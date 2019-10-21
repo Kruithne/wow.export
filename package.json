@@ -1,0 +1,16 @@
+{
+    "name": "wow.export",
+    "description": "WebKit port of Marlamin's WoW Export Tools",
+    "license": "MIT",
+    "version": "0.0.1",
+    "contributors": [
+        "Kruithne <kruithne@gmail.com> (https://kruithne.net/)",
+        "Martin Benjamins <marlamin@marlamin.com> (https://wow.tools/)"
+    ],
+    "engines": {
+        "node": ">=12.12.0"
+    },
+    "dependencies": {
+        "chalk": "^2.4.2"
+    }
+}
