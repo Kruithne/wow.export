@@ -9,6 +9,7 @@ const filesize = require('filesize');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = path.resolve('./build.conf');
+const MANIFEST_FILE = './package.json';
 
 const log = {
     error: (msg, ...params) => log.print(chalk.red('ERR ') + msg, ...params),
@@ -160,6 +161,17 @@ const collectFiles = async (dir, out = []) => {
         }
 
         // ToDo: Minify/merge sources (controlled by per-build flag).
+
+        // Build a manifest (package.json) file for the build.
+        const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
+        const manifest = Object.assign({}, config.manifest);
+
+        for (const inherit of config.manifestInherit || [])
+            manifest[inherit] = meta[inherit];
+
+        const manifestPath = path.resolve(path.join(buildDir, MANIFEST_FILE));
+        await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
+        log.success('Manifest file written to *%s*', manifestPath);
 
         const buildElapsed = (Date.now() - buildStart) / 1000;
         log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
