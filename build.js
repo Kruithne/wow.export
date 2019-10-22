@@ -119,7 +119,7 @@ const createDirectory = async (dir) => {
         }
 
         const extractElapsed = (Date.now() - extractStart) / 1000;
-        log.success('Extract %d files in %ds', zipEntries.length, extractElapsed);
+        log.success('Extracted %d files in %ds', zipEntries.length, extractElapsed);
 
         // ToDo: Copy over the source files (hard-copy or symlink, controlled by per-build flag).
         // ToDo: Minify/merge sources (controlled by per-build flag).
