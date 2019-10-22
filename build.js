@@ -19,12 +19,21 @@ const log = {
     print: (msg, ...params) => console.log(msg.replace(/\*([^\*]+)\*/gm, (m, g1) => chalk.cyan(g1)), ...params)
 };
 
+/**
+ * Create all directories in a given path if they do not exist.
+ * @param {string} dir Directory path.
+ */
 const createDirectory = async (dir) => {
     await fsp.access(dir).catch(async () => {
         await fsp.mkdir(dir, { recursive: true });
     });
 };
 
+/**
+ * Returns an array of all files recursively collected from a directory.
+ * @param {string} dir Directory to recursively search.
+ * @param {array} out Array to be populated with results (automatically created).
+ */
 const collectFiles = async (dir, out = []) => {
     const entries = await fsp.opendir(dir);
     for await (const entry of entries) {
@@ -81,7 +90,8 @@ const collectFiles = async (dir, out = []) => {
         const bundleArchive = util.format(build.bundle, config.webkitVersion);
         const bundlePath = path.join(cacheDir, bundleArchive);
 
-        // Download the bundle if it does not yet exist.
+        // Check if we already have a copy of this bundle in our cache directory.
+        // If not, download it from the remote server and store it for re-use.
         await fsp.access(bundlePath).catch(async () => {
             const bundleURL = util.format(config.webkitURL, config.webkitVersion, bundleArchive);
             log.info('Downloading *%s*...', bundleURL);
@@ -118,7 +128,8 @@ const collectFiles = async (dir, out = []) => {
         const extractStart = Date.now();
         log.info('Extracting files from *%s*...', bundleArchive);
 
-        // ToDo: Unify this reduction to support other archive types.
+        // Iterate over every entry inside the ZIP archive and extract according to the filter.
+        // ToDo: Adjust this to support non-ZIP archives.
         const bundleName = path.basename(bundleArchive, '.zip');
         for (const entry of zipEntries) {
             const entryName = entry.entryName;
@@ -142,9 +153,11 @@ const collectFiles = async (dir, out = []) => {
         const sourceTarget = path.resolve(path.join(buildDir, config.sourceDirectory));
 
         if (sourceType === 'LINK') {
+            // Create a symlink for the source directory.
             await fsp.symlink(sourceDirectory, sourceTarget, 'junction');
             log.success('Created source link *%s* <-> *%s*', sourceTarget, sourceDirectory);
         } else if (sourceType === 'CLONE') {
+            // Clone all of the sources files to the build output.
             log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
             const cloneStart = Date.now();
 
@@ -166,9 +179,11 @@ const collectFiles = async (dir, out = []) => {
         const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
         const manifest = {};
 
+        // Apply manifest properties inherited from this scripts manifest.
         for (const inherit of config.manifestInherit || [])
             manifest[inherit] = meta[inherit];
 
+        // Apply manifest properties defined in the config.
         Object.assign(manifest, config.manifest);
 
         const manifestPath = path.resolve(path.join(buildDir, MANIFEST_FILE));

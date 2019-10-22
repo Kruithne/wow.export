@@ -1,12 +1,20 @@
 {
     "name": "wow.export",
-    "description": "WebKit port of Marlamin's WoW Export Tools",
+    "description": "node-webkit port of Marlamin's WoW Export Tools",
     "license": "MIT",
     "version": "0.0.1",
     "contributors": [
         "Kruithne <kruithne@gmail.com> (https://kruithne.net/)",
         "Martin Benjamins <marlamin@marlamin.com> (https://wow.tools/)"
     ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Kruithne/wow.export.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Kruithne/wow.export/issues"
+    },
+    "homepage": "https://github.com/Kruithne/wow.export#readme",
     "engines": {
         "node": ">=12.12.0"
     },
