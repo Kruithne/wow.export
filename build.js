@@ -11,10 +11,11 @@ const argv = process.argv.splice(2);
 const CONFIG_FILE = path.resolve('./build.conf');
 
 const log = {
-    error: (msg, ...params) => console.log(chalk.red('ERR ') + msg, ...params),
-    warn: (msg, ...params) => console.log(chalk.yellow('WARN ') + msg, ...params),
-    success: (msg, ...params) => console.log(chalk.green('DONE ') + msg, ...params),
-    info: (msg, ...params) => console.log(chalk.blue('INFO ') + msg, ...params)
+    error: (msg, ...params) => log.print(chalk.red('ERR ') + msg, ...params),
+    warn: (msg, ...params) => log.print(chalk.yellow('WARN ') + msg, ...params),
+    success: (msg, ...params) => log.print(chalk.green('DONE ') + msg, ...params),
+    info: (msg, ...params) => log.print(chalk.blue('INFO ') + msg, ...params),
+    print: (msg, ...params) => console.log(msg.replace(/\*([^\*]+)\*/gm, (m, g1) => chalk.cyan(g1)), ...params)
 };
 
 const createDirectory = async (dir) => {
@@ -48,14 +49,14 @@ const createDirectory = async (dir) => {
     // User has not selected any valid builds; display available and exit.
     if (targetBuilds.length === 0) {
         log.warn('You have not selected any builds.');
-        log.info('Available builds: %s', config.builds.map(e => e.name).join(', '));
+        log.info('Available builds: %s', config.builds.map(e => chalk.cyan(e.name)).join(', '));
         return;
     }
 
-    log.info('Selected builds: %s', targetBuilds.map(e => e.name).join(', '));
+    log.info('Selected builds: %s', targetBuilds.map(e => chalk.cyan(e.name)).join(', '));
 
     for (const build of targetBuilds) {
-        log.info('Starting build \'%s\'...', build.name);
+        log.info('Starting build *%s*...', build.name);
         const buildStart = Date.now();
         const buildDir = path.join(outDir, build.name);
 
@@ -69,14 +70,14 @@ const createDirectory = async (dir) => {
         // Download the bundle if it does not yet exist.
         await fsp.access(bundlePath).catch(async () => {
             const bundleURL = util.format(config.webkitURL, config.webkitVersion, bundleArchive);
-            log.info('Downloading %s...', bundleURL);
+            log.info('Downloading *%s*...', bundleURL);
 
             const startTime = Date.now();
             await new Promise(resolve => request(bundleURL).pipe(fs.createWriteStream(bundlePath)).on('finish', resolve));
 
             const elapsed = (Date.now() - startTime) / 1000;
             const bundleStats = await fsp.stat(bundlePath);
-            log.success('Download complete! %s in %ds (%s/s)', filesize(bundleStats.size), elapsed, filesize(bundleStats.size / elapsed));
+            log.success('Download complete! *%s* in *%ds* (*%s/s*)', filesize(bundleStats.size), elapsed, filesize(bundleStats.size / elapsed));
         });
 
         // Extract framework from the bundle.
@@ -101,7 +102,7 @@ const createDirectory = async (dir) => {
         };
 
         const extractStart = Date.now();
-        log.info('Extracting files from %s...', bundleArchive);
+        log.info('Extracting files from *%s*...', bundleArchive);
 
         // ToDo: Unify this reduction to support other archive types.
         const bundleName = path.basename(bundleArchive, '.zip');
@@ -114,18 +115,18 @@ const createDirectory = async (dir) => {
                 await createDirectory(entryDir);
                 zip.extractEntryTo(entryName, entryDir, false, true);
             } else {
-                log.warn('Skipping extraction of \'%s\' due to filter!', entryName);
+                log.warn('Skipping extraction of *%s* due to filter!', entryName);
             }
         }
 
         const extractElapsed = (Date.now() - extractStart) / 1000;
-        log.success('Extracted %d files in %ds', zipEntries.length, extractElapsed);
+        log.success('Extracted *%d* files in *%ds*', zipEntries.length, extractElapsed);
 
         // ToDo: Copy over the source files (hard-copy or symlink, controlled by per-build flag).
         // ToDo: Minify/merge sources (controlled by per-build flag).
 
         const buildElapsed = (Date.now() - buildStart) / 1000;
-        log.success('Build \'%s\' completed in %ds', build.name, buildElapsed);
+        log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
     }
 })().catch(e => {
     log.error('An unexpected error has halted the build:');
