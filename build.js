@@ -8,7 +8,7 @@ const request = require('request');
 const filesize = require('filesize');
 const argv = process.argv.splice(2);
 
-const CONFIG_FILE = path.resolve('./build.conf');
+const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
 
 const log = {
