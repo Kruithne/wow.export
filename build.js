@@ -164,10 +164,12 @@ const collectFiles = async (dir, out = []) => {
 
         // Build a manifest (package.json) file for the build.
         const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
-        const manifest = Object.assign({}, config.manifest);
+        const manifest = {};
 
         for (const inherit of config.manifestInherit || [])
             manifest[inherit] = meta[inherit];
+
+        Object.assign(manifest, config.manifest);
 
         const manifestPath = path.resolve(path.join(buildDir, MANIFEST_FILE));
         await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
