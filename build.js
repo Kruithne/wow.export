@@ -17,14 +17,20 @@ const log = {
     info: (msg, ...params) => console.log(chalk.blue('INFO ') + msg, ...params)
 };
 
+const createDirectory = async (dir) => {
+    await fsp.access(dir).catch(async () => {
+        await fsp.mkdir(dir, { recursive: true });
+    });
+};
+
 (async () => {
     const config = JSON.parse(await fsp.readFile(CONFIG_FILE));
     const outDir = path.resolve(config.outputDirectory);
     const cacheDir = path.resolve(config.cacheDirectory);
 
     // Create base directories we use during the build.
-    await fsp.mkdir(outDir, { recursive: true });
-    await fsp.mkdir(cacheDir, { recursive: true });
+    await createDirectory(outDir);
+    await createDirectory(cacheDir);
 
     // Index builds from the build config.
     const builds = new Map();
@@ -55,7 +61,7 @@ const log = {
 
         // Wipe the build directory and then re-create it.
         await fsp.rmdir(buildDir, { recursive: true });
-        await fsp.mkdir(buildDir, { recursive: true });
+        await createDirectory(buildDir);
 
         const bundleArchive = util.format(build.bundle, config.webkitVersion);
         const bundlePath = path.join(cacheDir, bundleArchive);
@@ -105,7 +111,7 @@ const log = {
                 const entryPath = entryName.substr(bundleName.length);
                 const entryDir = path.join(buildDir, path.dirname(entryPath));
 
-                await fsp.mkdir(entryDir, { recusrive: true });
+                await createDirectory(entryDir);
                 zip.extractEntryTo(entryName, entryDir, false, true);
             } else {
                 log.warn('Skipping extraction of \'%s\' due to filter!', entryName);
