@@ -24,6 +24,19 @@ const createDirectory = async (dir) => {
     });
 };
 
+const collectFiles = async (dir, out = []) => {
+    const entries = await fsp.opendir(dir);
+    for await (const entry of entries) {
+        const entryPath = path.join(dir, entry.name);
+        if (entry.isDirectory())
+            await collectFiles(entryPath, out);
+        else
+            out.push(entryPath);
+    }
+
+    return out;
+};
+
 (async () => {
     const config = JSON.parse(await fsp.readFile(CONFIG_FILE));
     const outDir = path.resolve(config.outputDirectory);
@@ -122,7 +135,30 @@ const createDirectory = async (dir) => {
         const extractElapsed = (Date.now() - extractStart) / 1000;
         log.success('Extracted *%d* files in *%ds*', zipEntries.length, extractElapsed);
 
-        // ToDo: Copy over the source files (hard-copy or symlink, controlled by per-build flag).
+        // Clone or link sources (depending on build-specific flag).
+        const sourceType = build.sourceMethod.toUpperCase();
+        const sourceDirectory = path.resolve(config.sourceDirectory);
+        const sourceTarget = path.resolve(path.join(buildDir, config.sourceDirectory));
+
+        if (sourceType === 'LINK') {
+            await fsp.symlink(sourceDirectory, sourceTarget, 'junction');
+            log.success('Created source link *%s* <-> *%s*', sourceTarget, sourceDirectory);
+        } else if (sourceType === 'CLONE') {
+            log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
+            const cloneStart = Date.now();
+
+            await createDirectory(sourceTarget);
+            const files = await collectFiles(sourceDirectory);
+            for (const file of files) {
+                const targetPath = path.join(sourceTarget, path.relative(sourceDirectory, file));
+                await createDirectory(path.dirname(targetPath));
+                await fsp.copyFile(file, targetPath);
+            }
+
+            const cloneElapsed = (Date.now() - cloneStart) / 1000;
+            log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
+        }
+
         // ToDo: Minify/merge sources (controlled by per-build flag).
 
         const buildElapsed = (Date.now() - buildStart) / 1000;
