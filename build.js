@@ -225,7 +225,7 @@ const collectFiles = async (dir, out = []) => {
         // Apply manifest properties defined in the config.
         Object.assign(manifest, config.manifest);
 
-        const manifestPath = path.resolve(path.join(buildDir, MANIFEST_FILE));
+        const manifestPath = path.resolve(path.join(buildDir, build.manifestTarget));
         await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
         log.success('Manifest file written to *%s*', manifestPath);
 
