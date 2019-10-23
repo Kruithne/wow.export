@@ -179,7 +179,7 @@ const collectFiles = async (dir, out = []) => {
 
                 // In the event that we specify a deeper path that does not
                 // exist, make sure we create missing directories first.
-                await createDirectory(targetPath);
+                await createDirectory(path.dirname(targetPath));
                 await fsp.rename(path.join(buildDir, origName), targetPath);
             }
 
