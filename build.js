@@ -6,6 +6,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const AdmZip = require('adm-zip');
+const tar = require('tar');
 const path = require('path');
 const util = require('util');
 const chalk = require('chalk');
@@ -109,10 +110,6 @@ const collectFiles = async (dir, out = []) => {
             log.success('Download complete! *%s* in *%ds* (*%s/s*)', filesize(bundleStats.size), elapsed, filesize(bundleStats.size / elapsed));
         });
 
-        // Extract framework from the bundle.
-        const zip = new AdmZip(bundlePath);
-        const zipEntries = zip.getEntries();
-
         // This function allows us to filter out files from the framework
         // bundle that we don't want included in our final output.
         const filter = config.webkitFilter;
@@ -131,26 +128,45 @@ const collectFiles = async (dir, out = []) => {
         };
 
         const extractStart = Date.now();
+        let extractCount = 0;
         log.info('Extracting files from *%s*...', bundleArchive);
 
-        // Iterate over every entry inside the ZIP archive and extract according to the filter.
-        // ToDo: Adjust this to support non-ZIP archives.
-        const bundleName = path.basename(bundleArchive, '.zip');
-        for (const entry of zipEntries) {
-            const entryName = entry.entryName;
-            if (extractFilter(entryName)) {
-                const entryPath = entryName.substr(bundleName.length);
-                const entryDir = path.join(buildDir, path.dirname(entryPath));
+        const bundleType = build.bundleType.toUpperCase();
+        if (bundleType === 'ZIP') { // 0x04034b50
+            const zip = new AdmZip(bundlePath);
+            const zipEntries = zip.getEntries();
 
-                await createDirectory(entryDir);
-                zip.extractEntryTo(entryName, entryDir, false, true);
-            } else {
-                log.warn('Skipping extraction of *%s* due to filter!', entryName);
+            const bundleName = path.basename(bundleArchive, '.zip');
+            for (const entry of zipEntries) {
+                const entryName = entry.entryName;
+                if (extractFilter(entryName)) {
+                    const entryPath = entryName.substr(bundleName.length);
+                    const entryDir = path.join(buildDir, path.dirname(entryPath));
+    
+                    await createDirectory(entryDir);
+                    zip.extractEntryTo(entryName, entryDir, false, true);
+                    extractCount++;
+                } else {
+                    log.warn('Skipping extraction of *%s* due to filter!', entryName);
+                }
             }
+        } else if (bundleType === 'GZ') { // 0x8B1F
+            await tar.x({ file: bundlePath, cwd: buildDir, strip: 1, filter: (path) => {
+                if (!extractFilter(path)) {
+                    log.warn('Skipping extraction of *%s* due to filter!', path);
+                    return false;
+                }
+
+                extractCount++;
+                return true;
+            }});
+        } else {
+            // Developer didn't config a build properly.
+            throw new Error('Unexpected bundle type: ' + bundleType);
         }
 
         const extractElapsed = (Date.now() - extractStart) / 1000;
-        log.success('Extracted *%d* files in *%ds*', zipEntries.length, extractElapsed);
+        log.success('Extracted *%d* files in *%ds*', extractCount, extractElapsed);
 
         // Clone or link sources (depending on build-specific flag).
         const sourceType = build.sourceMethod.toUpperCase();
