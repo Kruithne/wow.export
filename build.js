@@ -134,6 +134,7 @@ const collectFiles = async (dir, out = []) => {
 
         const extractStart = Date.now();
         let extractCount = 0;
+        let filterCount = 0;
         log.info('Extracting files from *%s*...', bundleArchive);
 
         const bundleType = build.bundleType.toUpperCase();
@@ -152,18 +153,14 @@ const collectFiles = async (dir, out = []) => {
                     zip.extractEntryTo(entryName, entryDir, false, true);
                     extractCount++;
                 } else {
-                    log.warn('Skipping extraction of *%s* due to filter!', entryName);
+                    filterCount++;
                 }
             }
         } else if (bundleType === 'GZ') { // 0x8B1F
             await tar.x({ file: bundlePath, cwd: buildDir, strip: 1, filter: (path) => {
-                if (!extractFilter(path)) {
-                    log.warn('Skipping extraction of *%s* due to filter!', path);
-                    return false;
-                }
-
-                extractCount++;
-                return true;
+                const filter = extractFilter(path);
+                filter ? extractCount++ : filterCount++;
+                return filter;
             }});
         } else {
             // Developer didn't config a build properly.
@@ -171,7 +168,7 @@ const collectFiles = async (dir, out = []) => {
         }
 
         const extractElapsed = (Date.now() - extractStart) / 1000;
-        log.success('Extracted *%d* files in *%ds*', extractCount, extractElapsed);
+        log.success('Extracted *%d* files (*%d* filtered) in *%ds*', extractCount, filterCount, extractElapsed);
 
         // Clone or link sources (depending on build-specific flag).
         const sourceType = build.sourceMethod.toUpperCase();
