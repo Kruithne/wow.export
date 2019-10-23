@@ -171,6 +171,22 @@ const collectFiles = async (dir, out = []) => {
         const extractElapsed = (Date.now() - extractStart) / 1000;
         log.success('Extracted *%d* files (*%d* filtered) in *%ds*', extractCount, filterCount, extractElapsed);
 
+        const remap = Object.entries(build.remap || {});
+
+        if (remap.length > 0) {
+            log.info('Remapping framework files...');
+            for (const [origName, targetName] of remap) {
+                const targetPath = path.join(buildDir, targetName);
+
+                // In the event that we specify a deeper path that does not
+                // exist, make sure we create missing directories first.
+                await createDirectory(targetPath);
+                await fsp.rename(path.join(buildDir, origName), targetPath);
+            }
+
+            log.success('Remapped *%d* files', remap.length);
+        }
+
         // Clone or link sources (depending on build-specific flag).
         const sourceType = build.sourceMethod.toUpperCase();
         const sourceDirectory = path.resolve(config.sourceDirectory);
