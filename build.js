@@ -189,7 +189,7 @@ const collectFiles = async (dir, out = []) => {
         // Clone or link sources (depending on build-specific flag).
         const sourceType = build.sourceMethod.toUpperCase();
         const sourceDirectory = path.resolve(config.sourceDirectory);
-        const sourceTarget = path.resolve(path.join(buildDir, config.sourceDirectory));
+        const sourceTarget = path.resolve(path.join(buildDir, build.sourceTarget));
 
         if (sourceType === 'LINK') {
             // Create a symlink for the source directory.
