@@ -170,20 +170,29 @@ const collectFiles = async (dir, out = []) => {
         const extractElapsed = (Date.now() - extractStart) / 1000;
         log.success('Extracted *%d* files (*%d* filtered) in *%ds*', extractCount, filterCount, extractElapsed);
 
-        const remap = Object.entries(build.remap || {});
+        log.info('Remapping files and merging additional sources...');
+        const mappings = [];
 
-        if (remap.length > 0) {
-            log.info('Remapping framework files...');
-            for (const [origName, targetName] of remap) {
-                const targetPath = path.join(buildDir, targetName);
+        // File remappings: Source -and- target are relative to build directory.
+        const remaps = Object.entries(build.remap || {});
+        if (remaps.length > 0)
+            for (const [origName, target] of remaps)
+                mappings.push({ source: path.join(buildDir, origName), target });
 
-                // In the event that we specify a deeper path that does not
-                // exist, make sure we create missing directories first.
-                await createDirectory(path.dirname(targetPath));
-                await fsp.rename(path.join(buildDir, origName), targetPath);
-            }
+        // Additional source merges: Source is relative to cwd, target relative to build directory.
+        const include = Object.entries(build.include || {});
+        if (include.length > 0)
+            for (const [source, target] of include)
+                mappings.push({ source: path.resolve(source), target });
 
-            log.success('Remapped *%d* files', remap.length);
+        for (const map of mappings) {
+            const targetPath = path.join(buildDir, map.target);
+            log.info('*%s* -> *%s*', map.source, targetPath);
+
+            // In the event that we specify a deeper path that does not
+            // exist, make sure we create missing directories first.
+            await createDirectory(path.dirname(targetPath));
+            await fsp.rename(map.source, targetPath);
         }
 
         // Clone or link sources (depending on build-specific flag).
