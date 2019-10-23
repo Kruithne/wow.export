@@ -222,7 +222,7 @@ const collectFiles = async (dir, out = []) => {
             }, build.rcedit);
 
             log.info('Writing resource strings on binary...');
-            await rcedit(path.join(buildDir, 'nw.exe'), rcConfig);
+            await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
         }
 
         const buildElapsed = (Date.now() - buildStart) / 1000;
