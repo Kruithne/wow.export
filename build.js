@@ -69,10 +69,15 @@ const collectFiles = async (dir, out = []) => {
 
     // Check all provided CLI parameters for valid build names.
     const targetBuilds = [];
-    for (const arg of argv) {
-        const build = builds.get(arg.toLowerCase());
-        if (build !== undefined)
-            targetBuilds.push(build);
+    if (argv.includes('*')) {
+        // If * is present as a parameter, include all builds.
+        targetBuilds.push(...builds.values());
+    } else {
+        for (const arg of argv) {
+            const build = builds.get(arg.toLowerCase());
+            if (build !== undefined)
+                targetBuilds.push(build);
+        }
     }
 
     // User has not selected any valid builds; display available and exit.

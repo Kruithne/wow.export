@@ -19,6 +19,9 @@ npm install
 # This will list available builds.
 node ./build.js
 
+# This will compile -all- available builds.
+node ./build.js *
+
 # Substitute <BUILD> for the build(s) you wish to compile, space-delimitated.
-node ./build.js <BUILD>
+node ./build.js <BUILD1> <BUILD2> ...
 ```
