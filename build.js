@@ -118,14 +118,13 @@ const collectFiles = async (dir, out = []) => {
 
         // This function allows us to filter out files from the framework
         // bundle that we don't want included in our final output.
-        const filter = config.webkitFilter;
         const extractFilter = (entry) => {
             // Whitelist takes priority over blacklist.
-            for (const check of filter.whitelist)
+            for (const check of build.filter.whitelist)
                 if (entry.match(check))
                     return true;
 
-            for (const check of filter.blacklist)
+            for (const check of build.filter.blacklist)
                 if (entry.match(check))
                     return false;
 
