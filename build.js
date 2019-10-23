@@ -12,6 +12,7 @@ const util = require('util');
 const chalk = require('chalk');
 const request = require('request');
 const filesize = require('filesize');
+const rcedit = require('rcedit');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.conf';
@@ -212,6 +213,17 @@ const collectFiles = async (dir, out = []) => {
         const manifestPath = path.resolve(path.join(buildDir, MANIFEST_FILE));
         await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
         log.success('Manifest file written to *%s*', manifestPath);
+
+        // Set resource strings for the Windows binary.
+        if (build.rcedit) {
+            const rcConfig = Object.assign({
+                'file-version': meta.version,
+                'product-version': meta.version
+            }, build.rcedit);
+
+            log.info('Writing resource strings on binary...');
+            await rcedit(path.join(buildDir, 'nw.exe'), rcConfig);
+        }
 
         const buildElapsed = (Date.now() - buildStart) / 1000;
         log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
