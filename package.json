@@ -1,6 +1,6 @@
 {
     "name": "wow.export",
-    "description": "node-webkit port of Marlamin's WoW Export Tools",
+    "description": "Export Toolkit for World of Warcraft",
     "license": "MIT",
     "version": "0.0.1",
     "contributors": [
