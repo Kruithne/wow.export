@@ -183,7 +183,7 @@ const collectFiles = async (dir, out = []) => {
         const include = Object.entries(build.include || {});
         if (include.length > 0)
             for (const [source, target] of include)
-                mappings.push({ source: path.resolve(source), target });
+                mappings.push({ source: path.resolve(source), target, clone: true });
 
         for (const map of mappings) {
             const targetPath = path.join(buildDir, map.target);
@@ -192,7 +192,9 @@ const collectFiles = async (dir, out = []) => {
             // In the event that we specify a deeper path that does not
             // exist, make sure we create missing directories first.
             await createDirectory(path.dirname(targetPath));
-            await fsp.rename(map.source, targetPath);
+            const func = map.clone ? fsp.copyFile : fsp.rename;
+            await func(map.source, targetPath);
+        }
         }
 
         // Clone or link sources (depending on build-specific flag).
