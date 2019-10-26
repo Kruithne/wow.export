@@ -13,10 +13,59 @@ const chalk = require('chalk');
 const request = require('request');
 const filesize = require('filesize');
 const rcedit = require('rcedit');
+const acorn = require('acorn');
+const builtin = require('module');
+const terser = require('terser');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
+
+const AST_NO_MATCH = Symbol('astNoMatch');
+const AST_REQUIRE_STRUCT = {
+    type: 'VariableDeclaration',
+    declarations: {
+        type: 'VariableDeclarator',
+        id: {
+            type: 'Identifier'
+        },
+        init: {
+            type: 'CallExpression',
+            start: 'EXPORT',
+            end: 'EXPORT',
+            callee: {
+                type: 'Identifier',
+                name: 'require'
+            },
+            arguments: {
+                type: 'Literal',
+                value: 'EXPORT'
+            }
+        }
+    }
+};
+
+const AST_EXPORT_STRUCT = {
+    type: 'ExpressionStatement',
+    expression: {
+        type: 'AssignmentExpression',
+        operator: '=',
+        start: 'EXPORT',
+        end: 'EXPORT',
+        left: {
+            type: 'MemberExpression',
+            object: {
+                type: 'Identifier',
+                name: 'module'
+            },
+            property: {
+                type: 'Identifier',
+                name: 'exports'
+            }
+        },
+        right: 'EXPORT'
+    }
+};
 
 const log = {
     error: (msg, ...params) => log.print(chalk.red('ERR ') + msg, ...params),
@@ -25,6 +74,56 @@ const log = {
     info: (msg, ...params) => log.print(chalk.blue('INFO ') + msg, ...params),
     print: (msg, ...params) => console.log(msg.replace(/\*([^\*]+)\*/gm, (m, g1) => chalk.cyan(g1)), ...params)
 };
+
+/**
+ * Provides a wrapper for applying consecutive substitutions to a single
+ * string using the original offsets before any changes were made.
+ * @class DynamicString
+ */
+class DynamicString {
+    constructor(str) {
+        this._str = str;
+        this._mods = [];
+    }
+
+    _addOffset(idx, ofs) {
+        this._mods.push({ idx, ofs });
+    }
+
+    get(start, end) {
+        // Adjust the offsets relative to all applied changes.
+        for (const mod of this._mods) {
+            if (start >= mod.idx) {
+                start += mod.ofs;
+                end += mod.ofs;
+            }
+        }
+
+        return this._str.substring(start, end);
+    }
+
+    sub(start, end, sub) {
+        // Adjust the offsets relative to all applied changes.
+        for (const mod of this._mods) {
+            if (start >= mod.idx) {
+                start += mod.ofs;
+                end += mod.ofs;
+            }
+        }
+
+        const repl = this._str.substring(0, start) + sub + this._str.substring(end);
+        const origLength = end - start;
+
+        if (sub.length !== origLength)
+            this._addOffset(end, sub.length - origLength);
+
+        this._str = repl;
+    }
+
+    toString() {
+        return this._str;
+    }
+}
 
 /**
  * Create all directories in a given path if they do not exist.
@@ -51,6 +150,123 @@ const collectFiles = async (dir, out = []) => {
             out.push(entryPath);
     }
 
+    return out;
+};
+
+/**
+ * Check if an AST node matches a structure.
+ * Returns AST_NO_MATCH or an object containing exports.
+ * @param {object} target 
+ * @param {object} struct 
+ * @param {object} out 
+ */
+const matchAST = (target, struct, out = {}) => {
+    for (const [key, value] of Object.entries(struct)) {
+        const node = target[key];
+        const valueType = typeof value;
+
+        // Target AST node is missing a required property completely.
+        if (node === undefined)
+            return AST_NO_MATCH;
+
+        // Export the value of this property.
+        if (value === 'EXPORT') {
+            out[key] = target[key];
+            continue;
+        }
+
+        // Primitive types need to be a 1:1 match to pass.
+        if (valueType === 'string' || valueType === 'number') {
+            if (value !== node)
+                return AST_NO_MATCH;
+
+            continue;
+        }
+
+        // For arrays, at least one of the items needs to match the value structure.
+        if (Array.isArray(node)) {
+            let subMatch = false;
+            for (const subNode of node) {
+                if (matchAST(subNode, value, out) !== AST_NO_MATCH) {
+                    subMatch = true;
+                    continue;
+                }
+            }
+
+            if (!subMatch)
+                return AST_NO_MATCH;
+
+            continue;
+        }
+
+        // For normal objects just shift down a level in the tree.
+        if (valueType === 'object') {
+            if (matchAST(node, value, out) !== AST_NO_MATCH)
+                continue;
+
+            return AST_NO_MATCH;
+        }
+
+        // No matches? No pass.
+        return AST_NO_MATCH;
+    }
+
+    return out;
+};
+
+/**
+ * Parse a source module for imports.
+ * @param {string} mod 
+ */
+const parseModule = async (mod) => {
+    const out = {
+        path: path.resolve(mod),
+        data: await fsp.readFile(mod, 'utf8'),
+        modules: [],
+        isRoot: false
+    };
+
+    const ast = acorn.parse(out.data);
+    for (const node of ast.body) {
+        // Locate modules imported using require().
+        const importMatch = matchAST(node, AST_REQUIRE_STRUCT);
+        if (importMatch !== AST_NO_MATCH) {
+            // Only process the module if it's not a builtin.
+            if (!builtin.builtinModules.includes(importMatch.value)) {
+                importMatch.value = require.resolve(path.join(path.dirname(out.path), importMatch.value));
+                out.modules.push(importMatch);
+            }
+        }
+
+        // Location modules exported using module.exports
+        const exportMatch = matchAST(node, AST_EXPORT_STRUCT);
+        if (exportMatch !== AST_NO_MATCH)
+            out.export = exportMatch;
+    }
+
+    return out;
+};
+
+/**
+ * Build a module tree starting from the entry-point.
+ * @param {string} entry 
+ * @param {array} out 
+ */
+const buildModuleTree = async (entry, out = [], root = true) => {
+    const mod = await parseModule(entry);
+    mod.isRoot = root;
+    out.unshift(mod);
+
+    for (const sub of mod.modules) {
+        const subIndex = out.findIndex(e => e.path === sub.value);
+        if (subIndex > -1) {
+            // This module already exists in the stack, move it to the top.
+            out.unshift(out.splice(subIndex, 1)[0]);
+        } else {
+            // Unseen module, parse it.
+            await buildModuleTree(sub.value, out, false);
+        }
+    }
     return out;
 };
 
@@ -237,9 +453,59 @@ const collectFiles = async (dir, out = []) => {
 
             const cloneElapsed = (Date.now() - cloneStart) / 1000;
             log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
-        }
+        } else if (sourceType === 'BUNDLE') {
+            // Bundle everything together, packaged for production release.
+            const bundleConfig = build.bundleConfig;
+            log.info('Bundling sources...');
 
-        // ToDo: Minify/merge sources (controlled by per-build flag).
+            // Make sure the source directory exists.
+            await createDirectory(sourceTarget);
+
+            const jsEntry = path.join(sourceDirectory, bundleConfig.jsEntry);
+            const moduleTree = await buildModuleTree(jsEntry);
+
+            // Assign every module a globally unique ID to prevent any variable collision.
+            // The actual value doesn't matter since it will be minified later. We also
+            // calculate the overall size of all code pre-merge/minification here.
+            let moduleID = 0;
+            let rawSize = 0;
+            const moduleMap = new Map();
+            for (const mod of moduleTree) {
+                mod.id = '_MOD_' + moduleID++;
+                moduleMap.set(mod.path, mod.id);
+                rawSize += mod.data.length;
+            }
+
+            for (const mod of moduleTree) {
+                // Replace all import statements with ID assignments.
+                const data = new DynamicString(mod.data);
+                for (const sub of mod.modules)
+                    data.sub(sub.start, sub.end, moduleMap.get(sub.value));
+
+                // Replace module export statements.
+                if (mod.export) {
+                    const ex = mod.export;
+                    const exportStatement = data.get(ex.right.start, ex.right.end);
+                    data.sub(ex.start, ex.end, 'return ' + exportStatement);
+                }
+
+                // Wrap modules in self-executing function.
+                mod.data = '(() => {' + data.toString() + '})();';
+
+                // Everything except for the entry-point needs to be accessible.
+                if (!mod.isRoot)
+                    mod.data = 'const ' + mod.id + ' = ' + mod.data;
+            }
+
+            const merged = moduleTree.map(e => e.data).join('\n');
+            const minified = terser.minify(merged, config.terserConfig);
+
+            if (minified.error)
+                throw minified.error;
+            
+            await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsEntry), minified.code, 'utf8');
+            log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), Math.round((minified.code.length / rawSize) * 100));
+        }
 
         // Build a manifest (package.json) file for the build.
         const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
