@@ -272,5 +272,5 @@ const collectFiles = async (dir, out = []) => {
     }
 })().catch(e => {
     log.error('An unexpected error has halted the build:');
-    log.error(e.toString());
+    log.error(e.stack);
 });
