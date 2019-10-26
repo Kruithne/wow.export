@@ -476,7 +476,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
                 }
 
                 // Wrap modules in self-executing function.
-                mod.data = '(() => {' + data.toString() + '})();';
+                mod.data = '(() => {\n' + data.toString() + '\n})();';
 
                 // Everything except for the entry-point needs to be accessible.
                 if (!mod.isRoot)
@@ -504,7 +504,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             for (const file of files) {
                 if (isBundle && !filterExt.some(e => file.endsWith(e)))
                     continue;
-                    
+
                 const targetPath = path.join(sourceTarget, path.relative(sourceDirectory, file));
                 await createDirectory(path.dirname(targetPath));
                 await fsp.copyFile(file, targetPath);
