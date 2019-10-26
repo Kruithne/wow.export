@@ -434,26 +434,12 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         const sourceDirectory = path.resolve(config.sourceDirectory);
         const sourceTarget = path.resolve(path.join(buildDir, build.sourceTarget));
 
+        const isBundle = sourceType === 'BUNDLE';
         if (sourceType === 'LINK') {
             // Create a symlink for the source directory.
             await fsp.symlink(sourceDirectory, sourceTarget, 'junction');
             log.success('Created source link *%s* <-> *%s*', sourceTarget, sourceDirectory);
-        } else if (sourceType === 'CLONE') {
-            // Clone all of the sources files to the build output.
-            log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
-            const cloneStart = Date.now();
-
-            await createDirectory(sourceTarget);
-            const files = await collectFiles(sourceDirectory);
-            for (const file of files) {
-                const targetPath = path.join(sourceTarget, path.relative(sourceDirectory, file));
-                await createDirectory(path.dirname(targetPath));
-                await fsp.copyFile(file, targetPath);
-            }
-
-            const cloneElapsed = (Date.now() - cloneStart) / 1000;
-            log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
-        } else if (sourceType === 'BUNDLE') {
+        } else if (isBundle) {
             // Bundle everything together, packaged for production release.
             const bundleConfig = build.bundleConfig;
             log.info('Bundling sources...');
@@ -505,6 +491,27 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             
             await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsEntry), minified.code, 'utf8');
             log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), Math.round((minified.code.length / rawSize) * 100));
+        }
+
+        const filterExt = build.bundleConfig.filterExt || [];
+        if (sourceType === 'CLONE' || isBundle) {
+            // Clone all of the sources files to the build output.
+            log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
+            const cloneStart = Date.now();
+
+            await createDirectory(sourceTarget);
+            const files = await collectFiles(sourceDirectory);
+            for (const file of files) {
+                if (isBundle && !filterExt.some(e => file.endsWith(e)))
+                    continue;
+                    
+                const targetPath = path.join(sourceTarget, path.relative(sourceDirectory, file));
+                await createDirectory(path.dirname(targetPath));
+                await fsp.copyFile(file, targetPath);
+            }
+
+            const cloneElapsed = (Date.now() - cloneStart) / 1000;
+            log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
         }
 
         // Build a manifest (package.json) file for the build.
