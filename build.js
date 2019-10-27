@@ -305,6 +305,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         return;
     }
 
+    const allBuildsStart = Date.now();
     log.info('Selected builds: %s', targetBuilds.map(e => chalk.cyan(e.name)).join(', '));
 
     for (const build of targetBuilds) {
@@ -557,6 +558,9 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         const buildElapsed = (Date.now() - buildStart) / 1000;
         log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
     }
+
+    const allBuildsElapsed = (Date.now() - allBuildsStart) / 1000;
+    log.success('*%d* builds completed in *%ds*!', targetBuilds.length, allBuildsElapsed);
 })().catch(e => {
     log.error('An unexpected error has halted the build:');
     log.error(e.stack);
