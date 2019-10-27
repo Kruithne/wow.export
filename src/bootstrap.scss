@@ -3,4 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const test = 5;
+
+@import 'test';
+
+* {
+    margin: 0;
+    padding: 0;
+}

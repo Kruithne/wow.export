@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Author: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
 const fs = require('fs');
