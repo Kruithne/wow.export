@@ -1,4 +1,11 @@
+# nodejs modules
 /node_modules
+
+# Output directory for builds.
 /bin
+
+# IDE configuration.
 /.vscode
+
+# Compiled stylesheets (use .scss for source).
 *.css
