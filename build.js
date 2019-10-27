@@ -506,8 +506,9 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             log.success('Compiled stylesheet (%d files) in %ds', sassBuild.stats.includedFiles.length, sassBuild.stats.duration / 1000);
         }
 
-        const filterExt = build.bundleConfig.filterExt || [];
         if (sourceType === 'CLONE' || isBundle) {
+            const filterExt = build.bundleConfig.filterExt || [];
+            
             // Clone all of the sources files to the build output.
             log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
             const cloneStart = Date.now();
