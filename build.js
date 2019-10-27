@@ -515,7 +515,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             await createDirectory(sourceTarget);
             const files = await collectFiles(sourceDirectory);
             for (const file of files) {
-                if (isBundle && !filterExt.some(e => file.endsWith(e)))
+                if (isBundle && filterExt.some(e => file.endsWith(e)))
                     continue;
 
                 const targetPath = path.join(sourceTarget, path.relative(sourceDirectory, file));
