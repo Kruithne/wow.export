@@ -444,12 +444,12 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         } else if (isBundle) {
             // Bundle everything together, packaged for production release.
             const bundleConfig = build.bundleConfig;
-            log.info('Bundling sources...');
+            const jsEntry = path.join(sourceDirectory, bundleConfig.jsEntry);
+            log.info('Bundling sources (entry: *%s*)...', jsEntry);
 
             // Make sure the source directory exists.
             await createDirectory(sourceTarget);
 
-            const jsEntry = path.join(sourceDirectory, bundleConfig.jsEntry);
             const moduleTree = await buildModuleTree(jsEntry);
 
             // Assign every module a globally unique ID to prevent any variable collision.
@@ -492,11 +492,11 @@ const buildModuleTree = async (entry, out = [], root = true) => {
                 throw minified.error;
             
             await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsOut), minified.code, 'utf8');
-            log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), 100 - Math.round((minified.code.length / rawSize) * 100));
+            log.success('*%d* sources bundled *%s* -> *%s* (*%d%*)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), 100 - Math.round((minified.code.length / rawSize) * 100));
 
             // Compile SCSS files into a single minified CSS output.
             const sassEntry = path.join(sourceDirectory, bundleConfig.sassEntry);
-            log.info('Compiling stylesheet (entry: %s)', sassEntry);
+            log.info('Compiling stylesheet (entry: *%s*)...', sassEntry);
 
             const sassBuild = await util.promisify(sass.render)({
                 file: sassEntry,
@@ -504,7 +504,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             });
 
             await fsp.writeFile(path.join(sourceTarget, bundleConfig.sassOut), sassBuild.css, 'utf8');
-            log.success('Compiled stylesheet (%d files) in %ds', sassBuild.stats.includedFiles.length, sassBuild.stats.duration / 1000);
+            log.success('Compiled stylesheet (*%d* files) in *%ds*', sassBuild.stats.includedFiles.length, sassBuild.stats.duration / 1000);
         }
 
         if (sourceType === 'CLONE' || isBundle) {
