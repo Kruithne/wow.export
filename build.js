@@ -507,8 +507,8 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         }
 
         if (sourceType === 'CLONE' || isBundle) {
-            const filterExt = build.bundleConfig.filterExt || [];
-            
+            const filterExt = isBundle ? build.bundleConfig.filterExt || [] : [];
+
             // Clone all of the sources files to the build output.
             log.info('Cloning sources *%s* -> *%s*...', sourceDirectory, sourceTarget);
             const cloneStart = Date.now();
