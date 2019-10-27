@@ -16,6 +16,7 @@ const rcedit = require('rcedit');
 const acorn = require('acorn');
 const builtin = require('module');
 const terser = require('terser');
+const sass = require('node-sass');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.conf';
@@ -491,6 +492,18 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             
             await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsEntry), minified.code, 'utf8');
             log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), Math.round((minified.code.length / rawSize) * 100));
+
+            // Compile SCSS files into a single minified CSS output.
+            const sassEntry = path.join(sourceDirectory, bundleConfig.sassEntry);
+            log.info('Compiling stylesheet (entry: %s)', sassEntry);
+
+            const sassBuild = await util.promisify(sass.render)({
+                file: sassEntry,
+                outputStyle: 'compressed'
+            });
+
+            await fsp.writeFile(path.join(sourceTarget, bundleConfig.sassOut), sassBuild.css, 'utf8');
+            log.success('Compiled stylesheet (%d files) in %ds', sassBuild.stats.includedFiles.length, sassBuild.stats.duration / 1000);
         }
 
         const filterExt = build.bundleConfig.filterExt || [];

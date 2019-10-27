@@ -9,7 +9,8 @@ To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/
 
 ## Building (Developers Only)
 > Note: Building wow.export **requires** Node 12.12.0 or above.
-> Note: For building on platforms other than Windows, Wine 1.6 or above is required.
+> Note: For building **on** Windows requires [node-gyp prerequisites](https://github.com/nodejs/node-gyp#on-windows).
+> Note: For building on platforms **other** than Windows, Wine 1.6 or above is required.
 
 ```
 git fetch https://github.com/Kruithne/wow.export.git

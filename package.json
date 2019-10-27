@@ -23,6 +23,7 @@
         "adm-zip": "git+https://github.com/cthackers/adm-zip.git",
         "chalk": "^2.4.2",
         "filesize": "^5.0.3",
+        "node-sass": "^4.13.0",
         "rcedit": "^2.0.0",
         "request": "^2.88.0",
         "tar": "^5.0.5",
