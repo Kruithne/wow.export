@@ -1,6 +1,22 @@
-@import 'test';
+// This file defines core rules and properties for the application.
+// All other sass modules required for styling are imported by this sheet (see bottom).
+
+:root {
+    --background: #343a40;
+    --background-dark: #2c3136;
+    --border: #6c757d;
+    --font-primary: #ffffffcc;
+    --font-hightlight: #ffffff;
+}
 
 * {
     margin: 0;
     padding: 0;
 }
+
+*:focus {
+    outline: 0;
+}
+
+@import './css/font';
+@import './css/base';

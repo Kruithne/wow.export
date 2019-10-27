@@ -1,0 +1,39 @@
+// This file defines the general structure of the application layout.
+
+body {
+    background: var(--background);
+    color: var(--font-primary);
+    overflow: hidden;
+    font-family: 'Selawik', sans-serif;
+}
+
+#container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-rows: 53px 1fr 73px;
+
+    #header {
+        border-bottom: 1px solid var(--border);
+        background: var(--background-dark);
+        display: flex;
+
+        #logo {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+            background: url(./images/logo.png) no-repeat center left;
+            font-size: 25px;
+            font-weight: 700;
+            padding: 0 0 3px 85px;
+        }
+    }
+    
+    #footer {
+        border-top: 1px solid var(--border);
+        background: var(--background-dark);
+    }
+}
