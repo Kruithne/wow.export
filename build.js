@@ -491,7 +491,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
                 throw minified.error;
             
             await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsEntry), minified.code, 'utf8');
-            log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), Math.round((minified.code.length / rawSize) * 100));
+            log.success('%d sources bundled %s -> %s (%d%)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), 100 - Math.round((minified.code.length / rawSize) * 100));
 
             // Compile SCSS files into a single minified CSS output.
             const sassEntry = path.join(sourceDirectory, bundleConfig.sassEntry);
