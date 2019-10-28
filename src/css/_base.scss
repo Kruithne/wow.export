@@ -42,3 +42,42 @@ body {
         color: var(--font-faded);
     }
 }
+
+#nav {
+    display: flex;
+    align-items: center;
+
+    div {
+        margin-left: 10px;
+
+        &:hover {
+            cursor: pointer;
+            color: var(--font-highlight);
+        }
+    }
+
+    div::before {
+        font-family: 'FontAwesome';
+        margin-right: 5px;
+    }
+
+    &-models::before {
+        content: '\f1b2';
+    }
+
+    &-textures::before {
+        content: '\f03e';
+    }
+
+    &-sounds::before {
+        content: '\f001';
+    }
+
+    &-maps::before {
+        content: '\f278';
+    }
+
+    &-other::before {
+        content: '\f0c5';
+    }
+}
