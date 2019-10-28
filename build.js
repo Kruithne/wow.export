@@ -531,7 +531,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
 
         // Build a manifest (package.json) file for the build.
         const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
-        const manifest = {};
+        const manifest = { flavour: build.name };
 
         // Apply manifest properties inherited from this scripts manifest.
         for (const inherit of config.manifestInherit || [])
