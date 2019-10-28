@@ -555,6 +555,17 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
         }
 
+        const buildArchiveType = build.buildArchive;
+        if (buildArchiveType) {
+            if (buildArchiveType === 'ZIP') {
+                // ToDo: Use AdmZip to archive the output files.
+            } else if (buildArchiveType === 'GZ') {
+                // ToDo: Use tar to archive the output files.
+            } else {
+                throw new Error('Unknown build archive type: ' + buildArchiveType);
+            }
+        }
+
         const buildElapsed = (Date.now() - buildStart) / 1000;
         log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
     }
