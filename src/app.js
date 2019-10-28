@@ -3,6 +3,15 @@
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
 
+// Force all links to open in the users default application.
+document.addEventListener('click', function(e) {
+    if (!e.target.matches('a'))
+        return;
+
+    e.preventDefault();
+    nw.Shell.openExternal(e.target.getAttribute('href'));
+});
+
 (async () => {
     // Wait for the DOM to be loaded.
     if (document.readyState === 'loading')

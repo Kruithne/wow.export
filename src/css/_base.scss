@@ -35,5 +35,10 @@ body {
     #footer {
         border-top: 1px solid var(--border);
         background: var(--background-dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--font-faded);
     }
 }
