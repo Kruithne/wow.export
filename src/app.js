@@ -19,4 +19,12 @@ document.addEventListener('click', function(e) {
 
     // Append the application version to the title bar.
     document.title += ' v' + nw.App.manifest.version;
+
+    // Initialize Vue.
+    const content = new Vue({
+        el: '#container',
+        data: {
+            isSourceActive: false
+        }
+    });
 })();

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <script async type="text/javascript" src="lib/vue.js"></script>
-        <script async type="text/javascript" src="app.js"></script>
+        <script defer type="text/javascript" src="lib/vue.js"></script>
+        <script defer type="text/javascript" src="app.js"></script>
         <link rel="stylesheet" type="text/css" href="app.css"/>
         <title>wow.export</title>
     </head>
@@ -10,7 +10,7 @@
         <div id="container">
             <div id="header">
                 <div id="logo">.export</div>
-                <div id="nav">
+                <div id="nav" v-if="isSourceActive">
                     <div id="nav-models">Models</div>
                     <div id="nav-textures">Textures</div>
                     <div id="nav-sounds">Sounds</div>
