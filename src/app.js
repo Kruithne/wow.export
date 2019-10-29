@@ -24,7 +24,8 @@ document.addEventListener('click', function(e) {
     const content = new Vue({
         el: '#container',
         data: {
-            isSourceActive: false
+            isSourceActive: false,
+            localSourceRecent: []
         }
     });
 })();

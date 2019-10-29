@@ -19,7 +19,25 @@
                 </div>
             </div>
             <div id="content">
-
+                <div id="source-select" v-if="!isSourceActive">
+                    <div id="source-local">
+                        <div class="source-icon"></div>
+                        <div class="source-text">
+                            Open Local Installation
+                            <span>(Recommended)</span>
+                            <ul id="source-recent" v-if="localSourceRecent.length > 0">
+                                <li>Recent</li>
+                                <li v-for="entry in localSourceRecent">{{ entry }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="source-remote">
+                        <div class="source-icon"></div>
+                        <div class="source-text">
+                            Use Blizzard CDN
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="footer">
                 <span id="footer-links">

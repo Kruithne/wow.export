@@ -81,3 +81,80 @@ body {
         content: '\f0c5';
     }
 }
+
+#source-select {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+
+    > div {
+        width: 500px;
+        height: 500px;
+        border: 3px dashed var(--font-faded);
+        margin: 0 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: border-color linear 0.5s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        .source-icon {
+            font-family: 'FontAwesome';
+            font-size: 120px;
+            color: var(--font-faded);
+            transition: color linear 0.5s;
+        }
+
+        .source-text {
+            font-size: 20px;
+            margin-top: 10px;
+            position: relative;
+
+            span {
+                opacity: 0.5;
+                margin-left: 2px;
+            }
+
+            ul {
+                position: absolute;
+                font-size: 15px;
+                list-style: none;
+                top: 60px;
+                left: 50%;
+                width: 300px;
+                transform: translate(-50%);
+                
+                li:not(:first-child) {
+                    cursor: pointer;
+                    color: var(--font-alt);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+
+                    &:hover {
+                        color: var(--font-alt-highlight);
+                    }
+                }
+            }
+        }
+
+        &:hover {
+            border-color: var(--font-highlight);
+    
+            .source-icon {
+                color: var(--font-highlight);
+            }
+        }
+    }
+
+    #source-local .source-icon::before {
+        content: '\f0ac';
+    }
+
+    #source-remote .source-icon::before {
+        content: '\f0a0';
+    }
+}
