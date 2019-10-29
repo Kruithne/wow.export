@@ -19,6 +19,7 @@ body {
     #header {
         border-bottom: 1px solid var(--border);
         background: var(--background-dark);
+        z-index: 5;
         display: flex;
 
         #logo {
@@ -40,6 +41,10 @@ body {
         align-items: center;
         justify-content: center;
         color: var(--font-faded);
+    }
+
+    #header.shadowed {
+        box-shadow: var(--widget-shadow);
     }
 }
 
@@ -156,5 +161,42 @@ body {
 
     #source-remote .source-icon::before {
         content: '\f0a0';
+    }
+}
+
+#toast {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 30px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    color: var(--font-toast);
+
+    &::before {
+        font-family: 'FontAwesome';
+        margin-right: 5px;
+    }
+
+    &.progress {
+        background: var(--toast-progress);
+        &::before { content: '\f017'; }
+    }
+
+    &.info {
+        background: var(--toast-info);
+        &::before { content: '\f05a'; }
+    }
+
+    &.error {
+        background: var(--toast-error);
+        &::before { content: '\f071'; }
+    }
+
+    &.success {
+        background: var(--toast-success);
+        &::before { content: '\f00c'; }
     }
 }

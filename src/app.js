@@ -25,7 +25,8 @@ document.addEventListener('click', function(e) {
         el: '#container',
         data: {
             isSourceActive: false,
-            localSourceRecent: []
+            localSourceRecent: [],
+            toast: null
         }
     });
 })();

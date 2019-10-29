@@ -8,7 +8,7 @@
     </head>
     <body>
         <div id="container">
-            <div id="header">
+            <div id="header" :class="{ shadowed: toast !== null }">
                 <div id="logo">.export</div>
                 <div id="nav" v-if="isSourceActive">
                     <div id="nav-models">Models</div>
@@ -19,6 +19,9 @@
                 </div>
             </div>
             <div id="content">
+                <div id="toast" v-if="toast" :class="toast.type">
+                    {{ toast.message }}
+                </div>
                 <div id="source-select" v-if="!isSourceActive">
                     <div id="source-local">
                         <div class="source-icon"></div>
