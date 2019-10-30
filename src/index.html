@@ -19,8 +19,14 @@
                 </div>
             </div>
             <div id="content">
+                <div id="update-splash" v-if="isUpdating">
+                    <div id="update-splash-icon"></div>
+                    <span id="update-splash-title">Updating, please wait...</span>
+                    <span id="update-splash-progress">{{ updateProgress }}</span>
+                </div>
                 <div id="toast" v-if="toast" :class="toast.type">
                     {{ toast.message }}
+                    <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
                 </div>
                 <div id="source-select" v-if="!isSourceActive">
                     <div id="source-local">

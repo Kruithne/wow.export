@@ -16,6 +16,10 @@ body {
     display: grid;
     grid-template-rows: 53px 1fr 73px;
 
+    #content {
+        position: relative;
+    }
+
     #header {
         border-bottom: 1px solid var(--border);
         background: var(--background-dark);
@@ -175,6 +179,13 @@ body {
     padding-left: 10px;
     color: var(--font-toast);
 
+    span {
+        margin: 0 5px;
+        color: var(--font-toast-link);
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
     &::before {
         font-family: 'FontAwesome';
         margin-right: 5px;
@@ -198,5 +209,43 @@ body {
     &.success {
         background: var(--toast-success);
         &::before { content: '\f00c'; }
+    }
+}
+
+@keyframes update-cog-spin {
+    from { transform:rotate(0deg); }
+    to { transform:rotate(360deg); }
+}
+
+#update-splash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    z-index: 90;
+
+    &-title {
+        font-size: 25px;
+    }
+
+    &-progress {
+        font-size: 20px;
+    }
+
+    &-icon {
+        font-family: 'FontAwesome';
+        font-size: 80px;
+        margin-bottom: 10px;
+        animation: update-cog-spin 6s infinite linear;
+
+        &::before {
+            content: '\f013';
+        }
     }
 }
