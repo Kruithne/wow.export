@@ -585,7 +585,7 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         log.info('Checksum complete (*%s* in *%d* files)', filesize(totalSize), entryCount);
 
         // Build a manifest (package.json) file for the build.
-        const manifest = { flavour: build.name, guid: buildGUID, contents };
+        const manifest = {};
 
         // Apply manifest properties inherited from this scripts manifest.
         for (const inherit of config.manifestInherit || [])
@@ -593,6 +593,9 @@ const buildModuleTree = async (entry, out = [], root = true) => {
 
         // Apply manifest properties defined in the config.
         Object.assign(manifest, config.manifest);
+
+        // Apply build specific meta data to the manifest.
+        Object.assign(manifest, { flavour: build.name, guid: buildGUID, contents });
 
         const manifestPath = path.resolve(path.join(buildDir, build.manifestTarget));
         await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
