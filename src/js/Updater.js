@@ -96,11 +96,7 @@ const applyUpdate = async () => {
  * Launch the external updater process and exit.
  */
 const launchUpdater = () => {
-    let updaterPath = path.join(Constants.InstallPath, 'updater');
-    if (process.platform === 'win32')
-        updaterPath += '.exe';
-
-    const child = cp.spawn(updaterPath, [], { detached: true, stdio: 'ignore' });
+    const child = cp.spawn(Constants.Update.Helper, [], { detached: true, stdio: 'ignore' });
     child.unref();
     process.exit();
 };

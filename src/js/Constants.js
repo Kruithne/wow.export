@@ -10,7 +10,8 @@ module.exports = {
     Update: {
         URL: 'https://kruithne.net/wow.export/%s/',
         Manifest: 'package.json',
-        Directory: path.join(INSTALL_PATH, '.update')
+        Directory: path.join(INSTALL_PATH, '.update'),
+        Helper: path.join(INSTALL_PATH, 'updater.exe') // ToDo: Cross-platform support.
     },
 
     // Product Keys

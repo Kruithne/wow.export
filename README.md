@@ -2,10 +2,12 @@
 wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [WoW Export Tools](https://github.com/Marlamin/WoWExportTools/) which provides tools for extracting and converting files from the World of Warcraft game client or public CDN servers.
 
 ## Features
-- Cross-platform support for Windows, MacOS and Linux.
+- Soon™
 
 ## Installing
-To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/wow.export/releases) page and download the latest one for your operating system. That's it!
+To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/wow.export/releases) page and download the latest version. That's it!
+
+> **OSX/Linux**: For people not using Windows, we are currently not producing builds targeted for these platforms. You will need to make use of Wine to use wow.export for now or compile your own build.
 
 ## Building (Developers Only)
 - 🔨 Building wow.export **requires** Node 12.12.0 or above.

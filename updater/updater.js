@@ -1,22 +1,12 @@
 const exec = require('child_process').exec;
-
 const PROCESS_NAME = 'wow.export';
-
-// There's no built-in for process handling, so we need to
-// use OS-specific commands to check for our parent process.
-let processCmd = '';
-switch (process.platform) {
-    case 'win32': processCmd = 'tasklist'; break;
-    case 'darwin': processCmd = 'ps -ax | grep ' + PROCESS_NAME; break;
-    case 'linux': processCmd = 'ps -A';
-}
 
 /**
  * Check if our main process is currently active.
  */
 const checkForProcess = async () => {
     return new Promise((resolve, reject) => {
-        exec(processCmd, (err, stdout) => {
+        exec('tasklist', (err, stdout) => {
             if (err)
                 return reject(err);
 
