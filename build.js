@@ -18,6 +18,7 @@ const builtin = require('module');
 const terser = require('terser');
 const sass = require('node-sass');
 const uuid = require('uuid/v4');
+const crypto = require('crypto');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.conf';
@@ -126,6 +127,22 @@ class DynamicString {
         return this._str;
     }
 }
+
+/**
+ * Calculate the hash of a file.
+ * @param {string} file Path to the file to hash.
+ * @param {string} method Hashing method.
+ * @param {string} encoding Output encoding.
+ */
+const getFileHash = async (file, method, encoding) => {
+    return new Promise(resolve => {
+        const fd = fs.createReadStream(file);
+        const hash = crypto.createHash(method);
+        
+        fd.on('data', chunk => hash.update(chunk));
+        fd.on('end', () => resolve(hash.digest(encoding)));
+    });
+};
 
 /**
  * Create all directories in a given path if they do not exist.
@@ -532,6 +549,9 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
         }
 
+        // Grab the contents of the project manifest file.
+        const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
+
         // Set resource strings for the Windows binary.
         if (build.rcedit) {
             const rcConfig = Object.assign({
@@ -543,9 +563,29 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
         }
 
+        // Collect checksum data for all files in the build.
+        // These are stored in the manifest and used for update checking.
+        log.info('Calculating file checksums...');
+        const contents = {};
+        const files = await collectFiles(buildDir);
+
+        let entryCount = 0;
+        let totalSize = 0;
+
+        for (const file of files) {
+            const relative = path.relative(buildDir, file).replace(/\\/g, '/');
+            const hash = await getFileHash(file, 'sha256', 'hex');
+            const stats = await fsp.stat(file);
+
+            contents[relative] = [hash, stats.size];
+            totalSize += stats.size;
+            entryCount++;
+        }
+
+        log.info('Checksum complete (*%s* in *%d* files)', filesize(totalSize), entryCount);
+
         // Build a manifest (package.json) file for the build.
-        const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
-        const manifest = { flavour: build.name, guid: buildGUID };
+        const manifest = { flavour: build.name, guid: buildGUID, contents };
 
         // Apply manifest properties inherited from this scripts manifest.
         for (const inherit of config.manifestInherit || [])
