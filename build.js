@@ -202,7 +202,7 @@ const matchAST = (target, struct, out = {}) => {
         }
 
         // For normal objects just shift down a level in the tree.
-        if (valueType === 'object') {
+        if (node !== null && valueType === 'object') {
             if (matchAST(node, value, out) !== AST_NO_MATCH)
                 continue;
 
