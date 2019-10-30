@@ -17,6 +17,7 @@ const acorn = require('acorn');
 const builtin = require('module');
 const terser = require('terser');
 const sass = require('node-sass');
+const uuid = require('uuid/v4');
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.conf';
@@ -309,7 +310,9 @@ const buildModuleTree = async (entry, out = [], root = true) => {
     log.info('Selected builds: %s', targetBuilds.map(e => chalk.cyan(e.name)).join(', '));
 
     for (const build of targetBuilds) {
-        log.info('Starting build *%s*...', build.name);
+        const buildGUID = uuid();
+
+        log.info('Starting build *%s* [guid *%s*]...', build.name, buildGUID);
         const buildStart = Date.now();
         const buildDir = path.join(outDir, build.name);
 
@@ -529,9 +532,20 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             log.success('Cloned *%d* source files in *%ds*', files.length, cloneElapsed);
         }
 
+        // Set resource strings for the Windows binary.
+        if (build.rcedit) {
+            const rcConfig = Object.assign({
+                'file-version': meta.version,
+                'product-version': meta.version
+            }, build.rcedit);
+
+            log.info('Writing resource strings on binary...');
+            await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
+        }
+
         // Build a manifest (package.json) file for the build.
         const meta = JSON.parse(await fsp.readFile(MANIFEST_FILE));
-        const manifest = { flavour: build.name };
+        const manifest = { flavour: build.name, guid: buildGUID };
 
         // Apply manifest properties inherited from this scripts manifest.
         for (const inherit of config.manifestInherit || [])
@@ -543,17 +557,6 @@ const buildModuleTree = async (entry, out = [], root = true) => {
         const manifestPath = path.resolve(path.join(buildDir, build.manifestTarget));
         await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
         log.success('Manifest file written to *%s*', manifestPath);
-
-        // Set resource strings for the Windows binary.
-        if (build.rcedit) {
-            const rcConfig = Object.assign({
-                'file-version': meta.version,
-                'product-version': meta.version
-            }, build.rcedit);
-
-            log.info('Writing resource strings on binary...');
-            await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
-        }
 
         const buildArchiveType = build.buildArchive;
         if (buildArchiveType) {
