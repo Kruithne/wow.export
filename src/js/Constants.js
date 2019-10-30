@@ -4,7 +4,7 @@ const path = require('path');
 const INSTALL_PATH = nw.App.getStartPath();
 
 module.exports = {
-    InstallPath = INSTALL_PATH,
+    InstallPath: INSTALL_PATH,
 
     // Application Updates
     Update: {
