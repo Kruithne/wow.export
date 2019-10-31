@@ -4,8 +4,12 @@
 // BUILD_RELEASE is set to false will be removed as dead-code during compile.
 BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
 
+const os = require('os');
+const constants = require('./js/constants');
+const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
+const log = require('./js/log');
 
 // Prevent files from being dropped onto the window.
 // ToDo: Implement drag-and-drop support (see GH-2).
@@ -49,6 +53,13 @@ document.addEventListener('click', function(e) {
             }
         }
     });
+
+    // Log some basic information for potential diagnostics.
+    const manifest = nw.App.manifest;
+    const cpus = os.cpus();
+    log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
+    log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
+    log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
 
     // Check for updates (without blocking).
     if (BUILD_RELEASE) {
