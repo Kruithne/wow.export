@@ -2,6 +2,7 @@
 const path = require('path');
 
 const INSTALL_PATH = nw.App.getStartPath();
+const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
 module.exports = {
     InstallPath: INSTALL_PATH,
@@ -11,7 +12,7 @@ module.exports = {
         URL: 'https://kruithne.net/wow.export/%s/',
         Manifest: 'package.json',
         Directory: path.join(INSTALL_PATH, '.update'),
-        Helper: path.join(INSTALL_PATH, 'updater.exe') // ToDo: Cross-platform support.
+        Helper: path.join(INSTALL_PATH, 'updater' + (UPDATER_EXT[process.platform] || ''))
     },
 
     // Product Keys
