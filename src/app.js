@@ -4,8 +4,8 @@
 // BUILD_RELEASE is set to false will be removed as dead-code during compile.
 BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
 
-const Updater = require('./js/Updater');
-const Core = require('./js/Core');
+const updater = require('./js/updater');
+const core = require('./js/core');
 
 // Prevent files from being dropped onto the window.
 // ToDo: Implement drag-and-drop support (see GH-2).
@@ -34,9 +34,9 @@ document.addEventListener('click', function(e) {
     document.title += ' v' + nw.App.manifest.version;
 
     // Initialize Vue.
-    Core.View = new Vue({
+    core.view = new Vue({
         el: '#container',
-        data: Core.View,
+        data: core.view,
         methods: {
             /**
              * Invoked when a toast option is clicked.
@@ -45,18 +45,18 @@ document.addEventListener('click', function(e) {
              */
             handleToastOptionClick: function(tag) {
                 this.toast = null;
-                Core.Events.emit(tag);
+                core.events.emit(tag);
             }
         }
     });
 
     // Check for updates (without blocking).
     if (BUILD_RELEASE) {
-        Updater.checkForUpdates().then(updateAvailable => {
+        updater.checkForUpdates().then(updateAvailable => {
             if (updateAvailable) {
-                Core.Events.once('toast-accept-update', () => Updater.applyUpdate());
+                core.events.once('toast-accept-update', () => updater.applyUpdate());
 
-                Core.View.toast = {
+                core.view.toast = {
                     type: 'info',
                     message: 'A new update is available. You should update, it\'s probably really cool.',
                     options: {

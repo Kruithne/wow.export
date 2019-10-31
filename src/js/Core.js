@@ -4,8 +4,8 @@ const eventHandler = new EventEmitter();
 eventHandler.setMaxListeners(666);
 
 module.exports = {
-    Events: eventHandler,
-    View: { // This is turned into a Vue instance during runtime.
+    events: eventHandler,
+    view: { // This is turned into a Vue instance during runtime.
         isSourceActive: false, // Indicates if a source has been selected.
         isBusy: false, // Indicates a large task is currently active.
         isUpdating: false, // Controls the display of the update splash.

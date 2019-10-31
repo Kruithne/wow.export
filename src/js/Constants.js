@@ -7,30 +7,30 @@ const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
 module.exports = {
     // General Constants
-    InstallPath: INSTALL_PATH,
-    DataPath: DATA_PATH,
-    RuntimeLog: path.join(DATA_PATH, 'runtime.log'),
+    INSTALL_PATH,
+    DATA_PATH,
+    RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'),
 
     // Application Updates
-    Update: {
+    UPDATE: {
         URL: 'https://kruithne.net/wow.export/%s/',
-        Manifest: 'package.json',
-        Directory: path.join(INSTALL_PATH, '.update'),
-        Helper: 'updater' + (UPDATER_EXT[process.platform] || '')
+        MANIFEST: 'package.json',
+        DIRECTORY: path.join(INSTALL_PATH, '.update'),
+        HELPER: 'updater' + (UPDATER_EXT[process.platform] || '')
     },
 
     // Product Keys
-    ProductKeys: {
+    PRODUCT_KEYS: {
         WORLD_OF_WARCRAFT: 'wow',
         WORLD_OF_WARCRAFT_PTR: 'wowt',
         WORLD_OF_WARCRAFT_BETA: 'wow_beta',
     },
 
     // Blizzard Patch Server
-    PatchServer: {
-        Regions: ['eu', 'us', 'kr', 'cn', 'tw'],
-        Host: 'http://%s.patch.battle.net:1119',
-        ServerConfig: 'cdns',
-        VersionConfig: 'versions'
+    PATCH: {
+        REGIONS: ['eu', 'us', 'kr', 'cn', 'tw'],
+        HOST: 'http://%s.patch.battle.net:1119',
+        SERVER_CONFIG: 'cdns',
+        VERSION_CONFIG: 'versions'
     }
 };

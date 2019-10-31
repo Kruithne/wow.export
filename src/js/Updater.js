@@ -3,9 +3,9 @@ const path = require('path');
 const assert = require('assert').strict;
 const fsp = require('fs').promises;
 const cp = require('child_process');
-const Constants = require('./Constants');
-const Utils = require('./Utils');
-const Core = require('./Core');
+const constants = require('./constants');
+const generics = require('./generics');
+const core = require('./core');
 
 let updateManifest;
 
@@ -16,8 +16,8 @@ let updateManifest;
 const checkForUpdates = async () => {
     try {
         const localManifest = nw.App.manifest;
-        const manifestURL = util.format(Constants.Update.URL, localManifest.flavour) + Constants.Update.Manifest;
-        const manifest = await Utils.getJSON(manifestURL);
+        const manifestURL = util.format(constants.UPDATE.URL, localManifest.flavour) + constants.UPDATE.MANIFEST;
+        const manifest = await generics.getJSON(manifestURL);
 
         assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
         assert(typeof manifest.contents === 'object', 'Update manifest does not contain a valid contents list');
@@ -38,8 +38,8 @@ const checkForUpdates = async () => {
  * Apply an outstanding update.
  */
 const applyUpdate = async () => {
-    Core.View.isBusy = true;
-    Core.View.isUpdating = true;
+    core.view.isBusy = true;
+    core.view.isUpdating = true;
 
     const requiredFiles = [];
 
@@ -50,10 +50,10 @@ const applyUpdate = async () => {
         const [file, meta] = entries[i];
         const [hash, size] = meta;
 
-        Core.View.updateProgress = util.format('Verifying local files (%d / %d)', i + 1, entries.length);
+        core.view.updateProgress = util.format('Verifying local files (%d / %d)', i + 1, entries.length);
         totalSize += size;
 
-        const localPath = path.join(Constants.InstallPath, file);
+        const localPath = path.join(constants.INSTALL_PATH, file);
         const node = { file, size };
 
         try {
@@ -67,7 +67,7 @@ const applyUpdate = async () => {
             }
 
             // Verify local sha256 hash with remote one.
-            const localHash = await Utils.getFileHash(localPath, 'sha256', 'hex');
+            const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
             if (localHash !== hash) {
                 console.log('%s !== %s', localHash, hash);
                 requiredFiles.push(node);
@@ -79,16 +79,16 @@ const applyUpdate = async () => {
         }
     }
 
-    const remoteDir = util.format(Constants.Update.URL, nw.App.manifest.flavour);
+    const remoteDir = util.format(constants.UPDATE.URL, nw.App.manifest.flavour);
 
     let downloadSize = 0;
     for (const node of requiredFiles) {
-        Core.View.updateProgress = util.format('%s / %s (%s%)', Utils.filesize(downloadSize), Utils.filesize(totalSize), Math.floor((downloadSize / totalSize) * 100));
-        await Utils.downloadFile(remoteDir + node.file, path.join(Constants.Update.Directory, node.file));
+        core.view.updateProgress = util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor((downloadSize / totalSize) * 100));
+        await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
         downloadSize += node.size;
     }
 
-    Core.View.updateProgress = 'Restarting application';
+    core.view.updateProgress = 'Restarting application';
     await launchUpdater();
 };
 
@@ -98,8 +98,8 @@ const applyUpdate = async () => {
 const launchUpdater = async () => {
     // On the rare occurance that we've updated the updater, the updater
     // cannot update the updater, so instead we update the updater here.
-    const helperApp = path.join(Constants.Installpath, Constants.Update.Helper);
-    const updatedApp = path.join(Constants.Update.Directory, Constants.Update.Helper);
+    const helperApp = path.join(constants.Installpath, constants.UPDATE.HELPER);
+    const updatedApp = path.join(constants.UPDATE.DIRECTORY, constants.UPDATE.HELPER);
 
     try {
         // Rather than checking if an updated updater exists, just attempt

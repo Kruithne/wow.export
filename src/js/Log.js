@@ -1,6 +1,6 @@
 const fs = require('fs');
 const util = require('util');
-const Constants = require('./Constants');
+const constants = require('./constants');
 
 const MAX_LOG_POOL = 1000;
 const MAX_DRAIN_PER_TICK = 10;
@@ -53,7 +53,7 @@ const write = (...parameters) => {
 };
 
 // Initialize the logging stream.
-const stream = fs.createWriteStream(Constants.RuntimeLog);
+const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', () => { /* ToDo: Handle this. */ });
 stream.on('drain', drainPool);
 
