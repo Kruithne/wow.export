@@ -7,7 +7,7 @@ wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [W
 ## Installing
 To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/wow.export/releases) page and download the latest version. That's it!
 
-> **OSX/Linux**: For people not using Windows, we are currently not producing builds targeted for these platforms. You will need to make use of Wine to use wow.export for now or compile your own build.
+> ***OSX/Linux**: We are currently not producing builds targeted for non-Windows builds. If you wish to use wow.export on OSX or Linux, you will need to compile your own build from the source.
 
 ## Building (Developers Only)
 - 🔨 Building wow.export **requires** Node 12.12.0 or above.
