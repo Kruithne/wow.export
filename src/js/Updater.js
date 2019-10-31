@@ -89,14 +89,26 @@ const applyUpdate = async () => {
     }
 
     Core.View.updateProgress = 'Restarting application';
-    launchUpdater();
+    await launchUpdater();
 };
 
 /**
  * Launch the external updater process and exit.
  */
-const launchUpdater = () => {
-    const child = cp.spawn(Constants.Update.Helper, [], { detached: true, stdio: 'ignore' });
+const launchUpdater = async () => {
+    // On the rare occurance that we've updated the updater, the updater
+    // cannot update the updater, so instead we update the updater here.
+    const helperApp = path.join(Constants.Installpath, Constants.Update.Helper);
+    const updatedApp = path.join(Constants.Update.Directory, Constants.Update.Helper);
+
+    try {
+        // Rather than checking if an updated updater exists, just attempt
+        // to copy it regardless. It will fail if not or on permission errors.
+        await fsp.copyFile(updatedApp, helperApp);
+    } catch (e) {}
+
+    // Launch the updater application.
+    const child = cp.spawn(helperApp, [], { detached: true, stdio: 'ignore' });
     child.unref();
     process.exit();
 };

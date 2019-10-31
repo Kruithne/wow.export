@@ -12,7 +12,7 @@ module.exports = {
         URL: 'https://kruithne.net/wow.export/%s/',
         Manifest: 'package.json',
         Directory: path.join(INSTALL_PATH, '.update'),
-        Helper: path.join(INSTALL_PATH, 'updater' + (UPDATER_EXT[process.platform] || ''))
+        Helper: 'updater' + (UPDATER_EXT[process.platform] || '')
     },
 
     // Product Keys
