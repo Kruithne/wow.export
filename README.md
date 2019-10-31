@@ -27,3 +27,12 @@ node ./build.js *
 # Substitute <BUILD> for the build(s) you wish to compile, space-delimitated.
 node ./build.js <BUILD1> <BUILD2> ...
 ```
+
+## Debugging (Developers Only)
+> **Note**: Debugging is currently only supported on Windows.
+
+To debug wow.export, compile a `win-x64-debug` build using the build script. This will produce a bare-bones build using the SDK framework and without any production polish. Open starting the debug version, DevTools will be automatically launched alongside the application.
+
+For the debug build, source code will not be compiled, rather a symlink is created. This changes to the source code are instantly reflected in the application, simply press F5 in DevTools to refresh sources.
+
+Since stylesheets are written in Sass and no source compilation is done, you will need a transpiler for your IDE to ensure that Sass files are automatically transpiled to raw CSS during development (do not commit these).
