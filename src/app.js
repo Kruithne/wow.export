@@ -51,18 +51,20 @@ document.addEventListener('click', function(e) {
     });
 
     // Check for updates (without blocking).
-    Updater.checkForUpdates().then(updateAvailable => {
-        if (updateAvailable) {
-            Core.Events.once('toast-accept-update', () => Updater.applyUpdate());
+    if (BUILD_RELEASE) {
+        Updater.checkForUpdates().then(updateAvailable => {
+            if (updateAvailable) {
+                Core.Events.once('toast-accept-update', () => Updater.applyUpdate());
 
-            Core.View.toast = {
-                type: 'info',
-                message: 'A new update is available. You should update, it\'s probably really cool.',
-                options: {
-                    'toast-accept-update': 'Update Now',
-                    'toast-dismiss': 'Maybe Later'
-                }
-            };
-        }
-    });
+                Core.View.toast = {
+                    type: 'info',
+                    message: 'A new update is available. You should update, it\'s probably really cool.',
+                    options: {
+                        'toast-accept-update': 'Update Now',
+                        'toast-dismiss': 'Maybe Later'
+                    }
+                };
+            }
+        });
+    }
 })();
