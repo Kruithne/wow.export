@@ -1,6 +1,11 @@
+// BUILD_RELEASE will be set globally by Terser during bundling allowing us
+// to discern a production build. However, for debugging builds it will throw
+// a ReferenceError without the following check. Any code that only runs when
+// BUILD_RELEASE is set to false will be removed as dead-code during compile.
+BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
+
 const Updater = require('./js/Updater');
 const Core = require('./js/Core');
-const Utils = require('./js/Utils');
 
 // Prevent files from being dropped onto the window.
 // ToDo: Implement drag-and-drop support (see GH-2).
@@ -8,7 +13,7 @@ window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
 
 // Launch DevTools for debug builds.
-if (Utils.isDebugBuild())
+if (!BUILD_RELEASE)
     nw.Window.get().showDevTools();
 
 // Force all links to open in the users default application.
