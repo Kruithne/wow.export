@@ -147,4 +147,11 @@ const getFileHash = async (file, method, encoding) => {
     });
 };
 
-module.exports = { getJSON, filesize, getFileHash, createDirectory, downloadFile };
+/**
+ * Returns true if we are currently running an SDK build.
+ */
+const isDebugBuild = () => {
+    return process.versions['nw-flavor'] === 'sdk';
+};
+
+module.exports = { getJSON, filesize, getFileHash, createDirectory, downloadFile, isDebugBuild };

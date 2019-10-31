@@ -1,10 +1,15 @@
 const Updater = require('./js/Updater');
 const Core = require('./js/Core');
+const Utils = require('./js/Utils');
 
 // Prevent files from being dropped onto the window.
 // ToDo: Implement drag-and-drop support (see GH-2).
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
+
+// Launch DevTools for debug builds.
+if (Utils.isDebugBuild())
+    nw.Window.get().showDevTools();
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
