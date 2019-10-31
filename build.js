@@ -20,6 +20,7 @@ const sass = require('node-sass');
 const uuid = require('uuid/v4');
 const crypto = require('crypto');
 const argv = process.argv.splice(2);
+const pkg = require('pkg');
 
 const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
@@ -561,6 +562,18 @@ const buildModuleTree = async (entry, out = [], root = true) => {
 
             log.info('Writing resource strings on binary...');
             await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
+        }
+
+        // Compile updater application.
+        if (build.updater) {
+            const updaterStart = Date.now();
+            const updaterOutput = path.join(buildDir, build.updater.out);
+
+            log.info('Compiling updater application (*%s*)...', build.updater.target);
+            await pkg.exec([config.updaterScript, '--target', build.updater.target, '--output', updaterOutput]);
+
+            const updaterElapsed = (Date.now() - updaterStart) / 1000;
+            log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);
         }
 
         // Collect checksum data for all files in the build.
