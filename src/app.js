@@ -2,7 +2,7 @@ const Updater = require('./js/Updater');
 const Core = require('./js/Core');
 
 // Prevent files from being dropped onto the window.
-// ToDo: Expand this to allow local conversion invokes via file drop?
+// ToDo: Implement drag-and-drop support (see GH-2).
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
 
