@@ -108,7 +108,7 @@ const launchUpdater = async () => {
     } catch (e) {}
 
     // Launch the updater application.
-    const child = cp.spawn(helperApp, [], { detached: true, stdio: 'ignore' });
+    const child = cp.spawn(helperApp, [process.pid], { detached: true, stdio: 'ignore' });
     child.unref();
     process.exit();
 };
