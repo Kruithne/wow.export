@@ -1,37 +1,26 @@
-const exec = require('child_process').exec;
-
-const PROCESS_NAME = 'wow.export';
-
-// There's no built-in for process handling, so we need to
-// use OS-specific commands to check for our parent process.
-let processCmd = '';
-switch (process.platform) {
-    case 'win32': processCmd = 'tasklist'; break;
-    case 'darwin': processCmd = 'ps -ax | grep ' + PROCESS_NAME; break;
-    case 'linux': processCmd = 'ps -A';
-}
-
-/**
- * Check if our main process is currently active.
- */
-const checkForProcess = async () => {
-    return new Promise((resolve, reject) => {
-        exec(processCmd, (err, stdout) => {
-            if (err)
-                return reject(err);
-
-            resolve(stdout.toLowerCase().includes(PROCESS_NAME));
-        });
-    });
-};
+const argv = process.argv.splice(2);
 
 (async () => {
-    // Here we wait until the parent process exits.
-    // We use a basic promise-wrapped timeout to delay each check.
+    console.log('Applying updates, please wait!');
+
+    // Ensure we were given a valid PID by whatever spawned us.
+    const pid = Number(argv[0]);
+    if (isNaN(pid))
+        return console.log('No parent process?');
+
+    // Wait for the parent process (PID) to terminate.
     let isRunning = true;
     while (isRunning) {
-        isRunning = await checkForProcess();
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Sending 0 as a signal does not kill the process, allowing for existence checking.
+            // See: http://man7.org/linux/man-pages/man2/kill.2.html
+            process.kill(pid, 0);
+
+            // Introduce a small delay between checks.
+            await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+            isRunning = false;
+        }
     }
 
     // ToDo: Clone files from update directory.
