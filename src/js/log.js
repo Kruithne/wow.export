@@ -9,6 +9,18 @@ let isClogged = false;
 const pool = [];
 
 /**
+ * Return a HH:MM:SS formatted timestamp.
+ */
+const getTimestamp = () => {
+    const time = new Date();
+    return util.format(
+        '%s:%s:%s',
+        time.getHours().toString().padStart(2, '0'),
+        time.getMinutes().toString().padStart(2, '0'),
+        time.getSeconds().toString().padStart(2, '0'));
+};
+
+/**
  * Invoked when the stream has finished flushing.
  */
 const drainPool = () => {
@@ -36,7 +48,7 @@ const drainPool = () => {
  * Write a message to the log.
  */
 const write = (...parameters) => {
-    const line = util.format(...parameters) + '\n';
+    const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
     if (!isClogged) {
         isClogged = !stream.write(line);
