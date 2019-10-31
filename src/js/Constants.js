@@ -1,7 +1,7 @@
 // This file defines constants used throughout the application.
 const path = require('path');
 
-const INSTALL_PATH = nw.App.getStartPath();
+const INSTALL_PATH = nw.App.startPath;
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
 module.exports = {
