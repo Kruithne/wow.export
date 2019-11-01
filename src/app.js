@@ -22,11 +22,11 @@ if (!BUILD_RELEASE)
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
-    if (!e.target.matches('a'))
+    if (!e.target.matches('[data-external]'))
         return;
 
     e.preventDefault();
-    nw.Shell.openExternal(e.target.getAttribute('href'));
+    nw.Shell.openExternal(e.target.getAttribute('data-external'));
 });
 
 (async () => {
