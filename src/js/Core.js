@@ -4,8 +4,13 @@ const eventHandler = new EventEmitter();
 eventHandler.setMaxListeners(666);
 
 module.exports = {
+    // core.events is a global event handler used for dispatching
+    // events from any point in the system, to any other point.
     events: eventHandler,
-    view: { // This is turned into a Vue instance during runtime.
+
+    // The `view` object below is used as the data source for the main Vue instance.
+    // All properties within it will be reactive once the view has been initialized.
+    view: {
         isSourceActive: false, // Indicates if a source has been selected.
         isBusy: false, // Indicates a large task is currently active.
         isUpdating: false, // Controls the display of the update splash.
