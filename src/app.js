@@ -24,6 +24,11 @@ crash = (errorCode, errorText) => {
     const body = document.querySelector('body');
     body.innerHTML = errorMarkup;
 
+    // Keep the logo, because that's cool.
+    const logo = document.createElement('div');
+    logo.setAttribute('id', 'logo-background');
+    document.body.appendChild(logo);
+
     // Display our error code/text.
     document.querySelector('#crash-screen-text-code').textContent = errorCode;
     document.querySelector('#crash-screen-text-message').textContent = errorText;
