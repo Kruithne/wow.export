@@ -121,6 +121,8 @@ document.addEventListener('click', function(e) {
         });
     }
 
+    // GH-4: Load most recent local installation paths into local source select widget.
+
     // Set-up CDN region data and run ping checks.
     for (const region of constants.PATCH.REGIONS) {
         // GH-3: Persist user selected defaults for the CDN option.
