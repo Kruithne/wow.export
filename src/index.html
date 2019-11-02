@@ -46,7 +46,7 @@
                         <div class="source-text">
                             Use Blizzard CDN
                             <ul id="source-cdn">
-                                <li v-for="region in cdnRegions" :class="{ selected: region.selected }">
+                                <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }">
                                     {{ region.tag.toUpperCase() }}
                                     <span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
                                 </li>

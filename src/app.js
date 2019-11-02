@@ -131,8 +131,12 @@ document.addEventListener('click', function(e) {
     for (const region of constants.PATCH.REGIONS) {
         // GH-3: Persist user selected defaults for the CDN option.
         const cdnURL = util.format(constants.PATCH.HOST, region);
-        const node = { tag: region, url: cdnURL, delay: null, selected: region === constants.PATCH.DEFAULT_REGION };
+        const node = { tag: region, url: cdnURL, delay: null };
         regions.push(node);
+
+        // Mark this region as the selected one.
+        if (region === constants.PATCH.DEFAULT_REGION)
+            core.view.selectedCDNRegion = node;
 
         // Run a rudimentary ping check for each CDN. 
         pings.push(generics.ping(cdnURL).then(ms => node.delay = ms));
@@ -140,18 +144,15 @@ document.addEventListener('click', function(e) {
 
     // Once all pings are resolved, pick the fastest.
     Promise.all(pings).then(() => {
-        let selectedRegion = regions.find(e => e.selected);
+        let selectedRegion = core.view.selectedCDNRegion;
         for (const region of regions) {
             // Skip regions that don't have a valid ping.
             if (region.delay === null || region.delay < 0)
                 continue;
 
             // Switch the selected region for the fastest one.
-            if (region.delay < selectedRegion.delay) {
-                selectedRegion.selected = false;
-                region.selected = true;
-                selectedRegion = region;
-            }
+            if (region.delay < selectedRegion.delay)
+                core.view.selectedCDNRegion = region;
         }
     });
 })();
