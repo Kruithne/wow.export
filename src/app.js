@@ -94,6 +94,16 @@ document.addEventListener('click', function(e) {
             handleToastOptionClick: function(tag) {
                 this.toast = null;
                 core.events.emit(tag);
+            },
+
+            /**
+             * Invoked when the user manually selects a CDN region.
+             * @param {object} region 
+             */
+            setSelectedCDN: function(region) {
+                this.selectedCDNRegion = region;
+                this.lockCDNRegion = true;
+                localStorage.setItem('sourceSelectUserRegion', region.tag);
             }
         }
     });
@@ -125,9 +135,15 @@ document.addEventListener('click', function(e) {
 
     // GH-4: Load most recent local installation paths into local source select widget.
 
-    // Set-up CDN data nodes.
     const pings = [];
     const regions = core.view.cdnRegions;
+    const userRegion = localStorage.getItem('sourceSelectUserRegion');
+
+    // User has pre-selected a CDN, lock choice from changing.
+    if (userRegion !== null)
+        core.view.lockCDNRegion = true;
+
+    // Iterate CDN regions and create data nodes.
     for (const region of constants.PATCH.REGIONS) {
         // GH-3: Persist user selected defaults for the CDN option.
         const cdnURL = util.format(constants.PATCH.HOST, region);
@@ -135,7 +151,7 @@ document.addEventListener('click', function(e) {
         regions.push(node);
 
         // Mark this region as the selected one.
-        if (region === constants.PATCH.DEFAULT_REGION)
+        if (region === userRegion || (userRegion === null && region === constants.PATCH.DEFAULT_REGION))
             core.view.selectedCDNRegion = node;
 
         // Run a rudimentary ping check for each CDN. 
