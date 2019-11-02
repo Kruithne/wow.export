@@ -125,13 +125,32 @@ document.addEventListener('click', function(e) {
     // GH-4: Load most recent local installation paths into local source select widget.
 
     // Set-up CDN data nodes.
+    const pings = [];
+    const regions = core.view.cdnRegions;
     for (const region of constants.PATCH.REGIONS) {
         // GH-3: Persist user selected defaults for the CDN option.
         const cdnURL = util.format(constants.PATCH.HOST, region);
         const node = { tag: region, url: cdnURL, delay: null, selected: region === constants.PATCH.DEFAULT_REGION };
-        core.view.cdnRegions.push(node);
+        regions.push(node);
 
         // Run a rudimentary ping check for each CDN. 
-        generics.ping(cdnURL).then(ms => node.delay = ms);
+        pings.push(generics.ping(cdnURL).then(ms => node.delay = ms));
     }
+
+    // Once all pings are resolved, pick the fastest.
+    Promise.all(pings).then(() => {
+        let selectedRegion = regions.find(e => e.selected);
+        for (const region of regions) {
+            // Skip regions that don't have a valid ping.
+            if (region.delay === null || region.delay < 0)
+                continue;
+
+            // Switch the selected region for the fastest one.
+            if (region.delay < selectedRegion.delay) {
+                selectedRegion.selected = false;
+                region.selected = true;
+                selectedRegion = region;
+            }
+        }
+    });
 })();
