@@ -109,6 +109,61 @@ body {
     justify-content: center;
     align-items: center;
 
+    #source-recent {
+        position: absolute;
+        font-size: 15px;
+        list-style: none;
+        left: 50%;
+        transform: translate(-50%);
+        margin-top: 20px;
+        
+        li:not(:first-child) {
+            cursor: pointer;
+            color: var(--font-alt);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            &:hover {
+                color: var(--font-alt-highlight);
+            }
+        }
+    }
+
+    #source-cdn {
+        position: absolute;
+        list-style: none;
+        margin-top: 20px;
+        text-align: center;
+        left: 0;
+        right: 0;
+
+        li:first-child {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+
+        li:last-child {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        li:not(:first-child) {
+            margin-left: 1px;
+        }
+
+        li {
+            background: var(--form-button-base);
+            padding: 10px;
+            color: white;
+            display: inline-block;
+
+            &:hover, &.selected {
+                background: var(--form-button-hover);
+            }
+        }
+    }
+
     > div {
         width: 500px;
         height: 500px;
@@ -116,6 +171,7 @@ body {
         margin: 0 15px;
         border-radius: 20px;
         cursor: pointer;
+        position: relative;
         transition: border-color linear 0.5s;
         display: flex;
         justify-content: center;
@@ -132,33 +188,10 @@ body {
         .source-text {
             font-size: 20px;
             margin-top: 10px;
-            position: relative;
 
             span {
                 opacity: 0.5;
                 margin-left: 2px;
-            }
-
-            ul {
-                position: absolute;
-                font-size: 15px;
-                list-style: none;
-                top: 60px;
-                left: 50%;
-                width: 300px;
-                transform: translate(-50%);
-                
-                li:not(:first-child) {
-                    cursor: pointer;
-                    color: var(--font-alt);
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-
-                    &:hover {
-                        color: var(--font-alt-highlight);
-                    }
-                }
             }
         }
 

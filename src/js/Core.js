@@ -14,6 +14,7 @@ module.exports = {
             "C:\\Program Files (x86)\\World of Warcraft",
             "C:\\Users\\Marlamin\\Games\\World of Warcraft"
         ], // Contains the latest local install paths used.
-        toast: null // Controls the currently active toast bar.
+        toast: null, // Controls the currently active toast bar.
+        cdnRegions: [] // CDN region data.
     }
 }

@@ -120,4 +120,10 @@ document.addEventListener('click', function(e) {
             }
         });
     }
+
+    // Set-up CDN region data and run ping checks.
+    for (const region of constants.PATCH.REGIONS) {
+        // GH-3: Persist user selected defaults for the CDN option.
+        core.view.cdnRegions.push({ tag: region, delay: null, selected: region === constants.PATCH.DEFAULT_REGION });
+    }
 })();

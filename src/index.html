@@ -45,6 +45,9 @@
                         <div class="source-icon"></div>
                         <div class="source-text">
                             Use Blizzard CDN
+                            <ul id="source-cdn">
+                                <li v-for="region in cdnRegions" :class="{ selected: region.selected }">{{ region.tag.toUpperCase() }}</li>
+                            </ul>
                         </div>
                     </div>
                 </div>

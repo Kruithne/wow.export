@@ -29,6 +29,7 @@ module.exports = {
     // Blizzard Patch Server
     PATCH: {
         REGIONS: ['eu', 'us', 'kr', 'cn', 'tw'],
+        DEFAULT_REGION: 'us',
         HOST: 'http://%s.patch.battle.net:1119',
         SERVER_CONFIG: 'cdns',
         VERSION_CONFIG: 'versions'
