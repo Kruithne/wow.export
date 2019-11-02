@@ -44,6 +44,7 @@ process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message)
 
 // Imports
 const os = require('os');
+const util = require('util');
 const constants = require('./js/constants');
 const generics = require('./js/generics');
 const updater = require('./js/updater');
@@ -123,9 +124,14 @@ document.addEventListener('click', function(e) {
 
     // GH-4: Load most recent local installation paths into local source select widget.
 
-    // Set-up CDN region data and run ping checks.
+    // Set-up CDN data nodes.
     for (const region of constants.PATCH.REGIONS) {
         // GH-3: Persist user selected defaults for the CDN option.
-        core.view.cdnRegions.push({ tag: region, delay: null, selected: region === constants.PATCH.DEFAULT_REGION });
+        const cdnURL = util.format(constants.PATCH.HOST, region);
+        const node = { tag: region, url: cdnURL, delay: null, selected: region === constants.PATCH.DEFAULT_REGION };
+        core.view.cdnRegions.push(node);
+
+        // Run a rudimentary ping check for each CDN. 
+        generics.ping(cdnURL).then(ms => node.delay = ms);
     }
 })();
