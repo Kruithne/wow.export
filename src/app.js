@@ -145,7 +145,6 @@ document.addEventListener('click', function(e) {
 
     // Iterate CDN regions and create data nodes.
     for (const region of constants.PATCH.REGIONS) {
-        // GH-3: Persist user selected defaults for the CDN option.
         const cdnURL = util.format(constants.PATCH.HOST, region);
         const node = { tag: region, url: cdnURL, delay: null };
         regions.push(node);
