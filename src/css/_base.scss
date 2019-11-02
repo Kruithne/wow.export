@@ -7,6 +7,16 @@ body {
     font-family: 'Selawik', sans-serif;
 }
 
+#logo-background {
+    z-index: -5;
+    background: url(./images/logo.png) no-repeat center center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1024px;
+    height: 1024px;
+}
+
 #container {
     position: absolute;
     top: 0;
@@ -33,7 +43,8 @@ body {
             background: url(./images/logo.png) no-repeat center left;
             font-size: 25px;
             font-weight: 700;
-            padding: 0 0 3px 85px;
+            padding: 0 0 3px 40px;
+            background-size: 32px;
         }
     }
     
