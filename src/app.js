@@ -51,7 +51,7 @@ const core = require('./js/core');
 const log = require('./js/log');
 
 // Prevent files from being dropped onto the window.
-// ToDo: Implement drag-and-drop support (see GH-2).
+// GH-2: Implement drag-and-drop support.
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
 
