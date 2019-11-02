@@ -10,7 +10,7 @@ To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/
 ## Updating
 When an update to wow.export is available, you will be prompted in the application to update. This process is done entirely automatically once you accept the update!
 
-> ***OSX/Linux**: We are currently not producing builds targeted for non-Windows builds. If you wish to use wow.export on OSX or Linux, you will need to compile your own build from the source. See GH-1 for known issues.
+> **OSX/Linux**: We are currently not producing builds targeted for non-Windows builds. If you wish to use wow.export on OSX or Linux, you will need to compile your own build from the source. See GH-1 for known issues.
 
 ## Building (Developers Only)
 - 🔨 Building wow.export **requires** Node 12.12.0 or above.
