@@ -33,7 +33,8 @@ crash = (errorCode, errorText) => {
     document.querySelector('#crash-screen-text-code').textContent = errorCode;
     document.querySelector('#crash-screen-text-message').textContent = errorText;
 
-    // Grab the runtime log if available.
+    // getErrorDump is set as a global function by the log module.
+    // This is used to get the contents of the runtime log without depending on the module.
     if (typeof getErrorDump === 'function')
         getErrorDump().then(data => document.querySelector('#crash-screen-log').textContent = data);
 };
