@@ -24,6 +24,7 @@ module.exports = {
         WORLD_OF_WARCRAFT: 'wow',
         WORLD_OF_WARCRAFT_PTR: 'wowt',
         WORLD_OF_WARCRAFT_BETA: 'wow_beta',
+        WORLD_OF_WARCRAFT_CLASSIC: 'wow_classic'
     },
 
     // Blizzard Patch Server
