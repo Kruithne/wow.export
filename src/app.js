@@ -144,6 +144,10 @@ document.addEventListener('click', function(e) {
 
     // Once all pings are resolved, pick the fastest.
     Promise.all(pings).then(() => {
+        // CDN region choice is locked, do nothing.
+        if (core.view.lockCDNRegion)
+            return;
+
         let selectedRegion = core.view.selectedCDNRegion;
         for (const region of regions) {
             // Skip regions that don't have a valid ping.

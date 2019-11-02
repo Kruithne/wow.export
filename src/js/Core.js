@@ -17,5 +17,6 @@ module.exports = {
         toast: null, // Controls the currently active toast bar.
         cdnRegions: [], // CDN region data.
         selectedCDNRegion: null, // Active CDN region.
+        lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
     }
 }
