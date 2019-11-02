@@ -249,3 +249,43 @@ body {
         }
     }
 }
+
+#crash-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+
+    &-log {
+        margin-top: 20px;
+        height: 100%;
+    }
+
+    h1 {
+        &::before {
+            font-family: 'FontAwesome';
+            content: '\f071';
+            margin-right: 10px;
+        }
+    }
+
+    &-text {
+        font-weight: normal;
+        font-size: 20px;
+        margin: 20px 0;
+
+        &-code {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+    }
+
+    &-versions span {
+        margin: 0 5px;
+        color: var(--border);
+    }
+}

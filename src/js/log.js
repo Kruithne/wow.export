@@ -64,6 +64,19 @@ const write = (...parameters) => {
         console.log(line);
 };
 
+/**
+ * Attempts to return the contents of the runtime log.
+ * This is defined as a global as it is requested during
+ * an application crash where modules may not be loaded.
+ */
+getErrorDump = async () => {
+    try {
+        return await fs.promises.readFile(constants.RUNTIME_LOG, 'utf8');
+    } catch (e) {
+        return 'Unable to obtain runtime log: ' + e.message;
+    }
+};
+
 // Initialize the logging stream.
 const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', () => { /* ToDo: Handle this. */ });

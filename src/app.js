@@ -4,6 +4,40 @@
 // BUILD_RELEASE is set to false will be removed as dead-code during compile.
 BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
 
+/**
+ * crash() is used to inform the user that the application has exploded.
+ * It is purposely global and primitive as we have no idea what state
+ * the application will be in when it is called.
+ * @param {string} errorCode
+ * @param {string} errorText
+ */
+let isCrashed = false;
+crash = (errorCode, errorText) => {
+    // Prevent a never-ending cycle of depression.
+    if (isCrashed)
+        return;
+
+    isCrashed = true;
+
+    // Replace the entire markup with just that from the <noscript> block.
+    const errorMarkup = document.querySelector('noscript').innerHTML;
+    const body = document.querySelector('body');
+    body.innerHTML = errorMarkup;
+
+    // Display our error code/text.
+    document.querySelector('#crash-screen-text-code').textContent = errorCode;
+    document.querySelector('#crash-screen-text-message').textContent = errorText;
+
+    // Grab the runtime log if available.
+    if (typeof getErrorDump === 'function')
+        getErrorDump().then(data => document.querySelector('#crash-screen-log').textContent = data);
+};
+
+// Register crash handlers.
+process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
+process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
+
+// Imports
 const os = require('os');
 const constants = require('./js/constants');
 const generics = require('./js/generics');
@@ -36,6 +70,9 @@ document.addEventListener('click', function(e) {
 
     // Append the application version to the title bar.
     document.title += ' v' + nw.App.manifest.version;
+
+    // Interlink error handling for Vue.
+    Vue.config.errorHandler = err => crash('ERR_VUE', err.message);
 
     // Initialize Vue.
     core.view = new Vue({
