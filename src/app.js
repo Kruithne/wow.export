@@ -51,6 +51,7 @@ const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
+const config = require('./js/config');
 
 // Prevent files from being dropped onto the window.
 // GH-2: Implement drag-and-drop support.

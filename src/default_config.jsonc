@@ -1,0 +1,9 @@
+// You should NOT edit this file. To adjust configuration, either:
+// - Use the built-in settings menu inside the application (Recommended).
+// - If you must edit manually, locate your user-config:
+//      Windows: %LOCALAPPDATA%\<name>\wow.export\User Data\Default\wow.export
+//      OSX: ~/Library/Application Support/<name>/Default\wow.export
+//      Linux: ~/.config/<name>/wow.export
+{
+    "test": 42
+}

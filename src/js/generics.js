@@ -64,6 +64,24 @@ const getJSON = async (url) => {
 };
 
 /**
+ * Read a JSON file from disk, returning NULL on error.
+ * Provides basic pruning for comments (lines starting with //) with ignoreComments.
+ * @param {string} file 
+ * @param {bool} ignoreComments
+ */
+const readJSON = async (file, ignoreComments = false) => {
+    try {
+        const raw = await fsp.readFile(file, 'utf8');
+        if (ignoreComments)
+            return JSON.parse(raw.split(/\r?\n/).filter(e => !e.startsWith('//')).join('\n'));
+
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+};
+
+/**
  * Download a file to the given output path.
  * @param {string} url 
  * @param {string} out 
@@ -162,6 +180,7 @@ const getFileHash = async (file, method, encoding) => {
 
 module.exports = { 
     getJSON,
+    readJSON,
     filesize,
     getFileHash,
     createDirectory,
