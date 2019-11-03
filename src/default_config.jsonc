@@ -5,5 +5,5 @@
 //      OSX: ~/Library/Application Support/<name>/Default\wow.export
 //      Linux: ~/.config/<name>/wow.export
 {
-    "test": 42
+    
 }
