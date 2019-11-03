@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
-const log = require('./log');
 
 const MAX_HTTP_REDIRECT = 4;
 
@@ -20,20 +19,14 @@ const get = async (url) => {
 /**
  * Ping a URL and measure the response time.
  * Not perfectly accurate, but good enough for our purposes.
- * Returns -1 on error or HTTP code other than 200.
+ * Throws on error or HTTP code other than 200.
  * @param {string} url 
  */
 const ping = async (url) => {
     const pingStart = Date.now();
     
-    try {
-        await get(url);
-        return (Date.now() - pingStart);
-    } catch (e) {
-        log.write('Failed ping to %s: %s', url, e.message);
-    }
-
-    return -1;
+    await get(url);
+    return (Date.now() - pingStart);
 };
 
 /**

@@ -154,7 +154,10 @@ document.addEventListener('click', function(e) {
             core.view.selectedCDNRegion = node;
 
         // Run a rudimentary ping check for each CDN. 
-        pings.push(generics.ping(cdnURL).then(ms => node.delay = ms));
+        pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
+            node.delay = -1;
+            log.write('Failed ping to %s: %s', cdnURL, e.message);
+        }));
     }
 
     // Once all pings are resolved, pick the fastest.
