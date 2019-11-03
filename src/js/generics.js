@@ -183,4 +183,5 @@ module.exports = {
     createDirectory,
     createWriteStream,
     downloadFile,
-    ping };
+    ping
+};
