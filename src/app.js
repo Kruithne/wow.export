@@ -104,7 +104,7 @@ document.addEventListener('click', function(e) {
             setSelectedCDN: function(region) {
                 this.selectedCDNRegion = region;
                 this.lockCDNRegion = true;
-                localStorage.setItem('sourceSelectUserRegion', region.tag);
+                config.set('sourceSelectUserRegion', region.tag);
             }
         }
     });
@@ -138,7 +138,7 @@ document.addEventListener('click', function(e) {
 
     const pings = [];
     const regions = core.view.cdnRegions;
-    const userRegion = localStorage.getItem('sourceSelectUserRegion');
+    const userRegion = config.getString('sourceSelectUserRegion');
 
     // User has pre-selected a CDN, lock choice from changing.
     if (userRegion !== null)
