@@ -99,6 +99,15 @@ const createDirectory = async (dir) => {
     });
 };
 
+/**
+ * Wrapped for fs.createWriteStream() with automatic directory creation.
+ * @param {string} file 
+ */
+const createWriteStream = async (file) => {
+    await createDirectory(path.dirname(file));
+    return fs.createWriteStream(file);
+};
+
 const JEDEC = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
 /**
@@ -167,4 +176,11 @@ const getFileHash = async (file, method, encoding) => {
     });
 };
 
-module.exports = { getJSON, filesize, getFileHash, createDirectory, downloadFile, ping };
+module.exports = { 
+    getJSON,
+    filesize,
+    getFileHash,
+    createDirectory,
+    createWriteStream,
+    downloadFile,
+    ping };
