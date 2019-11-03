@@ -41,8 +41,6 @@ const drainPool = () => {
     // something remaining in the pool.
     if (!isClogged && pool.length > 0)
         process.nextTick(drainPool);
-
-    /* ToDo: Handle error on pool overflow. */
 };
 
 /**
@@ -58,6 +56,8 @@ const write = (...parameters) => {
         // If pool exceeds MAX_LOG_POOL, explode.
         if (pool.length < MAX_LOG_POOL)
             pool.push(line);
+        else
+            crash('ERR_LOG_OVERFLOW', 'The log pool has overflowed.');
     }
 
     // Mirror output to debugger.
@@ -77,7 +77,6 @@ getErrorDump = async () => {
         return 'Unable to obtain runtime log: ' + e.message;
     }
 };
-
 // Initialize the logging stream.
 const stream = generics.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
