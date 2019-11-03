@@ -79,7 +79,7 @@ getErrorDump = async () => {
 
 // Initialize the logging stream.
 const stream = fs.createWriteStream(constants.RUNTIME_LOG);
-stream.once('error', () => { /* ToDo: Handle this. */ });
+stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
 stream.on('drain', drainPool);
 
 module.exports = { write };
