@@ -7,7 +7,10 @@ const log = require('./log');
 const config = core.view.config;
 let isSaving = false;
 
-(async () => {
+/**
+ * Load configuration from disk.
+ */
+const load = async () => {
     const defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
     const userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
 
@@ -16,7 +19,7 @@ let isSaving = false;
 
     Object.assign(config, defaultConfig);
     Object.assign(config, userConfig);
-})();
+};
 
 /**
  * Get a configuration value by the given key.
@@ -87,5 +90,5 @@ const save = async () => {
 };
 
 module.exports = {
-    get, getNumber, getBool, getString, set
+    get, getNumber, getBool, getString, set, load
 };

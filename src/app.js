@@ -79,6 +79,9 @@ document.addEventListener('click', function(e) {
     // Append the application version to the title bar.
     document.title += ' v' + nw.App.manifest.version;
 
+    // Load configuration.
+    await config.load();
+
     // Interlink error handling for Vue.
     Vue.config.errorHandler = err => crash('ERR_VUE', err.message);
 
