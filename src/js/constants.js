@@ -2,7 +2,7 @@
 const path = require('path');
 
 const INSTALL_PATH = nw.App.startPath;
-const DATA_PATH = path.join(nw.App.dataPath, nw.App.manifest.name);
+const DATA_PATH = nw.App.dataPath;
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
 module.exports = {

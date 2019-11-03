@@ -1,6 +1,5 @@
 const fs = require('fs');
 const util = require('util');
-const generics = require('./generics');
 const constants = require('./constants');
 
 const MAX_LOG_POOL = 1000;
@@ -77,8 +76,9 @@ getErrorDump = async () => {
         return 'Unable to obtain runtime log: ' + e.message;
     }
 };
+
 // Initialize the logging stream.
-const stream = generics.createWriteStream(constants.RUNTIME_LOG);
+const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
 stream.on('drain', drainPool);
 
