@@ -33,6 +33,10 @@
     outline: 0;
 }
 
+[v-cloak] {
+    display: none;
+}
+
 a {
     color: var(--font-primary);
     text-decoration: none;

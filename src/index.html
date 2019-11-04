@@ -8,7 +8,7 @@
     </head>
     <body>
         <div id="logo-background"></div>
-        <div id="container">
+        <div id="container" v-cloak>
             <div id="header" :class="{ shadowed: toast !== null }">
                 <div id="logo">wow.export</div>
                 <div id="nav" v-if="isSourceActive">
