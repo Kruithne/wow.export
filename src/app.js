@@ -105,6 +105,14 @@ document.addEventListener('click', function(e) {
                 this.selectedCDNRegion = region;
                 this.lockCDNRegion = true;
                 config.set('sourceSelectUserRegion', region.tag);
+            },
+
+            /**
+             * Emit an event using the global event emitter.
+             * @param {string} event 
+             */
+            emit: function(event) {
+                core.events.emit(event);
             }
         },
 

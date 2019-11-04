@@ -33,6 +33,20 @@ core.events.once('screen-source-select', async () => {
         }));
     }
 
+    // Set-up hooks for local installation dialog.
+    const selector = document.createElement('input');
+    selector.setAttribute('type', 'file');
+    selector.setAttribute('nwdirectory', true);
+    selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
+
+    // Monitor the directory selector for changes, and then validate the selected directory.
+    // ToDo: Actually use the directory given here.
+    selector.onchange = () => console.log(selector.value);
+
+    // When the user clicks on 'Open Local Installation', it fires 'click-source-local'.
+    // Register for this event and invoke a click onto our directory selector.
+    core.events.on('click-source-local', () => selector.click());
+
     // Once all pings are resolved, pick the fastest.
     Promise.all(pings).then(() => {
         // CDN region choice is locked, do nothing.

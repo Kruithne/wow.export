@@ -30,7 +30,7 @@
                     <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
                 </div>
                 <div id="source-select" v-if="screen === 'source-select'">
-                    <div id="source-local">
+                    <div id="source-local" @click.self="emit('click-source-local')">
                         <div class="source-icon"></div>
                         <div class="source-text">
                             Open Local Installation
