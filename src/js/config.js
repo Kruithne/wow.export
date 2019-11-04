@@ -87,6 +87,8 @@ const save = async () => {
     } catch (e) {
         crash('ERR_CONFIG_SAVE', e.message);
     }
+    
+    isSaving = false;
 };
 
 module.exports = {
