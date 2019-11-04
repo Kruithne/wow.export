@@ -294,24 +294,45 @@ const parseModule = async (mod) => {
 /**
  * Build a module tree starting from the entry-point.
  * @param {string} entry 
- * @param {array} out 
+ * @param {array|Set} out 
  */
 const buildModuleTree = async (entry, out = [], root = true) => {
     const mod = await parseModule(entry);
     mod.isRoot = root;
-    out.unshift(mod);
+    mod.deps = new Set();
+    out.push(mod);
 
     for (const sub of mod.modules) {
-        const subIndex = out.findIndex(e => e.path === sub.value);
-        if (subIndex > -1) {
-            // This module already exists in the stack, move it to the top.
-            out.unshift(out.splice(subIndex, 1)[0]);
-        } else {
-            // Unseen module, parse it.
-            await buildModuleTree(sub.value, out, false);
+        // Include every sub-module in the dependency list.
+        mod.deps.add(sub.value);
+
+        // Parse this module if it's not already in the tree.
+        if (!out.some(e => e.path === sub.value)) {
+            const subDeps = await buildModuleTree(sub.value, out, false);
+            for (const subDep of subDeps)
+                mod.deps.add(subDep);
         }
     }
-    return out;
+    
+    return root ? out : mod.deps;
+};
+
+/**
+ * Order a module tree array based on dependencies.
+ * @param {array} tree 
+ * @param {object} mod 
+ */
+const orderDependencies = (tree, mod) => {
+    const modIndex = tree.indexOf(mod);
+    for (const dep of mod.deps) {
+        const depIndex = tree.findIndex(e => e.path === dep);
+        const depModule = tree[depIndex];
+
+        if (depIndex > modIndex)
+            tree.splice(modIndex, 0, tree.splice(depIndex, 1)[0]);
+        
+        orderDependencies(tree, depModule);
+    }
 };
 
 (async () => {
@@ -495,7 +516,16 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             // Make sure the source directory exists.
             await createDirectory(sourceTarget);
 
+            // Parse the module tree, result will be unordered and potentially cyclic.
             const moduleTree = await buildModuleTree(jsEntry);
+
+            // Ensure that there are no cyclic dependencies in the tree.
+            for (const mod of moduleTree)
+                if (mod.deps.has(mod.path))
+                    throw new Error(util.format('Cyclic dependency: Module %s depends on itself.', mod.path));
+
+            // Structure the module tree in order of dependencies.
+            orderDependencies(moduleTree, moduleTree[0]);
 
             // Assign every module a globally unique ID to prevent any variable collision.
             // The actual value doesn't matter since it will be minified later. We also
