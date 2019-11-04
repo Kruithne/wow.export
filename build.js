@@ -26,7 +26,7 @@ const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
 
 const AST_NO_MATCH = Symbol('astNoMatch');
-const AST_REQUIRE_STRUCT = {
+const AST_REQUIRE_VAR_STRUCT = {
     type: 'VariableDeclaration',
     declarations: {
         type: 'VariableDeclarator',
@@ -45,6 +45,23 @@ const AST_REQUIRE_STRUCT = {
                 type: 'Literal',
                 value: 'EXPORT'
             }
+        }
+    }
+};
+
+const AST_REQUIRE_EXP_STRUCT = {
+    type: 'ExpressionStatement',
+    start: 'EXPORT',
+    end: 'EXPORT',
+    expression: {
+        type: 'CallExpression',
+        callee: {
+            type: 'Identifier',
+            name: 'require'
+        },
+        arguments: {
+            type: 'Literal',
+            value: 'EXPORT'
         }
     }
 };
@@ -248,8 +265,15 @@ const parseModule = async (mod) => {
 
     const ast = acorn.parse(out.data);
     for (const node of ast.body) {
-        // Locate modules imported using require().
-        const importMatch = matchAST(node, AST_REQUIRE_STRUCT);
+        // Locate modules imported using require() as variables or expressions.
+        let importMatch = matchAST(node, AST_REQUIRE_VAR_STRUCT);
+
+        // Node is not a require() variable, check for expression instead.
+        if (importMatch === AST_NO_MATCH)
+            importMatch = matchAST(node, AST_REQUIRE_EXP_STRUCT);
+        else
+            importMatch.isVariable = true;
+
         if (importMatch !== AST_NO_MATCH) {
             // Only process the module if it's not a builtin.
             if (!builtin.builtinModules.includes(importMatch.value)) {
@@ -488,8 +512,12 @@ const buildModuleTree = async (entry, out = [], root = true) => {
             for (const mod of moduleTree) {
                 // Replace all import statements with ID assignments.
                 const data = new DynamicString(mod.data);
-                for (const sub of mod.modules)
-                    data.sub(sub.start, sub.end, moduleMap.get(sub.value));
+                for (const sub of mod.modules) {
+                    if (sub.isVariable)
+                        data.sub(sub.start, sub.end, moduleMap.get(sub.value));
+                    else
+                        data.sub(sub.start, sub.end, '');
+                }
 
                 // Replace module export statements.
                 if (mod.export) {

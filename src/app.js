@@ -51,7 +51,7 @@ const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
-const sourceSelect = require('./js/ui/source-select');
+require('./js/ui/source-select');
 
 // Prevent files from being dropped onto the window.
 // GH-2: Implement drag-and-drop support.
