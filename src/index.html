@@ -11,7 +11,7 @@
         <div id="container" v-cloak>
             <div id="header" :class="{ shadowed: toast !== null }">
                 <div id="logo">wow.export</div>
-                <div id="nav" v-if="isSourceActive">
+                <div id="nav" v-if="false">
                     <div id="nav-models">Models</div>
                     <div id="nav-textures">Textures</div>
                     <div id="nav-sounds">Sounds</div>
@@ -29,7 +29,7 @@
                     {{ toast.message }}
                     <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
                 </div>
-                <div id="source-select" v-if="!isSourceActive">
+                <div id="source-select" v-if="screen === 'source-select'">
                     <div id="source-local">
                         <div class="source-icon"></div>
                         <div class="source-text">

@@ -11,7 +11,7 @@ module.exports = {
     // The `view` object below is used as the data source for the main Vue instance.
     // All properties within it will be reactive once the view has been initialized.
     view: {
-        isSourceActive: false, // Indicates if a source has been selected.
+        screen: null, // Controls the currently active interface screen.
         isBusy: false, // Indicates a large task is currently active.
         isUpdating: false, // Controls the display of the update splash.
         updateProgress: '', // Sets the progress text displayed on the update splash.
