@@ -5,6 +5,9 @@ const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
 
+const CASCLocal = require('../casc/casc-source-local');
+const CASCRemote = require('../casc/casc-source-remote');
+
 core.events.once('screen-source-select', async () => {
     // GH-4: Load most recent local installation paths into local source select widget.
 
@@ -40,12 +43,33 @@ core.events.once('screen-source-select', async () => {
     selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
     // Monitor the directory selector for changes, and then validate the selected directory.
-    // ToDo: Actually use the directory given here.
-    selector.onchange = () => console.log(selector.value);
+    selector.onchange = async () => {
+        try {
+            const source = new CASCLocal(selector.value);
+            await source.init();
 
-    // When the user clicks on 'Open Local Installation', it fires 'click-source-local'.
-    // Register for this event and invoke a click onto our directory selector.
+            console.log(source.getProductList());
+        } catch (e) {
+            log.write('Failed to initialize local CASC source: %s', e.message);
+        }
+    };
+
+    // Register for the 'click-source-local' event fired when the user clicks 'Open Local Installation'.
+    // Prompt the user with a directory selection dialog to locate their local installation.
     core.events.on('click-source-local', () => selector.click());
+
+    // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
+    // Version information for all known products needs to be collected from the CDN.
+    core.events.on('click-source-remote', async () => {
+        try {
+            const source = new CASCRemote(core.view.selectedCDNRegion.tag);
+            await source.init();
+            
+            console.log(source.getProductList());
+        } catch (e) {
+            log.write('Failed to initialize remote CASC source: %s', e.message);
+        }
+    });
 
     // Once all pings are resolved, pick the fastest.
     Promise.all(pings).then(() => {

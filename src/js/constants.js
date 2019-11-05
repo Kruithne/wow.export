@@ -26,11 +26,12 @@ module.exports = {
     },
 
     // Product Keys
-    PRODUCT_KEYS: {
-        WORLD_OF_WARCRAFT: 'wow',
-        WORLD_OF_WARCRAFT_PTR: 'wowt',
-        WORLD_OF_WARCRAFT_BETA: 'wow_beta',
-        WORLD_OF_WARCRAFT_CLASSIC: 'wow_classic'
+    // These are labelled as they appear in the Battle.net launcher.
+    PRODUCTS: {
+        'wow': 'World of Warcraft',
+        'wowt': 'PTR: World of Warcraft',
+        'wow_beta': 'Beta: World of Warcraft',
+        'wow_classic': 'World of Warcraft Classic'
     },
 
     // Blizzard Patch Server
@@ -38,7 +39,12 @@ module.exports = {
         REGIONS: ['eu', 'us', 'kr', 'cn', 'tw'],
         DEFAULT_REGION: 'us',
         HOST: 'http://%s.patch.battle.net:1119/',
-        SERVER_CONFIG: 'cdns',
-        VERSION_CONFIG: 'versions'
+        SERVER_CONFIG: '/cdns',
+        VERSION_CONFIG: '/versions'
+    },
+
+    // Local Builds
+    BUILD: {
+        MANIFEST: '.build.info'
     }
 };

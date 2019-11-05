@@ -185,5 +185,7 @@ module.exports = {
     getFileHash,
     createDirectory,
     downloadFile,
-    ping
+    ping,
+    get,
+    consumeUTF8Stream
 };
