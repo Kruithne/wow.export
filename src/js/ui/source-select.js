@@ -43,24 +43,22 @@ core.events.once('screen-source-select', async () => {
     // Grab recent local installations from config.
     const recentLocal = config.getArray('recentLocal');
 
-    // Monitor the directory selector for changes and then attempt to initialize
-    // a local CASC source using the selected directory.
-    selector.onchange = async () => {
+    const openInstall = async (installPath) => {
         try {
-            const source = new CASCLocal(selector.value);
+            const source = new CASCLocal(installPath);
             await source.init();
 
             core.view.availableLocalBuilds = source.getProductList();
 
             // Update the recent local installation list..
-            const preIndex = recentLocal.indexOf(selector.value);
+            const preIndex = recentLocal.indexOf(installPath);
             if (preIndex > -1) {
                 // Already in the list, bring it to the top (if not already).
                 if (preIndex > 0)
                     recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
             } else {
                 // Not in the list, add it to the top.
-                recentLocal.unshift(selector.value);
+                recentLocal.unshift(installPath);
             }
 
             // Limit amount of entries allowed in the recent list.
@@ -74,7 +72,7 @@ core.events.once('screen-source-select', async () => {
 
             // In the event that the given directory was once a valid installation and
             // is listed in the recent local list, make sure it is removed now.
-            const index = recentLocal.indexOf(selector.value);
+            const index = recentLocal.indexOf(installPath);
             if (index > -1) {
                 recentLocal.splice(index, 1);
                 config.save();
@@ -88,6 +86,11 @@ core.events.once('screen-source-select', async () => {
         selector.value = ''; // Wipe the existing value to ensure onchange triggers.
         selector.click();
     });
+    
+    // Both selecting a file using the directory selector, and clicking on a recent local
+    // installation (click-source-local-recent) should then attempt to open an install.
+    selector.onchange = () => openInstall(selector.value);
+    core.events.on('click-source-local-recent', entry => openInstall(entry));
 
     // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
     // Attempt to initialize a remote CASC source using the selected region.
