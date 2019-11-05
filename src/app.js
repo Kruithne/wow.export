@@ -29,20 +29,22 @@ crash = (errorCode, errorText) => {
     logo.setAttribute('id', 'logo-background');
     document.body.appendChild(logo);
 
+    const setText = (id, text) => document.querySelector(id).textContent = text;
+
     // Show build version/flavour/ID.
     const manifest = nw.App.manifest;
-    document.querySelector('#crash-screen-version').textContent = 'v' + manifest.version;
-    document.querySelector('#crash-screen-flavour').textContent = manifest.flavour;
-    document.querySelector('#crash-screen-build').textContent = manifest.guid;
+    setText('#crash-screen-version', 'v' + manifest.version);
+    setText('#crash-screen-flavour', manifest.flavour);
+    setText('#crash-screen-build', manifest.guid);
 
     // Display our error code/text.
-    document.querySelector('#crash-screen-text-code').textContent = errorCode;
-    document.querySelector('#crash-screen-text-message').textContent = errorText;
+    setText('#crash-screen-text-code', errorCode);
+    setText('#crash-screen-text-message'), errorText);
 
     // getErrorDump is set as a global function by the log module.
     // This is used to get the contents of the runtime log without depending on the module.
     if (typeof getErrorDump === 'function')
-        getErrorDump().then(data => document.querySelector('#crash-screen-log').textContent = data);
+        getErrorDump().then(data => setText('#crash-screen-log', data));
 };
 
 // Register crash handlers.
