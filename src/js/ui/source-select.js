@@ -51,6 +51,7 @@ core.events.once('screen-source-select', async () => {
 
             core.view.availableLocalBuilds = source.getProductList();
         } catch (e) {
+            core.view.toast = { type: 'error', message: util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value) };
             log.write('Failed to initialize local CASC source: %s', e.message);
         }
     };
