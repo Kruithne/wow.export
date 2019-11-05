@@ -76,6 +76,21 @@ const getString = (key) => {
 };
 
 /**
+ * Get a configuration value by the given key as an array.
+ * If the key is set but the value is not an array, it is cast to one using Array.from().
+ * Configuration keys can be tiered, such as: foo.bar.sheep
+ * Returns NULL if the configuration key does not exist.
+ * @param {string} key 
+ */
+const getArray = (key) => {
+    const value = get(key);
+    if (value === null)
+        return null;
+
+    return Array.isArray(value) ? value : Array.from(value);
+};
+
+/**
  * Set a configuration value.
  * Configuration keys can be tiered, such as: foo.bar.sheep
  * Changes will be persisted to disk on the next tick, allowing
@@ -120,5 +135,5 @@ const save = async () => {
 };
 
 module.exports = {
-    get, getNumber, getBool, getString, set, load
+    get, getNumber, getBool, getString, getArray, set, load
 };
