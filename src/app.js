@@ -39,7 +39,7 @@ crash = (errorCode, errorText) => {
 
     // Display our error code/text.
     setText('#crash-screen-text-code', errorCode);
-    setText('#crash-screen-text-message'), errorText);
+    setText('#crash-screen-text-message', errorText);
 
     // getErrorDump is set as a global function by the log module.
     // This is used to get the contents of the runtime log without depending on the module.
