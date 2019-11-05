@@ -14,10 +14,6 @@ module.exports = {
         screen: null, // Controls the currently active interface screen.
         isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
         updateProgress: '', // Sets the progress text displayed on the update splash.
-        localSourceRecent: [
-            "C:\\Program Files (x86)\\World of Warcraft",
-            "C:\\Users\\Marlamin\\Games\\World of Warcraft"
-        ], // Contains the latest local install paths used.
         toast: null, // Controls the currently active toast bar.
         cdnRegions: [], // CDN region data.
         selectedCDNRegion: null, // Active CDN region.

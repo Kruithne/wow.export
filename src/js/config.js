@@ -116,16 +116,23 @@ const set = (key, value) => {
     node[actualKey] = value;
     log.write('Set configuration value %s -> %s', key, value);
 
+    save();
+};
+
+/**
+ * Mark configuration for saving.
+ */
+const save = () => {
     if (!isSaving) {
         isSaving = true;
-        setImmediate(save);
+        setImmediate(doSave);
     }
 };
 
 /**
  * Persist configuration data to disk.
  */
-const save = async () => {
+const doSave = async () => {
     try {
         const out = JSON.stringify(config, null, '\t');
         await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
@@ -137,5 +144,5 @@ const save = async () => {
 };
 
 module.exports = {
-    get, getNumber, getBool, getString, getArray, set, load
+    get, getNumber, getBool, getString, getArray, set, load, save
 };

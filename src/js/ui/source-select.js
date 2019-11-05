@@ -9,8 +9,6 @@ const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
 
 core.events.once('screen-source-select', async () => {
-    // GH-4: Load most recent local installation paths into local source select widget.
-
     const pings = [];
     const regions = core.view.cdnRegions;
     const userRegion = config.getString('sourceSelectUserRegion');
@@ -42,6 +40,9 @@ core.events.once('screen-source-select', async () => {
     selector.setAttribute('nwdirectory', true);
     selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
+    // Grab recent local installations from config.
+    const recentLocal = config.getArray('recentLocal');
+
     // Monitor the directory selector for changes and then attempt to initialize
     // a local CASC source using the selected directory.
     selector.onchange = async () => {
@@ -50,9 +51,34 @@ core.events.once('screen-source-select', async () => {
             await source.init();
 
             core.view.availableLocalBuilds = source.getProductList();
+
+            // Update the recent local installation list..
+            const preIndex = recentLocal.indexOf(selector.value);
+            if (preIndex > -1) {
+                // Already in the list, bring it to the top (if not already).
+                if (preIndex > 0)
+                    recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
+            } else {
+                // Not in the list, add it to the top.
+                recentLocal.unshift(selector.value);
+            }
+
+            // Limit amount of entries allowed in the recent list.
+            if (recentLocal.length > constants.MAX_RECENT_LOCAL)
+                recentLocal.splice(constants.MAX_RECENT_LOCAL, recentLocal.length - constants.MAX_RECENT_LOCAL);
+
+            config.save(); // Changes to arrays are not automatically detected.
         } catch (e) {
             core.view.toast = { type: 'error', message: util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value) };
             log.write('Failed to initialize local CASC source: %s', e.message);
+
+            // In the event that the given directory was once a valid installation and
+            // is listed in the recent local list, make sure it is removed now.
+            const index = recentLocal.indexOf(selector.value);
+            if (index > -1) {
+                recentLocal.splice(index, 1);
+                config.save();
+            }
         }
     };
 

@@ -43,9 +43,9 @@
                             <div class="source-text">
                                 Open Local Installation
                                 <span>(Recommended)</span>
-                                <ul id="source-recent" v-if="localSourceRecent.length > 0">
+                                <ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
                                     <li>Recent</li>
-                                    <li v-for="entry in localSourceRecent">{{ entry }}</li>
+                                    <li v-for="entry in config.recentLocal">{{ entry }}</li>
                                 </ul>
                             </div>
                         </template>

@@ -11,6 +11,9 @@ module.exports = {
     DATA_PATH,
     RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'),
 
+    // How many recent local installations should we remember?
+    MAX_RECENT_LOCAL: 3,
+
     // Configuration Constants
     CONFIG:  {
         DEFAULT_PATH: path.join(INSTALL_PATH, 'src', 'default_config.jsonc'),
