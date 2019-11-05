@@ -112,9 +112,9 @@ document.addEventListener('click', function(e) {
              * @param {string} tag
              * @param {object} event
              */
-            click: function(tag, event) {
+            click: function(tag, event, ...params) {
                 if (!event.target.classList.contains('disabled'))
-                    core.events.emit('click-' + tag);
+                    core.events.emit('click-' + tag, ...params);
             }
         },
 
