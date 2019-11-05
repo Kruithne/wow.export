@@ -30,12 +30,12 @@
                     <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
                 </div>
                 <div id="source-select" v-if="screen === 'source-select'">
-                    <div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click.self="click('source-local', $event)">
+                    <div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
                         <template v-if="availableLocalBuilds">
                             <div class="source-builds">
                                 <span>Select Build</span>
                                 <input v-for="build in availableLocalBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click="availableLocalBuilds = null" class="link">Cancel</span>
+                                <span @click.stop="availableLocalBuilds = null" class="link">Cancel</span>
                             </div>
                         </template>
                         <template v-else>
@@ -45,17 +45,17 @@
                                 <span>(Recommended)</span>
                                 <ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
                                     <li>Recent</li>
-                                    <li v-for="entry in config.recentLocal" class="link" @click="click('source-local-recent', $event, entry)">{{ entry }}</li>
+                                    <li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry }}</li>
                                 </ul>
                             </div>
                         </template>
                     </div>
-                    <div id="source-remote" :class="{ disabled: !!availableRemoteBuilds }" @click.self="click('source-remote', $event)">
+                    <div id="source-remote" :class="{ disabled: !!availableRemoteBuilds }" @click="click('source-remote', $event)">
                         <template v-if="availableRemoteBuilds">
                             <div class="source-builds">
                                 <span>Select Build</span>
                                 <input v-for="build in availableRemoteBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click="availableRemoteBuilds = null" class="link">Cancel</span>
+                                <span @click.stop="availableRemoteBuilds = null" class="link">Cancel</span>
                             </div>
                         </template>
                         <template v-else>
@@ -63,7 +63,7 @@
                             <div class="source-text">
                                 Use Blizzard CDN
                                 <ul id="source-cdn">
-                                    <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click="setSelectedCDN(region)">
+                                    <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
                                         {{ region.tag.toUpperCase() }}
                                         <span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
                                     </li>
