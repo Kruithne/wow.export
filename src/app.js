@@ -29,6 +29,12 @@ crash = (errorCode, errorText) => {
     logo.setAttribute('id', 'logo-background');
     document.body.appendChild(logo);
 
+    // Show build version/flavour/ID.
+    const manifest = nw.App.manifest;
+    document.querySelector('#crash-screen-version').textContent = 'v' + manifest.version;
+    document.querySelector('#crash-screen-flavour').textContent = manifest.flavour;
+    document.querySelector('#crash-screen-build').textContent = manifest.guid;
+
     // Display our error code/text.
     document.querySelector('#crash-screen-text-code').textContent = errorCode;
     document.querySelector('#crash-screen-text-message').textContent = errorText;
