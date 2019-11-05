@@ -137,15 +137,15 @@ document.addEventListener('click', function(e) {
         }
     });
 
-    // Load configuration.
-    await config.load();
-
     // Log some basic information for potential diagnostics.
     const manifest = nw.App.manifest;
     const cpus = os.cpus();
     log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
     log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
     log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
+
+    // Load configuration.
+    await config.load();
 
     // Check for updates (without blocking).
     if (BUILD_RELEASE) {
