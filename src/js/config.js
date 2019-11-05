@@ -83,7 +83,7 @@ const getString = (key) => {
  * @param {string} key 
  */
 const getArray = (key) => {
-    const value = get(key);
+    let value = get(key);
     if (!Array.isArray(value)) {
         value = [];
         this.set(key, value);
