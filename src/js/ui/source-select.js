@@ -58,12 +58,7 @@ core.events.once('screen-source-select', async () => {
 
     // Register for the 'click-source-local' event fired when the user clicks 'Open Local Installation'.
     // Prompt the user with a directory selection dialog to locate their local installation.
-    core.events.on('click-source-local', () => {
-        if (core.view.availableLocalBuilds)
-            return;
-
-        selector.click();
-    });
+    core.events.on('click-source-local', () => selector.click());
 
     // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
     // Attempt to initialize a remote CASC source using the selected region.
