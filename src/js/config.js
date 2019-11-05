@@ -86,7 +86,7 @@ const getArray = (key) => {
     let value = get(key);
     if (!Array.isArray(value)) {
         value = [];
-        this.set(key, value);
+        set(key, value);
     }
 
     return value;
