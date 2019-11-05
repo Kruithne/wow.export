@@ -42,7 +42,8 @@ core.events.once('screen-source-select', async () => {
     selector.setAttribute('nwdirectory', true);
     selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
-    // Monitor the directory selector for changes, and then validate the selected directory.
+    // Monitor the directory selector for changes and then attempt to initialize
+    // a local CASC source using the selected directory.
     selector.onchange = async () => {
         try {
             const source = new CASCLocal(selector.value);
@@ -59,7 +60,7 @@ core.events.once('screen-source-select', async () => {
     core.events.on('click-source-local', () => selector.click());
 
     // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
-    // Version information for all known products needs to be collected from the CDN.
+    // Attempt to initialize a remote CASC source using the selected region.
     core.events.on('click-source-remote', async () => {
         try {
             const source = new CASCRemote(core.view.selectedCDNRegion.tag);
