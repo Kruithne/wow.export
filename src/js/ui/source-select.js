@@ -86,7 +86,7 @@ core.events.once('screen-source-select', async () => {
         selector.value = ''; // Wipe the existing value to ensure onchange triggers.
         selector.click();
     });
-    
+
     // Both selecting a file using the directory selector, and clicking on a recent local
     // installation (click-source-local-recent) should then attempt to open an install.
     selector.onchange = () => openInstall(selector.value);
@@ -96,10 +96,13 @@ core.events.once('screen-source-select', async () => {
     // Attempt to initialize a remote CASC source using the selected region.
     core.events.on('click-source-remote', async () => {
         try {
+            core.view.isBusy++;
+
             const source = new CASCRemote(core.view.selectedCDNRegion.tag);
             await source.init();
             
             core.view.availableRemoteBuilds = source.getProductList();
+            core.view.isBusy--;
         } catch (e) {
             log.write('Failed to initialize remote CASC source: %s', e.message);
         }
