@@ -109,6 +109,32 @@ body {
     justify-content: center;
     align-items: center;
 
+    .source-builds {
+        width: min-content;
+        
+        span {
+            text-align: center;
+            display: block;
+
+            &:first-child {
+                margin-bottom: 5px;
+            }
+
+            &:last-child {
+                margin-top: 5px;
+            }
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        input[type="button"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+    }
+
     #source-recent {
         position: absolute;
         font-size: 15px;
@@ -204,7 +230,7 @@ body {
             }
         }
 
-        &:hover {
+        &:hover, &.active {
             border-color: var(--font-highlight);
     
             .source-icon {

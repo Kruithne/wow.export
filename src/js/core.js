@@ -24,5 +24,7 @@ module.exports = {
         selectedCDNRegion: null, // Active CDN region.
         lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
         config: {}, // Will contain default/user-set configuration. Use config module to operate.
+        availableLocalBuilds: null, // Array containing local builds to display during source select.
+        availableRemoteBuilds: null, // Array containing remote builds to display during source select.
     }
 }

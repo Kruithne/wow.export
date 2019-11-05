@@ -49,7 +49,7 @@ core.events.once('screen-source-select', async () => {
             const source = new CASCLocal(selector.value);
             await source.init();
 
-            console.log(source.getProductList());
+            core.view.availableLocalBuilds = source.getProductList();
         } catch (e) {
             log.write('Failed to initialize local CASC source: %s', e.message);
         }
@@ -57,7 +57,12 @@ core.events.once('screen-source-select', async () => {
 
     // Register for the 'click-source-local' event fired when the user clicks 'Open Local Installation'.
     // Prompt the user with a directory selection dialog to locate their local installation.
-    core.events.on('click-source-local', () => selector.click());
+    core.events.on('click-source-local', () => {
+        if (core.view.availableLocalBuilds)
+            return;
+
+        selector.click();
+    });
 
     // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
     // Attempt to initialize a remote CASC source using the selected region.
@@ -66,7 +71,7 @@ core.events.once('screen-source-select', async () => {
             const source = new CASCRemote(core.view.selectedCDNRegion.tag);
             await source.init();
             
-            console.log(source.getProductList());
+            core.view.availableRemoteBuilds = source.getProductList();
         } catch (e) {
             log.write('Failed to initialize remote CASC source: %s', e.message);
         }

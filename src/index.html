@@ -30,28 +30,46 @@
                     <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
                 </div>
                 <div id="source-select" v-if="screen === 'source-select'">
-                    <div id="source-local" @click.self="emit('click-source-local')">
-                        <div class="source-icon"></div>
-                        <div class="source-text">
-                            Open Local Installation
-                            <span>(Recommended)</span>
-                            <ul id="source-recent" v-if="localSourceRecent.length > 0">
-                                <li>Recent</li>
-                                <li v-for="entry in localSourceRecent">{{ entry }}</li>
-                            </ul>
-                        </div>
+                    <div id="source-local" :class="{ active: !!availableLocalBuilds }" @click.self="emit('click-source-local')">
+                        <template v-if="availableLocalBuilds">
+                            <div class="source-builds">
+                                <span>Select Build</span>
+                                <input v-for="build in availableLocalBuilds" type="button" :value="build"/>
+                                <span @click="availableLocalBuilds = null">Cancel</span>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="source-icon"></div>
+                            <div class="source-text">
+                                Open Local Installation
+                                <span>(Recommended)</span>
+                                <ul id="source-recent" v-if="localSourceRecent.length > 0">
+                                    <li>Recent</li>
+                                    <li v-for="entry in localSourceRecent">{{ entry }}</li>
+                                </ul>
+                            </div>
+                        </template>
                     </div>
-                    <div id="source-remote" @click.self="emit('click-source-remote')">
-                        <div class="source-icon"></div>
-                        <div class="source-text">
-                            Use Blizzard CDN
-                            <ul id="source-cdn">
-                                <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click="setSelectedCDN(region)">
-                                    {{ region.tag.toUpperCase() }}
-                                    <span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
-                                </li>
-                            </ul>
-                        </div>
+                    <div id="source-remote" :class="{ active: !!availableRemoteBuilds }" @click.self="emit('click-source-remote')">
+                        <template v-if="availableRemoteBuilds">
+                            <div class="source-builds">
+                                <span>Select Build</span>
+                                <input v-for="build in availableRemoteBuilds" type="button" :value="build"/>
+                                <span @click="availableRemoteBuilds = null">Cancel</span>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="source-icon"></div>
+                            <div class="source-text">
+                                Use Blizzard CDN
+                                <ul id="source-cdn">
+                                    <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click="setSelectedCDN(region)">
+                                        {{ region.tag.toUpperCase() }}
+                                        <span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
