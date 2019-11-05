@@ -35,7 +35,7 @@
                             <div class="source-builds">
                                 <span>Select Build</span>
                                 <input v-for="build in availableLocalBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click="availableLocalBuilds = null">Cancel</span>
+                                <span @click="availableLocalBuilds = null" class="link">Cancel</span>
                             </div>
                         </template>
                         <template v-else>
@@ -45,7 +45,7 @@
                                 <span>(Recommended)</span>
                                 <ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
                                     <li>Recent</li>
-                                    <li v-for="entry in config.recentLocal" @click="click('source-local-recent', $event, entry)">{{ entry }}</li>
+                                    <li v-for="entry in config.recentLocal" class="link" @click="click('source-local-recent', $event, entry)">{{ entry }}</li>
                                 </ul>
                             </div>
                         </template>
@@ -55,7 +55,7 @@
                             <div class="source-builds">
                                 <span>Select Build</span>
                                 <input v-for="build in availableRemoteBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click="availableRemoteBuilds = null">Cancel</span>
+                                <span @click="availableRemoteBuilds = null" class="link">Cancel</span>
                             </div>
                         </template>
                         <template v-else>

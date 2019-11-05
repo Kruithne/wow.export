@@ -144,15 +144,9 @@ body {
         margin-top: 20px;
         
         li:not(:first-child) {
-            cursor: pointer;
-            color: var(--font-alt);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-
-            &:hover {
-                color: var(--font-alt-highlight);
-            }
         }
     }
 

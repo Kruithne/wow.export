@@ -46,6 +46,15 @@ a {
     }
 }
 
+.link {
+    color: var(--font-alt);
+    cursor: pointer;
+
+    &:hover {
+        color: var(--font-alt-highlight);
+    }
+}
+
 @import './css/font';
 @import './css/base';
 @import './css/ui';
