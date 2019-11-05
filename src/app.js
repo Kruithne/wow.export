@@ -109,10 +109,12 @@ document.addEventListener('click', function(e) {
 
             /**
              * Emit an event using the global event emitter.
-             * @param {string} event 
+             * @param {string} tag
+             * @param {object} event
              */
-            emit: function(event) {
-                core.events.emit(event);
+            click: function(tag, event) {
+                if (!event.target.classList.contains('disabled'))
+                    core.events.emit('click-' + tag);
             }
         },
 

@@ -229,8 +229,12 @@ body {
                 margin-left: 2px;
             }
         }
+        
+        &.disabled {
+            cursor: default;
+        }
 
-        &:hover, &.active {
+        &:hover, &.disabled {
             border-color: var(--font-highlight);
     
             .source-icon {
