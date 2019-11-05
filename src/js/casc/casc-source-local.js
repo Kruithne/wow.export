@@ -39,7 +39,7 @@ class CASCLocal extends CASC {
     getProductList() {
         const products = [];
         for (const entry of this.builds)
-            products.push(util.format('%s %s', constants.PRODUCTS[entry.Product], entry.Version));
+            products.push(util.format('%s (%s) %s', constants.PRODUCTS[entry.Product], entry.Branch.toUpperCase(), entry.Version));
 
         return products;
     }
