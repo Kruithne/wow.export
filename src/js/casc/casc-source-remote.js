@@ -60,7 +60,7 @@ class CASCRemote extends CASC {
     getProductList() {
         const products = [];
         for (const entry of this.builds)
-            products.push(util.format('%s %s.%s', constants.PRODUCTS[entry.Product], entry.VersionsName, entry.BuildId));
+            products.push(util.format('%s %s', constants.PRODUCTS[entry.Product], entry.VersionsName));
 
         return products;
     }
