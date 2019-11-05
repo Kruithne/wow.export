@@ -34,7 +34,7 @@
                         <template v-if="availableLocalBuilds">
                             <div class="source-builds">
                                 <span>Select Build</span>
-                                <input v-for="build in availableLocalBuilds" type="button" :value="build"/>
+                                <input v-for="build in availableLocalBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
                                 <span @click="availableLocalBuilds = null">Cancel</span>
                             </div>
                         </template>
@@ -54,7 +54,7 @@
                         <template v-if="availableRemoteBuilds">
                             <div class="source-builds">
                                 <span>Select Build</span>
-                                <input v-for="build in availableRemoteBuilds" type="button" :value="build"/>
+                                <input v-for="build in availableRemoteBuilds" :class="{ disabled: isBusy }" type="button" :value="build"/>
                                 <span @click="availableRemoteBuilds = null">Cancel</span>
                             </div>
                         </template>

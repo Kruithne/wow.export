@@ -12,7 +12,7 @@ module.exports = {
     // All properties within it will be reactive once the view has been initialized.
     view: {
         screen: null, // Controls the currently active interface screen.
-        isBusy: false, // Indicates a large task is currently active.
+        isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
         isUpdating: false, // Controls the display of the update splash.
         updateProgress: '', // Sets the progress text displayed on the update splash.
         localSourceRecent: [

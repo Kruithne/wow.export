@@ -21,6 +21,12 @@ input[type="button"] {
         background: var(--form-button-hover);
         color: var(--font-highlight);
     }
+
+    &.disabled {
+        cursor: default;
+        opacity: 0.5;
+        background: var(--form-button-disabled);
+    }
 }
 
 textarea {

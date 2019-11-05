@@ -38,7 +38,7 @@ const checkForUpdates = async () => {
  * Apply an outstanding update.
  */
 const applyUpdate = async () => {
-    core.view.isBusy = true;
+    core.view.isBusy++;
     core.view.isUpdating = true;
 
     const requiredFiles = [];
