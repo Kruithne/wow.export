@@ -39,8 +39,7 @@ const checkForUpdates = async () => {
  */
 const applyUpdate = async () => {
     core.view.isBusy++;
-    core.view.isUpdating = true;
-
+    core.view.screen = 'updater';
     const requiredFiles = [];
 
     // Check required files and calculate total file size...

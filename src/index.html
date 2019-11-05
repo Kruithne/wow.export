@@ -20,7 +20,7 @@
                 </div>
             </div>
             <div id="content">
-                <div id="update-splash" v-if="isUpdating">
+                <div id="update-splash" v-if="screen === 'updater'">
                     <div id="update-splash-icon"></div>
                     <span id="update-splash-title">Updating, please wait...</span>
                     <span id="update-splash-progress">{{ updateProgress }}</span>
