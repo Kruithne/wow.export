@@ -23,15 +23,28 @@ const load = async () => {
 
 /**
  * Get a configuration value by the given key.
+ * Configuration keys can be tiered, such as: foo.bar.sheep
  * Returns NULL if the configuration value does not exist.
  * @param {string} key 
  */
 const get = (key) => {
-    return config.hasOwnProperty(key) ? config[key] : null;
+    let node = config;
+
+    // Resolve the configuration key path.
+    const parts = key.split('.');
+    for (const part of parts) {
+        if (!node.hasOwnProperty(part))
+            return null;
+
+        node = node[part];
+    }
+
+    return node;
 };
 
 /**
  * Get a configuration value by the given key as a number.
+ * Configuration keys can be tiered, such as: foo.bar.sheep
  * Returns NaN if the configuration value does not exist or is not a number.
  * @param {string} key 
  */
@@ -42,6 +55,7 @@ const getNumber = (key) => {
 
 /**
  * Get a configuration value by the given key as a boolean.
+ * Configuration keys can be tiered, such as: foo.bar.sheep
  * Returns NULL if the configuration key does not exist.
  * @param {string} key 
  */
@@ -52,6 +66,7 @@ const getBool = (key) => {
 
 /**
  * Get a configuration value by the given key as a string.
+ * Configuration keys can be tiered, such as: foo.bar.sheep
  * Returns NULL if the configuration key does not exist.
  * @param {string} key 
  */
@@ -62,13 +77,26 @@ const getString = (key) => {
 
 /**
  * Set a configuration value.
+ * Configuration keys can be tiered, such as: foo.bar.sheep
  * Changes will be persisted to disk on the next tick, allowing
  * consecutive calls in the same tick to be batched.
  * @param {string} key 
  * @param {mixed} value 
  */
 const set = (key, value) => {
-    config[key] = value;
+    let node = config;
+
+    // Resolve configuration key path.
+    const parts = key.split('.');
+    const actualKey = parts.pop();
+    for (const part of parts) {
+        if (!node.hasOwnProperty(part))
+            node[part] = {};
+
+        node = node[part];
+    }
+
+    node[actualKey] = value;
     log.write('Set configuration value %s -> %s', key, value);
 
     if (!isSaving) {
