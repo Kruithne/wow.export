@@ -1,5 +1,7 @@
 const EventEmitter = require('events');
 
+let toastTimer = -1; // Used by setToast() for TTL toast prompts.
+
 // core.events is a global event handler used for dispatching
 // events from any point in the system, to any other point.
 const events = new EventEmitter();
@@ -67,9 +69,23 @@ const setScreen = (screenID) => {
  * @param {string} toastType 'error', 'info', 'success', 'progress'
  * @param {string} message 
  * @param {object} options
+ * @param {number} ttl Time in millseconds before removing the toast.
  */
-const setToast = (toastType, message, options = null) => {
+const setToast = (toastType, message, options = null, ttl = -1) => {
     view.toast = { type: toastType, message, options };
+
+    // Remove any outstanding toast timer we may have.
+    if (toastTimer > -1)
+        clearTimeout(toastTimer);
+
+    // Create a timer to remove this toast.
+    if (ttl > -1) {
+        toastTimer = setTimeout(() => {
+            view.toast = null;
+            toastTimer = -1;
+        }, ttl);
+    }
 }
+
 
 module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen, setToast };
