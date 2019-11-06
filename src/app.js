@@ -164,11 +164,8 @@ document.addEventListener('click', function(e) {
             if (updateAvailable) {
                 core.events.once('toast-accept-update', () => updater.applyUpdate());
 
-                core.view.toast = {
-                    type: 'info',
-                    message: 'A new update is available. You should update, it\'s probably really cool.',
-                    options: {
-                        'toast-accept-update': 'Update Now',
+                core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+                    'toast-accept-update': 'Update Now',
                         'toast-dismiss': 'Maybe Later'
                     }
                 };

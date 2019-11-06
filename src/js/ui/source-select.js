@@ -69,7 +69,7 @@ core.events.once('screen-source-select', async () => {
 
             config.save(); // Changes to arrays are not automatically detected.
         } catch (e) {
-            core.view.toast = { type: 'error', message: util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value) };
+            core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value));
             log.write('Failed to initialize local CASC source: %s', e.message);
 
             // In the event that the given directory was once a valid installation and
@@ -110,7 +110,7 @@ core.events.once('screen-source-select', async () => {
                 
                 core.view.availableRemoteBuilds = cascSource.getProductList();
             } catch (e) {
-                core.view.toast = { type: 'error', message: util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()) };
+                core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()));
                 log.write('Failed to initialize remote CASC source: %s', e.message);
             }
         });

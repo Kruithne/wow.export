@@ -62,4 +62,14 @@ const setScreen = (screenID) => {
     view.screen = screenID;
 };
 
-module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen };
+/**
+ * Display a toast message.
+ * @param {string} toastType 'error', 'info', 'success', 'progress'
+ * @param {string} message 
+ * @param {object} options
+ */
+const setToast = (toastType, message, options = null) => {
+    view.toast = { type: toastType, message, options };
+}
+
+module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen, setToast };
