@@ -166,9 +166,8 @@ document.addEventListener('click', function(e) {
 
                 core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
                     'toast-accept-update': 'Update Now',
-                        'toast-dismiss': 'Maybe Later'
-                    }
-                };
+                    'toast-dismiss': 'Maybe Layer'
+                });
             }
         });
     }

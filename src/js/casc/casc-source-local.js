@@ -43,6 +43,17 @@ class CASCLocal extends CASC {
 
         return products;
     }
+
+    /**
+     * Load the CASC interface with the given build.
+     * @param {number} buildIndex
+     */
+    async load(buildIndex) {
+        this.build = this.builds[buildIndex];
+        log.write('Loading local CASC build: %o', this.build);
+        
+        // ToDo: Everything.
+    }
 }
 
 module.exports = CASCLocal;

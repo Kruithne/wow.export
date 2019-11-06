@@ -121,13 +121,16 @@ core.events.once('screen-source-select', async () => {
     core.events.on('click-source-build', (index) => {
         core.block(async () => {
             core.showLoadScreen();
-            core.setLoadProgress('Not actually doing anything right now!', 0.5);
+
+            try {
+                await cascSource.load(index);
+                core.setScreen('tab-models');
+            } catch (e) {
+                // ToDo: Display error to user.
+                log.write('Failed to load CASC: %s', e.message);
+                core.setScreen('source-select');
+            }
         });
-
-        // ToDo: Invoke cascSource.load(); and await it's return.
-        // ToDo: If there are any errors during casc load, revert back to source-select.
-
-        //core.setScreen('tab-models');
     });
 
     // Once all pings are resolved, pick the fastest.

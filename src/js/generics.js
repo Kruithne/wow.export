@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
+const BufferWrapper = require('./buffer');
 
 const MAX_HTTP_REDIRECT = 4;
 
@@ -39,6 +40,19 @@ const consumeUTF8Stream = async (stream) => {
         stream.setEncoding('utf8');
         stream.on('data', chunk => data += chunk);
         stream.on('end', () => resolve(data));
+    });
+};
+
+/**
+ * Consume the entire contents of a stream into a buffer.
+ * @param {object} stream 
+ * @param {number} contentLength Expected content length.
+ */
+const consumeStream = async (stream, contentLength) => {
+    return new Promise(resolve => {
+        const buf = BufferWrapper.allocUnsafe(contentLength);
+        stream.on('data', chunk => buf.writeBuffer(chunk));
+        stream.on('end', () => resolve(buf));
     });
 };
 
@@ -187,5 +201,6 @@ module.exports = {
     downloadFile,
     ping,
     get,
-    consumeUTF8Stream
+    consumeUTF8Stream,
+    consumeStream
 };
