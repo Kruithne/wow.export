@@ -32,6 +32,8 @@ class CASCRemote extends CASC {
         for (const result of results)
             if (result.status === 'fulfilled')
                 this.builds.push(result.value.find(e => e.Region === this.region));
+
+        log.write('%o', this.builds);
     }
 
     /**
