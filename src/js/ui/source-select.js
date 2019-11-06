@@ -96,33 +96,31 @@ core.events.once('screen-source-select', async () => {
 
     // Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
     // Attempt to initialize a remote CASC source using the selected region.
-    core.events.on('click-source-remote', async () => {
-        try {
-            core.view.isBusy++;
-
-            cascSource = new CASCRemote(core.view.selectedCDNRegion.tag);
-            await cascSource.init();
-            
-            core.view.availableRemoteBuilds = cascSource.getProductList();
-            core.view.isBusy--;
-        } catch (e) {
-            log.write('Failed to initialize remote CASC source: %s', e.message);
-        }
+    core.events.on('click-source-remote', () => {
+        core.block(async () => {
+            try {
+                cascSource = new CASCRemote(core.view.selectedCDNRegion.tag);
+                await cascSource.init();
+                
+                core.view.availableRemoteBuilds = cascSource.getProductList();
+            } catch (e) {
+                log.write('Failed to initialize remote CASC source: %s', e.message);
+            }
+        });
     });
 
     // Register for 'click-source-build' events which are fired when the user selects
     // a build either for remote or local installations.
     core.events.on('click-source-build', (index) => {
-        core.view.isBusy++;
-        core.view.screen = 'loading';
-        core.view.loadingTitle = 'Loading, please wait...';
-        core.view.loadingProgress = 'Not actually doing anything right now!';
+        core.block(async () => {
+            core.showLoadScreen();
+            core.setLoadProgress('Not actually doing anything right now!', 0.5);
+        });
 
         // ToDo: Invoke cascSource.load(); and await it's return.
         // ToDo: If there are any errors during casc load, revert back to source-select.
 
-        //casc.view.screen = 'tab-models';
-        //casc.view.isBusy--;
+        //core.setScreen('tab-models');
     });
 
     // Once all pings are resolved, pick the fastest.

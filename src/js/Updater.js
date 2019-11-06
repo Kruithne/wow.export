@@ -38,59 +38,60 @@ const checkForUpdates = async () => {
  * Apply an outstanding update.
  */
 const applyUpdate = async () => {
-    core.view.isBusy++;
-    core.view.screen = 'loading';
-    core.view.loadingTitle = 'Updating, please wait...';
+    core.block(async () => {
+        core.showLoadScreen('Updating, please wait...');
 
-    const requiredFiles = [];
+        const requiredFiles = [];
 
-    // Check required files and calculate total file size...
-    let totalSize = 0;
-    const entries = Object.entries(updateManifest.contents);
-    for (let i = 0; i < entries.length; i++) {
-        const [file, meta] = entries[i];
-        const [hash, size] = meta;
+        // Check required files and calculate total file size...
+        let totalSize = 0;
+        const entries = Object.entries(updateManifest.contents);
+        for (let i = 0; i < entries.length; i++) {
+            const [file, meta] = entries[i];
+            const [hash, size] = meta;
 
-        core.view.loadingProgress = util.format('Verifying local files (%d / %d)', i + 1, entries.length);
-        totalSize += size;
+            core.setLoadProgress(util.format('Verifying local files (%d / %d)', i + 1, entries.length), (i + 1) / entries.length);
+            totalSize += size;
 
-        const localPath = path.join(constants.INSTALL_PATH, file);
-        const node = { file, size };
+            const localPath = path.join(constants.INSTALL_PATH, file);
+            const node = { file, size };
 
-        try {
-            const stats = await fsp.stat(localPath);
+            try {
+                const stats = await fsp.stat(localPath);
 
-            // If the file size is different, skip hashing and just mark for update.
-            if (stats.size !== size) {
-                console.log('%d !== %d', stats.size, size);
+                // If the file size is different, skip hashing and just mark for update.
+                if (stats.size !== size) {
+                    console.log('%d !== %d', stats.size, size);
+                    requiredFiles.push(node);
+                    continue;
+                }
+
+                // Verify local sha256 hash with remote one.
+                const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
+                if (localHash !== hash) {
+                    console.log('%s !== %s', localHash, hash);
+                    requiredFiles.push(node);
+                    continue;
+                }
+            } catch (e) {
+                // Error thrown, likely due to file not existing.
                 requiredFiles.push(node);
-                continue;
             }
-
-            // Verify local sha256 hash with remote one.
-            const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
-            if (localHash !== hash) {
-                console.log('%s !== %s', localHash, hash);
-                requiredFiles.push(node);
-                continue;
-            }
-        } catch (e) {
-            // Error thrown, likely due to file not existing.
-            requiredFiles.push(node);
         }
-    }
 
-    const remoteDir = util.format(constants.UPDATE.URL, nw.App.manifest.flavour);
+        const remoteDir = util.format(constants.UPDATE.URL, nw.App.manifest.flavour);
 
-    let downloadSize = 0;
-    for (const node of requiredFiles) {
-        core.view.loadingProgress = util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor((downloadSize / totalSize) * 100));
-        await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
-        downloadSize += node.size;
-    }
+        let downloadSize = 0;
+        for (const node of requiredFiles) {
+            const pct = (downloadSize / totalSize);
+            core.setLoadProgress(util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor(pct * 100)), pct);
+            await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
+            downloadSize += node.size;
+        }
 
-    core.view.loadingProgress = 'Restarting application';
-    await launchUpdater();
+        core.view.loadingProgress = 'Restarting application';
+        await launchUpdater();
+    });
 };
 
 /**
