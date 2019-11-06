@@ -122,6 +122,10 @@ core.events.once('screen-source-select', async () => {
         core.block(async () => {
             core.showLoadScreen();
 
+            // Wipe the available build lists.
+            core.view.availableLocalBuilds = [];
+            core.view.availableRemoteBuilds = [];
+
             try {
                 await cascSource.load(index);
                 core.setScreen('tab-models');
