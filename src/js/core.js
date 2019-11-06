@@ -13,7 +13,8 @@ module.exports = {
     view: {
         screen: null, // Controls the currently active interface screen.
         isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-        updateProgress: '', // Sets the progress text displayed on the update splash.
+        loadingProgress: '', // Sets the progress text for the loading screen.
+        loadingTitle: '', // Sets the title text for the loading screen.
         toast: null, // Controls the currently active toast bar.
         cdnRegions: [], // CDN region data.
         selectedCDNRegion: null, // Active CDN region.

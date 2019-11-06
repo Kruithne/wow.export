@@ -39,7 +39,9 @@ const checkForUpdates = async () => {
  */
 const applyUpdate = async () => {
     core.view.isBusy++;
-    core.view.screen = 'updater';
+    core.view.screen = 'loading';
+    core.view.loadingTitle = 'Updating, please wait...';
+
     const requiredFiles = [];
 
     // Check required files and calculate total file size...
@@ -49,7 +51,7 @@ const applyUpdate = async () => {
         const [file, meta] = entries[i];
         const [hash, size] = meta;
 
-        core.view.updateProgress = util.format('Verifying local files (%d / %d)', i + 1, entries.length);
+        core.view.loadingProgress = util.format('Verifying local files (%d / %d)', i + 1, entries.length);
         totalSize += size;
 
         const localPath = path.join(constants.INSTALL_PATH, file);
@@ -82,12 +84,12 @@ const applyUpdate = async () => {
 
     let downloadSize = 0;
     for (const node of requiredFiles) {
-        core.view.updateProgress = util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor((downloadSize / totalSize) * 100));
+        core.view.loadingProgress = util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor((downloadSize / totalSize) * 100));
         await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
         downloadSize += node.size;
     }
 
-    core.view.updateProgress = 'Restarting application';
+    core.view.loadingProgress = 'Restarting application';
     await launchUpdater();
 };
 

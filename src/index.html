@@ -20,10 +20,10 @@
                 </div>
             </div>
             <div id="content">
-                <div id="update-splash" v-if="screen === 'updater'">
-                    <div id="update-splash-icon"></div>
-                    <span id="update-splash-title">Updating, please wait...</span>
-                    <span id="update-splash-progress">{{ updateProgress }}</span>
+                <div id="loading" v-if="screen === 'loading'">
+                    <div id="loading-icon"></div>
+                    <span id="loading-title">{{ loadingTitle }}</span>
+                    <span id="loading-progress">{{ loadingProgress }}</span>
                 </div>
                 <div id="toast" v-if="toast" :class="toast.type">
                     {{ toast.message }}
