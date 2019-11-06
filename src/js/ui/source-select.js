@@ -8,6 +8,8 @@ const log = require('../log');
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
 
+let cascSource = null;
+
 core.events.once('screen-source-select', async () => {
     const pings = [];
     const regions = core.view.cdnRegions;
@@ -45,10 +47,10 @@ core.events.once('screen-source-select', async () => {
 
     const openInstall = async (installPath) => {
         try {
-            const source = new CASCLocal(installPath);
-            await source.init();
+            cascSource = new CASCLocal(installPath);
+            await cascSource.init();
 
-            core.view.availableLocalBuilds = source.getProductList();
+            core.view.availableLocalBuilds = cascSource.getProductList();
 
             // Update the recent local installation list..
             const preIndex = recentLocal.indexOf(installPath);
@@ -98,14 +100,29 @@ core.events.once('screen-source-select', async () => {
         try {
             core.view.isBusy++;
 
-            const source = new CASCRemote(core.view.selectedCDNRegion.tag);
-            await source.init();
+            cascSource = new CASCRemote(core.view.selectedCDNRegion.tag);
+            await cascSource.init();
             
-            core.view.availableRemoteBuilds = source.getProductList();
+            core.view.availableRemoteBuilds = cascSource.getProductList();
             core.view.isBusy--;
         } catch (e) {
             log.write('Failed to initialize remote CASC source: %s', e.message);
         }
+    });
+
+    // Register for 'click-source-build' events which are fired when the user selects
+    // a build either for remote or local installations.
+    core.events.on('click-source-build', (index) => {
+        core.view.isBusy++;
+        core.view.screen = 'loading';
+        core.view.loadingTitle = 'Loading, please wait...';
+        core.view.loadingProgress = 'Not actually doing anything right now!';
+
+        // ToDo: Invoke cascSource.load(); and await it's return.
+        // ToDo: If there are any errors during casc load, revert back to source-select.
+
+        //casc.view.screen = 'tab-models';
+        //casc.view.isBusy--;
     });
 
     // Once all pings are resolved, pick the fastest.
