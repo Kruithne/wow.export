@@ -45,7 +45,7 @@ class CASCRemote extends CASC {
         const res = await generics.get(url);
 
         if (res.statusCode !== 200)
-            throw new Error('HTTP %d from remote CASC endpoint: %s', res.statusCode, url);
+            throw new Error(util.format('HTTP %d from remote CASC endpoint: %s', res.statusCode, url));
 
         const config = VersionConfig(await generics.consumeUTF8Stream(res));
 
