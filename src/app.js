@@ -61,6 +61,9 @@ const log = require('./js/log');
 const config = require('./js/config');
 require('./js/ui/source-select');
 
+const win = nw.Window.get();
+win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
+
 // Prevent files from being dropped onto the window.
 // GH-2: Implement drag-and-drop support.
 window.ondragover = e => { e.preventDefault(); return false; };
@@ -68,7 +71,7 @@ window.ondrop = e => { e.preventDefault(); return false; };
 
 // Launch DevTools for debug builds.
 if (!BUILD_RELEASE)
-    nw.Window.get().showDevTools();
+    win.showDevTools();
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
@@ -133,6 +136,14 @@ document.addEventListener('click', function(e) {
              */
             screen: function(val) {
                 core.events.emit('screen-' + val);
+            },
+
+            /**
+             * Invoked when the active loading percentage is changed.
+             * @param {float} val 
+             */
+            loadPct: function(val) {
+                win.setProgressBar(val);
             }
         }
     });

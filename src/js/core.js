@@ -1,5 +1,4 @@
 const EventEmitter = require('events');
-const win = nw.Window.get();
 
 // core.events is a global event handler used for dispatching
 // events from any point in the system, to any other point.
@@ -13,6 +12,7 @@ const view = {
     isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
     loadingProgress: '', // Sets the progress text for the loading screen.
     loadingTitle: '', // Sets the title text for the loading screen.
+    loadPct: -1, // Controls active loading bar percentage.
     toast: null, // Controls the currently active toast bar.
     cdnRegions: [], // CDN region data.
     selectedCDNRegion: null, // Active CDN region.
@@ -41,7 +41,7 @@ const block = async (func) => {
  */
 const setLoadProgress = (text, pct = -1) => {
     view.loadingProgress = text;
-    win.setProgressBar(pct);
+    view.loadPct = pct;
 };
 
 /**
@@ -58,10 +58,7 @@ const showLoadScreen = (text) => {
  * @param {string} screenID 
  */
 const setScreen = (screenID) => {
-    // Ensure loading progress is dissolved if we're coming from a load screen.
-    if (view.screen === 'loading')
-        win.setProgressBar(-1);
-
+    view.loadPct = -1; // Ensure we reset if coming from a loading screen.
     view.screen = screenID;
 };
 
