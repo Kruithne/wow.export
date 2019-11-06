@@ -18,6 +18,35 @@ const get = async (url) => {
 };
 
 /**
+ * Dispatch an async handler for an array of items with a limit to how
+ * many can be resolving at once.
+ * @param {Array} items Each one is passed to the handler.
+ * @param {function} handler Must be async.
+ * @param {number} limit This many will be resolving at any given time.
+ */
+const queue = async (items, handler, limit) => {
+    return new Promise(resolve => {
+        let free = limit;
+        let complete = -1;
+        let index = 0;
+        const check = () => {
+            complete++;
+            free++;
+
+            while (free > 0 && index < items.length) {
+                handler(items[index]).then(check);
+                index++; free--;
+            }
+
+            if (complete === items.length)
+                return resolve();
+        };
+
+        check();
+    });
+};
+
+/**
  * Ping a URL and measure the response time.
  * Not perfectly accurate, but good enough for our purposes.
  * Throws on error or HTTP code other than 200.
@@ -202,5 +231,6 @@ module.exports = {
     ping,
     get,
     consumeUTF8Stream,
-    consumeStream
+    consumeStream,
+    queue
 };

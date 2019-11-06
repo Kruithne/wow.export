@@ -125,13 +125,15 @@ class CASCRemote extends CASC {
 
         // Download archive indexes.
         this.archives = {};
+        let archiveProgress = 0;
         const archiveKeys = this.cdnConfig.archives.split(' ');
         const archiveCount = archiveKeys.length;
-        for (let i = 0; i < archiveKeys.length; i++) {
-            const key = archiveKeys[i];
-            core.setLoadProgress(util.format('Downloading archive %s / %s', i + 1, archiveCount), 0.1 + ((i + 1 / archiveCount) / 10));
+        await generics.queue(archiveKeys, async (key) => {
             this.archives[key] = await this.getIndexFile(key);
-        }
+
+            archiveProgress++;
+            core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
+        }, 50);
 
         // ToDo: Encoding files.
         // ToDo: Root file.
