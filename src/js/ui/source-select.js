@@ -98,12 +98,19 @@ core.events.once('screen-source-select', async () => {
     // Attempt to initialize a remote CASC source using the selected region.
     core.events.on('click-source-remote', () => {
         core.block(async () => {
+            const tag = core.view.selectedCDNRegion.tag;
+
             try {
-                cascSource = new CASCRemote(core.view.selectedCDNRegion.tag);
+                cascSource = new CASCRemote(tag);
                 await cascSource.init();
+
+                // No builds available, likely CDN is not available.
+                if (cascSource.builds.length === 0)
+                    throw new Error('No builds available.');
                 
                 core.view.availableRemoteBuilds = cascSource.getProductList();
             } catch (e) {
+                core.view.toast = { type: 'error', message: util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()) };
                 log.write('Failed to initialize remote CASC source: %s', e.message);
             }
         });
