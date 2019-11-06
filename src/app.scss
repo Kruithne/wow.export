@@ -34,6 +34,10 @@
     outline: 0;
 }
 
+[v-cloak] {
+    display: none !important;
+}
+
 a {
     color: var(--font-primary);
     text-decoration: none;
@@ -58,7 +62,3 @@ a {
 @import './css/font';
 @import './css/base';
 @import './css/ui';
-
-[v-cloak] {
-    display: none;
-}
