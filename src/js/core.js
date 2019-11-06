@@ -65,6 +65,19 @@ const setScreen = (screenID) => {
 };
 
 /**
+ * Hide the currently active toast prompt.
+ */
+const hideToast = () => {
+    // Cancel outstanding toast expiry timer.
+    if (toastTimer > -1) {
+        clearTimeout(toastTimer);
+        toastTimer = -1;
+    }
+
+    view.toast = null;
+};
+
+/**
  * Display a toast message.
  * @param {string} toastType 'error', 'info', 'success', 'progress'
  * @param {string} message 
@@ -79,13 +92,9 @@ const setToast = (toastType, message, options = null, ttl = -1) => {
         clearTimeout(toastTimer);
 
     // Create a timer to remove this toast.
-    if (ttl > -1) {
-        toastTimer = setTimeout(() => {
-            view.toast = null;
-            toastTimer = -1;
-        }, ttl);
-    }
+    if (ttl > -1)
+        toastTimer = setTimeout(hideToast, ttl);
 }
 
 
-module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen, setToast };
+module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen, setToast, hideToast };
