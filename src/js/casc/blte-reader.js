@@ -80,7 +80,6 @@ class BLTEReader extends BufferWrapper {
         }
 
         this._buf = Buffer.alloc(allocSize);
-        this._processBlock();
     }
 
     /**
