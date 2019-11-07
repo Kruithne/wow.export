@@ -81,7 +81,10 @@ const consumeStream = async (stream, contentLength) => {
     return new Promise(resolve => {
         const buf = BufferWrapper.allocUnsafe(contentLength);
         stream.on('data', chunk => buf.writeBuffer(chunk));
-        stream.on('end', () => resolve(buf));
+        stream.on('end', () => {
+            buf.seek(0); // Reset position.
+            resolve(buf);
+        });
     });
 };
 
