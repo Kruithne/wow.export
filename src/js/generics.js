@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const BufferWrapper = require('./buffer');
+const log = require('./log');
 
 const MAX_HTTP_REDIRECT = 4;
 
@@ -157,6 +158,14 @@ const createDirectory = async (dir) => {
 };
 
 /**
+ * generics.mark() will mark the current timestamp.
+ * generics.measure() will return the time in ms since the generics.mark().
+ */
+let measureStart = -1;
+const mark = () => measureStart = Date.now();
+const measure = () => (Date.now() - measureStart) / 1000;
+
+/**
  * Returns a promise which resolves after a redraw.
  * This is used to ensure that components have redrawn.
  */
@@ -248,5 +257,7 @@ module.exports = {
     consumeUTF8Stream,
     consumeStream,
     queue,
-    redraw
+    redraw,
+    measure,
+    mark
 };

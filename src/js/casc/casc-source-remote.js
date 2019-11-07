@@ -128,6 +128,8 @@ class CASCRemote extends CASC {
         let archiveProgress = 0;
         const archiveKeys = this.cdnConfig.archives.split(' ');
         const archiveCount = archiveKeys.length;
+
+        generics.mark();
         await generics.queue(archiveKeys, async (key) => {
             this.archives[key] = await this.getIndexFile(key);
 
@@ -135,14 +137,20 @@ class CASCRemote extends CASC {
             await core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
         }, 50);
 
+        log.write('Downloaded %d archives in %dms', archiveCount, generics.measure());
+
         // Download encoding file.
         const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
 
+        generics.mark();
         await core.setLoadProgress('Fetching encoding table', 0.2);
         const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]));
+        log.write('Downloaded encoding table in %dms', generics.measure());
 
+        generics.mark();
         await core.setLoadProgress('Parsing encoding table', 0.3);
         const enc = await this.parseEncodingFile(encRaw, encKeys[1]);
+        log.write('Parsed encoding table in %dms', generics.measure());
 
         // ToDo: Root file.
     }
