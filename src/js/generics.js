@@ -156,6 +156,18 @@ const createDirectory = async (dir) => {
     });
 };
 
+/**
+ * Returns a promise which resolves after a redraw.
+ * This is used to ensure that components have redrawn.
+ */
+const redraw = async () => {
+    return new Promise(resolve => {
+        // This is a hack to ensure components redraw.
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=675795
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+};
+
 const JEDEC = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
 /**
@@ -235,5 +247,6 @@ module.exports = {
     get,
     consumeUTF8Stream,
     consumeStream,
-    queue
+    queue,
+    redraw
 };

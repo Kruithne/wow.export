@@ -50,7 +50,7 @@ const applyUpdate = async () => {
             const [file, meta] = entries[i];
             const [hash, size] = meta;
 
-            core.setLoadProgress(util.format('Verifying local files (%d / %d)', i + 1, entries.length), (i + 1) / entries.length);
+            await core.setLoadProgress(util.format('Verifying local files (%d / %d)', i + 1, entries.length), (i + 1) / entries.length);
             totalSize += size;
 
             const localPath = path.join(constants.INSTALL_PATH, file);
@@ -84,7 +84,7 @@ const applyUpdate = async () => {
         let downloadSize = 0;
         for (const node of requiredFiles) {
             const pct = (downloadSize / totalSize);
-            core.setLoadProgress(util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor(pct * 100)), pct);
+            await core.setLoadProgress(util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor(pct * 100)), pct);
             await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
             downloadSize += node.size;
         }

@@ -1,44 +1,44 @@
 const util = require('util');
+const crypto = require('crypto');
 
 const INT_8 = Symbol('int8');
-const UINT_8 = Symbol('uint8');
 const INT_16 = Symbol('int16');
-const UINT_16 = Symbol('uint16');
 const INT_32 = Symbol('int32');
-const UINT_32 = Symbol('uint32');
 const FLOAT = Symbol('float');
+const INT_40 = Symbol('int40');
 
 const ENDIAN_LITTLE = Symbol('LE');
 const ENDIAN_BIG = Symbol('BE');
 
-const INT_SIZE = {
+const INT_SIGNED = Symbol('signed');
+const INT_UNSIGNED = Symbol('unsigned');
+
+const TYPE_SIZE = {
     [INT_8]: 1,
-    [UINT_8]: 1,
     [INT_16]: 2,
-    [UINT_16]: 2,
     [INT_32]: 4,
-    [UINT_32]: 4,
-    [FLOAT]: 4
+    [INT_40]: 5
 };
 
-const BUF_FUNC = {
-    [ENDIAN_LITTLE]: {
-        [INT_8]: Buffer.prototype.readInt8,
-        [UINT_8]: Buffer.prototype.readUInt8,
-        [INT_16]: Buffer.prototype.readInt16LE,
-        [UINT_16]: Buffer.prototype.readUInt16LE,
-        [INT_32]: Buffer.prototype.readInt32LE,
-        [UINT_32]: Buffer.prototype.readUInt32LE,
-        [FLOAT]: Buffer.prototype.readFloatLE
+const BUF_READ_FUNC = {
+    [INT_SIGNED]: {
+        [ENDIAN_LITTLE]: Buffer.prototype.readIntLE,
+        [ENDIAN_BIG]: Buffer.prototype.readIntBE
     },
-    [ENDIAN_BIG]: {
-        [INT_8]: Buffer.prototype.readInt8,
-        [UINT_8]: Buffer.prototype.readUInt8,
-        [INT_16]: Buffer.prototype.readInt16BE,
-        [UINT_16]: Buffer.prototype.readUInt16BE,
-        [INT_32]: Buffer.prototype.readInt32BE,
-        [UINT_32]: Buffer.prototype.readUInt32BE,
-        [FLOAT]: Buffer.prototype.readFloatBE
+    [INT_UNSIGNED]: {
+        [ENDIAN_LITTLE]: Buffer.prototype.readUIntLE,
+        [ENDIAN_BIG]: Buffer.prototype.readUIntBE
+    }
+};
+
+const BUF_WRITE_FUNC = {
+    [INT_SIGNED]: {
+        [ENDIAN_LITTLE]: Buffer.prototype.writeIntLE,
+        [ENDIAN_BIG]: Buffer.prototype.writeIntBE
+    },
+    [INT_UNSIGNED]: {
+        [ENDIAN_LITTLE]: Buffer.prototype.writeUIntLE,
+        [ENDIAN_BIG]: Buffer.prototype.writeUIntBE
     }
 };
 
@@ -125,66 +125,86 @@ class BufferWrapper {
     }
 
     /**
-     * Read a signed 8-bit integer.
-     * @param {Symbol} endian
-     * @returns {number}
+     * Shift the position of the buffer relative to its current position.
+     * Positive numbers seek forward, negative seek backwards.
+     * @param {number} ofs 
      */
-    readInt8(endian) {
-        return this._readInt(INT_8, endian);
+    move(ofs) {
+        const pos = this.offset + ofs;
+        if (pos < 0 || pos >= this.byteLength)
+            throw new Error(util.format('move() offset out of bounds %d -> %d ! %d', ofs, pos, this.byteLength));
+
+        this._ofs = pos;
     }
 
     /**
-     * Read an unsigned 8-bit integer.
+     * Read one or more signed 8-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {number}
+     * @returns {number|number[]}
      */
-    readUInt8(endian) {
-        return this._readInt(UINT_8, endian);
+    readInt8(count = 1, endian) {
+        return this._readInt(INT_8, INT_SIGNED, count, endian);
     }
 
     /**
-     * Read a signed 16-bit integer.
+     * Read one or more unsigned 8-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {number}
+     * @returns {number|number[]}
      */
-    readInt16(endian) {
-        return this._readInt(INT_16, endian);
+    readUInt8(count = 1, endian) {
+        return this._readInt(INT_8, INT_UNSIGNED, count, endian);
     }
 
     /**
-     * Read an unsigned 16-bit integer.
+     * Read one or more signed 16-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {number}
+     * @returns {number|number[]}
      */
-    readUInt16(endian) {
-        return this._readInt(UINT_16, endian);
+    readInt16(count = 1, endian) {
+        return this._readInt(INT_16, INT_SIGNED, count, endian);
     }
 
     /**
-     * Read a signed 32-bit integer.
+     * Read one or more unsigned 16-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {number}
+     * @returns {number|number[]}
      */
-    readInt32(endian) {
-        return this._readInt(INT_32, endian);
+    readUInt16(count = 1, endian) {
+        return this._readInt(INT_16, INT_UNSIGNED, count, endian);
     }
 
     /**
-     * Read an unsigned 32-bit integer.
+     * Read one or more signed 32-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {number}
+     * @returns {number|number[]}
      */
-    readUInt32(endian) {
-        return this._readInt(UINT_32, endian);
+    readInt32(count = 1, endian) {
+        return this._readInt(INT_32, INT_SIGNED, count, endian);
     }
 
     /**
-     * Read a 32-bit float.
+     * Read one or more unsigned 32-bit integers.
+     * @param {number} count
      * @param {Symbol} endian
-     * @returns {float}
+     * @returns {number|number[]}
      */
-    readFloat(endian) {
-        return this._readInt(FLOAT, endian);
+    readUInt32(count = 1, endian) {
+        return this._readInt(INT_32, INT_UNSIGNED, count, endian);
+    }
+
+    /**
+     * Read one or more 40-bit integers.
+     * @param {number} count 
+     * @param {Symbol} endian 
+     * @returns {number|number[]}
+     */
+    readInt40(count = 1, endian) {
+        return this._readInt(INT_40, INT_SIGNED, count, endian);
     }
 
     /**
@@ -194,12 +214,83 @@ class BufferWrapper {
      */
     readString(length, encoding = 'utf8') {
         // Ensure we don't go out-of-bounds reading the string.
-        if (this._ofs + length > this.byteLength)
-            throw new Error(util.format('readString() out-of-bounds: %d > %d', this._ofs + length, this.byteLength));
+        this._checkBounds(length);
 
-        const str = this._buf.toString(encoding, this._ofs, length);
+        const str = this._buf.toString(encoding, this._ofs, this._ofs + length);
         this._ofs += length;
         return str;
+    }
+
+    /**
+     * Read a buffer from this buffer.
+     * @param {number} length 
+     */
+    readBuffer(length) {
+        if (length === undefined) // Default to consuming all remaining bytes.
+            length = this.remainingBytes;
+
+        // Ensure we have enough data left to fulfill this.
+        this._checkBounds(length);
+
+        const buf = BufferWrapper.allocUnsafe(length);
+        this.raw.copy(buf.raw, 0, this._ofs, this._ofs + length);
+        this._ofs += length;
+
+        return buf;
+    }
+
+    /**
+     * Write one or more signed 8-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeInt8(value, endian) {
+        this._writeInt(INT_8, INT_SIGNED, value, endian);
+    }
+
+    /**
+     * Write one or more unsigned 8-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeUInt8(value, endian) {
+        this._writeInt(INT_8, INT_UNSIGNED, value, endian);
+    }
+
+    /**
+     * Write one or more signed 16-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeInt16(value, endian) {
+        this._writeInt(INT_16, INT_SIGNED, value, endian);
+    }
+
+    /**
+     * Write one or more unsigned 16-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeUInt16(value, endian) {
+        this._writeInt(INT_16, INT_UNSIGNED, value, endian);
+    }
+
+    /**
+     * Write one or more signed 32-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeInt32(value, endian) {
+        this._writeInt(INT_32, INT_SIGNED, value, endian);
+    }
+
+    /**
+     * Write one or more unsigned 32-bit integers.
+     * @param {number|number[]} value 
+     * @param {Symbol} endian 
+     */
+    writeUInt32(value, endian) {
+        this._writeInt(INT_32, INT_UNSIGNED, value, endian);
     }
 
     /**
@@ -207,27 +298,98 @@ class BufferWrapper {
      * @param {Buffer|BufferWrapper} buf 
      */
     writeBuffer(buf) {
+        let startIndex = 0;
+        let copyLength = 0;
+
         // Unwrap the internal buffer if this is a wrapper.
-        if (buf instanceof BufferWrapper)
+        if (buf instanceof BufferWrapper) {
+            startIndex = buf.offset;
+            copyLength = buf.remainingBytes;
             buf = buf.raw;
+        } else {
+            copyLength = buf.byteLength;
+        }
 
         // Ensure consuming this buffer won't overflow us.
-        if (buf.byteLength > this.remainingBytes)
-            throw new Error(util.format('Unable to write buffer; capacity reached. %d > %d', buf.byteLength, this.remainingBytes));
+        this._checkBounds(buf.byteLength);
 
-        buf.copy(this._buf, this._ofs, 0, buf.byteLength);
-        this._ofs += buf.byteLength;
+        buf.copy(this._buf, this._ofs, startIndex, startIndex + copyLength);
+        this._ofs += copyLength;
     }
 
     /**
-     * Read an integer from the buffer.
+     * Calculate a hash of given bytes.
+     * @param {number} length Amount of bytes to process.
+     * @param {string} hash Hashing method, defaults to 'md5'.
+     * @param {string} encoding Output encoding, defaults to 'hex'.
+     */
+    calculateHash(length, hash = 'md5', encoding = 'hex') {
+        return crypto.createHash(hash).update(this.readBuffer(length).raw).digest(encoding);
+    }
+
+    /**
+     * Check a given length does not exceed current capacity.
+     * @param {number} length 
+     */
+    _checkBounds(length) {
+        if (this.remainingBytes < length)
+            throw new Error(util.format('Buffer operation out-of-bounds: %d > %d', length, this.remainingBytes));
+    }
+
+    /**
+     * Read one or more integers from the buffer.
      * @param {Symbol} type 
+     * @param {Symbol} signed
+     * @param {number} count
      * @param {Symbol} endian
      */
-    _readInt(type, endian) {
-        const value = BUF_FUNC[endian || this._end][type].call(this._buf, this._ofs);
-        this._ofs += INT_SIZE[type];
-        return value;
+    _readInt(type, signed, count, endian) {
+        if (count > 1) {
+            const size = TYPE_SIZE[type];
+            this._checkBounds(size * count);
+
+            const out = new Array(count);
+            const func = BUF_READ_FUNC[signed][endian || this._end];
+            for (let i = 0; i < count; i++) {
+                out[i] = func.call(this._buf, this._ofs, size);
+                this._ofs += size;
+            }
+
+            return out;
+        } else {
+            const size = TYPE_SIZE[type];
+            this._checkBounds(size);
+
+            const value = BUF_READ_FUNC[signed][endian || this._end].call(this._buf, this._ofs, size);
+            this._ofs += size;
+            return value;
+        }
+    }
+
+    /**
+     * Write one or more integers to this buffer.
+     * @param {Symbol} type 
+     * @param {Symbol} signed
+     * @param {number|Array} value 
+     * @param {Symbol} endian 
+     */
+    _writeInt(type, signed, value, endian) {
+        if (Array.isArray(value)) {
+            const size = TYPE_SIZE[type];
+            this._checkBounds(size * value.length);
+
+            const func = BUF_WRITE_FUNC[signed][endian || this._end];
+            for (const val of value) {
+                func.call(this._buf, val, this._ofs, size);
+                this._ofs += size;
+            }
+        } else {
+            const size = TYPE_SIZE[type];
+            this._checkBounds(size);
+
+            BUF_WRITE_FUNC[signed][endian || this._end].call(this._buf, value, this._ofs);
+            this._ofs += size;
+        }
     }
 }
 

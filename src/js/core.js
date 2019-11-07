@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+const generics = require('./generics');
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -41,9 +42,10 @@ const block = async (func) => {
  * @param {string} text 
  * @param {float} pct 
  */
-const setLoadProgress = (text, pct = -1) => {
+const setLoadProgress = async (text, pct = -1) => {
     view.loadingProgress = text;
     view.loadPct = pct;
+    await generics.redraw();
 };
 
 /**

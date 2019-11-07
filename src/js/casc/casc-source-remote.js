@@ -98,7 +98,7 @@ class CASCRemote extends CASC {
         log.write('Loading remote CASC build: %o', this.build);
 
         // Download CDN server list.
-        core.setLoadProgress('Downloading CDN configuration', 0.03);
+        await core.setLoadProgress('Fetching CDN configuration', 0.03);
         const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
         log.write('%o', serverConfigs);
 
@@ -107,7 +107,7 @@ class CASCRemote extends CASC {
         if (!this.serverConfig)
             throw new Error('CDN config does not contain entry for region ' + this.region);
 
-        core.setLoadProgress('Locating fastest CDN server', 0.06);
+        await core.setLoadProgress('Locating fastest CDN server', 0.06);
         const host = await this.resolveBestHost(this.serverConfig.Hosts);
         if (host === null)
             throw new Error('Unable to resolve a CDN host.');
@@ -116,7 +116,7 @@ class CASCRemote extends CASC {
         log.write('CDN host: %s', this.host);
 
         // Download CDNConfig and BuildConfig.
-        core.setLoadProgress('Downloading build configurations', 0.1);
+        await core.setLoadProgress('Fetching build configurations', 0.1);
         this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
         this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
 
@@ -132,10 +132,18 @@ class CASCRemote extends CASC {
             this.archives[key] = await this.getIndexFile(key);
 
             archiveProgress++;
-            core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
+            await core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
         }, 50);
 
-        // ToDo: Encoding files.
+        // Download encoding file.
+        const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
+
+        await core.setLoadProgress('Fetching encoding table', 0.2);
+        const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]));
+
+        await core.setLoadProgress('Parsing encoding table', 0.3);
+        const enc = await this.parseEncodingFile(encRaw, encKeys[1]);
+
         // ToDo: Root file.
     }
 
@@ -144,17 +152,26 @@ class CASCRemote extends CASC {
      * @param {string} key 
      */
     async getIndexFile(key) {
-        const url = this.host + 'data/' + this.formatCDNKey(key) + '.index';
+        return this.parseIndexFile(await this.getDataFile(this.formatCDNKey(key) + '.index'));
+    }
+
+    /**
+     * Download a data file from the CDN.
+     * @param {string} file 
+     * @returns {BufferWrapper}
+     */
+    async getDataFile(file) {
+        const url = this.host + 'data/' + file;
         const res = await generics.get(url);
 
         if (res.statusCode !== 200)
-            throw new Error('Unable to download archive index %s: HTTP %d', key, res.statusCode);
+            throw new Error('Unable to download file %s: HTTP %d', file, res.statusCode);
 
         const contentLength = Number(res.headers['content-length']);
         if (isNaN(contentLength))
-            throw new Error('Missing Content-Length header from archive index response');
+            throw new Error('Response is missing Content-Length header: ' + file);
 
-        return this.parseIndexFile(await generics.consumeStream(res, contentLength));
+        return await generics.consumeStream(res, contentLength);
     }
 
     /**

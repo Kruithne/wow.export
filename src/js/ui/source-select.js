@@ -130,7 +130,7 @@ core.events.once('screen-source-select', async () => {
                 await cascSource.load(index);
                 core.setScreen('tab-models');
             } catch (e) {
-                log.write('Failed to load CASC: %s', e.message);
+                log.write('Failed to load CASC: %o', e);
                 core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', null, 10000);
                 core.setScreen('source-select');
             }
