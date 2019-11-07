@@ -123,8 +123,8 @@ core.events.once('screen-source-select', async () => {
             core.showLoadScreen();
 
             // Wipe the available build lists.
-            core.view.availableLocalBuilds = [];
-            core.view.availableRemoteBuilds = [];
+            core.view.availableLocalBuilds = null;
+            core.view.availableRemoteBuilds = null;
 
             try {
                 await cascSource.load(index);
