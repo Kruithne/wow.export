@@ -5,6 +5,11 @@ const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
 
 class CASC {
+    constructor() {
+        this.encodingSizes = new Map();
+        this.encodingKeys = new Map();
+    }
+
     /**
      * Parse entries from an archive index.
      * @param {BufferWrapper} data 
@@ -45,7 +50,9 @@ class CASC {
      * @returns {object}
      */
     async parseEncodingFile(data, hash) {
-        const entries = {};
+        const encodingSizes = this.encodingSizes;
+        const encodingKeys = this.encodingKeys;
+
         const encoding = new BLTEReader(data, hash);
 
         const magic = encoding.readUInt16LE();
@@ -75,16 +82,12 @@ class CASC {
 
                 const size = encoding.readInt40BE();
                 const cKey = encoding.readString(hashSizeCKey, 'hex');
-                const entry = { size };
+                encodingSizes.set(cKey, size);
 
-                entry.key = encoding.readString(hashSizeEKey, 'hex'); // eKey
+                encodingKeys.set(cKey, encoding.readString(hashSizeEKey, 'hex'));
                 encoding.move(hashSizeEKey * (keysCount - 1));
-
-                entries[cKey] = entry;
             }
         }
-
-        return entries;
     }
 }
 

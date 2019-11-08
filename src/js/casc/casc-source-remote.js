@@ -149,7 +149,7 @@ class CASCRemote extends CASC {
 
         log.timeLog();
         await core.setLoadProgress('Parsing encoding table', 0.3);
-        const enc = await this.parseEncodingFile(encRaw, encKeys[1]);
+        await this.parseEncodingFile(encRaw, encKeys[1]);
         log.timeEnd('Parsed encoding table');
 
         // ToDo: Root file.
