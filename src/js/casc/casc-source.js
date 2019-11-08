@@ -82,9 +82,10 @@ class CASC {
 
                 const size = encoding.readInt40BE();
                 const cKey = encoding.readHexString(hashSizeCKey);
+                
                 encodingSizes.set(cKey, size);
-
                 encodingKeys.set(cKey, encoding.readHexString(hashSizeEKey));
+
                 encoding.move(hashSizeEKey * (keysCount - 1));
             }
         }
