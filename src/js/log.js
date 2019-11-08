@@ -5,6 +5,7 @@ const constants = require('./constants');
 const MAX_LOG_POOL = 1000;
 const MAX_DRAIN_PER_TICK = 10;
 
+let markTimer = 0;
 let isClogged = false;
 const pool = [];
 
@@ -40,6 +41,23 @@ const drainPool = () => {
     // something remaining in the pool.
     if (!isClogged && pool.length > 0)
         process.nextTick(drainPool);
+};
+
+/**
+ * Internally mark the current timestamp for measuring
+ * performance times with log.timeEnd();
+ */
+const timeLog = () => {
+    markTimer = Date.now();
+};
+
+/**
+ * Logs the time (in milliseconds) between the last log.timeLog()
+ * call and this call, with the given label prefixed.
+ * @param {string} label 
+ */
+const timeEnd = (label, ...params) => {
+    write(label + ' (%dms)', ...params, (Date.now() - markTimer) / 1000);
 };
 
 /**
@@ -82,4 +100,4 @@ const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
 stream.on('drain', drainPool);
 
-module.exports = { write };
+module.exports = { write, timeLog, timeEnd };
