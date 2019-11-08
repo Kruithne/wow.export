@@ -63,6 +63,7 @@ require('./js/ui/source-select');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
+win.on('close', () => process.exit()); // Ensure we exit when window is closed.
 
 // Prevent files from being dropped onto the window.
 // GH-2: Implement drag-and-drop support.
