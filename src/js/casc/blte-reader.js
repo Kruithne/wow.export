@@ -101,16 +101,22 @@ class BLTEReader extends BufferWrapper {
         this.seek(this.blockWriteIndex);
 
         const block = this.blocks[this.blockIndex];
-        const blockData = this._blte.readBuffer(block.CompSize);
+        const bltePos = this._blte.offset;
 
         if (block.Hash !== EMPTY_HASH) {
+            const blockData = this._blte.readBuffer(block.CompSize);
             const blockHash = blockData.calculateHash();
+
+            // Reset after reading the hash.
+            this._blte.seek(bltePos);
 
             if (blockHash !== block.Hash)
                 throw new Error(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', block.Hash, blockHash));
         }
 
-        this._handleBlock(blockData, this.blockIndex);
+        this._handleBlock(this._blte, bltePos + block.CompSize, this.blockIndex);
+        this._blte.seek(bltePos + block.CompSize);
+
         this.blockIndex++;
         this.blockWriteIndex = this.offset;
 
@@ -119,26 +125,27 @@ class BLTEReader extends BufferWrapper {
 
     /**
      * Handle a BLTE block.
-     * @param {BufferWrapper} data
+     * @param {BufferWrapper} block
+     * @param {number} blockEnd
      * @param {number} index 
      */
-    _handleBlock(data, index) {
-        const flag = data.readUInt8();
+    _handleBlock(block, blockEnd, index) {
+        const flag = block.readUInt8();
         switch (flag) {
             case 0x45: // Encrypted
-                const decrypted = this._decryptBlock(data, index);
-                this._handleBlock(decrypted, index);
+                const decrypted = this._decryptBlock(block, blockEnd, index);
+                this._handleBlock(decrypted, decrypted.byteLength, index);
                 break;
             
             case 0x46: // Frame (Recursive)
                 throw new Error('[BLTE] No frame decoder implemented!');
 
             case 0x4E: // Frame (Normal)
-                this._writeBufferBLTE(data);
+                this._writeBufferBLTE(block, blockEnd);
                 break;
 
             case 0x5A: // Compressed
-                this._decompressBlock(data, index);
+                this._decompressBlock(block, blockEnd, index);
                 break;
         }
     }
@@ -146,25 +153,27 @@ class BLTEReader extends BufferWrapper {
     /**
      * Decompress BLTE block.
      * @param {BufferWrapper} data 
+     * @param {number} blockEnd
      * @param {number} index 
      */
-    _decompressBlock(data, index) {
-        const decomp = data.readBuffer(null, true, true);
+    _decompressBlock(data, blockEnd, index) {
+        const decomp = data.readBuffer(blockEnd - data.offset, true, true);
         const expectedSize = this.blocks[index].DecompSize;
 
         // Reallocate buffer to compensate.
         if (decomp.byteLength > expectedSize)
             this.setCapacity(this.byteLength + (decomp.byteLength - expectedSize));
 
-        this._writeBufferBLTE(decomp);
+        this._writeBufferBLTE(decomp, decomp.byteLength);
     }
 
     /**
      * Decrypt BLTE block.
      * @param {BufferWrapper} data 
+     * @param {number} blockEnd
      * @param {number} index 
      */
-    _decryptBlock(data, index) {
+    _decryptBlock(data, blockEnd, index) {
         const keyNameSize = data.readUInt8();
         if (keyNameSize === 0 || keyNameSize !== 8)
             throw new Error('[BLTE] Unexpected keyNameSize: ' + keyNameSize);
@@ -199,18 +208,18 @@ class BLTEReader extends BufferWrapper {
             nonce[i] = (i < ivShort.length ? ivShort[i] : 0x0);
 
         const instance = new Salsa20(nonce, key);
-        return instance.process(data.readBuffer());
+        return instance.process(data.readBuffer(blockEnd - data.offset));
     }
 
     /**
      * Write the contents of a buffer to this instance.
      * Skips bound checking for BLTE internal writing.
      * @param {BufferWrapper} buf 
+     * @param {number} blockEnd
      */
-    _writeBufferBLTE(buf) {
-        const remain = buf.remainingBytes;
-        buf.raw.copy(this._buf, this._ofs, buf.offset, buf.byteLength);
-        this._ofs += remain;
+    _writeBufferBLTE(buf, blockEnd) {
+        buf.raw.copy(this._buf, this._ofs, buf.offset, blockEnd);
+        this._ofs += blockEnd - buf.offset;
     }
 
     /**
