@@ -103,7 +103,7 @@ class BLTEReader extends BufferWrapper {
         const block = this.blocks[this.blockIndex];
         block.Data = this._blte.readBuffer(block.CompSize);
 
-        if (!block.Hash === EMPTY_HASH) {
+        if (block.Hash !== EMPTY_HASH) {
             const blockHash = block.Data.calculateHash();
             block.Data.seek(0);
 
