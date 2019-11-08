@@ -52,18 +52,16 @@ class CASC {
         if (magic !== ENC_MAGIC)
             throw new Error('Invalid encoding magic: ' + magic);
 
-        const version = encoding.readUInt8();
+        encoding.move(1); // version
         const hashSizeCKey = encoding.readUInt8();
         const hashSizeEKey = encoding.readUInt8();
         const cKeyPageSize = encoding.readInt16BE() * 1024;
-        const eKeyPageSize = encoding.readInt16BE() * 1024;
+        encoding.move(2); // eKeyPageSize
         const cKeyPageCount = encoding.readInt32BE();
-        const eKeyPageCount = encoding.readInt32BE();
-        const unk11 = encoding.readUInt8(); // 0
+        encoding.move(4 + 1); // eKeyPageCount + unk11
         const specBlockSize = encoding.readInt32BE();
 
-        encoding.move(specBlockSize);
-        encoding.move(cKeyPageCount * (hashSizeCKey + 16));
+        encoding.move(specBlockSize + (cKeyPageCount * (hashSizeCKey + 16)));
 
         const pagesStart = encoding.offset;
         for (let i = 0; i < cKeyPageCount; i++) {
