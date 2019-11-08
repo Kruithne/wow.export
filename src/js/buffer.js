@@ -1,45 +1,22 @@
 const util = require('util');
 const crypto = require('crypto');
 
-const INT_8 = Symbol('int8');
-const INT_16 = Symbol('int16');
-const INT_32 = Symbol('int32');
-const FLOAT = Symbol('float');
-const INT_40 = Symbol('int40');
-
-const ENDIAN_LITTLE = Symbol('LE');
-const ENDIAN_BIG = Symbol('BE');
-
-const INT_SIGNED = Symbol('signed');
-const INT_UNSIGNED = Symbol('unsigned');
-
-const TYPE_SIZE = {
-    [INT_8]: 1,
-    [INT_16]: 2,
-    [INT_32]: 4,
-    [INT_40]: 5
+const LITTLE_ENDIAN = {
+    READ_INT: Buffer.prototype.readIntLE,
+    READ_UINT: Buffer.prototype.readUIntLE,
+    READ_FLOAT: Buffer.prototype.readFloatLE,
+    WRITE_INT: Buffer.prototype.writeIntLE,
+    WRITE_UINT: Buffer.prototype.writeUIntLE,
+    WRITE_FLOAT: Buffer.prototype.writeFloatLE
 };
 
-const BUF_READ_FUNC = {
-    [INT_SIGNED]: {
-        [ENDIAN_LITTLE]: Buffer.prototype.readIntLE,
-        [ENDIAN_BIG]: Buffer.prototype.readIntBE
-    },
-    [INT_UNSIGNED]: {
-        [ENDIAN_LITTLE]: Buffer.prototype.readUIntLE,
-        [ENDIAN_BIG]: Buffer.prototype.readUIntBE
-    }
-};
-
-const BUF_WRITE_FUNC = {
-    [INT_SIGNED]: {
-        [ENDIAN_LITTLE]: Buffer.prototype.writeIntLE,
-        [ENDIAN_BIG]: Buffer.prototype.writeIntBE
-    },
-    [INT_UNSIGNED]: {
-        [ENDIAN_LITTLE]: Buffer.prototype.writeUIntLE,
-        [ENDIAN_BIG]: Buffer.prototype.writeUIntBE
-    }
+const BIG_ENDIAN = {
+    READ_INT: Buffer.prototype.readIntBE,
+    READ_UINT: Buffer.prototype.readUIntBE,
+    READ_FLOAT: Buffer.prototype.readFloatBE,
+    WRITE_INT: Buffer.prototype.writeIntBE,
+    WRITE_UINT: Buffer.prototype.writeUIntBE,
+    WRITE_FLOAT: Buffer.prototype.writeFloatBE
 };
 
 /**
@@ -48,9 +25,6 @@ const BUF_WRITE_FUNC = {
  * @class BufferWrapper
  */
 class BufferWrapper {
-    static ENDIAN_BIG = ENDIAN_BIG;
-    static ENDIAN_LITTLE = ENDIAN_LITTLE;
-
     /**
      * Alloc a buffer with the given length and return it wrapped.
      * The buffer is not zeroed before use and may contain secure data.
@@ -65,10 +39,9 @@ class BufferWrapper {
      * Construct a new BufferWrapper.
      * @param {Buffer} buf 
      */
-    constructor(buf, endian = ENDIAN_LITTLE) {
+    constructor(buf) {
         this._ofs = 0;
         this._buf = buf;
-        this._end = endian;
     }
 
     /**
@@ -104,14 +77,6 @@ class BufferWrapper {
     }
 
     /**
-     * Set the default endian used by this buffer.
-     * @param {Symbol} endian 
-     */
-    setEndian(endian) {
-        this._end = endian;
-    }
-
-    /**
      * Set the absolute position of this buffer.
      * Negative values will set the position from the end of the buffer.
      * @param {number} ofs 
@@ -138,73 +103,219 @@ class BufferWrapper {
     }
 
     /**
-     * Read one or more signed 8-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more signed 8-bit integers in little endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readInt8(count = 1, endian) {
-        return this._readInt(INT_8, INT_SIGNED, count, endian);
+    readInt8(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 1);
     }
 
     /**
-     * Read one or more unsigned 8-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more unsigned 8-bit integers in little endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readUInt8(count = 1, endian) {
-        return this._readInt(INT_8, INT_UNSIGNED, count, endian);
+    readUInt8(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 1);
     }
 
     /**
-     * Read one or more signed 16-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more signed 16-bit integers in little endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readInt16(count = 1, endian) {
-        return this._readInt(INT_16, INT_SIGNED, count, endian);
+    readInt16LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 2);
     }
 
     /**
-     * Read one or more unsigned 16-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more unsigned 16-bit integers in little endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readUInt16(count = 1, endian) {
-        return this._readInt(INT_16, INT_UNSIGNED, count, endian);
+    readUInt16LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 2);
     }
 
     /**
-     * Read one or more signed 32-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more signed 16-bit integers in big endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readInt32(count = 1, endian) {
-        return this._readInt(INT_32, INT_SIGNED, count, endian);
+    readInt16BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_INT, 2);
     }
 
     /**
-     * Read one or more unsigned 32-bit integers.
-     * @param {number} count
-     * @param {Symbol} endian
+     * Read one or more unsigned 16-bit integers in big endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readUInt32(count = 1, endian) {
-        return this._readInt(INT_32, INT_UNSIGNED, count, endian);
+    readUInt16BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_UINT, 2);
     }
 
     /**
-     * Read one or more 40-bit integers.
-     * @param {number} count 
-     * @param {Symbol} endian 
+     * Read one or more signed 24-bit integers in little endian.
+     * @param {number} count How many to read.
      * @returns {number|number[]}
      */
-    readInt40(count = 1, endian) {
-        return this._readInt(INT_40, INT_SIGNED, count, endian);
+    readInt24LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 3);
+    }
+
+    /**
+     * Read one or more unsigned 24-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt24LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 3);
+    }
+
+    /**
+     * Read one or more signed 24-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt24BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_INT, 3);
+    }
+
+    /**
+     * Read one or more unsigned 24-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt24BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_UINT, 3);
+    }
+
+    /**
+     * Read one or more signed 32-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt32LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 4);
+    }
+
+    /**
+     * Read one or more unsigned 32-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt32LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 4);
+    }
+
+    /**
+     * Read one or more signed 32-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt32BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_INT, 4);
+    }
+
+    /**
+     * Read one or more unsigned 32-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt32BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_UINT, 4);
+    }
+
+    /**
+     * Read one or more signed 40-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt40LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 5);
+    }
+
+    /**
+     * Read one or more unsigned 40-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt40LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 5);
+    }
+
+    /**
+     * Read one or more signed 40-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt40BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_INT, 5);
+    }
+    
+    /**
+     * Read one or more unsigned 40-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt40BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_UINT, 5);
+    }
+
+    /**
+     * Read one or more signed 48-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt48LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_INT, 6);
+    }
+
+    /**
+     * Read one or more unsigned 48-bit integers in little endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt48LE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 6);
+    }
+
+    /**
+     * Read one of more signed 48-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readInt48BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_INT, 6);
+    }
+
+    /**
+     * Read one or more unsigned 48-bit integers in big endian.
+     * @param {number} count How many to read.
+     * @returns {number|number[]}
+     */
+    readUInt48BE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_UINT, 6);
+    }
+
+    /**
+     * Read one or more floats in little endian.
+     * @param {number} count How many to read.
+     * @returns {float|float[]}
+     */
+    readFloatLE(count = 1) {
+        return this._readInt(count, LITTLE_ENDIAN.READ_FLOAT, 4);
+    }
+
+    /**
+     * Read one or more floats in big endian.
+     * @param {number} count How many to read.
+     * @returns {float|float[]}
+     */
+    readFloatBE(count = 1) {
+        return this._readInt(count, BIG_ENDIAN.READ_FLOAT, 4);
     }
 
     /**
@@ -240,57 +351,219 @@ class BufferWrapper {
     }
 
     /**
-     * Write one or more signed 8-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a signed 8-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeInt8(value, endian) {
-        this._writeInt(INT_8, INT_SIGNED, value, endian);
+    writeInt8(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 1);
     }
 
     /**
-     * Write one or more unsigned 8-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a unsigned 8-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeUInt8(value, endian) {
-        this._writeInt(INT_8, INT_UNSIGNED, value, endian);
+    writeUInt8(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 1);
     }
 
     /**
-     * Write one or more signed 16-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a signed 16-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeInt16(value, endian) {
-        this._writeInt(INT_16, INT_SIGNED, value, endian);
+    writeInt16LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 2);
     }
 
     /**
-     * Write one or more unsigned 16-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a unsigned 16-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeUInt16(value, endian) {
-        this._writeInt(INT_16, INT_UNSIGNED, value, endian);
+    writeUInt16LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 2);
     }
 
     /**
-     * Write one or more signed 32-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a signed 16-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeInt32(value, endian) {
-        this._writeInt(INT_32, INT_SIGNED, value, endian);
+    writeInt16BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 2);
     }
 
     /**
-     * Write one or more unsigned 32-bit integers.
-     * @param {number|number[]} value 
-     * @param {Symbol} endian 
+     * Write a unsigned 16-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
      */
-    writeUInt32(value, endian) {
-        this._writeInt(INT_32, INT_UNSIGNED, value, endian);
+    writeUInt16BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 2);
+    }
+
+    /**
+     * Write a signed 24-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt24LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 3);
+    }
+
+    /**
+     * Write a unsigned 24-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt24LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 3);
+    }
+
+    /**
+     * Write a signed 24-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt24BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 3);
+    }
+
+    /**
+     * Write a unsigned 24-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt24BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 3);
+    }
+
+    /**
+     * Write a signed 32-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt32LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 4);
+    }
+
+    /**
+     * Write a unsigned 32-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt32LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 4);
+    }
+
+    /**
+     * Write a signed 32-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt32BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 4);
+    }
+
+    /**
+     * Write a unsigned 32-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt32BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 4);
+    }
+
+    /**
+     * Write a signed 40-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt40LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 5);
+    }
+
+    /**
+     * Write a unsigned 40-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt40LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 5);
+    }
+
+    /**
+     * Write a signed 40-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt40BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 5);
+    }
+    
+    /**
+     * Write a unsigned 40-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt40BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 5);
+    }
+
+    /**
+     * Write a signed 48-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt48LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_INT, 6);
+    }
+
+    /**
+     * Write a unsigned 48-bit integer in little endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt48LE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_UINT, 6);
+    }
+
+    /**
+     * Write a signed 48-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeInt48BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 6);
+    }
+
+    /**
+     * Write a unsigned 48-bit integer in big endian.
+     * @param {number} value
+     * @returns {number|number[]}
+     */
+    writeUInt48BE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 6);
+    }
+
+    /**
+     * Write a float in little endian.
+     * @param {number} value
+     * @returns {float|float[]}
+     */
+    writeFloatLE(value) {
+        return this._writeInt(value, LITTLE_ENDIAN.WRITE_FLOAT, 4);
+    }
+
+    /**
+     * Write a float in big endian.
+     * @param {number} value
+     * @returns {float|float[]}
+     */
+    writeFloatBE(value) {
+        return this._writeInt(value, BIG_ENDIAN.WRITE_FLOAT, 4);
     }
 
     /**
@@ -338,58 +611,42 @@ class BufferWrapper {
 
     /**
      * Read one or more integers from the buffer.
-     * @param {Symbol} type 
-     * @param {Symbol} signed
-     * @param {number} count
-     * @param {Symbol} endian
+     * @param {number} count How many integers to read.
+     * @param {function} func Buffer prototype function.
+     * @param {number} byteLength Byte-length of each integer.
+     * @returns {number|number[]}
      */
-    _readInt(type, signed, count, endian) {
+    _readInt(count, func, byteLength) {
         if (count > 1) {
-            const size = TYPE_SIZE[type];
-            this._checkBounds(size * count);
+            this._checkBounds(byteLength * count);
 
-            const out = new Array(count);
-            const func = BUF_READ_FUNC[signed][endian || this._end];
+            const values = new Array(count);
             for (let i = 0; i < count; i++) {
-                out[i] = func.call(this._buf, this._ofs, size);
-                this._ofs += size;
+                values[i] = func.call(this._buf, this._ofs, byteLength);
+                this._ofs += byteLength;
             }
 
-            return out;
+            return values;
         } else {
-            const size = TYPE_SIZE[type];
-            this._checkBounds(size);
+            this._checkBounds(byteLength);
 
-            const value = BUF_READ_FUNC[signed][endian || this._end].call(this._buf, this._ofs, size);
-            this._ofs += size;
+            const value = func.call(this._buf, this._ofs, byteLength);
+            this._ofs += byteLength;
             return value;
         }
     }
 
     /**
-     * Write one or more integers to this buffer.
-     * @param {Symbol} type 
-     * @param {Symbol} signed
-     * @param {number|Array} value 
-     * @param {Symbol} endian 
+     * Write an integer to the buffer.
+     * @param {number} value
+     * @param {function} func Buffer prototype function.
+     * @param {number} byteLength Byte-length of the number to write.
      */
-    _writeInt(type, signed, value, endian) {
-        if (Array.isArray(value)) {
-            const size = TYPE_SIZE[type];
-            this._checkBounds(size * value.length);
+    _writeInt(value, func, byteLength) {
+        this._checkBounds(byteLength);
 
-            const func = BUF_WRITE_FUNC[signed][endian || this._end];
-            for (const val of value) {
-                func.call(this._buf, val, this._ofs, size);
-                this._ofs += size;
-            }
-        } else {
-            const size = TYPE_SIZE[type];
-            this._checkBounds(size);
-
-            BUF_WRITE_FUNC[signed][endian || this._end].call(this._buf, value, this._ofs);
-            this._ofs += size;
-        }
+        func.call(this._buf, value, this._ofs, byteLength);
+        this._ofs += byteLength;
     }
 }
 

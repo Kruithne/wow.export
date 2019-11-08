@@ -14,7 +14,7 @@ class CASC {
     parseIndexFile(data) {
         // Skip to the end of the archive to find the count.
         data.seek(-12);
-        const count = data.readInt32();
+        const count = data.readInt32LE();
 
         if (count * 24 > data.byteLength)
             throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
@@ -31,8 +31,8 @@ class CASC {
 
             entries[i] = {
                 hash,
-                size: data.readInt32(1, BufferWrapper.ENDIAN_BIG),
-                offset: data.readInt32(1, BufferWrapper.ENDIAN_BIG)
+                size: data.readInt32BE(),
+                offset: data.readInt32BE()
             };
         }
 
@@ -49,21 +49,19 @@ class CASC {
         const entries = {};
         const encoding = new BLTEReader(data, hash);
 
-        const magic = encoding.readUInt16();
+        const magic = encoding.readUInt16LE();
         if (magic !== ENC_MAGIC)
             throw new Error('Invalid encoding magic: ' + magic);
-
-        encoding.setEndian(BufferWrapper.ENDIAN_BIG);
 
         const version = encoding.readUInt8();
         const hashSizeCKey = encoding.readUInt8();
         const hashSizeEKey = encoding.readUInt8();
-        const cKeyPageSize = encoding.readInt16() * 1024;
-        const eKeyPageSize = encoding.readInt16() * 1024;
-        const cKeyPageCount = encoding.readInt32();
-        const eKeyPageCount = encoding.readInt32();
+        const cKeyPageSize = encoding.readInt16BE() * 1024;
+        const eKeyPageSize = encoding.readInt16BE() * 1024;
+        const cKeyPageCount = encoding.readInt32BE();
+        const eKeyPageCount = encoding.readInt32BE();
         const unk11 = encoding.readUInt8(); // 0
-        const specBlockSize = encoding.readInt32();
+        const specBlockSize = encoding.readInt32BE();
 
         encoding.move(specBlockSize);
         encoding.move(cKeyPageCount * (hashSizeCKey + 16));
@@ -78,7 +76,7 @@ class CASC {
                 if (keysCount === 0)
                     break;
 
-                const size = encoding.readInt40();
+                const size = encoding.readInt40BE();
                 const cKey = encoding.readString(hashSizeCKey, 'hex');
                 const entry = { size };
                 for (let k = 0; k < keysCount; k++) {

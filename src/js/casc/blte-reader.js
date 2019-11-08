@@ -26,11 +26,11 @@ class BLTEReader extends BufferWrapper {
         if (size < 8)
             throw new Error('[BLTE] Not enough data (< 8)');
 
-        const magic = buf.readUInt32();
+        const magic = buf.readUInt32LE();
         if (magic !== BLTE_MAGIC)
             throw new Error('[BLTE] Invalid magic: ' + magic);
 
-        const headerSize = buf.readInt32(1, BufferWrapper.ENDIAN_BIG);
+        const headerSize = buf.readInt32BE();
         const origPos = buf.offset;
 
         buf.seek(0);
@@ -66,8 +66,8 @@ class BLTEReader extends BufferWrapper {
         for (let i = 0; i < numBlocks; i++) {
             const block = {};
             if (headerSize !== 0) {
-                block.CompSize = buf.readInt32(1, BufferWrapper.ENDIAN_BIG);
-                block.DecompSize = buf.readInt32(1, BufferWrapper.ENDIAN_BIG);
+                block.CompSize = buf.readInt32BE();
+                block.DecompSize = buf.readInt32BE();
                 block.Hash = buf.readString(16, 'hex');
             } else {
                 block.CompSize = size - 8;
