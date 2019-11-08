@@ -27,11 +27,11 @@ class CASC {
         const entries = new Array(count);
 
         for (let i = 0; i < count; i++) {
-            let hash = data.readString(16, 'hex');
+            let hash = data.readHexString(16);
 
             // Skip zero hashes.
             if (hash === EMPTY_HASH)
-                hash = data.readString(16, 'hex');
+                hash = data.readHexString(16);
 
             entries[i] = {
                 hash,
@@ -81,10 +81,10 @@ class CASC {
                     break;
 
                 const size = encoding.readInt40BE();
-                const cKey = encoding.readString(hashSizeCKey, 'hex');
+                const cKey = encoding.readHexString(hashSizeCKey);
                 encodingSizes.set(cKey, size);
 
-                encodingKeys.set(cKey, encoding.readString(hashSizeEKey, 'hex'));
+                encodingKeys.set(cKey, encoding.readHexString(hashSizeEKey));
                 encoding.move(hashSizeEKey * (keysCount - 1));
             }
         }

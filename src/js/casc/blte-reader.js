@@ -67,7 +67,7 @@ class BLTEReader extends BufferWrapper {
             if (headerSize !== 0) {
                 block.CompSize = buf.readInt32BE();
                 block.DecompSize = buf.readInt32BE();
-                block.Hash = buf.readString(16, 'hex');
+                block.Hash = buf.readHexString(16);
             } else {
                 block.CompSize = size - 8;
                 block.DecompSize = size - 9;
@@ -170,7 +170,7 @@ class BLTEReader extends BufferWrapper {
         if (keyNameSize === 0 || keyNameSize !== 8)
             throw new Error('[BLTE] Unexpected keyNameSize: ' + keyNameSize);
 
-        const keyNameBytes = data.readString(keyNameSize, 'hex').toUpperCase();
+        const keyNameBytes = data.readHexString(keyNameSize);
         const ivSize = data.readUInt8();
 
         if (ivSize !== 4)
@@ -242,7 +242,7 @@ class BLTEReader extends BufferWrapper {
             if (key.length !== 32)
                 throw new Error('[BLTE] Decryption keys are expected to be 16-bytes.');
 
-            KEY_RING[keyName.toUpperCase()] = key.toUpperCase();
+            KEY_RING[keyName.toLowerCase()] = key.toLowerCase();
         }
     }
 }

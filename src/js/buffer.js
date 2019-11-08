@@ -320,17 +320,14 @@ class BufferWrapper {
     }
 
     /**
-     * Read a string from the buffer.
-     * @param {number} length Number of bytes to read.
-     * @param {string} encoding 'hex', 'ascii', 'utf8', etc.
+     * Read a portion of this buffer as a hex string.
+     * @param {number} length 
      */
-    readString(length, encoding = 'utf8') {
-        // Ensure we don't go out-of-bounds reading the string.
+    readHexString(length) {
         this._checkBounds(length);
-
-        const str = this._buf.toString(encoding, this._ofs, this._ofs + length);
+        const hex = this._buf.hexSlice(this._ofs, this._ofs + length);
         this._ofs += length;
-        return str;
+        return hex;
     }
 
     /**
