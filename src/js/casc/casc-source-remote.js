@@ -124,14 +124,14 @@ class CASCRemote extends CASC {
         log.write('BuildConfig: %o', this.buildConfig);
 
         // Download archive indexes.
-        this.archives = {};
+        this.archives = new Map();
         let archiveProgress = 0;
         const archiveKeys = this.cdnConfig.archives.split(' ');
         const archiveCount = archiveKeys.length;
 
         log.timeLog();
         await generics.queue(archiveKeys, async (key) => {
-            this.archives[key] = await this.getIndexFile(key);
+            this.archives.set(key, await this.getIndexFile(key));
 
             archiveProgress++;
             await core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
