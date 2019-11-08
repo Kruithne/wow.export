@@ -76,11 +76,9 @@ class CASC {
                 const size = encoding.readInt40BE();
                 const cKey = encoding.readString(hashSizeCKey, 'hex');
                 const entry = { size };
-                for (let k = 0; k < keysCount; k++) {
-                    const eKey = encoding.readString(hashSizeEKey, 'hex');
-                    if (k === 0)
-                        entry.key = eKey;
-                }
+
+                entry.key = encoding.readString(hashSizeEKey, 'hex'); // eKey
+                encoding.move(hashSizeEKey * (keysCount - 1));
 
                 entries[cKey] = entry;
             }
