@@ -57,7 +57,7 @@ const timeLog = () => {
  * @param {string} label 
  */
 const timeEnd = (label, ...params) => {
-    write(label + ' (%dms)', ...params, (Date.now() - markTimer) / 1000);
+    write(label + ' (%dms)', ...params, (Date.now() - markTimer));
 };
 
 /**
