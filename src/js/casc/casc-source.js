@@ -6,6 +6,7 @@ const ENC_MAGIC = 0x4E45;
 
 class CASC {
     constructor() {
+        this.archives = new Map();
         this.encodingSizes = new Map();
         this.encodingKeys = new Map();
     }

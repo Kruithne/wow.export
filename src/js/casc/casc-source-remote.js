@@ -124,7 +124,6 @@ class CASCRemote extends CASC {
         log.write('BuildConfig: %o', this.buildConfig);
 
         // Download archive indexes.
-        this.archives = new Map();
         let archiveProgress = 0;
         const archiveKeys = this.cdnConfig.archives.split(' ');
         const archiveCount = archiveKeys.length;
