@@ -1,5 +1,6 @@
 const util = require('util');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const LITTLE_ENDIAN = {
     READ_INT: Buffer.prototype.readIntLE,
@@ -336,17 +337,24 @@ class BufferWrapper {
      * Read a buffer from this buffer.
      * @param {number} length How many bytes to read into the buffer.
      * @param {boolean} wrap If true, returns BufferWrapper, else raw buffer.
+     * @param {boolean} inflate If true, data will be decompressed using inflate.
      */
-    readBuffer(length, wrap = true) {
+    readBuffer(length, wrap = true, inflate = false) {
         if (!length) // Default to consuming all remaining bytes.
             length = this.remainingBytes;
 
         // Ensure we have enough data left to fulfill this.
         this._checkBounds(length);
 
-        const buf = Buffer.allocUnsafe(length);
+        // ToDo: Build inflation into the buffer class and support async.
+        //const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer(null, false)));
+
+        let buf = Buffer.allocUnsafe(length);
         this._buf.copy(buf, 0, this._ofs, this._ofs + length);
         this._ofs += length;
+
+        if (inflate)
+            buf = zlib.inflateSync(buf);
 
         return wrap ? new BufferWrapper(buf) : buf;
     }

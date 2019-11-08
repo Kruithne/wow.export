@@ -1,5 +1,4 @@
 const util = require('util');
-const zlib = require('zlib');
 const BufferWrapper = require('../buffer');
 const Salsa20 = require('./salsa20');
 
@@ -151,8 +150,7 @@ class BLTEReader extends BufferWrapper {
      * @param {number} index 
      */
     _decompressBlock(data, index) {
-        // ToDo: Build inflation into the buffer class and support async.
-        const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer(null, false)));
+        const decomp = data.readBuffer(null, true, true);
         const expectedSize = this.blocks[index].DecompSize;
 
         // Reallocate buffer to compensate.
