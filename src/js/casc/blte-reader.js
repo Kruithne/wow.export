@@ -34,7 +34,7 @@ class BLTEReader extends BufferWrapper {
 
         buf.seek(0);
 
-        const hashCheck = buf.calculateHash(headerSize > 0 ? headerSize : size);
+        const hashCheck = buf.readBuffer(headerSize > 0 ? headerSize: size).calculateHash();
         if (hashCheck !== hash)
             throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
 
@@ -104,7 +104,7 @@ class BLTEReader extends BufferWrapper {
         block.Data = this._blte.readBuffer(block.CompSize);
 
         if (!block.Hash === EMPTY_HASH) {
-            const blockHash = block.Data.calculateHash(block.CompSize);
+            const blockHash = block.Data.calculateHash();
             block.Data.seek(0);
 
             if (blockHash !== block.Hash)

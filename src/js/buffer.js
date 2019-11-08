@@ -613,13 +613,12 @@ class BufferWrapper {
     }
 
     /**
-     * Calculate a hash of given bytes.
-     * @param {number} length Amount of bytes to process.
+     * Calculate a hash of this buffer
      * @param {string} hash Hashing method, defaults to 'md5'.
      * @param {string} encoding Output encoding, defaults to 'hex'.
      */
-    calculateHash(length, hash = 'md5', encoding = 'hex') {
-        return crypto.createHash(hash).update(this.readBuffer(length, false)).digest(encoding);
+    calculateHash(hash = 'md5', encoding = 'hex') {
+        return crypto.createHash(hash).update(this._buf).digest(encoding);
     }
 
     /**
