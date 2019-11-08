@@ -101,16 +101,16 @@ class BLTEReader extends BufferWrapper {
         this.seek(this.blockWriteIndex);
 
         const block = this.blocks[this.blockIndex];
-        block.Data = this._blte.readBuffer(block.CompSize);
+        const blockData = this._blte.readBuffer(block.CompSize);
 
         if (block.Hash !== EMPTY_HASH) {
-            const blockHash = block.Data.calculateHash();
+            const blockHash = blockData.calculateHash();
 
             if (blockHash !== block.Hash)
                 throw new Error(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', block.Hash, blockHash));
         }
 
-        this._handleBlock(block.Data, this.blockIndex);
+        this._handleBlock(blockData, this.blockIndex);
         this.blockIndex++;
         this.blockWriteIndex = this.offset;
 
