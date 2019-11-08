@@ -105,7 +105,6 @@ class BLTEReader extends BufferWrapper {
 
         if (block.Hash !== EMPTY_HASH) {
             const blockHash = block.Data.calculateHash();
-            block.Data.seek(0);
 
             if (blockHash !== block.Hash)
                 throw new Error(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', block.Hash, blockHash));
