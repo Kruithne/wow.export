@@ -2,7 +2,6 @@ const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
-const ENC_CHUNK_SIZE = 4096;
 const ENC_MAGIC = 0x4E45;
 
 class CASC {
