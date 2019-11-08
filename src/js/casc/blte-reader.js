@@ -152,7 +152,7 @@ class BLTEReader extends BufferWrapper {
      */
     _decompressBlock(data, index) {
         // ToDo: Build inflation into the buffer class and support async.
-        const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer().raw));
+        const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer(null, false)));
         const expectedSize = this.blocks[index].DecompSize;
 
         // Reallocate buffer to compensate.

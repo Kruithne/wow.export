@@ -334,20 +334,21 @@ class BufferWrapper {
 
     /**
      * Read a buffer from this buffer.
-     * @param {number} length 
+     * @param {number} length How many bytes to read into the buffer.
+     * @param {boolean} wrap If true, returns BufferWrapper, else raw buffer.
      */
-    readBuffer(length) {
-        if (length === undefined) // Default to consuming all remaining bytes.
+    readBuffer(length, wrap = true) {
+        if (!length) // Default to consuming all remaining bytes.
             length = this.remainingBytes;
 
         // Ensure we have enough data left to fulfill this.
         this._checkBounds(length);
 
-        const buf = BufferWrapper.allocUnsafe(length);
-        this.raw.copy(buf.raw, 0, this._ofs, this._ofs + length);
+        const buf = Buffer.allocUnsafe(length);
+        this._buf.copy(buf, 0, this._ofs, this._ofs + length);
         this._ofs += length;
 
-        return buf;
+        return wrap ? new BufferWrapper(buf) : buf;
     }
 
     /**
@@ -597,7 +598,7 @@ class BufferWrapper {
      * @param {string} encoding Output encoding, defaults to 'hex'.
      */
     calculateHash(length, hash = 'md5', encoding = 'hex') {
-        return crypto.createHash(hash).update(this.readBuffer(length).raw).digest(encoding);
+        return crypto.createHash(hash).update(this.readBuffer(length, false)).digest(encoding);
     }
 
     /**
