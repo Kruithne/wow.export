@@ -133,19 +133,21 @@ class CASCRemote extends CASC {
             this.archives.set(key, await this.getIndexFile(key));
 
             archiveProgress++;
-            await core.setLoadProgress(util.format('Downloading archive %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
+            await core.setLoadProgress(util.format('Fetching archives %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
         }, 50);
 
         log.timeEnd('Downloaded %d archives', archiveCount);
 
         // Download encoding file.
-        const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
-
         log.timeLog();
+        const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
         await core.setLoadProgress('Fetching encoding table', 0.2);
-        const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]));
+        const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]), async (bytes, total) => {
+            await core.setLoadProgress(util.format('Fetching encoding table %s / %s', generics.filesize(bytes), generics.filesize(total)), 0.2 + ((bytes / total) / 10));
+        });
         log.timeEnd('Downloaded encoding table');
 
+        // Parse encoding file.
         log.timeLog();
         await core.setLoadProgress('Parsing encoding table', 0.3);
         await this.parseEncodingFile(encRaw, encKeys[1]);
@@ -165,9 +167,10 @@ class CASCRemote extends CASC {
     /**
      * Download a data file from the CDN.
      * @param {string} file 
+     * @param {function} reporter
      * @returns {BufferWrapper}
      */
-    async getDataFile(file) {
+    async getDataFile(file, reporter) {
         const url = this.host + 'data/' + file;
         const res = await generics.get(url);
 
@@ -178,7 +181,7 @@ class CASCRemote extends CASC {
         if (isNaN(contentLength))
             throw new Error('Response is missing Content-Length header: ' + file);
 
-        return await generics.consumeStream(res, contentLength);
+        return await generics.consumeStream(res, contentLength, reporter);
     }
 
     /**
