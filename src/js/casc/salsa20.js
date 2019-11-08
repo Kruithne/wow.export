@@ -10,7 +10,7 @@ class Salsa20 {
 	 * Construct a new Salsa20 instance.
 	 * @param {Array} nonce 8 byte nonce.
 	 * @param {Array} key 16 or 32 byte key.
-     * @param {number} rounds Defaults to 20.
+	 * @param {number} rounds Defaults to 20.
 	 */
 	constructor(nonce, key, rounds = 20) {
 		if (nonce.length !== 8)
@@ -66,7 +66,7 @@ class Salsa20 {
 	 * @returns {BufferWrapper}
 	 */
 	getBytes(byteCount) {
-        const out = BufferWrapper.alloc(byteCount);
+		const out = BufferWrapper.alloc(byteCount);
 		for (let i = 0; i < byteCount; i++) {
 			if (this.blockUsed === 64) {
 				this._generateBlock();
@@ -74,7 +74,7 @@ class Salsa20 {
 				this.blockUsed = 0;
 			}
 
-            out.writeUInt8(this.block[this.blockUsed]);
+			out.writeUInt8(this.block[this.blockUsed]);
 			this.blockUsed++;
 		}
 
@@ -88,7 +88,7 @@ class Salsa20 {
 	 * @returns {BufferWrapper}
 	 */
 	process(buf) {
-        const out = BufferWrapper.alloc(buf.byteLength);
+		const out = BufferWrapper.alloc(buf.byteLength);
 		const bytes = this.getBytes(buf.byteLength);
 
 		buf.seek(0);

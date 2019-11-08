@@ -1,369 +1,369 @@
 // This file defines the general structure of the application layout.
 
 body {
-    background: var(--background);
-    color: var(--font-primary);
-    overflow: hidden;
-    font-family: 'Selawik', sans-serif;
+	background: var(--background);
+	color: var(--font-primary);
+	overflow: hidden;
+	font-family: 'Selawik', sans-serif;
 }
 
 #logo-background {
-    z-index: -5;
-    background: url(./images/logo.png) no-repeat center center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    opacity: 0.05;
+	z-index: -5;
+	background: url(./images/logo.png) no-repeat center center;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	opacity: 0.05;
 }
 
 #container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: grid;
-    grid-template-rows: 53px 1fr 73px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: grid;
+	grid-template-rows: 53px 1fr 73px;
 
-    #content {
-        position: relative;
-    }
+	#content {
+		position: relative;
+	}
 
-    #header {
-        border-bottom: 1px solid var(--border);
-        background: var(--background-dark);
-        z-index: 5;
-        display: flex;
+	#header {
+		border-bottom: 1px solid var(--border);
+		background: var(--background-dark);
+		z-index: 5;
+		display: flex;
 
-        #logo {
-            display: flex;
-            align-items: center;
-            margin: 0 15px;
-            background: url(./images/logo.png) no-repeat center left;
-            font-size: 25px;
-            font-weight: 700;
-            padding: 0 0 3px 40px;
-            background-size: 32px;
-        }
-    }
-    
-    #footer {
-        border-top: 1px solid var(--border);
-        background: var(--background-dark);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: var(--font-faded);
-    }
+		#logo {
+			display: flex;
+			align-items: center;
+			margin: 0 15px;
+			background: url(./images/logo.png) no-repeat center left;
+			font-size: 25px;
+			font-weight: 700;
+			padding: 0 0 3px 40px;
+			background-size: 32px;
+		}
+	}
+	
+	#footer {
+		border-top: 1px solid var(--border);
+		background: var(--background-dark);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		color: var(--font-faded);
+	}
 
-    #header.shadowed {
-        box-shadow: var(--widget-shadow);
-    }
+	#header.shadowed {
+		box-shadow: var(--widget-shadow);
+	}
 }
 
 #nav {
-    display: flex;
-    align-items: center;
+	display: flex;
+	align-items: center;
 
-    div {
-        margin-left: 10px;
+	div {
+		margin-left: 10px;
 
-        &:hover {
-            cursor: pointer;
-            color: var(--font-highlight);
-        }
-    }
+		&:hover {
+			cursor: pointer;
+			color: var(--font-highlight);
+		}
+	}
 
-    div::before {
-        font-family: 'FontAwesome';
-        margin-right: 5px;
-    }
+	div::before {
+		font-family: 'FontAwesome';
+		margin-right: 5px;
+	}
 
-    &-models::before {
-        content: '\f1b2';
-    }
+	&-models::before {
+		content: '\f1b2';
+	}
 
-    &-textures::before {
-        content: '\f03e';
-    }
+	&-textures::before {
+		content: '\f03e';
+	}
 
-    &-sounds::before {
-        content: '\f001';
-    }
+	&-sounds::before {
+		content: '\f001';
+	}
 
-    &-maps::before {
-        content: '\f278';
-    }
+	&-maps::before {
+		content: '\f278';
+	}
 
-    &-other::before {
-        content: '\f0c5';
-    }
+	&-other::before {
+		content: '\f0c5';
+	}
 }
 
 #source-select {
-    display: flex;
-    height: 100%;
-    justify-content: center;
-    align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	align-items: center;
 
-    .source-builds {
-        width: min-content;
-        
-        span {
-            text-align: center;
-            display: block;
+	.source-builds {
+		width: min-content;
+		
+		span {
+			text-align: center;
+			display: block;
 
-            &:first-child {
-                margin-bottom: 5px;
-            }
+			&:first-child {
+				margin-bottom: 5px;
+			}
 
-            &:last-child {
-                margin-top: 5px;
-            }
-        }
+			&:last-child {
+				margin-top: 5px;
+			}
+		}
 
-        p {
-            margin-bottom: 10px;
-        }
+		p {
+			margin-bottom: 10px;
+		}
 
-        input[type="button"] {
-            width: 100%;
-            margin: 5px 0;
-        }
-    }
+		input[type="button"] {
+			width: 100%;
+			margin: 5px 0;
+		}
+	}
 
-    #source-recent {
-        position: absolute;
-        font-size: 15px;
-        list-style: none;
-        left: 50%;
-        transform: translate(-50%);
-        margin-top: 20px;
-        
-        li:not(:first-child) {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    }
+	#source-recent {
+		position: absolute;
+		font-size: 15px;
+		list-style: none;
+		left: 50%;
+		transform: translate(-50%);
+		margin-top: 20px;
+		
+		li:not(:first-child) {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
 
-    #source-cdn {
-        position: absolute;
-        list-style: none;
-        margin-top: 20px;
-        text-align: center;
-        left: 0;
-        right: 0;
+	#source-cdn {
+		position: absolute;
+		list-style: none;
+		margin-top: 20px;
+		text-align: center;
+		left: 0;
+		right: 0;
 
-        li:first-child {
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-        }
+		li:first-child {
+			border-top-left-radius: 5px;
+			border-bottom-left-radius: 5px;
+		}
 
-        li:last-child {
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-        }
+		li:last-child {
+			border-top-right-radius: 5px;
+			border-bottom-right-radius: 5px;
+		}
 
-        li:not(:first-child) {
-            margin-left: 1px;
-        }
+		li:not(:first-child) {
+			margin-left: 1px;
+		}
 
-        li {
-            background: var(--form-button-base);
-            position: relative;
-            padding: 10px;
-            color: white;
-            display: inline-block;
+		li {
+			background: var(--form-button-base);
+			position: relative;
+			padding: 10px;
+			color: white;
+			display: inline-block;
 
-            &:hover, &.selected {
-                background: var(--form-button-hover);
-            }
+			&:hover, &.selected {
+				background: var(--form-button-hover);
+			}
 
-            span {
-                position: absolute;
-                font-size: 12px;
-                bottom: -21px;
-                left: 0;
-                right: 0;
-            }
-        }
-    }
+			span {
+				position: absolute;
+				font-size: 12px;
+				bottom: -21px;
+				left: 0;
+				right: 0;
+			}
+		}
+	}
 
-    > div {
-        width: 500px;
-        height: 500px;
-        border: 3px dashed var(--font-faded);
-        margin: 0 15px;
-        border-radius: 20px;
-        cursor: pointer;
-        position: relative;
-        transition: border-color linear 0.5s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
+	> div {
+		width: 500px;
+		height: 500px;
+		border: 3px dashed var(--font-faded);
+		margin: 0 15px;
+		border-radius: 20px;
+		cursor: pointer;
+		position: relative;
+		transition: border-color linear 0.5s;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
 
-        .source-icon {
-            font-family: 'FontAwesome';
-            font-size: 120px;
-            color: var(--font-faded);
-            transition: color linear 0.5s;
-        }
+		.source-icon {
+			font-family: 'FontAwesome';
+			font-size: 120px;
+			color: var(--font-faded);
+			transition: color linear 0.5s;
+		}
 
-        .source-text {
-            font-size: 20px;
-            margin-top: 10px;
+		.source-text {
+			font-size: 20px;
+			margin-top: 10px;
 
-            span {
-                opacity: 0.5;
-                margin-left: 2px;
-            }
-        }
-        
-        &.disabled {
-            cursor: default;
-        }
+			span {
+				opacity: 0.5;
+				margin-left: 2px;
+			}
+		}
+		
+		&.disabled {
+			cursor: default;
+		}
 
-        &:hover, &.disabled {
-            border-color: var(--font-highlight);
-    
-            .source-icon {
-                color: var(--font-highlight);
-            }
-        }
-    }
+		&:hover, &.disabled {
+			border-color: var(--font-highlight);
+	
+			.source-icon {
+				color: var(--font-highlight);
+			}
+		}
+	}
 
-    #source-local .source-icon::before {
-        content: '\f0a0';
-    }
+	#source-local .source-icon::before {
+		content: '\f0a0';
+	}
 
-    #source-remote .source-icon::before {
-        content: '\f0ac';
-    }
+	#source-remote .source-icon::before {
+		content: '\f0ac';
+	}
 }
 
 #toast {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 30px;
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    padding-left: 10px;
-    color: var(--font-toast);
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 30px;
+	font-size: 15px;
+	display: flex;
+	align-items: center;
+	padding-left: 10px;
+	color: var(--font-toast);
 
-    span {
-        margin: 0 5px;
-        color: var(--font-toast-link);
-        text-decoration: underline;
-        cursor: pointer;
-    }
+	span {
+		margin: 0 5px;
+		color: var(--font-toast-link);
+		text-decoration: underline;
+		cursor: pointer;
+	}
 
-    &::before {
-        font-family: 'FontAwesome';
-        margin-right: 5px;
-    }
+	&::before {
+		font-family: 'FontAwesome';
+		margin-right: 5px;
+	}
 
-    &.progress {
-        background: var(--toast-progress);
-        &::before { content: '\f017'; }
-    }
+	&.progress {
+		background: var(--toast-progress);
+		&::before { content: '\f017'; }
+	}
 
-    &.info {
-        background: var(--toast-info);
-        &::before { content: '\f05a'; }
-    }
+	&.info {
+		background: var(--toast-info);
+		&::before { content: '\f05a'; }
+	}
 
-    &.error {
-        background: var(--toast-error);
-        &::before { content: '\f071'; }
-    }
+	&.error {
+		background: var(--toast-error);
+		&::before { content: '\f071'; }
+	}
 
-    &.success {
-        background: var(--toast-success);
-        &::before { content: '\f00c'; }
-    }
+	&.success {
+		background: var(--toast-success);
+		&::before { content: '\f00c'; }
+	}
 }
 
 @keyframes update-cog-spin {
-    from { transform:rotate(0deg); }
-    to { transform:rotate(360deg); }
+	from { transform:rotate(0deg); }
+	to { transform:rotate(360deg); }
 }
 
 #loading {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--background);
-    z-index: 90;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: var(--background);
+	z-index: 90;
 
-    &-title {
-        font-size: 25px;
-    }
+	&-title {
+		font-size: 25px;
+	}
 
-    &-progress {
-        font-size: 20px;
-    }
+	&-progress {
+		font-size: 20px;
+	}
 
-    &-icon {
-        font-family: 'FontAwesome';
-        font-size: 80px;
-        margin-bottom: 10px;
-        animation: update-cog-spin 6s infinite linear;
+	&-icon {
+		font-family: 'FontAwesome';
+		font-size: 80px;
+		margin-bottom: 10px;
+		animation: update-cog-spin 6s infinite linear;
 
-        &::before {
-            content: '\f013';
-        }
-    }
+		&::before {
+			content: '\f013';
+		}
+	}
 }
 
 #crash-screen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 50px;
-    display: flex;
-    flex-direction: column;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 50px;
+	display: flex;
+	flex-direction: column;
 
-    &-log {
-        margin-top: 20px;
-        height: 100%;
-    }
+	&-log {
+		margin-top: 20px;
+		height: 100%;
+	}
 
-    h1 {
-        &::before {
-            font-family: 'FontAwesome';
-            content: '\f071';
-            margin-right: 10px;
-        }
-    }
+	h1 {
+		&::before {
+			font-family: 'FontAwesome';
+			content: '\f071';
+			margin-right: 10px;
+		}
+	}
 
-    &-text {
-        font-weight: normal;
-        font-size: 20px;
-        margin: 20px 0;
+	&-text {
+		font-weight: normal;
+		font-size: 20px;
+		margin: 20px 0;
 
-        &-code {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-    }
+		&-code {
+			font-weight: bold;
+			margin-right: 5px;
+		}
+	}
 
-    &-versions span {
-        margin: 0 5px;
-        color: var(--border);
-    }
+	&-versions span {
+		margin: 0 5px;
+		color: var(--border);
+	}
 }

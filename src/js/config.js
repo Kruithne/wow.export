@@ -11,14 +11,14 @@ let isSaving = false;
  * Load configuration from disk.
  */
 const load = async () => {
-    const defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
-    const userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
+	const defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
+	const userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
 
-    log.write('Loaded config defaults: %o', defaultConfig);
-    log.write('Loaded user config: %o', userConfig);
+	log.write('Loaded config defaults: %o', defaultConfig);
+	log.write('Loaded user config: %o', userConfig);
 
-    Object.assign(config, defaultConfig);
-    Object.assign(config, userConfig);
+	Object.assign(config, defaultConfig);
+	Object.assign(config, userConfig);
 };
 
 /**
@@ -28,18 +28,18 @@ const load = async () => {
  * @param {string} key 
  */
 const get = (key) => {
-    let node = config;
+	let node = config;
 
-    // Resolve the configuration key path.
-    const parts = key.split('.');
-    for (const part of parts) {
-        if (!node.hasOwnProperty(part))
-            return null;
+	// Resolve the configuration key path.
+	const parts = key.split('.');
+	for (const part of parts) {
+		if (!node.hasOwnProperty(part))
+			return null;
 
-        node = node[part];
-    }
+		node = node[part];
+	}
 
-    return node;
+	return node;
 };
 
 /**
@@ -49,8 +49,8 @@ const get = (key) => {
  * @param {string} key 
  */
 const getNumber = (key) => {
-    const value = get(key);
-    return value === null ? NaN : Number(value);
+	const value = get(key);
+	return value === null ? NaN : Number(value);
 };
 
 /**
@@ -60,8 +60,8 @@ const getNumber = (key) => {
  * @param {string} key 
  */
 const getBool = (key) => {
-    const value = get(key);
-    return value === null ? null : Boolean(value);
+	const value = get(key);
+	return value === null ? null : Boolean(value);
 };
 
 /**
@@ -71,8 +71,8 @@ const getBool = (key) => {
  * @param {string} key 
  */
 const getString = (key) => {
-    const value = get(key);
-    return value === null ? null : String(value);
+	const value = get(key);
+	return value === null ? null : String(value);
 };
 
 /**
@@ -83,13 +83,13 @@ const getString = (key) => {
  * @param {string} key 
  */
 const getArray = (key) => {
-    let value = get(key);
-    if (!Array.isArray(value)) {
-        value = [];
-        set(key, value);
-    }
+	let value = get(key);
+	if (!Array.isArray(value)) {
+		value = [];
+		set(key, value);
+	}
 
-    return value;
+	return value;
 };
 
 /**
@@ -101,48 +101,48 @@ const getArray = (key) => {
  * @param {mixed} value 
  */
 const set = (key, value) => {
-    let node = config;
+	let node = config;
 
-    // Resolve configuration key path.
-    const parts = key.split('.');
-    const actualKey = parts.pop();
-    for (const part of parts) {
-        if (!node.hasOwnProperty(part))
-            node[part] = {};
+	// Resolve configuration key path.
+	const parts = key.split('.');
+	const actualKey = parts.pop();
+	for (const part of parts) {
+		if (!node.hasOwnProperty(part))
+			node[part] = {};
 
-        node = node[part];
-    }
+		node = node[part];
+	}
 
-    node[actualKey] = value;
-    log.write('Set configuration value %s -> %s', key, value);
+	node[actualKey] = value;
+	log.write('Set configuration value %s -> %s', key, value);
 
-    save();
+	save();
 };
 
 /**
  * Mark configuration for saving.
  */
 const save = () => {
-    if (!isSaving) {
-        isSaving = true;
-        setImmediate(doSave);
-    }
+	if (!isSaving) {
+		isSaving = true;
+		setImmediate(doSave);
+	}
 };
 
 /**
  * Persist configuration data to disk.
  */
 const doSave = async () => {
-    try {
-        const out = JSON.stringify(config, null, '\t');
-        await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
-    } catch (e) {
-        crash('ERR_CONFIG_SAVE', e.message);
-    }
-    
-    isSaving = false;
+	try {
+		const out = JSON.stringify(config, null, '\t');
+		await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
+	} catch (e) {
+		crash('ERR_CONFIG_SAVE', e.message);
+	}
+	
+	isSaving = false;
 };
 
 module.exports = {
-    get, getNumber, getBool, getString, getArray, set, load, save
+	get, getNumber, getBool, getString, getArray, set, load, save
 };

@@ -11,18 +11,18 @@ events.setMaxListeners(666);
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
 const view = {
-    screen: null, // Controls the currently active interface screen.
-    isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-    loadingProgress: '', // Sets the progress text for the loading screen.
-    loadingTitle: '', // Sets the title text for the loading screen.
-    loadPct: -1, // Controls active loading bar percentage.
-    toast: null, // Controls the currently active toast bar.
-    cdnRegions: [], // CDN region data.
-    selectedCDNRegion: null, // Active CDN region.
-    lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
-    config: {}, // Will contain default/user-set configuration. Use config module to operate.
-    availableLocalBuilds: null, // Array containing local builds to display during source select.
-    availableRemoteBuilds: null, // Array containing remote builds to display during source select.
+	screen: null, // Controls the currently active interface screen.
+	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
+	loadingProgress: '', // Sets the progress text for the loading screen.
+	loadingTitle: '', // Sets the title text for the loading screen.
+	loadPct: -1, // Controls active loading bar percentage.
+	toast: null, // Controls the currently active toast bar.
+	cdnRegions: [], // CDN region data.
+	selectedCDNRegion: null, // Active CDN region.
+	lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
+	config: {}, // Will contain default/user-set configuration. Use config module to operate.
+	availableLocalBuilds: null, // Array containing local builds to display during source select.
+	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 };
 
 /**
@@ -31,9 +31,9 @@ const view = {
  * @param {function} func 
  */
 const block = async (func) => {
-    view.isBusy++;
-    await func();
-    view.isBusy--;
+	view.isBusy++;
+	await func();
+	view.isBusy--;
 };
 
 /**
@@ -43,9 +43,9 @@ const block = async (func) => {
  * @param {float} pct 
  */
 const setLoadProgress = async (text, pct = -1) => {
-    view.loadingProgress = text;
-    view.loadPct = pct;
-    await generics.redraw();
+	view.loadingProgress = text;
+	view.loadPct = pct;
+	await generics.redraw();
 };
 
 /**
@@ -53,8 +53,8 @@ const setLoadProgress = async (text, pct = -1) => {
  * @param {string} text Defaults to 'Loading, please wait'
  */
 const showLoadScreen = (text) => {
-    view.screen = 'loading';
-    view.loadingTitle = text || 'Loading, please wait...';
+	view.screen = 'loading';
+	view.loadingTitle = text || 'Loading, please wait...';
 };
 
 /**
@@ -62,21 +62,21 @@ const showLoadScreen = (text) => {
  * @param {string} screenID 
  */
 const setScreen = (screenID) => {
-    view.loadPct = -1; // Ensure we reset if coming from a loading screen.
-    view.screen = screenID;
+	view.loadPct = -1; // Ensure we reset if coming from a loading screen.
+	view.screen = screenID;
 };
 
 /**
  * Hide the currently active toast prompt.
  */
 const hideToast = () => {
-    // Cancel outstanding toast expiry timer.
-    if (toastTimer > -1) {
-        clearTimeout(toastTimer);
-        toastTimer = -1;
-    }
+	// Cancel outstanding toast expiry timer.
+	if (toastTimer > -1) {
+		clearTimeout(toastTimer);
+		toastTimer = -1;
+	}
 
-    view.toast = null;
+	view.toast = null;
 };
 
 /**
@@ -87,15 +87,15 @@ const hideToast = () => {
  * @param {number} ttl Time in millseconds before removing the toast.
  */
 const setToast = (toastType, message, options = null, ttl = -1) => {
-    view.toast = { type: toastType, message, options };
+	view.toast = { type: toastType, message, options };
 
-    // Remove any outstanding toast timer we may have.
-    if (toastTimer > -1)
-        clearTimeout(toastTimer);
+	// Remove any outstanding toast timer we may have.
+	if (toastTimer > -1)
+		clearTimeout(toastTimer);
 
-    // Create a timer to remove this toast.
-    if (ttl > -1)
-        toastTimer = setTimeout(hideToast, ttl);
+	// Create a timer to remove this toast.
+	if (ttl > -1)
+		toastTimer = setTimeout(hideToast, ttl);
 }
 
 

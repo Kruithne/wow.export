@@ -1,108 +1,108 @@
 <!DOCTYPE html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <script defer type="text/javascript" src="lib/vue.js"></script>
-        <script defer type="text/javascript" src="app.js"></script>
-        <link rel="stylesheet" type="text/css" href="app.css"/>
-        <title>wow.export</title>
-    </head>
-    <body>
-        <div id="logo-background"></div>
-        <div id="container" v-cloak>
-            <div id="header" :class="{ shadowed: toast !== null }">
-                <div id="logo">wow.export</div>
-                <div id="nav" v-if="false">
-                    <div id="nav-models">Models</div>
-                    <div id="nav-textures">Textures</div>
-                    <div id="nav-sounds">Sounds</div>
-                    <div id="nav-maps">Maps</div>
-                    <div id="nav-other">Other</div>
-                </div>
-            </div>
-            <div id="content">
-                <div id="loading" v-if="screen === 'loading'">
-                    <div id="loading-icon"></div>
-                    <span id="loading-title">{{ loadingTitle }}</span>
-                    <span id="loading-progress">{{ loadingProgress }}</span>
-                </div>
-                <div id="toast" v-if="toast" :class="toast.type">
-                    {{ toast.message }}
-                    <span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
-                </div>
-                <div id="source-select" v-if="screen === 'source-select'">
-                    <div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
-                        <template v-if="availableLocalBuilds">
-                            <div class="source-builds">
-                                <span>Select Build</span>
-                                <input v-for="(build, i) in availableLocalBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click.stop="availableLocalBuilds = null" class="link">Cancel</span>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <div class="source-icon"></div>
-                            <div class="source-text">
-                                Open Local Installation
-                                <span>(Recommended)</span>
-                                <ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
-                                    <li>Recent</li>
-                                    <li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry }}</li>
-                                </ul>
-                            </div>
-                        </template>
-                    </div>
-                    <div id="source-remote" :class="{ disabled: !!availableRemoteBuilds }" @click="click('source-remote', $event)">
-                        <template v-if="availableRemoteBuilds">
-                            <div class="source-builds">
-                                <span>Select Build</span>
-                                <input v-for="(build, i) in availableRemoteBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
-                                <span @click.stop="availableRemoteBuilds = null" class="link">Cancel</span>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <div class="source-icon"></div>
-                            <div class="source-text">
-                                Use Blizzard CDN
-                                <ul id="source-cdn">
-                                    <li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
-                                        {{ region.tag.toUpperCase() }}
-                                        <span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-            <div id="footer">
-                <span id="footer-links">
-                    <a data-external="https://discord.gg/BYpgyhy">Discord</a> - 
-                    <a data-external="https://patreon.com/Marlamin">Patreon</a> - 
-                    <a data-external="https://twitter.com/Marlamin">Twitter</a> - 
-                    <a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
-                </span>
-                <span id="footer-copyright">
-                    World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
-                </span>
-            </div>
-        </div>
-        <noscript>
-            <div id="crash-screen">
-                <h1>Oh no! The kakapo has exploded...</h1>
-                <div id="crash-screen-versions">
-                    <span id="crash-screen-version">???</span>
-                    <span id="crash-screen-flavour">???</span>
-                    <span id="crash-screen-build">???</span>
-                </div>
-                <div id="crash-screen-text">
-                    <span id="crash-screen-text-code">ERR_BROKEN:</span>
-                    <span id="crash-screen-text-message">Something went so terribly wrong that we don't even have an error message.</span>
-                </div>
-                <div class="form-tray">
-                    <input type="button" value="Report Issue" data-external="https://github.com/Kruithne/wow.export/issues"/>
-                    <input type="button" value="Get Help on Discord" data-external="https://discord.gg/BYpgyhy"/>
-                </div>
-                <textarea id="crash-screen-log">No runtime log available.</textarea>
-            </div>
-        </noscript>
-    </body>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<script defer type="text/javascript" src="lib/vue.js"></script>
+		<script defer type="text/javascript" src="app.js"></script>
+		<link rel="stylesheet" type="text/css" href="app.css"/>
+		<title>wow.export</title>
+	</head>
+	<body>
+		<div id="logo-background"></div>
+		<div id="container" v-cloak>
+			<div id="header" :class="{ shadowed: toast !== null }">
+				<div id="logo">wow.export</div>
+				<div id="nav" v-if="false">
+					<div id="nav-models">Models</div>
+					<div id="nav-textures">Textures</div>
+					<div id="nav-sounds">Sounds</div>
+					<div id="nav-maps">Maps</div>
+					<div id="nav-other">Other</div>
+				</div>
+			</div>
+			<div id="content">
+				<div id="loading" v-if="screen === 'loading'">
+					<div id="loading-icon"></div>
+					<span id="loading-title">{{ loadingTitle }}</span>
+					<span id="loading-progress">{{ loadingProgress }}</span>
+				</div>
+				<div id="toast" v-if="toast" :class="toast.type">
+					{{ toast.message }}
+					<span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
+				</div>
+				<div id="source-select" v-if="screen === 'source-select'">
+					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
+						<template v-if="availableLocalBuilds">
+							<div class="source-builds">
+								<span>Select Build</span>
+								<input v-for="(build, i) in availableLocalBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
+								<span @click.stop="availableLocalBuilds = null" class="link">Cancel</span>
+							</div>
+						</template>
+						<template v-else>
+							<div class="source-icon"></div>
+							<div class="source-text">
+								Open Local Installation
+								<span>(Recommended)</span>
+								<ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
+									<li>Recent</li>
+									<li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry }}</li>
+								</ul>
+							</div>
+						</template>
+					</div>
+					<div id="source-remote" :class="{ disabled: !!availableRemoteBuilds }" @click="click('source-remote', $event)">
+						<template v-if="availableRemoteBuilds">
+							<div class="source-builds">
+								<span>Select Build</span>
+								<input v-for="(build, i) in availableRemoteBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
+								<span @click.stop="availableRemoteBuilds = null" class="link">Cancel</span>
+							</div>
+						</template>
+						<template v-else>
+							<div class="source-icon"></div>
+							<div class="source-text">
+								Use Blizzard CDN
+								<ul id="source-cdn">
+									<li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
+										{{ region.tag.toUpperCase() }}
+										<span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
+									</li>
+								</ul>
+							</div>
+						</template>
+					</div>
+				</div>
+			</div>
+			<div id="footer">
+				<span id="footer-links">
+					<a data-external="https://discord.gg/BYpgyhy">Discord</a> - 
+					<a data-external="https://patreon.com/Marlamin">Patreon</a> - 
+					<a data-external="https://twitter.com/Marlamin">Twitter</a> - 
+					<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
+				</span>
+				<span id="footer-copyright">
+					World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
+				</span>
+			</div>
+		</div>
+		<noscript>
+			<div id="crash-screen">
+				<h1>Oh no! The kakapo has exploded...</h1>
+				<div id="crash-screen-versions">
+					<span id="crash-screen-version">???</span>
+					<span id="crash-screen-flavour">???</span>
+					<span id="crash-screen-build">???</span>
+				</div>
+				<div id="crash-screen-text">
+					<span id="crash-screen-text-code">ERR_BROKEN:</span>
+					<span id="crash-screen-text-message">Something went so terribly wrong that we don't even have an error message.</span>
+				</div>
+				<div class="form-tray">
+					<input type="button" value="Report Issue" data-external="https://github.com/Kruithne/wow.export/issues"/>
+					<input type="button" value="Get Help on Discord" data-external="https://discord.gg/BYpgyhy"/>
+				</div>
+				<textarea id="crash-screen-log">No runtime log available.</textarea>
+			</div>
+		</noscript>
+	</body>
 </html>

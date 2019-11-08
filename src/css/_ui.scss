@@ -1,41 +1,41 @@
 .form-tray {
-    display: flex;
-    margin: 10px 0;
-    
-    input {
-        margin: 0 5px;
-    }
+	display: flex;
+	margin: 10px 0;
+	
+	input {
+		margin: 0 5px;
+	}
 }
 
 input[type="button"] {
-    padding: 10px;
-    background: var(--form-button-base);
-    color: var(--font-primary);
-    width: 200px;
-    font-size: 18px;
-    border: 0;
-    border-radius: 5px;
-    cursor: pointer;
+	padding: 10px;
+	background: var(--form-button-base);
+	color: var(--font-primary);
+	width: 200px;
+	font-size: 18px;
+	border: 0;
+	border-radius: 5px;
+	cursor: pointer;
 
-    &:hover {
-        background: var(--form-button-hover);
-        color: var(--font-highlight);
-    }
+	&:hover {
+		background: var(--form-button-hover);
+		color: var(--font-highlight);
+	}
 
-    &.disabled {
-        cursor: default;
-        opacity: 0.5;
-        background: var(--form-button-disabled);
-    }
+	&.disabled {
+		cursor: default;
+		opacity: 0.5;
+		background: var(--form-button-disabled);
+	}
 }
 
 textarea {
-    border-radius: 5px;
-    resize: none;
-    box-shadow: var(--form-field-shadow);
-    background: var(--background-trans);
-    color: white;
-    padding: 10px;
-    font-family: 'Selawik', sans-serif;
-    font-size: 15px;
+	border-radius: 5px;
+	resize: none;
+	box-shadow: var(--form-field-shadow);
+	background: var(--background-trans);
+	color: white;
+	padding: 10px;
+	font-family: 'Selawik', sans-serif;
+	font-size: 15px;
 }

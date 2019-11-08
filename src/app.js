@@ -13,38 +13,38 @@ BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
  */
 let isCrashed = false;
 crash = (errorCode, errorText) => {
-    // Prevent a never-ending cycle of depression.
-    if (isCrashed)
-        return;
+	// Prevent a never-ending cycle of depression.
+	if (isCrashed)
+		return;
 
-    isCrashed = true;
+	isCrashed = true;
 
-    // Replace the entire markup with just that from the <noscript> block.
-    const errorMarkup = document.querySelector('noscript').innerHTML;
-    const body = document.querySelector('body');
-    body.innerHTML = errorMarkup;
+	// Replace the entire markup with just that from the <noscript> block.
+	const errorMarkup = document.querySelector('noscript').innerHTML;
+	const body = document.querySelector('body');
+	body.innerHTML = errorMarkup;
 
-    // Keep the logo, because that's cool.
-    const logo = document.createElement('div');
-    logo.setAttribute('id', 'logo-background');
-    document.body.appendChild(logo);
+	// Keep the logo, because that's cool.
+	const logo = document.createElement('div');
+	logo.setAttribute('id', 'logo-background');
+	document.body.appendChild(logo);
 
-    const setText = (id, text) => document.querySelector(id).textContent = text;
+	const setText = (id, text) => document.querySelector(id).textContent = text;
 
-    // Show build version/flavour/ID.
-    const manifest = nw.App.manifest;
-    setText('#crash-screen-version', 'v' + manifest.version);
-    setText('#crash-screen-flavour', manifest.flavour);
-    setText('#crash-screen-build', manifest.guid);
+	// Show build version/flavour/ID.
+	const manifest = nw.App.manifest;
+	setText('#crash-screen-version', 'v' + manifest.version);
+	setText('#crash-screen-flavour', manifest.flavour);
+	setText('#crash-screen-build', manifest.guid);
 
-    // Display our error code/text.
-    setText('#crash-screen-text-code', errorCode);
-    setText('#crash-screen-text-message', errorText);
+	// Display our error code/text.
+	setText('#crash-screen-text-code', errorCode);
+	setText('#crash-screen-text-message', errorText);
 
-    // getErrorDump is set as a global function by the log module.
-    // This is used to get the contents of the runtime log without depending on the module.
-    if (typeof getErrorDump === 'function')
-        getErrorDump().then(data => setText('#crash-screen-log', data));
+	// getErrorDump is set as a global function by the log module.
+	// This is used to get the contents of the runtime log without depending on the module.
+	if (typeof getErrorDump === 'function')
+		getErrorDump().then(data => setText('#crash-screen-log', data));
 };
 
 // Register crash handlers.
@@ -72,107 +72,107 @@ window.ondrop = e => { e.preventDefault(); return false; };
 
 // Launch DevTools for debug builds.
 if (!BUILD_RELEASE)
-    win.showDevTools();
+	win.showDevTools();
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
-    if (!e.target.matches('[data-external]'))
-        return;
+	if (!e.target.matches('[data-external]'))
+		return;
 
-    e.preventDefault();
-    nw.Shell.openExternal(e.target.getAttribute('data-external'));
+	e.preventDefault();
+	nw.Shell.openExternal(e.target.getAttribute('data-external'));
 });
 
 (async () => {
-    // Wait for the DOM to be loaded.
-    if (document.readyState === 'loading')
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+	// Wait for the DOM to be loaded.
+	if (document.readyState === 'loading')
+		await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
 
-    // Append the application version to the title bar.
-    document.title += ' v' + nw.App.manifest.version;
+	// Append the application version to the title bar.
+	document.title += ' v' + nw.App.manifest.version;
 
-    // Interlink error handling for Vue.
-    Vue.config.errorHandler = err => crash('ERR_VUE', err.message);
+	// Interlink error handling for Vue.
+	Vue.config.errorHandler = err => crash('ERR_VUE', err.message);
 
-    // Initialize Vue.
-    core.view = new Vue({
-        el: '#container',
-        data: core.view,
-        methods: {
-            /**
-             * Invoked when a toast option is clicked.
-             * The tag is passed to our global event emitter.
-             * @param {string} tag 
-             */
-            handleToastOptionClick: function(tag) {
-                this.toast = null;
-                core.events.emit(tag);
-            },
+	// Initialize Vue.
+	core.view = new Vue({
+		el: '#container',
+		data: core.view,
+		methods: {
+			/**
+			 * Invoked when a toast option is clicked.
+			 * The tag is passed to our global event emitter.
+			 * @param {string} tag 
+			 */
+			handleToastOptionClick: function(tag) {
+				this.toast = null;
+				core.events.emit(tag);
+			},
 
-            /**
-             * Invoked when the user manually selects a CDN region.
-             * @param {object} region 
-             */
-            setSelectedCDN: function(region) {
-                this.selectedCDNRegion = region;
-                this.lockCDNRegion = true;
-                config.set('sourceSelectUserRegion', region.tag);
-            },
+			/**
+			 * Invoked when the user manually selects a CDN region.
+			 * @param {object} region 
+			 */
+			setSelectedCDN: function(region) {
+				this.selectedCDNRegion = region;
+				this.lockCDNRegion = true;
+				config.set('sourceSelectUserRegion', region.tag);
+			},
 
-            /**
-             * Emit an event using the global event emitter.
-             * @param {string} tag
-             * @param {object} event
-             */
-            click: function(tag, event, ...params) {
-                if (!event.target.classList.contains('disabled'))
-                    core.events.emit('click-' + tag, ...params);
-            }
-        },
+			/**
+			 * Emit an event using the global event emitter.
+			 * @param {string} tag
+			 * @param {object} event
+			 */
+			click: function(tag, event, ...params) {
+				if (!event.target.classList.contains('disabled'))
+					core.events.emit('click-' + tag, ...params);
+			}
+		},
 
-        watch: {
-            /**
-             * Invoked when the active 'screen' is changed.
-             * @param {string} val 
-             */
-            screen: function(val) {
-                core.events.emit('screen-' + val);
-            },
+		watch: {
+			/**
+			 * Invoked when the active 'screen' is changed.
+			 * @param {string} val 
+			 */
+			screen: function(val) {
+				core.events.emit('screen-' + val);
+			},
 
-            /**
-             * Invoked when the active loading percentage is changed.
-             * @param {float} val 
-             */
-            loadPct: function(val) {
-                win.setProgressBar(val);
-            }
-        }
-    });
+			/**
+			 * Invoked when the active loading percentage is changed.
+			 * @param {float} val 
+			 */
+			loadPct: function(val) {
+				win.setProgressBar(val);
+			}
+		}
+	});
 
-    // Log some basic information for potential diagnostics.
-    const manifest = nw.App.manifest;
-    const cpus = os.cpus();
-    log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
-    log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
-    log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
+	// Log some basic information for potential diagnostics.
+	const manifest = nw.App.manifest;
+	const cpus = os.cpus();
+	log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
+	log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
+	log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
 
-    // Load configuration.
-    await config.load();
+	// Load configuration.
+	await config.load();
 
-    // Check for updates (without blocking).
-    if (BUILD_RELEASE) {
-        updater.checkForUpdates().then(updateAvailable => {
-            if (updateAvailable) {
-                core.events.once('toast-accept-update', () => updater.applyUpdate());
+	// Check for updates (without blocking).
+	if (BUILD_RELEASE) {
+		updater.checkForUpdates().then(updateAvailable => {
+			if (updateAvailable) {
+				core.events.once('toast-accept-update', () => updater.applyUpdate());
 
-                core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-                    'toast-accept-update': 'Update Now',
-                    'toast-dismiss': 'Maybe Layer'
-                });
-            }
-        });
-    }
+				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+					'toast-accept-update': 'Update Now',
+					'toast-dismiss': 'Maybe Layer'
+				});
+			}
+		});
+	}
 
-    // Set source select as the currently active interface screen.
-    core.setScreen('source-select');
+	// Set source select as the currently active interface screen.
+	core.setScreen('source-select');
 })();
