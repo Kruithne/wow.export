@@ -156,11 +156,8 @@ class BLTEReader extends BufferWrapper {
         const expectedSize = this.blocks[index].DecompSize;
 
         // Reallocate buffer to compensate.
-        if (decomp.byteLength > expectedSize) {
-            const newBuffer = BufferWrapper.allocUnsafe((this.byteLength - expectedSize) + decomp.byteLength);
-            newBuffer.writeBuffer(this);
-            this._buf = newBuffer.raw;
-        }
+        if (decomp.byteLength > expectedSize)
+            this.setCapacity(this.byteLength + (decomp.byteLength - expectedSize));
 
         this._writeBufferBLTE(decomp);
     }

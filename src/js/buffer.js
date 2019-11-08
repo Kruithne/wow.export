@@ -592,6 +592,22 @@ class BufferWrapper {
     }
 
     /**
+     * Replace the internal buffer with a different capacity.
+     * If the specified capacity is lower than the current, there may be data loss.
+     * @param {number} capacity New capacity of the internal buffer.
+     * @param {boolean} secure If true, expanded capacity will be zeroed for security.
+     */
+    setCapacity(capacity, secure = false) {
+        // Don't waste time replacing the buffer for nothing.
+        if (capacity === this.byteLength)
+            return;
+
+        const buf = secure ? Buffer.alloc(capacity) : Buffer.allocUnsafe(capacity);
+        this._buf.copy(buf, 0, 0, Math.min(capacity, this.byteLength));
+        this._buf = buf;
+    }
+
+    /**
      * Calculate a hash of given bytes.
      * @param {number} length Amount of bytes to process.
      * @param {string} hash Hashing method, defaults to 'md5'.
