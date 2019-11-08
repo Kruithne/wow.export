@@ -79,7 +79,7 @@ const consumeUTF8Stream = async (stream) => {
  */
 const consumeStream = async (stream, contentLength) => {
     return new Promise(resolve => {
-        const buf = BufferWrapper.allocUnsafe(contentLength);
+        const buf = BufferWrapper.alloc(contentLength);
         stream.on('data', chunk => buf.writeBuffer(chunk));
         stream.on('end', () => {
             buf.seek(0); // Reset position.

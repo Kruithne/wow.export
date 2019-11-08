@@ -66,7 +66,7 @@ class Salsa20 {
 	 * @returns {BufferWrapper}
 	 */
 	getBytes(byteCount) {
-        const out = BufferWrapper.allocUnsafe(byteCount);
+        const out = BufferWrapper.alloc(byteCount);
 		for (let i = 0; i < byteCount; i++) {
 			if (this.blockUsed === 64) {
 				this._generateBlock();
@@ -88,7 +88,7 @@ class Salsa20 {
 	 * @returns {BufferWrapper}
 	 */
 	process(buf) {
-        const out = BufferWrapper.allocUnsafe(buf.byteLength);
+        const out = BufferWrapper.alloc(buf.byteLength);
 		const bytes = this.getBytes(buf.byteLength);
 
 		buf.seek(0);

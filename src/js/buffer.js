@@ -27,12 +27,12 @@ const BIG_ENDIAN = {
 class BufferWrapper {
     /**
      * Alloc a buffer with the given length and return it wrapped.
-     * The buffer is not zeroed before use and may contain secure data.
-     * @param {number} length 
+     * @param {number} length Initial capacity of the internal buffer.
+     * @param {boolean} secure If true, buffer will be zeroed for security.
      * @returns {BufferWrapper}
      */
-    static allocUnsafe(length) {
-        return new BufferWrapper(Buffer.allocUnsafe(length));
+    static alloc(length, secure = false) {
+        return new BufferWrapper(secure ? Buffer.alloc(length) : Buffer.allocUnsafe(length));
     }
 
     /**
