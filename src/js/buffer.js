@@ -6,6 +6,8 @@ const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
 	READ_UINT: Buffer.prototype.readUIntLE,
 	READ_FLOAT: Buffer.prototype.readFloatLE,
+	READ_BIG_INT: Buffer.prototype.readBigInt64LE,
+	READ_BIG_UINT: Buffer.prototype.readBigUInt64LE,
 	WRITE_INT: Buffer.prototype.writeIntLE,
 	WRITE_UINT: Buffer.prototype.writeUIntLE,
 	WRITE_FLOAT: Buffer.prototype.writeFloatLE
@@ -15,6 +17,8 @@ const BIG_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntBE,
 	READ_UINT: Buffer.prototype.readUIntBE,
 	READ_FLOAT: Buffer.prototype.readFloatBE,
+	READ_BIG_INT: Buffer.prototype.readBigInt64BE,
+	READ_BIG_UINT: Buffer.prototype.readBigUInt64BE,
 	WRITE_INT: Buffer.prototype.writeIntBE,
 	WRITE_UINT: Buffer.prototype.writeUIntBE,
 	WRITE_FLOAT: Buffer.prototype.writeFloatBE
@@ -299,6 +303,42 @@ class BufferWrapper {
 	 */
 	readUInt48BE(count = 1) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 6);
+	}
+
+	/**
+	 * Read one or more signed 64-bit integers in little endian.
+	 * @param {number} count How many to read.
+	 * @returns {number|number[]}
+	 */
+	readInt64LE(count = 1) {
+		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_INT, 8);
+	}
+
+	/**
+	 * Read one or more unsigned 64-bit integers in little endian.
+	 * @param {number} count How many to read.
+	 * @returns {number|number[]}
+	 */
+	readUInt64LE(count = 1) {
+		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_UNIT, 8);
+	}
+
+	/**
+	 * Read one or more signed 64-bit integers in big endian.
+	 * @param {number} count How many to read.
+	 * @returns {number|number[]}
+	 */
+	readInt64BE(count = 1) {
+		return this._readInt(count, BIG_ENDIAN.READ_BIG_INT, 8);
+	}
+
+	/**
+	 * Read one or more unsigned 64-bit integers in big endian.
+	 * @param {number} count How many to read.
+	 * @returns {number|number[]}
+	 */
+	readUInt64BE(count = 1) {
+		return this._readInt(count, BIG_ENDIAN.READ_BIG_UINT, 8);
 	}
 
 	/**
