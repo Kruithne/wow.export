@@ -118,7 +118,7 @@ class CASCRemote extends CASC {
 
 		await this.progress.updateWithText(5, 'Fetching encoding table');
 		const encRaw = await this.getDataFile(cdnKey, async (bytes, total) => await this.progress.update(5, bytes / total));
-		log.timeEnd('Downloaded encoding table (%s)', generics.filesize(encRaw.length));
+		log.timeEnd('Downloaded encoding table (%s)', generics.filesize(encRaw.byteLength));
 
 		// Parse encoding file.
 		log.timeLog();
