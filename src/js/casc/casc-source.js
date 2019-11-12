@@ -5,34 +5,34 @@ const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
 
 const LocaleFlag = {
-	enUS = 0x2,
-	koKR = 0x4,
-	frFR = 0x10,
-	deDE = 0x20,
-	zhCN = 0x40,
-	esES = 0x80,
-	zhTW = 0x100,
-	enGB = 0x200,
-	enCN = 0x400,
-	enTW = 0x800,
-	esMX = 0x1000,
-	ruRU = 0x2000,
-	ptBR = 0x4000,
-	itIT = 0x8000,
-	ptPT = 0x10000
+	enUS: 0x2,
+	koKR: 0x4,
+	frFR: 0x10,
+	deDE: 0x20,
+	zhCN: 0x40,
+	esES: 0x80,
+	zhTW: 0x100,
+	enGB: 0x200,
+	enCN: 0x400,
+	enTW: 0x800,
+	esMX: 0x1000,
+	ruRU: 0x2000,
+	ptBR: 0x4000,
+	itIT: 0x8000,
+	ptPT: 0x10000
 };
 
 const ContentFlag = {
-	LoadOnWindows = 0x8,
-	LoadOnMacOS = 0x10,
-	LowViolence = 0x80,
-	DoNotLoad = 0x100,
-	UpdatePlugin = 0x800,
-	Encrypted = 0x8000000,
-	NoNameHash = 0x10000000,
-	UncommonResolution = 0x20000000,
-	Bundle = 0x40000000,
-	NoCompression = 0x80000000
+	LoadOnWindows: 0x8,
+	LoadOnMacOS: 0x10,
+	LowViolence: 0x80,
+	DoNotLoad: 0x100,
+	UpdatePlugin: 0x800,
+	Encrypted: 0x8000000,
+	NoNameHash: 0x10000000,
+	UncommonResolution: 0x20000000,
+	Bundle: 0x40000000,
+	NoCompression: 0x80000000
 };
 
 class CASC {
