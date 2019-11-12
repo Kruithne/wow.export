@@ -104,9 +104,11 @@ document.addEventListener('click', function(e) {
 			 * The tag is passed to our global event emitter.
 			 * @param {string} tag 
 			 */
-			handleToastOptionClick: function(tag) {
+			handleToastOptionClick: function(func) {
 				this.toast = null;
-				core.events.emit(tag);
+				
+				if (typeof func === 'function')
+					func();
 			},
 
 			/**
@@ -163,11 +165,9 @@ document.addEventListener('click', function(e) {
 	if (BUILD_RELEASE) {
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
-				core.events.once('toast-accept-update', () => updater.applyUpdate());
-
 				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-					'toast-accept-update': 'Update Now',
-					'toast-dismiss': 'Maybe Layer'
+					'Update Now': () => updater.applyUpdate(),
+					'Maybe Later': false
 				});
 			}
 		});

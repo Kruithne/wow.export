@@ -27,7 +27,7 @@
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
-					<span v-for="(label, tag) in toast.options" @click="handleToastOptionClick(tag)">{{ label }}</span>
+					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">
 					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
