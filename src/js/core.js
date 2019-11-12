@@ -42,7 +42,7 @@ const block = async (func) => {
  * @param {string} text 
  * @param {float} pct 
  */
-const setLoadProgress = async (text, pct = -1) => {
+const setLoadingText = async (text, pct = -1) => {
 	view.loadingProgress = text;
 	view.loadPct = pct;
 	await generics.redraw();
@@ -99,4 +99,4 @@ const setToast = (toastType, message, options = null, ttl = -1) => {
 }
 
 
-module.exports = { events, view, block, setLoadProgress, showLoadScreen, setScreen, setToast, hideToast };
+module.exports = { events, view, block, setLoadingText, showLoadScreen, setScreen, setToast, hideToast };
