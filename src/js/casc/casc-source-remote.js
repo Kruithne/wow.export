@@ -118,13 +118,13 @@ class CASCRemote extends CASC {
 
 		await this.progress.updateWithText(5, 'Fetching encoding table');
 		const encRaw = await this.getDataFile(cdnKey, async (bytes, total) => await this.progress.update(5, bytes / total));
-		log.timeEnd('Downloaded encoding table');
+		log.timeEnd('Downloaded encoding table (%s)', generics.filesize(encRaw.length));
 
 		// Parse encoding file.
 		log.timeLog();
 		await this.progress.updateWithText(6, 'Parsing encoding table');
 		await this.parseEncodingFile(encRaw, encKeys[1]);
-		log.timeEnd('Parsed encoding table');
+		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
 	}
 
 	/**
@@ -147,7 +147,7 @@ class CASCRemote extends CASC {
 		log.timeLog();
 		await this.progress.updateWithText(8, 'Parsing root file')
 		await this.parseRootFile(root, rootKey);
-		log.timeEnd('Parsed root file with %d entries', this.rootEntries.length);
+		log.timeEnd('Parsed root file (%d entries)', this.rootEntries.length);
 	}
 
 	/**
@@ -158,18 +158,24 @@ class CASCRemote extends CASC {
 		let archiveProgress = 0;
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
+		let archiveEntryCount = 0;
 
 		log.timeLog();
 
 		await this.progress.updateWithText(4, 'Fetching archives');
 		await generics.queue(archiveKeys, async (key) => {
-			this.archives.set(key, await this.getIndexFile(key));
+			const entries = await this.getIndexFile(key);
+			archiveEntryCount += entries.length;
+
+			this.archives.set(key, entries);
 
 			archiveProgress++;
 			await this.progress.update(4, archiveProgress / archiveCount);
 		}, 50);
 
-		log.timeEnd('Downloaded %d archives', archiveCount);
+		// Quick and dirty way to get the total archive size using config.
+		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
+		log.timeEnd('Downloaded %d archives (%d entries, %s)', archiveCount, archiveEntryCount, generics.filesize(archiveTotalSize));
 	}
 
 	/**
