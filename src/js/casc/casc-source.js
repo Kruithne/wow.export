@@ -81,6 +81,7 @@ class CASC {
 	 * Parse entries from a root file.
 	 * @param {BufferWrapper} data 
 	 * @param {string} hash 
+	 * @returns {number}
 	 */
 	async parseRootFile(data, hash) {
 		const root = new BLTEReader(data, hash);
@@ -126,7 +127,7 @@ class CASC {
 			rootTypes.push({ contentFlags, localeFlags });
 		}
 
-		console.log(this);
+		return totalFileCount;
 	}
 	
 	/**

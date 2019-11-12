@@ -145,9 +145,9 @@ class CASCRemote extends CASC {
 
 		// Parse root file.
 		log.timeLog();
-		await this.progress.updateWithText(8, 'Parsing root file')
-		await this.parseRootFile(root, rootKey);
-		log.timeEnd('Parsed root file (%d entries)', this.rootEntries.length);
+		await this.progress.updateWithText(8, 'Parsing root file');
+		const rootEntryCount = await this.parseRootFile(root, rootKey);
+		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
 	}
 
 	/**
