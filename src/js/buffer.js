@@ -320,7 +320,7 @@ class BufferWrapper {
 	 * @returns {number|number[]}
 	 */
 	readUInt64LE(count = 1) {
-		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_UNIT, 8);
+		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_UINT, 8);
 	}
 
 	/**
