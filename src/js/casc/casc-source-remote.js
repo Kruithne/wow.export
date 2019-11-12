@@ -123,7 +123,7 @@ class CASCRemote extends CASC {
 
 		// Parse encoding file.
 		log.timeLog();
-		await this.progress.updateWithText(6, 'Parshing encoding table');
+		await this.progress.updateWithText(6, 'Parsing encoding table');
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table');
 	}
