@@ -12,10 +12,12 @@ const normalizeKey = (key) => {
 	if (keyParts.length === 1)
 		return key;
 
-	for (let i = 1; i < keyParts.length; i++)
-		keyParts[i][0] = keyParts[i][0].toUpperCase();
+	for (let i = 1; i < keyParts.length; i++) {
+		const part = keyParts[i];
+		keyParts[i] = part.charAt(0).toUpperCase() + part.slice(1);
+	}
 
-	return keyParts.join();
+	return keyParts.join('');
 };
 
 module.exports = data => {
