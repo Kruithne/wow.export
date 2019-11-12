@@ -97,47 +97,19 @@ class CASCRemote extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading remote CASC build: %o', this.build);
 
-		// Download CDN server list.
-		await core.setLoadProgress('Fetching CDN configuration', 0.03);
-		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
-		log.write('%o', serverConfigs);
+		await this.downloadServerConfig();
+		await this.resolveCDNHost();
+		await this.downloadCDNConfigs();
+		await this.downloadArchives();
+		await this.downloadEncoding();
 
-		// Locate the CDN entry for our selected region.
-		this.serverConfig = serverConfigs.find(e => e.Name === this.region);
-		if (!this.serverConfig)
-			throw new Error('CDN config does not contain entry for region ' + this.region);
+		// ToDo: Root file.
+	}
 
-		await core.setLoadProgress('Locating fastest CDN server', 0.06);
-		const host = await this.resolveBestHost(this.serverConfig.Hosts);
-		if (host === null)
-			throw new Error('Unable to resolve a CDN host.');
-
-		this.host = host + this.serverConfig.Path + '/';
-		log.write('CDN host: %s', this.host);
-
-		// Download CDNConfig and BuildConfig.
-		await core.setLoadProgress('Fetching build configurations', 0.1);
-		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
-		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
-
-		log.write('CDNConfig: %o', this.cdnConfig);
-		log.write('BuildConfig: %o', this.buildConfig);
-
-		// Download archive indexes.
-		let archiveProgress = 0;
-		const archiveKeys = this.cdnConfig.archives.split(' ');
-		const archiveCount = archiveKeys.length;
-
-		log.timeLog();
-		await generics.queue(archiveKeys, async (key) => {
-			this.archives.set(key, await this.getIndexFile(key));
-
-			archiveProgress++;
-			await core.setLoadProgress(util.format('Fetching archives %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
-		}, 50);
-
-		log.timeEnd('Downloaded %d archives', archiveCount);
-
+	/**
+	 * Download and parse the encoding file.
+	 */
+	async downloadEncoding() {
 		// Download encoding file.
 		log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
@@ -152,8 +124,42 @@ class CASCRemote extends CASC {
 		await core.setLoadProgress('Parsing encoding table', 0.3);
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table');
+	}
 
-		// ToDo: Root file.
+	/**
+	 * Download and parse archive files.
+	 */
+	async downloadArchives() {
+		// Download archive indexes.
+		let archiveProgress = 0;
+		const archiveKeys = this.cdnConfig.archives.split(' ');
+		const archiveCount = archiveKeys.length;
+
+		log.timeLog();
+		await generics.queue(archiveKeys, async (key) => {
+			this.archives.set(key, await this.getIndexFile(key));
+
+			archiveProgress++;
+			await core.setLoadProgress(util.format('Fetching archives %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
+		}, 50);
+
+		log.timeEnd('Downloaded %d archives', archiveCount);
+	}
+
+	/**
+	 * Download the CDN configuration and store the entry for our
+	 * selected region.
+	 */
+	async downloadServerConfig() {
+		// Download CDN server list.
+		await core.setLoadProgress('Fetching CDN configuration', 0.03);
+		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
+		log.write('%o', serverConfigs);
+
+		// Locate the CDN entry for our selected region.
+		this.serverConfig = serverConfigs.find(e => e.Name === this.region);
+		if (!this.serverConfig)
+			throw new Error('CDN config does not contain entry for region ' + this.region);
 	}
 
 	/**
@@ -185,15 +191,28 @@ class CASCRemote extends CASC {
 	}
 
 	/**
-	 * Run a ping for all hosts in a string and return the fastest.
-	 * Returns NULL if all the hosts failed to ping.
-	 * @param {string} hostString Space-delimited host string.
+	 * Download the CDNConfig and BuildConfig.
 	 */
-	async resolveBestHost(hostString) {
-		log.write('Resolving best host: %s', hostString);
+	async downloadCDNConfigs() {
+		// Download CDNConfig and BuildConfig.
+		await core.setLoadProgress('Fetching build configurations', 0.1);
+		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
+		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
+
+		log.write('CDNConfig: %o', this.cdnConfig);
+		log.write('BuildConfig: %o', this.buildConfig);
+	}
+
+	/**
+	 * Run a ping for all hosts in the server config and resolve fastest.
+	 * Returns NULL if all the hosts failed to ping.
+	 */
+	async resolveCDNHost() {
+		await core.setLoadProgress('Locating fastest CDN server', 0.06);
+		log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
 		let bestHost = null;
-		const hosts = hostString.split(' ').map(e => 'http://' + e + '/');
+		const hosts = this.serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
 		const hostPings = [];
 
 		for (const host of hosts) {
@@ -211,10 +230,10 @@ class CASCRemote extends CASC {
 
 		// No hosts resolved.
 		if (bestHost === null)
-			return null;
+			throw new Error('Unable to resolve a CDN host.');
 
 		log.write('%s resolved as the fastest host with a ping of %dms', bestHost.host, bestHost.ping);
-		return bestHost.host;
+		this.host = bestHost.host + this.serverConfig.Path + '/';
 	}
 
 	/**
