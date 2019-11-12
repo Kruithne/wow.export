@@ -61,6 +61,13 @@ const timeEnd = (label, ...params) => {
 };
 
 /**
+ * Open the runtime log in the users external editor.
+ */
+const openRuntimeLog = () => {
+	nw.Shell.openItem(constants.RUNTIME_LOG);
+};
+
+/**
  * Write a message to the log.
  */
 const write = (...parameters) => {
@@ -100,4 +107,4 @@ const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
 stream.on('drain', drainPool);
 
-module.exports = { write, timeLog, timeEnd };
+module.exports = { write, timeLog, timeEnd, openRuntimeLog };
