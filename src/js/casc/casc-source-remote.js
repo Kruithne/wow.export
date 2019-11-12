@@ -113,7 +113,7 @@ class CASCRemote extends CASC {
 	async downloadEncoding() {
 		// Download encoding file.
 		log.timeLog();
-		const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
+		const encKeys = this.buildConfig.encoding.split(' ');
 		const cdnKey = this.formatCDNKey(encKeys[1]);
 
 		await this.progress.updateWithText(5, 'Fetching encoding table');
