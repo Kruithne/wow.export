@@ -97,15 +97,14 @@ class CASCRemote extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading remote CASC build: %o', this.build);
 
-		this.progress = core.createProgress(6);
+		this.progress = core.createProgress(8);
 		await this.downloadServerConfig();
 		await this.resolveCDNHost();
 		await this.downloadCDNConfigs();
 		await this.downloadArchives();
 		await this.downloadEncoding();
+		await this.downloadRoot();
 		this.progress.finish();
-
-		// ToDo: Root file.
 	}
 
 	/**
@@ -126,6 +125,29 @@ class CASCRemote extends CASC {
 		await this.progress.updateWithText(6, 'Parsing encoding table');
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table');
+	}
+
+	/**
+	 * Download and parse the root file.
+	 */
+	async downloadRoot() {
+		// Get root key from encoding table.
+		const rootKey = this.encodingKeys.get(this.buildConfig.root);
+		if (rootKey === undefined)
+			throw new Error('No encoding entry found for root key');
+
+		// Download root file.
+		log.timeLog();
+		await this.progress.updateWithText(7, 'Fetching root file');
+		const urlKey = this.formatCDNKey(rootKey);
+		const root = await this.getDataFile(urlKey, async (bytes, total) => await this.progress.update(7, bytes / total));
+		log.timeEnd('Downloaded root file (%s)', generics.filesize(root.byteLength));
+
+		// Parse root file.
+		log.timeLog();
+		await this.progress.updateWithText(8, 'Parsing root file')
+		await this.parseRootFile(root, rootKey);
+		log.timeEnd('Parsed root file with %d entries', this.rootEntries.length);
 	}
 
 	/**
