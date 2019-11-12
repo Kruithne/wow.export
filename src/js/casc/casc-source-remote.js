@@ -115,17 +115,9 @@ class CASCRemote extends CASC {
 		const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
 		await core.setLoadingText('Fetching encoding table', 0.2);
 		const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]), async (bytes, total) => {
-			await core.(util.format('Fetching encoding table %s / %s', generics.filesize(bytes), generics.filesize(total)), 0.2 + ((bytes / total) / 10));
+			await core.setLoadingText(util.format('Fetching encoding table %s / %s', generics.filesize(bytes), generics.filesize(total)), 0.2 + ((bytes / total) / 10));
 		});
 		log.timeEnd('Downloaded encoding table');
-
-		// Download encoding file.
-		log.timeLog();
-		const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
-		const cdnKey = this.formatCDNKey(encKeys[1]);
-		const encRaw = await this.getDataFile(cdnKey, async (bytes, total) => {
-
-		});
 
 		// Parse encoding file.
 		log.timeLog();
