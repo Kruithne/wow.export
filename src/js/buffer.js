@@ -84,7 +84,7 @@ class BufferWrapper {
 	 */
 	seek(ofs) {
 		const pos = ofs < 0 ? this.byteLength + ofs : ofs;
-		if (pos < 0 || pos >= this.byteLength)
+		if (pos < 0 || pos > this.byteLength)
 			throw new Error(util.format('seek() offset out of bounds %d -> %d ! %d', ofs, pos, this.byteLength));
 
 		this._ofs = pos;
@@ -97,7 +97,7 @@ class BufferWrapper {
 	 */
 	move(ofs) {
 		const pos = this.offset + ofs;
-		if (pos < 0 || pos >= this.byteLength)
+		if (pos < 0 || pos > this.byteLength)
 			throw new Error(util.format('move() offset out of bounds %d -> %d ! %d', ofs, pos, this.byteLength));
 
 		this._ofs = pos;
