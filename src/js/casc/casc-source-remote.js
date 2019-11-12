@@ -97,11 +97,13 @@ class CASCRemote extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading remote CASC build: %o', this.build);
 
+		this.progress = core.createProgress(6);
 		await this.downloadServerConfig();
 		await this.resolveCDNHost();
 		await this.downloadCDNConfigs();
 		await this.downloadArchives();
 		await this.downloadEncoding();
+		this.progress.finish();
 
 		// ToDo: Root file.
 	}
@@ -113,15 +115,15 @@ class CASCRemote extends CASC {
 		// Download encoding file.
 		log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' '); // MD5 + Key
-		await core.setLoadingText('Fetching encoding table', 0.2);
-		const encRaw = await this.getDataFile(this.formatCDNKey(encKeys[1]), async (bytes, total) => {
-			await core.setLoadingText(util.format('Fetching encoding table %s / %s', generics.filesize(bytes), generics.filesize(total)), 0.2 + ((bytes / total) / 10));
-		});
+		const cdnKey = this.formatCDNKey(encKeys[1]);
+
+		await this.progress.updateWithText(5, 'Fetching encoding table');
+		const encRaw = await this.getDataFile(cdnKey, async (bytes, total) => await this.progress.update(5, bytes / total));
 		log.timeEnd('Downloaded encoding table');
 
 		// Parse encoding file.
 		log.timeLog();
-		await core.setLoadingText('Parsing encoding table', 0.3);
+		await this.progress.updateWithText(6, 'Parshing encoding table');
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table');
 	}
@@ -136,11 +138,13 @@ class CASCRemote extends CASC {
 		const archiveCount = archiveKeys.length;
 
 		log.timeLog();
+
+		await this.progress.updateWithText(4, 'Fetching archives');
 		await generics.queue(archiveKeys, async (key) => {
 			this.archives.set(key, await this.getIndexFile(key));
 
 			archiveProgress++;
-			await core.setLoadingText(util.format('Fetching archives %d / %d', archiveProgress, archiveCount), 0.1 + ((archiveProgress / archiveCount) / 10));
+			await this.progress.update(4, archiveProgress / archiveCount);
 		}, 50);
 
 		log.timeEnd('Downloaded %d archives', archiveCount);
@@ -152,7 +156,7 @@ class CASCRemote extends CASC {
 	 */
 	async downloadServerConfig() {
 		// Download CDN server list.
-		await core.setLoadingText('Fetching CDN configuration', 0.03);
+		await this.progress.updateWithText(1, 'Fetching CDN configuration');
 		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
 		log.write('%o', serverConfigs);
 
@@ -195,7 +199,7 @@ class CASCRemote extends CASC {
 	 */
 	async downloadCDNConfigs() {
 		// Download CDNConfig and BuildConfig.
-		await core.setLoadingText('Fetching build configurations', 0.1);
+		await this.progress.updateWithText(3, 'Fetching build configurations');
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
 		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
 
@@ -208,7 +212,7 @@ class CASCRemote extends CASC {
 	 * Returns NULL if all the hosts failed to ping.
 	 */
 	async resolveCDNHost() {
-		await core.setLoadingText('Locating fastest CDN server', 0.06);
+		await this.progress.updateWithText(2, 'Locating fastest CDN server');
 		log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
 		let bestHost = null;

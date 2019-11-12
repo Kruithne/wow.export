@@ -25,6 +25,40 @@ const view = {
 	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 };
 
+class Progress {
+	constructor(segments = 1) {
+		this.segWeight = 1 / segments;
+	}
+
+	/**
+	 * Set the current progress.
+	 * @param {number} segment Between 1 and segments (provided to constructor).
+	 * @param {float} progress Progress of the current segment (0 - 1).
+	 */
+	async update(segment, progress = 0) {
+		view.loadPct = ((segment - 1) * this.segWeight) + (this.segWeight * progress);
+		await generics.redraw();
+	}
+
+	/**
+	 * Set the current progress with segment text.
+	 * @param {number} segment Between 1 and segments (provided to constructor).
+	 * @param {string} text Text to set for this loading segment.
+	 * @param {float} progress Progress of the current segment (0 - 1).
+	 */
+	async updateWithText(segment, text, progress = 0) {
+		view.loadingProgress = text;
+		await this.update(segment, progress);
+	}
+
+	/**
+	 * Set the progress to full.
+	 */
+	finish() {
+		view.loadPct = 1;
+	}
+}
+
 /**
  * Run an async function while preventing the user from starting others.
  * This is heavily used in UI to disable components during big tasks.
@@ -42,10 +76,18 @@ const block = async (func) => {
  * @param {string} text 
  * @param {float} pct 
  */
-const setLoadingText = async (text, pct = -1) => {
+const setLoadingText = async (text) => {
 	view.loadingProgress = text;
-	view.loadPct = pct;
 	await generics.redraw();
+};
+
+/**
+ * Create a progress interface for easy status reporting.
+ * @param {number} segments 
+ * @returns {Progress}
+ */
+const createProgress = (segments = 1) => {
+	return new Progress(segments);
 };
 
 /**
@@ -99,4 +141,4 @@ const setToast = (toastType, message, options = null, ttl = -1) => {
 }
 
 
-module.exports = { events, view, block, setLoadingText, showLoadScreen, setScreen, setToast, hideToast };
+module.exports = { events, view, block, setLoadingText, createProgress, showLoadScreen, setScreen, setToast, hideToast };

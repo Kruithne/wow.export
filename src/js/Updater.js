@@ -40,17 +40,19 @@ const checkForUpdates = async () => {
 const applyUpdate = async () => {
 	core.block(async () => {
 		core.showLoadScreen('Updating, please wait...');
+		const progress = core.createProgress(2);
 
 		const requiredFiles = [];
 
 		// Check required files and calculate total file size...
 		let totalSize = 0;
 		const entries = Object.entries(updateManifest.contents);
+		await progress.updateWithText(1, 'Verifying local files');
 		for (let i = 0; i < entries.length; i++) {
 			const [file, meta] = entries[i];
 			const [hash, size] = meta;
 
-			await core.setLoadingText(util.format('Verifying local files (%d / %d)', i + 1, entries.length), (i + 1) / entries.length);
+			await progress.update(1, (i + 1) / entries.length);
 			totalSize += size;
 
 			const localPath = path.join(constants.INSTALL_PATH, file);
@@ -82,14 +84,14 @@ const applyUpdate = async () => {
 		const remoteDir = util.format(constants.UPDATE.URL, nw.App.manifest.flavour);
 
 		let downloadSize = 0;
+		await progress.updateWithText(2, 'Downloading updates');
 		for (const node of requiredFiles) {
-			const pct = (downloadSize / totalSize);
-			await core.setLoadingText(util.format('%s / %s (%s%)', generics.filesize(downloadSize), generics.filesize(totalSize), Math.floor(pct * 100)), pct);
+			await progress.update(2, downloadSize / totalSize);
 			await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
 			downloadSize += node.size;
 		}
 
-		core.view.loadingProgress = 'Restarting application';
+		progress.updateWithText(2, 'Restarting application', 1);
 		await launchUpdater();
 	});
 };
