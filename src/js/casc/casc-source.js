@@ -100,7 +100,7 @@ class CASC {
 			const contentFlag = root.readUInt32LE();
 			const localeFlag = root.readUInt32LE();
 			
-			if (localFlag === LocaleFlag.None)
+			if (localeFlag === LocaleFlag.None)
 				throw new Error('No locale specified for root entry');
 
 			if (contentFlag !== ContentFlag.None && (contentFlag & (ContentFlag.F00000008 | ContentFlag.F00000010 | ContentFlag.NoCompression | ContentFlag.F20000000) === 0))
