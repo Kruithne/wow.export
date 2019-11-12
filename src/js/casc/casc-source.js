@@ -4,6 +4,8 @@ const BLTEReader = require('./blte-reader');
 const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
 
+const ROOT_MAGIC = 0x4D465354;
+
 const LocaleFlag = {
 	enUS: 0x2,
 	koKR: 0x4,
@@ -83,49 +85,48 @@ class CASC {
 	async parseRootFile(data, hash) {
 		const root = new BLTEReader(data, hash);
 
-		let typeIndex = 0;
-		const rootTypes = this.rootTypes = new Map();
-		const rootEntries = this.rootEntries = [];
-		const rootIndex = new Map();
+		const magic = root.readUInt32LE();
+		if (magic !== ROOT_MAGIC)
+			throw new Error('Invalid root magic: ' + magic);
+		
+		const totalFileCount = root.readUInt32LE();
+		const namedFileCount = root.readUInt32LE();
+		const allowNamelessFiles = totalFileCount !== namedFileCount;
 
+		const rootTypes = this.rootTypes = [];
+		const rootEntries = this.rootEntries = new Map();
+	
 		while (root.remainingBytes > 0) {
-			const count = root.readInt32LE();
-
-			const contentFlag = root.readUInt32LE();
-			const localeFlag = root.readUInt32LE();
+			const numRecords = root.readUInt32LE();
 			
-			if (localeFlag === LocaleFlag.None)
-				throw new Error('No locale specified for root entry');
+			const contentFlags = root.readUInt32LE();
+			const localeFlags = root.readUInt32LE();
 
-			if (contentFlag !== ContentFlag.None && (contentFlag & (ContentFlag.F00000008 | ContentFlag.F00000010 | ContentFlag.NoCompression | ContentFlag.F20000000) === 0))
-				throw new Error('Invalid content flag: ' + contentFlag);
-
-			rootTypes.set(typeIndex, { localeFlag, contentFlag });
-
-			const entries = new Array(count);
-			let fileDataIndex = 0;
-
-			for (let i = 0; i < count; i++) {
-				const nextID = fileDataIndex + root.readInt32LE();
-				entries[i] = { rootType: typeIndex, fileDataID: nextID };
-				fileDataIndex = nextID + 1;
+			const entries = new Array(numRecords);
+			let fileDataID = 0;
+			for (let i = 0; i < numRecords; i++)  {
+				const nextID = fileDataID + root.readInt32LE();
+				entries[i] = { fileDataID: nextID, contentKey: null, hash: 0 };
+				fileDataID = nextID + 1;
 			}
 
-			for (let i = 0; i < count; i++) {
-				const key = root.readHexString(16);
-				const hash = root.readHexString(8);
+			// Parse MD5 content keys for entries.
+			for (let i = 0; i < numRecords; i++)
+				entries[i].contentKey = root.readHexString(16);
 
-				const entry = entries[i];
-				const hashCheck = rootIndex.get(entry.fileDataID);
-				if (hashCheck !== undefined && hashCheck !== hash)
-					continue;
+			// Parse lookup hashes for entries.
+			if (!(allowNamelessFiles && contentFlags & ContentFlag.NoNameHash))
+				for (let i = 0; i < numRecords; i++)
+					entries[i].hash = root.readUInt64LE();
 
-				rootEntries.push({ hash, fileDataID: entry.fileDataID, key, type: entry.rootType });
-				rootIndex.set(entry.fileDataID, hash);
-			}
+			rootEntries.set(rootTypes.length, entries);
 
-			typeIndex++;
+			// Push the rootType after the parsing the block so that
+			// rootTypes.length can be used for the type index above.
+			rootTypes.push({ contentFlags, localeFlags });
 		}
+
+		console.log(this);
 	}
 	
 	/**
