@@ -185,7 +185,7 @@ class CASCRemote extends CASC {
 		const res = await generics.get(url);
 
 		if (res.statusCode !== 200)
-			throw new Error(util.format('Unable to download file %s: HTTP %d', file, res.statusCode));
+			throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
 
 		const contentLength = Number(res.headers['content-length']);
 		if (isNaN(contentLength))
