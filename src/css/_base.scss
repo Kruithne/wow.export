@@ -326,6 +326,7 @@ body {
 		> div {
 			background: var(--progress-bar);
 			transition: width 0.5s ease-in-out;
+			height: 100%;
 		}
 	}
 
