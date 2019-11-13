@@ -21,7 +21,8 @@
     --form-button-base: #22b549;
     --form-button-hover: #2665d2;
     --form-button-disabled: #696969;
-    --form-field-shadow: inset black 0 0 9px 0px;
+	--form-field-shadow: inset black 0 0 9px 0px;
+	--progress-bar: linear(180deg, var(#57afe2), var(#35759a));
 }
 
 * {

@@ -24,6 +24,9 @@
 					<div id="loading-icon"></div>
 					<span id="loading-title">{{ loadingTitle }}</span>
 					<span id="loading-progress">{{ loadingProgress }}</span>
+					<div id="loading-bar">
+						<div :style="{ width: (loadPct * 100) + '%' }"></div>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}

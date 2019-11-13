@@ -316,6 +316,19 @@ body {
 		font-size: 20px;
 	}
 
+	&-bar {
+		margin-top: 15px;
+		width: 400px;
+		border: 1px solid var(--border);
+		height: 15px;
+		background: #00000038;
+
+		> div {
+			background: var(--progress-bar);
+			transition: width 0.5s ease-in-out;
+		}
+	}
+
 	&-icon {
 		font-family: 'FontAwesome';
 		font-size: 80px;
