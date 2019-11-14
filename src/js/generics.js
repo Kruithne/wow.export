@@ -121,7 +121,7 @@ const getJSON = async (url) => {
  * Read a JSON file from disk, returning NULL on error.
  * Provides basic pruning for comments (lines starting with //) with ignoreComments.
  * @param {string} file 
- * @param {bool} ignoreComments
+ * @param {boolean} ignoreComments
  */
 const readJSON = async (file, ignoreComments = false) => {
 	try {
