@@ -28,6 +28,7 @@ const view = {
 class Progress {
 	constructor(segments = 1) {
 		this.segWeight = 1 / segments;
+		this.segments = segments;
 	}
 
 	/**
@@ -36,7 +37,7 @@ class Progress {
 	 * @param {float} progress Progress of the current segment (0 - 1).
 	 */
 	async update(segment, progress = 0) {
-		view.loadPct = ((segment - 1) * this.segWeight) + (this.segWeight * progress);
+		view.loadPct = ((Math.min(segment, this.segments) - 1) * this.segWeight) + (this.segWeight * progress);
 		await generics.redraw();
 	}
 
