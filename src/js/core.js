@@ -25,41 +25,6 @@ const view = {
 	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 };
 
-class Progress {
-	constructor(segments = 1) {
-		this.segWeight = 1 / segments;
-		this.segments = segments;
-	}
-
-	/**
-	 * Set the current progress.
-	 * @param {number} segment Between 1 and segments (provided to constructor).
-	 * @param {float} progress Progress of the current segment (0 - 1).
-	 */
-	async update(segment, progress = 0) {
-		view.loadPct = ((Math.min(segment, this.segments) - 1) * this.segWeight) + (this.segWeight * progress);
-		await generics.redraw();
-	}
-
-	/**
-	 * Set the current progress with segment text.
-	 * @param {number} segment Between 1 and segments (provided to constructor).
-	 * @param {string} text Text to set for this loading segment.
-	 * @param {float} progress Progress of the current segment (0 - 1).
-	 */
-	async updateWithText(segment, text, progress = 0) {
-		view.loadingProgress = text;
-		await this.update(segment, progress);
-	}
-
-	/**
-	 * Set the progress to full.
-	 */
-	finish() {
-		view.loadPct = 1;
-	}
-}
-
 /**
  * Run an async function while preventing the user from starting others.
  * This is heavily used in UI to disable components during big tasks.
@@ -88,7 +53,20 @@ const setLoadingText = async (text) => {
  * @returns {Progress}
  */
 const createProgress = (segments = 1) => {
-	return new Progress(segments);
+	view.loadPct = 0;
+	return {
+		segWeight: 1 / segments,
+		value: 0,
+		step: async function(text) {
+			this.value++;
+			view.loadPct = Math.min(this.value * this.segWeight, 1);
+
+			if (text)
+				view.loadingProgress = text;
+
+			await generics.redraw();
+		}
+	};
 };
 
 /**
