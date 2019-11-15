@@ -59,6 +59,7 @@ const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
+const listfile = require('./js/casc/listfile');
 require('./js/ui/source-select');
 
 const win = nw.Window.get();
@@ -160,6 +161,9 @@ document.addEventListener('click', function(e) {
 
 	// Load configuration.
 	await config.load();
+
+	// Listfile initilization (non-blocking).
+	listfile.initialize();
 
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {

@@ -6,6 +6,7 @@ const log = require('../log');
 const CASC = require('./casc-source');
 const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
+const listfile = require('./listfile');
 
 class CASCRemote extends CASC {
 	/**
@@ -97,14 +98,25 @@ class CASCRemote extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading remote CASC build: %o', this.build);
 
-		this.progress = core.createProgress(8);
+		this.progress = core.createProgress(9);
 		await this.downloadServerConfig();
 		await this.resolveCDNHost();
 		await this.downloadCDNConfigs();
 		await this.downloadArchives();
 		await this.downloadEncoding();
 		await this.downloadRoot();
+		await this.loadListfile();
 		this.progress.finish();
+	}
+
+	/**
+	 * Load the listfile for selected build.
+	 */
+	async loadListfile() {
+		this.progress.updateWithText(9, 'Loading listfile');
+		const entries = await listfile.loadListfile(this.build.BuildConfig);
+		if (entries === 0)
+			throw new Error('No listfile entries found');
 	}
 
 	/**

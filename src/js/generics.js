@@ -1,6 +1,9 @@
 const path = require('path');
+const util = require('util');
 const fs = require('fs');
 const fsp = fs.promises;
+const readline = require('readline');
+const zlib = require('zlib');
 const BufferWrapper = require('./buffer');
 
 const MAX_HTTP_REDIRECT = 4;
@@ -9,12 +12,20 @@ const MAX_HTTP_REDIRECT = 4;
  * Async wrapper for http.get()/https.get().
  * The module used is determined by the prefix of the URL.
  * @param {string} url 
+ * @param {object} options
  */
-const get = async (url) => {
-	return new Promise((resolve, reject) => {
-		const http = require(url.startsWith('https') ? 'https' : 'http');
-		http.get(url, res => resolve(res)).on('error', e => reject(e));
-	});
+const get = async (url, options = {}) => {
+	const http = require(url.startsWith('https') ? 'https' : 'http');
+	let redirects = 0;
+	let res = null;
+
+	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
+	while (!res || (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT)) {
+		res = await new Promise((resolve, reject) => http.get(url, options, resolve).on('error', reject));
+		redirects++;
+	}
+
+	return res;
 };
 
 /**
@@ -103,12 +114,6 @@ const consumeStream = async (stream, contentLength, reporter) => {
 const getJSON = async (url) => {
 	let redirects = 0;
 	let res = await get(url);
-
-	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
-	while (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT) {
-		res = await get(res.headers.location);
-		redirects++;
-	}
 	
 	// Abort with anything other than HTTP 200 OK at this point.
 	if (res.statusCode !== 200)
@@ -136,22 +141,45 @@ const readJSON = async (file, ignoreComments = false) => {
 };
 
 /**
- * Download a file to the given output path.
- * @param {string} url 
- * @param {string} out 
+ * Download a file (optionally to a local file).
+ * GZIP deflation will be used if available.
+ * Data is always returned even if `out` is provided.
+ * @param {string} url Remote URL of the file to download.
+ * @param {string} out Optional file to write file to.
  */
-const downloadFile = async (url, out) =>{
-	await createDirectory(path.dirname(out));
-	const res = await get(url);
+const downloadFile = async (url, out) => {
+	const res = await get(url, { headers: {'Accept-Encoding': 'gzip'} });
 
-	return new Promise(resolve => {
-		const fd = fs.createWriteStream(out);
-		fd.on('finish', () => {
-			fd.close();
-			resolve();
+	if (res.statusCode !== 200)
+		throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
+
+	let totalBytes = 0;
+	let buffers = [];
+
+	let source = res;
+	if (res.headers['content-encoding'] === 'gzip') {
+		source = zlib.createGunzip();
+		res.pipe(source);
+	}
+
+	await new Promise(resolve => {
+		source.on('data', chunk => {
+			totalBytes += chunk.byteLength;
+			buffers.push(chunk);
 		});
-		res.pipe(fd);
+
+		source.on('end', resolve);
 	});
+
+	const merged = Buffer.concat(buffers, totalBytes);
+
+	// Write the file to disk if requested.
+	if (out) {
+		await createDirectory(path.dirname(out));
+		await fsp.writeFile(out, merged);
+	}
+
+	return new BufferWrapper(merged);
 };
 
 /**
@@ -244,6 +272,31 @@ const getFileHash = async (file, method, encoding) => {
 	});
 };
 
+/**
+ * Wrapper for asynchronously checking if a file exists.
+ * @param {string} file 
+ */
+const fileExists = async (file) => {
+	return new Promise(res => fsp.access(file).then(res(true)).catch(res(false)));
+};
+
+/**
+ * Read all lines of a file.
+ * @param {string} file Path to the file.
+ * @param {function} handler Invoked with every line.
+ * @param {string} encoding File encoding, defaults to utf8.
+ */
+const readFileLines = async(file, handler, encoding = 'utf8') => {
+	return new Promise((resolve, reject) => {
+		const input = fs.createReadStream(file, { encoding });
+		input.on('error', reject);
+		input.on('end', resolve);
+
+		const rl = readline.createInterface({ input });
+		rl.on('line', handler);
+	});
+};
+
 module.exports = { 
 	getJSON,
 	readJSON,
@@ -256,5 +309,7 @@ module.exports = {
 	consumeUTF8Stream,
 	consumeStream,
 	queue,
-	redraw
+	redraw,
+	readFileLines,
+	fileExists
 };

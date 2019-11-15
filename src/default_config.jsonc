@@ -5,5 +5,7 @@
 //      OSX: ~/Library/Application Support/<name>/Default\wow.export
 //      Linux: ~/.config/<name>/wow.export
 {
-	
+	"listfileURL": "https://wow.tools/casc/listfile/download/csv/build?buildConfig=%s",
+	"listfileCacheRefresh": 259200000,
+	"listfileCacheExpiry": 1209600000
 }

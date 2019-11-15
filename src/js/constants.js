@@ -11,6 +11,11 @@ module.exports = {
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
+	LISTFILE: {
+		CACHE_DIR: path.join(DATA_PATH, 'listfile'), // Path to listfile cache directory.
+		CACHE_MANIFEST: path.join(DATA_PATH, 'listfile', 'manifest.json')
+	},
+
 	CONFIG:  {
 		DEFAULT_PATH: path.join(INSTALL_PATH, 'src', 'default_config.jsonc'), // Path of default configuration file.
 		USER_PATH: path.join(DATA_PATH, 'config.json') // Path of user-defined configuration file.
@@ -41,5 +46,9 @@ module.exports = {
 
 	BUILD: {
 		MANIFEST: '.build.info' // File that contains version information in local installs.
+	},
+
+	TIME: {
+		DAY: 86400000 // Milliseconds in a day.
 	}
 };
