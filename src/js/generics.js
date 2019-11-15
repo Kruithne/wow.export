@@ -84,30 +84,6 @@ const consumeUTF8Stream = async (stream) => {
 };
 
 /**
- * Consume the entire contents of a stream into a buffer.
- * @param {object} stream 
- * @param {number} contentLength Expected content length.
- * @param {function} reporter Reporter function
- */
-const consumeStream = async (stream, contentLength, reporter) => {
-	return new Promise(resolve => {
-		const buf = BufferWrapper.alloc(contentLength);
-		stream.on('data', chunk => {
-			buf.writeBuffer(chunk);
-
-			// Report progress to provided reporter function.
-			if (reporter)
-				reporter(buf.offset, contentLength);
-		});
-
-		stream.on('end', () => {
-			buf.seek(0); // Reset position.
-			resolve(buf);
-		});
-	});
-};
-
-/**
  * Obtain JSON from a remote end-point.
  * @param {string} url 
  */
@@ -307,7 +283,6 @@ module.exports = {
 	ping,
 	get,
 	consumeUTF8Stream,
-	consumeStream,
 	queue,
 	redraw,
 	readFileLines,
