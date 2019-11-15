@@ -129,7 +129,7 @@ class CASCRemote extends CASC {
 		const cdnKey = this.formatCDNKey(encKeys[1]);
 
 		await this.progress.updateWithText(5, 'Fetching encoding table');
-		const encRaw = await this.getDataFile(cdnKey, async (bytes, total) => await this.progress.update(5, bytes / total));
+		const encRaw = await this.getDataFile(cdnKey);
 		log.timeEnd('Downloaded encoding table (%s)', generics.filesize(encRaw.byteLength));
 
 		// Parse encoding file.
@@ -152,7 +152,7 @@ class CASCRemote extends CASC {
 		log.timeLog();
 		await this.progress.updateWithText(7, 'Fetching root file');
 		const urlKey = this.formatCDNKey(rootKey);
-		const root = await this.getDataFile(urlKey, async (bytes, total) => await this.progress.update(7, bytes / total));
+		const root = await this.getDataFile(urlKey);
 		log.timeEnd('Downloaded root file (%s)', generics.filesize(root.byteLength));
 
 		// Parse root file.
@@ -217,21 +217,10 @@ class CASCRemote extends CASC {
 	/**
 	 * Download a data file from the CDN.
 	 * @param {string} file 
-	 * @param {function} reporter
 	 * @returns {BufferWrapper}
 	 */
-	async getDataFile(file, reporter) {
-		const url = this.host + 'data/' + file;
-		const res = await generics.get(url);
-
-		if (res.statusCode !== 200)
-			throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
-
-		const contentLength = Number(res.headers['content-length']);
-		if (isNaN(contentLength))
-			throw new Error('Response is missing Content-Length header: ' + file);
-
-		return await generics.consumeStream(res, contentLength, reporter);
+	async getDataFile(file) {
+		return await generics.downloadFile(this.host + 'data/' + file);
 	}
 
 	/**
