@@ -383,9 +383,6 @@ class BufferWrapper {
 		// Ensure we have enough data left to fulfill this.
 		this._checkBounds(length);
 
-		// ToDo: Build inflation into the buffer class and support async.
-		//const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer(null, false)));
-
 		let buf = Buffer.allocUnsafe(length);
 		this._buf.copy(buf, 0, this._ofs, this._ofs + length);
 		this._ofs += length;
