@@ -99,12 +99,12 @@ class CASCRemote extends CASC {
 		log.write('Loading remote CASC build: %o', this.build);
 
 		this.progress = core.createProgress(9);
-		await this.downloadServerConfig();
+		await this.loadServerConfig();
 		await this.resolveCDNHost();
-		await this.downloadCDNConfigs();
-		await this.downloadArchives();
-		await this.downloadEncoding();
-		await this.downloadRoot();
+		await this.loadCDNConfigs();
+		await this.loadArchives();
+		await this.loadEncoding();
+		await this.loadRoot();
 		await this.loadListfile();
 	}
 
@@ -121,7 +121,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Download and parse the encoding file.
 	 */
-	async downloadEncoding() {
+	async loadEncoding() {
 		// Download encoding file.
 		log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' ');
@@ -141,7 +141,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Download and parse the root file.
 	 */
-	async downloadRoot() {
+	async loadRoot() {
 		// Get root key from encoding table.
 		const rootKey = this.encodingKeys.get(this.buildConfig.root);
 		if (rootKey === undefined)
@@ -164,7 +164,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Download and parse archive files.
 	 */
-	async downloadArchives() {
+	async loadArchives() {
 		// Download archive indexes.
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
@@ -189,7 +189,7 @@ class CASCRemote extends CASC {
 	 * Download the CDN configuration and store the entry for our
 	 * selected region.
 	 */
-	async downloadServerConfig() {
+	async loadServerConfig() {
 		// Download CDN server list.
 		await this.progress.step('Fetching CDN configuration');
 		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
@@ -221,7 +221,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Download the CDNConfig and BuildConfig.
 	 */
-	async downloadCDNConfigs() {
+	async loadCDNConfigs() {
 		// Download CDNConfig and BuildConfig.
 		await this.progress.step('Fetching build configurations');
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
