@@ -45,7 +45,8 @@ module.exports = {
 	},
 
 	BUILD: {
-		MANIFEST: '.build.info' // File that contains version information in local installs.
+		MANIFEST: '.build.info', // File that contains version information in local installs.
+		DATA_DIR: 'Data'
 	},
 
 	TIME: {

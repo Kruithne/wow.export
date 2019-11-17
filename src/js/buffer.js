@@ -1,6 +1,7 @@
 const util = require('util');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const fsp = require('fs').promises;
 
 const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
@@ -38,6 +39,14 @@ class BufferWrapper {
 	 */
 	static alloc(length, secure = false) {
 		return new BufferWrapper(secure ? Buffer.alloc(length) : Buffer.allocUnsafe(length));
+	}
+
+	/**
+	 * Load a file from disk at the given path into a wrapped buffer.
+	 * @param {string} file Path to the file.
+	 */
+	static async readFile(file) {
+		return new BufferWrapper(await fsp.readFile(file));
 	}
 
 	/**

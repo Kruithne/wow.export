@@ -49,7 +49,7 @@ class CASC {
 	 * @param {BufferWrapper} data 
 	 * @returns {object[]}
 	 */
-	parseIndexFile(data) {
+	parseArchiveIndex(data) {
 		// Skip to the end of the archive to find the count.
 		data.seek(-12);
 		const count = data.readInt32LE();

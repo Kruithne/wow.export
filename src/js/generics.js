@@ -273,6 +273,22 @@ const readFileLines = async(file, handler, encoding = 'utf8') => {
 	});
 };
 
+/**
+ * Read a portion of a file.
+ * @param {string} file Path of the file.
+ * @param {number} offset Offset to start reading from
+ * @param {number} length Total bytes to read.
+ */
+const readFile = async (file, offset, length) => {
+	const fd = await fsp.open(file);
+	const buf = BufferWrapper.alloc(length);
+
+	await fd.read(buf.raw, 0, length, offset);
+	await fd.close();
+
+	return buf;
+};
+
 module.exports = { 
 	getJSON,
 	readJSON,
@@ -286,5 +302,6 @@ module.exports = {
 	queue,
 	redraw,
 	readFileLines,
-	fileExists
+	fileExists,
+	readFile
 };

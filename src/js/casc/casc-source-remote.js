@@ -101,7 +101,7 @@ class CASCRemote extends CASC {
 		this.progress = core.createProgress(9);
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
-		await this.loadCDNConfigs();
+		await this.loadConfigs();
 		await this.loadArchives();
 		await this.loadEncoding();
 		await this.loadRoot();
@@ -174,7 +174,7 @@ class CASCRemote extends CASC {
 
 		await this.progress.step('Fetching archives');
 		await generics.queue(archiveKeys, async (key) => {
-			const entries = await this.getIndexFile(key);
+			const entries = await this.getArchiveIndex(key);
 			archiveEntryCount += entries.length;
 
 			this.archives.set(key, entries);
@@ -205,8 +205,8 @@ class CASCRemote extends CASC {
 	 * Download and parse the contents of an archive index.
 	 * @param {string} key 
 	 */
-	async getIndexFile(key) {
-		return this.parseIndexFile(await this.getDataFile(this.formatCDNKey(key) + '.index'));
+	async getArchiveIndex(key) {
+		return this.parseArchiveIndex(await this.getDataFile(this.formatCDNKey(key) + '.index'));
 	}
 
 	/**
@@ -221,7 +221,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Download the CDNConfig and BuildConfig.
 	 */
-	async loadCDNConfigs() {
+	async loadConfigs() {
 		// Download CDNConfig and BuildConfig.
 		await this.progress.step('Fetching build configurations');
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
