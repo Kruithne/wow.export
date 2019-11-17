@@ -59,7 +59,7 @@ class CASCLocal extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading local CASC build: %o', this.build);
 
-		this.progress = core.createProgress(9);
+		this.progress = core.createProgress(6);
 		await this.loadConfigs();
 		await this.loadArchives();
 		await this.loadIndexes();
