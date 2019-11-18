@@ -30,7 +30,7 @@ const loadListfile = async (buildConfig, cache) => {
 			requireDownload = true;
 		} else {
 			// Ensure that the local cache file *actually* exists before relying on it.
-			if (!cache.hasFile(constants.CACHE.BUILD_LISTFILE)) {
+			if (!await cache.hasFile(constants.CACHE.BUILD_LISTFILE)) {
 				log.write('Listfile for %s is missing despite meta entry. User tamper?', buildConfig);
 				requireDownload = true;
 			} else {
