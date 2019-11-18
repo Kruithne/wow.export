@@ -1,6 +1,7 @@
 const util = require('util');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const path = require('path');
 const fsp = require('fs').promises;
 
 const LITTLE_ENDIAN = {
@@ -640,6 +641,16 @@ class BufferWrapper {
 
 		buf.copy(this._buf, this._ofs, startIndex, startIndex + copyLength);
 		this._ofs += copyLength;
+	}
+
+	/**
+	 * Write the contents of this buffer to a file.
+	 * Directory path will be created if needed.
+	 * @param {string} file 
+	 */
+	async writeToFile(file) {
+		await fsp.mkdir(path.dirname(file), { recursive: true });
+		await fsp.writeFile(file, this._buf);
 	}
 
 	/**

@@ -1,4 +1,5 @@
 const util = require('util');
+const path = require('path');
 const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
@@ -7,6 +8,7 @@ const CASC = require('./casc-source');
 const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
 const listfile = require('./listfile');
+const BufferWrapper = require('../buffer');
 
 class CASCRemote extends CASC {
 	/**
@@ -202,11 +204,25 @@ class CASCRemote extends CASC {
 	}
 
 	/**
-	 * Download and parse the contents of an archive index.
+	 * Load and parse the contents of an archive index.
+	 * Will use global cache and download if missing.
 	 * @param {string} key 
 	 */
 	async getArchiveIndex(key) {
-		return this.parseArchiveIndex(await this.getDataFile(this.formatCDNKey(key) + '.index'));
+		const cdnKey = this.formatCDNKey(key) + '.index';
+		const cachePath = path.join(constants.CACHE.ARCHIVE_INDEXES, key + '.index');
+
+		let data;
+		try {
+			// Read the file from cache.
+			data = await BufferWrapper.readFile(cachePath);
+		} catch (e) {
+			// Not cached, download and store.
+			data = await this.getDataFile(cdnKey);
+			await data.writeToFile(cachePath);
+		}
+		
+		return this.parseArchiveIndex(data);
 	}
 
 	/**

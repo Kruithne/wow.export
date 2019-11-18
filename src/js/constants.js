@@ -11,6 +11,10 @@ module.exports = {
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
+	CACHE: {
+		ARCHIVE_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Directory to cache archive indexes.
+	},
+
 	LISTFILE: {
 		CACHE_DIR: path.join(DATA_PATH, 'listfile'), // Path to listfile cache directory.
 		CACHE_MANIFEST: path.join(DATA_PATH, 'listfile', 'manifest.json')
