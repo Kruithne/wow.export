@@ -36,7 +36,7 @@ const get = async (url, options = {}) => {
  * @param {number} limit This many will be resolving at any given time.
  */
 const queue = async (items, handler, limit) => {
-	return new Promise(resolve => {
+	return new Promise((resolve, reject) => {
 		let free = limit;
 		let complete = -1;
 		let index = 0;
@@ -45,7 +45,7 @@ const queue = async (items, handler, limit) => {
 			free++;
 
 			while (free > 0 && index < items.length) {
-				handler(items[index]).then(check);
+				handler(items[index]).then(check).catch(reject);
 				index++; free--;
 			}
 
