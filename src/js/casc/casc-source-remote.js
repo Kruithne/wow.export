@@ -129,19 +129,31 @@ class CASCRemote extends CASC {
 	 * Download and parse the encoding file.
 	 */
 	async loadEncoding() {
-		// Download encoding file.
-		log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' ');
-		const cdnKey = this.formatCDNKey(encKeys[1]);
+		const encKey = encKeys[1];
 
-		await this.progress.step('Fetching encoding table');
-		const encRaw = await this.getDataFile(cdnKey);
-		log.timeEnd('Downloaded encoding table (%s)', generics.filesize(encRaw.byteLength));
+		let encRaw;
+		log.timeLog();
+		if (await this.cache.hasFile(constants.CACHE.BUILD_ENCODING)) {
+			// Pull encoding file from build cache.
+			await this.progress.step('Loading encoding table');
+			log.write('Encoding for build %s cached locally, reading from disk.', this.cache.key);
+			encRaw = await this.cache.getFile(constants.CACHE.BUILD_ENCODING);
+		} else {
+			// Download encoding file.
+			await this.progress.step('Fetching encoding table');
+			log.write('Encoding for build %s not cached, downloading.', this.cache.key);
+			encRaw = await this.getDataFile(this.formatCDNKey(encKey));
+			
+			// Store back into cache (no need to block).
+			this.cache.storeFile(constants.CACHE.BUILD_ENCODING, encRaw);
+		}
+		log.timeEnd('Loaded encoding table (%s)', generics.filesize(encRaw.byteLength));
 
 		// Parse encoding file.
 		log.timeLog();
 		await this.progress.step('Parsing encoding table');
-		await this.parseEncodingFile(encRaw, encKeys[1]);
+		await this.parseEncodingFile(encRaw, encKey);
 		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
 	}
 

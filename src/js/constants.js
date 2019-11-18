@@ -16,6 +16,7 @@ module.exports = {
 		BUILD: path.join(DATA_PATH, 'casc', 'builds'), // Directory to cache build-specific data.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
+		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 	},
 
 	CONFIG:  {
