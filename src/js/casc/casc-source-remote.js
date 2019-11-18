@@ -1,5 +1,6 @@
 const util = require('util');
 const path = require('path');
+const fsp = require('fs').promises;
 const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
@@ -7,6 +8,7 @@ const log = require('../log');
 const CASC = require('./casc-source');
 const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
+const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BufferWrapper = require('../buffer');
 
@@ -100,6 +102,9 @@ class CASCRemote extends CASC {
 		this.build = this.builds[buildIndex];
 		log.write('Loading remote CASC build: %o', this.build);
 
+		this.cache = new BuildCache(this.build.BuildConfig);
+		await this.cache.init();
+
 		this.progress = core.createProgress(9);
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
@@ -115,7 +120,7 @@ class CASCRemote extends CASC {
 	 */
 	async loadListfile() {
 		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(this.build.BuildConfig);
+		const entries = await listfile.loadListfile(this.build.BuildConfig, this.cache);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
 	}

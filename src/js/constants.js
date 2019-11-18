@@ -13,11 +13,9 @@ module.exports = {
 
 	CACHE: {
 		ARCHIVE_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Directory to cache archive indexes.
-	},
-
-	LISTFILE: {
-		CACHE_DIR: path.join(DATA_PATH, 'listfile'), // Path to listfile cache directory.
-		CACHE_MANIFEST: path.join(DATA_PATH, 'listfile', 'manifest.json')
+		BUILD: path.join(DATA_PATH, 'casc', 'builds'), // Directory to cache build-specific data.
+		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
+		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 	},
 
 	CONFIG:  {

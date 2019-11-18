@@ -128,6 +128,7 @@ core.events.once('screen-source-select', async () => {
 
 			try {
 				await cascSource.load(index);
+				core.view.casc = cascSource;
 				core.setScreen('tab-models');
 			} catch (e) {
 				log.write('Failed to load CASC: %o', e);

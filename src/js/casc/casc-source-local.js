@@ -7,6 +7,7 @@ const CASC = require('./casc-source');
 const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
+const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 
 class CASCLocal extends CASC {
@@ -58,6 +59,9 @@ class CASCLocal extends CASC {
 	async load(buildIndex) {
 		this.build = this.builds[buildIndex];
 		log.write('Loading local CASC build: %o', this.build);
+
+		this.cache = new BuildCache(this.build.BuildKey);
+		await this.cache.init();
 
 		this.progress = core.createProgress(6);
 		await this.loadConfigs();
@@ -198,7 +202,7 @@ class CASCLocal extends CASC {
 	 */
 	async loadListfile() {
 		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(this.build.BuildKey);
+		const entries = await listfile.loadListfile(this.build.BuildKey, this.cache);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
 	}

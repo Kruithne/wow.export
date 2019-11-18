@@ -148,6 +148,13 @@ document.addEventListener('click', function(e) {
 			 */
 			loadPct: function(val) {
 				win.setProgressBar(val);
+			},
+
+			/**
+			 * Invoked when the core CASC instance is changed.
+			 */
+			casc: function() {
+				core.events.emit('casc-source-changed');
 			}
 		}
 	});
@@ -161,9 +168,6 @@ document.addEventListener('click', function(e) {
 
 	// Load configuration.
 	await config.load();
-
-	// Listfile initilization (non-blocking).
-	listfile.initialize();
 
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {

@@ -289,6 +289,21 @@ const readFile = async (file, offset, length) => {
 	return buf;
 };
 
+/**
+ * Recursively delete a directory and everything inside of it.
+ * @param {string} dir 
+ */
+const deleteDirectory = async (dir) => {
+	const entries = await fsp.readdir(dir, { withFileTypes: true });
+	for (const entry of entries) {
+		const entryPath = path.join(dir, entry.name);
+		if (entry.isDirectory())
+			await deleteDirectory(entryPath);
+		else
+			await fsp.unlink(entryPath);
+	}
+};
+
 module.exports = { 
 	getJSON,
 	readJSON,
@@ -303,5 +318,6 @@ module.exports = {
 	redraw,
 	readFileLines,
 	fileExists,
-	readFile
+	readFile,
+	deleteDirectory
 };
