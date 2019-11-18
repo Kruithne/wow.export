@@ -6,6 +6,7 @@ const config = require('../config');
 const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
+const BufferWrapper = require('../buffer');
 
 class BuildCache {
 	/**
@@ -81,6 +82,9 @@ class BuildCache {
 	 * @param {mixed} data 
 	 */
 	async storeFile(file, data) {
+		if (data instanceof BufferWrapper)
+			data = data.raw;
+
 		await fsp.writeFile(this.getFilePath(file), data);
 	}
 
