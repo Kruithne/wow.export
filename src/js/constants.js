@@ -17,6 +17,7 @@ module.exports = {
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
+		BUILD_ROOT: 'root', // Build-specific root file.
 	},
 
 	CONFIG:  {

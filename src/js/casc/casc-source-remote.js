@@ -166,12 +166,23 @@ class CASCRemote extends CASC {
 		if (rootKey === undefined)
 			throw new Error('No encoding entry found for root key');
 
-		// Download root file.
+		let root;
 		log.timeLog();
-		await this.progress.step('Fetching root file');
-		const urlKey = this.formatCDNKey(rootKey);
-		const root = await this.getDataFile(urlKey);
-		log.timeEnd('Downloaded root file (%s)', generics.filesize(root.byteLength));
+		if (await this.cache.hasFile(constants.CACHE.BUILD_ROOT)) {
+			// Pull root file from cache.
+			await this.progress.step('Loading root table');
+			log.write('Root for build %s cached locally, reading from disk.', this.cache.key);
+
+			root = await this.cache.getFile(constants.CACHE.BUILD_ROOT);
+		} else {
+			// Download root file.
+			await this.progress.step('Fetching root table');
+			log.write('Root for build %s not cached, downloading.', this.cache.key);
+
+			root = await this.getDataFile(this.formatCDNKey(rootKey));
+			this.cache.storeFile(constants.CACHE.BUILD_ROOT, root);
+		}
+		log.timeEnd('Loaded root file (%s)', generics.filesize(root.byteLength));
 
 		// Parse root file.
 		log.timeLog();
