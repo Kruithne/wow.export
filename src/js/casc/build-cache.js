@@ -48,7 +48,7 @@ class BuildCache {
 	 */
 	async getFile(file) {
 		try {
-			return await fsp.readFile(this.getFilePath(file));
+			return await BufferWrapper.readFile(this.getFilePath(file));
 		} catch (e) {
 			return null;
 		}
