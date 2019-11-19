@@ -1,4 +1,3 @@
-const path = require('path');
 const util = require('util');
 const generics = require('../generics');
 const constants = require('../constants');
