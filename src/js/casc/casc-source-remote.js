@@ -198,21 +198,15 @@ class CASCRemote extends CASC {
 		// Download archive indexes.
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
-		let archiveEntryCount = 0;
 
 		log.timeLog();
 
 		await this.progress.step('Loading archives');
-		await generics.queue(archiveKeys, async (key) => {
-			const entries = await this.getArchiveIndex(key);
-			archiveEntryCount += entries.length;
-
-			this.archives.set(key, entries);
-		}, 50);
+		await generics.queue(archiveKeys, async key => await this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
 		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
-		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, archiveEntryCount, generics.filesize(archiveTotalSize));
+		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
 	}
 
 	/**
@@ -236,7 +230,7 @@ class CASCRemote extends CASC {
 	 * Will use global cache and download if missing.
 	 * @param {string} key 
 	 */
-	async getArchiveIndex(key) {
+	async parseArchiveIndex(key) {
 		const cdnKey = this.formatCDNKey(key) + '.index';
 		const cachePath = path.join(constants.CACHE.ARCHIVE_INDEXES, key + '.index');
 
@@ -250,7 +244,7 @@ class CASCRemote extends CASC {
 			await data.writeToFile(cachePath);
 		}
 		
-		return this.parseArchiveIndex(data);
+		super.parseArchiveIndex(data, key);
 	}
 
 	/**

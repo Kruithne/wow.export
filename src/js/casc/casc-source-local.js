@@ -8,6 +8,7 @@ const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
 const BuildCache = require('./build-cache');
+const BLTEReader = require('./blte-reader');
 const listfile = require('./listfile');
 
 class CASCLocal extends CASC {
@@ -38,6 +39,16 @@ class CASCLocal extends CASC {
 		this.builds = config.filter(entry => constants.PRODUCTS.hasOwnProperty(entry.Product));
 
 		log.write('%o', this.builds);
+	}
+
+	/**
+	 * Obtain a file by it's fileDataID.
+	 * @param {number} fileDataID 
+	 * @param {number} locale
+	 */
+	async getFile(fileDataID, locale = LocaleFlag.enUS) {
+		const encodingKey = await super.getFile(fileDataID, locale);
+		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey);
 	}
 
 	/**
@@ -92,21 +103,15 @@ class CASCLocal extends CASC {
 		// Download archive indexes.
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
-		let archiveEntryCount = 0;
 
 		log.timeLog();
-
 		await this.progress.step('Loading archives');
-		for (const key of archiveKeys) {
-			const entries = this.parseArchiveIndex(await BufferWrapper.readFile(this.formatIndexPath(key)));
-			archiveEntryCount += entries.length;
-
-			this.archives.set(key, entries);
-		}
+		for (const key of archiveKeys)
+			this.parseArchiveIndex(await BufferWrapper.readFile(this.formatIndexPath(key)), key);
 
 		// Quick and dirty way to get the total archive size using config.
 		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
-		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, archiveEntryCount, generics.filesize(archiveTotalSize));
+		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
 	}
 
 	/**

@@ -1,5 +1,6 @@
 const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader');
+const listfile = require('./listfile');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
@@ -45,14 +46,65 @@ class CASC {
 		this.archives = new Map();
 		this.encodingSizes = new Map();
 		this.encodingKeys = new Map();
+		this.rootTypes = [];
+		this.rootEntries = new Map();
+	}
+
+	/**
+	 * Obtain a file by it's fileDataID.
+	 * @param {number} fileDataID 
+	 * @param {number} locale
+	 */
+	async getFile(fileDataID, locale = LocaleFlag.enUS) {
+		const root = this.rootEntries.get(fileDataID);
+		if (root === undefined)
+			throw new Error('fileDataID does not exist in root: ' + fileDataID);
+
+		let contentKey = null;
+		for (const [rootTypeIdx, key] of root.entries()) {
+			const rootType = this.rootTypes[rootTypeIdx];
+
+			// Select the first root entry that has a matching locale and no LowViolence flag set.
+			// ToDo: Potentially allow users to fine-tune these flags more directly in config.
+			if ((rootType.localeFlags & locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+				contentKey = key;
+				break;
+			}
+		}
+
+		if (contentKey === null)
+			throw new Error('No root entry found for locale: ' + locale);
+
+		const encodingKey = this.encodingKeys.get(contentKey);
+		if (encodingKey === undefined)
+			throw new Error('No encoding entry found: ' + contentKey);
+
+		// This underlying implementation returns the encoding key rather than a
+		// data file, allowing CASCLocal and CASCRemote to implement readers.
+		return encodingKey;
+	}
+
+	/**
+	 * Obtain a file by a filename.
+	 * fileName must exist in the loaded listfile.
+	 * @param {string} fileName 
+	 * @param {number} locale
+	 */
+	async getFileByName(fileName, locale = LocaleFlag.enUS) {
+		const fileDataID = listfile.getFileByName(fileName);
+		if (fileDataID === undefined)
+			throw new Error('File not mapping in listfile: %s', fileName);
+
+		return await this.getFile(fileDataID, locale);
 	}
 
 	/**
 	 * Parse entries from an archive index.
 	 * @param {BufferWrapper} data 
+	 * @param {string} key
 	 * @returns {object[]}
 	 */
-	parseArchiveIndex(data) {
+	parseArchiveIndex(data, key) {
 		// Skip to the end of the archive to find the count.
 		data.seek(-12);
 		const count = data.readInt32LE();
@@ -61,7 +113,6 @@ class CASC {
 			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
 
 		data.seek(0); // Reset position.
-		const entries = new Array(count);
 
 		for (let i = 0; i < count; i++) {
 			let hash = data.readHexString(16);
@@ -70,14 +121,8 @@ class CASC {
 			if (hash === EMPTY_HASH)
 				hash = data.readHexString(16);
 
-			entries[i] = {
-				hash,
-				size: data.readInt32BE(),
-				offset: data.readInt32BE()
-			};
+			this.archives.set(hash, { key, size: data.readInt32BE(), offset: data.readInt32BE() });
 		}
-
-		return entries;
 	}
 
 	/**
