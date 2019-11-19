@@ -38,6 +38,9 @@ const ContentFlag = {
 };
 
 class CASC {
+	static Locale = LocaleFlag;
+	static Content = ContentFlag;
+
 	constructor() {
 		this.archives = new Map();
 		this.encodingSizes = new Map();
