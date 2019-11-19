@@ -404,6 +404,22 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Read a string from the buffer.
+	 * @param {number} length 
+	 * @param {string} encoding 
+	 */
+	readString(length = -1, encoding = 'utf8') {
+		if (length === -1) // Default to consuming all remaining bytes.
+			length = this.remainingBytes;
+
+		this._checkBounds(length);
+		const str = this._buf.toString(encoding, this._ofs, this._ofs + length);
+		this._ofs += length;
+
+		return str;
+	}
+
+	/**
 	 * Write a signed 8-bit integer in little endian.
 	 * @param {number} value
 	 * @returns {number|number[]}
