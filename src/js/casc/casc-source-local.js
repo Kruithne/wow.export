@@ -76,7 +76,6 @@ class CASCLocal extends CASC {
 
 		this.progress = core.createProgress(6);
 		await this.loadConfigs();
-		await this.loadArchives();
 		await this.loadIndexes();
 		await this.loadEncoding();
 		await this.loadRoot();
@@ -94,24 +93,6 @@ class CASCLocal extends CASC {
 
 		log.write('BuildConfig: %o', this.buildConfig);
 		log.write('CDNConfig: %o', this.cdnConfig);
-	}
-
-	/**
-	 * Load and parse archive files from the local installation.
-	 */
-	async loadArchives() {
-		// Download archive indexes.
-		const archiveKeys = this.cdnConfig.archives.split(' ');
-		const archiveCount = archiveKeys.length;
-
-		log.timeLog();
-		await this.progress.step('Loading archives');
-		for (const key of archiveKeys)
-			this.parseArchiveIndex(await BufferWrapper.readFile(this.formatIndexPath(key)), key);
-
-		// Quick and dirty way to get the total archive size using config.
-		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
-		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
 	}
 
 	/**
