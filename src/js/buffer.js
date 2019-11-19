@@ -386,7 +386,7 @@ class BufferWrapper {
 	 * @param {boolean} wrap If true, returns BufferWrapper, else raw buffer.
 	 * @param {boolean} inflate If true, data will be decompressed using inflate.
 	 */
-	readBuffer(length, wrap = true, inflate = false) {
+	readBuffer(length = -1, wrap = true, inflate = false) {
 		if (!length) // Default to consuming all remaining bytes.
 			length = this.remainingBytes;
 
