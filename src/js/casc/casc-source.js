@@ -97,8 +97,8 @@ class CASC {
 		const namedFileCount = root.readUInt32LE();
 		const allowNamelessFiles = totalFileCount !== namedFileCount;
 
-		const rootTypes = this.rootTypes = [];
-		const rootEntries = this.rootEntries = new Map();
+		const rootTypes = this.rootTypes;
+		const rootEntries = this.rootEntries;
 	
 		while (root.remainingBytes > 0) {
 			const numRecords = root.readUInt32LE();
@@ -106,24 +106,31 @@ class CASC {
 			const contentFlags = root.readUInt32LE();
 			const localeFlags = root.readUInt32LE();
 
-			const entries = new Array(numRecords);
+			const fileDataIDs = new Array(numRecords);
+
 			let fileDataID = 0;
 			for (let i = 0; i < numRecords; i++)  {
 				const nextID = fileDataID + root.readInt32LE();
-				entries[i] = { fileDataID: nextID, contentKey: null, hash: 0 };
+				fileDataIDs[i] = nextID;
 				fileDataID = nextID + 1;
 			}
 
 			// Parse MD5 content keys for entries.
-			for (let i = 0; i < numRecords; i++)
-				entries[i].contentKey = root.readHexString(16);
+			for (let i = 0; i < numRecords; i++) {
+				const fileDataID = fileDataIDs[i];
+				let entry = rootEntries.get(fileDataID);
 
-			// Parse lookup hashes for entries.
+				if (!entry) {
+					entry = new Map();
+					rootEntries.set(fileDataID, entry);
+				}
+
+				entry.set(rootTypes.length, root.readHexString(16));
+			}
+
+			// Skip lookup hashes for entries.
 			if (!(allowNamelessFiles && contentFlags & ContentFlag.NoNameHash))
-				for (let i = 0; i < numRecords; i++)
-					entries[i].hash = root.readUInt64LE();
-
-			rootEntries.set(rootTypes.length, entries);
+				root.move(8 * numRecords);
 
 			// Push the rootType after the parsing the block so that
 			// rootTypes.length can be used for the type index above.
