@@ -90,7 +90,11 @@ class BuildCache {
 		if (data instanceof BufferWrapper)
 			data = data.raw;
 
-		await fsp.writeFile(this.getFilePath(file, dir), data);
+		const filePath = this.getFilePath(file, dir);
+		if (dir)
+			await generics.createDirectory(path.dirname(filePath));
+			
+		await fsp.writeFile(filePath, data);
 	}
 
 	/**
