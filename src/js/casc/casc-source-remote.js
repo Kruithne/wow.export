@@ -231,17 +231,13 @@ class CASCRemote extends CASC {
 	 * @param {string} key 
 	 */
 	async parseArchiveIndex(key) {
-		const cdnKey = this.formatCDNKey(key) + '.index';
-		const cachePath = path.join(constants.CACHE.ARCHIVE_INDEXES, key + '.index');
+		const fileName = key + '.index';
 
-		let data;
-		try {
-			// Read the file from cache.
-			data = await BufferWrapper.readFile(cachePath);
-		} catch (e) {
-			// Not cached, download and store.
+		let data = await this.cache.getFile(fileName, constants.CACHE.DIR_INDEXES);
+		if (data === null) {
+		const cdnKey = this.formatCDNKey(key) + '.index';
 			data = await this.getDataFile(cdnKey);
-			await data.writeToFile(cachePath);
+			this.cache.storeFile(fileName, data, constants.CACHE.DIR_INDEXES);
 		}
 		
 		super.parseArchiveIndex(data, key);

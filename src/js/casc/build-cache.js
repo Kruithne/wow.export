@@ -17,7 +17,7 @@ class BuildCache {
 		this.key = key;
 		this.meta = {};
 
-		this.cacheDir = path.join(constants.CACHE.BUILD, key);
+		this.cacheDir = path.join(constants.CACHE.DIR_BUILDS, key);
 		this.manifestPath = path.join(this.cacheDir, constants.CACHE.BUILD_MANIFEST);
 	}
 	
@@ -44,11 +44,12 @@ class BuildCache {
 	/**
 	 * Attempt to get a file from this build cache.
 	 * Returns NULL if the file is not cached.
-	 * @param {string} file 
+	 * @param {string} file File path relative to build cache.
+	 * @param {string} dir Optional override directory.
 	 */
-	async getFile(file) {
+	async getFile(file, dir) {
 		try {
-			return await BufferWrapper.readFile(this.getFilePath(file));
+			return await BufferWrapper.readFile(this.getFilePath(file, dir));
 		} catch (e) {
 			return null;
 		}
@@ -57,19 +58,22 @@ class BuildCache {
 	/**
 	 * Get a direct path to a cached file.
 	 * Does not guarentee existence. Use hasFile() first to check.
-	 * @param {string} file 
+	 * @param {string} file File path relative to build cache.
+	 * @param {string} dir Optional override directory.
 	 */
-	getFilePath(file) {
-		return path.join(this.cacheDir, file);
+	getFilePath(file, dir) {
+		return path.join(dir || this.cacheDir, file);
 	}
 
 	/**
 	 * Check if this build cache has a file without loading it.
 	 * Returns true if the file exists in cache, otherwise false.
+	 * @param {string} file File path relative to build cache.
+	 * @param {string} dir Optional override dir.
 	 */
-	async hasFile(file) {
+	async hasFile(file, dir) {
 		try {
-			await fsp.access(this.getFilePath(file));
+			await fsp.access(this.getFilePath(file, dir));
 			return true;
 		} catch (e) {
 			return false;
@@ -78,14 +82,15 @@ class BuildCache {
 
 	/**
 	 * Store a file in this build cache.
-	 * @param {string} file 
-	 * @param {mixed} data 
+	 * @param {string} file File path relative to build cache.
+	 * @param {mixed} data Data to store in the file.
+	 * @param {string} dir Optional override directory.
 	 */
-	async storeFile(file, data) {
+	async storeFile(file, data, dir) {
 		if (data instanceof BufferWrapper)
 			data = data.raw;
 
-		await fsp.writeFile(this.getFilePath(file), data);
+		await fsp.writeFile(this.getFilePath(file, dir), data);
 	}
 
 	/**
@@ -110,7 +115,7 @@ core.events.once('casc-source-changed', async () => {
 	}
 
 	log.write('Running clean-up for stale build caches...');
-	const entries = await fsp.readdir(constants.CACHE.BUILD, { withFileTypes: true });
+	const entries = await fsp.readdir(constants.CACHE.DIR_BUILDS, { withFileTypes: true });
 	const ts = Date.now();
 
 	for (const entry of entries) {
@@ -120,7 +125,7 @@ core.events.once('casc-source-changed', async () => {
 			continue;
 
 		let deleteEntry = false;
-		const entryDir = path.join(constants.CACHE.BUILD, entry.name);
+		const entryDir = path.join(constants.CACHE.DIR_BUILDS, entry.name);
 		const entryManifest = path.join(entryDir, constants.CACHE.BUILD_MANIFEST);
 
 		try {

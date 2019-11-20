@@ -12,8 +12,8 @@ module.exports = {
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
 	CACHE: {
-		ARCHIVE_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Directory to cache archive indexes.
-		BUILD: path.join(DATA_PATH, 'casc', 'builds'), // Directory to cache build-specific data.
+		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
+		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Cache for archive indexes.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
