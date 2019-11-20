@@ -19,7 +19,7 @@ const loadListfile = async (buildConfig, cache) => {
 	idLookup.clear();
 	nameLookup.clear();
 
-	const cacheFile = cache.getFilePath(constants.CACHE.BUILD_LISTFILE);
+	//const cacheFile = cache.getFilePath(constants.CACHE.BUILD_LISTFILE);
 	let requireDownload = false;
 	if (cache.meta.lastListfileUpdate) {
 		const ttl = config.getNumber('listfileCacheRefresh');
@@ -42,21 +42,26 @@ const loadListfile = async (buildConfig, cache) => {
 		log.write('Listfile for %s is not cached, downloading fresh.', buildConfig);
 	}
 
+	let data;
 	if (requireDownload) {
 		let url = config.getString('listfileURL');
 		if (url === null)
 			throw new Error('Missing listfileURL in configuration!');
 
 		url = util.format(url, buildConfig);
-		await generics.downloadFile(url, cacheFile);
+		data = await generics.downloadFile(url);
+		cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
 
 		cache.meta.lastListfileUpdate = Date.now();
 		cache.saveManifest();
+	} else {
+		data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
 	}
 
 	// Parse all lines in the listfile.
 	// Example: 53187;sound/music/citymusic/darnassus/druid grove.mp3
-	await generics.readFileLines(cacheFile, line => {
+	const lines = data.readLines();
+	for (const line of lines) {
 		const tokens = line.split(';');
 
 		if (tokens.length !== 2) {
@@ -72,7 +77,7 @@ const loadListfile = async (buildConfig, cache) => {
 
 		idLookup.set(fileDataID, tokens[1]);
 		nameLookup.set(tokens[1], fileDataID);
-	});
+	}
 
 	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;

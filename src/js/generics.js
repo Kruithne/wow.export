@@ -2,7 +2,6 @@ const path = require('path');
 const util = require('util');
 const fs = require('fs');
 const fsp = fs.promises;
-const readline = require('readline');
 const zlib = require('zlib');
 const BufferWrapper = require('./buffer');
 
@@ -259,23 +258,6 @@ const fileExists = async (file) => {
 };
 
 /**
- * Read all lines of a file.
- * @param {string} file Path to the file.
- * @param {function} handler Invoked with every line.
- * @param {string} encoding File encoding, defaults to utf8.
- */
-const readFileLines = async(file, handler, encoding = 'utf8') => {
-	return new Promise((resolve, reject) => {
-		const input = fs.createReadStream(file, encoding);
-		input.on('error', reject);
-		input.on('end', resolve);
-
-		const rl = readline.createInterface({ input });
-		rl.on('line', handler);
-	});
-};
-
-/**
  * Read a portion of a file.
  * @param {string} file Path of the file.
  * @param {number} offset Offset to start reading from
@@ -326,7 +308,6 @@ module.exports = {
 	consumeUTF8Stream,
 	queue,
 	redraw,
-	readFileLines,
 	fileExists,
 	readFile,
 	deleteDirectory

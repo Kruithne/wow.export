@@ -420,6 +420,21 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Read the entire buffer split by lines (\r\n, \n, \r).
+	 * Preserves current offset of the wrapper.
+	 * @param {string} encoding 
+	 */
+	readLines(encoding = 'utf8') {
+		const ofs = this._ofs;
+		this.seek(0);
+
+		const str = this.readString(0, encoding);
+		this.seek(ofs);
+
+		return str.split(/\r\n|\n|\r/);
+	}
+
+	/**
 	 * Write a signed 8-bit integer in little endian.
 	 * @param {number} value
 	 * @returns {number|number[]}
