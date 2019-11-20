@@ -160,5 +160,5 @@ const doSave = async () => {
 };
 
 module.exports = {
-	get, getNumber, getBool, getString, getArray, set, load, save, hook
+	get, getNumber, getBool, getString, getArray, set, load, save, hook, unhook
 };
