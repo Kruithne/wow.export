@@ -1,6 +1,7 @@
 const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader');
 const listfile = require('./listfile');
+const log = require('../log');
 const config = require('../config');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
@@ -49,6 +50,16 @@ class CASC {
 		this.encodingKeys = new Map();
 		this.rootTypes = [];
 		this.rootEntries = new Map();
+		
+		this.onLocaleChanged = () => {
+			this.locale = config.getNumber('cascLocale');
+			if (isNaN(this.locale)) {
+				log.write('Invalid locale set in configuration, defaulting to enUS');
+				this.locale = LocaleFlag.enUS;
+			}
+		};
+
+		config.hook('cascLocale', this.onLocaleChanged);
 	}
 
 	/**
@@ -60,24 +71,20 @@ class CASC {
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
 
-		const locale = config.getNumber('cascLocale');
-		if (isNaN(locale))
-			throw new Error('Invalid cascLocale set in configuration');
-
 		let contentKey = null;
 		for (const [rootTypeIdx, key] of root.entries()) {
 			const rootType = this.rootTypes[rootTypeIdx];
 
 			// Select the first root entry that has a matching locale and no LowViolence flag set.
 			// ToDo: Potentially allow users to fine-tune these flags more directly in config.
-			if ((rootType.localeFlags & locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+			if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
 				contentKey = key;
 				break;
 			}
 		}
 
 		if (contentKey === null)
-			throw new Error('No root entry found for locale: ' + locale);
+			throw new Error('No root entry found for locale: ' + this.locale);
 
 		const encodingKey = this.encodingKeys.get(contentKey);
 		if (encodingKey === undefined)
@@ -234,6 +241,14 @@ class CASC {
 				encoding.move(hashSizeEKey * (keysCount - 1));
 			}
 		}
+	}
+
+	/**
+	 * Run any necessary clean-up once a CASC instance is no longer
+	 * needed. At this point, the instance must be made eligible for GC.
+	 */
+	cleanup() {
+		config.unhook('cascLocale', this.onLocaleChanged);
 	}
 }
 
