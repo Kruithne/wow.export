@@ -163,9 +163,7 @@ const downloadFile = async (url, out) => {
  * @param {string} dir Directory path.
  */
 const createDirectory = async (dir) => {
-	await fsp.access(dir).catch(async () => {
-		await fsp.mkdir(dir, { recursive: true });
-	});
+	await fsp.mkdir(dir, { recursive: true });
 };
 
 /**
