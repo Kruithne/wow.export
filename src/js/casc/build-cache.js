@@ -93,8 +93,9 @@ class BuildCache {
 		const filePath = this.getFilePath(file, dir);
 		if (dir)
 			await generics.createDirectory(path.dirname(filePath));
-			
+
 		await fsp.writeFile(filePath, data);
+		core.view.cacheSize += data.byteLength;
 	}
 
 	/**
@@ -129,11 +130,15 @@ core.events.once('casc-source-changed', async () => {
 			continue;
 
 		let deleteEntry = false;
+		let manifestSize = 0;
 		const entryDir = path.join(constants.CACHE.DIR_BUILDS, entry.name);
 		const entryManifest = path.join(entryDir, constants.CACHE.BUILD_MANIFEST);
 
 		try {
-			const manifest = JSON.parse(await fsp.readFile(entryManifest, 'utf8'));
+			const manifestRaw = await fsp.readFile(entryManifest, 'utf8');
+			const manifest = JSON.parse(manifestRaw);
+			manifestSize = Buffer.byteLength(manifestRaw, 'utf8');
+
 			if (!isNaN(manifest.lastAccess)) {
 				const delta = ts - manifest.lastAccess;
 				if (delta > cacheExpire) {
@@ -151,8 +156,15 @@ core.events.once('casc-source-changed', async () => {
 			log.write('Unable to read manifest for %s, marking for deletion.', entry.name);
 		}
 
-		if (deleteEntry)
-			await generics.deleteDirectory(entryDir);
+		if (deleteEntry) {
+			let deleteSize = await generics.deleteDirectory(entryDir);
+
+			// We don't include manifests in the cache size, so we need to make
+			// sure we don't subtract the size of it from our total to maintain accuracy.
+			deleteSize -= manifestSize;
+
+			core.view.cacheSize -= deleteSize;
+		}
 	}
 });
 

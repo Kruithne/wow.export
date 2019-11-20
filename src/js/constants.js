@@ -12,6 +12,8 @@ module.exports = {
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
 	CACHE: {
+		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.
+		SIZE_UPDATE_DELAY: 5000, // Milliseconds to buffer cache size update writes.
 		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.

@@ -59,6 +59,7 @@ const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
+const fsp = require('fs').promises;
 const listfile = require('./js/casc/listfile');
 require('./js/ui/source-select');
 
@@ -168,6 +169,28 @@ document.addEventListener('click', function(e) {
 
 	// Load configuration.
 	await config.load();
+
+	// Load cachesize, a file used to track the overall size of the cache directory
+	// without having to calculate the real size before showing to users. Fast and reliable.
+	fsp.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
+		core.view.cacheSize = Number(data) || 0;
+	}).catch(() => {}).finally(() => {
+		let updateTimer = -1;
+
+		// Create a watcher programtically *after* assigning the initial value
+		// to prevent a needless file write by triggering itself during init.
+		core.view.$watch('cacheSize', function(nv) {
+			// Clear any existing timer running.
+			clearTimeout(updateTimer);
+
+			// We buffer this call by SIZE_UPDATE_DELAY so that we're not writing
+			// to the file constantly during heavy cache usage. Post-poning until
+			// next tick would not help due to async and potential IO/net delay.
+			updateTimer = setTimeout(() => {
+				fsp.writeFile(constants.CACHE.SIZE, nv, 'utf8');
+			}, constants.CACHE.SIZE_UPDATE_DELAY);
+		});
+	});
 
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {

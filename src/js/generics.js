@@ -293,17 +293,25 @@ const readFile = async (file, offset, length) => {
 
 /**
  * Recursively delete a directory and everything inside of it.
+ * Returns the total size of all files deleted.
  * @param {string} dir 
  */
 const deleteDirectory = async (dir) => {
-	const entries = await fsp.readdir(dir, { withFileTypes: true });
+	let deleteSize = 0;
+	const entries = await fsp.readdir(dir);
 	for (const entry of entries) {
-		const entryPath = path.join(dir, entry.name);
-		if (entry.isDirectory())
-			await deleteDirectory(entryPath);
-		else
+		const entryPath = path.join(dir, entry);
+		const entryStat = await fsp.stat(entryPath);
+
+		if (entryStat.isDirectory()) {
+			deleteSize += await deleteDirectory(entryPath);
+		} else {
 			await fsp.unlink(entryPath);
+			deleteSize += entryStat.size;
+		}
 	}
+
+	return deleteSize;
 };
 
 module.exports = { 
