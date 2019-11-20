@@ -123,10 +123,14 @@ const readJSON = async (file, ignoreComments = false) => {
  * @param {string} url Remote URL of the file to download.
  * @param {string} out Optional file to write file to.
  */
-const downloadFile = async (url, out) => {
-	const res = await get(url, { headers: {'Accept-Encoding': 'gzip'} });
+const downloadFile = async (url, out, partialOfs = -1, partialLen = -1) => {
+	const headers = {'Accept-Encoding': 'gzip'};
+	if (partialOfs > -1 && partialLen > -1)
+		headers.Range = util.format('bytes=%d-%d', partialOfs, partialOfs + partialLen - 1);
 
-	if (res.statusCode !== 200)
+	const res = await get(url, { headers });
+
+	if (res.statusCode !== 200 && res.statusCode !== 206)
 		throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
 
 	let totalBytes = 0;

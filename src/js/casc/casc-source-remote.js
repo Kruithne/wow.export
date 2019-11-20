@@ -9,6 +9,7 @@ const CDNConfig = require('./cdn-config');
 const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BufferWrapper = require('../buffer');
+const BLTEReader = require('./blte-reader');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 
@@ -81,6 +82,26 @@ class CASCRemote extends CASC {
 			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d)', key, res.statusCode));
 
 		return CDNConfig(await generics.consumeUTF8Stream(res));
+	}
+
+	/**
+	 * Obtain a file by it's fileDataID.
+	 * @param {number} fileDataID 
+	 */
+	async getFile(fileDataID) {
+		const encodingKey = await super.getFile(fileDataID);
+		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
+
+		if (data === null) {
+			const archive = this.archives.get(encodingKey);
+			if (archive === undefined)
+				throw new Error('No remote archive indexed for encoding key: ' + encodingKey);
+
+			data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
+			this.cache.storeFile(encodingKey, data, constants.CACHE.DIR_DATA);
+		}
+
+		return new BLTEReader(data, encodingKey);
 	}
 
 	/**
@@ -268,6 +289,17 @@ class CASCRemote extends CASC {
 	 */
 	async getDataFile(file) {
 		return await generics.downloadFile(this.host + 'data/' + file);
+	}
+
+	/**
+	 * Download a partial chunk of a data file from the CDN.
+	 * @param {string} file 
+	 * @param {number} ofs
+	 * @param {number} len
+	 * @returns {BufferWrapper}
+	 */
+	async getDataFilePartial(file, ofs, len) {
+		return await generics.downloadFile(this.host + 'data/' + file, null, ofs, len);
 	}
 
 	/**
