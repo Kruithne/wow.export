@@ -6,6 +6,9 @@ const log = require('./log');
 
 const config = core.view.config;
 let isSaving = false;
+let isLoaded = false;
+
+const listeners = new Map();
 
 /**
  * Load configuration from disk.
@@ -19,6 +22,32 @@ const load = async () => {
 
 	Object.assign(config, defaultConfig);
 	Object.assign(config, userConfig);
+
+	isLoaded = true;
+
+	// Invoke all listeners registered before config load.
+	for (const [key, hooks] of listeners.entries())
+		for (const hook of hooks)
+			hook(this.get(key));
+};
+
+/**
+ * Register a callback for when a configuration key is set/updated.
+ * Invoked immediately once if configuration is loaded.
+ * @param {string} key 
+ * @param {function} callback 
+ */
+const hook = (key, callback) => {
+	let hooks = listeners.get(key);
+	if (!hooks) {
+		hooks = [];
+		listeners.set(key, hooks);
+	}
+
+	hooks.push(callback);
+
+	if (isLoaded)
+		callback(this.get(key));
 };
 
 /**
@@ -87,6 +116,11 @@ const set = (key, value) => {
 	config[actualKey] = value;
 	log.write('Set configuration value %s -> %s', key, value);
 
+	// Invoke all registered hooks for this config key.
+	const hooks = listeners.get(key) || [];
+	for (const hook of hooks)
+		hook(value);
+
 	save();
 };
 
@@ -115,5 +149,5 @@ const doSave = async () => {
 };
 
 module.exports = {
-	get, getNumber, getBool, getString, getArray, set, load, save
+	get, getNumber, getBool, getString, getArray, set, load, save, hook
 };
