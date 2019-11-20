@@ -1,6 +1,4 @@
 const util = require('util');
-const path = require('path');
-const fsp = require('fs').promises;
 const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
