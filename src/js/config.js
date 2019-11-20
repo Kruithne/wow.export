@@ -47,7 +47,7 @@ const hook = (key, callback) => {
 	hooks.add(callback);
 
 	if (isLoaded)
-		callback(this.get(key));
+		callback(get(key));
 };
 
 /**
