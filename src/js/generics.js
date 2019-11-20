@@ -266,7 +266,7 @@ const fileExists = async (file) => {
  */
 const readFileLines = async(file, handler, encoding = 'utf8') => {
 	return new Promise((resolve, reject) => {
-		const input = fs.createReadStream(file, { encoding });
+		const input = fs.createReadStream(file, encoding);
 		input.on('error', reject);
 		input.on('end', resolve);
 
