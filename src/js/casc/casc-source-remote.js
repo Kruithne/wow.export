@@ -10,6 +10,8 @@ const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BufferWrapper = require('../buffer');
 
+const EMPTY_HASH = '00000000000000000000000000000000';
+
 class CASCRemote extends CASC {
 	/**
 	 * Create a new CASC source using a Blizzard CDN.

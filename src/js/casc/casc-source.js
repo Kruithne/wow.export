@@ -4,7 +4,6 @@ const listfile = require('./listfile');
 const log = require('../log');
 const config = require('../config');
 
-const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
 
 const ROOT_MAGIC = 0x4D465354;
