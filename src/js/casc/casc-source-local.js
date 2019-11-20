@@ -44,10 +44,9 @@ class CASCLocal extends CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
-	 * @param {number} locale
 	 */
-	async getFile(fileDataID, locale = LocaleFlag.enUS) {
-		const encodingKey = await super.getFile(fileDataID, locale);
+	async getFile(fileDataID) {
+		const encodingKey = await super.getFile(fileDataID);
 		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey);
 	}
 

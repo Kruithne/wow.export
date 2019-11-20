@@ -1,6 +1,7 @@
 const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader');
 const listfile = require('./listfile');
+const config = require('../config');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 const ENC_MAGIC = 0x4E45;
@@ -53,12 +54,15 @@ class CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
-	 * @param {number} locale
 	 */
-	async getFile(fileDataID, locale = LocaleFlag.enUS) {
+	async getFile(fileDataID) {
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
+
+		const locale = config.getNumber('cascLocale');
+		if (isNaN(locale))
+			throw new Error('Invalid cascLocale set in configuration');
 
 		let contentKey = null;
 		for (const [rootTypeIdx, key] of root.entries()) {
@@ -88,14 +92,13 @@ class CASC {
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
 	 * @param {string} fileName 
-	 * @param {number} locale
 	 */
-	async getFileByName(fileName, locale = LocaleFlag.enUS) {
+	async getFileByName(fileName) {
 		const fileDataID = listfile.getFileByName(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: %s', fileName);
 
-		return await this.getFile(fileDataID, locale);
+		return await this.getFile(fileDataID);
 	}
 
 	/**

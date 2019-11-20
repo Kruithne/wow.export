@@ -7,5 +7,6 @@
 {
 	"listfileURL": "https://wow.tools/casc/listfile/download/csv/build?buildConfig=%s",
 	"listfileCacheRefresh": 259200000,
-	"listfileCacheExpiry": 1209600000
+	"listfileCacheExpiry": 1209600000,
+	"cascLocale": 2
 }
