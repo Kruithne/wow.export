@@ -97,8 +97,11 @@ class CASCRemote extends CASC {
 			if (archive === undefined)
 				throw new Error('No remote archive indexed for encoding key: ' + encodingKey);
 
+			log.write('Downloading CASC file %d', fileDataID);
 			data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
 			this.cache.storeFile(encodingKey, data, constants.CACHE.DIR_DATA);
+		} else {
+			log.write('Loaded CASC file %d from cache', fileDataID);
 		}
 
 		return new BLTEReader(data, encodingKey);
