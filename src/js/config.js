@@ -28,7 +28,7 @@ const load = async () => {
 	// Invoke all listeners registered before config load.
 	for (const [key, hooks] of listeners.entries())
 		for (const hook of hooks)
-			hook(this.get(key));
+			hook(get(key));
 };
 
 /**
