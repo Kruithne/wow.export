@@ -40,14 +40,25 @@ const load = async () => {
 const hook = (key, callback) => {
 	let hooks = listeners.get(key);
 	if (!hooks) {
-		hooks = [];
+		hooks = new Set();
 		listeners.set(key, hooks);
 	}
 
-	hooks.push(callback);
+	hooks.add(callback);
 
 	if (isLoaded)
 		callback(this.get(key));
+};
+
+/**
+ * Remove a registered configuration listener.
+ * @param {string} key 
+ * @param {function} callback 
+ */
+const unhook = (key, callback) => {
+	let hooks = listeners.get(key);
+	if (!hooks)
+		hooks.delete(callback);
 };
 
 /**
