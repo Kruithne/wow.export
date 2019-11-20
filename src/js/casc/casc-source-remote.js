@@ -20,6 +20,7 @@ class CASCRemote extends CASC {
 	constructor(region) {
 		super();
 
+		this.archives = new Map();
 		this.region = region;
 	}
 
@@ -235,12 +236,29 @@ class CASCRemote extends CASC {
 
 		let data = await this.cache.getFile(fileName, constants.CACHE.DIR_INDEXES);
 		if (data === null) {
-		const cdnKey = this.formatCDNKey(key) + '.index';
+			const cdnKey = this.formatCDNKey(key) + '.index';
 			data = await this.getDataFile(cdnKey);
 			this.cache.storeFile(fileName, data, constants.CACHE.DIR_INDEXES);
 		}
-		
-		super.parseArchiveIndex(data, key);
+
+		// Skip to the end of the archive to find the count.
+		data.seek(-12);
+		const count = data.readInt32LE();
+
+		if (count * 24 > data.byteLength)
+			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
+
+		data.seek(0); // Reset position.
+
+		for (let i = 0; i < count; i++) {
+			let hash = data.readHexString(16);
+
+			// Skip zero hashes.
+			if (hash === EMPTY_HASH)
+				hash = data.readHexString(16);
+
+			this.archives.set(hash, { key, size: data.readInt32BE(), offset: data.readInt32BE() });
+		}
 	}
 
 	/**

@@ -45,7 +45,6 @@ class CASC {
 	static Content = ContentFlag;
 
 	constructor() {
-		this.archives = new Map();
 		this.encodingSizes = new Map();
 		this.encodingKeys = new Map();
 		this.rootTypes = [];
@@ -106,33 +105,6 @@ class CASC {
 			throw new Error('File not mapping in listfile: %s', fileName);
 
 		return await this.getFile(fileDataID);
-	}
-
-	/**
-	 * Parse entries from an archive index.
-	 * @param {BufferWrapper} data 
-	 * @param {string} key
-	 * @returns {object[]}
-	 */
-	parseArchiveIndex(data, key) {
-		// Skip to the end of the archive to find the count.
-		data.seek(-12);
-		const count = data.readInt32LE();
-
-		if (count * 24 > data.byteLength)
-			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
-
-		data.seek(0); // Reset position.
-
-		for (let i = 0; i < count; i++) {
-			let hash = data.readHexString(16);
-
-			// Skip zero hashes.
-			if (hash === EMPTY_HASH)
-				hash = data.readHexString(16);
-
-			this.archives.set(hash, { key, size: data.readInt32BE(), offset: data.readInt32BE() });
-		}
 	}
 
 	/**
