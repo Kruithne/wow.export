@@ -128,6 +128,12 @@ core.events.once('screen-source-select', async () => {
 
 			try {
 				await cascSource.load(index);
+
+				// Passing the CASC instance to Vue causes the entire instance (with indexes) to
+				// become observable. This is a massive waste of memory. We freeze the instance here
+				// to prevent that from happening.
+				Object.freeze(cascSource);
+
 				core.view.casc = cascSource;
 				core.setScreen('tab-models');
 			} catch (e) {
