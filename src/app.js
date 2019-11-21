@@ -191,6 +191,43 @@ document.addEventListener('click', function(e) {
 		});
 	});
 
+	// Update Tact keys from remote URL.
+	generics.get(core.view.config.tactKeysURL).then(async res => {
+		if (res.statusCode === 200) {
+			const data = await generics.consumeUTF8Stream(res);
+			const lines = data.split(/\r\n|\n|\r/);
+			const tactKeys = core.view.config.tactKeys;
+
+			for (const line of lines) {
+				const parts = line.split(' ');
+
+				if (parts.length !== 2)
+					continue;
+
+				const keyName = parts[0].trim().toUpperCase();
+				if (keyName.length !== 16)
+					continue;
+
+				const key = parts[1].trim().toUpperCase();
+				if (key.length !== 32)
+					continue;
+
+				const check = tactKeys.find(e => e.keyName === keyName);
+				if (check) {
+					if (check.key !== key) {
+						log.write('Conflicting tactKey, replacing %s with %s for %s', check.key, key, keyName);
+						check.key = key;
+					}
+				} else {
+					tactKeys.push({ keyName, key });
+					log.write('Added new tactKey %s -> %s', keyName, key);
+				}
+			}
+		} else {
+			log.write('Unable to download tactKey updates: HTTP %d', res.statusCode);
+		}
+	}).catch(e => console.log('Unable to download tactKey updates: %o', e));
+
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {
 		updater.checkForUpdates().then(updateAvailable => {
