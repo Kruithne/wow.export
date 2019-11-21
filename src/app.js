@@ -60,7 +60,6 @@ const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
 const fsp = require('fs').promises;
-const listfile = require('./js/casc/listfile');
 require('./js/ui/source-select');
 
 const win = nw.Window.get();
