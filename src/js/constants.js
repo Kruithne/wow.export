@@ -21,6 +21,7 @@ module.exports = {
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
+		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
 	},
 
 	CONFIG:  {

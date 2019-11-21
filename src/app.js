@@ -59,6 +59,7 @@ const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
+const BLTEReader = require('./js/casc/blte-reader');
 const fsp = require('fs').promises;
 require('./js/ui/source-select');
 
@@ -191,42 +192,40 @@ document.addEventListener('click', function(e) {
 		});
 	});
 
-	// Update Tact keys from remote URL.
-	generics.get(core.view.config.tactKeysURL).then(async res => {
+	// Load/update BLTE decryption keys.
+	(async () => {
+		const cacheFile = constants.CACHE.TACT_KEYS;
+		const tactKeys = {};
+
+		// Load from local cache.
+		try {
+			Object.assign(tactKeys, JSON.parse(await fsp.readFile(cacheFile, 'utf8')));
+		} catch (e) {
+			// No tactKeys cached locally, doesn't matter.
+		}
+
+		// Update from remote server.
+		const res = await generics.get(core.view.config.tactKeysURL);
 		if (res.statusCode === 200) {
 			const data = await generics.consumeUTF8Stream(res);
 			const lines = data.split(/\r\n|\n|\r/);
-			const tactKeys = core.view.config.tactKeys;
-
+			
 			for (const line of lines) {
 				const parts = line.split(' ');
-
 				if (parts.length !== 2)
 					continue;
 
-				const keyName = parts[0].trim().toUpperCase();
-				if (keyName.length !== 16)
-					continue;
-
-				const key = parts[1].trim().toUpperCase();
-				if (key.length !== 32)
-					continue;
-
-				const check = tactKeys.find(e => e.keyName === keyName);
-				if (check) {
-					if (check.key !== key) {
-						log.write('Conflicting tactKey, replacing %s with %s for %s', check.key, key, keyName);
-						check.key = key;
-					}
-				} else {
-					tactKeys.push({ keyName, key });
-					log.write('Added new tactKey %s -> %s', keyName, key);
-				}
+				tactKeys[parts[0].trim()] = parts[1].trim();
 			}
 		} else {
-			log.write('Unable to download tactKey updates: HTTP %d', res.statusCode);
+			log.write('Unable to update tactKeys, HTTP %d', res.statusCode);
 		}
-	}).catch(e => console.log('Unable to download tactKey updates: %o', e));
+
+		await fsp.writeFile(cacheFile, JSON.stringify(tactKeys, null, '\t'), 'utf8');
+
+		log.write('Loaded decryption keys: %o', tactKeys);
+		BLTEReader.registerKeys(tactKeys);
+	})();
 
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {
