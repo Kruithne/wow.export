@@ -2,7 +2,7 @@ const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader');
 const listfile = require('./listfile');
 const log = require('../log');
-const config = require('../config');
+const core = require('../core');
 
 const ENC_MAGIC = 0x4E45;
 
@@ -48,16 +48,16 @@ class CASC {
 		this.encodingKeys = new Map();
 		this.rootTypes = [];
 		this.rootEntries = new Map();
-		
-		this.onLocaleChanged = () => {
-			this.locale = config.getNumber('cascLocale');
-			if (isNaN(this.locale)) {
+
+		// Listen for configuration changes to cascLocale.
+		this.unhookConfig = core.view.$watch('cascLocale', (locale) => {
+			if (!isNaN(locale)) {
+				this.locale = locale;
+			} else {
 				log.write('Invalid locale set in configuration, defaulting to enUS');
 				this.locale = LocaleFlag.enUS;
 			}
-		};
-
-		config.hook('cascLocale', this.onLocaleChanged);
+		}, { immediate: true });
 	}
 
 	/**
@@ -219,7 +219,7 @@ class CASC {
 	 * needed. At this point, the instance must be made eligible for GC.
 	 */
 	cleanup() {
-		config.unhook('cascLocale', this.onLocaleChanged);
+		this.unhookConfig();
 	}
 }
 

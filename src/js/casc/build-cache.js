@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const log = require('../log');
-const config = require('../config');
 const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
@@ -110,7 +109,7 @@ class BuildCache {
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
 core.events.once('casc-source-changed', async () => {
-	const cacheExpire = config.getNumber('listfileCacheExpiry');
+	const cacheExpire = Number(core.view.config.listfileCacheExpiry);
 
 	// If user sets listfileCacheExpiry to 0 in the configuration, we completely
 	// skip the clean-up process. This is generally considered a bad idea.

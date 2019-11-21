@@ -1,6 +1,5 @@
 const util = require('util');
 const core = require('../core');
-const config = require('../config');
 const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
@@ -13,10 +12,10 @@ let cascSource = null;
 core.events.once('screen-source-select', async () => {
 	const pings = [];
 	const regions = core.view.cdnRegions;
-	const userRegion = config.getString('sourceSelectUserRegion');
+	const userRegion = core.view.config.sourceSelectUserRegion;
 
 	// User has pre-selected a CDN, lock choice from changing.
-	if (userRegion !== null)
+	if (typeof userRegion === 'string')
 		core.view.lockCDNRegion = true;
 
 	// Iterate CDN regions and create data nodes.
@@ -26,7 +25,7 @@ core.events.once('screen-source-select', async () => {
 		regions.push(node);
 
 		// Mark this region as the selected one.
-		if (region === userRegion || (userRegion === null && region === constants.PATCH.DEFAULT_REGION))
+		if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION))
 			core.view.selectedCDNRegion = node;
 
 		// Run a rudimentary ping check for each CDN. 
@@ -43,7 +42,9 @@ core.events.once('screen-source-select', async () => {
 	selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
 	// Grab recent local installations from config.
-	const recentLocal = config.getArray('recentLocal');
+	let recentLocal = core.view.config.recentLocal;
+	if (!Array.isArray(recentLocal))
+		recentLocal = core.view.config.recentLocal = [];
 
 	const openInstall = async (installPath) => {
 		try {
@@ -66,8 +67,6 @@ core.events.once('screen-source-select', async () => {
 			// Limit amount of entries allowed in the recent list.
 			if (recentLocal.length > constants.MAX_RECENT_LOCAL)
 				recentLocal.splice(constants.MAX_RECENT_LOCAL, recentLocal.length - constants.MAX_RECENT_LOCAL);
-
-			config.save(); // Changes to arrays are not automatically detected.
 		} catch (e) {
 			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, 5000);
 			log.write('Failed to initialize local CASC source: %s', e.message);
@@ -75,10 +74,8 @@ core.events.once('screen-source-select', async () => {
 			// In the event that the given directory was once a valid installation and
 			// is listed in the recent local list, make sure it is removed now.
 			const index = recentLocal.indexOf(installPath);
-			if (index > -1) {
+			if (index > -1)
 				recentLocal.splice(index, 1);
-				config.save();
-			}
 		}
 	};
 

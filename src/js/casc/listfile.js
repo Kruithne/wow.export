@@ -1,7 +1,7 @@
 const util = require('util');
 const generics = require('../generics');
 const constants = require('../constants');
-const config = require('../config');
+const core = require('../core');
 const log = require('../log');
 
 const nameLookup = new Map();
@@ -22,7 +22,7 @@ const loadListfile = async (buildConfig, cache) => {
 	//const cacheFile = cache.getFilePath(constants.CACHE.BUILD_LISTFILE);
 	let requireDownload = false;
 	if (cache.meta.lastListfileUpdate) {
-		const ttl = config.getNumber('listfileCacheRefresh');
+		const ttl = Number(core.view.config.listfileCacheRefresh);
 		if (isNaN(ttl) || ttl < 1 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
 			// Local cache file needs updating (or has invalid manifest entry).
 			log.write('Cached listfile for %s is out-of-date (> %d).', buildConfig, ttl);
@@ -44,9 +44,9 @@ const loadListfile = async (buildConfig, cache) => {
 
 	let data;
 	if (requireDownload) {
-		let url = config.getString('listfileURL');
-		if (url === null)
-			throw new Error('Missing listfileURL in configuration!');
+		let url = String(core.view.config.listfileURL);
+		if (typeof url !== 'string')
+			throw new Error('Missing/malformed listfileURL in configuration!');
 
 		url = util.format(url, buildConfig);
 		data = await generics.downloadFile(url);

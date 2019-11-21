@@ -120,7 +120,7 @@ document.addEventListener('click', function(e) {
 			setSelectedCDN: function(region) {
 				this.selectedCDNRegion = region;
 				this.lockCDNRegion = true;
-				config.set('sourceSelectUserRegion', region.tag);
+				this.config.sourceSelectUserRegion = region.tag;
 			},
 
 			/**
