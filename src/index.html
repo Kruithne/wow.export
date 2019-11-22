@@ -47,6 +47,11 @@
 						<p>Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>
 					</div>
+					<div class="config-option">
+						<h1>Encryption Keys</h1>
+						<p>Remote URL used to update keys for encrypted files.</p>
+						<input type="text" v-model.trim="configEdit.tactKeysURL"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}

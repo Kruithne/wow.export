@@ -61,6 +61,9 @@ core.events.on('click-config-apply', () => {
 	if (cfg.listfileURL.length === 0 || !cfg.listfileURL.startsWith('http'))
 		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, 10000);
 
+	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
+		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, 10000);
+
 	// Everything checks out, apply.
 	core.view.config = cfg;
 	core.showPreviousScreen();
