@@ -6,8 +6,8 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	display: grid;
-	grid-template-columns: 50% 50%;
+	display: flex;
+	flex-direction: column;
 
 	&.toastgap {
 		margin-top: 20px;
@@ -15,9 +15,14 @@
 
 	.config-option {
 		padding: 20px;
+		padding-bottom: 0;
 
 		h1 {
 			font-size: 18px;
+		}
+
+		input {
+			margin-bottom: 0;
 		}
 	}
 }
