@@ -41,7 +41,7 @@ textarea {
 	font-size: 15px;
 }
 
-input[type="text"] {
+input[type="text"], input[type="number"] {
 	padding: 10px;
 	background: var(--background-dark);
 	color: var(--font-primary);
@@ -53,4 +53,13 @@ input[type="text"] {
 	&:focus, &:hover {
 		color: var(--font-highlight);
 	}
+}
+
+input[type="number"] {
+	width: 50px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	display: none;
 }
