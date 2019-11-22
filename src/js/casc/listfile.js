@@ -19,7 +19,6 @@ const loadListfile = async (buildConfig, cache) => {
 	idLookup.clear();
 	nameLookup.clear();
 
-	//const cacheFile = cache.getFilePath(constants.CACHE.BUILD_LISTFILE);
 	let requireDownload = false;
 	if (cache.meta.lastListfileUpdate) {
 		const ttl = Number(core.view.config.listfileCacheRefresh);
