@@ -11,7 +11,7 @@
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo">wow.export</div>
-				<div id="nav" v-if="screen.startsWith('tab-')">
+				<div id="nav" v-if="screen !== null && screen.startsWith('tab-')">
 					<div id="nav-models">Models</div>
 					<div id="nav-textures">Textures</div>
 					<div id="nav-sounds">Sounds</div>
