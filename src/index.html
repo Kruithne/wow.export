@@ -11,7 +11,7 @@
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo">wow.export</div>
-				<div id="nav" v-if="screen !== null && screen.startsWith('tab-')">
+				<div id="nav" v-if="!!screen && screen.startsWith('tab-')">
 					<div id="nav-models">Models</div>
 					<div id="nav-textures">Textures</div>
 					<div id="nav-sounds">Sounds</div>
@@ -27,6 +27,13 @@
 					<span id="loading-progress">{{ loadingProgress }}</span>
 					<div id="loading-bar">
 						<div :style="{ width: (loadPct * 100) + '%' }"></div>
+					</div>
+				</div>
+				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">
+					<div class="config-option">
+						<h1>Listfile URL</h1>
+						<p>Remote URL used for updating the CASC listfile. (Must use same format)</p>
+						<input type="text" v-model.trim="configEdit.listfileURL"/>
 					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
@@ -78,15 +85,24 @@
 				</div>
 			</div>
 			<div id="footer">
-				<span id="footer-links">
-					<a data-external="https://discord.gg/BYpgyhy">Discord</a> - 
-					<a data-external="https://patreon.com/Marlamin">Patreon</a> - 
-					<a data-external="https://twitter.com/Marlamin">Twitter</a> - 
-					<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
-				</span>
-				<span id="footer-copyright">
-					World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
-				</span>
+				<template v-if="screen === 'config'">
+					<div id="config-buttons">
+						<input type="button" value="Discard" :class="{ disabled: isBusy }" @click="click('config-discard', $event)"/>
+						<input type="button" value="Apply" :class="{ disabled: isBusy }" @click="click('config-apply', $event)"/>
+						<input type="button" id="config-reset" value="Reset to Defaults" :class="{ disabled: isBusy }" @click="click('config-reset', $event)"/>
+					</div>
+				</template>
+				<template v-else>
+					<span id="footer-links">
+						<a data-external="https://discord.gg/BYpgyhy">Discord</a> - 
+						<a data-external="https://patreon.com/Marlamin">Patreon</a> - 
+						<a data-external="https://twitter.com/Marlamin">Twitter</a> - 
+						<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
+					</span>
+					<span id="footer-copyright">
+						World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
+					</span>
+				</template>
 			</div>
 		</div>
 		<noscript>

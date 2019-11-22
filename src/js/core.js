@@ -11,7 +11,7 @@ events.setMaxListeners(666);
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
 const view = {
-	screen: null, // Controls the currently active interface screen.
+	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
 	loadingProgress: '', // Sets the progress text for the loading screen.
 	loadingTitle: '', // Sets the title text for the loading screen.
@@ -21,6 +21,7 @@ const view = {
 	selectedCDNRegion: null, // Active CDN region.
 	lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
 	config: {}, // Will contain default/user-set configuration. Use config module to operate.
+	configEdit: {}, // Temporary configuration clone used during user configuration editing.
 	availableLocalBuilds: null, // Array containing local builds to display during source select.
 	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 	casc: null, // Active CASC instance.
@@ -82,11 +83,27 @@ const showLoadScreen = (text) => {
 
 /**
  * Set the currently active screen.
+ * If `preserve` is true, the current screen ID will be pushed further onto the stack.
+ * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
  * @param {string} screenID 
+ * @param {boolean} preserve
  */
-const setScreen = (screenID) => {
+const setScreen = (screenID, preserve = false) => {
 	view.loadPct = -1; // Ensure we reset if coming from a loading screen.
-	view.screen = screenID;
+	
+	if (preserve)
+		view.screenStack.unshift(screenID);
+	else
+		core.view.$set(view.screenStack, 0, screenID);
+};
+
+/**
+ * Remove the active screen from the screen stack, effectively returning to the
+ * 'previous' screen. Has no effect if there are no more screens in the stack.
+ */
+const showPreviousScreen = () => {
+	if (view.screenStack.length > 1)
+		view.screenStack.shift();
 };
 
 /**
@@ -122,4 +139,17 @@ const setToast = (toastType, message, options = null, ttl = -1) => {
 }
 
 
-module.exports = { events, view, block, setLoadingText, createProgress, showLoadScreen, setScreen, setToast, hideToast };
+const core = { 
+	events,
+	view,
+	block,
+	setLoadingText,
+	createProgress,
+	showLoadScreen,
+	setScreen,
+	setToast,
+	hideToast,
+	showPreviousScreen
+};
+
+module.exports = core;

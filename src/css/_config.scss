@@ -1,0 +1,39 @@
+// This file defines style rules for the user configuration panel.
+
+#config {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: grid;
+	grid-template-columns: 50% 50%;
+
+	&.toastgap {
+		margin-top: 20px;
+	}
+
+	.config-option {
+		padding: 20px;
+
+		h1 {
+			font-size: 18px;
+		}
+	}
+}
+
+#config-buttons {
+	display: flex;
+	width: 100%;
+	flex-direction: row-reverse;
+
+	input {
+		margin-right: 20px;
+	}
+
+	#config-reset {
+		align-self: flex-end;
+		margin-right: auto;
+		margin-left: 20px;
+	}
+}

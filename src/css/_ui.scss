@@ -10,10 +10,9 @@
 }
 
 input[type="button"] {
-	padding: 10px;
+	padding: 10px 20px;
 	background: var(--form-button-base);
 	color: var(--font-primary);
-	width: 200px;
 	font-size: 18px;
 	border: 0;
 	border-radius: 5px;
@@ -40,4 +39,18 @@ textarea {
 	padding: 10px;
 	font-family: 'Selawik', sans-serif;
 	font-size: 15px;
+}
+
+input[type="text"] {
+	padding: 10px;
+	background: var(--background-dark);
+	color: var(--font-primary);
+	border: 1px solid var(--border);
+	margin: 10px;
+	border-radius: 5px;
+	width: 300px;
+
+	&:focus, &:hover {
+		color: var(--font-highlight);
+	}
 }

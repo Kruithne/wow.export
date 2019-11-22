@@ -134,6 +134,15 @@ document.addEventListener('click', function(e) {
 			}
 		},
 
+		computed: {
+			/**
+			 * Returns the currently 'active' screen, which is first on the stack.
+			 */
+			screen: function() {
+				return this.screenStack[0];
+			}
+		},
+
 		watch: {
 			/**
 			 * Invoked when the active 'screen' is changed.
