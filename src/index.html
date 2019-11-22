@@ -37,13 +37,13 @@
 					</div>
 					<div class="config-option">
 						<h1>Listfile Update Frequency</h1>
-						<p>Controls how often (in days) the listfile is updated.</p>
-						<p>Set to zero to always use a freshly downloaded listfile.</p>
+						<p>How often (in days) the listfile is updated.</p>
+						<p>Set to zero to always re-download the listfile.</p>
 						<input type="number" v-model.number="configEdit.listfileCacheRefresh"/>
 					</div>
 					<div class="config-option">
 						<h1>Cache Expiry</h1>
-						<p>Controls how many days cached data must be inactive for before being cleaned.</p>
+						<p>After how many days of inacivity is cached data deleted.</p>
 						<p>Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>
 					</div>
