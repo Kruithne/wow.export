@@ -35,6 +35,12 @@
 						<p>Remote URL used for updating the CASC listfile. (Must use same format)</p>
 						<input type="text" v-model.trim="configEdit.listfileURL"/>
 					</div>
+					<div class="config-option">
+						<h1>Listfile Update Frequency</h1>
+						<p>Controls how often (in days) the listfile is updated.</p>
+						<p>Set to zero to always use a freshly downloaded listfile.</p>
+						<input type="text" v-model.number="configEdit.listfileCacheRefresh"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
