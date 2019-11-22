@@ -8,6 +8,7 @@
 	bottom: 0;
 	display: flex;
 	flex-direction: column;
+	overflow-y: auto;
 
 	&.toastgap {
 		margin-top: 20px;
