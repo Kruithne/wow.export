@@ -109,12 +109,13 @@ class BuildCache {
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
 core.events.once('casc-source-changed', async () => {
-	const cacheExpire = Number(core.view.config.listfileCacheExpiry);
+	let cacheExpire = Number(core.view.config.listfileCacheExpiry) || 0;
+	cacheExpire *= 24 * 60 * 60 * 1000;
 
 	// If user sets listfileCacheExpiry to 0 in the configuration, we completely
 	// skip the clean-up process. This is generally considered a bad idea.
-	if (isNaN(cacheExpire) || cacheExpire <= 0) {
-		log.write('WARNING: Cache clean-up has been skipped due to listfileCacheExpiry being %s', cacheExpire);
+	if (cacheExpire === 0) {
+		log.write('WARNING: Cache clean-up has been skipped due to listfileCacheExpiry being %d', cacheExpire);
 		return;
 	}
 

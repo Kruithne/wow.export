@@ -6,8 +6,8 @@
 //      Linux: ~/.config/<name>/wow.export
 {
 	"listfileURL": "https://wow.tools/casc/listfile/download/csv/build?buildConfig=%s",
-	"listfileCacheRefresh": 259200000,
-	"listfileCacheExpiry": 1209600000,
+	"listfileCacheRefresh": 3,
+	"listfileCacheExpiry": 7,
 	"cascLocale": 2,
 	"recentLocal": [],
 	"sourceSelectUserRegion": null,

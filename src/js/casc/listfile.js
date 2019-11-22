@@ -21,8 +21,10 @@ const loadListfile = async (buildConfig, cache) => {
 
 	let requireDownload = false;
 	if (cache.meta.lastListfileUpdate) {
-		const ttl = Number(core.view.config.listfileCacheRefresh);
-		if (isNaN(ttl) || ttl < 1 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
+		let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
+		ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
+
+		if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
 			// Local cache file needs updating (or has invalid manifest entry).
 			log.write('Cached listfile for %s is out-of-date (> %d).', buildConfig, ttl);
 			requireDownload = true;
