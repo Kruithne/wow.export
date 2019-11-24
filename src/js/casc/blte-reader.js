@@ -199,10 +199,6 @@ class BLTEReader extends BufferWrapper {
 		if (key === undefined)
 			throw new Error('[BLTE] Unknown decryption key: ' + keyName);
 
-		// ToDo: Support Arc4 decryption.
-		if (encryptType === ENC_TYPE_ARC4)
-			throw new Error('[BLTE] Arc4 decryption not implemented.');
-
 		const nonce = [];
 		for (let i = 0; i < 8; i++)
 			nonce[i] = (i < ivShort.length ? ivShort[i] : 0x0);
