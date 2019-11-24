@@ -1,6 +1,7 @@
 const fsp = require('fs').promises;
 const constants = require('./constants');
 const generics = require('./generics');
+const tactKeys = require('./casc/tact-keys');
 const core = require('./core');
 const log = require('./log');
 
@@ -68,6 +69,15 @@ core.events.on('click-config-apply', () => {
 	core.view.config = cfg;
 	core.showPreviousScreen();
 	core.setToast('success', 'Changes to your configuration have been saved!', {}, 10000);
+});
+
+// User has attempted to manually add an encryption key.
+// Verify the input, register it to BLTEReader and store with keys.
+core.events.on('click-tact-key', () => {
+	if (tactKeys.addKey(core.view.userInputTactKeyName, core.view.userInputTactKey))
+		core.setToast('success', 'Successfully added decryption key.', {}, 10000);
+	else
+		core.setToast('error', 'Invalid encryption key.', {}, 10000);
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply

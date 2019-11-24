@@ -59,7 +59,7 @@ const updater = require('./js/updater');
 const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
-const BLTEReader = require('./js/casc/blte-reader');
+const tactKeys = require('./js/casc/tact-keys');
 const fsp = require('fs').promises;
 require('./js/ui/source-select');
 
@@ -202,39 +202,7 @@ document.addEventListener('click', function(e) {
 	});
 
 	// Load/update BLTE decryption keys.
-	(async () => {
-		const cacheFile = constants.CACHE.TACT_KEYS;
-		const tactKeys = {};
-
-		// Load from local cache.
-		try {
-			Object.assign(tactKeys, JSON.parse(await fsp.readFile(cacheFile, 'utf8')));
-		} catch (e) {
-			// No tactKeys cached locally, doesn't matter.
-		}
-
-		// Update from remote server.
-		const res = await generics.get(core.view.config.tactKeysURL);
-		if (res.statusCode === 200) {
-			const data = await generics.consumeUTF8Stream(res);
-			const lines = data.split(/\r\n|\n|\r/);
-			
-			for (const line of lines) {
-				const parts = line.split(' ');
-				if (parts.length !== 2)
-					continue;
-
-				tactKeys[parts[0].trim()] = parts[1].trim();
-			}
-		} else {
-			log.write('Unable to update tactKeys, HTTP %d', res.statusCode);
-		}
-
-		await fsp.writeFile(cacheFile, JSON.stringify(tactKeys, null, '\t'), 'utf8');
-
-		log.write('Loaded decryption keys: %o', tactKeys);
-		BLTEReader.registerKeys(tactKeys);
-	})();
+	tactKeys.load();
 
 	// Check for updates (without blocking).
 	if (BUILD_RELEASE) {

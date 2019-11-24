@@ -1,6 +1,7 @@
 const util = require('util');
 const BufferWrapper = require('../buffer');
 const Salsa20 = require('./salsa20');
+const tactKeys = require('./tact-keys');
 
 const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
@@ -178,7 +179,7 @@ class BLTEReader extends BufferWrapper {
 		if (keyNameSize === 0 || keyNameSize !== 8)
 			throw new Error('[BLTE] Unexpected keyNameSize: ' + keyNameSize);
 
-		const keyName = data.readHexString(keyNameSize).toUpperCase();
+		const keyName = data.readHexString(keyNameSize);
 		const ivSize = data.readUInt8();
 
 		if (ivSize !== 4)
@@ -195,8 +196,8 @@ class BLTEReader extends BufferWrapper {
 		for (let shift = 0, i = 0; i < 4; shift += 8, i++)
 			ivShort[i] ^= (index >> shift) & 0xFF;
 
-		const key = KEY_RING[keyName];
-		if (key === undefined)
+		const key = tactKeys.getKey(keyName);
+		if (typeof key !== 'string')
 			throw new Error('[BLTE] Unknown decryption key: ' + keyName);
 
 		const nonce = [];
@@ -230,24 +231,6 @@ class BLTEReader extends BufferWrapper {
 		const pos = this.offset + length;
 		while (pos > this.blockWriteIndex)
 			this._processBlock();
-	}
-
-	/**
-	 * Register keys for BLTE decryption.
-	 * @param {object} keys 
-	 */
-	static registerKeys(keys) {
-		for (const [keyName, key] of Object.entries(keys)) {
-			// Ensure keyName is 8-bytes.
-			if (keyName.length !== 16)
-				throw new Error('[BLTE] Decryption key names are expected to be 8 bytes.');
-
-			// Ensure key is 16-bytes.
-			if (key.length !== 32)
-				throw new Error('[BLTE] Decryption keys are expected to be 16-bytes.');
-
-			KEY_RING[keyName.toUpperCase()] = key.toUpperCase();
-		}
 	}
 }
 

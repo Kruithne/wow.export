@@ -52,6 +52,13 @@
 						<p>Remote URL used to update keys for encrypted files.</p>
 						<input type="text" v-model.trim="configEdit.tactKeysURL"/>
 					</div>
+					<div>
+						<h1>Add Encryption Key</h1>
+						<p>Manually add a BLTE encryption key.</p>
+						<input type="text" width="140" v-model.trim="userInputTactKeyName" maxlength="16" placeholder="e.g 8F4098E2470FE0C8"/>
+						<input type="text" width="280" v-model.trim="userInputTactKey" maxlength="32" placeholder="e.g AA718D1F1A23078D49AD0C606A72F3D5"/>
+						<input type="button" value="Add" @click="click('tact-key', $event)"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}

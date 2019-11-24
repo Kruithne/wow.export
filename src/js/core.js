@@ -26,6 +26,8 @@ const view = {
 	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 	casc: null, // Active CASC instance.
 	cacheSize: 0, // Active size of the user cache.
+	userInputTactKey: '', // Value of manual tact key field.
+	userInputTactKeyName: '', // Value of manual tact key name field.
 };
 
 /**
