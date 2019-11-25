@@ -79,7 +79,7 @@ const createProgress = (segments = 1) => {
  * @param {string} text Defaults to 'Loading, please wait'
  */
 const showLoadScreen = (text) => {
-	view.screen = 'loading';
+	setScreen('loading');
 	view.loadingTitle = text || 'Loading, please wait...';
 };
 
