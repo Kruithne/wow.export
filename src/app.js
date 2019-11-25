@@ -242,5 +242,5 @@ document.addEventListener('click', function(e) {
 	}
 
 	// Set source select as the currently active interface screen.
-	core.setScreen('source-select');
+	core.view.setScreen('source-select');
 })();
