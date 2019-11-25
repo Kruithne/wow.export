@@ -79,33 +79,8 @@ const createProgress = (segments = 1) => {
  * @param {string} text Defaults to 'Loading, please wait'
  */
 const showLoadScreen = (text) => {
-	setScreen('loading');
+	view.setScreen('loading');
 	view.loadingTitle = text || 'Loading, please wait...';
-};
-
-/**
- * Set the currently active screen.
- * If `preserve` is true, the current screen ID will be pushed further onto the stack.
- * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
- * @param {string} screenID 
- * @param {boolean} preserve
- */
-const setScreen = (screenID, preserve = false) => {
-	view.loadPct = -1; // Ensure we reset if coming from a loading screen.
-	
-	if (preserve)
-		view.screenStack.unshift(screenID);
-	else
-		core.view.$set(view.screenStack, 0, screenID);
-};
-
-/**
- * Remove the active screen from the screen stack, effectively returning to the
- * 'previous' screen. Has no effect if there are no more screens in the stack.
- */
-const showPreviousScreen = () => {
-	if (view.screenStack.length > 1)
-		view.screenStack.shift();
 };
 
 /**
@@ -148,10 +123,8 @@ const core = {
 	setLoadingText,
 	createProgress,
 	showLoadScreen,
-	setScreen,
 	setToast,
-	hideToast,
-	showPreviousScreen
+	hideToast
 };
 
 module.exports = core;

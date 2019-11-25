@@ -3,6 +3,7 @@ const core = require('../core');
 const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
+const listfile = require('../casc/listfile');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
@@ -132,13 +133,13 @@ core.events.once('screen-source-select', async () => {
 				Object.freeze(cascSource);
 
 				core.view.casc = cascSource;
-				core.setScreen('tab-models');
+				core.view.setScreen('tab-models');
 			} catch (e) {
 				log.write('Failed to load CASC: %o', e);
 				core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', {
 					'View Log': () => log.openRuntimeLog()
 				}, 10000);
-				core.setScreen('source-select');
+				core.view.setScreen('source-select');
 			}
 		});
 	});

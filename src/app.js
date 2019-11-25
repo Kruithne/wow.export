@@ -102,6 +102,31 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
+			 * Set the currently active screen.
+			 * If `preserve` is true, the current screen ID will be pushed further onto the stack.
+			 * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
+			 * @param {string} screenID 
+			 * @param {boolean} preserve
+			 */
+			setScreen: function(screenID, preserve = false) {
+				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
+				
+				if (preserve)
+					this.screenStack.unshift(screenID);
+				else
+					this.$set(this.screenStack, 0, screenID);
+			},
+
+			/**
+			 * Remove the active screen from the screen stack, effectively returning to the
+			 * 'previous' screen. Has no effect if there are no more screens in the stack.
+			 */
+			showPreviousScreen: function() {
+				if (this.screenStack.length > 1)
+					this.screenStack.shift();
+			},
+
+			/**
 			 * Invoked when a toast option is clicked.
 			 * The tag is passed to our global event emitter.
 			 * @param {string} tag 

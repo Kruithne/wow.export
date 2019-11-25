@@ -67,7 +67,7 @@ core.events.on('click-config-apply', () => {
 
 	// Everything checks out, apply.
 	core.view.config = cfg;
-	core.showPreviousScreen();
+	core.view.showPreviousScreen();
 	core.setToast('success', 'Changes to your configuration have been saved!', {}, 10000);
 });
 
@@ -82,7 +82,7 @@ core.events.on('click-tact-key', () => {
 
 // When the user clicks 'Discard' on the configuration screen, simply
 // move back to the previous screen on the stack.
-core.events.on('click-config-discard', () => core.showPreviousScreen());
+core.events.on('click-config-discard', () => core.view.showPreviousScreen());
 
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
