@@ -12,11 +12,11 @@
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo">wow.export</div>
 				<div id="nav" v-if="!!screen && screen.startsWith('tab-')">
-					<div id="nav-models">Models</div>
-					<div id="nav-textures">Textures</div>
-					<div id="nav-sounds">Sounds</div>
-					<div id="nav-maps">Maps</div>
-					<div id="nav-other">Other</div>
+					<div id="nav-models" @click="screen = 'tab-models'">Models</div>
+					<div id="nav-textures" @click="screen = 'tab-textures'">Textures</div>
+					<div id="nav-sounds" @click="screen = 'tab-sounds'">Sounds</div>
+					<div id="nav-maps" @click="screen = 'tab-maps'">Maps</div>
+					<div id="nav-other" @click="screen = 'tab-other'">Other</div>
 				</div>
 			</div>
 			<div id="content">
