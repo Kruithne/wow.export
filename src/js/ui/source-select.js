@@ -118,7 +118,7 @@ core.events.once('screen-source-select', async () => {
 	// a build either for remote or local installations.
 	core.events.on('click-source-build', (index) => {
 		core.block(async () => {
-			core.showLoadScreen();
+			core.view.showLoadScreen();
 
 			// Wipe the available build lists.
 			core.view.availableLocalBuilds = null;

@@ -39,7 +39,7 @@ const checkForUpdates = async () => {
  */
 const applyUpdate = async () => {
 	core.block(async () => {
-		core.showLoadScreen('Updating, please wait...');
+		core.view.showLoadScreen('Updating, please wait...');
 		const progress = core.createProgress(2);
 
 		const requiredFiles = [];

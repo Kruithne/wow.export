@@ -75,15 +75,6 @@ const createProgress = (segments = 1) => {
 };
 
 /**
- * Show the loading screen with a given message.
- * @param {string} text Defaults to 'Loading, please wait'
- */
-const showLoadScreen = (text) => {
-	view.setScreen('loading');
-	view.loadingTitle = text || 'Loading, please wait...';
-};
-
-/**
  * Hide the currently active toast prompt.
  */
 const hideToast = () => {
@@ -122,7 +113,6 @@ const core = {
 	block,
 	setLoadingText,
 	createProgress,
-	showLoadScreen,
 	setToast,
 	hideToast
 };

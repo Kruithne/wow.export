@@ -118,6 +118,15 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Show the loading screen with a given message.
+			 * @param {string} text Defaults to 'Loading, please wait'
+			 */
+			showLoadScreen: function(text) {
+				this.setScreen('loading');
+				this.loadingTitle = text || 'Loading, please wait...';
+			},
+
+			/**
 			 * Remove the active screen from the screen stack, effectively returning to the
 			 * 'previous' screen. Has no effect if there are no more screens in the stack.
 			 */
