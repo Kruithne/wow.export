@@ -3,7 +3,6 @@ const core = require('../core');
 const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
-const listfile = require('../casc/listfile');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
