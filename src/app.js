@@ -61,7 +61,11 @@ const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const fsp = require('fs').promises;
+
+require('./js/components/listbox');
+
 require('./js/ui/source-select');
+require('./js/ui/tab-textures');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

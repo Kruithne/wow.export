@@ -28,6 +28,8 @@ const view = {
 	cacheSize: 0, // Active size of the user cache.
 	userInputTactKey: '', // Value of manual tact key field.
 	userInputTactKeyName: '', // Value of manual tact key name field.
+	userInputFilterTextures: '', // Value of the 'filter' field for textures.
+	listfileTextures: [], // Filtered listfile for texture files.
 };
 
 /**

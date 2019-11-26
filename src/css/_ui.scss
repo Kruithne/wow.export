@@ -63,3 +63,42 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
 	display: none;
 }
+
+.ui-listbox {
+	width: 500px;
+	height: 500px;
+	background: white;
+	position: relative;
+	margin: 20px;
+
+	.item {
+		color: black;
+		background: rgb(200, 124, 124);
+	}
+
+	.scroller {
+		position: absolute;
+		right: 3px;
+		width: 8px;
+		height: 45px;
+		opacity: 0.7;
+		cursor: pointer;
+
+		> div {
+			position: absolute;
+			top: 3px;
+			bottom: 3px;
+			right: 0;
+			left: 0;
+			background: var(--background-dark);
+			border: 1px solid var(--background-dark);
+			border-radius: 5px;
+		}
+
+		&:hover, &.using {
+			> div {
+				background: var(--border);
+			}
+		}
+	}
+}
