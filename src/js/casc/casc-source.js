@@ -115,6 +115,10 @@ class CASC {
 		const entries = await listfile.loadListfile(buildKey, this.cache);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
+
+		// Pre-filter extensions for tabs.
+		await this.progress.step('Filtering listfiles');
+		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
 	}
 
 	/**

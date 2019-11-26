@@ -85,6 +85,28 @@ const loadListfile = async (buildConfig, cache) => {
 }
 
 /**
+ * Return an array of filenames ending with the given extension(s).
+ * @param {string|Array} exts 
+ */
+const getFilenamesByExtension = (exts) => {
+	// Box into an array for reduced code.
+	if (!Array.isArray(exts))
+		exts = [exts];
+
+	const entries = [];
+	for (const filename of idLookup.values()) {
+		for (const ext of exts) {
+			if (filename.endsWith(ext)) {
+				entries.push(filename);
+				continue;
+			}
+		}
+	}
+
+	return entries;
+};
+
+/**
  * Get a filename from a given file data ID.
  * @param {number} id 
  * @returns {string|undefined}
@@ -102,4 +124,4 @@ const getByFilename = (filename) => {
 	return nameLookup.get(filename.toLowerCase().replace('\\', '/'));
 };
 
-module.exports = { loadListfile, getByID, getByFilename };
+module.exports = { loadListfile, getByID, getByFilename, getFilenamesByExtension };

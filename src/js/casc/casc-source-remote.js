@@ -130,7 +130,7 @@ class CASCRemote extends CASC {
 		this.cache = new BuildCache(this.build.BuildConfig);
 		await this.cache.init();
 
-		this.progress = core.createProgress(9);
+		this.progress = core.createProgress(10);
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
 		await this.loadConfigs();
