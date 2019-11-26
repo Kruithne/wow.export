@@ -79,7 +79,7 @@ class CASCLocal extends CASC {
 		await this.loadIndexes();
 		await this.loadEncoding();
 		await this.loadRoot();
-		await this.loadListfile();
+		await this.loadListfile(this.build.BuildKey);
 	}
 
 	/**
@@ -180,17 +180,6 @@ class CASCLocal extends CASC {
 		const root = await this.getDataFile(rootKey);
 		const rootEntryCount = await this.parseRootFile(root, rootKey);
 		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
-	}
-
-	
-	/**
-	 * Load the listfile for selected build.
-	 */
-	async loadListfile() {
-		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(this.build.BuildKey, this.cache);
-		if (entries === 0)
-			throw new Error('No listfile entries found');
 	}
 
 	/**

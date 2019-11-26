@@ -107,6 +107,17 @@ class CASC {
 	}
 
 	/**
+	 * Load the listfile for selected build.
+	 * @param {string} buildKey 
+	 */
+	async loadListfile(buildKey) {
+		await this.progress.step('Loading listfile');
+		const entries = await listfile.loadListfile(buildKey, this.cache);
+		if (entries === 0)
+			throw new Error('No listfile entries found');
+	}
+
+	/**
 	 * Parse entries from a root file.
 	 * @param {BufferWrapper} data 
 	 * @param {string} hash 

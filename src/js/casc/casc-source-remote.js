@@ -137,17 +137,7 @@ class CASCRemote extends CASC {
 		await this.loadArchives();
 		await this.loadEncoding();
 		await this.loadRoot();
-		await this.loadListfile();
-	}
-
-	/**
-	 * Load the listfile for selected build.
-	 */
-	async loadListfile() {
-		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(this.build.BuildConfig, this.cache);
-		if (entries === 0)
-			throw new Error('No listfile entries found');
+		await this.loadListfile(this.build.BuildConfig);
 	}
 
 	/**
