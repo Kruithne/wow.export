@@ -70,10 +70,19 @@ input[type="number"]::-webkit-outer-spin-button {
 	background: white;
 	position: relative;
 	margin: 20px;
+	border: 1px solid var(--border);
+	box-shadow: black 0 0 3px 0px;
 
 	.item {
-		color: black;
-		background: rgb(200, 124, 124);
+		padding: 2px 8px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		background: var(--background-dark);
+
+		&:nth-child(even) {
+			background: var(--background-alt);
+		}
 	}
 
 	.scroller {
@@ -90,14 +99,14 @@ input[type="number"]::-webkit-outer-spin-button {
 			bottom: 3px;
 			right: 0;
 			left: 0;
-			background: var(--background-dark);
-			border: 1px solid var(--background-dark);
+			background: var(--border);
+			border: 1px solid var(--border);
 			border-radius: 5px;
 		}
 
 		&:hover, &.using {
 			> div {
-				background: var(--border);
+				background: var(--font-highlight);
 			}
 		}
 	}
