@@ -27,6 +27,10 @@ Vue.component('listbox', {
 
 		filteredItems: function() {
 			return this.$props.items.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
+		},
+
+		itemWeight: function() {
+			return 1 / this.$props.items.length;
 		}
 	},
 
@@ -73,10 +77,16 @@ Vue.component('listbox', {
 
 		stopMouse: function(e) {
 			this.isScrolling = false;
+		},
+
+		wheelMouse: function(e) {
+			const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+			this.scroll += ((e.deltaY / 10) * this.itemWeight) * weight;
+			this.recalculateBounds();
 		}
 	},
 
-	template: `<div class="ui-listbox">
+	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="item in filteredItems" class="item">{{ item }}</div>
 	</div>`
