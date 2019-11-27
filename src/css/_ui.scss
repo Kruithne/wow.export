@@ -65,7 +65,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .ui-listbox {
-	background: white;
+	background: var(--background);
 	position: relative;
 	margin: 20px;
 	border: 1px solid var(--border);
