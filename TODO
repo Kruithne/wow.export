@@ -1,0 +1,20 @@
+- Add settings button to top-right to open configuration.
+- Checkbox to toggle texture transparency in texture viewer.
+- Export button for texture viewer with optional formats (persist choice).
+- Copy/paste functionality for listboxes (track component focus?).
+- Show dimensions of selected texture in texture viewer.
+- Fix issue with directories not being deleted with cleaned-up builds.
+- Listbox for models filtered with .m2 and .wmo extensions.
+- 3D model viewer with controls (rotate, zoom, etc).
+- Geoset control over 3D models.
+- WMO control (groups, doodad sets).
+- Export button for models with various formats (m2, obj, fbx?, glfl?)
+- Listbox for sounds filtered with .ogg and .mp3 extensions.
+- Sound player with controls (play/pause, volume, seek?).
+- Export button for sounds (additional formats?).
+- DB2 reader interface.
+- List of available maps showing tiles and ADT grid for selection.
+- Export button for maps exporting object, baked textures, doodads and WMOs.
+- Export minimap tile (raw).
+- Remove 'Other' tab for the time being.
+- Local file conversion tools (MDX, M2, more?).
