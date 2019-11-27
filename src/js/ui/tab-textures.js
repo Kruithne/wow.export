@@ -4,9 +4,6 @@ const BLPFile = require('../casc/blp');
 
 let selectedFile = null;
 
-//let canvas = null;
-//let canvasContainer = null;
-
 let previewContainer = null;
 let previewInner = null;
 
