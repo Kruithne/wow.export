@@ -13,7 +13,8 @@ Vue.component('listbox', {
 			scroll: 0,
 			scrollRel: 0,
 			isScrolling: false,
-			slotCount: 1
+			slotCount: 1,
+			selection: []
 		}
 	},
 
@@ -148,6 +149,28 @@ Vue.component('listbox', {
 			const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
 			this.scroll += ((e.deltaY / 10) * this.itemWeight) * weight;
 			this.recalculateBounds();
+		},
+
+		/**
+		 * Invoked when a user selects an item in the list.
+		 * @param {string} item 
+		 */
+		selectItem: function(item, e) {
+			const index = this.selection.indexOf(item);
+			if (e.shiftKey) {
+				// Shift-key held, so allow multiple selections.
+				if (index > -1)
+					this.selection.splice(index, 1);
+				else
+					this.selection.push(item);
+			} else if (index > -1) {
+				// Normal click, replace entire selection.
+				this.selection = [item];
+			} else {
+				return;
+			}
+
+			this.$emit('selection-changed', this.selection);
 		}
 	},
 
@@ -156,6 +179,6 @@ Vue.component('listbox', {
 	 */
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="item in displayItems" class="item">{{ item }}</div>
+		<div v-for="item in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">{{ item }}</div>
 	</div>`
 });

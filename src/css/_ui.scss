@@ -78,9 +78,14 @@ input[type="number"]::-webkit-outer-spin-button {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		background: var(--background-dark);
+		cursor: pointer;
 
 		&:nth-child(even) {
 			background: var(--background-alt);
+		}
+
+		&:hover, &.selected {
+			background: var(--font-alt);
 		}
 	}
 
