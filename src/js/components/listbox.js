@@ -54,7 +54,7 @@ Vue.component('listbox', {
 		 */
 		filteredItems: function() {
 			const filter = this.$props.filter.trim().toLowerCase();
-			if (filter > 0)
+			if (filter.length > 0)
 				return this.$props.items.filter(e => e.includes(filter));
 
 			return this.$props.items;
