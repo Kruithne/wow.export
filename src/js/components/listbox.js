@@ -181,7 +181,7 @@ Vue.component('listbox', {
 					this.selection.splice(index, 1);
 				else
 					this.selection.push(item);
-			} else if (index === -1) {
+			} else if (index === -1 || (index > -1 && this.selection.length > 1)) {
 				// Normal click, replace entire selection.
 				this.selection = [item];
 			}
