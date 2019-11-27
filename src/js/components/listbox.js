@@ -97,7 +97,7 @@ Vue.component('listbox', {
 				}
 			}
 
-			this.slotCount = Math.ceil(this.$el.clientHeight / this.childHeight);
+			this.slotCount = Math.floor(this.$el.clientHeight / this.childHeight);
 		},
 
 		/**
