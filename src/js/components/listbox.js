@@ -84,16 +84,6 @@ Vue.component('listbox', {
 		}
 	},
 
-	watch: {
-		/**
-		 * Track changes to the selection array and emit as an event.
-		 * @param {Array} val 
-		 */
-		selection: function(val) {
-			this.$emit('selection-changed', val);
-		}
-	},
-
 	methods: {
 		/**
 		 * Invoked by a ResizeObserver when the main component node
@@ -181,9 +171,12 @@ Vue.component('listbox', {
 					this.selection.splice(index, 1);
 				else
 					this.selection.push(item);
+
+				this.$emit('selection-changed', this.selection);
 			} else if (index === -1 || (index > -1 && this.selection.length > 1)) {
 				// Normal click, replace entire selection.
 				this.selection = [item];
+				this.$emit('selection-changed', this.selection);
 			}
 		}
 	},
