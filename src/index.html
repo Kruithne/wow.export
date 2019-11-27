@@ -68,11 +68,11 @@
 					<div class="tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<input type="text" class="filter" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
 						<div class="list-container">
-							<listbox :items="listfileTextures" :filter="userInputFilterTextures"></listbox>
+							<listbox :items="listfileTextures" :filter="userInputFilterTextures" @selection-changed="emit('user-select-texture', ...arguments)"></listbox>
 						</div>
 						<div class="preview-container">
 							<div class="preview-background">
-								<div class="preview default"></div>
+								<canvas id="texture-preview"></canvas>
 							</div>
 						</div>
 					</div>

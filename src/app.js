@@ -169,6 +169,15 @@ document.addEventListener('click', function(e) {
 			click: function(tag, event, ...params) {
 				if (!event.target.classList.contains('disabled'))
 					core.events.emit('click-' + tag, ...params);
+			},
+
+			/**
+			 * Pass-through function to emit events from reactive markup.
+			 * @param {string} tag 
+			 * @param  {...any} params 
+			 */
+			emit: function(tag, ...params) {
+				core.events.emit(tag, ...params);
 			}
 		},
 
