@@ -48,7 +48,7 @@ const applyUpdate = async () => {
 		let totalSize = 0;
 		const entries = Object.entries(updateManifest.contents);
 		await progress.updateWithText(1, 'Verifying local files');
-		for (let i = 0; i < entries.length; i++) {
+		for (let i = 0, n = entries.length; i < n; i++) {
 			const [file, meta] = entries[i];
 			const [hash, size] = meta;
 

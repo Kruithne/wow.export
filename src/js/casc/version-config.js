@@ -9,7 +9,7 @@ module.exports = data => {
 
 	// Whitespace is replaced so that a field like 'Install Key' becomes 'InstallKey'.
 	// This just improves coding readability when accessing the fields later on.
-	for (let i = 0; i < headers.length; i++)
+	for (let i = 0, n = headers.length; i < n; i++)
 		fields[i] = headers[i].split('!')[0].replace(' ', '');
 
 	for (const entry of lines) {
@@ -19,7 +19,7 @@ module.exports = data => {
 			
 		const node = {};
 		const entryFields = entry.split('|');
-		for (let i = 0; i < entryFields.length; i++)
+		for (let i = 0, n = entryFields.length; i < n; i++)
 			node[fields[i]] = entryFields[i];
 
 		entries.push(node);

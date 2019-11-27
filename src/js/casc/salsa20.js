@@ -92,7 +92,7 @@ class Salsa20 {
 		const bytes = this.getBytes(buf.byteLength);
 
 		buf.seek(0);
-		for (let i = 0; i < buf.byteLength; i++)
+		for (let i = 0, n = buf.byteLength; i < n; i++)
 			out.writeUInt8(bytes.readUInt8() ^ buf.readUInt8());
 
 		out.seek(0);
@@ -146,7 +146,7 @@ class Salsa20 {
 			x8 = j8, x9 = j9, x10 = j10, x11 = j11, x12 = j12, x13 = j13, x14 = j14, x15 = j15;
 
 		let u;
-		for (let i = 0; i < this.rounds; i += 2) {
+		for (let i = 0, n = this.rounds; i < n; i += 2) {
 			u = x0 + x12;
 			x4 ^= (u << 7) | (u >>> (32 - 7));
 			u = x4 + x0;
