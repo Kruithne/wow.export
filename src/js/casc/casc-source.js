@@ -99,7 +99,7 @@ class CASC {
 	 * @param {string} fileName 
 	 */
 	async getFileByName(fileName) {
-		const fileDataID = listfile.getFileByName(fileName);
+		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: %s', fileName);
 
