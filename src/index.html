@@ -66,7 +66,8 @@
 				</div>
 				<keep-alive>
 					<div class="tab" id="tab-textures" v-if="screen === 'tab-textures'">
-						<listbox :items="listfileTextures"></listbox>
+						<input type="text" v-model.trim="userInputFilterTextures" placeholder="Filter textures..."/>
+						<listbox :items="listfileTextures" :filter="userInputFilterTextures"></listbox>
 					</div>
 				</keep-alive>
 				<div id="source-select" v-if="screen === 'source-select'">

@@ -3,7 +3,7 @@ Vue.component('listbox', {
 	 * component.items should contain a reference to an array
 	 * containing items to display in the listbox.
 	 */
-	props: ['items'],
+	props: ['items', 'filter'],
 
 	/**
 	 * Reactive instance data.
@@ -44,22 +44,33 @@ Vue.component('listbox', {
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
-			return Math.floor((this.$props.items.length - this.slotCount) * this.scrollRel);
+			return Math.floor((this.filteredItems.length - this.slotCount) * this.scrollRel);
+		},
+
+		/**
+		 * Reactively filtered version of the underlying data array.
+		 * Automatically refilters when the filter input is changed.
+		 */
+		filteredItems: function() {
+			if (this.$props.filter.length > 0)
+				return this.$props.items.filter(e => e.includes(this.$props.filter));
+
+			return this.$props.items;
 		},
 
 		/**
 		 * Dynamic array of items which should be displayed from the underlying
 		 * data array. Reactively updates based on scroll and data.
 		 */
-		filteredItems: function() {
-			return this.$props.items.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
+		displayItems: function() {
+			return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
 		itemWeight: function() {
-			return 1 / this.$props.items.length;
+			return 1 / this.filteredItems.length;
 		}
 	},
 
@@ -144,6 +155,6 @@ Vue.component('listbox', {
 	 */
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="item in filteredItems" class="item">{{ item }}</div>
+		<div v-for="item in displayItems" class="item">{{ item }}</div>
 	</div>`
 });
