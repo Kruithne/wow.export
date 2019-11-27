@@ -54,10 +54,18 @@ Vue.component('listbox', {
 		 */
 		filteredItems: function() {
 			const filter = this.$props.filter.trim().toLowerCase();
-			if (filter.length > 0)
-				return this.$props.items.filter(e => e.includes(filter));
+			let res = this.$props.items;
 
-			return this.$props.items;
+			if (filter.length > 0)
+				res =  res.filter(e => e.includes(filter));
+
+			const newSelection = [];
+			for (const selected of this.selection)
+				if (res.includes(selected))
+					newSelection.push(selected);
+
+			this.selection = newSelection;
+			return res;
 		},
 
 		/**
@@ -73,6 +81,16 @@ Vue.component('listbox', {
 		 */
 		itemWeight: function() {
 			return 1 / this.filteredItems.length;
+		}
+	},
+
+	watch: {
+		/**
+		 * Track changes to the selection array and emit as an event.
+		 * @param {Array} val 
+		 */
+		selection: function(val) {
+			this.$emit('selection-changed', val);
 		}
 	},
 
@@ -163,14 +181,10 @@ Vue.component('listbox', {
 					this.selection.splice(index, 1);
 				else
 					this.selection.push(item);
-			} else if (index > -1) {
+			} else if (index < -1) {
 				// Normal click, replace entire selection.
 				this.selection = [item];
-			} else {
-				return;
 			}
-
-			this.$emit('selection-changed', this.selection);
 		}
 	},
 
