@@ -17,11 +17,6 @@ core.events.on('user-select-texture', async selection => {
 			const file = await core.view.casc.getFileByName(first);
 			const blp = new BLPFile(file);
 
-			//if (!canvas || !canvasContainer) {
-				//canvasContainer = document.getElementById('texture-preview');
-				//canvas = canvasContainer.querySelector('canvas');
-			//}
-
 			if (!previewContainer || !previewInner) {
 				previewContainer = document.getElementById('texture-preview');
 				previewInner = previewContainer.querySelector('div');
