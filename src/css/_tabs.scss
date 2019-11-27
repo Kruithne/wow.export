@@ -1,0 +1,30 @@
+.tab {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+#tab-textures {
+	display: grid;
+	grid-template-columns: 50% 50%;
+	grid-template-rows: 56px 1fr;
+
+	.filter {
+		width: auto;
+		margin: 15px 20px 0 20px;
+	}
+
+	.list-container {
+		position: relative;
+
+		.ui-listbox {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+		}
+	}
+}
