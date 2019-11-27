@@ -65,7 +65,7 @@
 					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
 				</div>
 				<keep-alive>
-					<div id="tab-textures" v-if="screen === 'tab-textures'">
+					<div class="tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<listbox :items="listfileTextures"></listbox>
 					</div>
 				</keep-alive>
