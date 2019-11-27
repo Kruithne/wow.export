@@ -6,6 +6,29 @@
 	bottom: 0;
 }
 
+.preview-container {
+	margin: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	.preview-background {
+		border: 1px solid var(--border);
+		background-size: 30px 30px;
+		background-position: 0 0, 15px 15px;
+		background-color: var(--trans-check-b);
+		box-shadow: black 0 0 3px 0;
+		background-image: linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a)),
+		linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a));
+		display: table;
+
+		.preview.default {
+			width: 250px;
+			height: 250px;
+		}
+	}
+}
+
 #tab-textures {
 	display: grid;
 	grid-template-columns: 50% 50%;
@@ -18,6 +41,7 @@
 
 	.list-container {
 		position: relative;
+		grid-column: 1;
 
 		.ui-listbox {
 			position: absolute;

@@ -70,6 +70,11 @@
 						<div class="list-container">
 							<listbox :items="listfileTextures" :filter="userInputFilterTextures"></listbox>
 						</div>
+						<div class="preview-container">
+							<div class="preview-background">
+								<div class="preview default"></div>
+							</div>
+						</div>
 					</div>
 				</keep-alive>
 				<div id="source-select" v-if="screen === 'source-select'">
