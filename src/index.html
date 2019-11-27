@@ -71,8 +71,8 @@
 							<listbox :items="listfileTextures" :filter="userInputFilterTextures" @selection-changed="emit('user-select-texture', ...arguments)"></listbox>
 						</div>
 						<div class="preview-container">
-							<div class="preview-background">
-								<canvas id="texture-preview"></canvas>
+							<div class="preview-background" id="texture-preview">
+								<div></div>
 							</div>
 						</div>
 					</div>
