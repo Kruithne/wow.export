@@ -43,6 +43,14 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Create a buffer from a source using Buffer.from().
+	 * @param {Array} source 
+	 */
+	static from(source) {
+		return new BufferWrapper(Buffer.from(source));
+	}
+
+	/**
 	 * Load a file from disk at the given path into a wrapped buffer.
 	 * @param {string} file Path to the file.
 	 */
