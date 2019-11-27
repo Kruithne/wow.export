@@ -76,8 +76,9 @@ const loadListfile = async (buildConfig, cache) => {
 			return;
 		}
 
-		idLookup.set(fileDataID, tokens[1]);
-		nameLookup.set(tokens[1], fileDataID);
+		const fileName = tokens[1].toLowerCase();
+		idLookup.set(fileDataID, fileName);
+		nameLookup.set(fileName, fileDataID);
 	}
 
 	log.write('%d listfile entries loaded', idLookup.size);
