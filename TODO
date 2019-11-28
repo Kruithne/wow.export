@@ -19,3 +19,4 @@
 - Video tab with export capabilities.
 - Add configuration button to clear the cache (show current cache size).
 - Add configuration drop-down to change current CASC locale.
+- Fix JS doc in BLP reader.
