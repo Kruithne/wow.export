@@ -7,7 +7,7 @@
 }
 
 .preview-controls {
-	margin-bottom: 15px;
+	margin-bottom: 20px;
 	display: flex;
 	justify-content: flex-end;
 	margin-right: 20px;
@@ -45,11 +45,11 @@
 #tab-textures {
 	display: grid;
 	grid-template-columns: 50% 50%;
-	grid-template-rows: 1fr 56px;
+	grid-template-rows: 1fr 60px;
 
 	.filter {
 		width: auto;
-		margin: 0 20px 15px 20px;
+		margin: 0 20px 20px 20px;
 	}
 
 	.list-container {
