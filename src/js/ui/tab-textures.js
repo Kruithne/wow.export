@@ -25,7 +25,7 @@ const previewTexture = async (texture) => {
 		canvas.width = blp.width;
 		canvas.height = blp.height;
 
-		blp.drawToCanvas(canvas, 0, !core.view.config.exportTextureAlpha);
+		blp.drawToCanvas(canvas, 0, core.view.config.exportTextureAlpha);
 
 		previewInner.style.backgroundImage = 'url(' + canvas.toDataURL() + ')';
 		previewContainer.style.maxHeight = blp.height + 'px';
