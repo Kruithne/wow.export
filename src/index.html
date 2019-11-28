@@ -79,6 +79,10 @@
 							</div>
 						</div>
 						<div class="preview-controls">
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.exportTextureAlpha"/>
+								<span>Transparency</span>
+							</label>
 							<menu-button :label="'Export as %s'" :options="['PNG', 'M2']" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" class="upward"></menu-button>
 						</div>
 					</div>

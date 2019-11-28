@@ -30,6 +30,19 @@ input[type="button"] {
 	}
 }
 
+.ui-checkbox {
+	font-size: 20px;
+	display: flex;
+	margin: 0 15px;
+	align-items: center;
+	
+	input[type="checkbox"] {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+	}
+}
+
 .ui-menu-button {
 	display: inline-block;
 	position: relative;

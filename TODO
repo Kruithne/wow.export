@@ -1,4 +1,3 @@
-- Checkbox to toggle texture transparency in texture viewer.
 - Export button for texture viewer with optional formats (persist choice).
 - Copy/paste functionality for listboxes (track component focus?).
 - Show dimensions of selected texture in texture viewer.
