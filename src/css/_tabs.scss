@@ -9,6 +9,10 @@
 .preview-controls {
 	grid-row: 1;
 	grid-column: 2;
+	margin-top: 14px;
+	display: flex;
+	justify-content: flex-end;
+	margin-right: 20px;
 }
 
 .preview-container {
