@@ -1,5 +1,6 @@
 const core = require('../core');
 const log = require('../log');
+const util = require('util');
 const BLPFile = require('../casc/blp');
 
 let selectedFile = null;
@@ -11,6 +12,7 @@ core.events.on('user-select-texture', async selection => {
 	const first = selection[0];
 	if (first && selectedFile !== first) {
 		try {
+			core.setToast('progress', util.format('Loading %s, please wait...', first));
 			const file = await core.view.casc.getFileByName(first);
 			const blp = new BLPFile(file);
 
