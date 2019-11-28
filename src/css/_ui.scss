@@ -93,6 +93,14 @@ input[type="button"] {
 		}
 	}
 
+	&:not(.disabled) {
+		.arrow:hover {
+			background: var(--form-button-hover);
+			color: var(--font-highlight);
+			cursor: pointer;
+		}
+	}
+
 	.arrow {
 		z-index: 3;
 		position: absolute;
@@ -105,12 +113,6 @@ input[type="button"] {
 		justify-content: center;
 		border-top-right-radius: 5px;
 		border-bottom-right-radius: 5px;
-		cursor: pointer;
-
-		&:hover {
-			background: var(--form-button-hover);
-			color: var(--font-highlight);
-		}
 
 		&::before {
 			font-family: 'FontAwesome';
