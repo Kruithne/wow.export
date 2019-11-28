@@ -132,7 +132,7 @@ class BLPImage {
 
 	/**
 	 * Extract compressed data.
-	 * @param {ImageData}
+	 * @param {ImageData} canvasData
 	 * @param {boolean} useAlpha
 	 * @private
 	 */
@@ -267,7 +267,7 @@ class BLPImage {
 
 	/**
 	 * Match the uncompressed data with the palette.
-	 * @param {ImageData}
+	 * @param {ImageData} canvasData
 	 * @param {boolean} useAlpha
 	 * @returns {BufferWrapper|undefined}
 	 * @private
@@ -296,7 +296,7 @@ class BLPImage {
 
 	/**
 	 * Marshal a BGRA array into an RGBA ordered buffer.
-	 * @param {ImageData}
+	 * @param {ImageData} canvasData
 	 * @param {boolean} useAlpha
 	 * @returns {BufferWrapper|undefined}
 	 * @private
