@@ -293,6 +293,7 @@ const deleteDirectory = async (dir) => {
 		}
 	}
 
+	await fsp.rmdir(dir);
 	return deleteSize;
 };
 

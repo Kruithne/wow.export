@@ -3,7 +3,6 @@
 - Export button for texture viewer with optional formats (persist choice).
 - Copy/paste functionality for listboxes (track component focus?).
 - Show dimensions of selected texture in texture viewer.
-- Fix issue with directories not being deleted with cleaned-up builds.
 - Listbox for models filtered with .m2 and .wmo extensions.
 - 3D model viewer with controls (rotate, zoom, etc).
 - Geoset control over 3D models.
