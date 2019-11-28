@@ -18,7 +18,7 @@ input[type="button"] {
 	border-radius: 5px;
 	cursor: pointer;
 
-	&:hover {
+	&:hover:not(.disabled) {
 		background: var(--form-button-hover);
 		color: var(--font-highlight);
 	}
@@ -27,101 +27,6 @@ input[type="button"] {
 		cursor: default;
 		opacity: 0.5;
 		background: var(--form-button-disabled);
-	}
-}
-
-.ui-checkbox {
-	font-size: 20px;
-	display: flex;
-	margin: 0 15px;
-	align-items: center;
-	
-	input[type="checkbox"] {
-		width: 20px;
-		height: 20px;
-		margin-right: 5px;
-	}
-}
-
-.ui-menu-button {
-	display: inline-block;
-	position: relative;
-	height: 45px;
-
-	input[type="button"] {
-		padding-right: 35px;
-		position: relative;
-		z-index: 2;
-		height: 100%;
-	}
-
-	.menu {
-		list-style: none;
-		position: absolute;
-		background: var(--form-button-menu);
-		top: 85%;
-		width: 100%;
-		padding-top: 5%;
-		z-index: 1;
-
-		&, li:last-of-type {
-			border-bottom-right-radius: 5px;
-			border-bottom-left-radius: 5px;
-		}
-
-		li {
-			padding: 10px;
-			background: var(--form-button-menu);
-			cursor: pointer;
-
-			&:hover {
-				background: var(--form-button-menu-hover);
-			}
-		}
-	}
-
-	&.upward .menu {
-		top: unset;
-		padding-top: unset;
-		bottom: 85%;
-		padding-bottom: 5%;
-		
-		&, li:last-of-type {
-			border-bottom-right-radius: unset;
-			border-bottom-left-radius: unset;
-		}
-
-		&, li:first-of-type {
-			border-top-left-radius: 5px;
-			border-top-right-radius: 5px;
-		}
-	}
-
-	.arrow {
-		z-index: 3;
-		position: absolute;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		width: 29px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-top-right-radius: 5px;
-		border-bottom-right-radius: 5px;
-		cursor: pointer;
-
-		&:hover {
-			background: var(--form-button-hover);
-			color: var(--font-highlight);
-		}
-
-		&::before {
-			font-family: 'FontAwesome';
-			content: '\f0d7';
-			margin-bottom: 2px;
-			margin-right: 1px;
-		}
 	}
 }
 
@@ -162,6 +67,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .ui-listbox {
 	background: var(--background);
 	position: relative;
+	margin: 20px;
 	border: 1px solid var(--border);
 	box-shadow: black 0 0 3px 0px;
 	overflow: hidden;
