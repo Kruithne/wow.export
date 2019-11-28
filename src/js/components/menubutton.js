@@ -36,7 +36,7 @@ Vue.component('menu-button', {
 	},
 
 	template: `<div class="ui-menu-button" :class="{ disabled }">
-		<input type="button" :value="displayText" :class="{ disabled }"/>
+		<input type="button" :value="displayText" :class="{ disabled }" @click="$emit('click', $event)"/>
 		<div class="arrow" @click="openMenu"></div>
 		<ul class="menu" v-if="open">
 			<li v-for="option in options" @click="select(option)">{{ option }}</li>
