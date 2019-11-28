@@ -6,6 +6,11 @@
 	bottom: 0;
 }
 
+.preview-controls {
+	grid-row: 1;
+	grid-column: 2;
+}
+
 .preview-container {
 	margin: 20px;
 	display: flex;

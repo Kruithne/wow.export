@@ -63,6 +63,7 @@ const tactKeys = require('./js/casc/tact-keys');
 const fsp = require('fs').promises;
 
 require('./js/components/listbox');
+require('./js/components/menubutton');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');

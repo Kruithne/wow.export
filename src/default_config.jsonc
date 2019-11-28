@@ -11,5 +11,6 @@
 	"cascLocale": 2,
 	"recentLocal": [],
 	"sourceSelectUserRegion": null,
-	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys"
+	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
+	"exportTextureFormat": "PNG"
 }

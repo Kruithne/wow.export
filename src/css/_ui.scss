@@ -30,6 +30,69 @@ input[type="button"] {
 	}
 }
 
+.ui-menu-button {
+	display: inline-block;
+	position: relative;
+
+	input[type="button"] {
+		padding-right: 30px;
+		position: relative;
+		z-index: 2;
+	}
+
+	.menu {
+		list-style: none;
+		position: absolute;
+		background: var(--form-button-menu);
+		top: 85%;
+		width: 100%;
+		padding-top: 5%;
+		z-index: 1;
+
+		&, li:last-of-type {
+			border-bottom-right-radius: 5px;
+			border-bottom-left-radius: 5px;
+		}
+
+		li {
+			padding: 10px;
+			background: var(--form-button-menu);
+			cursor: pointer;
+
+			&:hover {
+				background: var(--form-button-menu-hover);
+			}
+		}
+	}
+
+	.arrow {
+		z-index: 3;
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 29px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+		cursor: pointer;
+
+		&:hover {
+			background: var(--form-button-hover);
+			color: var(--font-highlight);
+		}
+
+		&::before {
+			font-family: 'FontAwesome';
+			content: '\f0d7';
+			margin-bottom: 2px;
+			margin-right: 1px;
+		}
+	}
+}
+
 textarea {
 	border-radius: 5px;
 	resize: none;
