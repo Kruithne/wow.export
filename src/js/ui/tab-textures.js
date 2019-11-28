@@ -10,9 +10,11 @@ let previewInner = null;
 
 core.events.on('user-select-texture', async selection => {
 	const first = selection[0];
-	if (first && selectedFile !== first) {
+	if (!core.isBusy && first && selectedFile !== first) {
+		core.isBusy++;
+		core.setToast('progress', util.format('Loading %s, please wait...', first));
+
 		try {
-			core.setToast('progress', util.format('Loading %s, please wait...', first));
 			const file = await core.view.casc.getFileByName(first);
 			const blp = new BLPFile(file);
 
@@ -36,5 +38,7 @@ core.events.on('user-select-texture', async selection => {
 			core.setToast('error', 'Unable to open file: ' + first, { 'View Log': () => log.openRuntimeLog() }, 10000);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
+
+		core.isBusy--;
 	}
 });
