@@ -227,6 +227,10 @@ document.addEventListener('click', function(e) {
 	// Load configuration.
 	await config.load();
 
+	// Emit an initiation event. This is used for modules that need to know
+	// when the reactive instance is mounted and ready for use.
+	core.events.emit('init');
+
 	// Load cachesize, a file used to track the overall size of the cache directory
 	// without having to calculate the real size before showing to users. Fast and reliable.
 	fsp.readFile(constants.CACHE.SIZE, 'utf8').then(data => {

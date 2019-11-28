@@ -10,7 +10,7 @@ let previewInner = null;
 
 const previewTexture = async (texture) => {
 	core.isBusy++;
-	core.setToast('progress', util.format('Loading %s, please wait...', texture));
+	const toast = core.delayToast(500, 'progress', util.format('Loading %s, please wait...', texture));
 
 	try {
 		const file = await core.view.casc.getFileByName(texture);
@@ -32,8 +32,9 @@ const previewTexture = async (texture) => {
 		previewContainer.style.maxWidth = blp.width + 'px';
 
 		selectedFile = texture;
-		core.hideToast();
+		toast.cancel();
 	} catch (e) {
+		toast.cancel();
 		core.setToast('error', 'Unable to open file: ' + texture, { 'View Log': () => log.openRuntimeLog() }, 10000);
 		log.write('Failed to open CASC file: %s', e.message);
 	}
@@ -41,16 +42,18 @@ const previewTexture = async (texture) => {
 	core.isBusy--;
 };
 
-// Track changes to exportTextureAlpha. If it changes, re-render the
-// currently displayed texture to ensure we match desired alpha.
-core.view.$watch('config.exportTextureAlpha', () => {
-	if (selectedFile !== null)
-		previewTexture(selectedFile);
-});
+core.events.once('init', () => {
+	// Track changes to exportTextureAlpha. If it changes, re-render the
+	// currently displayed texture to ensure we match desired alpha.
+	core.view.$watch('config.exportTextureAlpha', () => {
+		if (selectedFile !== null)
+			previewTexture(selectedFile);
+	});
 
-// Track selection changes on the texture listbox and preview first texture.
-core.events.on('user-select-texture', async selection => {
-	const first = selection[0];
-	if (!core.isBusy && first && selectedFile !== first)
-		previewTexture(first);
+	// Track selection changes on the texture listbox and preview first texture.
+	core.events.on('user-select-texture', async selection => {
+		const first = selection[0];
+		if (!core.isBusy && first && selectedFile !== first)
+			previewTexture(first);
+	});
 });
