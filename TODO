@@ -19,3 +19,4 @@
 - Add configuration drop-down to change current CASC locale.
 - Add button to non-progress toasts allowing user to close them manually.
 - Reduce excessive re-use of identical parameters for toast calls.
+- Write feature list for README.md
