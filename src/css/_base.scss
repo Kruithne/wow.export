@@ -67,6 +67,7 @@ body {
 #nav {
 	display: flex;
 	align-items: center;
+	width: 100%;
 
 	div {
 		margin-left: 10px;
@@ -103,7 +104,7 @@ body {
 	}
 
 	&-settings {
-		margin-left: auto;
+		margin-left: auto !important;
 		margin-right: 10px;
 		font-size: 26px;
 
