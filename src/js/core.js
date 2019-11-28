@@ -119,6 +119,12 @@ const setToast = (toastType, message, options = null, ttl = -1) => {
 		toastTimer = setTimeout(hideToast, ttl);
 }
 
+/**
+ * Open user-configured export directory with OS default.
+ */
+const openExportDirectory = () => {
+	nw.Shell.openItem(view.config.exportDirectory)
+};
 
 const core = { 
 	events,
@@ -128,7 +134,8 @@ const core = {
 	createProgress,
 	setToast,
 	hideToast,
-	delayToast
+	delayToast,
+	openExportDirectory
 };
 
 module.exports = core;

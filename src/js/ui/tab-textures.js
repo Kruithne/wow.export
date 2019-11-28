@@ -2,6 +2,7 @@ const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const BLPFile = require('../casc/blp');
+const ExportHelper = require('../casc/export-helper');
 
 let isLoading = false;
 let selectedFile = null;
@@ -65,37 +66,24 @@ core.events.once('init', () => {
 
 	// Track when the user clicks to export selected textures.
 	core.events.on('click-export-texture', async () => {
-		const count = userSelection.length;
-		if (count === 0) {
+		if (userSelection.length === 0) {
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.', {}, 10000);
 			return;
 		}
 
-		core.view.isBusy++;
-		let toastTag = count > 1 ? count + ' textures' : userSelection[0];
-		core.setToast('progress', 'Exporting ' + toastTag + ', please wait...');
+		const helper = new ExportHelper(userSelection.length);
+		helper.start();
 
-		let failed = 0;
 		for (const fileName of userSelection) {
 			try {
 				const file = await core.view.casc.getFileByName(fileName);
 				// ToDo: Actually export somewhere.
+				helper.mark(fileName, true);
 			} catch (e) {
-				failed++;
-				log.write('Failed to export %s (%s)', fileName, e.message);
+				helper.mark(fileName, false, e.message);
 			}
 		}
 
-		if (failed === 0) {
-			// Everything exported successfully.
-			core.setToast('success', 'Successfully exported ' + toastTag, {}, 10000);
-		} else if (failed < count) {
-			// Partial success, some files failed.
-			core.setToast('info', util.format('Export complete, but %d files failed to export', failed), { 'View Log': () => log.openRuntimeLog() }, 10000);
-		} else {
-			// Everything failed to export, prompt user with log link.
-			core.setToast('error', 'Unable to export ' + toastTag, { 'View Log': () => log.openRuntimeLog() }, 10000);
-		}
-		core.view.isBusy--;
+		helper.finish();
 	});
 });
