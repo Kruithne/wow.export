@@ -67,6 +67,23 @@ input[type="button"] {
 		}
 	}
 
+	&.upward .menu {
+		top: unset;
+		padding-top: unset;
+		bottom: 85%;
+		padding-bottom: 5%;
+		
+		&, li:last-of-type {
+			border-bottom-right-radius: unset;
+			border-bottom-left-radius: unset;
+		}
+
+		&, li:first-of-type {
+			border-top-left-radius: 5px;
+			border-top-right-radius: 5px;
+		}
+	}
+
 	.arrow {
 		z-index: 3;
 		position: absolute;
