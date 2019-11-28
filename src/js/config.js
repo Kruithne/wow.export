@@ -69,6 +69,9 @@ core.events.on('screen-config', () => {
 core.events.on('click-config-apply', () => {
 	const cfg = core.view.configEdit;
 
+	if (cfg.exportDirectory.length === 0)
+		return core.setToast('error', 'A valid export directory must be provided', {}, 10000);
+
 	if (cfg.listfileURL.length === 0 || !cfg.listfileURL.startsWith('http'))
 		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, 10000);
 
