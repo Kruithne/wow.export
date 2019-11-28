@@ -20,3 +20,4 @@
 - Add configuration drop-down to change current CASC locale.
 - Add 'Show On Disk' in export success toast prompts.
 - Reduce exporting feedback from texture exporter into reusable module.
+- Document MenuButton component class.
