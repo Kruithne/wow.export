@@ -106,55 +106,6 @@ class BLPImage {
 	}
 
 	/**
-	 * Obtain the pixels for the given mipmap.
-	 * @param {number} [mipmap]
-	 * @param {HTMLElement} [canvas]
-	 */
-	getPixels(mipmap, canvas = null) {
-		// Constrict the requested mipmap to a valid range..
-		mipmap = Math.max(0, Math.min(mipmap || 0, this.mapCount - 1));
-
-		// Calculate the scaled dimensions..
-		this.scale = Math.pow(2, mipmap);
-		this.scaledWidth = this.width / this.scale;
-		this.scaledHeight = this.height / this.scale;
-		this.scaledLength = this.scaledWidth * this.scaledHeight;
-
-		// Extract the raw data we need..
-		this.data.seek(this.mapOffsets[mipmap]);
-		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]);
-
-		// Canvas
-		if (canvas !== null) {
-			this.imageContext = canvas.getContext('2d');
-			this.imageData = this.imageContext.createImageData(this.scaledWidth, this.scaledHeight);
-		}
-
-		// Decode the raw data depending on the file..
-		let out;
-		switch (this.encoding) {
-			case 1:
-				out = this._getUncompressed();
-				break;
-
-			case 2:
-				out = this._getCompressed();
-				break;
-
-			case 3:
-				out = this._marshalBGRA();
-				break;
-		}
-
-		if (canvas !== null) {
-			this.imageContext.putImageData(this.imageData, 0, 0);
-			return this.imageContext;
-		}
-
-		return out;
-	}
-
-	/**
 	 * Calculate the alpha using this files alpha depth.
 	 * @param {number} index Alpha index.
 	 * @private
