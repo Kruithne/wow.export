@@ -19,3 +19,7 @@
 - Add configuration button to clear the cache (show current cache size).
 - Add configuration drop-down to change current CASC locale.
 - Document MenuButton component class.
+- Fix issue with default configuration not being loaded?
+- Add button to non-progress toasts allowing user to close them manually.
+- Add export directory to user configuration page.
+- Automatically set-up sensible default for export directory.
