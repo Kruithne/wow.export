@@ -252,7 +252,7 @@ class BLPImage {
 							for (let i = 0; i < 3; i++)
 								data[pixel + i] = target[blockPos + i];
 
-							data[pixel + 3] = useAlpha ? target[blockPos + i] : 255;
+							data[pixel + 3] = useAlpha ? target[blockPos + 3] : 255;
 						}
 						blockPos += 4;
 					}
