@@ -14,5 +14,5 @@
 	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
 	"exportDirectory": "D:\\test",
 	"exportTextureFormat": "PNG",
-	"exportTextureAlpha": true,
+	"exportTextureAlpha": true
 }
