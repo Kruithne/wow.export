@@ -34,6 +34,7 @@ core.events.on('user-select-texture', async selection => {
 			previewContainer.style.maxWidth = blp.width + 'px';
 
 			selectedFile = first;
+			core.hideToast();
 		} catch (e) {
 			core.setToast('error', 'Unable to open file: ' + first, { 'View Log': () => log.openRuntimeLog() }, 10000);
 			log.write('Failed to open CASC file: %s', e.message);
