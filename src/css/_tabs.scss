@@ -7,9 +7,7 @@
 }
 
 .preview-controls {
-	grid-row: 1;
-	grid-column: 2;
-	margin-top: 14px;
+	margin-bottom: 15px;
 	display: flex;
 	justify-content: flex-end;
 	margin-right: 20px;
@@ -20,7 +18,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	grid-row: 2;
+	grid-row: 1;
 	grid-column: 2;
 
 	.preview-background {
@@ -47,16 +45,15 @@
 #tab-textures {
 	display: grid;
 	grid-template-columns: 50% 50%;
-	grid-template-rows: 56px 1fr;
+	grid-template-rows: 1fr 56px;
 
 	.filter {
 		width: auto;
-		margin: 15px 20px 0 20px;
+		margin: 0 20px 15px 20px;
 	}
 
 	.list-container {
 		position: relative;
-		grid-column: 1;
 
 		.ui-listbox {
 			position: absolute;
