@@ -190,6 +190,13 @@ document.addEventListener('click', function(e) {
 			 */
 			screen: function() {
 				return this.screenStack[0];
+			},
+
+			/**
+			 * Returns the cache size formatted as a file size.
+			 */
+			cacheSizeFormatted: function() {
+				return generics.filesize(this.cacheSize);
 			}
 		},
 

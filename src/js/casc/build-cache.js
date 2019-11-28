@@ -105,6 +105,20 @@ class BuildCache {
 	}
 }
 
+// Invoked when the user requests a cache purge.
+core.events.on('click-cache-clear', async () => {
+	core.view.isBusy++;
+	core.setToast('progress', 'Clearing cache, please wait...');
+	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
+
+	await fsp.rmdir(constants.CACHE.DIR, { recursive: true });
+	await fsp.mkdir(constants.CACHE.DIR);
+
+	core.view.cacheSize = 0;
+	log.write('Purge complete, awaiting mandatory restart.');
+	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => chrome.runtime.reload() });
+});
+
 // Run cache clean-up once a CASC source has been selected.
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
