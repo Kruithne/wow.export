@@ -14,7 +14,7 @@
 }
 
 .preview-container {
-	margin: 20px 20px 0 20px;
+	margin: 20px 20px 0 10px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -54,7 +54,7 @@
 
 .list-container {
 	position: relative;
-	margin: 20px 20px 0 20px;
+	margin: 20px 10px 0 20px;
 
 	.ui-listbox {
 		position: absolute;
