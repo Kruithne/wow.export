@@ -12,7 +12,7 @@ const normalizeKey = (key) => {
 	if (keyParts.length === 1)
 		return key;
 
-	for (let i = 1, n = ketparts.length; i < n; i++) {
+	for (let i = 1, n = keyParts.length; i < n; i++) {
 		const part = keyParts[i];
 		keyParts[i] = part.charAt(0).toUpperCase() + part.slice(1);
 	}
