@@ -12,7 +12,7 @@
 	"recentLocal": [],
 	"sourceSelectUserRegion": null,
 	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
-	"exportDirectory": "D:\\test",
+	"exportDirectory": "",
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true
 }

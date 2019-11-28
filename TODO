@@ -19,6 +19,5 @@
 - Add configuration button to clear the cache (show current cache size).
 - Add configuration drop-down to change current CASC locale.
 - Add button to non-progress toasts allowing user to close them manually.
-- Automatically set-up sensible default for export directory.
 - Adjust multi-selection functionality of listbox to be more like Windows.
 - Reduce excessive re-use of identical parameters for toast calls.

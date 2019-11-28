@@ -53,6 +53,7 @@ process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message)
 
 // Imports
 const os = require('os');
+const path = require('path');
 const constants = require('./js/constants');
 const generics = require('./js/generics');
 const updater = require('./js/updater');
@@ -227,6 +228,12 @@ document.addEventListener('click', function(e) {
 
 	// Load configuration.
 	await config.load();
+
+	// Set-up default export directory if none configured.
+	if (core.view.config.exportDirectory === '') {
+		core.view.config.exportDirectory = path.join(os.homedir(), 'wow.export');
+		log.write('No export directory set, setting to %s', core.view.config.exportDirectory);
+	}
 
 	// Emit an initiation event. This is used for modules that need to know
 	// when the reactive instance is mounted and ready for use.
