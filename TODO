@@ -22,3 +22,4 @@
 - Add button to non-progress toasts allowing user to close them manually.
 - Add export directory to user configuration page.
 - Automatically set-up sensible default for export directory.
+- Adjust multi-selection functionality of listbox to be more like Windows.
