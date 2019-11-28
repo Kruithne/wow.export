@@ -18,7 +18,7 @@ input[type="button"] {
 	border-radius: 5px;
 	cursor: pointer;
 
-	&:hover:not(.disabled) {
+	&:hover {
 		background: var(--form-button-hover);
 		color: var(--font-highlight);
 	}
@@ -67,7 +67,6 @@ input[type="number"]::-webkit-outer-spin-button {
 .ui-listbox {
 	background: var(--background);
 	position: relative;
-	margin: 20px;
 	border: 1px solid var(--border);
 	box-shadow: black 0 0 3px 0px;
 	overflow: hidden;
