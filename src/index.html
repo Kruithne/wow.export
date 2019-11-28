@@ -36,7 +36,7 @@
 					<div>
 						<h1>Export Directory</h1>
 						<p>Local directory where files will be exported to.</p>
-						<input type="text" v-model.trim="configEdit.exportDirectory"/>
+						<file-field v-model="configEdit.exportDirectory"></file-field>
 					</div>
 					<div>
 						<h1>Listfile URL</h1>

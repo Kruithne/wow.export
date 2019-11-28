@@ -64,6 +64,7 @@ const fsp = require('fs').promises;
 
 require('./js/components/listbox');
 require('./js/components/menu-button');
+require('./js/components/file-field');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
