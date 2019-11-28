@@ -6,6 +6,7 @@ const core = require('./core');
 const log = require('./log');
 
 let isSaving = false;
+let isQueued = false;
 let defaultConfig = {};
 
 /**
@@ -31,6 +32,9 @@ const save = () => {
 	if (!isSaving) {
 		isSaving = true;
 		setImmediate(doSave);
+	} else {
+		// Queue another save.
+		isQueued = true;
 	}
 };
 
@@ -45,7 +49,13 @@ const doSave = async () => {
 		crash('ERR_CONFIG_SAVE', e.message);
 	}
 	
-	isSaving = false;
+	// If another save was attempted during this one, re-save.
+	if (isQueued) {
+		isQueued = false;
+		doSave();
+	} else {
+		isSaving = false;
+	}
 };
 
 // Track when the configuration screen is displayed and clone a copy of
