@@ -11,12 +11,14 @@
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo">wow.export</div>
-				<div id="nav" v-if="!!screen && screen.startsWith('tab-')">
-					<div id="nav-models" @click="setScreen('tab-models')">Models</div>
-					<div id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
-					<div id="nav-sounds" @click="setScreen('tab-sounds')">Sounds</div>
-					<div id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
-					<div id="nav-other" @click="setScreen('tab-other')">Other</div>
+				<div id="nav">
+					<template v-if="!!screen && screen.startsWith('tab-')">
+						<div id="nav-models" @click="setScreen('tab-models')">Models</div>
+						<div id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
+						<div id="nav-sounds" @click="setScreen('tab-sounds')">Sounds</div>
+						<div id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
+						<div id="nav-other" @click="setScreen('tab-other')">Other</div>
+					</template>
 					<div id="nav-settings" @click="setScreen('config', true)"></div>
 				</div>
 			</div>
