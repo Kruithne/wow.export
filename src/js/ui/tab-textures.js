@@ -71,7 +71,7 @@ core.events.once('init', () => {
 			return;
 		}
 
-		const helper = new ExportHelper(userSelection.length);
+		const helper = new ExportHelper(userSelection.length, 'texture');
 		helper.start();
 
 		for (const fileName of userSelection) {
