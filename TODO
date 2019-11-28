@@ -20,3 +20,4 @@
 - Add configuration button to clear the cache (show current cache size).
 - Add configuration drop-down to change current CASC locale.
 - Fix JS doc in BLP reader.
+- Reduce/remove flickering of CASC loading toast?
