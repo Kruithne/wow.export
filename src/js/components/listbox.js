@@ -14,7 +14,8 @@ Vue.component('listbox', {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1,
-			selection: []
+			selection: [],
+			lastSelectIndex: -1
 		}
 	},
 
@@ -162,22 +163,37 @@ Vue.component('listbox', {
 		/**
 		 * Invoked when a user selects an item in the list.
 		 * @param {string} item 
+		 * @param {number} selectIndex
+		 * @param {MouseEvent} e
 		 */
-		selectItem: function(item, e) {
-			const index = this.selection.indexOf(item);
-			if (e.shiftKey) {
-				// Shift-key held, so allow multiple selections.
-				if (index > -1)
-					this.selection.splice(index, 1);
+		selectItem: function(item, selectIndex, event) {
+			const checkIndex = this.selection.indexOf(item);
+			if (event.ctrlKey) {
+				// Ctrl-key held, so allow multiple selections.
+				if (checkIndex > -1)
+					this.selection.splice(checkIndex, 1);
 				else
 					this.selection.push(item);
 
 				this.$emit('selection-changed', this.selection);
-			} else if (index === -1 || (index > -1 && this.selection.length > 1)) {
+			} else if (event.shiftKey) {
+				// Shift-key held, select a range.
+				if (this.lastSelectIndex > -1 && this.lastSelectIndex !== selectIndex) {
+					const delta = Math.abs(this.lastSelectIndex - selectIndex);
+					const lowest = Math.min(this.lastSelectIndex, selectIndex);
+					const range = this.displayItems.slice(lowest, lowest + delta);
+
+					for (const select of range)
+						if (this.selection.indexOf(select) === -1)
+							this.selection.push(select);
+				}				
+			} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 				// Normal click, replace entire selection.
 				this.selection = [item];
 				this.$emit('selection-changed', this.selection);
 			}
+
+			this.lastSelectIndex = selectIndex;
 		}
 	},
 
@@ -186,6 +202,6 @@ Vue.component('listbox', {
 	 */
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="item in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">{{ item }}</div>
+		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, i, $event)" :class="{ selected: selection.includes(item) }">{{ item }}</div>
 	</div>`
 });
