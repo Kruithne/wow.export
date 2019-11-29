@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 const generics = require('./generics');
+const LocaleFlag = require('./casc/locale-flags');
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -30,6 +31,7 @@ const view = {
 	userInputTactKeyName: '', // Value of manual tact key name field.
 	userInputFilterTextures: '', // Value of the 'filter' field for textures.
 	listfileTextures: [], // Filtered listfile for texture files.
+	availableLocale: LocaleFlag, // Available CASC locale.
 };
 
 /**

@@ -204,6 +204,24 @@ document.addEventListener('click', function(e) {
 			 */
 			cacheSizeFormatted: function() {
 				return generics.filesize(this.cacheSize);
+			},
+
+			/**
+			 * Returns an Array of available locale keys.
+			 */
+			availableLocaleKeys: function() {
+				return Object.keys(this.availableLocale);
+			},
+
+			/**
+			 * Return the locale key for the configured CASC locale.
+			 */
+			selectedLocaleKey: function() {
+				for (const [key, flag] of Object.entries(this.availableLocale))
+					if (flag === this.config.cascLocale)
+						return key;
+
+				return 'unUN';
 			}
 		},
 
