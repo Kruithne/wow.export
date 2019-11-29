@@ -2,6 +2,7 @@ const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const BLPFile = require('../casc/blp');
+const BLTEReader = require('../casc/blte-reader');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 
@@ -52,6 +53,56 @@ const previewTexture = async (texture) => {
 	isLoading = false;
 };
 
+const exportFiles = async (files, isLocal = false) => {
+	const helper = new ExportHelper(files.length, 'texture');
+	helper.start();
+
+	const format = core.view.config.exportTextureFormat;
+	const type = EXPORT_TYPES[format];
+
+	let canvas;
+	for (const fileName of files) {
+		try {
+			const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
+			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+
+			if (format === 'BLP') {
+				// Export as raw file with no conversion.
+				await data.writeToFile(exportPath);
+			} else {
+				// Swap file extension for the new one.
+				exportPath = ExportHelper.replaceExtension(exportPath, type.ext);
+				const blp = new BLPFile(data);
+
+				// Re-use canvas node for this batch of renders.
+				if (!canvas)
+					canvas = document.createElement('canvas');
+
+				canvas.width = blp.width;
+				canvas.height = blp.height;
+
+				blp.drawToCanvas(canvas, 0, core.view.config.exportTextureAlpha);
+
+				const buf = await BufferWrapper.fromCanvas(canvas, type.mime);
+				await buf.writeToFile(exportPath);
+			}
+
+			helper.mark(fileName, true);
+		} catch (e) {
+			helper.mark(fileName, false, e.message);
+		}
+	}
+
+	helper.finish();
+};
+
+// Register a drop handler for BLP files.
+core.registerDropHandler({
+	ext: '.blp',
+	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
+	process: files => exportFiles(files, true)
+});
+
 core.events.once('init', () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
@@ -78,45 +129,6 @@ core.events.once('init', () => {
 			return;
 		}
 
-		const helper = new ExportHelper(userSelection.length, 'texture');
-		helper.start();
-
-		const format = core.view.config.exportTextureFormat;
-		const type = EXPORT_TYPES[format];
-
-		let canvas;
-		for (const fileName of userSelection) {
-			try {
-				const file = await core.view.casc.getFileByName(fileName);
-				let exportPath = ExportHelper.getExportPath(fileName);
-
-				if (format === 'BLP') {
-					// Export as raw file with no conversion.
-					await file.writeToFile(exportPath);
-				} else {
-					// Swap file extension for the new one.
-					exportPath = ExportHelper.replaceExtension(exportPath, type.ext);
-					const blp = new BLPFile(file);
-
-					// Re-use canvas node for this batch of renders.
-					if (!canvas)
-						canvas = document.createElement('canvas');
-
-					canvas.width = blp.width;
-					canvas.height = blp.height;
-
-					blp.drawToCanvas(canvas, 0, core.view.config.exportTextureAlpha);
-
-					const buf = await BufferWrapper.fromCanvas(canvas, type.mime);
-					await buf.writeToFile(exportPath);
-				}
-
-				helper.mark(fileName, true);
-			} catch (e) {
-				helper.mark(fileName, false, e.message);
-			}
-		}
-
-		helper.finish();
+		await exportFiles(userSelection);
 	});
 });

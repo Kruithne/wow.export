@@ -25,6 +25,9 @@
 					</div>
 				</div>
 			</div>
+			<div id="drop-overlay" v-if="!!fileDropPrompt">
+				» {{ fileDropPrompt }} «
+			</div>
 			<div id="content">
 				<div id="loading" v-if="screen === 'loading'">
 					<div id="loading-background"></div>

@@ -74,8 +74,8 @@ const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 win.on('close', () => process.exit()); // Ensure we exit when window is closed.
 
-// Prevent files from being dropped onto the window.
-// GH-2: Implement drag-and-drop support.
+// Prevent files from being dropped onto the window. These are over-written
+// later but we disable here to prevent them working if init fails.
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
 
@@ -277,6 +277,74 @@ document.addEventListener('click', function(e) {
 	// Emit an initiation event. This is used for modules that need to know
 	// when the reactive instance is mounted and ready for use.
 	core.events.emit('init');
+
+	// Set-up proper drag/drop handlers.
+	let dropStack = 0;
+	window.ondragenter = e => {
+		e.preventDefault();
+
+		// Converting local files while busy shouldn't end badly, but it seems
+		// weird to let people do this on loading screens.
+		if (core.view.isBusy)
+			return false;
+
+		dropStack++;
+
+		// We're already showing a prompt, don't re-process it.
+		if (core.view.fileDropPrompt !== null)
+			return false;
+
+		const files = e.dataTransfer.files;
+		if (files.length > 0) {
+			const handler = core.getDropHandler(files[0].path);
+			if (handler) {
+				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
+				let count = 0;
+				for (const file of files)
+					if (file.name.toLowerCase().endsWith(handler.ext))
+						count++;
+
+				core.view.fileDropPrompt = handler.prompt(count);
+			} else {
+				core.view.fileDropPrompt = 'That file cannot be converted.';
+			}
+		}
+
+		return false;
+	};
+
+	window.ondrop = e => {
+		e.preventDefault();
+		core.view.fileDropPrompt = null;
+
+		const files = e.dataTransfer.files;
+		if (files.length > 0) {
+			const handler = core.getDropHandler(files[0].path);
+			if (handler) {
+				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
+				const include = [];
+				for (const file of files)
+					if (file.name.toLowerCase().endsWith(handler.ext))
+						include.push(file.path);
+
+				handler.process(include);
+			}
+		}
+		return false;
+	};
+
+	window.ondragleave = e => {
+		e.preventDefault();
+
+		// Window drag events trigger for all elements. Ensure that there is currently
+		// nothing being dragged once the dropStack is empty.
+		dropStack--;
+		if (dropStack === 0)
+			core.view.fileDropPrompt = null;
+	};
+
+	//window.ondragover = e => { e.preventDefault(); return false; };
+	//window.ondrop = e => { e.preventDefault(); return false; };
 
 	// Load cachesize, a file used to track the overall size of the cache directory
 	// without having to calculate the real size before showing to users. Fast and reliable.

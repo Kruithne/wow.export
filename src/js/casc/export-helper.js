@@ -65,12 +65,16 @@ class ExportHelper {
 		core.setToast('progress', util.format('Exporting %d %s, please wait...', this.count, this.unitFormatted), null, -1, false);
 	}
 
-	finish() {
+	/**
+	 * Finish the export.
+	 * @param {boolean} includeDirLink 
+	 */
+	finish(includeDirLink = true) {
 		log.write('Finished export (%d succeeded, %d failed)', this.succeeded, this.failed);
 
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
-			core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), TOAST_OPT_DIR);
+			core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? TOAST_OPT_DIR : null);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			core.setToast('info', util.format('Export complete, but %d %s failed to export.', this.failed, this.unitFormatted), TOAST_OPT_LOG);

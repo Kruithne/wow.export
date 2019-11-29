@@ -9,6 +9,10 @@ let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 const events = new EventEmitter();
 events.setMaxListeners(666);
 
+// dropHandlers contains handlers for drag/drop support.
+// Each item is an object defining .ext, .prompt() and .process().
+const dropHandlers = [];
+
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
 const view = {
@@ -32,6 +36,7 @@ const view = {
 	userInputFilterTextures: '', // Value of the 'filter' field for textures.
 	listfileTextures: [], // Filtered listfile for texture files.
 	availableLocale: LocaleFlag, // Available CASC locale.
+	fileDropPrompt: null, // Prompt to display for file drag/drops.
 };
 
 /**
@@ -129,6 +134,24 @@ const openExportDirectory = () => {
 	nw.Shell.openItem(view.config.exportDirectory)
 };
 
+/**
+ * Register a handler for file drops.
+ * @param {object} handler 
+ */
+const registerDropHandler = (handler) => {
+	handler.ext = handler.ext.toLowerCase();
+	dropHandlers.push(handler);	
+};
+
+/**
+ * Get a drop handler for the given file path.
+ * @param {string} file 
+ */
+const getDropHandler = (file) => {
+	file = file.toLowerCase();
+	return dropHandlers.find(e => file.endsWith(e.ext));
+};
+
 const core = { 
 	events,
 	view,
@@ -138,7 +161,9 @@ const core = {
 	setToast,
 	hideToast,
 	delayToast,
-	openExportDirectory
+	openExportDirectory,
+	registerDropHandler,
+	getDropHandler
 };
 
 module.exports = core;
