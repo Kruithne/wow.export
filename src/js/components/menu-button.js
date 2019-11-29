@@ -39,11 +39,11 @@ Vue.component('menu-button', {
 		/**
 		 * Handle clicks onto the button node.
 		 */
-		handleClick: function() {
+		handleClick: function(e) {
 			if (this.dropdown)
 				this.openMenu();
 			else
-				this.$emit('click', $event);
+				this.$emit('click', e);
 		}
 	},
 
