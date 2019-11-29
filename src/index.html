@@ -20,8 +20,8 @@
 						<div class="option" id="nav-other" @click="setScreen('tab-other')">Other</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
-						<div v-if="!!casc" class="option" id="nav-reload" @click="restartApplication"></div>
-						<div id="nav-settings" class="option" @click="setScreen('config', true)"></div>
+						<div v-if="!!casc" title="Restart" class="option" id="nav-reload" @click="restartApplication"></div>
+						<div id="nav-settings" title="Settings" class="option" @click="setScreen('config', true)"></div>
 					</div>
 				</div>
 			</div>
