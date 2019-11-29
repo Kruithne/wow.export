@@ -231,7 +231,7 @@ class BLTEReader extends BufferWrapper {
 		const pos = this.offset + length;
 		while (pos > this.blockWriteIndex)
 			this._processBlock();
-	},
+	}
 
 	/**
 	 * Write the contents of this buffer to a file.
