@@ -70,7 +70,7 @@ Vue.component('menu-button', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-menu-button" :class="{ disabled, dropdown }">
+	template: `<div class="ui-menu-button" :class="{ disabled, dropdown, open }">
 		<input type="button" :value="displayText" :class="{ disabled }" @click="handleClick"/>
 		<div class="arrow" @click="openMenu"></div>
 		<ul class="menu" v-if="open">

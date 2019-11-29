@@ -100,7 +100,7 @@ input[type="button"] {
 			cursor: pointer;
 		}
 
-		&.dropdown:hover {
+		&.dropdown:hover, &.open {
 			cursor: pointer;
 
 			input[type="button"], .arrow {
