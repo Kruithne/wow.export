@@ -181,6 +181,13 @@ document.addEventListener('click', function(e) {
 			 */
 			emit: function(tag, ...params) {
 				core.events.emit(tag, ...params);
+			},
+
+			/**
+			 * Hide the toast bar.
+			 */
+			hideToast: function() {
+				core.hideToast();
 			}
 		},
 

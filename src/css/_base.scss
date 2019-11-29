@@ -276,6 +276,13 @@ body {
 		cursor: pointer;
 	}
 
+	.close {
+		font-family: 'FontAwesome';
+		margin: 0 10px 0 auto;
+		cursor: pointer;
+		&::before { content: '\f00d' }
+	}
+
 	&::before {
 		font-family: 'FontAwesome';
 		margin-right: 5px;
