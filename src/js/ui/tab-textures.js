@@ -13,7 +13,7 @@ let previewInner = null;
 
 const previewTexture = async (texture) => {
 	isLoading = true;
-	const toast = core.delayToast(500, 'progress', util.format('Loading %s, please wait...', texture));
+	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture));
 
 	try {
 		const file = await core.view.casc.getFileByName(texture);
