@@ -13,13 +13,16 @@
 				<div id="logo">wow.export</div>
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
-						<div id="nav-models" @click="setScreen('tab-models')">Models</div>
-						<div id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
-						<div id="nav-sounds" @click="setScreen('tab-sounds')">Sounds</div>
-						<div id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
-						<div id="nav-other" @click="setScreen('tab-other')">Other</div>
+						<div class="option" id="nav-models" @click="setScreen('tab-models')">Models</div>
+						<div class="option" id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
+						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')">Sounds</div>
+						<div class="option" id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
+						<div class="option" id="nav-other" @click="setScreen('tab-other')">Other</div>
 					</template>
-					<div v-if="!isBusy" id="nav-settings" @click="setScreen('config', true)"></div>
+					<div v-if="!isBusy" id="nav-right">
+						<div v-if="!!casc" class="option" id="nav-reload" @click="restartApplication"></div>
+						<div id="nav-settings" class="option" @click="setScreen('config', true)"></div>
+					</div>
 				</div>
 			</div>
 			<div id="content">

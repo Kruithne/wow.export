@@ -129,13 +129,6 @@ const openExportDirectory = () => {
 	nw.Shell.openItem(view.config.exportDirectory)
 };
 
-/**
- * Restart the application.
- */
-const restart = () => {
-	chrome.runtime.reload();
-};
-
 const core = { 
 	events,
 	view,
@@ -145,8 +138,7 @@ const core = {
 	setToast,
 	hideToast,
 	delayToast,
-	openExportDirectory,
-	restart
+	openExportDirectory
 };
 
 module.exports = core;

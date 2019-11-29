@@ -188,6 +188,13 @@ document.addEventListener('click', function(e) {
 			 */
 			hideToast: function() {
 				core.hideToast();
+			},
+
+			/**
+			 * Restart the application.
+			 */
+			restartApplication: function() {
+				chrome.runtime.reload();
 			}
 		},
 

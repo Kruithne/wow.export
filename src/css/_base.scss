@@ -69,7 +69,7 @@ body {
 	align-items: center;
 	width: 100%;
 
-	div {
+	.option {
 		margin-left: 10px;
 
 		&:hover {
@@ -78,7 +78,7 @@ body {
 		}
 	}
 
-	div::before {
+	.option::before {
 		font-family: 'FontAwesome';
 		margin-right: 5px;
 	}
@@ -103,14 +103,22 @@ body {
 		content: '\f0c5';
 	}
 
-	&-settings {
-		margin-left: auto !important;
-		margin-right: 10px;
+	&-right {
+		margin-left: auto;
+		display: flex;
 		font-size: 26px;
 
-		&::before {
-			content: '\f085';
+		div {
+			margin-right: 10px;
 		}
+	}
+
+	&-reload::before {
+		content: '\f0e2';
+	}
+
+	&-settings::before {
+		content: '\f085';
 	}
 }
 

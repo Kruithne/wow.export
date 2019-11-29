@@ -116,7 +116,7 @@ core.events.on('click-cache-clear', async () => {
 
 	core.view.cacheSize = 0;
 	log.write('Purge complete, awaiting mandatory restart.');
-	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => core.restart() }, -1, false);
+	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => core.view.restartApplication() }, -1, false);
 });
 
 // Run cache clean-up once a CASC source has been selected.
