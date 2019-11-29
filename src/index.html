@@ -19,7 +19,7 @@
 						<div id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
 						<div id="nav-other" @click="setScreen('tab-other')">Other</div>
 					</template>
-					<div id="nav-settings" @click="setScreen('config', true)"></div>
+					<div v-if="!isBusy" id="nav-settings" @click="setScreen('config', true)"></div>
 				</div>
 			</div>
 			<div id="content">
