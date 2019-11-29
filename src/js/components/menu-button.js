@@ -43,7 +43,7 @@ Vue.component('menu-button', {
 			if (this.dropdown)
 				this.openMenu();
 			else
-				$emit('click', $event);
+				this.$emit('click', $event);
 		}
 	},
 
