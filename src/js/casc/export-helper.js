@@ -1,3 +1,4 @@
+const path = require('path');
 const util = require('util');
 const core = require('../core');
 const log = require('../log');
@@ -11,6 +12,23 @@ const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory(
  * @class ExportHelper
  */
 class ExportHelper {
+	/**
+	 * Return an export path for the given file.
+	 * @param {string} file 
+	 */
+	static getExportPath(file) {
+		return path.normalize(path.join(core.view.config.exportDirectory, file));
+	}
+
+	/**
+	 * Replace an extension on a file path with another.
+	 * @param {string} file 
+	 * @param {string} ext 
+	 */
+	static replaceExtension(file, ext) {
+		return path.join(path.dirname(file), path.basename(file, path.extname(file)) + ext);
+	}
+
 	/**
 	 * Construct a new ExportHelper instance.
 	 * @param {number} count 

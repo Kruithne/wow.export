@@ -1,4 +1,3 @@
-- Export button for texture viewer with optional formats (persist choice).
 - Copy/paste functionality for listboxes (track component focus?).
 - Show dimensions of selected texture in texture viewer.
 - Listbox for models filtered with .m2 and .wmo extensions.

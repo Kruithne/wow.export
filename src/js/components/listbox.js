@@ -21,14 +21,31 @@ Vue.component('listbox', {
 
 	/**
 	 * Invoked when the component is mounted.
-	 * Used to register global mouse listeners and size observer.
+	 * Used to register global mouse listeners and resize observer.
 	 * ToDo: Unregister these events if the components ever get destroyed.
 	 */
 	mounted: function() {
-		document.addEventListener('mousemove', e => this.moveMouse(e));
-		document.addEventListener('mouseup', e => this.stopMouse(e));
+		this.onMouseMove = e => this.moveMouse(e);
+		this.onMouseUp = e => this.stopMouse(e);
 
-		new ResizeObserver(() => this.resize()).observe(this.$el);
+		document.addEventListener('mousemove', this.onMouseMove);
+		document.addEventListener('mouseup', this.onMouseUp);
+
+		this.observer = new ResizeObserver(() => this.resize());
+		this.observer.observe(this.$el);
+	},
+
+	/**
+	 * Invoked when the component is destroyed.
+	 * Used to unregister global mouse listeners and resize observer.
+	 */
+	beforeDestroy: function() {
+		// Unregister global mouse listeners.
+		document.removeEventListener('mousemove', this.onMouseMove);
+		document.removeEventListener('mouseup', this.onMouseUp);
+
+		// Disconnect resize observer.
+		this.observer.disconnect();
 	},
 
 	computed: {

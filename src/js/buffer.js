@@ -51,6 +51,16 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Create a BufferWrapper from a canvas element.
+	 * @param {HTMLCanvasElement} canvas 
+	 * @param {string} mimeType 
+	 */
+	static async fromCanvas(canvas, mimeType) {
+		const blob = await new Promise(res => canvas.toBlob(res, mimeType));
+		return new BufferWrapper(Buffer.from(await blob.arrayBuffer()));
+	}
+
+	/**
 	 * Load a file from disk at the given path into a wrapped buffer.
 	 * @param {string} file Path to the file.
 	 */
