@@ -108,7 +108,7 @@ const delayToast = (delay, ...params) => {
  * @param {number} ttl Time in millseconds before removing the toast.
  * @param {boolean} closable If true, toast can manually be closed.
  */
-const setToast = (toastType, message, options = null, ttl = -1, closable = true) => {
+const setToast = (toastType, message, options = null, ttl = 10000, closable = true) => {
 	view.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.

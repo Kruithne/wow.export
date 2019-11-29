@@ -13,7 +13,7 @@ let previewInner = null;
 
 const previewTexture = async (texture) => {
 	isLoading = true;
-	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture));
+	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 
 	try {
 		const file = await core.view.casc.getFileByName(texture);
@@ -38,7 +38,7 @@ const previewTexture = async (texture) => {
 		toast.cancel();
 	} catch (e) {
 		toast.cancel();
-		core.setToast('error', 'Unable to open file: ' + texture, { 'View Log': () => log.openRuntimeLog() }, 10000);
+		core.setToast('error', 'Unable to open file: ' + texture, { 'View Log': () => log.openRuntimeLog() });
 		log.write('Failed to open CASC file: %s', e.message);
 	}
 
@@ -67,7 +67,7 @@ core.events.once('init', () => {
 	// Track when the user clicks to export selected textures.
 	core.events.on('click-export-texture', async () => {
 		if (userSelection.length === 0) {
-			core.setToast('info', 'You didn\'t select any files to export; you should do that first.', {}, 10000);
+			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 

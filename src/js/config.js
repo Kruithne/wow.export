@@ -70,27 +70,27 @@ core.events.on('click-config-apply', () => {
 	const cfg = core.view.configEdit;
 
 	if (cfg.exportDirectory.length === 0)
-		return core.setToast('error', 'A valid export directory must be provided', {}, 10000);
+		return core.setToast('error', 'A valid export directory must be provided');
 
 	if (cfg.listfileURL.length === 0 || !cfg.listfileURL.startsWith('http'))
-		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, 10000);
+		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
-		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, 10000);
+		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL });
 
 	// Everything checks out, apply.
 	core.view.config = cfg;
 	core.view.showPreviousScreen();
-	core.setToast('success', 'Changes to your configuration have been saved!', {}, 10000);
+	core.setToast('success', 'Changes to your configuration have been saved!');
 });
 
 // User has attempted to manually add an encryption key.
 // Verify the input, register it to BLTEReader and store with keys.
 core.events.on('click-tact-key', () => {
 	if (tactKeys.addKey(core.view.userInputTactKeyName, core.view.userInputTactKey))
-		core.setToast('success', 'Successfully added decryption key.', {}, 10000);
+		core.setToast('success', 'Successfully added decryption key.');
 	else
-		core.setToast('error', 'Invalid encryption key.', {}, 10000);
+		core.setToast('error', 'Invalid encryption key.');
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply

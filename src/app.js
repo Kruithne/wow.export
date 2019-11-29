@@ -285,7 +285,7 @@ document.addEventListener('click', function(e) {
 				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
 					'Update Now': () => updater.applyUpdate(),
 					'Maybe Later': false
-				});
+				}, -1, false);
 			}
 		});
 	}

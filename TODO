@@ -17,5 +17,4 @@
 - Local file conversion tools (MDX, M2, more?).
 - Video tab with export capabilities.
 - Add configuration drop-down to change current CASC locale.
-- Reduce excessive re-use of identical parameters for toast calls.
 - Write feature list for README.md
