@@ -200,7 +200,7 @@ Vue.component('listbox', {
 				if (this.lastSelectIndex > -1 && this.lastSelectIndex !== selectIndex) {
 					const delta = Math.abs(this.lastSelectIndex - selectIndex);
 					const lowest = Math.min(this.lastSelectIndex, selectIndex);
-					const range = this.displayItems.slice(lowest, lowest + delta);
+					const range = this.displayItems.slice(lowest, lowest + delta + 1);
 
 					for (const select of range)
 						if (this.selection.indexOf(select) === -1)
