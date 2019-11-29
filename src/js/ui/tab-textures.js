@@ -21,6 +21,7 @@ const EXPORT_TYPES = {
 const previewTexture = async (texture) => {
 	isLoading = true;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	log.write('Previewing texture file %s', texture);
 
 	try {
 		const file = await core.view.casc.getFileByName(texture);
