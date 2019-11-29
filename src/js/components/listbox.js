@@ -185,6 +185,8 @@ Vue.component('listbox', {
 		 */
 		selectItem: function(item, selectIndex, event) {
 			const checkIndex = this.selection.indexOf(item);
+			let emit = false;
+
 			if (event.ctrlKey) {
 				// Ctrl-key held, so allow multiple selections.
 				if (checkIndex > -1)
@@ -192,7 +194,7 @@ Vue.component('listbox', {
 				else
 					this.selection.push(item);
 
-				this.$emit('selection-changed', this.selection);
+				emit = true;
 			} else if (event.shiftKey) {
 				// Shift-key held, select a range.
 				if (this.lastSelectIndex > -1 && this.lastSelectIndex !== selectIndex) {
@@ -204,11 +206,16 @@ Vue.component('listbox', {
 						if (this.selection.indexOf(select) === -1)
 							this.selection.push(select);
 				}				
+
+				emit = true;
 			} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 				// Normal click, replace entire selection.
 				this.selection = [item];
-				this.$emit('selection-changed', this.selection);
+				emit = true;
 			}
+
+			if (emit)
+				this.$emit('selection-changed', this.selection);
 
 			this.lastSelectIndex = selectIndex;
 		}
