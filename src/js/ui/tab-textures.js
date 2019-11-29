@@ -14,7 +14,9 @@ let previewContainer = null;
 let previewInner = null;
 
 const EXPORT_TYPES = {
-	'PNG': { mime: 'image/png', ext: '.png' }
+	'PNG': { mime: 'image/png', ext: '.png' },
+	'JPG': { mime: 'image/jpeg', ext: '.jpg' },
+	'BMP': { mime: 'image/bmp', ext: '.bmp' }
 };
 
 const previewTexture = async (texture) => {
