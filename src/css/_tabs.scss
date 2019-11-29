@@ -11,6 +11,8 @@
 	justify-content: flex-end;
 	align-items: center;
 	margin-right: 20px;
+	grid-column: 2;
+	grid-row: 2;
 }
 
 .preview-container {
@@ -45,6 +47,8 @@
 .filter {
 	display: flex;
 	align-items: center;
+	grid-column: 1;
+	grid-row: 2;
 
 	input {
 		width: 100%;
@@ -65,7 +69,7 @@
 	}
 }
 
-#tab-textures {
+#tab-textures, #tab-sounds, #tab-models {
 	display: grid;
 	grid-template-columns: 50% 50%;
 	grid-template-rows: 1fr 70px;

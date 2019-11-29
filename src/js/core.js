@@ -34,7 +34,9 @@ const view = {
 	userInputTactKey: '', // Value of manual tact key field.
 	userInputTactKeyName: '', // Value of manual tact key name field.
 	userInputFilterTextures: '', // Value of the 'filter' field for textures.
+	userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 	listfileTextures: [], // Filtered listfile for texture files.
+	listfileSounds: [], // Filtered listfile for sound files.
 	availableLocale: LocaleFlag, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 };

@@ -86,6 +86,7 @@ class CASC {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
+		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.wav']);
 	}
 
 	/**

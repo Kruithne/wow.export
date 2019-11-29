@@ -109,6 +109,20 @@
 						</div>
 					</div>
 				</keep-alive>
+				<keep-alive>
+					<div class="tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
+						<div class="list-container">
+							<listbox :items="listfileSounds" :filter="userInputFilterSounds" @selection-changed="emit('user-select-sound', ...arguments)"></listbox>
+						</div>
+						<div class="filter">
+							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>
+						</div>
+						<div></div>
+						<div class="preview-controls">
+							<input type="button" value="Export Selected" @click="click('export-sound', $event)" :class="{ disabled: isBusy }"/>
+						</div>
+					</div>
+				</keep-alive>
 				<div id="source-select" v-if="screen === 'source-select'">
 					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
 						<template v-if="availableLocalBuilds">
