@@ -22,7 +22,6 @@ Vue.component('listbox', {
 	/**
 	 * Invoked when the component is mounted.
 	 * Used to register global mouse listeners and resize observer.
-	 * ToDo: Unregister these events if the components ever get destroyed.
 	 */
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
