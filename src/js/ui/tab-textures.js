@@ -63,7 +63,6 @@ core.events.once('init', () => {
 	// Track selection changes on the texture listbox and preview first texture.
 	core.events.on('user-select-texture', async selection => {
 		// Store the full selection for exporting purposes.
-		console.log(selection);
 		userSelection = selection;
 
 		// Check if the first file in the selection is "new".
