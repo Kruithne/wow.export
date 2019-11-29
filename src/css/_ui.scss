@@ -99,6 +99,15 @@ input[type="button"] {
 			color: var(--font-highlight);
 			cursor: pointer;
 		}
+
+		&.dropdown:hover {
+			cursor: pointer;
+
+			input[type="button"], .arrow {
+				background: var(--form-button-hover);
+				color: var(--font-highlight);
+			}
+		}
 	}
 
 	.arrow {

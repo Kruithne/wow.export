@@ -6,8 +6,9 @@ Vue.component('menu-button', {
 	 * label: Formattable button label. %s is substituted for the selected option.
 	 * default: Which option to use as a default.
 	 * disabled: Controls disabled state of the component.
+	 * dropdown: If true, component acts like a drop-down menu.
 	 */
-	props: ['options', 'label', 'default', 'disabled'],
+	props: ['options', 'label', 'default', 'disabled', 'dropdown'],
 
 	data: function() {
 		return {
@@ -33,6 +34,16 @@ Vue.component('menu-button', {
 		 */
 		openMenu: function() {
 			this.open = !this.open && !this.disabled;
+		},
+
+		/**
+		 * Handle clicks onto the button node.
+		 */
+		handleClick: function() {
+			if (this.dropdown)
+				this.openMenu();
+			else
+				$emit('click', $event);
 		}
 	},
 
@@ -59,8 +70,8 @@ Vue.component('menu-button', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-menu-button" :class="{ disabled }">
-		<input type="button" :value="displayText" :class="{ disabled }" @click="$emit('click', $event)"/>
+	template: `<div class="ui-menu-button" :class="{ disabled, dropdown }">
+		<input type="button" :value="displayText" :class="{ disabled }" @click="handleClick"/>
 		<div class="arrow" @click="openMenu"></div>
 		<ul class="menu" v-if="open">
 			<li v-for="option in options" @click="select(option)">{{ option }}</li>

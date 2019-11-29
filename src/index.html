@@ -41,7 +41,7 @@
 					<div>
 						<h1>CASC Locale</h1>
 						<p>Locale used to read files. Affects localization and available files.</p>
-						<menu-button class="spaced" :label="'%s'" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale[$event]"></menu-button>
+						<menu-button class="spaced" :dropdown="true" :label="'%s'" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale[$event]"></menu-button>
 					</div>
 					<div>
 						<h1>Listfile URL</h1>
