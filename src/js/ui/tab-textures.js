@@ -1,4 +1,3 @@
-const path = require('path');
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
