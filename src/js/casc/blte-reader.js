@@ -7,7 +7,6 @@ const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
 const ENC_TYPE_ARC4 = 0x41;
 const EMPTY_HASH = '00000000000000000000000000000000';
-const KEY_RING = {};
 
 class BLTEReader extends BufferWrapper {
 	/**
