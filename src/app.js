@@ -45,6 +45,10 @@ crash = (errorCode, errorText) => {
 	// This is used to get the contents of the runtime log without depending on the module.
 	if (typeof getErrorDump === 'function')
 		getErrorDump().then(data => setText('#crash-screen-log', data));
+
+	// If we can, emit a global event to the application informing of the crash.
+	if (core)
+		core.events.emit('crash');
 };
 
 // Register crash handlers.
