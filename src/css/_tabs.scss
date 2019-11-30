@@ -131,6 +131,18 @@
 			#slider-volume {
 				width: 100px;
 				margin-left: auto;
+
+				&::before {
+					font-family: 'FontAwesome';
+					content: '\f028';
+					position: absolute;
+					right: 100%;
+					margin-right: 8px;
+					font-size: 15px;
+					height: 100%;
+					display: flex;
+					align-items: center;
+				}
 			}
 		}
 	}
