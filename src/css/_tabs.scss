@@ -4,6 +4,22 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
+
+	&.list-tab {
+		display: grid;
+		grid-template-columns: 50% 50%;
+		grid-template-rows: 1fr 70px;
+	}
+}
+
+#tab-video {
+	grid-template-columns: unset;
+
+	.filter {
+		input[type="button"] {
+			width: unset;
+		}
+	}
 }
 
 .preview-controls {
@@ -67,12 +83,6 @@
 		right: 0;
 		bottom: 0;
 	}
-}
-
-#tab-textures, #tab-sounds, #tab-models {
-	display: grid;
-	grid-template-columns: 50% 50%;
-	grid-template-rows: 1fr 70px;
 }
 
 @keyframes sound-audiobox-anim {

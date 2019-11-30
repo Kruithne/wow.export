@@ -122,6 +122,10 @@ body {
 		content: '\f278';
 	}
 
+	&-videos::before {
+		content: '\f008';
+	}
+
 	&-right {
 		margin-left: auto;
 		display: flex;

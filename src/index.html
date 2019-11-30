@@ -16,6 +16,7 @@
 						<div class="option" id="nav-models" @click="setScreen('tab-models')">Models</div>
 						<div class="option" id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')">Sounds</div>
+						<div class="option" id="nav-videos" @click="setScreen('tab-video')">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
@@ -87,7 +88,7 @@
 					<div class="close" v-if="toast.closable" @click="hideToast"></div>
 				</div>
 				<keep-alive>
-					<div class="tab" id="tab-textures" v-if="screen === 'tab-textures'">
+					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
 							<listbox :items="listfileTextures" :filter="userInputFilterTextures" @selection-changed="emit('user-select-texture', ...arguments)"></listbox>
 						</div>
@@ -109,7 +110,18 @@
 					</div>
 				</keep-alive>
 				<keep-alive>
-					<div class="tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
+					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
+						<div class="list-container">
+							<listbox :items="listfileVideos" :filter="userInputFilterVideos" @selection-changed="emit('user-select-video', ...arguments)"></listbox>
+						</div>
+						<div class="filter">
+							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
+							<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
 							<listbox :items="listfileSounds" :filter="userInputFilterSounds" @selection-changed="emit('user-select-sound', ...arguments)"></listbox>
 						</div>
