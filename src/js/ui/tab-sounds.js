@@ -101,7 +101,7 @@ core.events.once('init', () => {
 	// Track requests to seek the current sound file and directly edit the
 	// time of the audio node. core.view.soundPlayerSeek will automatically update.
 	core.events.on('click-sound-seek', seek => {
-		if (audioNode)
+		if (audioNode && isTrackLoaded)
 			audioNode.currentTime = audioNode.duration * seek;
 	});
 
