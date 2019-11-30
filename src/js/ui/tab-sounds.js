@@ -19,6 +19,14 @@ const updateSeek = () => {
 		return;
 
 	core.view.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
+
+	if (core.view.soundPlayerSeek === 1) {
+		if (core.view.config.soundPlayerLoop)
+			audioNode.play();
+		else
+			core.view.soundPlayerState = false;
+	}
+
 	requestAnimationFrame(updateSeek);
 };
 

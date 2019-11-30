@@ -16,5 +16,6 @@
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"soundPlayerVolume": 0.7,
-	"soundPlayerAutoPlay": true
+	"soundPlayerAutoPlay": true,
+	"soundPlayerLoop": false
 }
