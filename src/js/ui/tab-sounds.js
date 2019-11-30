@@ -11,6 +11,9 @@ let isTrackLoaded = false;
 let audioNode = null;
 let data = null;
 
+/**
+ * Update the current status of the sound player seek bar.
+ */
 const updateSeek = () => {
 	if (!core.view.soundPlayerState || !audioNode)
 		return;
