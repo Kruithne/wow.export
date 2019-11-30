@@ -141,4 +141,12 @@ core.events.once('init', () => {
 		// ToDo: Export sound files.
 		//await exportFiles(userSelection);
 	});
+
+	// If the application crashes, we need to make sure to stop playing sound.
+	core.events.on('crash', () => {
+		if (audioNode)
+			audioNode.remove();
+
+		unloadSelectedTrack();
+	});
 });
