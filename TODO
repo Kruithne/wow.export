@@ -1,5 +1,4 @@
 - Copy/paste functionality for listboxes (track component focus?).
-- Show dimensions of selected texture in texture viewer.
 - Listbox for models filtered with .m2 and .wmo extensions.
 - 3D model viewer with controls (rotate, zoom, etc).
 - Geoset control over 3D models.
@@ -11,6 +10,7 @@
 - Export button for maps exporting object, baked textures, doodads and WMOs.
 - Export minimap tile (raw).
 - Remove 'Other' tab for the time being.
-- Local file conversion tools (MDX, M2, more?).
+- Local file conversion for MDX.
+- Local file conversion for M2 / WMO?
 - Video tab with export capabilities.
 - Write feature list for README.md
