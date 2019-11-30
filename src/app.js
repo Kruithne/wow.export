@@ -74,7 +74,7 @@ require('./js/components/slider');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
-require('./js/ui/tab-sounds');
+require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 
 const win = nw.Window.get();
