@@ -38,9 +38,12 @@ const playSelectedTrack = async () => {
 	if (!isTrackLoaded)
 		await loadSelectedTrack();
 
-	core.view.soundPlayerState = true;
-	audioNode.play();
-	updateSeek();
+	// Ensure the track actually loaded.
+	if (isTrackLoaded) {
+		core.view.soundPlayerState = true;
+		audioNode.play();
+		updateSeek();
+	}
 };
 
 /**
