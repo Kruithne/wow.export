@@ -51,6 +51,7 @@ const unloadSelectedTrack = () => {
 	isTrackLoaded = false;
 	core.view.soundPlayerState = false;
 	core.view.soundPlayerDuration = 0;
+	core.view.soundPlayerSeek = 0;
 	audioNode.src = '';
 
 	// Free assigned data URL.
