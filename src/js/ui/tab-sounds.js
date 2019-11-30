@@ -103,8 +103,6 @@ core.events.once('init', () => {
 	audioNode.volume = core.view.config.soundPlayerVolume;
 	audioNode.ondurationchange = () => core.view.soundPlayerDuration = audioNode.duration;
 
-	console.log(audioNode); // ToDo: Remove.
-
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
 	core.view.$watch('config.soundPlayerVolume', value => {
 		audioNode.volume = value;
