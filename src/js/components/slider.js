@@ -34,6 +34,14 @@ Vue.component('slider', {
 
 	methods: {
 		/**
+		 * Set the current value of this slider.
+		 * @param {number} value 
+		 */
+		setValue: function(value) {
+			this.$emit('input', Math.min(1, Math.max(0, value)));
+		},
+
+		/**
 		 * Invoked when a mouse-down event is captured on the slider handle.
 		 * @param {MouseEvent} e 
 		 */
@@ -51,7 +59,7 @@ Vue.component('slider', {
 			if (this.isScrolling) {
 				const max = this.$el.clientWidth;
 				const delta = e.clientX - this.scrollStartX;
-				this.$emit('input', Math.min(1, Math.max(0, this.scrollStart + (delta / max))));
+				this.setValue(this.scrollStart + (delta / max));
 			}
 		},
 
@@ -62,13 +70,25 @@ Vue.component('slider', {
 		stopMouse: function(e) {
 			this.isScrolling = false;
 		},
+
+		/**
+		 * Invoked when the user clicks somewhere on the slider.
+		 * @param {MouseEvent} e 
+		 */
+		handleClick: function(e) {
+			// Don't handle click events on the draggable handle.
+			if (e.target === this.$refs.handle)
+				return;
+
+			this.setValue(e.offsetX / this.$el.clientWidth);
+		}
 	},
 
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-slider">
+	template: `<div class="ui-slider" @click="handleClick">
 		<div class="fill" :style="{ width: (value * 100) + '%' }"></div>
-		<div class="handle" @mousedown="startMouse" :style="{ left: (value * 100) + '%' }"></div>
+		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (value * 100) + '%' }"></div>
 	</div>`
 });
