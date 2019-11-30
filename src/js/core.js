@@ -39,6 +39,10 @@ const view = {
 	listfileSounds: [], // Filtered listfile for sound files.
 	availableLocale: LocaleFlag, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
+	soundPlayerSeek: 0, // Current seek of the sound player.
+	soundPlayerState: false, // Playing state of the sound player.
+	soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
+	soundPlayerDuration: 0, // Duration of the currently playing sound track.
 };
 
 /**

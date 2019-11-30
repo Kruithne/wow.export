@@ -110,6 +110,14 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Get the internal ArrayBuffer used by this instance.
+	 * @returns {ArrayBuffer}
+	 */
+	get internalArrayBuffer() {
+		return this._buf.buffer;
+	}
+
+	/**
 	 * Set the absolute position of this buffer.
 	 * Negative values will set the position from the end of the buffer.
 	 * @param {number} ofs 
@@ -700,6 +708,36 @@ class BufferWrapper {
 	async writeToFile(file) {
 		await fsp.mkdir(path.dirname(file), { recursive: true });
 		await fsp.writeFile(file, this._buf);
+	}
+
+	/**
+	 * Decode this buffer using the given audio context.
+	 * @param {AudioContext} context 
+	 */
+	async decodeAudio(context) {
+		return await context.decodeAudioData(this._buf.buffer);
+	}
+
+	/**
+	 * Assign a data URL for this buffer.
+	 * @returns {string}
+	 */
+	getDataURL() {
+		if (!this.dataURL) {
+			const blob = new Blob([this.internalArrayBuffer]);
+			this.dataURL = URL.createObjectURL(blob);
+		}
+		return this.dataURL;
+	}
+
+	/**
+	 * Revoke the data URL assigned to this buffer.
+	 */
+	revokeDataURL() {
+		if (this.dataURL) {
+			URL.revokeObjectURL(this.dataURL);
+			this.dataURL = undefined;
+		}
 	}
 
 	/**

@@ -70,6 +70,7 @@ require('./js/components/slider');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
+require('./js/ui/tab-sounds');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

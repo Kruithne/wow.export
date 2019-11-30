@@ -74,3 +74,27 @@
 	grid-template-columns: 50% 50%;
 	grid-template-rows: 1fr 70px;
 }
+
+@keyframes sound-audiobox-anim {
+	to { background-position-x: -4326px; }
+}
+
+#sound-player {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+
+	&-anim {
+		width: 309px;
+		height: 397px;
+		background: url(./images/audiobox.png) no-repeat;
+		animation: sound-audiobox-anim 0.7s steps(14, end) infinite paused;
+	}
+
+	&-controls {
+		margin-top: 20px;
+		width: 500px;
+		height: 70px;
+	}
+}

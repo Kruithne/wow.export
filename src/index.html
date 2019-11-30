@@ -117,8 +117,21 @@
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>
 						</div>
-						<div></div>
+						<div id="sound-player">
+							<div id="sound-player-anim" :style="{ 'animation-play-state': soundPlayerState ? 'running' : 'paused' }"></div>
+							<div id="sound-player-controls">
+								{{ soundPlayerTitle }}
+								<slider v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
+								<slider v-model="config.soundPlayerVolume"></slider>
+								{{ soundPlayerDuration }}
+								<input type="button" :value="soundPlayerState ? 'Pause' : 'Play'" @click="click('sound-toggle', $event)"/>
+							</div>
+						</div>
 						<div class="preview-controls">
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.soundPlayerAutoPlay"/>
+								<span>Autoplay</span>
+							</label>
 							<input type="button" value="Export Selected" @click="click('export-sound', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>

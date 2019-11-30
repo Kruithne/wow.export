@@ -242,6 +242,28 @@ class BLTEReader extends BufferWrapper {
 		this.processAllBlocks();
 		await super.writeToFile(file);
 	}
+
+	/**
+	 * Decode this buffer using the given audio context.
+	 * @param {AudioContext} context 
+	 */
+	async decodeAudio(context) {
+		this.processAllBlocks();
+		return super.decodeAudio(context);
+	}
+
+	/**
+	 * Assign a data URL for this buffer.
+	 * @returns {string}
+	 */
+	getDataURL() {
+		if (!this.dataURL) {
+			this.processAllBlocks();
+			return super.getDataURL();
+		}
+
+		return this.dataURL;
+	}
 }
 
 module.exports = BLTEReader;

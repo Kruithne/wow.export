@@ -14,5 +14,7 @@
 	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
 	"exportDirectory": "",
 	"exportTextureFormat": "PNG",
-	"exportTextureAlpha": true
+	"exportTextureAlpha": true,
+	"soundPlayerVolume": 0.7,
+	"soundPlayerAutoPlay": true
 }
