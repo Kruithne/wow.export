@@ -6,8 +6,6 @@
 - WMO control (groups, doodad sets).
 - Export button for models with various formats (m2, obj, fbx?, glfl?)
 - Listbox for sounds filtered with .ogg and .mp3 extensions.
-- Sound player with controls (play/pause, volume, seek?).
-- Export button for sounds (additional formats?).
 - DB2 reader interface.
 - List of available maps showing tiles and ADT grid for selection.
 - Export button for maps exporting object, baked textures, doodads and WMOs.

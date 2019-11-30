@@ -2,6 +2,7 @@ const core = require('../core');
 const log = require('../log');
 const path = require('path');
 const util = require('util');
+const ExportHelper = require('../casc/export-helper');
 
 let isLoading = null;
 
@@ -149,8 +150,20 @@ core.events.once('init', () => {
 			return;
 		}
 
-		// ToDo: Export sound files.
-		//await exportFiles(userSelection);
+		const helper = new ExportHelper(userSelection.length, 'sound files');
+		helper.start();
+		
+		for (const fileName of userSelection) {
+			try {
+				const data = await core.view.casc.getFileByName(fileName);
+				await data.writeToFile(ExportHelper.getExportPath(fileName));
+				helper.mark(fileName, true);
+			} catch (e) {
+				helper.mark(fileName, false, e.message);
+			}
+		}
+
+		helper.finish();
 	});
 
 	// If the application crashes, we need to make sure to stop playing sound.
