@@ -88,6 +88,12 @@
 	&-info {
 		display: flex;
 		justify-content: space-between;
+
+		.title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			margin: 0 15px;
+		}
 	}
 
 	&-anim {

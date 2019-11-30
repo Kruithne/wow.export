@@ -122,7 +122,7 @@
 							<div id="sound-player-controls">
 								<div id="sound-player-info">
 									<span>{{ soundPlayerSeekFormatted }}</span>
-									<span>{{ soundPlayerTitle }}</span>
+									<span class="title">{{ soundPlayerTitle }}</span>
 									<span>{{ soundPlayerDurationFormatted }}</span>
 								</div>
 								<slider v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
