@@ -125,9 +125,11 @@
 									<span class="title">{{ soundPlayerTitle }}</span>
 									<span>{{ soundPlayerDurationFormatted }}</span>
 								</div>
-								<slider v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
-								<slider v-model="config.soundPlayerVolume"></slider>
-								<input type="button" :value="soundPlayerState ? 'Pause' : 'Play'" @click="click('sound-toggle', $event)"/>
+								<slider id="slider-seek" v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
+								<div class="buttons">
+									<input type="button" :value="soundPlayerState ? '&#xf04c' : '&#xf04b'" @click="click('sound-toggle', $event)"/>
+									<slider id="slider-volume" v-model="config.soundPlayerVolume"></slider>
+								</div>
 							</div>
 						</div>
 						<div class="preview-controls">

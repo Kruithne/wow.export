@@ -105,7 +105,33 @@
 
 	&-controls {
 		margin-top: 20px;
-		width: 500px;
-		height: 70px;
+		width: 90%;
+
+		#slider-seek {
+			margin: 8px 0;
+		}
+
+		.buttons {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+
+			input[type="button"] {
+				font-family: 'FontAwesome';
+				font-size: 13px;
+				height: 30px;
+				width: 30px;
+				padding: 0;
+				border-radius: 0;
+				border: 1px solid var(--border);
+				background: var(--background-dark);
+				box-shadow: black 0 0 1px;
+			}
+
+			#slider-volume {
+				width: 100px;
+				margin-left: auto;
+			}
+		}
 	}
 }
