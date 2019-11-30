@@ -85,6 +85,11 @@
 	align-items: center;
 	flex-direction: column;
 
+	&-info {
+		display: flex;
+		justify-content: space-between;
+	}
+
 	&-anim {
 		width: 309px;
 		height: 397px;

@@ -297,6 +297,19 @@ const deleteDirectory = async (dir) => {
 	return deleteSize;
 };
 
+/**
+ * Return a formatted representation of seconds.
+ * Example: 26 will return 00:26
+ * @param {number} seconds 
+ * @returns {string}
+ */
+const formatPlaybackSeconds = (seconds) => {
+	if (isNaN(seconds))
+		return '00:00';
+		
+	return Math.floor(seconds / 60).toString().padStart(2, 0) + ':' + Math.round(seconds % 60).toString().padStart(2, 0);
+};
+
 module.exports = { 
 	getJSON,
 	readJSON,
@@ -311,5 +324,6 @@ module.exports = {
 	redraw,
 	fileExists,
 	readFile,
-	deleteDirectory
+	deleteDirectory,
+	formatPlaybackSeconds
 };

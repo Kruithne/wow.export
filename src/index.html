@@ -120,10 +120,13 @@
 						<div id="sound-player">
 							<div id="sound-player-anim" :style="{ 'animation-play-state': soundPlayerState ? 'running' : 'paused' }"></div>
 							<div id="sound-player-controls">
-								{{ soundPlayerTitle }}
+								<div id="sound-player-info">
+									<span>{{ soundPlayerSeekFormatted }}</span>
+									<span>{{ soundPlayerTitle }}</span>
+									<span>{{ soundPlayerDurationFormatted }}</span>
+								</div>
 								<slider v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
 								<slider v-model="config.soundPlayerVolume"></slider>
-								{{ soundPlayerDuration }}
 								<input type="button" :value="soundPlayerState ? 'Pause' : 'Play'" @click="click('sound-toggle', $event)"/>
 							</div>
 						</div>

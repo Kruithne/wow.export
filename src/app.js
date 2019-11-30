@@ -235,6 +235,20 @@ document.addEventListener('click', function(e) {
 						return key;
 
 				return 'unUN';
+			},
+
+			/**
+			 * Return the formatted duration of the selected track on the sound player.
+			 */
+			soundPlayerDurationFormatted: function() {
+				return generics.formatPlaybackSeconds(this.soundPlayerDuration);
+			},
+
+			/**
+			 * Return the formatted current seek of the selected track on the sound player.
+			 */
+			soundPlayerSeekFormatted: function() {
+				return generics.formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
 			}
 		},
 
