@@ -5,6 +5,7 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
+const M2Loader = require('../3D/loaders/M2Loader');
 
 let isLoading = false;
 let selectedFile = null;
@@ -18,7 +19,12 @@ const previewModel = async (fileName) => {
 	log.write('Previewing model %s', fileName);
 
 	try {
-		//const file = await core.view.casc.getFileByName(fileName);
+		const file = await core.view.casc.getFileByName(fileName);
+		if (fileName.toLowerCase().endsWith('.m2')) {
+			const m2 = new M2Loader(file);
+			await m2.load();
+			console.log(m2);
+		}
 
 		selectedFile = fileName;
 		toast.cancel();
@@ -110,7 +116,7 @@ core.events.once('init', () => {
 	core.view.$watch('config.modelsShowWMO', updateListfile);
 
 	// Track selection changes on the model listbox and preview first model.
-	core.events.on('user-select-mode;', async selection => {
+	core.events.on('user-select-model', async selection => {
 		// Store the full selection for exporting purposes.
 		userSelection = selection;
 
