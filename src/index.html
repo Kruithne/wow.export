@@ -2,6 +2,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<script defer type="text/javascript" src="lib/vue.js"></script>
+		<script defer type="text/javascript" src="lib/three.js"></script>
 		<script defer type="text/javascript" src="app.js"></script>
 		<link rel="stylesheet" type="text/css" href="app.css"/>
 		<title>wow.export</title>
@@ -119,7 +120,7 @@
 						</div>
 						<div class="preview-container">
 							<div class="preview-background" id="model-preview">
-								<div></div>
+								<model-viewer :context="modelViewerContext"></model-viewer>
 							</div>
 						</div>
 						<div class="preview-controls">

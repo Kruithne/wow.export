@@ -10,8 +10,7 @@ let isLoading = false;
 let selectedFile = null;
 let userSelection = [];
 
-//let previewContainer = null;
-//let previewInner = null;
+let camera, scene, mesh;
 
 const previewModel = async (fileName) => {
 	isLoading = true;
@@ -75,11 +74,34 @@ const updateListfile = () => {
 	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 };
 
+const onRender = () => {
+	if (mesh)
+		mesh.rotation.y += 0.01;
+	//mesh.rotation.y += 0.02;
+
+	//renderer.render(scene, camera);
+	requestAnimationFrame(onRender);
+};
+
 // Register a drop handler for M2/WMO files.
 core.registerDropHandler({
 	ext: ['.m2', '.wmo'],
 	prompt: count => util.format('Export %d models as %s', count, core.view.config.exportModelFormat),
 	process: files => exportFiles(files, true)
+});
+
+// The first time the user opens up the model tab, initialize 3D preview.
+core.events.once('screen-tab-models', () => {
+	camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 10);
+	camera.position.z = 1.2;
+	camera.position.y = 0.4;
+
+	scene = new THREE.Scene();
+	const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+	scene.add(light);
+
+	core.view.modelViewerContext = { camera, scene };
+	onRender();
 });
 
 core.events.once('init', () => {

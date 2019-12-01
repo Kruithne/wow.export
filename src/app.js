@@ -67,10 +67,13 @@ const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const fsp = require('fs').promises;
 
+require('./js/3d/OBJLoader');
+
 require('./js/components/listbox');
 require('./js/components/menu-button');
 require('./js/components/file-field');
 require('./js/components/slider');
+require('./js/components/model-viewer');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
