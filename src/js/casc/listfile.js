@@ -88,9 +88,8 @@ const loadListfile = async (buildConfig, cache) => {
 /**
  * Return an array of filenames ending with the given extension(s).
  * @param {string|Array} exts 
- * @param {RegExp} filter
  */
-const getFilenamesByExtension = (exts, filter) => {
+const getFilenamesByExtension = (exts) => {
 	// Box into an array for reduced code.
 	if (!Array.isArray(exts))
 		exts = [exts];
@@ -98,11 +97,16 @@ const getFilenamesByExtension = (exts, filter) => {
 	const entries = [];
 	for (const filename of idLookup.values()) {
 		for (const ext of exts) {
-			if (filename.endsWith(ext)) {
-				if (!filter || !filename.match(filter))
+			if (Array.isArray(ext)) {
+				if (filename.endsWith(ext[0]) && !filename.match(ext[1])) {
 					entries.push(filename);
-
-				continue;
+					continue;
+				}
+			} else {
+				if (filename.endsWith(ext)) {
+					entries.push(filename);
+					continue;
+				}
 			}
 		}
 	}

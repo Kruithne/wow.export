@@ -69,10 +69,10 @@ const updateListfile = () => {
 		modelExt.push('.m2');
 	
 	if (core.view.config.modelsShowWMO)
-		modelExt.push('.wmo');
+		modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
 	// Create a new listfile using the given configuration.
-	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, constants.LISTFILE_MODEL_FILTER);
+	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 };
 
 // Register a drop handler for M2/WMO files.

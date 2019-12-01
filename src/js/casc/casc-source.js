@@ -90,14 +90,14 @@ class CASC {
 			modelExt.push('.m2');
 		
 		if (core.view.config.modelsShowWMO)
-			modelExt.push('.wmo');
+			modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, constants.LISTFILE_MODEL_FILTER);
+		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 	}
 
 	/**
