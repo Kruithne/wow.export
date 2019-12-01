@@ -109,9 +109,9 @@ class M2Loader {
 		const uvAnimLookupCount = data.readUInt32LE();
 		const uvAnimLookupOfs = data.readUInt32LE();
 	
-		// Read model name.
+		// Read model name (Always followed by single 0x0 character, -1 to trim).
 		data.seek(modelNameOfs + 8);
-		this.name = data.readString(modelNameLength);
+		this.name = data.readString(modelNameLength - 1);
 	
 		// Read mesh data.
 		const verts = this.verticies = new Array(vertsCount * 12);
