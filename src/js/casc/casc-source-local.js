@@ -9,6 +9,7 @@ const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
 const BuildCache = require('./build-cache');
 const BLTEReader = require('./blte-reader');
+const core = require('../core');
 
 class CASCLocal extends CASC {
 	/**
