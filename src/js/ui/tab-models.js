@@ -4,6 +4,7 @@ const util = require('util');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
+const constants = require('../constants');
 
 let isLoading = false;
 let selectedFile = null;
@@ -71,7 +72,7 @@ const updateListfile = () => {
 		modelExt.push('.wmo');
 
 	// Create a new listfile using the given configuration.
-	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, constants.LISTFILE_MODEL_FILTER);
 };
 
 // Register a drop handler for M2/WMO files.

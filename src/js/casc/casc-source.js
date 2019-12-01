@@ -3,6 +3,7 @@ const BLTEReader = require('./blte-reader');
 const listfile = require('./listfile');
 const log = require('../log');
 const core = require('../core');
+const constants = require('../constants');
 const LocaleFlag = require('./locale-flags');
 const ContentFlag = require('./content-flags');
 
@@ -96,7 +97,7 @@ class CASC {
 		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, constants.LISTFILE_MODEL_FILTER);
 	}
 
 	/**
