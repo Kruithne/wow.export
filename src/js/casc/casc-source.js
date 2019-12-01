@@ -83,12 +83,20 @@ class CASC {
 		if (entries === 0)
 			throw new Error('No listfile entries found');
 
+		// Filters for the model viewer depending on user settings.
+		const modelExt = [];
+		if (core.view.config.modelsShowM2)
+			modelExt.push('.m2');
+		
+		if (core.view.config.modelsShowWMO)
+			modelExt.push('.wmo');
+
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileModels = listfile.getFilenamesByExtension(['.m2', '.wmo']);
+		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 	}
 
 	/**

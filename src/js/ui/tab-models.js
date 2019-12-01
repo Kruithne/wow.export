@@ -3,6 +3,7 @@ const log = require('../log');
 const util = require('util');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
+const listfile = require('../casc/listfile');
 
 let isLoading = false;
 let selectedFile = null;
@@ -56,6 +57,23 @@ const exportFiles = async (files, isLocal = false) => {
 	helper.finish();
 };
 
+/**
+ * Update the 3D model listfile.
+ * Invoke when users change the visibility settings for model types.
+ */
+const updateListfile = () => {
+	// Filters for the model viewer depending on user settings.
+	const modelExt = [];
+	if (core.view.config.modelsShowM2)
+		modelExt.push('.m2');
+	
+	if (core.view.config.modelsShowWMO)
+		modelExt.push('.wmo');
+
+	// Create a new listfile using the given configuration.
+	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+};
+
 // Register a drop handler for M2/WMO files.
 core.registerDropHandler({
 	ext: ['.m2', '.wmo'],
@@ -64,6 +82,10 @@ core.registerDropHandler({
 });
 
 core.events.once('init', () => {
+	// Track changes to the visible model listfile types.
+	core.view.$watch('config.modelsShowM2', updateListfile);
+	core.view.$watch('config.modelsShowWMO', updateListfile);
+
 	// Track selection changes on the model listbox and preview first model.
 	core.events.on('user-select-mode;', async selection => {
 		// Store the full selection for exporting purposes.
