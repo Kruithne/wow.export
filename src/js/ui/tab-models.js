@@ -58,7 +58,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 // Register a drop handler for M2/WMO files.
 core.registerDropHandler({
-	ext: '.m2', // ToDo: WMO
+	ext: ['.m2', '.wmo'],
 	prompt: count => util.format('Export %d models as %s', count, core.view.config.exportModelFormat),
 	process: files => exportFiles(files, true)
 });

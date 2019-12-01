@@ -149,8 +149,9 @@ const openExportDirectory = () => {
  * @param {object} handler 
  */
 const registerDropHandler = (handler) => {
-	handler.ext = handler.ext.toLowerCase();
-	dropHandlers.push(handler);	
+	// Ensure the extensions are all lower-case.
+	handler.ext = handler.ext.map(e => e.toLowerCase());
+	dropHandlers.push(handler);
 };
 
 /**
@@ -159,7 +160,13 @@ const registerDropHandler = (handler) => {
  */
 const getDropHandler = (file) => {
 	file = file.toLowerCase();
-	return dropHandlers.find(e => file.endsWith(e.ext));
+
+	for (const handler of dropHandlers)
+		for (const ext of handler.ext)
+			if (file.endsWith(ext))
+				return handler;
+	
+	return null;
 };
 
 const core = { 

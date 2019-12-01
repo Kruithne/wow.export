@@ -98,7 +98,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 // Register a drop handler for BLP files.
 core.registerDropHandler({
-	ext: '.blp',
+	ext: ['.blp'],
 	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
 	process: files => exportFiles(files, true)
 });
