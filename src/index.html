@@ -110,6 +110,32 @@
 					</div>
 				</keep-alive>
 				<keep-alive>
+					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
+						<div class="list-container">
+							<listbox :items="listfileModels" :filter="userInputFilterModels" @selection-changed="emit('user-select-model', ...arguments)"></listbox>
+						</div>
+						<div class="filter">
+							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
+						</div>
+						<div class="preview-container">
+							<div class="preview-background" id="model-preview">
+								<div></div>
+							</div>
+						</div>
+						<div class="preview-controls">
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.modelsShowM2"/>
+								<span>Show M2</span>
+							</label>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.modelsShowWMO"/>
+								<span>Show WMO</span>
+							</label>
+							<menu-button :label="'Export as %s'" :options="['OBJ', 'M2/WMO']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
 							<listbox :items="listfileVideos" :filter="userInputFilterVideos" @selection-changed="emit('user-select-video', ...arguments)"></listbox>

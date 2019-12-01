@@ -15,6 +15,9 @@
 	"exportDirectory": "",
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
+	"exportModelFormat": "OBJ",
+	"modelsShowM2": true,
+	"modelsShowWMO": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false
