@@ -1,9 +1,98 @@
-//const BufferWrapper = require('../../buffer');
+const util = require('util');
+const listfile = require('../../casc/listfile');
+const core = require('../../core');
 
 const MAGIC_MD21 = 0x3132444D;
 const MAGIC_MD20 = 0x3032444D;
 
+const MAGIC_SKIN = 0x4E494B53;
+
 const CHUNK_SFID = 0x44494653;
+
+class Skin {
+	constructor(fileDataID) {
+		this.fileDataID = fileDataID;
+		this.fileName = listfile.getByID(fileDataID);
+		this.isLoaded = false;
+	}
+
+	async load() {
+		try {
+			const data = await core.view.casc.getFile(this.fileDataID);
+
+			const magic = data.readUInt32LE();
+			if (magic !== MAGIC_SKIN)
+				throw new Error('Invalid magic: ' + magic);
+
+			const indiciesCount = data.readUInt32LE();
+			const indiciesOfs = data.readUInt32LE();
+			const trianglesCount = data.readUInt32LE();
+			const trianglesOfs = data.readUInt32LE();
+			const propertiesCount = data.readUInt32LE();
+			const propertiesOfs = data.readUInt32LE();
+			const submeshesCount = data.readUInt32LE();
+			const submeshesOfs = data.readUInt32LE();
+			const textureUnitsCount = data.readUInt32LE();
+			const textureUnitsOfs = data.readUInt32LE();
+			this.bones = data.readUInt32LE();
+			
+			// Read indicies.
+			data.seek(indiciesOfs);
+			this.indicies = data.readUInt16LE(indiciesCount);
+
+			// Read triangles.
+			data.seek(trianglesOfs);
+			this.triangles = data.readUInt16LE(trianglesCount);
+
+			// Read properties.
+			data.seek(propertiesOfs);
+			this.properties = data.readUInt8(propertiesCount);
+
+			// Read submeshes.
+			data.seek(submeshesOfs);
+			this.submeshes = new Array(submeshesCount);
+			for (let i = 0; i < submeshesCount; i++) {
+				this.submeshes[i] = {
+					submeshID: data.readUInt16LE(),
+					level: data.readUInt16LE(),
+					vertexStart: data.readUInt32LE(),
+					vertexCount: data.readUInt16LE(),
+					triangleStart: data.readUInt32LE(),
+					triangleCount: data.readUInt16LE(),
+					boneCount: data.readUInt16LE(),
+					boneStart: data.readUInt16LE(),
+					boneInfluences: data.readUInt16LE(),
+					centerBoneIndex: data.readUInt16LE(),
+					centerPosition: data.readFloatLE(3),
+					sortCenterPosition: data.readFloatLE(3),
+					sortRadius: data.readFloatLE()
+				};
+			}
+
+			// Read texture units.
+			data.seek(textureUnitsOfs);
+			this.textureUnits = new Array(textureUnitsCount);
+			for (let i = 0; i < textureUnitsCount; i++) {
+				this.textureUnits[i] = {
+					flags: data.readUInt16LE(),
+					shading: data.readUInt16LE(),
+					submeshIndex: data.readUInt16LE(),
+					submeshIndex2: data.readUInt16LE(),
+					colorIndex: data.readUInt16LE(),
+					renderFlags: data.readUInt16LE(),
+					texUnitNumber: data.readUInt16LE(),
+					mode: data.readUInt16LE(),
+					texture: data.readUInt16LE(),
+					texUnitNumber2: data.readUInt16LE(),
+					transparency: data.readUInt16LE(),
+					textureAnim: data.readUInt16LE()
+				};
+			}
+		} catch (e) {
+			throw new Error(util.format('Unable to load skin fileDataID %d: %s', this.fileDataID, e.message));
+		}
+	}
+}
 
 class M2Loader {
 	/**
@@ -34,16 +123,28 @@ class M2Loader {
 	}
 
 	/**
+	 * Get a skin at a given index from this.skins.
+	 * @param {number} index 
+	 */
+	async getSkin(index) {
+		const skin = this.skins[index];
+		if (!skin.isLoaded)
+			await skin.load();
+
+		return skin;
+	}
+
+	/**
 	 * Parse SFID chunk for skin file data IDs.
 	 */
 	parseChunk_SFID() {
 		if (this.viewCount === undefined)
 			throw new Error('Cannot parse SFID chunk in M2 before MD21 chunk!');
 
-		this.skinFileIDs = new Array(this.viewCount);
+		this.skins = new Array(this.viewCount);
 
 		for (let i = 0; i < this.viewCount; i++)
-			this.skinFileIDs[i] = this.data.readUInt32LE();
+			this.skins[i] = new Skin(this.data.readUInt32LE());
 	}
 
 	/**
@@ -60,66 +161,25 @@ class M2Loader {
 		const modelNameOfs = data.readUInt32LE();
 	
 		this.modelFlags = data.readUInt32LE();
-		const sequenceCount = data.readUInt32LE();
-		const sequenceOfs = data.readUInt32LE();
+		data.move(10 * 4);
 	
-		const animationCount = data.readUInt32LE();
-		const animationOfs = data.readUInt32LE();
-		const animationLookupCount = data.readUInt32LE();
-		const animationLookupOfs = data.readUInt32LE();
-	
-		const boneCount = data.readUInt32LE();
-		const boneOfs = data.readUInt32LE();
-		const keyboneLookupCount = data.readUInt32LE();
-		const keyboneLookupOfs = data.readUInt32LE();
-	
-		const vertsCount = data.readUInt32LE();
-		const vertsOfs = data.readUInt32LE();
+		const verticesCount = data.readUInt32LE();
+		const verticesOfs = data.readUInt32LE();
 	
 		this.viewCount = data.readUInt32LE();
-		const colourCount = data.readUInt32LE();
-		const colourOfs = data.readUInt32LE();
-	
-		const textureCount = data.readUInt32LE();
-		const textureOfs = data.readUInt32LE();
-		const transparencyCount = data.readUInt32LE();
-		const transparencyOfs = data.readUInt32LE();
-	
-		const uvAnimCount = data.readUInt32LE();
-		const uvAnimOfs = data.readUInt32LE();
-	
-		const texReplaceCount = data.readUInt32LE();
-		const texReplaceOfs = data.readUInt32LE();
-	
-		const renderFlagCount = data.readUInt32LE();
-		const renderFlagOfs = data.readUInt32LE();
-	
-		const boneLookupTableCount = data.readUInt32LE();
-		const boneLookupTableOfs = data.readUInt32LE();
-	
-		const textureLookupCount = data.readUInt32LE();
-		const textureLookupOfs = data.readUInt32LE();
-	
-		const unk1Count = data.readUInt32LE();
-		const unk1Ofs = data.readUInt32LE();
-	
-		const transLookupCount = data.readUInt32LE();
-		const transLookupOfs = data.readUInt32LE();
-	
-		const uvAnimLookupCount = data.readUInt32LE();
-		const uvAnimLookupOfs = data.readUInt32LE();
 	
 		// Read model name (Always followed by single 0x0 character, -1 to trim).
 		data.seek(modelNameOfs + 8);
 		this.name = data.readString(modelNameLength - 1);
+
+		// Read verticies.	
+		data.seek(this.vertices)
+		const verts = this.vertices = new Array(verticesCount * 12);
+		const normals = this.normals = new Array(verticesCount * 12);
+		const uv = this.uv = new Array(verticesCount * 8);
+		data.seek(verticesOfs + 8);
 	
-		// Read mesh data.
-		const verts = this.verticies = new Array(vertsCount * 12);
-		const normals = this.normals = new Array(vertsCount * 12);
-		const uv = this.uv = new Array(vertsCount * 8);
-		data.seek(vertsOfs + 8);
-	
-		for (let i = 0; i < vertsCount; i++) {
+		for (let i = 0; i < verticesCount; i++) {
 			const index = i * 12;
 			verts[index] = data.readFloatLE();
 			verts[index + 1] = data.readFloatLE();
