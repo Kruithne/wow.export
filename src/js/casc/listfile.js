@@ -111,6 +111,7 @@ const getFilenamesByExtension = (exts) => {
 		}
 	}
 
+	entries.sort();
 	return entries;
 };
 
