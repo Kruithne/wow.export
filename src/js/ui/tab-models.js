@@ -58,7 +58,7 @@ const previewModel = async (fileName) => {
 						const data = await texture.getTextureFile();
 						const blp = new BLPFile(data);
 
-						const tex = new THREE.TextureLoader().load(await blp.getDataURL());
+						const tex = new THREE.TextureLoader().load(blp.getDataURL());
 						if (texture.flags & Texture.FLAG_WRAP_U)
 							tex.wrapS = THREE.RepeatWrapping;
 

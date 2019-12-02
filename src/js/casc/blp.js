@@ -79,7 +79,7 @@ class BLPImage {
 	 * If a URL is already bound, it is reassigned.
 	 * @param {boolean} useAlpha 
 	 */
-	async getDataURL(useAlpha = true) {
+	getDataURL(useAlpha = true) {
 		if (this.dataURL)
 			this.revokeDataURL();
 
