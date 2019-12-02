@@ -251,7 +251,7 @@ class M2Loader {
 	
 			const uvIndex = i * 2;
 			uv[uvIndex] = data.readFloatLE();
-			uv[uvIndex + 1] = data.readFloatLE();
+			uv[uvIndex + 1] = (data.readFloatLE() - 1) * -1;
 
 			data.move(8); // texCoordX2, texCoordY2?
 		}
