@@ -134,7 +134,11 @@ class BLTEReader extends BufferWrapper {
 		switch (flag) {
 			case 0x45: // Encrypted
 				const decrypted = this._decryptBlock(block, blockEnd, index);
-				this._handleBlock(decrypted, decrypted.byteLength, index);
+				if (decrypted)
+					this._handleBlock(decrypted, decrypted.byteLength, index);
+				else
+					this._ofs = blockEnd;
+
 				break;
 			
 			case 0x46: // Frame (Recursive)
@@ -197,7 +201,7 @@ class BLTEReader extends BufferWrapper {
 
 		const key = tactKeys.getKey(keyName);
 		if (typeof key !== 'string')
-			throw new Error('[BLTE] Unknown decryption key: ' + keyName);
+			return false;
 
 		const nonce = [];
 		for (let i = 0; i < 8; i++)
