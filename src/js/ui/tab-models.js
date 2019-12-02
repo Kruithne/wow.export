@@ -5,7 +5,7 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
-const M2Loader = require('../3D/loaders/M2Loader');
+const M2Loader = require('../3D/M2Loader');
 const BLPFile = require('../casc/blp');
 const Texture = require('../3D/Texture');
 
