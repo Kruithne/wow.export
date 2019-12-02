@@ -117,11 +117,15 @@ const previewModel = async (fileName) => {
 					controls.target = center;
 					controls.maxDistance = cameraToFarEdge * 2;
 				}
+
+				toast.cancel();
+			} else {
+				toast.cancel();
+				core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 			}
 		}
 
 		selectedFile = fileName;
-		toast.cancel();
 	} catch (e) {
 		toast.cancel();
 		core.setToast('error', 'Unable to open file: ' + fileName, { 'View Log': () => log.openRuntimeLog() });
