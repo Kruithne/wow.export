@@ -2,8 +2,13 @@ const listfile = require('../casc/listfile');
 const core = require('../core');
 
 class Texture {
-	static FLAG_WRAP_U = 0x1;
-	static FLAG_WRAP_V = 0x2;
+	static FLAG_WRAP_U() {
+		return 0x1;
+	}
+
+	static FLAG_WRAP_V() {
+		return 0x2;
+	}
 
 	/**
 	 * Construct a new Texture instance.
