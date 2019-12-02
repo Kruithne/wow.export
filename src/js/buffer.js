@@ -148,7 +148,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt8(count = 1) {
+	readInt8(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 1);
 	}
 
@@ -157,7 +157,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt8(count = 1) {
+	readUInt8(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 1);
 	}
 
@@ -166,7 +166,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt16LE(count = 1) {
+	readInt16LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 2);
 	}
 
@@ -175,7 +175,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt16LE(count = 1) {
+	readUInt16LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 2);
 	}
 
@@ -184,7 +184,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt16BE(count = 1) {
+	readInt16BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 2);
 	}
 
@@ -193,7 +193,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt16BE(count = 1) {
+	readUInt16BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 2);
 	}
 
@@ -202,7 +202,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt24LE(count = 1) {
+	readInt24LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 3);
 	}
 
@@ -211,7 +211,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt24LE(count = 1) {
+	readUInt24LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 3);
 	}
 
@@ -220,7 +220,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt24BE(count = 1) {
+	readInt24BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 3);
 	}
 
@@ -229,7 +229,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt24BE(count = 1) {
+	readUInt24BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 3);
 	}
 
@@ -238,7 +238,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt32LE(count = 1) {
+	readInt32LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 4);
 	}
 
@@ -247,7 +247,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt32LE(count = 1) {
+	readUInt32LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 4);
 	}
 
@@ -256,7 +256,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt32BE(count = 1) {
+	readInt32BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 4);
 	}
 
@@ -265,7 +265,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt32BE(count = 1) {
+	readUInt32BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 4);
 	}
 
@@ -274,7 +274,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt40LE(count = 1) {
+	readInt40LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 5);
 	}
 
@@ -283,7 +283,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt40LE(count = 1) {
+	readUInt40LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 5);
 	}
 
@@ -292,7 +292,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt40BE(count = 1) {
+	readInt40BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 5);
 	}
 	
@@ -301,7 +301,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt40BE(count = 1) {
+	readUInt40BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 5);
 	}
 
@@ -310,7 +310,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt48LE(count = 1) {
+	readInt48LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_INT, 6);
 	}
 
@@ -319,7 +319,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt48LE(count = 1) {
+	readUInt48LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, 6);
 	}
 
@@ -328,7 +328,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt48BE(count = 1) {
+	readInt48BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 6);
 	}
 
@@ -337,7 +337,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt48BE(count = 1) {
+	readUInt48BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_UINT, 6);
 	}
 
@@ -346,7 +346,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt64LE(count = 1) {
+	readInt64LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_INT, 8);
 	}
 
@@ -355,7 +355,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt64LE(count = 1) {
+	readUInt64LE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_BIG_UINT, 8);
 	}
 
@@ -364,7 +364,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readInt64BE(count = 1) {
+	readInt64BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_BIG_INT, 8);
 	}
 
@@ -373,7 +373,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
 	 */
-	readUInt64BE(count = 1) {
+	readUInt64BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_BIG_UINT, 8);
 	}
 
@@ -382,7 +382,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {float|float[]}
 	 */
-	readFloatLE(count = 1) {
+	readFloatLE(count) {
 		return this._readInt(count, LITTLE_ENDIAN.READ_FLOAT, 4);
 	}
 
@@ -391,7 +391,7 @@ class BufferWrapper {
 	 * @param {number} count How many to read.
 	 * @returns {float|float[]}
 	 */
-	readFloatBE(count = 1) {
+	readFloatBE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_FLOAT, 4);
 	}
 
@@ -782,7 +782,7 @@ class BufferWrapper {
 	 * @returns {number|number[]}
 	 */
 	_readInt(count, func, byteLength) {
-		if (count > 1) {
+		if (count !== undefined) {
 			this._checkBounds(byteLength * count);
 
 			const values = new Array(count);
