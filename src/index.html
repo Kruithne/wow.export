@@ -132,6 +132,10 @@
 								<input type="checkbox" v-model="config.modelsShowWMO"/>
 								<span>Show WMO</span>
 							</label>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.modelsAutoPreview"/>
+								<span>Preview</span>
+							</label>
 							<menu-button :label="'Export as %s'" :options="['OBJ', 'M2/WMO']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 						</div>
 					</div>

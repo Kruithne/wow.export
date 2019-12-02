@@ -206,6 +206,10 @@ core.events.once('init', () => {
 
 	// Track selection changes on the model listbox and preview first model.
 	core.view.$watch('selectionModels', async selection => {
+		// Don't do anything if we're not loading models.
+		if (!core.view.config.modelsAutoPreview)
+			return;
+
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 		if (!isLoading && first && selectedFile !== first)
