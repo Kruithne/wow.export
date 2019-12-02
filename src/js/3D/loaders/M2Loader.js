@@ -90,6 +90,8 @@ class Skin {
 					textureAnim: data.readUInt16LE()
 				};
 			}
+
+			this.isLoaded = true;
 		} catch (e) {
 			throw new Error(util.format('Unable to load skin fileDataID %d: %s', this.fileDataID, e.message));
 		}
