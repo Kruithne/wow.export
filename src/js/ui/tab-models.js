@@ -7,6 +7,7 @@ const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const M2Loader = require('../3D/loaders/M2Loader');
 const BLPFile = require('../casc/blp');
+const Texture = require('../3D/Texture');
 
 let isLoading = false;
 let selectedFile = null;
@@ -35,6 +36,8 @@ const previewModel = async (fileName) => {
 			loadedM2 = new M2Loader(file);
 			await loadedM2.load();
 
+			console.log(loadedM2);
+
 			// Don't try to load a model without veritices.
 			if (loadedM2.vertices.length > 0) {
 				const skin = await loadedM2.getSkin(0);
@@ -48,6 +51,12 @@ const previewModel = async (fileName) => {
 						const blp = new BLPFile(data);
 
 						const tex = new THREE.TextureLoader().load(await blp.getDataURL());
+						if (texture.flags & Texture.FLAG_WRAP_U)
+							tex.wrapS = THREE.RepeatWrapping;
+
+						if (texture.flags & Texture.FLAG_WRAP_V)
+							tex.wrapT = THREE.RepeatWrapping;
+
 						const mat = new THREE.MeshPhongMaterial({ map: tex });
 
 						materials[i] = mat;
