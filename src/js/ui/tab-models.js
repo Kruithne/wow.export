@@ -17,6 +17,8 @@ let loadedM2, loadedModel;
 
 let loadedTextures = [];
 
+const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
+
 const previewModel = async (fileName) => {
 	isLoading = true;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
@@ -67,6 +69,8 @@ const previewModel = async (fileName) => {
 						loadedTextures.push(tex);
 						const mat = new THREE.MeshPhongMaterial({ map: tex });
 						materials[i] = mat;
+					} else {
+						materials[i] = DEFAULT_MATERIAL;
 					}
 				}
 
