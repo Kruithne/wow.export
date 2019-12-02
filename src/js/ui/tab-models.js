@@ -68,8 +68,6 @@ const previewModel = async (fileName) => {
 						const mat = new THREE.MeshPhongMaterial({ map: tex });
 						materials[i] = mat;
 					}
-
-					//const mat = new THREE.TextureLoader().load(data.getDataURL());
 				}
 
 				const geometry = new THREE.BufferGeometry();
