@@ -89,6 +89,7 @@ class CASCRemote extends CASC {
 	 * @param {number} fileDataID 
 	 */
 	async getFile(fileDataID) {
+		log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 		const encodingKey = await super.getFile(fileDataID);
 		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
 

@@ -9,6 +9,7 @@ const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
 const BuildCache = require('./build-cache');
 const BLTEReader = require('./blte-reader');
+const listfile = require('./listfile');
 const core = require('../core');
 
 class CASCLocal extends CASC {
@@ -46,7 +47,7 @@ class CASCLocal extends CASC {
 	 * @param {number} fileDataID 
 	 */
 	async getFile(fileDataID) {
-		log.write('Loading local CASC file %d', fileDataID);
+		log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 		const encodingKey = await super.getFile(fileDataID);
 		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey);
 	}
