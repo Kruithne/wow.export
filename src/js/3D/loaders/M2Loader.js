@@ -152,6 +152,9 @@ class M2Loader {
 	 */
 	async parseChunk_MD21() {
 		const data = this.data;
+		const ofs = data.offset;
+
+
 		const magic = data.readUInt32LE();
 		if (magic !== MAGIC_MD20)
 			throw new Error('Invalid M2 magic: ' + magic);
@@ -169,7 +172,7 @@ class M2Loader {
 		this.viewCount = data.readUInt32LE();
 	
 		// Read model name (Always followed by single 0x0 character, -1 to trim).
-		data.seek(modelNameOfs + 8);
+		data.seek(modelNameOfs + ofs);
 		this.name = data.readString(modelNameLength - 1);
 
 		// Read verticies.	
@@ -177,7 +180,7 @@ class M2Loader {
 		const verts = this.vertices = new Array(verticesCount * 12);
 		const normals = this.normals = new Array(verticesCount * 12);
 		const uv = this.uv = new Array(verticesCount * 8);
-		data.seek(verticesOfs + 8);
+		data.seek(verticesOfs + ofs);
 	
 		for (let i = 0; i < verticesCount; i++) {
 			const index = i * 12;
