@@ -2,14 +2,9 @@ const core = require('../core');
 const ExportHelper = require('../casc/export-helper');
 
 core.events.once('init', () => {
-	// Track selection changes on the video listbox and set first as active entry.
-	core.events.on('user-select-video', async selection => {
-		// Store the full selection for exporting purposes.
-		userSelection = selection;
-	});
-
 	// Track when the user clicks to export selected sound files.
 	core.events.on('click-export-video', async () => {
+		const userSelection = core.view.selectionVideos;
 		if (userSelection.length === 0) {
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;

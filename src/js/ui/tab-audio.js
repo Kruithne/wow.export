@@ -124,10 +124,7 @@ core.events.once('init', () => {
 	});
 
 	// Track selection changes on the sound listbox and set first as active entry.
-	core.events.on('user-select-sound', async selection => {
-		// Store the full selection for exporting purposes.
-		userSelection = selection;
-
+	core.view.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 		if (!isLoading && first && selectedFile !== first) {
@@ -143,6 +140,7 @@ core.events.once('init', () => {
 
 	// Track when the user clicks to export selected sound files.
 	core.events.on('click-export-sound', async () => {
+		const userSelection = core.view.selectionSounds;
 		if (userSelection.length === 0) {
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;

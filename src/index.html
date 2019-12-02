@@ -91,7 +91,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :items="listfileTextures" :filter="userInputFilterTextures" @selection-changed="emit('user-select-texture', ...arguments)"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
@@ -113,7 +113,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :items="listfileModels" :filter="userInputFilterModels" @selection-changed="emit('user-select-model', ...arguments)"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
@@ -139,7 +139,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :items="listfileVideos" :filter="userInputFilterVideos" @selection-changed="emit('user-select-video', ...arguments)"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
@@ -150,7 +150,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :items="listfileSounds" :filter="userInputFilterSounds" @selection-changed="emit('user-select-sound', ...arguments)"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>

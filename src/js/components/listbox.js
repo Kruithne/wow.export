@@ -3,7 +3,7 @@ Vue.component('listbox', {
 	 * component.items should contain a reference to an array
 	 * containing items to display in the listbox.
 	 */
-	props: ['items', 'filter'],
+	props: ['items', 'filter', 'selection'],
 
 	/**
 	 * Reactive instance data.
@@ -14,7 +14,6 @@ Vue.component('listbox', {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1,
-			selection: [],
 			lastSelectIndex: -1
 		}
 	},
@@ -76,12 +75,13 @@ Vue.component('listbox', {
 			if (filter.length > 0)
 				res =  res.filter(e => e.includes(filter));
 
-			const newSelection = [];
-			for (const selected of this.selection)
-				if (res.includes(selected))
-					newSelection.push(selected);
+			// Remove anything from the user selection that has now been filtered out.
+			// Iterate backwards here due to re-indexing as elements are spliced.
+			for (let i = this.selection.length - 1; i >= 0; i--) {
+				if (!res.includes(this.selection[i]))
+					this.selection.splice(i, 1);
+			}
 
-			this.selection = newSelection;
 			return res;
 		},
 
@@ -184,7 +184,6 @@ Vue.component('listbox', {
 		 */
 		selectItem: function(item, selectIndex, event) {
 			const checkIndex = this.selection.indexOf(item);
-			let emit = false;
 
 			if (event.ctrlKey) {
 				// Ctrl-key held, so allow multiple selections.
@@ -192,8 +191,6 @@ Vue.component('listbox', {
 					this.selection.splice(checkIndex, 1);
 				else
 					this.selection.push(item);
-
-				emit = true;
 			} else if (event.shiftKey) {
 				// Shift-key held, select a range.
 				if (this.lastSelectIndex > -1 && this.lastSelectIndex !== selectIndex) {
@@ -205,16 +202,14 @@ Vue.component('listbox', {
 						if (this.selection.indexOf(select) === -1)
 							this.selection.push(select);
 				}				
-
-				emit = true;
 			} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 				// Normal click, replace entire selection.
-				this.selection = [item];
-				emit = true;
+				this.selection.splice(0, this.selection.length);
+				this.selection.push(item);
 			}
 
-			if (emit)
-				this.$emit('selection-changed', this.selection);
+			//if (emit)
+				//this.$emit('selection-changed', this.selection);
 
 			this.lastSelectIndex = selectIndex;
 		}

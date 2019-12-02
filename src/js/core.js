@@ -37,6 +37,10 @@ const view = {
 	userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 	userInputFilterVideos: '', // Value of the 'filter' field for video files.
 	userInputFilterModels: '', // Value of the 'filter' field for models.
+	selectionTextures: [], // Current user selection of texture files.
+	selectionModels: [], // Current user selection of models.
+	selectionSounds: [], // Current user selection of sounds.
+	selectionVideos: [],  // Current user selection of videos.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.

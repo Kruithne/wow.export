@@ -11,7 +11,6 @@ const Texture = require('../3D/Texture');
 
 let isLoading = false;
 let selectedFile = null;
-let userSelection = [];
 
 let camera, scene;
 let loadedM2, loadedModel;
@@ -204,10 +203,7 @@ core.events.once('init', () => {
 	core.view.$watch('config.modelsShowWMO', updateListfile);
 
 	// Track selection changes on the model listbox and preview first model.
-	core.events.on('user-select-model', async selection => {
-		// Store the full selection for exporting purposes.
-		userSelection = selection;
-
+	core.view.$watch('selectionModels', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 		if (!isLoading && first && selectedFile !== first)
@@ -216,6 +212,7 @@ core.events.once('init', () => {
 
 	// Track when the user clicks to export selected textures.
 	core.events.on('click-export-model', async () => {
+		const userSelection = core.view.selectionModels;
 		if (userSelection.length === 0) {
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;

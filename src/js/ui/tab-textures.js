@@ -7,7 +7,6 @@ const ExportHelper = require('../casc/export-helper');
 
 let isLoading = false;
 let selectedFile = null;
-let userSelection = [];
 
 const EXPORT_TYPES = {
 	'PNG': { mime: 'image/png', ext: '.png' },
@@ -106,10 +105,7 @@ core.events.once('init', () => {
 	});
 
 	// Track selection changes on the texture listbox and preview first texture.
-	core.events.on('user-select-texture', async selection => {
-		// Store the full selection for exporting purposes.
-		userSelection = selection;
-
+	core.view.$watch('selectionTextures', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 		if (!isLoading && first && selectedFile !== first)
@@ -118,6 +114,7 @@ core.events.once('init', () => {
 
 	// Track when the user clicks to export selected textures.
 	core.events.on('click-export-texture', async () => {
+		const userSelection = core.view.selectionTextures;
 		if (userSelection.length === 0) {
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
