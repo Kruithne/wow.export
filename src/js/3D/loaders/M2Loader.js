@@ -8,6 +8,7 @@ const MAGIC_MD20 = 0x3032444D;
 const MAGIC_SKIN = 0x4E494B53;
 
 const CHUNK_SFID = 0x44494653;
+const CHUNK_TXID = 0x44495854;
 
 class Skin {
 	constructor(fileDataID) {
@@ -98,6 +99,42 @@ class Skin {
 	}
 }
 
+class Texture {
+	/**
+	 * Construct a new Texture instance.
+	 * @param {number} type 
+	 * @param {number} flags 
+	 */
+	constructor(type, flags) {
+		this.type = type;
+		this.flags = flags;
+		this.fileDataID = 0;
+	}
+
+	/**
+	 * Set the texture file using a file name.
+	 * @param {string} fileName 
+	 */
+	setFileName(fileName) {
+		this.fileDataID = listfile.getByFilename(fileName) || 0;
+	}
+
+	/**
+	 * Obtain the texture file for this texture, instance cached.
+	 * Returns NULL if fileDataID is not set.
+	 */
+	async getTextureFile() {
+		if (this.fileDataID > 0) {
+			if (!this.data)
+				this.data = await core.view.casc.getFile(this.fileDataID);
+
+			return this.data;
+		}
+
+		return null;
+	}
+}
+
 class M2Loader {
 	/**
 	 * Construct a new M2Loader instance.
@@ -119,6 +156,7 @@ class M2Loader {
 			switch (chunkID) {
 				case MAGIC_MD21: await this.parseChunk_MD21(); break;
 				case CHUNK_SFID: this.parseChunk_SFID(); break;
+				case CHUNK_TXID: this.parseChunk_TXID(); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -152,12 +190,22 @@ class M2Loader {
 	}
 
 	/**
+	 * Parse TXID chunk for texture file data IDs.
+	 */
+	parseChunk_TXID() {
+		if (this.textures === undefined)
+			throw new Error('Cannot parse TXID chunk in M2 before MD21 chunk!');
+
+		for (let i = 0, n = this.textures.length; i < n; i++)
+			this.textures[i].fileDataID = this.data.readUInt32LE();
+	}
+
+	/**
 	 * Parse MD21 chunk.
 	 */
 	async parseChunk_MD21() {
 		const data = this.data;
 		const ofs = data.offset;
-
 
 		const magic = data.readUInt32LE();
 		if (magic !== MAGIC_MD20)
@@ -174,6 +222,10 @@ class M2Loader {
 		const verticesOfs = data.readUInt32LE();
 	
 		this.viewCount = data.readUInt32LE();
+		data.move(8); // coloursCount, coloursOfs
+
+		const texturesCount = data.readUInt32LE();
+		const texturesOfs = data.readUInt32LE();
 	
 		// Read model name (Always followed by single 0x0 character, -1 to trim).
 		data.seek(modelNameOfs + ofs);
@@ -202,6 +254,35 @@ class M2Loader {
 			uv[uvIndex + 1] = data.readFloatLE();
 
 			data.move(8); // texCoordX2, texCoordY2?
+		}
+
+		// Read textures.
+		data.seek(texturesOfs + ofs);
+		const textures = this.textures = new Array(texturesCount);
+
+		for (let i = 0; i < texturesCount; i++) {
+			const texture = new Texture(data.readUInt32LE(), data.readUInt32LE());
+
+			// Check if texture has a filename (legacy).
+			if (texture.type === 0) {
+				const nameLength = data.readUInt32LE();
+				const nameOfs = data.readUInt32LE();
+
+				if (nameOfs >= 10) {
+					const pos = data.offset;
+
+					data.seek(nameOfs);
+					const fileName = data.readString(nameLength);
+					fileName.replace('\0', ''); // Remove NULL characters.
+
+					if (fileName.length > 0)
+						texture.setFileName(fileName);
+
+					data.seek(pos);
+				}
+			}
+
+			textures[i] = texture;
 		}
 	}
 }

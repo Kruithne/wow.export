@@ -6,6 +6,7 @@ const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const M2Loader = require('../3D/loaders/M2Loader');
+const BLPFile = require('../casc/blp');
 
 let isLoading = false;
 let selectedFile = null;
@@ -14,18 +15,22 @@ let userSelection = [];
 let camera, scene;
 let loadedM2, loadedModel;
 
+let loadedTextures = [];
+
 const previewModel = async (fileName) => {
 	isLoading = true;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	log.write('Previewing model %s', fileName);
 
 	try {
+		// Dispose of existing model.
+		if (loadedModel) {
+			scene.remove(loadedModel);
+			loadedModel.geometry.dispose();
+		}
+
 		const file = await core.view.casc.getFileByName(fileName);
 		if (fileName.toLowerCase().endsWith('.m2')) {
-			if (loadedModel) {
-				scene.remove(loadedModel);
-				loadedModel.geometry.dispose();
-			}
 
 			loadedM2 = new M2Loader(file);
 			await loadedM2.load();
@@ -33,6 +38,23 @@ const previewModel = async (fileName) => {
 			// Don't try to load a model without veritices.
 			if (loadedM2.vertices.length > 0) {
 				const skin = await loadedM2.getSkin(0);
+				const materials = new Array(loadedM2.textures.length);
+
+				for (let i = 0, n = loadedM2.textures.length; i < n; i++) {
+					const texture = loadedM2.textures[i];
+
+					if (texture.fileDataID > 0) {
+						const data = await texture.getTextureFile();
+						const blp = new BLPFile(data);
+
+						const tex = new THREE.TextureLoader().load(await blp.getDataURL());
+						const mat = new THREE.MeshPhongMaterial({ map: tex });
+
+						materials[i] = mat;
+					}
+
+					//const mat = new THREE.TextureLoader().load(data.getDataURL());
+				}
 
 				const geometry = new THREE.BufferGeometry();
 				geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(loadedM2.vertices), 3));
@@ -40,10 +62,13 @@ const previewModel = async (fileName) => {
 				geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(loadedM2.uv), 2));
 				geometry.setIndex(skin.triangles);
 
-				for (const mesh of skin.submeshes)
-					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, 0);
+				for (let i = 0, n = skin.submeshes.length; i < n; i++) {
+					const mesh = skin.submeshes[i];
+					const texUnit = skin.textureUnits.find(tex => tex.submeshIndex === i);
+					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, texUnit.texture);
+				}
 
-				loadedModel = new THREE.Mesh(geometry);
+				loadedModel = new THREE.Mesh(geometry, materials);
 				scene.add(loadedModel);
 
 				// Adjust for weird WoW rotations?

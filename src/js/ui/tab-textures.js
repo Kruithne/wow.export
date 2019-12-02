@@ -12,6 +12,8 @@ let userSelection = [];
 let previewContainer = null;
 let previewInner = null;
 
+let previewBLP = null;
+
 const EXPORT_TYPES = {
 	'PNG': { mime: 'image/png', ext: '.png' },
 	'JPG': { mime: 'image/jpeg', ext: '.jpg' },
@@ -24,23 +26,21 @@ const previewTexture = async (texture) => {
 	log.write('Previewing texture file %s', texture);
 
 	try {
+		// Ensure we clear any existing data objects.
+		if (previewBLP)
+			previewBLP.revokeDataURL();
+			
 		const file = await core.view.casc.getFileByName(texture);
-		const blp = new BLPFile(file);
+		previewBLP = new BLPFile(file);
 
 		if (!previewContainer || !previewInner) {
 			previewContainer = document.getElementById('texture-preview');
 			previewInner = previewContainer.querySelector('div');
 		}
 
-		const canvas = document.createElement('canvas');
-		canvas.width = blp.width;
-		canvas.height = blp.height;
-
-		blp.drawToCanvas(canvas, 0, core.view.config.exportTextureAlpha);
-
-		previewInner.style.backgroundImage = 'url(' + canvas.toDataURL() + ')';
-		previewContainer.style.maxHeight = blp.height + 'px';
-		previewContainer.style.maxWidth = blp.width + 'px';
+		previewInner.style.backgroundImage = 'url(' + previewBLP.getDataURL(core.view.config.exportTextureAlpha) + ')';
+		previewContainer.style.maxHeight = previewBLP.height + 'px';
+		previewContainer.style.maxWidth = previewBLP.width + 'px';
 
 		selectedFile = texture;
 		toast.cancel();

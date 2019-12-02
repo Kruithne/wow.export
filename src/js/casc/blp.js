@@ -75,6 +75,32 @@ class BLPImage {
 	}
 
 	/**
+	 * Assign a data URL to this image and return it.
+	 * If a URL is already bound, it is reassigned.
+	 * @param {boolean} useAlpha 
+	 */
+	async getDataURL(useAlpha = true) {
+		if (this.dataURL)
+			this.revokeDataURL();
+
+		const canvas = document.createElement('canvas');
+		canvas.width = this.width;
+		canvas.height = this.height;
+
+		this.drawToCanvas(canvas, 0, useAlpha);
+		this.dataURL = canvas.toDataURL();
+		return this.dataURL;
+	}
+
+	/**
+	 * Revoke the data URL assigned to this image.
+	 */
+	revokeDataURL() {
+		if (this.dataURL)
+			URL.revokeObjectURL(this.dataURL);
+	}
+
+	/**
 	 * Draw the contents of this BLP file onto a canvas.
 	 * @param {HTMLElement} canvas 
 	 * @param {number} mipmap 
