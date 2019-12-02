@@ -56,10 +56,18 @@ const previewModel = async (fileName) => {
 					const texture = loadedM2.textures[i];
 
 					if (texture.fileDataID > 0) {
-						const data = await texture.getTextureFile();
-						const blp = new BLPFile(data);
+						const tex = new THREE.Texture();
+						const loader = new THREE.ImageLoader();
 
-						const tex = new THREE.TextureLoader().load(blp.getDataURL());
+						texture.getTextureFile().then(data => {
+							const blp = new BLPFile(data);
+							loader.load(blp.getDataURL(), image => {
+								tex.image = image;
+								tex.format = THREE.RGBAFormat;
+								tex.needsUpdate = true;
+							});
+						});
+
 						if (texture.flags & Texture.FLAG_WRAP_U)
 							tex.wrapS = THREE.RepeatWrapping;
 
