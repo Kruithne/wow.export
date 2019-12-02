@@ -1,104 +1,11 @@
-const util = require('util');
-const listfile = require('../../casc/listfile');
-const core = require('../../core');
 const Texture = require('../Texture');
+const Skin = require('../Skin');
 
 const MAGIC_MD21 = 0x3132444D;
 const MAGIC_MD20 = 0x3032444D;
 
-const MAGIC_SKIN = 0x4E494B53;
-
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
-
-class Skin {
-	constructor(fileDataID) {
-		this.fileDataID = fileDataID;
-		this.fileName = listfile.getByID(fileDataID);
-		this.isLoaded = false;
-	}
-
-	async load() {
-		try {
-			const data = await core.view.casc.getFile(this.fileDataID);
-
-			const magic = data.readUInt32LE();
-			if (magic !== MAGIC_SKIN)
-				throw new Error('Invalid magic: ' + magic);
-
-			const indiciesCount = data.readUInt32LE();
-			const indiciesOfs = data.readUInt32LE();
-			const trianglesCount = data.readUInt32LE();
-			const trianglesOfs = data.readUInt32LE();
-			const propertiesCount = data.readUInt32LE();
-			const propertiesOfs = data.readUInt32LE();
-			const submeshesCount = data.readUInt32LE();
-			const submeshesOfs = data.readUInt32LE();
-			const textureUnitsCount = data.readUInt32LE();
-			const textureUnitsOfs = data.readUInt32LE();
-			this.bones = data.readUInt32LE();
-			
-			// Read indicies.
-			data.seek(indiciesOfs);
-			this.indicies = data.readUInt16LE(indiciesCount);
-
-			// Read triangles.
-			data.seek(trianglesOfs);
-			this.triangles = data.readUInt16LE(trianglesCount);
-
-			// Read properties.
-			data.seek(propertiesOfs);
-			this.properties = data.readUInt8(propertiesCount);
-
-			// Read submeshes.
-			data.seek(submeshesOfs);
-			this.submeshes = new Array(submeshesCount);
-			for (let i = 0; i < submeshesCount; i++) {
-				this.submeshes[i] = {
-					submeshID: data.readUInt16LE(),
-					level: data.readUInt16LE(),
-					vertexStart: data.readUInt16LE(),
-					vertexCount: data.readUInt16LE(),
-					triangleStart: data.readUInt16LE(),
-					triangleCount: data.readUInt16LE(),
-					boneCount: data.readUInt16LE(),
-					boneStart: data.readUInt16LE(),
-					boneInfluences: data.readUInt16LE(),
-					centerBoneIndex: data.readUInt16LE(),
-					centerPosition: data.readFloatLE(3),
-					sortCenterPosition: data.readFloatLE(3),
-					sortRadius: data.readFloatLE()
-				};
-
-				this.submeshes[i].triangleStart += this.submeshes[i].level << 16;
-			}
-
-			// Read texture units.
-			data.seek(textureUnitsOfs);
-			this.textureUnits = new Array(textureUnitsCount);
-			for (let i = 0; i < textureUnitsCount; i++) {
-				this.textureUnits[i] = {
-					flags: data.readUInt16LE(),
-					shading: data.readUInt16LE(),
-					submeshIndex: data.readUInt16LE(),
-					submeshIndex2: data.readUInt16LE(),
-					colorIndex: data.readUInt16LE(),
-					renderFlags: data.readUInt16LE(),
-					texUnitNumber: data.readUInt16LE(),
-					mode: data.readUInt16LE(),
-					texture: data.readUInt16LE(),
-					texUnitNumber2: data.readUInt16LE(),
-					transparency: data.readUInt16LE(),
-					textureAnim: data.readUInt16LE()
-				};
-			}
-
-			this.isLoaded = true;
-		} catch (e) {
-			throw new Error(util.format('Unable to load skin fileDataID %d: %s', this.fileDataID, e.message));
-		}
-	}
-}
 
 class M2Loader {
 	/**
