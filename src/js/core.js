@@ -48,6 +48,9 @@ const view = {
 	soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
 	soundPlayerDuration: 0, // Duration of the currently playing sound track.
 	modelViewerContext: null, // 3D context for the model viewer.
+	texturePreviewWidth: 256, // Active width of the texture preview.
+	texturePreviewHeight: 256, // Active height of the texture preview.
+	texturePreviewURL: '' // Active URL of the texture preview image.
 };
 
 /**

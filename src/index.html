@@ -97,8 +97,8 @@
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
 						</div>
 						<div class="preview-container">
-							<div class="preview-background" id="texture-preview">
-								<div></div>
+							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
+								<div :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
 							</div>
 						</div>
 						<div class="preview-controls">

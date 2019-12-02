@@ -93,14 +93,6 @@ class BLPImage {
 	}
 
 	/**
-	 * Revoke the data URL assigned to this image.
-	 */
-	revokeDataURL() {
-		if (this.dataURL)
-			URL.revokeObjectURL(this.dataURL);
-	}
-
-	/**
 	 * Draw the contents of this BLP file onto a canvas.
 	 * @param {HTMLElement} canvas 
 	 * @param {number} mipmap 
