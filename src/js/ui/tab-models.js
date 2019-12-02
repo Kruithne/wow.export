@@ -16,6 +16,8 @@ let userSelection = [];
 let camera, scene;
 let loadedM2, loadedModel;
 
+let loadedTextures = [];
+
 const previewModel = async (fileName) => {
 	isLoading = true;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
@@ -26,6 +28,14 @@ const previewModel = async (fileName) => {
 		if (loadedModel) {
 			scene.remove(loadedModel);
 			loadedModel.geometry.dispose();
+		}
+
+		// Dispose of loaded textures.
+		if (loadedTextures.length > 1) {
+			for (let tex of loadedTextures)
+				tex.dispose();
+
+			loadedTextures = [];
 		}
 
 		const file = await core.view.casc.getFileByName(fileName);
@@ -55,8 +65,8 @@ const previewModel = async (fileName) => {
 						if (texture.flags & Texture.FLAG_WRAP_V)
 							tex.wrapT = THREE.RepeatWrapping;
 
+						loadedTextures.push(tex);
 						const mat = new THREE.MeshPhongMaterial({ map: tex });
-
 						materials[i] = mat;
 					}
 
