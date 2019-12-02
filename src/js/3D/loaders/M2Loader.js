@@ -178,7 +178,6 @@ class M2Loader {
 		this.name = data.readString(modelNameLength - 1);
 
 		// Read verticies.	
-		data.seek(this.vertices)
 		const verts = this.vertices = new Array(verticesCount * 12);
 		const normals = this.normals = new Array(verticesCount * 12);
 		const uv = this.uv = new Array(verticesCount * 8);
