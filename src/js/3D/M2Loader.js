@@ -14,6 +14,7 @@ class M2Loader {
 	 */
 	constructor(data) {
 		this.data = data;
+		this.encrypted = false;
 	}
 
 	/**
@@ -29,6 +30,7 @@ class M2Loader {
 				case MAGIC_MD21: await this.parseChunk_MD21(); break;
 				case CHUNK_SFID: this.parseChunk_SFID(); break;
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
+				case 0x0: this.encrypted = true; return;
 			}
 	
 			// Ensure that we start at the next chunk exactly.

@@ -48,7 +48,11 @@ const previewModel = async (fileName) => {
 			console.log(loadedM2);
 
 			// Don't try to load a model without veritices.
-			if (loadedM2.vertices.length > 0) {
+			if (loadedM2.encrypted) {
+				// We can't decrypt this model, display an error.
+				toast.cancel();
+				core.setToast('error', util.format('No publicly known decryption key for %s yet. You can manually add one in settings.', fileName));
+			} else if (loadedM2.vertices.length > 0) {
 				const skin = await loadedM2.getSkin(0);
 				const materials = new Array(loadedM2.textures.length);
 
