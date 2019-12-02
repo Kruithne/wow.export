@@ -1,3 +1,5 @@
+require('../3D/lib/OrbitControls');
+
 Vue.component('model-viewer', {
 	props: ['context'],
 
@@ -6,6 +8,7 @@ Vue.component('model-viewer', {
 			if (!this.isRendering)
 				return;
 	
+			this.controls.update();
 			this.renderer.render(this.context.scene, this.context.camera);
 			requestAnimationFrame(() => this.render());
 		}
@@ -20,6 +23,9 @@ Vue.component('model-viewer', {
 
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
+
+		this.controls = new THREE.OrbitControls(this.context.camera, canvas);
+		this.context.controls = this.controls;
 
 		this.onResize = () => {
 			// We need to remove the canvas from the container so that the layout updates
@@ -46,6 +52,8 @@ Vue.component('model-viewer', {
 	 */
 	beforeDestroy: function() {
 		this.isRendering = false;
+		this.controls.dispose();
+		this.renderer.dispose();
 		window.removeEventListener('resize', this.onResize);
 	},
 

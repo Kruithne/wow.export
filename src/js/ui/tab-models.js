@@ -11,7 +11,8 @@ let isLoading = false;
 let selectedFile = null;
 let userSelection = [];
 
-let camera, scene, mesh;
+let camera, scene;
+let loadedM2, loadedModel;
 
 const previewModel = async (fileName) => {
 	isLoading = true;
@@ -21,9 +22,59 @@ const previewModel = async (fileName) => {
 	try {
 		const file = await core.view.casc.getFileByName(fileName);
 		if (fileName.toLowerCase().endsWith('.m2')) {
-			const m2 = new M2Loader(file);
-			await m2.load();
-			console.log(m2);
+			if (loadedModel) {
+				scene.remove(loadedModel);
+				loadedModel.geometry.dispose();
+			}
+
+			loadedM2 = new M2Loader(file);
+			await loadedM2.load();
+
+			// Don't try to load a model without veritices.
+			if (loadedM2.vertices.length > 0) {
+				const skin = await loadedM2.getSkin(0);
+
+				const geometry = new THREE.BufferGeometry();
+				geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(loadedM2.vertices), 3));
+				geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(loadedM2.normals), 3));
+				geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(loadedM2.uv), 2));
+				geometry.setIndex(skin.triangles);
+
+				for (const mesh of skin.submeshes)
+					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, 0);
+
+				loadedModel = new THREE.Mesh(geometry);
+				scene.add(loadedModel);
+
+				// Adjust for weird WoW rotations?
+				loadedModel.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
+				loadedModel.rotateOnAxis(new THREE.Vector3(0, 0, 1), 270 * (Math.PI / 180));
+
+				// Get the bounding box for the model.
+				const boundingBox = new THREE.Box3();
+				boundingBox.setFromObject(loadedModel);
+
+				// Calculate center point and size from bounding box.
+				const center = boundingBox.getCenter(new THREE.Vector3());
+				const size = boundingBox.getSize(new THREE.Vector3());
+
+				const maxDim = Math.max(size.x, size.y, size.z);
+				const fov = camera.fov * (Math.PI / 180);
+				let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
+				camera.position.set(center.x, center.y, cameraZ);
+
+				const minZ = boundingBox.min.z;
+				const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
+
+				camera.far = cameraToFarEdge * 3;
+				camera.updateProjectionMatrix();
+
+				const controls = core.view.modelViewerContext.controls;
+				if (controls) {
+					controls.target = center;
+					controls.maxDistance = cameraToFarEdge * 2;
+				}
+			}
 		}
 
 		selectedFile = fileName;
@@ -81,11 +132,8 @@ const updateListfile = () => {
 };
 
 const onRender = () => {
-	if (mesh)
-		mesh.rotation.y += 0.01;
-	//mesh.rotation.y += 0.02;
 
-	//renderer.render(scene, camera);
+	
 	requestAnimationFrame(onRender);
 };
 
@@ -99,8 +147,6 @@ core.registerDropHandler({
 // The first time the user opens up the model tab, initialize 3D preview.
 core.events.once('screen-tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 10);
-	camera.position.z = 1.2;
-	camera.position.y = 0.4;
 
 	scene = new THREE.Scene();
 	const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
