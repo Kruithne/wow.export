@@ -55,9 +55,9 @@ class Skin {
 				this.submeshes[i] = {
 					submeshID: data.readUInt16LE(),
 					level: data.readUInt16LE(),
-					vertexStart: data.readUInt32LE(),
+					vertexStart: data.readUInt16LE(),
 					vertexCount: data.readUInt16LE(),
-					triangleStart: data.readUInt32LE(),
+					triangleStart: data.readUInt16LE(),
 					triangleCount: data.readUInt16LE(),
 					boneCount: data.readUInt16LE(),
 					boneStart: data.readUInt16LE(),
@@ -67,6 +67,8 @@ class Skin {
 					sortCenterPosition: data.readFloatLE(3),
 					sortRadius: data.readFloatLE()
 				};
+
+				this.submeshes[i].triangleStart += this.submeshes[i].level << 16;
 			}
 
 			// Read texture units.
