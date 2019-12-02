@@ -5,7 +5,6 @@ const tactKeys = require('./tact-keys');
 
 const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
-const ENC_TYPE_ARC4 = 0x41;
 const EMPTY_HASH = '00000000000000000000000000000000';
 
 class BLTEReader extends BufferWrapper {
@@ -193,7 +192,7 @@ class BLTEReader extends BufferWrapper {
 			throw new Error('[BLTE] Unexpected end of data before encryption flag.');
 
 		const encryptType = data.readUInt8();
-		if (encryptType !== ENC_TYPE_SALSA20 && encryptType !== ENC_TYPE_ARC4)
+		if (encryptType !== ENC_TYPE_SALSA20)
 			throw new Error('[BLTE] Unexpected encryption type: ' + encryptType);
 
 		for (let shift = 0, i = 0; i < 4; shift += 8, i++)
