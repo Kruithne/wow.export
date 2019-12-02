@@ -198,6 +198,8 @@ class M2Loader {
 			const uvIndex = i * 8;
 			uv[uvIndex] = data.readFloatLE();
 			uv[uvIndex + 1] = data.readFloatLE();
+
+			data.move(8); // texCoordX2, texCoordY2?
 		}
 	}
 }
