@@ -178,13 +178,13 @@ class M2Loader {
 		this.name = data.readString(modelNameLength - 1);
 
 		// Read verticies.	
-		const verts = this.vertices = new Array(verticesCount * 12);
-		const normals = this.normals = new Array(verticesCount * 12);
-		const uv = this.uv = new Array(verticesCount * 8);
+		const verts = this.vertices = new Array(verticesCount * 3);
+		const normals = this.normals = new Array(verticesCount * 3);
+		const uv = this.uv = new Array(verticesCount * 2);
 		data.seek(verticesOfs + ofs);
 	
 		for (let i = 0; i < verticesCount; i++) {
-			const index = i * 12;
+			const index = i * 3;
 			verts[index] = data.readFloatLE();
 			verts[index + 1] = data.readFloatLE();
 			verts[index + 2] = data.readFloatLE();
@@ -195,7 +195,7 @@ class M2Loader {
 			normals[index + 1] = data.readFloatLE();
 			normals[index + 2] = data.readFloatLE();
 	
-			const uvIndex = i * 8;
+			const uvIndex = i * 2;
 			uv[uvIndex] = data.readFloatLE();
 			uv[uvIndex + 1] = data.readFloatLE();
 
