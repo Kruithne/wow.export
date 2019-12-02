@@ -48,7 +48,7 @@ class Skin {
 			this.submeshes = new Array(submeshesCount);
 			for (let i = 0; i < submeshesCount; i++) {
 				this.submeshes[i] = {
-					submeshID: data.readUInt16LE(),
+					skinSectionID: data.readUInt16LE(),
 					level: data.readUInt16LE(),
 					vertexStart: data.readUInt16LE(),
 					vertexCount: data.readUInt16LE(),
@@ -71,18 +71,19 @@ class Skin {
 			this.textureUnits = new Array(textureUnitsCount);
 			for (let i = 0; i < textureUnitsCount; i++) {
 				this.textureUnits[i] = {
-					flags: data.readUInt16LE(),
-					shading: data.readUInt16LE(),
-					submeshIndex: data.readUInt16LE(),
-					submeshIndex2: data.readUInt16LE(),
+					flags: data.readUInt8(),
+					priority: data.readUInt8(),
+					shaderID: data.readUInt16LE(),
+					skinSectionIndex: data.readUInt16LE(),
+					geosetIndex: data.readUInt16LE(),
 					colorIndex: data.readUInt16LE(),
-					renderFlags: data.readUInt16LE(),
-					texUnitNumber: data.readUInt16LE(),
-					mode: data.readUInt16LE(),
-					texture: data.readUInt16LE(),
-					texUnitNumber2: data.readUInt16LE(),
-					transparency: data.readUInt16LE(),
-					textureAnim: data.readUInt16LE()
+					materialIndex: data.readUInt16LE(),
+					materialLayer: data.readUInt16LE(),
+					textureCount: data.readUInt16LE(),
+					textureComboIndex: data.readUInt16LE(),
+					textureCoordComboIndex: data.readUInt16LE(),
+					textureWeightComboIndex: data.readUInt16LE(),
+					textureTransformComboIndex: data.readUInt16LE()
 				};
 			}
 
