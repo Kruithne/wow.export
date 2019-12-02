@@ -48,7 +48,7 @@ class Skin {
 			this.submeshes = new Array(submeshesCount);
 			for (let i = 0; i < submeshesCount; i++) {
 				this.submeshes[i] = {
-					skinSectionID: data.readUInt16LE(),
+					submeshID: data.readUInt16LE(),
 					level: data.readUInt16LE(),
 					vertexStart: data.readUInt16LE(),
 					vertexCount: data.readUInt16LE(),

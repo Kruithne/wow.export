@@ -81,7 +81,7 @@ const previewModel = async (fileName) => {
 				for (let i = 0, n = skin.submeshes.length; i < n; i++) {
 					const mesh = skin.submeshes[i];
 					const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
-					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, texUnit.materialIndex);
+					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, loadedM2.textureCombos[texUnit.textureComboIndex]);
 				}
 
 				loadedModel = new THREE.Mesh(geometry, materials);

@@ -98,6 +98,11 @@ class M2Loader {
 
 		const texturesCount = data.readUInt32LE();
 		const texturesOfs = data.readUInt32LE();
+
+		data.move(10 * 4); // UVAnim, TexReplace, renderFlags, boneLookup
+
+		const textureComboCount = data.readUInt32LE();
+		const textureComboOfs = data.readUInt32LE();
 	
 		// Read model name (Always followed by single 0x0 character, -1 to trim).
 		data.seek(modelNameOfs + ofs);
@@ -156,6 +161,10 @@ class M2Loader {
 
 			textures[i] = texture;
 		}
+
+		// Read texture lookups
+		data.seek(textureComboOfs + ofs);
+		this.textureCombos = data.readUInt16LE(textureComboCount);
 	}
 }
 
