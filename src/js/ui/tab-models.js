@@ -174,12 +174,6 @@ const updateListfile = () => {
 	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 };
 
-const onRender = () => {
-
-	
-	requestAnimationFrame(onRender);
-};
-
 // Register a drop handler for M2/WMO files.
 core.registerDropHandler({
 	ext: ['.m2', '.wmo'],
@@ -196,7 +190,6 @@ core.events.once('screen-tab-models', () => {
 	scene.add(light);
 
 	core.view.modelViewerContext = { camera, scene };
-	onRender();
 });
 
 core.events.once('init', () => {
