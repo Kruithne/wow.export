@@ -76,95 +76,132 @@ class M2Loader {
 	 * Parse MD21 chunk.
 	 */
 	async parseChunk_MD21() {
-		const data = this.data;
-		const ofs = data.offset;
+		const ofs = this.data.offset;
 
-		const magic = data.readUInt32LE();
+		const magic = this.data.readUInt32LE();
 		if (magic !== MAGIC_MD20)
 			throw new Error('Invalid M2 magic: ' + magic);
 	
-		this.version = data.readUInt32LE();
-		const modelNameLength = data.readUInt32LE();
-		const modelNameOfs = data.readUInt32LE();
+		this.version = this.data.readUInt32LE();
+		this.parseChunk_MD21_modelName(ofs);
+		this.data.move(11 * 4); // flags, loops, seq, bones.
+		this.parseChunk_MD21_verticies(ofs);
+		this.viewCount = this.data.readUInt32LE();
+		this.data.move(8); // coloursCount, coloursOfs
+		this.parseChunk_MD21_textures(ofs);
+		this.data.move(10 * 4); // UVAnim, TexReplace, renderFlags, boneLookup
+		this.parseChunk_MD21_textureCombos(ofs);
+	}
 	
-		this.modelFlags = data.readUInt32LE();
-		data.move(10 * 4);
-	
-		const verticesCount = data.readUInt32LE();
-		const verticesOfs = data.readUInt32LE();
-	
-		this.viewCount = data.readUInt32LE();
-		data.move(8); // coloursCount, coloursOfs
+	/**
+	 * Parse the model name from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_modelName(ofs) {
+		const modelNameLength = this.data.readUInt32LE();
+		const modelNameOfs = this.data.readUInt32LE();
 
-		const texturesCount = data.readUInt32LE();
-		const texturesOfs = data.readUInt32LE();
+		const base = this.data.offset;
+		this.data.seek(modelNameOfs + ofs);
 
-		data.move(10 * 4); // UVAnim, TexReplace, renderFlags, boneLookup
+		// Always followed by single 0x0 character, -1 to trim).
+		this.data.seek(modelNameOfs + ofs);
+		this.name = this.data.readString(modelNameLength - 1);
 
-		const textureComboCount = data.readUInt32LE();
-		const textureComboOfs = data.readUInt32LE();
-	
-		// Read model name (Always followed by single 0x0 character, -1 to trim).
-		data.seek(modelNameOfs + ofs);
-		this.name = data.readString(modelNameLength - 1);
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse verticies from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_verticies(ofs) {
+		const verticesCount = this.data.readUInt32LE();
+		const verticesOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(verticesOfs + ofs);
 
 		// Read verticies.	
 		const verts = this.vertices = new Array(verticesCount * 3);
 		const normals = this.normals = new Array(verticesCount * 3);
 		const uv = this.uv = new Array(verticesCount * 2);
-		data.seek(verticesOfs + ofs);
 	
 		for (let i = 0; i < verticesCount; i++) {
 			const index = i * 3;
-			verts[index] = data.readFloatLE();
-			verts[index + 1] = data.readFloatLE();
-			verts[index + 2] = data.readFloatLE();
+			verts[index] = this.data.readFloatLE();
+			verts[index + 1] = this.data.readFloatLE();
+			verts[index + 2] = this.data.readFloatLE();
 	
-			data.move(8); // boneWeight/boneIndicies.
+			this.data.move(8); // boneWeight/boneIndicies.
 	
-			normals[index] = data.readFloatLE();
-			normals[index + 1] = data.readFloatLE();
-			normals[index + 2] = data.readFloatLE();
+			normals[index] = this.data.readFloatLE();
+			normals[index + 1] = this.data.readFloatLE();
+			normals[index + 2] = this.data.readFloatLE();
 	
 			const uvIndex = i * 2;
-			uv[uvIndex] = data.readFloatLE();
-			uv[uvIndex + 1] = (data.readFloatLE() - 1) * -1;
+			uv[uvIndex] = this.data.readFloatLE();
+			uv[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 
-			data.move(8); // texCoordX2, texCoordY2?
+			this.data.move(8); // texCoordX2, texCoordY2?
 		}
 
-		// Read textures.
-		data.seek(texturesOfs + ofs);
-		const textures = this.textures = new Array(texturesCount);
+		this.data.seek(base);
+	}
 
+	/**
+	 * Parse textures from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textures(ofs) {
+		const texturesCount = this.data.readUInt32LE();
+		const texturesOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(texturesOfs + ofs);
+
+		// Read textures.
+		const textures = this.textures = new Array(texturesCount);
 		for (let i = 0; i < texturesCount; i++) {
-			const texture = new Texture(data.readUInt32LE(), data.readUInt32LE());
+			const texture = new Texture(this.data.readUInt32LE(), this.data.readUInt32LE());
 
 			// Check if texture has a filename (legacy).
 			if (texture.type === 0) {
-				const nameLength = data.readUInt32LE();
-				const nameOfs = data.readUInt32LE();
+				const nameLength = this.data.readUInt32LE();
+				const nameOfs = this.data.readUInt32LE();
 
 				if (nameOfs >= 10) {
-					const pos = data.offset;
+					const pos = this.data.offset;
 
-					data.seek(nameOfs);
-					const fileName = data.readString(nameLength);
+					this.data.seek(nameOfs);
+					const fileName = this.data.readString(nameLength);
 					fileName.replace('\0', ''); // Remove NULL characters.
 
 					if (fileName.length > 0)
 						texture.setFileName(fileName);
 
-					data.seek(pos);
+					this.data.seek(pos);
 				}
 			}
 
 			textures[i] = texture;
 		}
 
-		// Read texture lookups
-		data.seek(textureComboOfs + ofs);
-		this.textureCombos = data.readUInt16LE(textureComboCount);
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse texture combos from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureCombos(ofs) {
+		const textureComboCount = this.data.readUInt32LE();
+		const textureComboOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(textureComboOfs + ofs);
+		this.textureCombos = this.data.readUInt16LE(textureComboCount);
+		this.data.seek(base);
 	}
 }
 
