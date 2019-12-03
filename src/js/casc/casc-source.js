@@ -18,7 +18,7 @@ class CASC {
 		this.rootEntries = new Map();
 
 		// Listen for configuration changes to cascLocale.
-		this.unhookConfig = core.view.$watch('cascLocale', (locale) => {
+		this.unhookConfig = core.view.$watch('config.cascLocale', (locale) => {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
