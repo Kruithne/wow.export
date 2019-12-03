@@ -23,17 +23,10 @@ const previewTexture = async (texture) => {
 		const file = await core.view.casc.getFileByName(texture);
 		const blp = new BLPFile(file);
 
-		//const previewContainer = document.getElementById('texture-preview');
-		//const previewInner = previewContainer.querySelector('div');
-
 		const view = core.view;
 		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
-
-		//previewInner.style.backgroundImage = 'url(' + blp.getDataURL(core.view.config.exportTextureAlpha) + ')';
-		//previewContainer.style.maxHeight = blp.height + 'px';
-		//previewContainer.style.maxWidth = blp.width + 'px';
 
 		selectedFile = texture;
 		toast.cancel();
