@@ -67,6 +67,8 @@ const previewModel = async (fileName) => {
 								tex.format = THREE.RGBAFormat;
 								tex.needsUpdate = true;
 							});
+						}).catch(e => {
+							log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 						});
 
 						if (texture.flags & Texture.FLAG_WRAP_U)
