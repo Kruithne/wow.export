@@ -24,6 +24,9 @@ const get = async (url, options = {}) => {
 
 	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
 	while (!res || (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT)) {
+		if (res && res.statusCode === 301)
+			url = res.headers.location;
+
 		res = await new Promise((resolve, reject) => http.get(url, options, resolve).on('error', reject));
 		redirects++;
 	}
