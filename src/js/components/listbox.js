@@ -208,9 +208,6 @@ Vue.component('listbox', {
 				this.selection.push(item);
 			}
 
-			//if (emit)
-				//this.$emit('selection-changed', this.selection);
-
 			this.lastSelectIndex = selectIndex;
 		}
 	},
