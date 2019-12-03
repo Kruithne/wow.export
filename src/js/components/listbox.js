@@ -14,20 +14,22 @@ Vue.component('listbox', {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1,
-			lastSelectIndex: -1
+			lastSelectItem: null
 		}
 	},
 
 	/**
 	 * Invoked when the component is mounted.
-	 * Used to register global mouse listeners and resize observer.
+	 * Used to register global listeners and resize observer.
 	 */
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
+		this.onKeyDown = e => this.handleKey(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
+		document.addEventListener('keydown', this.onKeyDown);
 
 		this.observer = new ResizeObserver(() => this.resize());
 		this.observer.observe(this.$el);
@@ -38,9 +40,10 @@ Vue.component('listbox', {
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
 	beforeDestroy: function() {
-		// Unregister global mouse listeners.
+		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+		document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
 		this.observer.disconnect();
@@ -61,7 +64,7 @@ Vue.component('listbox', {
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
-			return Math.floor((this.filteredItems.length - this.slotCount) * this.scrollRel);
+			return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
 		},
 
 		/**
@@ -177,6 +180,50 @@ Vue.component('listbox', {
 		},
 
 		/**
+		 * Invoked when a keydown event is fired.
+		 * @param {KeyboardEvent} e 
+		 */
+		handleKey: function(e) {
+			// If document.activeElement is the document body, then we can safely assume
+			// the user is not focusing anything, and can intercept keyboard input.
+			if (document.activeElement !== document.body)
+				return;
+
+			// User hasn't selected anything in the listbox yet.
+			if (!this.lastSelectItem)
+				return;
+
+			const isArrowUp = e.key === 'ArrowUp';
+			const isArrowDown = e.key === 'ArrowDown';
+			if (isArrowUp || isArrowDown) {
+				const delta = isArrowUp ? -1 : 1;
+
+				// Move/expand selection one.
+				const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+				const nextIndex = lastSelectIndex + delta;
+				const next = this.filteredItems[nextIndex];
+				if (next) {
+					const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
+					let diff = Math.abs(nextIndex - lastViewIndex);
+					if (isArrowDown)
+						diff += 1;
+
+					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+						const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+						this.scroll += ((diff * this.itemWeight) * weight) * delta;
+						this.recalculateBounds();
+					}
+
+					if (!e.shiftKey)
+						this.selection.splice(0, this.selection.length);
+
+					this.selection.push(next);
+					this.lastSelectItem = next;
+				}
+			}
+		},
+
+		/**
 		 * Invoked when a user selects an item in the list.
 		 * @param {string} item 
 		 * @param {number} selectIndex
@@ -193,10 +240,13 @@ Vue.component('listbox', {
 					this.selection.push(item);
 			} else if (event.shiftKey) {
 				// Shift-key held, select a range.
-				if (this.lastSelectIndex > -1 && this.lastSelectIndex !== selectIndex) {
-					const delta = Math.abs(this.lastSelectIndex - selectIndex);
-					const lowest = Math.min(this.lastSelectIndex, selectIndex);
-					const range = this.displayItems.slice(lowest, lowest + delta + 1);
+				if (this.lastSelectItem && this.lastSelectItem !== item) {
+					const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+					const thisSelectIndex = this.filteredItems.indexOf(item);
+
+					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+					const range = this.filteredItems.slice(lowest, lowest + delta + 1);
 
 					for (const select of range)
 						if (this.selection.indexOf(select) === -1)
@@ -208,7 +258,7 @@ Vue.component('listbox', {
 				this.selection.push(item);
 			}
 
-			this.lastSelectIndex = selectIndex;
+			this.lastSelectItem = item;
 		}
 	},
 
