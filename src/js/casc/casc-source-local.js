@@ -8,7 +8,7 @@ const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
 const BuildCache = require('./build-cache');
-const BLTEReader = require('./blte-reader');
+const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const core = require('../core');
 
@@ -45,11 +45,12 @@ class CASCLocal extends CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
+	 * @param {boolean} partialDecryption
 	 */
-	async getFile(fileDataID) {
+	async getFile(fileDataID, partialDecryption = false) {
 		log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 		const encodingKey = await super.getFile(fileDataID);
-		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey);
+		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey, partialDecryption);
 	}
 
 	/**

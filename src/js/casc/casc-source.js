@@ -1,5 +1,5 @@
 const BufferWrapper = require('../buffer');
-const BLTEReader = require('./blte-reader');
+const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const log = require('../log');
 const core = require('../core');

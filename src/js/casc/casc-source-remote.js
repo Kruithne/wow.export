@@ -9,7 +9,7 @@ const CDNConfig = require('./cdn-config');
 const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BufferWrapper = require('../buffer');
-const BLTEReader = require('./blte-reader');
+const BLTEReader = require('./blte-reader').BLTEReader;
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 

@@ -8,6 +8,7 @@ const constants = require('../constants');
 const M2Loader = require('../3D/M2Loader');
 const BLPFile = require('../casc/blp');
 const Texture = require('../3D/Texture');
+const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 let isLoading = false;
 let selectedFile = null;
@@ -48,11 +49,7 @@ const previewModel = async (fileName) => {
 			console.log(loadedM2);
 
 			// Don't try to load a model without veritices.
-			if (loadedM2.encrypted) {
-				// We can't decrypt this model, display an error.
-				toast.cancel();
-				core.setToast('error', util.format('No publicly known decryption key for %s yet. You can manually add one in settings.', fileName));
-			} else if (loadedM2.vertices.length > 0) {
+			if (loadedM2.vertices.length > 0) {
 				const skin = await loadedM2.getSkin(0);
 				const materials = new Array(loadedM2.textures.length);
 
@@ -140,8 +137,15 @@ const previewModel = async (fileName) => {
 		selectedFile = fileName;
 	} catch (e) {
 		toast.cancel();
-		core.setToast('error', 'Unable to open file: ' + fileName, { 'View Log': () => log.openRuntimeLog() });
-		log.write('Failed to open CASC file: %s', e.message);
+
+		if (e instanceof EncryptionError) {
+			// Unable to decrypt the model.
+			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key));
+			log.write('Failed to decrypt model %s (%s)', fileName, e.key);
+		} else {
+			core.setToast('error', 'Unable to open model ' + fileName, { 'View Log': () => log.openRuntimeLog() });
+			log.write('Failed to open CASC file: %s', e.message);
+		}
 	}
 
 	isLoading = false;

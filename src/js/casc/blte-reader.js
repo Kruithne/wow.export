@@ -7,18 +7,31 @@ const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
 const EMPTY_HASH = '00000000000000000000000000000000';
 
+class EncryptionError extends Error {
+	constructor(key, ...params) {
+		super('[BLTE] Missing decryption key ' + key, ...params);
+		this.key = key;
+
+		// Maintain stack trace (V8).
+		if (Error.captureStackTrace)
+			Error.captureStackTrace(this, EncryptionError);
+	}
+}
+
 class BLTEReader extends BufferWrapper {
 	/**
 	 * Construct a new BLTEReader instance.
 	 * @param {BufferWrapper} buf 
 	 * @param {string} hash 
+	 * @param {boolean} partialDecrypt
 	 */
-	constructor(buf, hash) {
+	constructor(buf, hash, partialDecrypt = false) {
 		super(null);
 
 		this._blte = buf;
 		this.blockIndex = 0;
 		this.blockWriteIndex = 0;
+		this.partialDecrypt = partialDecrypt;
 
 		const size = buf.byteLength;
 		if (size < 8)
@@ -132,11 +145,18 @@ class BLTEReader extends BufferWrapper {
 		const flag = block.readUInt8();
 		switch (flag) {
 			case 0x45: // Encrypted
-				const decrypted = this._decryptBlock(block, blockEnd, index);
-				if (decrypted)
+				try {
+					const decrypted = this._decryptBlock(block, blockEnd, index);
 					this._handleBlock(decrypted, decrypted.byteLength, index);
-				else
-					this._ofs = blockEnd;
+				} catch (e) {
+					if (e instanceof EncryptionError) {
+						// Partial decryption allows us to leave zeroed data.
+						if (this.partialDecrypt)
+							this._ofs = blockEnd;
+						else
+							throw e;
+					}
+				}
 
 				break;
 			
@@ -200,7 +220,7 @@ class BLTEReader extends BufferWrapper {
 
 		const key = tactKeys.getKey(keyName);
 		if (typeof key !== 'string')
-			return false;
+			throw new EncryptionError(keyName);
 
 		const nonce = [];
 		for (let i = 0; i < 8; i++)
@@ -268,4 +288,4 @@ class BLTEReader extends BufferWrapper {
 	}
 }
 
-module.exports = BLTEReader;
+module.exports = { BLTEReader, EncryptionError };
