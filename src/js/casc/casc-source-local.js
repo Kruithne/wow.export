@@ -11,6 +11,7 @@ const BuildCache = require('./build-cache');
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const core = require('../core');
+const generics = require('../generics');
 
 class CASCLocal extends CASC {
 	/**
