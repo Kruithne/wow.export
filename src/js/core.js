@@ -69,17 +69,6 @@ const block = async (func) => {
 };
 
 /**
- * Set the current loading message as well as a completion percentage
- * between 0 and 1 (-1 to disable) used in the system taskbar.
- * @param {string} text 
- * @param {float} pct 
- */
-const setLoadingText = async (text) => {
-	view.loadingProgress = text;
-	await generics.redraw();
-};
-
-/**
  * Create a progress interface for easy status reporting.
  * @param {number} segments 
  * @returns {Progress}
@@ -181,7 +170,6 @@ const core = {
 	events,
 	view,
 	block,
-	setLoadingText,
 	createProgress,
 	setToast,
 	hideToast,
