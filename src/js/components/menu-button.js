@@ -7,8 +7,9 @@ Vue.component('menu-button', {
 	 * default: Which option to use as a default.
 	 * disabled: Controls disabled state of the component.
 	 * dropdown: If true, component acts like a drop-down menu.
+	 * displayNames: Optional visual override for values.
 	 */
-	props: ['options', 'label', 'default', 'disabled', 'dropdown'],
+	props: ['options', 'label', 'default', 'disabled', 'dropdown', 'display-names'],
 
 	data: function() {
 		return {
@@ -44,6 +45,14 @@ Vue.component('menu-button', {
 				this.openMenu();
 			else
 				this.$emit('click', e);
+		},
+
+		/**
+		 * Return the display name for the provided option.
+		 * @param {string} option 
+		 */
+		getOptionDisplay: function(option) {
+			return (this.displayNames && this.displayNames[option]) || option;
 		}
 	},
 
@@ -63,7 +72,7 @@ Vue.component('menu-button', {
 		 * Returns the formatted text to display on the button.
 		 */
 		displayText: function() {
-			return util.format(this.label, this.selected);
+			return util.format(this.label, this.getOptionDisplay(this.selected));
 		}
 	},
 
@@ -74,7 +83,7 @@ Vue.component('menu-button', {
 		<input type="button" :value="displayText" :class="{ disabled }" @click="handleClick"/>
 		<div class="arrow" @click="openMenu"></div>
 		<ul class="menu" v-if="open">
-			<li v-for="option in options" @click="select(option)">{{ option }}</li>
+			<li v-for="option in options" @click="select(option)">{{ getOptionDisplay(option) }}</li>
 		</ul>
 	</div>`
 });

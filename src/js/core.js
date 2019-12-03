@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const generics = require('./generics');
-const LocaleFlag = require('./casc/locale-flags');
+const Locale = require('./casc/locale-flags');
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -45,7 +45,7 @@ const view = {
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
 	listfileModels: [], // Filtered listfile for M2/WMO models.
-	availableLocale: LocaleFlag, // Available CASC locale.
+	availableLocale: Locale, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	soundPlayerSeek: 0, // Current seek of the sound player.
 	soundPlayerState: false, // Playing state of the sound player.

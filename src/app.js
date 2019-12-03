@@ -235,14 +235,14 @@ document.addEventListener('click', function(e) {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale);
+				return Object.keys(this.availableLocale.flags);
 			},
 
 			/**
 			 * Return the locale key for the configured CASC locale.
 			 */
 			selectedLocaleKey: function() {
-				for (const [key, flag] of Object.entries(this.availableLocale))
+				for (const [key, flag] of Object.entries(this.availableLocale.flags))
 					if (flag === this.config.cascLocale)
 						return key;
 

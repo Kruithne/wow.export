@@ -4,7 +4,7 @@ const listfile = require('./listfile');
 const log = require('../log');
 const core = require('../core');
 const constants = require('../constants');
-const LocaleFlag = require('./locale-flags');
+const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
 
 const ENC_MAGIC = 0x4E45;
