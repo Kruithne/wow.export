@@ -3,6 +3,7 @@ const util = require('util');
 const fs = require('fs');
 const fsp = fs.promises;
 const zlib = require('zlib');
+const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
 
