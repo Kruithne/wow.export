@@ -34,7 +34,7 @@ class CASCRemote extends CASC {
 		this.builds = [];
 
 		// Collect version configs for all products.
-		const promises = Object.keys(constants.PRODUCTS).map(p => this.getVersionConfig(p));
+		const promises = constants.PRODUCTS.map(p => this.getVersionConfig(p.product));
 		const results = await Promise.allSettled(promises);
 
 		// Iterate through successful requests and extract product config for our region.
@@ -114,8 +114,10 @@ class CASCRemote extends CASC {
 	 */
 	getProductList() {
 		const products = [];
-		for (const entry of this.builds)
-			products.push(util.format('%s %s', constants.PRODUCTS[entry.Product], entry.VersionsName));
+		for (const entry of this.builds) {
+			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
+			products.push(util.format('%s %s', product.title, entry.VersionsName));
+		}
 
 		return products;
 	}

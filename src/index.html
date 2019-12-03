@@ -203,7 +203,7 @@
 								<span>(Recommended)</span>
 								<ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
 									<li>Recent</li>
-									<li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry }}</li>
+									<li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry.path }} ({{ getProductTag(entry.product) }})</li>
 								</ul>
 							</div>
 						</template>

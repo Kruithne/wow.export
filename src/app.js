@@ -118,6 +118,15 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
+			 * Return a tag for a given product.
+			 * @param {string} product 
+			 */
+			getProductTag: function(product) {
+				const entry = constants.PRODUCTS.find(e => e.product === product);
+				return entry ? entry.tag : 'Unknown';
+			},
+
+			/**
 			 * Set the currently active screen.
 			 * If `preserve` is true, the current screen ID will be pushed further onto the stack.
 			 * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].

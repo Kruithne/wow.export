@@ -37,7 +37,7 @@ class CASCLocal extends CASC {
 		const config = VersionConfig(await fsp.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
-		this.builds = config.filter(entry => constants.PRODUCTS.hasOwnProperty(entry.Product));
+		this.builds = config.filter(entry => constants.PRODUCTS.some(e => e.product === entry.Product));
 
 		log.write('%o', this.builds);
 	}
@@ -59,8 +59,10 @@ class CASCLocal extends CASC {
 	 */
 	getProductList() {
 		const products = [];
-		for (const entry of this.builds)
-			products.push(util.format('%s (%s) %s', constants.PRODUCTS[entry.Product], entry.Branch.toUpperCase(), entry.Version));
+		for (const entry of this.builds) {
+			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
+			products.push(util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version));
+		}
 
 		return products;
 	}

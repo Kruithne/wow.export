@@ -9,6 +9,54 @@ const CASCRemote = require('../casc/casc-source-remote');
 
 let cascSource = null;
 
+const loadInstall = (index) => {
+	core.block(async () => {
+		core.view.showLoadScreen();
+
+		// Wipe the available build lists.
+		core.view.availableLocalBuilds = null;
+		core.view.availableRemoteBuilds = null;
+
+		if (cascSource instanceof CASCLocal) {
+			// Update the recent local installation list..
+			const recentLocal = core.view.config.recentLocal;
+			const installPath = cascSource.dir;
+			const build = cascSource.builds[index];
+			const preIndex = recentLocal.findIndex(e => e.path === installPath && e.product === build.Product);
+			if (preIndex > -1) {
+				// Already in the list, bring it to the top (if not already).
+				if (preIndex > 0)
+					recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
+			} else {
+				// Not in the list, add it to the top.
+				recentLocal.unshift({ path: installPath, product: build.Product });
+			}
+
+			// Limit amount of entries allowed in the recent list.
+			if (recentLocal.length > constants.MAX_RECENT_LOCAL)
+				recentLocal.splice(constants.MAX_RECENT_LOCAL, recentLocal.length - constants.MAX_RECENT_LOCAL);
+		}
+
+		try {
+			await cascSource.load(index);
+
+			// Passing the CASC instance to Vue causes the entire instance (with indexes) to
+			// become observable. This is a massive waste of memory. We freeze the instance here
+			// to prevent that from happening.
+			Object.freeze(cascSource);
+
+			core.view.casc = cascSource;
+			core.view.setScreen('tab-models');
+		} catch (e) {
+			log.write('Failed to load CASC: %o', e);
+			core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', {
+				'View Log': () => log.openRuntimeLog()
+			});
+			core.view.setScreen('source-select');
+		}
+	});
+};
+
 core.events.once('screen-source-select', async () => {
 	const pings = [];
 	const regions = core.view.cdnRegions;
@@ -46,36 +94,27 @@ core.events.once('screen-source-select', async () => {
 	if (!Array.isArray(recentLocal))
 		recentLocal = core.view.config.recentLocal = [];
 
-	const openInstall = async (installPath) => {
+	const openInstall = async (installPath, product) => {
 		try {
 			cascSource = new CASCLocal(installPath);
 			await cascSource.init();
 
-			core.view.availableLocalBuilds = cascSource.getProductList();
-
-			// Update the recent local installation list..
-			const preIndex = recentLocal.indexOf(installPath);
-			if (preIndex > -1) {
-				// Already in the list, bring it to the top (if not already).
-				if (preIndex > 0)
-					recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
-			} else {
-				// Not in the list, add it to the top.
-				recentLocal.unshift(installPath);
-			}
-
-			// Limit amount of entries allowed in the recent list.
-			if (recentLocal.length > constants.MAX_RECENT_LOCAL)
-				recentLocal.splice(constants.MAX_RECENT_LOCAL, recentLocal.length - constants.MAX_RECENT_LOCAL);
+			if (product)
+				loadInstall(cascSource.builds.findIndex(build => build.Product === product));
+			else
+				core.view.availableLocalBuilds = cascSource.getProductList();
 		} catch (e) {
 			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value));
 			log.write('Failed to initialize local CASC source: %s', e.message);
 
-			// In the event that the given directory was once a valid installation and
-			// is listed in the recent local list, make sure it is removed now.
-			const index = recentLocal.indexOf(installPath);
-			if (index > -1)
-				recentLocal.splice(index, 1);
+			// In the event the given installation directory is now invalid, remove all
+			// recent local entries using that directory. If product was provided, we can
+			// filter more specifically for that broken build.
+			for (let i = recentLocal.length - 1; i >= 0; i--) {
+				const entry = recentLocal[i];
+				if (entry.path === installPath && (!product || entry.product === product))
+					recentLocal.splice(i, 1);
+			}
 		}
 	};
 
@@ -89,7 +128,7 @@ core.events.once('screen-source-select', async () => {
 	// Both selecting a file using the directory selector, and clicking on a recent local
 	// installation (click-source-local-recent) should then attempt to open an install.
 	selector.onchange = () => openInstall(selector.value);
-	core.events.on('click-source-local-recent', entry => openInstall(entry));
+	core.events.on('click-source-local-recent', entry => openInstall(entry.path, entry.product));
 
 	// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 	// Attempt to initialize a remote CASC source using the selected region.
@@ -115,33 +154,7 @@ core.events.once('screen-source-select', async () => {
 
 	// Register for 'click-source-build' events which are fired when the user selects
 	// a build either for remote or local installations.
-	core.events.on('click-source-build', (index) => {
-		core.block(async () => {
-			core.view.showLoadScreen();
-
-			// Wipe the available build lists.
-			core.view.availableLocalBuilds = null;
-			core.view.availableRemoteBuilds = null;
-
-			try {
-				await cascSource.load(index);
-
-				// Passing the CASC instance to Vue causes the entire instance (with indexes) to
-				// become observable. This is a massive waste of memory. We freeze the instance here
-				// to prevent that from happening.
-				Object.freeze(cascSource);
-
-				core.view.casc = cascSource;
-				core.view.setScreen('tab-models');
-			} catch (e) {
-				log.write('Failed to load CASC: %o', e);
-				core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', {
-					'View Log': () => log.openRuntimeLog()
-				});
-				core.view.setScreen('source-select');
-			}
-		});
-	});
+	core.events.on('click-source-build', loadInstall);
 
 	// Once all pings are resolved, pick the fastest.
 	Promise.all(pings).then(() => {

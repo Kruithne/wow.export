@@ -43,13 +43,15 @@ module.exports = {
 		HELPER: 'updater' + (UPDATER_EXT[process.platform] || '') // Path to update helper application.
 	},
 
-	// These are labelled as they appear in the Battle.net launcher.
-	PRODUCTS: {
-		'wow': 'World of Warcraft',
-		'wowt': 'PTR: World of Warcraft',
-		'wow_beta': 'Beta: World of Warcraft',
-		'wow_classic': 'World of Warcraft Classic'
-	},
+	// product: Internal product ID.
+	// title: Label as it appears on the Battle.net launcher.
+	// tag: Specific version tag.
+	PRODUCTS: [
+		{ product: 'wow', title: 'World of Warcraft', tag: 'Retail' },
+		{ product: 'wowt', title: 'PTR: World of Warcraft', tag: 'PTR' },
+		{ product: 'wow_beta', title: 'Beta: World of Warcraft', tag: 'Beta' },
+		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' }
+	],
 
 	PATCH: {
 		REGIONS: ['eu', 'us', 'kr', 'cn', 'tw'], // Valid CDN regions.
