@@ -91,7 +91,6 @@ const consumeUTF8Stream = async (stream) => {
  * @param {string} url 
  */
 const getJSON = async (url) => {
-	let redirects = 0;
 	let res = await get(url);
 	
 	// Abort with anything other than HTTP 200 OK at this point.
