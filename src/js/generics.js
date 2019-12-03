@@ -4,6 +4,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const zlib = require('zlib');
 const BufferWrapper = require('./buffer');
+const constants = require('./constants');
 
 const MAX_HTTP_REDIRECT = 4;
 
@@ -17,6 +18,9 @@ const get = async (url, options = {}) => {
 	const http = require(url.startsWith('https') ? 'https' : 'http');
 	let redirects = 0;
 	let res = null;
+
+	const headers = options.headers = options.headers || {};
+	headers['User-Agent'] = constants.USER_AGENT;
 
 	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
 	while (!res || (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT)) {

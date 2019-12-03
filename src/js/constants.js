@@ -14,6 +14,9 @@ module.exports = {
 	// Filter used to filter out WMO LOD files.
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
+	// User-agent used for HTTP/HTTPs requests.
+	USER_AGENT: 'wow.export; ' + nw.App.manifest.version,
+
 	CACHE: {
 		DIR: path.join(DATA_PATH, 'casc'), // Cache directory.
 		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.
