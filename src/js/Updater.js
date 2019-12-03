@@ -16,10 +16,10 @@ let updateManifest;
  */
 const checkForUpdates = async () => {
 	try {
+		const localManifest = nw.App.manifest;
 		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + constants.UPDATE.MANIFEST;
 		log.write('Checking for updates (%s)...', manifestURL);
 
-		const localManifest = nw.App.manifest;
 		const manifest = await generics.getJSON(manifestURL);
 
 		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
