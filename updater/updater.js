@@ -36,23 +36,24 @@ const directoryExists = async (dir) => {
 
     // Ensure we were given a valid PID by whatever spawned us.
     const pid = Number(argv[0]);
-    if (isNaN(pid))
-        return console.log('No parent process?');
+    if (!isNaN(pid)) {
+		// Wait for the parent process (PID) to terminate.
+		let isRunning = true;
+		while (isRunning) {
+			try {
+				// Sending 0 as a signal does not kill the process, allowing for existence checking.
+				// See: http://man7.org/linux/man-pages/man2/kill.2.html
+				process.kill(pid, 0);
 
-    // Wait for the parent process (PID) to terminate.
-    let isRunning = true;
-    while (isRunning) {
-        try {
-            // Sending 0 as a signal does not kill the process, allowing for existence checking.
-            // See: http://man7.org/linux/man-pages/man2/kill.2.html
-            process.kill(pid, 0);
-
-            // Introduce a small delay between checks.
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-            isRunning = false;
-        }
-    }
+				// Introduce a small delay between checks.
+				await new Promise(resolve => setTimeout(resolve, 500));
+			} catch (e) {
+				isRunning = false;
+			}
+		}
+	} else {
+		console.log('No parent process?');
+	}
 
     const installDir = path.dirname(path.resolve(process.execPath));
     const updateDir = path.join(installDir, '.update');
