@@ -170,6 +170,9 @@ class BLTEReader extends BufferWrapper {
 			case 0x5A: // Compressed
 				this._decompressBlock(block, blockEnd, index);
 				break;
+
+			default:
+				throw new Error('Unknown block: ' + flag);
 		}
 	}
 
