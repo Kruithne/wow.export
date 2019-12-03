@@ -16,7 +16,7 @@ let updateManifest;
 const checkForUpdates = async () => {
 	try {
 		const localManifest = nw.App.manifest;
-		const manifestURL = util.format(constants.UPDATE.URL, localManifest.flavour) + constants.UPDATE.MANIFEST;
+		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + constants.UPDATE.MANIFEST;
 		const manifest = await generics.getJSON(manifestURL);
 
 		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
@@ -81,7 +81,7 @@ const applyUpdate = async () => {
 			}
 		}
 
-		const remoteDir = util.format(constants.UPDATE.URL, nw.App.manifest.flavour);
+		const remoteDir = util.format(core.view.config.updateURL, nw.App.manifest.flavour);
 
 		let downloadSize = 0;
 		await progress.updateWithText(2, 'Downloading updates');

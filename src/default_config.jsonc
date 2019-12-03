@@ -7,6 +7,7 @@
 {
 	"listfileURL": "https://wow.tools/casc/listfile/download/csv/build?buildConfig=%s",
 	"listfileCacheRefresh": 3,
+	"updateURL": "https://kruithne.net/wow.export/%s/",
 	"cacheExpiry": 7,
 	"cascLocale": 2,
 	"recentLocal": [],
