@@ -9,18 +9,18 @@ class Salsa20 {
 	/**
 	 * Construct a new Salsa20 instance.
 	 * @param {Array} nonce 8 byte nonce.
-	 * @param {Array} key 16 or 32 byte key.
+	 * @param {string} key 16 or 32 byte key.
 	 * @param {number} rounds Defaults to 20.
 	 */
 	constructor(nonce, key, rounds = 20) {
 		if (nonce.length !== 8)
 			throw new Error('Unexpected nonce length. 8 bytes expected, got ' + nonce.length);
 
-		if (key.length !== 16 && key.length !== 32)
+		if (key.length !== 32 && key.length !== 64)
 			throw new Error('Unexpected key length. 16 or 32 bytes expected, got ' + key.length);
 
 		this.rounds = rounds;
-		this.sigma = key.length === 16 ? SIGMA_16 : SIGMA_32;
+		this.sigma = key.length === 32 ? SIGMA_16 : SIGMA_32;
 
 		this.keyWords = [];
 		this.nonceWords = [0, 0];
@@ -29,7 +29,7 @@ class Salsa20 {
 		this.block = [];
 		this.blockUsed = 64;
 
-		this.setKey(Array.from(key));
+		this.setKey([...Buffer.from(key, 'hex')]);
 		this.setNonce(Array.from(nonce));
 	}
 
