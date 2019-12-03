@@ -6,6 +6,7 @@ const cp = require('child_process');
 const constants = require('./constants');
 const generics = require('./generics');
 const core = require('./core');
+const log = require('./log');
 
 let updateManifest;
 
@@ -15,8 +16,11 @@ let updateManifest;
  */
 const checkForUpdates = async () => {
 	try {
+		const updateURL = core.view.config.updateURL;
+		log.write('Checking for updates (%s)...', updateURL);
+
 		const localManifest = nw.App.manifest;
-		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + constants.UPDATE.MANIFEST;
+		const manifestURL = util.format(updateURL, localManifest.flavour) + constants.UPDATE.MANIFEST;
 		const manifest = await generics.getJSON(manifestURL);
 
 		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
@@ -24,11 +28,14 @@ const checkForUpdates = async () => {
 
 		if (manifest.guid !== localManifest.guid) {
 			updateManifest = manifest;
+			log.write('Update available, prompting using (%s != %s)', manifest.guid, localManifest.guid);
 			return true;
 		}
 
+		log.write('Not updating (%s == %s)', manifest.guid, localManifest.guid);
 		return false;
 	} catch (e) {
+		log.write('Not updating due to error: %s', e.message);
 		console.log(e);
 		return false;
 	}
