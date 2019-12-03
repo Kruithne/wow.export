@@ -143,7 +143,7 @@ const previewModel = async (fileName) => {
 			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key));
 			log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
-			core.setToast('error', 'Unable to open model ' + fileName, { 'View Log': () => log.openRuntimeLog() });
+			core.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => log.openRuntimeLog() });
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
