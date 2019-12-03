@@ -201,7 +201,11 @@ class BLTEReader extends BufferWrapper {
 		if (keyNameSize === 0 || keyNameSize !== 8)
 			throw new Error('[BLTE] Unexpected keyNameSize: ' + keyNameSize);
 
-		const keyName = data.readHexString(keyNameSize);
+		const keyNameBytes = new Array(keyNameSize);
+		for (let i = 0; i < keyNameSize; i++)
+			keyNameBytes[i] = data.readHexString(1);
+
+		const keyName = keyNameBytes.reverse().join('');
 		const ivSize = data.readUInt8();
 
 		if (ivSize !== 4)
