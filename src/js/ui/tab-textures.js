@@ -4,6 +4,7 @@ const util = require('util');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
+const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 let isLoading = false;
 let selectedFile = null;
@@ -32,8 +33,16 @@ const previewTexture = async (texture) => {
 		toast.cancel();
 	} catch (e) {
 		toast.cancel();
-		core.setToast('error', 'Unable to open file: ' + texture, { 'View Log': () => log.openRuntimeLog() });
-		log.write('Failed to open CASC file: %s', e.message);
+
+		if (e instanceof EncryptionError) {
+			// Missing decryption key.
+			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key));
+			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
+		} else {
+			// Error reading/parsing texture.
+			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() });
+			log.write('Failed to open CASC file: %s', e.message);
+		}
 	}
 
 	isLoading = false;

@@ -3,6 +3,7 @@ const log = require('../log');
 const path = require('path');
 const util = require('util');
 const ExportHelper = require('../casc/export-helper');
+const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 let isLoading = null;
 
@@ -90,8 +91,16 @@ const loadSelectedTrack = async () => {
 		toast.cancel();
 	} catch (e) {
 		toast.cancel();
-		core.setToast('error', 'Unable to open file: ' + selectedFile, { 'View Log': () => log.openRuntimeLog() });
-		log.write('Failed to open CASC file: %s', e.message);
+
+		if (e instanceof EncryptionError) {
+			// Missing decryption key.
+			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key));
+			log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
+		} else {
+			// Error reading/parsing audio.
+			core.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() });
+			log.write('Failed to open CASC file: %s', e.message);
+		}
 	}
 
 	isLoading = false;
