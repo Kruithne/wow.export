@@ -49,6 +49,32 @@ const AST_REQUIRE_VAR_STRUCT = {
 	}
 };
 
+const AST_REQUIRE_MEMBER_STRUCT = {
+	type: 'VariableDeclaration',
+	declarations: {
+		type: 'VariableDeclarator',
+		id: {
+			type: 'Identifier'
+		},
+		init: {
+			type: 'MemberExpression',
+			object: {
+				type: 'CallExpression',
+				start: 'EXPORT',
+				end: 'EXPORT',
+				callee: {
+					type: 'Identifier',
+					name: 'require'
+				},
+				arguments: {
+					type: 'Literal',
+					value: 'EXPORT'
+				}
+			}
+		}
+	}
+};
+
 const AST_REQUIRE_EXP_STRUCT = {
 	type: 'ExpressionStatement',
 	start: 'EXPORT',
@@ -267,6 +293,10 @@ const parseModule = async (mod) => {
 	for (const node of ast.body) {
 		// Locate modules imported using require() as variables or expressions.
 		let importMatch = matchAST(node, AST_REQUIRE_VAR_STRUCT);
+
+		// Check if node is a member expression?
+		if (importMatch === AST_NO_MATCH)
+			importMatch = matchAST(node, AST_REQUIRE_MEMBER_STRUCT);
 
 		// Node is not a require() variable, check for expression instead.
 		if (importMatch === AST_NO_MATCH)
