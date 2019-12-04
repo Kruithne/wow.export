@@ -43,8 +43,6 @@ const deleteDirectory = (dir) => {
 
 		fs.rmdirSync(dir);
 	}
-
-	return info;
 }
 
 /**
