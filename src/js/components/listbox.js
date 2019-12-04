@@ -72,6 +72,10 @@ Vue.component('listbox', {
 		 * Automatically refilters when the filter input is changed.
 		 */
 		filteredItems: function() {
+			// Skip filtering if no filter is set.
+			if (!this.$props.filter)
+				return $this.$props.items;
+
 			const filter = this.$props.filter.trim().toLowerCase();
 			let res = this.$props.items;
 
