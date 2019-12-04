@@ -104,7 +104,7 @@ const applyUpdate = async () => {
 
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
 		const node = requiredFiles[i];
-		await progress.step((i + 1) + ' / ' + n);
+		await progress.step('%d / %d (%s)', i + 1, n, downloadSize);
 
 		await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
 	}
