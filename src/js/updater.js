@@ -48,7 +48,7 @@ const applyUpdate = async () => {
 
 	log.write('Starting update to %s...', updateManifest.guid);
 
-	const requiredFiles = [];
+	const requiredFiles = [constants.UPDATE.MANIFEST];
 	const entries = Object.entries(updateManifest.contents);
 
 	let progress = core.createProgress(entries.length);
