@@ -12,6 +12,7 @@ const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const core = require('../core');
 const generics = require('../generics');
+const CASCRemote = require('./casc-source-remote');
 
 class CASCLocal extends CASC {
 	/**
@@ -85,6 +86,10 @@ class CASCLocal extends CASC {
 		await this.loadEncoding();
 		await this.loadRoot();
 		await this.loadListfile(this.build.BuildKey);
+
+		// Dispose of remote instance if used.
+		if (this.remote)
+			this.remote = null;
 	}
 
 	/**
@@ -165,7 +170,7 @@ class CASCLocal extends CASC {
 		const encKeys = this.buildConfig.encoding.split(' ');
 
 		await this.progress.step('Loading encoding table');
-		const encRaw = await this.getDataFile(encKeys[1]);
+		const encRaw = await this.getDataFileWithRemoteFallback(encKeys[1]);
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
 	}
@@ -181,10 +186,58 @@ class CASCLocal extends CASC {
 
 		// Parse root file.
 		log.timeLog();
-		await this.progress.step('Parsing root file');
-		const root = await this.getDataFile(rootKey);
+		await this.progress.step('Loading root file');
+		const root = await this.getDataFileWithRemoteFallback(rootKey);
 		const rootEntryCount = await this.parseRootFile(root, rootKey);
 		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
+	}
+
+	/**
+	 * Initialize a remote CASC instance to download missing
+	 * files needed during local initialization.
+	 */
+	async initializeRemoteCASC() {
+		const remote = new CASCRemote(core.view.selectedCDNRegion.tag);
+		await remote.init();
+
+		const buildIndex = remote.builds.findIndex(build => build.Product === this.build.Product);
+		await remote.preload(buildIndex);
+
+		this.remote = remote;
+	}
+
+	/**
+	 * Obtain a data file from the local archives.
+	 * If not stored locally, file will be downloaded from a CDN.
+	 * @param {string} key 
+	 */
+	async getDataFileWithRemoteFallback(key) {
+		try {
+			// Attempt 1: Extract from local archives.
+			const local = await this.getDataFile(key);
+
+			if (!BLTEReader.check(local))
+				throw new Error('Local data file is not a valid BLTE');
+
+			return local;
+		} catch (e) {
+			// Attempt 2: Load from cache from previous fallback.
+			log.write('Local file %s does not exist, falling back to cache...', key);
+			const isCached = await this.cache.hasFile(key);
+			if (isCached)
+				return await this.cache.getFile(key);
+
+			// Attempt 3: Download from CDN.
+			log.write('Local file %s not cached, falling back to CDN...', key);
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			const remoteKey = this.remote.formatCDNKey(key);
+			const remote = await this.remote.getDataFile(remoteKey, constants.CACHE.DIR_DATA);
+
+			this.cache.storeFile(key, remote, constants.CACHE.DIR_DATA);
+			return remote;
+		}
 	}
 
 	/**

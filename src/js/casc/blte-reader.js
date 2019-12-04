@@ -20,6 +20,19 @@ class EncryptionError extends Error {
 
 class BLTEReader extends BufferWrapper {
 	/**
+	 * Check if the given data is a BLTE file.
+	 * @param {BufferWrapper} data 
+	 */
+	static check(data) {
+		if (data.byteLength < 4)
+			return false;
+
+		const magic = data.readUInt32LE();
+		data.seek(0);
+
+		return magic === BLTE_MAGIC;
+	}
+	/**
 	 * Construct a new BLTEReader instance.
 	 * @param {BufferWrapper} buf 
 	 * @param {string} hash 

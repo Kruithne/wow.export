@@ -123,19 +123,28 @@ class CASCRemote extends CASC {
 	}
 
 	/**
+	 * Preload requirements for reading remote files without initializing the
+	 * entire instance. Used by local CASC install for CDN fallback.
+	 */
+	async preload(buildIndex) {
+		this.build = this.builds[buildIndex];
+		log.write('Preloading remote CASC build: %o', this.build);
+
+		await this.loadServerConfig();
+		await this.resolveCDNHost();
+	}
+
+	/**
 	 * Load the CASC interface with the given build.
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
-		this.build = this.builds[buildIndex];
-		log.write('Loading remote CASC build: %o', this.build);
+		this.progress = core.createProgress(10);
+		await this.preload(buildIndex);
 
 		this.cache = new BuildCache(this.build.BuildConfig);
 		await this.cache.init();
 
-		this.progress = core.createProgress(10);
-		await this.loadServerConfig();
-		await this.resolveCDNHost();
 		await this.loadConfigs();
 		await this.loadArchives();
 		await this.loadEncoding();
@@ -232,8 +241,10 @@ class CASCRemote extends CASC {
 	 * selected region.
 	 */
 	async loadServerConfig() {
+		if (this.progress)
+			await this.progress.step('Fetching CDN configuration');
+
 		// Download CDN server list.
-		await this.progress.step('Fetching CDN configuration');
 		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
 		log.write('%o', serverConfigs);
 
@@ -316,7 +327,9 @@ class CASCRemote extends CASC {
 	 * Returns NULL if all the hosts failed to ping.
 	 */
 	async resolveCDNHost() {
-		await this.progress.step('Locating fastest CDN server');
+		if (this.progress)
+			await this.progress.step('Locating fastest CDN server');
+
 		log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
 		let bestHost = null;
