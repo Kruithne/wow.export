@@ -1,6 +1,7 @@
 const argv = process.argv.splice(2);
 const fsp = require('fs').promises;
 const path = require('path');
+const cp = require('child_process');
 
 /**
  * Returns an array of all files recursively collected from a directory.
@@ -70,8 +71,19 @@ const directoryExists = async (dir) => {
         }
     } else {
         console.log('Unable to locate update files.');
-    }
+	}
+	
+	// [GH-1] Expand this with support for further platforms as needed.
+	let binary;
+	switch (process.platform) {
+		case 'win32': binary = 'wow.export.exe'; break;
+		default: process.exit(); break;
+	}
 
-    // ToDo: Launch process once more.
-    // ToDo: Terminate ourselves.
+	// Re-launch application.
+	const child = cp.spawn(path.join(installDir, binary), [], { detached: true, stdio: 'ignore' });
+	child.unref();
+
+	// Exit updater.
+	process.exit();
 })();
