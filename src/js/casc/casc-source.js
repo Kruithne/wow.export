@@ -109,54 +109,90 @@ class CASC {
 		const root = new BLTEReader(data, hash);
 
 		const magic = root.readUInt32LE();
-		if (magic !== ROOT_MAGIC)
-			throw new Error('Invalid root magic: ' + magic);
-		
-		const totalFileCount = root.readUInt32LE();
-		const namedFileCount = root.readUInt32LE();
-		const allowNamelessFiles = totalFileCount !== namedFileCount;
-
 		const rootTypes = this.rootTypes;
 		const rootEntries = this.rootEntries;
-	
-		while (root.remainingBytes > 0) {
-			const numRecords = root.readUInt32LE();
-			
-			const contentFlags = root.readUInt32LE();
-			const localeFlags = root.readUInt32LE();
 
-			const fileDataIDs = new Array(numRecords);
+		if (magic == ROOT_MAGIC) { // 8.2
+			const totalFileCount = root.readUInt32LE();
+			const namedFileCount = root.readUInt32LE();
+			const allowNamelessFiles = totalFileCount !== namedFileCount;
+		
+			while (root.remainingBytes > 0) {
+				const numRecords = root.readUInt32LE();
+				
+				const contentFlags = root.readUInt32LE();
+				const localeFlags = root.readUInt32LE();
 
-			let fileDataID = 0;
-			for (let i = 0; i < numRecords; i++)  {
-				const nextID = fileDataID + root.readInt32LE();
-				fileDataIDs[i] = nextID;
-				fileDataID = nextID + 1;
-			}
+				const fileDataIDs = new Array(numRecords);
 
-			// Parse MD5 content keys for entries.
-			for (let i = 0; i < numRecords; i++) {
-				const fileDataID = fileDataIDs[i];
-				let entry = rootEntries.get(fileDataID);
-
-				if (!entry) {
-					entry = new Map();
-					rootEntries.set(fileDataID, entry);
+				let fileDataID = 0;
+				for (let i = 0; i < numRecords; i++)  {
+					const nextID = fileDataID + root.readInt32LE();
+					fileDataIDs[i] = nextID;
+					fileDataID = nextID + 1;
 				}
 
-				entry.set(rootTypes.length, root.readHexString(16));
+				// Parse MD5 content keys for entries.
+				for (let i = 0; i < numRecords; i++) {
+					const fileDataID = fileDataIDs[i];
+					let entry = rootEntries.get(fileDataID);
+
+					if (!entry) {
+						entry = new Map();
+						rootEntries.set(fileDataID, entry);
+					}
+
+					entry.set(rootTypes.length, root.readHexString(16));
+				}
+
+				// Skip lookup hashes for entries.
+				if (!(allowNamelessFiles && contentFlags & ContentFlag.NoNameHash))
+					root.move(8 * numRecords);
+
+				// Push the rootType after parsing the block so that
+				// rootTypes.length can be used for the type index above.
+				rootTypes.push({ contentFlags, localeFlags });
 			}
+		} else { // Classic
+			root.seek(0);
+			while (root.remainingBytes > 0) {
+				const numRecords = root.readUInt32LE();
 
-			// Skip lookup hashes for entries.
-			if (!(allowNamelessFiles && contentFlags & ContentFlag.NoNameHash))
-				root.move(8 * numRecords);
+				const contentFlags = root.readUInt32LE();
+				const localeFlags = root.readUInt32LE();
 
-			// Push the rootType after the parsing the block so that
-			// rootTypes.length can be used for the type index above.
-			rootTypes.push({ contentFlags, localeFlags });
+				const fileDataIDs = new Array(numRecords);
+
+				let fileDataID = 0;
+				for (let i = 0; i < numRecords; i++)  {
+					const nextID = fileDataID + root.readInt32LE();
+					fileDataIDs[i] = nextID;
+					fileDataID = nextID + 1;
+				}
+
+				// Parse MD5 content keys for entries.
+				for (let i = 0; i < numRecords; i++) {
+					const key = root.readHexString(16);
+					root.move(8); // hash
+
+					const fileDataID = fileDataIDs[i];
+					let entry = rootEntries.get(fileDataID);
+
+					if (!entry) {
+						entry = new Map();
+						rootEntries.set(fileDataID, entry);
+					}
+
+					entry.set(rootTypes.length, key);
+				}
+
+				// Push the rootType after parsing the block so that
+				// rootTypes.length can be used for the type index above.
+				rootTypes.push({ contentFlags, localeFlags });
+			}
 		}
 
-		return totalFileCount;
+		return rootEntries.size;
 	}
 	
 	/**
