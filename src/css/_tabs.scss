@@ -7,8 +7,23 @@
 
 	&.list-tab {
 		display: grid;
-		grid-template-columns: 50% 50%;
+		grid-template-columns: 1fr 1fr;
 		grid-template-rows: 1fr 70px;
+	}
+}
+
+#tab-models {
+	grid-template-columns: 1fr 1fr auto;
+
+	.sidebar {
+		grid-column: 3;
+		width: 200px;
+		grid-row: 1 / span 2;
+		margin-top: 20px;
+	}
+
+	#sidebar-button {
+		margin-left: 5px;
 	}
 }
 
