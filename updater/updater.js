@@ -68,7 +68,7 @@ const directoryExists = async (dir) => {
             await fsp.copyFile(file, writePath).catch(() => {
                 console.log('UNABLE TO WRITE: %s', writePath);
             });
-        }
+		}
     } else {
         console.log('Unable to locate update files.');
 	}
@@ -77,12 +77,17 @@ const directoryExists = async (dir) => {
 	let binary;
 	switch (process.platform) {
 		case 'win32': binary = 'wow.export.exe'; break;
-		default: process.exit(); break;
 	}
 
 	// Re-launch application.
-	const child = cp.spawn(path.join(installDir, binary), [], { detached: true, stdio: 'ignore' });
-	child.unref();
+	if (binary) {
+		const child = cp.spawn(path.join(installDir, binary), [], { detached: true, stdio: 'ignore' });
+		child.unref();
+	}
+
+	// Clear the update directory.
+	console.log('Cleaning up, hold on!');
+	await fsp.rmdir(updateDir, { recursive: true });
 
 	// Exit updater.
 	process.exit();
