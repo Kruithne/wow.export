@@ -209,7 +209,7 @@ core.events.once('screen-tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 10);
 
 	scene = new THREE.Scene();
-	const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
 	scene.add(light);
 
 	core.view.modelViewerContext = { camera, scene };
