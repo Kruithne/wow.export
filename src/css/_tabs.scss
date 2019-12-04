@@ -20,6 +20,11 @@
 		width: 200px;
 		grid-row: 1 / span 2;
 		margin-top: 20px;
+
+		span {
+			display: block;
+			margin-top: 5px;
+		}
 	}
 
 	#sidebar-button {

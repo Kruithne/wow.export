@@ -129,6 +129,7 @@
 							<input id="sidebar-button" type="button" :value="config.modelsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.modelsShowSidebar = !config.modelsShowSidebar"/>
 						</div>
 						<div class="sidebar" v-if="config.modelsShowSidebar">
+							<span>Listing</span>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.modelsShowM2"/>
 								<span>Show M2</span>
@@ -137,6 +138,7 @@
 								<input type="checkbox" v-model="config.modelsShowWMO"/>
 								<span>Show WMO</span>
 							</label>
+							<span>Preview</span>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.modelsAutoPreview"/>
 								<span>Auto Preview</span>
