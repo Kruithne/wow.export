@@ -48,7 +48,7 @@ const applyUpdate = async () => {
 
 	log.write('Starting update to %s...', updateManifest.guid);
 
-	const requiredFiles = [];
+	const requiredFiles = [{ file: constants.UPDATE.MANIFEST, size: 0 }];
 	const entries = Object.entries(updateManifest.contents);
 
 	let progress = core.createProgress(entries.length);
@@ -65,13 +65,6 @@ const applyUpdate = async () => {
 
 		try {
 			const stats = await fsp.stat(localPath);
-
-			// Always update the manifest.
-			if (file === constants.UPDATE.MANIFEST) {
-				log.write('Marking %s for update (always required)', file);
-				requiredFiles.push(node);
-				continue;
-			}
 
 			// If the file size is different, skip hashing and just mark for update.
 			if (stats.size !== size) {
