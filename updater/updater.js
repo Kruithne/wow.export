@@ -1,5 +1,6 @@
 const argv = process.argv.splice(2);
-const fsp = require('fs').promises;
+const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
 const cp = require('child_process');
 
@@ -20,6 +21,31 @@ const collectFiles = async (dir, out = []) => {
 
     return out;
 };
+
+/**
+* Recursively delete a directory.
+* @param {string} dir Path to the directory.
+*/
+const deleteDirectory = (dir) => {
+	if (fs.existsSync(dir)) {
+		let entries = fs.readdirSync(dir);
+
+		for (let entry of entries) {
+			let entryPath = path.join(dir, entry);
+			let entryStat = fs.lstatSync(entryPath);
+
+			// Recursively delete as a directory or unlink the file/symlink.
+			if (entryStat.isFile() || entryStat.isSymbolicLink())
+				fs.unlinkSync(entryPath);
+			else
+				deleteDirectory(entryPath);
+		}
+
+		fs.rmdirSync(dir);
+	}
+
+	return info;
+}
 
 /**
  * Wrapper for fs.Promises.access() to check if a directory exists.
@@ -87,7 +113,7 @@ const directoryExists = async (dir) => {
 
 	// Clear the update directory.
 	console.log('Cleaning up, hold on!');
-	await fsp.rmdir(updateDir, { recursive: true });
+	deleteDirectory(updateDir);
 
 	// Exit updater.
 	process.exit();
