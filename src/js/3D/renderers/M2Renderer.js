@@ -35,6 +35,9 @@ class M2Renderer {
 
 			this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
 		}
+
+		// Drop reference to raw data, we don't need it now.
+		this.data = null;
 	}
 
 	/**
