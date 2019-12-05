@@ -20,6 +20,8 @@
 		width: 200px;
 		grid-row: 1 / span 2;
 		margin-top: 20px;
+		padding-right: 20px;
+		box-sizing: border-box;
 
 		span.header {
 			display: block;
@@ -27,7 +29,6 @@
 		}
 
 		.ui-checkboxlist {
-			margin-right: 20px;
 			margin-top: 10px;
 		}
 
