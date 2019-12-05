@@ -167,6 +167,19 @@ input[type="number"]::-webkit-outer-spin-button {
 	display: none;
 }
 
+.ui-checkboxlist {
+	.item {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+
+		span {
+			display: inline;
+			margin: 0 0 1px 5px;
+		}
+	}
+}
+
 .ui-listbox {
 	background: var(--background);
 	position: relative;

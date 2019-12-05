@@ -42,7 +42,8 @@ const previewModel = async (fileName) => {
 
 		const file = await core.view.casc.getFileByName(fileName);
 		if (fileName.toLowerCase().endsWith('.m2')) {
-
+			core.view.modelViewerActiveType = 'm2';
+			
 			loadedM2 = new M2Loader(file);
 			await loadedM2.load();
 

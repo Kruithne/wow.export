@@ -15,15 +15,24 @@
 #tab-models {
 	grid-template-columns: 1fr 1fr auto;
 
-	.sidebar {
+	#model-sidebar {
 		grid-column: 3;
 		width: 200px;
 		grid-row: 1 / span 2;
 		margin-top: 20px;
 
-		span {
+		span.header {
 			display: block;
 			margin-top: 5px;
+		}
+
+		.ui-listbox {
+			margin-right: 20px;
+			margin-top: 10px;
+		}
+
+		#list-geosets {
+			height: 400px;
 		}
 	}
 

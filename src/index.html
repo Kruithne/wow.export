@@ -128,8 +128,8 @@
 							<menu-button :label="'Export as %s'" :options="['OBJ', 'M2/WMO']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 							<input id="sidebar-button" type="button" :value="config.modelsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.modelsShowSidebar = !config.modelsShowSidebar"/>
 						</div>
-						<div class="sidebar" v-if="config.modelsShowSidebar">
-							<span>Listing</span>
+						<div id="model-sidebar" v-if="config.modelsShowSidebar">
+							<span class="header">Listing</span>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.modelsShowM2"/>
 								<span>Show M2</span>
@@ -138,11 +138,15 @@
 								<input type="checkbox" v-model="config.modelsShowWMO"/>
 								<span>Show WMO</span>
 							</label>
-							<span>Preview</span>
+							<span class="header">Preview</span>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.modelsAutoPreview"/>
 								<span>Auto Preview</span>
 							</label>
+							<template v-if="modelViewerActiveType === 'm2'">
+								<span>Geosets</span>
+								<checkboxlist id="list-geosets" :items="modelViewerGeosets"></checkboxlist>
+							</template>
 						</div>
 					</div>
 				</keep-alive>

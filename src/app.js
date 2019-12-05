@@ -68,6 +68,7 @@ const tactKeys = require('./js/casc/tact-keys');
 const fsp = require('fs').promises;
 
 require('./js/components/listbox');
+require('./js/components/checkboxlist');
 require('./js/components/menu-button');
 require('./js/components/file-field');
 require('./js/components/slider');
