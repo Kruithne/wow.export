@@ -1,3 +1,5 @@
+const core = require('../../core');
+
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const M2Loader = require('../loaders/M2Loader');
@@ -13,6 +15,7 @@ class M2Renderer {
 	constructor(data, renderGroup) {
 		this.data = data;
 		this.renderGroup = renderGroup;
+		this.geosetArray = core.view.modelViewerGeosets;
 		this.textures = [];
 	}
 
@@ -27,7 +30,21 @@ class M2Renderer {
 		if (this.m2.vertices.length > 0) {
 			this.loadTextures();
 			await this.loadSkin(0);
+
+			this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
 		}
+	}
+
+	/**
+	 * Update the current state of geosets.
+	 */
+	updateGeosets() {
+		if (!this.meshGroup)
+			return;
+
+		const meshes = this.meshGroup.children;
+		for (let i = 0, n = meshes.length; i < n; i++)
+			meshes[i].visible = this.geosetArray[i].checked;
 	}
 	
 	/**
@@ -56,6 +73,9 @@ class M2Renderer {
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, m2.textureCombos[texUnit.textureComboIndex]);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+
+			if (this.geosetArray)
+				this.geosetArray.push({ label: 'Geoset ' + i, checked: true });
 		}
 
 		// Adjust for weird WoW rotations?
@@ -108,6 +128,10 @@ class M2Renderer {
 	 * Dispose of all meshes controlled by this renderer.
 	 */
 	disposeMeshGroup() {
+		// Clear out geoset controller.
+		if (this.geosetArray)
+			this.geosetArray.splice(0, this.geosetArray.length);
+
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
 			this.renderGroup.remove(this.meshGroup);
@@ -128,6 +152,10 @@ class M2Renderer {
 	 * Dispose of this instance and release all resources.
 	 */
 	dispose() {
+		// Unregister geoset array watcher.
+		if (this.geosetWatcher)
+			this.geosetWatcher();
+
 		// Release bound textures.
 		for (const tex of this.textures)
 			tex.dispose();

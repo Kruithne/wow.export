@@ -34,6 +34,8 @@ Vue.component('listbox', {
 
 		this.observer = new ResizeObserver(() => this.resize());
 		this.observer.observe(this.$el);
+
+		console.log(this);
 	},
 
 	/**
@@ -127,6 +129,8 @@ Vue.component('listbox', {
 					// No items in list, create temporary to measure.
 					const temp = document.createElement('div');
 					temp.classList.add('item');
+					temp.textContent = 'temporary';
+					
 					this.$el.appendChild(temp);
 					this.childHeight = temp.clientHeight;
 					temp.remove();

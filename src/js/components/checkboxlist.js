@@ -96,6 +96,7 @@ Vue.component('checkboxlist', {
 					// No items in list, create temporary to measure.
 					const temp = document.createElement('div');
 					temp.classList.add('item');
+					temp.textContent = 'temporary';
 
 					this.$el.appendChild(temp);
 					this.childHeight = temp.clientHeight;
@@ -161,15 +162,20 @@ Vue.component('checkboxlist', {
 		 * @param {MouseEvent} event 
 		 */
 		propogateClick: function(event) {
-			if (!event.target.matches('input'))
-				event.target.querySelector('input').click();
+			let target = event.target;
+			if (!target.matches('input')) {
+				if (target.matches('span'))
+					target = target.parentNode;
+
+				target.querySelector('input').click();
+			}
 		}
 	},
 
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-listbox ui-checkboxlist" @wheel="wheelMouse">
+	template: `<div class="ui-checkboxlist" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="propogateClick($event)" :class="{ selected: item.checked }">
 			<input type="checkbox" v-model="item.checked"/>

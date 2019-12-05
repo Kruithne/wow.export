@@ -181,6 +181,12 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .ui-listbox {
+	.item:hover {
+		background: var(--font-alt);
+	}
+}
+
+.ui-listbox, .ui-checkboxlist {
 	background: var(--background);
 	position: relative;
 	border: 1px solid var(--border);
@@ -199,7 +205,7 @@ input[type="number"]::-webkit-outer-spin-button {
 			background: var(--background-alt);
 		}
 
-		&:hover, &.selected {
+		&.selected {
 			background: var(--font-alt);
 		}
 	}
