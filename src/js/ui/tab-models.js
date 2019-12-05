@@ -44,6 +44,8 @@ const previewModel = async (fileName) => {
 		await activeRenderer.load();
 		updateCameraBounding();
 
+		console.log(activeRenderer);
+
 		toast.cancel();
 
 		// Renderer did not provide any 
