@@ -1,7 +1,8 @@
 Vue.component('listbox', {
 	/**
-	 * component.items should contain a reference to an array
-	 * containing items to display in the listbox.
+	 * items: Item entries displayed in the list.
+	 * filter: Optional reactive filter for items.
+	 * selection: Reactive selection controller.
 	 */
 	props: ['items', 'filter', 'selection'],
 
