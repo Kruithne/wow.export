@@ -32,10 +32,9 @@ Vue.component('listbox', {
 		document.addEventListener('mouseup', this.onMouseUp);
 		document.addEventListener('keydown', this.onKeyDown);
 
+		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
 		this.observer.observe(this.$el);
-
-		console.log(this);
 	},
 
 	/**
@@ -117,27 +116,8 @@ Vue.component('listbox', {
 		 * is resized due to layout changes.
 		 */
 		resize: function() {
-			const max = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
-			this.scroll = max * this.scrollRel;
-
-			if (!this.childHeight) {
-				const child = this.$el.querySelector('.item');
-				if (child !== null) {
-					// Items already exist in list, use height of first.
-					this.childHeight = child.clientHeight;
-				} else {
-					// No items in list, create temporary to measure.
-					const temp = document.createElement('div');
-					temp.classList.add('item');
-					temp.textContent = 'temporary';
-					
-					this.$el.appendChild(temp);
-					this.childHeight = temp.clientHeight;
-					temp.remove();
-				}
-			}
-
-			this.slotCount = Math.floor(this.$el.clientHeight / this.childHeight);
+			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
+			this.slotCount = Math.floor(this.$el.clientHeight / 26);
 		},
 
 		/**

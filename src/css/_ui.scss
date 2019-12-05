@@ -200,6 +200,11 @@ input[type="number"]::-webkit-outer-spin-button {
 		text-overflow: ellipsis;
 		background: var(--background-dark);
 		cursor: pointer;
+		box-sizing: border-box;
+
+		// If you edit the height here, make sure to edit the identical
+		// hard-coded value used in the listbox/checkboxlist components.
+		height: 26px;
 
 		&:nth-child(even) {
 			background: var(--background-alt);
