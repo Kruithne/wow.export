@@ -17,6 +17,9 @@ module.exports = {
 	// User-agent used for HTTP/HTTPs requests.
 	USER_AGENT: 'wow.export (' + nw.App.manifest.version + ')',
 
+	// Location of geoset mapping.
+	GEOSET_MAPPING: path.join(INSTALL_PATH, 'src', 'geosets', '%d.txt'),
+
 	CACHE: {
 		DIR: path.join(DATA_PATH, 'casc'), // Cache directory.
 		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.

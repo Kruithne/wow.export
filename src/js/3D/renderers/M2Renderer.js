@@ -3,6 +3,7 @@ const core = require('../../core');
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const M2Loader = require('../loaders/M2Loader');
+const GeosetMapper = require('../GeosetMapper');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
 
@@ -11,10 +12,12 @@ class M2Renderer {
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data 
 	 * @param {THREE.Group} renderGroup
+	 * @param {number} fileDataID
 	 */
-	constructor(data, renderGroup) {
+	constructor(data, renderGroup, fileDataID) {
 		this.data = data;
 		this.renderGroup = renderGroup;
+		this.fileDataID = fileDataID;
 		this.textures = [];
 	}
 
@@ -78,6 +81,7 @@ class M2Renderer {
 		}
 
 		core.view.modelViewerGeosets = this.geosetArray;
+		GeosetMapper.loadMapping(this.fileDataID, this.geosetArray);
 
 		// Adjust for weird WoW rotations?
 		this.meshGroup.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
