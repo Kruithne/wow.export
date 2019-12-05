@@ -18,8 +18,6 @@ const renderGroup = new THREE.Group();
 
 let activeRenderer;
 
-//let loadedTextures = [];
-
 const previewModel = async (fileName) => {
 	isLoading = true;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
