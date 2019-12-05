@@ -15,7 +15,6 @@ class M2Renderer {
 	constructor(data, renderGroup) {
 		this.data = data;
 		this.renderGroup = renderGroup;
-		this.geosetArray = core.view.modelViewerGeosets;
 		this.textures = [];
 	}
 
@@ -39,7 +38,7 @@ class M2Renderer {
 	 * Update the current state of geosets.
 	 */
 	updateGeosets() {
-		if (!this.meshGroup)
+		if (!this.meshGroup || !this.geosetArray)
 			return;
 
 		const meshes = this.meshGroup.children;
@@ -61,6 +60,8 @@ class M2Renderer {
 		const dataNorms = new THREE.BufferAttribute(new Float32Array(m2.normals), 3);
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
 
+		this.geosetArray = new Array(skin.submeshes.length);
+
 		for (let i = 0, n = skin.submeshes.length; i < n; i++) {
 			const geometry = new THREE.BufferGeometry();
 			geometry.setAttribute('position', dataVerts);
@@ -73,10 +74,10 @@ class M2Renderer {
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, m2.textureCombos[texUnit.textureComboIndex]);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-
-			if (this.geosetArray)
-				this.geosetArray.push({ label: 'Geoset ' + i, checked: true });
+			this.geosetArray[i] = { label: 'Geoset ' + i, checked: true };
 		}
+
+		core.view.modelViewerGeosets = this.geosetArray;
 
 		// Adjust for weird WoW rotations?
 		this.meshGroup.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
