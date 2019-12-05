@@ -157,7 +157,7 @@ core.events.once('screen-tab-models', () => {
 	scene.add(light);
 	scene.add(renderGroup);
 
-	core.view.modelViewerContext = { camera, scene };
+	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
 core.events.once('init', () => {
