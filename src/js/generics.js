@@ -261,7 +261,12 @@ const getFileHash = async (file, method, encoding) => {
  * @param {string} file 
  */
 const fileExists = async (file) => {
-	return new Promise(res => fsp.access(file).then(res(true)).catch(res(false)));
+	try {
+		await fsp.access(file);
+		return true;
+	} catch (e) {
+		return false;
+	}
 };
 
 /**
