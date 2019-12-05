@@ -126,6 +126,7 @@ Vue.component('listbox', {
 				} else {
 					// No items in list, create temporary to measure.
 					const temp = document.createElement('div');
+					temp.classList.add('item');
 					this.$el.appendChild(temp);
 					this.childHeight = temp.clientHeight;
 					temp.remove();
