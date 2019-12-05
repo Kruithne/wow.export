@@ -30,13 +30,12 @@ const previewModel = async (fileName) => {
 			activeRenderer = null;
 		}
 
-		const fileDataID = listfile.getByFilename(fileName);
-		const file = await core.view.casc.getFile(fileDataID);
+		const file = await core.view.casc.getFileByName(fileName);
 		if (fileName.toLowerCase().endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
 
 			// Load an M2 rendering instance for this model.
-			activeRenderer = new M2Renderer(file, renderGroup, fileDataID);
+			activeRenderer = new M2Renderer(file, renderGroup);
 		} else {
 			throw new Error('Unknown model extension: %s', fileName);
 		}

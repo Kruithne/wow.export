@@ -12,12 +12,10 @@ class M2Renderer {
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data 
 	 * @param {THREE.Group} renderGroup
-	 * @param {number} fileDataID
 	 */
-	constructor(data, renderGroup, fileDataID) {
+	constructor(data, renderGroup) {
 		this.data = data;
 		this.renderGroup = renderGroup;
-		this.fileDataID = fileDataID;
 		this.textures = [];
 	}
 
@@ -80,11 +78,11 @@ class M2Renderer {
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, m2.textureCombos[texUnit.textureComboIndex]);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-			this.geosetArray[i] = { label: 'Geoset ' + i, checked: true };
+			this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
 		}
 
 		core.view.modelViewerGeosets = this.geosetArray;
-		GeosetMapper.loadMapping(this.fileDataID, this.geosetArray);
+		GeosetMapper.map(this.geosetArray);
 
 		// Adjust for weird WoW rotations?
 		this.meshGroup.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
