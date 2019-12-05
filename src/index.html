@@ -146,6 +146,9 @@
 							<template v-if="modelViewerActiveType === 'm2'">
 								<span class="header">Geosets</span>
 								<checkboxlist id="list-geosets" :items="modelViewerGeosets"></checkboxlist>
+								<div id="geoset-toggle">
+									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+								</div>
 							</template>
 						</div>
 					</div>

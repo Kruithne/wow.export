@@ -119,6 +119,16 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
+			 * Mark all geosets to the given state.
+			 * @param {boolean} state 
+			 */
+			setAllGeosets: function(state) {
+				if (this.modelViewerGeosets)
+					for (const node of this.modelViewerGeosets)
+						node.checked = state;
+			},
+
+			/**
 			 * Return a tag for a given product.
 			 * @param {string} product 
 			 */
