@@ -231,10 +231,9 @@ Vue.component('listbox', {
 		/**
 		 * Invoked when a user selects an item in the list.
 		 * @param {string} item 
-		 * @param {number} selectIndex
 		 * @param {MouseEvent} e
 		 */
-		selectItem: function(item, selectIndex, event) {
+		selectItem: function(item, event) {
 			const checkIndex = this.selection.indexOf(item);
 
 			if (event.ctrlKey) {
@@ -272,6 +271,6 @@ Vue.component('listbox', {
 	 */
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, i, $event)" :class="{ selected: selection.includes(item) }">{{ item }}</div>
+		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">{{ item }}</div>
 	</div>`
 });
