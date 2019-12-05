@@ -1,5 +1,5 @@
-const Texture = require('./Texture');
-const Skin = require('./Skin');
+const Texture = require('../Texture');
+const Skin = require('../Skin');
 
 const MAGIC_MD21 = 0x3132444D;
 const MAGIC_MD20 = 0x3032444D;

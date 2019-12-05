@@ -5,20 +5,20 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
-const M2Loader = require('../3D/M2Loader');
-const BLPFile = require('../casc/blp');
-const Texture = require('../3D/Texture');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+
+//const M2Loader = require('../3D/loaders/M2Loader');
+const M2Renderer = require('../3D/renderers/M2Renderer');
 
 let isLoading = false;
 let selectedFile = null;
 
 let camera, scene;
-let loadedM2, loadedModel;
+const renderGroup = new THREE.Group();
 
-let loadedTextures = [];
+let activeRenderer;
 
-const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
+//let loadedTextures = [];
 
 const previewModel = async (fileName) => {
 	isLoading = true;
@@ -26,116 +26,31 @@ const previewModel = async (fileName) => {
 	log.write('Previewing model %s', fileName);
 
 	try {
-		// Dispose of existing model.
-		if (loadedModel) {
-			scene.remove(loadedModel);
-			loadedModel.geometry.dispose();
-		}
-
-		// Dispose of loaded textures.
-		if (loadedTextures.length > 1) {
-			for (let tex of loadedTextures)
-				tex.dispose();
-
-			loadedTextures = [];
+		// Dispose the currently active renderer.
+		if (activeRenderer) {
+			activeRenderer.dispose();
+			activeRenderer = null;
 		}
 
 		const file = await core.view.casc.getFileByName(fileName);
 		if (fileName.toLowerCase().endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
-			
-			loadedM2 = new M2Loader(file);
-			await loadedM2.load();
 
-			console.log(loadedM2);
-
-			// Don't try to load a model without veritices.
-			if (loadedM2.vertices.length > 0) {
-				const skin = await loadedM2.getSkin(0);
-				const materials = new Array(loadedM2.textures.length);
-
-				for (let i = 0, n = loadedM2.textures.length; i < n; i++) {
-					const texture = loadedM2.textures[i];
-
-					if (texture.fileDataID > 0) {
-						const tex = new THREE.Texture();
-						const loader = new THREE.ImageLoader();
-
-						texture.getTextureFile().then(data => {
-							const blp = new BLPFile(data);
-							loader.load(blp.getDataURL(), image => {
-								tex.image = image;
-								tex.format = THREE.RGBAFormat;
-								tex.needsUpdate = true;
-							});
-						}).catch(e => {
-							log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
-						});
-
-						if (texture.flags & Texture.FLAG_WRAP_U)
-							tex.wrapS = THREE.RepeatWrapping;
-
-						if (texture.flags & Texture.FLAG_WRAP_V)
-							tex.wrapT = THREE.RepeatWrapping;
-
-						loadedTextures.push(tex);
-						const mat = new THREE.MeshPhongMaterial({ map: tex });
-						materials[i] = mat;
-					} else {
-						materials[i] = DEFAULT_MATERIAL;
-					}
-				}
-
-				const geometry = new THREE.BufferGeometry();
-				geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(loadedM2.vertices), 3));
-				geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(loadedM2.normals), 3));
-				geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(loadedM2.uv), 2));
-				geometry.setIndex(skin.triangles);
-
-				for (let i = 0, n = skin.submeshes.length; i < n; i++) {
-					const mesh = skin.submeshes[i];
-					const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
-					geometry.addGroup(mesh.triangleStart, mesh.triangleCount, loadedM2.textureCombos[texUnit.textureComboIndex]);
-				}
-
-				loadedModel = new THREE.Mesh(geometry, materials);
-				scene.add(loadedModel);
-
-				// Adjust for weird WoW rotations?
-				loadedModel.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
-				loadedModel.rotateOnAxis(new THREE.Vector3(0, 0, 1), 270 * (Math.PI / 180));
-
-				// Get the bounding box for the model.
-				const boundingBox = new THREE.Box3();
-				boundingBox.setFromObject(loadedModel);
-
-				// Calculate center point and size from bounding box.
-				const center = boundingBox.getCenter(new THREE.Vector3());
-				const size = boundingBox.getSize(new THREE.Vector3());
-
-				const maxDim = Math.max(size.x, size.y, size.z);
-				const fov = camera.fov * (Math.PI / 180);
-				let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
-				camera.position.set(center.x, center.y, cameraZ);
-
-				const minZ = boundingBox.min.z;
-				const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
-
-				camera.far = cameraToFarEdge * 3;
-				camera.updateProjectionMatrix();
-
-				const controls = core.view.modelViewerContext.controls;
-				if (controls) {
-					controls.target = center;
-					controls.maxDistance = cameraToFarEdge * 2;
-				}
-
-				toast.cancel();
-			} else {
-				toast.cancel();
-				core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
-			}
+			// Load an M2 rendering instance for this model.
+			activeRenderer = new M2Renderer(file, renderGroup);
+		} else {
+			throw new Error('Unknown model extension: %s', fileName);
 		}
+
+		await activeRenderer.load();
+		updateCameraBounding();
+
+		console.log(activeRenderer);
+		toast.cancel();
+
+		// Renderer did not provide any 
+		if (renderGroup.children.length === 0)
+			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		selectedFile = fileName;
 	} catch (e) {
@@ -153,6 +68,36 @@ const previewModel = async (fileName) => {
 	}
 
 	isLoading = false;
+};
+
+/**
+ * Update the camera to match render group bounding.
+ */
+const updateCameraBounding = () => {
+	// Get the bounding box for the model.
+	const boundingBox = new THREE.Box3();
+	boundingBox.setFromObject(renderGroup);
+
+	// Calculate center point and size from bounding box.
+	const center = boundingBox.getCenter(new THREE.Vector3());
+	const size = boundingBox.getSize(new THREE.Vector3());
+
+	const maxDim = Math.max(size.x, size.y, size.z);
+	const fov = camera.fov * (Math.PI / 180);
+	let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
+	camera.position.set(center.x, center.y, cameraZ);
+
+	const minZ = boundingBox.min.z;
+	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
+
+	camera.far = cameraToFarEdge * 3;
+	camera.updateProjectionMatrix();
+
+	const controls = core.view.modelViewerContext.controls;
+	if (controls) {
+		controls.target = center;
+		controls.maxDistance = cameraToFarEdge * 2;
+	}
 };
 
 const exportFiles = async (files, isLocal = false) => {
@@ -212,6 +157,7 @@ core.events.once('screen-tab-models', () => {
 	scene = new THREE.Scene();
 	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
 	scene.add(light);
+	scene.add(renderGroup);
 
 	core.view.modelViewerContext = { camera, scene };
 });
