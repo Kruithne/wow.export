@@ -123,7 +123,7 @@ class M2Renderer {
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
+				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex, alphaTest: 0.5 });
 			} else {
 				this.materials[i] = DEFAULT_MATERIAL;
 			}
