@@ -90,10 +90,6 @@ class M2Renderer {
 		core.view.modelViewerGeosets = this.geosetArray;
 		GeosetMapper.map(this.geosetArray);
 
-		// Adjust for weird WoW rotations?
-		this.meshGroup.rotateOnAxis(new THREE.Vector3(1, 0, 0), 270 * (Math.PI / 180));
-		this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 0, 1), 270 * (Math.PI / 180));
-
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
 	}

@@ -130,14 +130,14 @@ class M2Loader {
 		for (let i = 0; i < verticesCount; i++) {
 			const index = i * 3;
 			verts[index] = this.data.readFloatLE();
+			verts[index + 2] = this.data.readFloatLE() * -1;
 			verts[index + 1] = this.data.readFloatLE();
-			verts[index + 2] = this.data.readFloatLE();
 	
 			this.data.move(8); // boneWeight/boneIndicies.
 	
 			normals[index] = this.data.readFloatLE();
+			normals[index + 2] = this.data.readFloatLE() * -1;
 			normals[index + 1] = this.data.readFloatLE();
-			normals[index + 2] = this.data.readFloatLE();
 	
 			const uvIndex = i * 2;
 			uv[uvIndex] = this.data.readFloatLE();
