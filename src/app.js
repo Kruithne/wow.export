@@ -347,7 +347,8 @@ document.addEventListener('click', function(e) {
 					if (file.name.toLowerCase().endsWith(handler.ext))
 						count++;
 
-				core.view.fileDropPrompt = handler.prompt(count);
+				if (count > 0)
+					core.view.fileDropPrompt = handler.prompt(count);
 			} else {
 				core.view.fileDropPrompt = 'That file cannot be converted.';
 			}
@@ -370,7 +371,8 @@ document.addEventListener('click', function(e) {
 					if (file.name.toLowerCase().endsWith(handler.ext))
 						include.push(file.path);
 
-				handler.process(include);
+				if (include.length > 0)
+					handler.process(include);
 			}
 		}
 		return false;
