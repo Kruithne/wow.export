@@ -35,7 +35,7 @@ class M2Renderer {
 		}
 
 		// Drop reference to raw data, we don't need it now.
-		this.data = null;
+		this.data = undefined;
 	}
 
 	/**
