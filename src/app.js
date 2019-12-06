@@ -343,9 +343,11 @@ document.addEventListener('click', function(e) {
 			if (handler) {
 				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 				let count = 0;
-				for (const file of files)
-					if (file.name.toLowerCase().endsWith(handler.ext))
+				for (const file of files) {
+					const check = file.name.toLowerCase();
+					if (handler.ext.some(ext => check.endsWith(ext)))
 						count++;
+				}
 
 				if (count > 0)
 					core.view.fileDropPrompt = handler.prompt(count);
@@ -367,9 +369,11 @@ document.addEventListener('click', function(e) {
 			if (handler) {
 				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 				const include = [];
-				for (const file of files)
-					if (file.name.toLowerCase().endsWith(handler.ext))
+				for (const file of files) {
+					const check = file.name.toLowerCase();
+					if (handler.ext.some(ext => check.endsWith(ext)))
 						include.push(file.path);
+				}
 
 				if (include.length > 0)
 					handler.process(include);
