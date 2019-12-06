@@ -7,8 +7,8 @@ const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
-//const M2Loader = require('../3D/loaders/M2Loader');
 const M2Renderer = require('../3D/renderers/M2Renderer');
+const M2Exporter = require('../3D/exporters/M2Exporter');
 
 let isLoading = false;
 let selectedFile = null;
@@ -137,7 +137,19 @@ const exportFiles = async (files, isLocal = false) => {
 						break;
 
 					case 'OBJ':
-						// ToDo: WaveFront exporting.
+						const exportOBJ = ExportHelper.replaceExtension(exportPath, '.obj');
+
+						if (fileName.endsWith('.m2')) {
+							const exporter = new M2Exporter(data);
+
+							// Respect geoset masking for selected model.
+							if (fileName == activePath)
+								exporter.setGeosetMask(core.view.modelViewerGeosets);
+
+							await exporter.exportAsOBJ(exportOBJ);
+						} else {
+							throw new Error('Unexpected model format: ' + fileName);
+						}
 						break;
 
 					default:

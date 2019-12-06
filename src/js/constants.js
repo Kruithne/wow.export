@@ -11,6 +11,9 @@ module.exports = {
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
+	// Current version of wow.export
+	VERSION: nw.App.manifest.version,
+
 	// Filter used to filter out WMO LOD files.
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
