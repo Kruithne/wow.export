@@ -55,7 +55,6 @@ const exportFiles = async (files, isLocal = false) => {
 	const format = core.view.config.exportTextureFormat;
 	const type = EXPORT_TYPES[format];
 
-	let canvas;
 	for (const fileName of files) {
 		try {
 			const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
@@ -68,18 +67,7 @@ const exportFiles = async (files, isLocal = false) => {
 				// Swap file extension for the new one.
 				exportPath = ExportHelper.replaceExtension(exportPath, type.ext);
 				const blp = new BLPFile(data);
-
-				// Re-use canvas node for this batch of renders.
-				if (!canvas)
-					canvas = document.createElement('canvas');
-
-				canvas.width = blp.width;
-				canvas.height = blp.height;
-
-				blp.drawToCanvas(canvas, 0, core.view.config.exportTextureAlpha);
-
-				const buf = await BufferWrapper.fromCanvas(canvas, type.mime);
-				await buf.writeToFile(exportPath);
+				await blp.saveToFile(exportPath, type.mime, core.view.config.exportTextureAlpha);
 			}
 
 			helper.mark(fileName, true);

@@ -83,13 +83,32 @@ class BLPImage {
 		if (this.dataURL)
 			this.revokeDataURL();
 
+		this.dataURL = this.toCanvas(useAlpha).toDataURL();
+		return this.dataURL;
+	}
+
+	/**
+	 * Return a canvas with this BLP painted onto it.
+	 * @param {boolean} useAlpha 
+	 */
+	toCanvas(useAlpha = true) {
 		const canvas = document.createElement('canvas');
 		canvas.width = this.width;
 		canvas.height = this.height;
 
 		this.drawToCanvas(canvas, 0, useAlpha);
-		this.dataURL = canvas.toDataURL();
-		return this.dataURL;
+		return canvas;
+	}
+
+	/**
+	 * Save this BLP to a file.
+	 * @param {string} file 
+	 * @param {string} mimeType 
+	 * @param {boolean} useAlpha 
+	 */
+	async saveToFile(file, mimeType, useAlpha = true) {
+		const buf = await BufferWrapper.fromCanvas(this.toCanvas(useAlpha), mimeType);
+		await buf.writeToFile(file);
 	}
 
 	/**

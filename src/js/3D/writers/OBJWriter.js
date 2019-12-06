@@ -16,6 +16,15 @@ class OBJWriter {
 		this.uvs = [];
 
 		this.meshes = [];
+		this.name = 'Mesh';
+	}
+
+	/**
+	 * Set the name of this model.
+	 * @param {string} name 
+	 */
+	setName(name) {
+		this.name = name;
 	}
 
 	/**
@@ -44,10 +53,12 @@ class OBJWriter {
 
 	/**
 	 * Add a mesh to this writer.
+	 * @param {string} name
 	 * @param {Array} triangles 
+	 * @param {string} matName
 	 */
-	addMesh(name, triangles) {
-		this.meshes.push({ name, triangles });
+	addMesh(name, triangles, matName) {
+		this.meshes.push({ name, triangles, matName });
 	}
 
 	/**
@@ -59,6 +70,7 @@ class OBJWriter {
 
 		// Write header.
 		writer.writeLine('# Exported using wow.export v' + constants.VERSION);
+		writer.writeLine('o ' + this.name);
 
 		// Write verts.
 		const verts = this.verts;
@@ -79,6 +91,9 @@ class OBJWriter {
 		for (const mesh of this.meshes) {
 			writer.writeLine('g ' + mesh.name);
 			writer.writeLine('s 1');
+
+			if (mesh.matName)
+				writer.writeLine('usemtl ' + mesh.matName);
 
 			const triangles = mesh.triangles;
 			for (let i = 0, n = triangles.length; i < n; i += 3) {
