@@ -90,6 +90,9 @@ class M2Renderer {
 		core.view.modelViewerGeosets = this.geosetArray;
 		GeosetMapper.map(this.geosetArray);
 
+		// Rotate to face camera.
+		this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
 	}
