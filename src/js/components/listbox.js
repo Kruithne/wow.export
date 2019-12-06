@@ -3,8 +3,9 @@ Vue.component('listbox', {
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
 	 * selection: Reactive selection controller.
+	 * single: If set, only one entry can be selected.
 	 */
-	props: ['items', 'filter', 'selection'],
+	props: ['items', 'filter', 'selection', 'single'],
 
 	/**
 	 * Reactive instance data.
@@ -221,33 +222,41 @@ Vue.component('listbox', {
 		selectItem: function(item, event) {
 			const checkIndex = this.selection.indexOf(item);
 
-			if (event.ctrlKey) {
-				// Ctrl-key held, so allow multiple selections.
-				if (checkIndex > -1)
-					this.selection.splice(checkIndex, 1);
-				else
+			if (this.single) {
+				// Listbox is in single-entry mode, replace selection.
+				if (checkIndex === -1) {
+					this.selection.splice(0, this.selection.length);
 					this.selection.push(item);
-			} else if (event.shiftKey) {
-				// Shift-key held, select a range.
-				if (this.lastSelectItem && this.lastSelectItem !== item) {
-					const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-					const thisSelectIndex = this.filteredItems.indexOf(item);
+				}
+			} else {
+				if (event.ctrlKey) {
+					// Ctrl-key held, so allow multiple selections.
+					if (checkIndex > -1)
+						this.selection.splice(checkIndex, 1);
+					else
+						this.selection.push(item);
+				} else if (event.shiftKey) {
+					// Shift-key held, select a range.
+					if (this.lastSelectItem && this.lastSelectItem !== item) {
+						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+						const thisSelectIndex = this.filteredItems.indexOf(item);
 
-					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
-					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
-					const range = this.filteredItems.slice(lowest, lowest + delta + 1);
+						const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+						const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+						const range = this.filteredItems.slice(lowest, lowest + delta + 1);
 
-					for (const select of range)
-						if (this.selection.indexOf(select) === -1)
-							this.selection.push(select);
-				}				
-			} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
-				// Normal click, replace entire selection.
-				this.selection.splice(0, this.selection.length);
-				this.selection.push(item);
+						for (const select of range)
+							if (this.selection.indexOf(select) === -1)
+								this.selection.push(select);
+					}				
+				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
+					// Normal click, replace entire selection.
+					this.selection.splice(0, this.selection.length);
+					this.selection.push(item);
+				}
+				
+				this.lastSelectItem = item;
 			}
-
-			this.lastSelectItem = item;
 		}
 	},
 
