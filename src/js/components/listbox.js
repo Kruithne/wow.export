@@ -184,32 +184,39 @@ Vue.component('listbox', {
 			if (!this.lastSelectItem)
 				return;
 
-			const isArrowUp = e.key === 'ArrowUp';
-			const isArrowDown = e.key === 'ArrowDown';
-			if (isArrowUp || isArrowDown) {
-				const delta = isArrowUp ? -1 : 1;
+			if (e.key === 'c' && e.ctrlKey) {
+				// Copy selection to clipboard.
+				const out = this.selection.join('\n');
+				nw.Clipboard.get().set(out, 'text');
+			} else {
+				// Arrow keys.
+				const isArrowUp = e.key === 'ArrowUp';
+				const isArrowDown = e.key === 'ArrowDown';
+				if (isArrowUp || isArrowDown) {
+					const delta = isArrowUp ? -1 : 1;
 
-				// Move/expand selection one.
-				const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-				const nextIndex = lastSelectIndex + delta;
-				const next = this.filteredItems[nextIndex];
-				if (next) {
-					const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
-					let diff = Math.abs(nextIndex - lastViewIndex);
-					if (isArrowDown)
-						diff += 1;
+					// Move/expand selection one.
+					const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+					const nextIndex = lastSelectIndex + delta;
+					const next = this.filteredItems[nextIndex];
+					if (next) {
+						const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
+						let diff = Math.abs(nextIndex - lastViewIndex);
+						if (isArrowDown)
+							diff += 1;
 
-					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
-						const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
-						this.scroll += ((diff * this.itemWeight) * weight) * delta;
-						this.recalculateBounds();
+						if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+							const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+							this.scroll += ((diff * this.itemWeight) * weight) * delta;
+							this.recalculateBounds();
+						}
+
+						if (!e.shiftKey)
+							this.selection.splice(0, this.selection.length);
+
+						this.selection.push(next);
+						this.lastSelectItem = next;
 					}
-
-					if (!e.shiftKey)
-						this.selection.splice(0, this.selection.length);
-
-					this.selection.push(next);
-					this.lastSelectItem = next;
 				}
 			}
 		},
@@ -254,7 +261,7 @@ Vue.component('listbox', {
 					this.selection.splice(0, this.selection.length);
 					this.selection.push(item);
 				}
-				
+
 				this.lastSelectItem = item;
 			}
 		}
