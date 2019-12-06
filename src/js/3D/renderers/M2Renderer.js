@@ -71,7 +71,13 @@ class M2Renderer {
 			geometry.setAttribute('position', dataVerts);
 			geometry.setAttribute('normal', dataNorms);
 			geometry.setAttribute('uv', dataUVs);
-			geometry.setIndex(skin.triangles);
+
+			// Map triangle array to indicies.
+			const index = new Array(skin.triangles.length);
+			for (let j = 0, m = index.length; j < m; j++)
+				index[j] = skin.indicies[skin.triangles[j]];
+
+			geometry.setIndex(index);
 
 			const skinMesh = skin.submeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
