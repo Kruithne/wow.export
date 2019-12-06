@@ -4,8 +4,9 @@ Vue.component('listbox', {
 	 * filter: Optional reactive filter for items.
 	 * selection: Reactive selection controller.
 	 * single: If set, only one entry can be selected.
+	 * keyinput: If true, listbox registers for keyboard input.
 	 */
-	props: ['items', 'filter', 'selection', 'single'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput'],
 
 	/**
 	 * Reactive instance data.
@@ -27,11 +28,14 @@ Vue.component('listbox', {
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
-		this.onKeyDown = e => this.handleKey(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
-		document.addEventListener('keydown', this.onKeyDown);
+
+		if (this.keyinput) {
+			this.onKeyDown = e => this.handleKey(e);
+			document.addEventListener('keydown', this.onKeyDown);
+		}
 
 		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
@@ -46,7 +50,9 @@ Vue.component('listbox', {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
-		document.removeEventListener('keydown', this.onKeyDown);
+
+		if (this.keyinput)
+			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
 		this.observer.disconnect();
