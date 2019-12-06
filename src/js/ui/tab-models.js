@@ -17,6 +17,7 @@ let camera, scene;
 const renderGroup = new THREE.Group();
 
 let activeRenderer;
+let activePath;
 
 const previewModel = async (fileName) => {
 	isLoading = true;
@@ -28,9 +29,11 @@ const previewModel = async (fileName) => {
 		if (activeRenderer) {
 			activeRenderer.dispose();
 			activeRenderer = null;
+			activePath = null;
 		}
 
 		const file = await core.view.casc.getFileByName(fileName);
+
 		if (fileName.toLowerCase().endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
 
@@ -42,6 +45,8 @@ const previewModel = async (fileName) => {
 
 		await activeRenderer.load();
 		updateCameraBounding();
+
+		activePath = fileName;
 
 		console.log(activeRenderer);
 
@@ -100,29 +105,52 @@ const updateCameraBounding = () => {
 };
 
 const exportFiles = async (files, isLocal = false) => {
-	const helper = new ExportHelper(files.length, 'model');
-	helper.start();
-
 	const format = core.view.config.exportModelFormat;
-	for (const fileName of files) {
-		try {
-			const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
-			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+	if (format === 'PNG') {
+		// For PNG exports, we only export the viewport, not the selected files.
+		if (activePath) {
+			core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
+			const exportPath = ExportHelper.getExportPath(activePath);
 
-			if (format === 'M2/WMO') {
-				// Export as raw file with no conversion.
-				await data.writeToFile(exportPath);
-			} else {
-				// ToDo: M2/WMO conversion.
-			}
+			const canvas = document.getElementById('model-preview').querySelector('canvas');
+			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+			await buf.writeToFile(ExportHelper.replaceExtension(exportPath, '.png'));
 
-			helper.mark(fileName, true);
-		} catch (e) {
-			helper.mark(fileName, false, e.message);
+			core.setToast('success', util.format('Successfully exported preview to %s!', exportPath));
+		} else {
+			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!');
 		}
-	}
+	} else {
+		const helper = new ExportHelper(files.length, 'model');
+		helper.start();
 
-	helper.finish();
+		for (const fileName of files) {
+			try {
+				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
+				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+
+				switch (format) {
+					case 'RAW':
+						// Export as raw file with no conversions.
+						await data.writeToFile(exportPath);
+						break;
+
+					case 'OBJ':
+						// ToDo: WaveFront exporting.
+						break;
+
+					default:
+						throw new Error('Unexpected model export format: ' + format);
+				}
+
+				helper.mark(fileName, true);
+			} catch (e) {
+				helper.mark(fileName, false, e.message);
+			}
+		}
+
+		helper.finish();
+	}
 };
 
 /**
