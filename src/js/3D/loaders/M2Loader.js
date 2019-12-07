@@ -89,8 +89,28 @@ class M2Loader {
 		this.viewCount = this.data.readUInt32LE();
 		this.data.move(8); // coloursCount, coloursOfs
 		this.parseChunk_MD21_textures(ofs);
-		this.data.move(10 * 4); // UVAnim, TexReplace, renderFlags, boneLookup
+		this.data.move(6 * 4); // texture_weights, texture_transforms, textureIndiciesById
+		this.parseChunk_MD21_materials(ofs);
+		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
+	}
+	
+	/**
+	 * Parse material meta-data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_materials(ofs) {
+		const materialCount = this.data.readUInt32LE();
+		const materialOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(materialOfs + ofs);
+
+		this.materials = new Array(materialCount);
+		for (let i = 0; i < materialCount; i++)
+			this.materials[i] = { flags: this.data.readUInt16LE(), blendingMode: this.data.readUInt16LE() };
+
+		this.data.seek(base);
 	}
 	
 	/**
