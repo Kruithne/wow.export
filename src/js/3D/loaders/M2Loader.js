@@ -89,10 +89,27 @@ class M2Loader {
 		this.viewCount = this.data.readUInt32LE();
 		this.data.move(8); // coloursCount, coloursOfs
 		this.parseChunk_MD21_textures(ofs);
-		this.data.move(6 * 4); // texture_weights, texture_transforms, textureIndiciesById
+		this.data.move(4 * 4); // texture_weights, texture_transforms
+		this.parseChunk_MD21_replaceableTextureLookup(ofs);
 		this.parseChunk_MD21_materials(ofs);
 		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
+	}
+
+	/**
+	 * Parse replaceable texture lookups from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_replaceableTextureLookup(ofs) {
+		const lookupCount = this.data.readUInt32LE();
+		const lookupOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(lookupOfs + ofs);
+
+		this.replacableTextureLookup = this.data.readUInt16LE(lookupCount);
+
+		this.data.seek(base);
 	}
 	
 	/**
