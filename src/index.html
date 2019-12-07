@@ -62,6 +62,14 @@
 						<input type="number" v-model.number="configEdit.listfileCacheRefresh"/>
 					</div>
 					<div>
+						<h1>Export Model Collision</h1>
+						<p>If enabled, M2 models exported as OBJ will also have their collision exported into a .phys.obj file.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.modelsExportCollision"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inacivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>

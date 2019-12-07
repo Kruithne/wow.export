@@ -21,6 +21,7 @@
 	"modelsShowWMO": true,
 	"modelsAutoPreview": true,
 	"modelsShowSidebar": true,
+	"modelsExportCollision": false,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false

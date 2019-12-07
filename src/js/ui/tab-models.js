@@ -146,7 +146,7 @@ const exportFiles = async (files, isLocal = false) => {
 							if (fileName == activePath)
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
-							await exporter.exportAsOBJ(exportOBJ);
+							await exporter.exportAsOBJ(exportOBJ, core.view.config.modelsExportCollision);
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);
 						}

@@ -28,8 +28,9 @@ class M2Exporter {
 	/**
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param {string} out
+	 * @param {boolean} exportCollision
 	 */
-	async exportAsOBJ(out) {
+	async exportAsOBJ(out, exportCollision = false) {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
@@ -89,6 +90,15 @@ class M2Exporter {
 
 		await obj.write();
 		await mtl.write();
+
+		if (exportCollision) {
+			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
+			phys.setVertArray(this.m2.collisionPositions);
+			phys.setNormalArray(this.m2.collisionNormals);
+			phys.addMesh('Collision', this.m2.collisionIndicies);
+
+			await phys.write();
+		}
 	}
 }
 

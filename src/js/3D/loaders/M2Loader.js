@@ -94,6 +94,54 @@ class M2Loader {
 		this.parseChunk_MD21_materials(ofs);
 		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
+		this.data.move(6 * 4); // textureTransformBoneMap, textureWeightCombos, textureTransformCombos
+		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
+		this.parseChunk_MD21_collision(ofs);
+	}
+
+	/**
+	 * Parse collision data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_collision(ofs) {
+		const indiciesCount = this.data.readUInt32LE();
+		const indiciesOfs = this.data.readUInt32LE();
+
+		const positionsCount = this.data.readUInt32LE();
+		const positionsOfs = this.data.readUInt32LE();
+
+		const normalsCount = this.data.readUInt32LE();
+		const normalsOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+
+		// Indicies
+		this.data.seek(indiciesOfs + ofs);
+		this.collisionIndicies = this.data.readUInt16LE(indiciesCount);
+
+		// Positions
+		this.data.seek(positionsOfs + ofs);
+		const positions = this.collisionPositions = new Array(positionsCount * 3);
+		for (let i = 0; i < positionsCount; i++) {
+			const index = i * 3;
+
+			positions[index] = this.data.readFloatLE();
+			positions[index + 2] = this.data.readFloatLE() * -1;
+			positions[index + 1] = this.data.readFloatLE();
+		}
+
+		// Normals
+		this.data.seek(normalsOfs + ofs);
+		const normals = this.collisionNormals = new Array(normalsCount * 3);
+		for (let i = 0; i < normalsCount; i++) {
+			const index = i * 3;
+
+			normals[index] = this.data.readFloatLE();
+			normals[index + 2] = this.data.readFloatLE() * -1;
+			normals[index + 1] = this.data.readFloatLE();
+		}
+
+		this.data.seek(base);
 	}
 
 	/**
