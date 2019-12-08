@@ -4,6 +4,7 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
+const M2Renderer = require('./M2Renderer');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
 
@@ -19,6 +20,7 @@ class WMORenderer {
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
 		this.textures = [];
+		this.m2Renderers = [];
 	}
 
 	/**
@@ -57,12 +59,21 @@ class WMORenderer {
 			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true });
 		}
 
+		const setCount = wmo.doodadSets.length;
+		this.setArray = new Array(setCount);
+		this.doodadSets = new Array(setCount);
+		for (let i = 0; i < setCount; i++)
+			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
+
 		// Set-up reactive controls.
-		core.view.modelViewerWMOGroups = this.groupArray;
-		this.groupWatcher = core.view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
+		const view = core.view;
+		view.modelViewerWMOGroups = this.groupArray;
+		view.modelViewerWMOSets = this.setArray;
+		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
+		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
 
 		// Rotate to face camera.
-		this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+		//this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
@@ -119,6 +130,58 @@ class WMORenderer {
 	}
 
 	/**
+	 * Load a doodad set for this WMO.
+	 * @param {number} index 
+	 */
+	async loadDoodadSet(index) {
+		const wmo = this.wmo;
+		const set = wmo.doodadSets[index];
+		const casc = core.view.casc;
+
+		if (!set)
+			throw new Error('Invalid doodad set requested: %s', index);
+
+		log.write('Loading doodad set: %s', set.name);
+
+		const renderGroup = new THREE.Group();
+
+		const firstIndex = set.firstInstanceIndex;
+		const count = set.doodadCount;
+
+		for (let i = firstIndex; i < count; i++) {
+			const doodad = wmo.doodads[i];
+			const fileDataID = wmo.fileDataIDs[doodad.offset];
+
+			if (fileDataID > 0) {
+				try {
+					const data = await casc.getFile(fileDataID);
+					const m2 = new M2Renderer(data, renderGroup);
+
+					await m2.load();
+					await m2.loadSkin(0);
+
+					const pos = doodad.position;
+					m2.meshGroup.position.set(pos[0], pos[2], pos[1] * -1);
+
+					const rot = doodad.rotation;
+					m2.meshGroup.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
+
+					m2.meshGroup.scale.set(doodad.scale, doodad.scale, doodad.scale);
+
+					this.m2Renderers.push(m2);
+				} catch (e) {
+					log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+				}
+			}
+		}
+
+		//renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+
+		this.renderGroup.add(renderGroup);
+		this.doodadSets[index] = renderGroup;
+	}
+
+	/**
 	 * Update the visibility status of WMO groups.
 	 */
 	updateGroups() {
@@ -128,6 +191,25 @@ class WMORenderer {
 		const meshes = this.meshGroup.children;
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.groupArray[i].checked;
+	}
+
+	/**
+	 * Update the visibility status of doodad sets.
+	 */
+	async updateSets() {
+		if (!this.wmo || !this.setArray)
+			return;
+
+		const sets = this.doodadSets;
+		for (let i = 0, n = sets.length; i < n; i++) {
+			const state = this.setArray[i].checked;
+			const set = sets[i];
+
+			if (set)
+				set.visible = state;
+			else if (state)
+				await this.loadDoodadSet(i);
+		}
 	}
 
 	/**
@@ -149,13 +231,25 @@ class WMORenderer {
 			this.meshGroup = null;
 		}
 
-		// Remove the group watcher.
-		if (this.groupWatcher)
-			this.groupWatcher();
+		// Dispose of all M2 renderers for doodad sets.
+		for (const renderer of this.m2Renderers)
+			renderer.dispose();
 
-		// Clear out WMO group array.
-		if (this.groupArray)
-			this.groupArray.splice(0, this.groupArray.length);
+		// Remove doodad set containers from renderGroup.
+		// In theory, these should now be empty is M2 renderers dispose correctly.
+		for (const set of this.doodadSets)
+			this.renderGroup.remove(set);
+
+		// Dereference M2 renderers for faster clean-up.
+		this.m2Renderers = undefined;
+
+		// Unregister reactive watchers.
+		if (this.groupWatcher) this.groupWatcher();
+		if (this.setWatcher) this.setWatcher();
+
+		// Empty reactive arrays.
+		if (this.groupArray) this.groupArray.splice(0, this.groupArray.length);
+		if (this.setArray) this.setArray.splice(0, this.setArray.length);
 
 		// Release bound textures.
 		for (const tex of this.textures)

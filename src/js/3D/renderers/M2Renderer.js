@@ -12,10 +12,12 @@ class M2Renderer {
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data 
 	 * @param {THREE.Group} renderGroup
+	 * @param {boolean} reactive
 	 */
-	constructor(data, renderGroup) {
+	constructor(data, renderGroup, reactive = false) {
 		this.data = data;
 		this.renderGroup = renderGroup;
+		this.reactive = reactive;
 		this.textures = [];
 	}
 
@@ -31,7 +33,8 @@ class M2Renderer {
 			this.loadTextures();
 			await this.loadSkin(0);
 
-			this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+			if (this.reactive)
+				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
 		}
 
 		// Drop reference to raw data, we don't need it now.
@@ -42,7 +45,7 @@ class M2Renderer {
 	 * Update the current state of geosets.
 	 */
 	updateGeosets() {
-		if (!this.meshGroup || !this.geosetArray)
+		if (!this.reactive || !this.meshGroup || !this.geosetArray)
 			return;
 
 		const meshes = this.meshGroup.children;
@@ -64,7 +67,8 @@ class M2Renderer {
 		const dataNorms = new THREE.BufferAttribute(new Float32Array(m2.normals), 3);
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
 
-		this.geosetArray = new Array(skin.submeshes.length);
+		if (this.reactive)
+			this.geosetArray = new Array(skin.submeshes.length);
 
 		for (let i = 0, n = skin.submeshes.length; i < n; i++) {
 			const geometry = new THREE.BufferGeometry();
@@ -84,11 +88,15 @@ class M2Renderer {
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, m2.textureCombos[texUnit.textureComboIndex]);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-			this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
+
+			if (this.reactive)
+				this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
 		}
 
-		core.view.modelViewerGeosets = this.geosetArray;
-		GeosetMapper.map(this.geosetArray);
+		if (this.reactive) {
+			core.view.modelViewerGeosets = this.geosetArray;
+			GeosetMapper.map(this.geosetArray);
+		}
 
 		// Rotate to face camera.
 		this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));

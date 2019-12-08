@@ -219,7 +219,7 @@ const WMOChunkHandlers = {
 			doodads[i] = {
 				offset: data.readUInt24LE(),
 				flags: data.readUInt8(),
-				position: this.readPosition(),
+				position: data.readFloatLE(3),
 				rotation: data.readFloatLE(4),
 				scale: data.readFloatLE(),
 				color: data.readUInt8(4)

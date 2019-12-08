@@ -39,7 +39,7 @@ const previewModel = async (fileName) => {
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
-			activeRenderer = new M2Renderer(file, renderGroup);
+			activeRenderer = new M2Renderer(file, renderGroup, true);
 		} else if (fileNameLower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
 			activeRenderer = new WMORenderer(file, fileName, renderGroup);
