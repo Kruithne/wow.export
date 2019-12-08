@@ -77,7 +77,7 @@ class M2Renderer {
 			for (let j = 0, m = index.length; j < m; j++)
 				index[j] = skin.indicies[skin.triangles[j]];
 
-			geometry.setIndex(index);
+			geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(index), 1));
 
 			const skinMesh = skin.submeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
