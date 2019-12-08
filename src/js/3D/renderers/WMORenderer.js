@@ -160,8 +160,6 @@ class WMORenderer {
 		// Release bound textures.
 		for (const tex of this.textures)
 			tex.dispose();
-
-		this.disposeMeshGroup();
 	}
 }
 
