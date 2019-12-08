@@ -164,10 +164,8 @@ class M2Renderer {
 	 */
 	dispose() {
 		// Unregister geoset array watcher.
-		if (this.geosetWatcher) {
+		if (this.geosetWatcher)
 			this.geosetWatcher();
-			this.geosetWatcher = undefined;
-		}
 
 		// Release bound textures.
 		for (const tex of this.textures)
