@@ -22,6 +22,7 @@ class WMORenderer {
 		this.renderGroup = renderGroup;
 		this.textures = [];
 		this.m2Renderers = new Map();
+		this.m2Clones = [];
 	}
 
 	/**
@@ -163,6 +164,7 @@ class WMORenderer {
 						// We already built this m2, re-use it.
 						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
 						this.renderGroup.add(mesh);
+						this.m2Clones.push(mesh);
 					} else {
 						// New M2, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
@@ -252,6 +254,10 @@ class WMORenderer {
 		for (const renderer of this.m2Renderers.values())
 			renderer.dispose();
 
+		// Remove M2 clones from the renderGroup.
+		for (const clone of this.m2Clones)
+			this.renderGroup.remove(clone);
+
 		// Remove doodad set containers from renderGroup.
 		// In theory, these should now be empty is M2 renderers dispose correctly.
 		for (const set of this.doodadSets)
@@ -259,6 +265,7 @@ class WMORenderer {
 
 		// Dereference M2 renderers for faster clean-up.
 		this.m2Renderers = undefined;
+		this.m2Clones = undefined;
 
 		// Unregister reactive watchers.
 		if (this.groupWatcher) this.groupWatcher();
