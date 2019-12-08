@@ -21,7 +21,7 @@ class WMORenderer {
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
 		this.textures = [];
-		this.m2Renderers = [];
+		this.m2Renderers = new Map();
 	}
 
 	/**
@@ -158,21 +158,31 @@ class WMORenderer {
 
 			if (fileDataID > 0) {
 				try {
-					const data = await casc.getFile(fileDataID);
-					const m2 = new M2Renderer(data, renderGroup);
+					let mesh;
+					if (this.m2Renderers.has(fileDataID)) {
+						// We already built this m2, re-use it.
+						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
+						this.renderGroup.add(mesh);
+					} else {
+						// New M2, load it from CASC and prepare for render.
+						const data = await casc.getFile(fileDataID);
+						const m2 = new M2Renderer(data, renderGroup);
+						
+						await m2.load();
+						await m2.loadSkin(0);
 
-					await m2.load();
-					await m2.loadSkin(0);
+						mesh = m2.meshGroup;
+						this.m2Renderers.set(fileDataID, m2);
+					}
 
+					// Apply relative position/rotation/scale.
 					const pos = doodad.position;
-					m2.meshGroup.position.set(pos[0], pos[2], pos[1] * -1);
+					mesh.position.set(pos[0], pos[2], pos[1] * -1);
 
 					const rot = doodad.rotation;
-					m2.meshGroup.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
+					mesh.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
 
-					m2.meshGroup.scale.set(doodad.scale, doodad.scale, doodad.scale);
-
-					this.m2Renderers.push(m2);
+					mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);
 				} catch (e) {
 					log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
 				}
@@ -239,7 +249,7 @@ class WMORenderer {
 		}
 
 		// Dispose of all M2 renderers for doodad sets.
-		for (const renderer of this.m2Renderers)
+		for (const renderer of this.m2Renderers.values())
 			renderer.dispose();
 
 		// Remove doodad set containers from renderGroup.
