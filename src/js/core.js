@@ -108,17 +108,6 @@ const hideToast = () => {
 };
 
 /**
- * Display a toast message after delay (milliseconds).
- * Returns an object with a .cancel() function for aborting/hiding.
- * @param {number} delay 
- * @param  {...any} params 
- */
-const delayToast = (delay, ...params) => {
-	let id = setTimeout(() => setToast(...params), delay);
-	return { cancel: () => { clearTimeout(id); hideToast(); }};
-};
-
-/**
  * Display a toast message.
  * @param {string} toastType 'error', 'info', 'success', 'progress'
  * @param {string} message 
@@ -176,8 +165,7 @@ const core = {
 	block,
 	createProgress,
 	setToast,
-	hideToast,
-	delayToast,
+	hideToast,	
 	openExportDirectory,
 	registerDropHandler,
 	getDropHandler
