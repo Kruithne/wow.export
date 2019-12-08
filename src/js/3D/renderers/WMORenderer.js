@@ -6,6 +6,7 @@ const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
+const listfile = require('../../casc/listfile');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
 
@@ -155,7 +156,12 @@ class WMORenderer {
 
 		for (let i = firstIndex; i < count; i++) {
 			const doodad = wmo.doodads[i];
-			const fileDataID = wmo.fileDataIDs[doodad.offset];
+			let fileDataID = 0;
+
+			if (wmo.fileDataIDs)
+				fileDataID = wmo.fileDataIDs[doodad.offset];
+			else
+				fileDataID = listfile.getByFilename(wmo.doodadNames[doodad.offset]) || 0;
 
 			if (fileDataID > 0) {
 				try {
