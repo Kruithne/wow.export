@@ -120,7 +120,7 @@ class M2Renderer {
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					loader.load(blp.getDataURL(), image => {
+					loader.load(blp.getDataURL(false), image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -136,7 +136,7 @@ class M2Renderer {
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex, alphaTest: 0.5 });
+				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
 			} else {
 				this.materials[i] = DEFAULT_MATERIAL;
 			}
