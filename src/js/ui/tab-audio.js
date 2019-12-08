@@ -77,7 +77,7 @@ const unloadSelectedTrack = () => {
  */
 const loadSelectedTrack = async () => {
 	core.view.isBusy++;
-	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
+	core.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	log.write('Previewing sound file %s', selectedFile);
 
 	try {
@@ -85,11 +85,7 @@ const loadSelectedTrack = async () => {
 		audioNode.src = data.getDataURL();
 
 		isTrackLoaded = true;
-
-		toast.cancel();
 	} catch (e) {
-		toast.cancel();
-
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key));

@@ -16,7 +16,7 @@ const EXPORT_TYPES = {
 
 const previewTexture = async (texture) => {
 	core.view.isBusy++;
-	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
 	try {			
@@ -29,10 +29,7 @@ const previewTexture = async (texture) => {
 		view.texturePreviewHeight = blp.height;
 
 		selectedFile = texture;
-		toast.cancel();
 	} catch (e) {
-		toast.cancel();
-
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key));
