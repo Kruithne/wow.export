@@ -1,4 +1,5 @@
 const core = require('../../core');
+const log = require('../../log');
 
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
