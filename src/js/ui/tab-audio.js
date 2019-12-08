@@ -5,8 +5,6 @@ const util = require('util');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
-let isLoading = null;
-
 let selectedFile = null;
 let isTrackLoaded = false;
 
@@ -78,7 +76,7 @@ const unloadSelectedTrack = () => {
  * Ensure unloadSelectedTrack() is called first.
  */
 const loadSelectedTrack = async () => {
-	isLoading = true;
+	core.view.isBusy++;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	log.write('Previewing sound file %s', selectedFile);
 
@@ -103,7 +101,7 @@ const loadSelectedTrack = async () => {
 		}
 	}
 
-	isLoading = false;
+	core.view.isBusy--;
 };
 
 core.events.once('init', () => {
@@ -136,7 +134,7 @@ core.events.once('init', () => {
 	core.view.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
-		if (!isLoading && first && selectedFile !== first) {
+		if (!core.view.isBusy && first && selectedFile !== first) {
 			core.view.soundPlayerTitle = path.basename(first);
 
 			selectedFile = first;

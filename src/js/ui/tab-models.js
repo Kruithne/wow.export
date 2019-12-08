@@ -12,7 +12,6 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 
-let isLoading = false;
 let selectedFile = null;
 
 let camera, scene;
@@ -22,7 +21,7 @@ let activeRenderer;
 let activePath;
 
 const previewModel = async (fileName) => {
-	isLoading = true;
+	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	log.write('Previewing model %s', fileName);
 
@@ -71,7 +70,7 @@ const previewModel = async (fileName) => {
 		}
 	}
 
-	isLoading = false;
+	core.view.isBusy--;
 };
 
 /**
@@ -221,7 +220,7 @@ core.events.once('init', () => {
 
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
-		if (!isLoading && first && selectedFile !== first)
+		if (!core.view.isBusy && first && selectedFile !== first)
 			previewModel(first);
 	});
 

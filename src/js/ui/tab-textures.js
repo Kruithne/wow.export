@@ -6,7 +6,6 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
-let isLoading = false;
 let selectedFile = null;
 
 const EXPORT_TYPES = {
@@ -16,7 +15,7 @@ const EXPORT_TYPES = {
 };
 
 const previewTexture = async (texture) => {
-	isLoading = true;
+	core.view.isBusy++;
 	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
@@ -45,7 +44,7 @@ const previewTexture = async (texture) => {
 		}
 	}
 
-	isLoading = false;
+	core.view.isBusy--;
 };
 
 const exportFiles = async (files, isLocal = false) => {
@@ -90,7 +89,7 @@ core.events.once('init', () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
 	core.view.$watch('config.exportTextureAlpha', () => {
-		if (!isLoading && selectedFile !== null)
+		if (!core.view.isBusy && selectedFile !== null)
 			previewTexture(selectedFile);
 	});
 
@@ -98,7 +97,7 @@ core.events.once('init', () => {
 	core.view.$watch('selectionTextures', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
-		if (!isLoading && first && selectedFile !== first)
+		if (!core.view.isBusy && first && selectedFile !== first)
 			previewTexture(first);
 	});
 
