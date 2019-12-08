@@ -111,11 +111,11 @@ class WMORenderer {
 			}
 		}
 	}
-
+	
 	/**
-	 * Dispose of all meshes controlled by this renderer.
+	 * Dispose of this instance and release all resources.
 	 */
-	disposeMeshGroup() {
+	dispose() {
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
 			this.renderGroup.remove(this.meshGroup);
@@ -130,12 +130,7 @@ class WMORenderer {
 			// Drop the reference to the mesh group.
 			this.meshGroup = null;
 		}
-	}
 
-	/**
-	 * Dispose of this instance and release all resources.
-	 */
-	dispose() {
 		// Release bound textures.
 		for (const tex of this.textures)
 			tex.dispose();
