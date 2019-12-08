@@ -35,6 +35,10 @@ class WMORenderer {
 		for (let i = 0, n = wmo.groupCount; i < n; i++) {
 			const group = await wmo.getGroup(i);
 
+			// Skip empty groups?
+			if (!group.renderBatches || group.renderBatches.length === 0)
+				continue;
+
 			const geometry = new THREE.BufferGeometry();
 			geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(group.verticies), 3));
 			geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(group.normals), 3));
