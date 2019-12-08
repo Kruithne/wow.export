@@ -85,7 +85,7 @@ class WMOLoader {
 					continue;
 				}
 				
-				entries[readOfs] = chunk.toString('utf8', readOfs, i).trim();
+				entries[readOfs] = chunk.toString('utf8', readOfs, i).replace(/\0/g, '');
 				readOfs = i + 1;
 			}
 		}
