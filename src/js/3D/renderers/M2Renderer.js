@@ -155,7 +155,7 @@ class M2Renderer {
 			this.meshGroup.remove(...this.meshGroup.children);
 
 			// Drop the reference to the mesh group.
-			this.meshGroup = null;
+			this.meshGroup = undefined;
 		}
 	}
 
