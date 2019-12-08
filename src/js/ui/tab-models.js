@@ -23,7 +23,7 @@ let activePath;
 
 const previewModel = async (fileName) => {
 	isLoading = true;
-	const toast = core.delayToast(200, 'progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
+	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	log.write('Previewing model %s', fileName);
 
 	try {
@@ -54,16 +54,12 @@ const previewModel = async (fileName) => {
 
 		console.log(activeRenderer);
 
-		toast.cancel();
-
 		// Renderer did not provide any 
 		if (renderGroup.children.length === 0)
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		selectedFile = fileName;
 	} catch (e) {
-		toast.cancel();
-
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key));
