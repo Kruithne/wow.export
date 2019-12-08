@@ -53,7 +53,7 @@ const previewModel = async (fileName) => {
 
 		console.log(activeRenderer);
 
-		// Renderer did not provide any 
+		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
