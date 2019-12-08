@@ -12,13 +12,12 @@ class Texture {
 
 	/**
 	 * Construct a new Texture instance.
-	 * @param {number} type 
 	 * @param {number} flags 
+	 * @param {number} fileDataID
 	 */
-	constructor(type, flags) {
-		this.type = type;
+	constructor(flags, fileDataID) {
 		this.flags = flags;
-		this.fileDataID = 0;
+		this.fileDataID = fileDataID || 0;
 	}
 
 	/**

@@ -10,6 +10,8 @@ const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 
+const WMORenderer = require('../3D/renderers/WMORenderer');
+
 let isLoading = false;
 let selectedFile = null;
 
@@ -34,11 +36,13 @@ const previewModel = async (fileName) => {
 
 		const file = await core.view.casc.getFileByName(fileName);
 
-		if (fileName.toLowerCase().endsWith('.m2')) {
+		const fileNameLower = fileName.toLowerCase();
+		if (fileNameLower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
-
-			// Load an M2 rendering instance for this model.
 			activeRenderer = new M2Renderer(file, renderGroup);
+		} else if (fileNameLower.endsWith('.wmo')) {
+			core.view.modelViewerActiveType = 'wmo';
+			activeRenderer = new WMORenderer(file, fileName, renderGroup);
 		} else {
 			throw new Error('Unknown model extension: %s', fileName);
 		}

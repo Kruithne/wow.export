@@ -1,0 +1,349 @@
+const core = require('../../core');
+const listfile = require('../../casc/listfile');
+
+class WMOLoader {
+	/**
+	 * Construct a new WMOLoader instance.
+	 * @param {BufferWrapper} data 
+	 * @param {number|string} fileID File name or fileDataID
+	 */
+	constructor(data, fileID) {
+		this.data = data;
+
+		if (fileID !== undefined) {
+			if (typeof fileID === 'string') {
+				this.fileDataID = listfile.getByFilename(fileID);
+				this.fileName = fileID;
+			} else {
+				this.fileDataID = fileID;
+				this.fileName = listfile.getByID(fileID);
+			}
+		}
+	}
+
+	/**
+	 * Load the WMO object.
+	 */
+	async load() {
+		while (this.data.remainingBytes > 0) {
+			const chunkID = this.data.readUInt32LE();
+			const chunkSize = this.data.readUInt32LE();
+			const nextChunkPos = this.data.offset + chunkSize;
+
+			const handler = WMOChunkHandlers[chunkID];
+			if (handler)
+				handler.call(this, this.data, chunkSize);
+	
+			// Ensure that we start at the next chunk exactly.
+			this.data.seek(nextChunkPos);
+		}
+
+		// Drop internal reference to raw data.
+		this.data = undefined;
+	}
+
+	/**
+	 * Get a group from this WMO.
+	 * @param {number} index 
+	 */
+	async getGroup(index) {
+		if (!this.groups)
+			throw new Error('Attempted to obtain group from a root WMO.');
+
+		const casc = core.view.casc;
+
+		let group = this.groups[index];
+		if (group)
+			return group;
+
+		let data;
+		if (this.groupIDs)
+			data = await casc.getFile(this.groupIDs[index]);
+		else
+			data = await casc.getFileByName(this.fileName.replace('.wmo', '_' + index.toString().padStart(3, '0') + '.wmo'));
+
+		group = this.groups[index] = new WMOLoader(data);
+		await group.load();
+
+		return group;
+	}
+
+	/**
+	 * Process a null-terminated string block.
+	 * @param {number} chunkSize 
+	 */
+	readStringBlock(chunkSize) {
+		const chunk = this.data.readBuffer(chunkSize, false);
+		const entries = {};
+
+		let readOfs = 0;
+		for (let i = 0; i < chunkSize; i++) {
+			if (chunk[i] === 0x0) {
+				// Skip padding bytes.
+				if (readOfs === i) {
+					readOfs += 1;
+					continue;
+				}
+				
+				entries[readOfs] = chunk.toString('utf8', readOfs, i).trim();
+				readOfs = i + 1;
+			}
+		}
+
+		return entries;
+	}
+
+	/**
+	 * Read a position, corrected from WoW's co-ordinate system.
+	 */
+	readPosition() {
+		const x = this.data.readFloatLE();
+		const z = this.data.readFloatLE();
+		const y = this.data.readFloatLE() * -1;
+
+		return [x, y, z];
+	}
+};
+
+const WMOChunkHandlers = {
+	// MVER (Version) [WMO Root, WMO Group]
+	0x4D564552: function(data) {
+		this.version = data.readUInt32LE();
+		if (this.version !== 17)
+			throw new Error('Unsupported WMO version: %d', this.version);
+	},
+
+	// MOHD (Header) [WMO Root]
+	0x4D4F4844: function(data) {
+		this.materialCount = data.readUInt32LE();
+		this.groupCount = data.readUInt32LE();
+		this.portalCount = data.readUInt32LE();
+		this.lightCount = data.readUInt32LE();
+		this.modelCount = data.readUInt32LE();
+		this.doodadCount = data.readUInt32LE();
+		this.setCount = data.readUInt32LE();
+		this.ambientColor = data.readUInt32LE();
+		this.areaTableID = data.readUInt32LE();
+		this.boundingBox1 = data.readFloatLE(3);
+		this.boundingBox2 = data.readFloatLE(3);
+		this.flags = data.readUInt16LE();
+		this.lodCount = data.readUInt16LE();
+
+		this.groups = new Array(this.groupCount);
+	},
+
+	// MOTX (Textures) [Classic, WMO Root]
+	0x4D4F5458: function(data, chunkSize) {
+		this.textureNames = this.readStringBlock(chunkSize);
+	},
+
+	// MOMT (Materials) [WMO Root]
+	0x4D4F4D54: function(data, chunkSize) {
+		const count = chunkSize / 64;
+		const materials = this.materials = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			materials[i] = {
+				flags: data.readUInt32LE(),
+				shader: data.readUInt32LE(),
+				blendMode: data.readUInt32LE(),
+				texture1: data.readUInt32LE(),
+				color1: data.readUInt32LE(),
+				color1b: data.readUInt32LE(),
+				texture2: data.readUInt32LE(),
+				color2: data.readUInt32LE(),
+				groupType: data.readUInt32LE(),
+				texture3: data.readUInt32LE(),
+				color3: data.readUInt32LE(),
+				flags3: data.readUInt32LE(),
+				runtimeData: data.readUInt32LE(4)
+			};
+		}
+	},
+
+	// MOGN (Group Names) [WMO Root]
+	0x4D4F474E: function(data, chunkSize) {
+		this.groupNames = this.readStringBlock(chunkSize);
+	},
+
+	// MOGI (Group Info) [WMO Root]
+	0x4D4F4749: function(data, chunkSize) {
+		const count = chunkSize / 32;
+		const groupInfo = this.groupInfo = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			groupInfo[i] = {
+				flags: data.readUInt32LE(),
+				boundingBox1: data.readFloatLE(3),
+				boundingBox2: data.readFloatLE(3),
+				nameIndex: data.readInt32LE()
+			};
+		}
+	},
+
+	// MODS (Doodad Sets) [WMO Root]
+	0x4D4F4453: function(data, chunkSize) {
+		const count = chunkSize / 32;
+		const doodadSets = this.doodadSets = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			doodadSets[i] = {
+				name: data.readString(20).trim(),
+				firstInstanceIndex: data.readUInt32LE(),
+				doodadCount: data.readUInt32LE(),
+				unused: data.readUInt32LE()
+			};
+		}
+	},
+
+	// MODI (Doodad IDs) [WMO Root]
+	0x4D4F4449: function(data, chunkSize) {
+		this.fileDataIDs = data.readUInt32LE(chunkSize / 4);
+	},
+
+	// MODN (Doodad Names) [WMO Root]
+	0x4D4F444E: function(data, chunkSize) {
+		this.doodadNames = this.readStringBlock(chunkSize);
+
+		// Doodads are still reference as MDX in Classic doodad names, replace them with m2.
+		for (const [ofs, file] of Object.entries(this.doodadNames))
+			this.doodadNames[ofs] = file.toLowerCase().replace('.mdx', '.m2');
+	},
+
+	// MODD (Doodad Definitions) [WMO Root]
+	0x4D4F4444: function(data, chunkSize) {
+		const count = chunkSize / 40;
+		const doodads = this.doodads = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			doodads[i] = {
+				offset: data.readUInt24LE(),
+				flags: data.readUInt8(),
+				position: this.readPosition(),
+				rotation: data.readFloatLE(4),
+				scale: data.readFloatLE(),
+				color: data.readUInt8(4)
+			};
+		}
+	},
+
+	// GFID (Group file Data IDs) [WMO Root]
+	0x47464944: function(data, chunkSize) {
+		this.groupIDs = data.readUInt32LE(chunkSize / 4);
+	},
+
+	// MOGP (Group Header) [WMO Group]
+	0x4D4F4750: function(data, chunkSize) {
+		const endOfs = data.offset + chunkSize;
+
+		this.nameOfs = data.readUInt32LE();
+		this.descOfs = data.readUInt32LE();
+
+		this.flags = data.readUInt32LE();
+		this.boundingBox1 = data.readFloatLE(3);
+		this.boundingBox2 = data.readFloatLE(3);
+
+		this.ofsPortals = data.readUInt16LE();
+		this.numPortals = data.readUInt16LE();
+
+		this.numBatchesA = data.readUInt16LE();
+		this.numBatchesB = data.readUInt16LE();
+		this.numBatchesC = data.readUInt32LE();
+
+		data.move(4); // Unused.
+
+		this.liquidType = data.readUInt32LE();
+		this.groupID = data.readUInt32LE();
+		
+		data.move(8); // Unknown.
+
+		// Read sub-chunks.
+		while (data.offset < endOfs) {
+			const chunkID = data.readUInt32LE();
+			const chunkSize = data.readUInt32LE();
+			const nextChunkPos = data.offset + chunkSize;
+
+			const handler = WMOChunkHandlers[chunkID];
+			if (handler)
+				handler.call(this, data, chunkSize);
+	
+			// Ensure that we start at the next chunk exactly.
+			data.seek(nextChunkPos);
+		}
+	},
+
+	// MOVI (Indicies) [WMO Group]
+	0x4D4F5649: function(data, chunkSize) {
+		this.indicies = data.readUInt16LE(chunkSize / 2);
+	},
+
+	// MOVT (Verticies) [WMO Group]
+	0x4D4F5654: function(data, chunkSize) {
+		const count = chunkSize / 4;
+		const verticies = this.verticies = new Array(count);
+
+		for (let i = 0; i < count; i += 3) {
+			verticies[i] = data.readFloatLE();
+			verticies[i + 2] = data.readFloatLE() * -1;
+			verticies[i + 1] = data.readFloatLE();
+		}
+	},
+
+	// MOTV (UVs) [WMO Group]
+	0x4D4F5456: function(data, chunkSize) {
+		if (!this.uvs)
+			this.uvs = [];
+
+		const count = chunkSize / 4;
+		const uvs = new Array(count);
+		for (let i = 0; i < count; i+=2) {
+			uvs[i] = data.readFloatLE();
+			uvs[i + 1] = (data.readFloatLE() - 1) * -1;
+		}
+
+		this.uvs.push(uvs);
+	},
+
+	// MONR (Normals) [WMO Group]
+	0x4D4F4E52: function(data, chunkSize) {
+		const count = chunkSize / 4;
+		const normals = this.normals = new Array(count);
+
+		for (let i = 0; i < count; i += 3) {
+			normals[i] = data.readFloatLE();
+			normals[i + 2] = data.readFloatLE() * -1;
+			normals[i + 1] = data.readFloatLE();
+		}
+	},
+
+	// MOBA (Render Batches) [WMO Group]
+	0x4D4F4241: function(data, chunkSize) {
+		const count = chunkSize / 24;
+		const batches = this.renderBatches = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			batches[i] = {
+				possibleBox1: data.readUInt16LE(3),
+				possibleBox2: data.readUInt16LE(3),
+				firstFace: data.readUInt32LE(),
+				numFaces: data.readUInt16LE(),
+				firstVertex: data.readUInt16LE(),
+				lastVertex: data.readUInt16LE(),
+				flags: data.readUInt8(),
+				materialID: data.readUInt8()
+			};
+		}
+	},
+
+	// MOPY (Material Info) [WMO Group]
+	0x4D4F5059: function(data, chunkSize) {
+		const count = chunkSize / 2;
+		const materialInfo = this.materialInfo = new Array(count);
+
+		for (let i = 0; i < count; i++)
+			materialInfo[i] = { flags: data.readUInt8(), materialID: data.readUInt8() };
+	},
+
+};
+
+module.exports = WMOLoader;
