@@ -95,7 +95,7 @@ class WMORenderer {
 				});
 
 				if (texture.flags & Texture.FLAG_WRAP_U)
-				tex.wrapS = THREE.RepeatWrapping;
+					tex.wrapS = THREE.RepeatWrapping;
 
 				if (texture.flags & Texture.FLAG_WRAP_V)
 					tex.wrapT = THREE.RepeatWrapping;
