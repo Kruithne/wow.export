@@ -85,6 +85,7 @@ const loadSelectedTrack = async () => {
 		audioNode.src = data.getDataURL();
 
 		isTrackLoaded = true;
+		core.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.

@@ -184,6 +184,7 @@ class WMORenderer {
 		this.renderGroup.add(renderGroup);
 		this.doodadSets[index] = renderGroup;
 
+		core.hideToast();
 		core.view.isBusy--;
 	}
 

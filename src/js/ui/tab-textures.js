@@ -29,6 +29,7 @@ const previewTexture = async (texture) => {
 		view.texturePreviewHeight = blp.height;
 
 		selectedFile = texture;
+		core.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
