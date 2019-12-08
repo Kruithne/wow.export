@@ -54,6 +54,7 @@ const view = {
 	modelViewerContext: null, // 3D context for the model viewer.
 	modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
 	modelViewerGeosets: [], // Active M2 model geoset control.
+	modelViewerWMOGroups: [], // Active WMO model group control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '' // Active URL of the texture preview image.

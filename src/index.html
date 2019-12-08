@@ -158,6 +158,13 @@
 									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 								</div>
 							</template>
+							<template v-if="modelViewerActiveType === 'wmo'">
+								<span class="header">WMO Groups</span>
+								<checkboxlist id="list-wmo-groups" :items="modelViewerWMOGroups"></checkboxlist>
+								<div id="geoset-toggle">
+									<a @click="setAllWMOGroups(true)">Enable All</a> / <a @click="setAllWMOGroups(false)">Disable All</a>
+								</div>
+							</template>
 						</div>
 					</div>
 				</keep-alive>

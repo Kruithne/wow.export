@@ -119,6 +119,16 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
+			 * Mark all WMO groups to the given state.
+			 * @param {boolean} state 
+			 */
+			setAllWMOGroups: function(state) {
+				if (this.modelViewerWMOGroups)
+					for (const node of this.modelViewerWMOGroups)
+						node.checked = state;
+			},
+
+			/**
 			 * Mark all geosets to the given state.
 			 * @param {boolean} state 
 			 */

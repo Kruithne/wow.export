@@ -31,6 +31,7 @@ class WMORenderer {
 		await this.loadTextures();
 
 		this.meshGroup = new THREE.Group();
+		this.groupArray = [];
 
 		for (let i = 0, n = wmo.groupCount; i < n; i++) {
 			const group = await wmo.getGroup(i);
@@ -53,7 +54,12 @@ class WMORenderer {
 				geometry.addGroup(batch.firstFace, batch.numFaces, batch.materialID);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true });
 		}
+
+		// Set-up reactive controls.
+		core.view.modelViewerWMOGroups = this.groupArray;
+		this.groupWatcher = core.view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
 
 		// Rotate to face camera.
 		this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
@@ -111,7 +117,19 @@ class WMORenderer {
 			}
 		}
 	}
-	
+
+	/**
+	 * Update the visibility status of WMO groups.
+	 */
+	updateGroups() {
+		if (!this.meshGroup || !this.groupArray)
+			return;
+
+		const meshes = this.meshGroup.children;
+		for (let i = 0, n = meshes.length; i < n; i++)
+			meshes[i].visible = this.groupArray[i].checked;
+	}
+
 	/**
 	 * Dispose of this instance and release all resources.
 	 */
@@ -130,6 +148,14 @@ class WMORenderer {
 			// Drop the reference to the mesh group.
 			this.meshGroup = null;
 		}
+
+		// Remove the group watcher.
+		if (this.groupWatcher)
+			this.groupWatcher();
+
+		// Clear out WMO group array.
+		if (this.groupArray)
+			this.groupArray.splice(0, this.groupArray.length);
 
 		// Release bound textures.
 		for (const tex of this.textures)
