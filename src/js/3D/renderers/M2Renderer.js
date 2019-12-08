@@ -122,10 +122,10 @@ class M2Renderer {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
 
-				if (texture.flags & Texture.FLAG_WRAP_U)
+				if (texture.flags & 0x1)
 					tex.wrapS = THREE.RepeatWrapping;
 
-				if (texture.flags & Texture.FLAG_WRAP_V)
+				if (texture.flags & 0x2)
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
