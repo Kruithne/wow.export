@@ -1,3 +1,4 @@
+const util = require('util');
 const core = require('../../core');
 const log = require('../../log');
 
@@ -148,6 +149,9 @@ class WMORenderer {
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
 
+		core.view.isBusy++;
+		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
+
 		for (let i = firstIndex; i < count; i++) {
 			const doodad = wmo.doodads[i];
 			const fileDataID = wmo.fileDataIDs[doodad.offset];
@@ -179,6 +183,8 @@ class WMORenderer {
 
 		this.renderGroup.add(renderGroup);
 		this.doodadSets[index] = renderGroup;
+
+		core.view.isBusy--;
 	}
 
 	/**
