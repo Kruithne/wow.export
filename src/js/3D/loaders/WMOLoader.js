@@ -188,7 +188,7 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			doodadSets[i] = {
-				name: data.readString(20).trim(),
+				name: data.readString(20).replace(/\0/g, ''),
 				firstInstanceIndex: data.readUInt32LE(),
 				doodadCount: data.readUInt32LE(),
 				unused: data.readUInt32LE()
