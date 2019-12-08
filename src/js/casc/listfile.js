@@ -130,7 +130,7 @@ const getByID = (id) => {
  * @returns {number|undefined} 
  */
 const getByFilename = (filename) => {
-	return nameLookup.get(filename.toLowerCase().replace('\\', '/'));
+	return nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
 };
 
 module.exports = { loadListfile, getByID, getByFilename, getFilenamesByExtension };
