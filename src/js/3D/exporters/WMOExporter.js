@@ -201,7 +201,7 @@ class WMOExporter {
 						await m2Export.exportAsOBJ(m2Path);
 
 						csv.addRow({
-							ModelFile: path.basename(m2Path, '.obj'),
+							ModelFile: path.basename(m2Path),
 							PositionX: doodad.position[0],
 							PositionY: doodad.position[1],
 							PositionZ: doodad.position[2],
