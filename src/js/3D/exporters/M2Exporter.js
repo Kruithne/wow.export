@@ -72,6 +72,10 @@ class M2Exporter {
 
 		// Faces
 		for (let mI = 0, mC = skin.submeshes.length; mI < mC; mI++) {
+			// Skip geosets that are not enabled.
+			if (this.geosetMask && !this.geosetMask[mI].checked)
+				continue;
+
 			const mesh = skin.submeshes[mI];
 			const verts = new Array(mesh.triangleCount);
 			for (let vI = 0; vI < mesh.triangleCount; vI++)
