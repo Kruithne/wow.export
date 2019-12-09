@@ -32,7 +32,7 @@ Vue.component('listbox', {
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 
-		if (this.keyinput) {
+		if (this.$props.keyinput) {
 			this.onKeyDown = e => this.handleKey(e);
 			document.addEventListener('keydown', this.onKeyDown);
 		}
@@ -51,7 +51,7 @@ Vue.component('listbox', {
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
 
-		if (this.keyinput)
+		if (this.$props.keyinput)
 			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
