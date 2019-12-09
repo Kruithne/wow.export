@@ -89,7 +89,7 @@ Vue.component('listbox', {
 			let res = this.$props.items;
 
 			if (filter.length > 0)
-				res =  res.filter(e => e.includes(filter));
+				res = res.filter(e => e.toLowerCase().includes(filter));
 
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.
