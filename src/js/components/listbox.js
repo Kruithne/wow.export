@@ -241,6 +241,8 @@ Vue.component('listbox', {
 					this.selection.splice(0, this.selection.length);
 					this.selection.push(item);
 				}
+
+				this.lastSelectItem = item;
 			} else {
 				if (event.ctrlKey) {
 					// Ctrl-key held, so allow multiple selections.
