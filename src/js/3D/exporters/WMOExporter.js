@@ -17,7 +17,6 @@ class WMOExporter {
 	 * @param {string|number} fileID
 	 */
 	constructor(data, fileID) {
-		//this.m2 = new M2Loader(data);
 		this.wmo = new WMOLoader(data, fileID);
 	}
 
