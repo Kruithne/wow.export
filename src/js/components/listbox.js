@@ -217,7 +217,7 @@ Vue.component('listbox', {
 							this.recalculateBounds();
 						}
 
-						if (!e.shiftKey)
+						if (!e.shiftKey || this.$props.single)
 							this.selection.splice(0, this.selection.length);
 
 						this.selection.push(next);
