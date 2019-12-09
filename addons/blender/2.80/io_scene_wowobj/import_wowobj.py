@@ -286,7 +286,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         importedFile = originalObject.copy()
                         bpy.context.scene.collection.objects.link(importedFile)
 
-                    importedFile.location = (float(row['PositionX']) * -1, float(row['PositionY']) * -1, float(row['PositionZ']))
+                    importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
 
                     importedFile.rotation_euler = [0, 0, 0]
                     rotQuat = Quaternion((float(row['RotationW']), float(row['RotationX']), float(row['RotationY']), float(row['RotationZ'])))
