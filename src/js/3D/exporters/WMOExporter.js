@@ -4,11 +4,11 @@ const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
 const WMOLoader = require('../loaders/WMOLoader');
-const M2Loader = require('../loaders/M2Loader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
-const GeosetMapper = require('../GeosetMapper');
+const CSVWriter = require('../writers/CSVWriter');
 const ExportHelper = require('../../casc/export-helper');
+const M2Exporter = require('./M2Exporter');
 
 class WMOExporter {
 	/**
@@ -29,10 +29,18 @@ class WMOExporter {
 	}
 
 	/**
+	 * Set the mask used for doodad set control.
+	 */
+	setDoodadSetMask(mask) {
+		this.doodadSetMask = mask;
+	}
+
+	/**
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param {string} out
 	 */
 	async exportAsOBJ(out) {
+		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
@@ -62,7 +70,7 @@ class WMOExporter {
 
 			if (fileDataID > 0) {
 				try {
-					const data = await core.view.casc.getFile(fileDataID);
+					const data = await casc.getFile(fileDataID);
 					const blp = new BLPFile(data);
 
 					const texFile = fileDataID + '.png';
@@ -155,6 +163,71 @@ class WMOExporter {
 		obj.setNormalArray(normalsArray);
 		obj.setUVArray(uvsArray);
 
+		const csv = new CSVWriter(ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv'));
+		csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
+
+		// Doodad sets.
+		const doodadSets = wmo.doodadSets;
+		for (let i = 0, n = doodadSets.length; i < n; i++) {
+			// Skip disabled doodad sets.
+			if (this.doodadSetMask && !this.doodadSetMask[i].checked)
+				continue;
+
+			const set = doodadSets[i];
+			const count = set.doodadCount;
+			log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
+
+			for (let i = set.firstInstanceIndex; i < count; i++) {
+				const doodad = wmo.doodads[i];
+				let fileDataID = 0;
+				let fileName;
+	
+				if (wmo.fileDataIDs) {
+					// Retail, use fileDataID and lookup the filename.
+					fileDataID = wmo.fileDataIDs[doodad.offset];
+					fileName = listfile.getByID(fileDataID);
+				} else {
+					// Classic, use fileName and lookup the fileDataID.
+					fileName = wmo.doodadNames[doodad.offset];
+					fileDataID = listfile.getByFilename(fileName) || 0;
+				}
+	
+				if (fileDataID > 0) {
+					try {
+						const data = await casc.getFile(fileDataID);
+						const m2Export = new M2Exporter(data);
+
+						const m2Path = ExportHelper.replaceExtension(ExportHelper.replaceFile(out, fileName), '.obj');
+						await m2Export.exportAsOBJ(m2Path);
+
+						csv.addRow({
+							ModelFile: path.basename(m2Path, '.obj'),
+							PositionX: doodad.position[0],
+							PositionY: doodad.position[1],
+							PositionZ: doodad.position[2],
+							RotationW: doodad.rotation[3],
+							RotationX: doodad.rotation[0],
+							RotationY: doodad.rotation[1],
+							RotationZ: doodad.rotation[2],
+							ScaleFactor: doodad.scale,
+							DoodadSet: set.name
+						});
+	
+						/*const pos = doodad.position;
+						mesh.position.set(pos[0], pos[2], pos[1] * -1);
+	
+						const rot = doodad.rotation;
+						mesh.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
+	
+						mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);*/
+					} catch (e) {
+						log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					}
+				}
+			}
+		}
+
+		await csv.write();
 		await obj.write();
 		await mtl.write();
 	}

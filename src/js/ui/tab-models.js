@@ -158,9 +158,11 @@ const exportFiles = async (files, isLocal = false) => {
 
 							const exporter = new WMOExporter(data, fileName);
 
-							// Respect group masking for selected WMO.
-							if (fileName === activePath)
+							// Respect group/set masking for selected WMO.
+							if (fileName === activePath) {
 								exporter.setGroupMask(core.view.modelViewerWMOGroups);
+								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
+							}
 
 							await exporter.exportAsOBJ(exportOBJ);
 						} else {
