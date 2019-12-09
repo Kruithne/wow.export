@@ -55,8 +55,10 @@ class WMORenderer {
 			geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(group.indicies), 1));
 
 			// Load all render batches into the mesh.
-			for (const batch of group.renderBatches)
-				geometry.addGroup(batch.firstFace, batch.numFaces, batch.materialID);
+			for (const batch of group.renderBatches) {
+				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
+				geometry.addGroup(batch.firstFace, batch.numFaces, matID);
+			}
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true });
