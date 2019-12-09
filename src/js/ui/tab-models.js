@@ -157,6 +157,11 @@ const exportFiles = async (files, isLocal = false) => {
 								throw new Error('Converting local WMO objects is currently not supported.');
 
 							const exporter = new WMOExporter(data, fileName);
+
+							// Respect group masking for selected WMO.
+							if (fileName === activePath)
+								exporter.setGroupMask(core.view.modelViewerWMOGroups);
+
 							await exporter.exportAsOBJ(exportOBJ);
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);

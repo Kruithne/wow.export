@@ -21,6 +21,14 @@ class WMOExporter {
 	}
 
 	/**
+	 * Set the mask used for group control.
+	 * @param {Array} mask 
+	 */
+	setGroupMask(mask) {
+		this.groupMask = mask;
+	}
+
+	/**
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param {string} out
 	 */
@@ -81,6 +89,10 @@ class WMOExporter {
 
 			// Skip empty groups.
 			if (!group.renderBatches || group.renderBatches.length === 0)
+				continue;
+
+			// Skip masked groups.
+			if (this.groupMask && !this.groupMask[i].checked)
 				continue;
 
 			// 3 verts per indicies.
