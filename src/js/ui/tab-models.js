@@ -11,6 +11,7 @@ const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
+const WMOExporter = require('../3D/exporters/WMOExporter');
 
 let selectedFile = null;
 
@@ -130,6 +131,7 @@ const exportFiles = async (files, isLocal = false) => {
 			try {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
 				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+				const fileNameLower = fileName.toLowerCase();
 
 				switch (format) {
 					case 'RAW':
@@ -140,7 +142,7 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'OBJ':
 						const exportOBJ = ExportHelper.replaceExtension(exportPath, '.obj');
 
-						if (fileName.endsWith('.m2')) {
+						if (fileNameLower.endsWith('.m2')) {
 							const exporter = new M2Exporter(data);
 
 							// Respect geoset masking for selected model.
@@ -148,6 +150,14 @@ const exportFiles = async (files, isLocal = false) => {
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
 							await exporter.exportAsOBJ(exportOBJ, core.view.config.modelsExportCollision);
+						} else if (fileNameLower.endsWith('.wmo')) {
+							// WMO loading currently loads group objects directly from CASC.
+							// In order to load these properly, we would need to know the internal name here.
+							if (isLocal)
+								throw new Error('Converting local WMO objects is currently not supported.');
+
+							const exporter = new WMOExporter(data, fileName);
+							await exporter.exportAsOBJ(exportOBJ);
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);
 						}
@@ -184,9 +194,9 @@ const updateListfile = () => {
 	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 };
 
-// Register a drop handler for M2/WMO files.
+// Register a drop handler for M2 files.
 core.registerDropHandler({
-	ext: ['.m2', '.wmo'],
+	ext: ['.m2'],
 	prompt: count => util.format('Export %d models as %s', count, core.view.config.exportModelFormat),
 	process: files => exportFiles(files, true)
 });
