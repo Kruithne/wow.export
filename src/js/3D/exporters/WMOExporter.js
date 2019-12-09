@@ -219,6 +219,9 @@ class WMOExporter {
 			}
 		}
 
+		if (!mtl.isEmpty)
+			obj.setMaterialLibrary(path.basename(mtl.out));
+
 		await csv.write();
 		await obj.write();
 		await mtl.write();

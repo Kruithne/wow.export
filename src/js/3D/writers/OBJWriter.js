@@ -18,6 +18,14 @@ class OBJWriter {
 		this.meshes = [];
 		this.name = 'Mesh';
 	}
+	
+	/**
+	 * Set the name of the material library.
+	 * @param {string} name 
+	 */
+	setMaterialLibrary(name) {
+		this.mtl = name;
+	}
 
 	/**
 	 * Set the name of this model.
@@ -71,6 +79,10 @@ class OBJWriter {
 		// Write header.
 		writer.writeLine('# Exported using wow.export v' + constants.VERSION);
 		writer.writeLine('o ' + this.name);
+
+		// Link material library.
+		if (this.mtl)
+			writer.writeLine('mtllib ' + this.mtl);
 
 		// Write verts.
 		const verts = this.verts;

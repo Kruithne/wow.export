@@ -21,11 +21,18 @@ class MTLWriter {
 	}
 
 	/**
+	 * Returns true if this material library is empty.
+	 */
+	get isEmpty() {
+		return this.materials.length === 0;
+	}
+
+	/**
 	 * Write the material library to disk.
 	 */
 	async write() {
 		// Don't bother writing an empty material library.
-		if (this.materials.length === 0)
+		if (this.isEmpty)
 			return;
 
 		await generics.createDirectory(path.dirname(this.out));

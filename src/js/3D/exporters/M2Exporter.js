@@ -92,6 +92,9 @@ class M2Exporter {
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
 
+		if (!mtl.isEmpty)
+			obj.setMaterialLibrary(path.basename(mtl.out));
+
 		await obj.write();
 		await mtl.write();
 
