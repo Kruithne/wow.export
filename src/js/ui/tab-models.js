@@ -200,6 +200,9 @@ core.events.once('screen-tab-models', () => {
 	scene.add(light);
 	scene.add(renderGroup);
 
+	// WoW models are by default facing the wrong way; rotate everything.
+	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+
 	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 

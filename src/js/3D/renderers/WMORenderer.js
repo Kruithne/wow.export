@@ -77,9 +77,6 @@ class WMORenderer {
 		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
 		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
 
-		// Rotate to face camera.
-		//this.meshGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
-
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
 
@@ -198,8 +195,6 @@ class WMORenderer {
 				}
 			}
 		}
-
-		//renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
 		this.renderGroup.add(renderGroup);
 		this.doodadSets[index] = renderGroup;
