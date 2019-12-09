@@ -212,14 +212,6 @@ class WMOExporter {
 							ScaleFactor: doodad.scale,
 							DoodadSet: set.name
 						});
-	
-						/*const pos = doodad.position;
-						mesh.position.set(pos[0], pos[2], pos[1] * -1);
-	
-						const rot = doodad.rotation;
-						mesh.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
-	
-						mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);*/
 					} catch (e) {
 						log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
 					}
