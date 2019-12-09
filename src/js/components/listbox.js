@@ -235,7 +235,7 @@ Vue.component('listbox', {
 		selectItem: function(item, event) {
 			const checkIndex = this.selection.indexOf(item);
 
-			if (this.single) {
+			if (this.$props.single) {
 				// Listbox is in single-entry mode, replace selection.
 				if (checkIndex === -1) {
 					this.selection.splice(0, this.selection.length);
