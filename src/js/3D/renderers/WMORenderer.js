@@ -171,7 +171,7 @@ class WMORenderer {
 					if (this.m2Renderers.has(fileDataID)) {
 						// We already built this m2, re-use it.
 						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
-						this.renderGroup.add(mesh);
+						renderGroup.add(mesh);
 						this.m2Clones.push(mesh);
 					} else {
 						// New M2, load it from CASC and prepare for render.
