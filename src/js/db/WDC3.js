@@ -122,6 +122,21 @@ class WDC3 {
 			const offsetMap = section.offsetMap;
 			const isNormal = section.isNormal;
 
+			// Skip parsing entries from encrypted sections.
+			if (section.tactKeyHash !== 0x0) {
+				let isZeroed = true;
+				data.seek(section.recordDataOfs);
+				for (let i = 0, n = section.recordDataSize; i < n; i++) {
+					if (data.readUInt8() !== 0x0) {
+						isZeroed = false;
+						break;
+					}
+				}
+
+				if (isZeroed)
+					continue;
+			}
+
 			// For unknown reasons the 'absolute' offsets for string block lookups in
 			// normal records is offset by the total recordDataSize of all other sections.
 			let outsideDataSize = 0;
