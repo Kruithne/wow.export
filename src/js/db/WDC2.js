@@ -1,11 +1,5 @@
 const FieldType = require('./FieldType');
-
-const COMPRESSION_NONE = 0;
-const COMPRESSION_IMMEDIATE = 1;
-const COMPRESSION_COMMON = 2;
-const COMPRESSION_PALLET = 3;
-const COMPRESSION_PALLET_ARR = 4;
-const COMPRESSION_SIGNED_IMMEDIATE = 5;
+const CompressionType = require('./CompressionType');
 
 class WDC2 {
 	constructor(data, schema) {
