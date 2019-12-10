@@ -182,7 +182,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .ui-listbox {
 	.item:hover {
-		background: var(--font-alt);
+		background: var(--font-alt) !important;
 	}
 }
 
