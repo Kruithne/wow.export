@@ -26,7 +26,7 @@ module.exports = {
 				break;
 
 			default:
-				throw new Error('Unsupported DB format: %d', magic);
+				throw new Error('Unsupported DB format: ' + magic);
 		}
 
 		log.write('Extracted %d rows from %s', table.rows.size, fileName);
