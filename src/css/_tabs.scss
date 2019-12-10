@@ -52,6 +52,23 @@
 	}
 }
 
+#tab-maps {
+	#listbox-maps {
+		.sub {
+			margin-right: 5px;
+		}
+
+		.sub-0 {
+			color: var(--font-alt-highlight);
+		}
+
+		.sub-2 {
+			opacity: 0.5;
+			font-style: italic;
+		}
+	}
+}
+
 #tab-video {
 	grid-template-columns: unset;
 

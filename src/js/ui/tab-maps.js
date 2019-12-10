@@ -14,7 +14,7 @@ core.events.once('screen-tab-maps', async () => {
 
 	const maps = [];
 	for (const [id, entry] of table.rows)
-		maps.push(util.format('[%d] %s (%s)', id, entry.Directory, entry.MapName));
+		maps.push(util.format('[%d]\31%s\31(%s)', id, entry.MapName, entry.Directory));
 
 	core.view.mapViewerMaps = maps;
 	
