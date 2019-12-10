@@ -10,7 +10,6 @@ core.events.once('screen-tab-maps', async () => {
 	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
 	const table = await DBHandler.openTable('dbfilesclient/map.db2', DB_Map);
-	console.log(table);
 
 	const maps = [];
 	for (const [id, entry] of table.rows)
