@@ -1,8 +1,12 @@
 const log = require('../log');
 const core = require('../core');
-const WDC3 = require('./WDC3');
 
+const WDC3 = require('./WDC3');
+const WDC2 = require('./WDC2');
+
+const WDC2_MAGIC = 0x32434457;
 const WDC3_MAGIC = 0x33434457;
+const CLS1_MAGIC = 0x434C5331;
 
 module.exports = {
 	/**
@@ -23,6 +27,12 @@ module.exports = {
 			case WDC3_MAGIC:
 				log.write('Processing DB file %s as WDC3', fileName);
 				table = new WDC3(data, schema);
+				break;
+
+			case WDC2_MAGIC:
+			case CLS1_MAGIC:
+				log.write('Processing DB file %s as WDC2/CLS1', fileName);
+				table = new WDC2(data, schema);
 				break;
 
 			default:
