@@ -766,6 +766,17 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Check if this buffer is entirely zeroed.
+	 */
+	isZeroed() {
+		for (let i = 0, n = this.byteLength; i < n; i++)
+			if (this._buf[i] !== 0x0)
+				return false;
+
+		return true;
+	}
+
+	/**
 	 * Check a given length does not exceed current capacity.
 	 * @param {number} length 
 	 */

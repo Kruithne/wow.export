@@ -79,6 +79,7 @@ require('./js/ui/tab-textures');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 require('./js/ui/tab-models');
+require('./js/ui/tab-maps');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

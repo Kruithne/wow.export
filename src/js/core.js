@@ -37,10 +37,12 @@ const view = {
 	userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 	userInputFilterVideos: '', // Value of the 'filter' field for video files.
 	userInputFilterModels: '', // Value of the 'filter' field for models.
+	userInputFilterMaps: '', // Value of the 'filter' field for maps.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
 	selectionVideos: [],  // Current user selection of videos.
+	selectionMaps: [], // Current user selection of maps.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
@@ -58,7 +60,8 @@ const view = {
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
-	texturePreviewURL: '' // Active URL of the texture preview image.
+	texturePreviewURL: '', // Active URL of the texture preview image.
+	mapViewerMaps: [] // Available maps for the map viewer.
 };
 
 /**
