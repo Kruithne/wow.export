@@ -286,3 +286,24 @@ input[type="number"]::-webkit-outer-spin-button {
 		display: block;
 	}
 }
+
+.ui-map-viewer {
+	border: 1px solid var(--border);
+	background-size: 30px 30px;
+	background-position: 0 0, 15px 15px;
+	background-color: var(--trans-check-b);
+	box-shadow: black 0 0 3px 0;
+	background-image: linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a)),
+	linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a));
+	margin: 20px 20px 0 10px;
+	grid-row: 1;
+	grid-column: 2;
+	overflow: hidden;
+	position: relative;
+
+	canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+}

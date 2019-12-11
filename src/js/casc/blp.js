@@ -142,7 +142,7 @@ class BLPImage {
 
 		ctx.putImageData(canvasData, 0, 0);
 	}
-
+	
 	/**
 	 * Calculate the alpha using this files alpha depth.
 	 * @param {number} index Alpha index.

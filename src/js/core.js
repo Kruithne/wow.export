@@ -61,7 +61,9 @@ const view = {
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.
-	mapViewerMaps: [] // Available maps for the map viewer.
+	mapViewerMaps: [], // Available maps for the map viewer.
+	mapViewerTileLoader: null, // Tile loader for active map viewer map.
+	mapViewerSelectedMap: null, // Currently selected map.
 };
 
 /**

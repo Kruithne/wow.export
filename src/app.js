@@ -73,6 +73,7 @@ require('./js/components/menu-button');
 require('./js/components/file-field');
 require('./js/components/slider');
 require('./js/components/model-viewer');
+require('./js/components/map-viewer');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
