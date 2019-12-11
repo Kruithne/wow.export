@@ -4,13 +4,15 @@ Vue.component('map-viewer', {
 	 * tileSize: Base size of tiles (before zoom).
 	 * mapSize: Maximum tile index of the map.
 	 * map: ID of the current map. We use this to listen for map changes.
+	 * zoom: Maxium zoom-out factor allowed.
 	 */
-	props: ['loader', 'tileSize', 'mapSize', 'map'],
+	props: ['loader', 'tileSize', 'mapSize', 'map', 'zoom'],
 
 	data: function() {
 		return {
 			offsetX: 0,
-			offsetY: 0
+			offsetY: 0,
+			zoomFactor: 1
 		}
 	},
 
@@ -79,6 +81,18 @@ Vue.component('map-viewer', {
 
 			// Trigger a re-render.
 			this.render();
+		},
+
+		/**
+		 * Invoked when the zoomFactor property changes for this component.
+		 * This indicates that the user has scrolled in/out.
+		 */
+		zoomFactor: function() {
+			// Invalidate the cache so that tiles are re-rendered.
+			this.initializeCache();
+
+			// Manually trigger a re-render.
+			this.render();
 		}
 	},
 
@@ -114,7 +128,7 @@ Vue.component('map-viewer', {
 
 			// Calculate which tiles will appear within the viewer.
 			const maxTile = this.$props.mapSize;
-			const tileSize = this.$props.tileSize;
+			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
 
 			// Get local reference to the canvas context.
 			const ctx = this.context;
@@ -217,13 +231,22 @@ Vue.component('map-viewer', {
 				this.panBaseX = this.offsetX;
 				this.panBaseY = this.offsetY;
 			}
+		},
+
+		/**
+		 * Invoked on mousewheel events captured on the container element.
+		 * @param {WheelEvent} event 
+		 */
+		handleMouseWheel: function(event) {
+			const delta = event.deltaY > 0 ? 1 : -1;
+			this.zoomFactor = Math.max(1, Math.min(this.$props.zoom, this.zoomFactor + delta));
 		}
 	},
 
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown">
+	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel">
 		<canvas ref="canvas"></canvas>
 	</div>`
 });
