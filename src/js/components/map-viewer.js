@@ -298,8 +298,8 @@ Vue.component('map-viewer', {
 
 			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
 
-			const tileX = (viewOfsX / tileSize) + 1;
-			const tileY = (viewOfsY / tileSize) + 1;
+			const tileX = viewOfsX / tileSize;
+			const tileY = viewOfsY / tileSize;
 
 			const posX = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileX);
 			const posY = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileY);
