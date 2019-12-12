@@ -197,7 +197,7 @@ Vue.component('map-viewer', {
 					// Skip tiles that are not in (or around) the viewport.
 					if (drawX > (viewportWidth + tileSize) || drawY > (viewportHeight + tileSize) || drawX + tileSize < -tileSize || drawY + tileSize < -tileSize) {
 						// Clear out cache entries for tiles no longer in viewport.
-						if (cache[index] !== undefined) {
+						if (cached !== undefined) {
 							ctx.clearRect(drawX, drawY, tileSize, tileSize);
 							cache[index] = undefined;
 						}
