@@ -231,11 +231,8 @@ Vue.component('map-viewer', {
 					}
 
 					// Check if the tile is renderable.
-					if (cached instanceof ImageData) {
+					if (cached instanceof ImageData)
 						ctx.putImageData(cached, drawX, drawY);
-						ctx.strokeStyle = 'pink';
-						ctx.strokeRect(drawX, drawY, tileSize, tileSize);
-					}
 				}
 			}
 		},
