@@ -87,8 +87,9 @@ class CASCRemote extends CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
+	 * @param {boolean} partialDecrypt
 	 */
-	async getFile(fileDataID) {
+	async getFile(fileDataID, partialDecrypt = false) {
 		log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 		const encodingKey = await super.getFile(fileDataID);
 		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
@@ -105,7 +106,7 @@ class CASCRemote extends CASC {
 			log.write('Loaded CASC file %d from cache', fileDataID);
 		}
 
-		return new BLTEReader(data, encodingKey);
+		return new BLTEReader(data, encodingKey, partialDecrypt);
 	}
 
 	/**

@@ -64,13 +64,14 @@ class CASC {
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
 	 * @param {string} fileName 
+	 * @param {boolean} partialDecrypt
 	 */
-	async getFileByName(fileName) {
+	async getFileByName(fileName, partialDecrypt = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: %s', fileName);
 
-		return await this.getFile(fileDataID);
+		return await this.getFile(fileDataID, partialDecrypt);
 	}
 
 	/**
