@@ -12,7 +12,8 @@ Vue.component('map-viewer', {
 		return {
 			offsetX: 0,
 			offsetY: 0,
-			zoomFactor: 1
+			zoomFactor: 1,
+			tileQueue: []
 		}
 	},
 
@@ -101,7 +102,60 @@ Vue.component('map-viewer', {
 		 * Initialize a fresh cache array.
 		 */
 		initializeCache: function() {
+			this.tileQueue = [];
 			this.cache = new Array(this.$props.mapSize * this.$props.mapSize);
+		},
+
+		/**
+		 * Process the next tile in the loading queue.
+		 */
+		checkTileQueue: function() {
+			const tile = this.tileQueue.shift();
+			if (tile)
+				this.loadTile(tile);
+			else
+				this.awaitingTile = false;
+		},
+
+		/**
+		 * Add a tile to the queue to be loaded.
+		 * @param {number} x 
+		 * @param {number} y 
+		 * @param {number} index 
+		 * @param {number} tileSize 
+		 */
+		queueTile: function(x, y, index, tileSize) {
+			const node = [x, y, index, tileSize];
+
+			if (this.awaitingTile)
+				this.tileQueue.push(node);
+			else
+				this.loadTile(node);
+		},
+
+		/**
+		 * Load a given tile into the cache.
+		 * Triggers a re-render and queue-check once loaded.
+		 * @param {Array} tile 
+		 */
+		loadTile: function(tile) {
+			this.awaitingTile = true;
+
+			const [x, y, index, tileSize] = tile;
+
+			// We need to use a local reference to the cache so that async callbacks
+			// for tile loading don't overwrite the most current cache if they resolve
+			// after a new map has been selected. 
+			const cache = this.cache;
+
+			this.$props.loader(x, y, tileSize).then(data => {
+				cache[index] = data;
+
+				if (data !== false)
+					this.render();
+
+				this.checkTileQueue();
+			});
 		},
 
 		/**
@@ -144,7 +198,7 @@ Vue.component('map-viewer', {
 			const cache = this.cache;
 
 			// Iterate over all possible tiles in a map and render as needed.
-			const loaderFunc = this.$props.loader;
+			//const loaderFunc = this.$props.loader;
 			for (let x = 0; x < maxTile; x++) {
 				for (let y = 0; y < maxTile; y++) {
 					// drawX/drawY is the absolute position to draw this tile.
@@ -171,11 +225,8 @@ Vue.component('map-viewer', {
 						// Set the tile cache to 'true' so it is skipped while loading.
 						this.cache[index] = true;
 
-						// Request the new tile.
-						loaderFunc(x, y, tileSize).then(data => {
-							cache[index] = data;
-							this.render();
-						});
+						// Add this tile to the loading queue.
+						this.queueTile(x, y, index, tileSize);
 						continue;
 					}
 
