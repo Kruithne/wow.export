@@ -85,18 +85,6 @@ Vue.component('map-viewer', {
 			// Set the map position to 0, 0 which will be centered.
 			// This will trigger a re-render for us too.
 			this.setMapPosition(0, 0);
-		},
-
-		/**
-		 * Invoked when the zoomFactor property changes for this component.
-		 * This indicates that the user has scrolled in/out.
-		 */
-		zoomFactor: function() {
-			// Invalidate the cache so that tiles are re-rendered.
-			this.initializeCache();
-
-			// Manually trigger a re-render.
-			this.render();
 		}
 	},
 
@@ -301,7 +289,7 @@ Vue.component('map-viewer', {
 			const posX = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileX);
 			const posY = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileY);
 
-			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX, posY };
+			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX: posY, posY: posX };
 		},
 
 		/**
@@ -310,16 +298,32 @@ Vue.component('map-viewer', {
 		 * @param {number} y 
 		 */
 		setMapPosition: function(x, y) {
+			// Translate to WoW co-ordinates.
+			const posX = y;
+			const posY = x;
+
 			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
 
-			const ofsX = -(((x + MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
-			const ofsY = -(((y + MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
+			const ofsX = (((posX - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
+			const ofsY = (((posY - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
 
 			const viewport = this.$el;
 			this.offsetX = ofsX + (viewport.clientWidth / 2);
 			this.offsetY = ofsY + (viewport.clientHeight / 2);
 
 			this.render();
+		},
+
+		/**
+		 * Set the zoom factor. This will invalidate the cache.
+		 * This function will not re-render the preview.
+		 * @param {number} factor 
+		 */
+		setZoomFactor: function(factor) {
+			this.zoomFactor = factor;
+
+			// Invalidate the cache so that tiles are re-rendered.
+			this.initializeCache();
 		},
 
 		/**
@@ -343,11 +347,14 @@ Vue.component('map-viewer', {
 			// the zoomFactor watcher being reactive, but we still check it here so that we only
 			// pan the map to the new zoom point if we're actually zooming.
 			if (newZoom !== this.zoomFactor) {
-				// Offset the map to where the user zoomed in. This doesn't re-render automatically.
-				//this.centerOnClientPoint(event.clientX, event.clientY);
+				// Get the in-game position of the mouse cursor.
+				const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 
-				// Set the new zoom factor, this will trigger a re-render.
-				this.zoomFactor = newZoom;
+				// Set the new zoom factor. This will not trigger a re-render.
+				this.setZoomFactor(newZoom);
+
+				// Pan the map to the cursor position.
+				this.setMapPosition(point.posX, point.posY);
 			}
 		}
 	},
