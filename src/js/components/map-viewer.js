@@ -10,8 +10,9 @@ Vue.component('map-viewer', {
 	 * tileSize: Base size of tiles (before zoom).
 	 * map: ID of the current map. We use this to listen for map changes.
 	 * zoom: Maxium zoom-out factor allowed.
+	 * mask: Chunk mask. Expected MAP_SIZE ^ 2 array.
 	 */
-	props: ['loader', 'tileSize', 'map', 'zoom'],
+	props: ['loader', 'tileSize', 'map', 'zoom', 'mask'],
 
 	data: function() {
 		return {
@@ -193,6 +194,10 @@ Vue.component('map-viewer', {
 					// Cache is a one-dimensional array, calculate the index as such.
 					const index = (x * MAP_SIZE) + y;
 					const cached = cache[index];
+
+					// This chunk is masked out, so skip rendering it.
+					if (this.mask && this.mask[index] !== 1)
+						continue;
 
 					// Skip tiles that are not in (or around) the viewport.
 					if (drawX > (viewportWidth + tileSize) || drawY > (viewportHeight + tileSize) || drawX + tileSize < -tileSize || drawY + tileSize < -tileSize) {

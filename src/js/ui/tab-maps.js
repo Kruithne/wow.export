@@ -4,6 +4,9 @@ const core = require('../core');
 const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
 const BLPFile = require('../casc/blp');
+const WDTLoader = require('../3D/loaders/WDTLoader');
+
+const MAP_SIZE = 64;
 
 let selectedMapID;
 let selectedMapDir;
@@ -13,13 +16,27 @@ let selectedMapDir;
  * @param {number} mapID 
  * @param {string} mapDir 
  */
-const loadMap = (mapID, mapDir) => {
+const loadMap = async (mapID, mapDir) => {
 	selectedMapID = mapID;
 	selectedMapDir = mapDir;
 
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
 	core.view.mapViewerSelectedMap = mapID;
+
+	// Attempt to load the WDT for this map for chunk masking.
+	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDir, mapDir);
+
+	try {
+		const data = await core.view.casc.getFileByName(wdtPath);
+		const wdt = new WDTLoader(data);
+		wdt.load();
+
+		core.view.mapViewerChunkMask = wdt.tiles;
+	} catch (e) {
+		// Unable to load WDT, default to all chunks enabled.
+		core.view.mapViewerChunkMask = new Array(MAP_SIZE * MAP_SIZE).fill(1);
+	}
 };
 
 /**

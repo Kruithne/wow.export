@@ -64,6 +64,7 @@ const view = {
 	mapViewerMaps: [], // Available maps for the map viewer.
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.
 	mapViewerSelectedMap: null, // Currently selected map.
+	mapViewerChunkMask: null, // Map viewer chunk mask.
 };
 
 /**
