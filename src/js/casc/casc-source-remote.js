@@ -88,9 +88,12 @@ class CASCRemote extends CASC {
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
 	 * @param {boolean} partialDecrypt
+	 * @param {boolean} suppressLog
 	 */
-	async getFile(fileDataID, partialDecrypt = false) {
-		log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+	async getFile(fileDataID, partialDecrypt = false, suppressLog = false) {
+		if (!suppressLog)
+			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+
 		const encodingKey = await super.getFile(fileDataID);
 		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
 
@@ -99,10 +102,12 @@ class CASCRemote extends CASC {
 			if (archive === undefined)
 				throw new Error('No remote archive indexed for encoding key: ' + encodingKey);
 
-			log.write('Downloading CASC file %d', fileDataID);
+			if (!suppressLog)
+				log.write('Downloading CASC file %d', fileDataID);
+
 			data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
 			this.cache.storeFile(encodingKey, data, constants.CACHE.DIR_DATA);
-		} else {
+		} else if (!suppressLog) {
 			log.write('Loaded CASC file %d from cache', fileDataID);
 		}
 

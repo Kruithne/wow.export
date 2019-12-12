@@ -48,9 +48,12 @@ class CASCLocal extends CASC {
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
 	 * @param {boolean} partialDecryption
+	 * @param {boolean} suppressLog
 	 */
-	async getFile(fileDataID, partialDecryption = false) {
-		log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+	async getFile(fileDataID, partialDecryption = false, suppressLog = false) {
+		if (!suppressLog)
+			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+			
 		const encodingKey = await super.getFile(fileDataID);
 		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey, partialDecryption);
 	}

@@ -36,7 +36,7 @@ const loadMapTile = async (x, y, size) => {
 	try {
 		// Attempt to load the requested tile from CASC.
 		const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', selectedMapDir, x + 1, y + 1);
-		const data = await core.view.casc.getFileByName(tilePath);
+		const data = await core.view.casc.getFileByName(tilePath, false, true);
 		const blp = new BLPFile(data);
 
 		// Draw the BLP onto a raw-sized canvas.
