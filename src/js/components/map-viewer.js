@@ -1,19 +1,25 @@
+const util = require('util');
+
+const MAP_SIZE = 64;
+const MAP_COORD_BASE =  51200 / 3;
+const MAP_CHUNK_WEIGHT = (MAP_COORD_BASE * 2) / 64;
+
 Vue.component('map-viewer', {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).
-	 * mapSize: Maximum tile index of the map.
 	 * map: ID of the current map. We use this to listen for map changes.
 	 * zoom: Maxium zoom-out factor allowed.
 	 */
-	props: ['loader', 'tileSize', 'mapSize', 'map', 'zoom'],
+	props: ['loader', 'tileSize', 'map', 'zoom'],
 
 	data: function() {
 		return {
 			offsetX: 0,
 			offsetY: 0,
 			zoomFactor: 1,
-			tileQueue: []
+			tileQueue: [],
+			hoverInfo: ''
 		}
 	},
 
@@ -103,7 +109,7 @@ Vue.component('map-viewer', {
 		 */
 		initializeCache: function() {
 			this.tileQueue = [];
-			this.cache = new Array(this.$props.mapSize * this.$props.mapSize);
+			this.cache = new Array(MAP_SIZE * MAP_SIZE);
 		},
 
 		/**
@@ -181,16 +187,10 @@ Vue.component('map-viewer', {
 			const viewportHeight = viewport.clientHeight;
 
 			// Calculate which tiles will appear within the viewer.
-			const maxTile = this.$props.mapSize;
 			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
 
 			// Get local reference to the canvas context.
 			const ctx = this.context;
-
-			// drawOfsX/drawOfsY offset the the render to make the map centered.
-			// Additionally, the current panning offsets are also factored in here.
-			const drawOfsX = -((maxTile * tileSize) / 2) + (viewportWidth / 2) + this.offsetX;
-			const drawOfsY = -((maxTile * tileSize) / 2) + (viewportHeight / 2) + this.offsetY;
 
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
@@ -199,14 +199,14 @@ Vue.component('map-viewer', {
 
 			// Iterate over all possible tiles in a map and render as needed.
 			//const loaderFunc = this.$props.loader;
-			for (let x = 0; x < maxTile; x++) {
-				for (let y = 0; y < maxTile; y++) {
+			for (let x = 0; x < MAP_SIZE; x++) {
+				for (let y = 0; y < MAP_SIZE; y++) {
 					// drawX/drawY is the absolute position to draw this tile.
-					const drawX = (x * tileSize) + drawOfsX;
-					const drawY = (y * tileSize) + drawOfsY;
+					const drawX = (x * tileSize) + this.offsetX;
+					const drawY = (y * tileSize) + this.offsetY;
 
 					// Cache is a one-dimensional array, calculate the index as such.
-					const index = (x * maxTile) + y;
+					const index = (x * MAP_SIZE) + y;
 					const cached = cache[index];
 
 					// Skip tiles that are not in (or around) the viewport.
@@ -231,8 +231,11 @@ Vue.component('map-viewer', {
 					}
 
 					// Check if the tile is renderable.
-					if (cached instanceof ImageData)
+					if (cached instanceof ImageData) {
 						ctx.putImageData(cached, drawX, drawY);
+						ctx.strokeStyle = 'pink';
+						ctx.strokeRect(drawX, drawY, tileSize, tileSize);
+					}
 				}
 			}
 		},
@@ -285,19 +288,63 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * Convert an absolute client point (such as cursor position) to a relative
+		 * position on the map. Returns { tileX, tileY posX, posY }
+		 * @param {number} x 
+		 * @param {number} y 
+		 */
+		mapPositionFromClientPoint: function(x, y) {
+			const viewport = this.$el.getBoundingClientRect();
+			
+			const viewOfsX = (x - viewport.x) - this.offsetX;
+			const viewOfsY = (y - viewport.y) - this.offsetY;
+
+			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
+
+			const tileX = (viewOfsX / tileSize) + 1;
+			const tileY = (viewOfsY / tileSize) + 1;
+
+			const posX = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileX);
+			const posY = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileY);
+
+			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX, posY };
+		},
+
+		/**
+		 * Invoked when the mouse is moved over the component.
+		 * @param {MouseEvent} event 
+		 */
+		handleMouseOver: function(event) {
+			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
+			this.hoverInfo = util.format('%d %d (%d %d)', Math.floor(point.posX), Math.floor(point.posY), point.tileX, point.tileY);
+		},
+
+		/**
 		 * Invoked on mousewheel events captured on the container element.
 		 * @param {WheelEvent} event 
 		 */
 		handleMouseWheel: function(event) {
 			const delta = event.deltaY > 0 ? 1 : -1;
-			this.zoomFactor = Math.max(1, Math.min(this.$props.zoom, this.zoomFactor + delta));
+			const newZoom = Math.max(1, Math.min(this.$props.zoom, this.zoomFactor + delta));
+
+			// Setting the new zoom factor even if it hasn't changed would have no effect due to
+			// the zoomFactor watcher being reactive, but we still check it here so that we only
+			// pan the map to the new zoom point if we're actually zooming.
+			if (newZoom !== this.zoomFactor) {
+				// Offset the map to where the user zoomed in. This doesn't re-render automatically.
+				//this.centerOnClientPoint(event.clientX, event.clientY);
+
+				// Set the new zoom factor, this will trigger a re-render.
+				this.zoomFactor = newZoom;
+			}
 		}
 	},
 
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel">
+	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver">
+		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
 });
