@@ -1,7 +1,7 @@
 const util = require('util');
 
 const MAP_SIZE = 64;
-const MAP_COORD_BASE =  51200 / 3;
+const MAP_COORD_BASE = 51200 / 3;
 const MAP_CHUNK_WEIGHT = (MAP_COORD_BASE * 2) / 64;
 
 Vue.component('map-viewer', {
@@ -79,15 +79,12 @@ Vue.component('map-viewer', {
 		 * This indicates that a new map has been selected for rendering.
 		 */
 		map: function() {
-			// Reset the current panning position of the viewer.
-			this.offsetX = 0;
-			this.offsetY = 0;
-
 			// Reset the cache.
 			this.initializeCache();
 
-			// Trigger a re-render.
-			this.render();
+			// Set the map position to 0, 0 which will be centered.
+			// This will trigger a re-render for us too.
+			this.setMapPosition(0, 0);
 		},
 
 		/**
@@ -305,6 +302,24 @@ Vue.component('map-viewer', {
 			const posY = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileY);
 
 			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX, posY };
+		},
+
+		/**
+		 * Centers the map on a given X, Y in-game position.
+		 * @param {number} x 
+		 * @param {number} y 
+		 */
+		setMapPosition: function(x, y) {
+			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
+
+			const ofsX = -(((x + MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
+			const ofsY = -(((y + MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
+
+			const viewport = this.$el;
+			this.offsetX = ofsX + (viewport.clientWidth / 2);
+			this.offsetY = ofsY + (viewport.clientHeight / 2);
+
+			this.render();
 		},
 
 		/**
