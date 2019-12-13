@@ -415,6 +415,15 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * Invoked when the mouse leaves the component.
+		 * @param {MouseEvent} event 
+		 */
+		handleMouseOut: function(event) {
+			// Remove the current hover overlay.
+			this.hoverTile = null;
+		},
+
+		/**
 		 * Invoked on mousewheel events captured on the container element.
 		 * @param {WheelEvent} event 
 		 */
@@ -441,7 +450,7 @@ Vue.component('map-viewer', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver">
+	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver" @mouseout="handleMouseOut">
 		<div class="info">
 			<span>Navigate: Click + Drag</span>
 			<span>Select Tile: Shift + Click</span>
