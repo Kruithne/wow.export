@@ -6,6 +6,16 @@ const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
 const MAP_CHUNK_WEIGHT = constants.GAME.MAP_CHUNK_WEIGHT;
 
+// Persisted state for the map-viewer component. This generally goes against the
+// principals of reactive instanced components, but unfortunately nothing else worked
+// for maintaining state. This just means we can only have one map-viewer component.
+const state = {
+	offsetX: 0,
+	offsetY: 0,
+	zoomFactor: 2,
+	tileQueue: [],
+};
+
 Vue.component('map-viewer', {
 	/**
 	 * loader: Tile loader function.
@@ -19,10 +29,6 @@ Vue.component('map-viewer', {
 
 	data: function() {
 		return {
-			offsetX: 0,
-			offsetY: 0,
-			zoomFactor: 2,
-			tileQueue: [],
 			hoverInfo: '',
 			selectionCount: 0,
 			hoverTile: null,
@@ -109,7 +115,7 @@ Vue.component('map-viewer', {
 		 * Initialize a fresh cache array.
 		 */
 		initializeCache: function() {
-			this.tileQueue = [];
+			state.tileQueue = [];
 			this.cache = new Array(MAP_SIZE_SQ);
 		},
 
@@ -117,7 +123,7 @@ Vue.component('map-viewer', {
 		 * Process the next tile in the loading queue.
 		 */
 		checkTileQueue: function() {
-			const tile = this.tileQueue.shift();
+			const tile = state.tileQueue.shift();
 			if (tile)
 				this.loadTile(tile);
 			else
@@ -135,7 +141,7 @@ Vue.component('map-viewer', {
 			const node = [x, y, index, tileSize];
 
 			if (this.awaitingTile)
-				this.tileQueue.push(node);
+				state.tileQueue.push(node);
 			else
 				this.loadTile(node);
 		},
@@ -218,7 +224,7 @@ Vue.component('map-viewer', {
 			const viewportHeight = viewport.clientHeight;
 
 			// Calculate which tiles will appear within the viewer.
-			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
 			// Get local reference to the canvas context.
 			const ctx = this.context;
@@ -232,8 +238,8 @@ Vue.component('map-viewer', {
 			for (let x = 0; x < MAP_SIZE; x++) {
 				for (let y = 0; y < MAP_SIZE; y++) {
 					// drawX/drawY is the absolute position to draw this tile.
-					const drawX = (x * tileSize) + this.offsetX;
-					const drawY = (y * tileSize) + this.offsetY;
+					const drawX = (x * tileSize) + state.offsetX;
+					const drawY = (y * tileSize) + state.offsetY;
 
 					// Cache is a one-dimensional array, calculate the index as such.
 					const index = (x * MAP_SIZE) + y;
@@ -292,8 +298,8 @@ Vue.component('map-viewer', {
 				const deltaY = this.mouseBaseY - event.clientY;
 
 				// Update the offset based on our pan base.
-				this.offsetX = this.panBaseX - deltaX;
-				this.offsetY = this.panBaseY - deltaY;
+				state.offsetX = this.panBaseX - deltaX;
+				state.offsetY = this.panBaseY - deltaY;
 
 				// Offsets are not reactive, manually trigger an update.
 				this.render();
@@ -339,8 +345,8 @@ Vue.component('map-viewer', {
 
 				// Store the current offsetX/offsetY used for relative panning
 				// as the user drags the component.
-				this.panBaseX = this.offsetX;
-				this.panBaseY = this.offsetY;
+				this.panBaseX = state.offsetX;
+				this.panBaseY = state.offsetY;
 			}
 		},
 
@@ -353,10 +359,10 @@ Vue.component('map-viewer', {
 		mapPositionFromClientPoint: function(x, y) {
 			const viewport = this.$el.getBoundingClientRect();
 			
-			const viewOfsX = (x - viewport.x) - this.offsetX;
-			const viewOfsY = (y - viewport.y) - this.offsetY;
+			const viewOfsX = (x - viewport.x) - state.offsetX;
+			const viewOfsY = (y - viewport.y) - state.offsetY;
 
-			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
 			const tileX = viewOfsX / tileSize;
 			const tileY = viewOfsY / tileSize;
@@ -377,14 +383,14 @@ Vue.component('map-viewer', {
 			const posX = y;
 			const posY = x;
 
-			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
 			const ofsX = (((posX - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
 			const ofsY = (((posY - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
 
 			const viewport = this.$el;
-			this.offsetX = ofsX + (viewport.clientWidth / 2);
-			this.offsetY = ofsY + (viewport.clientHeight / 2);
+			state.offsetX = ofsX + (viewport.clientWidth / 2);
+			state.offsetY = ofsY + (viewport.clientHeight / 2);
 
 			this.render();
 		},
@@ -395,7 +401,7 @@ Vue.component('map-viewer', {
 		 * @param {number} factor 
 		 */
 		setZoomFactor: function(factor) {
-			this.zoomFactor = factor;
+			state.zoomFactor = factor;
 
 			// Invalidate the cache so that tiles are re-rendered.
 			this.initializeCache();
@@ -429,12 +435,12 @@ Vue.component('map-viewer', {
 		 */
 		handleMouseWheel: function(event) {
 			const delta = event.deltaY > 0 ? 1 : -1;
-			const newZoom = Math.max(1, Math.min(this.zoom, this.zoomFactor + delta));
+			const newZoom = Math.max(1, Math.min(this.zoom, state.zoomFactor + delta));
 
 			// Setting the new zoom factor even if it hasn't changed would have no effect due to
 			// the zoomFactor watcher being reactive, but we still check it here so that we only
 			// pan the map to the new zoom point if we're actually zooming.
-			if (newZoom !== this.zoomFactor) {
+			if (newZoom !== state.zoomFactor) {
 				// Get the in-game position of the mouse cursor.
 				const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 
