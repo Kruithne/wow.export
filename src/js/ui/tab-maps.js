@@ -83,17 +83,11 @@ const loadMapTile = async (x, y, size) => {
  * @param {string} entry 
  */
 const parseMapEntry = (entry) => {
-	const parts = entry.split('\31');
+	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^\)]+)\)/);
+	if (!match)
+		throw new Error('Unexpected map entry');
 
-	if (parts.length !== 3)
-		throw new Error('Unexpected part count for map entry.');
-
-	const mapID = parseInt(parts[0].substr(1, parts[0].length - 2));
-	if (isNaN(mapID))
-		throw new Error('Invalid map ID in map entry: ' + parts[0]);
-
-	const mapDir = parts[2].substr(1, parts[2].length - 2).toLowerCase();
-	return [mapID, parts[1], mapDir];
+	return { id: parseInt(match[1]), name: match[2], dir: match[3].toLowerCase() };
 };
 
 // The first time the user opens up the map tab, initialize map names.
@@ -123,9 +117,9 @@ core.events.once('init', () => {
 		const first = selection[0];
 
 		if (!core.view.isBusy && first) {
-			const [mapID, mapName, mapDir] = parseMapEntry(first);
-			if (selectedMapID !== mapID)
-				loadMap(mapID, mapDir);
+			const map = parseMapEntry(first);
+			if (selectedMapID !== map.id)
+				loadMap(map.id, map.dir);
 		}
 	});
 });
