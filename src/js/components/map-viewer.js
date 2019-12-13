@@ -260,7 +260,7 @@ Vue.component('map-viewer', {
 					// No cache, request it (async) then skip.
 					if (cached === undefined) {
 						// Set the tile cache to 'true' so it is skipped while loading.
-						state.cache[index] = true;
+						cache[index] = true;
 
 						// Add this tile to the loading queue.
 						this.queueTile(x, y, index, tileSize);
