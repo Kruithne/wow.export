@@ -13,8 +13,9 @@ Vue.component('map-viewer', {
 	 * map: ID of the current map. We use this to listen for map changes.
 	 * zoom: Maxium zoom-out factor allowed.
 	 * mask: Chunk mask. Expected MAP_SIZE ^ 2 array.
+	 * selection: Set() defining selected tiles.
 	 */
-	props: ['loader', 'tileSize', 'map', 'zoom', 'mask'],
+	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
 
 	data: function() {
 		return {
@@ -22,7 +23,9 @@ Vue.component('map-viewer', {
 			offsetY: 0,
 			zoomFactor: 1,
 			tileQueue: [],
-			hoverInfo: ''
+			hoverInfo: '',
+			selectionCount: 0,
+			hoverTile: null,
 		}
 	},
 
@@ -85,9 +88,19 @@ Vue.component('map-viewer', {
 			// Reset the cache.
 			this.initializeCache();
 
+			// Reset our internal selection counter.
+			this.selectionCount = 0;
+
 			// Set the map position to a default position.
 			// This will trigger a re-render for us too.
 			this.setToDefaultPosition();
+		},
+
+		/**
+		 * Invoked when the tile being hovered over changes.
+		 */
+		hoverTile: function() {
+			this.render();
 		}
 	},
 
@@ -248,12 +261,22 @@ Vue.component('map-viewer', {
 
 						// Add this tile to the loading queue.
 						this.queueTile(x, y, index, tileSize);
-						continue;
+					} else if (cached instanceof ImageData) {
+						// If the tile is renderable, render it.
+						ctx.putImageData(cached, drawX, drawY);
 					}
 
-					// Check if the tile is renderable.
-					if (cached instanceof ImageData)
-						ctx.putImageData(cached, drawX, drawY);
+					// Draw the selection overlay if this tile is selected.
+					if (this.selection.has(index)) {
+						ctx.fillStyle = 'rgba(159, 241, 161, 0.5)';
+						ctx.fillRect(drawX, drawY, tileSize, tileSize);	
+					}
+
+					// Draw the hover overlay if this tile is hovered over.
+					if (this.hoverTile === index) {
+						ctx.fillStyle = 'rgba(87, 175, 226, 0.5)';
+						ctx.fillRect(drawX, drawY, tileSize, tileSize);
+					}
 				}
 			}
 		},
@@ -291,7 +314,23 @@ Vue.component('map-viewer', {
 		 * @param {MouseEvent} event
 		 */
 		handleMouseDown: function(event) {
-			if (!this.isPanning) {
+			if (event.shiftKey) {
+				// Calculate which chunk we shift-clicked on.
+				const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
+				const index = (point.tileX * MAP_SIZE) + point.tileY;
+
+				// Either select or deselect depending on current state.
+				if (this.selection.has(index))
+					this.selection.delete(index);
+				else
+					this.selection.add(index);
+
+				// A Set() cannot be reactive, track selection count internally.
+				this.selectionCount = this.selection.size;
+
+				// Trigger a re-render so the overlay updates.
+				this.render();
+			} else if (!this.isPanning) {
 				this.isPanning = true;
 
 				// Store the X/Y of the mouse event to calculate drag deltas.
@@ -369,6 +408,10 @@ Vue.component('map-viewer', {
 		handleMouseOver: function(event) {
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 			this.hoverInfo = util.format('%d %d (%d %d)', Math.floor(point.posX), Math.floor(point.posY), point.tileX, point.tileY);
+
+			// If we're not panning, highlight the current tile.
+			if (!this.isPanning)
+				this.hoverTile = (point.tileX * MAP_SIZE) + point.tileY;
 		},
 
 		/**
@@ -400,6 +443,7 @@ Vue.component('map-viewer', {
 	 */
 	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver">
 		<div class="hover-info">{{ hoverInfo }}</div>
+		<div class="select-info" v-if="selectionCount > 0">{{ selectionCount + ' tiles selected' }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
 });

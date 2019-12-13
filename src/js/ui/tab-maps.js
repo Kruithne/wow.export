@@ -32,6 +32,9 @@ const loadMap = async (mapID, mapDir) => {
 		core.view.mapViewerChunkMask = null;
 	}
 
+	// Reset the tile selection.
+	core.view.mapViewerSelection.clear();
+
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
 	core.view.mapViewerSelectedMap = mapID;
