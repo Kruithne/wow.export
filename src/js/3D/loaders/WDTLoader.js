@@ -1,7 +1,10 @@
+const constants = require('../../constants');
+
 const CHUNK_MAIN = 0x4D41494E;
 const CHUNK_MAID = 0x4D414944;
 
-const MAP_SIZE = 64;
+const MAP_SIZE = constants.GAME.MAP_SIZE;
+const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 
 class WDTLoader {
 	/**
@@ -35,7 +38,7 @@ class WDTLoader {
 	 * Parse a map tile fileDataID chunk.
 	 */
 	parseChunk_MAID() {
-		const entries = this.entries = new Array(MAP_SIZE * MAP_SIZE);
+		const entries = this.entries = new Array(MAP_SIZE_SQ);
 
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let y = 0; y < MAP_SIZE; y++) {
@@ -57,7 +60,7 @@ class WDTLoader {
 	 * Parse a map tile table chunk.
 	 */
 	parseChunk_MAIN() {
-		const tiles = this.tiles = new Array(MAP_SIZE * MAP_SIZE);
+		const tiles = this.tiles = new Array(MAP_SIZE_SQ);
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let y = 0; y < MAP_SIZE; y++) {
 				tiles[(y * MAP_SIZE) + x] = this.data.readUInt32LE();

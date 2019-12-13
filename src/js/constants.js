@@ -20,6 +20,14 @@ module.exports = {
 	// User-agent used for HTTP/HTTPs requests.
 	USER_AGENT: 'wow.export (' + nw.App.manifest.version + ')',
 
+	// Defines game-specific constants.
+	GAME: {
+		MAP_SIZE: 64,
+		MAP_SIZE_SQ: 4096, // MAP_SIZE ^ 2
+		MAP_COORD_BASE: 51200 / 3,
+		MAP_CHUNK_WEIGHT: ((51200 / 3) * 2) / 64 // (MAP_COORD_BASE) * 2 / 64
+	},
+
 	CACHE: {
 		DIR: path.join(DATA_PATH, 'casc'), // Cache directory.
 		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.

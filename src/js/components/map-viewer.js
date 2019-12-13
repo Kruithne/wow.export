@@ -1,8 +1,10 @@
 const util = require('util');
+const constants = require('../constants');
 
-const MAP_SIZE = 64;
-const MAP_COORD_BASE = 51200 / 3;
-const MAP_CHUNK_WEIGHT = (MAP_COORD_BASE * 2) / 64;
+const MAP_SIZE = constants.GAME.MAP_SIZE;
+const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
+const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
+const MAP_CHUNK_WEIGHT = constants.GAME.MAP_CHUNK_WEIGHT;
 
 Vue.component('map-viewer', {
 	/**
@@ -95,7 +97,7 @@ Vue.component('map-viewer', {
 		 */
 		initializeCache: function() {
 			this.tileQueue = [];
-			this.cache = new Array(MAP_SIZE * MAP_SIZE);
+			this.cache = new Array(MAP_SIZE_SQ);
 		},
 
 		/**

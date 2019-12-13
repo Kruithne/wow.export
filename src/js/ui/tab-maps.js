@@ -1,12 +1,13 @@
 const util = require('util');
 const core = require('../core');
+const constants = require('../constants');
 
 const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 
-const MAP_SIZE = 64;
+const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 
 let selectedMapID;
 let selectedMapDir;
@@ -35,7 +36,7 @@ const loadMap = async (mapID, mapDir) => {
 		core.view.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
-		core.view.mapViewerChunkMask = new Array(MAP_SIZE * MAP_SIZE).fill(1);
+		core.view.mapViewerChunkMask = new Array(MAP_SIZE_SQ).fill(1);
 	}
 };
 
