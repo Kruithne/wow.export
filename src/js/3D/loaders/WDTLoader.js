@@ -1,6 +1,8 @@
 const CHUNK_MAIN = 0x4D41494E;
 const CHUNK_MAID = 0x4D414944;
 
+const MAP_SIZE = 64;
+
 class WDTLoader {
 	/**
 	 * Construct a new WDTLoader instance.
@@ -20,8 +22,8 @@ class WDTLoader {
 			const nextChunkPos = this.data.offset + chunkSize;
 	
 			switch (chunkID) {
-				case CHUNK_MAIN: this.parseChunk_MAIN(chunkSize); break;
-				case CHUNK_MAID: this.parseChunk_MAID(chunkSize); break;
+				case CHUNK_MAIN: this.parseChunk_MAIN(); break;
+				case CHUNK_MAID: this.parseChunk_MAID(); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -32,34 +34,35 @@ class WDTLoader {
 	/**
 	 * Parse a map tile fileDataID chunk.
 	 */
-	parseChunk_MAID(chunkSize) {
-		const count = chunkSize / (8 * 4);
-		const entries = this.entries = new Array(count);
+	parseChunk_MAID() {
+		const entries = this.entries = new Array(MAP_SIZE * MAP_SIZE);
 
-		for (let i = 0; i < count; i++) {
-			entries[i] = {
-				rootADT: this.data.readUInt32LE(),	
-				obj0ADT: this.data.readUInt32LE(),
-				obj1ADT: this.data.readUInt32LE(),
-				tex0ADT: this.data.readUInt32LE(),
-				lodADT: this.data.readUInt32LE(),
-				mapTexture: this.data.readUInt32LE(),
-				mapTextureN: this.data.readUInt32LE(),
-				minimapTexture: this.data.readUInt32LE()
-			};
+		for (let x = 0; x < MAP_SIZE; x++) {
+			for (let y = 0; y < MAP_SIZE; y++) {
+				entries[(y * MAP_SIZE) + x] = {
+					rootADT: this.data.readUInt32LE(),
+					obj0ADT: this.data.readUInt32LE(),
+					obj1ADT: this.data.readUInt32LE(),
+					tex0ADT: this.data.readUInt32LE(),
+					lodADT: this.data.readUInt32LE(),
+					mapTexture: this.data.readUInt32LE(),
+					mapTextureN: this.data.readUInt32LE(),
+					minimapTexture: this.data.readUInt32LE()
+				};
+			}
 		}
 	}
 
 	/**
 	 * Parse a map tile table chunk.
-	 * @param {number} chunkSize
 	 */
-	parseChunk_MAIN(chunkSize) {
-		const count = chunkSize / 8;
-		const tiles = this.tiles = new Array(count);
-		for (let i = 0; i < count; i++) {
-			tiles[i] = this.data.readUInt32LE();
-			this.data.move(4);
+	parseChunk_MAIN() {
+		const tiles = this.tiles = new Array(MAP_SIZE * MAP_SIZE);
+		for (let x = 0; x < MAP_SIZE; x++) {
+			for (let y = 0; y < MAP_SIZE; y++) {
+				tiles[(y * MAP_SIZE) + x] = this.data.readUInt32LE();
+				this.data.move(4);
+			}
 		}
 	}
 }
