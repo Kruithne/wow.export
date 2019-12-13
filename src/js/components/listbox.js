@@ -218,7 +218,7 @@ Vue.component('listbox', {
 						}
 
 						if (!e.shiftKey || this.single)
-							this.selection.splice(0, this.selection.length);
+							this.selection.splice(0);
 
 						this.selection.push(next);
 						this.lastSelectItem = next;
@@ -238,7 +238,7 @@ Vue.component('listbox', {
 			if (this.single) {
 				// Listbox is in single-entry mode, replace selection.
 				if (checkIndex === -1) {
-					this.selection.splice(0, this.selection.length);
+					this.selection.splice(0);
 					this.selection.push(item);
 				}
 
@@ -266,7 +266,7 @@ Vue.component('listbox', {
 					}				
 				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 					// Normal click, replace entire selection.
-					this.selection.splice(0, this.selection.length);
+					this.selection.splice(0);
 					this.selection.push(item);
 				}
 

@@ -275,8 +275,8 @@ class WMORenderer {
 		if (this.setWatcher) this.setWatcher();
 
 		// Empty reactive arrays.
-		if (this.groupArray) this.groupArray.splice(0, this.groupArray.length);
-		if (this.setArray) this.setArray.splice(0, this.setArray.length);
+		if (this.groupArray) this.groupArray.splice(0);
+		if (this.setArray) this.setArray.splice(0);
 
 		// Release bound textures.
 		for (const tex of this.textures)

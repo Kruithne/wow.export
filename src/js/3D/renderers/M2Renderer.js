@@ -146,7 +146,7 @@ class M2Renderer {
 	disposeMeshGroup() {
 		// Clear out geoset controller.
 		if (this.geosetArray)
-			this.geosetArray.splice(0, this.geosetArray.length);
+			this.geosetArray.splice(0);
 
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
