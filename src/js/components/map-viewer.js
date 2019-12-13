@@ -21,7 +21,7 @@ Vue.component('map-viewer', {
 		return {
 			offsetX: 0,
 			offsetY: 0,
-			zoomFactor: 1,
+			zoomFactor: 2,
 			tileQueue: [],
 			hoverInfo: '',
 			selectionCount: 0,
