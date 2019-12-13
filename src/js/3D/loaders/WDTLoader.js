@@ -33,7 +33,7 @@ class WDTLoader {
 	 * Parse a map tile fileDataID chunk.
 	 */
 	parseChunk_MAID(chunkSize) {
-		const count = chunkSize / 8;
+		const count = chunkSize / (8 * 4);
 		const entries = this.entries = new Array(count);
 
 		for (let i = 0; i < count; i++) {
