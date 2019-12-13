@@ -318,4 +318,17 @@ input[type="number"]::-webkit-outer-spin-button {
 		bottom: 3px;
 		right: 3px;
 	}
+
+	.info {
+		position: absolute;
+		top: 6px;
+		left: 0;
+		right: 0;
+		display: flex;
+		justify-content: center;
+
+		span {
+			margin: 0 5px;
+		}
+	}
 }

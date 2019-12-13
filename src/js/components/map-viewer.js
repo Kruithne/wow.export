@@ -442,6 +442,11 @@ Vue.component('map-viewer', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver">
+		<div class="info">
+			<span>Navigate: Click + Drag</span>
+			<span>Select Tile: Shift + Click</span>
+			<span>Zoom: Mouse Wheel</span>
+		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<div class="select-info" v-if="selectionCount > 0">{{ selectionCount + ' tiles selected' }}</div>
 		<canvas ref="canvas"></canvas>
