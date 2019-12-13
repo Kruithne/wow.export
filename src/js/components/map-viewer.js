@@ -23,14 +23,13 @@ Vue.component('map-viewer', {
 	 * map: ID of the current map. We use this to listen for map changes.
 	 * zoom: Maxium zoom-out factor allowed.
 	 * mask: Chunk mask. Expected MAP_SIZE ^ 2 array.
-	 * selection: Set() defining selected tiles.
+	 * selection: Array defining selected tiles.
 	 */
 	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
 
 	data: function() {
 		return {
 			hoverInfo: '',
-			selectionCount: 0,
 			hoverTile: null,
 		}
 	},
@@ -90,9 +89,6 @@ Vue.component('map-viewer', {
 		map: function() {
 			// Reset the cache.
 			this.initializeCache();
-
-			// Reset our internal selection counter.
-			this.selectionCount = 0;
 
 			// Set the map position to a default position.
 			// This will trigger a re-render for us too.
@@ -270,7 +266,7 @@ Vue.component('map-viewer', {
 					}
 
 					// Draw the selection overlay if this tile is selected.
-					if (this.selection.has(index)) {
+					if (this.selection.includes(index)) {
 						ctx.fillStyle = 'rgba(159, 241, 161, 0.5)';
 						ctx.fillRect(drawX, drawY, tileSize, tileSize);	
 					}
@@ -323,13 +319,11 @@ Vue.component('map-viewer', {
 				const index = (point.tileX * MAP_SIZE) + point.tileY;
 
 				// Either select or deselect depending on current state.
-				if (this.selection.has(index))
-					this.selection.delete(index);
+				const check = this.selection.indexOf(index);
+				if (check > -1)
+					this.selection.splice(check, 1);
 				else
-					this.selection.add(index);
-
-				// A Set() cannot be reactive, track selection count internally.
-				this.selectionCount = this.selection.size;
+					this.selection.push(index);
 
 				// Trigger a re-render so the overlay updates.
 				this.render();
@@ -460,7 +454,7 @@ Vue.component('map-viewer', {
 			<span>Zoom: Mouse Wheel</span>
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
-		<div class="select-info" v-if="selectionCount > 0">{{ selectionCount + ' tiles selected' }}</div>
+		<div class="select-info" v-if="selection.length > 0">{{ selection.length + ' tiles selected' }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
 });
