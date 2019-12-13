@@ -85,9 +85,9 @@ Vue.component('map-viewer', {
 			// Reset the cache.
 			this.initializeCache();
 
-			// Set the map position to 0, 0 which will be centered.
+			// Set the map position to a default position.
 			// This will trigger a re-render for us too.
-			this.setMapPosition(0, 0);
+			this.setToDefaultPosition();
 		}
 	},
 
@@ -150,6 +150,36 @@ Vue.component('map-viewer', {
 
 				this.checkTileQueue();
 			});
+		},
+
+		/**
+		 * Set the map to a sensible default position. For most maps this will be centered
+		 * on 0, 0. For maps without a chunk at 0, 0 it will center on the first chunk that
+		 * is activated in the mask (providing one is set).
+		 */
+		setToDefaultPosition: function() {
+			let posX = 0, posY = 0;
+
+			// We can only search for a chunk if we have a mask set.
+			if (this.mask) {
+				// Check if we have a center chunk, if so we can leave the default as 0,0.
+				const center = Math.floor(MAP_COORD_BASE / MAP_CHUNK_WEIGHT);
+				const centerIndex = this.mask[(center * MAP_SIZE) + center];
+				
+				// No center chunk, find first chunk available.
+				if (centerIndex !== 1) {
+					const index = this.mask.findIndex(e => e === 1);
+
+					if (index > -1) {
+						// Translate the index into chunk co-ordinates, expand those to in-game co-ordinates
+						// and then offset by half a chunk so that we are centered on the chunk.
+						posX = (MAP_COORD_BASE - ((index % MAP_SIZE) * MAP_CHUNK_WEIGHT)) - MAP_CHUNK_WEIGHT / 2;
+						posY = (MAP_COORD_BASE - (Math.floor(index / MAP_SIZE) * MAP_CHUNK_WEIGHT)) - MAP_CHUNK_WEIGHT / 2;
+					}
+				}
+			}
+
+			this.setMapPosition(posX, posY);
 		},
 
 		/**
