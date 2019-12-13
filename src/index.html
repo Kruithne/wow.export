@@ -128,6 +128,9 @@
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
 						</div>
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
+						<div class="preview-controls">
+							<input type="button" :value="'Export ' + mapViewerSelection.length + ' Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0 }"/>
+						</div>
 					</div>
 				</keep-alive>
 				<keep-alive>

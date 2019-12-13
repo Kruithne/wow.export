@@ -454,7 +454,6 @@ Vue.component('map-viewer', {
 			<span>Zoom: Mouse Wheel</span>
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
-		<div class="select-info" v-if="selection.length > 0">{{ selection.length + ' tiles selected' }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
 });
