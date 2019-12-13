@@ -1,5 +1,6 @@
 const util = require('util');
 const core = require('../core');
+const log = require('../log');
 
 const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
@@ -20,6 +21,7 @@ const loadMap = async (mapID, mapDir) => {
 
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDir, mapDir);
+	log.write('Loading map preview for %s (%d)', mapDir, mapID);
 
 	try {
 		const data = await core.view.casc.getFileByName(wdtPath);
@@ -29,6 +31,7 @@ const loadMap = async (mapID, mapDir) => {
 		core.view.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
+		log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
 		core.view.mapViewerChunkMask = null;
 	}
 
