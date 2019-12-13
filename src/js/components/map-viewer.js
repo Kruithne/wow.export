@@ -42,9 +42,6 @@ Vue.component('map-viewer', {
 		// Store a local reference to the canvas context for faster rendering.
 		this.context = this.$refs.canvas.getContext('2d');
 
-		// Create a new local cache for map tiles.
-		this.initializeCache();
-
 		// Create anonymous pass-through functions for our event handlers
 		// to maintain context. We store them so we can unregister them later.
 		this.onMouseMove = event => this.handleMouseMove(event);
@@ -116,7 +113,7 @@ Vue.component('map-viewer', {
 		 */
 		initializeCache: function() {
 			state.tileQueue = [];
-			this.cache = new Array(MAP_SIZE_SQ);
+			state.cache = new Array(MAP_SIZE_SQ);
 		},
 
 		/**
@@ -159,7 +156,7 @@ Vue.component('map-viewer', {
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected. 
-			const cache = this.cache;
+			const cache = state.cache;
 
 			this.loader(x, y, tileSize).then(data => {
 				cache[index] = data;
@@ -232,7 +229,7 @@ Vue.component('map-viewer', {
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected. 
-			const cache = this.cache;
+			const cache = state.cache;
 
 			// Iterate over all possible tiles in a map and render as needed.
 			for (let x = 0; x < MAP_SIZE; x++) {
@@ -263,7 +260,7 @@ Vue.component('map-viewer', {
 					// No cache, request it (async) then skip.
 					if (cached === undefined) {
 						// Set the tile cache to 'true' so it is skipped while loading.
-						this.cache[index] = true;
+						state.cache[index] = true;
 
 						// Add this tile to the loading queue.
 						this.queueTile(x, y, index, tileSize);
