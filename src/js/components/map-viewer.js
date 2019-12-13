@@ -142,7 +142,7 @@ Vue.component('map-viewer', {
 			// after a new map has been selected. 
 			const cache = this.cache;
 
-			this.$props.loader(x, y, tileSize).then(data => {
+			this.loader(x, y, tileSize).then(data => {
 				cache[index] = data;
 
 				if (data !== false)
@@ -157,7 +157,7 @@ Vue.component('map-viewer', {
 		 */
 		render: function() {
 			// If no map has been selected, do not render.
-			if (this.$props.map === null)
+			if (this.map === null)
 				return;
 
 			// No canvas reference? Component likely dismounting.
@@ -175,7 +175,7 @@ Vue.component('map-viewer', {
 			const viewportHeight = viewport.clientHeight;
 
 			// Calculate which tiles will appear within the viewer.
-			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
 
 			// Get local reference to the canvas context.
 			const ctx = this.context;
@@ -186,7 +186,6 @@ Vue.component('map-viewer', {
 			const cache = this.cache;
 
 			// Iterate over all possible tiles in a map and render as needed.
-			//const loaderFunc = this.$props.loader;
 			for (let x = 0; x < MAP_SIZE; x++) {
 				for (let y = 0; y < MAP_SIZE; y++) {
 					// drawX/drawY is the absolute position to draw this tile.
@@ -288,7 +287,7 @@ Vue.component('map-viewer', {
 			const viewOfsX = (x - viewport.x) - this.offsetX;
 			const viewOfsY = (y - viewport.y) - this.offsetY;
 
-			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
 
 			const tileX = viewOfsX / tileSize;
 			const tileY = viewOfsY / tileSize;
@@ -309,7 +308,7 @@ Vue.component('map-viewer', {
 			const posX = y;
 			const posY = x;
 
-			const tileSize = Math.floor(this.$props.tileSize / this.zoomFactor);
+			const tileSize = Math.floor(this.tileSize / this.zoomFactor);
 
 			const ofsX = (((posX - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
 			const ofsY = (((posY - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
@@ -348,7 +347,7 @@ Vue.component('map-viewer', {
 		 */
 		handleMouseWheel: function(event) {
 			const delta = event.deltaY > 0 ? 1 : -1;
-			const newZoom = Math.max(1, Math.min(this.$props.zoom, this.zoomFactor + delta));
+			const newZoom = Math.max(1, Math.min(this.zoom, this.zoomFactor + delta));
 
 			// Setting the new zoom factor even if it hasn't changed would have no effect due to
 			// the zoomFactor watcher being reactive, but we still check it here so that we only

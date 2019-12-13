@@ -32,7 +32,7 @@ Vue.component('listbox', {
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 
-		if (this.$props.keyinput) {
+		if (this.keyinput) {
 			this.onKeyDown = e => this.handleKey(e);
 			document.addEventListener('keydown', this.onKeyDown);
 		}
@@ -51,7 +51,7 @@ Vue.component('listbox', {
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
 
-		if (this.$props.keyinput)
+		if (this.keyinput)
 			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
@@ -82,11 +82,11 @@ Vue.component('listbox', {
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
-			if (!this.$props.filter)
-				return this.$props.items;
+			if (!this.filter)
+				return this.items;
 
-			const filter = this.$props.filter.trim().toLowerCase();
-			let res = this.$props.items;
+			const filter = this.filter.trim().toLowerCase();
+			let res = this.items;
 
 			if (filter.length > 0)
 				res = res.filter(e => e.toLowerCase().includes(filter));
@@ -217,7 +217,7 @@ Vue.component('listbox', {
 							this.recalculateBounds();
 						}
 
-						if (!e.shiftKey || this.$props.single)
+						if (!e.shiftKey || this.single)
 							this.selection.splice(0, this.selection.length);
 
 						this.selection.push(next);
@@ -235,7 +235,7 @@ Vue.component('listbox', {
 		selectItem: function(item, event) {
 			const checkIndex = this.selection.indexOf(item);
 
-			if (this.$props.single) {
+			if (this.single) {
 				// Listbox is in single-entry mode, replace selection.
 				if (checkIndex === -1) {
 					this.selection.splice(0, this.selection.length);
