@@ -18,10 +18,6 @@ const loadMap = async (mapID, mapDir) => {
 	selectedMapID = mapID;
 	selectedMapDir = mapDir;
 
-	// While not used directly by the components, we update this reactive value
-	// so that the components know a new map has been selected, and to request tiles.
-	core.view.mapViewerSelectedMap = mapID;
-
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDir, mapDir);
 
@@ -35,6 +31,10 @@ const loadMap = async (mapID, mapDir) => {
 		// Unable to load WDT, default to all chunks enabled.
 		core.view.mapViewerChunkMask = null;
 	}
+
+	// While not used directly by the components, we update this reactive value
+	// so that the components know a new map has been selected, and to request tiles.
+	core.view.mapViewerSelectedMap = mapID;
 };
 
 /**
