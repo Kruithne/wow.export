@@ -323,6 +323,9 @@ input[type="number"]::-webkit-outer-spin-button {
 		right: 0;
 		display: flex;
 		justify-content: center;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 
 		span {
 			margin: 0 5px;
