@@ -20,7 +20,7 @@
 	"modelsShowM2": true,
 	"modelsShowWMO": true,
 	"modelsAutoPreview": true,
-	"modelsShowSidebar": true,
+	"modelsShowSidebar": false,
 	"modelsExportCollision": false,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
