@@ -1,6 +1,7 @@
 const util = require('util');
 const core = require('../core');
 const log = require('../log');
+const listfile = require('../casc/listfile');
 
 const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
@@ -101,8 +102,11 @@ core.events.once('screen-tab-maps', async () => {
 	const table = await DBHandler.openTable('dbfilesclient/map.db2', DB_Map);
 
 	const maps = [];
-	for (const [id, entry] of table.rows)
-		maps.push(util.format('[%d]\31%s\31(%s)', id, entry.MapName, entry.Directory));
+	for (const [id, entry] of table.rows) {
+		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
+		if (listfile.getByFilename(wdtPath))
+			maps.push(util.format('[%d]\31%s\31(%s)', id, entry.MapName, entry.Directory));
+	}
 
 	core.view.mapViewerMaps = maps;
 	
