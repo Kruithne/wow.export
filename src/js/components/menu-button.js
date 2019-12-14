@@ -52,7 +52,8 @@ Vue.component('menu-button', {
 		 * @param {string} option 
 		 */
 		getOptionDisplay: function(option) {
-			return (this.displayNames && this.displayNames[option]) || option;
+			const optionIndex = this.options.indexOf(option);
+			return (this.displayNames && this.displayNames[optionIndex]) || option;
 		}
 	},
 
