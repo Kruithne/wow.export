@@ -87,6 +87,50 @@ body {
 	}
 }
 
+#blender-info {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: grid;
+	grid-template-rows: 100px 1fr 100px;
+
+	&-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+
+		a {
+			font-size: 20px;
+		}
+	}
+
+	&-inner {
+		display: grid;
+		margin: auto 40px;
+
+		p {
+			grid-row: 2;
+			font-size: 20px;
+			margin-top: 20px;
+			text-align: center;
+		}
+
+		img {
+			margin: auto;
+			max-width: 100%;
+		}
+	}
+
+	&-buttons {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+}
+
 #nav {
 	display: flex;
 	align-items: center;
@@ -133,6 +177,18 @@ body {
 
 		div {
 			margin-right: 10px;
+		}
+	}
+
+	&-blender {
+		background: url(./images/blender.png);
+		width: 26px;
+		height: 26px;
+		align-self: center;
+		opacity: 0.8;
+
+		&:hover {
+			opacity: 1;
 		}
 	}
 

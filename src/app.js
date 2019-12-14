@@ -121,6 +121,14 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
+			 * Open the local directory containing our Blender add-on
+			 * using the OS default folder explorer application.
+			 */
+			openBlenderAddonFolder: function() {
+				nw.Shell.openItem(constants.BLENDER_ADDON_DIR);
+			},
+
+			/**
 			 * Mark all WMO groups to the given state.
 			 * @param {boolean} state 
 			 */

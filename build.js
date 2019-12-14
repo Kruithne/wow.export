@@ -510,6 +510,20 @@ const orderDependencies = (tree, mod) => {
 			await func(map.source, targetPath);
 		}
 
+		// Build included ZIP archives.
+		const includeZip = Object.entries(build.includeZip || {});
+		for (const [source, target] of includeZip) {
+			log.info('Creating archive *%s* -> *%s*', source, target);
+			const zip = new AdmZip();
+			const targetPath = path.join(buildDir, target);
+
+			// Create directory as needed.
+			await createDirectory(path.dirname(targetPath));
+
+			zip.addLocalFolder(path.resolve(source), path.basename(target, '.zip'));
+			zip.writeZip(targetPath);
+		}
+
 		const osxConfig = build.osxConfig;
 		if (osxConfig) {
 			// Adjust the CFBundleDisplayName value in the XML dict.

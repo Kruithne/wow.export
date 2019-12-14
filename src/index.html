@@ -21,6 +21,7 @@
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
+						<div title="Blender Add-On" class="option" id="nav-blender" @click="setScreen('blender', true)"></div>
 						<div v-if="!!casc" title="Restart" class="option" id="nav-reload" @click="restartApplication"></div>
 						<div id="nav-settings" title="Settings" class="option" @click="setScreen('config', true)"></div>
 					</div>
@@ -37,6 +38,23 @@
 					<span id="loading-progress">{{ loadingProgress }}</span>
 					<div id="loading-bar">
 						<div :style="{ width: (loadPct * 100) + '%' }"></div>
+					</div>
+				</div>
+				<div id="blender-info" v-if="screen === 'blender'">
+					<div id="blender-info-header">
+						<h1>Installing the wow.export Add-on for Blender 2.8</h1>
+						<a @click="openBlenderAddonFolder">» Click here to get the latest version «</a>
+					</div>
+					<div id="blender-info-inner">
+						<img src="./images/blender_info_1.png"/>
+						<p>1. Open Blender, and select 'User Preferences' from the 'Edit' menu.</p>
+						<img src="./images/blender_info_2.png"/>
+						<p>2. Select 'Add-Ons' from the menu on the left, and then click 'Install' in the top-right.</p>
+						<img src="./images/blender_info_3.png"/>
+						<p>3. Navigate <a @click="openBlenderAddonFolder">to this folder</a> in the file browser and select 'io_scene_wowobj.zip' to install.</p>
+					</div>
+					<div id="blender-info-buttons">
+						<input type="button" value="Close" @click="showPreviousScreen"/>
 					</div>
 				</div>
 				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">
