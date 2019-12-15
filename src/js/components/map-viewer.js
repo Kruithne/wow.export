@@ -4,7 +4,7 @@ const constants = require('../constants');
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
-const MAP_CHUNK_WEIGHT = constants.GAME.MAP_CHUNK_WEIGHT;
+const TILE_SIZE = constants.GAME.TILE_SIZE;
 
 // Persisted state for the map-viewer component. This generally goes against the
 // principals of reactive instanced components, but unfortunately nothing else worked
@@ -175,7 +175,7 @@ Vue.component('map-viewer', {
 			// We can only search for a chunk if we have a mask set.
 			if (this.mask) {
 				// Check if we have a center chunk, if so we can leave the default as 0,0.
-				const center = Math.floor(MAP_COORD_BASE / MAP_CHUNK_WEIGHT);
+				const center = Math.floor(MAP_COORD_BASE / TILE_SIZE);
 				const centerIndex = this.mask[(center * MAP_SIZE) + center];
 				
 				// No center chunk, find first chunk available.
@@ -185,8 +185,10 @@ Vue.component('map-viewer', {
 					if (index > -1) {
 						// Translate the index into chunk co-ordinates, expand those to in-game co-ordinates
 						// and then offset by half a chunk so that we are centered on the chunk.
-						posX = (MAP_COORD_BASE - ((index % MAP_SIZE) * MAP_CHUNK_WEIGHT)) - MAP_CHUNK_WEIGHT / 2;
-						posY = (MAP_COORD_BASE - (Math.floor(index / MAP_SIZE) * MAP_CHUNK_WEIGHT)) - MAP_CHUNK_WEIGHT / 2;
+						const chunkX = index % MAP_SIZE;
+						const chunkY = Math.floor(index / MAP_SIZE);
+						posX = ((chunkX - 32) * TILE_SIZE) * -1;
+						posY = ((chunkY - 32) * TILE_SIZE) * -1;
 					}
 				}
 			}
@@ -358,8 +360,8 @@ Vue.component('map-viewer', {
 			const tileX = viewOfsX / tileSize;
 			const tileY = viewOfsY / tileSize;
 
-			const posX = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileX);
-			const posY = MAP_COORD_BASE - (MAP_CHUNK_WEIGHT * tileY);
+			const posX = MAP_COORD_BASE - (TILE_SIZE * tileX);
+			const posY = MAP_COORD_BASE - (TILE_SIZE * tileY);
 
 			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX: posY, posY: posX };
 		},
@@ -376,8 +378,8 @@ Vue.component('map-viewer', {
 
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
-			const ofsX = (((posX - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
-			const ofsY = (((posY - MAP_COORD_BASE) / MAP_CHUNK_WEIGHT) * tileSize);
+			const ofsX = (((posX - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
+			const ofsY = (((posY - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
 
 			const viewport = this.$el;
 			state.offsetX = ofsX + (viewport.clientWidth / 2);

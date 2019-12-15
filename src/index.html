@@ -148,6 +148,28 @@
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
 						<div class="preview-controls">
 							<input type="button" :value="'Export ' + mapViewerSelection.length + ' Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0 }"/>
+							<input id="sidebar-button" type="button" :value="config.mapsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.mapsShowSidebar = !config.mapsShowSidebar"/>
+						</div>
+						<div id="maps-sidebar" class="sidebar" v-if="config.mapsShowSidebar">
+							<span class="header">Export Options</span>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.mapsIncludeWMO"/>
+								<span>Export WMO</span>
+							</label>
+							<label class="ui-checkbox" v-if="config.mapsIncludeWMO">
+								<input type="checkbox" v-model="config.mapsIncludeWMOSets"/>
+								<span>Export WMO Sets</span>
+							</label>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.mapsIncludeM2"/>
+								<span>Export M2</span>
+							</label>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.mapsIncludeFoliage"/>
+								<span>Export Foliage</span>
+							</label>
+							<span class="header">Terrain Texture Quality</span>
+							<menu-button :label="'%s'" :options="[0, 256, 512, 1024, 4096, 8192, 16384]" :display-names="['None', 'Potato (256)', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</div>
 					</div>
 				</keep-alive>
@@ -168,7 +190,7 @@
 							<menu-button :label="'Export as %s'" :options="['OBJ', 'PNG', 'RAW']" :display-names="['OBJ', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 							<input id="sidebar-button" type="button" :value="config.modelsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.modelsShowSidebar = !config.modelsShowSidebar"/>
 						</div>
-						<div id="model-sidebar" v-if="config.modelsShowSidebar">
+						<div id="model-sidebar" class="sidebar" v-if="config.modelsShowSidebar">
 							<span class="header">Listing</span>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.modelsShowM2"/>

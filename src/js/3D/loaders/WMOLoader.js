@@ -1,6 +1,8 @@
 const core = require('../../core');
 const listfile = require('../../casc/listfile');
 
+const LoaderGenerics = require('./LoaderGenerics');
+
 class WMOLoader {
 	/**
 	 * Construct a new WMOLoader instance.
@@ -69,31 +71,6 @@ class WMOLoader {
 	}
 
 	/**
-	 * Process a null-terminated string block.
-	 * @param {number} chunkSize 
-	 */
-	readStringBlock(chunkSize) {
-		const chunk = this.data.readBuffer(chunkSize, false);
-		const entries = {};
-
-		let readOfs = 0;
-		for (let i = 0; i < chunkSize; i++) {
-			if (chunk[i] === 0x0) {
-				// Skip padding bytes.
-				if (readOfs === i) {
-					readOfs += 1;
-					continue;
-				}
-				
-				entries[readOfs] = chunk.toString('utf8', readOfs, i).replace(/\0/g, '');
-				readOfs = i + 1;
-			}
-		}
-
-		return entries;
-	}
-
-	/**
 	 * Read a position, corrected from WoW's co-ordinate system.
 	 */
 	readPosition() {
@@ -134,7 +111,7 @@ const WMOChunkHandlers = {
 
 	// MOTX (Textures) [Classic, WMO Root]
 	0x4D4F5458: function(data, chunkSize) {
-		this.textureNames = this.readStringBlock(chunkSize);
+		this.texutreNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
 	},
 
 	// MOMT (Materials) [WMO Root]
@@ -163,7 +140,7 @@ const WMOChunkHandlers = {
 
 	// MOGN (Group Names) [WMO Root]
 	0x4D4F474E: function(data, chunkSize) {
-		this.groupNames = this.readStringBlock(chunkSize);
+		this.groupNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
 	},
 
 	// MOGI (Group Info) [WMO Root]
@@ -203,7 +180,7 @@ const WMOChunkHandlers = {
 
 	// MODN (Doodad Names) [WMO Root]
 	0x4D4F444E: function(data, chunkSize) {
-		this.doodadNames = this.readStringBlock(chunkSize);
+		this.doodadNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
 
 		// Doodads are still reference as MDX in Classic doodad names, replace them with m2.
 		for (const [ofs, file] of Object.entries(this.doodadNames))

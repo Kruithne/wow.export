@@ -7,6 +7,8 @@ const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
+const ADTExporter = require('../3D/exporters/ADTExporter');
+const ExportHelper = require('../casc/export-helper');
 
 let selectedMapID;
 let selectedMapDir;
@@ -82,6 +84,32 @@ const loadMapTile = async (x, y, size) => {
 	}
 };
 
+const exportSelectedMap = async () => {
+	const exportTiles = core.view.mapViewerSelection;
+	const exportQuality = core.view.config.exportMapQuality;
+
+	const helper = new ExportHelper(exportTiles.length, 'tile');
+	helper.start();
+
+	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
+
+	for (const index of exportTiles) {
+		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
+
+		try {
+			await adt.export(dir, exportQuality);
+			helper.mark(adt.tileID, true);
+		} catch (e) {
+			helper.mark(adt.tileID, false, e.message);
+		}
+	}
+
+	// Clear the internal ADTLoader cache.
+	ADTExporter.clearCache();
+
+	helper.finish();
+};
+
 /**
  * Parse a map entry from the listbox.
  * @param {string} entry 
@@ -129,4 +157,7 @@ core.events.once('init', () => {
 				loadMap(map.id, map.dir);
 		}
 	});
+
+	// Track when user clicks to export a map.
+	core.events.on('click-export-map', () => exportSelectedMap());
 });

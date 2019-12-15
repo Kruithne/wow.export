@@ -24,5 +24,11 @@
 	"modelsExportCollision": false,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
-	"soundPlayerLoop": false
+	"soundPlayerLoop": false,
+	"mapsShowSidebar": false,
+	"mapsIncludeWMO": true,
+	"mapsIncludeM2": true,
+	"mapsIncludeWMOSets": true,
+	"mapsIncludeFoliage": true,
+	"exportMapQuality": 4096
 }

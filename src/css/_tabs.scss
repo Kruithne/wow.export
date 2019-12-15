@@ -12,26 +12,36 @@
 	}
 }
 
+.sidebar {
+	grid-column: 3;
+	width: 200px;
+	grid-row: 1 / span 2;
+	margin-top: 20px;
+	padding-right: 20px;
+	box-sizing: border-box;
+
+	span.header {
+		display: block;
+		margin: 5px 0;
+	}
+
+	label span {
+		font-size: 16px;
+	}
+
+	.ui-checkboxlist {
+		margin-top: 10px;
+	}
+}
+
+#sidebar-button {
+	margin-left: 5px;
+}
+
 #tab-models {
 	grid-template-columns: 1fr 1fr auto;
 
 	#model-sidebar {
-		grid-column: 3;
-		width: 200px;
-		grid-row: 1 / span 2;
-		margin-top: 20px;
-		padding-right: 20px;
-		box-sizing: border-box;
-
-		span.header {
-			display: block;
-			margin: 5px 0;
-		}
-
-		.ui-checkboxlist {
-			margin-top: 10px;
-		}
-
 		#list-geosets {
 			height: 390px;
 		}
@@ -46,13 +56,13 @@
 			margin-top: 5px;
 		}
 	}
-
-	#sidebar-button {
-		margin-left: 5px;
-	}
 }
 
 #tab-maps {
+	#maps-sidebar {
+
+	}
+
 	#listbox-maps {
 		.sub {
 			margin-right: 5px;
