@@ -3,6 +3,9 @@ const core = require('../../core');
 const constants = require('../../constants');
 const listfile = require('../../casc/listfile');
 
+const BufferWrapper = require('../../buffer');
+const BLPFile = require('../../casc/blp');
+
 const WDTLoader = require('../loaders/WDTLoader');
 const ADTLoader = require('../loaders/ADTLoader');
 
@@ -171,7 +174,6 @@ class ADTExporter {
 				}
 			
 				ofs = midx;
-				console.log(indicies);
 
 				if (splitTextures)
 					mtl.addMaterial(chunkID, 'tex_' + this.tileID + '_' + chunkID + '.png');
@@ -192,6 +194,38 @@ class ADTExporter {
 		
 		await obj.write();
 		await mtl.write();
+
+		// Texture baking.
+		if (splitTextures) {
+			// Bake texture and split per chunk.
+		} else {
+			if (quality <= 512) {
+				// Use minimaps for cheap textures.
+				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileX, this.tileY);
+				const data = await casc.getFileByName(tilePath, false, true);
+				const blp = new BLPFile(data);
+
+				// Draw the BLP onto a raw-sized canvas.
+				const canvas = blp.toCanvas(false);
+
+				// Scale the image down by copying the raw canvas onto a
+				// scaled canvas, and then returning the scaled image data.
+				const scale = quality / blp.scaledWidth;
+				const scaled = document.createElement('canvas');
+				scaled.width = quality;
+				scaled.height = quality;
+
+				const ctx = scaled.getContext('2d');
+				ctx.scale(scale, scale);
+				ctx.drawImage(canvas, 0, 0);
+
+				const buf = await BufferWrapper.fromCanvas(scaled, 'image/png');
+				await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
+			} else {
+				// Bake full texture.
+				
+			}
+		}
 
 		console.log(rootAdt, texAdt, objAdt);
 		console.log(verticies, normals, uvs);
