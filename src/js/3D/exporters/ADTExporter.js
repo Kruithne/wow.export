@@ -315,7 +315,7 @@ class ADTExporter {
 
 		if (quality <= 512) {
 			// Use minimaps for cheap textures.
-			const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileX, this.tileY);
+			const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
 			const data = await casc.getFileByName(tilePath, false, true);
 			const blp = new BLPFile(data);
 
