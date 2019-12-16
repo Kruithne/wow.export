@@ -112,12 +112,10 @@ class BLPImage {
 	}
 
 	/**
-	 * Draw the contents of this BLP file onto a canvas.
-	 * @param {HTMLElement} canvas 
+	 * Prepare BLP for processing.
 	 * @param {number} mipmap 
-	 * @param {boolean} useAlpha
 	 */
-	drawToCanvas(canvas, mipmap = 0, useAlpha = true) {
+	_prepare(mipmap = 0) {
 		// Constrict the requested mipmap to a valid range..
 		mipmap = Math.max(0, Math.min(mipmap || 0, this.mapCount - 1));
 
@@ -130,6 +128,16 @@ class BLPImage {
 		// Extract the raw data we need..
 		this.data.seek(this.mapOffsets[mipmap]);
 		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]);
+	}
+
+	/**
+	 * Draw the contents of this BLP file onto a canvas.
+	 * @param {HTMLElement} canvas 
+	 * @param {number} mipmap 
+	 * @param {boolean} useAlpha
+	 */
+	drawToCanvas(canvas, mipmap = 0, useAlpha = true) {
+		this._prepare(mipmap);
 
 		const ctx = canvas.getContext('2d');
 		const canvasData = ctx.createImageData(this.scaledWidth, this.scaledHeight);
@@ -141,6 +149,24 @@ class BLPImage {
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
+	}
+
+	/**
+	 * Get the contents of this BLP as an RGBA UInt8 array.
+	 * @param {number} mipmap 
+	 * @param {boolean} useAlpha 
+	 */
+	toUInt8Array(mipmap = 0, useAlpha = true) {
+		this._prepare(mipmap);
+
+		const arr = new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
+		switch (this.encoding) {
+			case 1: this._getUncompressed(arr, useAlpha); break;
+			case 2: this._getCompressed(arr, useAlpha); break;
+			case 3: this._marshalBGRA(arr, useAlpha); break;
+		}
+
+		return arr;
 	}
 	
 	/**

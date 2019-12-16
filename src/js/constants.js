@@ -11,6 +11,9 @@ module.exports = {
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
+	// Location of GL shaders.
+	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
+
 	// Local path to our Blender add-on.
 	BLENDER_ADDON_DIR: path.join(INSTALL_PATH, 'addon'),
 
