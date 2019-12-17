@@ -320,8 +320,8 @@ class ADTExporter {
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 		
-		//await obj.write();
-		//await mtl.write();
+		await obj.write();
+		await mtl.write();
 
 		if (quality <= 512) {
 			// Use minimaps for cheap textures.
