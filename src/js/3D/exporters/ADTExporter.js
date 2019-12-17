@@ -63,6 +63,8 @@ const bindAlphaLayer = (layer) => {
 		data[j + 0] = data[j + 1] = data[j + 2] = data[j + 3] = layer[i];
 
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	gl.generateMipmap(gl.TEXTURE_2D);
 
 	return texture;
@@ -101,7 +103,7 @@ const saveCanvas = async (dir, file) => {
 
 	const ctx = rotate.getContext('2d');
 	ctx.translate(rotate.width / 2, rotate.height / 2);
-	ctx.rotate(Math.PI / 180 * 90);
+	ctx.rotate(Math.PI / 180 * 180);
 	ctx.drawImage(glCanvas, -(rotate.width / 2), -(rotate.height / 2));
 
 	const buf = await BufferWrapper.fromCanvas(rotate, 'image/png');
@@ -161,7 +163,7 @@ class ADTExporter {
 		this.mapDir = mapDir;
 		this.tileX = tileIndex % MAP_SIZE;
 		this.tileY = Math.floor(tileIndex / MAP_SIZE);
-		this.tileID = this.tileX + '_' + this.tileY;
+		this.tileID = this.tileY + '_' + this.tileX;
 		this.tileIndex = tileIndex;
 	}
 
@@ -208,12 +210,14 @@ class ADTExporter {
 		const normals = new Array(16 * 16 * 145 * 3);
 		const uvs = new Array(16 * 16 * 145 * 2);
 
+		const chunkMeshes = new Array(256);
+
 		const obj = new OBJWriter(path.join(dir, 'adt_' + this.tileID + '.obj'));
 		const mtl = new MTLWriter(path.join(dir, 'adt_' + this.tileID + '.mtl'));
 
 		const firstChunk = rootAdt.chunks[0];
 		const firstChunkX = firstChunk.position[0];
-		const firstChunkY = firstChunk.position[2];
+		const firstChunkY = firstChunk.position[1];
 
 		const splitTextures = quality >= 8192;
 	
@@ -230,14 +234,14 @@ class ADTExporter {
 				const chunkY = chunk.position[1];
 				const chunkZ = chunk.position[2];
 
-				for (let col = 0, idx = 0; col < 17; col++) {
-					const isShort = !!(col % 2);
-					const rowLength = isShort ? 8 : 9;
+				for (let row = 0, idx = 0; row < 17; row++) {
+					const isShort = !!(row % 2);
+					const colCount = isShort ? 8 : 9;
 
-					for (let row = 0; row < rowLength; row++) {
-						let vx = chunkY - (row * UNIT_SIZE);
+					for (let col = 0; col < colCount; col++) {
+						let vx = chunkY - (col * UNIT_SIZE);
 						let vy = chunk.verticies[idx] + chunkZ;
-						let vz = chunkX - (col * UNIT_SIZE_HALF);
+						let vz = chunkX - (row * UNIT_SIZE_HALF);
 
 						if (isShort)
 							vx -= UNIT_SIZE_HALF;
@@ -252,15 +256,15 @@ class ADTExporter {
 						normals[vIndex + 1] = normal[1] / 127;
 						normals[vIndex + 2] = normal[2] / 127;
 
-						const uvIdx = isShort ? row + 0.5 : row;
+						const uvIdx = isShort ? col + 0.5 : col;
 						const uvIndex = midx * 2;
 
 						if (quality === 0) {
 							uvs[uvIndex + 0] = uvIdx / 8;
-							uvs[uvIndex + 1] = (col * 0.5) / 8;
+							uvs[uvIndex + 1] = (row * 0.5) / 8;
 						} else if (splitTextures) {
-							uvs[uvIndex + 0] = row / 8;
-							uvs[uvIndex + 1] = 1 - (col / 16);
+							uvs[uvIndex + 0] = col / 8;
+							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
 							uvs[uvIndex + 0] = -(vx - firstChunkX) / TILE_SIZE;
 							uvs[uvIndex + 1] = (vz - firstChunkY) / TILE_SIZE;
@@ -307,6 +311,7 @@ class ADTExporter {
 					mtl.addMaterial(chunkID, 'tex_' + this.tileID + '_' + chunkID + '.png');
 
 				obj.addMesh(chunkID++, indicies, splitTextures ? chunkID : 'terrain');
+				chunkMeshes[chunkIndex] = indicies;
 			}
 		}
 
@@ -398,6 +403,9 @@ class ADTExporter {
 
 			const uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
 			const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
+			const uVertexColor = gl.getUniformLocation(glShaderProg, 'vertexColor');
+			const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
+			const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
 
 			if (splitTextures) {
 				// Bake texture split over chunks.
@@ -434,39 +442,35 @@ class ADTExporter {
 
 				clearCanvas();
 
+				gl.uniform2f(uResolution, TILE_SIZE, TILE_SIZE);
+
+				const vertexBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aVertexPosition);
+				gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+
+				const uvBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aTexCoord);
+				gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+
+				const firstChunk = rootAdt.chunks[0];
+				gl.uniform2f(uTranslation, firstChunk.position[0], firstChunk.position[1]);
+
 				for (let x = 0; x < 16; x++) {
 					for (let y = 0; y < 16; y++) {
 						const chunkX = (x * 0.125) - 1;
 						const chunkY = (y * 0.125) - 1;
 
+						// ToDo: Actually add proper vertex colouring.
+						gl.uniform4f(uVertexColor, 0.5, 0.5, 0.5, 1);
+
 						const chunkIndex = (x * 16) + y;
 						//const chunk = rootAdt.chunks[chunkIndex];
 						const texChunk = texAdt.texChunks[chunkIndex];
-
-						const uvBuffer = gl.createBuffer();
-						gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-
-						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-							1, 0, 1, 1, 0, 1,
-							1, 0, 0, 1, 0, 0
-						]), gl.STATIC_DRAW);
-
-						gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-
-						gl.enableVertexAttribArray(aTexCoord);
-						gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
-
-						const vertexBuffer = gl.createBuffer();
-						gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-							chunkX, chunkY + 0.125, chunkX + 0.125, chunkY + 0.125, chunkX + 0.125, chunkY,
-							chunkX, chunkY + 0.125, chunkX + 0.125, chunkY, chunkX, chunkY
-						]), gl.STATIC_DRAW);
-
-						gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-
-						gl.enableVertexAttribArray(aVertexPosition);
-						gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+						const indicies = chunkMeshes[chunkIndex];
 
 						const alphaLayers = texChunk.alphaLayers || [];
 						const alphaTextures = new Array(alphaLayers.length);
@@ -504,6 +508,11 @@ class ADTExporter {
 
 						gl.uniform4f(uHeightScale, ...heightScales);
 						gl.uniform4f(uHeightOffset, ...heightOffsets);
+
+						const indexBuffer = gl.createBuffer();
+						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
+						gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
 
 						gl.drawArrays(gl.TRIANGLES, 0, 6);
 						unbindAllTextures();

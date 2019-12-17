@@ -24,13 +24,13 @@ uniform sampler2D pt_blend1;
 uniform sampler2D pt_blend2;
 uniform sampler2D pt_blend3;
 
+uniform vec4 vertexColor;
+
 void main() {
 	vec2 tc0 = vTextureCoord * (8.0 / layerScale0);
 	vec2 tc1 = vTextureCoord * (8.0 / layerScale1);
 	vec2 tc2 = vTextureCoord * (8.0 / layerScale2);
 	vec2 tc3 = vTextureCoord * (8.0 / layerScale3);
-
-	vec4 vertexColor = vec4(0.5, 0.5, 0.5, 1.0);
 
 	float blendTex0 = texture2D(pt_blend1, vTextureCoord).r;
 	float blendTex1 = texture2D(pt_blend2, vTextureCoord).r;
@@ -55,5 +55,7 @@ void main() {
 	vec4 weightedLayer_2 = texture2D(pt_layer2, tc2) * layerPct.z;
 	vec4 weightedLayer_3 = texture2D(pt_layer3, tc3) * layerPct.w;
 
-	gl_FragColor = vec4((weightedLayer_0.xyz + weightedLayer_1.xyz + weightedLayer_2.xyz + weightedLayer_3.xyz) * vertexColor.rgb * 2.0, 1.0);
+	//gl_FragColor = vec4((weightedLayer_0.xyz + weightedLayer_1.xyz + weightedLayer_2.xyz + weightedLayer_3.xyz) * vertexColor.rgb * 2.0, 1.0);
+	gl_FragColor = texture2D(pt_blend1, vTextureCoord);
+	//gl_FragColor = vertexColor;
 }
