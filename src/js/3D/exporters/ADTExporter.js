@@ -94,7 +94,17 @@ const clearCanvas = () => {
  * @param {string} file 
  */
 const saveCanvas = async (dir, file) => {
-	const buf = await BufferWrapper.fromCanvas(glCanvas, 'image/png');
+	// This is a quick and easy fix to rotate tiles to their correct orientation.
+	const rotate = document.createElement('canvas');
+	rotate.width = glCanvas.width;
+	rotate.height = glCanvas.height;
+
+	const ctx = rotate.getContext('2d');
+	ctx.translate(rotate.width / 2, rotate.height / 2);
+	ctx.rotate(Math.PI / 180 * 90);
+	ctx.drawImage(glCanvas, -(rotate.width / 2), -(rotate.height / 2));
+
+	const buf = await BufferWrapper.fromCanvas(rotate, 'image/png');
 	await buf.writeToFile(path.join(dir, file));
 };
 
