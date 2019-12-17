@@ -213,7 +213,7 @@ class ADTExporter {
 
 		const firstChunk = rootAdt.chunks[0];
 		const firstChunkX = firstChunk.position[0];
-		const firstChunkY = firstChunk.position[1];
+		const firstChunkY = firstChunk.position[2];
 
 		const splitTextures = quality >= 8192;
 	
