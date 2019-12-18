@@ -1,7 +1,10 @@
 attribute vec3 aVertexPosition;
 attribute vec2 aTextureCoord;
+attribute vec4 aVertexColor;
 
 varying highp vec2 vTextureCoord;
+varying vec4 vVertexColor;
+
 uniform vec2 uTranslation;
 uniform vec2 uResolution;
 
@@ -14,4 +17,5 @@ void main() {
 	//gl_Position = vec4(position, 0.0, 1.0);
 	//gl_Position = vec4(aVertexPosition.x, aVertexPosition.y, aVertexPosition.z, 1.0) + uTranslation;
 	vTextureCoord = aTextureCoord * vec2(16.0, -16.0);
+	vVertexColor = aVertexColor;
 }

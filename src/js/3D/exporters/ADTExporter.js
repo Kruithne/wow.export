@@ -209,6 +209,7 @@ class ADTExporter {
 		const verticies = new Array(16 * 16 * 145 * 3);
 		const normals = new Array(16 * 16 * 145 * 3);
 		const uvs = new Array(16 * 16 * 145 * 2);
+		const vertexColors = new Array(16 * 16 * 145 * 4);
 
 		const chunkMeshes = new Array(256);
 
@@ -255,6 +256,22 @@ class ADTExporter {
 						normals[vIndex + 0] = normal[0] / 127;
 						normals[vIndex + 1] = normal[1] / 127;
 						normals[vIndex + 2] = normal[2] / 127;
+
+						const cIndex = midx * 4;
+						if (chunk.vertexShading) {
+							// Store vertex shading in BGRA format.
+							const color = chunk.vertexShading[idx];
+							vertexColors[cIndex + 0] = color.b / 255;
+							vertexColors[cIndex + 1] = color.g / 255;
+							vertexColors[cIndex + 2] = color.r / 255;
+							vertexColors[cIndex + 3] = color.a / 255;
+						} else {
+							// No vertex shading, default to this.
+							vertexColors[cIndex + 0] = 0.5;
+							vertexColors[cIndex + 1] = 0.5;
+							vertexColors[cIndex + 2] = 0.5;
+							vertexColors[cIndex + 3] = 1;
+						}
 
 						const uvIdx = isShort ? col + 0.5 : col;
 						const uvIndex = midx * 2;
@@ -386,6 +403,7 @@ class ADTExporter {
 
 			const aVertexPosition = gl.getAttribLocation(glShaderProg, 'aVertexPosition');
 			const aTexCoord = gl.getAttribLocation(glShaderProg, 'aTextureCoord');
+			const aVertexColor = gl.getAttribLocation(glShaderProg, 'aVertexColor');
 
 			const uLayers = new Array(4);
 			const uScales = new Array(4);
@@ -403,7 +421,6 @@ class ADTExporter {
 
 			const uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
 			const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
-			const uVertexColor = gl.getUniformLocation(glShaderProg, 'vertexColor');
 			const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
 			const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
 
@@ -456,6 +473,12 @@ class ADTExporter {
 				gl.enableVertexAttribArray(aTexCoord);
 				gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 
+				const vcBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, vcBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aVertexColor);
+				gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
+
 				const firstChunk = rootAdt.chunks[0];
 				const deltaX = firstChunk.position[1] - TILE_SIZE;
 				const deltaY = firstChunk.position[0] - TILE_SIZE;
@@ -467,10 +490,10 @@ class ADTExporter {
 						const chunkY = (y * 0.125) - 1;
 
 						// ToDo: Actually add proper vertex colouring.
-						gl.uniform4f(uVertexColor, 0.5, 0.5, 0.5, 1);
+						//gl.uniform4f(uVertexColor, 0.5, 0.5, 0.5, 1);
 
 						const chunkIndex = (x * 16) + y;
-						//const chunk = rootAdt.chunks[chunkIndex];
+						const chunk = rootAdt.chunks[chunkIndex];
 						const texChunk = texAdt.texChunks[chunkIndex];
 						const indicies = chunkMeshes[chunkIndex];
 
