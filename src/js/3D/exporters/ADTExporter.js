@@ -16,7 +16,6 @@ const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
-//const MAX_SIZE = constants.GAME.MAP_COORD_BASE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 const CHUNK_SIZE = TILE_SIZE / 16;
 const UNIT_SIZE = CHUNK_SIZE / 8;
@@ -486,14 +485,7 @@ class ADTExporter {
 
 				for (let x = 0; x < 16; x++) {
 					for (let y = 0; y < 16; y++) {
-						const chunkX = (x * 0.125) - 1;
-						const chunkY = (y * 0.125) - 1;
-
-						// ToDo: Actually add proper vertex colouring.
-						//gl.uniform4f(uVertexColor, 0.5, 0.5, 0.5, 1);
-
 						const chunkIndex = (x * 16) + y;
-						const chunk = rootAdt.chunks[chunkIndex];
 						const texChunk = texAdt.texChunks[chunkIndex];
 						const indicies = chunkMeshes[chunkIndex];
 
@@ -559,9 +551,6 @@ class ADTExporter {
 			for (const mat of materials)
 				gl.deleteTexture(mat.texture);
 		}
-
-		console.log(rootAdt, texAdt, objAdt);
-		console.log(verticies, normals, uvs);
 	}
 
 	/**
