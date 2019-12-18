@@ -323,11 +323,17 @@ class ADTExporter {
 			
 				ofs = midx;
 
-				if (splitTextures)
-					mtl.addMaterial(chunkID, 'tex_' + this.tileID + '_' + chunkID + '.png');
-
-				obj.addMesh(chunkID++, indicies, splitTextures ? chunkID : 'terrain');
+				if (splitTextures) {
+					const objName = this.tileID + '_' + chunkID;
+					const matName = 'tex_' + objName;
+					mtl.addMaterial(matName, matName + '.png');
+					obj.addMesh(objName, indicies, matName);
+				} else {
+					obj.addMesh(chunkID, indicies, 'terrain');
+				}
 				chunkMeshes[chunkIndex] = indicies;
+
+				chunkID++;
 			}
 		}
 
