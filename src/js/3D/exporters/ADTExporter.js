@@ -580,6 +580,7 @@ class ADTExporter {
 					if (!objectCache.has(model.mmidEntry)) {
 						const m2 = new M2Exporter(await casc.getFile(model.mmidEntry));
 						await m2.exportAsOBJ(path.join(dir, modelPath));
+						objectCache.add(model.mmidEntry);
 					}
 
 					csv.addRow({
