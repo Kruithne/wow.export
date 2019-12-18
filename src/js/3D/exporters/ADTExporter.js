@@ -15,6 +15,12 @@ const ADTLoader = require('../loaders/ADTLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 
+const DBHandler = require('../../db/DBHandler');
+const DB_GroundEffectTexture = require('../../db/schema/GroundEffectTexture');
+const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
+
+const M2Exporter = require('../../3D/exporters/M2Exporter');
+
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 const CHUNK_SIZE = TILE_SIZE / 16;
@@ -551,6 +557,54 @@ class ADTExporter {
 			// Delete loaded textures.
 			for (const mat of materials)
 				gl.deleteTexture(mat.texture);
+		}
+
+		// Export foliage.
+		//if (core.view.config.mapsIncludeFoliage) {
+		// ToDo: Need compression support in data tables.
+		if (false) {
+			const foliageExportCache = new Set();
+			const foliageDir = path.join(dir, 'foliage');
+
+			const dbTextures = await DBHandler.openTable('dbfilesclient/groundeffecttexture.db2', DB_GroundEffectTexture);
+			const dbDoodads = await DBHandler.openTable('dbfilesclient/groundeffectdoodad.db2', DB_GroundEffectDoodad);
+
+			for (const chunk of texAdt.texChunks) {
+				// Skip chunks that have no layers?
+				if (!chunk.layers)
+					continue;
+
+				for (const layer of chunk.layers) {
+					// Skip layers with no effect.
+					if (!layer.effectID)
+						continue;
+
+					const groundEffectTexture = dbTextures[layer.effectID];
+					if (!groundEffectTexture)
+						continue;
+
+					for (const doodadID of groundEffectTexture.DoodadID) {
+						// Skip empty fields.
+						if (!doodadID)
+							continue;
+
+						const groundEffectDoodad = dbDoodads[doodadID];
+						if (groundEffectDoodad) {
+							const modelID = groundEffectDoodad.ModelFileID;
+							if (!modelID || foliageExportCache.has(modelID))
+								continue;
+
+							const modelName = listfile.getByID(modelID);
+							const data = await casc.getFile(modelID);
+
+							const exporter = new M2Exporter(data);
+							await exporter.exportAsOBJ(path.join(foliageDir, modelName));
+
+							foliageExportCache.add(modelID);
+						}
+					}
+				}
+			}
 		}
 	}
 
