@@ -514,7 +514,6 @@ class ADTExporter {
 						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
 						gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
 
-						gl.drawArrays(gl.TRIANGLES, 0, 6);
 						unbindAllTextures();
 						
 						// Destroy alpha layers rendered for the tile.
