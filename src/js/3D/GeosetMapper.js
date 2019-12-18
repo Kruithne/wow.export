@@ -17,9 +17,9 @@ const GEOSET_GROUPS = {
 	1800: 'Belt',
 	1900: 'Tail',
 	2000: 'Feet',
-	2300: 'DH Hands',
-	2400: 'DH Horns',
-	2500: 'DH Blindfolds'
+	2300: 'DHHands',
+	2400: 'DHHorns',
+	2500: 'DHBlindfolds'
 };
 
 /**
@@ -29,15 +29,15 @@ const GEOSET_GROUPS = {
  */
 const getGeosetName = (index, id) => {
 	if (id === 0)
-		return 'Geoset ' + index;
+		return 'Geoset' + index;
 
 	const base = Math.floor(id / 100) * 100;
 	const group = GEOSET_GROUPS[base];
 
 	if (group)
-		return group + ' ' + (id - base);
+		return group + (id - base);
 
-	return 'Geoset ' + index;
+	return 'Geoset' + index;
 };
 
 /**
