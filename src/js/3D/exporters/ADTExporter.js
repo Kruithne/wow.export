@@ -62,8 +62,6 @@ const bindAlphaLayer = (layer) => {
 		data[j + 0] = data[j + 1] = data[j + 2] = data[j + 3] = layer[i];
 
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	gl.generateMipmap(gl.TEXTURE_2D);
 
 	return texture;
