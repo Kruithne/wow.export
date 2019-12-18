@@ -283,7 +283,7 @@ class ADTExporter {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = (row * 0.5) / 8;
 						} else if (splitTextures) {
-							uvs[uvIndex + 0] = col / 8;
+							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
 							uvs[uvIndex + 0] = uvsBake[uvIndex + 0];
