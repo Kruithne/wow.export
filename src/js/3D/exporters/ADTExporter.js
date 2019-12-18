@@ -572,14 +572,7 @@ class ADTExporter {
 
 			if (config.mapsIncludeM2) {
 				log.write('Exporting %d doodads for ADT...', objAdt.models.length);
-				for (const model of objAdt.models) {
-					/*	flags: 64
-						mmidEntry: 203598
-						position: (3) [16697.4609375, 33.46315002441406, 16793.048828125]
-						rotation: (3) [0, 358, 0]
-						scale: 788
-						uniqueId: 207898	*/
-					
+				for (const model of objAdt.models) {					
 					const fileName = path.basename(listfile.getByID(model.mmidEntry));
 					const modelPath = ExportHelper.replaceExtension(fileName, '.obj');
 
