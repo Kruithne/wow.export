@@ -457,7 +457,9 @@ class ADTExporter {
 				gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 
 				const firstChunk = rootAdt.chunks[0];
-				gl.uniform2f(uTranslation, firstChunk.position[0], firstChunk.position[1]);
+				const deltaX = firstChunk.position[1] - TILE_SIZE;
+				const deltaY = firstChunk.position[0] - TILE_SIZE;
+				gl.uniform2f(uTranslation, -deltaX, -deltaY);
 
 				for (let x = 0; x < 16; x++) {
 					for (let y = 0; y < 16; y++) {
