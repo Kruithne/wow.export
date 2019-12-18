@@ -160,7 +160,12 @@ class WDC2 {
 
 					// ToDo: Add support for compressed fields.
 
-					switch (type) {
+					let count;
+					let fieldType = type;
+					if (Array.isArray(type))
+						[fieldType, count] = type;
+
+					switch (fieldType) {
 						case FieldType.String:
 							const ofs = data.readUInt32LE();
 							const pos = data.offset;
@@ -170,12 +175,12 @@ class WDC2 {
 							data.seek(pos);
 							break;
 
-						case FieldType.UInt8: out[prop] = data.readUInt8(); break;
-						case FieldType.Int16: out[prop] = data.readInt16LE(); break;
-						case FieldType.UInt16: out[prop] = data.readUInt16LE(); break;
-						case FieldType.Int32: out[prop] = data.readInt32LE(); break;
-						case FieldType.UInt32: out[prop] = data.readUInt32LE(); break;
-						case FieldType.Float: out[prop] = data.readFloatLE(); break;
+						case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
+						case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
+						case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
+						case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
+						case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
+						case FieldType.Float: out[prop] = data.readFloatLE(count); break;
 					}
 				}
 
