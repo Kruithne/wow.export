@@ -111,7 +111,7 @@ const WMOChunkHandlers = {
 
 	// MOTX (Textures) [Classic, WMO Root]
 	0x4D4F5458: function(data, chunkSize) {
-		this.texutreNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.textureNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
 	},
 
 	// MOMT (Materials) [WMO Root]
