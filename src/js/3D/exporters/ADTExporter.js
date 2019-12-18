@@ -208,6 +208,7 @@ class ADTExporter {
 		const verticies = new Array(16 * 16 * 145 * 3);
 		const normals = new Array(16 * 16 * 145 * 3);
 		const uvs = new Array(16 * 16 * 145 * 2);
+		const uvsBake = new Array(16 * 16 * 145 * 2);
 		const vertexColors = new Array(16 * 16 * 145 * 4);
 
 		const chunkMeshes = new Array(256);
@@ -275,6 +276,9 @@ class ADTExporter {
 						const uvIdx = isShort ? col + 0.5 : col;
 						const uvIndex = midx * 2;
 
+						uvsBake[uvIndex + 0] = -(vx - firstChunkX) / TILE_SIZE;
+						uvsBake[uvIndex + 1] = (vz - firstChunkY) / TILE_SIZE;
+
 						if (quality === 0) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = (row * 0.5) / 8;
@@ -282,8 +286,8 @@ class ADTExporter {
 							uvs[uvIndex + 0] = col / 8;
 							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
-							uvs[uvIndex + 0] = -(vx - firstChunkX) / TILE_SIZE;
-							uvs[uvIndex + 1] = (vz - firstChunkY) / TILE_SIZE;
+							uvs[uvIndex + 0] = uvsBake[uvIndex + 0];
+							uvs[uvIndex + 1] = uvsBake[uvIndex + 1];
 						}
 
 						idx++;
@@ -428,127 +432,120 @@ class ADTExporter {
 			const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
 			const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
 			const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
+			const uZoom = gl.getUniformLocation(glShaderProg, 'uZoom');
 
 			if (splitTextures) {
-				// Bake texture split over chunks.
 				glCanvas.width = quality / 16;
 				glCanvas.height = quality / 16;
-
-				let chunkID = 0;
-				for (let x = 0; x < 16; x++) {
-					for (let y = 0; y < 16; y++) {
-						clearCanvas();
-
-						const vertexBuffer = gl.createBuffer();
-						gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-							-1, 1, 1, 1, 1, -1,
-							-1, 1, 1, -1, -1, -1
-						]), gl.STATIC_DRAW);
-
-						gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-
-						gl.enableVertexAttribArray(aVertexPosition);
-						gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-						gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-						unbindAllTextures();
-						await saveCanvas(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
-					}
-				}
 			} else {
-				// Bake full texture.
 				glCanvas.width = quality;
 				glCanvas.height = quality;
+			}
 
-				clearCanvas();
+			clearCanvas();
 
-				gl.uniform2f(uResolution, TILE_SIZE, TILE_SIZE);
+			gl.uniform2f(uResolution, TILE_SIZE, TILE_SIZE);
 
-				const vertexBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
-				gl.enableVertexAttribArray(aVertexPosition);
-				gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+			const vertexBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
+			gl.enableVertexAttribArray(aVertexPosition);
+			gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
 
-				const uvBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-				gl.enableVertexAttribArray(aTexCoord);
-				gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+			const uvBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvsBake), gl.STATIC_DRAW);
+			gl.enableVertexAttribArray(aTexCoord);
+			gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 
-				const vcBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, vcBuffer);
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
-				gl.enableVertexAttribArray(aVertexColor);
-				gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
+			const vcBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vcBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+			gl.enableVertexAttribArray(aVertexColor);
+			gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
 
-				const firstChunk = rootAdt.chunks[0];
-				const deltaX = firstChunk.position[1] - TILE_SIZE;
-				const deltaY = firstChunk.position[0] - TILE_SIZE;
+			const firstChunk = rootAdt.chunks[0];
+			const deltaX = firstChunk.position[1] - TILE_SIZE;
+			const deltaY = firstChunk.position[0] - TILE_SIZE;
+
+			if (!splitTextures)
 				gl.uniform2f(uTranslation, -deltaX, -deltaY);
 
-				for (let x = 0; x < 16; x++) {
-					for (let y = 0; y < 16; y++) {
-						const chunkIndex = (x * 16) + y;
-						const texChunk = texAdt.texChunks[chunkIndex];
-						const indicies = chunkMeshes[chunkIndex];
+			gl.uniform1f(uZoom, splitTextures ? 0.0625 : 1);
 
-						const alphaLayers = texChunk.alphaLayers || [];
-						const alphaTextures = new Array(alphaLayers.length);
+			let chunkID = 0;
+			for (let x = 0; x < 16; x++) {
+				for (let y = 0; y < 16; y++) {
+					if (splitTextures) {
+						const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
+						const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
 
-						for (let i = 1; i < alphaLayers.length; i++) {
-							gl.activeTexture(gl.TEXTURE3 + i);
-
-							const alphaTex = bindAlphaLayer(alphaLayers[i]);
-							gl.bindTexture(gl.TEXTURE_2D, alphaTex);
-							gl.uniform1i(uBlends[i], i + 3);
-
-							// Store to clean up after render.
-							alphaTextures[i] = alphaTex;
-						}
-
-						const texLayers = texChunk.layers;
-						const heightScales = new Array(4).fill(1);
-						const heightOffsets = new Array(4).fill(1);
-
-						for (let i = 0, n = texLayers.length; i < n; i++) {
-							const mat = materials[texLayers[i].textureId];							
-							gl.activeTexture(gl.TEXTURE0 + i);
-							gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
-
-							gl.uniform1i(uLayers[i], i);
-							gl.uniform1f(uScales[i], mat.scale);
-
-							if (mat.heightTex) {
-								gl.activeTexture(gl.TEXTURE7 + i);
-								gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
-
-								gl.uniform1i(uHeights[i], 7 + i);
-								heightScales[i] = mat.heightScale;
-								heightOffsets[i] = mat.heightOffset;
-							}
-						}
-
-						gl.uniform4f(uHeightScale, ...heightScales);
-						gl.uniform4f(uHeightOffset, ...heightOffsets);
-
-						const indexBuffer = gl.createBuffer();
-						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
-						gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
-
-						unbindAllTextures();
-						
-						// Destroy alpha layers rendered for the tile.
-						for (const tex of alphaTextures)
-							gl.deleteTexture(tex);
+						gl.uniform2f(uTranslation, ofsX, ofsY);
 					}
-				}
 
-				await saveCanvas(dir, 'tex_' + this.tileID + '.png');
+					const chunkIndex = (x * 16) + y;
+					const texChunk = texAdt.texChunks[chunkIndex];
+					const indicies = chunkMeshes[chunkIndex];
+
+					const alphaLayers = texChunk.alphaLayers || [];
+					const alphaTextures = new Array(alphaLayers.length);
+
+					for (let i = 1; i < alphaLayers.length; i++) {
+						gl.activeTexture(gl.TEXTURE3 + i);
+
+						const alphaTex = bindAlphaLayer(alphaLayers[i]);
+						gl.bindTexture(gl.TEXTURE_2D, alphaTex);
+						gl.uniform1i(uBlends[i], i + 3);
+
+						// Store to clean up after render.
+						alphaTextures[i] = alphaTex;
+					}
+
+					const texLayers = texChunk.layers;
+					const heightScales = new Array(4).fill(1);
+					const heightOffsets = new Array(4).fill(1);
+
+					for (let i = 0, n = texLayers.length; i < n; i++) {
+						const mat = materials[texLayers[i].textureId];							
+						gl.activeTexture(gl.TEXTURE0 + i);
+						gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
+
+						gl.uniform1i(uLayers[i], i);
+						gl.uniform1f(uScales[i], mat.scale);
+
+						if (mat.heightTex) {
+							gl.activeTexture(gl.TEXTURE7 + i);
+							gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
+
+							gl.uniform1i(uHeights[i], 7 + i);
+							heightScales[i] = mat.heightScale;
+							heightOffsets[i] = mat.heightOffset;
+						}
+					}
+
+					gl.uniform4f(uHeightScale, ...heightScales);
+					gl.uniform4f(uHeightOffset, ...heightOffsets);
+
+					const indexBuffer = gl.createBuffer();
+					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
+					gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
+
+					unbindAllTextures();
+					
+					// Destroy alpha layers rendered for the tile.
+					for (const tex of alphaTextures)
+						gl.deleteTexture(tex);
+
+					// Save this individual chunk.
+					if (splitTextures)
+						await saveCanvas(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
+				}
 			}
+
+			// Save the completed tile.
+			if (!splitTextures)
+				await saveCanvas(dir, 'tex_' + this.tileID + '.png');
 
 			// Clear buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
