@@ -10,6 +10,8 @@ const CSVWriter = require('../writers/CSVWriter');
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
 
+const doodadCache = new Set();
+
 class WMOExporter {
 	/**
 	 * Construct a new WMOExporter instance.
@@ -194,11 +196,15 @@ class WMOExporter {
 	
 				if (fileDataID > 0) {
 					try {
-						const data = await casc.getFile(fileDataID);
-						const m2Export = new M2Exporter(data);
-
 						const m2Path = ExportHelper.replaceExtension(ExportHelper.replaceFile(out, fileName), '.obj');
-						await m2Export.exportAsOBJ(m2Path);
+
+						// Only export doodads that are not already exported.
+						if (!doodadCache.has(fileDataID)) {
+							const data = await casc.getFile(fileDataID);
+							const m2Export = new M2Exporter(data);
+							await m2Export.exportAsOBJ(m2Path);
+							doodadCache.add(fileDataID);
+						}
 
 						csv.addRow({
 							ModelFile: path.basename(m2Path),
@@ -225,6 +231,13 @@ class WMOExporter {
 		await csv.write();
 		await obj.write();
 		await mtl.write();
+	}
+
+	/**
+	 * Clear the WMO exporting cache.
+	 */
+	static clearCache() {
+		doodadCache.clear();
 	}
 }
 

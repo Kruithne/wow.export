@@ -165,6 +165,7 @@ const exportFiles = async (files, isLocal = false) => {
 							}
 
 							await exporter.exportAsOBJ(exportOBJ);
+							WMOExporter.clearCache();
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);
 						}
