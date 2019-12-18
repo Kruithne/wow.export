@@ -595,11 +595,12 @@ class ADTExporter {
 							if (!modelID || foliageExportCache.has(modelID))
 								continue;
 
-							const modelName = listfile.getByID(modelID);
+							const modelName = path.basename(listfile.getByID(modelID));
 							const data = await casc.getFile(modelID);
 
 							const exporter = new M2Exporter(data);
-							await exporter.exportAsOBJ(path.join(foliageDir, ExportHelper.replaceExtension(modelName, '.obj')));
+							const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
+							await exporter.exportAsOBJ(path.join(foliageDir, modelPath));
 
 							foliageExportCache.add(modelID);
 						}
