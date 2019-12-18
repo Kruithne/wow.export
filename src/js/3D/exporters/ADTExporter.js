@@ -21,6 +21,7 @@ const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
 
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
+const CSVWriter = require('../../3D/writers/CSVWriter');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
@@ -178,6 +179,8 @@ class ADTExporter {
 	 */
 	async export(dir, quality) {
 		const casc = core.view.casc;
+		const config = core.view.config;
+
 		const prefix = util.format('world/maps/%s/%s', this.mapDir, this.mapDir);
 
 		// Load the WDT. We cache this to speed up exporting large amounts of tiles
@@ -560,8 +563,56 @@ class ADTExporter {
 				gl.deleteTexture(mat.texture);
 		}
 
+		// Export dooads / WMOs.
+		if (config.mapsIncludeWMO || config.mapsIncludeM2) {
+			const objectCache = new Set();
+
+			const csv = new CSVWriter(path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv'));
+			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'ModelId', 'Type');
+
+			if (config.mapsIncludeM2) {
+				log.write('Exporting %d doodads for ADT...', objAdt.models.length);
+				for (const model of objAdt.models) {
+					/*	flags: 64
+						mmidEntry: 203598
+						position: (3) [16697.4609375, 33.46315002441406, 16793.048828125]
+						rotation: (3) [0, 358, 0]
+						scale: 788
+						uniqueId: 207898	*/
+					
+					const fileName = path.basename(listfile.getByID(model.mmidEntry));
+					const modelPath = ExportHelper.replaceExtension(fileName, '.obj');
+
+					// Export the model if we haven't done so for this export session.
+					if (!objectCache.has(model.mmidEntry)) {
+						const m2 = new M2Exporter(await casc.getFile(model.mmidEntry));
+						await m2.exportAsOBJ(path.join(dir, modelPath));
+					}
+
+					csv.addRow({
+						ModelFile: modelPath,
+						PositionX: model.position[0],
+						PositionY: model.position[1],
+						PositionZ: model.position[2],
+						RotationX: model.rotation[0],
+						RotationY: model.rotation[1],
+						RotationZ: model.rotation[2],
+						ScaleFactor: model.scale / 1024,
+						ModelId: model.uniqueId,
+						Type: 'm2'
+					});
+				}
+			}
+
+			if (config.mapsIncludeWMO) {
+				// ToDo: Implement WMO exporting here.
+			}
+
+			await csv.write();
+		}
+
 		// Export foliage.
-		//if (core.view.config.mapsIncludeFoliage) {
+		//if (config.mapsIncludeFoliage) {
 		// ToDo: Need compression support in data tables.
 		if (false) {
 			const foliageExportCache = new Set();
