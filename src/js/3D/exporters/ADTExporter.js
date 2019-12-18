@@ -19,6 +19,7 @@ const DBHandler = require('../../db/DBHandler');
 const DB_GroundEffectTexture = require('../../db/schema/GroundEffectTexture');
 const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
 
+const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
@@ -598,7 +599,7 @@ class ADTExporter {
 							const data = await casc.getFile(modelID);
 
 							const exporter = new M2Exporter(data);
-							await exporter.exportAsOBJ(path.join(foliageDir, modelName));
+							await exporter.exportAsOBJ(path.join(foliageDir, ExportHelper.replaceExtension(modelName, '.obj')));
 
 							foliageExportCache.add(modelID);
 						}
