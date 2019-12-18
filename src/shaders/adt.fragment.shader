@@ -55,7 +55,5 @@ void main() {
 	vec4 weightedLayer_2 = texture2D(pt_layer2, tc2) * layerPct.z;
 	vec4 weightedLayer_3 = texture2D(pt_layer3, tc3) * layerPct.w;
 
-	//gl_FragColor = vec4((weightedLayer_0.xyz + weightedLayer_1.xyz + weightedLayer_2.xyz + weightedLayer_3.xyz) * vertexColor.rgb * 2.0, 1.0);
-	gl_FragColor = texture2D(pt_blend1, vTextureCoord);
-	//gl_FragColor = vertexColor;
+	gl_FragColor = vec4((weightedLayer_0.xyz + weightedLayer_1.xyz + weightedLayer_2.xyz + weightedLayer_3.xyz) * vertexColor.rgb * 2.0, 1.0);
 }

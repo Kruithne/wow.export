@@ -474,11 +474,13 @@ class ADTExporter {
 
 						const alphaLayers = texChunk.alphaLayers || [];
 						const alphaTextures = new Array(alphaLayers.length);
+
 						for (let i = 1; i < alphaLayers.length; i++) {
-							const alphaTex = bindAlphaLayer(alphaLayers[i]);
 							gl.activeTexture(gl.TEXTURE3 + i);
+
+							const alphaTex = bindAlphaLayer(alphaLayers[i]);
 							gl.bindTexture(gl.TEXTURE_2D, alphaTex);
-							gl.uniform1i(uBlends[i], 3 + i);
+							gl.uniform1i(uBlends[i], i + 3);
 
 							// Store to clean up after render.
 							alphaTextures[i] = alphaTex;
