@@ -158,7 +158,6 @@ class WDC2 {
 					if (data.offset > recordEnd)
 						throw new Error('DB table schema exceeds available record data.');
 
-					// ToDo: Add support for other field types.
 					// ToDo: Add support for compressed fields.
 
 					switch (type) {
@@ -170,6 +169,13 @@ class WDC2 {
 							out[prop] = this.readString();
 							data.seek(pos);
 							break;
+
+						case FieldType.UInt8: out[prop] = data.readUInt8(); break;
+						case FieldType.Int16: out[prop] = data.readInt16LE(); break;
+						case FieldType.UInt16: out[prop] = data.readUInt16LE(); break;
+						case FieldType.Int32: out[prop] = data.readInt32LE(); break;
+						case FieldType.UInt32: out[prop] = data.readUInt32LE(); break;
+						case FieldType.Float: out[prop] = data.readFloatLE(); break;
 					}
 				}
 
