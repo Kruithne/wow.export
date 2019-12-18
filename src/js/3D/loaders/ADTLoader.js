@@ -374,7 +374,7 @@ const ADTObjChunkHandlers = {
 		for (let i = 0; i < count; i++) {
 			entries[i] = {
 				mwidEntry: data.readUInt32LE(),
-				uniqueID: data.readUInt32LE(),
+				uniqueId: data.readUInt32LE(),
 				position: data.readFloatLE(3),
 				rotation: data.readFloatLE(3),
 				lowerBounds: data.readFloatLE(3),
