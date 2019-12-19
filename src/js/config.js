@@ -43,7 +43,16 @@ const save = () => {
  */
 const doSave = async () => {
 	try {
-		const out = JSON.stringify(core.view.config, null, '\t');
+		const configSave = {};
+		for (const [key, value] of Object.entries(core.view.config)) {
+			// Only persist configuration values that do not match defaults.
+			if (defaultConfig.hasOwnProperty(key) && defaultConfig[key] === value)
+				continue;
+
+			configSave[key] = value;
+		}
+
+		const out = JSON.stringify(configSave, null, '\t');
 		await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
 	} catch (e) {
 		crash('ERR_CONFIG_SAVE', e.message);
