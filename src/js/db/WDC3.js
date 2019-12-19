@@ -131,8 +131,7 @@ class WDC3 {
 					continue;
 			}
 
-			// For unknown reasons the 'absolute' offsets for string block lookups in
-			// normal records is offset by the total recordDataSize of all other sections.
+			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
 			let outsideDataSize = 0;
 			for (let i = 0; i < sectionCount; i++) {
 				if (i > sectionIndex)
