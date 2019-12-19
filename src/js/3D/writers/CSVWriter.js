@@ -1,4 +1,5 @@
 const generics = require('../../generics');
+const path = require('path');
 const FileWriter = require('../../file-writer');
 
 class CSVWriter {
