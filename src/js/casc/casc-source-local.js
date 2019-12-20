@@ -274,6 +274,7 @@ class CASCLocal extends CASC {
 		if (isZeroed)
 			throw new Error('Requested data file is empty or missing: ' + key);
 
+		data.seek(0);
 		return data;
 	}
 
