@@ -49,13 +49,15 @@ class CASCLocal extends CASC {
 	 * @param {number} fileDataID 
 	 * @param {boolean} partialDecryption
 	 * @param {boolean} suppressLog
+	 * @param {boolean} supportFallback
 	 */
-	async getFile(fileDataID, partialDecryption = false, suppressLog = false) {
+	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = false) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 			
 		const encodingKey = await super.getFile(fileDataID);
-		return new BLTEReader(await this.getDataFile(encodingKey), encodingKey, partialDecryption);
+		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey) : await this.getDataFile(encodingKey);
+		return new BLTEReader(data, encodingKey, partialDecryption);
 	}
 
 	/**
@@ -89,10 +91,6 @@ class CASCLocal extends CASC {
 		await this.loadEncoding();
 		await this.loadRoot();
 		await this.loadListfile(this.build.BuildKey);
-
-		// Dispose of remote instance if used.
-		if (this.remote)
-			this.remote = null;
 	}
 
 	/**
@@ -203,6 +201,8 @@ class CASCLocal extends CASC {
 		const remote = new CASCRemote(core.view.selectedCDNRegion.tag);
 		await remote.init();
 
+		remote.cache = this.cache;
+
 		const buildIndex = remote.builds.findIndex(build => build.Product === this.build.Product);
 		await remote.preload(buildIndex);
 
@@ -235,11 +235,20 @@ class CASCLocal extends CASC {
 			if (!this.remote)
 				await this.initializeRemoteCASC();
 
-			const remoteKey = this.remote.formatCDNKey(key);
-			const remote = await this.remote.getDataFile(remoteKey);
+			const archive = this.remote.archives.get(key);
+			let data;
+			if (archive !== undefined) {
+				// Archive exists for key, attempt partial remote download.
+				log.write('Local file %s has archive, attempt partial download...', key);
+				data = await this.remote.getDataFilePartial(this.remote.formatCDNKey(archive.key), archive.offset, archive.size);
+			} else {
+				// No archive for this file, attempt direct download.
+				log.write('Local file %s has no archive, attempting direct download...', key);
+				data = await this.remote.getDataFile(this.remote.formatCDNKey(key));
+			}
 
-			this.cache.storeFile(key, remote, constants.CACHE.DIR_DATA);
-			return remote;
+			this.cache.storeFile(key, data, constants.CACHE.DIR_DATA);
+			return data;
 		}
 	}
 
@@ -252,7 +261,20 @@ class CASCLocal extends CASC {
 		if (!entry)
 			throw new Error('Requested file does not exist in local data: ' + key);
 
-		return await generics.readFile(this.formatDataPath(entry.index), entry.offset + 0x1E, entry.size - 0x1E);
+		const data = await generics.readFile(this.formatDataPath(entry.index), entry.offset + 0x1E, entry.size - 0x1E);
+
+		let isZeroed = true;
+		for (let i = 0, n = data.remainingBytes; i < n; i++) {
+			if (data.readUInt8() !== 0x0) {
+				isZeroed = false;
+				break;
+			}
+		}
+
+		if (isZeroed)
+			throw new Error('Requested data file is empty or missing: ' + key);
+
+		return data;
 	}
 
 	/**

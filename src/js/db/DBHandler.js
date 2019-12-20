@@ -15,11 +15,7 @@ module.exports = {
 	 * @param {object} schema
 	 */
 	openTable: async (fileName, schema) => {
-		const data = await core.view.casc.getFileByName(fileName);
-
-		// Allow this BLTE to have zeroed sections.
-		data.partialDecrypt = true;
-
+		const data = await core.view.casc.getFileByName(fileName, true, false, true);
 		const magic = data.readUInt32LE();
 
 		let table;

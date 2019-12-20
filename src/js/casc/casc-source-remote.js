@@ -138,6 +138,8 @@ class CASCRemote extends CASC {
 
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
+		await this.loadConfigs();
+		await this.loadArchives();
 	}
 
 	/**
@@ -151,8 +153,6 @@ class CASCRemote extends CASC {
 		this.cache = new BuildCache(this.build.BuildConfig);
 		await this.cache.init();
 
-		await this.loadConfigs();
-		await this.loadArchives();
 		await this.loadEncoding();
 		await this.loadRoot();
 		await this.loadListfile(this.build.BuildConfig);
@@ -234,7 +234,9 @@ class CASCRemote extends CASC {
 
 		log.timeLog();
 
-		await this.progress.step('Loading archives');
+		if (this.progress)
+			await this.progress.step('Loading archives');
+			
 		await generics.queue(archiveKeys, async key => await this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
@@ -320,7 +322,9 @@ class CASCRemote extends CASC {
 	 */
 	async loadConfigs() {
 		// Download CDNConfig and BuildConfig.
-		await this.progress.step('Fetching build configurations');
+		if (this.progress)
+			await this.progress.step('Fetching build configurations');
+
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
 		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
 
