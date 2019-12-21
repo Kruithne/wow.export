@@ -43,18 +43,12 @@
 				<div id="blender-info" v-if="screen === 'blender'">
 					<div id="blender-info-header">
 						<h1>Installing the wow.export Add-on for Blender 2.8</h1>
-						<a @click="openBlenderAddonFolder">» Click here to get the latest version «</a>
-					</div>
-					<div id="blender-info-inner">
-						<img src="./images/blender_info_1.png"/>
-						<p>1. Open Blender, and select 'User Preferences' from the 'Edit' menu.</p>
-						<img src="./images/blender_info_2.png"/>
-						<p>2. Select 'Add-Ons' from the menu on the left, and then click 'Install' in the top-right.</p>
-						<img src="./images/blender_info_3.png"/>
-						<p>3. Navigate <a @click="openBlenderAddonFolder">to this folder</a> in the file browser and select 'io_scene_wowobj.zip' to install.</p>
+						<p>Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.</p>
 					</div>
 					<div id="blender-info-buttons">
-						<input type="button" value="Close" @click="showPreviousScreen"/>
+						<input type="button" value="Install Automatically (Recommended)" @click="installBlenderAddon" :class="{ disabled: isBusy }"/>
+						<input type="button" value="Install Manually (ZIP Archive)" @click="openBlenderAddonFolder"/>
+						<input type="button" value="Go Back" @click="showPreviousScreen"/>
 					</div>
 				</div>
 				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">

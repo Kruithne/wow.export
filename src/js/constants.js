@@ -14,9 +14,6 @@ module.exports = {
 	// Location of GL shaders.
 	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
 
-	// Local path to our Blender add-on.
-	BLENDER_ADDON_DIR: path.join(INSTALL_PATH, 'addon'),
-
 	// Current version of wow.export
 	VERSION: nw.App.manifest.version,
 
@@ -25,6 +22,14 @@ module.exports = {
 
 	// User-agent used for HTTP/HTTPs requests.
 	USER_AGENT: 'wow.export (' + nw.App.manifest.version + ')',
+
+	// Defines Blender constants.
+	BLENDER: {
+		DIR: process.env.APPDATA + '\\Blender Foundation\\Blender', // Blender app-data directory.
+		ADDON_DIR: 'scripts\\addons\\io_scene_wowobj', // Install path for add-ons
+		LOCAL_DIR: path.join(INSTALL_PATH, 'addon', 'io_scene_wowobj'), // Local copy of our Blender add-on.
+		MIN_VER: 2.8 // Minimum version supported by our add-on.
+	},
 
 	// Defines game-specific constants.
 	GAME: {

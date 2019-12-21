@@ -93,34 +93,21 @@ body {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	display: grid;
-	grid-template-rows: 100px 1fr 100px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
 
 	&-header {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-direction: column;
+		text-align: center;
 
-		a {
-			font-size: 20px;
+		h1 {
+			margin-bottom: 10px;
 		}
-	}
-
-	&-inner {
-		display: grid;
-		margin: auto 40px;
 
 		p {
-			grid-row: 2;
-			font-size: 20px;
-			margin-top: 20px;
-			text-align: center;
-		}
-
-		img {
-			margin: auto;
-			max-width: 100%;
+			margin-bottom: 20px;
+			width: 900px;
 		}
 	}
 
@@ -128,6 +115,10 @@ body {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+
+		input {
+			margin: 0 10px;
+		}
 	}
 }
 
