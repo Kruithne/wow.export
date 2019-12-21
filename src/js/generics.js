@@ -292,20 +292,23 @@ const readFile = async (file, offset, length) => {
  */
 const deleteDirectory = async (dir) => {
 	let deleteSize = 0;
-	const entries = await fsp.readdir(dir);
-	for (const entry of entries) {
-		const entryPath = path.join(dir, entry);
-		const entryStat = await fsp.stat(entryPath);
+	try {
+		const entries = await fsp.readdir(dir);
+		for (const entry of entries) {
+			const entryPath = path.join(dir, entry);
+			const entryStat = await fsp.stat(entryPath);
 
-		if (entryStat.isDirectory()) {
-			deleteSize += await deleteDirectory(entryPath);
-		} else {
-			await fsp.unlink(entryPath);
-			deleteSize += entryStat.size;
+			if (entryStat.isDirectory()) {
+				deleteSize += await deleteDirectory(entryPath);
+			} else {
+				await fsp.unlink(entryPath);
+				deleteSize += entryStat.size;
+			}
 		}
-	}
 
-	await fsp.rmdir(dir);
+		await fsp.rmdir(dir);
+	} catch (e) {}
+	
 	return deleteSize;
 };
 
