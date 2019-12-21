@@ -131,10 +131,19 @@ class CASCRemote extends CASC {
 	/**
 	 * Preload requirements for reading remote files without initializing the
 	 * entire instance. Used by local CASC install for CDN fallback.
+	 * @param {number} buildIndex
+	 * @param {Object} cache
 	 */
-	async preload(buildIndex) {
+	async preload(buildIndex, cache = null) {
 		this.build = this.builds[buildIndex];
 		log.write('Preloading remote CASC build: %o', this.build);
+
+		if (cache) {
+			this.cache = cache;
+		} else {
+			this.cache = new BuildCache(this.build.BuildConfig);
+			await this.cache.init();
+		}
 
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
@@ -149,9 +158,6 @@ class CASCRemote extends CASC {
 	async load(buildIndex) {
 		this.progress = core.createProgress(10);
 		await this.preload(buildIndex);
-
-		this.cache = new BuildCache(this.build.BuildConfig);
-		await this.cache.init();
 
 		await this.loadEncoding();
 		await this.loadRoot();

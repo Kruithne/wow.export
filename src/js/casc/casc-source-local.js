@@ -201,10 +201,8 @@ class CASCLocal extends CASC {
 		const remote = new CASCRemote(core.view.selectedCDNRegion.tag);
 		await remote.init();
 
-		remote.cache = this.cache;
-
 		const buildIndex = remote.builds.findIndex(build => build.Product === this.build.Product);
-		await remote.preload(buildIndex);
+		await remote.preload(buildIndex, this.cache);
 
 		this.remote = remote;
 	}
