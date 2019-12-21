@@ -142,7 +142,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         bm.verts[face[2] - 1]
                     ));
                     bm.faces.ensure_lookup_table()
-					if mesh.usemtl:
+                    if mesh.usemtl:
                         bm.faces[-1].material_index = materialmapping[mesh.usemtl]
                     bm.faces[-1].smooth = True
                     exampleFace = bm.faces[-1]
