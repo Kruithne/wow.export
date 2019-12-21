@@ -89,6 +89,7 @@ const directoryExists = async (dir) => {
             const relativePath = path.relative(updateDir, file);
             const writePath = path.join(installDir, relativePath);
 
+			await fsp.mkdir(path.dirname(writeDir));
             await fsp.copyFile(file, writePath).catch(() => {
                 console.log('UNABLE TO WRITE: %s', writePath);
             });
