@@ -96,10 +96,13 @@ const applyUpdate = async () => {
 	const remoteDir = util.format(core.view.config.updateURL, nw.App.manifest.flavour);
 
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
-		const node = requiredFiles[i];
-		await progress.step(util.format('%d / %d (%s)', i + 1, n, downloadSize));
+		const node = requiredFiles[i];		
+		const remoteFile = remoteDir + node.file;
+		const localFile = path.join(constants.UPDATE.DIRECTORY, node.file);
+		log.write('Downloading %s to %s', remoteFile, localFile);
 
-		await generics.downloadFile(remoteDir + node.file, path.join(constants.UPDATE.DIRECTORY, node.file));
+		await progress.step(util.format('%d / %d (%s)', i + 1, n, downloadSize));
+		await generics.downloadFile(remoteFile, localFile);
 	}
 
 	core.view.loadingTitle = 'Restarting application...';
