@@ -59,7 +59,6 @@ module.exports = {
 	},
 
 	UPDATE: {
-		MANIFEST: 'package.json', // Remote manifest file for update checking.
 		DIRECTORY: path.join(INSTALL_PATH, '.update'), // Temporary directory for storing update data.
 		HELPER: 'updater' + (UPDATER_EXT[process.platform] || '') // Path to update helper application.
 	},

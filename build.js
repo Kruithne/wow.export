@@ -6,6 +6,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const AdmZip = require('adm-zip');
+const zlib = require('zlib');
 const tar = require('tar');
 const path = require('path');
 const util = require('util');
@@ -171,22 +172,6 @@ class DynamicString {
 		return this._str;
 	}
 }
-
-/**
- * Calculate the hash of a file.
- * @param {string} file Path to the file to hash.
- * @param {string} method Hashing method.
- * @param {string} encoding Output encoding.
- */
-const getFileHash = async (file, method, encoding) => {
-	return new Promise(resolve => {
-		const fd = fs.createReadStream(file);
-		const hash = crypto.createHash(method);
-		
-		fd.on('data', chunk => hash.update(chunk));
-		fd.on('end', () => resolve(hash.digest(encoding)));
-	});
-};
 
 /**
  * Create all directories in a given path if they do not exist.
@@ -364,6 +349,9 @@ const orderDependencies = (tree, mod) => {
 		orderDependencies(tree, depModule);
 	}
 };
+
+// Create a promisified version of zlib.deflate.
+const deflateBuffer = util.promisify(zlib.deflate);
 
 (async () => {
 	const config = JSON.parse(await fsp.readFile(CONFIG_FILE));
@@ -678,27 +666,6 @@ const orderDependencies = (tree, mod) => {
 			log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);
 		}
 
-		// Collect checksum data for all files in the build.
-		// These are stored in the manifest and used for update checking.
-		log.info('Calculating file checksums...');
-		const contents = {};
-		const files = await collectFiles(buildDir);
-
-		let entryCount = 0;
-		let totalSize = 0;
-
-		for (const file of files) {
-			const relative = path.relative(buildDir, file).replace(/\\/g, '/');
-			const hash = await getFileHash(file, 'sha256', 'hex');
-			const stats = await fsp.stat(file);
-
-			contents[relative] = [hash, stats.size];
-			totalSize += stats.size;
-			entryCount++;
-		}
-
-		log.info('Checksum complete (*%s* in *%d* files)', filesize(totalSize), entryCount);
-
 		// Build a manifest (package.json) file for the build.
 		const manifest = {};
 
@@ -710,11 +677,46 @@ const orderDependencies = (tree, mod) => {
 		Object.assign(manifest, config.manifest);
 
 		// Apply build specific meta data to the manifest.
-		Object.assign(manifest, { flavour: build.name, guid: buildGUID, contents });
+		Object.assign(manifest, { flavour: build.name, guid: buildGUID });
 
 		const manifestPath = path.resolve(path.join(buildDir, build.manifestTarget));
 		await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
 		log.success('Manifest file written to *%s*', manifestPath);
+
+		// Create update bundle and manifest.
+		if (build.updateBundle) {
+			log.info('Building update package...');
+
+			const contents = {};
+			const bundleOut = path.join(buildDir, build.updateBundle.bundle);
+			const files = await collectFiles(buildDir);
+
+			let entryCount = 0;
+			let totalSize = 0;
+			let compSize = 0;
+
+			for (const file of files) {
+				const relative = path.relative(buildDir, file).replace(/\\/g, '/');
+
+				const data = await fsp.readFile(file);
+				const hash = crypto.createHash('sha256');
+				hash.update(data);
+
+				const comp = await deflateBuffer(data);
+				await fsp.writeFile(bundleOut, comp, { flag: 'a' });
+
+				contents[relative] = { hash: hash.digest('hex'), size: data.byteLength, compSize: comp.byteLength, ofs: compSize };
+				totalSize += data.byteLength;
+				compSize += comp.byteLength;
+
+				entryCount++;
+			}
+
+			const manifestData = { contents, guid: buildGUID }
+			const manifestOut = path.join(buildDir, build.updateBundle.manifest);
+			await fsp.writeFile(manifestOut, JSON.stringify(manifestData, null, '\t'), 'utf8');
+			log.info('Update package built (*%s* (*%s* deflated) in *%d* files)', filesize(totalSize), filesize(compSize), entryCount);
+		}
 
 		const buildElapsed = (Date.now() - buildStart) / 1000;
 		log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);

@@ -9,6 +9,8 @@ const constants = require('./constants');
 
 const MAX_HTTP_REDIRECT = 4;
 
+const inflate = util.promisify(zlib.inflate);
+
 /**
  * Async wrapper for http.get()/https.get().
  * The module used is determined by the prefix of the URL.
@@ -124,12 +126,15 @@ const readJSON = async (file, ignoreComments = false) => {
 
 /**
  * Download a file (optionally to a local file).
- * GZIP deflation will be used if available.
+ * GZIP deflation will be used if headers are set.
  * Data is always returned even if `out` is provided.
  * @param {string} url Remote URL of the file to download.
  * @param {string} out Optional file to write file to.
+ * @param {number} partialOfs Partial content start offset.
+ * @param {number} partialLen Partial content size.
+ * @param {boolean} deflate If true, will deflate data regardless of header.
  */
-const downloadFile = async (url, out, partialOfs = -1, partialLen = -1) => {
+const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false) => {
 	const headers = {'Accept-Encoding': 'gzip'};
 	if (partialOfs > -1 && partialLen > -1)
 		headers.Range = util.format('bytes=%d-%d', partialOfs, partialOfs + partialLen - 1);
@@ -157,7 +162,10 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1) => {
 		source.on('end', resolve);
 	});
 
-	const merged = Buffer.concat(buffers, totalBytes);
+	let merged = Buffer.concat(buffers, totalBytes);
+
+	if (deflate)
+		merged = await inflate(merged);
 
 	// Write the file to disk if requested.
 	if (out) {

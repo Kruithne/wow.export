@@ -181,12 +181,6 @@ document.addEventListener('click', function(e) {
 							const srcPath = path.join(constants.BLENDER.LOCAL_DIR, file.name);
 							let destPath = path.join(addonPath, file.name);
 
-							// To fix an issue with Python scripts executing on the update server
-							// they're renamed to .pyc. Revert that here. Ideally we should improve the
-							// update system to be more robust.
-							if (destPath.endsWith('.pyc'))
-								destPath = destPath.substring(0, destPath.length - 1);
-
 							log.write('%s -> %s', srcPath, destPath);
 							await fsp.copyFile(srcPath, destPath);
 						}

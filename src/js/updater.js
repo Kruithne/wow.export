@@ -17,7 +17,7 @@ let updateManifest;
 const checkForUpdates = async () => {
 	try {
 		const localManifest = nw.App.manifest;
-		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + constants.UPDATE.MANIFEST;
+		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + 'update.json';
 		log.write('Checking for updates (%s)...', manifestURL);
 
 		const manifest = await generics.getJSON(manifestURL);
@@ -48,7 +48,7 @@ const applyUpdate = async () => {
 
 	log.write('Starting update to %s...', updateManifest.guid);
 
-	const requiredFiles = [{ file: constants.UPDATE.MANIFEST, size: 0 }];
+	const requiredFiles = [];
 	const entries = Object.entries(updateManifest.contents);
 
 	let progress = core.createProgress(entries.length);
@@ -56,27 +56,26 @@ const applyUpdate = async () => {
 
 	for (let i = 0, n = entries.length; i < n; i++) {
 		const [file, meta] = entries[i];
-		const [hash, size] = meta;
 
 		await progress.step((i + 1) + ' / ' + n);
 
 		const localPath = path.join(constants.INSTALL_PATH, file);
-		const node = { file, size };
+		const node = { file, meta };
 
 		try {
 			const stats = await fsp.stat(localPath);
 
 			// If the file size is different, skip hashing and just mark for update.
-			if (stats.size !== size) {
-				log.write('Marking %s for update due to size mismatch (%d != %d)', file, stats.size, size);
+			if (stats.size !== meta.size) {
+				log.write('Marking %s for update due to size mismatch (%d != %d)', file, stats.size, meta.size);
 				requiredFiles.push(node);
 				continue;
 			}
 
 			// Verify local sha256 hash with remote one.
 			const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
-			if (localHash !== hash) {
-				log.write('Marking %s for update due to hash mismatch (%s != %s)', file, localHash, hash);
+			if (localHash !== meta.hash) {
+				log.write('Marking %s for update due to hash mismatch (%s != %s)', file, localHash, meta.hash);
 				requiredFiles.push(node);
 				continue;
 			}
@@ -87,22 +86,20 @@ const applyUpdate = async () => {
 		}
 	}
 
-	const downloadSize = generics.filesize(requiredFiles.map(e => e.size).reduce((total, val) => total + val));
+	const downloadSize = generics.filesize(requiredFiles.map(e => e.meta.size).reduce((total, val) => total + val));
 	log.write('%d files (%s) marked for download.', requiredFiles.length, downloadSize);
 
 	progress = core.createProgress(requiredFiles.length);
 	core.view.loadingTitle = 'Downloading updates...';
 	
-	const remoteDir = util.format(core.view.config.updateURL, nw.App.manifest.flavour);
-
+	const remoteEndpoint = util.format(core.view.config.updateURL, nw.App.manifest.flavour) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
 		const node = requiredFiles[i];		
-		const remoteFile = remoteDir + node.file;
 		const localFile = path.join(constants.UPDATE.DIRECTORY, node.file);
-		log.write('Downloading %s to %s', remoteFile, localFile);
+		log.write('Downloading %s to %s', node.file, localFile);
 
 		await progress.step(util.format('%d / %d (%s)', i + 1, n, downloadSize));
-		await generics.downloadFile(remoteFile, localFile);
+		await generics.downloadFile(remoteEndpoint, localFile, node.meta.ofs, node.meta.compSize, true);
 	}
 
 	core.view.loadingTitle = 'Restarting application...';
