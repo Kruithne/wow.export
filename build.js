@@ -716,17 +716,6 @@ const orderDependencies = (tree, mod) => {
 		await fsp.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
 		log.success('Manifest file written to *%s*', manifestPath);
 
-		const buildArchiveType = build.buildArchive;
-		if (buildArchiveType) {
-			if (buildArchiveType === 'ZIP') {
-				// ToDo: Use AdmZip to archive the output files.
-			} else if (buildArchiveType === 'GZ') {
-				// ToDo: Use tar to archive the output files.
-			} else {
-				throw new Error('Unknown build archive type: ' + buildArchiveType);
-			}
-		}
-
 		const buildElapsed = (Date.now() - buildStart) / 1000;
 		log.success('Build *%s* completed in *%ds*', build.name, buildElapsed);
 	}
