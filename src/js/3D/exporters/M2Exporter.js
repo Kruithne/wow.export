@@ -82,8 +82,10 @@ class M2Exporter {
 			for (let vI = 0; vI < mesh.triangleCount; vI++)
 				verts[vI] = skin.indicies[skin.triangles[mesh.triangleStart + vI]];
 
+			let texture = null;
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
-			const texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
+			if (texUnit)
+				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
 			const texFileDataID = texture.fileDataID;

@@ -85,7 +85,7 @@ class M2Renderer {
 
 			const skinMesh = skin.submeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
-			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, m2.textureCombos[texUnit.textureComboIndex]);
+			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
