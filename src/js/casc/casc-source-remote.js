@@ -381,6 +381,14 @@ class CASCRemote extends CASC {
 	formatCDNKey(key) {
 		return key.substring(0, 2) + '/' + key.substring(2, 4) + '/' + key;
 	}
+
+	/**
+     * Get the current build ID.
+     * @returns {string}
+     */
+    getBuildName() {
+        return this.build.VersionsName;
+    }
 }
 
 module.exports = CASCRemote;

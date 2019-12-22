@@ -312,6 +312,14 @@ class CASCLocal extends CASC {
 	formatCDNKey(key) {
 		return path.join(key.substring(0, 2), key.substring(2, 4), key);
 	}
+
+	/**
+     * Get the current build ID.
+     * @returns {string}
+     */
+    getBuildName() {
+        return this.build.Version;
+    }
 }
 
 module.exports = CASCLocal;
