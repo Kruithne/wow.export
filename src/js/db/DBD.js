@@ -18,7 +18,7 @@ module.exports = {
 		const targetBuild = core.view.casc.getBuildName();
 
 		// Parse DBD
-		const columnDefinitions = [];
+		const columnDefinitions = new Map();
 		const versionDefinitions = [];
 
 		const validTypes = ["int", "float", "string", "locstring"];
@@ -53,7 +53,7 @@ module.exports = {
 
 				// SKIPPED: Verified (?) and comment reading
 
-				columnDefinitions[name] = type;
+				columnDefinitions.set(name, type);
 			}
 		}
 
@@ -85,11 +85,7 @@ module.exports = {
 
 			if (line.substring(0, 6) !== "LAYOUT" && line.substring(0, 5) !== "BUILD" && line.substring(0, 7) !== "COMMENT" && line.length !== 0)
 			{
-				let field = [];
-				field.isID = false;
-				field.isNonInline = false;
-				field.isRelation = false;
-				field.arrLength = 0;
+				const field = { arrLength: 0 };
 
 				if(line.indexOf('$') !== -1){
 					// Annotation
@@ -98,14 +94,9 @@ module.exports = {
 
 					const annotations = line.substring(start + 1, end - 1).split(",");
 
-					if(annotations.includes("id"))
-						field.isID = true;
-
-					if(annotations.includes("noninline"))
-						field.isNonInline = true;
-
-					if(annotations.includes("relation"))
-						field.isRelation = true;
+					field.isID = annotations.includes("id");
+					field.isNonInline = annotations.includes("noninline");
+					field.isRelation = annotations.includes("relation");
 
 					line = line.substring(end + 1);
 				}
@@ -141,7 +132,7 @@ module.exports = {
 
 				field.name = line;
 
-				if(!(field.name in columnDefinitions))
+				if (!columnDefinitions.has(field.name))
 					throw new Error('Could not find field in column definitions: ' + field.name);
 
 				fields.push(field);
@@ -171,7 +162,7 @@ module.exports = {
 		}
 		*/
 
-		if(matchedDefinition == undefined)
+		if(matchedDefinition === undefined)
 			throw new Error('Unable to find version definition for build ' + targetBuild);
 
 		return {columnDefinitions, matchedDefinition};
