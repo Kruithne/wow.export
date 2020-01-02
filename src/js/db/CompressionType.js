@@ -1,8 +1,8 @@
 module.exports = {
-	NONE: 0,
-	BITPACKED: 1,
-	COMMON_DATA: 2,
-	BITPACKED_INDEXED: 3,
-	BITPACKED_INDEXED_ARRAY: 4,
-	BITPACKED_SIGNED: 5
+	None: 0,
+	Bitpacked: 1,
+	CommonData: 2,
+	BitpackedIndexed: 3,
+	BitpackedIndexedArray: 4,
+	BitpackedSigned: 5
 };

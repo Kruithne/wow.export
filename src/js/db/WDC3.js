@@ -67,9 +67,18 @@ class WDC3 {
 		}
 
 		// char pallet_data[header.pallet_data_size];
-		// char common_data[header.common_data_size];
 		// ToDo: Implement if needed.
-		data.move(palletDataSize + commonDataSize);
+		data.move(palletDataSize);
+
+		// char common_data[header.common_data_size];
+		const common_data = new Array(fieldInfo.length);
+		for (let fieldIndex = 0; fieldIndex < fieldInfo.length; fieldIndex++){
+			if(fieldInfo[fieldIndex].fieldCompression === CompressionType.CommonData){
+				common_data[fieldIndex] = new Map();
+				for(let i = 0; i < fieldInfo[fieldIndex].additionalDataSize / 8; i++)
+					common_data[fieldIndex].set(data.readUInt32LE(), data.readUInt32LE());
+			}
+		}
 
 		// data_sections[header.section_count];
 		const sections = new Array(sectionCount);
