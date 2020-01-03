@@ -234,7 +234,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         parent.rotation_euler = [0, 0, 0]
                         parent.rotation_euler.x += radians(float(row['RotationZ']))
                         parent.rotation_euler.y += radians(float(row['RotationX']))
-                        parent.rotation_euler.z = radians((-90 + float(row['RotationY'])))
+                        parent.rotation_euler.z = radians((90 + float(row['RotationY'])))
                         if row['ScaleFactor']:
                             parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
                         bpy.context.scene.collection.objects.link(parent)
