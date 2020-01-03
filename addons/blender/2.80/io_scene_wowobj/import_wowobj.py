@@ -33,7 +33,7 @@ def importWoWOBJ(objectFile, givenParent = None):
             self.faces = []
 
     curMesh = OBJMesh()
-    meshIndex = -1;
+    meshIndex = -1
     with open(objectFile, 'rb') as f:
         for line in f:
             line_split = line.split()
@@ -89,7 +89,7 @@ def importWoWOBJ(objectFile, givenParent = None):
     objname = os.path.basename(objectFile)
 
     if objname in bpy.data.objects:
-        objindex = 1;
+        objindex = 1
         newname = objname
         while(newname in bpy.data.objects):
             newname = objname + '.' + str(objindex).rjust(3, '0')
@@ -153,7 +153,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         bm.verts[face[0] - 1],
                         bm.verts[face[1] - 1],
                         bm.verts[face[2] - 1]
-                    ), exampleFace);
+                    ), exampleFace)
             except ValueError:
                 ## TODO: Duplicate faces happen for some reason
                 pass
@@ -292,7 +292,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                     importedFile.rotation_euler = [0, 0, 0]
                     rotQuat = Quaternion((float(row['RotationW']), float(row['RotationX']), float(row['RotationY']), float(row['RotationZ'])))
                     rotEul = rotQuat.to_euler()
-                    rotEul.x += radians(90);
+                    rotEul.x += radians(90)
                     importedFile.rotation_euler = rotEul
                     importedFile.parent = givenParent or obj
                     if row['ScaleFactor']:
