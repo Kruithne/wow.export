@@ -313,7 +313,7 @@ class ADTExporter {
 
 					let isHole = true;
 					if (!(chunk.flags & 0x10000)) {
-						const current = Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 4));
+						const current = Math.trunc(Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 2) * 4));
 
 						if (!(chunk.holesLowRes & current))
 							isHole = false;
