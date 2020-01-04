@@ -1,6 +1,7 @@
 0.1.7
 - Users will now be prompted when a new version of the Blender add-on is available.
 - Automatic installation of the Blender add-on now supports alpha/beta versions of Blender.
+- Fixed an issue that prevented recent local installations from appearing on the source selection screen.
 - Fix holes in exported terrain being slightly offset.
 - Fix terrain material name conflicts in Blender by using a unique name per tile.
 

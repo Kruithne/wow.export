@@ -10,6 +10,24 @@ let isQueued = false;
 let defaultConfig = {};
 
 /**
+ * Clone one config object into another.
+ * Arrays are cloned rather than passed by reference.
+ * @param {object} src 
+ * @param {object} target 
+ */
+const copyConfig = (src, target) => {
+	for (const [key, value] of Object.entries(src)) {
+		if (Array.isArray(value)) {
+			// Clone array rather than passing reference.
+			target[key] = value.slice(0);
+		} else {
+			// Pass everything else in wholemeal.
+			target[key] = value;
+		}
+	}
+};
+
+/**
  * Load configuration from disk.
  */
 const load = async () => {
@@ -19,9 +37,11 @@ const load = async () => {
 	log.write('Loaded config defaults: %o', defaultConfig);
 	log.write('Loaded user config: %o', userConfig);
 
-	const config = Object.assign({}, defaultConfig, userConfig);
-	core.view.config = config;
+	const config = {};
+	copyConfig(defaultConfig, config);
+	copyConfig(userConfig, config);
 
+	core.view.config = config;
 	core.view.$watch('config', () => save(), { deep: true });
 };
 
