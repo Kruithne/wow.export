@@ -88,9 +88,8 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			const texFileDataID = texture.fileDataID;
-			if (texture && texFileDataID > 0 && validTextures[texFileDataID])
-				matName = texFileDataID;
+			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID])
+				matName = texture.fileDataID;
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}

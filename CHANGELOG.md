@@ -1,3 +1,6 @@
+0.1.8
+- Fix issue that prevented certain map tiles from exporting.
+
 0.1.7
 - Users will now be prompted when a new version of the Blender add-on is available.
 - Automatic installation of the Blender add-on now supports alpha/beta versions of Blender.
