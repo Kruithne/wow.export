@@ -218,7 +218,7 @@ const ADTTexChunkhandlers = {
 
 		for (let i = 0; i < count; i++) {
 			params[i] = {
-				flags: data.readUIng32LE(),
+				flags: data.readUInt32LE(),
 				height: data.readFloatLE(),
 				offset: data.readFloatLE(),
 				unk3: data.readUInt32LE()
@@ -278,7 +278,7 @@ const TexMCNKChunkHandlers = {
 					inOfs++;
 
 					const mode = (info & 0x80) >> 7;
-					const count = (info & 0x7F);
+					let count = (info & 0x7F);
 
 					if (mode !== 0) {
 						const value = data.readUInt8();

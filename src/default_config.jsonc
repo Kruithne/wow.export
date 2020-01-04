@@ -8,7 +8,7 @@
 	"listfileURL": "https://wow.tools/casc/listfile/download/csv/build?buildConfig=%s",
 	"listfileCacheRefresh": 3,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/master/definitions/%s.dbd",
-	"updateURL": "https://kruithne.net/wow.export/%s/",
+	"updateURL": "https://wow.tools/export/update/%s/",
 	"cacheExpiry": 7,
 	"cascLocale": 2,
 	"recentLocal": [],

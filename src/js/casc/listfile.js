@@ -3,6 +3,7 @@ const generics = require('../generics');
 const constants = require('../constants');
 const core = require('../core');
 const log = require('../log');
+const BufferWrapper = require('../buffer');
 
 const nameLookup = new Map();
 const idLookup = new Map();
@@ -16,47 +17,65 @@ const idLookup = new Map();
 const loadListfile = async (buildConfig, cache) => {
 	log.write('Loading listfile for build %s', buildConfig);
 
+	let url = String(core.view.config.listfileURL);
+	if (typeof url !== 'string')
+		throw new Error('Missing/malformed listfileURL in configuration!');
+
+	url = util.format(url, buildConfig);
+
 	idLookup.clear();
 	nameLookup.clear();
 
-	let requireDownload = false;
-	if (cache.meta.lastListfileUpdate) {
-		let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
-		ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
+	let data;
+	if (url.startsWith('http')) {
+		// Listfile URL is http, check for cache/updates.
+		let requireDownload = false;
+		let hasCache = await cache.hasFile(constants.CACHE.BUILD_LISTFILE);
 
-		if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
-			// Local cache file needs updating (or has invalid manifest entry).
-			log.write('Cached listfile for %s is out-of-date (> %d).', buildConfig, ttl);
-			requireDownload = true;
-		} else {
-			// Ensure that the local cache file *actually* exists before relying on it.
-			if (!await cache.hasFile(constants.CACHE.BUILD_LISTFILE)) {
-				log.write('Listfile for %s is missing despite meta entry. User tamper?', buildConfig);
+		if (cache.meta.lastListfileUpdate) {
+			let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
+			ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
+
+			if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
+				// Local cache file needs updating (or has invalid manifest entry).
+				log.write('Cached listfile for %s is out-of-date (> %d).', buildConfig, ttl);
 				requireDownload = true;
 			} else {
-				log.write('Listfile for %s is cached locally.', buildConfig);
+				// Ensure that the local cache file *actually* exists before relying on it.
+				if (!hasCache) {
+					log.write('Listfile for %s is missing despite meta entry. User tamper?', buildConfig);
+					requireDownload = true;
+				} else {
+					log.write('Listfile for %s is cached locally.', buildConfig);
+				}
 			}
+		} else {
+			// This listfile has never been updated.
+			requireDownload = true;
+			log.write('Listfile for %s is not cached, downloading fresh.', buildConfig);
+		}
+
+		if (requireDownload) {
+			try {
+				data = await generics.downloadFile(url);
+				cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
+
+				cache.meta.lastListfileUpdate = Date.now();
+				cache.saveManifest();
+			} catch {
+				if (!hasCache)
+					throw new Error('Failed to download listfile, no cached version for fallback');
+
+				log.write('Failed to download listfile, using cached as redundancy.');
+				data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+			}
+		} else {
+			data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
 		}
 	} else {
-		// This listfile has never been updated.
-		requireDownload = true;
-		log.write('Listfile for %s is not cached, downloading fresh.', buildConfig);
-	}
-
-	let data;
-	if (requireDownload) {
-		let url = String(core.view.config.listfileURL);
-		if (typeof url !== 'string')
-			throw new Error('Missing/malformed listfileURL in configuration!');
-
-		url = util.format(url, buildConfig);
-		data = await generics.downloadFile(url);
-		cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
-
-		cache.meta.lastListfileUpdate = Date.now();
-		cache.saveManifest();
-	} else {
-		data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+		// User has configured a local listfile location.
+		log.write('Loading user-defined local listfile: %s', url);
+		data = await BufferWrapper.readFile(url);
 	}
 
 	// Parse all lines in the listfile.

@@ -47,7 +47,7 @@
 					</div>
 					<div id="blender-info-buttons">
 						<input type="button" value="Install Automatically (Recommended)" @click="installBlenderAddon" :class="{ disabled: isBusy }"/>
-						<input type="button" value="Install Manually (ZIP Archive)" @click="openBlenderAddonFolder"/>
+						<input type="button" value="Install Manually (Advanced)" @click="openBlenderAddonFolder"/>
 						<input type="button" value="Go Back" @click="showPreviousScreen"/>
 					</div>
 				</div>
@@ -64,8 +64,8 @@
 						<menu-button class="spaced" :dropdown="true" :label="'%s'" :display-names="availableLocale.names" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
 					</div>
 					<div>
-						<h1>Listfile URL</h1>
-						<p>Remote URL used for updating the CASC listfile. (Must use same format)</p>
+						<h1>Listfile Source</h1>
+						<p>Remote URL or local path used for updating the CASC listfile. (Must use same format)</p>
 						<input type="text" v-model.trim="configEdit.listfileURL"/>
 					</div>
 					<div>
@@ -319,9 +319,9 @@
 				</template>
 				<template v-else>
 					<span id="footer-links">
-						<a data-external="https://discord.gg/BYpgyhy">Discord</a> - 
+						<a data-external="https://discord.gg/52mHpxC">Discord</a> - 
 						<a data-external="https://patreon.com/Marlamin">Patreon</a> - 
-						<a data-external="https://twitter.com/Marlamin">Twitter</a> - 
+						<a data-external="https://wow.tools/export/">About</a> - 
 						<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
 					</span>
 					<span id="footer-copyright">
@@ -344,7 +344,7 @@
 				</div>
 				<div class="form-tray">
 					<input type="button" value="Report Issue" data-external="https://github.com/Kruithne/wow.export/issues"/>
-					<input type="button" value="Get Help on Discord" data-external="https://discord.gg/BYpgyhy"/>
+					<input type="button" value="Get Help on Discord" data-external="https://discord.gg/52mHpxC"/>
 					<input type="button" value="Restart Application" onclick="chrome.runtime.reload()"/>
 				</div>
 				<textarea id="crash-screen-log">No runtime log available.</textarea>

@@ -10,6 +10,24 @@ let isQueued = false;
 let defaultConfig = {};
 
 /**
+ * Clone one config object into another.
+ * Arrays are cloned rather than passed by reference.
+ * @param {object} src 
+ * @param {object} target 
+ */
+const copyConfig = (src, target) => {
+	for (const [key, value] of Object.entries(src)) {
+		if (Array.isArray(value)) {
+			// Clone array rather than passing reference.
+			target[key] = value.slice(0);
+		} else {
+			// Pass everything else in wholemeal.
+			target[key] = value;
+		}
+	}
+};
+
+/**
  * Load configuration from disk.
  */
 const load = async () => {
@@ -19,9 +37,11 @@ const load = async () => {
 	log.write('Loaded config defaults: %o', defaultConfig);
 	log.write('Loaded user config: %o', userConfig);
 
-	const config = Object.assign({}, defaultConfig, userConfig);
-	core.view.config = config;
+	const config = {};
+	copyConfig(defaultConfig, config);
+	copyConfig(userConfig, config);
 
+	core.view.config = config;
 	core.view.$watch('config', () => save(), { deep: true });
 };
 
@@ -81,8 +101,8 @@ core.events.on('click-config-apply', () => {
 	if (cfg.exportDirectory.length === 0)
 		return core.setToast('error', 'A valid export directory must be provided');
 
-	if (cfg.listfileURL.length === 0 || !cfg.listfileURL.startsWith('http'))
-		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
+	if (cfg.listfileURL.length === 0)
+		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
 		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL });

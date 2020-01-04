@@ -28,6 +28,7 @@ module.exports = {
 		DIR: process.env.APPDATA + '\\Blender Foundation\\Blender', // Blender app-data directory.
 		ADDON_DIR: 'scripts\\addons\\io_scene_wowobj', // Install path for add-ons
 		LOCAL_DIR: path.join(INSTALL_PATH, 'addon', 'io_scene_wowobj'), // Local copy of our Blender add-on.
+		ADDON_ENTRY: '__init__.py', // Add-on entry point that contains the version.
 		MIN_VER: 2.8 // Minimum version supported by our add-on.
 	},
 
