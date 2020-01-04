@@ -65,6 +65,7 @@ const core = require('./js/core');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
+const blender = require('./js/blender');
 const fsp = require('fs').promises;
 
 require('./js/components/listbox');
@@ -121,81 +122,17 @@ document.addEventListener('click', function(e) {
 		data: core.view,
 		methods: {
 			/**
-			 * Open the local directory containing our Blender add-on
-			 * using the OS default folder explorer application.
+			 * Invoked when the user chooses to manually install the Blender add-on.
 			 */
 			openBlenderAddonFolder: function() {
-				nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
+				blender.openAddonDirectory();
 			},
 
 			/**
-			 * Attempt to automatically install the Blender add-on.
+			 * Invoked when the user chooses to automatically install the Blender add-on.
 			 */
-			installBlenderAddon: async function() {
-				// ToDo: Modify this to work on non-Windows platforms. GH-1.
-				this.isBusy++;
-				core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
-				log.write('Starting automatic installation of Blender add-on...');
-
-				try {
-					const entries = await fsp.readdir(constants.BLENDER.DIR, { withFileTypes: true });
-					let selectedVersion;
-
-					for (const entry of entries) {
-						// Skip non-directories.
-						if (!entry.isDirectory())
-							continue;
-
-						// Each version directory should be a float.
-						const parsed = parseFloat(entry.name);
-						if (isNaN(parsed)) {
-							log.write('Skipping invalid %s version', entry.name);
-							continue;
-						}
-
-						if (parsed < constants.BLENDER.MIN_VER) {
-							log.write('Skipping out-dated version %s', entry.name);
-							continue;
-						}
-
-						// Set this as the selected version.
-						if (selectedVersion === undefined || parsed > selectedVersion)
-							selectedVersion = entry.name;
-					}
-
-					if (selectedVersion !== undefined) {
-						const addonPath = path.join(constants.BLENDER.DIR, selectedVersion, constants.BLENDER.ADDON_DIR);
-
-						// Delete and re-create our add-on to ensure no cache.
-						await generics.deleteDirectory(addonPath);
-						await generics.createDirectory(addonPath);
-
-						// Clone our new files over.
-						const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
-						for (const file of files) {
-							// We don't expect any directories in our add-on.
-							// Adjust this to be recursive if we ever need to.
-							if (file.isDirectory())
-								continue;
-
-							const srcPath = path.join(constants.BLENDER.LOCAL_DIR, file.name);
-							let destPath = path.join(addonPath, file.name);
-
-							log.write('%s -> %s', srcPath, destPath);
-							await fsp.copyFile(srcPath, destPath);
-						}
-
-						core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
-					} else {
-						log.write('No valid Blender installation found, add-on install failed.');
-						core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.');
-					}
-				} catch (e) {
-					log.write('Installation failed due to exception: %s', e.message);
-					core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.');
-				}
-
-				this.isBusy--;
+			installBlenderAddon: function() {
+				blender.startAutomaticInstall();
 			},
 
 			/**
