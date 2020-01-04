@@ -158,6 +158,7 @@ class WDC3 {
 				data.seek(section.recordDataOfs + recordOfs);
 
 				const out = {};
+				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
 					// Prevent schema from flowing out-of-bounds for a record.
 					// We don't bother checking if the schema is too short, allowing for partial schema.
@@ -165,29 +166,47 @@ class WDC3 {
 						throw new Error('DB table schema exceeds available record data.');
 
 					// ToDo: Add support for compressed fields.
+					switch(fieldInfo[fieldIndex].fieldCompression){
+						case CompressionType.None:
+							let count;
+							let fieldType = type;
+							if (Array.isArray(type))
+								[fieldType, count] = type;
 
-					let count;
-					let fieldType = type;
-					if (Array.isArray(type))
-						[fieldType, count] = type;
+							switch (fieldType) {
+								case FieldType.String:
+									const ofs = data.readUInt32LE();
+									const pos = data.offset;
 
-					switch (fieldType) {
-						case FieldType.String:
-							const ofs = data.readUInt32LE();
-							const pos = data.offset;
+									data.move((ofs - 4) - outsideDataSize);
+									out[prop] = this.readString();
+									data.seek(pos);
+									break;
 
-							data.move((ofs - 4) - outsideDataSize);
-							out[prop] = this.readString();
-							data.seek(pos);
+								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
+								case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
+								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
+								case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
+								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
+								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
+							}
 							break;
-
-						case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
-						case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
-						case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
-						case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
-						case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
-						case FieldType.Float: out[prop] = data.readFloatLE(count); break;
+						case CompressionType.Bitpacked:
+							break;
+						case CompressionType.CommonData:
+							if(common_data[fieldIndex].has(recordID)){
+								out[prop] = common_data[fieldIndex].get(recordID);
+							}else{
+								out[prop] = fieldInfo[fieldIndex].fieldCompressionPacking[0]; // Default value
+							}
+							break;
+						case CompressionType.BitpackedIndexed:
+						case CompressionType.BitpackedIndexedArray:
+						case CompressionType.BitpackedSigned:
+							break;
 					}
+
+					fieldIndex++;
 				}
 
 				this.rows.set(recordID, out);
