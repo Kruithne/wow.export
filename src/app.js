@@ -451,12 +451,20 @@ document.addEventListener('click', function(e) {
 	if (BUILD_RELEASE) {
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
+				// Update is available, prompt to update. If user declines,
+				// begin checking the local Blender add-on version.
 				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
 					'Update Now': () => updater.applyUpdate(),
-					'Maybe Later': false
+					'Maybe Later': () => blender.checkLocalVersion()
 				}, -1, false);
+			} else {
+				// No update available, start checking Blender add-on.
+				blender.checkLocalVersion();
 			}
 		});
+	} else {
+		// Debug mode, go straight to Blender add-on check.
+		blender.checkLocalVersion();
 	}
 
 	// Set source select as the currently active interface screen.
