@@ -75,9 +75,10 @@ class WDC3 {
 		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if(thisFieldInfo.fieldCompression === CompressionType.CommonData){
-				common_data[fieldIndex] = new Map();
+				const commonDataMap = common_data[fieldIndex] = new Map();
+
 				for(let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
-					common_data[fieldIndex].set(data.readUInt32LE(), data.readUInt32LE());
+					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
 			}
 		}
 
@@ -97,8 +98,10 @@ class WDC3 {
 			const idList = data.readUInt32LE(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
-			// ToDo: Implement if needed.
-			data.move(header.copyTableCount * 8);
+			// ToDo: Actually use this.
+			const copyTable = new Map();
+			for(let i = 0; i < header.copyTableCount; i++)
+				copyTable.set(data.readInt32LE(), data.readInt32LE());
 
 			// offset_map_entry offset_map[section_headers.offset_map_id_count];
 			const offsetMap = new Array(header.offsetMapIDCount);
@@ -115,7 +118,7 @@ class WDC3 {
 			data.move(header.offsetMapIDCount * 4);
 
 			sections[sectionIndex] = {
-				header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap
+				header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, copyTable
 			};
 		}
 
