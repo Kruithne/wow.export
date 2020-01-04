@@ -342,7 +342,7 @@ class ADTExporter {
 					mtl.addMaterial(matName, matName + '.png');
 					obj.addMesh(objName, indicies, matName);
 				} else {
-					obj.addMesh(chunkID, indicies, 'terrain');
+					obj.addMesh(chunkID, indicies, 'tex_' + this.tileID);
 				}
 				chunkMeshes[chunkIndex] = indicies;
 
@@ -351,7 +351,7 @@ class ADTExporter {
 		}
 
 		if (!splitTextures)
-			mtl.addMaterial('terrain', 'tex_' + this.tileID + '.png');
+			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(verticies);
 		obj.setNormalArray(normals);
