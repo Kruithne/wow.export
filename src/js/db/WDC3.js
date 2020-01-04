@@ -72,10 +72,11 @@ class WDC3 {
 
 		// char common_data[header.common_data_size];
 		const common_data = new Array(fieldInfo.length);
-		for (let fieldIndex = 0; fieldIndex < fieldInfo.length; fieldIndex++){
-			if(fieldInfo[fieldIndex].fieldCompression === CompressionType.CommonData){
+		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
+			const thisFieldInfo = fieldInfo[fieldIndex];
+			if(thisFieldInfo.fieldCompression === CompressionType.CommonData){
 				common_data[fieldIndex] = new Map();
-				for(let i = 0; i < fieldInfo[fieldIndex].additionalDataSize / 8; i++)
+				for(let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
 					common_data[fieldIndex].set(data.readUInt32LE(), data.readUInt32LE());
 			}
 		}
@@ -190,8 +191,7 @@ class WDC3 {
 								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
 								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
 							}
-							break;
-						case CompressionType.Bitpacked:
+
 							break;
 						case CompressionType.CommonData:
 							if(common_data[fieldIndex].has(recordID)){
@@ -199,7 +199,9 @@ class WDC3 {
 							}else{
 								out[prop] = fieldInfo[fieldIndex].fieldCompressionPacking[0]; // Default value
 							}
+
 							break;
+						case CompressionType.Bitpacked:
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
 						case CompressionType.BitpackedSigned:
