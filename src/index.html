@@ -64,8 +64,8 @@
 						<menu-button class="spaced" :dropdown="true" :label="'%s'" :display-names="availableLocale.names" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
 					</div>
 					<div>
-						<h1>Listfile URL</h1>
-						<p>Remote URL used for updating the CASC listfile. (Must use same format)</p>
+						<h1>Listfile Source</h1>
+						<p>Remote URL or local path used for updating the CASC listfile. (Must use same format)</p>
 						<input type="text" v-model.trim="configEdit.listfileURL"/>
 					</div>
 					<div>

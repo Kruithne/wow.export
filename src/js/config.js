@@ -101,8 +101,8 @@ core.events.on('click-config-apply', () => {
 	if (cfg.exportDirectory.length === 0)
 		return core.setToast('error', 'A valid export directory must be provided');
 
-	if (cfg.listfileURL.length === 0 || !cfg.listfileURL.startsWith('http'))
-		return core.setToast('error', 'A valid listfile URL is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
+	if (cfg.listfileURL.length === 0)
+		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
 		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL });
