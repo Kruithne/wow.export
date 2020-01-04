@@ -20,6 +20,8 @@ const loadListfile = async (buildConfig, cache) => {
 	nameLookup.clear();
 
 	let requireDownload = false;
+	let hasCache = await cache.hasFile(constants.CACHE.BUILD_LISTFILE);
+
 	if (cache.meta.lastListfileUpdate) {
 		let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
 		ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
@@ -30,7 +32,7 @@ const loadListfile = async (buildConfig, cache) => {
 			requireDownload = true;
 		} else {
 			// Ensure that the local cache file *actually* exists before relying on it.
-			if (!await cache.hasFile(constants.CACHE.BUILD_LISTFILE)) {
+			if (!hasCache) {
 				log.write('Listfile for %s is missing despite meta entry. User tamper?', buildConfig);
 				requireDownload = true;
 			} else {
@@ -49,12 +51,20 @@ const loadListfile = async (buildConfig, cache) => {
 		if (typeof url !== 'string')
 			throw new Error('Missing/malformed listfileURL in configuration!');
 
-		url = util.format(url, buildConfig);
-		data = await generics.downloadFile(url);
-		cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
+		try {
+			url = util.format(url, buildConfig);
+			data = await generics.downloadFile(url);
+			cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
 
-		cache.meta.lastListfileUpdate = Date.now();
-		cache.saveManifest();
+			cache.meta.lastListfileUpdate = Date.now();
+			cache.saveManifest();
+		} catch {
+			if (!hasCache)
+				throw new Error('Failed to download listfile, no cached version for fallback');
+
+			log.write('Failed to download listfile, using cached as redundancy.');
+			data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+		}
 	} else {
 		data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
 	}
