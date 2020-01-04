@@ -1,3 +1,7 @@
+0.1.7
+- Fix holes in exported terrain being slightly offset.
+- Fix terrain material name conflicts in by using a unique name per tile.
+
 0.1.6 (03-01-2020)
 - Fix crash when exporting modern ADTs.
 - Fix incorrect ADT WMO Blender import rotations.
