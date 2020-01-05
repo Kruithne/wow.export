@@ -1,19 +1,48 @@
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
 
-class WDC3 {
-	constructor(data, schema) {
-		this.data = data;
-		this.schema = schema;
-
-		this.rows = new Map();
-		this.load();
+/**
+ * Defines unified logic between WDC2 and WDC3.
+ * @class WDC
+ */
+class WDC {
+	/**
+	 * Identifier for WDC2 variations.
+	 */
+	static get FORMAT_WDC2() {
+		return 0x2;
 	}
 
-	load() {
-		const data = this.data;
+	/**
+	 * Identifier for WDC3 variations.
+	 */
+	static get FORMAT_WDC3() {
+		return 0x3;
+	}
 
-		// wdc3_db2_header
+	/**
+	 * Construct a new WDC instance.
+	 * @param {BufferWrapper} data 
+	 * @param {object} schema 
+	 * @param {number} variant
+	 */
+	constructor(data, schema, variant) {
+		this.data = data;
+		this.schema = schema;
+		this.variant = variant;
+
+		this.rows = new Map();
+		this.parse();
+	}
+
+	/**
+	 * Parse the data table.
+	 */
+	parse() {
+		const data = this.data;
+		const isWDC2 = this.variant === WDC.FORMAT_WDC2;
+
+		// wdc_db2_header
 		const recordCount = data.readUInt32LE();
 		const fieldCount = data.readUInt32LE();
 		const recordSize = data.readUInt32LE();
@@ -33,10 +62,19 @@ class WDC3 {
 		const palletDataSize = data.readUInt32LE();
 		const sectionCount = data.readUInt32LE();
 
-		// wdc3_section_header section_headers[section_count]
+		// wdc_section_header section_headers[section_count]
 		const sectionHeaders = new Array(sectionCount);
 		for (let i = 0; i < sectionCount; i++) {
-			sectionHeaders[i] = {
+			sectionHeaders[i] = isWDC2 ? {
+				tactKeyHash: data.readUInt64LE(),
+				fileOffset: data.readUInt32LE(),
+				recordCount: data.readUInt32LE(),
+				stringTableSize: data.readUInt32LE(),
+				copyTableSize: data.readUInt32LE(),
+				offsetMapOffset: data.readUInt32LE(),
+				idListSize: data.readUInt32LE(),
+				relationshipDataSize: data.readUInt32LE()
+			} : {
 				tactKeyHash: data.readUInt64LE(),
 				fileOffset: data.readUInt32LE(),
 				recordCount: data.readUInt32LE(),
@@ -67,15 +105,14 @@ class WDC3 {
 		}
 
 		// char pallet_data[header.pallet_data_size];
-		// ToDo: Implement if needed.
 		data.move(palletDataSize);
 
 		// char common_data[header.common_data_size];
-		const common_data = new Array(fieldInfo.length);
+		const commonData = new Array(fieldInfo.length);
 		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.CommonData) {
-				const commonDataMap = common_data[fieldIndex] = new Map();
+				const commonDataMap = commonData[fieldIndex] = new Map();
 
 				for (let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
 					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
@@ -89,8 +126,18 @@ class WDC3 {
 			const isNormal = !(this.flags & 1);
 
 			const recordDataOfs = data.offset;
-			const recordDataSize = isNormal ? recordSize * header.recordCount : header.offsetRecordsEnd - header.fileOffset;
+			const recordsOfs = isWDC2 ? header.offsetMapOffset : header.offsetRecordsEnd;
+			const recordDataSize = isNormal ? recordSize * header.recordCount : recordsOfs - header.fileOffset;
 			const stringBlockOfs = recordDataOfs + recordDataSize;
+
+			let offsetMap;
+			if (isWDC2 && !isNormal) {
+				// offset_map_entry offset_map[header.max_id - header.min_id + 1];
+				const offsetMapCount = maxID - minID + 1;
+				offsetMap = new Array(offsetMapCount);
+				for (let i = 0, n = offsetMapCount; i < n; i++)
+					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+			}
 
 			data.seek(stringBlockOfs + header.stringTableSize);
 
@@ -99,26 +146,27 @@ class WDC3 {
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTable = new Map();
-			for(let i = 0; i < header.copyTableCount; i++)
+			const copyTableCount = isWDC2 ? (header.copyTableSize * 8) : header.copyTableCount
+			for(let i = 0; i < copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
 
-			// offset_map_entry offset_map[section_headers.offset_map_id_count];
-			const offsetMap = new Array(header.offsetMapIDCount);
-			for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
-				offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+			if (!isWDC2) {
+				// offset_map_entry offset_map[section_headers.offset_map_id_count];
+				offsetMap = new Array(header.offsetMapIDCount);
+				for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
+					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+			}
 
 			// relationship_map
-			// ToDo: Implement if needed.
 			if (header.relationshipDataSize > 0)
 				data.move((data.readUInt32LE() * 8) + 8);
 
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
-			data.move(header.offsetMapIDCount * 4);
+			if (!isWDC2)
+				data.move(header.offsetMapIDCount * 4);
 
-			sections[sectionIndex] = {
-				header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, copyTable
-			};
+			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, copyTable };
 		}
 
 		// Parse section records.
@@ -145,8 +193,12 @@ class WDC3 {
 
 			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
 			let outsideDataSize = 0;
-			for (let i = 0; i < sectionCount; i++)
-				outsideDataSize += i > sectionIndex ? sections[i].recordDataSize : sections[i].header.stringTableSize;
+			for (let i = 0; i < sectionCount; i++) {
+				if (i > sectionIndex)
+					outsideDataSize += sections[i].recordDataSize;
+				else if (i < sectionIndex)
+					outsideDataSize += sections[i].header.stringTableSize;
+			}
 
 			const hasIDMap = section.idList.length > 0;
 			for (let i = 0, n = header.recordCount; i < n; i++) {
@@ -255,4 +307,4 @@ class WDC3 {
 	}
 }
 
-module.exports = WDC3;
+module.exports = WDC;
