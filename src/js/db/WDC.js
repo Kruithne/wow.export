@@ -147,7 +147,7 @@ class WDC {
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTable = new Map();
 			const copyTableCount = isWDC2 ? (header.copyTableSize * 8) : header.copyTableCount
-			for(let i = 0; i < copyTableCount; i++)
+			for (let i = 0; i < copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
 
 			if (!isWDC2) {
@@ -252,8 +252,8 @@ class WDC {
 							break;
 							
 						case CompressionType.CommonData:
-							if (common_data[fieldIndex].has(recordID))
-								out[prop] = common_data[fieldIndex].get(recordID);
+							if (commonData[fieldIndex].has(recordID))
+								out[prop] = commonData[fieldIndex].get(recordID);
 							else
 								out[prop] = thisFieldInfo.fieldCompressionPacking[0]; // Default value
 							break;
