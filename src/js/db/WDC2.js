@@ -80,10 +80,11 @@ class WDC2 {
 			const recordDataSize = isNormal ? recordSize * header.recordCount : header.offsetMapOffset - header.fileOffset;
 			const stringBlockOfs = recordDataOfs + recordDataSize;
 
+			let offsetMap;
 			if (!isNormal) {
 				// offset_map_entry offset_map[header.max_id - header.min_id + 1];
 				const offsetMapCount = header.maxID - header.minID + 1;
-				const offsetMap = section.offsetMap = new Array(offsetMapCount);
+				offsetMap = new Array(offsetMapCount);
 				for (let i = 0, n = offsetMapCount; i < n; i++)
 					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
@@ -107,7 +108,7 @@ class WDC2 {
 			data.move(header.offsetMapIDCount * 4);
 
 			sections[sectionIndex] = {
-				header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList
+				header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap
 			};
 		}
 
