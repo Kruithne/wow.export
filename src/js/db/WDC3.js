@@ -175,7 +175,6 @@ class WDC3 {
 					if (data.offset > recordEnd)
 						throw new Error('DB table schema exceeds available record data.');
 
-					// ToDo: Add support for more compressed fields.
 					const thisFieldInfo = fieldInfo[fieldIndex];
 					switch (thisFieldInfo.fieldCompression) {
 						case CompressionType.None:
