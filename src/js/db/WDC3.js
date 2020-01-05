@@ -169,7 +169,7 @@ class WDC3 {
 					if (data.offset > recordEnd)
 						throw new Error('DB table schema exceeds available record data.');
 
-					// ToDo: Add support for compressed fields.
+					// ToDo: Add support for more compressed fields.
 					const thisFieldInfo = fieldInfo[fieldIndex];
 					switch(thisFieldInfo.fieldCompression){
 						case CompressionType.None:
@@ -193,6 +193,8 @@ class WDC3 {
 								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
 								case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
 								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
+								case FieldType.Int64: out[prop] = data.readInt64LE(count); break;
+								case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
 								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
 							}
 
@@ -206,9 +208,28 @@ class WDC3 {
 
 							break;
 						case CompressionType.Bitpacked:
+						case CompressionType.BitpackedSigned:
+							// ToDo: Everything is unsigned right now
+							const fieldSizeBytes = (thisFieldInfo.fieldSizeBits + (thisFieldInfo.fieldOffsetBits & 7) + 7) / 8;
+							if (fieldSizeBytes > 4)
+								throw new Error('This field will require 64-bit reading/bitmasking stuff, nyi/tested');
+
+							//const fieldOffsetByte = thisFieldInfo.fieldOffsetBits / 8;
+
+							// BREAK IN CASE OF 64 BITS, MAYBE
+							/*
+							const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
+							const result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
+							*/
+
+							const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
+							const result = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+
+							out[prop] = result;
+
+							break;
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
-						case CompressionType.BitpackedSigned:
 							break;
 					}
 
