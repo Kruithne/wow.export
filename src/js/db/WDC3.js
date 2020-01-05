@@ -59,7 +59,7 @@ class WDC3 {
 		for (let i = 0, n = fieldInfo.length; i < n; i++) {
 			fieldInfo[i] = {
 				fieldOffsetBits: data.readUInt16LE(),
-				fieldOffsetSize: data.readUInt16LE(),
+				fieldSizeBits: data.readUInt16LE(),
 				additionalDataSize: data.readUInt32LE(),
 				fieldCompression: data.readUInt32LE(),
 				fieldCompressionPacking: data.readUInt32LE(3)
@@ -170,7 +170,8 @@ class WDC3 {
 						throw new Error('DB table schema exceeds available record data.');
 
 					// ToDo: Add support for compressed fields.
-					switch(fieldInfo[fieldIndex].fieldCompression){
+					const thisFieldInfo = fieldInfo[fieldIndex];
+					switch(thisFieldInfo.fieldCompression){
 						case CompressionType.None:
 							let count;
 							let fieldType = type;
@@ -200,7 +201,7 @@ class WDC3 {
 							if(common_data[fieldIndex].has(recordID)){
 								out[prop] = common_data[fieldIndex].get(recordID);
 							}else{
-								out[prop] = fieldInfo[fieldIndex].fieldCompressionPacking[0]; // Default value
+								out[prop] = thisFieldInfo.fieldCompressionPacking[0]; // Default value
 							}
 
 							break;
