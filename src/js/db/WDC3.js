@@ -153,8 +153,14 @@ class WDC3 {
 					outsideDataSize += sections[i].header.stringTableSize;
 			}
 
+			const hasIDMap = section.idList.length > 0;
+
 			for (let i = 0, n = header.recordCount; i < n; i++) {
-				const recordID = section.idList[i];
+				let recordID;
+
+				if(hasIDMap)
+					recordID = section.idList[i];
+
 				const recordOfs = isNormal ? i * recordSize : offsetMap[i].offset;
 				const actualRecordSize = isNormal ? recordSize : offsetMap[i].size;
 				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
@@ -232,6 +238,9 @@ class WDC3 {
 						case CompressionType.BitpackedIndexedArray:
 							break;
 					}
+
+					if(!hasIDMap && fieldIndex == idIndex)
+						recordID = out[prop];
 
 					fieldIndex++;
 				}
