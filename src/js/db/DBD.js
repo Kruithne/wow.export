@@ -2,6 +2,7 @@ const util = require('util');
 const log = require('../log');
 const core = require('../core');
 const generics = require('../generics');
+const validTypes = ["int", "float", "string", "locstring"];
 
 module.exports = {
 	/**
@@ -20,8 +21,6 @@ module.exports = {
 		// Parse DBD
 		const columnDefinitions = new Map();
 		const versionDefinitions = [];
-
-		const validTypes = ["int", "float", "string", "locstring"];
 
 		const lines = data.readLines();
 		let lineNumber = 0;
