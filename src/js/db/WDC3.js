@@ -74,10 +74,10 @@ class WDC3 {
 		const common_data = new Array(fieldInfo.length);
 		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
 			const thisFieldInfo = fieldInfo[fieldIndex];
-			if(thisFieldInfo.fieldCompression === CompressionType.CommonData){
+			if (thisFieldInfo.fieldCompression === CompressionType.CommonData) {
 				const commonDataMap = common_data[fieldIndex] = new Map();
 
-				for(let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
+				for (let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
 					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
 			}
 		}
@@ -158,7 +158,7 @@ class WDC3 {
 			for (let i = 0, n = header.recordCount; i < n; i++) {
 				let recordID;
 
-				if(hasIDMap)
+				if (hasIDMap)
 					recordID = section.idList[i];
 
 				const recordOfs = isNormal ? i * recordSize : offsetMap[i].offset;
@@ -177,7 +177,7 @@ class WDC3 {
 
 					// ToDo: Add support for more compressed fields.
 					const thisFieldInfo = fieldInfo[fieldIndex];
-					switch(thisFieldInfo.fieldCompression){
+					switch (thisFieldInfo.fieldCompression) {
 						case CompressionType.None:
 							let count;
 							let fieldType = type;
@@ -206,30 +206,30 @@ class WDC3 {
 
 							break;
 						case CompressionType.CommonData:
-							if(common_data[fieldIndex].has(recordID)){
+							if (common_data[fieldIndex].has(recordID)) {
 								out[prop] = common_data[fieldIndex].get(recordID);
-							}else{
+							} else {
 								out[prop] = thisFieldInfo.fieldCompressionPacking[0]; // Default value
 							}
 
 							break;
 						case CompressionType.Bitpacked:
 						case CompressionType.BitpackedSigned:
-							// ToDo: Everything is unsigned right now
+							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness
 							const fieldSizeBytes = (thisFieldInfo.fieldSizeBits + (thisFieldInfo.fieldOffsetBits & 7) + 7) / 8;
-							if (fieldSizeBytes > 4)
-								throw new Error('This field will require 64-bit reading/bitmasking stuff, nyi/tested');
+							let result;
 
-							//const fieldOffsetByte = thisFieldInfo.fieldOffsetBits / 8;
-
-							// BREAK IN CASE OF 64 BITS, MAYBE
-							/*
-							const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
-							const result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
-							*/
-
-							const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
-							const result = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+							if (fieldSizeBytes > 4) {
+								throw new Error('This field will require 64-bit reading/bitmasking stuff, nyi');
+								// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing.
+								/*
+								const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
+								result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
+								*/
+							} else {
+								const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
+								result = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+							}
 
 							out[prop] = result;
 
@@ -239,7 +239,7 @@ class WDC3 {
 							break;
 					}
 
-					if(!hasIDMap && fieldIndex == idIndex)
+					if (!hasIDMap && fieldIndex === idIndex)
 						recordID = out[prop];
 
 					fieldIndex++;
