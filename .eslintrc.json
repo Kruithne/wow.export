@@ -1,0 +1,43 @@
+{
+    "root": true,
+    "ignorePatterns": ["lib/", "src/js/3D/lib/"],
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
+    "globals": {
+        "Vue": true,
+        "THREE": true,
+        "nw": true,
+        "BUILD_RELEASE": true,
+        "chrome": true,
+        "crash": true,
+        "getErrorDump": true
+    },
+    "env": {
+        "browser": true,
+        "es6": true,
+        "node": true
+    },
+    "rules": {
+        /* Overrides from recommended ruleset */
+        "no-unused-vars": "off",
+        "no-case-declarations": "off",
+
+        /* Custom */
+        "no-trailing-spaces": "off",
+        "indent": [
+            "error",
+            "tab",
+            { "SwitchCase": 1 }
+        ],
+        "keyword-spacing": "error"
+    },
+    "plugins": [
+        "vue"
+    ],
+    "extends": [
+        "plugin:vue/base",
+        "eslint:recommended"
+    ]
+
+}
