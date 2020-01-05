@@ -14,9 +14,10 @@ module.exports = {
 	 * Open a DB using a table reader based on the data format.
 	 * @param {string} fileName
 	 * @param {object} schema
+	 * @param {object} casc
 	 */
-	openTable: async (fileName, schema) => {
-		const data = await core.view.casc.getFileByName(fileName, true, false, true);
+	openTable: async (fileName, schema, casc = core.view.casc) => {
+		const data = await casc.getFileByName(fileName, true, false, true);
 		const magic = data.readUInt32LE();
 
 		const format = TABLE_FORMATS[magic];

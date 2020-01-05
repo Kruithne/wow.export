@@ -82,7 +82,7 @@ class CASC {
 	 */
 	async loadListfile(buildKey) {
 		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(buildKey, this.cache);
+		const entries = await listfile.loadListfile(buildKey, this.cache, this);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
 

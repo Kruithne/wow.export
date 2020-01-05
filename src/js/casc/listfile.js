@@ -5,6 +5,10 @@ const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
 
+const DBHandler = require('../db/DBHandler');
+const DB_ModelFileData = require('../db/schema/ModelFileData');
+const DB_TextureFileData = require('../db/schema/TextureFileData');
+
 const nameLookup = new Map();
 const idLookup = new Map();
 
@@ -13,8 +17,9 @@ const idLookup = new Map();
  * Returns the amount of file ID to filename mappings loaded.
  * @param {string} buildConfig
  * @param {BuildCache} cache
+ * @param {object} casc
  */
-const loadListfile = async (buildConfig, cache) => {
+const loadListfile = async (buildConfig, cache, casc) => {
 	log.write('Loading listfile for build %s', buildConfig);
 
 	let url = String(core.view.config.listfileURL);
@@ -100,9 +105,36 @@ const loadListfile = async (buildConfig, cache) => {
 		nameLookup.set(fileName, fileDataID);
 	}
 
-	log.write('%d listfile entries loaded', idLookup.size);
+	let unknownCount = 0;
+	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', DB_ModelFileData, '.m2', casc);
+	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', DB_TextureFileData, '.blp', casc);
+
+	log.write('%d listfile entries loaded (%d unknown entries)', idLookup.size, unknownCount);
 	return idLookup.size;
 }
+
+/**
+ * Load file IDs from a data table.
+ * @param {string} tableFile 
+ * @param {object} tableSchema 
+ * @param {string} ext 
+ * @param {object} casc
+ */
+const loadIDTable = async (tableFile, tableSchema, ext, casc) => {
+	let loadCount = 0;
+	const table = await DBHandler.openTable(tableFile, tableSchema, casc);
+	for (const row of table.rows.values()) {
+		const fileDataID = row.FileDataID;
+		if (!idLookup.has(fileDataID)) {
+			const fileName = 'unknown_' + fileDataID + ext;
+			idLookup.set(fileDataID, fileName);
+			nameLookup.set(fileName, fileDataID);
+			loadCount++;
+		}
+	}
+
+	return loadCount;
+};
 
 /**
  * Return an array of filenames ending with the given extension(s).
