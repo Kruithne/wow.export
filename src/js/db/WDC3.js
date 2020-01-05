@@ -98,7 +98,6 @@ class WDC3 {
 			const idList = data.readUInt32LE(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
-			// ToDo: Actually use this.
 			const copyTable = new Map();
 			for(let i = 0; i < header.copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
@@ -146,15 +145,10 @@ class WDC3 {
 
 			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
 			let outsideDataSize = 0;
-			for (let i = 0; i < sectionCount; i++) {
-				if (i > sectionIndex)
-					outsideDataSize += sections[i].recordDataSize;
-				else if (i < sectionIndex)
-					outsideDataSize += sections[i].header.stringTableSize;
-			}
+			for (let i = 0; i < sectionCount; i++)
+				outsideDataSize += i > sectionIndex ? sections[i].recordDataSize : sections[i].header.stringTableSize;
 
 			const hasIDMap = section.idList.length > 0;
-
 			for (let i = 0, n = header.recordCount; i < n; i++) {
 				let recordID;
 
@@ -204,14 +198,14 @@ class WDC3 {
 							}
 
 							break;
+							
 						case CompressionType.CommonData:
-							if (common_data[fieldIndex].has(recordID)) {
+							if (common_data[fieldIndex].has(recordID))
 								out[prop] = common_data[fieldIndex].get(recordID);
-							} else {
+							else
 								out[prop] = thisFieldInfo.fieldCompressionPacking[0]; // Default value
-							}
-
 							break;
+
 						case CompressionType.Bitpacked:
 						case CompressionType.BitpackedSigned:
 							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness
@@ -219,12 +213,10 @@ class WDC3 {
 							let result;
 
 							if (fieldSizeBytes > 4) {
-								throw new Error('This field will require 64-bit reading/bitmasking stuff, nyi');
+								throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
 								// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing.
-								/*
-								const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
-								result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
-								*/
+								// const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
+								// result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
 							} else {
 								const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
 								result = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
@@ -233,6 +225,7 @@ class WDC3 {
 							out[prop] = result;
 
 							break;
+
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
 							break;
