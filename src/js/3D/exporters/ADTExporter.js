@@ -653,7 +653,7 @@ class ADTExporter {
 			const foliageDir = path.join(dir, 'foliage');
 
 			const dbTextures = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
-			const dbDoodads = await DBHandler.openTable('DBFilesClient/GroundEffectDoodads.db2', DB_GroundEffectDoodad);
+			const dbDoodads = await DBHandler.openTable('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
 
 			for (const chunk of texAdt.texChunks) {
 				// Skip chunks that have no layers?
