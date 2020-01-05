@@ -386,9 +386,9 @@ class CASCRemote extends CASC {
      * Get the current build ID.
      * @returns {string}
      */
-    getBuildName() {
-        return this.build.VersionsName;
-    }
+	getBuildName() {
+		return this.build.VersionsName;
+	}
 }
 
 module.exports = CASCRemote;

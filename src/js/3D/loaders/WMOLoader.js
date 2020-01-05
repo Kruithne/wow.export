@@ -80,7 +80,7 @@ class WMOLoader {
 
 		return [x, y, z];
 	}
-};
+}
 
 const WMOChunkHandlers = {
 	// MVER (Version) [WMO Root, WMO Group]

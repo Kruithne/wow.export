@@ -10,16 +10,16 @@ const cp = require('child_process');
  * @param {array} out Array to be populated with results (automatically created).
  */
 const collectFiles = async (dir, out = []) => {
-    const entries = await fsp.readdir(dir, { withFileTypes: true });
-    for await (const entry of entries) {
-        const entryPath = path.join(dir, entry.name);
-        if (entry.isDirectory())
-            await collectFiles(entryPath, out);
-        else
-            out.push(entryPath);
-    }
+	const entries = await fsp.readdir(dir, { withFileTypes: true });
+	for await (const entry of entries) {
+		const entryPath = path.join(dir, entry.name);
+		if (entry.isDirectory())
+			await collectFiles(entryPath, out);
+		else
+			out.push(entryPath);
+	}
 
-    return out;
+	return out;
 };
 
 /**
@@ -51,17 +51,17 @@ const deleteDirectory = (dir) => {
  * @param {string} dir 
  */
 const directoryExists = async (dir) => {
-    return new Promise(resolve => {
-        fsp.access(dir).then(() => resolve(true)).catch(() => resolve(false));
-    });
+	return new Promise(resolve => {
+		fsp.access(dir).then(() => resolve(true)).catch(() => resolve(false));
+	});
 };
 
 (async () => {
-    console.log('Applying updates, please wait!');
+	console.log('Applying updates, please wait!');
 
-    // Ensure we were given a valid PID by whatever spawned us.
-    const pid = Number(argv[0]);
-    if (!isNaN(pid)) {
+	// Ensure we were given a valid PID by whatever spawned us.
+	const pid = Number(argv[0]);
+	if (!isNaN(pid)) {
 		// Wait for the parent process (PID) to terminate.
 		let isRunning = true;
 		while (isRunning) {
@@ -80,22 +80,22 @@ const directoryExists = async (dir) => {
 		console.log('No parent process?');
 	}
 
-    const installDir = path.dirname(path.resolve(process.execPath));
-    const updateDir = path.join(installDir, '.update');
+	const installDir = path.dirname(path.resolve(process.execPath));
+	const updateDir = path.join(installDir, '.update');
 
-    if (await directoryExists(updateDir)) {
-        const updateFiles = await collectFiles(updateDir);
-        for (const file of updateFiles) {
-            const relativePath = path.relative(updateDir, file);
-            const writePath = path.join(installDir, relativePath);
+	if (await directoryExists(updateDir)) {
+		const updateFiles = await collectFiles(updateDir);
+		for (const file of updateFiles) {
+			const relativePath = path.relative(updateDir, file);
+			const writePath = path.join(installDir, relativePath);
 
 			await fsp.mkdir(path.dirname(writePath), { recursive: true });
-            await fsp.copyFile(file, writePath).catch(() => {
-                console.log('UNABLE TO WRITE: %s', writePath);
-            });
+			await fsp.copyFile(file, writePath).catch(() => {
+				console.log('UNABLE TO WRITE: %s', writePath);
+			});
 		}
-    } else {
-        console.log('Unable to locate update files.');
+	} else {
+		console.log('Unable to locate update files.');
 	}
 	
 	// [GH-1] Expand this with support for further platforms as needed.

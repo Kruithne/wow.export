@@ -315,7 +315,9 @@ const deleteDirectory = async (dir) => {
 		}
 
 		await fsp.rmdir(dir);
-	} catch (e) {}
+	} catch (e) {
+		// Something failed to delete.
+	}
 	
 	return deleteSize;
 };

@@ -116,7 +116,7 @@ const exportSelectedMap = async () => {
  * @param {string} entry 
  */
 const parseMapEntry = (entry) => {
-	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^\)]+)\)/);
+	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^)]+)\)/);
 	if (!match)
 		throw new Error('Unexpected map entry');
 

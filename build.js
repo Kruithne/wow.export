@@ -120,7 +120,7 @@ const log = {
 	warn: (msg, ...params) => log.print(chalk.yellow('WARN ') + msg, ...params),
 	success: (msg, ...params) => log.print(chalk.green('DONE ') + msg, ...params),
 	info: (msg, ...params) => log.print(chalk.blue('INFO ') + msg, ...params),
-	print: (msg, ...params) => console.log(msg.replace(/\*([^\*]+)\*/gm, (m, g1) => chalk.cyan(g1)), ...params)
+	print: (msg, ...params) => console.log(msg.replace(/\*([^*]+)\*/gm, (m, g1) => chalk.cyan(g1)), ...params)
 };
 
 /**

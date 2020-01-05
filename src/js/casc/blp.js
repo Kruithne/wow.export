@@ -365,6 +365,8 @@ class BLPImage {
 	 * @private
 	 */
 	_marshalBGRA(canvasData, useAlpha) {
+		const data = this.rawData;
+		
 		if (canvasData) {
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;

@@ -21,7 +21,8 @@
     "rules": {
         /* Overrides from recommended ruleset */
         "no-unused-vars": "off",
-        "no-case-declarations": "off",
+		"no-case-declarations": "off",
+		"no-prototype-builtins": "off",
 
         /* Custom */
         "no-trailing-spaces": "off",
