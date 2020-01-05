@@ -146,7 +146,7 @@ class WDC {
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTable = new Map();
-			const copyTableCount = isWDC2 ? (header.copyTableSize * 8) : header.copyTableCount
+			const copyTableCount = isWDC2 ? (header.copyTableSize / 8) : header.copyTableCount
 			for (let i = 0; i < copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
 
