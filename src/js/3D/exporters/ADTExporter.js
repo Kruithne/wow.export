@@ -665,7 +665,7 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures[layer.effectID];
+					const groundEffectTexture = dbTextures.rows[layer.effectID];
 					if (!groundEffectTexture)
 						continue;
 
@@ -674,7 +674,7 @@ class ADTExporter {
 						if (!doodadID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads[doodadID];
+						const groundEffectDoodad = dbDoodads.rows[doodadID];
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							if (!modelID || foliageExportCache.has(modelID))
