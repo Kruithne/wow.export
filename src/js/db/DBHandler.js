@@ -1,12 +1,13 @@
 const log = require('../log');
 const core = require('../core');
 
-const WDC3 = require('./WDC3');
-const WDC2 = require('./WDC2');
+const WDC = require('./WDC');
 
-const WDC2_MAGIC = 0x32434457;
-const WDC3_MAGIC = 0x33434457;
-const CLS1_MAGIC = 0x434C5331;
+const TABLE_FORMATS = {
+	0x434C5331: { name: 'CLS1', id: WDC.FORMAT_WDC2 },
+	0x32434457: { name: 'WDC2', id: WDC.FORMAT_WDC2 },
+	0x33434457: { name: 'WDC3', id: WDC.FORMAT_WDC3 }
+};
 
 module.exports = {
 	/**
@@ -18,24 +19,14 @@ module.exports = {
 		const data = await core.view.casc.getFileByName(fileName, true, false, true);
 		const magic = data.readUInt32LE();
 
-		let table;
-		switch (magic) {
-			case WDC3_MAGIC:
-				log.write('Processing DB file %s as WDC3', fileName);
-				table = new WDC3(data, schema);
-				break;
+		const format = TABLE_FORMATS[magic];
+		if (!format)
+			throw new Error('Unsupported DB format: ' + magic);
 
-			case WDC2_MAGIC:
-			case CLS1_MAGIC:
-				log.write('Processing DB file %s as WDC2/CLS1', fileName);
-				table = new WDC2(data, schema);
-				break;
+		log.write('Processing DB file %s as %s', fileName, format.name);
+		const table = new WDC(data, schema, format.id);
 
-			default:
-				throw new Error('Unsupported DB format: ' + magic);
-		}
-
-		log.write('Extracted %d rows from %s', table.rows.size, fileName);
+		log.write('Parsed %s with %d rows', fileName, table.rows.size);
 		return table;
 	}
 };
