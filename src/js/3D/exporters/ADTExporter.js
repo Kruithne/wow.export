@@ -648,14 +648,12 @@ class ADTExporter {
 		}
 
 		// Export foliage.
-		//if (config.mapsIncludeFoliage) {
-		// ToDo: Need compression support in data tables.
-		if (false) {
+		if (config.mapsIncludeFoliage) {
 			const foliageExportCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
 
-			const dbTextures = await DBHandler.openTable('dbfilesclient/groundeffecttexture.db2', DB_GroundEffectTexture);
-			const dbDoodads = await DBHandler.openTable('dbfilesclient/groundeffectdoodad.db2', DB_GroundEffectDoodad);
+			const dbTextures = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+			const dbDoodads = await DBHandler.openTable('DBFilesClient/GroundEffectDoodads.db2', DB_GroundEffectDoodad);
 
 			for (const chunk of texAdt.texChunks) {
 				// Skip chunks that have no layers?
