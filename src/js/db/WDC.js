@@ -121,6 +121,7 @@ class WDC {
 
 		// data_sections[header.section_count];
 		const sections = new Array(sectionCount);
+		const copyTable = new Map();
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
 			const header = sectionHeaders[sectionIndex];
 			const isNormal = !(this.flags & 1);
@@ -145,7 +146,6 @@ class WDC {
 			const idList = data.readUInt32LE(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
-			const copyTable = new Map();
 			const copyTableCount = isWDC2 ? (header.copyTableSize / 8) : header.copyTableCount
 			for (let i = 0; i < copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
@@ -292,6 +292,10 @@ class WDC {
 				this.rows.set(recordID, out);
 			}
 		}
+
+		// Inflate duplicated rows.
+		for (const [destID, srcID] of copyTable)
+			this.rows.set(destID, this.rows.get(srcID));
 	}
 
 	readString() {
