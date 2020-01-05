@@ -1,6 +1,5 @@
 const log = require('../log');
 const core = require('../core');
-const dbd = require('./DBD');
 
 const WDC3 = require('./WDC3');
 const WDC2 = require('./WDC2');

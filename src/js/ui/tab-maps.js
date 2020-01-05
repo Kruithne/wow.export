@@ -6,7 +6,6 @@ const listfile = require('../casc/listfile');
 
 const DBHandler = require('../db/DBHandler');
 const DB_Map = require('../db/schema/Map');
-const DBD = require('../db/DBD');
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
@@ -129,8 +128,6 @@ core.events.once('screen-tab-maps', async () => {
 	core.view.isBusy++;
 	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
-	const dbd = await DBD.getSchemaForTable("Map");
-	console.log(dbd);
 	const table = await DBHandler.openTable('DBFilesClient/Map.db2', DB_Map);
 
 	const maps = [];
