@@ -1,5 +1,6 @@
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
+const log = require('../log');
 
 /**
  * Defines unified logic between WDC2 and WDC3.
@@ -105,7 +106,21 @@ class WDC {
 		}
 
 		// char pallet_data[header.pallet_data_size];
-		data.move(palletDataSize);
+		let prevPos = data.offset;
+
+		const palletData = new Array(fieldInfo.length);
+		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
+			const thisFieldInfo = fieldInfo[fieldIndex];
+			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
+				palletData[fieldIndex] = new Array();
+				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++)
+					palletData[fieldIndex][i] = data.readUInt32LE();
+			}
+		}
+
+		// ToDo: Do this in more places and with asserts
+		if ((prevPos + palletDataSize) !== data.offset)
+			log.write("Read incorrect amount of pallet data, expected %s, read %s", prevPos + palletDataSize, data.offset);
 
 		// char common_data[header.common_data_size];
 		const commonData = new Array(fieldInfo.length);
@@ -158,11 +173,13 @@ class WDC {
 			}
 
 			// relationship_map
+			// ToDo: Read
 			if (header.relationshipDataSize > 0)
 				data.move((data.readUInt32LE() * 8) + 8);
 
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
+			// ToDo: Read
 			if (!isWDC2)
 				data.move(header.offsetMapIDCount * 4);
 
@@ -218,17 +235,17 @@ class WDC {
 				for (const [prop, type] of Object.entries(this.schema)) {
 					// Prevent schema from flowing out-of-bounds for a record.
 					// We don't bother checking if the schema is too short, allowing for partial schema.
-					if (data.offset > recordEnd)
-						throw new Error('DB table schema exceeds available record data.');
+					//if (data.offset > recordEnd)
+					//	throw new Error('DB table schema exceeds available record data.');
 
 					const thisFieldInfo = fieldInfo[fieldIndex];
+					let count = 1;
+					let fieldType = type;
+					if (Array.isArray(type))
+						[fieldType, count] = type;
+
 					switch (thisFieldInfo.fieldCompression) {
 						case CompressionType.None:
-							let count;
-							let fieldType = type;
-							if (Array.isArray(type))
-								[fieldType, count] = type;
-
 							switch (fieldType) {
 								case FieldType.String:
 									const ofs = data.readUInt32LE();
@@ -280,6 +297,20 @@ class WDC {
 
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
+							// ToDo: What follows is incredibly broken and outputs wrong data, but data nonetheless
+							if (count > 1){
+								out[prop] = new Array(count);
+								for (let i = 0; i < count; i++){
+									const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
+									let res = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+									out[prop][i] = palletData[fieldIndex][res];
+								}
+							} else {
+								const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
+								let res = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+								out[prop] = palletData[fieldIndex][res];
+							}
+
 							break;
 					}
 
