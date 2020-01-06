@@ -1,6 +1,5 @@
 const core = require('../core');
 const log = require('../log');
-const util = require('util');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');

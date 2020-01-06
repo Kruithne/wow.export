@@ -1,6 +1,3 @@
-const path = require('path');
-const fsp = require('fs').promises;
-const util = require('util');
 const log = require('../log');
 const constants = require('../constants');
 const CASC = require('./casc-source');

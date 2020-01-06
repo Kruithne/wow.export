@@ -1,4 +1,3 @@
-const assert = require('assert').strict;
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
 const log = require('../log');

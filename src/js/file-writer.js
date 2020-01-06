@@ -1,5 +1,3 @@
-const fsp = require('fs').promises;
-
 class FileWriter {
 	/**
 	 * Construct a new FileWriter instance.

@@ -559,6 +559,10 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			// Structure the module tree in order of dependencies.
 			orderDependencies(moduleTree, moduleTree[0]);
 
+			// List of modules defined in config as "builtin".
+			// These will be inlined above all other modules and not assigned an ID.
+			const builtins = config.builtins.map(e => path.resolve(e));
+
 			// Assign every module a globally unique ID to prevent any variable collision.
 			// The actual value doesn't matter since it will be minified later. We also
 			// calculate the overall size of all code pre-merge/minification here.
@@ -571,6 +575,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				rawSize += mod.data.length;
 			}
 
+			let merged = '(() => {\n';
 			for (const mod of moduleTree) {
 				// Replace all import statements with ID assignments.
 				const data = new DynamicString(mod.data);
@@ -588,15 +593,21 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					data.sub(ex.start, ex.end, 'return ' + exportStatement);
 				}
 
-				// Wrap modules in self-executing function.
-				mod.data = '(() => {\n' + data.toString() + '\n})();';
+				if (!builtins.includes(mod.path)) {
+					// Wrap modules in self-executing function.
+					mod.data = '(() => {\n' + data.toString() + '\n})();';
 
-				// Everything except for the entry-point needs to be accessible.
-				if (!mod.isRoot)
-					mod.data = 'const ' + mod.id + ' = ' + mod.data;
+					// Everything except for the entry-point needs to be accessible.
+					if (!mod.isRoot)
+						mod.data = 'const ' + mod.id + ' = ' + mod.data;
+				} else {
+					// Builtin modules get directly inlined above everything.
+					mod.builtin = true;
+					merged += '\n' + data.toString() + '\n';
+				}
 			}
 
-			const merged = moduleTree.map(e => e.data).join('\n');
+			merged += moduleTree.filter(e => !e.builtin).map(e => e.data).join('\n') + '\n})();';
 			const minified = terser.minify(merged, config.terserConfig);
 
 			if (minified.error)

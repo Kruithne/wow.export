@@ -1,9 +1,3 @@
-const util = require('util');
-const crypto = require('crypto');
-const zlib = require('zlib');
-const path = require('path');
-const fsp = require('fs').promises;
-
 const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
 	READ_UINT: Buffer.prototype.readUIntLE,
@@ -762,7 +756,7 @@ class BufferWrapper {
 	 * @param {string} encoding Output encoding, defaults to 'hex'.
 	 */
 	calculateHash(hash = 'md5', encoding = 'hex') {
-		return crypto.createHash(hash).update(this._buf).digest(encoding);
+		return node_crypto.createHash(hash).update(this._buf).digest(encoding);
 	}
 
 	/**

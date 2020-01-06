@@ -1,6 +1,3 @@
-const path = require('path');
-const fs = require('fs');
-const fsp = fs.promises;
 const log = require('../log');
 const constants = require('../constants');
 const generics = require('../generics');

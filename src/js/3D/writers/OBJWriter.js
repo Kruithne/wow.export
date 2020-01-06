@@ -1,4 +1,3 @@
-const path = require('path');
 const constants = require('../../constants');
 const generics = require('../../generics');
 const FileWriter = require('../../file-writer');

@@ -1,4 +1,3 @@
-const util = require('util');
 const BufferWrapper = require('../buffer');
 const Salsa20 = require('./salsa20');
 const tactKeys = require('./tact-keys');

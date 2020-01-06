@@ -1,9 +1,3 @@
-const path = require('path');
-const util = require('util');
-const fs = require('fs');
-const fsp = fs.promises;
-const zlib = require('zlib');
-const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
 
@@ -257,7 +251,7 @@ const filesize = (input) => {
 const getFileHash = async (file, method, encoding) => {
 	return new Promise(resolve => {
 		const fd = fs.createReadStream(file);
-		const hash = crypto.createHash(method);
+		const hash = node_crypto.createHash(method);
 		
 		fd.on('data', chunk => hash.update(chunk));
 		fd.on('end', () => resolve(hash.digest(encoding)));

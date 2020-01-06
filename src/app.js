@@ -55,9 +55,10 @@ crash = (errorCode, errorText) => {
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
 
+// Import builtin Node modules.
+require('./builtins');
+
 // Imports
-const os = require('os');
-const path = require('path');
 const constants = require('./js/constants');
 const generics = require('./js/generics');
 const updater = require('./js/updater');
@@ -66,7 +67,6 @@ const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const blender = require('./js/blender');
-const fsp = require('fs').promises;
 
 require('./js/components/listbox');
 require('./js/components/checkboxlist');

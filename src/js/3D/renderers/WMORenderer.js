@@ -1,4 +1,3 @@
-const util = require('util');
 const core = require('../../core');
 const log = require('../../log');
 

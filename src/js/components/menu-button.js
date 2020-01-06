@@ -1,5 +1,3 @@
-const util = require('util');
-
 Vue.component('menu-button', {
 	/**
 	 * options: An array of strings denoting options shown in the menu.

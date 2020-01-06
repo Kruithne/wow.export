@@ -1,4 +1,3 @@
-const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
 

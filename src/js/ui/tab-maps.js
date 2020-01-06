@@ -1,7 +1,5 @@
-const util = require('util');
 const core = require('../core');
 const log = require('../log');
-const path = require('path');
 const listfile = require('../casc/listfile');
 
 const DBHandler = require('../db/DBHandler');

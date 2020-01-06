@@ -1,5 +1,3 @@
-const fs = require('fs');
-const util = require('util');
 const constants = require('./constants');
 
 const MAX_LOG_POOL = 1000;
