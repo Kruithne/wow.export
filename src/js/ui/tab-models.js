@@ -215,7 +215,7 @@ core.registerDropHandler({
 
 // The first time the user opens up the model tab, initialize 3D preview.
 core.events.once('screen-tab-models', () => {
-	camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 10);
+	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 10);
 
 	scene = new THREE.Scene();
 	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
