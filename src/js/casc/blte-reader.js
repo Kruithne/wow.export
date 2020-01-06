@@ -1,3 +1,8 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
 const BufferWrapper = require('../buffer');
 const Salsa20 = require('./salsa20');
 const tactKeys = require('./tact-keys');

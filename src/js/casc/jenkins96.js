@@ -1,6 +1,10 @@
-// Based off original works by Robert John Jenkins Junior (Port by bryc).
-// https://en.wikipedia.org/wiki/Jenkins_hash_function
-
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	Based off original works by Robert John Jenkins Junior (Port by bryc).
+	https://en.wikipedia.org/wiki/Jenkins_hash_function
+	License: MIT
+ */
 module.exports = (k, init = 0, init2 = 0) => {
 	let len = k.length, o = 0,
 		a = 0xDEADBEEF + len + init | 0,

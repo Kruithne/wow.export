@@ -1,4 +1,9 @@
-// Based off original works by Dmitry Chestnykh <dmitry@codingrobots.com>
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	Based off original works by Dmitry Chestnykh <dmitry@codingrobots.com>
+	License: MIT
+ */
 
 const BufferWrapper = require('../buffer');
 

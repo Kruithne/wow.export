@@ -1,3 +1,9 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
+
 const GEOSET_GROUPS = {
 	0: 'Hair',
 	100: 'FacialA',

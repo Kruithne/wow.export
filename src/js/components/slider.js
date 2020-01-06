@@ -1,3 +1,8 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
 Vue.component('slider', {
 	/**
 	 * value: Slider value between 0 and 1.

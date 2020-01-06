@@ -1,3 +1,8 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
 const core = require('../../core');
 const constants = require('../../constants');
 const listfile = require('../../casc/listfile');

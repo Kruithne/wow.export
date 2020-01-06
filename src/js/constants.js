@@ -1,3 +1,9 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
+
 // This file defines constants used throughout the application.
 const INSTALL_PATH = nw.App.startPath;
 const DATA_PATH = nw.App.dataPath;

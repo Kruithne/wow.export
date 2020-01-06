@@ -1,3 +1,9 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
+
 const argv = process.argv.splice(2);
 const fs = require('fs');
 const fsp = fs.promises;

@@ -1,3 +1,8 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
 const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
 	READ_UINT: Buffer.prototype.readUIntLE,

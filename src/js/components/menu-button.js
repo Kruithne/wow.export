@@ -1,3 +1,8 @@
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
 Vue.component('menu-button', {
 	/**
 	 * options: An array of strings denoting options shown in the menu.

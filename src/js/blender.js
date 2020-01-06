@@ -1,4 +1,10 @@
-// This class provides helper functions for managing the Blender add-on
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
+ */
+
+// This module provides helper functions for managing the Blender add-on
 // that ships with wow.export and the userland installation of it.
 const constants = require('./constants');
 const generics = require('./generics');
