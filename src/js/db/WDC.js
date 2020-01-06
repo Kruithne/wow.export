@@ -1,6 +1,5 @@
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
-const log = require('../log');
 
 /**
  * Defines unified logic between WDC2 and WDC3.
