@@ -46,6 +46,9 @@ class WMOExporter {
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
+		const groupMask = this.groupMask;
+		const doodadSetMask = this.doodadSetMask;
+
 		const wmoName = path.basename(out, '.wmo');
 		obj.setName(wmoName);
 
@@ -102,7 +105,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (this.groupMask && !this.groupMask[i].checked)
+			if (groupMask && !groupMask[i].checked)
 				continue;
 
 			// 3 verts per indicies.
@@ -172,7 +175,7 @@ class WMOExporter {
 		const doodadSets = wmo.doodadSets;
 		for (let i = 0, n = doodadSets.length; i < n; i++) {
 			// Skip disabled doodad sets.
-			if (this.doodadSetMask && (!this.doodadSetMask[i] || !this.doodadSetMask[i].checked))
+			if (doodadSetMask && (!doodadSetMask[i] || !doodadSetMask[i].checked))
 				continue;
 
 			const set = doodadSets[i];

@@ -1,6 +1,7 @@
 0.1.8
 - Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
 - Foliage doodads can now be exported along with map tiles in the map exporter.
+- Fixed issue that caused WMO exports to error if you switched to another model during export.
 - Fixed texture files for exported WMOs incorrectly having alpha channels (transparency).
 - Fixed issue that prevented certain models (and thus some map tiles) from exporting.
 
