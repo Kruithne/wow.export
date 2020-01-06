@@ -324,6 +324,16 @@ Vue.component('map-viewer', {
 				const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 				const index = (point.tileX * MAP_SIZE) + point.tileY;
 
+				if (this.mask) {
+					// If we have a WDT, and this tile is not defined, disallow selection.
+					if (this.mask[index] !== 1)
+						return;
+				} else {
+					// No WDT, disallow selection if tile is not rendered.
+					if (typeof state.cache[index] !== 'object')
+						return;
+				}
+
 				// Either select or deselect depending on current state.
 				const check = this.selection.indexOf(index);
 				if (check > -1)
