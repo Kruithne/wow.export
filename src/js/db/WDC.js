@@ -194,7 +194,7 @@ class WDC {
 			const isNormal = section.isNormal;
 
 			// Skip parsing entries from encrypted sections.
-			if (section.tactKeyHash !== 0n) {
+			if (section.tactKeyHash !== BigInt(0)) {
 				let isZeroed = true;
 				data.seek(section.recordDataOfs);
 				for (let i = 0, n = section.recordDataSize; i < n; i++) {
