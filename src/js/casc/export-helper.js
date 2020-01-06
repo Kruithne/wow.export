@@ -81,7 +81,10 @@ class ExportHelper {
 
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
-			core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? TOAST_OPT_DIR : null);
+			if (this.count > 1)
+				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? TOAST_OPT_DIR : null);
+			else
+				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? TOAST_OPT_DIR : null);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			core.setToast('info', util.format('Export complete, but %d %s failed to export.', this.failed, this.unitFormatted), TOAST_OPT_LOG);
@@ -102,6 +105,7 @@ class ExportHelper {
 	mark(item, state, error) {
 		if (state) {
 			log.write('Successfully exported %s', item);
+			this.lastItem = item;
 			this.succeeded++;
 		} else {
 			log.write('Failed to export %s (%s)', item, error);
