@@ -1,3 +1,4 @@
+const assert = require('assert').strict;
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
 const log = require('../log');
@@ -118,9 +119,8 @@ class WDC {
 			}
 		}
 
-		// ToDo: Do this in more places and with asserts
-		if ((prevPos + palletDataSize) !== data.offset)
-			log.write("Read incorrect amount of pallet data, expected %s, read %s", prevPos + palletDataSize, data.offset);
+		// Ensure we've read the expected amount of pallet data.
+		assert.strictEqual(data.offset, prevPos + palletDataSize, 'Read incorrect amount of pallet data');
 
 		// char common_data[header.common_data_size];
 		const commonData = new Array(fieldInfo.length);
