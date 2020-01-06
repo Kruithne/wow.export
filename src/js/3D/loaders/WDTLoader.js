@@ -67,6 +67,27 @@ const WDTChunkHandlers = {
 				};
 			}
 		}
+	},
+
+	// MWMO (World WMO)
+	0x4D574D4F: function(data, chunkSize) {
+		this.worldModel = data.readString(chunkSize).replace('\0', '');
+	},
+
+	// MODF (World WMO Placement)
+	0x4D4F4446: function(data) {
+		this.worldModelPlacement = {
+			id: data.readUInt32LE(),
+			uid: data.readUInt32LE(),
+			position: data.readFloatLE(3),
+			rotation: data.readFloatLE(3),
+			upperExtents: data.readFloatLE(3),
+			lowerExtents: data.readFloatLE(3),
+			flags: data.readUInt16LE(),
+			doodadSetIndex: data.readUInt16LE(),
+			nameSet: data.readUInt16LE(),
+			padding: data.readUInt16LE()
+		};
 	}
 };
 

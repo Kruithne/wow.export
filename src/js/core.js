@@ -61,6 +61,7 @@ const view = {
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.
 	mapViewerMaps: [], // Available maps for the map viewer.
+	mapViewerHasWorldModel: false, // Does selected map have a world model?
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.
 	mapViewerSelectedMap: null, // Currently selected map.
 	mapViewerChunkMask: null, // Map viewer chunk mask.

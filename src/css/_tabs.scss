@@ -85,13 +85,19 @@
 	}
 }
 
-.preview-controls {
+.preview-controls, .spaced-preview-controls {
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
 	margin-right: 20px;
 	grid-column: 2;
 	grid-row: 2;
+}
+
+.spaced-preview-controls {
+	input {
+		margin-left: 5px;
+	}
 }
 
 .preview-container {

@@ -8,9 +8,11 @@ const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
 const ExportHelper = require('../casc/export-helper');
+const WMOExporter = require('../3D/exporters/WMOExporter');
 
 let selectedMapID;
 let selectedMapDir;
+let selectedWDT;
 
 /**
  * Load a map into the map viewer.
@@ -21,14 +23,21 @@ const loadMap = async (mapID, mapDir) => {
 	selectedMapID = mapID;
 	selectedMapDir = mapDir;
 
+	selectedWDT = null;
+	core.view.mapViewerHasWorldModel = false;
+
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDir, mapDir);
 	log.write('Loading map preview for %s (%d)', mapDir, mapID);
 
 	try {
 		const data = await core.view.casc.getFileByName(wdtPath);
-		const wdt = new WDTLoader(data);
+		const wdt = selectedWDT = new WDTLoader(data);
 		wdt.load();
+
+		// Enable the 'Export Global WMO' button if available.
+		if (wdt.worldModelPlacement)
+			core.view.mapViewerHasWorldModel = true;
 
 		core.view.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
@@ -81,6 +90,48 @@ const loadMapTile = async (x, y, size) => {
 		// Map tile does not exist or cannot be read.
 		return false;
 	}
+};
+
+const exportSelectedMapWMO = async () => {
+	const helper = new ExportHelper(1, 'WMO');
+	helper.start();
+
+	try {
+		if (!selectedWDT || !selectedWDT.worldModelPlacement)
+			throw new Error('Map does not contain a world model.');
+
+		const placement = selectedWDT.worldModelPlacement;
+		let fileDataID = 0;
+		let fileName;
+
+		if (selectedWDT.worldModel) {
+			fileName = selectedWDT.worldModel;
+			fileDataID = listfile.getByFilename(fileName);
+
+			if (!fileDataID)
+				throw new Error('Invalid world model path: ' + fileName);
+		} else {
+			if (placement.id === 0)
+				throw new Error('Map does not define a valid world model.');
+			
+			fileDataID = placement.id;
+			fileName = listfile.getByID(fileDataID) || 'unknown_' + fileDataID + '.wmo';
+		}
+
+		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), '.obj');
+
+		const data = await core.view.casc.getFile(fileDataID);
+		const wmo = new WMOExporter(data, fileDataID);
+
+		wmo.setDoodadSetMask({ [placement.doodadSetIndex]: { checked: true } });
+		await wmo.exportAsOBJ(exportPath);
+
+		helper.mark(fileName, true);
+	} catch (e) {
+		helper.mark('world model', false, e.message);
+	}
+
+	helper.finish();
 };
 
 const exportSelectedMap = async () => {
@@ -157,6 +208,7 @@ core.events.once('init', () => {
 		}
 	});
 
-	// Track when user clicks to export a map.
+	// Track when user clicks to export a map or world model.
 	core.events.on('click-export-map', () => exportSelectedMap());
+	core.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
 });
