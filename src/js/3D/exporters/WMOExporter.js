@@ -79,7 +79,7 @@ class WMOExporter {
 					const texPath = path.join(path.dirname(out), texFile);
 
 					log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-					await blp.saveToFile(texPath, 'image/png', true);
+					await blp.saveToFile(texPath, 'image/png', material.blendMode !== 0);
 
 					mtl.addMaterial(fileDataID, texFile);
 					materialMap.set(i, fileDataID);
