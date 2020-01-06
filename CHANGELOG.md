@@ -1,5 +1,7 @@
 0.1.8
-- Fix issue that prevented certain map tiles from exporting.
+- Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
+- Foliage doodads can now be exported along with map tiles in the map exporter.
+- Fix issue that prevented certain models (and thus some map tiles) from exporting.
 
 0.1.7 (04-01-2020)
 - Users will now be prompted when a new version of the Blender add-on is available.
