@@ -326,10 +326,10 @@ class ADTExporter {
 
 					if (!isHole) {
 						const indOfs = ofs + j;
-						indicies.push(indOfs + 8, indOfs - 9, indOfs);
-						indicies.push(indOfs - 9, indOfs - 8, indOfs);
-						indicies.push(indOfs - 8, indOfs + 9, indOfs);
-						indicies.push(indOfs + 9, indOfs + 8, indOfs);
+						indicies.push(indOfs, indOfs - 9, indOfs + 8);
+						indicies.push(indOfs, indOfs - 8, indOfs - 9);
+						indicies.push(indOfs, indOfs + 9, indOfs - 8);
+						indicies.push(indOfs, indOfs + 8, indOfs + 9);
 					}
 
 					if (!((j + 1) % (9 + 8)))
