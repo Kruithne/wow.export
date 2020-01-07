@@ -162,8 +162,13 @@ const RootMCNKChunkHandlers = {
 	// MCNR (Normals)
 	0x4D434E52: function(data) {
 		const normals = this.normals = new Array(145);
-		for (let i = 0; i < 145; i++)
-			normals[i] = data.readInt8(3);
+		for (let i = 0; i < 145; i++) {
+			const x = data.readInt8();
+			const z = data.readInt8();
+			const y = data.readInt8();
+
+			normals[i] = [x, y, z];
+		}
 	},
 
 	// MCBB (Blend Batches)
