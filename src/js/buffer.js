@@ -434,7 +434,7 @@ class BufferWrapper {
 	 * @param {string} encoding 
 	 */
 	readString(length = -1, encoding = 'utf8') {
-		if (!length) // Default to consuming all remaining bytes.
+		if (length < 0) // Default to consuming all remaining bytes.
 			length = this.remainingBytes;
 
 		this._checkBounds(length);
