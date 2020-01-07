@@ -473,6 +473,24 @@ document.addEventListener('click', function(e) {
 		blender.checkLocalVersion();
 	}
 
+	// Load the changelog when the user opens the screen.
+	core.events.on('screen-changelog', () => {
+		setImmediate(async () => {
+			const element = document.getElementById('changelog-text');
+
+			if (BUILD_RELEASE) {
+				try {
+					const text = await fsp.readFile('./src/CHANGELOG.md', 'utf8');
+					element.textContent = text;
+				} catch (e) {
+					element.textContent = 'Error loading changelog';
+				}
+			} else {
+				element.textContent = 'Cannot load changelog in DEBUG mode';
+			}
+		});
+	});
+
 	// Set source select as the currently active interface screen.
 	core.view.setScreen('source-select');
 })();

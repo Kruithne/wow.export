@@ -87,6 +87,35 @@ body {
 	}
 }
 
+#changelog {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	padding: 10px 20px 20px 20px;
+
+	h1 {
+		margin-bottom: 10px;
+	}
+
+	pre {
+		border: 1px solid var(--border);
+		background: var(--background-dark);
+		font-size: 20px;
+		padding: 20px;
+		box-shadow: rgba(0, 0, 0, 0.45) 0 0 20px 0 inset;
+		overflow: auto;
+	}
+
+	input {
+		margin: 20px auto;
+		width: 200px;
+	}
+}
+
 #blender-info {
 	position: absolute;
 	top: 0;
@@ -185,6 +214,10 @@ body {
 
 	&-reload::before {
 		content: '\f0e2';
+	}
+
+	&-changes::before {
+		content: '\f03a';
 	}
 
 	&-settings::before {
