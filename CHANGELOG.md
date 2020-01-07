@@ -1,4 +1,4 @@
-0.1.8
+0.1.8 (Unreleased)
 - Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
 - Foliage doodads can now be exported along with map tiles in the map exporter.
 - Global map WMOs can now be exported for maps that contain them (such as Stormwind Stockade).
