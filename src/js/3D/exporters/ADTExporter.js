@@ -365,205 +365,207 @@ class ADTExporter {
 		await obj.write();
 		await mtl.write();
 
-		if (quality <= 512) {
-			// Use minimaps for cheap textures.
-			const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
-			const data = await casc.getFileByName(tilePath, false, true);
-			const blp = new BLPFile(data);
+		if (quality > 0) {
+			if (quality <= 512) {
+				// Use minimaps for cheap textures.
+				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
+				const data = await casc.getFileByName(tilePath, false, true);
+				const blp = new BLPFile(data);
 
-			// Draw the BLP onto a raw-sized canvas.
-			const canvas = blp.toCanvas(false);
+				// Draw the BLP onto a raw-sized canvas.
+				const canvas = blp.toCanvas(false);
 
-			// Scale the image down by copying the raw canvas onto a
-			// scaled canvas, and then returning the scaled image data.
-			const scale = quality / blp.scaledWidth;
-			const scaled = document.createElement('canvas');
-			scaled.width = quality;
-			scaled.height = quality;
+				// Scale the image down by copying the raw canvas onto a
+				// scaled canvas, and then returning the scaled image data.
+				const scale = quality / blp.scaledWidth;
+				const scaled = document.createElement('canvas');
+				scaled.width = quality;
+				scaled.height = quality;
 
-			const ctx = scaled.getContext('2d');
-			ctx.scale(scale, scale);
-			ctx.drawImage(canvas, 0, 0);
+				const ctx = scaled.getContext('2d');
+				ctx.scale(scale, scale);
+				ctx.drawImage(canvas, 0, 0);
 
-			const buf = await BufferWrapper.fromCanvas(scaled, 'image/png');
-			await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
-		} else {
-			// Create new GL context and compile shaders.
-			if (!gl) {
-				glCanvas = document.createElement('canvas');
-				gl = glCanvas.getContext('webgl');
-
-				await compileShaders();
-			}
-
-			// Materials
-			const materialIDs = texAdt.diffuseTextureFileDataIDs;
-			const heightIDs = texAdt.heightTextureFileDataIDs;
-			const texParams = texAdt.texParams;
-
-			const materials = new Array(materialIDs.length);
-			for (let i = 0, n = materials.length; i < n; i++) {
-				const diffuseFileDataID = materialIDs[i];
-				const heightFileDataID = heightIDs[i];
-
-				const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 };
-				mat.diffuseTex = await loadTexture(diffuseFileDataID);
-
-				if (texParams && texParams[i]) {
-					const params = texParams[i];
-					mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
-
-					if (params.height !== 0 || params.offset !== 1) {
-						mat.heightScale = params.height;
-						mat.heightOffset = params.offset;
-						mat.heightTex = heightFileDataID ? await loadTexture(heightFileDataID) : mat.diffuseTex;
-					}
-				}
-			}
-
-			const aVertexPosition = gl.getAttribLocation(glShaderProg, 'aVertexPosition');
-			const aTexCoord = gl.getAttribLocation(glShaderProg, 'aTextureCoord');
-			const aVertexColor = gl.getAttribLocation(glShaderProg, 'aVertexColor');
-
-			const uLayers = new Array(4);
-			const uScales = new Array(4);
-			const uHeights = new Array(4);
-			const uBlends = new Array(4);
-
-			for (let i = 0; i < 4; i++) {
-				uLayers[i] = gl.getUniformLocation(glShaderProg, 'pt_layer' + i);
-				uScales[i] = gl.getUniformLocation(glShaderProg, 'layerScale' + i);
-				uHeights[i] = gl.getUniformLocation(glShaderProg, 'pt_height' + i);
-
-				if (i > 0)
-					uBlends[i] = gl.getUniformLocation(glShaderProg, 'pt_blend' + i);
-			}
-
-			const uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
-			const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
-			const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
-			const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
-			const uZoom = gl.getUniformLocation(glShaderProg, 'uZoom');
-
-			if (splitTextures) {
-				glCanvas.width = quality / 16;
-				glCanvas.height = quality / 16;
+				const buf = await BufferWrapper.fromCanvas(scaled, 'image/png');
+				await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
 			} else {
-				glCanvas.width = quality;
-				glCanvas.height = quality;
-			}
+				// Create new GL context and compile shaders.
+				if (!gl) {
+					glCanvas = document.createElement('canvas');
+					gl = glCanvas.getContext('webgl');
 
-			clearCanvas();
+					await compileShaders();
+				}
 
-			gl.uniform2f(uResolution, TILE_SIZE, TILE_SIZE);
+				// Materials
+				const materialIDs = texAdt.diffuseTextureFileDataIDs;
+				const heightIDs = texAdt.heightTextureFileDataIDs;
+				const texParams = texAdt.texParams;
 
-			const vertexBuffer = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray(aVertexPosition);
-			gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+				const materials = new Array(materialIDs.length);
+				for (let i = 0, n = materials.length; i < n; i++) {
+					const diffuseFileDataID = materialIDs[i];
+					const heightFileDataID = heightIDs[i];
 
-			const uvBuffer = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvsBake), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray(aTexCoord);
-			gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+					const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 };
+					mat.diffuseTex = await loadTexture(diffuseFileDataID);
 
-			const vcBuffer = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER, vcBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray(aVertexColor);
-			gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
+					if (texParams && texParams[i]) {
+						const params = texParams[i];
+						mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
 
-			const firstChunk = rootAdt.chunks[0];
-			const deltaX = firstChunk.position[1] - TILE_SIZE;
-			const deltaY = firstChunk.position[0] - TILE_SIZE;
-
-			if (!splitTextures)
-				gl.uniform2f(uTranslation, -deltaX, -deltaY);
-
-			gl.uniform1f(uZoom, splitTextures ? 0.0625 : 1);
-
-			let chunkID = 0;
-			for (let x = 0; x < 16; x++) {
-				for (let y = 0; y < 16; y++) {
-					if (splitTextures) {
-						const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
-						const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
-
-						gl.uniform2f(uTranslation, ofsX, ofsY);
-					}
-
-					const chunkIndex = (x * 16) + y;
-					const texChunk = texAdt.texChunks[chunkIndex];
-					const indicies = chunkMeshes[chunkIndex];
-
-					const alphaLayers = texChunk.alphaLayers || [];
-					const alphaTextures = new Array(alphaLayers.length);
-
-					for (let i = 1; i < alphaLayers.length; i++) {
-						gl.activeTexture(gl.TEXTURE3 + i);
-
-						const alphaTex = bindAlphaLayer(alphaLayers[i]);
-						gl.bindTexture(gl.TEXTURE_2D, alphaTex);
-						gl.uniform1i(uBlends[i], i + 3);
-
-						// Store to clean up after render.
-						alphaTextures[i] = alphaTex;
-					}
-
-					const texLayers = texChunk.layers;
-					const heightScales = new Array(4).fill(1);
-					const heightOffsets = new Array(4).fill(1);
-
-					for (let i = 0, n = texLayers.length; i < n; i++) {
-						const mat = materials[texLayers[i].textureId];							
-						gl.activeTexture(gl.TEXTURE0 + i);
-						gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
-
-						gl.uniform1i(uLayers[i], i);
-						gl.uniform1f(uScales[i], mat.scale);
-
-						if (mat.heightTex) {
-							gl.activeTexture(gl.TEXTURE7 + i);
-							gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
-
-							gl.uniform1i(uHeights[i], 7 + i);
-							heightScales[i] = mat.heightScale;
-							heightOffsets[i] = mat.heightOffset;
+						if (params.height !== 0 || params.offset !== 1) {
+							mat.heightScale = params.height;
+							mat.heightOffset = params.offset;
+							mat.heightTex = heightFileDataID ? await loadTexture(heightFileDataID) : mat.diffuseTex;
 						}
 					}
-
-					gl.uniform4f(uHeightScale, ...heightScales);
-					gl.uniform4f(uHeightOffset, ...heightOffsets);
-
-					const indexBuffer = gl.createBuffer();
-					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
-					gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
-
-					unbindAllTextures();
-					
-					// Destroy alpha layers rendered for the tile.
-					for (const tex of alphaTextures)
-						gl.deleteTexture(tex);
-
-					// Save this individual chunk.
-					if (splitTextures)
-						await saveCanvas(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
 				}
+
+				const aVertexPosition = gl.getAttribLocation(glShaderProg, 'aVertexPosition');
+				const aTexCoord = gl.getAttribLocation(glShaderProg, 'aTextureCoord');
+				const aVertexColor = gl.getAttribLocation(glShaderProg, 'aVertexColor');
+
+				const uLayers = new Array(4);
+				const uScales = new Array(4);
+				const uHeights = new Array(4);
+				const uBlends = new Array(4);
+
+				for (let i = 0; i < 4; i++) {
+					uLayers[i] = gl.getUniformLocation(glShaderProg, 'pt_layer' + i);
+					uScales[i] = gl.getUniformLocation(glShaderProg, 'layerScale' + i);
+					uHeights[i] = gl.getUniformLocation(glShaderProg, 'pt_height' + i);
+
+					if (i > 0)
+						uBlends[i] = gl.getUniformLocation(glShaderProg, 'pt_blend' + i);
+				}
+
+				const uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
+				const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
+				const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
+				const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
+				const uZoom = gl.getUniformLocation(glShaderProg, 'uZoom');
+
+				if (splitTextures) {
+					glCanvas.width = quality / 16;
+					glCanvas.height = quality / 16;
+				} else {
+					glCanvas.width = quality;
+					glCanvas.height = quality;
+				}
+
+				clearCanvas();
+
+				gl.uniform2f(uResolution, TILE_SIZE, TILE_SIZE);
+
+				const vertexBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aVertexPosition);
+				gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+
+				const uvBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvsBake), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aTexCoord);
+				gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+
+				const vcBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, vcBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(aVertexColor);
+				gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
+
+				const firstChunk = rootAdt.chunks[0];
+				const deltaX = firstChunk.position[1] - TILE_SIZE;
+				const deltaY = firstChunk.position[0] - TILE_SIZE;
+
+				if (!splitTextures)
+					gl.uniform2f(uTranslation, -deltaX, -deltaY);
+
+				gl.uniform1f(uZoom, splitTextures ? 0.0625 : 1);
+
+				let chunkID = 0;
+				for (let x = 0; x < 16; x++) {
+					for (let y = 0; y < 16; y++) {
+						if (splitTextures) {
+							const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
+							const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
+
+							gl.uniform2f(uTranslation, ofsX, ofsY);
+						}
+
+						const chunkIndex = (x * 16) + y;
+						const texChunk = texAdt.texChunks[chunkIndex];
+						const indicies = chunkMeshes[chunkIndex];
+
+						const alphaLayers = texChunk.alphaLayers || [];
+						const alphaTextures = new Array(alphaLayers.length);
+
+						for (let i = 1; i < alphaLayers.length; i++) {
+							gl.activeTexture(gl.TEXTURE3 + i);
+
+							const alphaTex = bindAlphaLayer(alphaLayers[i]);
+							gl.bindTexture(gl.TEXTURE_2D, alphaTex);
+							gl.uniform1i(uBlends[i], i + 3);
+
+							// Store to clean up after render.
+							alphaTextures[i] = alphaTex;
+						}
+
+						const texLayers = texChunk.layers;
+						const heightScales = new Array(4).fill(1);
+						const heightOffsets = new Array(4).fill(1);
+
+						for (let i = 0, n = texLayers.length; i < n; i++) {
+							const mat = materials[texLayers[i].textureId];							
+							gl.activeTexture(gl.TEXTURE0 + i);
+							gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
+
+							gl.uniform1i(uLayers[i], i);
+							gl.uniform1f(uScales[i], mat.scale);
+
+							if (mat.heightTex) {
+								gl.activeTexture(gl.TEXTURE7 + i);
+								gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
+
+								gl.uniform1i(uHeights[i], 7 + i);
+								heightScales[i] = mat.heightScale;
+								heightOffsets[i] = mat.heightOffset;
+							}
+						}
+
+						gl.uniform4f(uHeightScale, ...heightScales);
+						gl.uniform4f(uHeightOffset, ...heightOffsets);
+
+						const indexBuffer = gl.createBuffer();
+						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
+						gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
+
+						unbindAllTextures();
+						
+						// Destroy alpha layers rendered for the tile.
+						for (const tex of alphaTextures)
+							gl.deleteTexture(tex);
+
+						// Save this individual chunk.
+						if (splitTextures)
+							await saveCanvas(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
+					}
+				}
+
+				// Save the completed tile.
+				if (!splitTextures)
+					await saveCanvas(dir, 'tex_' + this.tileID + '.png');
+
+				// Clear buffer.
+				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+				// Delete loaded textures.
+				for (const mat of materials)
+					gl.deleteTexture(mat.texture);
 			}
-
-			// Save the completed tile.
-			if (!splitTextures)
-				await saveCanvas(dir, 'tex_' + this.tileID + '.png');
-
-			// Clear buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-			// Delete loaded textures.
-			for (const mat of materials)
-				gl.deleteTexture(mat.texture);
 		}
 
 		// Export dooads / WMOs.
