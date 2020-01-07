@@ -18,6 +18,9 @@
 	"engines": {
 		"node": ">=12.12.0"
 	},
+	"scripts": {
+		"test": "node ./runTests.js"
+	},
 	"dependencies": {
 		"acorn": "^7.1.0",
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git",
