@@ -1,6 +1,4 @@
-![Build Status](https://travis-ci.org/Kruithne/wow.export.svg?branch=master)
-
-# 📦 wow.export
+# 📦 wow.export ![Build Status](https://travis-ci.org/Kruithne/wow.export.svg?branch=master)
 wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [WoW Export Tools](https://github.com/Marlamin/WoWExportTools/) which provides tools for extracting and converting files from the World of Warcraft game client or public CDN servers.
 
 ## Features
