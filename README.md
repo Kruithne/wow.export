@@ -14,7 +14,7 @@ wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [W
 - Convert local M2/BLP files by drag-dropping them onto the application.
 
 ## Installing
-To install wow.export, navigate to the ['Releases'](https://github.com/Kruithne/wow.export/releases) page and download the latest version. That's it!
+To install wow.export, navigate to the ['wow.tools'](https://wow.tools/export/) site and download the latest version. That's it!
 
 > **OSX/Linux**: We are currently not producing builds targeted for non-Windows builds. If you wish to use wow.export on OSX or Linux, you will need to compile your own build from the source. See GH-1 for known issues.
 
