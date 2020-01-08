@@ -37,6 +37,11 @@ const wdtCache = new Map();
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.vertex.shader');
 
+let isFoliageAvailable = false;
+let hasLoadedFoliage = false;
+let dbTextures;
+let dbDoodads;
+
 let glShaderProg;
 let glCanvas;
 let gl;
@@ -58,6 +63,31 @@ const loadTexture = async (fileDataID) => {
 	gl.generateMipmap(gl.TEXTURE_2D);
 
 	return texture;
+};
+
+/**
+ * Load and cache GroundEffectDoodad and GroundEffectTexture data tables.
+ */
+const loadFoliageTables = async () => {
+	if (!hasLoadedFoliage) {
+		try {
+			const dbDoodadsTable = await DBHandler.openTable('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
+			const dbTexturesTable = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+
+			hasLoadedFoliage = true;
+			isFoliageAvailable = true;
+
+			// Only keep the actual row data, otherwise we'll be keeping large buffers
+			// and other meta-data in memory for no reason.
+			dbDoodads = dbDoodadsTable.rows;
+			dbTextures = dbTexturesTable.rows;
+		} catch (e) {
+			isFoliageAvailable = false;
+			log.write('Unable to load foliage tables, foliage exporting will be unavailable for all tiles.');
+		}
+
+		hasLoadedFoliage = true;
+	}
 };
 
 /**
@@ -651,15 +681,16 @@ class ADTExporter {
 			await csv.write();
 		}
 
+		// Prepare foliage data tables if needed.
+		if (config.mapsIncludeFoliage && !hasLoadedFoliage)
+			await loadFoliageTables();
+
 		// Export foliage.
-		if (config.mapsIncludeFoliage) {
+		if (config.mapsIncludeFoliage && isFoliageAvailable) {
 			const foliageExportCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
 			
 			log.write('Exporting foliage to %s', foliageDir);
-
-			const dbTextures = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
-			const dbDoodads = await DBHandler.openTable('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
 
 			for (const chunk of texAdt.texChunks) {
 				// Skip chunks that have no layers?
@@ -671,7 +702,7 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures.rows.get(layer.effectID);
+					const groundEffectTexture = dbTextures.get(layer.effectID);
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
@@ -680,7 +711,7 @@ class ADTExporter {
 						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads.rows.get(doodadEntryID);
+						const groundEffectDoodad = dbDoodads.get(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							if (!modelID || foliageExportCache.has(modelID))
