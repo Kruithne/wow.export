@@ -6,7 +6,7 @@ const BufferWrapper = require('../src/js/buffer');
 	const raw = Buffer.from('BOLDLY, YOU SOUGHT THE POWER OF RAGNAROS. NOW YOU SHALL SEE IT FIRSTHAND!');
 	const buf = new BufferWrapper(raw);
 
-	assert.strictEqual(buf.byteLength, buf.byteLength, 'Wrapped buffer size does not match source node buffer size');
+	assert.strictEqual(buf.byteLength, raw.byteLength, 'Wrapped buffer size does not match source node buffer size');
 
 	for (let i = 0; i < raw.byteLength; i++)
 		assert.strictEqual(buf.readInt8(), raw[i], 'Wrapped buffer does not match source node buffer');
