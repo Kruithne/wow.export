@@ -655,6 +655,8 @@ class ADTExporter {
 		if (config.mapsIncludeFoliage) {
 			const foliageExportCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
+			
+			log.write('Exporting foliage to %s', foliageDir);
 
 			const dbTextures = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
 			const dbDoodads = await DBHandler.openTable('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
@@ -669,16 +671,16 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures.rows[layer.effectID];
-					if (!groundEffectTexture)
+					const groundEffectTexture = dbTextures.rows.get(layer.effectID);
+					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
-					for (const doodadID of groundEffectTexture.DoodadID) {
+					for (const doodadEntryID of groundEffectTexture.DoodadID) {
 						// Skip empty fields.
-						if (!doodadID)
+						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads.rows[doodadID];
+						const groundEffectDoodad = dbDoodads.rows.get(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							if (!modelID || foliageExportCache.has(modelID))
