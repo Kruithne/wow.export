@@ -10,8 +10,9 @@ Vue.component('listbox', {
 	 * selection: Reactive selection controller.
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
+	 * regex: If true, filter will be treated as a regular expression.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex'],
 
 	/**
 	 * Reactive instance data.
@@ -90,11 +91,20 @@ Vue.component('listbox', {
 			if (!this.filter)
 				return this.items;
 
-			const filter = this.filter.trim().toLowerCase();
 			let res = this.items;
 
-			if (filter.length > 0)
-				res = res.filter(e => e.toLowerCase().includes(filter));
+			if (this.regex) {
+				try {
+					const filter = new RegExp(this.filter.trim());
+					res = res.filter(e => e.match(filter));
+				} catch (e) {
+					// Regular expression did not compile, skip filtering.
+				}
+			} else {
+				const filter = this.filter.trim().toLowerCase();
+				if (filter.length > 0)
+					res = res.filter(e => e.toLowerCase().includes(filter));
+			}
 
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.

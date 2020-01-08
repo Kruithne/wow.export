@@ -31,5 +31,6 @@
 	"mapsIncludeM2": true,
 	"mapsIncludeWMOSets": true,
 	"mapsIncludeFoliage": true,
+	"regexFilters": false,
 	"exportMapQuality": 4096
 }

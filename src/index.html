@@ -109,6 +109,14 @@
 						<input type="text" width="280" v-model.trim="userInputTactKey" maxlength="32" placeholder="e.g AA718D1F1A23078D49AD0C606A72F3D5"/>
 						<input type="button" value="Add" @click="click('tact-key', $event)"/>
 					</div>
+					<div>
+						<h1>Regular Expression Filtering (Advanced)</h1>
+						<p>Allows use of regular expressions in filtering lists.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.regexFilters"/>
+							<span>Enable</span>
+						</label>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
@@ -118,7 +126,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
@@ -140,7 +148,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
@@ -178,7 +186,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
@@ -229,7 +237,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
@@ -240,7 +248,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>

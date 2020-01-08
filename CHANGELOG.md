@@ -2,6 +2,7 @@
 - Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
 - Foliage doodads can now be exported along with map tiles in the map exporter.
 - Global map WMOs can now be exported for maps that contain them (such as Stormwind Stockade).
+- Regular expressions can now be used for filtering (disabled by default, turn on in settings).
 - Added 'Changelog' button to the top-right navigation, which displays this changelog.
 - Fixed issue with faces/normals being incorrect on exported ADT meshes.
 - Fixed issue that caused WMO exports to error if you switched to another model during export.
