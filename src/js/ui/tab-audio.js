@@ -5,6 +5,8 @@
  */
 const core = require('../core');
 const log = require('../log');
+const path = require('path');
+const util = require('util');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 

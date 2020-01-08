@@ -3,6 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
 

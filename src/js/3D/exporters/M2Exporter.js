@@ -5,6 +5,7 @@
  */
 const core = require('../../core');
 const log = require('../../log');
+const path = require('path');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');

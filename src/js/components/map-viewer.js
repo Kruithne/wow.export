@@ -3,6 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const util = require('util');
 const constants = require('../constants');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;

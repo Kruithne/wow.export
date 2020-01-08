@@ -5,33 +5,14 @@
         "ecmaVersion": 2020
     },
     "globals": {
-		/* Framework*/
-        "nw": true,
-		"chrome": true,
-		
-		/* Third Party */
-		"Vue": true,
+        "Vue": true,
         "THREE": true,
-
-		/* App Globals*/
-		"BUILD_RELEASE": true,
-		"crash": true,
+        "nw": true,
+        "BUILD_RELEASE": true,
+        "chrome": true,
+        "crash": true,
 		"getErrorDump": true,
-
-		/* EMCA2020 */
-		"BigInt": true,
-
-		/* Node builtins, defined in ./src/builtins.js */
-		"path": true,
-		"util": true,
-		"fs": true,
-		"fsp": true,
-		"assert": true,
-		"node_crypto": true,
-		"zlib": true,
-		"EventEmitter": true,
-		"cp": true,
-		"os": true
+		"BigInt": true
     },
     "env": {
         "browser": true,

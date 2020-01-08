@@ -3,6 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const fsp = require('fs').promises;
+
 class FileWriter {
 	/**
 	 * Construct a new FileWriter instance.

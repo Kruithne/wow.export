@@ -3,6 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
+const assert = require('assert').strict;
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
 

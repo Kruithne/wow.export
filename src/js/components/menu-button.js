@@ -3,6 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const util = require('util');
+
 Vue.component('menu-button', {
 	/**
 	 * options: An array of strings denoting options shown in the menu.

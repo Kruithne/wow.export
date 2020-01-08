@@ -3,7 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const util = require('util');
 const core = require('../../core');
+const path = require('path');
+const fsp = require('fs').promises;
 const constants = require('../../constants');
 const listfile = require('../../casc/listfile');
 const log = require('../../log');

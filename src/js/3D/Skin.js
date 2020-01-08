@@ -4,6 +4,7 @@
 	License: MIT
  */
 
+const util = require('util');
 const listfile = require('../casc/listfile');
 const core = require('../core');
 

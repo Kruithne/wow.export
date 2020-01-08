@@ -6,6 +6,10 @@
 
 // This module provides helper functions for managing the Blender add-on
 // that ships with wow.export and the userland installation of it.
+const path = require('path');
+const util = require('util');
+const fsp = require('fs').promises;
+
 const constants = require('./constants');
 const generics = require('./generics');
 const core = require('./core');

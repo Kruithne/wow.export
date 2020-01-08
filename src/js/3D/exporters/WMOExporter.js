@@ -6,6 +6,7 @@
 const core = require('../../core');
 const log = require('../../log');
 const listfile = require('../../casc/listfile');
+const path = require('path');
 
 const BLPFile = require('../../casc/blp');
 const WMOLoader = require('../loaders/WMOLoader');

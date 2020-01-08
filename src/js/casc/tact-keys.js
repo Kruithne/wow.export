@@ -4,6 +4,7 @@
 	License: MIT
  */
 const log = require('../log');
+const fsp = require('fs').promises;
 const generics = require('../generics');
 const constants = require('../constants');
 const core = require('../core');

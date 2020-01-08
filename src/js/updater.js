@@ -3,6 +3,11 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const util = require('util');
+const path = require('path');
+const assert = require('assert').strict;
+const fsp = require('fs').promises;
+const cp = require('child_process');
 const constants = require('./constants');
 const generics = require('./generics');
 const core = require('./core');

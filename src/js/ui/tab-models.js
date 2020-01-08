@@ -5,6 +5,7 @@
  */
 const core = require('../core');
 const log = require('../log');
+const util = require('util');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
