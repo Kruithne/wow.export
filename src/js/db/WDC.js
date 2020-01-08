@@ -125,6 +125,8 @@ class WDC {
 		// Ensure we've read the expected amount of pallet data.
 		assert.strictEqual(data.offset, prevPos + palletDataSize, 'Read incorrect amount of pallet data');
 
+		prevPos = data.offset;
+
 		// char common_data[header.common_data_size];
 		const commonData = new Array(fieldInfo.length);
 		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
@@ -136,6 +138,8 @@ class WDC {
 					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
 			}
 		}
+
+		assert.strictEqual(data.offset, prevPos + commonDataSize, 'Read incorrect amount of common data');
 
 		// data_sections[header.section_count];
 		const sections = new Array(sectionCount);
@@ -234,6 +238,7 @@ class WDC {
 				data.seek(section.recordDataOfs + recordOfs);
 
 				const out = {};
+				let recordIndex = 0;
 				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
 					// Prevent schema from flowing out-of-bounds for a record.
@@ -242,10 +247,15 @@ class WDC {
 					//	throw new Error('DB table schema exceeds available record data.');
 
 					const thisFieldInfo = fieldInfo[fieldIndex];
-					let count = 1;
+					let count;
 					let fieldType = type;
 					if (Array.isArray(type))
 						[fieldType, count] = type;
+
+					const fieldSizeBytes = (thisFieldInfo.fieldSizeBits + (thisFieldInfo.fieldOffsetBits & 7) + 7) / 8;
+
+					// ToDo: Test if floor is the best decision to make here
+					const fieldOffsetBytes = Math.floor(thisFieldInfo.fieldOffsetBits / 8);
 
 					switch (thisFieldInfo.fieldCompression) {
 						case CompressionType.None:
@@ -280,38 +290,34 @@ class WDC {
 
 						case CompressionType.Bitpacked:
 						case CompressionType.BitpackedSigned:
-							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness
-							const fieldSizeBytes = (thisFieldInfo.fieldSizeBits + (thisFieldInfo.fieldOffsetBits & 7) + 7) / 8;
-							let result;
-
-							if (fieldSizeBytes > 4) {
-								throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
-								// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing.
-								// const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
-								// result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
-							} else {
-								const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
-								result = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
-							}
-
-							out[prop] = result;
-
-							break;
-
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
-							// ToDo: What follows is incredibly broken and outputs wrong data, but data nonetheless
-							if (count > 1){
+							// ToDo: All bitpacked stuff requires testing on more DB2s before being able to call it done.
+							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness(es?).
+
+							// Seek to (hopefully correct, see fieldOffsetBytes comment) position in record stream
+							data.seek(section.recordDataOfs + recordOfs + (recordIndex * recordSize) + fieldOffsetBytes);
+
+							// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing, error for now.
+							if (fieldSizeBytes > 4) {
+								throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
+								// const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
+								// result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
+							}
+
+							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
+							const bitpackedValue = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7) & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+
+							if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray){
 								out[prop] = new Array(count);
 								for (let i = 0; i < count; i++){
-									const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
-									let res = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
-									out[prop][i] = palletData[fieldIndex][res];
+									out[prop][i] = palletData[fieldIndex][(bitpackedValue * count) + i];
 								}
+							} else if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
+								out[prop] = palletData[fieldIndex][bitpackedValue];
 							} else {
-								const fieldData = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7);
-								let res = fieldData & ((1 << thisFieldInfo.fieldSizeBits) - 1);
-								out[prop] = palletData[fieldIndex][res];
+								// ToDo: Bitpacked & BitpackedSigned, not sure if these need separate handling
+								out[prop] = bitpackedValue;
 							}
 
 							break;
@@ -323,6 +329,8 @@ class WDC {
 					fieldIndex++;
 				}
 
+				recordIndex++;
+				
 				this.rows.set(recordID, out);
 			}
 		}
