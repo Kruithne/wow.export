@@ -62,6 +62,7 @@ const view = {
 	modelViewerGeosets: [], // Active M2 model geoset control.
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
+	modelViewerAutoAdjust: true, // Automatic camera adjustment.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.

@@ -215,6 +215,10 @@
 								<input type="checkbox" v-model="config.modelsAutoPreview"/>
 								<span>Auto Preview</span>
 							</label>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="modelViewerAutoAdjust"/>
+								<span>Auto Camera</span>
+							</label>
 							<template v-if="modelViewerActiveType === 'm2'">
 								<span class="header">Geosets</span>
 								<checkboxlist id="list-geosets" :items="modelViewerGeosets"></checkboxlist>

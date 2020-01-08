@@ -18,6 +18,7 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 let selectedFile = null;
+let isFirstModel = true;
 
 let camera, scene;
 const renderGroup = new THREE.Group();
@@ -95,7 +96,11 @@ const updateCameraBounding = () => {
 	const maxDim = Math.max(size.x, size.y, size.z);
 	const fov = camera.fov * (Math.PI / 180);
 	let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
-	camera.position.set(center.x, center.y, cameraZ);
+
+	if (isFirstModel || core.view.modelViewerAutoAdjust) {
+		camera.position.set(center.x, center.y, cameraZ);
+		isFirstModel = false;
+	}
 
 	const minZ = boundingBox.min.z;
 	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
