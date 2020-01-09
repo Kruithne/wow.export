@@ -88,6 +88,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Always Overwrite Existing Files (Recommended)</h1>
+						<p>When exporting, files will always be written to disk even if they exist.</p>
+						<p>Disabling this can speed up exporting, but may lead to issues between versions.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.overwriteFiles"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>

@@ -7,6 +7,7 @@ const core = require('../core');
 const log = require('../log');
 const path = require('path');
 const util = require('util');
+const generics = require('../generics');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
@@ -158,10 +159,18 @@ core.events.once('init', () => {
 		const helper = new ExportHelper(userSelection.length, 'sound files');
 		helper.start();
 		
+		const overwriteFiles = core.view.config.overwriteFiles;
 		for (const fileName of userSelection) {
 			try {
-				const data = await core.view.casc.getFileByName(fileName);
-				await data.writeToFile(ExportHelper.getExportPath(fileName));
+				const exportPath = ExportHelper.getExportPath(fileName);
+
+				if (overwriteFiles || !await generics.fileExists(exportPath)) {
+					const data = await core.view.casc.getFileByName(fileName);
+					await data.writeToFile(exportPath);
+				} else {
+					log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);
+				}
+
 				helper.mark(fileName, true);
 			} catch (e) {
 				helper.mark(fileName, false, e.message);

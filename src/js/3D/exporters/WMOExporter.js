@@ -7,6 +7,7 @@ const core = require('../../core');
 const log = require('../../log');
 const listfile = require('../../casc/listfile');
 const path = require('path');
+const generics = require('../../generics');
 
 const BLPFile = require('../../casc/blp');
 const WMOLoader = require('../loaders/WMOLoader');
@@ -52,6 +53,8 @@ class WMOExporter {
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
+		const overwriteFiles = core.view.config.overwriteFiles;
+
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
 
@@ -81,14 +84,18 @@ class WMOExporter {
 
 			if (fileDataID > 0) {
 				try {
-					const data = await casc.getFile(fileDataID);
-					const blp = new BLPFile(data);
-
 					const texFile = fileDataID + '.png';
 					const texPath = path.join(path.dirname(out), texFile);
 
-					log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-					await blp.saveToFile(texPath, 'image/png', material.blendMode !== 0);
+					if (overwriteFiles || !await generics.fileExists(texPath)) {
+						const data = await casc.getFile(fileDataID);
+						const blp = new BLPFile(data);
+
+						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
+						await blp.saveToFile(texPath, 'image/png', material.blendMode !== 0);
+					} else {
+						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
+					}
 
 					mtl.addMaterial(fileDataID, texFile);
 					materialMap.set(i, fileDataID);
@@ -174,72 +181,78 @@ class WMOExporter {
 		obj.setNormalArray(normalsArray);
 		obj.setUVArray(uvsArray);
 
-		const csv = new CSVWriter(ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv'));
-		csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
+		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
+		if (overwriteFiles || !await generics.fileExists(csvPath)) {
+			const csv = new CSVWriter(csvPath);
+			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
 
-		// Doodad sets.
-		const doodadSets = wmo.doodadSets;
-		for (let i = 0, n = doodadSets.length; i < n; i++) {
-			// Skip disabled doodad sets.
-			if (doodadSetMask && (!doodadSetMask[i] || !doodadSetMask[i].checked))
-				continue;
+			// Doodad sets.
+			const doodadSets = wmo.doodadSets;
+			for (let i = 0, n = doodadSets.length; i < n; i++) {
+				// Skip disabled doodad sets.
+				if (doodadSetMask && (!doodadSetMask[i] || !doodadSetMask[i].checked))
+					continue;
 
-			const set = doodadSets[i];
-			const count = set.doodadCount;
-			log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
+				const set = doodadSets[i];
+				const count = set.doodadCount;
+				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
-			for (let i = set.firstInstanceIndex; i < count; i++) {
-				const doodad = wmo.doodads[i];
-				let fileDataID = 0;
-				let fileName;
-	
-				if (wmo.fileDataIDs) {
-					// Retail, use fileDataID and lookup the filename.
-					fileDataID = wmo.fileDataIDs[doodad.offset];
-					fileName = listfile.getByID(fileDataID);
-				} else {
-					// Classic, use fileName and lookup the fileDataID.
-					fileName = wmo.doodadNames[doodad.offset];
-					fileDataID = listfile.getByFilename(fileName) || 0;
-				}
-	
-				if (fileDataID > 0) {
-					try {
-						const m2Path = ExportHelper.replaceExtension(ExportHelper.replaceFile(out, fileName), '.obj');
+				for (let i = set.firstInstanceIndex; i < count; i++) {
+					const doodad = wmo.doodads[i];
+					let fileDataID = 0;
+					let fileName;
+		
+					if (wmo.fileDataIDs) {
+						// Retail, use fileDataID and lookup the filename.
+						fileDataID = wmo.fileDataIDs[doodad.offset];
+						fileName = listfile.getByID(fileDataID);
+					} else {
+						// Classic, use fileName and lookup the fileDataID.
+						fileName = wmo.doodadNames[doodad.offset];
+						fileDataID = listfile.getByFilename(fileName) || 0;
+					}
+		
+					if (fileDataID > 0) {
+						try {
+							const m2Path = ExportHelper.replaceExtension(ExportHelper.replaceFile(out, fileName), '.obj');
 
-						// Only export doodads that are not already exported.
-						if (!doodadCache.has(fileDataID)) {
-							const data = await casc.getFile(fileDataID);
-							const m2Export = new M2Exporter(data);
-							await m2Export.exportAsOBJ(m2Path);
-							doodadCache.add(fileDataID);
+							// Only export doodads that are not already exported.
+							if (!doodadCache.has(fileDataID)) {
+								const data = await casc.getFile(fileDataID);
+								const m2Export = new M2Exporter(data);
+								await m2Export.exportAsOBJ(m2Path);
+								doodadCache.add(fileDataID);
+							}
+
+							csv.addRow({
+								ModelFile: path.basename(m2Path),
+								PositionX: doodad.position[0],
+								PositionY: doodad.position[1],
+								PositionZ: doodad.position[2],
+								RotationW: doodad.rotation[3],
+								RotationX: doodad.rotation[0],
+								RotationY: doodad.rotation[1],
+								RotationZ: doodad.rotation[2],
+								ScaleFactor: doodad.scale,
+								DoodadSet: set.name
+							});
+						} catch (e) {
+							log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
 						}
-
-						csv.addRow({
-							ModelFile: path.basename(m2Path),
-							PositionX: doodad.position[0],
-							PositionY: doodad.position[1],
-							PositionZ: doodad.position[2],
-							RotationW: doodad.rotation[3],
-							RotationX: doodad.rotation[0],
-							RotationY: doodad.rotation[1],
-							RotationZ: doodad.rotation[2],
-							ScaleFactor: doodad.scale,
-							DoodadSet: set.name
-						});
-					} catch (e) {
-						log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
 					}
 				}
 			}
+
+			await csv.write();
+		} else {
+			log.write('Skipping model placement export %s (file exists, overwrite disabled)', csvPath);
 		}
 
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
-		await csv.write();
-		await obj.write();
-		await mtl.write();
+		await obj.write(overwriteFiles);
+		await mtl.write(overwriteFiles);
 	}
 
 	/**

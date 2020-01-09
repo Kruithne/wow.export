@@ -36,10 +36,15 @@ class CSVWriter {
 
 	/**
 	 * Write the CSV to disk.
+	 * @param {boolean} overwrite
 	 */
-	async write() {
+	async write(overwrite = true) {
 		// Don't bother writing an empty CSV file.
 		if (this.rows.length === 0)
+			return;
+
+		// If overwriting is disabled, check file existence.
+		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
 		await generics.createDirectory(path.dirname(this.out));

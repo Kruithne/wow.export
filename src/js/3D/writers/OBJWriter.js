@@ -76,8 +76,13 @@ class OBJWriter {
 
 	/**
 	 * Write the OBJ file (and associated MTLs).
+	 * @param {boolean} overwrite
 	 */
-	async write() {
+	async write(overwrite = true) {
+		// If overwriting is disabled, check file existence.
+		if (!overwrite && await generics.fileExists(this.out))
+			return;
+
 		await generics.createDirectory(path.dirname(this.out));
 		const writer = new FileWriter(this.out);
 

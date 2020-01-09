@@ -6,6 +6,7 @@
 const core = require('../../core');
 const log = require('../../log');
 const path = require('path');
+const generics = require('../../generics');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
@@ -40,6 +41,8 @@ class M2Exporter {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
+		const overwriteFiles = core.view.config.overwriteFiles;
+
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
@@ -59,14 +62,18 @@ class M2Exporter {
 			const texFileDataID = texture.fileDataID;
 			if (texFileDataID > 0) {
 				try {
-					const data = await core.view.casc.getFile(texFileDataID);
-					const blp = new BLPFile(data);
-
 					const texFile = texFileDataID + '.png';
 					const texPath = path.join(path.dirname(out), texFile);
 
-					log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
-					await blp.saveToFile(texPath, 'image/png', true);
+					if (overwriteFiles || !await generics.fileExists(texPath)) {
+						const data = await core.view.casc.getFile(texFileDataID);
+						const blp = new BLPFile(data);
+
+						log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
+						await blp.saveToFile(texPath, 'image/png', true);
+					} else {
+						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
+					}
 
 					mtl.addMaterial(texFileDataID, texFile);
 					validTextures[texFileDataID] = true;
@@ -102,8 +109,8 @@ class M2Exporter {
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
-		await obj.write();
-		await mtl.write();
+		await obj.write(overwriteFiles);
+		await mtl.write(overwriteFiles);
 
 		if (exportCollision) {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
@@ -111,7 +118,7 @@ class M2Exporter {
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
 
-			await phys.write();
+			await phys.write(overwriteFiles);
 		}
 	}
 }

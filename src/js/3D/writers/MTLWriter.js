@@ -35,10 +35,15 @@ class MTLWriter {
 
 	/**
 	 * Write the material library to disk.
+	 * @param {boolean} overwrite
 	 */
-	async write() {
+	async write(overwrite = true) {
 		// Don't bother writing an empty material library.
 		if (this.isEmpty)
+			return;
+
+		// If overwriting is disabled, check file existence.
+		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
 		await generics.createDirectory(path.dirname(this.out));

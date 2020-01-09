@@ -18,6 +18,7 @@
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"exportModelFormat": "OBJ",
+	"overwriteFiles": true,
 	"modelsShowM2": true,
 	"modelsShowWMO": true,
 	"modelsAutoPreview": true,

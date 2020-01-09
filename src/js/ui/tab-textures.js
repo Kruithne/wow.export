@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const generics = require('../generics');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
@@ -57,19 +58,26 @@ const exportFiles = async (files, isLocal = false) => {
 	const format = core.view.config.exportTextureFormat;
 	const type = EXPORT_TYPES[format];
 
+	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	for (const fileName of files) {
 		try {
-			const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
-
-			if (format === 'BLP') {
-				// Export as raw file with no conversion.
-				await data.writeToFile(exportPath);
-			} else {
-				// Swap file extension for the new one.
+			if (format !== 'BLP')
 				exportPath = ExportHelper.replaceExtension(exportPath, type.ext);
-				const blp = new BLPFile(data);
-				await blp.saveToFile(exportPath, type.mime, core.view.config.exportTextureAlpha);
+
+			if (overwriteFiles || !await generics.fileExists(exportPath)) {
+				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
+
+				if (format === 'BLP') {
+					// Export as raw file with no conversion.
+					await data.writeToFile(exportPath);
+				} else {
+					// Swap file extension for the new one.
+					const blp = new BLPFile(data);
+					await blp.saveToFile(exportPath, type.mime, core.view.config.exportTextureAlpha);
+				}
+			} else {
+				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
 			}
 
 			helper.mark(fileName, true);
