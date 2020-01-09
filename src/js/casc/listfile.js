@@ -127,7 +127,7 @@ const loadListfile = async (buildConfig, cache, casc) => {
  */
 const loadIDTable = async (tableFile, tableSchema, ext, casc) => {
 	let loadCount = 0;
-	const table = new WDC(tableFile, tableSchema, casc);
+	const table = new WDCReader(tableFile, tableSchema, casc);
 	await table.parse();
 
 	for (const row of table.rows.values()) {

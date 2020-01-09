@@ -185,7 +185,7 @@ core.events.once('screen-tab-maps', async () => {
 	core.view.isBusy++;
 	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
-	const table = new WDC('DBFilesClient/Map.db2', DB_Map);
+	const table = new WDCReader('DBFilesClient/Map.db2', DB_Map);
 	await table.parse();
 
 	const maps = [];
