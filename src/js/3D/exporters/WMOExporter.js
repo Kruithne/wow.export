@@ -224,8 +224,7 @@ class WMOExporter {
 		
 					if (fileDataID > 0) {
 						try {
-							const m2Name = ExportHelper.replaceExtension(fileName, '.obj');
-							let m2Path = ExportHelper.replaceFile(out, m2Name);
+							const m2Path = ExportHelper.getExportPath(ExportHelper.replaceExtension(fileName, '.obj'));
 
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
@@ -236,7 +235,7 @@ class WMOExporter {
 							}
 
 							csv.addRow({
-								ModelFile: path.basename(m2Path),
+								ModelFile: path.relative(path.dirname(out), m2Path),
 								PositionX: doodad.position[0],
 								PositionY: doodad.position[1],
 								PositionZ: doodad.position[2],
