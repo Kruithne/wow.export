@@ -74,19 +74,14 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			const dbDoodadsTable = new WDCReader('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
-			const dbTexturesTable = new WDCReader('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
+			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
 
-			await dbDoodadsTable.parse();
-			await dbTexturesTable.parse();
+			await dbDoodads.parse();
+			await dbTextures.parse();
 
 			hasLoadedFoliage = true;
 			isFoliageAvailable = true;
-
-			// Only keep the actual row data, otherwise we'll be keeping large buffers
-			// and other meta-data in memory for no reason.
-			dbDoodads = dbDoodadsTable.rows;
-			dbTextures = dbTexturesTable.rows;
 		} catch (e) {
 			isFoliageAvailable = false;
 			log.write('Unable to load foliage tables, foliage exporting will be unavailable for all tiles.');
@@ -708,7 +703,7 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures.get(layer.effectID);
+					const groundEffectTexture = dbTextures.getRow(layer.effectID);
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
@@ -717,7 +712,7 @@ class ADTExporter {
 						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads.get(doodadEntryID);
+						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							if (!modelID || foliageExportCache.has(modelID))

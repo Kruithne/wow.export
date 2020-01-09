@@ -189,7 +189,7 @@ core.events.once('screen-tab-maps', async () => {
 	await table.parse();
 
 	const maps = [];
-	for (const [id, entry] of table.rows) {
+	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 		if (listfile.getByFilename(wdtPath))
 			maps.push(util.format('[%d]\x19%s\x19(%s)', id, entry.MapName, entry.Directory));

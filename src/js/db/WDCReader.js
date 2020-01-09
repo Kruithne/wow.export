@@ -32,6 +32,57 @@ class WDCReader {
 		this.casc = casc;
 
 		this.rows = new Map();
+		this.copyTable = new Map();
+
+		this.isInflated = false;
+	}
+
+	/**
+	 * Returns the amount of rows available in the table.
+	 */
+	get size() {
+		return this.rows.size + this.copyTable.size;
+	}
+	
+	/**
+	 * Get a row from this table.
+	 * Returns NULL if the row does not exist.
+	 * @param {number} recordID 
+	 */
+	getRow(recordID) {
+		// Look this row up as a normal entry.
+		const record = this.rows.get(recordID);
+		if (record !== undefined)
+			return record;
+
+		// Check if the copy table contains a mapping entry.
+		const copyID = this.copyTable.get(recordID);
+		if (copyID !== undefined) {
+			const copy = this.rows.get(copyID);
+			if (copy !== undefined)
+				return copy;
+		}
+
+		// Row does not exist.
+		return null;
+	}
+
+	/**
+	 * Returns all available rows in the table.
+	 * Calling this will permanently inflate internal copy data; use wisely.
+	 */
+	getAllRows() {
+		const rows = this.rows;
+
+		// Inflate all copy table data before returning.
+		if (!this.isInflated) {
+			for (const [destID, srcID] of this.copyTable)
+				rows.set(destID, rows.get(srcID));
+
+			this.isInflated = true;
+		}
+
+		return rows;
 	}
 
 	/**
@@ -146,7 +197,7 @@ class WDCReader {
 
 		// data_sections[header.section_count];
 		const sections = new Array(sectionCount);
-		const copyTable = new Map();
+		const copyTable = this.copyTable;
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
 			const header = sectionHeaders[sectionIndex];
 			const isNormal = !(flags & 1);
@@ -193,7 +244,7 @@ class WDCReader {
 			if (wdcVersion === 3)
 				data.move(header.offsetMapIDCount * 4);
 
-			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, copyTable };
+			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap };
 		}
 
 		// Parse section records.
@@ -268,7 +319,15 @@ class WDCReader {
 									const pos = data.offset;
 
 									data.move((ofs - 4) - outsideDataSize);
-									out[prop] = this.readString();
+									const startOfs = data.offset;
+							
+									let len = 0;
+									while (data.readUInt8() !== 0x0)
+										len++;
+							
+									data.seek(startOfs);
+									out[prop] = data.readString(len, 'utf8');
+
 									data.seek(pos);
 									break;
 
@@ -338,23 +397,7 @@ class WDCReader {
 			}
 		}
 
-		// Inflate duplicated rows.
-		for (const [destID, srcID] of copyTable)
-			this.rows.set(destID, this.rows.get(srcID));
-
-		log.write('Parsed %s with %d rows', this.fileName, this.rows.size);
-	}
-
-	readString() {
-		const data = this.data;
-		const startOfs = data.offset;
-
-		let len = 0;
-		while (data.readUInt8() !== 0x0)
-			len++;
-
-		data.seek(startOfs);
-		return data.readString(len, 'utf8');
+		log.write('Parsed %s with %d rows', this.fileName, this.size);
 	}
 }
 
