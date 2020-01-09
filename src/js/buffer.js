@@ -716,6 +716,35 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Get the index of the given byte from start.
+	 * Defaults to the current reader offset.
+	 * @param {number|string} byte
+	 * @param {number} start 
+	 */
+	indexOf(byte, start = this.offset) {
+		if (typeof byte === 'string') {
+			if (byte.length > 1)
+				throw new Error('.indexOf() given string, expected single character.');
+
+			byte = byte.charCodeAt(0);
+		}
+
+		const resetPos = this.offset;
+		this.seek(start);
+		
+		while (this.remainingBytes > 0) {
+			const mark = this.offset;
+			if (this.readUInt8() === byte) {
+				this.seek(resetPos);
+				return mark;
+			}
+		}
+
+		this.seek(resetPos);
+		return -1;
+	}
+
+	/**
 	 * Decode this buffer using the given audio context.
 	 * @param {AudioContext} context 
 	 */

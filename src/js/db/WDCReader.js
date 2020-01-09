@@ -307,7 +307,7 @@ class WDCReader {
 				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
 					const recordFieldInfo = fieldInfo[fieldIndex];
-					
+
 					let count;
 					let fieldType = type;
 					if (Array.isArray(type))
@@ -326,14 +326,7 @@ class WDCReader {
 									const pos = data.offset;
 
 									data.move((ofs - 4) - outsideDataSize);
-									const startOfs = data.offset;
-							
-									let len = 0;
-									while (data.readUInt8() !== 0x0)
-										len++;
-							
-									data.seek(startOfs);
-									out[prop] = data.readString(len, 'utf8');
+									out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
 
 									data.seek(pos);
 									break;
