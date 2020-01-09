@@ -677,10 +677,10 @@ class ADTExporter {
 
 						if (fileName !== undefined) {
 							// Replace WMO extension with OBJ.
-							fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
 						} else {
 							// Handle unknown WMO files.
-							fileName = 'unknown/' + fileDataID + '.obj';
+							fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
 						}
 
 						const modelPath = ExportHelper.getExportPath(fileName);
