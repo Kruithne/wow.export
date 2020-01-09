@@ -306,23 +306,19 @@ class WDCReader {
 				let recordIndex = 0;
 				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
-					// Prevent schema from flowing out-of-bounds for a record.
-					// We don't bother checking if the schema is too short, allowing for partial schema.
-					//if (data.offset > recordEnd)
-					//	throw new Error('DB table schema exceeds available record data.');
-
-					const thisFieldInfo = fieldInfo[fieldIndex];
+					const recordFieldInfo = fieldInfo[fieldIndex];
+					
 					let count;
 					let fieldType = type;
 					if (Array.isArray(type))
 						[fieldType, count] = type;
 
-					const fieldSizeBytes = (thisFieldInfo.fieldSizeBits + (thisFieldInfo.fieldOffsetBits & 7) + 7) / 8;
+					const fieldSizeBytes = (recordFieldInfo.fieldSizeBits + (recordFieldInfo.fieldOffsetBits & 7) + 7) / 8;
 
 					// ToDo: Test if floor is the best decision to make here
-					const fieldOffsetBytes = Math.floor(thisFieldInfo.fieldOffsetBits / 8);
+					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
 
-					switch (thisFieldInfo.fieldCompression) {
+					switch (recordFieldInfo.fieldCompression) {
 						case CompressionType.None:
 							switch (fieldType) {
 								case FieldType.String:
@@ -358,7 +354,7 @@ class WDCReader {
 							if (commonData[fieldIndex].has(recordID))
 								out[prop] = commonData[fieldIndex].get(recordID);
 							else
-								out[prop] = thisFieldInfo.fieldCompressionPacking[0]; // Default value
+								out[prop] = recordFieldInfo.fieldCompressionPacking[0]; // Default value
 							break;
 
 						case CompressionType.Bitpacked:
@@ -379,14 +375,14 @@ class WDCReader {
 							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
-							const bitpackedValue = data.readUInt32LE() >> (thisFieldInfo.fieldOffsetBits & 7) & ((1 << thisFieldInfo.fieldSizeBits) - 1);
+							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
 
-							if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray){
+							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray){
 								out[prop] = new Array(count);
 								for (let i = 0; i < count; i++){
 									out[prop][i] = palletData[fieldIndex][(bitpackedValue * count) + i];
 								}
-							} else if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
+							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
 								out[prop] = palletData[fieldIndex][bitpackedValue];
 							} else {
 								// ToDo: Bitpacked & BitpackedSigned, not sure if these need separate handling
