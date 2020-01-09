@@ -149,7 +149,7 @@ class WDC {
 		const copyTable = new Map();
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
 			const header = sectionHeaders[sectionIndex];
-			const isNormal = !(this.flags & 1);
+			const isNormal = !(flags & 1);
 
 			const recordDataOfs = data.offset;
 			const recordsOfs = wdcVersion === 2 ? header.offsetMapOffset : header.offsetRecordsEnd;
