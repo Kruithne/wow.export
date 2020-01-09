@@ -212,10 +212,6 @@ class WMOExporter {
 						// Retail, use fileDataID and lookup the filename.
 						fileDataID = wmo.fileDataIDs[doodad.offset];
 						fileName = listfile.getByID(fileDataID);
-
-						// File name is not known, use a substitute.
-						if (fileName === undefined)
-							fileName = 'unknown/' + fileDataID + '.m2';
 					} else {
 						// Classic, use fileName and lookup the fileDataID.
 						fileName = wmo.doodadNames[doodad.offset];
@@ -224,7 +220,15 @@ class WMOExporter {
 		
 					if (fileDataID > 0) {
 						try {
-							const m2Path = ExportHelper.getExportPath(ExportHelper.replaceExtension(fileName, '.obj'));
+							if (fileName !== undefined) {
+								// Replace M2 extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								// Handle unknown files.
+								fileName = 'unknown/' + fileDataID + '.obj';
+							}
+
+							const m2Path = ExportHelper.getExportPath(fileName);
 
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {

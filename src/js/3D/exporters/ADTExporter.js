@@ -623,19 +623,29 @@ class ADTExporter {
 
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
-					for (const model of objAdt.models) {					
-						const fileName = path.basename(listfile.getByID(model.mmidEntry));
-						const modelPath = ExportHelper.replaceExtension(fileName, '.obj');
+					for (const model of objAdt.models) {			
+						const fileDataID = model.mmidEntry;		
+						let fileName = listfile.getByID(fileDataID);
+
+						if (fileName !== undefined) {
+							// Replace M2 extension with OBJ.
+							fileName = ExportHelper.replaceExtension(fileName, '.obj');
+						} else {
+							// Handle unknown file.
+							fileName = 'unknown/' + fileDataID + '.obj';
+						}
+
+						const modelPath = ExportHelper.getExportPath(fileName);
 
 						// Export the model if we haven't done so for this export session.
-						if (!objectCache.has(model.mmidEntry)) {
-							const m2 = new M2Exporter(await casc.getFile(model.mmidEntry));
-							await m2.exportAsOBJ(path.join(dir, modelPath));
-							objectCache.add(model.mmidEntry);
+						if (!objectCache.has(fileDataID)) {
+							const m2 = new M2Exporter(await casc.getFile(fileDataID));
+							await m2.exportAsOBJ(modelPath);
+							objectCache.add(fileDataID);
 						}
 
 						csv.addRow({
-							ModelFile: modelPath,
+							ModelFile: path.relative(dir, modelPath),
 							PositionX: model.position[0],
 							PositionY: model.position[1],
 							PositionZ: model.position[2],
@@ -665,8 +675,15 @@ class ADTExporter {
 							fileName = listfile.getByID(fileDataID);
 						}
 
-						const modelName = path.basename(fileName);
-						const modelPath = path.join(dir, ExportHelper.replaceExtension(modelName, '.obj'));
+						if (fileName !== undefined) {
+							// Replace WMO extension with OBJ.
+							fileName = ExportHelper.replaceExtension(fileName, '.obj');
+						} else {
+							// Handle unknown WMO files.
+							fileName = 'unknown/' + fileDataID + '.obj';
+						}
+
+						const modelPath = ExportHelper.getExportPath(fileName);
 
 						if (!objectCache.has(fileDataID)) {
 							const data = await casc.getFile(fileDataID);
@@ -680,7 +697,7 @@ class ADTExporter {
 						}
 
 						csv.addRow({
-							ModelFile: path.basename(modelPath),
+							ModelFile: path.relative(dir, modelPath),
 							PositionX: model.position[0],
 							PositionY: model.position[1],
 							PositionZ: model.position[2],
