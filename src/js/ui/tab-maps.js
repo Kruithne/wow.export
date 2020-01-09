@@ -9,8 +9,9 @@ const log = require('../log');
 const path = require('path');
 const listfile = require('../casc/listfile');
 
-const DBHandler = require('../db/DBHandler');
+const WDC = require('../db/WDC');
 const DB_Map = require('../db/schema/Map');
+
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
@@ -184,7 +185,8 @@ core.events.once('screen-tab-maps', async () => {
 	core.view.isBusy++;
 	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
-	const table = await DBHandler.openTable('DBFilesClient/Map.db2', DB_Map);
+	const table = new WDC('DBFilesClient/Map.db2', DB_Map);
+	await table.parse();
 
 	const maps = [];
 	for (const [id, entry] of table.rows) {

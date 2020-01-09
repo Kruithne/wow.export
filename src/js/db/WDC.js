@@ -4,8 +4,17 @@
 	License: MIT
  */
 const assert = require('assert').strict;
+const log = require('../log');
+const core = require('../core');
+
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
+
+const TABLE_FORMATS = {
+	0x32434457: { name: 'WDC2', wdcVersion: 2 },
+	0x434C5331: { name: 'CLS1', wdcVersion: 2 },
+	0x33434457: { name: 'WDC3', wdcVersion: 3 }
+};
 
 /**
  * Defines unified logic between WDC2 and WDC3.
@@ -13,40 +22,33 @@ const CompressionType = require('./CompressionType');
  */
 class WDC {
 	/**
-	 * Identifier for WDC2 variations.
-	 */
-	static get FORMAT_WDC2() {
-		return 0x2;
-	}
-
-	/**
-	 * Identifier for WDC3 variations.
-	 */
-	static get FORMAT_WDC3() {
-		return 0x3;
-	}
-
-	/**
 	 * Construct a new WDC instance.
-	 * @param {BufferWrapper} data 
+	 * @param {string} fileName
 	 * @param {object} schema 
-	 * @param {number} variant
 	 */
-	constructor(data, schema, variant) {
-		this.data = data;
+	constructor(fileName, schema, casc = core.view.casc) {
+		this.fileName = fileName;
 		this.schema = schema;
-		this.variant = variant;
+		this.casc = casc;
 
 		this.rows = new Map();
-		this.parse();
 	}
 
 	/**
 	 * Parse the data table.
 	 */
-	parse() {
-		const data = this.data;
-		const isWDC2 = this.variant === WDC.FORMAT_WDC2;
+	async parse() {
+		const data = await this.casc.getFileByName(this.fileName, true, false, true);
+
+		// wdc_magic
+		const magic = data.readUInt32LE();
+		const format = TABLE_FORMATS[magic];
+
+		if (!format)
+			throw new Error('Unsupported DB2 type: ' + magic);
+
+		const wdcVersion = format.wdcVersion;
+		log.write('Processing DB file %s as %s', this.fileName, format.name);
 
 		// wdc_db2_header
 		const recordCount = data.readUInt32LE();
@@ -71,7 +73,7 @@ class WDC {
 		// wdc_section_header section_headers[section_count]
 		const sectionHeaders = new Array(sectionCount);
 		for (let i = 0; i < sectionCount; i++) {
-			sectionHeaders[i] = isWDC2 ? {
+			sectionHeaders[i] = wdcVersion === 2 ? {
 				tactKeyHash: data.readUInt64LE(),
 				fileOffset: data.readUInt32LE(),
 				recordCount: data.readUInt32LE(),
@@ -150,12 +152,12 @@ class WDC {
 			const isNormal = !(this.flags & 1);
 
 			const recordDataOfs = data.offset;
-			const recordsOfs = isWDC2 ? header.offsetMapOffset : header.offsetRecordsEnd;
+			const recordsOfs = wdcVersion === 2 ? header.offsetMapOffset : header.offsetRecordsEnd;
 			const recordDataSize = isNormal ? recordSize * header.recordCount : recordsOfs - header.fileOffset;
 			const stringBlockOfs = recordDataOfs + recordDataSize;
 
 			let offsetMap;
-			if (isWDC2 && !isNormal) {
+			if (wdcVersion === 2 && !isNormal) {
 				// offset_map_entry offset_map[header.max_id - header.min_id + 1];
 				const offsetMapCount = maxID - minID + 1;
 				offsetMap = new Array(offsetMapCount);
@@ -169,11 +171,11 @@ class WDC {
 			const idList = data.readUInt32LE(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
-			const copyTableCount = isWDC2 ? (header.copyTableSize / 8) : header.copyTableCount
+			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount
 			for (let i = 0; i < copyTableCount; i++)
 				copyTable.set(data.readInt32LE(), data.readInt32LE());
 
-			if (!isWDC2) {
+			if (wdcVersion === 3) {
 				// offset_map_entry offset_map[section_headers.offset_map_id_count];
 				offsetMap = new Array(header.offsetMapIDCount);
 				for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
@@ -188,7 +190,7 @@ class WDC {
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
 			// ToDo: Read
-			if (!isWDC2)
+			if (wdcVersion === 3)
 				data.move(header.offsetMapIDCount * 4);
 
 			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, copyTable };
@@ -339,6 +341,8 @@ class WDC {
 		// Inflate duplicated rows.
 		for (const [destID, srcID] of copyTable)
 			this.rows.set(destID, this.rows.get(srcID));
+
+		log.write('Parsed %s with %d rows', this.fileName, this.rows.size);
 	}
 
 	readString() {

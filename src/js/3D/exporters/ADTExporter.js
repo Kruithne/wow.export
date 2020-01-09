@@ -20,7 +20,7 @@ const ADTLoader = require('../loaders/ADTLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 
-const DBHandler = require('../../db/DBHandler');
+const WDC = require('../../db/WDC');
 const DB_GroundEffectTexture = require('../../db/schema/GroundEffectTexture');
 const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
 
@@ -74,8 +74,11 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			const dbDoodadsTable = await DBHandler.openTable('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
-			const dbTexturesTable = await DBHandler.openTable('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+			const dbDoodadsTable = new WDC('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
+			const dbTexturesTable = new WDC('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+
+			await dbDoodadsTable.parse();
+			await dbTexturesTable.parse();
 
 			hasLoadedFoliage = true;
 			isFoliageAvailable = true;

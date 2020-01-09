@@ -10,7 +10,7 @@ const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
 
-const DBHandler = require('../db/DBHandler');
+const WDC = require('../db/WDC');
 const DB_ModelFileData = require('../db/schema/ModelFileData');
 const DB_TextureFileData = require('../db/schema/TextureFileData');
 
@@ -127,7 +127,9 @@ const loadListfile = async (buildConfig, cache, casc) => {
  */
 const loadIDTable = async (tableFile, tableSchema, ext, casc) => {
 	let loadCount = 0;
-	const table = await DBHandler.openTable(tableFile, tableSchema, casc);
+	const table = new WDC(tableFile, tableSchema, casc);
+	await table.parse();
+
 	for (const row of table.rows.values()) {
 		const fileDataID = row.FileDataID;
 		if (!idLookup.has(fileDataID)) {
