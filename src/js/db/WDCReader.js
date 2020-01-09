@@ -20,9 +20,9 @@ const TABLE_FORMATS = {
  * Defines unified logic between WDC2 and WDC3.
  * @class WDC
  */
-class WDC {
+class WDCReader {
 	/**
-	 * Construct a new WDC instance.
+	 * Construct a new WDCReader instance.
 	 * @param {string} fileName
 	 * @param {object} schema 
 	 */
@@ -358,4 +358,4 @@ class WDC {
 	}
 }
 
-module.exports = WDC;
+module.exports = WDCReader;

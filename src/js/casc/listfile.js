@@ -10,7 +10,7 @@ const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
 
-const WDC = require('../db/WDC');
+const WDCReader = require('../db/WDCReader');
 const DB_ModelFileData = require('../db/schema/ModelFileData');
 const DB_TextureFileData = require('../db/schema/TextureFileData');
 

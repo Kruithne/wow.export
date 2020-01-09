@@ -9,7 +9,7 @@ const log = require('../log');
 const path = require('path');
 const listfile = require('../casc/listfile');
 
-const WDC = require('../db/WDC');
+const WDCReader = require('../db/WDCReader');
 const DB_Map = require('../db/schema/Map');
 
 const BLPFile = require('../casc/blp');
