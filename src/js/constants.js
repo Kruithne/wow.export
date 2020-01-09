@@ -51,7 +51,7 @@ module.exports = {
 		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.
 		SIZE_UPDATE_DELAY: 5000, // Milliseconds to buffer cache size update writes.
 		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
-		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indicies'), // Cache for archive indexes.
+		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.

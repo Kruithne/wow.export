@@ -254,20 +254,20 @@ const WMOChunkHandlers = {
 		}
 	},
 
-	// MOVI (Indicies) [WMO Group]
+	// MOVI (indices) [WMO Group]
 	0x4D4F5649: function(data, chunkSize) {
-		this.indicies = data.readUInt16LE(chunkSize / 2);
+		this.indices = data.readUInt16LE(chunkSize / 2);
 	},
 
-	// MOVT (Verticies) [WMO Group]
+	// MOVT (vertices) [WMO Group]
 	0x4D4F5654: function(data, chunkSize) {
 		const count = chunkSize / 4;
-		const verticies = this.verticies = new Array(count);
+		const vertices = this.vertices = new Array(count);
 
 		for (let i = 0; i < count; i += 3) {
-			verticies[i] = data.readFloatLE();
-			verticies[i + 2] = data.readFloatLE() * -1;
-			verticies[i + 1] = data.readFloatLE();
+			vertices[i] = data.readFloatLE();
+			vertices[i + 2] = data.readFloatLE() * -1;
+			vertices[i + 1] = data.readFloatLE();
 		}
 	},
 

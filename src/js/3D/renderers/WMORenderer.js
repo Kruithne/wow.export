@@ -51,13 +51,13 @@ class WMORenderer {
 				continue;
 
 			const geometry = new THREE.BufferGeometry();
-			geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(group.verticies), 3));
+			geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(group.vertices), 3));
 			geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(group.normals), 3));
 
 			if (group.uvs)
 				geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(group.uvs[0]), 2));
 
-			geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(group.indicies), 1));
+			geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(group.indices), 1));
 
 			// Load all render batches into the mesh.
 			for (const batch of group.renderBatches) {

@@ -114,8 +114,8 @@ class WMOExporter {
 			if (groupMask && !groupMask[i].checked)
 				continue;
 
-			// 3 verts per indicies.
-			nInd += group.verticies.length / 3;
+			// 3 verts per indices.
+			nInd += group.vertices.length / 3;
 
 			// Store the valid groups for quicker iteration later.
 			groups.push(group);
@@ -128,14 +128,14 @@ class WMOExporter {
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
 		for (const group of groups) {
-			const indCount = group.verticies.length / 3;
+			const indCount = group.vertices.length / 3;
 
 			const vertOfs = indOfs * 3;
-			const groupVerts = group.verticies;
+			const groupVerts = group.vertices;
 			for (let i = 0, n = groupVerts.length; i < n; i++)
 				vertsArray[vertOfs + i] = groupVerts[i];
 
-			// Normals and verticies should match, so re-use vertOfs here.
+			// Normals and vertices should match, so re-use vertOfs here.
 			const groupNormals = group.normals;
 			for (let i = 0, n = groupNormals.length; i < n; i++)
 				normalsArray[vertOfs + i] = groupNormals[i];
@@ -158,13 +158,13 @@ class WMOExporter {
 			// Load all render batches into the mesh.
 			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
 				const batch = group.renderBatches[bI];
-				const indicies = new Array(batch.numFaces);
+				const indices = new Array(batch.numFaces);
 
 				for (let i = 0; i < batch.numFaces; i++)
-					indicies[i] = group.indicies[batch.firstFace + i] + indOfs;
+					indices[i] = group.indices[batch.firstFace + i] + indOfs;
 
 				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
-				obj.addMesh(groupName + bI, indicies, materialMap.get(matID));
+				obj.addMesh(groupName + bI, indices, materialMap.get(matID));
 			}
 
 			indOfs += indCount;

@@ -25,21 +25,21 @@ class Skin {
 			if (magic !== MAGIC_SKIN)
 				throw new Error('Invalid magic: ' + magic);
 
-			const indiciesCount = data.readUInt32LE();
-			const indiciesOfs = data.readUInt32LE();
+			const indicesCount = data.readUInt32LE();
+			const indicesOfs = data.readUInt32LE();
 			const trianglesCount = data.readUInt32LE();
 			const trianglesOfs = data.readUInt32LE();
 			const propertiesCount = data.readUInt32LE();
 			const propertiesOfs = data.readUInt32LE();
-			const submeshesCount = data.readUInt32LE();
-			const submeshesOfs = data.readUInt32LE();
+			const subMeshesCount = data.readUInt32LE();
+			const subMeshesOfs = data.readUInt32LE();
 			const textureUnitsCount = data.readUInt32LE();
 			const textureUnitsOfs = data.readUInt32LE();
 			this.bones = data.readUInt32LE();
 			
-			// Read indicies.
-			data.seek(indiciesOfs);
-			this.indicies = data.readUInt16LE(indiciesCount);
+			// Read indices.
+			data.seek(indicesOfs);
+			this.indices = data.readUInt16LE(indicesCount);
 
 			// Read triangles.
 			data.seek(trianglesOfs);
@@ -49,11 +49,11 @@ class Skin {
 			data.seek(propertiesOfs);
 			this.properties = data.readUInt8(propertiesCount);
 
-			// Read submeshes.
-			data.seek(submeshesOfs);
-			this.submeshes = new Array(submeshesCount);
-			for (let i = 0; i < submeshesCount; i++) {
-				this.submeshes[i] = {
+			// Read subMeshes.
+			data.seek(subMeshesOfs);
+			this.subMeshes = new Array(subMeshesCount);
+			for (let i = 0; i < subMeshesCount; i++) {
+				this.subMeshes[i] = {
 					submeshID: data.readUInt16LE(),
 					level: data.readUInt16LE(),
 					vertexStart: data.readUInt16LE(),
@@ -69,7 +69,7 @@ class Skin {
 					sortRadius: data.readFloatLE()
 				};
 
-				this.submeshes[i].triangleStart += this.submeshes[i].level << 16;
+				this.subMeshes[i].triangleStart += this.subMeshes[i].level << 16;
 			}
 
 			// Read texture units.

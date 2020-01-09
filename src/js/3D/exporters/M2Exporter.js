@@ -77,15 +77,15 @@ class M2Exporter {
 		}
 
 		// Faces
-		for (let mI = 0, mC = skin.submeshes.length; mI < mC; mI++) {
+		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
 			// Skip geosets that are not enabled.
 			if (this.geosetMask && !this.geosetMask[mI].checked)
 				continue;
 
-			const mesh = skin.submeshes[mI];
+			const mesh = skin.subMeshes[mI];
 			const verts = new Array(mesh.triangleCount);
 			for (let vI = 0; vI < mesh.triangleCount; vI++)
-				verts[vI] = skin.indicies[skin.triangles[mesh.triangleStart + vI]];
+				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
 
 			let texture = null;
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
@@ -109,7 +109,7 @@ class M2Exporter {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
-			phys.addMesh('Collision', this.m2.collisionIndicies);
+			phys.addMesh('Collision', this.m2.collisionIndices);
 
 			await phys.write();
 		}

@@ -73,22 +73,22 @@ class M2Renderer {
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
 
 		if (this.reactive)
-			this.geosetArray = new Array(skin.submeshes.length);
+			this.geosetArray = new Array(skin.subMeshes.length);
 
-		for (let i = 0, n = skin.submeshes.length; i < n; i++) {
+		for (let i = 0, n = skin.subMeshes.length; i < n; i++) {
 			const geometry = new THREE.BufferGeometry();
 			geometry.setAttribute('position', dataVerts);
 			geometry.setAttribute('normal', dataNorms);
 			geometry.setAttribute('uv', dataUVs);
 
-			// Map triangle array to indicies.
+			// Map triangle array to indices.
 			const index = new Array(skin.triangles.length);
 			for (let j = 0, m = index.length; j < m; j++)
-				index[j] = skin.indicies[skin.triangles[j]];
+				index[j] = skin.indices[skin.triangles[j]];
 
 			geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(index), 1));
 
-			const skinMesh = skin.submeshes[i];
+			const skinMesh = skin.subMeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 

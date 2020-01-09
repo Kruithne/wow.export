@@ -247,7 +247,7 @@ class ADTExporter {
 		const objAdt = new ADTLoader(await casc.getFile(obj0FileDataID));
 		objAdt.loadObj();
 
-		const verticies = new Array(16 * 16 * 145 * 3);
+		const vertices = new Array(16 * 16 * 145 * 3);
 		const normals = new Array(16 * 16 * 145 * 3);
 		const uvs = new Array(16 * 16 * 145 * 2);
 		const uvsBake = new Array(16 * 16 * 145 * 2);
@@ -266,9 +266,9 @@ class ADTExporter {
 	
 		let ofs = 0;
 		let chunkID = 0;
-		for (let x = 0, midx = 0; x < 16; x++) {
+		for (let x = 0, midX = 0; x < 16; x++) {
 			for (let y = 0; y < 16; y++) {
-				const indicies = [];
+				const indices = [];
 
 				const chunkIndex = (x * 16) + y;
 				const chunk = rootAdt.chunks[chunkIndex];
@@ -283,23 +283,23 @@ class ADTExporter {
 
 					for (let col = 0; col < colCount; col++) {
 						let vx = chunkY - (col * UNIT_SIZE);
-						let vy = chunk.verticies[idx] + chunkZ;
+						let vy = chunk.vertices[idx] + chunkZ;
 						let vz = chunkX - (row * UNIT_SIZE_HALF);
 
 						if (isShort)
 							vx -= UNIT_SIZE_HALF;
 
-						const vIndex = midx * 3;
-						verticies[vIndex + 0] = vx;
-						verticies[vIndex + 1] = vy;
-						verticies[vIndex + 2] = vz;
+						const vIndex = midX * 3;
+						vertices[vIndex + 0] = vx;
+						vertices[vIndex + 1] = vy;
+						vertices[vIndex + 2] = vz;
 
 						const normal = chunk.normals[idx];
 						normals[vIndex + 0] = normal[0] / 127;
 						normals[vIndex + 1] = normal[1] / 127;
 						normals[vIndex + 2] = normal[2] / 127;
 
-						const cIndex = midx * 4;
+						const cIndex = midX * 4;
 						if (chunk.vertexShading) {
 							// Store vertex shading in BGRA format.
 							const color = chunk.vertexShading[idx];
@@ -316,7 +316,7 @@ class ADTExporter {
 						}
 
 						const uvIdx = isShort ? col + 0.5 : col;
-						const uvIndex = midx * 2;
+						const uvIndex = midX * 2;
 
 						uvsBake[uvIndex + 0] = -(vx - firstChunkX) / TILE_SIZE;
 						uvsBake[uvIndex + 1] = (vz - firstChunkY) / TILE_SIZE;
@@ -333,7 +333,7 @@ class ADTExporter {
 						}
 
 						idx++;
-						midx++;
+						midX++;
 					}
 				}
 
@@ -357,27 +357,27 @@ class ADTExporter {
 
 					if (!isHole) {
 						const indOfs = ofs + j;
-						indicies.push(indOfs, indOfs - 9, indOfs + 8);
-						indicies.push(indOfs, indOfs - 8, indOfs - 9);
-						indicies.push(indOfs, indOfs + 9, indOfs - 8);
-						indicies.push(indOfs, indOfs + 8, indOfs + 9);
+						indices.push(indOfs, indOfs - 9, indOfs + 8);
+						indices.push(indOfs, indOfs - 8, indOfs - 9);
+						indices.push(indOfs, indOfs + 9, indOfs - 8);
+						indices.push(indOfs, indOfs + 8, indOfs + 9);
 					}
 
 					if (!((j + 1) % (9 + 8)))
 						j += 9;
 				}
 			
-				ofs = midx;
+				ofs = midX;
 
 				if (splitTextures) {
 					const objName = this.tileID + '_' + chunkID;
 					const matName = 'tex_' + objName;
 					mtl.addMaterial(matName, matName + '.png');
-					obj.addMesh(objName, indicies, matName);
+					obj.addMesh(objName, indices, matName);
 				} else {
-					obj.addMesh(chunkID, indicies, 'tex_' + this.tileID);
+					obj.addMesh(chunkID, indices, 'tex_' + this.tileID);
 				}
-				chunkMeshes[chunkIndex] = indicies;
+				chunkMeshes[chunkIndex] = indices;
 
 				chunkID++;
 			}
@@ -386,7 +386,7 @@ class ADTExporter {
 		if (!splitTextures)
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
-		obj.setVertArray(verticies);
+		obj.setVertArray(vertices);
 		obj.setNormalArray(normals);
 		obj.setUVArray(uvs);
 
@@ -491,7 +491,7 @@ class ADTExporter {
 
 				const vertexBuffer = gl.createBuffer();
 				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticies), gl.STATIC_DRAW);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 				gl.enableVertexAttribArray(aVertexPosition);
 				gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
 
@@ -528,7 +528,7 @@ class ADTExporter {
 
 						const chunkIndex = (x * 16) + y;
 						const texChunk = texAdt.texChunks[chunkIndex];
-						const indicies = chunkMeshes[chunkIndex];
+						const indices = chunkMeshes[chunkIndex];
 
 						const alphaLayers = texChunk.alphaLayers || [];
 						const alphaTextures = new Array(alphaLayers.length);
@@ -571,8 +571,8 @@ class ADTExporter {
 
 						const indexBuffer = gl.createBuffer();
 						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicies), gl.STATIC_DRAW);
-						gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_SHORT, 0);
+						gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+						gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
 						unbindAllTextures();
 						

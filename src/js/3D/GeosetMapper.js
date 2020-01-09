@@ -47,7 +47,7 @@ const getGeosetName = (index, id) => {
 };
 
 /**
- * Map geoset names for submeshes.
+ * Map geoset names for subMeshes.
  * @param {Array} geosets
  */
 const map = async (geosets) => {

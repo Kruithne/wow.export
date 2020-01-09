@@ -42,7 +42,7 @@ class ADTLoader {
 		this.chunkIndex = 0;
 		this.wdt = wdt;
 
-		this.handlers = ADTTexChunkhandlers;
+		this.handlers = ADTTexChunkHandlers;
 		this._load();
 	}
 
@@ -141,9 +141,9 @@ const ADTChunkHandlers = {
 };
 
 const RootMCNKChunkHandlers = {
-	// MCVT (Verticies)
+	// MCVT (vertices)
 	0x4D435654: function(data) {
-		this.verticies = data.readFloatLE(145);
+		this.vertices = data.readFloatLE(145);
 	},
 
 	// MCCV (Vertex Shading)
@@ -188,7 +188,7 @@ const RootMCNKChunkHandlers = {
 	}
 };
 
-const ADTTexChunkhandlers = {
+const ADTTexChunkHandlers = {
 	// MVER (Version)
 	0x4D564552: function(data) {
 		this.version = data.readUInt32LE();

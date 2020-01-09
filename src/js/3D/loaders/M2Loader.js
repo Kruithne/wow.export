@@ -91,7 +91,7 @@ class M2Loader {
 		this.version = this.data.readUInt32LE();
 		this.parseChunk_MD21_modelName(ofs);
 		this.data.move(11 * 4); // flags, loops, seq, bones.
-		this.parseChunk_MD21_verticies(ofs);
+		this.parseChunk_MD21_vertices(ofs);
 		this.viewCount = this.data.readUInt32LE();
 		this.data.move(8); // coloursCount, coloursOfs
 		this.parseChunk_MD21_textures(ofs);
@@ -110,8 +110,8 @@ class M2Loader {
 	 * @param {number} ofs 
 	 */
 	parseChunk_MD21_collision(ofs) {
-		const indiciesCount = this.data.readUInt32LE();
-		const indiciesOfs = this.data.readUInt32LE();
+		const indicesCount = this.data.readUInt32LE();
+		const indicesOfs = this.data.readUInt32LE();
 
 		const positionsCount = this.data.readUInt32LE();
 		const positionsOfs = this.data.readUInt32LE();
@@ -121,9 +121,9 @@ class M2Loader {
 
 		const base = this.data.offset;
 
-		// Indicies
-		this.data.seek(indiciesOfs + ofs);
-		this.collisionIndicies = this.data.readUInt16LE(indiciesCount);
+		// indices
+		this.data.seek(indicesOfs + ofs);
+		this.collisionIndices = this.data.readUInt16LE(indicesCount);
 
 		// Positions
 		this.data.seek(positionsOfs + ofs);
@@ -203,17 +203,17 @@ class M2Loader {
 	}
 
 	/**
-	 * Parse verticies from an MD21 chunk.
+	 * Parse vertices from an MD21 chunk.
 	 * @param {number} ofs 
 	 */
-	parseChunk_MD21_verticies(ofs) {
+	parseChunk_MD21_vertices(ofs) {
 		const verticesCount = this.data.readUInt32LE();
 		const verticesOfs = this.data.readUInt32LE();
 
 		const base = this.data.offset;
 		this.data.seek(verticesOfs + ofs);
 
-		// Read verticies.	
+		// Read vertices.	
 		const verts = this.vertices = new Array(verticesCount * 3);
 		const normals = this.normals = new Array(verticesCount * 3);
 		const uv = this.uv = new Array(verticesCount * 2);
@@ -224,7 +224,7 @@ class M2Loader {
 			verts[index + 2] = this.data.readFloatLE() * -1;
 			verts[index + 1] = this.data.readFloatLE();
 	
-			this.data.move(8); // boneWeight/boneIndicies.
+			this.data.move(8); // boneWeight/boneindices.
 	
 			normals[index] = this.data.readFloatLE();
 			normals[index + 2] = this.data.readFloatLE() * -1;
