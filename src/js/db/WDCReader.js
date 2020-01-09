@@ -35,6 +35,7 @@ class WDCReader {
 		this.copyTable = new Map();
 
 		this.isInflated = false;
+		this.isLoaded = false;
 	}
 
 	/**
@@ -50,6 +51,11 @@ class WDCReader {
 	 * @param {number} recordID 
 	 */
 	getRow(recordID) {
+		// The table needs to be loaded before we attempt to access a row.
+		// We could just return a NULL here, but throwing an error highlights the mistake.
+		if (!this.isLoaded)
+			throw new Error('Attempted to read a data table row before table was loaded.');
+
 		// Look this row up as a normal entry.
 		const record = this.rows.get(recordID);
 		if (record !== undefined)
@@ -72,6 +78,11 @@ class WDCReader {
 	 * Calling this will permanently inflate internal copy data; use wisely.
 	 */
 	getAllRows() {
+		// The table needs to be loaded before we attempt to access the rows.
+		// We could just return an empty Map here, but throwing an error highlights the mistake.
+		if (!this.isLoaded)
+			throw new Error('Attempted to read a data table rows before table was loaded.');
+
 		const rows = this.rows;
 
 		// Inflate all copy table data before returning.
@@ -398,6 +409,7 @@ class WDCReader {
 		}
 
 		log.write('Parsed %s with %d rows', this.fileName, this.size);
+		this.isLoaded = true;
 	}
 }
 
