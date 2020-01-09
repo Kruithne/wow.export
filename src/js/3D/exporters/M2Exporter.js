@@ -41,7 +41,7 @@ class M2Exporter {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const overwriteFiles = core.view.config.overwriteFiles;
+		const config = core.view.config;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -62,10 +62,16 @@ class M2Exporter {
 			const texFileDataID = texture.fileDataID;
 			if (texFileDataID > 0) {
 				try {
-					const texFile = texFileDataID + '.png';
-					const texPath = path.join(path.dirname(out), texFile);
+					let texFile = texFileDataID + '.png';
+					let texPath = path.join(path.dirname(out), texFile);
 
-					if (overwriteFiles || !await generics.fileExists(texPath)) {
+					// Map texture files relative to shared directory.
+					if (config.enableSharedTextures) {
+						texPath = ExportHelper.getSharedTexturePath(texFile);
+						texFile = path.relative(path.dirname(out), texPath);
+					}
+
+					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 						const data = await core.view.casc.getFile(texFileDataID);
 						const blp = new BLPFile(data);
 
@@ -109,8 +115,8 @@ class M2Exporter {
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
-		await obj.write(overwriteFiles);
-		await mtl.write(overwriteFiles);
+		await obj.write(config.overwriteFiles);
+		await mtl.write(config.overwriteFiles);
 
 		if (exportCollision) {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
@@ -118,7 +124,7 @@ class M2Exporter {
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
 
-			await phys.write(overwriteFiles);
+			await phys.write(config.overwriteFiles);
 		}
 	}
 }

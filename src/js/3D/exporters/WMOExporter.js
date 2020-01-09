@@ -53,7 +53,7 @@ class WMOExporter {
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
-		const overwriteFiles = core.view.config.overwriteFiles;
+		const config = core.view.config;
 
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
@@ -84,10 +84,16 @@ class WMOExporter {
 
 			if (fileDataID > 0) {
 				try {
-					const texFile = fileDataID + '.png';
-					const texPath = path.join(path.dirname(out), texFile);
+					let texFile = fileDataID + '.png';
+					let texPath = path.join(path.dirname(out), texFile);
 
-					if (overwriteFiles || !await generics.fileExists(texPath)) {
+					// Map texture files relative to shared directory.
+					if (config.enableSharedTextures) {
+						texPath = ExportHelper.getSharedTexturePath(texFile);
+						texFile = path.relative(path.dirname(out), texPath);
+					}
+
+					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 						const data = await casc.getFile(fileDataID);
 						const blp = new BLPFile(data);
 
@@ -182,7 +188,7 @@ class WMOExporter {
 		obj.setUVArray(uvsArray);
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
-		if (overwriteFiles || !await generics.fileExists(csvPath)) {
+		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
 
@@ -214,7 +220,8 @@ class WMOExporter {
 		
 					if (fileDataID > 0) {
 						try {
-							const m2Path = ExportHelper.replaceExtension(ExportHelper.replaceFile(out, fileName), '.obj');
+							const m2Name = ExportHelper.replaceExtension(fileName, '.obj');
+							let m2Path = ExportHelper.replaceFile(out, m2Name);
 
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
@@ -251,8 +258,8 @@ class WMOExporter {
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
-		await obj.write(overwriteFiles);
-		await mtl.write(overwriteFiles);
+		await obj.write(config.overwriteFiles);
+		await mtl.write(config.overwriteFiles);
 	}
 
 	/**

@@ -26,6 +26,14 @@ class ExportHelper {
 	}
 
 	/**
+	 * Return a shared texture path for the given file.
+	 * @param {string} file 
+	 */
+	static getSharedTexturePath(file) {
+		return path.normalize(path.join(core.view.config.exportDirectory, core.view.config.sharedTexturesDir, file));
+	}
+
+	/**
 	 * Takes the directory from fileA and combines it with the basename of fileB.
 	 * @param {string} fileA 
 	 * @param {string} fileB 
