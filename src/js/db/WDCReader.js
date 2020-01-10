@@ -371,9 +371,9 @@ class WDCReader {
 							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
 
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
-								out[prop] = new Array(count);
-								for (let i = 0; i < count; i++)
-									out[prop][i] = palletData[fieldIndex][(bitpackedValue * count) + i];
+								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
+								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
+									out[prop][i] = palletData[fieldIndex][(bitpackedValue * recordFieldInfo.fieldCompressionPacking[2]) + i];
 
 							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
 								out[prop] = palletData[fieldIndex][bitpackedValue];
