@@ -358,7 +358,7 @@ class WDCReader {
 							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness(es?).
 
 							// Seek to (hopefully correct, see fieldOffsetBytes comment) position in record stream
-							data.seek(section.recordDataOfs + recordOfs + (recordIndex * recordSize) + fieldOffsetBytes);
+							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
 							// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing, error for now.
 							//if (fieldSizeBytes > 4) {
