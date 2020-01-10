@@ -8,7 +8,7 @@ const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
 const generics = require('../generics');
 
-core.events.once('init', () => {
+core.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.
 	core.events.on('click-export-video', async () => {
 		const userSelection = core.view.selectionVideos;

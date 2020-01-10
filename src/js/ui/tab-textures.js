@@ -96,7 +96,7 @@ core.registerDropHandler({
 	process: files => exportFiles(files, true)
 });
 
-core.events.once('init', () => {
+core.registerLoadFunc(async () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
 	core.view.$watch('config.exportTextureAlpha', () => {

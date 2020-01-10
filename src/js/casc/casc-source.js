@@ -108,6 +108,15 @@ class CASC {
 	}
 
 	/**
+	 * Initialize external components as part of the CASC load process.
+	 * This allows us to do it seamlessly under the cover of the same loading screen.
+	 */
+	async initializeComponents() {
+		await this.progress.step('Initializing components');
+		await core.runLoadFuncs();
+	}
+
+	/**
 	 * Parse entries from a root file.
 	 * @param {BufferWrapper} data 
 	 * @param {string} hash 

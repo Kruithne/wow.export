@@ -350,10 +350,6 @@ document.addEventListener('click', function(e) {
 		log.write('No export directory set, setting to %s', core.view.config.exportDirectory);
 	}
 
-	// Emit an initiation event. This is used for modules that need to know
-	// when the reactive instance is mounted and ready for use.
-	core.events.emit('init');
-
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;
 	window.ondragenter = e => {

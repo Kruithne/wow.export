@@ -234,7 +234,7 @@ core.events.once('screen-tab-models', () => {
 	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
-core.events.once('init', () => {
+core.registerLoadFunc(async () => {
 	// Track changes to the visible model listfile types.
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);

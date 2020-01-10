@@ -107,7 +107,7 @@ const loadSelectedTrack = async () => {
 	core.view.isBusy--;
 };
 
-core.events.once('init', () => {
+core.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
 	audioNode.volume = core.view.config.soundPlayerVolume;

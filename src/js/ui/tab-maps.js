@@ -201,7 +201,7 @@ core.events.once('screen-tab-maps', async () => {
 	core.view.isBusy--;
 });
 
-core.events.once('init', () => {
+core.registerLoadFunc(async () => {
 	// Store a reference to loadMapTile for the map viewer component.
 	core.view.mapViewerTileLoader = loadMapTile;
 

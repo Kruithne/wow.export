@@ -18,6 +18,10 @@ events.setMaxListeners(666);
 // Each item is an object defining .ext, .prompt() and .process().
 const dropHandlers = [];
 
+// loaders is an array of promises which need to be resolved as a 
+// step in the loading process, allowing components to initialize.
+let loaders = [];
+
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
 const view = {
@@ -173,6 +177,24 @@ const getDropHandler = (file) => {
 	return null;
 };
 
+/**
+ * Register a promise to be resolved during the last loading step.
+ * @param {function} func 
+ */
+const registerLoadFunc = (func) => {
+	loaders.push(func);
+};
+
+/**
+ * Resolve all registered loader functions.
+ */
+const runLoadFuncs = async () => {
+	while (loaders.length > 0)
+		await loaders.shift()();
+		
+	loaders = undefined;
+};
+
 const core = { 
 	events,
 	view,
@@ -182,7 +204,9 @@ const core = {
 	hideToast,	
 	openExportDirectory,
 	registerDropHandler,
-	getDropHandler
+	getDropHandler,
+	registerLoadFunc,
+	runLoadFuncs
 };
 
 module.exports = core;
