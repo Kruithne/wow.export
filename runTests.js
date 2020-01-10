@@ -6,7 +6,8 @@ const INCLUDED_UNIT_TESTS = [
 ];
 
 // Create test runtime folder
-fs.mkdirSync('./tests/user_data')
+if (!fs.existsSync('./tests/user_data'))
+	fs.mkdirSync('./tests/user_data')
 
 // Test runner.
 let isErrored = false;
