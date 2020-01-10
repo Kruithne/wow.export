@@ -330,6 +330,7 @@ class WDCReader {
 									data.seek(pos);
 									break;
 
+								case FieldType.Int8: out[prop] = data.readInt8(count); break;
 								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
 								case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
 								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
