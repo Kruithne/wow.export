@@ -145,10 +145,10 @@ Vue.component('checkboxlist', {
 		},
 
 		/**
-		 * Propogate entry clicks to the child checkbox.
+		 * Propagate entry clicks to the child checkbox.
 		 * @param {MouseEvent} event 
 		 */
-		propogateClick: function(event) {
+		propagateClick: function(event) {
 			let target = event.target;
 			if (!target.matches('input')) {
 				if (target.matches('span'))
@@ -164,7 +164,7 @@ Vue.component('checkboxlist', {
 	 */
 	template: `<div class="ui-checkboxlist" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="(item, i) in displayItems" class="item" @click="propogateClick($event)" :class="{ selected: item.checked }">
+		<div v-for="(item, i) in displayItems" class="item" @click="propagateClick($event)" :class="{ selected: item.checked }">
 			<input type="checkbox" v-model="item.checked"/>
 			<span>{{ item.label }}</span>
 		</div>
