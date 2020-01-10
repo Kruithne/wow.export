@@ -369,11 +369,11 @@ class WDCReader {
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
 							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
 
-							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray){
+							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(count);
-								for (let i = 0; i < count; i++){
+								for (let i = 0; i < count; i++)
 									out[prop][i] = palletData[fieldIndex][(bitpackedValue * count) + i];
-								}
+
 							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
 								out[prop] = palletData[fieldIndex][bitpackedValue];
 							} else {
