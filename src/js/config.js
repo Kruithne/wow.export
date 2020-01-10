@@ -67,21 +67,17 @@ const save = () => {
  * Persist configuration data to disk.
  */
 const doSave = async () => {
-	try {
-		const configSave = {};
-		for (const [key, value] of Object.entries(core.view.config)) {
-			// Only persist configuration values that do not match defaults.
-			if (defaultConfig.hasOwnProperty(key) && defaultConfig[key] === value)
-				continue;
+	const configSave = {};
+	for (const [key, value] of Object.entries(core.view.config)) {
+		// Only persist configuration values that do not match defaults.
+		if (defaultConfig.hasOwnProperty(key) && defaultConfig[key] === value)
+			continue;
 
-			configSave[key] = value;
-		}
-
-		const out = JSON.stringify(configSave, null, '\t');
-		await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
-	} catch (e) {
-		crash('ERR_CONFIG_SAVE', e.message);
+		configSave[key] = value;
 	}
+
+	const out = JSON.stringify(configSave, null, '\t');
+	await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
 	
 	// If another save was attempted during this one, re-save.
 	if (isQueued) {

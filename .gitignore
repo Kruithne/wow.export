@@ -9,3 +9,6 @@
 
 # Compiled stylesheets (use .scss for source).
 *.css
+
+# Runtime directory for tests.
+/tests/user_data
