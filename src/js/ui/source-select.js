@@ -44,8 +44,6 @@ const loadInstall = (index) => {
 
 		try {
 			await cascSource.load(index);
-
-			core.view.casc = cascSource;
 			core.view.setScreen('tab-models');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);

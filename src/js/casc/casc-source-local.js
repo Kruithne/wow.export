@@ -95,6 +95,9 @@ class CASCLocal extends CASC {
 		await this.loadIndexes();
 		await this.loadEncoding();
 		await this.loadRoot();
+
+		core.view.casc = this;
+
 		await this.loadListfile(this.build.BuildKey);
 	}
 

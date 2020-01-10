@@ -22,9 +22,8 @@ const idLookup = new Map();
  * Returns the amount of file ID to filename mappings loaded.
  * @param {string} buildConfig
  * @param {BuildCache} cache
- * @param {object} casc
  */
-const loadListfile = async (buildConfig, cache, casc) => {
+const loadListfile = async (buildConfig, cache) => {
 	log.write('Loading listfile for build %s', buildConfig);
 
 	let url = String(core.view.config.listfileURL);
@@ -111,8 +110,8 @@ const loadListfile = async (buildConfig, cache, casc) => {
 	}
 
 	let unknownCount = 0;
-	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', DB_ModelFileData, '.m2', casc);
-	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', DB_TextureFileData, '.blp', casc);
+	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', DB_ModelFileData, '.m2');
+	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', DB_TextureFileData, '.blp');
 
 	log.write('%d listfile entries loaded (%d unknown entries)', idLookup.size, unknownCount);
 	return idLookup.size;
@@ -123,11 +122,10 @@ const loadListfile = async (buildConfig, cache, casc) => {
  * @param {string} tableFile 
  * @param {object} tableSchema 
  * @param {string} ext 
- * @param {object} casc
  */
-const loadIDTable = async (tableFile, tableSchema, ext, casc) => {
+const loadIDTable = async (tableFile, tableSchema, ext) => {
 	let loadCount = 0;
-	const table = new WDCReader(tableFile, tableSchema, casc);
+	const table = new WDCReader(tableFile, tableSchema);
 	await table.parse();
 
 	for (const row of table.rows.values()) {

@@ -166,6 +166,9 @@ class CASCRemote extends CASC {
 
 		await this.loadEncoding();
 		await this.loadRoot();
+
+		core.view.casc = this;
+		
 		await this.loadListfile(this.build.BuildConfig);
 	}
 

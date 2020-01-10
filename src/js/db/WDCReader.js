@@ -26,10 +26,9 @@ class WDCReader {
 	 * @param {string} fileName
 	 * @param {object} schema 
 	 */
-	constructor(fileName, schema, casc = core.view.casc) {
+	constructor(fileName, schema) {
 		this.fileName = fileName;
 		this.schema = schema;
-		this.casc = casc;
 
 		this.rows = new Map();
 		this.copyTable = new Map();
@@ -100,7 +99,7 @@ class WDCReader {
 	 * Parse the data table.
 	 */
 	async parse() {
-		const data = await this.casc.getFileByName(this.fileName, true, false, true);
+		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
 		const magic = data.readUInt32LE();
