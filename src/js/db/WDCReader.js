@@ -304,7 +304,6 @@ class WDCReader {
 				data.seek(section.recordDataOfs + recordOfs);
 
 				const out = {};
-				let recordIndex = 0;
 				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
 					const recordFieldInfo = fieldInfo[fieldIndex];
@@ -314,7 +313,7 @@ class WDCReader {
 					if (Array.isArray(type))
 						[fieldType, count] = type;
 
-					//const fieldSizeBytes = (recordFieldInfo.fieldSizeBits + (recordFieldInfo.fieldOffsetBits & 7) + 7) / 8;
+					//const fieldSizeBytes = recordFieldInfo.fieldSizeBits / 8;
 
 					// ToDo: Test if floor is the best decision to make here
 					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
@@ -393,8 +392,6 @@ class WDCReader {
 					fieldIndex++;
 				}
 
-				recordIndex++;
-				
 				this.rows.set(recordID, out);
 			}
 		}
