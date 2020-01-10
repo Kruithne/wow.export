@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const path = require('path');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
@@ -17,6 +18,13 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
+
+const WDCReader = require('../db/WDCReader');
+const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
+const DB_CreatureModelData = require('../db/schema/CreatureModelData');
+
+const creatureTextures = new Map();
+const activeSkins = new Map();
 
 let selectedFile = null;
 let isFirstModel = true;
@@ -40,12 +48,18 @@ const previewModel = async (fileName) => {
 			activePath = null;
 		}
 
-		const file = await core.view.casc.getFileByName(fileName);
+		// Clear the active skin map.
+		activeSkins.clear();
+
+		const fileDataID = listfile.getByFilename(fileName);
+		const file = await core.view.casc.getFile(fileDataID);
+		let isM2 = false;
 
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
 			activeRenderer = new M2Renderer(file, renderGroup, true);
+			isM2 = true;
 		} else if (fileNameLower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
 			activeRenderer = new WMORenderer(file, fileName, renderGroup);
@@ -54,6 +68,36 @@ const previewModel = async (fileName) => {
 		}
 
 		await activeRenderer.load();
+
+		if (isM2) {
+			// Check for creature skins.
+			const skins = creatureTextures.get(fileDataID);
+			let isFirst = true;
+			if (skins !== undefined) {
+				const skinList = [];
+				for (const skin of skins) {
+					let skinName = listfile.getByID(skin);
+					if (skinName !== undefined) {
+						// Display the texture name without path/extension.
+						skinName = path.basename(skinName, '.blp');
+					} else {
+						// Handle unknown textures.
+						skinName = 'unknown_' + skin;
+					}
+
+					// Push the skin onto the display list.
+					skinList.push(skinName);
+
+					// Keep a mapping of the name -> fileDataID for user selects.
+					activeSkins.set(skinName, skin);
+					isFirst = false;
+				}
+
+				core.view.modelViewerSkins = skinList;
+				core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
+			}
+		}
+
 		updateCameraBounding();
 
 		activePath = fileName;
@@ -235,6 +279,51 @@ core.events.once('screen-tab-models', () => {
 });
 
 core.registerLoadFunc(async () => {
+	// Attempt to load creature model data.
+	try {
+		log.write('Loading creature textures...');
+
+		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
+		await creatureDisplayInfo.parse();
+
+		const textureMap = new Map();
+
+		// Map all available texture fileDataIDs to model IDs.
+		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
+			const textures = displayRow.TextureVariationFieldDataID.filter(e => e > 0);
+
+			if (textures.length > 0) {
+				if (textureMap.has(displayRow.ModelID))
+					textureMap.get(displayRow.ModelID).push(...textures);
+				else
+					textureMap.set(displayRow.ModelID, textures);
+			}
+		}
+
+		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2', DB_CreatureModelData);
+		await creatureModelData.parse();
+
+		// Using the texture mapping, map all model fileDataIDs to used textures.
+		for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
+			const textures = textureMap.get(modelID);
+			if (textures !== undefined) {
+				const fileDataID = modelRow.FileDataID;
+				const entry = creatureTextures.get(fileDataID);
+
+				if (entry !== undefined) {
+					for (const texture of textures)
+						entry.add(texture);
+				} else {
+					creatureTextures.set(fileDataID, new Set(textures));
+				}
+			}
+		}
+
+		log.write('Loaded textures for %d creatures', creatureTextures.size);
+	} catch (e) {
+		log.write('Unable to load creature model data: %s', e.message);
+	}
+
 	// Track changes to the visible model listfile types.
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);
@@ -243,6 +332,20 @@ core.registerLoadFunc(async () => {
 	// resize event for the window so the modelview component corrects.
 	core.view.$watch('config.modelsShowSidebar', () => {
 		window.dispatchEvent(new Event('resize'));
+	});
+
+	// When the selected model skin is changed, update our model.
+	core.view.$watch('modelViewerSkinsSelection', async selection => {
+		// Don't do anything if we're lacking skins.
+		if (!activeRenderer || activeSkins.size === 0)
+			return;
+
+		// Skin selector is single-select, should only be one item.
+		const selected = selection[0];
+
+		const fileDataID = activeSkins.get(selected);
+		if (fileDataID !== undefined)
+			activeRenderer.loadNPCVariantTexture(fileDataID);
 	});
 
 	// Track selection changes on the model listbox and preview first model.

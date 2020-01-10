@@ -312,7 +312,7 @@ class WDCReader {
 					if (Array.isArray(type))
 						[fieldType, count] = type;
 
-					const fieldSizeBytes = (recordFieldInfo.fieldSizeBits + (recordFieldInfo.fieldOffsetBits & 7) + 7) / 8;
+					//const fieldSizeBytes = (recordFieldInfo.fieldSizeBits + (recordFieldInfo.fieldOffsetBits & 7) + 7) / 8;
 
 					// ToDo: Test if floor is the best decision to make here
 					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
@@ -361,11 +361,11 @@ class WDCReader {
 							data.seek(section.recordDataOfs + recordOfs + (recordIndex * recordSize) + fieldOffsetBytes);
 
 							// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing, error for now.
-							if (fieldSizeBytes > 4) {
-								throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
-								// const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
-								// result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
-							}
+							//if (fieldSizeBytes > 4) {
+							//	throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
+							//	const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
+							//	result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
+							//}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
 							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);

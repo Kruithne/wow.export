@@ -10,7 +10,7 @@ const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
 
-const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
+const DEFAULT_MODEL_COLOR = 0x57afe2;
 
 class M2Renderer {
 	/**
@@ -108,6 +108,37 @@ class M2Renderer {
 	}
 
 	/**
+	 * Load an NPC variant texture onto this model.
+	 * @param {number} fileDataID 
+	 */
+	async loadNPCVariantTexture(fileDataID) {
+		try {
+			log.write('Loading variant texture %d', fileDataID);
+			if (!this.defaultMaterial)
+				throw new Error('Model does not have a default material to replace.');
+
+			const data = await core.view.casc.getFile(fileDataID);
+			const blp = new BLPFile(data);
+
+			const loader = new THREE.ImageLoader();
+			loader.load(blp.getDataURL(false), image => {
+				const tex = new THREE.Texture();
+				const mat = this.defaultMaterial;
+
+				tex.image = image;
+				tex.format = THREE.RGBAFormat;
+				tex.needsUpdate = true;
+
+				mat.map = tex;
+				mat.color = 0x0;
+				mat.needsUpdate = true;
+			});
+		} catch (e) {
+			log.write('Failed to set variant texture: %s', e.message);
+		}
+	}
+
+	/**
 	 * Load all textures needed for the M2 model.
 	 */
 	loadTextures() {
@@ -140,7 +171,10 @@ class M2Renderer {
 				this.textures.push(tex);
 				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
 			} else {
-				this.materials[i] = DEFAULT_MATERIAL;
+				if (!this.defaultMaterial)
+					this.defaultMaterial = new THREE.MeshPhongMaterial({ color: DEFAULT_MODEL_COLOR });
+
+				this.materials[i] = this.defaultMaterial;
 			}
 		}
 	}

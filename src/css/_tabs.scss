@@ -42,11 +42,8 @@
 	grid-template-columns: 1fr 1fr auto;
 
 	#model-sidebar {
-		#list-geosets {
-			height: 377px;
-		}
 
-		#list-wmo-groups, #list-wmo-sets {
+		.ui-checkboxlist, .ui-listbox {
 			height: 156px;
 		}
 
