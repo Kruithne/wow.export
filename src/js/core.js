@@ -126,7 +126,7 @@ const hideToast = () => {
  * @param {string} toastType 'error', 'info', 'success', 'progress'
  * @param {string} message 
  * @param {object} options
- * @param {number} ttl Time in millseconds before removing the toast.
+ * @param {number} ttl Time in milliseconds before removing the toast.
  * @param {boolean} closable If true, toast can manually be closed.
  */
 const setToast = (toastType, message, options = null, ttl = 10000, closable = true) => {
