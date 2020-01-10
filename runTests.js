@@ -1,7 +1,12 @@
+const fs = require('fs');
+
 // Unit tests to be executed.
 const INCLUDED_UNIT_TESTS = [
 	'./tests/bufferTest',
 ];
+
+// Create test runtime folder
+fs.mkdirSync('./tests/user_data')
 
 // Test runner.
 let isErrored = false;

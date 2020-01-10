@@ -86,7 +86,7 @@ const write = (...parameters) => {
 		if (pool.length < MAX_LOG_POOL)
 			pool.push(line);
 		else
-			crash('ERR_LOG_OVERFLOW', 'The log pool has overflowed.');
+			throw new Error('ERR_LOG_OVERFLOW: The log pool has overflowed.');
 	}
 
 	// Mirror output to debugger.
@@ -109,7 +109,6 @@ getErrorDump = async () => {
 
 // Initialize the logging stream.
 const stream = fs.createWriteStream(constants.RUNTIME_LOG);
-stream.once('error', e => crash('ERR_RUNTIME_LOG', e));
 stream.on('drain', drainPool);
 
 module.exports = { write, timeLog, timeEnd, openRuntimeLog };
