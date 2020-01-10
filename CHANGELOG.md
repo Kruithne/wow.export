@@ -1,5 +1,5 @@
 0.1.8 (Unreleased)
-- NPC variant textures can now be previewed for creature models.
+- NPC variant textures can now be selected/exported for creature models.
 - Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
 - Foliage doodads can now be exported along with map tiles in the map exporter.
 - Global map WMOs can now be exported for maps that contain them (such as Stormwind Stockade).

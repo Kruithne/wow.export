@@ -25,6 +25,7 @@ const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 
 const creatureTextures = new Map();
 const activeSkins = new Map();
+let selectedVariantTexID = 0;
 
 let selectedFile = null;
 let isFirstModel = true;
@@ -50,6 +51,7 @@ const previewModel = async (fileName) => {
 
 		// Clear the active skin map.
 		activeSkins.clear();
+		selectedVariantTexID = 0;
 
 		const fileDataID = listfile.getByFilename(fileName);
 		const file = await core.view.casc.getFile(fileDataID);
@@ -197,7 +199,7 @@ const exportFiles = async (files, isLocal = false) => {
 						const exportOBJ = ExportHelper.replaceExtension(exportPath, '.obj');
 
 						if (fileNameLower.endsWith('.m2')) {
-							const exporter = new M2Exporter(data);
+							const exporter = new M2Exporter(data, selectedVariantTexID);
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
@@ -344,8 +346,10 @@ core.registerLoadFunc(async () => {
 		const selected = selection[0];
 
 		const fileDataID = activeSkins.get(selected);
-		if (fileDataID !== undefined)
+		if (fileDataID !== undefined) {
+			selectedVariantTexID = fileDataID;
 			activeRenderer.loadNPCVariantTexture(fileDataID);
+		}
 	});
 
 	// Track selection changes on the model listbox and preview first model.

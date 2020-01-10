@@ -19,9 +19,11 @@ class M2Exporter {
 	/**
 	 * Construct a new M2Exporter instance.
 	 * @param {BufferWrapper}
+	 * @param {number} variantTexture
 	 */
-	constructor(data) {
+	constructor(data, variantTexture = 0) {
 		this.m2 = new M2Loader(data);
+		this.variantTexture = variantTexture;
 	}
 
 	/**
@@ -59,7 +61,17 @@ class M2Exporter {
 		// Textures
 		const validTextures = {};
 		for (const texture of this.m2.textures) {
-			const texFileDataID = texture.fileDataID;
+			let texFileDataID = texture.fileDataID;
+
+			// Blank texture, do we have a variant texture?
+			if (texFileDataID === 0) {
+				texFileDataID = this.variantTexture;
+
+				// Backward patch the variant texture into the M2 instance so that
+				// the MTL exports with the correct texture once we swap it here.
+				texture.fileDataID = this.variantTexture;
+			}
+
 			if (texFileDataID > 0) {
 				try {
 					let texFile = texFileDataID + '.png';
