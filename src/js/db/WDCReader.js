@@ -97,9 +97,11 @@ class WDCReader {
 
 	/**
 	 * Parse the data table.
+	 * @param {object} [data] 
 	 */
-	async parse() {
-		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);
+	async parse(data) {
+		if (!data)
+			data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
 		const magic = data.readUInt32LE();
