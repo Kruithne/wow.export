@@ -301,6 +301,11 @@ class WDCReader {
 				const actualRecordSize = isNormal ? recordSize : offsetMap[i].size;
 				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
 
+				// Append 8 bytes (a full uint64) to buffer to prevent hitting the buffer limit when reading bitpacked fields.
+				if (recordEnd + 8 > data.byteLength){
+					data.setCapacity(data.byteLength + 8, true);
+				}
+
 				data.seek(section.recordDataOfs + recordOfs);
 
 				const out = {};
