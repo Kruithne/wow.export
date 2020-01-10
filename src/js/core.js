@@ -29,7 +29,7 @@ const view = {
 	toast: null, // Controls the currently active toast bar.
 	cdnRegions: [], // CDN region data.
 	selectedCDNRegion: null, // Active CDN region.
-	lockCDNRegion: false, // If true, do not programatically alter the selected CDN region.
+	lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
 	config: {}, // Will contain default/user-set configuration. Use config module to operate.
 	configEdit: {}, // Temporary configuration clone used during user configuration editing.
 	availableLocalBuilds: null, // Array containing local builds to display during source select.
