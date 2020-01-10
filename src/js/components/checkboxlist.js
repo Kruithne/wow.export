@@ -61,7 +61,7 @@ Vue.component('checkboxlist', {
 
 		/**
 		 * Index which array reading should start at, based on the current
-		 * relative scroll and the overal item count. Value is dynamically
+		 * relative scroll and the overall item count. Value is dynamically
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
