@@ -95,3 +95,18 @@ const FieldType = require ('../src/js/db/FieldType');
 		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
 	}
 })();
+
+(async () => {
+	// CreatureDifficulty (PTR), for relation testing
+	const CDSchema = {
+		ExpansionID: FieldType.Int8,
+		MinLevel: FieldType.Int8,
+		MaxLevel: FieldType.Int8,
+		FactionID: FieldType.UInt16,
+		ContentTuningID: FieldType.Int32,
+		Flags: [FieldType.UInt32, 7],
+	}
+	const CDData = await BufferWrapper.readFile('./tests/resources/db2/CreatureDifficulty.db2');
+	const CDDB = new WDCReader('DBFilesClient/CreatureDifficulty.db2', CDSchema);
+	CDDB.parse(CDData);
+})();
