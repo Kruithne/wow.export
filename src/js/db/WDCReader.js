@@ -184,9 +184,8 @@ class WDCReader {
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 				palletData[fieldIndex] = new Array();
-				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++){
+				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++)
 					palletData[fieldIndex][i] = data.readUInt32LE();
-				}
 			}
 		}
 
@@ -263,6 +262,7 @@ class WDCReader {
 		}
 
 		const castBuffer = BufferWrapper.alloc(8, true);
+		const bitBuffer = new ArrayBuffer(8);
 
 		// Parse section records.
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
@@ -364,12 +364,13 @@ class WDCReader {
 							let rawValue;
 							if (data.remainingBytes >= 8){
 								rawValue = data.readUInt64LE();
-							} else if (data.remainingBytes >= 4){
-								rawValue = BigInt(data.readUInt32LE());
-							} else if (data.remainingBytes >= 2){
-								rawValue = BigInt(data.readUInt16LE());
-							} else if (data.remainingBytes == 1){
-								rawValue = BigInt(data.readUInt8LE());
+							} else {
+								// If this doesn't work the last (few?) fields of a file might be wrong. Least it don't crash no more.
+								const view = new DataView(bitBuffer);
+								const left = data.remainingBytes;
+								for (let i = 0; i < left; i++)
+									view.setUint8(i, data.readUInt8());
+								rawValue = view.getBigUint64(0, true)
 							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
