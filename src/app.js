@@ -57,6 +57,14 @@ crash = (errorCode, errorText) => {
 		core.events.emit('crash');
 };
 
+// Debugging reloader.
+if (!BUILD_RELEASE) {
+	window.addEventListener('keyup', e => {
+		if (e.code === 'F5')
+			chrome.runtime.reload();
+	});
+}
+
 // Register crash handlers.
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
