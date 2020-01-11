@@ -301,11 +301,6 @@ class WDCReader {
 				const actualRecordSize = isNormal ? recordSize : offsetMap[i].size;
 				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
 
-				// Append 8 bytes (a full uint64) to buffer to prevent hitting the buffer limit when reading bitpacked fields.
-				if (recordEnd + 8 > data.byteLength){
-					data.setCapacity(data.byteLength + 8, true);
-				}
-
 				data.seek(section.recordDataOfs + recordOfs);
 
 				const out = {};
@@ -373,9 +368,17 @@ class WDCReader {
 							//	result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
 							//}
 
-							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
-							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
+							// ToDo: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
+							let rawValue;
+							if (data.remainingBytes > 4){
+								rawValue = data.readUInt32LE();
+							} else if (data.remainingBytes < 4){
+								rawValue = data.readUInt16LE();
+							}
 
+							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
+							const bitpackedValue = rawValue >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
+							
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
 								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
