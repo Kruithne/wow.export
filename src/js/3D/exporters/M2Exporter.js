@@ -7,6 +7,7 @@ const core = require('../../core');
 const log = require('../../log');
 const path = require('path');
 const generics = require('../../generics');
+const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
@@ -77,9 +78,18 @@ class M2Exporter {
 					let texFile = texFileDataID + '.png';
 					let texPath = path.join(path.dirname(out), texFile);
 
-					// Map texture files relative to shared directory.
+					// Map texture files relative to its own path.
 					if (config.enableSharedTextures) {
-						texPath = ExportHelper.getSharedTexturePath(texFile);
+						let fileName = listfile.getByID(texFileDataID);
+						if (fileName !== undefined) {
+							// Replace BLP extension with PNG.
+							fileName = ExportHelper.replaceExtension(fileName, '.png');
+						} else {
+							// Handle unknown files.
+							fileName = 'unknown/' + texFile;
+						}
+
+						texPath = ExportHelper.getExportPath(fileName);
 						texFile = path.relative(path.dirname(out), texPath);
 					}
 

@@ -74,9 +74,11 @@ class WMOExporter {
 			const material = wmo.materials[i];
 
 			let fileDataID;
+			let fileName;
 			if (isClassic) {
 				// Classic, look-up fileDataID using file name.
-				fileDataID = listfile.getByFilename(wmo.textureNames[material.texture1]) || 0;
+				fileName = wmo.textureNames[material.texture1];
+				fileDataID = listfile.getByFilename(fileName) || 0;
 			} else {
 				// Retail, use fileDataID directly.
 				fileDataID = material.texture1;
@@ -89,7 +91,20 @@ class WMOExporter {
 
 					// Map texture files relative to shared directory.
 					if (config.enableSharedTextures) {
-						texPath = ExportHelper.getSharedTexturePath(texFile);
+						// We may already have the file name, if Classic.
+						if (fileName === undefined) {
+							fileName = listfile.getByID(fileDataID);
+
+							if (fileName !== undefined) {
+								// Replace BLP extension with PNG.
+								fileName = ExportHelper.replaceExtension(fileName, '.png');
+							} else {
+								// Handle unknown files.
+								fileName = 'unknown/' + fileDataID + '.png';
+							}
+						}
+
+						texPath = ExportHelper.getExportPath(fileName);
 						texFile = path.relative(path.dirname(out), texPath);
 					}
 
