@@ -65,17 +65,12 @@
 					</div>
 					<div>
 						<h1>Enable Shared Textures</h1>
-						<p>If enabled, exported textures will be placed in a shared directory.</p>
+						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableSharedTextures"/>
 							<span>Enable</span>
 						</label>
-					</div>
-					<div v-if="configEdit.enableSharedTextures">
-						<h1>Shared Texture Directory</h1>
-						<p>Directory relative to the export directory where shared textures will be stored.</p>
-						<input type="text" v-model.trim="configEdit.sharedTexturesDir"/>
 					</div>
 					<div>
 						<h1>CASC Locale</h1>

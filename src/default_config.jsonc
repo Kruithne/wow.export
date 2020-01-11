@@ -16,7 +16,6 @@
 	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
 	"exportDirectory": "",
 	"enableSharedTextures": true,
-	"sharedTexturesDir": "_textures",
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"exportModelFormat": "OBJ",
