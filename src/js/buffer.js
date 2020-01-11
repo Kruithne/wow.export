@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -13,22 +13,28 @@ const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
 	READ_UINT: Buffer.prototype.readUIntLE,
 	READ_FLOAT: Buffer.prototype.readFloatLE,
+	READ_DOUBLE: Buffer.prototype.readDoubleLE,
 	READ_BIG_INT: Buffer.prototype.readBigInt64LE,
 	READ_BIG_UINT: Buffer.prototype.readBigUInt64LE,
 	WRITE_INT: Buffer.prototype.writeIntLE,
 	WRITE_UINT: Buffer.prototype.writeUIntLE,
-	WRITE_FLOAT: Buffer.prototype.writeFloatLE
+	WRITE_FLOAT: Buffer.prototype.writeFloatLE,
+	WRITE_BIG_INT: Buffer.prototype.writeBigInt64LE,
+	WRITE_BIG_UINT: Buffer.prototype.writeBigUInt64LE
 };
 
 const BIG_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntBE,
 	READ_UINT: Buffer.prototype.readUIntBE,
 	READ_FLOAT: Buffer.prototype.readFloatBE,
+	READ_DOUBLE: Buffer.prototype.readDoubleBE,
 	READ_BIG_INT: Buffer.prototype.readBigInt64BE,
 	READ_BIG_UINT: Buffer.prototype.readBigUInt64BE,
 	WRITE_INT: Buffer.prototype.writeIntBE,
 	WRITE_UINT: Buffer.prototype.writeUIntBE,
-	WRITE_FLOAT: Buffer.prototype.writeFloatBE
+	WRITE_FLOAT: Buffer.prototype.writeFloatBE,
+	WRITE_BIG_INT: Buffer.prototype.writeBigInt64BE,
+	WRITE_BIG_UINT: Buffer.prototype.writeBigUInt64BE
 };
 
 /**
@@ -399,6 +405,24 @@ class BufferWrapper {
 	readFloatBE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_FLOAT, 4);
 	}
+	
+	/**
+	 * Read one or more doubles in little endian.
+	 * @param {number} count How many to read.
+	 * @returns {double|double[]}
+	 */
+	readDoubleLE(count) {
+		return this._readInt(count, LITTLE_ENDIAN.READ_DOUBLE, 8);
+	}
+
+	/**
+	 * Read one or more doubles in big endian.
+	 * @param {number} count How many to read.
+	 * @returns {double|double[]}
+	 */
+	readDoubleBE(count) {
+		return this._readInt(count, BIG_ENDIAN.READ_DOUBLE, 8);
+	}
 
 	/**
 	 * Read a portion of this buffer as a hex string.
@@ -661,6 +685,42 @@ class BufferWrapper {
 	 */
 	writeUInt48BE(value) {
 		return this._writeInt(value, BIG_ENDIAN.WRITE_UINT, 6);
+	}
+
+	/**
+	 * Write a signed 64-bit integer in little endian.
+	 * @param {bigint} value
+	 * @returns {number|number[]}
+	 */
+	writeBigInt64LE(value) {
+		return this._writeInt(value, LITTLE_ENDIAN.WRITE_BIG_INT, 8);
+	}
+
+	/**
+	 * Write a unsigned 64-bit integer in little endian.
+	 * @param {bigint} value
+	 * @returns {number|number[]}
+	 */
+	writeBigUInt64LE(value) {
+		return this._writeInt(value, LITTLE_ENDIAN.WRITE_BIG_UINT, 8);
+	}
+
+	/**
+	 * Write a signed 64-bit integer in big endian.
+	 * @param {bigint} value
+	 * @returns {number|number[]}
+	 */
+	writeBigInt64BE(value) {
+		return this._writeInt(value, BIG_ENDIAN.WRITE_BIG_INT, 8);
+	}
+
+	/**
+	 * Write a unsigned 64-bit integer in big endian.
+	 * @param {bigint} value
+	 * @returns {number|number[]}
+	 */
+	writeBigUInt64BE(value) {
+		return this._writeInt(value, BIG_ENDIAN.WRITE_BIG_UINT, 8);
 	}
 
 	/**
