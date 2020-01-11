@@ -9,6 +9,7 @@ const core = require('../core');
 
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
+const BufferWrapper = require('../buffer');
 
 const TABLE_FORMATS = {
 	0x32434457: { name: 'WDC2', wdcVersion: 2 },
@@ -183,8 +184,9 @@ class WDCReader {
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 				palletData[fieldIndex] = new Array();
-				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++)
-					palletData[fieldIndex][i] = data.readUInt32LE();
+				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++){
+					palletData[fieldIndex][i] = new Uint32Array([data.readUInt32LE()]);
+				}
 			}
 		}
 
@@ -205,6 +207,7 @@ class WDCReader {
 			}
 		}
 
+		// Ensure we've read the expected amount of common data.
 		assert.strictEqual(data.offset, prevPos + commonDataSize, 'Read incorrect amount of common data');
 
 		// data_sections[header.section_count];
@@ -319,8 +322,6 @@ class WDCReader {
 						[fieldType, count] = type;
 
 					//const fieldSizeBytes = recordFieldInfo.fieldSizeBits / 8;
-
-					// ToDo: Test if floor is the best decision to make here
 					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
 
 					switch (recordFieldInfo.fieldCompression) {
@@ -346,10 +347,10 @@ class WDCReader {
 								case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
 								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
 							}
-
 							break;
 							
 						case CompressionType.CommonData:
+							// ToDo: Support different types, see CreatureDisplayInfo.PetInstanceScale. Will likely need a switch too, might need to start looking at separating that out.
 							if (commonData[fieldIndex].has(recordID))
 								out[prop] = commonData[fieldIndex].get(recordID);
 							else
@@ -361,31 +362,47 @@ class WDCReader {
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
 							// ToDo: All bitpacked stuff requires testing on more DB2s before being able to call it done.
-							// ToDo: Everything is UInt32 right now, expand Bitpacked reading support to all types/signedness(es?).
 
-							// Seek to (hopefully correct, see fieldOffsetBytes comment) position in record stream
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
-							// For fully compliant DB2 support we need to be able to do the same for 64 bit values. Need further implementing/testing, error for now.
-							//if (fieldSizeBytes > 4) {
-							//	throw new Error('This field will require 64-bit reading/bitmasking stuff (not yet implemented).');
-							//	const fieldData = data.readUInt64LE() >> (BigInt(thisFieldInfo.fieldOffsetBits) & BigInt(7));
-							//	result = fieldData & ((BigInt(1) << BigInt(thisFieldInfo.fieldSizeBits)) - BigInt(1));
-							//}
-
-							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData 
-							const bitpackedValue = data.readUInt32LE() >> (recordFieldInfo.fieldOffsetBits & 7) & ((1 << recordFieldInfo.fieldSizeBits) - 1);
+							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
+							const bitpackedValue = data.readUInt64LE() >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
 
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
 								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
-									out[prop][i] = palletData[fieldIndex][(bitpackedValue * recordFieldInfo.fieldCompressionPacking[2]) + i];
-
+									out[prop][i] = palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)][0];
 							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
 								out[prop] = palletData[fieldIndex][bitpackedValue];
 							} else {
-								// ToDo: Bitpacked & BitpackedSigned, not sure if these need separate handling
 								out[prop] = bitpackedValue;
+							}
+							
+							// ToDo: Can arrays of other types be bitpacked? If so, this needs support. Also, strings as well as code dedup. 
+							if (!Array.isArray(type)){
+								let tempBuffer;
+								if (typeof out[prop] === "object"){
+									tempBuffer = BufferWrapper.from(out[prop].buffer);
+								} else {
+									tempBuffer = BufferWrapper.alloc(8, true);
+									tempBuffer.writeBigUInt64LE(out[prop]);
+									tempBuffer.seek(0);
+								}
+
+								switch (fieldType) {
+									case FieldType.String:
+										throw new Error("Reading bitpacked strings is currently not supported.");
+	
+									case FieldType.Int8: out[prop] = tempBuffer.readInt8(); break;
+									case FieldType.UInt8: out[prop] = tempBuffer.readUInt8(); break;
+									case FieldType.Int16: out[prop] = tempBuffer.readInt16LE(); break;
+									case FieldType.UInt16: out[prop] = tempBuffer.readUInt16LE(); break;
+									case FieldType.Int32: out[prop] = tempBuffer.readInt32LE(); break;
+									case FieldType.UInt32: out[prop] = tempBuffer.readUInt32LE(); break;
+									case FieldType.Int64: out[prop] = tempBuffer.readInt64LE(); break;
+									case FieldType.UInt64: out[prop] = tempBuffer.readUInt64LE(); break;
+									case FieldType.Float: out[prop] = +tempBuffer.readFloatLE().toFixed(5); break; // The + is there to strip off extra 0's on the end.
+								}
 							}
 
 							break;
