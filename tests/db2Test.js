@@ -36,19 +36,18 @@ const FieldType = require ('../src/js/db/FieldType');
 		Flags: 0,
 		StateSpellVisualKitID: 0,
 		PlayerOverrideScale: 0,
-		PetInstanceScale: 0,
-		UnarmedWeaponType: 0,
+		PetInstanceScale: 1,
+		UnarmedWeaponType: -1,
 		MountPoofSpellVisualKitID: 0,
 		DissolveEffectID: 0,
 		Gender: 2,
-		DissolveOutEfectID: 0,
+		DissolveOutEffectID: 0,
 		CreatureModelMinLod: 0,
 		TextureVariationFileDataID: [1795294, 1848705, 0],
 	};
 
 	const ourRecord = CDIDB.getRow(93456);
-
 	for (const [name, value] of Object.entries(properRecord)) {
-		assert.strictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
+		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
 	}
 })();

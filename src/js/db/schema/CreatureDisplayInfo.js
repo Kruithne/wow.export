@@ -20,10 +20,10 @@ module.exports = {
 	PlayerOverrideScale: FieldType.Float,
 	PetInstanceScale: FieldType.Float,
 	UnarmedWeaponType: FieldType.Int8,
-	MountProofSpellVisualKitID: FieldType.Int32,
+	MountPoofSpellVisualKitID: FieldType.Int32,
 	DissolveEffectID: FieldType.Int32,
 	Gender: FieldType.Int8,
 	DissolveOutEffectID: FieldType.Int32,
 	CreatureModelMinLod: FieldType.Int8,
-	TextureVariationFieldDataID: [FieldType.Int32, 3]
+	TextureVariationFileDataID: [FieldType.Int32, 3]
 };
