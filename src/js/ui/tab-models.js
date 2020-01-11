@@ -75,8 +75,9 @@ const previewModel = async (fileName) => {
 			// Check for creature skins.
 			const skins = creatureTextures.get(fileDataID);
 			let isFirst = true;
+			const skinList = [];
+
 			if (skins !== undefined) {
-				const skinList = [];
 				for (const skin of skins) {
 					let skinName = listfile.getByID(skin);
 					if (skinName !== undefined) {
@@ -94,10 +95,10 @@ const previewModel = async (fileName) => {
 					activeSkins.set(skinName, skin);
 					isFirst = false;
 				}
-
-				core.view.modelViewerSkins = skinList;
-				core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
 			}
+
+			core.view.modelViewerSkins = skinList;
+			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
 		}
 
 		updateCameraBounding();
