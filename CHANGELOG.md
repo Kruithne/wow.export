@@ -1,4 +1,4 @@
-0.1.8 (Unreleased)
+0.1.8 (11-01-2020)
 - NPC variant textures can now be selected/exported for creature models.
 - Game clients are now checked for unknown models/textures (listed as 'unknown_xxx').
 - Foliage doodads can now be exported along with map tiles in the map exporter.
