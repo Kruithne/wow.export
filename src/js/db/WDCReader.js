@@ -247,10 +247,28 @@ class WDCReader {
 					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
 
+			prevPos = data.offset;
+
 			// relationship_map
-			// ToDo: Read
-			if (header.relationshipDataSize > 0)
-				data.move((data.readUInt32LE() * 8) + 8);
+			let relationshipMap;
+
+			if (header.relationshipDataSize > 0){
+				const relationshipEntryCount = data.readUInt32LE();
+				const relationshipMinID = data.readUInt32LE(); // What are these used for?
+				const relationshipMaxID = data.readUInt32LE(); // What are these used for?
+
+				relationshipMap = new Map();
+				for (let i = 0; i < relationshipEntryCount; i++){
+					let foreignID = data.readUInt32LE();
+					let recordIndex = data.readUInt32LE();
+					relationshipMap.set(recordIndex, foreignID);
+				}
+
+				// If a section is encrypted it is highly likely we don't read the correct amount of data here. Skip ahead if so.
+				if (prevPos + header.relationshipDataSize != data.offset){
+					data.seek(prevPos + header.relationshipDataSize);
+				}
+			}
 
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
@@ -258,7 +276,7 @@ class WDCReader {
 			if (wdcVersion === 3)
 				data.move(header.offsetMapIDCount * 4);
 
-			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap };
+			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, relationshipMap };
 		}
 
 		const castBuffer = BufferWrapper.alloc(8, true);
