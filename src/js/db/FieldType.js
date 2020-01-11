@@ -8,5 +8,6 @@ module.exports = {
 	UInt32: 0x7,
 	Int64: 0x8,
 	UInt64: 0x9,
-	Float: 0x10
+	Float: 0x10,
+	Relation: 0x11
 };

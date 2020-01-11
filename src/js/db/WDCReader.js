@@ -259,8 +259,8 @@ class WDCReader {
 
 				relationshipMap = new Map();
 				for (let i = 0; i < relationshipEntryCount; i++){
-					let foreignID = data.readUInt32LE();
-					let recordIndex = data.readUInt32LE();
+					const foreignID = data.readUInt32LE();
+					const recordIndex = data.readUInt32LE();
 					relationshipMap.set(recordIndex, foreignID);
 				}
 
@@ -329,6 +329,11 @@ class WDCReader {
 				const out = {};
 				let fieldIndex = 0;
 				for (const [prop, type] of Object.entries(this.schema)) {
+					if (type === FieldType.Relation){
+						out[prop] = section.relationshipMap.get(i);
+						continue;
+					}
+
 					const recordFieldInfo = fieldInfo[fieldIndex];
 
 					let count;

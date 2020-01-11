@@ -105,8 +105,25 @@ const FieldType = require ('../src/js/db/FieldType');
 		FactionID: FieldType.UInt16,
 		ContentTuningID: FieldType.Int32,
 		Flags: [FieldType.UInt32, 7],
-	}
+		CreatureID: FieldType.Relation,
+	};
+
+	const properRecord = {
+		ExpansionID: 0,
+		MinLevel: 24,
+		MaxLevel: 25,
+		FactionID: 21,
+		ContentTuningID: 13,
+		Flags: [524288, 0, 0, 0, 16777216, 0, 0],
+		CreatureID: 3,
+	};
+
 	const CDData = await BufferWrapper.readFile('./tests/resources/db2/CreatureDifficulty.db2');
 	const CDDB = new WDCReader('DBFilesClient/CreatureDifficulty.db2', CDSchema);
 	CDDB.parse(CDData);
+
+	const ourRecord = CDDB.getRow(2);
+	for (const [name, value] of Object.entries(properRecord)) {
+		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
+	}
 })();
