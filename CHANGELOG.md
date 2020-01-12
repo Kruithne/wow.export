@@ -1,5 +1,6 @@
 0.1.9 (Unreleased)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
+- Fixed issue that prevented some files from being available in remote mode.
 
 0.1.8 (11-01-2020)
 - NPC variant textures can now be selected/exported for creature models.

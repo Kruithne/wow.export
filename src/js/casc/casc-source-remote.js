@@ -104,13 +104,21 @@ class CASCRemote extends CASC {
 
 		if (data === null) {
 			const archive = this.archives.get(encodingKey);
-			if (archive === undefined)
-				throw new Error('No remote archive indexed for encoding key: ' + encodingKey);
+			if (archive !== undefined){
+				data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
+				
+				if (!suppressLog)
+					log.write('Downloading CASC file %d from archive %s', fileDataID, archive.key);
+			} else {
+				data = await this.getDataFile(this.formatCDNKey(encodingKey));
 
-			if (!suppressLog)
-				log.write('Downloading CASC file %d', fileDataID);
+				if (!suppressLog)
+					log.write('Downloading unarchived CASC file %d', fileDataID);
 
-			data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
+				if (data === null)
+					throw new Error('No remote unarchived/archive indexed for encoding key: ' + encodingKey);
+			}
+
 			this.cache.storeFile(encodingKey, data, constants.CACHE.DIR_DATA);
 		} else if (!suppressLog) {
 			log.write('Loaded CASC file %d from cache', fileDataID);
