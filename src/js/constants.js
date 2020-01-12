@@ -31,7 +31,7 @@ module.exports = {
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
 	// User-agent used for HTTP/HTTPs requests.
-	USER_AGENT: 'wow.export (' + isUnitTest ? "0.0.0" : nw.App.manifest.version + ')',
+	USER_AGENT: 'wow.export (' + (isUnitTest ? "0.0.0" : nw.App.manifest.version) + ')',
 
 	// Defines Blender constants.
 	BLENDER: {
