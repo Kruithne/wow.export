@@ -146,6 +146,10 @@ const exportSelectedMap = async () => {
 	const exportTiles = core.view.mapViewerSelection;
 	const exportQuality = core.view.config.exportMapQuality;
 
+	// User has not selected any tiles.
+	if (exportTiles.length === 0)
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.');
+
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
 
