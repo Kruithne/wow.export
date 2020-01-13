@@ -59,7 +59,7 @@ class MTLWriter {
 
 			let materialFile = material.file;
 			if (useAbsolute)
-				materialFile = path.resolve(materialFile);
+				materialFile = path.resolve(mtlDir, materialFile);
 
 			writer.writeLine('map_Kd ' + materialFile);
 		}
