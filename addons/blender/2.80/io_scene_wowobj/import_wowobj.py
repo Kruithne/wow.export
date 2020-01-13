@@ -67,19 +67,19 @@ def importWoWOBJ(objectFile, givenParent = None):
     materials = dict()
     matname = ""
     matfile = ""
+    if mtlfile != "":
+	    with open(os.path.join(baseDir, mtlfile.decode("utf-8") ), 'r') as f:
+	        for line in f:
+	            line_split = line.split()
+	            if not line_split:
+	                continue
+	            line_start = line_split[0]
 
-    with open(os.path.join(baseDir, mtlfile.decode("utf-8") ), 'r') as f:
-        for line in f:
-            line_split = line.split()
-            if not line_split:
-                continue
-            line_start = line_split[0]
-
-            if line_start == 'newmtl':
-                matname = line_split[1]
-            elif line_start == 'map_Kd':
-                matfile = line_split[1]
-                materials[matname] = os.path.join(baseDir, matfile)
+	            if line_start == 'newmtl':
+	                matname = line_split[1]
+	            elif line_start == 'map_Kd':
+	                matfile = line_split[1]
+	                materials[matname] = os.path.join(baseDir, matfile)
 
     if bpy.ops.object.select_all.poll():
         bpy.ops.object.select_all(action='DESELECT')
