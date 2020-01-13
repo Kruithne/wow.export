@@ -61,7 +61,7 @@ class BuildCache {
 
 	/**
 	 * Get a direct path to a cached file.
-	 * Does not guarentee existence. Use hasFile() first to check.
+	 * Does not guarantee existence. Use hasFile() first to check.
 	 * @param {string} file File path relative to build cache.
 	 * @param {string} dir Optional override directory.
 	 */
