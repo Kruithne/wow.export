@@ -64,6 +64,16 @@
 						<file-field v-model="configEdit.exportDirectory"></file-field>
 					</div>
 					<div>
+						<h1>Use Absolute MTL Paths</h1>
+						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<p>Enable this option if you are having issues importing models in Cinema 4D.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>

@@ -6,6 +6,7 @@
 const path = require('path');
 const generics = require('../../generics');
 const FileWriter = require('../../file-writer');
+const core = require('../../core');
 
 class MTLWriter {
 	/**
@@ -46,13 +47,21 @@ class MTLWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		const mtlDir = path.dirname(this.out);
+		await generics.createDirectory(mtlDir);
+
+		const useAbsolute = core.view.config.enableAbsoluteMTLPaths;
 		const writer = new FileWriter(this.out);
 
 		for (const material of this.materials) {
 			writer.writeLine('newmtl ' + material.name);
 			writer.writeLine('illum 1');
-			writer.writeLine('map_Kd ' + material.file);
+
+			let materialFile = material.file;
+			if (useAbsolute)
+				materialFile = path.resolve(materialFile);
+
+			writer.writeLine('map_Kd ' + materialFile);
 		}
 
 		await writer.close();
