@@ -9,7 +9,7 @@ const core = require('../core');
 const log = require('../log');
 
 const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
-const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
+//const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
 
 /**
  * ExportHelper is a unified way to provide feedback to the user and to
@@ -88,10 +88,13 @@ class ExportHelper {
 
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
+			const lastExportPath = ExportHelper.getExportPath(path.dirname(this.lastItem));
+			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
+
 			if (this.count > 1)
-				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? TOAST_OPT_DIR : null);
+				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null);
 			else
-				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? TOAST_OPT_DIR : null);
+				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			core.setToast('info', util.format('Export complete, but %d %s failed to export.', this.failed, this.unitFormatted), TOAST_OPT_LOG);
