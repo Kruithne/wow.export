@@ -1,6 +1,7 @@
 0.1.9 (Unreleased)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
 - Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.
+- Added a 'Copy File Directories' setting which makes CTRL + C only copy file directories.
 - Fixed issue that prevented some files from being available in remote mode.
 
 0.1.8 (11-01-2020)

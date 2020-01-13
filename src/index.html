@@ -64,21 +64,21 @@
 						<file-field v-model="configEdit.exportDirectory"></file-field>
 					</div>
 					<div>
-						<h1>Use Absolute MTL Paths</h1>
-						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
-						<p>This will cause issues when sharing exported models between computers.</p>
-						<p>Enable this option if you are having issues importing models in Cinema 4D.</p>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
-							<span>Enable</span>
-						</label>
-					</div>
-					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableSharedTextures"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Use Absolute MTL Paths</h1>
+						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<p>Enable this option if you are having issues importing models in Cinema 4D with Shared Textures enabled.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -110,6 +110,15 @@
 						<p>Allows use of regular expressions in filtering lists.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.regexFilters"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Copy File Directories</h1>
+						<p>By default, using CTRL + C on a file list in wow.export will copy the paths to your clipboard.</p>
+						<p>If you enable this, only the directories of the selected paths will be copied.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.copyFileDirectories"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -154,7 +163,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
@@ -176,7 +185,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
@@ -214,7 +223,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
@@ -271,7 +280,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
@@ -282,7 +291,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>

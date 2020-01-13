@@ -15,6 +15,7 @@
 	"sourceSelectUserRegion": null,
 	"tactKeysURL": "https://wow.tools/api.php?type=tactkeys",
 	"exportDirectory": "",
+	"copyFileDirectories": false,
 	"enableSharedTextures": true,
 	"enableAbsoluteMTLPaths": false,
 	"exportTextureFormat": "PNG",
