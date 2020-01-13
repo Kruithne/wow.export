@@ -188,22 +188,21 @@ class CASCRemote extends CASC {
 		const encKeys = this.buildConfig.encoding.split(' ');
 		const encKey = encKeys[1];
 
-		let encRaw;
 		log.timeLog();
-		if (await this.cache.hasFile(constants.CACHE.BUILD_ENCODING)) {
-			// Pull encoding file from build cache.
-			await this.progress.step('Loading encoding table');
-			log.write('Encoding for build %s cached locally, reading from disk.', this.cache.key);
-			encRaw = await this.cache.getFile(constants.CACHE.BUILD_ENCODING);
-		} else {
-			// Download encoding file.
-			await this.progress.step('Fetching encoding table');
+
+		await this.progress.step('Loading encoding table');
+		let encRaw = await this.cache.getFile(constants.CACHE.BUILD_ENCODING);
+		if (encRaw === null) {
+			// Encoding file not cached, download it.
 			log.write('Encoding for build %s not cached, downloading.', this.cache.key);
 			encRaw = await this.getDataFile(this.formatCDNKey(encKey));
-			
+
 			// Store back into cache (no need to block).
 			this.cache.storeFile(constants.CACHE.BUILD_ENCODING, encRaw);
+		} else {
+			log.write('Encoding for build %s cached locally.', this.cache.key);
 		}
+
 		log.timeEnd('Loaded encoding table (%s)', generics.filesize(encRaw.byteLength));
 
 		// Parse encoding file.
@@ -222,22 +221,18 @@ class CASCRemote extends CASC {
 		if (rootKey === undefined)
 			throw new Error('No encoding entry found for root key');
 
-		let root;
 		log.timeLog();
-		if (await this.cache.hasFile(constants.CACHE.BUILD_ROOT)) {
-			// Pull root file from cache.
-			await this.progress.step('Loading root table');
-			log.write('Root for build %s cached locally, reading from disk.', this.cache.key);
+		await this.progress.step('Loading root table');
 
-			root = await this.cache.getFile(constants.CACHE.BUILD_ROOT);
-		} else {
-			// Download root file.
-			await this.progress.step('Fetching root table');
-			log.write('Root for build %s not cached, downloading.', this.cache.key);
-
+		let root = await this.cache.getFile(constants.CACHE.BUILD_ROOT);
+		if (root === null) {
+			// Root file not cached, download.
+			log.write('Root file for build %s not cached, downloading.', this.cache.key);
+			
 			root = await this.getDataFile(this.formatCDNKey(rootKey));
 			this.cache.storeFile(constants.CACHE.BUILD_ROOT, root);
 		}
+		
 		log.timeEnd('Loaded root file (%s)', generics.filesize(root.byteLength));
 
 		// Parse root file.

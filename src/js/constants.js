@@ -53,6 +53,7 @@ module.exports = {
 	CACHE: {
 		DIR: path.join(DATA_PATH, 'casc'), // Cache directory.
 		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.
+		INTEGRITY_FILE: path.join(DATA_PATH, 'casc', 'cacheintegrity'), // Cache integrity file.
 		SIZE_UPDATE_DELAY: 5000, // Milliseconds to buffer cache size update writes.
 		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.

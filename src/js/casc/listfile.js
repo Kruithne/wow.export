@@ -39,7 +39,7 @@ const loadListfile = async (buildConfig, cache) => {
 	if (url.startsWith('http')) {
 		// Listfile URL is http, check for cache/updates.
 		let requireDownload = false;
-		let hasCache = await cache.hasFile(constants.CACHE.BUILD_LISTFILE);
+		const cached = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
 
 		if (cache.meta.lastListfileUpdate) {
 			let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
@@ -51,7 +51,7 @@ const loadListfile = async (buildConfig, cache) => {
 				requireDownload = true;
 			} else {
 				// Ensure that the local cache file *actually* exists before relying on it.
-				if (!hasCache) {
+				if (cached === null) {
 					log.write('Listfile for %s is missing despite meta entry. User tamper?', buildConfig);
 					requireDownload = true;
 				} else {
@@ -72,14 +72,14 @@ const loadListfile = async (buildConfig, cache) => {
 				cache.meta.lastListfileUpdate = Date.now();
 				cache.saveManifest();
 			} catch {
-				if (!hasCache)
+				if (cached === null)
 					throw new Error('Failed to download listfile, no cached version for fallback');
 
 				log.write('Failed to download listfile, using cached as redundancy.');
-				data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+				data = cached;
 			}
 		} else {
-			data = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+			data = cached;
 		}
 	} else {
 		// User has configured a local listfile location.
