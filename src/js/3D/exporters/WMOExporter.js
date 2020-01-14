@@ -129,6 +129,18 @@ class WMOExporter {
 		const groups = [];
 		let nInd = 0;
 
+		const mask = new Set();
+
+		// Map our user-facing group mask to a WMO mask.
+		if (groupMask) {
+			for (const group of groupMask) {
+				if (group.checked) {
+					// Add the group index to the mask.
+					mask.add(group.groupIndex);
+				}
+			}
+		}
+
 		// Iterate over the groups once to calculate the total size of our
 		// vertex/normal/uv arrays allowing for pre-allocation.
 		for (let i = 0, n = wmo.groupCount; i < n; i++) {
@@ -139,7 +151,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (groupMask && !groupMask[i].checked)
+			if (!mask.has(i))
 				continue;
 
 			// 3 verts per indices.
