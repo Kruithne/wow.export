@@ -129,10 +129,11 @@ class WMOExporter {
 		const groups = [];
 		let nInd = 0;
 
-		const mask = new Set();
+		let mask;
 
 		// Map our user-facing group mask to a WMO mask.
 		if (groupMask) {
+			mask = new Set();
 			for (const group of groupMask) {
 				if (group.checked) {
 					// Add the group index to the mask.
@@ -151,7 +152,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (!mask.has(i))
+			if (mask && !mask.has(i))
 				continue;
 
 			// 3 verts per indices.
