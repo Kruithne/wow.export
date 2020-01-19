@@ -684,8 +684,9 @@ class ADTExporter {
 						}
 
 						const modelPath = ExportHelper.getExportPath(fileName);
+						const cacheID = fileDataID + '-' + model.doodadSet;
 
-						if (!objectCache.has(fileDataID)) {
+						if (!objectCache.has(cacheID)) {
 							const data = await casc.getFile(fileDataID);
 							const wmo = new WMOExporter(data, fileDataID);
 
@@ -693,7 +694,7 @@ class ADTExporter {
 								wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
 
 							await wmo.exportAsOBJ(modelPath);
-							objectCache.add(fileDataID);
+							objectCache.add(cacheID);
 						}
 
 						csv.addRow({
