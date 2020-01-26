@@ -61,7 +61,7 @@ const loadTexture = async (fileDataID) => {
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	// For unknown reasons, we have to store blpData as a variable. Inlining it into the
-	// parameter list causes issues, despite it being syncronous.
+	// parameter list causes issues, despite it being synchronous.
 	const blpData = blp.toUInt8Array(0);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, blp.scaledWidth, blp.scaledHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, blpData);
 	gl.generateMipmap(gl.TEXTURE_2D);
