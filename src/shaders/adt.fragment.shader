@@ -31,9 +31,9 @@ void main() {
 	vec2 tc2 = vTextureCoord * (8.0 / layerScale2);
 	vec2 tc3 = vTextureCoord * (8.0 / layerScale3);
 
-	float blendTex0 = texture2D(pt_blend1, vTextureCoord).r;
-	float blendTex1 = texture2D(pt_blend2, vTextureCoord).r;
-	float blendTex2 = texture2D(pt_blend3, vTextureCoord).r;
+	float blendTex0 = texture2D(pt_blend1, mod(vTextureCoord, 1.0)).r;
+	float blendTex1 = texture2D(pt_blend2, mod(vTextureCoord, 1.0)).r;
+	float blendTex2 = texture2D(pt_blend3, mod(vTextureCoord, 1.0)).r;
 
 	vec3 blendTex = vec3(blendTex0, blendTex1, blendTex2);
 

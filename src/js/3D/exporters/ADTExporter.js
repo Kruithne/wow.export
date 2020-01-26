@@ -546,6 +546,10 @@ class ADTExporter {
 
 								const alphaTex = bindAlphaLayer(alphaLayers[i]);
 								gl.bindTexture(gl.TEXTURE_2D, alphaTex);
+								
+								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
 								gl.uniform1i(uBlends[i], i + 3);
 
 								// Store to clean up after render.
@@ -557,7 +561,7 @@ class ADTExporter {
 							const heightOffsets = new Array(4).fill(1);
 
 							for (let i = 0, n = texLayers.length; i < n; i++) {
-								const mat = materials[texLayers[i].textureId];							
+								const mat = materials[texLayers[i].textureId];
 								gl.activeTexture(gl.TEXTURE0 + i);
 								gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
 
