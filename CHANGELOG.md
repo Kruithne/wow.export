@@ -7,6 +7,7 @@
 - Fixed issue in Blender plugin that slowed down imports significantly.
 - Fixed issue in Blender plugin where it would crash on models without materials.
 - Fixed issue that prevented duplicate WMOs with different doodad sets from exporting on the same ADT tile.
+- Fixed issue where there would be extremely visible lines in terrain textures.
 - The 'Open Export Directory' link after exporting has been replaced with 'View in Explorer' which opens the directory of the last exported item.
 
 0.1.8 (11-01-2020)
