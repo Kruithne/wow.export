@@ -90,6 +90,14 @@ const loadSelectedTrack = async () => {
 		data = await core.view.casc.getFileByName(selectedFile);
 		audioNode.src = data.getDataURL();
 
+		await new Promise(res => {
+			audioNode.onloadeddata = res;
+			audioNode.onerror = res;
+		});
+
+		if (isNaN(audioNode.duration))
+			throw new Error('Invalid audio duration.');
+
 		isTrackLoaded = true;
 		core.hideToast();
 	} catch (e) {
