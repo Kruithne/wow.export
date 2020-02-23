@@ -627,92 +627,101 @@ class ADTExporter {
 
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
-					for (const model of objAdt.models) {			
+					for (const model of objAdt.models) {
 						const fileDataID = model.mmidEntry;		
 						let fileName = listfile.getByID(fileDataID);
 
-						if (fileName !== undefined) {
-							// Replace M2 extension with OBJ.
-							fileName = ExportHelper.replaceExtension(fileName, '.obj');
-						} else {
-							// Handle unknown file.
-							fileName = 'unknown/' + fileDataID + '.obj';
+						try {	
+
+							if (fileName !== undefined) {
+								// Replace M2 extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								// Handle unknown file.
+								fileName = 'unknown/' + fileDataID + '.obj';
+							}
+
+							const modelPath = ExportHelper.getExportPath(fileName);
+
+							// Export the model if we haven't done so for this export session.
+							if (!objectCache.has(fileDataID)) {
+								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								await m2.exportAsOBJ(modelPath);
+								objectCache.add(fileDataID);
+							}
+
+							csv.addRow({
+								ModelFile: path.relative(dir, modelPath),
+								PositionX: model.position[0],
+								PositionY: model.position[1],
+								PositionZ: model.position[2],
+								RotationX: model.rotation[0],
+								RotationY: model.rotation[1],
+								RotationZ: model.rotation[2],
+								ScaleFactor: model.scale / 1024,
+								ModelId: model.uniqueId,
+								Type: 'm2'
+							});
+						} catch {
+							log.write('Failed to export %s [%d]', fileName, fileDataID);
 						}
-
-						const modelPath = ExportHelper.getExportPath(fileName);
-
-						// Export the model if we haven't done so for this export session.
-						if (!objectCache.has(fileDataID)) {
-							const m2 = new M2Exporter(await casc.getFile(fileDataID));
-							await m2.exportAsOBJ(modelPath);
-							objectCache.add(fileDataID);
-						}
-
-						csv.addRow({
-							ModelFile: path.relative(dir, modelPath),
-							PositionX: model.position[0],
-							PositionY: model.position[1],
-							PositionZ: model.position[2],
-							RotationX: model.rotation[0],
-							RotationY: model.rotation[1],
-							RotationZ: model.rotation[2],
-							ScaleFactor: model.scale / 1024,
-							ModelId: model.uniqueId,
-							Type: 'm2'
-						});
 					}
 				}
 
 				if (config.mapsIncludeWMO) {
 					log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
 
-					const usingNames = !!objAdt.wmoNames;				
+					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
 						let fileDataID;
 						let fileName;
 
-						if (usingNames) {
-							fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
-							fileDataID = listfile.getByFilename(fileName);
-						} else {
-							fileDataID = model.mwidEntry;
-							fileName = listfile.getByID(fileDataID);
+						try {
+							if (usingNames) {
+								fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
+								fileDataID = listfile.getByFilename(fileName);
+							} else {
+								fileDataID = model.mwidEntry;
+								fileName = listfile.getByID(fileDataID);
+							}
+
+							if (fileName !== undefined) {
+								// Replace WMO extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
+							} else {
+								// Handle unknown WMO files.
+								fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
+							}
+
+							const modelPath = ExportHelper.getExportPath(fileName);
+							const cacheID = fileDataID + '-' + model.doodadSet;
+
+							if (!objectCache.has(cacheID)) {
+								const data = await casc.getFile(fileDataID);
+								const wmo = new WMOExporter(data, fileDataID);
+
+								if (config.mapsIncludeWMOSets)
+									wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
+
+								await wmo.exportAsOBJ(modelPath);
+								objectCache.add(cacheID);
+							}
+
+							csv.addRow({
+								ModelFile: path.relative(dir, modelPath),
+								PositionX: model.position[0],
+								PositionY: model.position[1],
+								PositionZ: model.position[2],
+								RotationX: model.rotation[0],
+								RotationY: model.rotation[1],
+								RotationZ: model.rotation[2],
+								ScaleFactor: model.scale / 1024,
+								ModelId: model.uniqueId,
+								Type: 'wmo'
+							});
+						} catch {
+							log.write('Failed to export %s [%d]', fileName, fileDataID);
 						}
-
-						if (fileName !== undefined) {
-							// Replace WMO extension with OBJ.
-							fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
-						} else {
-							// Handle unknown WMO files.
-							fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
-						}
-
-						const modelPath = ExportHelper.getExportPath(fileName);
-						const cacheID = fileDataID + '-' + model.doodadSet;
-
-						if (!objectCache.has(cacheID)) {
-							const data = await casc.getFile(fileDataID);
-							const wmo = new WMOExporter(data, fileDataID);
-
-							if (config.mapsIncludeWMOSets)
-								wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
-
-							await wmo.exportAsOBJ(modelPath);
-							objectCache.add(cacheID);
-						}
-
-						csv.addRow({
-							ModelFile: path.relative(dir, modelPath),
-							PositionX: model.position[0],
-							PositionY: model.position[1],
-							PositionZ: model.position[2],
-							RotationX: model.rotation[0],
-							RotationY: model.rotation[1],
-							RotationZ: model.rotation[2],
-							ScaleFactor: model.scale / 1024,
-							ModelId: model.uniqueId,
-							Type: 'wmo'
-						});
 					}
 				}
 
