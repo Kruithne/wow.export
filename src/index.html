@@ -216,7 +216,7 @@
 								<span>Export Foliage</span>
 							</label>
 							<span class="header">Terrain Texture Quality</span>
-							<menu-button :label="'%s'" :options="[0, 512, 1024, 4096, 8192, 16384]" :display-names="['None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
+							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</div>
 					</div>
 				</keep-alive>

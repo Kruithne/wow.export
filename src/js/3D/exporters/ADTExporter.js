@@ -324,7 +324,7 @@ class ADTExporter {
 						if (quality === 0) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = (row * 0.5) / 8;
-						} else if (splitTextures) {
+						} else if (splitTextures || quality === -1) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
@@ -369,7 +369,7 @@ class ADTExporter {
 			
 				ofs = midX;
 
-				if (splitTextures) {
+				if (splitTextures || quality === -1) {
 					const objName = this.tileID + '_' + chunkID;
 					const matName = 'tex_' + objName;
 					mtl.addMaterial(matName, matName + '.png');
@@ -383,7 +383,7 @@ class ADTExporter {
 			}
 		}
 
-		if (!splitTextures)
+		if (!splitTextures && quality !== -1)
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(vertices);
@@ -396,8 +396,64 @@ class ADTExporter {
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
 
-		if (quality > 0) {
-			if (quality <= 512) {
+		if (quality !== 0) {
+			if (quality === -1) {
+				// Export alpha maps.
+
+				// Create a 2D canvas for drawing the alpha maps.
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+
+				const materialIDs = texAdt.diffuseTextureFileDataIDs;
+				const texParams = texAdt.texParams;
+
+				// Export the raw diffuse textures to disk.
+				const materials = new Array(materialIDs.length);
+				for (let i = 0, n = materials.length; i < n; i++) {
+					const diffuseFileDataID = materialIDs[i];
+					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
+					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', true);
+
+					if (texParams && texParams[i]) {
+						const params = texParams[i];
+						const scale = Math.pow(2, (params.flags & 0xF0) >> 4);
+						// TODO: Save scale to disk along with height data.
+					}
+				}
+
+				// Alpha maps are 64x64, we're not up-scaling here.
+				canvas.width = 64;
+				canvas.height = 64;
+
+				let chunkID = 0;
+				for (let x = 0; x < 16; x++) {
+					for (let y = 0; y < 16; y++) {
+						const chunkIndex = (x * 16) + y;
+						const texChunk = texAdt.texChunks[chunkIndex];
+
+						const alphaLayers = texChunk.alphaLayers || [];
+						const imageData = ctx.createImageData(64, 64);
+
+						// Write each layer as RGB.
+						for (let i = 1; i < alphaLayers.length; i++) {
+							const layer = alphaLayers[i];
+
+							for (let j = 0; j < layer.length; j++)
+								imageData.data[(j * 4) + (i - 1)] = layer[j];
+						}
+
+						// Set all the alpha values to max.
+						for (let i = 0; i < 64 * 64; i++)
+							imageData.data[(i * 4) + 3] = 255;
+
+						ctx.putImageData(imageData, 0, 0);
+
+						const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
+						const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+						await buf.writeToFile(tilePath);
+					}
+				}
+			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.
 				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
