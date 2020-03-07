@@ -412,12 +412,13 @@ class ADTExporter {
 				for (let i = 0, n = materials.length; i < n; i++) {
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', true);
+					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', false);
+
+					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
 
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
-						const scale = Math.pow(2, (params.flags & 0xF0) >> 4);
-						// TODO: Save scale to disk along with height data.
+						mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
 					}
 				}
 
@@ -448,9 +449,21 @@ class ADTExporter {
 
 						ctx.putImageData(imageData, 0, 0);
 
-						const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
+						const prefix = this.tileID + '_' + (chunkID++);
+						const tilePath = path.join(dir, 'tex_' + prefix + '.png');
+
 						const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
 						await buf.writeToFile(tilePath);
+
+						const texLayers = texChunk.layers;
+						const lines = [];
+						for (let i = 0, n = texLayers.length; i < n; i++) {
+							const mat = materials[texLayers[i].textureId];
+							lines.push([i, mat.id, mat.scale].join(','));
+						}
+
+						const metaOut = path.join(dir, 'tex_' + prefix + '.csv');
+						await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
 					}
 				}
 			} else if (quality <= 512) {
