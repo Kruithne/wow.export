@@ -431,8 +431,19 @@ class WDCReader {
 								case FieldType.UInt32: out[prop] = castBuffer.readUInt32LE(); break;
 								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
 								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
-								case FieldType.Float: out[prop] = Math.round(castBuffer.readFloatLE() * 100) / 100; break;
+								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
 							}
+						}
+					}
+
+					// Round floats correctly
+					if (fieldType == FieldType.Float) {
+						if (count > 0) {
+							for (let i = 0; i < count; i++) {
+								out[prop][i] = Math.round(out[prop][i] * 100) / 100;
+							}
+						} else {
+							out[prop] = Math.round(out[prop] * 100) / 100;
 						}
 					}
 
