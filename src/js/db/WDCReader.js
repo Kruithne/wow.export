@@ -404,7 +404,13 @@ class WDCReader {
 								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
 									out[prop][i] = palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)];
 							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
-								out[prop] = palletData[fieldIndex][bitpackedValue];
+								if (bitpackedValue in palletData[fieldIndex]) {
+									out[prop] = palletData[fieldIndex][bitpackedValue];
+								} else {
+									// ToDo: This is happening when loading CreatureDisplayInfo via GUI, but not when reading it via tests. File is apparently also not available locally so it reads it from cache (d42d81c636ca01a1bcd92e5dfd4c5ed1). Investigate!
+									console.log("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
+									out[prop] = 0;
+								}
 							} else {
 								out[prop] = bitpackedValue;
 							}
