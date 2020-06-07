@@ -22,6 +22,7 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 const WDCReader = require('../db/WDCReader');
 const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
 const DB_CreatureModelData = require('../db/schema/CreatureModelData');
+const DB_ChrModel = require('../db/schema/ChrModel');
 
 const creatureTextures = new Map();
 const activeSkins = new Map();
@@ -99,6 +100,19 @@ const previewModel = async (fileName) => {
 
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
+
+			// Check for character model stuff
+			if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
+				const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
+				await chrModel.parse();
+
+				for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
+					console.log(chrModelID);
+				}
+			} else {
+				console.log("ChrModel not in listfile, likely not using Shadowlands, skipping character mode stuff..");
+			}
+			
 		}
 
 		updateCameraBounding();
