@@ -98,6 +98,9 @@ class WMOExporter {
 							if (fileName !== undefined) {
 								// Replace BLP extension with PNG.
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
+
+								// Remove all whitespace from exported textures due to MTL incompatibility.
+								fileName = fileName.replace(/\s/g, '');
 							} else {
 								// Handle unknown files.
 								fileName = 'unknown/' + fileDataID + '.png';
@@ -129,6 +132,19 @@ class WMOExporter {
 		const groups = [];
 		let nInd = 0;
 
+		let mask;
+
+		// Map our user-facing group mask to a WMO mask.
+		if (groupMask) {
+			mask = new Set();
+			for (const group of groupMask) {
+				if (group.checked) {
+					// Add the group index to the mask.
+					mask.add(group.groupIndex);
+				}
+			}
+		}
+
 		// Iterate over the groups once to calculate the total size of our
 		// vertex/normal/uv arrays allowing for pre-allocation.
 		for (let i = 0, n = wmo.groupCount; i < n; i++) {
@@ -139,7 +155,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (groupMask && !groupMask[i].checked)
+			if (mask && !mask.has(i))
 				continue;
 
 			// 3 verts per indices.

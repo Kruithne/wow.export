@@ -146,19 +146,28 @@ const exportSelectedMap = async () => {
 	const exportTiles = core.view.mapViewerSelection;
 	const exportQuality = core.view.config.exportMapQuality;
 
+	// User has not selected any tiles.
+	if (exportTiles.length === 0)
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.');
+
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
+
+	// The export helper provides the user with a link to the directory of the last exported
+	// item. Since we're using directory paths, we just append another segment here so that
+	// when the path is trimmed, users end up in the right place. Bit hack-y, but quicker.
+	const markPath = path.join('maps', selectedMapDir, selectedMapDir);
 
 	for (const index of exportTiles) {
 		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
 
 		try {
 			await adt.export(dir, exportQuality);
-			helper.mark(adt.tileID, true);
+			helper.mark(markPath, true);
 		} catch (e) {
-			helper.mark(adt.tileID, false, e.message);
+			helper.mark(markPath, false, e.message);
 		}
 	}
 

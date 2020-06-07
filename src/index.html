@@ -73,6 +73,16 @@
 						</label>
 					</div>
 					<div>
+						<h1>Use Absolute MTL Paths</h1>
+						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<p>Enable this option if you are having issues importing models in Cinema 4D with Shared Textures enabled.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>CASC Locale</h1>
 						<p>Which locale to use for file reading. This only affects game files.</p>
 						<p>This should match the locale of your client when using local installations.</p>
@@ -100,6 +110,15 @@
 						<p>Allows use of regular expressions in filtering lists.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.regexFilters"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Copy File Directories</h1>
+						<p>By default, using CTRL + C on a file list in wow.export will copy the paths to your clipboard.</p>
+						<p>If you enable this, only the directories of the selected paths will be copied.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.copyFileDirectories"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -144,7 +163,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
@@ -166,7 +185,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
@@ -174,7 +193,7 @@
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
 						<div class="spaced-preview-controls">
 							<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
-							<input type="button" :value="'Export ' + mapViewerSelection.length + ' Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0 }"/>
+							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export ' + mapViewerSelection.length + ' Tiles') : 'Export Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy}"/>
 							<input type="button" :value="config.mapsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.mapsShowSidebar = !config.mapsShowSidebar"/>
 						</div>
 
@@ -197,14 +216,14 @@
 								<span>Export Foliage</span>
 							</label>
 							<span class="header">Terrain Texture Quality</span>
-							<menu-button :label="'%s'" :options="[0, 512, 1024, 4096, 8192, 16384]" :display-names="['None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
+							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</div>
 					</div>
 				</keep-alive>
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
@@ -261,7 +280,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
@@ -272,7 +291,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>

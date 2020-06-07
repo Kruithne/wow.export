@@ -233,9 +233,9 @@ class CASCLocal extends CASC {
 		} catch (e) {
 			// Attempt 2: Load from cache from previous fallback.
 			log.write('Local file %s does not exist, falling back to cache...', key);
-			const isCached = await this.cache.hasFile(key, constants.CACHE.DIR_DATA);
-			if (isCached)
-				return await this.cache.getFile(key, constants.CACHE.DIR_DATA);
+			const cached = await this.cache.getFile(key, constants.CACHE.DIR_DATA);
+			if (cached !== null)
+				return cached;
 
 			// Attempt 3: Download from CDN.
 			log.write('Local file %s not cached, falling back to CDN...', key);

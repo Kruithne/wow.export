@@ -3,6 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+
+const path = require('path');
+
 Vue.component('listbox', {
 	/**
 	 * items: Item entries displayed in the list.
@@ -11,8 +14,9 @@ Vue.component('listbox', {
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
 	 * regex: If true, filter will be treated as a regular expression.
+	 * copydir: If true, CTRL + C will only copy directories.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir'],
 
 	/**
 	 * Reactive instance data.
@@ -207,8 +211,11 @@ Vue.component('listbox', {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				const out = this.selection.join('\n');
-				nw.Clipboard.get().set(out, 'text');
+				let entries = this.selection;
+				if (this.copydir)
+					entries = entries.map(e => path.dirname(e));
+
+				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';

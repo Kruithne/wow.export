@@ -61,7 +61,7 @@ const loadTexture = async (fileDataID) => {
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	// For unknown reasons, we have to store blpData as a variable. Inlining it into the
-	// parameter list causes issues, despite it being syncronous.
+	// parameter list causes issues, despite it being synchronous.
 	const blpData = blp.toUInt8Array(0);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, blp.scaledWidth, blp.scaledHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, blpData);
 	gl.generateMipmap(gl.TEXTURE_2D);
@@ -324,7 +324,7 @@ class ADTExporter {
 						if (quality === 0) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = (row * 0.5) / 8;
-						} else if (splitTextures) {
+						} else if (splitTextures || quality === -1) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
@@ -369,7 +369,7 @@ class ADTExporter {
 			
 				ofs = midX;
 
-				if (splitTextures) {
+				if (splitTextures || quality === -1) {
 					const objName = this.tileID + '_' + chunkID;
 					const matName = 'tex_' + objName;
 					mtl.addMaterial(matName, matName + '.png');
@@ -383,7 +383,7 @@ class ADTExporter {
 			}
 		}
 
-		if (!splitTextures)
+		if (!splitTextures && quality !== -1)
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(vertices);
@@ -396,8 +396,77 @@ class ADTExporter {
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
 
-		if (quality > 0) {
-			if (quality <= 512) {
+		if (quality !== 0) {
+			if (quality === -1) {
+				// Export alpha maps.
+
+				// Create a 2D canvas for drawing the alpha maps.
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+
+				const materialIDs = texAdt.diffuseTextureFileDataIDs;
+				const texParams = texAdt.texParams;
+
+				// Export the raw diffuse textures to disk.
+				const materials = new Array(materialIDs.length);
+				for (let i = 0, n = materials.length; i < n; i++) {
+					const diffuseFileDataID = materialIDs[i];
+					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
+					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', false);
+
+					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
+
+					if (texParams && texParams[i]) {
+						const params = texParams[i];
+						mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
+					}
+				}
+
+				// Alpha maps are 64x64, we're not up-scaling here.
+				canvas.width = 64;
+				canvas.height = 64;
+
+				let chunkID = 0;
+				for (let x = 0; x < 16; x++) {
+					for (let y = 0; y < 16; y++) {
+						const chunkIndex = (x * 16) + y;
+						const texChunk = texAdt.texChunks[chunkIndex];
+
+						const alphaLayers = texChunk.alphaLayers || [];
+						const imageData = ctx.createImageData(64, 64);
+
+						// Write each layer as RGB.
+						for (let i = 1; i < alphaLayers.length; i++) {
+							const layer = alphaLayers[i];
+
+							for (let j = 0; j < layer.length; j++)
+								imageData.data[(j * 4) + (i - 1)] = layer[j];
+						}
+
+						// Set all the alpha values to max.
+						for (let i = 0; i < 64 * 64; i++)
+							imageData.data[(i * 4) + 3] = 255;
+
+						ctx.putImageData(imageData, 0, 0);
+
+						const prefix = this.tileID + '_' + (chunkID++);
+						const tilePath = path.join(dir, 'tex_' + prefix + '.png');
+
+						const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+						await buf.writeToFile(tilePath);
+
+						const texLayers = texChunk.layers;
+						const lines = [];
+						for (let i = 0, n = texLayers.length; i < n; i++) {
+							const mat = materials[texLayers[i].textureId];
+							lines.push([i, mat.id, mat.scale].join(','));
+						}
+
+						const metaOut = path.join(dir, 'tex_' + prefix + '.csv');
+						await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
+					}
+				}
+			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.
 				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
@@ -546,6 +615,10 @@ class ADTExporter {
 
 								const alphaTex = bindAlphaLayer(alphaLayers[i]);
 								gl.bindTexture(gl.TEXTURE_2D, alphaTex);
+								
+								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
 								gl.uniform1i(uBlends[i], i + 3);
 
 								// Store to clean up after render.
@@ -557,7 +630,7 @@ class ADTExporter {
 							const heightOffsets = new Array(4).fill(1);
 
 							for (let i = 0, n = texLayers.length; i < n; i++) {
-								const mat = materials[texLayers[i].textureId];							
+								const mat = materials[texLayers[i].textureId];
 								gl.activeTexture(gl.TEXTURE0 + i);
 								gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
 
@@ -623,91 +696,101 @@ class ADTExporter {
 
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
-					for (const model of objAdt.models) {			
+					for (const model of objAdt.models) {
 						const fileDataID = model.mmidEntry;		
 						let fileName = listfile.getByID(fileDataID);
 
-						if (fileName !== undefined) {
-							// Replace M2 extension with OBJ.
-							fileName = ExportHelper.replaceExtension(fileName, '.obj');
-						} else {
-							// Handle unknown file.
-							fileName = 'unknown/' + fileDataID + '.obj';
+						try {	
+
+							if (fileName !== undefined) {
+								// Replace M2 extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								// Handle unknown file.
+								fileName = 'unknown/' + fileDataID + '.obj';
+							}
+
+							const modelPath = ExportHelper.getExportPath(fileName);
+
+							// Export the model if we haven't done so for this export session.
+							if (!objectCache.has(fileDataID)) {
+								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								await m2.exportAsOBJ(modelPath);
+								objectCache.add(fileDataID);
+							}
+
+							csv.addRow({
+								ModelFile: path.relative(dir, modelPath),
+								PositionX: model.position[0],
+								PositionY: model.position[1],
+								PositionZ: model.position[2],
+								RotationX: model.rotation[0],
+								RotationY: model.rotation[1],
+								RotationZ: model.rotation[2],
+								ScaleFactor: model.scale / 1024,
+								ModelId: model.uniqueId,
+								Type: 'm2'
+							});
+						} catch {
+							log.write('Failed to export %s [%d]', fileName, fileDataID);
 						}
-
-						const modelPath = ExportHelper.getExportPath(fileName);
-
-						// Export the model if we haven't done so for this export session.
-						if (!objectCache.has(fileDataID)) {
-							const m2 = new M2Exporter(await casc.getFile(fileDataID));
-							await m2.exportAsOBJ(modelPath);
-							objectCache.add(fileDataID);
-						}
-
-						csv.addRow({
-							ModelFile: path.relative(dir, modelPath),
-							PositionX: model.position[0],
-							PositionY: model.position[1],
-							PositionZ: model.position[2],
-							RotationX: model.rotation[0],
-							RotationY: model.rotation[1],
-							RotationZ: model.rotation[2],
-							ScaleFactor: model.scale / 1024,
-							ModelId: model.uniqueId,
-							Type: 'm2'
-						});
 					}
 				}
 
 				if (config.mapsIncludeWMO) {
 					log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
 
-					const usingNames = !!objAdt.wmoNames;				
+					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
 						let fileDataID;
 						let fileName;
 
-						if (usingNames) {
-							fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
-							fileDataID = listfile.getByFilename(fileName);
-						} else {
-							fileDataID = model.mwidEntry;
-							fileName = listfile.getByID(fileDataID);
+						try {
+							if (usingNames) {
+								fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
+								fileDataID = listfile.getByFilename(fileName);
+							} else {
+								fileDataID = model.mwidEntry;
+								fileName = listfile.getByID(fileDataID);
+							}
+
+							if (fileName !== undefined) {
+								// Replace WMO extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
+							} else {
+								// Handle unknown WMO files.
+								fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
+							}
+
+							const modelPath = ExportHelper.getExportPath(fileName);
+							const cacheID = fileDataID + '-' + model.doodadSet;
+
+							if (!objectCache.has(cacheID)) {
+								const data = await casc.getFile(fileDataID);
+								const wmo = new WMOExporter(data, fileDataID);
+
+								if (config.mapsIncludeWMOSets)
+									wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
+
+								await wmo.exportAsOBJ(modelPath);
+								objectCache.add(cacheID);
+							}
+
+							csv.addRow({
+								ModelFile: path.relative(dir, modelPath),
+								PositionX: model.position[0],
+								PositionY: model.position[1],
+								PositionZ: model.position[2],
+								RotationX: model.rotation[0],
+								RotationY: model.rotation[1],
+								RotationZ: model.rotation[2],
+								ScaleFactor: model.scale / 1024,
+								ModelId: model.uniqueId,
+								Type: 'wmo'
+							});
+						} catch {
+							log.write('Failed to export %s [%d]', fileName, fileDataID);
 						}
-
-						if (fileName !== undefined) {
-							// Replace WMO extension with OBJ.
-							fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
-						} else {
-							// Handle unknown WMO files.
-							fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
-						}
-
-						const modelPath = ExportHelper.getExportPath(fileName);
-
-						if (!objectCache.has(fileDataID)) {
-							const data = await casc.getFile(fileDataID);
-							const wmo = new WMOExporter(data, fileDataID);
-
-							if (config.mapsIncludeWMOSets)
-								wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
-
-							await wmo.exportAsOBJ(modelPath);
-							objectCache.add(fileDataID);
-						}
-
-						csv.addRow({
-							ModelFile: path.relative(dir, modelPath),
-							PositionX: model.position[0],
-							PositionY: model.position[1],
-							PositionZ: model.position[2],
-							RotationX: model.rotation[0],
-							RotationY: model.rotation[1],
-							RotationZ: model.rotation[2],
-							ScaleFactor: model.scale / 1024,
-							ModelId: model.uniqueId,
-							Type: 'wmo'
-						});
 					}
 				}
 

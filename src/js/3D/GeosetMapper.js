@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 
@@ -11,6 +11,7 @@ const GEOSET_GROUPS = {
 	300: 'FacialC',
 	400: 'Gloves',
 	500: 'Boots',
+	600: 'Tail',
 	700: 'Ears',
 	800: 'Wrists',
 	900: 'Kneepads',
@@ -21,11 +22,22 @@ const GEOSET_GROUPS = {
 	1500: 'Cloak',
 	1700: 'Eyeglow',
 	1800: 'Belt',
-	1900: 'Tail',
+	1900: 'Bone/Tail',
 	2000: 'Feet',
-	2300: 'DHHands',
-	2400: 'DHHorns',
-	2500: 'DHBlindfolds'
+	2200: 'Torso',
+	2300: 'HandAttach',
+	2400: 'HeadAttach',
+	2500: 'DHBlindfolds',
+	2700: 'Head',
+	2800: 'Chest',
+	2900: 'MechagnomeArms',
+	3000: 'MechagnomeLegs',
+	3100: 'MechagnomeFeet',
+	3200: 'Face',
+	3300: 'Eyes',
+	3400: 'Eyebrows',
+	3500: 'Earrings',
+	3600: 'Necklace'
 };
 
 /**
@@ -43,7 +55,7 @@ const getGeosetName = (index, id) => {
 	if (group)
 		return group + (id - base);
 
-	return 'Geoset' + index;
+	return 'Geoset' + index + "_" + base;
 };
 
 /**

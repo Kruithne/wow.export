@@ -439,14 +439,14 @@ document.addEventListener('click', function(e) {
 	}).catch(() => {}).finally(() => {
 		let updateTimer = -1;
 
-		// Create a watcher programtically *after* assigning the initial value
+		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
 		core.view.$watch('cacheSize', function(nv) {
 			// Clear any existing timer running.
 			clearTimeout(updateTimer);
 
 			// We buffer this call by SIZE_UPDATE_DELAY so that we're not writing
-			// to the file constantly during heavy cache usage. Post-poning until
+			// to the file constantly during heavy cache usage. Postponing until
 			// next tick would not help due to async and potential IO/net delay.
 			updateTimer = setTimeout(() => {
 				fsp.writeFile(constants.CACHE.SIZE, nv, 'utf8');

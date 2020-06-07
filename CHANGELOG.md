@@ -1,5 +1,15 @@
-0.1.9 (Unreleased)
+0.1.9 (13-01-2020)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
+- Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.
+- Added a 'Copy File Directories' setting which makes CTRL + C only copy file directories.
+- Fixed issue that prevented exported WMOs with empty groups.
+- Fixed issue that prevented some files from being available in remote mode.
+- Fixed issue in Blender plugin that slowed down imports significantly.
+- Fixed issue in Blender plugin where it would crash on models without materials.
+- Fixed issue that prevented duplicate WMOs with different doodad sets from exporting on the same ADT tile.
+- Fixed issue where there would be extremely visible lines in terrain textures.
+- Fixed issue with ADTs failing to export due to bad/missing doodads and/or WMOs.
+- The 'Open Export Directory' link after exporting has been replaced with 'View in Explorer' which opens the directory of the last exported item.
 
 0.1.8 (11-01-2020)
 - NPC variant textures can now be selected/exported for creature models.

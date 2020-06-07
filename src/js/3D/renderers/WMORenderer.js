@@ -66,7 +66,7 @@ class WMORenderer {
 			}
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true });
+			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true, groupIndex: i });
 		}
 
 		const setCount = wmo.doodadSets.length;
