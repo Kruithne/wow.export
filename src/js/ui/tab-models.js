@@ -324,7 +324,7 @@ core.registerLoadFunc(async () => {
 
 		log.write('Loaded textures for %d creatures', creatureTextures.size);
 	} catch (e) {
-		log.write('Unable to load creature model data: %s', e.message);
+		log.write('Unable to load creature model info or creature model data: %s', e.message);
 	}
 
 	// Track changes to the visible model listfile types.
