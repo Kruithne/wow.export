@@ -10,6 +10,8 @@ const FieldType = require ('../src/js/db/FieldType');
 	const MapData = await BufferWrapper.readFile('./tests/resources/db2/Map.db2');
 	const MapDB = new WDCReader('DBFilesClient/Map.db2', DB_Map);
 	MapDB.parse(MapData);
+
+	console.log("Map completed");
 })();
 
 (async () => {
@@ -52,6 +54,8 @@ const FieldType = require ('../src/js/db/FieldType');
 	for (const [name, value] of Object.entries(properRecord)) {
 		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
 	}
+
+	console.log("CreatureDisplayInfo (Mainline) completed")
 })();
 
 (async () => {
@@ -94,6 +98,8 @@ const FieldType = require ('../src/js/db/FieldType');
 	for (const [name, value] of Object.entries(properRecordClassic)) {
 		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
 	}
+
+	console.log("CreatureDisplayInfo (Classic) completed")
 })();
 
 (async () => {
@@ -126,4 +132,76 @@ const FieldType = require ('../src/js/db/FieldType');
 	for (const [name, value] of Object.entries(properRecord)) {
 		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) +')');
 	}
+
+	console.log("CreatureDifficulty completed");
+})();
+
+(async () => {
+	// ModelFileData (Beta), for relation testing
+	const MFDSchema = {
+		FileDataID: FieldType.Int32,
+		Flags: FieldType.UInt8,
+		LodCount: FieldType.UInt8,
+		ModelResourcesID: FieldType.Relation,
+	};
+
+	const properRecord = {
+		FileDataID: 3613913,
+		Flags: 0,
+		LodCount: 0,
+		ModelResourcesID: 58765
+	};
+
+	const MFDData = await BufferWrapper.readFile('./tests/resources/db2/ModelFileData.db2');
+	const MFDDB = new WDCReader('DBFilesClient/ModelFileData.db2', MFDSchema);
+	MFDDB.parse(MFDData);
+
+	const ourRecord = MFDDB.getRow(3613913);
+	for (const [name, value] of Object.entries(properRecord)) {
+		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) + ')');
+	}
+
+	console.log("ModelFileData completed");
+})();
+
+(async () => {
+	// ChrModel (Beta), for complex DB testing
+	const CMSchema = {
+		CustomizeOffset: [FieldType.Float, 3],
+		ID: FieldType.Int32,
+		Sex: FieldType.Int32,
+		DisplayID: FieldType.Int32,
+		CharComponentTextureLayoutID: FieldType.Int32,
+		Flags: FieldType.Int32,
+		SkeletonFileDataID: FieldType.Int32,
+		Field_9_0_1_34081_007: FieldType.Int32,
+		Field_9_0_1_34081_008: FieldType.Int32,
+		BaseRaceChrModelID: FieldType.Int32,
+		Field_9_0_1_34615_010: FieldType.Float,
+	};
+
+	const properRecord = {
+		CustomizeOffset: [2.8, 0, -0.37],
+		ID: 74,
+		Sex: 1,
+		DisplayID: 90787,
+		CharComponentTextureLayoutID: 150,
+		Flags: 2,
+		SkeletonFileDataID: 199668,
+		Field_9_0_1_34081_007: 0,
+		Field_9_0_1_34081_008: 0,
+		BaseRaceChrModelID: 0,
+		Field_9_0_1_34615_010: 1.3
+	};
+
+	const CMData = await BufferWrapper.readFile('./tests/resources/db2/ChrModel.db2');
+	const CMDB = new WDCReader('DBFilesClient/ChrModel.db2', CMSchema);
+	CMDB.parse(CMData);
+
+	const ourRecord = CMDB.getRow(74);
+	for (const [name, value] of Object.entries(properRecord)) {
+		assert.deepStrictEqual(value, ourRecord[name], 'Mismatch for column ' + name + ', proper value: ' + value + ' (' + value.toString(2) + '), our value: ' + ourRecord[name] + ' (' + ourRecord[name].toString(2) + ')');
+	}
+
+	console.log("ChrModel completed");
 })();
