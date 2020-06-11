@@ -94,8 +94,14 @@ class M2Renderer {
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
-			if (this.reactive)
-				this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
+			if (this.reactive){
+				let isDefault = false;
+
+				if (skinMesh.submeshID.toString().endsWith("0") || skinMesh.submeshID.toString().endsWith("01"))
+					isDefault = true;
+
+				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+			}
 		}
 
 		if (this.reactive) {
@@ -105,6 +111,9 @@ class M2Renderer {
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Update geosets once (so defaults are applied correctly)
+		this.updateGeosets();
 	}
 
 	/**
