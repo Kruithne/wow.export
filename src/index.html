@@ -262,8 +262,14 @@
 								<div class="list-toggles">
 									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 								</div>
-								<span class="header">Skins</span>
-								<listbox :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listbox>
+								<div id="mvSkins" v-if="modelViewerShowSkins">
+									<span class="header">Skins</span>
+									<listbox :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listbox>
+								</div>
+								<div id="chrCust" v-if="modelViewerShowChrCust">
+									<span class="header">Customization</span>
+									<listbox :items="modelViewerChrCustCategories" :selection="modelViewerSelectedChrCustCategory" :single="true"></listbox>
+								</div>
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>

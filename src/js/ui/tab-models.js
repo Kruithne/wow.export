@@ -22,14 +22,20 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 const WDCReader = require('../db/WDCReader');
 const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
 const DB_CreatureModelData = require('../db/schema/CreatureModelData');
-const DB_ChrModel = require('../db/schema/ChrModel');
 
+const DB_ChrModel = require('../db/schema/ChrModel');
+const DB_ChrCustomization = require('../db/schema/ChrCustomization');
+const DB_ChrCustomizationCategory = require('../db/schema/ChrCustomizationCategory');
+const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
+
+const fdidToChrModel = new Map();
 const creatureTextures = new Map();
 const activeSkins = new Map();
 let selectedVariantTexID = 0;
 
 let selectedFile = null;
 let isFirstModel = true;
+let chrCustomizationAvailable = false;
 
 let camera, scene;
 const renderGroup = new THREE.Group();
@@ -49,6 +55,10 @@ const previewModel = async (fileName) => {
 			activeRenderer = null;
 			activePath = null;
 		}
+
+		// Hide controls by default.
+		core.view.modelViewerShowChrCust = false;
+		core.view.modelViewerShowSkins = false;
 
 		// Clear the active skin map.
 		activeSkins.clear();
@@ -73,46 +83,75 @@ const previewModel = async (fileName) => {
 		await activeRenderer.load();
 
 		if (isM2) {
-			// Check for creature skins.
-			const skins = creatureTextures.get(fileDataID);
-			let isFirst = true;
-			const skinList = [];
+			// Check if model is a character model
+			if (chrCustomizationAvailable && fdidToChrModel.has(fileDataID)){
+				core.view.modelViewerShowChrCust = true;
+				try {
 
-			if (skins !== undefined) {
-				for (const skin of skins) {
-					let skinName = listfile.getByID(skin);
-					if (skinName !== undefined) {
-						// Display the texture name without path/extension.
-						skinName = path.basename(skinName, '.blp');
+					if (chrCustomizationAvailable) {
+						log.write('Loading character customization system...');
+
+						const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
+						await chrCustomization.parse();
+
+						const chrCustomizationCategory = new WDCReader('DBFilesClient/ChrCustomizationCategory.db2', DB_ChrCustomizationCategory);
+						await chrCustomizationCategory.parse(); 
+
+						const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
+						await chrCustomizationOption.parse();
+
+						let categoryList = new Array();
+						const chrModelID = fdidToChrModel.get(fileDataID);
+						for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
+							if (chrCustomizationOptionRow.ChrModelID != chrModelID)
+								continue;
+							
+							//const category = chrCustomizationCategory.getRow(chrCustomizationOptionRow.ChrCustomizationCategoryID);
+							if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
+								categoryList.push(chrCustomizationOptionRow.Name_lang);
+							}
+						}
+
+						core.view.modelViewerChrCustCategories = categoryList;
+						core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
+
+						log.write('Loaded character customization system');
 					} else {
-						// Handle unknown textures.
-						skinName = 'unknown_' + skin;
+						log.write('Skipped loading character customization system, not present in this version');
 					}
-
-					// Push the skin onto the display list.
-					skinList.push(skinName);
-
-					// Keep a mapping of the name -> fileDataID for user selects.
-					activeSkins.set(skinName, skin);
-					isFirst = false;
-				}
-			}
-
-			core.view.modelViewerSkins = skinList;
-			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
-
-			// Check for character model stuff
-			if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
-				const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
-				await chrModel.parse();
-
-				for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
-					console.log(chrModelID);
+				} catch (e) {
+					log.write('Unable to load character customization system: %s', e.message);
 				}
 			} else {
-				console.log("ChrModel not in listfile, likely not using Shadowlands, skipping character mode stuff..");
+				// Not a character model, check for creature skins.
+				const skins = creatureTextures.get(fileDataID);
+				let isFirst = true;
+				const skinList = [];
+
+				if (skins !== undefined) {
+					for (const skin of skins) {
+						let skinName = listfile.getByID(skin);
+						if (skinName !== undefined) {
+							// Display the texture name without path/extension.
+							skinName = path.basename(skinName, '.blp');
+						} else {
+							// Handle unknown textures.
+							skinName = 'unknown_' + skin;
+						}
+
+						// Push the skin onto the display list.
+						skinList.push(skinName);
+
+						// Keep a mapping of the name -> fileDataID for user selects.
+						activeSkins.set(skinName, skin);
+						isFirst = false;
+					}
+				}
+
+				core.view.modelViewerShowSkins = true;
+				core.view.modelViewerSkins = skinList;
+				core.view.modelViewerSkinsSelection = skinList.slice(0, 1);		
 			}
-			
 		}
 
 		updateCameraBounding();
@@ -333,6 +372,17 @@ core.registerLoadFunc(async () => {
 				} else {
 					creatureTextures.set(fileDataID, new Set(textures));
 				}
+			}
+		}
+
+		if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
+			chrCustomizationAvailable = true;
+			const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
+			await chrModel.parse();
+			for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
+				const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
+				const modelRow = creatureModelData.getRow(displayRow.ModelID);
+				fdidToChrModel.set(modelRow.FileDataID, chrModelID);
 			}
 		}
 

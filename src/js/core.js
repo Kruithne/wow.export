@@ -62,9 +62,13 @@ const view = {
 	soundPlayerState: false, // Playing state of the sound player.
 	soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
 	soundPlayerDuration: 0, // Duration of the currently playing sound track.
+	modelViewerChrCustCategories: [], // Available character customization categories.
+	modelViewerSelectedChrCustCategory: null, // Selected character customization category.
 	modelViewerContext: null, // 3D context for the model viewer.
 	modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
 	modelViewerGeosets: [], // Active M2 model geoset control.
+	modelViewerShowSkins: true, // Whether or not to show skins.
+	modelViewerShowChrCust: false, // Whether or not to show character customization.
 	modelViewerSkins: [], // Active M2 model skins.
 	modelViewerSkinsSelection: [], // Selected M2 model skins.
 	modelViewerWMOGroups: [], // Active WMO model group control.
