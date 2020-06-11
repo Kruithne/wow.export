@@ -262,7 +262,7 @@ Vue.component('listboxb', {
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
-			<span class="sub sub-0">item.label</span>
+			<span class="sub sub-0">{{ item.label }}</span>
 		</div>
 	</div>`
 });
