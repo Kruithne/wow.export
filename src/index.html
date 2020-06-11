@@ -267,8 +267,10 @@
 									<listbox :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listbox>
 								</div>
 								<div id="chrCust" v-if="modelViewerShowChrCust">
-									<span class="header">Customization</span>
+									<span class="header">Customization Options</span>
 									<listbox :items="modelViewerChrCustCategories" :selection="modelViewerSelectedChrCustCategory" :single="true"></listbox>
+									<span class="header">Customization Choices</span>
+									<listbox :items="modelViewerChrCustChoices" :selection="modelViewerSelectedChrCustChoice" :single="true"></listbox>
 								</div>
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">

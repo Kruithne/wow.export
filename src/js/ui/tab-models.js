@@ -26,9 +26,14 @@ const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 const DB_ChrModel = require('../db/schema/ChrModel');
 const DB_ChrCustomization = require('../db/schema/ChrCustomization');
 const DB_ChrCustomizationCategory = require('../db/schema/ChrCustomizationCategory');
+const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
+const ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 
 const fdidToChrModel = new Map();
+const activeOptions = new Map();
+const activeChoices = new Map();
+
 const creatureTextures = new Map();
 const activeSkins = new Map();
 let selectedVariantTexID = 0;
@@ -91,6 +96,8 @@ const previewModel = async (fileName) => {
 					if (chrCustomizationAvailable) {
 						log.write('Loading character customization system...');
 
+						activeOptions.clear();
+
 						const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
 						await chrCustomization.parse();
 
@@ -109,6 +116,7 @@ const previewModel = async (fileName) => {
 							//const category = chrCustomizationCategory.getRow(chrCustomizationOptionRow.ChrCustomizationCategoryID);
 							if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
 								categoryList.push(chrCustomizationOptionRow.Name_lang);
+								activeOptions.set(chrCustomizationOptionRow.Name_lang, chrCustomizationOptionRow.ID);
 							}
 						}
 
@@ -415,6 +423,76 @@ core.registerLoadFunc(async () => {
 			selectedVariantTexID = fileDataID;
 			activeRenderer.loadNPCVariantTexture(fileDataID);
 		}
+	});
+
+	// When the selected customization option is changed, update choice listbox.
+	core.view.$watch('modelViewerSelectedChrCustCategory', async selection => {
+		if (!activeRenderer)
+			return;
+
+		// Option selector is single-select, should only be one item.
+		const selectedChoiceID = activeOptions.get(selection[0]);
+
+		// TODO: Load these DBs only once!
+		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
+		await chrCustomizationChoice.parse();
+
+		let choiceList = Array();
+		activeChoices.clear();
+
+		for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
+			if (chrCustomizationChoiceRow.ChrCustomizationOptionID != selectedOptionID)
+				continue;
+
+			if (!(chrCustomizationChoiceRow.ID in activeChoices)) {
+				let name = "";
+				if (chrCustomizationChoiceRow.Name_lang != ""){
+					name = chrCustomizationChoiceRow.Name_lang;
+				} else {
+					name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
+				}
+				choiceList.push(name);
+				activeChoices.set(chrCustomizationChoiceRow.ID, name);
+			}
+		}
+
+		core.view.modelViewerChrCustChoices = choiceList;
+		core.view.modelViewerSelectedChrCustChoice = choiceList.slice(0, 1);	
+	});
+
+	// When the selected customization choice is changed, update geosets.
+	core.view.$watch('modelViewerSelectedChrCustChoice', async selection => {
+		if (!activeRenderer)
+			return;
+
+		// Option selector is single-select, should only be one item.
+		const selectedOptionID = activeChoices.get(selection[0]);
+
+		// TODO: Load these DBs only once!
+		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
+		await chrCustomizationChoice.parse();
+
+		let choiceList = Array();
+		let activeChoices = new Map();
+
+		for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
+			if (chrCustomizationChoiceRow.ChrCustomizationOptionID != selectedOptionID)
+				continue;
+
+			if (!(chrCustomizationChoiceRow.ID in activeChoices)) {
+				let name = "";
+				if (chrCustomizationChoiceRow.Name_lang != "") {
+					name = chrCustomizationChoiceRow.Name_lang;
+				} else {
+					name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
+				}
+				choiceList.push(name);
+				activeChoices.set(chrCustomizationChoiceRow.ID, name);
+			}
+		}
+
+		core.view.modelViewerChrCustChoices = choiceList;
+		core.view.modelViewerSelectedChrCustChoice = choiceList.slice(0, 1);
 	});
 
 	// Track selection changes on the model listbox and preview first model.
