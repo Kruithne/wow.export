@@ -83,6 +83,7 @@ const blender = require('./js/blender');
 const fsp = require('fs').promises;
 
 require('./js/components/listbox');
+require('./js/components/listboxb');
 require('./js/components/checkboxlist');
 require('./js/components/menu-button');
 require('./js/components/file-field');
