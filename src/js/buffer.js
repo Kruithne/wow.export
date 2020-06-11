@@ -442,7 +442,7 @@ class BufferWrapper {
 	 * @param {boolean} inflate If true, data will be decompressed using inflate.
 	 */
 	readBuffer(length = -1, wrap = true, inflate = false) {
-		if (!length) // Default to consuming all remaining bytes.
+		if (length === -1) // Default to consuming all remaining bytes.
 			length = this.remainingBytes;
 
 		// Ensure we have enough data left to fulfill this.
@@ -463,8 +463,8 @@ class BufferWrapper {
 	 * @param {number} length 
 	 * @param {string} encoding 
 	 */
-	readString(length = 0, encoding = 'utf8') {
-		if (length <= 0) // Default to consuming all remaining bytes.
+	readString(length = -1, encoding = 'utf8') {
+		if (length === -1) // Default to consuming all remaining bytes.
 			length = this.remainingBytes;
 
 		this._checkBounds(length);
@@ -483,7 +483,7 @@ class BufferWrapper {
 		const ofs = this._ofs;
 		this.seek(0);
 
-		const str = this.readString(0, encoding);
+		const str = this.readString(-1, encoding);
 		this.seek(ofs);
 
 		return str.split(/\r\n|\n|\r/);
