@@ -268,9 +268,9 @@
 								</div>
 								<div id="chrCust" v-if="modelViewerShowChrCust">
 									<span class="header">Customization Options</span>
-									<listbox :items="modelViewerChrCustCategories" :selection="modelViewerSelectedChrCustCategory" :single="true"></listbox>
+									<listboxb :items="modelViewerChrCustCategories" :selection="modelViewerSelectedChrCustCategory" :single="true"></listboxb>
 									<span class="header">Customization Choices</span>
-									<listbox :items="modelViewerChrCustChoices" :selection="modelViewerSelectedChrCustChoice" :single="true"></listbox>
+									<listboxb :items="modelViewerChrCustChoices" :selection="modelViewerSelectedChrCustChoice" :single="true"></listboxb>
 								</div>
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">

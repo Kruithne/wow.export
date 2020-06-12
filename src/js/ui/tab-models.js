@@ -31,8 +31,6 @@ const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption')
 const ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 
 const fdidToChrModel = new Map();
-const activeOptions = new Map();
-const activeChoices = new Map();
 
 const creatureTextures = new Map();
 const activeSkins = new Map();
@@ -92,11 +90,10 @@ const previewModel = async (fileName) => {
 			if (chrCustomizationAvailable && fdidToChrModel.has(fileDataID)){
 				core.view.modelViewerShowChrCust = true;
 				try {
-
 					if (chrCustomizationAvailable) {
 						log.write('Loading character customization system...');
-
-						activeOptions.clear();
+						
+						let defaultOptions = new Map();
 
 						const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
 						await chrCustomization.parse();
@@ -107,21 +104,33 @@ const previewModel = async (fileName) => {
 						const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
 						await chrCustomizationOption.parse();
 
+						const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
+						await chrCustomizationChoice.parse();
+
 						let categoryList = new Array();
 						const chrModelID = fdidToChrModel.get(fileDataID);
 						for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
 							if (chrCustomizationOptionRow.ChrModelID != chrModelID)
 								continue;
 							
-							//const category = chrCustomizationCategory.getRow(chrCustomizationOptionRow.ChrCustomizationCategoryID);
 							if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
-								categoryList.push(chrCustomizationOptionRow.Name_lang);
-								activeOptions.set(chrCustomizationOptionRow.Name_lang, chrCustomizationOptionRow.ID);
+								categoryList.push({ id: chrCustomizationOptionRow.ID, label: chrCustomizationOptionRow.Name_lang});
+
+								for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
+									if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
+										continue;
+
+									if (!(chrCustomizationOptionID in defaultOptions)) {
+										defaultOptions.set(chrCustomizationOptionID, chrCustomizationChoiceRow.ID);
+										break;
+									}
+								}
 							}
 						}
 
 						core.view.modelViewerChrCustCategories = categoryList;
 						core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
+						core.view.modelViewerChrCustCurrent = defaultOptions;
 
 						log.write('Loaded character customization system');
 					} else {
@@ -431,33 +440,36 @@ core.registerLoadFunc(async () => {
 			return;
 
 		// Option selector is single-select, should only be one item.
-		const selectedChoiceID = activeOptions.get(selection[0]);
+		const selectedOptionID = selection[0].id;
 
 		// TODO: Load these DBs only once!
 		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
 		await chrCustomizationChoice.parse();
 
 		let choiceList = Array();
-		activeChoices.clear();
-
+		let currentlySelectedIndex = 0;
 		for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
 			if (chrCustomizationChoiceRow.ChrCustomizationOptionID != selectedOptionID)
 				continue;
 
-			if (!(chrCustomizationChoiceRow.ID in activeChoices)) {
-				let name = "";
-				if (chrCustomizationChoiceRow.Name_lang != ""){
-					name = chrCustomizationChoiceRow.Name_lang;
-				} else {
-					name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
-				}
-				choiceList.push(name);
-				activeChoices.set(chrCustomizationChoiceRow.ID, name);
+			// Generate name because Blizz hasn't gotten around to setting it for everything yet.
+			let name = "";
+			if (chrCustomizationChoiceRow.Name_lang != ""){
+				name = chrCustomizationChoiceRow.Name_lang;
+			} else {
+				name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
 			}
+
+			// Check if user had already selected a choice, if so, select that later on. 
+			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == chrCustomizationChoiceID){
+				currentlySelectedIndex = choiceList.length;
+			}
+
+			choiceList.push({ id: chrCustomizationChoiceID, label: name});
 		}
 
 		core.view.modelViewerChrCustChoices = choiceList;
-		core.view.modelViewerSelectedChrCustChoice = choiceList.slice(0, 1);	
+		core.view.modelViewerSelectedChrCustChoice = [choiceList[currentlySelectedIndex]];	
 	});
 
 	// When the selected customization choice is changed, update geosets.
@@ -466,33 +478,10 @@ core.registerLoadFunc(async () => {
 			return;
 
 		// Option selector is single-select, should only be one item.
-		const selectedOptionID = activeChoices.get(selection[0]);
+		const selectedChoiceID = selection[0].id;
 
-		// TODO: Load these DBs only once!
-		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
-		await chrCustomizationChoice.parse();
-
-		let choiceList = Array();
-		let activeChoices = new Map();
-
-		for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
-			if (chrCustomizationChoiceRow.ChrCustomizationOptionID != selectedOptionID)
-				continue;
-
-			if (!(chrCustomizationChoiceRow.ID in activeChoices)) {
-				let name = "";
-				if (chrCustomizationChoiceRow.Name_lang != "") {
-					name = chrCustomizationChoiceRow.Name_lang;
-				} else {
-					name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
-				}
-				choiceList.push(name);
-				activeChoices.set(chrCustomizationChoiceRow.ID, name);
-			}
-		}
-
-		core.view.modelViewerChrCustChoices = choiceList;
-		core.view.modelViewerSelectedChrCustChoice = choiceList.slice(0, 1);
+		// Set current choice for this option to the newly selected choice.
+		core.view.modelViewerChrCustCurrent.set(core.view.modelViewerSelectedChrCustCategory[0].id, selectedChoiceID);
 	});
 
 	// Track selection changes on the model listbox and preview first model.
