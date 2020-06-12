@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../core');
@@ -20,26 +20,18 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const WDCReader = require('../db/WDCReader');
-const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
-const DB_CreatureModelData = require('../db/schema/CreatureModelData');
+const dbLogic = require('../db/DBLogic');
 
-const DB_ChrModel = require('../db/schema/ChrModel');
 const DB_ChrCustomization = require('../db/schema/ChrCustomization');
 const DB_ChrCustomizationCategory = require('../db/schema/ChrCustomizationCategory');
 const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
-const ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 
-const fdidToChrModel = new Map();
-
-const creatureTextures = new Map();
 const activeSkins = new Map();
 let selectedVariantTexID = 0;
 
 let selectedFile = null;
 let isFirstModel = true;
-let chrCustomizationAvailable = false;
-
 let camera, scene;
 const renderGroup = new THREE.Group();
 
@@ -87,61 +79,55 @@ const previewModel = async (fileName) => {
 
 		if (isM2) {
 			// Check if model is a character model
-			if (chrCustomizationAvailable && fdidToChrModel.has(fileDataID)){
+			console.log(dbLogic);
+			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)){
 				core.view.modelViewerShowChrCust = true;
 				try {
-					if (chrCustomizationAvailable) {
-						log.write('Loading character customization system...');
+					log.write('Loading character customization system...');
+					
+					let defaultOptions = new Map();
+
+					const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
+					await chrCustomization.parse();
+
+					const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
+					await chrCustomizationOption.parse();
+
+					const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
+					await chrCustomizationChoice.parse();
+
+					let categoryList = new Array();
+					const chrModelID = dbLogic.getChrModelIDByFileDataID(fileDataID);
+					for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
+						if (chrCustomizationOptionRow.ChrModelID != chrModelID)
+							continue;
 						
-						let defaultOptions = new Map();
+						if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
+							categoryList.push({ id: chrCustomizationOptionRow.ID, label: chrCustomizationOptionRow.Name_lang});
 
-						const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
-						await chrCustomization.parse();
+							for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
+								if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
+									continue;
 
-						const chrCustomizationCategory = new WDCReader('DBFilesClient/ChrCustomizationCategory.db2', DB_ChrCustomizationCategory);
-						await chrCustomizationCategory.parse(); 
-
-						const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
-						await chrCustomizationOption.parse();
-
-						const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
-						await chrCustomizationChoice.parse();
-
-						let categoryList = new Array();
-						const chrModelID = fdidToChrModel.get(fileDataID);
-						for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
-							if (chrCustomizationOptionRow.ChrModelID != chrModelID)
-								continue;
-							
-							if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
-								categoryList.push({ id: chrCustomizationOptionRow.ID, label: chrCustomizationOptionRow.Name_lang});
-
-								for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
-									if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
-										continue;
-
-									if (!(chrCustomizationOptionID in defaultOptions)) {
-										defaultOptions.set(chrCustomizationOptionID, chrCustomizationChoiceRow.ID);
-										break;
-									}
+								if (!(chrCustomizationOptionID in defaultOptions)) {
+									defaultOptions.set(chrCustomizationOptionID, chrCustomizationChoiceRow.ID);
+									break;
 								}
 							}
 						}
-
-						core.view.modelViewerChrCustCategories = categoryList;
-						core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
-						core.view.modelViewerChrCustCurrent = defaultOptions;
-
-						log.write('Loaded character customization system');
-					} else {
-						log.write('Skipped loading character customization system, not present in this version');
 					}
+
+					core.view.modelViewerChrCustCategories = categoryList;
+					core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
+					core.view.modelViewerChrCustCurrent = defaultOptions;
+
+					log.write('Loaded character customization system');
 				} catch (e) {
 					log.write('Unable to load character customization system: %s', e.message);
 				}
 			} else {
 				// Not a character model, check for creature skins.
-				const skins = creatureTextures.get(fileDataID);
+				const skins = dbLogic.getCreatureSkinsByFileDataID(fileDataID);
 				let isFirst = true;
 				const skinList = [];
 
@@ -352,62 +338,6 @@ core.events.once('screen-tab-models', () => {
 });
 
 core.registerLoadFunc(async () => {
-	// Attempt to load creature model data.
-	try {
-		log.write('Loading creature textures...');
-
-		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
-		await creatureDisplayInfo.parse();
-
-		const textureMap = new Map();
-
-		// Map all available texture fileDataIDs to model IDs.
-		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-			const textures = displayRow.TextureVariationFileDataID.filter(e => e > 0);
-
-			if (textures.length > 0) {
-				if (textureMap.has(displayRow.ModelID))
-					textureMap.get(displayRow.ModelID).push(...textures);
-				else
-					textureMap.set(displayRow.ModelID, textures);
-			}
-		}
-
-		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2', DB_CreatureModelData);
-		await creatureModelData.parse();
-
-		// Using the texture mapping, map all model fileDataIDs to used textures.
-		for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
-			const textures = textureMap.get(modelID);
-			if (textures !== undefined) {
-				const fileDataID = modelRow.FileDataID;
-				const entry = creatureTextures.get(fileDataID);
-
-				if (entry !== undefined) {
-					for (const texture of textures)
-						entry.add(texture);
-				} else {
-					creatureTextures.set(fileDataID, new Set(textures));
-				}
-			}
-		}
-
-		if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
-			chrCustomizationAvailable = true;
-			const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
-			await chrModel.parse();
-			for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
-				const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
-				const modelRow = creatureModelData.getRow(displayRow.ModelID);
-				fdidToChrModel.set(modelRow.FileDataID, chrModelID);
-			}
-		}
-
-		log.write('Loaded textures for %d creatures', creatureTextures.size);
-	} catch (e) {
-		log.write('Unable to load creature model info or creature model data: %s', e.message);
-	}
-
 	// Track changes to the visible model listfile types.
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);

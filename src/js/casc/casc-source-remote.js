@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -169,7 +169,7 @@ class CASCRemote extends CASC {
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
-		this.progress = core.createProgress(11);
+		this.progress = core.createProgress(12);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
@@ -178,6 +178,7 @@ class CASCRemote extends CASC {
 		core.view.casc = this;
 
 		await this.loadListfile(this.build.BuildConfig);
+		await this.loadTables();
 		await this.initializeComponents();
 	}
 

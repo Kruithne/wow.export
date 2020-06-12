@@ -1,11 +1,12 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
+const dbLogic = require('../db/DBLogic');
 const log = require('../log');
 const core = require('../core');
 const constants = require('../constants');
@@ -105,6 +106,14 @@ class CASC {
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
 		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+	}
+
+	/**
+	 * Load tables that are required globally.
+	 */
+	async loadTables(){
+		await this.progress.step('Loading required tables');
+		dbLogic.loadTables();
 	}
 
 	/**

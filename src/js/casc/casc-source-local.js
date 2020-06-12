@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const path = require('path');
@@ -90,7 +90,7 @@ class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = core.createProgress(8);
+		this.progress = core.createProgress(9);
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
@@ -99,6 +99,7 @@ class CASCLocal extends CASC {
 		core.view.casc = this;
 
 		await this.loadListfile(this.build.BuildKey);
+		await this.loadTables();
 		await this.initializeComponents();
 	}
 
