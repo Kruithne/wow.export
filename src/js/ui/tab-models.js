@@ -19,13 +19,7 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
-const WDCReader = require('../db/WDCReader');
 const dbLogic = require('../db/DBLogic');
-
-const DB_ChrCustomization = require('../db/schema/ChrCustomization');
-const DB_ChrCustomizationCategory = require('../db/schema/ChrCustomizationCategory');
-const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
-const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
 
 const activeSkins = new Map();
 let selectedVariantTexID = 0;
@@ -83,34 +77,19 @@ const previewModel = async (fileName) => {
 			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)){
 				core.view.modelViewerShowChrCust = true;
 				try {
-					log.write('Loading character customization system...');
-					
 					let defaultOptions = new Map();
-
-					const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
-					await chrCustomization.parse();
-
-					const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
-					await chrCustomizationOption.parse();
-
-					const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
-					await chrCustomizationChoice.parse();
 
 					let categoryList = new Array();
 					const chrModelID = dbLogic.getChrModelIDByFileDataID(fileDataID);
-					for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
-						if (chrCustomizationOptionRow.ChrModelID != chrModelID)
-							continue;
-						
-						if (!(chrCustomizationOptionRow.Name_lang in categoryList)){
-							categoryList.push({ id: chrCustomizationOptionRow.ID, label: chrCustomizationOptionRow.Name_lang});
+					const optionsForModel = dbLogic.getOptionsByChrModelID(chrModelID);
 
-							for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
-								if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
-									continue;
-
-								if (!(chrCustomizationOptionID in defaultOptions)) {
-									defaultOptions.set(chrCustomizationOptionID, chrCustomizationChoiceRow.ID);
+					for (const chrCustomizationOption of optionsForModel) {
+						if (!(chrCustomizationOption.name in categoryList)){
+							categoryList.push({ id: chrCustomizationOption.id, label: chrCustomizationOption.name});
+							let choices = dbLogic.getChoicesByOption(chrCustomizationOption.id);
+							for (const chrCustomizationChoice of choices) {
+								if (!(chrCustomizationOption.id in defaultOptions)) {
+									defaultOptions.set(chrCustomizationOption.id, chrCustomizationChoice.id);
 									break;
 								}
 							}
@@ -120,8 +99,6 @@ const previewModel = async (fileName) => {
 					core.view.modelViewerChrCustCategories = categoryList;
 					core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
 					core.view.modelViewerChrCustCurrent = defaultOptions;
-
-					log.write('Loaded character customization system');
 				} catch (e) {
 					log.write('Unable to load character customization system: %s', e.message);
 				}
@@ -372,30 +349,14 @@ core.registerLoadFunc(async () => {
 		// Option selector is single-select, should only be one item.
 		const selectedOptionID = selection[0].id;
 
-		// TODO: Load these DBs only once!
-		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
-		await chrCustomizationChoice.parse();
-
-		let choiceList = Array();
+		let choiceList = dbLogic.getChoicesByOption(selectedOptionID);
 		let currentlySelectedIndex = 0;
-		for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
-			if (chrCustomizationChoiceRow.ChrCustomizationOptionID != selectedOptionID)
-				continue;
 
-			// Generate name because Blizz hasn't gotten around to setting it for everything yet.
-			let name = "";
-			if (chrCustomizationChoiceRow.Name_lang != ""){
-				name = chrCustomizationChoiceRow.Name_lang;
-			} else {
-				name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
+		// Check if user had already selected a choice, if so, select that later on. 
+		for (let i = 0; i < choiceList.length; i++) {
+			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == choiceList[i].id) {
+				currentlySelectedIndex = i;
 			}
-
-			// Check if user had already selected a choice, if so, select that later on. 
-			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == chrCustomizationChoiceID){
-				currentlySelectedIndex = choiceList.length;
-			}
-
-			choiceList.push({ id: chrCustomizationChoiceID, label: name});
 		}
 
 		core.view.modelViewerChrCustChoices = choiceList;

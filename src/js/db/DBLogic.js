@@ -12,13 +12,14 @@ const WDCReader = require('../db/WDCReader');
 const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
 const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 const DB_ChrModel = require('../db/schema/ChrModel');
-const DB_ChrCustomization = require('../db/schema/ChrCustomization');
-// const DB_ChrCustomizationCategory = require('../db/schema/ChrCustomizationCategory');
+
 const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
 
 const creatureTextures = new Map();
 const fdidToChrModel = new Map();
+const optionToChoices = new Map();
+const optionsByChrModel = new Map();
 
 let chrCustomizationAvailable = false;
 
@@ -68,28 +69,55 @@ const loadTables = async () => {
 
 	// Checks if ChrModel.db2 is available -- if not we're not using Shadowlands.
 	if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
+		log.write('Loading character customization tables...');
 		chrCustomizationAvailable = true;
+
 		const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
 		await chrModel.parse();
-		for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
-			const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
-			const modelRow = creatureModelData.getRow(displayRow.ModelID);
-			fdidToChrModel.set(modelRow.FileDataID, chrModelID);
-		}
-	}
-
-	if (chrCustomizationAvailable){
-		const chrCustomization = new WDCReader('DBFilesClient/ChrCustomization.db2', DB_ChrCustomization);
-		await chrCustomization.parse();
-
-		// const chrCustomizationCategory = new WDCReader('DBFilesClient/ChrCustomizationCategory.db2', DB_ChrCustomizationCategory);
-		// await chrCustomizationCategory.parse();
 
 		const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
 		await chrCustomizationOption.parse();
 
 		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
 		await chrCustomizationChoice.parse();
+
+		for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
+			const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
+			const modelRow = creatureModelData.getRow(displayRow.ModelID);
+			fdidToChrModel.set(modelRow.FileDataID, chrModelID);
+
+			for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
+				if (chrCustomizationOptionRow.ChrModelID != chrModelID)
+					continue;
+
+				let choiceList = Array();
+
+				if (!optionsByChrModel.has(chrCustomizationOptionRow.ChrModelID)) {
+					optionsByChrModel.set(chrCustomizationOptionRow.ChrModelID, new Array());
+				}
+
+				optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).push({ id: chrCustomizationOptionID, name: chrCustomizationOptionRow.Name_lang });
+
+				for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustomizationChoice.getAllRows()) {
+					if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
+						continue;
+
+					// Generate name because Blizz hasn't gotten around to setting it for everything yet.
+					let name = "";
+					if (chrCustomizationChoiceRow.Name_lang != "") {
+						name = chrCustomizationChoiceRow.Name_lang;
+					} else {
+						name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
+					}
+
+					choiceList.push({ id: chrCustomizationChoiceID, label: name });
+				}
+
+				optionToChoices.set(chrCustomizationOptionID, choiceList);
+			}
+		}
+
+		log.write('Loaded character customization tables');
 	}
 }
 
@@ -128,4 +156,28 @@ const isCharacterCustomizationAvailable = () => {
 	return chrCustomizationAvailable;
 };
 
-module.exports = { loadTables, getCreatureSkinsByFileDataID, isFileDataIDCharacterModel, getChrModelIDByFileDataID, isCharacterCustomizationAvailable};
+/** 
+ * Gets available option IDs for a certain Chr Model ID.
+ * @returns {array}
+ */
+const getOptionsByChrModelID = (chrModelID) => {
+	return optionsByChrModel.get(chrModelID);
+};
+
+/** 
+ * Gets available choices for a certain Option ID.
+ * @returns {array}
+ */
+const getChoicesByOption = (optionID) => {
+	return optionToChoices.get(optionID);
+};
+
+module.exports = { 
+	loadTables, 
+	getCreatureSkinsByFileDataID, 
+	isFileDataIDCharacterModel, 
+	getChrModelIDByFileDataID, 
+	isCharacterCustomizationAvailable,
+	getChoicesByOption,
+	getOptionsByChrModelID
+};
