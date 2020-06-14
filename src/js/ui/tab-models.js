@@ -371,6 +371,36 @@ core.registerLoadFunc(async () => {
 		// Option selector is single-select, should only be one item.
 		const selectedChoiceID = selection[0].id;
 
+		// Get target geoset ID
+		const targetGeosetID = dbLogic.getGeosetForChoice(selectedChoiceID);
+
+		// Get other choices for this option 
+		const otherChoices = dbLogic.getChoicesByOption(core.view.modelViewerSelectedChrCustCategory[0].id);
+
+		let otherGeosets = new Array();
+		if (otherChoices.length > 0){
+			for (const otherChoice of otherChoices) {
+				const otherGeosetID = dbLogic.getGeosetForChoice(otherChoice.id);
+				if (otherGeosetID) {
+					otherGeosets.push(otherGeosetID);
+				}
+			}
+		}
+
+		if (targetGeosetID){
+			let currGeosets = core.view.modelViewerGeosets;
+			for (let i = 0; i < currGeosets.length; i++) {
+				if (currGeosets[i].id == targetGeosetID) {
+					currGeosets[i].checked = true;
+				} else {
+					// Check if current geoset is checked and part of another choice in the current option, disable if so.
+					if (currGeosets[i].checked && otherGeosets.includes(currGeosets[i].id)){
+						currGeosets[i].checked = false;
+					}
+				}
+			}
+		}
+		
 		// Set current choice for this option to the newly selected choice.
 		core.view.modelViewerChrCustCurrent.set(core.view.modelViewerSelectedChrCustCategory[0].id, selectedChoiceID);
 	});

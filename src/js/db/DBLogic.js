@@ -14,12 +14,16 @@ const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 const DB_ChrModel = require('../db/schema/ChrModel');
 
 const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
+const DB_ChrCustomizationElement = require('../db/schema/ChrCustomizationElement');
+const DB_ChrCustomizationGeoset = require('../db/schema/ChrCustomizationGeoset');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
 
 const creatureTextures = new Map();
 const fdidToChrModel = new Map();
 const optionToChoices = new Map();
 const optionsByChrModel = new Map();
+const choiceToGeoset = new Map();
+const geosetMap = new Map();
 
 let chrCustomizationAvailable = false;
 
@@ -117,6 +121,28 @@ const loadTables = async () => {
 			}
 		}
 
+		const chrCustomizationElement = new WDCReader('DBFilesClient/ChrCustomizationElement.db2', DB_ChrCustomizationElement);
+		await chrCustomizationElement.parse();
+
+		for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustomizationElement.getAllRows()) {
+			if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
+				choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID)
+		}
+
+		const chrCustomizationGeoset = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2', DB_ChrCustomizationGeoset);
+		await chrCustomizationGeoset.parse();
+
+		for (const [chrCustomizationGeosetID, chrCustomizationGeosetRow] of chrCustomizationGeoset.getAllRows()) {
+			let geosetName = "";
+			if (chrCustomizationGeosetRow.GeosetType == 0){
+				geosetName = chrCustomizationGeosetRow.GeosetID;
+			} else {
+				geosetName = chrCustomizationGeosetRow.GeosetType + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
+			}
+
+			geosetMap.set(chrCustomizationGeosetID, geosetName);
+		}
+
 		log.write('Loaded character customization tables');
 	}
 }
@@ -172,6 +198,18 @@ const getChoicesByOption = (optionID) => {
 	return optionToChoices.get(optionID);
 };
 
+/** 
+ * Gets available choices for a certain Option ID, returns false if there isn't one.
+ * @returns {integer|boolean}
+ */
+const getGeosetForChoice = (choiceID) => {
+	if (choiceToGeoset.has(choiceID)){
+		return geosetMap.get(choiceToGeoset.get(choiceID));
+	} else {
+		return false;
+	}
+};
+
 module.exports = { 
 	loadTables, 
 	getCreatureSkinsByFileDataID, 
@@ -179,5 +217,6 @@ module.exports = {
 	getChrModelIDByFileDataID, 
 	isCharacterCustomizationAvailable,
 	getChoicesByOption,
-	getOptionsByChrModelID
+	getOptionsByChrModelID,
+	getGeosetForChoice
 };
