@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 
@@ -256,24 +256,21 @@ class M2Loader {
 		for (let i = 0; i < texturesCount; i++) {
 			const textureType = this.data.readUInt32LE();
 			const texture = new Texture(this.data.readUInt32LE());
+			const nameLength = this.data.readUInt32LE();
+			const nameOfs = this.data.readUInt32LE();
 
 			// Check if texture has a filename (legacy).
-			if (textureType === 0) {
-				const nameLength = this.data.readUInt32LE();
-				const nameOfs = this.data.readUInt32LE();
+			if (textureType === 0 && nameOfs > 0) {
+				const pos = this.data.offset;
 
-				if (nameOfs >= 10) {
-					const pos = this.data.offset;
+				this.data.seek(nameOfs);
+				const fileName = this.data.readString(nameLength);
+				fileName.replace('\0', ''); // Remove NULL characters.
 
-					this.data.seek(nameOfs);
-					const fileName = this.data.readString(nameLength);
-					fileName.replace('\0', ''); // Remove NULL characters.
+				if (fileName.length > 0)
+					texture.setFileName(fileName);
 
-					if (fileName.length > 0)
-						texture.setFileName(fileName);
-
-					this.data.seek(pos);
-				}
+				this.data.seek(pos);
 			}
 
 			textures[i] = texture;
