@@ -147,6 +147,35 @@ class M2Renderer {
 		}
 	}
 
+	async overrideTextureType(type, fileDataID){
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			if (textureTypes[i] != type)
+				continue;
+
+			const tex = new THREE.Texture();
+			const loader = new THREE.ImageLoader();
+
+			const data = await core.view.casc.getFile(fileDataID);
+			const blp = new BLPFile(data);
+			loader.load(blp.getDataURL(false), image => {
+				tex.image = image;
+				tex.format = THREE.RGBAFormat;
+				tex.needsUpdate = true;
+			});
+
+			// TODO: Flags from one of the DB2s?
+
+			/*// if (texture.flags & 0x1)
+				// tex.wrapS = THREE.RepeatWrapping;
+
+			// if (texture.flags & 0x2)
+				// tex.wrapT = THREE.RepeatWrapping;*/
+			this.textures[i] = tex;
+			this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
+		}
+	}
+
 	/**
 	 * Load all textures needed for the M2 model.
 	 */

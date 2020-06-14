@@ -73,7 +73,6 @@ const previewModel = async (fileName) => {
 
 		if (isM2) {
 			// Check if model is a character model
-			console.log(dbLogic);
 			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)){
 				core.view.modelViewerShowChrCust = true;
 				try {
@@ -400,7 +399,13 @@ core.registerLoadFunc(async () => {
 				}
 			}
 		}
-		
+
+		const textureForChoice = dbLogic.getTextureFileDataIDForChoice(selectedChoiceID);
+		if (textureForChoice){
+			// TODO: Get right type to replace for this choice!
+			activeRenderer.overrideTextureType(1, textureForChoice);
+		}
+
 		// Set current choice for this option to the newly selected choice.
 		core.view.modelViewerChrCustCurrent.set(core.view.modelViewerSelectedChrCustCategory[0].id, selectedChoiceID);
 	});

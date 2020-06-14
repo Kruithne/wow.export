@@ -16,13 +16,19 @@ const DB_ChrModel = require('../db/schema/ChrModel');
 const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 const DB_ChrCustomizationElement = require('../db/schema/ChrCustomizationElement');
 const DB_ChrCustomizationGeoset = require('../db/schema/ChrCustomizationGeoset');
+const DB_ChrCustomizationMaterial = require('../db/schema/ChrCustomizationMaterial');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
 
+const DB_TextureFileData = require('../db/schema/TextureFileData');
+
+// Really putting too much in RAM here, need to figure out how to reduce!
+const matResIDToFileDataID = new Map();
 const creatureTextures = new Map();
 const fdidToChrModel = new Map();
 const optionToChoices = new Map();
 const optionsByChrModel = new Map();
 const choiceToGeoset = new Map();
+const choiceToMaterial = new Map();
 const geosetMap = new Map();
 
 let chrCustomizationAvailable = false;
@@ -68,8 +74,21 @@ const loadTables = async () => {
 			}
 		}
 	}
-
+	
 	log.write('Loaded textures for %d creatures', creatureTextures.size);
+
+	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2', DB_TextureFileData);
+	await textureFileData.parse();
+
+	// Using the texture mapping, map all model fileDataIDs to used textures.
+	for (const [textureFileDataID, textureFileDataRow] of textureFileData.getAllRows()) {
+
+		// TODO: Need to remap this to support other UsageTypes
+		if (textureFileDataRow.UsageType != 0)
+			continue;
+
+		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID, textureFileDataID);
+	}
 
 	// Checks if ChrModel.db2 is available -- if not we're not using Shadowlands.
 	if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
@@ -120,6 +139,8 @@ const loadTables = async () => {
 				optionToChoices.set(chrCustomizationOptionID, choiceList);
 			}
 		}
+		const chrCustomizationMaterial = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2', DB_ChrCustomizationMaterial);
+		await chrCustomizationMaterial.parse();
 
 		const chrCustomizationElement = new WDCReader('DBFilesClient/ChrCustomizationElement.db2', DB_ChrCustomizationElement);
 		await chrCustomizationElement.parse();
@@ -127,6 +148,11 @@ const loadTables = async () => {
 		for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustomizationElement.getAllRows()) {
 			if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 				choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID)
+
+			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0){
+				const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
+				choiceToMaterial.set(chrCustomizationElementRow.ChrCustomizationChoiceID, matRow.MaterialResourcesID);
+			}
 		}
 
 		const chrCustomizationGeoset = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2', DB_ChrCustomizationGeoset);
@@ -194,12 +220,24 @@ const getChoicesByOption = (optionID) => {
 };
 
 /** 
- * Gets available choices for a certain Option ID, returns false if there isn't one.
+ * Gets available geosets for a certain Choice ID, returns false if there isn't one.
  * @returns {integer|boolean}
  */
 const getGeosetForChoice = (choiceID) => {
 	if (choiceToGeoset.has(choiceID)){
 		return geosetMap.get(choiceToGeoset.get(choiceID));
+	} else {
+		return false;
+	}
+};
+
+/** 
+ * Gets available textures for a certain Choice ID, returns false if there isn't one.
+ * @returns {integer|boolean}
+ */
+const getTextureFileDataIDForChoice = (choiceID) => {
+	if (choiceToMaterial.has(choiceID)) {
+		return matResIDToFileDataID.get(choiceToMaterial.get(choiceID));
 	} else {
 		return false;
 	}
@@ -213,5 +251,6 @@ module.exports = {
 	isCharacterCustomizationAvailable,
 	getChoicesByOption,
 	getOptionsByChrModelID,
-	getGeosetForChoice
+	getGeosetForChoice,
+	getTextureFileDataIDForChoice
 };

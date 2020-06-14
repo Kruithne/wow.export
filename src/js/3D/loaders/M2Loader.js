@@ -253,14 +253,16 @@ class M2Loader {
 
 		// Read textures.
 		const textures = this.textures = new Array(texturesCount);
+		const textureTypes = this.textureTypes = new Array(texturesCount);
+
 		for (let i = 0; i < texturesCount; i++) {
-			const textureType = this.data.readUInt32LE();
+			textureTypes[i] = this.data.readUInt32LE();
 			const texture = new Texture(this.data.readUInt32LE());
 			const nameLength = this.data.readUInt32LE();
 			const nameOfs = this.data.readUInt32LE();
 
 			// Check if texture has a filename (legacy).
-			if (textureType === 0 && nameOfs > 0) {
+			if (textureTypes[i] === 0 && nameOfs > 0) {
 				const pos = this.data.offset;
 
 				this.data.seek(nameOfs);
