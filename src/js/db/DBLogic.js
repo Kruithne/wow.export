@@ -133,14 +133,9 @@ const loadTables = async () => {
 		await chrCustomizationGeoset.parse();
 
 		for (const [chrCustomizationGeosetID, chrCustomizationGeosetRow] of chrCustomizationGeoset.getAllRows()) {
-			let geosetName = "";
-			if (chrCustomizationGeosetRow.GeosetType == 0){
-				geosetName = chrCustomizationGeosetRow.GeosetID;
-			} else {
-				geosetName = chrCustomizationGeosetRow.GeosetType + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
-			}
+			let geoset = chrCustomizationGeosetRow.GeosetType.toString().padStart(2, '0') + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
 
-			geosetMap.set(chrCustomizationGeosetID, geosetName);
+			geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 		}
 
 		log.write('Loaded character customization tables');
