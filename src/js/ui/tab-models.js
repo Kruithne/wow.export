@@ -54,6 +54,8 @@ const previewModel = async (fileName) => {
 		selectedVariantTexID = 0;
 
 		const fileDataID = listfile.getByFilename(fileName);
+		core.view.modelViewerCurrFileDataID = fileDataID;
+
 		const file = await core.view.casc.getFile(fileDataID);
 		let isM2 = false;
 
@@ -399,11 +401,10 @@ core.registerLoadFunc(async () => {
 				}
 			}
 		}
-
-		const textureForChoice = dbLogic.getTextureFileDataIDForChoice(selectedChoiceID);
+		const textureForChoice = dbLogic.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, selectedChoiceID);
 		if (textureForChoice){
-			// TODO: Get right type to replace for this choice!
-			activeRenderer.overrideTextureType(1, textureForChoice);
+			console.log(textureForChoice);
+			activeRenderer.overrideTextureType(textureForChoice.TextureType, textureForChoice.FileDataID);
 		}
 
 		// Set current choice for this option to the newly selected choice.

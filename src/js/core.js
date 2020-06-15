@@ -67,6 +67,7 @@ const view = {
 	modelViewerChrCustChoices: [], // Available character customization choices.
 	modelViewerSelectedChrCustChoice: null, // Selected character customization choice.
 	modelViewerChrCustCurrent: new Map(), // Current character customization choices
+	modelViewerCurrFileDataID: 0, // Current FileDataID.
 	modelViewerContext: null, // 3D context for the model viewer.
 	modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
 	modelViewerGeosets: [], // Active M2 model geoset control.

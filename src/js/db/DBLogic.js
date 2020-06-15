@@ -18,18 +18,23 @@ const DB_ChrCustomizationElement = require('../db/schema/ChrCustomizationElement
 const DB_ChrCustomizationGeoset = require('../db/schema/ChrCustomizationGeoset');
 const DB_ChrCustomizationMaterial = require('../db/schema/ChrCustomizationMaterial');
 const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
+const DB_ChrModelTextureLayer = require('../db/schema/ChrModelTextureLayer');
 
 const DB_TextureFileData = require('../db/schema/TextureFileData');
 
 // Really putting too much in RAM here, need to figure out how to reduce!
+const choiceToChrCustMaterialID = new Map();
+const chrModelIDToTextureLayoutID = new Map();
 const matResIDToFileDataID = new Map();
 const creatureTextures = new Map();
 const fdidToChrModel = new Map();
 const optionToChoices = new Map();
 const optionsByChrModel = new Map();
 const choiceToGeoset = new Map();
-const choiceToMaterial = new Map();
 const geosetMap = new Map();
+const chrCustMatMap = new Map();
+const chrModelTexLayer = new Array();
+
 
 let chrCustomizationAvailable = false;
 
@@ -108,6 +113,7 @@ const loadTables = async () => {
 			const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
 			const modelRow = creatureModelData.getRow(displayRow.ModelID);
 			fdidToChrModel.set(modelRow.FileDataID, chrModelID);
+			chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutsID);
 
 			for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
 				if (chrCustomizationOptionRow.ChrModelID != chrModelID)
@@ -150,8 +156,10 @@ const loadTables = async () => {
 				choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID)
 
 			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0){
+				choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationMaterialID);
+
 				const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
-				choiceToMaterial.set(chrCustomizationElementRow.ChrCustomizationChoiceID, matRow.MaterialResourcesID);
+				chrCustMatMap.set(matRow.ID, {ChrModelTextureTargetID: matRow.ChrModelTextureTargetID, MaterialResourcesID: matRow.MaterialResourcesID});
 			}
 		}
 
@@ -164,6 +172,16 @@ const loadTables = async () => {
 			geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 		}
 
+		const chrModelTextureLayer = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2', DB_ChrModelTextureLayer);
+		await chrModelTextureLayer.parse();
+
+		for (const [chrModelTextureLayerID, chrModelTextureLayerRow] of chrModelTextureLayer.getAllRows()) {
+			if (!(chrModelTextureLayerRow.CharComponentTextureLayoutsID in chrModelTexLayer)){
+				chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID] = new Array();
+			}
+			
+			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID] = chrModelTextureLayerRow.TextureType;
+		}
 		log.write('Loaded character customization tables');
 	}
 }
@@ -193,6 +211,15 @@ const isFileDataIDCharacterModel = (fileDataID) => {
  */
 const getChrModelIDByFileDataID = (fileDataID) => {
 	return fdidToChrModel.get(fileDataID);
+};
+
+/**
+ * Gets CharComponentTextureLayoutsID for a given ChrModelID.
+ * @param {number} fileDataID
+ * @returns {number}
+ */
+const getChrComponentTextureLayoutIDByChrModelID = (chrModelID) => {
+	return chrModelIDToTextureLayoutID.get(chrModelID);
 };
 
 /** 
@@ -232,16 +259,37 @@ const getGeosetForChoice = (choiceID) => {
 };
 
 /** 
- * Gets available textures for a certain Choice ID, returns false if there isn't one.
+ * Gets TextureTargetID from ChrCustomizationMaterialID.
  * @returns {integer|boolean}
  */
-const getTextureFileDataIDForChoice = (choiceID) => {
-	if (choiceToMaterial.has(choiceID)) {
-		return matResIDToFileDataID.get(choiceToMaterial.get(choiceID));
+const getTextureTargetByChrCustomizationMaterialID = (chrModelMaterialID) => {
+	if (chrCustMatMap.has(chrModelMaterialID)) {
+		return chrCustMatMap.get(chrModelMaterialID).ChrModelTextureTargetID;
+	} else {
+		return false;
+	}
+}
+
+/** 
+ * Gets available textures for a certain Choice ID, returns false if there isn't one.
+ * @returns {object}
+ */
+const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
+	const chrModelID = fdidToChrModel.get(modelFileDataID);
+	const chrCustMatRow = chrCustMatMap.get(choiceToChrCustMaterialID.get(choiceID));
+
+	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
+	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
+
+	const textureType = chrModelTexLayer[textureLayout][textureTarget];
+
+	if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID)) {
+		return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID) };
 	} else {
 		return false;
 	}
 };
+
 
 module.exports = { 
 	loadTables, 
@@ -252,5 +300,7 @@ module.exports = {
 	getChoicesByOption,
 	getOptionsByChrModelID,
 	getGeosetForChoice,
-	getTextureFileDataIDForChoice
+	getTextureForFileDataIDAndChoice,
+	getChrComponentTextureLayoutIDByChrModelID,
+	getTextureTargetByChrCustomizationMaterialID
 };
