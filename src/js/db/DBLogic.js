@@ -113,7 +113,7 @@ const loadTables = async () => {
 			const displayRow = creatureDisplayInfo.getRow(chrModelRow.DisplayID);
 			const modelRow = creatureModelData.getRow(displayRow.ModelID);
 			fdidToChrModel.set(modelRow.FileDataID, chrModelID);
-			chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutsID);
+			chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutID);
 
 			for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustomizationOption.getAllRows()) {
 				if (chrCustomizationOptionRow.ChrModelID != chrModelID)
@@ -214,7 +214,7 @@ const getChrModelIDByFileDataID = (fileDataID) => {
 };
 
 /**
- * Gets CharComponentTextureLayoutsID for a given ChrModelID.
+ * Gets CharComponentTextureLayoutID for a given ChrModelID.
  * @param {number} fileDataID
  * @returns {number}
  */
@@ -272,13 +272,20 @@ const getTextureTargetByChrCustomizationMaterialID = (chrModelMaterialID) => {
 
 /** 
  * Gets available textures for a certain Choice ID, returns false if there isn't one.
- * @returns {object}
+ * @returns {object|boolean}
  */
 const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	const chrModelID = fdidToChrModel.get(modelFileDataID);
 	const chrCustMatRow = chrCustMatMap.get(choiceToChrCustMaterialID.get(choiceID));
 
+	if (!chrCustMatRow) {
+		return false;
+	}
 	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
+	if (!textureLayout) {
+		return false;
+	}
+
 	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
 
 	const textureType = chrModelTexLayer[textureLayout][textureTarget];

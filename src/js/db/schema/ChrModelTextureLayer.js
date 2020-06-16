@@ -9,4 +9,5 @@ module.exports = {
 	ChrModelTextureTargetID: FieldType.Int32,
 	Field_9_0_1_34365_006: FieldType.Int32,
 	TextureSectionTypeBitMask: FieldType.Int32,
+	CharComponentTextureLayoutsID: FieldType.Relation
 };
