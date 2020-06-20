@@ -150,10 +150,15 @@ class M2Renderer {
 	async overrideTextureType(type, fileDataID){
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
 			if (textureTypes[i] != type)
 				continue;
 
-			const tex = new THREE.Texture();
+			
+			let tex = this.textures[i];
+			if (tex === undefined)
+				tex = this.textures[i] = new THREE.Texture();
+
 			const loader = new THREE.ImageLoader();
 
 			const data = await core.view.casc.getFile(fileDataID);
@@ -171,7 +176,6 @@ class M2Renderer {
 
 			// if (texture.flags & 0x2)
 				// tex.wrapT = THREE.RepeatWrapping;*/
-			this.textures[i] = tex;
 			this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
 		}
 	}
@@ -250,8 +254,11 @@ class M2Renderer {
 			this.geosetWatcher();
 
 		// Release bound textures.
-		for (const tex of this.textures)
-			tex.dispose();
+		for (const tex of this.textures){
+			if (tex !== undefined){
+				tex.dispose();
+			}
+		}
 
 		this.disposeMeshGroup();
 	}
