@@ -10,6 +10,7 @@ const listfile = require('../casc/listfile');
 const WDCReader = require('../db/WDCReader');
 
 const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
+const DB_CreatureDisplayInfoGeosetData = require('../db/schema/CreatureDisplayInfoGeosetData');
 const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 const DB_ChrModel = require('../db/schema/ChrModel');
 
@@ -43,6 +44,19 @@ let chrCustomizationAvailable = false;
  */
 const loadTables = async () => { 
 	log.write('Loading creature textures...');
+
+	const geosetMap = new Map();
+
+	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2', DB_CreatureDisplayInfoGeosetData);
+	await creatureDisplayInfoGeosetData.parse();
+	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
+	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
+		if (!geosetMap.has(geosetRow.CreatureDisplayInfoID)){
+			geosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
+		}
+
+		geosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
+	}
 
 	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
 	await creatureDisplayInfo.parse();
