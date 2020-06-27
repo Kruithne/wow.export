@@ -113,7 +113,7 @@ class CASC {
 	 */
 	async loadTables(){
 		await this.progress.step('Loading required tables');
-		dbLogic.loadTables();
+		await dbLogic.loadTables();
 	}
 
 	/**
