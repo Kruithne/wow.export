@@ -27,7 +27,7 @@ const DB_TextureFileData = require('../db/schema/TextureFileData');
 const choiceToChrCustMaterialID = new Map();
 const chrModelIDToTextureLayoutID = new Map();
 const matResIDToFileDataID = new Map();
-const creatureTextures = new Map();
+const creatureDisplays = new Map();
 const fdidToChrModel = new Map();
 const optionToChoices = new Map();
 const optionsByChrModel = new Map();
@@ -61,18 +61,16 @@ const loadTables = async () => {
 	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
 	await creatureDisplayInfo.parse();
 
-	const textureMap = new Map();
-
+	const creatureDisplayInfoMap = new Map();
+	const modelIDToDisplayInfoMap = new Map();
 	// Map all available texture fileDataIDs to model IDs.
-	for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-		const textures = displayRow.TextureVariationFileDataID.filter(e => e > 0);
-
-		if (textures.length > 0) {
-			if (textureMap.has(displayRow.ModelID))
-				textureMap.get(displayRow.ModelID).push(...textures);
-			else
-				textureMap.set(displayRow.ModelID, textures);
-		}
+	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
+		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
+		
+		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
+			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
+		else
+			modelIDToDisplayInfoMap.set(displayRow.ModelID, [displayID]);
 	}
 
 	const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2', DB_CreatureModelData);
@@ -80,21 +78,31 @@ const loadTables = async () => {
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
-		const textures = textureMap.get(modelID);
-		if (textures !== undefined) {
+		if (modelIDToDisplayInfoMap.has(modelID)) {
 			const fileDataID = modelRow.FileDataID;
-			const entry = creatureTextures.get(fileDataID);
+			const displayIDs = modelIDToDisplayInfoMap.get(modelID);
+			const modelIDHasExtraGeosets = modelRow.CreatureGeosetDataID > 0;
 
-			if (entry !== undefined) {
-				for (const texture of textures)
-					entry.add(texture);
-			} else {
-				creatureTextures.set(fileDataID, new Set(textures));
+			for (const displayID of displayIDs){
+				const display = creatureDisplayInfoMap.get(displayID);
+
+				if (modelIDHasExtraGeosets){
+					display.extraGeosets = Array();
+					if (geosetMap.has(displayID)) {
+						display.extraGeosets = geosetMap.get(displayID);
+					}
+				}
+
+				if (creatureDisplays.has(fileDataID)) {
+					creatureDisplays.get(fileDataID).push(display);
+				} else {
+					creatureDisplays.set(fileDataID, [display]);
+				}
 			}
 		}
 	}
-	
-	log.write('Loaded textures for %d creatures', creatureTextures.size);
+
+	log.write('Loaded textures for %d creatures', creatureDisplays.size);
 
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2', DB_TextureFileData);
 	await textureFileData.parse();
@@ -205,8 +213,8 @@ const loadTables = async () => {
  * @param {number} fileDataID 
  * @returns {string|undefined}
  */
-const getCreatureSkinsByFileDataID = (fileDataID) => {
-	return creatureTextures.get(fileDataID);
+const getCreatureDisplaysByFileDataID = (fileDataID) => {
+	return creatureDisplays.get(fileDataID);
 };
 
 /**
@@ -314,7 +322,7 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 
 module.exports = { 
 	loadTables, 
-	getCreatureSkinsByFileDataID, 
+	getCreatureDisplaysByFileDataID, 
 	isFileDataIDCharacterModel, 
 	getChrModelIDByFileDataID, 
 	isCharacterCustomizationAvailable,

@@ -105,26 +105,48 @@ const previewModel = async (fileName) => {
 				}
 			} else {
 				// Not a character model, check for creature skins.
-				const skins = dbLogic.getCreatureSkinsByFileDataID(fileDataID);
+				const displays = dbLogic.getCreatureDisplaysByFileDataID(fileDataID);
 				let isFirst = true;
 				const skinList = [];
+				let modelName = listfile.getByID(fileDataID);
+				modelName = path.basename(modelName, '.m2');
+				
+				if (displays !== undefined) {
+					for (const display of displays) {
+						if (display.textures.length == 0)
+							continue;
+						const texture = display.textures[0];
 
-				if (skins !== undefined) {
-					for (const skin of skins) {
-						let skinName = listfile.getByID(skin);
+						let cleanSkinName = "";
+						let skinName = listfile.getByID(texture);
 						if (skinName !== undefined) {
 							// Display the texture name without path/extension.
 							skinName = path.basename(skinName, '.blp');
+							cleanSkinName = skinName.replace(modelName, '').replace('_', '');
 						} else {
 							// Handle unknown textures.
-							skinName = 'unknown_' + skin;
+							skinName = 'unknown_' + texture;
+						}
+
+						if (cleanSkinName == '')
+							cleanSkinName = 'base';
+
+
+						if (display.extraGeosets !== undefined && display.extraGeosets.length > 0){
+							skinName = skinName + display.extraGeosets.join(',');
+						}
+
+						cleanSkinName = cleanSkinName + " (" + display.ID + ")";
+
+						if (activeSkins.has(skinName)){
+							continue;
 						}
 
 						// Push the skin onto the display list.
-						skinList.push(skinName);
+						skinList.push({ id: skinName, label: cleanSkinName });
 
 						// Keep a mapping of the name -> fileDataID for user selects.
-						activeSkins.set(skinName, skin);
+						activeSkins.set(skinName, display);
 						isFirst = false;
 					}
 				}
@@ -335,7 +357,35 @@ core.registerLoadFunc(async () => {
 		// Skin selector is single-select, should only be one item.
 		const selected = selection[0];
 
-		const fileDataID = activeSkins.get(selected);
+		const display = activeSkins.get(selected.id);
+
+		let currGeosets = core.view.modelViewerGeosets;
+
+		if (display.extraGeosets !== undefined) {
+			for (let j = 0; j < currGeosets.length; j++) {
+				if (currGeosets[j].id > 0 && currGeosets[j].id < 900) {
+					currGeosets[j].checked = false;
+				}
+			}
+
+			for (let i = 0; i < display.extraGeosets.length; i++) {
+				for (let j = 0; j < currGeosets.length; j++) {
+					if (currGeosets[j].id == display.extraGeosets[i]){
+						currGeosets[j].checked = true;
+					}
+				}
+			}
+		} else {
+			for (let i = 0; i < currGeosets.length; i++) {
+				if (currGeosets[i].id.toString().endsWith("0") || currGeosets[i].id.toString().endsWith("01")){
+					currGeosets[i].checked = true;
+				} else {
+					currGeosets[i].checked = false;
+				}
+			}
+		}
+
+		const fileDataID = display.textures[0];
 		if (fileDataID !== undefined) {
 			selectedVariantTexID = fileDataID;
 			activeRenderer.loadNPCVariantTexture(fileDataID);
@@ -401,9 +451,9 @@ core.registerLoadFunc(async () => {
 				}
 			}
 		}
+
 		const textureForChoice = dbLogic.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, selectedChoiceID);
 		if (textureForChoice){
-			console.log(textureForChoice);
 			activeRenderer.overrideTextureType(textureForChoice.TextureType, textureForChoice.FileDataID);
 		}
 
