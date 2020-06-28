@@ -450,7 +450,7 @@ document.addEventListener('click', function(e) {
 			// to the file constantly during heavy cache usage. Postponing until
 			// next tick would not help due to async and potential IO/net delay.
 			updateTimer = setTimeout(() => {
-				fsp.writeFile(constants.CACHE.SIZE, nv, 'utf8');
+				fsp.writeFile(constants.CACHE.SIZE, nv.toString(), 'utf8');
 			}, constants.CACHE.SIZE_UPDATE_DELAY);
 		});
 	});
