@@ -9,6 +9,7 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const dbLogic = require('../../db/DBLogic');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -170,13 +171,109 @@ class M2Renderer {
 			});
 
 			// TODO: Flags from one of the DB2s?
-
 			/*// if (texture.flags & 0x1)
 				// tex.wrapS = THREE.RepeatWrapping;
 
 			// if (texture.flags & 0x2)
 				// tex.wrapT = THREE.RepeatWrapping;*/
-			this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
+			this.materials[i] = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex });
+		}
+	}
+
+	async applyCharacterCustomizationChoice(choiceID){
+		// Get target geoset ID
+		const targetGeosetID = dbLogic.getGeosetForChoice(choiceID);
+
+		// Get other choices for this option 
+		const otherChoices = dbLogic.getChoicesByOption(core.view.modelViewerSelectedChrCustCategory[0].id);
+
+		let otherGeosets = new Array();
+		if (otherChoices.length > 0) {
+			for (const otherChoice of otherChoices) {
+				const otherGeosetID = dbLogic.getGeosetForChoice(otherChoice.id);
+				if (otherGeosetID) {
+					otherGeosets.push(otherGeosetID);
+				}
+			}
+		}
+
+		if (targetGeosetID) {
+			let currGeosets = core.view.modelViewerGeosets;
+			for (let i = 0; i < currGeosets.length; i++) {
+				if (currGeosets[i].id == targetGeosetID) {
+					currGeosets[i].checked = true;
+					console.log("Checking " + currGeosets[i].id);
+				} else {
+					// Check if current geoset is checked and part of another choice in the current option, disable if so.
+					if (currGeosets[i].checked && otherGeosets.includes(currGeosets[i].id)) {
+						console.log("Unchecking " + currGeosets[i].id);
+						currGeosets[i].checked = false;
+					}
+				}
+			}
+		}
+
+		const textureForChoice = dbLogic.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, choiceID);
+		if (textureForChoice) {
+			if (textureForChoice.TextureType == 1 && textureForChoice.TextureSectionTypeBitMask == -1) {
+				// TODO: Skin texture!
+				// This requires generating a texture based on several textures from ChrModelTextureLayer.
+				// Type 1 & TextureSectionTypeBitMask == -1 & Layer = 0 is the base layer, every other type 1 is laid on top of the base texture based on values.
+				// To do this, go from TextureSectionTypeBitMask => CharComponentTextureSections.SectionType based on the correct ChrComponentTextureLayoutID
+				// let skinMats = Array();
+				// skinMats[0] = { fileDataID: 1027767 };
+				// skinMats[1] = { position: new THREE.Vector2(256, 192), fileDataID: 1027743 };
+				const skinMats = dbLogic.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
+				this.buildSkinMaterial(skinMats);
+			} else {
+				console.log("Overriding texture slot " + textureForChoice.TextureType + " with " + textureForChoice.FileDataID);
+				this.overrideTextureType(textureForChoice.TextureType, textureForChoice.FileDataID);
+			}
+		}
+	}
+
+	/**
+	 * TODO: Build skin material based on several FileDataIDs at specific X/Y offsets.
+	 * Base material should be in [0] with all the other textures in layers on top of that.
+	 */
+	async buildSkinMaterial(skinMats){
+		console.log("Building skin material", skinMats);
+
+		var texture = new THREE.Texture();
+
+		const loader = new THREE.ImageLoader();
+		const data = await core.view.casc.getFile(skinMats[0].FileDataID);
+		const blp = new BLPFile(data);
+		loader.load(blp.getDataURL(false), image => {
+			texture.image = image; // TODO: Should we update once after drawing all or after every draw? Hmmmmm
+			texture.format = THREE.RGBAFormat;
+			texture.needsUpdate = true;
+			texture.generateMipmaps = true;
+		});
+
+		// Loop through all skinMats and apply on top of texture
+		for (let i = 1; i < skinMats.length; i++){
+			if (skinMats[i] === undefined)
+				continue;
+			let tempTexture = new THREE.Texture();
+
+			const data = await core.view.casc.getFile(skinMats[i].FileDataID);
+			const blp = new BLPFile(data);
+			loader.load(blp.getDataURL(false), image => {
+				tempTexture.image = image;
+				tempTexture.format = THREE.RGBAFormat;
+				tempTexture.needsUpdate = true;
+				core.view.$emit('copyTextureToTextureRequest', skinMats[i].position, tempTexture, texture);
+				tempTexture.dispose();
+			});
+		}
+
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] != 1)
+				continue;
+			this.materials[i] = new THREE.MeshPhongMaterial({ name: "compiledSkinTexture", map: texture });
 		}
 	}
 
@@ -211,10 +308,10 @@ class M2Renderer {
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
+				this.materials[i] = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex });
 			} else {
 				if (!this.defaultMaterial)
-					this.defaultMaterial = new THREE.MeshPhongMaterial({ color: DEFAULT_MODEL_COLOR });
+					this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR });
 
 				this.materials[i] = this.defaultMaterial;
 			}

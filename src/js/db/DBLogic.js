@@ -34,9 +34,9 @@ const optionToChoices = new Map();
 const optionsByChrModel = new Map();
 const choiceToGeoset = new Map();
 const geosetMap = new Map();
+const creatureGeosetMap = new Map();
 const chrCustMatMap = new Map();
 const chrModelTexLayer = new Array();
-
 const charComponentTextureSectionMap = new Map();
 
 let chrCustomizationAvailable = false;
@@ -47,17 +47,17 @@ let chrCustomizationAvailable = false;
 const loadTables = async () => { 
 	log.write('Loading creature textures...');
 
-	const geosetMap = new Map();
+	const creatureGeosetMap = new Map();
 
 	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2', DB_CreatureDisplayInfoGeosetData);
 	await creatureDisplayInfoGeosetData.parse();
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
 	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
-		if (!geosetMap.has(geosetRow.CreatureDisplayInfoID)){
-			geosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
+		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID)){
+			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
 		}
 
-		geosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
+		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
 	}
 
 	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
@@ -90,8 +90,8 @@ const loadTables = async () => {
 
 				if (modelIDHasExtraGeosets){
 					display.extraGeosets = Array();
-					if (geosetMap.has(displayID)) {
-						display.extraGeosets = geosetMap.get(displayID);
+					if (creatureGeosetMap.has(displayID)) {
+						display.extraGeosets = creatureGeosetMap.get(displayID);
 					}
 				}
 
@@ -180,7 +180,11 @@ const loadTables = async () => {
 				choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID)
 
 			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0){
-				choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationMaterialID);
+				if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID)){
+					choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push(chrCustomizationElementRow.ChrCustomizationMaterialID);
+				} else {
+					choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [chrCustomizationElementRow.ChrCustomizationMaterialID]);
+				}
 
 				const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
 				chrCustMatMap.set(matRow.ID, {ChrModelTextureTargetID: matRow.ChrModelTextureTargetID, MaterialResourcesID: matRow.MaterialResourcesID});
@@ -204,7 +208,8 @@ const loadTables = async () => {
 				chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID] = new Array();
 			}
 			
-			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID] = chrModelTextureLayerRow.TextureType;
+			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID] = chrModelTextureLayerRow;
+		}
 
 		const charComponentTextureSections = new WDCReader('DBFilesClient/CharComponentTextureSections.db2', DB_CharComponentTextureSections);
 		await charComponentTextureSections.parse();
@@ -305,28 +310,81 @@ const getTextureTargetByChrCustomizationMaterialID = (chrModelMaterialID) => {
 	}
 }
 
+/**
+ * Builds a list of skin materials needed for this choice.
+ * TODO: This will probably need to take multiple options (one choice each) to fully work.
+ * @param {integer} choiceID 
+ */
+const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
+	const chrModelID = fdidToChrModel.get(modelFileDataID);
+	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
+	if (!textureLayout) {
+		return false;
+	}
+	
+	let chrCustMatRows = Array();
+	let materials = choiceToChrCustMaterialID.get(choiceID);
+	for (const material of materials){
+		chrCustMatRows.push(chrCustMatMap.get(material));
+	}
+
+	if (chrCustMatRows === undefined || chrCustMatRows.length == 0) {
+		return false;
+	}
+
+
+	if (!charComponentTextureSectionMap.has(textureLayout))
+		return false;
+
+	const textureSections = charComponentTextureSectionMap.get(textureLayout);
+
+	let skinMats = Array();
+
+	for (let i = 0; i < chrCustMatRows.length; i++){
+		const textureTarget = chrCustMatRows[i].ChrModelTextureTargetID;
+		const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
+
+		// TODO: Investigate! This occurs for Orc Male HD!
+		if (textureLayer === undefined)
+			continue;
+
+		for (const textureSection of textureSections){
+			// Not all texture sections have to be available
+			if (textureSection === undefined)
+				continue;
+
+			if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)){
+				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
+			}
+		}
+	}
+
+	return skinMats;
+}
+
 /** 
  * Gets available textures for a certain Choice ID, returns false if there isn't one.
  * @returns {object|boolean}
  */
 const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	const chrModelID = fdidToChrModel.get(modelFileDataID);
-	const chrCustMatRow = chrCustMatMap.get(choiceToChrCustMaterialID.get(choiceID));
+	const chrCustMatRow = chrCustMatMap.get(choiceToChrCustMaterialID.get(choiceID)[0]);
 
 	if (!chrCustMatRow) {
 		return false;
 	}
+
 	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
 	if (!textureLayout) {
 		return false;
 	}
 
 	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
-
-	const textureType = chrModelTexLayer[textureLayout][textureTarget];
-
+	const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
+	const textureType = textureLayer.TextureType;
+	
 	if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID)) {
-		return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID) };
+		return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID), TextureSectionTypeBitMask: textureLayer.TextureSectionTypeBitMask };
 	} else {
 		return false;
 	}
@@ -344,5 +402,6 @@ module.exports = {
 	getGeosetForChoice,
 	getTextureForFileDataIDAndChoice,
 	getChrComponentTextureLayoutIDByChrModelID,
-	getTextureTargetByChrCustomizationMaterialID
+	getTextureTargetByChrCustomizationMaterialID,
+	getSkinMaterialsForChoice
 };
