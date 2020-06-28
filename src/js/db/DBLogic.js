@@ -14,6 +14,7 @@ const DB_CreatureDisplayInfoGeosetData = require('../db/schema/CreatureDisplayIn
 const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 const DB_ChrModel = require('../db/schema/ChrModel');
 
+const DB_CharComponentTextureSections = require('../db/schema/CharComponentTextureSections');
 const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
 const DB_ChrCustomizationElement = require('../db/schema/ChrCustomizationElement');
 const DB_ChrCustomizationGeoset = require('../db/schema/ChrCustomizationGeoset');
@@ -36,6 +37,7 @@ const geosetMap = new Map();
 const chrCustMatMap = new Map();
 const chrModelTexLayer = new Array();
 
+const charComponentTextureSectionMap = new Map();
 
 let chrCustomizationAvailable = false;
 
@@ -203,7 +205,18 @@ const loadTables = async () => {
 			}
 			
 			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID] = chrModelTextureLayerRow.TextureType;
+
+		const charComponentTextureSections = new WDCReader('DBFilesClient/CharComponentTextureSections.db2', DB_CharComponentTextureSections);
+		await charComponentTextureSections.parse();
+
+		for (const [charComponentTextureSectionsID, charComponentTextureSectionsRow] of charComponentTextureSections.getAllRows()) {
+			if (!charComponentTextureSectionMap.has(charComponentTextureSectionsRow.CharComponentTextureLayoutID)) {
+				charComponentTextureSectionMap.set(charComponentTextureSectionsRow.CharComponentTextureLayoutID, new Array());
+			}
+
+			charComponentTextureSectionMap.get(charComponentTextureSectionsRow.CharComponentTextureLayoutID)[charComponentTextureSectionsRow.SectionType] = charComponentTextureSectionsRow;
 		}
+
 		log.write('Loaded character customization tables');
 	}
 }
