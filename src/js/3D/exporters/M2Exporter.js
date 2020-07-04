@@ -101,7 +101,7 @@ class M2Exporter {
 						const blp = new BLPFile(data);
 
 						log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
-						await blp.saveToFile(texPath, 'image/png', true);
+						await blp.saveToPNG(texPath, true);
 					} else {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
 					}

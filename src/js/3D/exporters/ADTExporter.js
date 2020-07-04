@@ -412,7 +412,7 @@ class ADTExporter {
 				for (let i = 0, n = materials.length; i < n; i++) {
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', false);
+					await blp.saveToPNG(path.join(dir, diffuseFileDataID + '.png'), false);
 
 					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
 
