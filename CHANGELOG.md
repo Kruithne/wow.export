@@ -1,3 +1,11 @@
+0.2.0 (??-??-2020)
+- Added initial support for new character customization system in Shadowlands.
+- Added support for enabling geosets for certain creature skins.
+- Changed which geosets get selected by default.
+- Skin names should be shorter for many models (and fit on screen now).
+- Improved DB2 reading support.
+- Fix issue with M2 texture reading.
+
 0.1.9 (13-01-2020)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
 - Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.
