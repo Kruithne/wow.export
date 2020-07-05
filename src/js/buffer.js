@@ -884,6 +884,14 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Returns a new deflated buffer using the contents of this buffer.
+	 * @returns {BufferWrapper}
+	 */
+	deflate() {
+		return new BufferWrapper(zlib.deflateSync(this._buf));
+	}
+
+	/**
 	 * Check a given length does not exceed current capacity.
 	 * @param {number} length 
 	 */

@@ -31,7 +31,12 @@ class PNGWriter {
 	 */
 	async write(file) {
 		const pixelDataSize = this.data.length;
-		const buf = BufferWrapper.alloc(8 + 25 + pixelDataSize + 12 + 12, false);
+		const pixelData = BufferWrapper.alloc(pixelDataSize, false);
+		for (const value of this.data)
+			pixelData.writeUInt8(value);
+
+		const deflated = pixelData.deflate();
+		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
 
 		// 8-byte PNG signature.
 		buf.writeUInt32LE(0x474E5089);
@@ -52,16 +57,15 @@ class PNGWriter {
 		buf.writeBuffer(ihdr);
 		buf.writeInt32BE(ihdr.getCRC32());
 
-		const idat = BufferWrapper.alloc(4 + pixelDataSize, false);
+		const idat = BufferWrapper.alloc(4 + deflated.byteLength, false);
 		idat.writeUInt32LE(0x54414449); // IDAT
-		for (const value of this.data)
-			idat.writeUInt8(value);
+		idat.writeBuffer(deflated);
 
 		idat.seek(0);
 
-		buf.writeUInt32BE(pixelDataSize);
+		buf.writeUInt32BE(deflated.byteLength);
 		buf.writeBuffer(idat);
-		buf.writeInt32BE(idat.getCRC32());
+		buf.writeInt32BE(deflated.getCRC32());
 
 		buf.writeUInt32BE(0);
 		buf.writeUInt32LE(0x444E4549); // IEND
