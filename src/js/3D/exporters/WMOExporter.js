@@ -234,8 +234,8 @@ class WMOExporter {
 				const count = set.doodadCount;
 				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
-				for (let i = set.firstInstanceIndex; i < count; i++) {
-					const doodad = wmo.doodads[i];
+				for (let i = 0; i < count; i++) {
+					const doodad = wmo.doodads[set.firstInstanceIndex + i];
 					let fileDataID = 0;
 					let fileName;
 		
