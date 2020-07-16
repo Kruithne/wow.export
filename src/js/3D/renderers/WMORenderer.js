@@ -158,8 +158,8 @@ class WMORenderer {
 		core.view.isBusy++;
 		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
-		for (let i = firstIndex; i < count; i++) {
-			const doodad = wmo.doodads[i];
+		for (let i = 0; i < count; i++) {
+			const doodad = wmo.doodads[firstIndex + i];
 			let fileDataID = 0;
 
 			if (wmo.fileDataIDs)
