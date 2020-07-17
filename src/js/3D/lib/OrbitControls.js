@@ -75,7 +75,14 @@ THREE.OrbitControls = function ( object, domElement ) {
 	this.enableKeys = true;
 
 	// The four arrow keys
-	this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+	this.keys = {
+		FORWARD: 87, // (W)
+		BACKWARD: 83, // (S)
+		RIGHT: 68, // (D)
+		LEFT: 65, // (A)
+		UP: 81, // (Q)
+		DOWN: 69, // (E)
+	};
 
 	// Mouse buttons
 	this.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
@@ -333,42 +340,44 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	}
 
-	var panLeft = function () {
-
+	var panX = function () {
 		var v = new THREE.Vector3();
 
-		return function panLeft( distance, objectMatrix ) {
+		return function panX(distance, objectMatrix) {
+			v.setFromMatrixColumn(objectMatrix, 0); // get X column of objectMatrix
+			v.multiplyScalar(-distance);
 
-			v.setFromMatrixColumn( objectMatrix, 0 ); // get X column of objectMatrix
-			v.multiplyScalar( - distance );
-
-			panOffset.add( v );
-
+			panOffset.add(v);
 		};
 
 	}();
 
-	var panUp = function () {
+	var panY = function() {
+		var v = new THREE.Vector3();
+		var y = new THREE.Vector3(0, 0, 1);
 
+		return function panY(distance, objectMatrix) {
+			v.setFromMatrixColumn(objectMatrix, 0);
+			v.crossVectors(y, v);
+			v.multiplyScalar(distance);
+
+			panOffset.add(v);
+		}
+	}();
+
+	var panZ = function () {
 		var v = new THREE.Vector3();
 
-		return function panUp( distance, objectMatrix ) {
-
-			if ( scope.screenSpacePanning === true ) {
-
-				v.setFromMatrixColumn( objectMatrix, 1 );
-
+		return function panZ(distance, objectMatrix) {
+			if (scope.screenSpacePanning === true) {
+				v.setFromMatrixColumn(objectMatrix, 1);
 			} else {
-
-				v.setFromMatrixColumn( objectMatrix, 0 );
-				v.crossVectors( scope.object.up, v );
-
+				v.setFromMatrixColumn(objectMatrix, 0);
+				v.crossVectors(scope.object.up, v);
 			}
 
 			v.multiplyScalar( distance );
-
-			panOffset.add( v );
-
+			panOffset.add(v);
 		};
 
 	}();
@@ -378,7 +387,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		var offset = new THREE.Vector3();
 
-		return function pan( deltaX, deltaY ) {
+		return function pan(deltaX, deltaY, deltaZ) {
 
 			var element = scope.domElement;
 
@@ -393,21 +402,17 @@ THREE.OrbitControls = function ( object, domElement ) {
 				targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
 				// we use only clientHeight here so aspect ratio does not distort speed
-				panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-				panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
-
+				panX(2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix);
+				panZ(2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix);
+				panY(2 * deltaZ * targetDistance / element.clientHeight, scope.object.matrix);
 			} else if ( scope.object.isOrthographicCamera ) {
-
 				// orthographic
-				panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-				panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
-
+				panX(deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix);
+				panZ(deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix);
 			} else {
-
 				// camera neither orthographic nor perspective
 				console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.' );
 				scope.enablePan = false;
-
 			}
 
 		};
@@ -524,7 +529,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
 
-		pan( panDelta.x, panDelta.y );
+		pan(panDelta.x, panDelta.y, 0);
 
 		panStart.copy( panEnd );
 
@@ -555,43 +560,44 @@ THREE.OrbitControls = function ( object, domElement ) {
 	}
 
 	function handleKeyDown( event ) {
-
 		var needsUpdate = false;
-
-		switch ( event.keyCode ) {
-
-			case scope.keys.UP:
-				pan( 0, scope.keyPanSpeed );
+		switch (event.keyCode) {
+			case scope.keys.FORWARD:
+				pan(0, scope.keyPanSpeed, 0);
 				needsUpdate = true;
 				break;
 
-			case scope.keys.BOTTOM:
-				pan( 0, - scope.keyPanSpeed );
+			case scope.keys.BACKWARD:
+				pan(0, -scope.keyPanSpeed, 0);
 				needsUpdate = true;
 				break;
 
 			case scope.keys.LEFT:
-				pan( scope.keyPanSpeed, 0 );
+				pan(scope.keyPanSpeed, 0, 0);
 				needsUpdate = true;
 				break;
 
 			case scope.keys.RIGHT:
-				pan( - scope.keyPanSpeed, 0 );
+				pan(-scope.keyPanSpeed, 0, 0);
 				needsUpdate = true;
 				break;
 
+			case scope.keys.UP:
+				pan(0, 0, scope.keyPanSpeed);
+				needsUpdate = true;
+				break;
+
+			case scope.keys.DOWN:
+				pan(0, 0, -scope.keyPanSpeed);
+				needsUpdate = true;
+				break;
 		}
 
-		if ( needsUpdate ) {
-
+		if (needsUpdate === true) {
 			// prevent the browser from scrolling on cursor keys
 			event.preventDefault();
-
 			scope.update();
-
 		}
-
-
 	}
 
 	function handleTouchStartRotate( event ) {
@@ -699,7 +705,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
 
-		pan( panDelta.x, panDelta.y );
+		pan(panDelta.x, panDelta.y, 0);
 
 		panStart.copy( panEnd );
 
@@ -955,7 +961,6 @@ THREE.OrbitControls = function ( object, domElement ) {
 	}
 
 	function onKeyDown( event ) {
-
 		if ( scope.enabled === false || scope.enableKeys === false || scope.enablePan === false ) return;
 
 		handleKeyDown( event );
