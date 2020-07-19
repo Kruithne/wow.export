@@ -123,6 +123,11 @@
 						</label>
 					</div>
 					<div>
+						<h1>Map Texture Split Threshold</h1>
+						<p>Defines the texture size at which map textures are split.</p>
+						<input type="number" v-model.number="configEdit.mapTextureSplitThreshold"/>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>
@@ -154,10 +159,6 @@
 						<p>How often (in days) the listfile is updated. Set to zero to always re-download the listfile.</p>
 						<input type="number" v-model.number="configEdit.listfileCacheRefresh"/>
 					</div>
-					<div>
-						<h1>Map Texture Split Threshold</h1>
-						<p>Defines the texture size at which map textures are split.</p>
-						<input type="number" v-model.number="configEdit.mapTextureSplitThreshold"/>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
