@@ -1,3 +1,9 @@
+0.1.10 (19-07-2020)
+- Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
+- 3D model panning via W, A, S, D, Q, E keys implemented.
+- Allow users to manually configure the map texture split threshold in configuration.
+- Added 'Use Absolute Model Placement Paths' option.
+
 0.1.9 (13-01-2020)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
 - Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.
@@ -10,10 +16,6 @@
 - Fixed issue where there would be extremely visible lines in terrain textures.
 - Fixed issue with ADTs failing to export due to bad/missing doodads and/or WMOs.
 - The 'Open Export Directory' link after exporting has been replaced with 'View in Explorer' which opens the directory of the last exported item.
-- Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
-- 3D model panning via W, A, S, D, Q, E keys implemented.
-- Allow users to manually configure the map texture split threshold in configuration.
-- Added 'Use Absolute Model Placement Paths' option.
 
 0.1.8 (11-01-2020)
 - NPC variant textures can now be selected/exported for creature models.
