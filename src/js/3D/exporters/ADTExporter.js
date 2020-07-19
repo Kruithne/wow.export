@@ -262,7 +262,7 @@ class ADTExporter {
 		const firstChunkX = firstChunk.position[0];
 		const firstChunkY = firstChunk.position[1];
 
-		const splitTextures = quality >= 8192;
+		const splitTextures = quality >= mapTextureSplitThreshold;
 	
 		let ofs = 0;
 		let chunkID = 0;

@@ -36,5 +36,6 @@
 	"mapsIncludeWMOSets": true,
 	"mapsIncludeFoliage": true,
 	"regexFilters": false,
-	"exportMapQuality": 4096
+	"exportMapQuality": 4096,
+	"mapTextureSplitThreshold": 8192
 }

@@ -12,6 +12,7 @@
 - The 'Open Export Directory' link after exporting has been replaced with 'View in Explorer' which opens the directory of the last exported item.
 - Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
 - 3D model panning via W, A, S, D, Q, E keys implemented.
+- Allow users to manually configure the map texture split threshold in configuration.
 
 0.1.8 (11-01-2020)
 - NPC variant textures can now be selected/exported for creature models.
