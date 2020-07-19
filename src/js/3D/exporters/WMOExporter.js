@@ -220,6 +220,8 @@ class WMOExporter {
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
+			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
+			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
 
@@ -269,8 +271,12 @@ class WMOExporter {
 								doodadCache.add(fileDataID);
 							}
 
+							let modelPath = path.relative(outDir, m2Path);
+							if (useAbsolute === true)
+								modelPath = path.resolve(outDir, modelPath);
+
 							csv.addRow({
-								ModelFile: path.relative(path.dirname(out), m2Path),
+								ModelFile: modelPath,
 								PositionX: doodad.position[0],
 								PositionY: doodad.position[1],
 								PositionZ: doodad.position[2],

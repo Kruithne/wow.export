@@ -83,6 +83,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Use Absolute Model Placement Paths</h1>
+						<p>If enabled, paths inside model placement files (CSV) will contain absolute paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteCSVPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>CASC Locale</h1>
 						<p>Which locale to use for file reading. This only affects game files.</p>
 						<p>This should match the locale of your client when using local installations.</p>
