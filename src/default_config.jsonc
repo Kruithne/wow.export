@@ -28,6 +28,7 @@
 	"modelsAutoPreview": true,
 	"modelsShowSidebar": false,
 	"modelsExportCollision": false,
+	"modelsExportSkin": false,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,

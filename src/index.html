@@ -270,6 +270,13 @@
 								<input type="checkbox" v-model="modelViewerAutoAdjust"/>
 								<span>Auto Camera</span>
 							</label>
+							<template v-if="config.exportModelFormat === 'RAW'">
+								<span class="header">Export</span>
+								<label class="ui-checkbox">
+									<input type="checkbox" v-model="config.modelsExportSkin"/>
+									<span>Export .skin files</span>
+								</label>
+							</template>
 							<template v-if="modelViewerActiveType === 'm2'">
 								<span class="header">Geosets</span>
 								<checkboxlist :items="modelViewerGeosets"></checkboxlist>

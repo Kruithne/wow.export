@@ -55,6 +55,15 @@ class M2Loader {
 	}
 
 	/**
+	 * Returns the internal array of Skin objects.
+	 * Note: Unlike getSkin(), this does not load any of the skins.
+	 * @returns {Skin[]}
+	 */
+	getSkinList() {
+		return this.skins;
+	}
+
+	/**
 	 * Parse SFID chunk for skin file data IDs.
 	 */
 	parseChunk_SFID() {

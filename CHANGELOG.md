@@ -1,3 +1,6 @@
+0.1.11 (20-07-2020)
+- Added 'Export .skin files' option for raw M2 exporting.
+
 0.1.10 (19-07-2020)
 - Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
 - 3D model panning via W, A, S, D, Q, E keys implemented.
