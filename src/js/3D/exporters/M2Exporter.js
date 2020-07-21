@@ -78,9 +78,15 @@ class M2Exporter {
 					let texFile = texFileDataID + '.png';
 					let texPath = path.join(path.dirname(out), texFile);
 
+					// Default MTL name to the file ID (prefixed for Maya).
+					let matName = 'mat_' + texFileDataID;
+					let fileName = listfile.getByID(texFileDataID);
+
+					if (fileName !== undefined)
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+
 					// Map texture files relative to its own path.
 					if (config.enableSharedTextures) {
-						let fileName = listfile.getByID(texFileDataID);
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
@@ -106,8 +112,8 @@ class M2Exporter {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
-					mtl.addMaterial(texFileDataID, texFile);
-					validTextures[texFileDataID] = true;
+					mtl.addMaterial(matName, texFile);
+					validTextures[texFileDataID] = matName;
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
 				}
@@ -131,8 +137,8 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID])
-				matName = texture.fileDataID;
+			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID] !== undefined)
+				matName = validTextures[texture.fileDataID];
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}

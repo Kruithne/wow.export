@@ -92,22 +92,28 @@ class WMOExporter {
 					let texFile = fileDataID + '.png';
 					let texPath = path.join(path.dirname(out), texFile);
 
+					// Default MTL name to the file ID (prefixed for Maya).
+					let matName = 'mat_' + fileDataID;
+					
+					// We may already have the file name (Classic), if not attempt to get it.
+					if (fileName === undefined)
+						fileName = listfile.getByID(fileDataID);
+
+					// If we have a valid file name, use it for the material name.
+					if (fileName !== undefined)
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+
 					// Map texture files relative to shared directory.
 					if (config.enableSharedTextures) {
-						// We may already have the file name, if Classic.
-						if (fileName === undefined) {
-							fileName = listfile.getByID(fileDataID);
+						if (fileName !== undefined) {
+							// Replace BLP extension with PNG.
+							fileName = ExportHelper.replaceExtension(fileName, '.png');
 
-							if (fileName !== undefined) {
-								// Replace BLP extension with PNG.
-								fileName = ExportHelper.replaceExtension(fileName, '.png');
-
-								// Remove all whitespace from exported textures due to MTL incompatibility.
-								fileName = fileName.replace(/\s/g, '');
-							} else {
-								// Handle unknown files.
-								fileName = 'unknown/' + fileDataID + '.png';
-							}
+							// Remove all whitespace from the exported textures due to MTL incompatibility.
+							fileName = fileName.replace(/\s/g, '');
+						} else {
+							// Handle unknown files.
+							fileName = 'unknown/' + fileDataID + '.png';
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -124,8 +130,8 @@ class WMOExporter {
 						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
-					mtl.addMaterial(fileDataID, texFile);
-					materialMap.set(i, fileDataID);
+					mtl.addMaterial(matName, texFile);
+					materialMap.set(i, matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for WMO: %s', fileDataID, e.message);
 				}
