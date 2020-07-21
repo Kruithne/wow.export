@@ -1,4 +1,4 @@
-0.1.11 (Coming Soon)
+0.1.11 (21-07-2020)
 - Added 'Export .skin files' option for raw M2 exporting.
 - Fixed issue that prevented some Classic WMOs from exporting correctly due to filename whitespace.
 - Exported models now have proper material names instead of fileDataIDs.
