@@ -268,8 +268,9 @@ class WMORenderer {
 
 		// Remove doodad set containers from renderGroup.
 		// In theory, these should now be empty is M2 renderers dispose correctly.
-		for (const set of this.doodadSets)
-			this.renderGroup.remove(set);
+		if (Array.isArray(this.doodadSets))
+			for (const set of this.doodadSets)
+				this.renderGroup.remove(set);
 
 		// Dereference M2 renderers for faster clean-up.
 		this.m2Renderers = undefined;
