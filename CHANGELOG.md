@@ -1,5 +1,6 @@
-0.1.11 (20-07-2020)
+0.1.11 (Coming Soon)
 - Added 'Export .skin files' option for raw M2 exporting.
+- Fixed issue that prevented some Classic WMOs from exporting correctly due to filename whitespace.
 
 0.1.10 (19-07-2020)
 - Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
