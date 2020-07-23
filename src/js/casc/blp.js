@@ -113,9 +113,6 @@ class BLPImage {
 	 * @param {number} mipmap
 	 */
 	async saveToPNG(file, useAlpha = true, mipmap = 0) {
-		//const buf = await BufferWrapper.fromCanvas(this.toCanvas(useAlpha), 'image/png');
-		//await buf.writeToFile(file);
-
 		this._prepare(mipmap);
 
 		const png = new PNGWriter(this.scaledWidth, this.scaledHeight);
