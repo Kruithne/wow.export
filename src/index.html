@@ -213,23 +213,23 @@
 
 						<div id="maps-sidebar" class="sidebar" v-if="config.mapsShowSidebar">
 							<span class="header">Export Options</span>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
 								<input type="checkbox" v-model="config.mapsIncludeWMO"/>
 								<span>Export WMO</span>
 							</label>
-							<label class="ui-checkbox" v-if="config.mapsIncludeWMO">
+							<label class="ui-checkbox" v-if="config.mapsIncludeWMO" title="Include objects inside WMOs (interior decorations)">
 								<input type="checkbox" v-model="config.mapsIncludeWMOSets"/>
 								<span>Export WMO Sets</span>
 							</label>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Export M2 objects on this tile (smaller objects such as trees)">
 								<input type="checkbox" v-model="config.mapsIncludeM2"/>
 								<span>Export M2</span>
 							</label>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Export foliage used on this tile (grass, etc)">
 								<input type="checkbox" v-model="config.mapsIncludeFoliage"/>
 								<span>Export Foliage</span>
 							</label>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Export client-side interactable objects (signs, banners, etc)">
 								<input type="checkbox" v-model="config.mapsIncludeGameObjects"/>
 								<span>Export G-Objects</span>
 							</label>
@@ -257,26 +257,26 @@
 						</div>
 						<div id="model-sidebar" class="sidebar" v-if="config.modelsShowSidebar">
 							<span class="header">Listing</span>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Include M2 objects in the list">
 								<input type="checkbox" v-model="config.modelsShowM2"/>
 								<span>Show M2</span>
 							</label>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Include WMO objects in the list">
 								<input type="checkbox" v-model="config.modelsShowWMO"/>
 								<span>Show WMO</span>
 							</label>
 							<span class="header">Preview</span>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Automatically preview a model when selecting it">
 								<input type="checkbox" v-model="config.modelsAutoPreview"/>
 								<span>Auto Preview</span>
 							</label>
-							<label class="ui-checkbox">
+							<label class="ui-checkbox" title="Automatically adjust camera when selecting a new model">
 								<input type="checkbox" v-model="modelViewerAutoAdjust"/>
 								<span>Auto Camera</span>
 							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<span class="header">Export</span>
-								<label class="ui-checkbox">
+								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
 									<span>Export .skin files</span>
 								</label>

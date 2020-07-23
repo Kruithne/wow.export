@@ -1,3 +1,6 @@
+0.1.13 (Coming Soon)
+- Added information tooltips to export control checkboxes.
+
 0.1.12 (23-07-2020)
 - Fixed issue that prevented Blender add-on from working on non-English Blender clients.
 - Fixed issue that caused exported PNG files to be premultiplicated (black splotches).
