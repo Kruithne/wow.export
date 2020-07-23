@@ -3,8 +3,177 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-//const fsp = require('fs').promises;
 const BufferWrapper = require('./buffer');
+
+const BITS_PER_PIXEL = 4;
+
+const FILTERS = {
+	// None
+	0: (data, dataOfs, byteWidth, raw, rawOfs) => {
+		for (let x = 0; x < byteWidth; x++)
+			raw[rawOfs + x] = data[dataOfs + x];
+	},
+
+	// Sub
+	1: (data, dataOfs, byteWidth, raw, rawOfs) => {
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let value = data[dataOfs + x] - left;
+
+			raw[rawOfs + x] = value;
+		}
+	},
+
+	// Up
+	2: (data, dataOfs, byteWidth, raw, rawOfs) => {
+		for (let x = 0; x < byteWidth; x++) {
+			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
+			let value = data[dataOfs + x] - up;
+
+			raw[rawOfs + x] = value;
+		}
+	},
+
+	// Average
+	3: (data, dataOfs, byteWidth, raw, rawOfs) => {
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
+			let value = data[dataOfs + x] - ((left + up) >> 1);
+
+			raw[rawOfs + x] = value;
+		}
+	},
+
+	// Paeth
+	4: (data, dataOfs, byteWidth, raw, rawOfs) => {
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
+			let upLeft = dataOfs > 0 && x >= BITS_PER_PIXEL ? data[dataOfs + x - (byteWidth + BITS_PER_PIXEL)] : 0;
+			let value = data[dataOfs + x] - paeth(left, up, upLeft);
+
+			raw[rawOfs + x] = value;
+		}
+	}
+};
+
+const FILTER_SUMS = {
+	// None
+	0: (data, dataOfs, byteWidth) => {
+		let sum = 0;
+		for (let i = dataOfs, len = dataOfs + byteWidth; i < len; i++)
+			sum += Math.abs(data[i]);
+
+		return sum;
+	},
+
+	// Sub
+	1: (data, dataOfs, byteWidth) => {
+		let sum = 0;
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let value = data[dataOfs + x] - left;
+
+			sum += Math.abs(value);
+		}
+
+		return sum;
+	},
+
+	// Up
+	2: (data, dataOfs, byteWidth) => {
+		let sum = 0;
+		for (let x = dataOfs, len = dataOfs + byteWidth; x < len; x++) {
+			let up = dataOfs > 0 ? data[x - byteWidth] : 0;
+			let value = data[x] - up;
+
+			sum += Math.abs(value);
+		}
+
+		return sum;
+	},
+
+	// Average
+	3: (data, dataOfs, byteWidth) => {
+		let sum = 0;
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x > BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
+			let value = data[dataOfs + x] - ((left + up) >> 1);
+
+			sum += Math.abs(value);
+		}
+
+		return sum;
+	},
+
+	// Paeth
+	4: (data, dataOfs, byteWidth) => {
+		let sum = 0;
+		for (let x = 0; x < byteWidth; x++) {
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
+			let upLeft = dataOfs > 0 && x >= BITS_PER_PIXEL ? data[dataOfs + x - (byteWidth + BITS_PER_PIXEL)] : 0;
+			let value = data[dataOfs + x] - paeth(left, up, upLeft);
+
+			sum += Math.abs(value);
+		}
+
+		return sum;
+	}
+};
+
+const paeth = (left, up, upLeft) => {
+	let paeth = left + up + upLeft;
+	let paethLeft = Math.abs(paeth - left);
+	let paethUp = Math.abs(paeth - above);
+	let paethUpLeft = Math.abs(paeth - upLeft);
+
+	if (paethLeft <= paethUp && paethLeft <= paethUpLeft)
+		return left;
+
+	if (paethUp <= paethUpLeft)
+		return up;
+
+	return upLeft;
+};
+
+/**
+ * Apply adapative filtering to RGBA data.
+ * @param {Buffer} data 
+ * @param {number} width 
+ * @param {number} height 
+ * @returns {Buffer}
+ */
+const filter = (data, width, height) => {
+	let byteWidth = width * BITS_PER_PIXEL;
+	let dataOfs = 0;
+
+	let rawOfs = 0;
+	let raw = Buffer.alloc((byteWidth + 1) * height);
+
+	let selectedFilter = 0;
+	for (let y = 0; y < height; y++) {
+		let min = Infinity;
+
+		for (let i = 0, len = FILTERS.length; i < len; i++) {
+			let sum = FILTER_SUMS[i](data, dataOfs, byteWidth);
+			if (sum < min) {
+				selectedFilter = i;
+				min = sum;
+			}
+		}
+
+		raw[rawOfs] = selectedFilter;
+		rawOfs++;
+	
+		FILTERS[selectedFilter](data, dataOfs, byteWidth, raw, rawOfs);
+		rawOfs += byteWidth;
+		dataOfs += byteWidth;
+	}
+	return raw;
+};
 
 class PNGWriter {
 	/**
@@ -35,7 +204,8 @@ class PNGWriter {
 		for (const value of this.data)
 			pixelData.writeUInt8(value);
 
-		const deflated = pixelData.deflate();
+		const filtered = new BufferWrapper(filter(pixelData.raw, this.width, this.height));
+		const deflated = filtered.deflate();
 		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
 
 		// 8-byte PNG signature.
