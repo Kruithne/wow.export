@@ -7,9 +7,8 @@ const util = require('util');
 const crypto = require('crypto');
 const zlib = require('zlib');
 const path = require('path');
+const crc32 = require('./crc32');
 const fsp = require('fs').promises;
-
-const CRC_TABLE = require('./crc-table');
 
 const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
@@ -874,13 +873,10 @@ class BufferWrapper {
 
 	/**
 	 * Get the CRC32 checksum for this buffer.
+	 * @returns {number}
 	 */
 	getCRC32() {
-		let crc = -1;
-		for (let i = 0, n = this.byteLength; i < n; i++)
-			crc = CRC_TABLE[(crc ^ this._buf[i]) & 0xFF] ^ (crc >>> 8);
-
-		return crc;
+		return crc32(this.raw);
 	}
 
 	/**
