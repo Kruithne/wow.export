@@ -1,5 +1,6 @@
 0.1.12 (Coming Soon)
 - Fixed issue that prevented Blender add-on from working on non-English Blender clients.
+- Fixed issue that caused exported PNG files to be premultiplicated (black splotches).
 
 0.1.11 (21-07-2020)
 - Added 'Export .skin files' option for raw M2 exporting.
