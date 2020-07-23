@@ -18,6 +18,7 @@
 	"copyFileDirectories": false,
 	"enableSharedTextures": true,
 	"enableAbsoluteMTLPaths": false,
+	"enableAbsoluteCSVPaths": false,
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"exportModelFormat": "OBJ",
@@ -27,6 +28,7 @@
 	"modelsAutoPreview": true,
 	"modelsShowSidebar": false,
 	"modelsExportCollision": false,
+	"modelsExportSkin": false,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,
@@ -36,5 +38,6 @@
 	"mapsIncludeWMOSets": true,
 	"mapsIncludeFoliage": true,
 	"regexFilters": false,
-	"exportMapQuality": 4096
+	"exportMapQuality": 4096,
+	"mapTextureSplitThreshold": 8192
 }

@@ -7,6 +7,7 @@ const util = require('util');
 const crypto = require('crypto');
 const zlib = require('zlib');
 const path = require('path');
+const crc32 = require('./crc32');
 const fsp = require('fs').promises;
 
 const LITTLE_ENDIAN = {
@@ -868,6 +869,22 @@ class BufferWrapper {
 				return false;
 
 		return true;
+	}
+
+	/**
+	 * Get the CRC32 checksum for this buffer.
+	 * @returns {number}
+	 */
+	getCRC32() {
+		return crc32(this.raw);
+	}
+
+	/**
+	 * Returns a new deflated buffer using the contents of this buffer.
+	 * @returns {BufferWrapper}
+	 */
+	deflate() {
+		return new BufferWrapper(zlib.deflateSync(this._buf));
 	}
 
 	/**

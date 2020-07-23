@@ -262,7 +262,7 @@ class ADTExporter {
 		const firstChunkX = firstChunk.position[0];
 		const firstChunkY = firstChunk.position[1];
 
-		const splitTextures = quality >= 8192;
+		const splitTextures = quality >= core.view.config.mapTextureSplitThreshold;
 	
 		let ofs = 0;
 		let chunkID = 0;
@@ -412,7 +412,7 @@ class ADTExporter {
 				for (let i = 0, n = materials.length; i < n; i++) {
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', false);
+					await blp.saveToPNG(path.join(dir, diffuseFileDataID + '.png'), false);
 
 					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
 

@@ -30,7 +30,7 @@ Vue.component('model-viewer', {
 		container.appendChild(canvas);
 
 		this.controls = new THREE.OrbitControls(this.context.camera, canvas);
-		this.controls.enableKeys = false;
+		//this.controls.enableKeys = false;
 		this.context.controls = this.controls;
 
 		this.onResize = () => {

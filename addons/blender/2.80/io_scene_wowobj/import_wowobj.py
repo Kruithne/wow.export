@@ -13,6 +13,13 @@ def importWoWOBJAddon(objectFile):
     importWoWOBJ(objectFile)
     return {'FINISHED'}
 
+def getFirstNodeOfType(nodes, nodeType):
+    for node in nodes:
+        if node.type == nodeType:
+            return node
+
+    return None
+
 def importWoWOBJ(objectFile, givenParent = None):
     baseDir, fileName = os.path.split(objectFile)
 
@@ -111,7 +118,10 @@ def importWoWOBJ(objectFile, givenParent = None):
             principled = PrincipledBSDFWrapper(mat, is_readonly=False)
             principled.specular = 0.0
             principled.base_color_texture.image = load_image(texturelocation)
-            mat.node_tree.links.new(mat.node_tree.nodes['Image Texture'].outputs[1], mat.node_tree.nodes['Principled BSDF'].inputs[18])
+            imageTextureNode = getFirstNodeOfType(mat.node_tree.nodes, 'TEX_IMAGE')
+            principledNode = getFirstNodeOfType(mat.node_tree.nodes, 'BSDF_PRINCIPLED')
+            if imageTextureNode is not None and principledNode is not None:
+                mat.node_tree.links.new(imageTextureNode.outputs[1], principledNode.inputs[18])
 
         obj.data.materials.append(bpy.data.materials[matname])
 

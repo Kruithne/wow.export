@@ -1,3 +1,18 @@
+0.1.12 (Coming Soon)
+- Fixed issue that prevented Blender add-on from working on non-English Blender clients.
+
+0.1.11 (21-07-2020)
+- Added 'Export .skin files' option for raw M2 exporting.
+- Fixed issue that prevented some Classic WMOs from exporting correctly due to filename whitespace.
+- Exported models now have proper material names instead of fileDataIDs.
+- MTL material names are now prefixed with a non-numeric value for compatibility with Maya.
+
+0.1.10 (19-07-2020)
+- Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
+- 3D model panning via W, A, S, D, Q, E keys implemented.
+- Allow users to manually configure the map texture split threshold in configuration.
+- Added 'Use Absolute Model Placement Paths' option.
+
 0.1.9 (13-01-2020)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
 - Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.

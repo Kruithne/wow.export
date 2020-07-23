@@ -83,6 +83,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Use Absolute Model Placement Paths</h1>
+						<p>If enabled, paths inside model placement files (CSV) will contain absolute paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteCSVPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>CASC Locale</h1>
 						<p>Which locale to use for file reading. This only affects game files.</p>
 						<p>This should match the locale of your client when using local installations.</p>
@@ -121,6 +130,11 @@
 							<input type="checkbox" v-model="configEdit.copyFileDirectories"/>
 							<span>Enable</span>
 						</label>
+					</div>
+					<div>
+						<h1>Map Texture Split Threshold</h1>
+						<p>Defines the texture size at which map textures are split.</p>
+						<input type="number" v-model.number="configEdit.mapTextureSplitThreshold"/>
 					</div>
 					<div>
 						<h1>Cache Expiry</h1>
@@ -178,7 +192,7 @@
 								<input type="checkbox" v-model="config.exportTextureAlpha"/>
 								<span>Transparency</span>
 							</label>
-							<menu-button :label="'Export as %s'" :options="['PNG', 'BLP', 'JPG', 'BMP']" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" class="upward" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
+							<menu-button :label="'Export as %s'" :options="['PNG', 'BLP']" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" class="upward" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
 						</div>
 					</div>
 				</keep-alive>
@@ -256,6 +270,13 @@
 								<input type="checkbox" v-model="modelViewerAutoAdjust"/>
 								<span>Auto Camera</span>
 							</label>
+							<template v-if="config.exportModelFormat === 'RAW'">
+								<span class="header">Export</span>
+								<label class="ui-checkbox">
+									<input type="checkbox" v-model="config.modelsExportSkin"/>
+									<span>Export .skin files</span>
+								</label>
+							</template>
 							<template v-if="modelViewerActiveType === 'm2'">
 								<span class="header">Geosets</span>
 								<checkboxlist :items="modelViewerGeosets"></checkboxlist>

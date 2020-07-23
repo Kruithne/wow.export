@@ -14,12 +14,6 @@ const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 let selectedFile = null;
 
-const EXPORT_TYPES = {
-	'PNG': { mime: 'image/png', ext: '.png' },
-	'JPG': { mime: 'image/jpeg', ext: '.jpg' },
-	'BMP': { mime: 'image/bmp', ext: '.bmp' }
-};
-
 const previewTexture = async (texture) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
@@ -56,14 +50,13 @@ const exportFiles = async (files, isLocal = false) => {
 	helper.start();
 
 	const format = core.view.config.exportTextureFormat;
-	const type = EXPORT_TYPES[format];
-
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
+
 	for (const fileName of files) {
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')
-				exportPath = ExportHelper.replaceExtension(exportPath, type.ext);
+				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
@@ -72,9 +65,9 @@ const exportFiles = async (files, isLocal = false) => {
 					// Export as raw file with no conversion.
 					await data.writeToFile(exportPath);
 				} else {
-					// Swap file extension for the new one.
+					// Export as PNG.
 					const blp = new BLPFile(data);
-					await blp.saveToFile(exportPath, type.mime, core.view.config.exportTextureAlpha);
+					await blp.saveToPNG(exportPath, core.view.config.exportTextureAlpha);
 				}
 			} else {
 				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
