@@ -235,7 +235,7 @@ class PNGWriter {
 
 		buf.writeUInt32BE(deflated.byteLength);
 		buf.writeBuffer(idat);
-		buf.writeInt32BE(deflated.getCRC32());
+		buf.writeInt32BE(idat.getCRC32());
 
 		buf.writeUInt32BE(0);
 		buf.writeUInt32LE(0x444E4549); // IEND
