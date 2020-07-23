@@ -8,6 +8,7 @@ const core = require('../core');
 const log = require('../log');
 const path = require('path');
 const listfile = require('../casc/listfile');
+const constants = require('../constants');
 
 const WDCReader = require('../db/WDCReader');
 const DB_Map = require('../db/schema/Map');
