@@ -305,9 +305,8 @@ def importWoWOBJ(objectFile, givenParent = None):
 
                         importedFile.parent = gobjparent
                         importedFile.location = (float(row['PositionY']), -float(row['PositionX']), float(row['PositionZ']))
-                        rotQuat = Quaternion((float(row['RotationW']), float(row['RotationX']), float(row['RotationY']), float(row['RotationZ'])))
+                        rotQuat = Quaternion((float(row['RotationX']), float(row['RotationY']), -float(row['RotationZ']), float(row['RotationW'])))
                         rotEul = rotQuat.to_euler()
-                        rotEul.x += radians(90)
                         importedFile.rotation_euler = rotEul
                         if row['ScaleFactor']:
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
