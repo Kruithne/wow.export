@@ -140,8 +140,14 @@ Vue.component('checkboxlist', {
 		 */
 		wheelMouse: function(e) {
 			const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
-			this.scroll += ((e.deltaY / 10) * this.itemWeight) * weight;
-			this.recalculateBounds();
+			const child = this.$el.querySelector('.item');
+
+			if (child !== null) {
+				const scrollCount = Math.floor(this.$el.clientHeight / child.clientHeight);
+				const direction = e.deltaY > 0 ? 1 : -1;
+				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
+				this.recalculateBounds();
+			}
 		},
 
 		/**

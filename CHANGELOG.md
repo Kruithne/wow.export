@@ -1,6 +1,7 @@
 0.1.13 (Coming Soon)
 - Added information tooltips to export control checkboxes.
 - Added a 'View Log' button to the top-right navigation for quick access of the application log.
+- Fixed issue that prevented mouse wheel navitation on listboxes from being accurate.
 
 0.1.12 (23-07-2020)
 - Fixed issue that prevented Blender add-on from working on non-English Blender clients.
