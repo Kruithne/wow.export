@@ -1,4 +1,4 @@
-0.1.13 (Coming Soon)
+0.1.13 (30-07-2020)
 - Added information tooltips to export control checkboxes.
 - Added a 'View Log' button to the top-right navigation for quick access of the application log.
 - Fixed issue that prevented mouse wheel navitation on listboxes from being accurate.
