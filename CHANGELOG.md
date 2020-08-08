@@ -1,5 +1,6 @@
 0.1.14 (Coming Soon)
 - The map viewer now supports selecting all tiles at once (Control + A).
+- Added 'Include Holes' option, allowing map tiles to be exported without holes.
 
 0.1.13 (30-07-2020)
 - Added information tooltips to export control checkboxes.

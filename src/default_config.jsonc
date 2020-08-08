@@ -38,6 +38,7 @@
 	"mapsIncludeWMOSets": true,
 	"mapsIncludeFoliage": true,
 	"mapsIncludeGameObjects": true,
+	"mapsIncludeHoles": true,
 	"regexFilters": false,
 	"exportMapQuality": 4096,
 	"mapTextureSplitThreshold": 8192

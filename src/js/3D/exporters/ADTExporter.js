@@ -264,6 +264,7 @@ class ADTExporter {
 		const firstChunkY = firstChunk.position[1];
 
 		const splitTextures = quality >= core.view.config.mapTextureSplitThreshold;
+		const includeHoles = core.view.config.mapsIncludeHoles;
 	
 		let ofs = 0;
 		let chunkID = 0;
@@ -346,14 +347,18 @@ class ADTExporter {
 					}
 
 					let isHole = true;
-					if (!(chunk.flags & 0x10000)) {
-						const current = Math.trunc(Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 2) * 4));
+					if (includeHoles === true) {
+						if (!(chunk.flags & 0x10000)) {
+							const current = Math.trunc(Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 2) * 4));
 
-						if (!(chunk.holesLowRes & current))
-							isHole = false;
+							if (!(chunk.holesLowRes & current))
+								isHole = false;
+						} else {
+							if (!((holesHighRes[yy] >> xx) & 1))
+								isHole = false;
+						}
 					} else {
-						if (!((holesHighRes[yy] >> xx) & 1))
-							isHole = false;
+						isHole = false;
 					}
 
 					if (!isHole) {
