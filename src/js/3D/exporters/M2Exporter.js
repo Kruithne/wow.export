@@ -76,9 +76,6 @@ class M2Exporter {
 							// Replace BLP extension with PNG.
 							if (raw === false)
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
-
-							// Remove all whitespace from exported textures due to MTL incompatibility.
-							fileName = fileName.replace(/\s/g, '');
 						} else {
 							// Handle unknown files.
 							fileName = 'unknown/' + texFile;

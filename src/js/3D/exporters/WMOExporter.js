@@ -108,9 +108,6 @@ class WMOExporter {
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
-
-							// Remove all whitespace from the exported textures due to MTL incompatibility.
-							fileName = fileName.replace(/\s/g, '');
 						} else {
 							// Handle unknown files.
 							fileName = 'unknown/' + fileDataID + '.png';
