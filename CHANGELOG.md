@@ -1,3 +1,6 @@
+0.1.15 (16-08-2020)
+- Fixed issue that caused wow.export to crash when registering large amounts of encryption keys.
+
 0.1.14 (08-08-2020)
 - The map viewer now supports selecting all tiles at once (Control + A).
 - Added 'Include Holes' option, allowing map tiles to be exported without holes.
