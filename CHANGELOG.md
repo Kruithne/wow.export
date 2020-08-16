@@ -1,6 +1,7 @@
 0.1.15 (16-08-2020)
 - Fixed issue that caused wow.export to crash when registering large amounts of encryption keys.
 - Exporting M2 models as RAW will now include related BLP files.
+- Fixed inconsistency with whitespace in exported file paths (it is now always stripped).
 
 0.1.14 (08-08-2020)
 - The map viewer now supports selecting all tiles at once (Control + A).
