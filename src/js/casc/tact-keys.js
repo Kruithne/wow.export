@@ -89,14 +89,26 @@ const load = async () => {
 	if (res.statusCode === 200) {
 		const data = await generics.consumeUTF8Stream(res);
 		const lines = data.split(/\r\n|\n|\r/);
+		let remoteAdded = 0;
 		
 		for (const line of lines) {
 			const parts = line.split(' ');
 			if (parts.length !== 2)
 				continue;
 
-			addKey(parts[0].trim(), parts[1].trim());
+			const keyName = parts[0].trim();
+			const key = parts[1].trim();
+
+			if (validateKeyPair(keyName, key)) {
+				KEY_RING[keyName.toLowerCase()] = key.toLowerCase();
+				remoteAdded++;
+			} else {
+				log.write('Skipping invalid remote tact key: %s -> %s', keyName, key);
+			}
 		}
+
+		if (remoteAdded > 0)
+			log.write('Added %d new tact keys from %s', remoteAdded, core.view.config.tactKeysURL);
 	} else {
 		log.write('Unable to update tactKeys, HTTP %d', res.statusCode);
 	}
