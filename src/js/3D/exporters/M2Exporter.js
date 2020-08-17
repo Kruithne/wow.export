@@ -139,7 +139,7 @@ class M2Exporter {
 		obj.setUVArray(this.m2.uv);
 
 		// Textures
-		const validTextures = this.exportTextures(out, false, mtl);
+		const validTextures = await this.exportTextures(out, false, mtl);
 
 		// Faces
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
