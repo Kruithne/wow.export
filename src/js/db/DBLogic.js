@@ -368,7 +368,11 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
  */
 const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	const chrModelID = fdidToChrModel.get(modelFileDataID);
-	const chrCustMatRow = chrCustMatMap.get(choiceToChrCustMaterialID.get(choiceID)[0]);
+	if (!choiceToChrCustMaterialID.has(choiceID)) {
+		return false;
+	}
+	const chrCustMatID = choiceToChrCustMaterialID.get(choiceID)[0];
+	const chrCustMatRow = chrCustMatMap.get(chrCustMatID);
 
 	if (!chrCustMatRow) {
 		return false;
