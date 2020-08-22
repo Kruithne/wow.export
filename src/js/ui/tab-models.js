@@ -15,6 +15,7 @@ const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
+const M2Loader = require('../3D/loaders/M2Loader');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
@@ -235,6 +236,7 @@ const exportFiles = async (files, isLocal = false) => {
 			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!');
 		}
 	} else {
+		const exportSkins = core.view.config.modelsExportSkin;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
@@ -248,6 +250,18 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'RAW':
 						// Export as raw file with no conversions.
 						await data.writeToFile(exportPath);
+
+						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
+							const exporter = new M2Exporter(data, selectedVariantTexID);
+							await exporter.exportTextures(exportPath, true, null);
+
+							const skins = exporter.m2.getSkinList();
+							const skinPath = path.dirname(exportPath);
+							for (const skin of skins) {
+								const skinData = await core.view.casc.getFile(skin.fileDataID);
+								await skinData.writeToFile(path.join(skinPath, path.basename(skin.fileName)));
+							}
+						}
 						break;
 
 					case 'OBJ':

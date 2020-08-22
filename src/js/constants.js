@@ -47,7 +47,8 @@ module.exports = {
 		MAP_SIZE: 64,
 		MAP_SIZE_SQ: 4096, // MAP_SIZE ^ 2
 		MAP_COORD_BASE: 51200 / 3,
-		TILE_SIZE: (51200 / 3) / 32
+		TILE_SIZE: (51200 / 3) / 32,
+		MAP_OFFSET: 17066,
 	},
 
 	CACHE: {

@@ -220,6 +220,10 @@ body {
 		content: '\f03a';
 	}
 
+	&-log::before {
+		content: '\f0f6';
+	}
+
 	&-settings::before {
 		content: '\f085';
 	}

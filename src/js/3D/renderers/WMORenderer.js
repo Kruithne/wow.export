@@ -158,8 +158,8 @@ class WMORenderer {
 		core.view.isBusy++;
 		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
-		for (let i = firstIndex; i < count; i++) {
-			const doodad = wmo.doodads[i];
+		for (let i = 0; i < count; i++) {
+			const doodad = wmo.doodads[firstIndex + i];
 			let fileDataID = 0;
 
 			if (wmo.fileDataIDs)
@@ -268,8 +268,9 @@ class WMORenderer {
 
 		// Remove doodad set containers from renderGroup.
 		// In theory, these should now be empty is M2 renderers dispose correctly.
-		for (const set of this.doodadSets)
-			this.renderGroup.remove(set);
+		if (Array.isArray(this.doodadSets))
+			for (const set of this.doodadSets)
+				this.renderGroup.remove(set);
 
 		// Dereference M2 renderers for faster clean-up.
 		this.m2Renderers = undefined;

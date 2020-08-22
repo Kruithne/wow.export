@@ -210,8 +210,9 @@ class ADTExporter {
 	 * Export the ADT tile.
 	 * @param {string} dir Directory to export the tile into.
 	 * @param {number} textureRes
+	 * @param {Set|undefined} gameObjects Additional game objects to export.
 	 */
-	async export(dir, quality) {
+	async export(dir, quality, gameObjects) {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
@@ -262,7 +263,8 @@ class ADTExporter {
 		const firstChunkX = firstChunk.position[0];
 		const firstChunkY = firstChunk.position[1];
 
-		const splitTextures = quality >= 8192;
+		const splitTextures = quality >= core.view.config.mapTextureSplitThreshold;
+		const includeHoles = core.view.config.mapsIncludeHoles;
 	
 		let ofs = 0;
 		let chunkID = 0;
@@ -345,14 +347,18 @@ class ADTExporter {
 					}
 
 					let isHole = true;
-					if (!(chunk.flags & 0x10000)) {
-						const current = Math.trunc(Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 2) * 4));
+					if (includeHoles === true) {
+						if (!(chunk.flags & 0x10000)) {
+							const current = Math.trunc(Math.pow(2, Math.floor(xx / 2) + Math.floor(yy / 2) * 4));
 
-						if (!(chunk.holesLowRes & current))
-							isHole = false;
+							if (!(chunk.holesLowRes & current))
+								isHole = false;
+						} else {
+							if (!((holesHighRes[yy] >> xx) & 1))
+								isHole = false;
+						}
 					} else {
-						if (!((holesHighRes[yy] >> xx) & 1))
-							isHole = false;
+						isHole = false;
 					}
 
 					if (!isHole) {
@@ -412,7 +418,7 @@ class ADTExporter {
 				for (let i = 0, n = materials.length; i < n; i++) {
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-					await blp.saveToFile(path.join(dir, diffuseFileDataID + '.png'), 'image/png', false);
+					await blp.saveToPNG(path.join(dir, diffuseFileDataID + '.png'), false);
 
 					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
 
@@ -686,13 +692,56 @@ class ADTExporter {
 		}
 
 		// Export dooads / WMOs.
-		if (config.mapsIncludeWMO || config.mapsIncludeM2) {
+		if (config.mapsIncludeWMO || config.mapsIncludeM2 || config.mapsIncludeGameObjects) {
 			const objectCache = new Set();
 
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
 			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
-				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'ModelId', 'Type');
+				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type');
+
+				if (config.mapsIncludeGameObjects === true && gameObjects !== undefined && gameObjects.size > 0) {
+					log.write('Exporting %d game objects for ADT...', gameObjects.size);
+					for (const model of gameObjects) {
+						const fileDataID = model.FileDataID;
+						let fileName = listfile.getByID(fileDataID);
+
+						try {
+							if (fileName !== undefined) {
+								// Replace M2 extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								// Handle unknown file.
+								fileName = 'unknown/' + fileDataID + '.obj';
+							}
+
+							const modelPath = ExportHelper.getExportPath(fileName);
+
+							// Export the model if we haven't done so for this export session.
+							if (!objectCache.has(fileDataID)) {
+								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								await m2.exportAsOBJ(modelPath);
+								objectCache.add(fileDataID);
+							}
+							
+							csv.addRow({
+								ModelFile: path.relative(dir, modelPath),
+								PositionX: model.Position[0],
+								PositionY: model.Position[1],
+								PositionZ: model.Position[2],
+								RotationX: model.Rotation[0],
+								RotationY: model.Rotation[1],
+								RotationZ: model.Rotation[2],
+								RotationW: model.Rotation[3],
+								ScaleFactor: 1,
+								ModelId: 0,
+								Type: 'gobj'
+							});
+						} catch {
+							log.write('Failed to export %s [%d]', fileName, fileDataID);
+						}
+					}
+				}
 
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
@@ -727,6 +776,7 @@ class ADTExporter {
 								RotationX: model.rotation[0],
 								RotationY: model.rotation[1],
 								RotationZ: model.rotation[2],
+								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
 								Type: 'm2'
@@ -784,6 +834,7 @@ class ADTExporter {
 								RotationX: model.rotation[0],
 								RotationY: model.rotation[1],
 								RotationZ: model.rotation[2],
+								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
 								Type: 'wmo'

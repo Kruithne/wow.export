@@ -6,6 +6,37 @@
 - Improved DB2 reading support.
 - Fix issue with M2 texture reading.
 
+0.1.15 (16-08-2020)
+- Fixed issue that caused wow.export to crash when registering large amounts of encryption keys.
+- Exporting M2 models as RAW will now include related BLP files.
+- Fixed inconsistency with whitespace in exported file paths (it is now always stripped).
+
+0.1.14 (08-08-2020)
+- The map viewer now supports selecting all tiles at once (Control + A).
+- Added 'Include Holes' option, allowing map tiles to be exported without holes.
+
+0.1.13 (30-07-2020)
+- Added information tooltips to export control checkboxes.
+- Added a 'View Log' button to the top-right navigation for quick access of the application log.
+- Fixed issue that prevented mouse wheel navitation on listboxes from being accurate.
+
+0.1.12 (23-07-2020)
+- Fixed issue that prevented Blender add-on from working on non-English Blender clients.
+- Fixed issue that caused exported PNG files to be premultiplicated (black splotches).
+- Added option to export game objects with map tiles (WIP, slightly broken).
+
+0.1.11 (21-07-2020)
+- Added 'Export .skin files' option for raw M2 exporting.
+- Fixed issue that prevented some Classic WMOs from exporting correctly due to filename whitespace.
+- Exported models now have proper material names instead of fileDataIDs.
+- MTL material names are now prefixed with a non-numeric value for compatibility with Maya.
+
+0.1.10 (19-07-2020)
+- Fixed issue that prevented doodad sets from exporting/previewing under certain circumstances.
+- 3D model panning via W, A, S, D, Q, E keys implemented.
+- Allow users to manually configure the map texture split threshold in configuration.
+- Added 'Use Absolute Model Placement Paths' option.
+
 0.1.9 (13-01-2020)
 - 'Enable Shared Textures' now exports textures to their full path, rather than a unified directory.
 - Added a 'Use Absolute MTL Paths' option in settings for Cinema 4D users.

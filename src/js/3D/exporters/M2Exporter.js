@@ -36,6 +36,85 @@ class M2Exporter {
 	}
 
 	/**
+	 * Export the textures for this M2 model.
+	 * @param {string} out 
+	 * @param {boolean} raw
+	 * @param {MTLWriter} mtl
+	 */
+	async exportTextures(out, raw = false, mtl = null) {
+		const config = core.view.config;
+		await this.m2.load();
+
+		const validTextures = {};
+		for (const texture of this.m2.textures) {
+			let texFileDataID = texture.fileDataID;
+
+			// Blank texture, do we have a variant texture?
+			if (texFileDataID === 0) {
+				texFileDataID = this.variantTexture;
+
+				// Backward patch the variant texture into the M2 instance so that
+				// the MTL exports with the correct texture once we swap it here.
+				texture.fileDataID = this.variantTexture;
+			}
+
+			if (texFileDataID > 0) {
+				try {
+					let texFile = texFileDataID + (raw ? '.blp' : '.png');
+					let texPath = path.join(path.dirname(out), texFile);
+
+					// Default MTL name to the file ID (prefixed for Maya).
+					let matName = 'mat_' + texFileDataID;
+					let fileName = listfile.getByID(texFileDataID);
+
+					if (fileName !== undefined)
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+
+					// Map texture files relative to its own path.
+					if (config.enableSharedTextures) {
+						if (fileName !== undefined) {
+							// Replace BLP extension with PNG.
+							if (raw === false)
+								fileName = ExportHelper.replaceExtension(fileName, '.png');
+						} else {
+							// Handle unknown files.
+							fileName = 'unknown/' + texFile;
+						}
+
+						texPath = ExportHelper.getExportPath(fileName);
+						texFile = path.relative(path.dirname(out), texPath);
+					}
+
+					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+						const data = await core.view.casc.getFile(texFileDataID);
+						log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
+
+						if (raw === true) {
+							// Write raw BLP files.
+							await data.writeToFile(texPath);
+						} else {
+							// Convert BLP to PNG.
+							const blp = new BLPFile(data);
+							await blp.saveToPNG(texPath, true);
+						}
+					} else {
+						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
+					}
+
+					if (mtl !== null) {
+						mtl.addMaterial(matName, texFile);
+						validTextures[texFileDataID] = matName;
+					}
+				} catch (e) {
+					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
+				}
+			}
+		}
+
+		return validTextures;
+	}
+
+	/**
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
@@ -60,59 +139,7 @@ class M2Exporter {
 		obj.setUVArray(this.m2.uv);
 
 		// Textures
-		const validTextures = {};
-		for (const texture of this.m2.textures) {
-			let texFileDataID = texture.fileDataID;
-
-			// Blank texture, do we have a variant texture?
-			if (texFileDataID === 0) {
-				texFileDataID = this.variantTexture;
-
-				// Backward patch the variant texture into the M2 instance so that
-				// the MTL exports with the correct texture once we swap it here.
-				texture.fileDataID = this.variantTexture;
-			}
-
-			if (texFileDataID > 0) {
-				try {
-					let texFile = texFileDataID + '.png';
-					let texPath = path.join(path.dirname(out), texFile);
-
-					// Map texture files relative to its own path.
-					if (config.enableSharedTextures) {
-						let fileName = listfile.getByID(texFileDataID);
-						if (fileName !== undefined) {
-							// Replace BLP extension with PNG.
-							fileName = ExportHelper.replaceExtension(fileName, '.png');
-
-							// Remove all whitespace from exported textures due to MTL incompatibility.
-							fileName = fileName.replace(/\s/g, '');
-						} else {
-							// Handle unknown files.
-							fileName = 'unknown/' + texFile;
-						}
-
-						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(path.dirname(out), texPath);
-					}
-
-					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
-						const data = await core.view.casc.getFile(texFileDataID);
-						const blp = new BLPFile(data);
-
-						log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
-						await blp.saveToFile(texPath, 'image/png', true);
-					} else {
-						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
-					}
-
-					mtl.addMaterial(texFileDataID, texFile);
-					validTextures[texFileDataID] = true;
-				} catch (e) {
-					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
-				}
-			}
-		}
+		const validTextures = await this.exportTextures(out, false, mtl);
 
 		// Faces
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
@@ -131,8 +158,8 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID])
-				matName = texture.fileDataID;
+			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID] !== undefined)
+				matName = validTextures[texture.fileDataID];
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}

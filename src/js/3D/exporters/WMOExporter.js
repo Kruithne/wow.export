@@ -79,6 +79,9 @@ class WMOExporter {
 				// Classic, look-up fileDataID using file name.
 				fileName = wmo.textureNames[material.texture1];
 				fileDataID = listfile.getByFilename(fileName) || 0;
+
+				// Remove all whitespace from exported textures due to MTL incompatibility.
+				fileName = fileName.replace(/\s/g, '');
 			} else {
 				// Retail, use fileDataID directly.
 				fileDataID = material.texture1;
@@ -89,22 +92,25 @@ class WMOExporter {
 					let texFile = fileDataID + '.png';
 					let texPath = path.join(path.dirname(out), texFile);
 
+					// Default MTL name to the file ID (prefixed for Maya).
+					let matName = 'mat_' + fileDataID;
+					
+					// We may already have the file name (Classic), if not attempt to get it.
+					if (fileName === undefined)
+						fileName = listfile.getByID(fileDataID);
+
+					// If we have a valid file name, use it for the material name.
+					if (fileName !== undefined)
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+
 					// Map texture files relative to shared directory.
 					if (config.enableSharedTextures) {
-						// We may already have the file name, if Classic.
-						if (fileName === undefined) {
-							fileName = listfile.getByID(fileDataID);
-
-							if (fileName !== undefined) {
-								// Replace BLP extension with PNG.
-								fileName = ExportHelper.replaceExtension(fileName, '.png');
-
-								// Remove all whitespace from exported textures due to MTL incompatibility.
-								fileName = fileName.replace(/\s/g, '');
-							} else {
-								// Handle unknown files.
-								fileName = 'unknown/' + fileDataID + '.png';
-							}
+						if (fileName !== undefined) {
+							// Replace BLP extension with PNG.
+							fileName = ExportHelper.replaceExtension(fileName, '.png');
+						} else {
+							// Handle unknown files.
+							fileName = 'unknown/' + fileDataID + '.png';
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -116,13 +122,13 @@ class WMOExporter {
 						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToFile(texPath, 'image/png', material.blendMode !== 0);
+						await blp.saveToPNG(texPath, material.blendMode !== 0);
 					} else {
 						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
-					mtl.addMaterial(fileDataID, texFile);
-					materialMap.set(i, fileDataID);
+					mtl.addMaterial(matName, texFile);
+					materialMap.set(i, matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for WMO: %s', fileDataID, e.message);
 				}
@@ -220,6 +226,8 @@ class WMOExporter {
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
+			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
+			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
 
@@ -234,8 +242,8 @@ class WMOExporter {
 				const count = set.doodadCount;
 				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
-				for (let i = set.firstInstanceIndex; i < count; i++) {
-					const doodad = wmo.doodads[i];
+				for (let i = 0; i < count; i++) {
+					const doodad = wmo.doodads[set.firstInstanceIndex + i];
 					let fileDataID = 0;
 					let fileName;
 		
@@ -269,8 +277,12 @@ class WMOExporter {
 								doodadCache.add(fileDataID);
 							}
 
+							let modelPath = path.relative(outDir, m2Path);
+							if (useAbsolute === true)
+								modelPath = path.resolve(outDir, modelPath);
+
 							csv.addRow({
-								ModelFile: path.relative(path.dirname(out), m2Path),
+								ModelFile: modelPath,
 								PositionX: doodad.position[0],
 								PositionY: doodad.position[1],
 								PositionZ: doodad.position[2],
