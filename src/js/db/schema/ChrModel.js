@@ -2,6 +2,7 @@ const FieldType = require('../FieldType');
 
 module.exports = {
 	CustomizeOffset: [FieldType.Float, 3],
+	Field_9_0_1_35522_001: [FieldType.Float, 3],
 	ID: FieldType.Int32,
 	Sex: FieldType.Int32,
 	DisplayID: FieldType.Int32,
