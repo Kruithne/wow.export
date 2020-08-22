@@ -98,7 +98,7 @@ class M2Renderer {
 			if (this.reactive){
 				let isDefault = false;
 
-				if (skinMesh.submeshID.toString().endsWith("0") || skinMesh.submeshID.toString().endsWith("01"))
+				if (skinMesh.submeshID == 0 || skinMesh.submeshID.toString().endsWith("01"))
 					isDefault = true;
 
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
