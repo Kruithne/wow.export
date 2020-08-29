@@ -208,7 +208,7 @@ const loadTables = async () => {
 				chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID] = new Array();
 			}
 			
-			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID] = chrModelTextureLayerRow;
+			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID[0]] = chrModelTextureLayerRow;
 		}
 
 		const charComponentTextureSections = new WDCReader('DBFilesClient/CharComponentTextureSections.db2', DB_CharComponentTextureSections);
@@ -353,8 +353,13 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 			if (textureSection === undefined)
 				continue;
 
-			if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)){
-				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
+			if (textureLayer.TextureSectionTypeBitMask == -1){
+				// TODO: Non-section texture
+				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(0, 0) };
+			} else {
+				if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)) {
+					skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
+				}
 			}
 		}
 	}
