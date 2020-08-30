@@ -110,6 +110,10 @@ class GLTFWriter {
 		const outGLTF = ExportHelper.replaceExtension(this.out, '.gltf');
 		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
 
+		// If overwriting is disabled, check file existence.
+		if (!overwrite && await generics.fileExists(outGLTF) && await generics.fileExists(outBIN))
+			return;
+
 		const manifest = nw.App.manifest;
 		const root = {
 			asset: {
@@ -335,6 +339,7 @@ class GLTFWriter {
 			nodes.push({ name: mesh.name, mesh: meshIndex });
 		}
 
+		await generics.createDirectory(path.dirname(this.out));
 		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
 		await bin.writeToFile(outBIN);
 	}
