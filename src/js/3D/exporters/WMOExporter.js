@@ -456,7 +456,7 @@ class WMOExporter {
 	
 			// ToDo: Add support for exporting doodads inside a glTF WMO.
 	
-			await gltf.write();
+			await gltf.write(core.view.config.overwriteFiles);
 	}
 
 	/**

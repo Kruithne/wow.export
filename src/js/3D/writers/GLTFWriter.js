@@ -105,8 +105,9 @@ class GLTFWriter {
 
 	/**
 	 * Write the GLTF file.
+	 * @param {boolean} overwrite
 	 */
-	async write() {
+	async write(overwrite = true) {
 		const outGLTF = ExportHelper.replaceExtension(this.out, '.gltf');
 		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
 

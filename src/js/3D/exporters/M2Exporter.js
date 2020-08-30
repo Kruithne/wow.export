@@ -164,7 +164,7 @@ class M2Exporter {
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
 		}
 
-		await gltf.write();
+		await gltf.write(core.view.config.overwriteFiles);
 	}
 
 	/**
