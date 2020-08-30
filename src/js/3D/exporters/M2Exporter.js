@@ -47,7 +47,7 @@ class M2Exporter {
 		const config = core.view.config;
 		await this.m2.load();
 
-		const validTextures = {};
+		const validTextures = new Map();
 		for (const texture of this.m2.textures) {
 			let texFileDataID = texture.fileDataID;
 
@@ -105,7 +105,7 @@ class M2Exporter {
 
 					if (mtl !== null) {
 						mtl.addMaterial(matName, texFile);
-						validTextures[texFileDataID] = fullTexPaths ? texFile : matName;
+						validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);
 					}
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
@@ -158,7 +158,7 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture && texture.fileDataID > 0 && textureMap[texture.fileDataID])
+			if (texture && texture.fileDataID > 0 && textureMap.has(texture.fileDataID))
 				matName = texture.fileDataID;
 
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
@@ -211,8 +211,8 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID] !== undefined)
-				matName = validTextures[texture.fileDataID];
+			if (texture && texture.fileDataID > 0 && validTextures.has(texture.fileDataID))
+				matName = validTextures.get(texture.fileDataID);
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
