@@ -342,9 +342,6 @@ class WMOExporter {
 	 * @param {string} out 
 	 */
 	async exportAsGLTF(out) {
-		const casc = core.view.casc;
-		const confic = core.view.config;
-
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 
 		// Skip export if file exists and overwriting is disabled.
@@ -355,7 +352,6 @@ class WMOExporter {
 			const gltf = new GLTFWriter(outGLTF, wmoName);
 	
 			const groupMask = this.groupMask;
-			const doodadSetMask = this.doodadSetMask;
 	
 			log.write('Exporting WMO model %s as GLTF: %s', wmoName, outGLTF);
 	
@@ -365,7 +361,7 @@ class WMOExporter {
 			const texMaps = await this.exportTextures(out, null);
 			const textureMap = texMaps.texMap;
 			const materialMap = texMaps.materialMap;
-			
+
 			gltf.setTextureMap(textureMap);
 	
 			const groups = [];
