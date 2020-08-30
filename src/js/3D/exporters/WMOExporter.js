@@ -361,7 +361,7 @@ class WMOExporter {
 	
 			const texMaps = await this.exportTextures(out, null);
 			const textureMap = texMaps.texMap;
-			const materialMap = texMaps.materialMap;
+			const materialMap = texMaps.matMap;
 
 			gltf.setTextureMap(textureMap);
 	
