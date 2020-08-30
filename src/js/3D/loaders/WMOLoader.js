@@ -16,6 +16,7 @@ class WMOLoader {
 	 */
 	constructor(data, fileID) {
 		this.data = data;
+		this.loaded = false;
 
 		if (fileID !== undefined) {
 			if (typeof fileID === 'string') {
@@ -32,6 +33,10 @@ class WMOLoader {
 	 * Load the WMO object.
 	 */
 	async load() {
+		// Prevent duplicate loading.
+		if (this.loaded === true)
+			return;
+
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();
 			const chunkSize = this.data.readUInt32LE();
@@ -44,6 +49,9 @@ class WMOLoader {
 			// Ensure that we start at the next chunk exactly.
 			this.data.seek(nextChunkPos);
 		}
+
+		// Mark this instance as loaded.
+		this.loaded = true;
 
 		// Drop internal reference to raw data.
 		this.data = undefined;

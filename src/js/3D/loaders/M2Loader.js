@@ -106,7 +106,15 @@ class M2Loader {
 	
 		this.version = this.data.readUInt32LE();
 		this.parseChunk_MD21_modelName(ofs);
-		this.data.move(11 * 4); // flags, loops, seq, bones.
+		// flags (uint32)
+		// global_loops (M2Array)
+		// sequences (M2Array)
+		// sequenceIdxHashById (M2Array)
+		this.data.move(4 + 8 + 8 + 8);
+
+		this.parseChunk_MD21_bones(ofs);
+		//this.parseChunk_MD21_boneIndices(ofs);
+		this.data.move(8);
 		this.parseChunk_MD21_vertices(ofs);
 		this.viewCount = this.data.readUInt32LE();
 		this.data.move(8); // coloursCount, coloursOfs
@@ -119,6 +127,71 @@ class M2Loader {
 		this.data.move(6 * 4); // textureTransformBoneMap, textureWeightCombos, textureTransformCombos
 		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
 		this.parseChunk_MD21_collision(ofs);
+	}
+
+	/**
+	 * Read an M2Array.
+	 * @param {number} ofs
+	 * @param {function} read 
+	 */
+	readM2Array(ofs, read) {
+		const data = this.data;
+		const arrCount = data.readUInt32LE();
+		const arrOfs = data.readUInt32LE();
+
+		const base = data.offset;
+		data.seek(ofs + arrOfs);
+
+		const arr = Array(arrCount);
+		for (let i = 0; i < arrCount; i++)
+			arr[i] = read();
+
+		data.seek(base);
+		return arr;
+	}
+
+	/**
+	 * Read an M2Track.
+	 * @param {number} ofs
+	 * @param {function} read 
+	 */
+	readM2Track(ofs, read) {
+		const data = this.data;
+		const globalSeq = data.readUInt16LE();
+		const interpolation = data.readUInt16LE();
+
+		const timestamps = this.readM2Array(ofs, () => this.readM2Array(ofs, () => data.readUInt32LE()));
+		const values = this.readM2Array(ofs, () => this.readM2Array(ofs, read));
+
+		return { globalSeq, interpolation, timestamps, values };
+	}
+
+	parseChunk_MD21_bones(ofs) {
+		const data = this.data;
+		const boneCount = data.readUInt32LE();
+		const boneOfs = data.readUInt32LE();
+
+		const base = data.offset;
+
+		data.seek(boneOfs + ofs);
+
+		const bones = this.bones = Array(boneCount);
+		for (let i = 0; i < boneCount; i++) {
+			bones[i] = {
+				boneID: data.readInt32LE(),
+				flags: data.readUInt32LE(),
+				parentBone: data.readInt16LE(),
+				subMeshID: data.readUInt16LE(),
+				distToDesc: data.readUInt16LE(),
+				zRatioOfChain: data.readUInt16LE(),
+				translation: this.readM2Track(ofs, () => data.readFloatLE(3)),
+				rotation: this.readM2Track(ofs, () => data.readUInt16LE(4).map(e => (e / 32767) - 1)),
+				scale: this.readM2Track(ofs, () => data.readFloatLE(3)),
+				pivot: data.readFloatLE(3)
+			};
+		}
+
+		data.seek(base);
 	}
 
 	/**
@@ -233,6 +306,8 @@ class M2Loader {
 		const verts = this.vertices = new Array(verticesCount * 3);
 		const normals = this.normals = new Array(verticesCount * 3);
 		const uv = this.uv = new Array(verticesCount * 2);
+		const boneWeights = this.boneWeights = Array(verticesCount * 4);
+		const boneIndicies = this.boneIndicies = Array(verticesCount * 4);
 	
 		for (let i = 0; i < verticesCount; i++) {
 			const index = i * 3;
@@ -240,7 +315,11 @@ class M2Loader {
 			verts[index + 2] = this.data.readFloatLE() * -1;
 			verts[index + 1] = this.data.readFloatLE();
 	
-			this.data.move(8); // boneWeight/boneindices.
+			for (let x = 0; x < 4; x++)
+				boneWeights[index + x] = this.data.readUInt8();
+
+			for (let x = 0; x < 4; x++)
+				boneIndicies[index + x] = this.data.readUInt8();
 	
 			normals[index] = this.data.readFloatLE();
 			normals[index + 2] = this.data.readFloatLE() * -1;

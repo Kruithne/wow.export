@@ -257,7 +257,7 @@
 							</div>
 						</div>
 						<div class="preview-controls">
-							<menu-button :label="'Export as %s'" :options="['OBJ', 'PNG', 'RAW']" :display-names="['OBJ', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
+							<menu-button :label="'Export as %s'" :options="['OBJ', 'GLTF', 'PNG', 'RAW']" :display-names="['OBJ', 'GLTF', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 							<input id="sidebar-button" type="button" :value="config.modelsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.modelsShowSidebar = !config.modelsShowSidebar"/>
 						</div>
 						<div id="model-sidebar" class="sidebar" v-if="config.modelsShowSidebar">
