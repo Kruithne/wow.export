@@ -54,6 +54,7 @@ class WMOExporter {
 	async exportTextures(out, mtl = null) {
 		const wmo = this.wmo;
 		const config = core.view.config;
+		const casc = core.view.casc;
 
 		// Ensure the WMO is loaded before reading materials.
 		await wmo.load();
