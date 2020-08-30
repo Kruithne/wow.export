@@ -212,7 +212,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 					case 'GLTF':
 					case 'OBJ':
-						const exportPath = ExportHelper.replaceExtension(exportPath, format === 'OBJ' ? '.obj' : '.gltf');
+						exportPath = ExportHelper.replaceExtension(exportPath, format === 'OBJ' ? '.obj' : '.gltf');
 
 						if (fileNameLower.endsWith('.m2')) {
 							const exporter = new M2Exporter(data, selectedVariantTexID);
