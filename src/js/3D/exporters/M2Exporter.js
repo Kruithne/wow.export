@@ -103,10 +103,10 @@ class M2Exporter {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
-					if (mtl !== null) {
+					if (mtl !== null)
 						mtl.addMaterial(matName, texFile);
-						validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);
-					}
+
+					validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
 				}
