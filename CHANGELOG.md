@@ -1,3 +1,6 @@
+0.1.16 (07-09-2020)
+- Fixed issue that prevented wow.export from working when launched from the start menu.
+
 0.1.15 (16-08-2020)
 - Fixed issue that caused wow.export to crash when registering large amounts of encryption keys.
 - Exporting M2 models as RAW will now include related BLP files.
