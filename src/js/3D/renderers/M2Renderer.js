@@ -264,6 +264,13 @@ class M2Renderer {
 				tempTexture.format = THREE.RGBAFormat;
 				tempTexture.needsUpdate = true;
 				core.view.$emit('copyTextureToTextureRequest', skinMats[i].position, tempTexture, texture);
+				let targetPosition = {x: skinMats[i].position.x, y: skinMats[i].position.y};
+				targetPosition.x = skinMats[i].position.x;
+				if (targetPosition.y == 0){
+					targetPosition.y = (skinMats[0].size.y - skinMats[i].size.y) + skinMats[i].position.y;
+				}
+
+				core.view.$emit('copyTextureToTextureRequest', targetPosition, tempTexture, texture);
 				tempTexture.dispose();
 			});
 		}

@@ -355,10 +355,10 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 
 			if (textureLayer.TextureSectionTypeBitMask == -1){
 				// TODO: Non-section texture
-				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(0, 0) };
+				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(1024, 512), position: new THREE.Vector2(0, 0) };
 			} else {
 				if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)) {
-					skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
+					skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(textureSection.Width, textureSection.Height), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
 				}
 			}
 		}
