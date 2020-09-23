@@ -181,9 +181,9 @@ const loadTables = async () => {
 
 			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0){
 				if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID)){
-					choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push(chrCustomizationElementRow.ChrCustomizationMaterialID);
+					choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push(chrCustomizationElementRow);
 				} else {
-					choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [chrCustomizationElementRow.ChrCustomizationMaterialID]);
+					choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [chrCustomizationElementRow]);
 				}
 
 				const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
@@ -325,13 +325,12 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 	let chrCustMatRows = Array();
 	let materials = choiceToChrCustMaterialID.get(choiceID);
 	for (const material of materials){
-		chrCustMatRows.push(chrCustMatMap.get(material));
+		chrCustMatRows.push(chrCustMatMap.get(material.ChrCustomizationMaterialID));
 	}
 
 	if (chrCustMatRows === undefined || chrCustMatRows.length == 0) {
 		return false;
 	}
-
 
 	if (!charComponentTextureSectionMap.has(textureLayout))
 		return false;
@@ -355,15 +354,16 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 
 			if (textureLayer.TextureSectionTypeBitMask == -1){
 				// TODO: Non-section texture
-				skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(1024, 512), position: new THREE.Vector2(0, 0) };
+				skinMats[textureLayer.Layer] = { TextureType: textureLayer.TextureType, FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(1024, 512), position: new THREE.Vector2(0, 0) };
 			} else {
 				if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)) {
-					skinMats[textureLayer.Layer] = { FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(textureSection.Width, textureSection.Height), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
+					skinMats[textureLayer.Layer] = { TextureType: textureLayer.TextureType, FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(textureSection.Width, textureSection.Height), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
 				}
 			}
 		}
 	}
 
+	console.log(skinMats);
 	return skinMats;
 }
 
@@ -376,7 +376,26 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	if (!choiceToChrCustMaterialID.has(choiceID)) {
 		return false;
 	}
-	const chrCustMatID = choiceToChrCustMaterialID.get(choiceID)[0];
+	console.log(core.view.modelViewerChrCustCurrent);
+
+	let chrCustMatID = 0;
+	const availableChoices = choiceToChrCustMaterialID.get(choiceID);
+
+	// Select correct material based on other choices (e.g. face material for a certain skin color)
+	// core.view.modelViewerChrCustCurrent has currently selected choice IDs for by category
+	core.view.modelViewerChrCustCurrent.forEach((entry) => {
+		availableChoices.forEach((availableChoice) => {
+			if (availableChoice.RelatedChrCustomizationChoiceID == entry){
+				chrCustMatID = availableChoice.ChrCustomizationMaterialID;
+			}
+		});
+	});
+
+	if (chrCustMatID == 0){
+		console.log("Unable to find matching choice/related choice combo for choice " + choiceID + ", falling back to first entry");
+		chrCustMatID = availableChoices[0].ChrCustomizationMaterialID;
+	}
+
 	const chrCustMatRow = chrCustMatMap.get(chrCustMatID);
 
 	if (!chrCustMatRow) {
@@ -389,16 +408,20 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	}
 
 	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
-	const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
-	const textureType = textureLayer.TextureType;
-	
-	if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID)) {
-		return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID), TextureSectionTypeBitMask: textureLayer.TextureSectionTypeBitMask };
-	} else {
+
+	if (!(textureTarget in chrModelTexLayer[textureLayout])) {
+		console.log("TextureTarget " + textureTarget + " not found in texture layers");
 		return false;
+	} else {
+		const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
+		const textureType = textureLayer.TextureType;
+		if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID)) {
+			return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID), TextureSectionTypeBitMask: textureLayer.TextureSectionTypeBitMask };
+		} else {
+			return false;
+		}
 	}
 };
-
 
 module.exports = { 
 	loadTables, 
