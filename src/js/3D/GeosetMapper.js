@@ -20,6 +20,7 @@ const GEOSET_GROUPS = {
 	1200: 'Tabard',
 	1300: 'Trousers',
 	1500: 'Cloak',
+	1600: 'Chins',
 	1700: 'Eyeglow',
 	1800: 'Belt',
 	1900: 'Bone/Tail',
