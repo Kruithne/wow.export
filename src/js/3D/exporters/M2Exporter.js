@@ -13,6 +13,7 @@ const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
+const JSONWriter = require('../writers/JSONWriter');
 const GeosetMapper = require('../GeosetMapper');
 const ExportHelper = require('../../casc/export-helper');
 
@@ -124,9 +125,11 @@ class M2Exporter {
 		const skin = await this.m2.getSkin(0);
 
 		const config = core.view.config;
+		const exportMeta = core.view.config.modelsExportMeta;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
+		const json = exportMeta ? new JSONWriter(ExportHelper.replaceExtension(out, '.json')) : null;
 
 		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
 
@@ -140,6 +143,15 @@ class M2Exporter {
 
 		// Textures
 		const validTextures = await this.exportTextures(out, false, mtl);
+
+		if (exportMeta) {
+			json.addProperty('textures', this.m2.textures);
+			json.addProperty('textureCombos', this.m2.textureCombos);
+			json.addProperty('skin', {
+				subMeshes: skin.subMeshes,
+				textureUnits: skin.textureUnits
+			});
+		}
 
 		// Faces
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
@@ -169,6 +181,8 @@ class M2Exporter {
 
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
+		if (json !== null)
+			await json.write(config.overwriteFiles);
 
 		if (exportCollision) {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));

@@ -1,3 +1,6 @@
+0.1.17 (25-10-2020)
+- Added ability to export M2 meta data as .json (disabled by default).
+
 0.1.16 (07-09-2020)
 - Fixed issue that prevented wow.export from working when launched from the start menu.
 
