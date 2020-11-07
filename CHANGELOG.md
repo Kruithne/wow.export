@@ -5,6 +5,7 @@
 - Skin names should be shorter for many models (and fit on screen now).
 - Improved DB2 reading support.
 - Fix issue with M2 texture reading.
+- Update three.js.
 
 0.1.17 (25-10-2020)
 - Added ability to export M2 meta data as .json (disabled by default).
