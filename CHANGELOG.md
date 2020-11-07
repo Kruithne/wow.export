@@ -6,6 +6,12 @@
 - Improved DB2 reading support.
 - Fix issue with M2 texture reading.
 
+0.1.17 (25-10-2020)
+- Added ability to export M2 meta data as .json (disabled by default).
+
+0.1.16 (07-09-2020)
+- Fixed issue that prevented wow.export from working when launched from the start menu.
+
 0.1.15 (16-08-2020)
 - Fixed issue that caused wow.export to crash when registering large amounts of encryption keys.
 - Exporting M2 models as RAW will now include related BLP files.
