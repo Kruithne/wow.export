@@ -51,10 +51,6 @@ Vue.component('model-viewer', {
 
 		this.isRendering = true;
 		this.render();
-
-		this.$root.$on('copyTextureToTextureRequest', (position, srcTexture, dstTexture) => {
-			this.renderer.copyTextureToTexture(position, srcTexture, dstTexture); 
-		});
 	},
 
 	/**

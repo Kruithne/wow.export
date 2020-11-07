@@ -238,12 +238,10 @@ class M2Renderer {
 	 */
 	async buildSkinMaterial(skinMats){
 		console.log("Building skin material", skinMats);
-		const mergedTexture = await this.makeFancyDebugTexture(skinMats);
+		const mergedTexture = await this.mergeSkinMaterials(skinMats);
 		var texture = new THREE.Texture();
 
 		const loader = new THREE.ImageLoader();
-		// const data = await core.view.casc.getFile(skinMats[0].FileDataID);
-		// const blp = new BLPFile(data);
 		loader.load(mergedTexture, image => {
 			texture.image = image; // TODO: Should we update once after drawing all or after every draw? Hmmmmm
 			texture.format = THREE.RGBAFormat;
@@ -262,7 +260,10 @@ class M2Renderer {
 		}
 	}
 
-	async makeFancyDebugTexture(skinMats) {
+	/**
+	 * Merges different skin materials
+	 */
+	async mergeSkinMaterials(skinMats) {
 		const debugCanvas = document.createElement('canvas');
 		const gl = debugCanvas.getContext('webgl');
 		debugCanvas.width = skinMats[0].size.x;
@@ -414,172 +415,6 @@ class M2Renderer {
 		return debugCanvas.toDataURL();
 	}
 
-	/**
-	 * Debug function to draw a nice debug texture with all the fancy character customization layers.
-	 */
-	async makeFancyDebugTextureOld(skinMats) {
-		const debugCanvas = document.createElement('canvas');
-		const gl = debugCanvas.getContext('webgl');
-		debugCanvas.width = 2048;
-		debugCanvas.height = 2048;
-
-		const blp = new BLPFile(await core.view.casc.getFile(skinMats[0].FileDataID));
-
-		const texture = gl.createTexture();
-		const blpData = blp.toUInt8Array(0);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, blpData);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		
-		var vertices = [
-			-0.5,0.5,0.0,
-			-0.5,-0.5,0.0,
-			0.5,-0.5,0.0,
-			0.5,0.5,0.0 
-		];
-
-		const uvs = [
-			0.0, 1.0,
-			0.0, 0.0,
-			1.0, 0.0,
-			1.0, 1.0
-		];
-
-		const indices = [3, 2, 1, 3, 1, 0];
-
-		const vertexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-		const indexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-				
-		const uvBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-		const vertCode =
-            'attribute vec3 vertices;' +
-            'attribute vec2 aTextureCoord;' +
-            'varying highp vec2 vTextureCoord;' +
-            'void main(void) {' +
-               ' gl_Position = vec4(vertices, 1.0);' +
-               ' vTextureCoord = aTextureCoord;' +
-			'}';
-
-		const vertShader = gl.createShader(gl.VERTEX_SHADER);
-		gl.shaderSource(vertShader, vertCode);
-		gl.compileShader(vertShader);
-
-		var message = gl.getShaderInfoLog(vertShader);
-		if (message.length > 0) {
-			console.log(message);
-		}
-
-		const fragCode =
-			'precision highp float;\n' +
-			'uniform sampler2D sampler;\n' +
-			'varying highp vec2 vTextureCoord;\n' +
-			'void main(void) {\n' +
-               ' gl_FragColor = texture2D(sampler, vTextureCoord);\n' +
-            '}\n';
-
-		const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-		gl.shaderSource(fragShader, fragCode);
-		gl.compileShader(fragShader);
-
-		var fragMessage = gl.getShaderInfoLog(fragShader);
-		if (fragMessage.length > 0) {
-			console.log(fragMessage);
-		}
-
-		const shaderProgram = gl.createProgram();
-		gl.attachShader(shaderProgram, vertShader);
-		gl.attachShader(shaderProgram, fragShader);
-		gl.linkProgram(shaderProgram);
-		gl.validateProgram(shaderProgram);
-
-		if ( !gl.getProgramParameter( shaderProgram, gl.LINK_STATUS) ) {
-			var info = gl.getProgramInfoLog(shaderProgram);
-			throw 'Could not compile WebGL program. \n\n' + info;
-		}
-
-		gl.useProgram(shaderProgram);
-
-		const samplerCoord = gl.getUniformLocation(shaderProgram, 'sampler');
-		// console.log("Sampler @ " + samplerCoord);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(samplerCoord, 0);
-		
-		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer); 
-		gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer); 
-
-		const vxCoord = gl.getAttribLocation(shaderProgram, "vertices");
-		console.log("VX @ " + vxCoord);
-		gl.vertexAttribPointer(vxCoord, 3, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(vxCoord);
-
-		const uvCoord = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-		console.log("UV @ " + uvCoord);
-		gl.vertexAttribPointer(uvCoord, 2, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(uvCoord);
-
-		gl.clearColor(0.5, 0.5, 0.5, 0.9);
-		gl.enable(gl.DEPTH_TEST);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-		gl.viewport(0, 0, 2048, 2048);
-		gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-		
-		debugCanvas.toBlob((blob) => window.open(URL.createObjectURL(blob)), 'image/png');
-		// window.open(URL.createObjectURL(temp1));
-
-		/*
-		// Loop through all skinMats and apply on top of texture
-		for (let i = 1; i < skinMats.length; i++){
-			if (skinMats[i] === undefined)
-				continue;
-			let tempTexture = new THREE.Texture();
-
-			const data = await core.view.casc.getFile(skinMats[i].FileDataID);
-			const blp = new BLPFile(data);
-			loader.load(blp.getDataURL(false), image => {
-				tempTexture.image = image;
-				tempTexture.format = THREE.RGBAFormat;
-				tempTexture.needsUpdate = true;
-				core.view.$emit('copyTextureToTextureRequest', skinMats[i].position, tempTexture, texture);
-				let targetPosition = {x: skinMats[i].position.x, y: skinMats[i].position.y};
-				targetPosition.x = skinMats[i].position.x;
-
-				// TODO: Translate bottom left to top left
-				targetPosition.y = (skinMats[0].size.y - skinMats[i].position.y) + skinMats[i].size.y;
-				
-				core.view.$emit('copyTextureToTextureRequest', targetPosition, tempTexture, texture);
-				tempTexture.dispose();
-			});
-		}
-
-		const textureTypes = this.m2.textureTypes;
-		for (let i = 0, n = textureTypes.length; i < n; i++) {
-			// Don't mess with textures not for this type.
-			if (textureTypes[i] != 1)
-				continue;
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: "compiledSkinTexture", map: texture });
-		}
-		*/
-	}
 	/**
 	 * Load all textures needed for the M2 model.
 	 */
