@@ -1,5 +1,7 @@
 const FieldType = require('../FieldType');
 
+// LayoutHash 29E7E6E9
+
 module.exports = {
 	ID: FieldType.Int32,
 	ChrCustomizationChoiceID: FieldType.Int32,

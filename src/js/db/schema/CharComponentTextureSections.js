@@ -1,5 +1,7 @@
 const FieldType = require('../FieldType');
 
+// LayoutHash B6E9C94F
+
 module.exports = {
 	CharComponentTextureLayoutID: FieldType.Int32,
 	SectionType: FieldType.Int32,
