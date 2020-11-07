@@ -74,6 +74,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Enable character customization (requires restart)</h1>
+						<p>If enabled, will enable work-in-progress support for Shadowlands character customization.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableCharacterCustomization" />
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Use Absolute MTL Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>
@@ -306,6 +314,7 @@
 								</div>
 								<div id="chrCust" v-if="modelViewerShowChrCust">
 									<span class="header">Customization Options</span>
+									<b style='color: red'>Work in progress!</b>
 									<listboxb :items="modelViewerChrCustCategories" :selection="modelViewerSelectedChrCustCategory" :single="true"></listboxb>
 									<span class="header">Customization Choices</span>
 									<listboxb :items="modelViewerChrCustChoices" :selection="modelViewerSelectedChrCustChoice" :single="true"></listboxb>

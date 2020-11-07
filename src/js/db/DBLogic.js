@@ -120,7 +120,7 @@ const loadTables = async () => {
 	}
 
 	// Checks if ChrModel.db2 is available -- if not we're not using Shadowlands.
-	if (listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
+	if (core.view.config.enableCharacterCustomization && listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
 		log.write('Loading character customization tables...');
 		chrCustomizationAvailable = true;
 
