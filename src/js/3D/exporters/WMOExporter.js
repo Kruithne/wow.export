@@ -66,6 +66,8 @@ class WMOExporter {
 		const wmo = this.wmo;
 		await wmo.load();
 
+		const useAlpha = config.modelsIncludeAlpha;
+
 		// Textures
 		const isClassic = !!wmo.textureNames;
 		const materialCount = wmo.materials.length;
@@ -122,7 +124,7 @@ class WMOExporter {
 						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToPNG(texPath, material.blendMode !== 0);
+						await blp.saveToPNG(texPath, useAlpha); // material.blendMode !== 0
 					} else {
 						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}

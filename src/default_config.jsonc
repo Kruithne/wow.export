@@ -30,6 +30,7 @@
 	"modelsExportCollision": false,
 	"modelsExportMeta": false,
 	"modelsExportSkin": false,
+	"modelsIncludeAlpha": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,
