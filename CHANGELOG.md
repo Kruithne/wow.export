@@ -1,5 +1,7 @@
 0.1.18 (10-11-2020)
 - Added 'Texture Alpha' option to model exporter, allowing binary control of texture transparency on models.
+- Added geoset labels for new Shadowlands customization.
+- Fixed issue that prevented wow.export from failing on corrupt game installations.
 
 0.1.17 (25-10-2020)
 - Added ability to export M2 meta data as .json (disabled by default).
