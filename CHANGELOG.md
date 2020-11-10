@@ -21,11 +21,11 @@
 0.1.13 (30-07-2020)
 - Added information tooltips to export control checkboxes.
 - Added a 'View Log' button to the top-right navigation for quick access of the application log.
-- Fixed issue that prevented mouse wheel navitation on listboxes from being accurate.
+- Fixed issue that prevented mouse wheel navigation on listboxes from being accurate.
 
 0.1.12 (23-07-2020)
 - Fixed issue that prevented Blender add-on from working on non-English Blender clients.
-- Fixed issue that caused exported PNG files to be premultiplicated (black splotches).
+- Fixed issue that caused exported PNG files to be premultipled (black splotches).
 - Added option to export game objects with map tiles (WIP, slightly broken).
 
 0.1.11 (21-07-2020)
