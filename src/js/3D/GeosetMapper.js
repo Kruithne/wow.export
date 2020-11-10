@@ -20,6 +20,7 @@ const GEOSET_GROUPS = {
 	1200: 'Tabard',
 	1300: 'Trousers',
 	1500: 'Cloak',
+	1600: 'Chins',
 	1700: 'Eyeglow',
 	1800: 'Belt',
 	1900: 'Bone/Tail',
@@ -37,7 +38,12 @@ const GEOSET_GROUPS = {
 	3300: 'Eyes',
 	3400: 'Eyebrows',
 	3500: 'Earrings',
-	3600: 'Necklace'
+	3600: 'Necklace',
+	3700: 'Headdress',
+	3800: 'Tails',
+	3900: 'Vines',
+	4000: 'Chins/Tusks',
+	4100: 'Noses'
 };
 
 /**
