@@ -409,9 +409,6 @@ class M2Renderer {
 		gl.deleteBuffer(positionBuffer);
 		gl.deleteBuffer(texcoordBuffer);
 
-		const buf = await BufferWrapper.fromCanvas(debugCanvas, 'image/png');
-		await buf.writeToFile("texdebug.png");
-
 		return debugCanvas.toDataURL();
 	}
 
