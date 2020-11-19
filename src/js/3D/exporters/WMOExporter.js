@@ -232,7 +232,7 @@ class WMOExporter {
 			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
 			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
-			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
+			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
 
 			// Doodad sets.
 			const doodadSets = wmo.doodadSets;
@@ -294,7 +294,8 @@ class WMOExporter {
 								RotationY: doodad.rotation[1],
 								RotationZ: doodad.rotation[2],
 								ScaleFactor: doodad.scale,
-								DoodadSet: set.name
+								DoodadSet: set.name,
+								FileDataID: fileDataID,
 							});
 						} catch (e) {
 							log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);

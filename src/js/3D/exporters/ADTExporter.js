@@ -698,7 +698,7 @@ class ADTExporter {
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
 			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
-				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type');
+				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID');
 
 				if (config.mapsIncludeGameObjects === true && gameObjects !== undefined && gameObjects.size > 0) {
 					log.write('Exporting %d game objects for ADT...', gameObjects.size);
@@ -735,7 +735,8 @@ class ADTExporter {
 								RotationW: model.Rotation[3],
 								ScaleFactor: 1,
 								ModelId: 0,
-								Type: 'gobj'
+								Type: 'gobj',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
@@ -746,7 +747,7 @@ class ADTExporter {
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
 					for (const model of objAdt.models) {
-						const fileDataID = model.mmidEntry;		
+						const fileDataID = model.mmidEntry;
 						let fileName = listfile.getByID(fileDataID);
 
 						try {	
@@ -779,7 +780,8 @@ class ADTExporter {
 								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
-								Type: 'm2'
+								Type: 'm2',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
