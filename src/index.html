@@ -74,6 +74,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Strip Whitespace From Export Paths</h1>
+						<p>If enabled, whitespace will be removed from exported paths.</p>
+						<p>Enable this option if your 3D software does not support whitespace in paths.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.removePathSpaces"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Use Absolute MTL Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>

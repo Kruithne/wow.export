@@ -1,3 +1,6 @@
+0.1.19 (19-11-2020)
+- Added 'Strip Whitespace From Export Paths' option to settings (enabled by default).
+
 0.1.18 (10-11-2020)
 - Added 'Texture Alpha' option to model exporter, allowing binary control of texture transparency on models.
 - Added geoset labels for new Shadowlands customization.

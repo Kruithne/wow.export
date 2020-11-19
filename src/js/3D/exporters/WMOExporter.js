@@ -83,7 +83,8 @@ class WMOExporter {
 				fileDataID = listfile.getByFilename(fileName) || 0;
 
 				// Remove all whitespace from exported textures due to MTL incompatibility.
-				fileName = fileName.replace(/\s/g, '');
+				if (config.removePathSpaces)
+					fileName = fileName.replace(/\s/g, '');
 			} else {
 				// Retail, use fileDataID directly.
 				fileDataID = material.texture1;

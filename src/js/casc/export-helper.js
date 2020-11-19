@@ -23,7 +23,8 @@ class ExportHelper {
 	 */
 	static getExportPath(file) {
 		// Remove whitespace due to MTL incompatibility for textures.
-		file = file.replace(/\s/g, '');
+		if (core.view.config.removePathSpaces)
+			file = file.replace(/\s/g, '');
 
 		return path.normalize(path.join(core.view.config.exportDirectory, file));
 	}

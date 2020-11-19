@@ -19,6 +19,7 @@
 	"enableSharedTextures": true,
 	"enableAbsoluteMTLPaths": false,
 	"enableAbsoluteCSVPaths": false,
+	"removePathSpaces": true,
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"exportModelFormat": "OBJ",
