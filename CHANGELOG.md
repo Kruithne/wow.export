@@ -1,3 +1,6 @@
+0.1.20 (In Development)
+- Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
+
 0.1.19 (19-11-2020)
 - Added 'Strip Whitespace From Export Paths' option to settings (enabled by default).
 - Added the FileDataID field to ModelPlacementInformation CSV files.
