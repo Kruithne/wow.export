@@ -19,11 +19,11 @@
 # <pep8-80 compliant>
 
 bl_info = {
-    "name": "V2 - Import WoW OBJ files with doodads",
+    "name": "Import WoW OBJ files with doodads",
     "author": "Marlamin, Kruithne",
-    "version": (0, 3, 6),
+    "version": (0, 3, 7),
     "blender": (2, 80, 0),
-    "location": "File > Import-Export > WoW OBJ (.obj) (experimental)",
+    "location": "File > Import-Export > WoW OBJ (.obj)",
     "description": "Import OBJ files exported by wow.export with WMOs and doodads",
     "warning": "",
     "wiki_url": "",
