@@ -1,5 +1,6 @@
 0.1.20 (In Development)
 - Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
+- Fixed an issue that caused the toast bar to disappear while an export was in progress.
 - Using the automatic Blender add-on installer now targets all installed versions of Blender on your system.
 
 0.1.19 (19-11-2020)
