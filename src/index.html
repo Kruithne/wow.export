@@ -195,7 +195,7 @@
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
 					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
-					<div class="close" v-if="toast.closable" @click="hideToast"></div>
+					<div class="close" v-if="toast.closable" @click="hideToast(true)"></div>
 				</div>
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">

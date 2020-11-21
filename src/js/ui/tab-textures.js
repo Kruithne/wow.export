@@ -53,6 +53,10 @@ const exportFiles = async (files, isLocal = false) => {
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 
 	for (const fileName of files) {
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			return;
+			
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')

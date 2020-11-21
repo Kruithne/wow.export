@@ -183,7 +183,11 @@ const exportSelectedMapWMO = async () => {
 		const wmo = new WMOExporter(data, fileDataID);
 
 		wmo.setDoodadSetMask({ [placement.doodadSetIndex]: { checked: true } });
-		await wmo.exportAsOBJ(exportPath);
+		await wmo.exportAsOBJ(exportPath, helper);
+
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			return;
 
 		helper.mark(fileName, true);
 	} catch (e) {
@@ -212,6 +216,10 @@ const exportSelectedMap = async () => {
 	const markPath = path.join('maps', selectedMapDir, selectedMapDir);
 
 	for (const index of exportTiles) {
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			break;
+
 		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
 
 		// Locate game objects within the tile for exporting.
@@ -229,7 +237,7 @@ const exportSelectedMap = async () => {
 		}
 
 		try {
-			await adt.export(dir, exportQuality, gameObjects);
+			await adt.export(dir, exportQuality, gameObjects, helper);
 			helper.mark(markPath, true);
 		} catch (e) {
 			helper.mark(markPath, false, e.message);

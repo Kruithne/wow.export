@@ -41,8 +41,9 @@ class M2Exporter {
 	 * @param {string} out 
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
+	 * @param {ExportHelper} helper
 	 */
-	async exportTextures(out, raw = false, mtl = null) {
+	async exportTextures(out, raw = false, mtl = null, helper) {
 		const config = core.view.config;
 		await this.m2.load();
 
@@ -50,6 +51,10 @@ class M2Exporter {
 
 		const validTextures = {};
 		for (const texture of this.m2.textures) {
+			// Abort if the export has been cancelled.
+			if (helper.isCancelled())
+				return;
+				
 			let texFileDataID = texture.fileDataID;
 
 			// Blank texture, do we have a variant texture?
@@ -121,8 +126,9 @@ class M2Exporter {
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
+	 * @param {ExportHelper} helper
 	 */
-	async exportAsOBJ(out, exportCollision = false) {
+	async exportAsOBJ(out, exportCollision = false, helper) {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
@@ -144,7 +150,11 @@ class M2Exporter {
 		obj.setUVArray(this.m2.uv);
 
 		// Textures
-		const validTextures = await this.exportTextures(out, false, mtl);
+		const validTextures = await this.exportTextures(out, false, mtl, helper);
+
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			return;
 
 		if (exportMeta) {
 			json.addProperty('textures', this.m2.textures);

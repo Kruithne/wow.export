@@ -185,6 +185,10 @@ const exportFiles = async (files, isLocal = false) => {
 		helper.start();
 
 		for (const fileName of files) {
+			// Abort if the export has been cancelled.
+			if (helper.isCancelled())
+				return;
+
 			try {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
 				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
@@ -202,6 +206,10 @@ const exportFiles = async (files, isLocal = false) => {
 							const skins = exporter.m2.getSkinList();
 							const skinPath = path.dirname(exportPath);
 							for (const skin of skins) {
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+
 								const skinData = await core.view.casc.getFile(skin.fileDataID);
 								await skinData.writeToFile(path.join(skinPath, path.basename(skin.fileName)));
 							}
@@ -218,7 +226,11 @@ const exportFiles = async (files, isLocal = false) => {
 							if (fileName == activePath)
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
-							await exporter.exportAsOBJ(exportOBJ, core.view.config.modelsExportCollision);
+							await exporter.exportAsOBJ(exportOBJ, core.view.config.modelsExportCollision, helper);
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
 						} else if (fileNameLower.endsWith('.wmo')) {
 							// WMO loading currently loads group objects directly from CASC.
 							// In order to load these properly, we would need to know the internal name here.
@@ -233,8 +245,12 @@ const exportFiles = async (files, isLocal = false) => {
 								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
 							}
 
-							await exporter.exportAsOBJ(exportOBJ);
+							await exporter.exportAsOBJ(exportOBJ, helper);
 							WMOExporter.clearCache();
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);
 						}

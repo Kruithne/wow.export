@@ -22,6 +22,10 @@ core.registerLoadFunc(async () => {
 		
 		const overwriteFiles = core.view.config.overwriteFiles;
 		for (const fileName of userSelection) {
+			// Abort if the export has been cancelled.
+			if (helper.isCancelled())
+				return;
+				
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
