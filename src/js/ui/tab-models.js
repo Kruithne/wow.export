@@ -305,10 +305,12 @@ core.registerLoadFunc(async () => {
 
 		// Map all available texture fileDataIDs to model IDs.
 		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-			if (!textureMap.has(displayRow.ModelID))
-				textureMap.set(displayRow.ModelID, new Set());
+			if (displayRow.TextureVariationFileDataID > 0) {
+				if (!textureMap.has(displayRow.ModelID))
+					textureMap.set(displayRow.ModelID, new Set());
 
-			textureMap.get(displayRow.ModelID).add(displayRow.TextureVariationFileDataID);
+				textureMap.get(displayRow.ModelID).add(displayRow.TextureVariationFileDataID);
+			}
 		}
 
 		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
