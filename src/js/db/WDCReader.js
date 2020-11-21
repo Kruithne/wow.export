@@ -63,7 +63,7 @@ class WDCReader {
 		this.rows = new Map();
 		this.copyTable = new Map();
 
-		this.schema = {};
+		this.schema = new Map();
 
 		this.isInflated = false;
 		this.isLoaded = false;
@@ -184,9 +184,9 @@ class WDCReader {
 
 			const fieldType = convertDBDToSchemaType(field);
 			if (field.arrayLength > -1)
-				this.schema[field.name] = [fieldType, field.arrayLength];
+				this.schema.set(field.name, [fieldType, field.arrayLength]);
 			else
-				this.schema[field.name] = fieldType;
+				this.schema.set(field.name, fieldType);
 		}
 	}
 
@@ -403,7 +403,7 @@ class WDCReader {
 
 				const out = {};
 				let fieldIndex = 0;
-				for (const [prop, type] of Object.entries(this.schema)) {
+				for (const [prop, type] of this.schema.entries()) {
 					const recordFieldInfo = fieldInfo[fieldIndex];
 
 					let count;
