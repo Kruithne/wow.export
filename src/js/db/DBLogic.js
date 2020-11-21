@@ -9,21 +9,6 @@ const listfile = require('../casc/listfile');
 
 const WDCReader = require('../db/WDCReader');
 
-const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
-const DB_CreatureDisplayInfoGeosetData = require('../db/schema/CreatureDisplayInfoGeosetData');
-const DB_CreatureModelData = require('../db/schema/CreatureModelData');
-const DB_ChrModel = require('../db/schema/ChrModel');
-
-const DB_CharComponentTextureSections = require('../db/schema/CharComponentTextureSections');
-const DB_ChrCustomizationChoice = require('../db/schema/ChrCustomizationChoice');
-const DB_ChrCustomizationElement = require('../db/schema/ChrCustomizationElement');
-const DB_ChrCustomizationGeoset = require('../db/schema/ChrCustomizationGeoset');
-const DB_ChrCustomizationMaterial = require('../db/schema/ChrCustomizationMaterial');
-const DB_ChrCustomizationOption = require('../db/schema/ChrCustomizationOption');
-const DB_ChrModelTextureLayer = require('../db/schema/ChrModelTextureLayer');
-
-const DB_TextureFileData = require('../db/schema/TextureFileData');
-
 // Really putting too much in RAM here, need to figure out how to reduce!
 const choiceToChrCustMaterialID = new Map();
 const chrModelIDToTextureLayoutID = new Map();
@@ -49,7 +34,7 @@ const loadTables = async () => {
 
 	const creatureGeosetMap = new Map();
 
-	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2', DB_CreatureDisplayInfoGeosetData);
+	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2');
 	await creatureDisplayInfoGeosetData.parse();
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
 	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
@@ -60,7 +45,7 @@ const loadTables = async () => {
 		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
 	}
 
-	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
+	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
 	await creatureDisplayInfo.parse();
 
 	const creatureDisplayInfoMap = new Map();
@@ -75,7 +60,7 @@ const loadTables = async () => {
 			modelIDToDisplayInfoMap.set(displayRow.ModelID, [displayID]);
 	}
 
-	const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2', DB_CreatureModelData);
+	const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
 	await creatureModelData.parse();
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
@@ -106,7 +91,7 @@ const loadTables = async () => {
 
 	log.write('Loaded textures for %d creatures', creatureDisplays.size);
 
-	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2', DB_TextureFileData);
+	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
@@ -124,13 +109,13 @@ const loadTables = async () => {
 		log.write('Loading character customization tables...');
 		chrCustomizationAvailable = true;
 
-		const chrModel = new WDCReader('DBFilesClient/ChrModel.db2', DB_ChrModel);
+		const chrModel = new WDCReader('DBFilesClient/ChrModel.db2');
 		await chrModel.parse();
 
-		const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2', DB_ChrCustomizationOption);
+		const chrCustomizationOption = new WDCReader('DBFilesClient/ChrCustomizationOption.db2');
 		await chrCustomizationOption.parse();
 
-		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2', DB_ChrCustomizationChoice);
+		const chrCustomizationChoice = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
 		await chrCustomizationChoice.parse();
 
 		for (const [chrModelID, chrModelRow] of chrModel.getAllRows()) {
@@ -169,10 +154,10 @@ const loadTables = async () => {
 				optionToChoices.set(chrCustomizationOptionID, choiceList);
 			}
 		}
-		const chrCustomizationMaterial = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2', DB_ChrCustomizationMaterial);
+		const chrCustomizationMaterial = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2');
 		await chrCustomizationMaterial.parse();
 
-		const chrCustomizationElement = new WDCReader('DBFilesClient/ChrCustomizationElement.db2', DB_ChrCustomizationElement);
+		const chrCustomizationElement = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
 		await chrCustomizationElement.parse();
 
 		for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustomizationElement.getAllRows()) {
@@ -191,7 +176,7 @@ const loadTables = async () => {
 			}
 		}
 
-		const chrCustomizationGeoset = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2', DB_ChrCustomizationGeoset);
+		const chrCustomizationGeoset = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2');
 		await chrCustomizationGeoset.parse();
 
 		for (const [chrCustomizationGeosetID, chrCustomizationGeosetRow] of chrCustomizationGeoset.getAllRows()) {
@@ -200,7 +185,7 @@ const loadTables = async () => {
 			geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 		}
 
-		const chrModelTextureLayer = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2', DB_ChrModelTextureLayer);
+		const chrModelTextureLayer = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2');
 		await chrModelTextureLayer.parse();
 
 		for (const [chrModelTextureLayerID, chrModelTextureLayerRow] of chrModelTextureLayer.getAllRows()) {
@@ -211,7 +196,7 @@ const loadTables = async () => {
 			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID[0]] = chrModelTextureLayerRow;
 		}
 
-		const charComponentTextureSections = new WDCReader('DBFilesClient/CharComponentTextureSections.db2', DB_CharComponentTextureSections);
+		const charComponentTextureSections = new WDCReader('DBFilesClient/CharComponentTextureSections.db2');
 		await charComponentTextureSections.parse();
 
 		for (const [charComponentTextureSectionsID, charComponentTextureSectionsRow] of charComponentTextureSections.getAllRows()) {
