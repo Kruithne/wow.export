@@ -47,8 +47,9 @@ class WMOExporter {
 	/**
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param {string} out
+	 * @param {ExportHelper} helper
 	 */
-	async exportAsOBJ(out) {
+	async exportAsOBJ(out, helper) {
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -73,6 +74,10 @@ class WMOExporter {
 		const materialCount = wmo.materials.length;
 		const materialMap = new Map();
 		for (let i = 0; i < materialCount; i++) {
+			// Abort if the export has been cancelled.
+			if (helper.isCancelled())
+				return;
+
 			const material = wmo.materials[i];
 
 			let fileDataID;
@@ -157,6 +162,10 @@ class WMOExporter {
 		// Iterate over the groups once to calculate the total size of our
 		// vertex/normal/uv arrays allowing for pre-allocation.
 		for (let i = 0, n = wmo.groupCount; i < n; i++) {
+			// Abort if the export has been cancelled.
+			if (helper.isCancelled())
+				return;
+
 			const group = await wmo.getGroup(i);
 
 			// Skip empty groups.
@@ -246,6 +255,10 @@ class WMOExporter {
 				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
 				for (let i = 0; i < count; i++) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
+
 					const doodad = wmo.doodads[set.firstInstanceIndex + i];
 					let fileDataID = 0;
 					let fileName;
@@ -276,7 +289,12 @@ class WMOExporter {
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
 								const m2Export = new M2Exporter(data);
-								await m2Export.exportAsOBJ(m2Path);
+								await m2Export.exportAsOBJ(m2Path, false, helper);
+
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+									
 								doodadCache.add(fileDataID);
 							}
 

@@ -87,6 +87,7 @@ const view = {
 	mapViewerSelectedMap: null, // Currently selected map.
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
+	exportCancelled: false, // Export cancellation state.
 };
 
 /**
@@ -124,8 +125,9 @@ const createProgress = (segments = 1) => {
 
 /**
  * Hide the currently active toast prompt.
+ * @param {boolean} userCancel
  */
-const hideToast = () => {
+const hideToast = (userCancel = false) => {
 	// Cancel outstanding toast expiry timer.
 	if (toastTimer > -1) {
 		clearTimeout(toastTimer);
@@ -133,6 +135,9 @@ const hideToast = () => {
 	}
 
 	view.toast = null;
+
+	if (userCancel)
+		events.emit('toast-cancelled');
 };
 
 /**

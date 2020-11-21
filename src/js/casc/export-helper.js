@@ -55,6 +55,7 @@ class ExportHelper {
 	constructor(count, unit = 'item') {
 		this.count = count;
 		this.unit = unit;
+		this.isFinished = false;
 	}
 
 	/**
@@ -77,10 +78,32 @@ class ExportHelper {
 	 */
 	start() {
 		this.succeeded = 0;
+		this.isFinished = false;
+
 		core.view.isBusy++;
+		core.view.exportCancelled = false;
 
 		log.write('Starting export of %d %s items', this.count, this.unit);
-		core.setToast('progress', util.format('Exporting %d %s, please wait...', this.count, this.unitFormatted), null, -1, false);
+		core.setToast('progress', util.format('Exporting %d %s, please wait...', this.count, this.unitFormatted), null, -1, true);
+
+		core.events.once('toast-cancelled', () => {
+			core.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
+			core.view.exportCancelled = true;
+		});
+	}
+
+	/**
+	 * Returns true if the current export is cancelled. Also calls this.finish()
+	 * as we can assume the export will now stop.
+	 * @returns {boolean}
+	 */
+	isCancelled() {
+		if (core.view.exportCancelled) {
+			this.finish();
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -88,6 +111,10 @@ class ExportHelper {
 	 * @param {boolean} includeDirLink 
 	 */
 	finish(includeDirLink = true) {
+		// Prevent duplicate calls to finish() in the event of user cancellation.
+		if (this.isFinished)
+			return;
+		
 		log.write('Finished export (%d succeeded, %d failed)', this.succeeded, this.failed);
 
 		if (this.succeeded === this.count) {
@@ -101,12 +128,17 @@ class ExportHelper {
 				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
-			core.setToast('info', util.format('Export complete, but %d %s failed to export.', this.failed, this.unitFormatted), TOAST_OPT_LOG);
+			const cancelled = core.view.exportCancelled;
+			core.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
-			core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG);
+			if (core.view.exportCancelled)	
+				core.setToast('info', 'Export was cancelled by the user.', null);
+			else
+				core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG);
 		}
 
+		this.isFinished = true;
 		core.view.isBusy--;
 	}
 

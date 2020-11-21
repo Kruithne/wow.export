@@ -263,9 +263,10 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Hide the toast bar.
+			 * @param {boolean} userCancel
 			 */
-			hideToast: function() {
-				core.hideToast();
+			hideToast: function(userCancel = false) {
+				core.hideToast(userCancel)
 			},
 
 			/**
