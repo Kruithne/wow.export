@@ -41,6 +41,10 @@ const PATTERN_LAYOUT = /^LAYOUT\s(.*)/;
  */
 const PATTERN_FIELD = /^(\$([^$]+)\$)?([^<[]+)(<(u|)(\d+)>)?(\[(\d+)\])?$/;
 
+/**
+ * Pattern to match the components of a build ID.
+ * @type {RegExp}
+ */
 const PATTERN_BUILD_ID = /(\d+).(\d+).(\d+).(\d+)/;
 
 /**
