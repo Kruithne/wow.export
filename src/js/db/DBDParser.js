@@ -41,6 +41,54 @@ const PATTERN_LAYOUT = /^LAYOUT\s(.*)/;
  */
 const PATTERN_FIELD = /^(\$([^$]+)\$)?([^<[]+)(<(u|)(\d+)>)?(\[(\d+)\])?$/;
 
+const PATTERN_BUILD_ID = /(\d+).(\d+).(\d+).(\d+)/;
+
+/**
+ * Parse a build ID into components.
+ * @param {string} buildID 
+ * @returns {object}
+ */
+const parseBuildID = (buildID) => {
+	const parts = buildID.match(PATTERN_BUILD_ID);
+	const entry = { major: 0, minor: 0, patch: 0, rev: 0 };
+
+	if (parts !== null) {
+		entry.major = parseInt(parts[1]);
+		entry.minor = parseInt(parts[2]);
+		entry.patch = parseInt(parts[3]);
+		entry.rev = parseInt(parts[4]);
+	}
+
+	return entry;
+};
+
+/**
+ * Returns true if the provided build falls within the provided range.
+ * @param {string} build 
+ * @param {string} min 
+ * @param {string} max 
+ * @returns {boolean}
+ */
+const isBuildInRange = (build, min, max) => {
+	build = parseBuildID(build);
+	min = parseBuildID(min);
+	max = parseBuildID(max);
+
+	if (build.major < min.major || build.major > max.major)
+		return false;
+
+	if (build.minor < min.minor || build.minor > max.minor)
+		return false;
+
+	if (build.patch < min.patch || build.patch > max.patch)
+		return false;
+
+	if (build.rev < min.rev || build.rev > max.rev)
+		return false;
+
+	return true;
+};
+
 class DBDField {
 	/**
 	 * Construct a new DBDField instance.
@@ -116,10 +164,9 @@ class DBDEntry {
 			return true;
 
 		// Fallback to checking build ranges.
-		for (const range of this.buildRanges) {
-			if (buildID >= range.min && buildID <= range.max)
+		for (const range of this.buildRanges)
+			if (isBuildInRange(buildID, range.min, range.max))
 				return true;
-		}
 
 		return false;
 	}
