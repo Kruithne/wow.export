@@ -13,7 +13,9 @@ const WDCReader = require('../db/WDCReader');
 const choiceToChrCustMaterialID = new Map();
 const chrModelIDToTextureLayoutID = new Map();
 const matResIDToFileDataID = new Map();
+const modelResIDToFileDataID = new Map();
 const creatureDisplays = new Map();
+const itemDisplays = new Map();
 const fdidToChrModel = new Map();
 const optionToChoices = new Map();
 const optionsByChrModel = new Map();
@@ -50,6 +52,7 @@ const loadTables = async () => {
 
 	const creatureDisplayInfoMap = new Map();
 	const modelIDToDisplayInfoMap = new Map();
+
 	// Map all available texture fileDataIDs to model IDs.
 	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
 		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
@@ -91,6 +94,17 @@ const loadTables = async () => {
 
 	log.write('Loaded textures for %d creatures', creatureDisplays.size);
 
+	log.write('Loading model mapping...');
+	const modelFileData = new WDCReader('DBFilesClient/ModelFileData.db2');
+	await modelFileData.parse();
+
+	// Using the texture mapping, map all model fileDataIDs to used textures.
+	for (const [modelFileDataID, modelFileDataRow] of modelFileData.getAllRows()) {
+		modelResIDToFileDataID.set(modelFileDataRow.ModelResourcesID, modelFileDataID);
+	}
+	log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
+
+	log.write('Loading texture mapping...');
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
 
@@ -103,6 +117,37 @@ const loadTables = async () => {
 
 		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID, textureFileDataID);
 	}
+	log.write('Loaded texture mapping for %d materials', matResIDToFileDataID.size);
+
+	log.write('Loading item textures...');
+	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
+	await itemDisplayInfo.parse();
+
+	// Using the texture mapping, map all model fileDataIDs to used textures.
+	for (const [itemDisplayInfoID, itemDisplayInfoRow] of itemDisplayInfo.getAllRows()) {
+		const modelResIDs = itemDisplayInfoRow.ModelResourcesID.filter(e => e > 0);
+		if (modelResIDs.length == 0) {
+			continue;
+		}
+
+		const matResIDs = itemDisplayInfoRow.ModelMaterialResourcesID.filter(e => e > 0);
+		if (matResIDs.length == 0) {
+			continue;
+		}
+
+		const modelFileDataID = modelResIDToFileDataID.get(modelResIDs[0]);
+		const textureFileDataID = matResIDToFileDataID.get(matResIDs[0]);
+		
+		const display = { ID: itemDisplayInfoID, textureFileDataID};
+
+		if (itemDisplays.has(modelFileDataID)) {
+			itemDisplays.get(modelFileDataID).push(display);
+		} else {
+			itemDisplays.set(modelFileDataID, [display]);
+		}
+	}
+
+	log.write('Loaded textures for %d creatures', itemDisplays.size);
 
 	// Checks if ChrModel.db2 is available -- if not we're not using Shadowlands.
 	if (core.view.config.enableCharacterCustomization && listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
@@ -218,6 +263,15 @@ const loadTables = async () => {
  */
 const getCreatureDisplaysByFileDataID = (fileDataID) => {
 	return creatureDisplays.get(fileDataID);
+};
+
+/**
+ * Gets item skins from a given file data ID.
+ * @param {number} fileDataID 
+ * @returns {string|undefined}
+ */
+const getItemDisplaysByFileDataID = (fileDataID) => {
+	return itemDisplays.get(fileDataID);
 };
 
 /**

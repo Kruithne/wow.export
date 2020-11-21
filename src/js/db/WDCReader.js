@@ -198,6 +198,8 @@ class WDCReader {
 	 * @param {object} [data] 
 	 */
 	async parse(data) {
+		log.write('Loading DB file %s from CASC', this.fileName);
+
 		if (!data)
 			data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
@@ -333,7 +335,9 @@ class WDCReader {
 			data.seek(stringBlockOfs + header.stringTableSize);
 
 			// uint32_t id_list[section_headers.id_list_size / 4];
+			console.log("Reading ID list with " + (header.idListSize / 4) + " for section " + sectionIndex);
 			const idList = data.readUInt32LE(header.idListSize / 4);
+			console.log("Done reading ID list for section " + sectionIndex);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount

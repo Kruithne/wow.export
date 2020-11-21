@@ -106,12 +106,17 @@ const previewModel = async (fileName) => {
 				}
 			} else {
 				// Not a character model, check for creature skins.
-				const displays = dbLogic.getCreatureDisplaysByFileDataID(fileDataID);
+				let displays = dbLogic.getCreatureDisplaysByFileDataID(fileDataID);
 				let isFirst = true;
 				const skinList = [];
 				let modelName = listfile.getByID(fileDataID);
 				modelName = path.basename(modelName, '.m2');
 				
+				// Check for item textures
+				if (displays === undefined) {
+					displays = dbLogic.getItemDisplaysByFileDataID(fileDataID);
+				}
+
 				if (displays !== undefined) {
 					for (const display of displays) {
 						if (display.textures.length == 0)
