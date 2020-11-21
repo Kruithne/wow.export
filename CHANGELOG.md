@@ -10,8 +10,10 @@
 0.1.20 (In Development)
 - Added expansion icons to the map exporter list.
 - Added ability to cancel exports that are in-progress.
+- Added verbose progress information for heavy export tasks (WMOs, ADTs, etc).
 - Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
 - Fixed an issue that caused the toast bar to disappear while an export was in progress.
+- Fixed an issue with exported WMO objects having .obj prefixed MTL names.
 - Using the automatic Blender add-on installer now targets all installed versions of Blender on your system.
 - Definitions for data tables are now automatically updated (update repository can be configured in settings).
 

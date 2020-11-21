@@ -436,12 +436,17 @@ class ADTExporter {
 				canvas.width = 64;
 				canvas.height = 64;
 
+				helper.setCurrentTaskName('Tile ' + this.tileID + ' alpha maps');
+				helper.setCurrentTaskMax(16 * 16);
+
 				let chunkID = 0;
 				for (let x = 0; x < 16; x++) {
 					for (let y = 0; y < 16; y++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
 							return;
+
+						helper.setCurrentTaskValue(chunkID);
 
 						const chunkIndex = (x * 16) + y;
 						const texChunk = texAdt.texChunks[chunkIndex];
@@ -526,11 +531,16 @@ class ADTExporter {
 					const heightIDs = texAdt.heightTextureFileDataIDs;
 					const texParams = texAdt.texParams;
 
+					helper.setCurrentTaskName('Tile ' + this.tileID + ', loading textures');
+					helper.setCurrentTaskMax(materialIDs.length);
+
 					const materials = new Array(materialIDs.length);
 					for (let i = 0, n = materials.length; i < n; i++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
 							return;
+
+						helper.setCurrentTaskValue(i);
 
 						const diffuseFileDataID = materialIDs[i];
 						const heightFileDataID = heightIDs[i];
@@ -621,12 +631,17 @@ class ADTExporter {
 
 					gl.uniform1f(uZoom, splitTextures ? 0.0625 : 1);
 
+					helper.setCurrentTaskName('Tile ' + this.tileID + ', baking textures');
+					helper.setCurrentTaskMax(16 * 16);
+
 					let chunkID = 0;
 					for (let x = 0; x < 16; x++) {
 						for (let y = 0; y < 16; y++) {
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())
 								return;
+
+							helper.setCurrentTaskValue(chunkID);
 
 							if (splitTextures) {
 								const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
@@ -730,7 +745,14 @@ class ADTExporter {
 
 				if (config.mapsIncludeGameObjects === true && gameObjects !== undefined && gameObjects.size > 0) {
 					log.write('Exporting %d game objects for ADT...', gameObjects.size);
+
+					helper.setCurrentTaskName('Tile ' + this.tileID + ', game objects');
+					helper.setCurrentTaskMax(gameObjects.size);
+
+					let gameObjectIndex = 0;
 					for (const model of gameObjects) {
+						helper.setCurrentTaskValue(gameObjectIndex++);
+
 						const fileDataID = model.FileDataID;
 						let fileName = listfile.getByID(fileDataID);
 
@@ -779,7 +801,13 @@ class ADTExporter {
 
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
+
+					helper.setCurrentTaskName('Tile ' + this.tileID + ', M2 objects');
+					helper.setCurrentTaskMax(objAdt.models.length);
+
+					let m2Index = 0;
 					for (const model of objAdt.models) {
+						helper.setCurrentTaskValue(m2Index++);
 						const fileDataID = model.mmidEntry;
 						let fileName = listfile.getByID(fileDataID);
 
@@ -829,8 +857,14 @@ class ADTExporter {
 				if (config.mapsIncludeWMO) {
 					log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
 
+					helper.setCurrentTaskName('Tile ' + this.tileID + ', WMO objects');
+					helper.setCurrentTaskMax(objAdt.worldModels.length);
+
+					let worldModelIndex = 0;
 					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
+						helper.setCurrentTaskValue(worldModelIndex++);
+
 						let fileDataID;
 						let fileName;
 
@@ -931,21 +965,30 @@ class ADTExporter {
 							if (!modelID || foliageExportCache.has(modelID))
 								continue;
 
-							const modelName = path.basename(listfile.getByID(modelID));
-							const data = await casc.getFile(modelID);
-
-							const exporter = new M2Exporter(data);
-							const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
-							await exporter.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
-
-							// Abort if the export has been cancelled.
-							if (helper.isCancelled())
-								return;
-
 							foliageExportCache.add(modelID);
 						}
 					}
 				}
+			}
+
+			helper.setCurrentTaskName('Tile ' + this.tileID + ', foliage doodads');
+			helper.setCurrentTaskMax(foliageExportCache.size);
+
+			// Export foliage after collecting to give an accurate progress count.
+			let foliageIndex = 0;
+			for (const modelID of foliageExportCache) {
+				helper.setCurrentTaskValue(foliageIndex++);
+				
+				const modelName = path.basename(listfile.getByID(modelID));
+				const data = await casc.getFile(modelID);
+
+				const exporter = new M2Exporter(data);
+				const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
+				await exporter.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
+
+				// Abort if the export has been cancelled.
+				if (helper.isCancelled())
+					return;
 			}
 		}
 	}
