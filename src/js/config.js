@@ -108,6 +108,9 @@ core.events.on('click-config-apply', () => {
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
 		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL });
 
+	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
+		return core.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL });
+
 	// Everything checks out, apply.
 	core.view.config = cfg;
 	core.view.showPreviousScreen();

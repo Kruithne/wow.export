@@ -4,6 +4,7 @@
 	License: MIT
  */
 const util = require('util');
+const core = require('../core');
 const constants = require('../constants');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
@@ -36,6 +37,7 @@ Vue.component('map-viewer', {
 		return {
 			hoverInfo: '',
 			hoverTile: null,
+			isHovering: false,
 		}
 	},
 
@@ -55,6 +57,10 @@ Vue.component('map-viewer', {
 		// still handle them if the user moves off the component while dragging.
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
+
+		// Listen for key press evetns to handle Select All function.
+		this.onKeyPress = event => this.handleKeyPress(event);
+		document.addEventListener('keydown', this.onKeyPress);
 
 		// Register a resize listener onto the window so we can adjust.
 		// We use an anonymous function to maintain context, and store it
@@ -81,6 +87,9 @@ Vue.component('map-viewer', {
 		// Unregister mouse listeners applied to document.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+
+		// Unregister key listener.
+		document.removeEventListener('keydown', this.onKeyPress);
 
 		// Disconnect the resize observer for the canvas.
 		this.observer.disconnect();
@@ -288,6 +297,38 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * Invoked when a key press event is fired on the document.
+		 * @param {KeyboardEvent} event 
+		 */
+		handleKeyPress: function(event) {
+			// Check if the user cursor is over the map viewer.
+			if (this.isHovering === false)
+				return;
+
+			if (event.ctrlKey === true && event.key === 'a') {
+				// Without a WDT mask, we can't reliably select everything.
+				if (!this.mask) {
+					core.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)');
+					return;
+				}
+
+				this.selection.length = 0; // Reset the selection array.
+				
+				// Iterate over all available tiles in the mask and select them.
+				for (let i = 0, n = this.mask.length; i < n; i++)
+					if (this.mask[i] === 1)
+						this.selection.push(i);
+
+				// Trigger a re-render to show the new selection.
+				this.render();
+				
+				// Absorb this event preventing further action.
+				event.preventDefault();
+				event.stopPropagation();
+			}
+		},
+
+		/**
 		 * Invoked on mousemove events captured on the document.
 		 * @param {MouseEvent} event
 		 */
@@ -420,6 +461,8 @@ Vue.component('map-viewer', {
 		 * @param {MouseEvent} event 
 		 */
 		handleMouseOver: function(event) {
+			this.isHovering = true;
+
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 			this.hoverInfo = util.format('%d %d (%d %d)', Math.floor(point.posX), Math.floor(point.posY), point.tileX, point.tileY);
 
@@ -433,6 +476,8 @@ Vue.component('map-viewer', {
 		 * @param {MouseEvent} event 
 		 */
 		handleMouseOut: function(event) {
+			this.isHovering = false;
+
 			// Remove the current hover overlay.
 			this.hoverTile = null;
 		},
@@ -469,6 +514,7 @@ Vue.component('map-viewer', {
 			<span>Navigate: Click + Drag</span>
 			<span>Select Tile: Shift + Click</span>
 			<span>Zoom: Mouse Wheel</span>
+			<span>Select All: Control + A</span>
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>

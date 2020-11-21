@@ -151,6 +151,13 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Opens the runtime application log from the application data directory.
+			 */
+			openRuntimeLog() {
+				log.openRuntimeLog();
+			},
+
+			/**
 			 * Mark all WMO groups to the given state.
 			 * @param {boolean} state 
 			 */

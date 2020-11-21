@@ -20,12 +20,17 @@ class M2Loader {
 	 */
 	constructor(data) {
 		this.data = data;
+		this.isLoaded = false;
 	}
 
 	/**
 	 * Load the M2 model.
 	 */
 	async load() {
+		// Prevent multiple loading of the same M2.
+		if (this.isLoaded === true)
+			return;
+
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();
 			const chunkSize = this.data.readUInt32LE();
@@ -40,6 +45,8 @@ class M2Loader {
 			// Ensure that we start at the next chunk exactly.
 			this.data.seek(nextChunkPos);
 		}
+
+		this.isLoaded = true;
 	}
 
 	/**

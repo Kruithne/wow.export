@@ -11,8 +11,6 @@ const log = require('../log');
 const BufferWrapper = require('../buffer');
 
 const WDCReader = require('../db/WDCReader');
-const DB_ModelFileData = require('../db/schema/ModelFileData');
-const DB_TextureFileData = require('../db/schema/TextureFileData');
 
 const nameLookup = new Map();
 const idLookup = new Map();
@@ -110,8 +108,8 @@ const loadListfile = async (buildConfig, cache) => {
 	}
 
 	let unknownCount = 0;
-	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', DB_ModelFileData, '.m2');
-	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', DB_TextureFileData, '.blp');
+	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', '.m2');
+	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', '.blp');
 
 	log.write('%d listfile entries loaded (%d unknown entries)', idLookup.size, unknownCount);
 	return idLookup.size;
@@ -120,12 +118,11 @@ const loadListfile = async (buildConfig, cache) => {
 /**
  * Load file IDs from a data table.
  * @param {string} tableFile 
- * @param {object} tableSchema 
  * @param {string} ext 
  */
-const loadIDTable = async (tableFile, tableSchema, ext) => {
+const loadIDTable = async (tableFile, ext) => {
 	let loadCount = 0;
-	const table = new WDCReader(tableFile, tableSchema);
+	const table = new WDCReader(tableFile);
 	await table.parse();
 
 	for (const row of table.rows.values()) {

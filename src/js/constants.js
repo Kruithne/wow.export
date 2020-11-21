@@ -10,7 +10,7 @@ const path = require('path');
 // Whether or not we're currently unit testing
 const isUnitTest = typeof nw === 'undefined';
 
-const INSTALL_PATH = isUnitTest ? process.cwd() : nw.App.startPath;
+const INSTALL_PATH = isUnitTest ? process.cwd() : path.dirname(process.execPath);
 const DATA_PATH = isUnitTest ? "./tests/user_data" : nw.App.dataPath;
 
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
@@ -47,7 +47,8 @@ module.exports = {
 		MAP_SIZE: 64,
 		MAP_SIZE_SQ: 4096, // MAP_SIZE ^ 2
 		MAP_COORD_BASE: 51200 / 3,
-		TILE_SIZE: (51200 / 3) / 32
+		TILE_SIZE: (51200 / 3) / 32,
+		MAP_OFFSET: 17066,
 	},
 
 	CACHE: {
@@ -58,6 +59,7 @@ module.exports = {
 		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
+		DIR_DBD: path.join(DATA_PATH, 'casc', 'dbd'), // Cache for DBD files.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.

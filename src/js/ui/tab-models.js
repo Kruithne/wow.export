@@ -21,8 +21,6 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const WDCReader = require('../db/WDCReader');
-const DB_CreatureDisplayInfo = require('../db/schema/CreatureDisplayInfo');
-const DB_CreatureModelData = require('../db/schema/CreatureModelData');
 
 const creatureTextures = new Map();
 const activeSkins = new Map();
@@ -198,10 +196,10 @@ const exportFiles = async (files, isLocal = false) => {
 						await data.writeToFile(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
-							const m2 =  new M2Loader(data);
-							await m2.load();
+							const exporter = new M2Exporter(data, selectedVariantTexID);
+							await exporter.exportTextures(exportPath, true, null);
 
-							const skins = m2.getSkinList();
+							const skins = exporter.m2.getSkinList();
 							const skinPath = path.dirname(exportPath);
 							for (const skin of skins) {
 								const skinData = await core.view.casc.getFile(skin.fileDataID);
@@ -300,7 +298,7 @@ core.registerLoadFunc(async () => {
 	try {
 		log.write('Loading creature textures...');
 
-		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2', DB_CreatureDisplayInfo);
+		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
 		await creatureDisplayInfo.parse();
 
 		const textureMap = new Map();
@@ -317,7 +315,7 @@ core.registerLoadFunc(async () => {
 			}
 		}
 
-		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2', DB_CreatureModelData);
+		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
 		await creatureModelData.parse();
 
 		// Using the texture mapping, map all model fileDataIDs to used textures.

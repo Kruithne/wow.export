@@ -211,6 +211,13 @@ def importWoWOBJ(objectFile, givenParent = None):
                 doodadparent.rotation_euler = [0, 0, 0]
                 doodadparent.rotation_euler.x = radians(-90)
                 bpy.context.scene.collection.objects.link(doodadparent)
+
+                gobjparent = bpy.data.objects.new("GameObjects", None)
+                gobjparent.parent = obj
+                gobjparent.name = "GameObjects"
+                gobjparent.rotation_euler = [0, 0, 0]
+                gobjparent.rotation_euler.x = radians(-90)
+                bpy.context.scene.collection.objects.link(gobjparent)
             else:
                 importType = 'WMO'
                 if not givenParent:
@@ -284,6 +291,23 @@ def importWoWOBJ(objectFile, givenParent = None):
                         importedFile.rotation_euler.x += radians(float(row['RotationZ']))
                         importedFile.rotation_euler.y += radians(float(row['RotationX']))
                         importedFile.rotation_euler.z = radians(90 + float(row['RotationY']))
+                        if row['ScaleFactor']:
+                            importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                    elif row['Type'] == 'gobj':
+                        if os.path.basename(row['ModelFile']) not in bpy.data.objects:
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']))
+                        else:
+                            originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
+                            importedFile = originalObject.copy()
+                            importedFile.rotation_euler = [0, 0, 0]
+                            importedFile.rotation_euler.x = radians(90)
+                            bpy.context.scene.collection.objects.link(importedFile)
+
+                        importedFile.parent = gobjparent
+                        importedFile.location = (float(row['PositionY']), -float(row['PositionX']), float(row['PositionZ']))
+                        rotQuat = Quaternion((float(row['RotationX']), float(row['RotationY']), -float(row['RotationZ']), float(row['RotationW'])))
+                        rotEul = rotQuat.to_euler()
+                        importedFile.rotation_euler = rotEul
                         if row['ScaleFactor']:
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
                     bpy.context.scene['importedModelIDs'] = tempModelIDList
