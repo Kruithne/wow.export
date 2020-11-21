@@ -309,7 +309,7 @@ Vue.component('listbox', {
 	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
-			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si">{{ sub }}</span>
+			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
 		</div>
 	</div>`
 });

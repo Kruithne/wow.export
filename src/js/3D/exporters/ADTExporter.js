@@ -210,8 +210,9 @@ class ADTExporter {
 	 * @param {string} dir Directory to export the tile into.
 	 * @param {number} textureRes
 	 * @param {Set|undefined} gameObjects Additional game objects to export.
+	 * @param {ExportHelper} helper
 	 */
-	async export(dir, quality, gameObjects) {
+	async export(dir, quality, gameObjects, helper) {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
@@ -415,6 +416,10 @@ class ADTExporter {
 				// Export the raw diffuse textures to disk.
 				const materials = new Array(materialIDs.length);
 				for (let i = 0, n = materials.length; i < n; i++) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
+
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
 					await blp.saveToPNG(path.join(dir, diffuseFileDataID + '.png'), false);
@@ -434,6 +439,10 @@ class ADTExporter {
 				let chunkID = 0;
 				for (let x = 0; x < 16; x++) {
 					for (let y = 0; y < 16; y++) {
+						// Abort if the export has been cancelled.
+						if (helper.isCancelled())
+							return;
+
 						const chunkIndex = (x * 16) + y;
 						const texChunk = texAdt.texChunks[chunkIndex];
 
@@ -519,6 +528,10 @@ class ADTExporter {
 
 					const materials = new Array(materialIDs.length);
 					for (let i = 0, n = materials.length; i < n; i++) {
+						// Abort if the export has been cancelled.
+						if (helper.isCancelled())
+							return;
+
 						const diffuseFileDataID = materialIDs[i];
 						const heightFileDataID = heightIDs[i];
 
@@ -611,6 +624,10 @@ class ADTExporter {
 					let chunkID = 0;
 					for (let x = 0; x < 16; x++) {
 						for (let y = 0; y < 16; y++) {
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
+
 							if (splitTextures) {
 								const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
 								const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
@@ -731,7 +748,12 @@ class ADTExporter {
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
 								const m2 = new M2Exporter(await casc.getFile(fileDataID));
-								await m2.exportAsOBJ(modelPath);
+								await m2.exportAsOBJ(modelPath, false, helper);
+
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+
 								objectCache.add(fileDataID);
 							}
 							
@@ -762,7 +784,6 @@ class ADTExporter {
 						let fileName = listfile.getByID(fileDataID);
 
 						try {	
-
 							if (fileName !== undefined) {
 								// Replace M2 extension with OBJ.
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
@@ -776,7 +797,12 @@ class ADTExporter {
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
 								const m2 = new M2Exporter(await casc.getFile(fileDataID));
-								await m2.exportAsOBJ(modelPath);
+								await m2.exportAsOBJ(modelPath, false, helper);
+
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+
 								objectCache.add(fileDataID);
 							}
 
@@ -835,7 +861,12 @@ class ADTExporter {
 								if (config.mapsIncludeWMOSets)
 									wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
 
-								await wmo.exportAsOBJ(modelPath);
+								await wmo.exportAsOBJ(modelPath, helper);
+
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+
 								objectCache.add(cacheID);
 							}
 
@@ -905,7 +936,11 @@ class ADTExporter {
 
 							const exporter = new M2Exporter(data);
 							const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
-							await exporter.exportAsOBJ(path.join(foliageDir, modelPath));
+							await exporter.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
 
 							foliageExportCache.add(modelID);
 						}
