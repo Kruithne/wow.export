@@ -56,6 +56,10 @@ class ExportHelper {
 		this.count = count;
 		this.unit = unit;
 		this.isFinished = false;
+
+		this.currentTaskName = null;
+		this.currentTaskMax = -1;
+		this.currentTaskValue = -1;
 	}
 
 	/**
@@ -84,7 +88,7 @@ class ExportHelper {
 		core.view.exportCancelled = false;
 
 		log.write('Starting export of %d %s items', this.count, this.unit);
-		core.setToast('progress', util.format('Exporting %d %s, please wait...', this.count, this.unitFormatted), null, -1, true);
+		this.updateCurrentTask();
 
 		core.events.once('toast-cancelled', () => {
 			core.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
@@ -143,6 +147,60 @@ class ExportHelper {
 	}
 
 	/**
+	 * Set the current task name.
+	 * @param {string} name 
+	 */
+	setCurrentTaskName(name) {
+		this.currentTaskName = name;
+		this.updateCurrentTask();
+	}
+
+	/**
+	 * Set the maximum value of the current task.
+	 * @param {number} max 
+	 */
+	setCurrentTaskMax(max) {
+		this.currentTaskMax = max;
+		this.updateCurrentTask();
+	}
+
+	/**
+	 * Set the value of the current task.
+	 * @param {number} value 
+	 */
+	setCurrentTaskValue(value) {
+		this.currentTaskValue = value;
+		this.updateCurrentTask();
+	}
+
+	/**
+	 * Clear the current progression task.
+	 */
+	clearCurrentTask() {
+		this.currentTaskName = null;
+		this.currentTaskMax = -1;
+		this.currentTaskValue = -1;
+		this.updateCurrentTask();
+	}
+
+	/**
+	 * Update the current task progression.
+	 */
+	updateCurrentTask() {
+		let exportProgress = util.format('Exporting %d / %d %s', this.succeeded, this.count, this.unitFormatted);
+
+		if (this.currentTaskName !== null) {
+			exportProgress += ' (Current task: ' + this.currentTaskName;
+			if (this.currentTaskValue > -1 && this.currentTaskMax > -1)
+				exportProgress += util.format(', %d / %d', this.currentTaskValue, this.currentTaskMax);
+
+			exportProgress += ')';
+		}
+
+		core.setToast('progress', exportProgress, null, -1, true);
+	}
+
+	/**
 	 * Mark exportation of an item.
 	 * @param {string} item
 	 * @param {boolean} state
@@ -156,6 +214,8 @@ class ExportHelper {
 		} else {
 			log.write('Failed to export %s (%s)', item, error);
 		}
+
+		this.updateCurrentTask();
 	}
 }
 
