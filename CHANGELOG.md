@@ -7,6 +7,21 @@
 - Fix issue with M2 texture reading.
 - Update three.js.
 
+0.1.20 (In Development)
+- Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
+- Fixed an issue that caused the toast bar to disappear while an export was in progress.
+- Using the automatic Blender add-on installer now targets all installed versions of Blender on your system.
+- Definitions for data tables are now automatically updated (update repository can be configured in settings).
+
+0.1.19 (19-11-2020)
+- Added 'Strip Whitespace From Export Paths' option to settings (enabled by default).
+- Added the FileDataID field to ModelPlacementInformation CSV files.
+
+0.1.18 (10-11-2020)
+- Added 'Texture Alpha' option to model exporter, allowing binary control of texture transparency on models.
+- Added geoset labels for new Shadowlands customization.
+- Fixed issue that prevented wow.export from failing on corrupt game installations.
+
 0.1.17 (25-10-2020)
 - Added ability to export M2 meta data as .json (disabled by default).
 
@@ -25,11 +40,11 @@
 0.1.13 (30-07-2020)
 - Added information tooltips to export control checkboxes.
 - Added a 'View Log' button to the top-right navigation for quick access of the application log.
-- Fixed issue that prevented mouse wheel navitation on listboxes from being accurate.
+- Fixed issue that prevented mouse wheel navigation on listboxes from being accurate.
 
 0.1.12 (23-07-2020)
 - Fixed issue that prevented Blender add-on from working on non-English Blender clients.
-- Fixed issue that caused exported PNG files to be premultiplicated (black splotches).
+- Fixed issue that caused exported PNG files to be premultipled (black splotches).
 - Added option to export game objects with map tiles (WIP, slightly broken).
 
 0.1.11 (21-07-2020)

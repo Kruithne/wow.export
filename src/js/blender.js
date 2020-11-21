@@ -133,31 +133,37 @@ module.exports = {
 
 		try {
 			const versions = await getBlenderInstallations();
+			let installed = false;
 
-			let selectedVersion = versions.sort().pop();
-			if (selectedVersion !== undefined && selectedVersion >= constants.BLENDER.MIN_VER) {
-				const addonPath = path.join(constants.BLENDER.DIR, selectedVersion, constants.BLENDER.ADDON_DIR);
-				log.write('Targeting Blender version %s (%s)', selectedVersion, addonPath);
+			for (const version of versions) {
+				if (version >= constants.BLENDER.MIN_VER) {
+					const addonPath = path.join(constants.BLENDER.DIR, version, constants.BLENDER.ADDON_DIR);
+					log.write('Targeting Blender version %s (%s)', version, addonPath);
 
-				// Delete and re-create our add-on to ensure no cache.
-				await generics.deleteDirectory(addonPath);
-				await generics.createDirectory(addonPath);
+					// Delete and re-create our add-on to ensure no cache.
+					await generics.deleteDirectory(addonPath);
+					await generics.createDirectory(addonPath);
 
-				// Clone our new files over.
-				const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
-				for (const file of files) {
-					// We don't expect any directories in our add-on.
-					// Adjust this to be recursive if we ever need to.
-					if (file.isDirectory())
-						continue;
+					// Clone our new files over.
+					const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
+					for (const file of files) {
+						// We don't expect any directories in our add-on.
+						// Adjust this to be recursive if we ever need to.
+						if (file.isDirectory())
+							continue;
 
-					const srcPath = path.join(constants.BLENDER.LOCAL_DIR, file.name);
-					let destPath = path.join(addonPath, file.name);
+						const srcPath = path.join(constants.BLENDER.LOCAL_DIR, file.name);
+						let destPath = path.join(addonPath, file.name);
 
-					log.write('%s -> %s', srcPath, destPath);
-					await fsp.copyFile(srcPath, destPath);
+						log.write('%s -> %s', srcPath, destPath);
+						await fsp.copyFile(srcPath, destPath);
+					}
+
+					installed = true;
 				}
+			}
 
+			if (installed) {
 				core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
 			} else {
 				log.write('No valid Blender installation found, add-on install failed.');

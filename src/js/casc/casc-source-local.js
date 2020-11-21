@@ -56,7 +56,7 @@ class CASCLocal extends CASC {
 	 * @param {boolean} suppressLog
 	 * @param {boolean} supportFallback
 	 */
-	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = false) {
+	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 			

@@ -147,8 +147,7 @@ const setToast = (toastType, message, options = null, ttl = 10000, closable = tr
 	view.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.
-	if (toastTimer > -1)
-		clearTimeout(toastTimer);
+	clearTimeout(toastTimer);
 
 	// Create a timer to remove this toast.
 	if (ttl > -1)

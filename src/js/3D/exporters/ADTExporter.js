@@ -22,8 +22,6 @@ const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 
 const WDCReader = require('../../db/WDCReader');
-const DB_GroundEffectTexture = require('../../db/schema/GroundEffectTexture');
-const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
 
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
@@ -39,6 +37,7 @@ const UNIT_SIZE_HALF = UNIT_SIZE / 2;
 const wdtCache = new Map();
 
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.shader');
+const FRAG_SHADER_OLD_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.old.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.vertex.shader');
 
 let isFoliageAvailable = false;
@@ -75,8 +74,8 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
-			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2',);
+			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2');
 
 			await dbDoodads.parse();
 			await dbTextures.parse();
@@ -153,12 +152,12 @@ const saveCanvas = async (out) => {
  * Compile the vertex and fragment shaders used for baking.
  * Will be attached to the current GL context.
  */
-const compileShaders = async () => {
+const compileShaders = async (useOld = false) => {
 	glShaderProg = gl.createProgram();
 
 	// Compile fragment shader.
 	const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-	gl.shaderSource(fragShader, await fsp.readFile(FRAG_SHADER_SRC, 'utf8'));
+	gl.shaderSource(fragShader, await fsp.readFile(useOld ? FRAG_SHADER_OLD_SRC : FRAG_SHADER_SRC, 'utf8'));
 	gl.compileShader(fragShader);
 
 	if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
@@ -501,14 +500,16 @@ class ADTExporter {
 					log.write('Skipping ADT bake of %s (file exists, overwrite disabled)', tileOutPath);
 				}
 			} else {
+				const hasHeightTexturing = (wdt.flags & 0x80) === 0x80;
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
+
 				if (splitTextures || config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
 					// Create new GL context and compile shaders.
 					if (!gl) {
 						glCanvas = document.createElement('canvas');
 						gl = glCanvas.getContext('webgl');
 
-						await compileShaders();
+						await compileShaders(!hasHeightTexturing);
 					}
 
 					// Materials
@@ -548,14 +549,22 @@ class ADTExporter {
 					for (let i = 0; i < 4; i++) {
 						uLayers[i] = gl.getUniformLocation(glShaderProg, 'pt_layer' + i);
 						uScales[i] = gl.getUniformLocation(glShaderProg, 'layerScale' + i);
-						uHeights[i] = gl.getUniformLocation(glShaderProg, 'pt_height' + i);
+
+						if (hasHeightTexturing)
+							uHeights[i] = gl.getUniformLocation(glShaderProg, 'pt_height' + i);
 
 						if (i > 0)
 							uBlends[i] = gl.getUniformLocation(glShaderProg, 'pt_blend' + i);
 					}
 
-					const uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
-					const uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
+					let uHeightScale;
+					let uHeightOffset;
+
+					if (hasHeightTexturing) {
+						uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
+						uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
+					}
+
 					const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
 					const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
 					const uZoom = gl.getUniformLocation(glShaderProg, 'uZoom');
@@ -643,7 +652,7 @@ class ADTExporter {
 								gl.uniform1i(uLayers[i], i);
 								gl.uniform1f(uScales[i], mat.scale);
 
-								if (mat.heightTex) {
+								if (hasHeightTexturing && mat.heightTex) {
 									gl.activeTexture(gl.TEXTURE7 + i);
 									gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
 
@@ -653,8 +662,10 @@ class ADTExporter {
 								}
 							}
 
-							gl.uniform4f(uHeightScale, ...heightScales);
-							gl.uniform4f(uHeightOffset, ...heightOffsets);
+							if (hasHeightTexturing) {
+								gl.uniform4f(uHeightScale, ...heightScales);
+								gl.uniform4f(uHeightOffset, ...heightOffsets);
+							}
 
 							const indexBuffer = gl.createBuffer();
 							gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -698,7 +709,7 @@ class ADTExporter {
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
 			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
-				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type');
+				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID');
 
 				if (config.mapsIncludeGameObjects === true && gameObjects !== undefined && gameObjects.size > 0) {
 					log.write('Exporting %d game objects for ADT...', gameObjects.size);
@@ -735,7 +746,8 @@ class ADTExporter {
 								RotationW: model.Rotation[3],
 								ScaleFactor: 1,
 								ModelId: 0,
-								Type: 'gobj'
+								Type: 'gobj',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
@@ -746,7 +758,7 @@ class ADTExporter {
 				if (config.mapsIncludeM2) {
 					log.write('Exporting %d doodads for ADT...', objAdt.models.length);
 					for (const model of objAdt.models) {
-						const fileDataID = model.mmidEntry;		
+						const fileDataID = model.mmidEntry;
 						let fileName = listfile.getByID(fileDataID);
 
 						try {	
@@ -779,7 +791,8 @@ class ADTExporter {
 								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
-								Type: 'm2'
+								Type: 'm2',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);

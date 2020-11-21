@@ -11,9 +11,6 @@ const listfile = require('../casc/listfile');
 const constants = require('../constants');
 
 const WDCReader = require('../db/WDCReader');
-const DB_Map = require('../db/schema/Map');
-const DB_GameObjects = require('../db/schema/GameObjects');
-const DB_GameObjectDisplayInfo = require('../db/schema/GameObjectDisplayInfo');
 
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
@@ -116,10 +113,10 @@ const loadMapTile = async (x, y, size) => {
 const collectGameObjects = async (mapID, filter) => {
 	// Load GameObjects.db2/GameObjectDisplayInfo.db2 on-demand.
 	if (gameObjectsDB2 === null) {
-		const objTable = new WDCReader('DBFilesClient/GameObjects.db2', DB_GameObjects);
+		const objTable = new WDCReader('DBFilesClient/GameObjects.db2');
 		await objTable.parse();
 
-		const idTable = new WDCReader('DBFilesClient/GameObjectDisplayInfo.db2', DB_GameObjectDisplayInfo);
+		const idTable = new WDCReader('DBFilesClient/GameObjectDisplayInfo.db2');
 		await idTable.parse();
 
 		// Index all of the rows by the map ID.
@@ -227,7 +224,7 @@ const exportSelectedMap = async () => {
 			const endY = startY + TILE_SIZE;
 
 			gameObjects = await collectGameObjects(selectedMapID, obj => {
-				const [posX, posY] = obj.Position;
+				const [posX, posY] = obj.Pos;
 				return posX > startX && posX < endX && posY > startY && posY < endY;
 			});
 		}
@@ -263,14 +260,14 @@ core.events.once('screen-tab-maps', async () => {
 	core.view.isBusy++;
 	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
-	const table = new WDCReader('DBFilesClient/Map.db2', DB_Map);
+	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();
 
 	const maps = [];
 	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 		if (listfile.getByFilename(wdtPath))
-			maps.push(util.format('[%d]\x19%s\x19(%s)', id, entry.MapName, entry.Directory));
+			maps.push(util.format('[%d]\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 
 	core.view.mapViewerMaps = maps;

@@ -46,6 +46,8 @@ class M2Exporter {
 		const config = core.view.config;
 		await this.m2.load();
 
+		const useAlpha = config.modelsIncludeAlpha;
+
 		const validTextures = {};
 		for (const texture of this.m2.textures) {
 			let texFileDataID = texture.fileDataID;
@@ -96,7 +98,7 @@ class M2Exporter {
 						} else {
 							// Convert BLP to PNG.
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, true);
+							await blp.saveToPNG(texPath, useAlpha);
 						}
 					} else {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);

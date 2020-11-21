@@ -66,6 +66,8 @@ class WMOExporter {
 		const wmo = this.wmo;
 		await wmo.load();
 
+		const useAlpha = config.modelsIncludeAlpha;
+
 		// Textures
 		const isClassic = !!wmo.textureNames;
 		const materialCount = wmo.materials.length;
@@ -81,7 +83,8 @@ class WMOExporter {
 				fileDataID = listfile.getByFilename(fileName) || 0;
 
 				// Remove all whitespace from exported textures due to MTL incompatibility.
-				fileName = fileName.replace(/\s/g, '');
+				if (config.removePathSpaces)
+					fileName = fileName.replace(/\s/g, '');
 			} else {
 				// Retail, use fileDataID directly.
 				fileDataID = material.texture1;
@@ -122,7 +125,7 @@ class WMOExporter {
 						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToPNG(texPath, material.blendMode !== 0);
+						await blp.saveToPNG(texPath, useAlpha); // material.blendMode !== 0
 					} else {
 						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}
@@ -229,7 +232,7 @@ class WMOExporter {
 			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
 			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
-			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet');
+			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
 
 			// Doodad sets.
 			const doodadSets = wmo.doodadSets;
@@ -291,7 +294,8 @@ class WMOExporter {
 								RotationY: doodad.rotation[1],
 								RotationZ: doodad.rotation[2],
 								ScaleFactor: doodad.scale,
-								DoodadSet: set.name
+								DoodadSet: set.name,
+								FileDataID: fileDataID,
 							});
 						} catch (e) {
 							log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);

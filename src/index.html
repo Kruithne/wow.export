@@ -49,7 +49,7 @@
 				</div>
 				<div id="blender-info" v-if="screen === 'blender'">
 					<div id="blender-info-header">
-						<h1>Installing the wow.export Add-on for Blender 2.8</h1>
+						<h1>Installing the wow.export Add-on for Blender 2.8+</h1>
 						<p>Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.</p>
 					</div>
 					<div id="blender-info-buttons">
@@ -78,6 +78,15 @@
 						<p>If enabled, will enable work-in-progress support for Shadowlands character customization.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableCharacterCustomization" />
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Strip Whitespace From Export Paths</h1>
+						<p>If enabled, whitespace will be removed from exported paths.</p>
+						<p>Enable this option if your 3D software does not support whitespace in paths.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.removePathSpaces"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -184,6 +193,11 @@
 						<h1>Listfile Update Frequency</h1>
 						<p>How often (in days) the listfile is updated. Set to zero to always re-download the listfile.</p>
 						<input type="number" v-model.number="configEdit.listfileCacheRefresh"/>
+					</div>
+					<div>
+						<h1>Data Table Definition Repository</h1>
+						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
+						<input type="text" v-model.trim="configEdit.dbdURL"/>
 					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
@@ -295,8 +309,12 @@
 								<input type="checkbox" v-model="modelViewerAutoAdjust"/>
 								<span>Auto Camera</span>
 							</label>
+							<span class="header">Export</span>
+							<label class="ui-checkbox" title="Include alpha channel in exported model textures">
+								<input type="checkbox" v-model="config.modelsIncludeAlpha"/>
+								<span>Texture Alpha</span>
+							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
-								<span class="header">Export</span>
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
 									<span>Export .skin files</span>
