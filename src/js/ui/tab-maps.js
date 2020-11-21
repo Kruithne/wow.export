@@ -224,7 +224,7 @@ const exportSelectedMap = async () => {
 			const endY = startY + TILE_SIZE;
 
 			gameObjects = await collectGameObjects(selectedMapID, obj => {
-				const [posX, posY] = obj.Position;
+				const [posX, posY] = obj.Pos;
 				return posX > startX && posX < endX && posY > startY && posY < endY;
 			});
 		}

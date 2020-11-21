@@ -305,7 +305,7 @@ core.registerLoadFunc(async () => {
 
 		// Map all available texture fileDataIDs to model IDs.
 		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-			const textures = displayRow.TextureVariationFieldDataID.filter(e => e > 0);
+			const textures = displayRow.TextureVariationFileDataID.filter(e => e > 0);
 
 			if (textures.length > 0) {
 				if (textureMap.has(displayRow.ModelID))
