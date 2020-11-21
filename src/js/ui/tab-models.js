@@ -305,11 +305,13 @@ core.registerLoadFunc(async () => {
 
 		// Map all available texture fileDataIDs to model IDs.
 		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-			if (displayRow.TextureVariationFileDataID > 0) {
-				if (!textureMap.has(displayRow.ModelID))
-					textureMap.set(displayRow.ModelID, new Set());
+			const textures = displayRow.TextureVariationFileDataID.filter(e => e > 0);
 
-				textureMap.get(displayRow.ModelID).add(displayRow.TextureVariationFileDataID);
+			if (textures.length > 0) {
+				if (textureMap.has(displayRow.ModelID))
+					textureMap.get(displayRow.ModelID).push(...textures);
+				else
+					textureMap.set(displayRow.ModelID, textures);
 			}
 		}
 
