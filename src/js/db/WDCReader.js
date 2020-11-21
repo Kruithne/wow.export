@@ -139,8 +139,6 @@ class WDCReader {
 		const dbdName = tableName + '.dbd';
 
 		let structure = null;
-		let parser = null;
-
 		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
 
 		// First check if a valid DBD exists in cache and contains a definition for this build.
