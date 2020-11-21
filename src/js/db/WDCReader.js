@@ -133,7 +133,7 @@ class WDCReader {
 	 */
 	async loadSchema(layoutHash) {
 		const casc = core.view.casc;
-		const buildID = casc.build.Version;
+		const buildID = casc.getBuildName();
 
 		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
 		const dbdName = tableName + '.dbd';
