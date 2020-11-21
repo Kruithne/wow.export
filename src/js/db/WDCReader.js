@@ -9,6 +9,7 @@ const assert = require('assert').strict;
 const log = require('../log');
 const core = require('../core');
 const generics = require('../generics');
+const constants = require('../constants');
 
 const ExportHelper = require('../casc/export-helper');
 const DBDParser = require('./DBDParser');
