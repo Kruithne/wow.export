@@ -11,7 +11,6 @@ const listfile = require('../casc/listfile');
 const constants = require('../constants');
 
 const WDCReader = require('../db/WDCReader');
-
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
@@ -267,7 +266,7 @@ core.events.once('screen-tab-maps', async () => {
 	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 		if (listfile.getByFilename(wdtPath))
-			maps.push(util.format('[%d]\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 
 	core.view.mapViewerMaps = maps;
