@@ -179,7 +179,7 @@ class WDCReader {
 	buildSchemaFromDBDStructure(structure) {
 		for (const field of structure.fields) {
 			// Skip ID, non-inlined and relation fields.
-			if (field.isID || !field.isInline || field.isRelation)
+			if (!field.isInline || field.isRelation)
 				continue;
 
 			const fieldType = convertDBDToSchemaType(field);
@@ -188,6 +188,8 @@ class WDCReader {
 			else
 				this.schema.set(field.name, fieldType);
 		}
+
+		console.log(this.schema);
 	}
 
 	/**
