@@ -133,7 +133,7 @@ class ExportHelper {
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			const cancelled = core.view.exportCancelled;
-			core.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), TOAST_OPT_LOG);
+			core.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
 			if (core.view.exportCancelled)	
