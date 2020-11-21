@@ -1,12 +1,12 @@
 module.exports = {
-	String: 0x1,
-	Int8: 0x2,
-	UInt8: 0x3,
-	Int16: 0x4,
-	UInt16: 0x5,
-	Int32: 0x6,
-	UInt32: 0x7,
-	Int64: 0x8,
-	UInt64: 0x9,
-	Float: 0x10
+	String: Symbol('dbFieldString'),
+	Int8: Symbol('dbFieldInt8'),
+	UInt8: Symbol('dbFieldUInt8'),
+	Int16: Symbol('dbFieldInt16'),
+	UInt16: Symbol('dbFieldUInt16'),
+	Int32: Symbol('dbFieldInt32'),
+	UInt32: Symbol('dbFieldUInt32'),
+	Int64: Symbol('dbFieldInt64'),
+	UInt64: Symbol('dbFieldUInt64'),
+	Float: Symbol('dbFieldFloat')
 };

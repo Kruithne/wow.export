@@ -22,8 +22,6 @@ const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 
 const WDCReader = require('../../db/WDCReader');
-const DB_GroundEffectTexture = require('../../db/schema/GroundEffectTexture');
-const DB_GroundEffectDoodad = require('../../db/schema/GroundEffectDoodad');
 
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
@@ -76,8 +74,8 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2', DB_GroundEffectDoodad);
-			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2', DB_GroundEffectTexture);
+			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2',);
+			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2');
 
 			await dbDoodads.parse();
 			await dbTextures.parse();

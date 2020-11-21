@@ -3,9 +3,15 @@
 	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
+const util = require('util');
+const path = require('path');
 const assert = require('assert').strict;
 const log = require('../log');
 const core = require('../core');
+const generics = require('../generics');
+
+const ExportHelper = require('../casc/export-helper');
+const DBDParser = require('./DBDParser');
 
 const FieldType = require('./FieldType');
 const CompressionType = require('./CompressionType');
@@ -17,6 +23,32 @@ const TABLE_FORMATS = {
 };
 
 /**
+ * Returns the schema type symbol for a DBD field.
+ * @param {DBDField} entry 
+ * @returns {symbol}
+ */
+const convertDBDToSchemaType = (entry) => {
+	// TODO: Handle string separate to locstring in the event we need it.
+	if (entry.type === 'string' || entry.type === 'locstring')
+		return FieldType.String;
+
+	if (entry.type === 'float')
+		return FieldType.Float;
+
+	if (entry.type === 'int') {
+		switch (entry.size) {
+			case 8: return entry.isSigned ? FieldType.Int8 : FieldType.UInt8;
+			case 16: return entry.isSigned ? FieldType.Int16 : FieldType.UInt16;
+			case 32: return entry.isSigned ? FieldType.Int32 : FieldType.UInt32;
+			case 64: return entry.isSigned ? FieldType.Int64 : FieldType.UInt64;
+			default: throw new Error('Unsupported DBD integer size ' + entry.size);
+		}
+	}
+
+	throw new Error('Unrecognized DBD type ' + entry.type);
+};
+
+/**
  * Defines unified logic between WDC2 and WDC3.
  * @class WDC
  */
@@ -24,14 +56,14 @@ class WDCReader {
 	/**
 	 * Construct a new WDCReader instance.
 	 * @param {string} fileName
-	 * @param {object} schema 
 	 */
-	constructor(fileName, schema) {
+	constructor(fileName) {
 		this.fileName = fileName;
-		this.schema = schema;
 
 		this.rows = new Map();
 		this.copyTable = new Map();
+
+		this.schema = {};
 
 		this.isInflated = false;
 		this.isLoaded = false;
@@ -96,6 +128,69 @@ class WDCReader {
 	}
 
 	/**
+	 * Load the schema for this table.
+	 */
+	async loadSchema(layoutHash) {
+		const casc = core.view.casc;
+		const buildID = casc.build.Version;
+
+		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
+		const dbdName = tableName + '.dbd';
+
+		let structure = null;
+		let parser = null;
+
+		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
+
+		// First check if a valid DBD exists in cache and contains a definition for this build.
+		let rawDbd = await casc.cache.getFile(dbdName, constants.CACHE.DIR_DBD);
+		if (rawDbd !== null)
+			structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
+
+		// No cached definition, download updated DBD and check again.
+		if (structure === null) {
+			try {
+				const dbdUrl = util.format(core.view.config.dbdURL, tableName);
+				log.write('No cached DBD, downloading new from %s', dbdUrl);
+
+				rawDbd = await generics.downloadFile(dbdUrl);
+
+				// Persist the newly download DBD to disk for future loads.
+				await casc.cache.storeFile(dbdName, rawDbd, constants.CACHE.DIR_DBD);
+
+				// Parse the updated DBD and check for definition.
+				structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
+			} catch (e) {
+				log.write(e);
+				throw new Error('Unable to download DBD for ' + tableName);
+			}
+		}
+
+		if (structure === null)
+			throw new Error('No table definition available for ' + tableName);
+
+		this.buildSchemaFromDBDStructure(structure);
+	}
+
+	/**
+	 * Builds a schema for this data table using the provided DBD structure.
+	 * @param {DBDEntry} structure 
+	 */
+	buildSchemaFromDBDStructure(structure) {
+		for (const field of structure.fields) {
+			// Skip ID, non-inlined and relation fields.
+			if (field.isID || !field.isInline || field.isRelation)
+				continue;
+
+			const fieldType = convertDBDToSchemaType(field);
+			if (field.arrayLength > -1)
+				this.schema[field.name] = [fieldType, field.arrayLength];
+			else
+				this.schema[field.name] = fieldType;
+		}
+	}
+
+	/**
 	 * Parse the data table.
 	 * @param {object} [data] 
 	 */
@@ -132,6 +227,9 @@ class WDCReader {
 		const commonDataSize = data.readUInt32LE();
 		const palletDataSize = data.readUInt32LE();
 		const sectionCount = data.readUInt32LE();
+
+		// Load the DBD and parse a schema from it.
+		await this.loadSchema(layoutHash);
 
 		// wdc_section_header section_headers[section_count]
 		const sectionHeaders = new Array(sectionCount);

@@ -186,6 +186,11 @@
 						<p>How often (in days) the listfile is updated. Set to zero to always re-download the listfile.</p>
 						<input type="number" v-model.number="configEdit.listfileCacheRefresh"/>
 					</div>
+					<div>
+						<h1>Data Table Definition Repository</h1>
+						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
+						<input type="text" v-model.trim="configEdit.dbdURL"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}

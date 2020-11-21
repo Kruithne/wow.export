@@ -59,6 +59,7 @@ module.exports = {
 		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
+		DIR_DBD: path.join(DATA_PATH, 'casc', 'dbd'), // Cache for DBD files.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.

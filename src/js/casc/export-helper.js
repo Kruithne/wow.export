@@ -43,7 +43,7 @@ class ExportHelper {
 	 * @param {string} file 
 	 * @param {string} ext 
 	 */
-	static replaceExtension(file, ext) {
+	static replaceExtension(file, ext = '') {
 		return path.join(path.dirname(file), path.basename(file, path.extname(file)) + ext);
 	}
 
