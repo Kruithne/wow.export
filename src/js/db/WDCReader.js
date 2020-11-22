@@ -9,6 +9,7 @@ const assert = require('assert').strict;
 const log = require('../log');
 const core = require('../core');
 const generics = require('../generics');
+const constants = require('../constants');
 
 const ExportHelper = require('../casc/export-helper');
 const DBDParser = require('./DBDParser');
@@ -133,14 +134,12 @@ class WDCReader {
 	 */
 	async loadSchema(layoutHash) {
 		const casc = core.view.casc;
-		const buildID = casc.build.Version;
+		const buildID = casc.getBuildName();
 
 		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
 		const dbdName = tableName + '.dbd';
 
 		let structure = null;
-		let parser = null;
-
 		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
 
 		// First check if a valid DBD exists in cache and contains a definition for this build.
