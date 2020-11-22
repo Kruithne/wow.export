@@ -100,7 +100,11 @@ const loadTables = async () => {
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [modelFileDataID, modelFileDataRow] of modelFileData.getAllRows()) {
-		modelResIDToFileDataID.set(modelFileDataRow.ModelResourcesID, modelFileDataID);
+		if (modelResIDToFileDataID.has(modelFileDataRow.ModelResourcesID)){
+			modelResIDToFileDataID.get(modelFileDataRow.ModelResourcesID).push(modelFileDataID);
+		} else {
+			modelResIDToFileDataID.set(modelFileDataRow.ModelResourcesID, [modelFileDataID]);
+		}
 	}
 	log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
 
@@ -135,19 +139,23 @@ const loadTables = async () => {
 			continue;
 		}
 
-		const modelFileDataID = modelResIDToFileDataID.get(modelResIDs[0]);
+		const modelFileDataIDs = modelResIDToFileDataID.get(modelResIDs[0]);
 		const textureFileDataID = matResIDToFileDataID.get(matResIDs[0]);
-		
-		const display = { ID: itemDisplayInfoID, textureFileDataID};
 
-		if (itemDisplays.has(modelFileDataID)) {
-			itemDisplays.get(modelFileDataID).push(display);
-		} else {
-			itemDisplays.set(modelFileDataID, [display]);
+		if (modelFileDataIDs !== undefined && textureFileDataID !== undefined){
+			for (const modelFileDataID of modelFileDataIDs){
+				const display = { ID: itemDisplayInfoID, textures: [textureFileDataID]};
+
+				if (itemDisplays.has(modelFileDataID)) {
+					itemDisplays.get(modelFileDataID).push(display);
+				} else {
+					itemDisplays.set(modelFileDataID, [display]);
+				}
+			}
 		}
 	}
 
-	log.write('Loaded textures for %d creatures', itemDisplays.size);
+	log.write('Loaded textures for %d items', itemDisplays.size);
 
 	// Checks if ChrModel.db2 is available -- if not we're not using Shadowlands.
 	if (core.view.config.enableCharacterCustomization && listfile.getByFilename('DBFilesClient/ChrModel.db2')) {
@@ -465,6 +473,7 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 module.exports = { 
 	loadTables, 
 	getCreatureDisplaysByFileDataID, 
+	getItemDisplaysByFileDataID,
 	isFileDataIDCharacterModel, 
 	getChrModelIDByFileDataID, 
 	isCharacterCustomizationAvailable,
