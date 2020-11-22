@@ -274,7 +274,7 @@ const parseModule = async (mod) => {
 		isRoot: false
 	};
 
-	const ast = acorn.parse(out.data);
+	const ast = acorn.parse(out.data, { ecmaVersion: 'latest' });
 	for (const node of ast.body) {
 		// Locate modules imported using require() as variables or expressions.
 		let importMatch = matchAST(node, AST_REQUIRE_VAR_STRUCT);
@@ -597,7 +597,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			}
 
 			const merged = moduleTree.map(e => e.data).join('\n');
-			const minified = terser.minify(merged, config.terserConfig);
+			const minified = await terser.minify(merged, config.terserConfig);
 
 			if (minified.error)
 				throw minified.error;

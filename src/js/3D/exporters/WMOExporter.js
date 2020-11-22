@@ -59,7 +59,7 @@ class WMOExporter {
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
 
-		const wmoName = path.basename(out, '.wmo');
+		const wmoName = path.basename(out, '.obj');
 		obj.setName(wmoName);
 
 		log.write('Exporting WMO model %s as OBJ: %s', wmoName, out);
@@ -73,10 +73,16 @@ class WMOExporter {
 		const isClassic = !!wmo.textureNames;
 		const materialCount = wmo.materials.length;
 		const materialMap = new Map();
+
+		helper.setCurrentTaskName(wmoName + ' textures');
+		helper.setCurrentTaskMax(materialCount);
+
 		for (let i = 0; i < materialCount; i++) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
+
+			helper.setCurrentTaskValue(i);
 
 			const material = wmo.materials[i];
 
@@ -158,6 +164,9 @@ class WMOExporter {
 				}
 			}
 		}
+	
+		helper.setCurrentTaskName(wmoName + ' groups');
+		helper.setCurrentTaskMax(wmo.groupCount);
 
 		// Iterate over the groups once to calculate the total size of our
 		// vertex/normal/uv arrays allowing for pre-allocation.
@@ -165,6 +174,8 @@ class WMOExporter {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
+
+			helper.setCurrentTaskValue(i);
 
 			const group = await wmo.getGroup(i);
 
@@ -254,10 +265,15 @@ class WMOExporter {
 				const count = set.doodadCount;
 				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
+				helper.setCurrentTaskName(wmoName + ', doodad set ' + set.name)
+				helper.setCurrentTaskMax(count);
+
 				for (let i = 0; i < count; i++) {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
 						return;
+
+					helper.setCurrentTaskValue(i);
 
 					const doodad = wmo.doodads[set.firstInstanceIndex + i];
 					let fileDataID = 0;
@@ -294,7 +310,7 @@ class WMOExporter {
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
 									return;
-									
+
 								doodadCache.add(fileDataID);
 							}
 
