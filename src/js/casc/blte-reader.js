@@ -277,7 +277,7 @@ class BLTEReader extends BufferWrapper {
 		// Ensure all blocks required for this read are available.
 		const pos = this.offset + length;
 		while (pos > this.blockWriteIndex)
-			if (!this._processBlock())
+			if (this._processBlock() === false)
 				return;
 	}
 
