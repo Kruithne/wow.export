@@ -80,6 +80,7 @@ const view = {
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
 	exportCancelled: false, // Export cancellation state.
+	isXmas: (new Date().getMonth() === 11)
 };
 
 /**
