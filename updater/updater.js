@@ -9,6 +9,32 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const cp = require('child_process');
+const util = require('util');
+
+const logOutput = [];
+
+/**
+ * Return a HH:MM:SS formatted timestamp.
+ */
+const getTimestamp = () => {
+	const time = new Date();
+	return util.format(
+		'%s:%s:%s',
+		time.getHours().toString().padStart(2, '0'),
+		time.getMinutes().toString().padStart(2, '0'),
+		time.getSeconds().toString().padStart(2, '0'));
+};
+
+/**
+ * Write a message to the log file which will be written upon exit.
+ * @param {string} message 
+ * @param  {...any} params 
+ */
+const log = (message, ...params) => {
+	const out = '[' + getTimestamp() + '] ' + util.format(message, ...params);
+	logOutput.push(out);
+	console.log(out);
+};
 
 /**
  * Returns an array of all files recursively collected from a directory.
@@ -63,13 +89,15 @@ const directoryExists = async (dir) => {
 };
 
 (async () => {
-	console.log('Applying updates, please wait!');
+	log('Updater has started.');
 
 	// Ensure we were given a valid PID by whatever spawned us.
 	const pid = Number(argv[0]);
 	if (!isNaN(pid)) {
 		// Wait for the parent process (PID) to terminate.
 		let isRunning = true;
+
+		log('Waiting for parent process %d to terminate...', pid);
 		while (isRunning) {
 			try {
 				// Sending 0 as a signal does not kill the process, allowing for existence checking.
@@ -79,15 +107,19 @@ const directoryExists = async (dir) => {
 				// Introduce a small delay between checks.
 				await new Promise(resolve => setTimeout(resolve, 500));
 			} catch (e) {
+				log('Parent process %d has terminated.', pid);
 				isRunning = false;
 			}
 		}
 	} else {
-		console.log('No parent process?');
+		log('WARN: No parent PID was given to the updater.');
 	}
 
 	const installDir = path.dirname(path.resolve(process.execPath));
 	const updateDir = path.join(installDir, '.update');
+
+	log('Install directory: %s', installDir);
+	log('Update directory: %s', updateDir);
 
 	if (await directoryExists(updateDir)) {
 		const updateFiles = await collectFiles(updateDir);
@@ -95,13 +127,15 @@ const directoryExists = async (dir) => {
 			const relativePath = path.relative(updateDir, file);
 			const writePath = path.join(installDir, relativePath);
 
+			log('Applying update file %s', writePath);
+
 			await fsp.mkdir(path.dirname(writePath), { recursive: true });
-			await fsp.copyFile(file, writePath).catch(() => {
-				console.log('UNABLE TO WRITE: %s', writePath);
+			await fsp.copyFile(file, writePath).catch(err => {
+				log('WARN: Failed to write update file due to system error: %s', err.message);
 			});
 		}
 	} else {
-		console.log('Unable to locate update files.');
+		log('WARN: Update directory does not exist. No update to apply.');
 	}
 	
 	// [GH-1] Expand this with support for further platforms as needed.
@@ -110,6 +144,8 @@ const directoryExists = async (dir) => {
 		case 'win32': binary = 'wow.export.exe'; break;
 	}
 
+	log('Re-launching main process %s (%s)', binary, process.platform);
+
 	// Re-launch application.
 	if (binary) {
 		const child = cp.spawn(path.join(installDir, binary), [], { detached: true, stdio: 'ignore' });
@@ -117,8 +153,15 @@ const directoryExists = async (dir) => {
 	}
 
 	// Clear the update directory.
-	console.log('Cleaning up, hold on!');
+	log('Removing update files...');
 	deleteDirectory(updateDir);
+
+	// Write log to disk.
+	const logName = util.format('%s-update.log', Date.now());
+	const logPath = path.resolve('./logs');
+
+	await fsp.mkdir(logPath, { recursive: true });
+	await fsp.writeFile(path.join(logPath, logName), logOutput.join('\n'), 'utf8');
 
 	// Exit updater.
 	process.exit();
