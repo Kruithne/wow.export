@@ -15,8 +15,9 @@ Vue.component('listbox', {
 	 * keyinput: If true, listbox registers for keyboard input.
 	 * regex: If true, filter will be treated as a regular expression.
 	 * copydir: If true, CTRL + C will only copy directories.
+	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'copytrimwhitespace'],
 
 	/**
 	 * Reactive instance data.
@@ -220,6 +221,10 @@ Vue.component('listbox', {
 				let entries = this.selection;
 				if (this.copydir)
 					entries = entries.map(e => path.dirname(e));
+
+				// Remove whitespace from paths to keep consistency with exports.
+				if (this.copytrimwhitespace)
+					entries = entries.map(e => e.replace(/\s/g, ''));
 
 				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {

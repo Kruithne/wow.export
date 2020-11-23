@@ -20,6 +20,7 @@
 	"enableAbsoluteMTLPaths": false,
 	"enableAbsoluteCSVPaths": false,
 	"removePathSpaces": true,
+	"removePathSpacesCopy": true,
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
 	"exportModelFormat": "OBJ",

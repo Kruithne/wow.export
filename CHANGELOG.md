@@ -2,6 +2,7 @@
 - Added expansion icons to the map exporter list.
 - Added ability to cancel exports that are in-progress.
 - Added verbose progress information for heavy export tasks (WMOs, ADTs, etc).
+- Added 'Strip Whitespace From Copied Paths' option to settings.
 - Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
 - Fixed an issue that caused the toast bar to disappear while an export was in progress.
 - Fixed an issue with exported WMO objects having .obj prefixed MTL names.

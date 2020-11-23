@@ -83,6 +83,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Strip Whitespace From Copied Paths</h1>
+						<p>If enabled, file paths copied from a listbox (CTRL + C) will have whitespace stripped.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.removePathSpacesCopy"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Use Absolute MTL Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>
@@ -200,7 +208,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
@@ -222,7 +230,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
@@ -268,7 +276,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
@@ -336,7 +344,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
@@ -347,7 +355,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>
