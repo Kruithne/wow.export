@@ -115,7 +115,7 @@ const applyUpdate = async () => {
  * Launch the external updater process and exit.
  */
 const launchUpdater = async () => {
-	// On the rare occurance that we've updated the updater, the updater
+	// On the rare occurrence that we've updated the updater, the updater
 	// cannot update the updater, so instead we update the updater here.
 	const helperApp = path.join(constants.INSTALL_PATH, constants.UPDATE.HELPER);
 	const updatedApp = path.join(constants.UPDATE.DIRECTORY, constants.UPDATE.HELPER);
