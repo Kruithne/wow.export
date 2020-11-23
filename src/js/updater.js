@@ -123,7 +123,7 @@ const launchUpdater = async () => {
 	try {
 		const updaterExists = await generics.fileExists(updatedApp);
 		if (updaterExists)
-			await fsp.copyFile(updatedApp, helperApp);
+			await fsp.rename(updatedApp, helperApp);
 
 		// Launch the updater application.
 		const child = cp.spawn(helperApp, [process.pid], { detached: true, stdio: 'ignore' });
