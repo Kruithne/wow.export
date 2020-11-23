@@ -1,4 +1,4 @@
-0.1.20 (In Development)
+0.1.20 (23-11-2020)
 - Added expansion icons to the map exporter list.
 - Added ability to cancel exports that are in-progress.
 - Added verbose progress information for heavy export tasks (WMOs, ADTs, etc).
