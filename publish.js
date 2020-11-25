@@ -185,7 +185,7 @@ const log = {
 
 			log.info('Renaming remote temporary files...');
 			for (const [from, to] of renames)
-				await sftp.rename(from, to);
+				await sftp.posixRename(from, to);
 
 			const uploadElapsed = (Date.now() - uploadStart) / 1000;
 			log.success('Uploaded {%d} files in {%ds}', uploads.length, uploadElapsed);
