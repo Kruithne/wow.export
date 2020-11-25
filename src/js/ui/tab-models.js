@@ -15,7 +15,6 @@ const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
-const M2Loader = require('../3D/loaders/M2Loader');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
