@@ -2,28 +2,28 @@
 // All other sass modules required for styling are imported by this sheet (see bottom).
 
 :root {
-    --background: #343a40;
-    --background-trans: #343a40b3;
+	--background: #343a40;
+	--background-trans: #343a40b3;
 	--background-dark: #2c3136;
 	--background-alt: #3c4147;
-    --border: #6c757d;
-    --font-primary: #ffffffcc;
-    --font-highlight: #ffffff;
-    --font-faded: #6c757d;
-    --font-alt: #57afe2;
-    --font-alt-highlight: #9ff1a1;
-    --widget-shadow: black 0 0 5px;
-    --font-toast: black;
-    --font-toast-link: #0300bf;
-    --toast-progress: #dcba90;
-    --toast-error: #dc9090;
-    --toast-success: #a6dc90;
-    --toast-info: #90bcdc;
-    --form-button-base: #22b549;
+	--border: #6c757d;
+	--font-primary: #ffffffcc;
+	--font-highlight: #ffffff;
+	--font-faded: #6c757d;
+	--font-alt: #57afe2;
+	--font-alt-highlight: #9ff1a1;
+	--widget-shadow: black 0 0 5px;
+	--font-toast: black;
+	--font-toast-link: #0300bf;
+	--toast-progress: #dcba90;
+	--toast-error: #dc9090;
+	--toast-success: #a6dc90;
+	--toast-info: #90bcdc;
+	--form-button-base: #22b549;
 	--form-button-hover: #2665d2;
 	--form-button-menu: #389451;
 	--form-button-menu-hover: #3e6bb9;
-    --form-button-disabled: #696969;
+	--form-button-disabled: #696969;
 	--form-field-shadow: inset black 0 0 9px 0px;
 	--progress-bar: linear-gradient(180deg, #57afe2, #35759a);
 	--trans-check-a: #303030;
@@ -31,38 +31,38 @@
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    user-select: none;
+	margin: 0;
+	padding: 0;
+	user-select: none;
 }
 
 *:focus {
-    outline: 0;
+	outline: 0;
 }
 
 [v-cloak] {
-    display: none !important;
+	display: none !important;
 }
 
 a {
-    color: var(--font-primary);
-    text-decoration: none;
-    font-weight: bold;
-    cursor: pointer;
+	color: var(--font-primary);
+	text-decoration: none;
+	font-weight: bold;
+	cursor: pointer;
 
-    &:hover {
-        color: var(--font-highlight);
-        text-decoration: underline;
-    }
+	&:hover {
+		color: var(--font-highlight);
+		text-decoration: underline;
+	}
 }
 
 .link {
-    color: var(--font-alt);
-    cursor: pointer;
+	color: var(--font-alt);
+	cursor: pointer;
 
-    &:hover {
-        color: var(--font-alt-highlight);
-    }
+	&:hover {
+		color: var(--font-alt-highlight);
+	}
 }
 
 @import './css/font';
