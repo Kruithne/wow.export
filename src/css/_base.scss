@@ -190,6 +190,10 @@ body {
 		content: '\f008';
 	}
 
+	&-text::before {
+		content: '\f0f6';
+	}
+
 	&-right {
 		margin-left: auto;
 		display: flex;

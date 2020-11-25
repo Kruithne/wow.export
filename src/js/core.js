@@ -45,19 +45,23 @@ const view = {
 	userInputFilterTextures: '', // Value of the 'filter' field for textures.
 	userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 	userInputFilterVideos: '', // Value of the 'filter' field for video files.
+	userInputFilterText: '', // Value of the 'filter' field for text files.
 	userInputFilterModels: '', // Value of the 'filter' field for models.
 	userInputFilterMaps: '', // Value of the 'filter' field for maps.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
 	selectionVideos: [],  // Current user selection of videos.
+	selectionText: [], // Current user selection of text files.
 	selectionMaps: [], // Current user selection of maps.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
+	listfileText: [], // Filtered listfile for text files.
 	listfileModels: [], // Filtered listfile for M2/WMO models.
 	availableLocale: Locale, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
+	textViewerSelectedText: '', // Active text for the text viewer.
 	soundPlayerSeek: 0, // Current seek of the sound player.
 	soundPlayerState: false, // Playing state of the sound player.
 	soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.

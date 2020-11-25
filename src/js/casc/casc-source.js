@@ -104,6 +104,7 @@ class CASC {
 		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
+		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
 		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
 	}
 

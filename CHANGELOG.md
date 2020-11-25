@@ -1,4 +1,5 @@
 0.1.21 (25-11-2020)
+- Added new 'Text' tab which allows preview/exporting of subtitles, Lua, XML, HTML, config and more.
 - Fixed an issue that prevented data tables from parsing on newest WoW builds.
 
 0.1.20 (23-11-2020)

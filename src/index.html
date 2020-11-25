@@ -19,6 +19,7 @@
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')">Audio</div>
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
+						<div class="option" id="nav-text" @click="setScreen('tab-text')">Text</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
 						<div title="Blender Add-On" class="option" id="nav-blender" @click="setScreen('blender', true)"></div>
@@ -349,6 +350,24 @@
 						<div class="filter">
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
 							<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab list-tab" id="tab-text" v-if="screen === 'tab-text'">
+						<div class="list-container">
+							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
+						</div>
+						<div class="filter">
+							<input type="text" v-model="userInputFilterText" placeholder="Filter text files..."/>
+						</div>
+						<div class="preview-container">
+							<div class="preview-background" id="model-preview">
+								<pre>{{ textViewerSelectedText }}</pre>
+							</div>
+						</div>
+						<div class="preview-controls">
+							<input type="button" value="Export Selected" @click="click('export-text', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
 				</keep-alive>
