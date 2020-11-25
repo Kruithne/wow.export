@@ -173,7 +173,7 @@ const log = {
 					const tmpRemote = upload.remote + '.tmp';
 
 					await sftp.mkdir(path.dirname(upload.remote), true);
-					await sftp.put(upload.local, upload.tmpRemote);
+					await sftp.put(upload.local, tmpRemote);
 
 					renames.set(tmpRemote, upload.remote);
 				} else {
