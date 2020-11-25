@@ -105,13 +105,13 @@ const log = {
 		// User has not selected any valid builds; display available and exit.
 		if (targetBuilds.length === 0) {
 			log.warn('You have not selected any builds.');
-			log.info('Available builds: %s', builds.map(e => '{' + e + '}').join(', '));
+			log.info('Available builds: ' + builds.map(e => '{' + e + '}').join(', '));
 			return;
 		}
 
 		const uploads = [];
 		const publishStart = Date.now();
-		log.info('Selected builds: %s', targetBuilds.map(e => '{' + e + '}').join(', '));
+		log.info('Selected builds: ' + targetBuilds.map(e => '{' + e + '}').join(', '));
 
 		for (const build of targetBuilds) {
 			const publishBuildStart = Date.now();
