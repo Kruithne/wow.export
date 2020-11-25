@@ -1,3 +1,6 @@
+0.1.21 (25-11-2020)
+- Fixed an issue that prevented data tables from parsing on newest WoW builds.
+
 0.1.20 (23-11-2020)
 - Added expansion icons to the map exporter list.
 - Added ability to cancel exports that are in-progress.
