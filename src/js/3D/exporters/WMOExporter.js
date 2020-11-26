@@ -279,7 +279,7 @@ class WMOExporter {
 
 		// TODO: Provide helper to exportTextures.
 		const texMaps = await this.exportTextures(out, mtl);
-		const materialMap = texMaps.textureMap;
+		const materialMap = texMaps.materialMap;
 
 		const groups = [];
 		let nInd = 0;
