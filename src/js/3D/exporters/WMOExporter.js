@@ -48,9 +48,10 @@ class WMOExporter {
 	 * Export textures for this WMO.
 	 * @param {string} out 
 	 * @param {?MTLWriter} mtl 
+	 * @param {ExportHelper}
 	 * @returns {{ textureMap: Map, materialMap: Map }}
 	 */
-	async exportTextures(out, mtl = null) {
+	async exportTextures(out, mtl = null, helper) {
 		const config = core.view.config;
 		const casc = core.view.casc;
 
@@ -64,8 +65,11 @@ class WMOExporter {
 		const textureMap = new Map();
 		const materialMap = new Map();
 
+		helper.setCurrentTaskMax(materialCount);
+
 		for (let i = 0; i < materialCount; i++) {
 			const material = this.wmo.materials[i];
+			helper.setCurrentTaskValue(i);
 
 			let fileDataID;
 			let fileName;
@@ -154,7 +158,8 @@ class WMOExporter {
 
 		await this.wmo.load();
 
-		const texMaps = await this.exportTextures(out, null);
+		helper.setCurrentTaskName(wmoName + ' textures');
+		const texMaps = await this.exportTextures(out, null, helper);
 		const textureMap = texMaps.textureMap;
 		const materialMap = texMaps.materialMap;
 
@@ -277,8 +282,9 @@ class WMOExporter {
 		const wmo = this.wmo;
 		await wmo.load();
 
-		// TODO: Provide helper to exportTextures.
-		const texMaps = await this.exportTextures(out, mtl);
+		helper.setCurrentTaskName(wmoName + ' textures');
+
+		const texMaps = await this.exportTextures(out, mtl, helper);
 		const materialMap = texMaps.materialMap;
 
 		const groups = [];
