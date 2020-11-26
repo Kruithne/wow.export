@@ -1,3 +1,6 @@
+0.1.22 (In Development)
+- Fix issue that prevented raw M2/skin exports.
+
 0.1.21 (25-11-2020)
 - Added new 'Text' tab which allows preview/exporting of subtitles, Lua, XML, HTML, config and more.
 - Fixed an issue that prevented data tables from parsing on newest WoW builds.

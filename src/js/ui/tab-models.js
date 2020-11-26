@@ -205,7 +205,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
 							const exporter = new M2Exporter(data, selectedVariantTexID);
-							await exporter.exportTextures(exportPath, true, null);
+							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
 							const skinPath = path.dirname(exportPath);
