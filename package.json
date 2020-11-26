@@ -23,7 +23,7 @@
 	},
 	"dependencies": {
 		"acorn": "^8.0.4",
-		"adm-zip": "git+https://github.com/cthackers/adm-zip.git",
+		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
 		"chalk": "^2.4.2",
 		"filesize": "^5.0.3",
 		"node-sass": "^4.14.1",
