@@ -68,6 +68,9 @@ class WMOExporter {
 		helper.setCurrentTaskMax(materialCount);
 
 		for (let i = 0; i < materialCount; i++) {
+			if (helper.isCancelled())
+				return;
+
 			const material = this.wmo.materials[i];
 			helper.setCurrentTaskValue(i);
 
@@ -160,6 +163,10 @@ class WMOExporter {
 
 		helper.setCurrentTaskName(wmoName + ' textures');
 		const texMaps = await this.exportTextures(out, null, helper);
+
+		if (helper.isCancelled())
+			return;
+
 		const textureMap = texMaps.textureMap;
 		const materialMap = texMaps.materialMap;
 
@@ -285,6 +292,10 @@ class WMOExporter {
 		helper.setCurrentTaskName(wmoName + ' textures');
 
 		const texMaps = await this.exportTextures(out, mtl, helper);
+
+		if (helper.isCancelled())
+			return;
+			
 		const materialMap = texMaps.materialMap;
 
 		const groups = [];
