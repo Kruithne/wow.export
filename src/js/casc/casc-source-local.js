@@ -52,16 +52,17 @@ class CASCLocal extends CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
-	 * @param {boolean} partialDecryption
-	 * @param {boolean} suppressLog
-	 * @param {boolean} supportFallback
+	 * @param {boolean} [partialDecryption=false]
+	 * @param {boolean} [suppressLog=false]
+	 * @param {boolean} [supportFallback=true]
+	 * @param {boolean} [forceFallback=false]
 	 */
-	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true) {
+	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 			
 		const encodingKey = await super.getFile(fileDataID);
-		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey) : await this.getDataFile(encodingKey);
+		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
 		return new BLTEReader(data, encodingKey, partialDecryption);
 	}
 
@@ -220,9 +221,14 @@ class CASCLocal extends CASC {
 	 * Obtain a data file from the local archives.
 	 * If not stored locally, file will be downloaded from a CDN.
 	 * @param {string} key 
+	 * @param {boolean} [forceFallback=false]
 	 */
-	async getDataFileWithRemoteFallback(key) {
+	async getDataFileWithRemoteFallback(key, forceFallback = false) {
 		try {
+			// If forceFallback is true, we have corrupt local data.
+			if (forceFallback)
+				throw new Error('Local data is corrupted, forceFallback set.');
+
 			// Attempt 1: Extract from local archives.
 			const local = await this.getDataFile(key);
 

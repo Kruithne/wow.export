@@ -69,16 +69,17 @@ class CASC {
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
 	 * @param {string} fileName 
-	 * @param {boolean} partialDecrypt
-	 * @param {boolean} suppressLog
-	 * @param {boolean} supportFallback
+	 * @param {boolean} [partialDecrypt=false]
+	 * @param {boolean} [suppressLog=false]
+	 * @param {boolean} [supportFallback=true]
+	 * @param {boolean} [forceFallback=false]
 	 */
-	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true) {
+	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: %s', fileName);
 
-		return await this.getFile(fileDataID, partialDecrypt, suppressLog, supportFallback);
+		return await this.getFile(fileDataID, partialDecrypt, suppressLog, supportFallback, forceFallback);
 	}
 
 	/**

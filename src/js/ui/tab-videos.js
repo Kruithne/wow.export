@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
+const BLTEIntegrityError = require('../casc/blte-reader');
 const generics = require('../generics');
 
 core.registerLoadFunc(async () => {
@@ -29,7 +30,17 @@ core.registerLoadFunc(async () => {
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
-					const data = await core.view.casc.getFileByName(fileName);
+					let data;
+					try {
+						data = await core.view.casc.getFileByName(fileName);
+					} catch (e) {
+						// Corrupted file, often caused by users cancelling a cinematic while it is streaming.
+						if (e instanceof BLTEIntegrityError)
+							data = await core.view.casc.getFileByName(fileName, false, false, true, true);
+						else
+							throw e;
+					}
+					
 					await data.writeToFile(exportPath);
 				} else {
 					log.write('Skipping video export %s (file exists, overwrite disabled)', exportPath);
