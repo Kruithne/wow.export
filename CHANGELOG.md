@@ -1,5 +1,6 @@
 0.1.22 (In Development)
 - Fixed issue that prevented raw M2/skin exports.
+- Fixed an issue with local user-defined listfiles not working without a wildcard.
 
 0.1.21 (25-11-2020)
 - Added new 'Text' tab which allows preview/exporting of subtitles, Lua, XML, HTML, config and more.
