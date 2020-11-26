@@ -9,6 +9,38 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const cp = require('child_process');
+const util = require('util');
+
+const logOutput = [];
+
+/**
+ * Defines the maximum amount of retries to update a file.
+ * @type {number}
+ */
+const MAX_LOCK_TRIES = 30;
+
+/**
+ * Return a HH:MM:SS formatted timestamp.
+ */
+const getTimestamp = () => {
+	const time = new Date();
+	return util.format(
+		'%s:%s:%s',
+		time.getHours().toString().padStart(2, '0'),
+		time.getMinutes().toString().padStart(2, '0'),
+		time.getSeconds().toString().padStart(2, '0'));
+};
+
+/**
+ * Write a message to the log file which will be written upon exit.
+ * @param {string} message 
+ * @param  {...any} params 
+ */
+const log = (message, ...params) => {
+	const out = '[' + getTimestamp() + '] ' + util.format(message, ...params);
+	logOutput.push(out);
+	console.log(out);
+};
 
 /**
  * Returns an array of all files recursively collected from a directory.
@@ -52,24 +84,51 @@ const deleteDirectory = (dir) => {
 }
 
 /**
- * Wrapper for fs.Promises.access() to check if a directory exists.
- * Returns a Promise that resolves to true or false.
- * @param {string} dir 
+ * Returns true if the provided file/directory exists.
+ * @param {string} file 
+ * @returns {boolean}
  */
-const directoryExists = async (dir) => {
-	return new Promise(resolve => {
-		fsp.access(dir).then(() => resolve(true)).catch(() => resolve(false));
-	});
+const fileExists = async (file) => {
+	try {
+		await fsp.access(file, fs.constants.F_OK);
+		return true;
+	} catch (e) {
+		return false;
+	}
+};
+
+/**
+ * Returns true if the provided file is locked.
+ * @param {string} file 
+ * @returns {boolean}
+ */
+const isFileLocked = async (file) => {
+	try {
+		await fsp.access(file, fs.constants.W_OK);
+		return false;
+	} catch (e) {
+		return true;
+	}
+};
+
+/**
+ * Async function that resolves after the provided amount of milliseconds.
+ * @param {number} ms 
+ */
+const delay = async (ms) => {
+	await new Promise(resolve => setTimeout(resolve, ms));
 };
 
 (async () => {
-	console.log('Applying updates, please wait!');
+	log('Updater has started.');
 
 	// Ensure we were given a valid PID by whatever spawned us.
 	const pid = Number(argv[0]);
 	if (!isNaN(pid)) {
 		// Wait for the parent process (PID) to terminate.
 		let isRunning = true;
+
+		log('Waiting for parent process %d to terminate...', pid);
 		while (isRunning) {
 			try {
 				// Sending 0 as a signal does not kill the process, allowing for existence checking.
@@ -77,31 +136,67 @@ const directoryExists = async (dir) => {
 				process.kill(pid, 0);
 
 				// Introduce a small delay between checks.
-				await new Promise(resolve => setTimeout(resolve, 500));
+				await delay(500);
 			} catch (e) {
+				log('Parent process %d has terminated.', pid);
 				isRunning = false;
 			}
 		}
 	} else {
-		console.log('No parent process?');
+		log('WARN: No parent PID was given to the updater.');
 	}
+
+	// We can never be 100% sure that the entire process tree terminated.
+	// To that end, send an OS specific termination command.
+
+	// [GH-1] Expand this with support for further platforms as needed.
+	let command;
+	switch (process.platform) {
+		case 'win32':
+			command = 'taskkill /f /im wow.export.exe';
+	}
+
+	log('Sending auxiliary termination command (%s) %s', process.platform, command);
+	await new Promise(resolve => cp.exec(command, resolve));
 
 	const installDir = path.dirname(path.resolve(process.execPath));
 	const updateDir = path.join(installDir, '.update');
 
-	if (await directoryExists(updateDir)) {
+	log('Install directory: %s', installDir);
+	log('Update directory: %s', updateDir);
+
+	if (await fileExists(updateDir)) {
 		const updateFiles = await collectFiles(updateDir);
 		for (const file of updateFiles) {
 			const relativePath = path.relative(updateDir, file);
 			const writePath = path.join(installDir, relativePath);
 
-			await fsp.mkdir(path.dirname(writePath), { recursive: true });
-			await fsp.copyFile(file, writePath).catch(() => {
-				console.log('UNABLE TO WRITE: %s', writePath);
-			});
+			log('Applying update file %s', writePath);
+
+			try {
+				let locked = (await fileExists(writePath)) && (await isFileLocked(writePath));
+				let tries = 0;
+
+				while (locked) {
+					tries++;
+
+					if (tries >= MAX_LOCK_TRIES)
+						throw new Error('File was locked, MAX_LOCK_TRIES exceeded.');
+
+					await delay(1000);
+					locked = await isFileLocked(writePath);
+				}
+
+				await fsp.mkdir(path.dirname(writePath), { recursive: true });
+				await fsp.copyFile(file, writePath).catch(err => {
+					log('WARN: Failed to write update file due to system error: %s', err.message);
+				});
+			} catch (e) {
+				log('WARN: ' + e.message);
+			}
 		}
 	} else {
-		console.log('Unable to locate update files.');
+		log('WARN: Update directory does not exist. No update to apply.');
 	}
 	
 	// [GH-1] Expand this with support for further platforms as needed.
@@ -110,6 +205,8 @@ const directoryExists = async (dir) => {
 		case 'win32': binary = 'wow.export.exe'; break;
 	}
 
+	log('Re-launching main process %s (%s)', binary, process.platform);
+
 	// Re-launch application.
 	if (binary) {
 		const child = cp.spawn(path.join(installDir, binary), [], { detached: true, stdio: 'ignore' });
@@ -117,8 +214,15 @@ const directoryExists = async (dir) => {
 	}
 
 	// Clear the update directory.
-	console.log('Cleaning up, hold on!');
+	log('Removing update files...');
 	deleteDirectory(updateDir);
+
+	// Write log to disk.
+	const logName = util.format('%s-update.log', Date.now());
+	const logPath = path.resolve('./logs');
+
+	await fsp.mkdir(logPath, { recursive: true });
+	await fsp.writeFile(path.join(logPath, logName), logOutput.join('\n'), 'utf8');
 
 	// Exit updater.
 	process.exit();

@@ -28,7 +28,9 @@ const loadListfile = async (buildConfig, cache) => {
 	if (typeof url !== 'string')
 		throw new Error('Missing/malformed listfileURL in configuration!');
 
-	url = util.format(url, buildConfig);
+	// Replace optional buildID wildcard.
+	if (url.includes('%s'))
+		url = util.format(url, buildConfig);
 
 	idLookup.clear();
 	nameLookup.clear();

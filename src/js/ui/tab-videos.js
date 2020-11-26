@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
+const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
 const generics = require('../generics');
 
 core.registerLoadFunc(async () => {
@@ -25,19 +26,41 @@ core.registerLoadFunc(async () => {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
-				
-			try {
-				const exportPath = ExportHelper.getExportPath(fileName);
-				if (overwriteFiles || !await generics.fileExists(exportPath)) {
+
+			const exportPath = ExportHelper.getExportPath(fileName);
+			let isCorrupted = false;
+
+			if (overwriteFiles || !await generics.fileExists(exportPath)) {
+				try {
 					const data = await core.view.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
-				} else {
-					log.write('Skipping video export %s (file exists, overwrite disabled)', exportPath);
+
+					helper.mark(fileName, true);
+				} catch (e) {
+					// Corrupted file, often caused by users cancelling a cinematic while it is streaming.
+					if (e instanceof BLTEIntegrityError) {
+						isCorrupted = true;
+					} else {
+						helper.mark(fileName, false, e.message);
+					}
 				}
 
+				if (isCorrupted) {
+					try {
+						log.write('Local cinematic file is corrupted, forcing fallback.');
+
+						// In the event of a corrupted cinematic, try again with forced fallback.
+						const data = await core.view.casc.getFileByName(fileName, false, false, true, true);
+						await data.writeToFile(exportPath);
+
+						helper.mark(fileName, true);
+					} catch (e) {
+						helper.mark(fileName, false, e.message);
+					}
+				}
+			} else {
 				helper.mark(fileName, true);
-			} catch (e) {
-				helper.mark(fileName, false, e.message);
+				log.write('Skipping video export %s (file exists, overwrite disabled)', exportPath);
 			}
 		}
 

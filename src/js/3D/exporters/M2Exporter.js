@@ -14,6 +14,7 @@ const M2Loader = require('../loaders/M2Loader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const JSONWriter = require('../writers/JSONWriter');
+const GLTFWriter = require('../writers/GLTFWriter');
 const GeosetMapper = require('../GeosetMapper');
 const ExportHelper = require('../../casc/export-helper');
 
@@ -42,14 +43,16 @@ class M2Exporter {
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
 	 * @param {ExportHelper} helper
+	 * @param {boolean} [fullTexPaths=false]
+	 * @returns {Map<number, string>}
 	 */
-	async exportTextures(out, raw = false, mtl = null, helper) {
+	async exportTextures(out, raw = false, mtl = null, helper, fullTexPaths = false) {
 		const config = core.view.config;
 		await this.m2.load();
 
 		const useAlpha = config.modelsIncludeAlpha;
 
-		const validTextures = {};
+		const validTextures = new Map();
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -109,10 +112,8 @@ class M2Exporter {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
-					if (mtl !== null) {
-						mtl.addMaterial(matName, texFile);
-						validTextures[texFileDataID] = matName;
-					}
+					mtl?.addMaterial(matName, texFile);
+					validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
 				}
@@ -120,6 +121,54 @@ class M2Exporter {
 		}
 
 		return validTextures;
+	}
+
+	async exportAsGLTF(out, helper) {
+		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
+
+		// Skip export if file exists and overwriting is disabled.
+		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
+			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
+
+		await this.m2.load();
+		const skin = await this.m2.getSkin(0);
+
+		const gltf = new GLTFWriter(out, this.m2.name);
+		log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
+
+		gltf.setVerticesArray(this.m2.vertices);
+		gltf.setNormalArray(this.m2.normals);
+		gltf.setUVArray(this.m2.uv);
+		gltf.setBonesArray(this.m2.bones);
+
+		// TODO: full texture paths.
+		const textureMap = await this.exportTextures(out, false, null, helper, true);
+		gltf.setTextureMap(textureMap);
+
+		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
+			// Skip geosets that are not enabled.
+			if (!this.geosetMask[mI]?.checked)
+				continue;
+
+			const mesh = skin.subMeshes[mI];
+			const indices = new Array(mesh.triangleCount);
+			for (let vI = 0; vI < mesh.triangleCount; vI++)
+				indices[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
+
+			let texture = null;
+			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
+			if (texUnit)
+				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
+
+			// TODO: Better material naming.
+			let matName;
+			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
+				matName = texture.fileDataID;
+
+			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
+		}
+
+		await gltf.write(core.view.config.overwriteFiles);
 	}
 
 	/**
@@ -182,8 +231,8 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture && texture.fileDataID > 0 && validTextures[texture.fileDataID] !== undefined)
-				matName = validTextures[texture.fileDataID];
+			if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID))
+				matName = validTextures.get(texture.fileDataID);
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}

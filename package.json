@@ -2,7 +2,7 @@
 	"name": "wow.export",
 	"description": "Export Toolkit for World of Warcraft",
 	"license": "MIT",
-	"version": "0.1.20",
+	"version": "0.1.22",
 	"contributors": [
 		"Kruithne <kruithne@gmail.com> (https://kruithne.net/)",
 		"Martin Benjamins <marlamin@marlamin.com> (https://wow.tools/)"
@@ -30,6 +30,7 @@
 		"pkg": "^4.4.0",
 		"rcedit": "^2.0.0",
 		"request": "^2.88.0",
+		"ssh2-sftp-client": "^5.3.2",
 		"tar": "^5.0.5",
 		"terser": "^5.5.0",
 		"uuid": "^3.3.3"

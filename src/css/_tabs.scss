@@ -182,6 +182,26 @@
 	}
 }
 
+#tab-text {
+	.preview-container {
+		.preview-background {
+			background: var(--background-dark);
+			position: relative;
+
+			pre {
+				overflow: scroll;
+				padding: 15px;
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				user-select: text;
+			}
+		}
+	}
+}
+
 .filter {
 	display: flex;
 	align-items: center;
