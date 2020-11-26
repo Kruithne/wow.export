@@ -21,6 +21,11 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const WDCReader = require('../db/WDCReader');
 
+const exportExtensions = {
+	'OBJ': '.obj',
+	'GLTF': '.gltf'
+};
+
 const creatureTextures = new Map();
 const activeSkins = new Map();
 let selectedVariantTexID = 0;
@@ -216,7 +221,8 @@ const exportFiles = async (files, isLocal = false) => {
 						break;
 
 					case 'OBJ':
-						const exportOBJ = ExportHelper.replaceExtension(exportPath, '.obj');
+					case 'GLTF':
+						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileNameLower.endsWith('.m2')) {
 							const exporter = new M2Exporter(data, selectedVariantTexID);
@@ -225,7 +231,10 @@ const exportFiles = async (files, isLocal = false) => {
 							if (fileName == activePath)
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
-							await exporter.exportAsOBJ(exportOBJ, core.view.config.modelsExportCollision, helper);
+							if (format === 'OBJ')
+								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper);
+							else if (format === 'GLTF')
+								await exporter.exportAsGLTF(exportPath, helper);
 
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())
@@ -244,7 +253,10 @@ const exportFiles = async (files, isLocal = false) => {
 								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
 							}
 
-							await exporter.exportAsOBJ(exportOBJ, helper);
+							if (format === 'OBJ')
+								await exporter.exportAsOBJ(exportPath, helper);
+							else if (format === 'GLTF')
+								await exporter.exportAsGLTF(exportPath, helper);
 							WMOExporter.clearCache();
 
 							// Abort if the export has been cancelled.
