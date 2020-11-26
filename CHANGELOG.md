@@ -1,4 +1,4 @@
-0.1.22 (In Development)
+0.1.22 (26-11-2020)
 - Fixed issue that prevented raw M2/skin exports.
 - Fixed an issue with local user-defined listfiles not working without a wildcard.
 
