@@ -47,6 +47,8 @@ core.registerLoadFunc(async () => {
 
 				if (isCorrupted) {
 					try {
+						log.write('Local cinematic file is corrupted, forcing fallback.');
+						
 						// In the event of a corrupted cinematic, try again with forced fallback.
 						const data = await core.view.casc.getFileByName(fileName, false, false, true, true);
 						await data.writeToFile(exportPath);
