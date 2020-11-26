@@ -224,7 +224,11 @@ class GLTFWriter {
 				children: bone.children
 			};
 
-			node.translation = bone.pivot;
+			const parentPos = [0, 0, 0];
+			if (node.parentNode > -1)
+				parentPos = bones[bone.parentBone].pivot;
+				
+			node.translation = bone.pivot.map((v, i) => v -= parentPos[i]);
 			nodes.push(node);
 		}
 
