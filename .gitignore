@@ -12,3 +12,6 @@
 
 # Runtime directory for tests.
 /tests/user_data
+
+# SFTP configuration.
+sftp.conf

@@ -7,10 +7,24 @@
 - Fix issue with M2 texture reading.
 - Update three.js.
 
-0.1.20 (In Development)
+0.1.23 (28-11-2020)
+- Added a warning to the configuration screen for export directories that contain spaces.
+- Added indicator for when regular expression searching is enabled with quick-guide tooltip.
+
+0.1.22 (26-11-2020)
+- Fixed issue that prevented raw M2/skin exports.
+- Fixed an issue with local user-defined listfiles not working without a wildcard.
+- Fixed an issue that prevented exporting of cinematics that are locally corrupted.
+
+0.1.21 (25-11-2020)
+- Added new 'Text' tab which allows preview/exporting of subtitles, Lua, XML, HTML, config and more.
+- Fixed an issue that prevented data tables from parsing on newest WoW builds.
+
+0.1.20 (23-11-2020)
 - Added expansion icons to the map exporter list.
 - Added ability to cancel exports that are in-progress.
 - Added verbose progress information for heavy export tasks (WMOs, ADTs, etc).
+- Added 'Strip Whitespace From Copied Paths' option to settings.
 - Fixed an issue exporting pre-baked map tiles that lack height textures. (example: https://i.imgur.com/v9nRgjk.jpg)
 - Fixed an issue that caused the toast bar to disappear while an export was in progress.
 - Fixed an issue with exported WMO objects having .obj prefixed MTL names.

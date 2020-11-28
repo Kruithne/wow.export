@@ -132,6 +132,10 @@
 	grid-template-columns: unset;
 
 	.filter {
+		> .regex-info {
+			right: 214px;
+		}
+
 		input[type="button"] {
 			width: unset;
 		}
@@ -182,11 +186,42 @@
 	}
 }
 
+#tab-text {
+	.preview-container {
+		.preview-background {
+			background: var(--background-dark);
+			position: relative;
+
+			pre {
+				overflow: scroll;
+				padding: 15px;
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				user-select: text;
+			}
+		}
+	}
+}
+
 .filter {
 	display: flex;
 	align-items: center;
 	grid-column: 1;
 	grid-row: 2;
+	position: relative;
+
+	> .regex-info {
+		position: absolute;
+		right: 17px;
+		padding: 3px 6px;
+		background: var(--border);
+		border-radius: 4px;
+		font-size: 0.8em;
+		cursor: help;
+	}
 
 	input {
 		width: 100%;

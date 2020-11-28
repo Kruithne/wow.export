@@ -134,6 +134,7 @@ class WDCReader {
 
 	/**
 	 * Load the schema for this table.
+	 * @param {string} layoutHash
 	 */
 	async loadSchema(layoutHash) {
 		const casc = core.view.casc;
@@ -221,7 +222,7 @@ class WDCReader {
 		const recordSize = data.readUInt32LE();
 		const stringTableSize = data.readUInt32LE();
 		const tableHash = data.readUInt32LE();
-		const layoutHash = data.readUInt32LE();
+		const layoutHash = data.readString(4, 'hex').toUpperCase();
 		const minID = data.readUInt32LE();
 		const maxID = data.readUInt32LE();
 		const locale = data.readUInt32LE();

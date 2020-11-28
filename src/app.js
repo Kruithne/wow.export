@@ -95,6 +95,7 @@ require('./js/ui/source-select');
 require('./js/ui/tab-textures');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
+require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
 
@@ -278,6 +279,22 @@ document.addEventListener('click', function(e) {
 		},
 
 		computed: {
+			/**
+			 * Returns true if the export directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isExportPathConcerning: function() {
+				return !!this.config?.exportDirectory?.match(/\s/g);
+			},
+
+			/**
+			 * Returns true if the editing config directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isEditExportPathConcerning: function() {
+				return !!this.configEdit?.exportDirectory?.match(/\s/g);
+			},
+
 			/**
 			 * Returns the currently 'active' screen, which is first on the stack.
 			 */

@@ -190,6 +190,10 @@ body {
 		content: '\f008';
 	}
 
+	&-text::before {
+		content: '\f0f6';
+	}
+
 	&-right {
 		margin-left: auto;
 		display: flex;
@@ -452,6 +456,10 @@ body {
 		background-size: cover;
 		z-index: -1;
 		opacity: 0.2;
+
+		&.xmas {
+			background-image: url(./images/loading-xmas.gif);
+		}
 	}
 
 	&-title {
@@ -525,4 +533,13 @@ body {
 		margin: 0 5px;
 		color: var(--border);
 	}
+}
+
+input.concern {
+	border-color: var(--toast-error) !important;
+	color: var(--toast-error) !important;
+}
+
+p.concern {
+	color: var(--toast-error);
 }
