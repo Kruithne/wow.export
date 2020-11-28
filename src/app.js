@@ -280,6 +280,22 @@ document.addEventListener('click', function(e) {
 
 		computed: {
 			/**
+			 * Returns true if the export directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isExportPathConcerning: function() {
+				return !!this.config?.exportDirectory?.match(/\s/g);
+			},
+
+			/**
+			 * Returns true if the editing config directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isEditExportPathConcerning: function() {
+				return !!this.configEdit?.exportDirectory?.match(/\s/g);
+			},
+
+			/**
 			 * Returns the currently 'active' screen, which is first on the stack.
 			 */
 			screen: function() {

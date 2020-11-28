@@ -63,7 +63,8 @@
 					<div>
 						<h1>Export Directory</h1>
 						<p>Local directory where files will be exported to.</p>
-						<file-field v-model="configEdit.exportDirectory"></file-field>
+						<p v-if="isEditExportPathConcerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
+						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
 					</div>
 					<div>
 						<h1>Enable Shared Textures</h1>
@@ -212,6 +213,7 @@
 							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
 						</div>
 						<div class="preview-container">
@@ -234,6 +236,7 @@
 							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
 						</div>
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
@@ -280,6 +283,7 @@
 							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
 						</div>
 						<div class="preview-container">
@@ -349,6 +353,7 @@
 							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
 							<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 						</div>
@@ -360,6 +365,7 @@
 							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterText" placeholder="Filter text files..."/>
 						</div>
 						<div class="preview-container">
@@ -378,6 +384,7 @@
 							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :copytrimwhitespace="config.removePathSpacesCopy"></listbox>
 						</div>
 						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>
 						</div>
 						<div id="sound-player">
@@ -463,7 +470,7 @@
 				<template v-else>
 					<span id="footer-links">
 						<a data-external="https://discord.gg/52mHpxC">Discord</a> - 
-						<a data-external="https://patreon.com/Marlamin">Patreon</a> - 
+						<a data-external="https://patreon.com/Kruithne">Patreon</a> - 
 						<a data-external="https://wow.tools/export/">About</a> - 
 						<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
 					</span>

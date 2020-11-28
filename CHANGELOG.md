@@ -1,3 +1,7 @@
+0.1.23 (28-11-2020)
+- Added a warning to the configuration screen for export directories that contain spaces.
+- Added indicator for when regular expression searching is enabled with quick-guide tooltip.
+
 0.1.22 (26-11-2020)
 - Fixed issue that prevented raw M2/skin exports.
 - Fixed an issue with local user-defined listfiles not working without a wildcard.
