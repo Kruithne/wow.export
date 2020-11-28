@@ -132,6 +132,10 @@
 	grid-template-columns: unset;
 
 	.filter {
+		> .regex-info {
+			right: 214px;
+		}
+
 		input[type="button"] {
 			width: unset;
 		}
@@ -207,6 +211,17 @@
 	align-items: center;
 	grid-column: 1;
 	grid-row: 2;
+	position: relative;
+
+	> .regex-info {
+		position: absolute;
+		right: 17px;
+		padding: 3px 6px;
+		background: var(--border);
+		border-radius: 4px;
+		font-size: 0.8em;
+		cursor: help;
+	}
 
 	input {
 		width: 100%;
