@@ -63,7 +63,8 @@
 					<div>
 						<h1>Export Directory</h1>
 						<p>Local directory where files will be exported to.</p>
-						<file-field v-model="configEdit.exportDirectory"></file-field>
+						<p v-if="isEditExportPathConcerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
+						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
 					</div>
 					<div>
 						<h1>Enable Shared Textures</h1>

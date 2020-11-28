@@ -534,3 +534,12 @@ body {
 		color: var(--border);
 	}
 }
+
+input.concern {
+	border-color: var(--toast-error) !important;
+	color: var(--toast-error) !important;
+}
+
+p.concern {
+	color: var(--toast-error);
+}
