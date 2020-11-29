@@ -216,7 +216,7 @@ class WDCReader {
 		const recordSize = data.readUInt32LE();
 		const stringTableSize = data.readUInt32LE();
 		const tableHash = data.readUInt32LE();
-		const layoutHash = data.readString(4, 'hex').toUpperCase();
+		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16)).join('').toUpperCase().padStart(8, '0');
 		const minID = data.readUInt32LE();
 		const maxID = data.readUInt32LE();
 		const locale = data.readUInt32LE();
