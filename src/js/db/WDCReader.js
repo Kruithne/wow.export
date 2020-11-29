@@ -222,7 +222,7 @@ class WDCReader {
 		const recordSize = data.readUInt32LE();
 		const stringTableSize = data.readUInt32LE();
 		const tableHash = data.readUInt32LE();
-		const layoutHash = data.readString(4, 'hex').toUpperCase();
+		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16)).join('').toUpperCase().padStart(8, '0');
 		const minID = data.readUInt32LE();
 		const maxID = data.readUInt32LE();
 		const locale = data.readUInt32LE();
@@ -512,9 +512,7 @@ class WDCReader {
 								if (bitpackedValue in palletData[fieldIndex]) {
 									out[prop] = palletData[fieldIndex][bitpackedValue];
 								} else {
-									// ToDo: This is happening when loading CreatureDisplayInfo via GUI, but not when reading it via tests. File is apparently also not available locally so it reads it from cache (d42d81c636ca01a1bcd92e5dfd4c5ed1). Investigate!
-									console.log("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
-									out[prop] = 0;
+									throw new Error("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
 								}
 							} else {
 								out[prop] = bitpackedValue;

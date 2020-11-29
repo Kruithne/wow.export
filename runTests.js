@@ -3,7 +3,6 @@ const fs = require('fs');
 // Unit tests to be executed.
 const INCLUDED_UNIT_TESTS = [
 	'./tests/bufferTest',
-	'./tests/db2Test',
 ];
 
 globalThis.BUILD_RELEASE = true;
