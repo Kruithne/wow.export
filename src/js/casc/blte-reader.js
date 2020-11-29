@@ -178,7 +178,7 @@ class BLTEReader extends BufferWrapper {
 					if (e instanceof EncryptionError) {
 						// Partial decryption allows us to leave zeroed data.
 						if (this.partialDecrypt)
-							this._ofs += blockEnd - block.offset;
+							this._ofs += this.blocks[index].DecompSize;
 						else
 							throw e;
 					}
