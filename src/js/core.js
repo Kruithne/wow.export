@@ -182,10 +182,12 @@ const registerDropHandler = (handler) => {
 const getDropHandler = (file) => {
 	file = file.toLowerCase();
 
-	for (const handler of dropHandlers)
-		for (const ext of handler.ext)
+	for (const handler of dropHandlers) {
+		for (const ext of handler.ext) {
 			if (file.endsWith(ext))
 				return handler;
+		}
+	}
 	
 	return null;
 };
