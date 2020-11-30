@@ -168,9 +168,10 @@ class DBDEntry {
 			return true;
 
 		// Fallback to checking build ranges.
-		for (const range of this.buildRanges)
+		for (const range of this.buildRanges) {
 			if (isBuildInRange(buildID, range.min, range.max))
 				return true;
+		}
 
 		return false;
 	}
@@ -195,9 +196,10 @@ class DBDParser {
 	 * @returns {?DBDEntry}
 	 */
 	getStructure(buildID, layoutHash) {
-		for (const entry of this.entries)
+		for (const entry of this.entries) {
 			if (entry.isValidFor(buildID, layoutHash))
 				return entry;
+		}
 
 		return null;
 	}
@@ -247,11 +249,10 @@ class DBDParser {
 					const builds = buildMatch[1].split(',');
 					for (const build of builds) {
 						const buildRange = build.match(PATTERN_BUILD_RANGE);
-						if (buildRange !== null) {
+						if (buildRange !== null)
 							entry.addBuild(buildRange[1], buildRange[2]);
-						} else {
+						else
 							entry.addBuild(build.trim());
-						}
 					}
 
 					continue;
