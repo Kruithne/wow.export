@@ -44,9 +44,10 @@ class Salsa20 {
 	 */
 	setKey(key) {
 		// Expand 16-byte (4-word) key into a 32-byte (8-word) key.
-		if (key.length === 16)
+		if (key.length === 16) {
 			for (let i = 0; i < 16; i++)
 				key[16 + i] = key[i];
+		}
 
 		for (let i = 0, j = 0; i < 8; i++, j += 4)
 			this.keyWords[i] = (key[j] & 0xFF) | ((key[j + 1] & 0xFF) << 8) | ((key[j + 2] & 0xFF) << 16) | ((key[j + 3] & 0xFF) << 24);

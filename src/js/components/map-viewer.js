@@ -315,9 +315,10 @@ Vue.component('map-viewer', {
 				this.selection.length = 0; // Reset the selection array.
 				
 				// Iterate over all available tiles in the mask and select them.
-				for (let i = 0, n = this.mask.length; i < n; i++)
+				for (let i = 0, n = this.mask.length; i < n; i++) {
 					if (this.mask[i] === 1)
 						this.selection.push(i);
+				}
 
 				// Trigger a re-render to show the new selection.
 				this.render();

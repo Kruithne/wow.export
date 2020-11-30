@@ -184,9 +184,10 @@ document.addEventListener('click', function(e) {
 			 * @param {boolean} state 
 			 */
 			setAllWMOGroups: function(state) {
-				if (this.modelViewerWMOGroups)
+				if (this.modelViewerWMOGroups) {
 					for (const node of this.modelViewerWMOGroups)
 						node.checked = state;
+				}
 			},
 
 			/**
@@ -194,9 +195,10 @@ document.addEventListener('click', function(e) {
 			 * @param {boolean} state 
 			 */
 			setAllGeosets: function(state) {
-				if (this.modelViewerGeosets)
+				if (this.modelViewerGeosets) {
 					for (const node of this.modelViewerGeosets)
 						node.checked = state;
+				}
 			},
 
 			/**
@@ -341,9 +343,10 @@ document.addEventListener('click', function(e) {
 			 * Return the locale key for the configured CASC locale.
 			 */
 			selectedLocaleKey: function() {
-				for (const [key, flag] of Object.entries(this.availableLocale.flags))
+				for (const [key, flag] of Object.entries(this.availableLocale.flags)) {
 					if (flag === this.config.cascLocale)
 						return key;
+				}
 
 				return 'unUN';
 			},
