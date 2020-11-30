@@ -156,6 +156,46 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Read one or more signed integers of variable byte length in little endian.
+	 * @param {number} byteLength 
+	 * @param {number} [count=1]
+	 * @returns {number|number[]}
+	 */
+	readIntLE(byteLength, count = 1) {
+		return this._readInt(count, LITTLE_ENDIAN.READ_INT, byteLength);
+	}
+
+	/**
+	 * Read one or more unsigned integers of variable byte length in little endian.
+	 * @param {number} byteLength 
+	 * @param {number} [count=1]
+	 * @returns {number|number[]}
+	 */
+	readUIntLE(byteLength, count = 1) {
+		return this._readInt(count, LITTLE_ENDIAN.READ_UINT, byteLength);
+	}
+
+	/**
+	 * Read one or more signed integers of variable byte length in big endian.
+	 * @param {number} byteLength 
+	 * @param {number} [count=1]
+	 * @returns {number}
+	 */
+	readIntBE(byteLength, count = 1) {
+		return this._readInt(count, BIG_ENDIAN.READ_INT, byteLength);
+	}
+	
+	/**
+	 * Read one or more unsigned integers of variable byte length in big endian.
+	 * @param {number} byteLength 
+	 * @param {number} [count=1]
+	 * @returns {number}
+	 */
+	readUIntBE(byteLength, count = 1) {
+		return this._readInt(count, BIG_ENDIAN.READ_UINT, byteLength);
+	}
+
+	/**
 	 * Read one or more signed 8-bit integers in little endian.
 	 * @param {number} count How many to read.
 	 * @returns {number|number[]}
@@ -864,9 +904,10 @@ class BufferWrapper {
 	 * Check if this buffer is entirely zeroed.
 	 */
 	isZeroed() {
-		for (let i = 0, n = this.byteLength; i < n; i++)
+		for (let i = 0, n = this.byteLength; i < n; i++) {
 			if (this._buf[i] !== 0x0)
 				return false;
+		}
 
 		return true;
 	}

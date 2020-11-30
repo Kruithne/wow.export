@@ -285,7 +285,7 @@ class WDCReader {
 		let prevPos = data.offset;
 
 		const palletData = new Array(fieldInfo.length);
-		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
+		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 				palletData[fieldIndex] = new Array();
@@ -301,7 +301,7 @@ class WDCReader {
 
 		// char common_data[header.common_data_size];
 		const commonData = new Array(fieldInfo.length);
-		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++){
+		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
 			const thisFieldInfo = fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.CommonData) {
 				const commonDataMap = commonData[fieldIndex] = new Map();
@@ -357,27 +357,26 @@ class WDCReader {
 			// relationship_map
 			let relationshipMap;
 
-			if (header.relationshipDataSize > 0){
+			if (header.relationshipDataSize > 0) {
 				const relationshipEntryCount = data.readUInt32LE();
 				const relationshipMinID = data.readUInt32LE(); // What are these used for?
 				const relationshipMaxID = data.readUInt32LE(); // What are these used for?
 
 				relationshipMap = new Map();
-				for (let i = 0; i < relationshipEntryCount; i++){
+				for (let i = 0; i < relationshipEntryCount; i++) {
 					const foreignID = data.readUInt32LE();
 					const recordIndex = data.readUInt32LE();
 					relationshipMap.set(recordIndex, foreignID);
 				}
 
 				// If a section is encrypted it is highly likely we don't read the correct amount of data here. Skip ahead if so.
-				if (prevPos + header.relationshipDataSize != data.offset){
+				if (prevPos + header.relationshipDataSize != data.offset)
 					data.seek(prevPos + header.relationshipDataSize);
-				}
 			}
 
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
-			// ToDo: Read
+			// TODO: Read
 			if (wdcVersion === 3)
 				data.move(header.offsetMapIDCount * 4);
 
@@ -385,7 +384,6 @@ class WDCReader {
 		}
 
 		const castBuffer = BufferWrapper.alloc(8, true);
-		const bitBuffer = new ArrayBuffer(8);
 
 		// Parse section records.
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
@@ -434,7 +432,7 @@ class WDCReader {
 				const out = {};
 				let fieldIndex = 0;
 				for (const [prop, type] of this.schema.entries()) {
-					if (type === FieldType.Relation){
+					if (type === FieldType.Relation) {
 						out[prop] = section.relationshipMap.get(i);
 						continue;
 					}
@@ -484,22 +482,11 @@ class WDCReader {
 						case CompressionType.BitpackedSigned:
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
-							// ToDo: All bitpacked stuff requires testing on more DB2s before being able to call it done.
-
+							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
-							// ToDo: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
-							let rawValue;
-							if (data.remainingBytes >= 8){
-								rawValue = data.readUInt64LE();
-							} else {
-								// If this doesn't work the last (few?) fields of a file might be wrong. Least it don't crash no more.
-								const view = new DataView(bitBuffer);
-								const left = data.remainingBytes;
-								for (let i = 0; i < left; i++)
-									view.setUint8(i, data.readUInt8());
-								rawValue = view.getBigUint64(0, true)
-							}
+							// TODO: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
+							const rawValue = data.remainingBytes >= 8 ? data.readUInt64LE() : BigInt(data.readUIntLE(data.remainingBytes));
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
 							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
@@ -509,11 +496,10 @@ class WDCReader {
 								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
 									out[prop][i] = palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)];
 							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
-								if (bitpackedValue in palletData[fieldIndex]) {
+								if (bitpackedValue in palletData[fieldIndex])
 									out[prop] = palletData[fieldIndex][bitpackedValue];
-								} else {
+								else
 									throw new Error("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
-								}
 							} else {
 								out[prop] = bitpackedValue;
 							}
@@ -523,8 +509,8 @@ class WDCReader {
 
 					// Reinterpret field correctly for compression types other than None
 					if (recordFieldInfo.fieldCompression !== CompressionType.None) {
-						// ToDo: Can arrays of other types than uint be bitpacked? If so, this needs support. Also, strings. 
-						if (!Array.isArray(type)){
+						// TODO: Can arrays of other types than uint be bitpacked? If so, this needs support. Also, strings.
+						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
 							castBuffer.writeBigUInt64LE(BigInt(out[prop]));
 							castBuffer.seek(0);
@@ -548,9 +534,8 @@ class WDCReader {
 					// Round floats correctly
 					if (fieldType == FieldType.Float) {
 						if (count > 0) {
-							for (let i = 0; i < count; i++) {
+							for (let i = 0; i < count; i++)
 								out[prop][i] = Math.round(out[prop][i] * 100) / 100;
-							}
 						} else {
 							out[prop] = Math.round(out[prop] * 100) / 100;
 						}
