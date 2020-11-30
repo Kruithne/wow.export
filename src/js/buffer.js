@@ -516,6 +516,16 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Read a string from the buffer and parse it as JSON.
+	 * @param {number} [length=0]
+	 * @param {encoding} [encoding=utf8]
+	 * @returns {object}
+	 */
+	readJSON(length = 0, encoding = 'utf8') {
+		return JSON.parse(this.readString(length, encoding));
+	}
+
+	/**
 	 * Read the entire buffer split by lines (\r\n, \n, \r).
 	 * Preserves current offset of the wrapper.
 	 * @param {string} encoding 

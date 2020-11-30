@@ -5,6 +5,7 @@
  */
 const log = require('../log');
 const util = require('util');
+const generics = require('../generics');
 
 class IntegrationTest {
 	/**
@@ -17,6 +18,14 @@ class IntegrationTest {
 		this.runner = runner;
 		this.succeeded = 0;
 		this.casc = casc;
+		this.enabled = true;
+	}
+	
+	/**
+	 * Initialize the testing unit.
+	 */
+	async init() {
+		// Overwrite if the test unit needs to process before the tests are called.
 	}
 
 	/**

@@ -13,6 +13,7 @@ const IntegrationTest = require('../integration-test');
 // TODO: Add test for writeBuffer()/readBuffer()
 // TODO: Add integer/float read/write tests.
 // TODO: Add test for readHexString()
+// TODO: Add test for readJSON().
 
 class BufferTest extends IntegrationTest {
 	/**
