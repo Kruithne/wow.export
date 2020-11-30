@@ -8,6 +8,7 @@ const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const generics = require('../generics');
+const util = require('util');
 
 let selectedFile = null;
 
