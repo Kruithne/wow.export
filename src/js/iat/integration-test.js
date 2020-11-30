@@ -11,10 +11,21 @@ class IntegrationTest {
 	 * IntegrationTest constructor.
 	 * Do not call this directly, use extending classes.
 	 * @param {TestRunner} runner 
+	 * @param {CASC} [casc=null]
 	 */
-	constructor(runner) {
+	constructor(runner, casc = null) {
 		this.runner = runner;
 		this.succeeded = 0;
+		this.casc = casc;
+	}
+
+	/**
+	 * Returns true if a test unit requires a CASC instance provided as the
+	 * second parameter. If false, this test unit will be automatically skipped
+	 * if CASC has not been initialized.
+	 */
+	static get requireCASC() {
+		return false;
 	}
 
 	/**

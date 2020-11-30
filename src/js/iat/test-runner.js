@@ -8,6 +8,7 @@ const util = require('util');
 const log = require('../log');
 
 const BufferTest = require('./tests/buffer-test');
+const CASCTest = require('./tests/casc-test');
 
 class TestRunner {
 	constructor() {
@@ -21,7 +22,8 @@ class TestRunner {
 	 */
 	get testUnits() {
 		return [
-			BufferTest
+			BufferTest,
+			CASCTest
 		];
 	}
 
@@ -47,14 +49,27 @@ class TestRunner {
 		this.currentTest = 1;
 
 		// Construct test unit instances to get a total test count.
+		const casc = core.view.casc;
 		for (let i = 0; i < unitCount; i++) {
-			const test = tests[i] = new this.testUnits[i](this);
-			this.testCount += test.testCount;
+			const testClass = this.testUnits[i];
+
+			if (testClass.requireCASC) {
+				if (casc !== null) {
+					tests[i] = new testClass(this, casc);
+				} else {
+					log.write('Skipping test unit %s (CASC has not been initiated)', testClass.name);
+					continue;
+				}
+			} else {
+				tests[i] = new testClass(this);
+			}
+
+			this.testCount == tests[i].testCount;
 		}
 
 		// Run the tests.
 		for (const test of tests)
-			await test.run();
+			await test?.run();
 
 		log.write('===== INTEGRATION TESTS FINISHED =====');
 	}
