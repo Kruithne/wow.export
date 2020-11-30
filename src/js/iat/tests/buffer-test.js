@@ -7,6 +7,18 @@ const assert = require('assert');
 const BufferWrapper = require('../../buffer');
 const IntegrationTest = require('../integration-test');
 
+// TODO: Add test for getDataURL / revokeDataURL.
+// TODO: Add test for setCapacity()
+// TODO: Add test for calculateHash()
+// TODO: Add test for isZeroed()
+// TODO: Add test for getCRC32()
+// TODO: Add test for deflate().
+// TODO: Add test for writeToFile()/readFile()
+// TODO: Add test for writeBuffer()/readBuffer()
+// TODO: Add integer/float read/write tests.
+// TODO: Add test for readLines()
+// TODO: Add test for readHexString()
+
 class BufferTest extends IntegrationTest {
 	/**
 	 * Returns the individual tests for this test unit.
@@ -17,7 +29,10 @@ class BufferTest extends IntegrationTest {
 			this.testBufferConstruction,
 			this.testBufferString,
 			this.testBufferIndexOf,
-			this.testBufferAllocation
+			this.testBufferAllocation,
+			this.testRawProperties,
+			this.testBufferFrom,
+			this.testBufferNavigation
 		]
 	}
 
@@ -30,9 +45,71 @@ class BufferTest extends IntegrationTest {
 
 		assert.strictEqual(buf.byteLength, raw.byteLength, 'Wrapped buffer size does not match source node buffer size');
 		assert.strictEqual(buf.offset, 0, 'Non-zero offset in newly wrapped buffer.');
+		assert.strictEqual(buf.remainingBytes, raw.byteLength, 'Unexpected amount of remaining bytes after construction');
 
 		for (let i = 0; i < raw.byteLength; i++)
 			assert.strictEqual(buf.readInt8(), raw[i], 'Wrapped buffed does not match source node buffer');
+	}
+
+	/**
+	 * Test functionality of the BufferWrapper.from() static constructor.
+	 */
+	testBufferFrom() {
+		const str = 'Stand and deliver.';
+		const raw = Buffer.from(str);
+		const buf = BufferWrapper.from(str);
+
+		assert.strictEqual(buf.byteLength, raw.byteLength, 'Size of Buffer.from() and BufferWrapper.from() do not match');
+		assert.strictEqual(buf.offset, 0, 'Non-zero offset for BufferWrapper.from() construction')
+		assert.strictEqual(buf.remainingBytes, raw.byteLength, 'Unexpected amount of remaining bytes after BufferWrapper.from() construction');
+
+		for (let i = 0; i < raw.byteLength; i++)
+			assert.strictEqual(buf.readInt8(), raw[i], 'Contents of Buffer.from() does not match BufferWrapper.from()');
+	}
+
+	/**
+	 * Test the return value of BufferWrapper.raw and BufferWrapper.internalArrayBuffer.
+	 */
+	testRawProperties() {
+		const raw = Buffer.from('Hello, world!');
+		const buf = new BufferWrapper(raw);
+
+		assert.strictEqual(buf.raw, raw, 'BufferWrapper.raw does not return the given buffer instance');
+		assert.strictEqual(buf.internalArrayBuffer, raw.buffer, 'BufferWrapper.internalArrayBuffer does not return the correct instance');
+	}
+
+	testBufferNavigation() {
+		const buf = BufferWrapper.from('This string is 28 bytes long');
+		
+		// A newly constructed BufferWrapper should always start with an offset of zero.
+		assert.strictEqual(buf.offset, 0, 'Buffer does not start at zero offset');
+
+		// Seek to every in-bounds position and validate offset/remainingBytes.
+		for (let i = 0; i < 29; i++) {
+			buf.seek(i);
+			assert.strictEqual(buf.offset, i, 'Buffer did not seek() to correct index');
+			assert.strictEqual(buf.remainingBytes, 28 - i, 'Unexpected remaining bytes after seek()');
+		}
+
+		// Attempt to seek out-of-bounds in both directions.
+		assert.throws(() => buf.seek(buf.byteLength + 1), 'Buffer did not throw when seeking out of bounds');
+		assert.throws(() => buf.seek(-1), 'Buffer did not throw when seeking out of bounds (negative)');
+
+		// Reset to offset 5 and move forward zero bytes. The offset should remain at 5.
+		buf.seek(5);
+		buf.move(0);
+		assert.strictEqual(buf.offset, 5, 'Buffer offset moved after calling move(0)');
+
+		// Move some bytes in both directions and validate offset.
+		buf.move(5);
+		assert.strictEqual(buf.offset, 10, 'Buffer at unexpected offset after move(5)');
+		buf.move(-7);
+		assert.strictEqual(buf.offset, 3, 'Buffer at unexpected offset after move(-7)');
+
+		// Attempt to move out-of-bounds in both directions.
+		buf.seek(0);
+		assert.throws(() => buf.move(40), 'Buffer did not throw when moving out of bounds');
+		assert.throws(() => buf.move(-40), 'Buffer did not throw when moving out of bounds (negative)');
 	}
 
 	/**
@@ -105,14 +182,19 @@ class BufferTest extends IntegrationTest {
 	 * Test allocation of a buffer wrapper.
 	 */
 	testBufferAllocation() {
+		// Allocate an unsafe buffer and verify initial values.
 		const unsafeAllocBuf = BufferWrapper.alloc(42, false);
 		assert.strictEqual(unsafeAllocBuf.byteLength, 42, 'Incorrect buffer size on unsafe allocation');
 		assert.strictEqual(unsafeAllocBuf.offset, 0, 'Non-zero offset on buffer unsafe allocation');
+		assert.strictEqual(unsafeAllocBuf.remainingBytes, 42, 'Unexpected amount of remaining bytes after unsafe allocation');
 
+		// Allocate a safe buffer and verify initial values.
 		const safeAllocBuf = BufferWrapper.alloc(32, true);
 		assert.strictEqual(safeAllocBuf.byteLength, 32, 'Incorrect buffer size on safe allocation');
 		assert.strictEqual(safeAllocBuf.offset, 0, 'Non-zero offset safe buffer allocation');
+		assert.strictEqual(unsafeAllocBuf.remainingBytes, 32, 'Unexpected amount of remaining bytes after safe allocation');
 
+		// A safely allocated buffer should be zeroed.
 		for (let i = 0; i < 32; i++)
 			assert.strictEqual(unsafeAllocBuf.readUInt8(), 0x0, 'Non-zero value in safe buffer allocation');
 	}
