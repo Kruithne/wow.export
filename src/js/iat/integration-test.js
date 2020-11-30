@@ -85,6 +85,9 @@ class IntegrationTest {
 			}
 
 			testIndex++;
+
+			// Give the progress bar a frame to breathe.
+			await generics.redraw();
 		}
 
 		log.write('Test unit %s %s (%d/%d)', this.unitName, this.passed ? 'succeeded' : 'failed', this.succeeded, this.testCount);
