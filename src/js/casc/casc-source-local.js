@@ -329,9 +329,9 @@ class CASCLocal extends CASC {
 	}
 
 	/**
-     * Get the current build ID.
-     * @returns {string}
-     */
+	* Get the current build ID.
+	* @returns {string}
+	*/
 	getBuildName() {
 		return this.build.Version;
 	}
