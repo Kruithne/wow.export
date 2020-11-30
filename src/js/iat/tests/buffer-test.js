@@ -8,15 +8,10 @@ const BufferWrapper = require('../../buffer');
 const IntegrationTest = require('../integration-test');
 
 // TODO: Add test for getDataURL / revokeDataURL.
-// TODO: Add test for setCapacity()
-// TODO: Add test for calculateHash()
-// TODO: Add test for isZeroed()
-// TODO: Add test for getCRC32()
 // TODO: Add test for deflate().
 // TODO: Add test for writeToFile()/readFile()
 // TODO: Add test for writeBuffer()/readBuffer()
 // TODO: Add integer/float read/write tests.
-// TODO: Add test for readLines()
 // TODO: Add test for readHexString()
 
 class BufferTest extends IntegrationTest {
@@ -32,7 +27,12 @@ class BufferTest extends IntegrationTest {
 			this.testBufferAllocation,
 			this.testRawProperties,
 			this.testBufferFrom,
-			this.testBufferNavigation
+			this.testBufferNavigation,
+			this.testBufferCRC32,
+			this.testBufferReadLines,
+			this.testBufferCalculateHash,
+			this.testBufferSetCapacity,
+			this.testBufferIsZeroed
 		]
 	}
 
@@ -197,6 +197,76 @@ class BufferTest extends IntegrationTest {
 		// A safely allocated buffer should be zeroed.
 		for (let i = 0; i < 32; i++)
 			assert.strictEqual(unsafeAllocBuf.readUInt8(), 0x0, 'Non-zero value in safe buffer allocation');
+	}
+
+	/**
+	 * Test BufferWrapper.getCRC32() return value.
+	 */
+	testBufferCRC32() {
+		const buf = BufferWrapper.from('I bless the rains down in Africa.');
+		assert.strictEqual(buf.getCRC32(), -555790484, 'CRC32 mismatch');
+	}
+
+	/**
+	 * Test BufferWrapper.calculateHash() return values.
+	 */
+	testBufferCalculateHash() {
+		const buf = BufferWrapper.from('We do what we must, because, we can.');
+		assert.strictEqual(buf.calculateHash('md5'), 'aee2eb3a016fec70d3dc867a7affe73d', 'MD5 hash mismatch');
+		assert.strictEqual(buf.calculateHash('sha1'), 'bbda825e691c4adff5fe646f10e3786722541d31', 'SHA-1 hash mismatch');
+	}
+
+	/**
+	 * Test BufferWrapper.readLines() functionality.
+	 */
+	testBufferReadLines() {
+		// The following string contains three possible line-endings, a blank line
+		// and trailing/leading empty lines.
+		const input = '\nLineA\nLineB\n\nLineC\r\nLineD\rLineE\n';
+		const expected = ["", "LineA", "LineB", "", "LineC", "LineD", "LineE", ""];
+
+		const buf = BufferWrapper.from(input);
+		const lines = buf.readLines();
+
+		for (let i = 0; i < expected.length; i++)
+			assert.strictEqual(lines[i], expected[i], 'readLines() output mismatch');
+	}
+
+	/**
+	 * Test BufferWrapper.setCapacity() functionality.
+	 */
+	testBufferSetCapacity() {
+		const str = 'I walk through the valley of the shadow of death.';
+		const buf = BufferWrapper.from(str);
+
+		// Setting the capacity of a buffer to the current size should not effect the data.
+		buf.seek(0);
+		buf.setCapacity(buf.byteLength);
+		assert.strictEqual(buf.byteLength, str.length, 'setCapacity(size) has changed buffer size');
+		assert.strictEqual(buf.readString(), str, 'setCapacity(size) has changed buffer data');
+
+		// Setting the capacity to be higher should introduce null bytes (if secure is set).
+		buf.seek(0);
+		buf.setCapacity(55, true);
+		assert.strictEqual(buf.byteLength, 55, 'setCapacity(55) does not give expected buffer size');
+		assert.strictEqual(buf.readString(), str.padEnd(55, '\0'), 'setCapacity(55) does not give expected buffer data');
+
+		// Setting the capacity lower should result in data maintained up to the new capacity.
+		buf.seek(0);
+		buf.setCapacity(20);
+		assert.strictEqual(buf.byteLength, 20, 'setCapacity(20) does not give expected buffer size');
+		assert.strictEqual(buf.readString(), str.substr(0, 20), 'setCapacity(20) does not give expected buffer data');
+	}
+
+	/**
+	 * Test BufferWrapper.isZeroed() functionality.
+	 */
+	testBufferIsZeroed() {
+		const nonZeroed = BufferWrapper.from('Where have all the good monks gone?');
+		const zeroed = BufferWrapper.from('\0'.repeat(10));
+
+		assert.strictEqual(nonZeroed.isZeroed(), false, '.isZeroed() returns true on non-zeroed buffer');
+		assert.strictEqual(zeroed.isZeroed(), true, '.isZeroed() returns false on zeroed buffer');
 	}
 }
 
