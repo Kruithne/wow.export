@@ -20,7 +20,7 @@ core.registerLoadFunc(async () => {
 		if (!core.view.isBusy && first && selectedFile !== first) {
 			try {
 				const file = await core.view.casc.getFileByName(first);
-				core.view.textViewerSelectedText = file.readString(-1, 'utf8');
+				core.view.textViewerSelectedText = file.readString(undefined, 'utf8');
 
 				selectedFile = first;
 			} catch (e) {

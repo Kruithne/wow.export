@@ -478,14 +478,11 @@ class BufferWrapper {
 
 	/**
 	 * Read a buffer from this buffer.
-	 * @param {number} length How many bytes to read into the buffer.
+	 * @param {?number} length How many bytes to read into the buffer.
 	 * @param {boolean} wrap If true, returns BufferWrapper, else raw buffer.
 	 * @param {boolean} inflate If true, data will be decompressed using inflate.
 	 */
-	readBuffer(length = -1, wrap = true, inflate = false) {
-		if (!length) // Default to consuming all remaining bytes.
-			length = this.remainingBytes;
-
+	readBuffer(length = this.remainingBytes, wrap = true, inflate = false) {
 		// Ensure we have enough data left to fulfill this.
 		this._checkBounds(length);
 
@@ -501,12 +498,14 @@ class BufferWrapper {
 
 	/**
 	 * Read a string from the buffer.
-	 * @param {number} length 
-	 * @param {string} encoding 
+	 * @param {?number} length 
+	 * @param {string} [encoding=utf8]
+	 * @returns {string}
 	 */
-	readString(length = 0, encoding = 'utf8') {
-		if (length <= 0) // Default to consuming all remaining bytes.
-			length = this.remainingBytes;
+	readString(length = this.remainingBytes, encoding = 'utf8') {
+		// If length is zero, just return an empty string.
+		if (length === 0)
+			return '';
 
 		this._checkBounds(length);
 		const str = this._buf.toString(encoding, this._ofs, this._ofs + length);
@@ -517,11 +516,11 @@ class BufferWrapper {
 
 	/**
 	 * Read a string from the buffer and parse it as JSON.
-	 * @param {number} [length=0]
+	 * @param {?number} length
 	 * @param {encoding} [encoding=utf8]
 	 * @returns {object}
 	 */
-	readJSON(length = 0, encoding = 'utf8') {
+	readJSON(length = this.remainingBytes, encoding = 'utf8') {
 		return JSON.parse(this.readString(length, encoding));
 	}
 
@@ -534,7 +533,7 @@ class BufferWrapper {
 		const ofs = this._ofs;
 		this.seek(0);
 
-		const str = this.readString(0, encoding);
+		const str = this.readString(this.remainingBytes, encoding);
 		this.seek(ofs);
 
 		return str.split(/\r\n|\n|\r/);

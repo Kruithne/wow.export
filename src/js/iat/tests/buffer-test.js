@@ -146,7 +146,7 @@ class BufferTest extends IntegrationTest {
 		// Read encoded string (hex).
 		buf.seek(0);
 		const hexExpected = Buffer.from(text).toString('hex');
-		const hexActual = buf.readString(-1, 'hex');
+		const hexActual = buf.readString(undefined, 'hex');
 		assert.strictEqual(hexActual, hexExpected, 'readString(-1, hex) does not return expected hex string');
 	}
 
