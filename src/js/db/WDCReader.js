@@ -379,7 +379,6 @@ class WDCReader {
 		}
 
 		const castBuffer = BufferWrapper.alloc(8, true);
-		const bitBuffer = new ArrayBuffer(8);
 
 		// Parse section records.
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
@@ -479,22 +478,10 @@ class WDCReader {
 						case CompressionType.BitpackedIndexed:
 						case CompressionType.BitpackedIndexedArray:
 							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
-
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
 							// TODO: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
-							let rawValue;
-							if (data.remainingBytes >= 8) {
-								rawValue = data.readUInt64LE();
-							} else {
-								// If this doesn't work the last (few?) fields of a file might be wrong.
-								const view = new DataView(bitBuffer);
-
-								for (let i = 0, n = data.remainingBytes; i < n; i++)
-									view.setUint8(i, data.readUInt8());
-
-								rawValue = view.getBigUint64(0, true);
-							}
+							const rawValue = data.remainingBytes >= 8 ? data.readUInt64LE() : BigInt(data.readUIntLE(data.remainingBytes));
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
 							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
