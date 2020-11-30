@@ -22,6 +22,7 @@
 						<div class="option" id="nav-text" @click="setScreen('tab-text')">Text</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
+						<div v-if="isDev" title="Run Integration Tests" class="option" id="nav-tests" @click="runIntegrationTests"></div>
 						<div title="Blender Add-On" class="option" id="nav-blender" @click="setScreen('blender', true)"></div>
 						<div title="Restart" class="option" id="nav-reload" @click="restartApplication"></div>
 						<div id="nav-settings" title="Settings" class="option" @click="setScreen('config', true)"></div>

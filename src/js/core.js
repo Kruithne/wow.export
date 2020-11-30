@@ -27,6 +27,7 @@ let loaders = [];
 const view = {
 	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
+	isDev: !BUILD_RELEASE, // True if in development environment.
 	loadingProgress: '', // Sets the progress text for the loading screen.
 	loadingTitle: '', // Sets the title text for the loading screen.
 	loadPct: -1, // Controls active loading bar percentage.

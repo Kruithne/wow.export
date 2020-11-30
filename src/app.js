@@ -81,6 +81,7 @@ const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const blender = require('./js/blender');
 const fsp = require('fs').promises;
+const TestRunner = require('./js/iat/test-runner');
 
 require('./js/components/listbox');
 require('./js/components/listboxb');
@@ -156,6 +157,26 @@ document.addEventListener('click', function(e) {
 			 */
 			openRuntimeLog() {
 				log.openRuntimeLog();
+			},
+
+			/**
+			 * Initiate the integration tests.
+			 */
+			async runIntegrationTests() {
+				this.setScreen('loading', true);
+
+				this.loadingTitle = 'Running integration tests...';
+				this.loadingProgress = 'Initializing';
+				this.loadPct = 0;
+
+				const runner = new TestRunner();
+				await runner.run();
+
+				this.showPreviousScreen();
+				core.setToast('success', 'Integration tests have completed, see runtime log for results.', { 'View Log': () => log.openRuntimeLog() });
+
+				// Reset the load progress (to hide Windows taskbar progress).
+				this.loadPct = -1;
 			},
 
 			/**
