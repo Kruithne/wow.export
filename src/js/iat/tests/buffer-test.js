@@ -91,9 +91,13 @@ class BufferTest extends IntegrationTest {
 			assert.strictEqual(buf.remainingBytes, 28 - i, 'Unexpected remaining bytes after seek()');
 		}
 
+		// Seeking with a negative value seeks from the end of the buffer.
+		buf.seek(-8);
+		assert.strictEqual(buf.offset, 20, 'Buffer did not seek to correct negative offset');
+
 		// Attempt to seek out-of-bounds in both directions.
 		assert.throws(() => buf.seek(buf.byteLength + 1), 'Buffer did not throw when seeking out of bounds');
-		assert.throws(() => buf.seek(-1), 'Buffer did not throw when seeking out of bounds (negative)');
+		assert.throws(() => buf.seek(-(buf.byteLength + 1)), 'Buffer did not throw when seeking out of bounds (negative)');
 
 		// Reset to offset 5 and move forward zero bytes. The offset should remain at 5.
 		buf.seek(5);
