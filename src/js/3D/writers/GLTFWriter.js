@@ -224,7 +224,7 @@ class GLTFWriter {
 				children: bone.children
 			};
 
-			const parentPos = [0, 0, 0];
+			let parentPos = [0, 0, 0];
 			if (node.parentNode > -1)
 				parentPos = bones[bone.parentBone].pivot;
 				
