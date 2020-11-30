@@ -33,8 +33,6 @@ class BufferTest extends IntegrationTest {
 
 		for (let i = 0; i < raw.byteLength; i++)
 			assert.strictEqual(buf.readInt8(), raw[i], 'Wrapped buffed does not match source node buffer');
-
-		assert.fail('Some kind of test failure');
 	}
 
 	/**
