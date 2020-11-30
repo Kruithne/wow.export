@@ -22,7 +22,7 @@ To install wow.export, navigate to the ['wow.tools'](https://wow.tools/export/) 
 When an update to wow.export is available, you will be prompted in the application to update. This process is done entirely automatically once you accept the update!
 
 ## Building (Developers Only)
-- 🔨 Building wow.export **requires** Node 12.12.0 or above.
+- 🔨 Building wow.export **requires** Node 15.3.0 or above.
 - 🧙‍ For building on Windows, [node-gyp prerequisites](https://github.com/nodejs/node-gyp#on-windows) **may** be required.
 - 🍷 For building Windows builds on platforms **other** than Windows, Wine 1.6 or above is required.
 
