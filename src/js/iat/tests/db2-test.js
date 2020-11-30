@@ -7,7 +7,6 @@ const assert = require('assert');
 const IntegrationTest = require('../integration-test');
 const WDCReader = require('../../db/WDCReader');
 const listfile = require('../../casc/listfile');
-const log = require('../../log');
 const generics = require('../../generics');
 const path = require('path');
 
@@ -34,7 +33,7 @@ class DB2Test extends IntegrationTest {
 		// Download the DBD repo tree and parse it for entry names.
 		const raw = await generics.downloadFile(DBD_REPO_TREE);
 		const root = raw.readJSON();
-		
+
 		for (const entry of root.tree) {
 			if (entry.path.startsWith('definitions/')) {
 				const name = path.basename(entry.path, '.dbd');
