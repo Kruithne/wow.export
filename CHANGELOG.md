@@ -1,3 +1,6 @@
+0.1.24 (In Development)
+- Fixed missing escape slashes in regex guide tooltip.
+
 0.1.23 (28-11-2020)
 - Added a warning to the configuration screen for export directories that contain spaces.
 - Added indicator for when regular expression searching is enabled with quick-guide tooltip.
