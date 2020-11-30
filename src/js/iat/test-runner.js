@@ -42,6 +42,10 @@ class TestRunner {
 	async run() {
 		log.write('===== INTEGRATION TESTS INITIATED =====');
 
+		const casc = core.view.casc;
+		if (casc !== null)
+			log.write('CASC tests enabled (%s)', casc.getBuildName());
+
 		const unitCount = this.testUnits.length;
 		const tests = Array(unitCount);
 
