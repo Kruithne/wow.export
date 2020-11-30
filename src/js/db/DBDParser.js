@@ -294,7 +294,7 @@ class DBDParser {
 					}
 
 					// Parse signedness, either 'u' or undefined.
-					if (fieldMatch[5] !== undefined && fieldMatch[5].length > 0)
+					if (fieldMatch[5]?.length > 0)
 						field.isSigned = false;
 
 					// Parse data size (eg '32').
