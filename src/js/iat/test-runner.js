@@ -6,6 +6,7 @@
 const core = require('../core');
 const util = require('util');
 const log = require('../log');
+const generics = require('../generics');
 
 const BufferTest = require('./tests/buffer-test');
 const CASCTest = require('./tests/casc-test');
@@ -33,9 +34,13 @@ class TestRunner {
 	 * Mark the currently active test.
 	 * @param {string} name 
 	 */
-	markTest(name) {
+	async markTest(name) {
 		core.view.loadingProgress = util.format('Running test %d / %d (%s)', this.currentTest, this.testCount, name);
 		core.view.loadPct = Math.min(1, this.currentTest / this.testCount);
+		this.currentTest++;
+
+		// Give the progress bar a frame to breathe.
+		await generics.redraw();
 	}
 
 	/**

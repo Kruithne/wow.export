@@ -5,7 +5,6 @@
  */
 const log = require('../log');
 const util = require('util');
-const generics = require('../generics');
 
 class IntegrationTest {
 	/**
@@ -79,7 +78,7 @@ class IntegrationTest {
 
 		let testIndex = 1;
 		for (const test of this.tests) {
-			this.runner.markTest(util.format('%s->%s', this.unitName, test.name));
+			await this.runner.markTest(util.format('%s->%s', this.unitName, test.name));
 
 			try {
 				const testStart = performance.now();
@@ -94,9 +93,6 @@ class IntegrationTest {
 			}
 
 			testIndex++;
-
-			// Give the progress bar a frame to breathe.
-			await generics.redraw();
 		}
 
 		log.write('Test unit %s %s (%d/%d)', this.unitName, this.passed ? 'succeeded' : 'failed', this.succeeded, this.testCount);
