@@ -192,7 +192,7 @@ class BufferTest extends IntegrationTest {
 		const safeAllocBuf = BufferWrapper.alloc(32, true);
 		assert.strictEqual(safeAllocBuf.byteLength, 32, 'Incorrect buffer size on safe allocation');
 		assert.strictEqual(safeAllocBuf.offset, 0, 'Non-zero offset safe buffer allocation');
-		assert.strictEqual(unsafeAllocBuf.remainingBytes, 32, 'Unexpected amount of remaining bytes after safe allocation');
+		assert.strictEqual(safeAllocBuf.remainingBytes, 32, 'Unexpected amount of remaining bytes after safe allocation');
 
 		// A safely allocated buffer should be zeroed.
 		for (let i = 0; i < 32; i++)
