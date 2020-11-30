@@ -5,6 +5,8 @@ const INCLUDED_UNIT_TESTS = [
 	'./tests/bufferTest',
 ];
 
+globalThis.BUILD_RELEASE = true;
+
 // Create test runtime folder
 if (!fs.existsSync('./tests/user_data'))
 	fs.mkdirSync('./tests/user_data')

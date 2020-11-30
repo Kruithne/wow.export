@@ -8,5 +8,6 @@ module.exports = {
 	UInt32: Symbol('dbFieldUInt32'),
 	Int64: Symbol('dbFieldInt64'),
 	UInt64: Symbol('dbFieldUInt64'),
-	Float: Symbol('dbFieldFloat')
+	Float: Symbol('dbFieldFloat'),
+	Relation: Symbol('dbFieldRelation')
 };
