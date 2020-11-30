@@ -162,25 +162,25 @@ class BufferTest extends IntegrationTest {
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(number, 0) did not reset cursor properly');
 	
 		// Obtain position of a given string character from the start of the buffer.
-		assert.strictEqual(buf.indexOf('B', 0), 4, 'indexOf(char, 0) did not return correct character position');
+		assert.strictEqual(buf.indexOfChar('B', 0), 4, 'indexOf(char, 0) did not return correct character position');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char, 0) did not reset cursor properly');
 	
 		// Obtain position of a given character, from the start of the cursor (default start index).
 		buf.seek(22);
-		assert.strictEqual(buf.indexOf('a'), 26, 'indexOf(char) did not return correct character position');
+		assert.strictEqual(buf.indexOfChar('a'), 26, 'indexOf(char) did not return correct character position');
 		assert.strictEqual(buf.offset, 22, 'indexOf(char) did not reset cursor properly');
 		buf.seek(startOffset);
 	
 		// Obtain position of a character that does not exist in the string.
-		assert.strictEqual(buf.indexOf('x', 0), -1, 'indexOf(char) did not return -1 for non-existent character');
+		assert.strictEqual(buf.indexOfChar('x', 0), -1, 'indexOf(char) did not return -1 for non-existent character');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char) did not reset cursor after non-existent character');
 	
 		// Obtain position of character that is in string, but before cursor.
-		assert.strictEqual(buf.indexOf('B', 22), -1, 'indexOf(char) did not return -1 for character before cursor');
+		assert.strictEqual(buf.indexOfChar('B', 22), -1, 'indexOf(char) did not return -1 for character before cursor');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char) did not reset cursor after pre-cursor character');
 	
 		// Providing a string rather than a single character should throw.
-		assert.throws(() => buf.indexOf('Anduin'), 'indexOf(string) did not throw an error');
+		assert.throws(() => buf.indexOfChar('Anduin'), 'indexOf(string) did not throw an error');
 	}
 
 	/**

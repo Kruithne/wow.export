@@ -826,19 +826,27 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Get the index of the given char from start.
+	 * Defaults to the current reader offset.
+	 * @param {string} char 
+	 * @param {number} start 
+	 * @returns {number}
+	 */
+	indexOfChar(char, start = this.offset) {
+		if (char.length > 1)
+			throw new Error('BufferWrapper.indexOfChar() given string, expected single character.');
+
+		return this.indexOf(char.charCodeAt(0), start);
+	}
+
+	/**
 	 * Get the index of the given byte from start.
 	 * Defaults to the current reader offset.
-	 * @param {number|string} byte
+	 * @param {number} byte
 	 * @param {number} start 
+	 * @returns {number}
 	 */
 	indexOf(byte, start = this.offset) {
-		if (typeof byte === 'string') {
-			if (byte.length > 1)
-				throw new Error('.indexOf() given string, expected single character.');
-
-			byte = byte.charCodeAt(0);
-		}
-
 		const resetPos = this.offset;
 		this.seek(start);
 		
