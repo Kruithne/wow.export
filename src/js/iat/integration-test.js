@@ -66,7 +66,7 @@ class IntegrationTest {
 	 */
 	async run() {
 		this.succeeded = 0;
-		log.write('Running %s tests (%d)', this.unitName, this.testCount);
+		log.write('Running %s (%d tests)', this.unitName, this.testCount);
 
 		let testIndex = 1;
 		for (const test of this.tests) {
