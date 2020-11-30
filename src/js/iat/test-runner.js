@@ -64,7 +64,7 @@ class TestRunner {
 				tests[i] = new testClass(this);
 			}
 
-			this.testCount == tests[i].testCount;
+			this.testCount += tests[i].testCount;
 		}
 
 		// Run the tests.
