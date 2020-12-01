@@ -172,7 +172,7 @@ class M2Renderer {
 
 			// if (texture.flags & 0x2)
 				// tex.wrapT = THREE.RepeatWrapping;*/
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex });
+			this.materials[i] = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
 		}
 	}
 
@@ -251,7 +251,7 @@ class M2Renderer {
 			if (textureTypes[i] != 1)
 				continue;
 
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: 'compiledSkinTexture', map: texture });
+			this.materials[i] = new THREE.MeshPhongMaterial({ name: 'compiledSkinTexture', map: texture, side: THREE.DoubleSide });
 		}
 	}
 
@@ -436,10 +436,10 @@ class M2Renderer {
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex });
+				this.materials[i] = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
 			} else {
 				if (!this.defaultMaterial)
-					this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR });
+					this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 
 				this.materials[i] = this.defaultMaterial;
 			}
