@@ -506,7 +506,7 @@ class WDCReader {
 								if (bitpackedValue in palletData[fieldIndex])
 									out[prop] = palletData[fieldIndex][bitpackedValue];
 								else
-									throw new Error("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
+									throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
 							} else {
 								out[prop] = bitpackedValue;
 							}
@@ -523,7 +523,7 @@ class WDCReader {
 							castBuffer.seek(0);
 							switch (fieldType) {
 								case FieldType.String:
-									throw new Error("Strings currently not supported.");
+									throw new Error('Strings currently not supported.');
 
 								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
 								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
