@@ -34,8 +34,6 @@ let chrCustomizationAvailable = false;
 const loadTables = async () => { 
 	log.write('Loading creature textures...');
 
-	const creatureGeosetMap = new Map();
-
 	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2');
 	await creatureDisplayInfoGeosetData.parse();
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
