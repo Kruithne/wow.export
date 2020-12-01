@@ -484,7 +484,16 @@ class WDCReader {
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
 							// TODO: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
-							const rawValue = data.remainingBytes >= 8 ? data.readUInt64LE() : BigInt(data.readUIntLE(data.remainingBytes));
+							let rawValue;
+							if (data.remainingBytes >= 8) {
+								rawValue = data.readUInt64LE();
+							} else {
+								castBuffer.seek(0);
+								castBuffer.writeBuffer(data);
+
+								castBuffer.seek(0);
+								rawValue = castBuffer.readUInt64LE();
+							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
 							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
