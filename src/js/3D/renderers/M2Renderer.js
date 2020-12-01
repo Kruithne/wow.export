@@ -221,7 +221,7 @@ class M2Renderer {
 				const skinMats = dbLogic.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
 				this.buildSkinMaterial(skinMats);
 			} else {
-				console.log("Overriding texture slot " + textureForChoice.TextureType + " with " + textureForChoice.FileDataID);
+				console.log('Overriding texture slot ' + textureForChoice.TextureType + ' with ' + textureForChoice.FileDataID);
 				this.overrideTextureType(textureForChoice.TextureType, textureForChoice.FileDataID);
 			}
 		}
@@ -232,7 +232,7 @@ class M2Renderer {
 	 * Base material should be in [0] with all the other textures in layers on top of that.
 	 */
 	async buildSkinMaterial(skinMats) {
-		console.log("Building skin material", skinMats);
+		console.log('Building skin material', skinMats);
 		const mergedTexture = await this.mergeSkinMaterials(skinMats);
 		var texture = new THREE.Texture();
 
@@ -251,7 +251,7 @@ class M2Renderer {
 			if (textureTypes[i] != 1)
 				continue;
 
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: "compiledSkinTexture", map: texture });
+			this.materials[i] = new THREE.MeshPhongMaterial({ name: 'compiledSkinTexture', map: texture });
 		}
 	}
 
@@ -309,9 +309,9 @@ class M2Renderer {
 
 		gl.useProgram(shaderProgram);
 
-		const positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
-		const texcoordLocation = gl.getAttribLocation(shaderProgram, "a_texcoord");
-		const textureLocation = gl.getUniformLocation(shaderProgram, "u_texture");
+		const positionLocation = gl.getAttribLocation(shaderProgram, 'a_position');
+		const texcoordLocation = gl.getAttribLocation(shaderProgram, 'a_texcoord');
+		const textureLocation = gl.getUniformLocation(shaderProgram, 'u_texture');
 
 		// Create a buffer.
 		var positionBuffer = gl.createBuffer();

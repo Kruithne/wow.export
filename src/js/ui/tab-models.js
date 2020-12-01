@@ -128,7 +128,7 @@ const previewModel = async (fileName) => {
 
 						const texture = display.textures[0];
 
-						let cleanSkinName = "";
+						let cleanSkinName = '';
 						let skinName = listfile.getByID(texture);
 						if (skinName !== undefined) {
 							// Display the texture name without path/extension.
@@ -145,7 +145,7 @@ const previewModel = async (fileName) => {
 						if (display.extraGeosets?.length > 0)
 							skinName = skinName + display.extraGeosets.join(',');
 
-						cleanSkinName = cleanSkinName + " (" + display.ID + ")";
+						cleanSkinName = cleanSkinName + ' (' + display.ID + ')';
 
 						if (activeSkins.has(skinName))
 							continue;
@@ -416,7 +416,7 @@ core.registerLoadFunc(async () => {
 			}
 		} else {
 			for (let i = 0; i < currGeosets.length; i++)
-				currGeosets[i].checked = (currGeosets[i].id.toString().endsWith("0") || currGeosets[i].id.toString().endsWith("01"));
+				currGeosets[i].checked = (currGeosets[i].id.toString().endsWith('0') || currGeosets[i].id.toString().endsWith('01'));
 		}
 
 		const fileDataID = display.textures[0];

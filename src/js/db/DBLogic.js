@@ -186,11 +186,11 @@ const loadTables = async () => {
 						continue;
 
 					// Generate name because Blizz hasn't gotten around to setting it for everything yet.
-					let name = "";
-					if (chrCustomizationChoiceRow.Name_lang != "")
+					let name = '';
+					if (chrCustomizationChoiceRow.Name_lang != '')
 						name = chrCustomizationChoiceRow.Name_lang;
 					else
-						name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
+						name = 'Choice ' + chrCustomizationChoiceRow.OrderIndex;
 
 					choiceList.push({ id: chrCustomizationChoiceID, label: name });
 				}
@@ -420,7 +420,7 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	});
 
 	if (chrCustMatID == 0) {
-		console.log("Unable to find matching choice/related choice combo for choice " + choiceID + ", falling back to first entry");
+		console.log('Unable to find matching choice/related choice combo for choice ' + choiceID + ', falling back to first entry');
 		chrCustMatID = availableChoices[0].ChrCustomizationMaterialID;
 	}
 
@@ -436,7 +436,7 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
 
 	if (!(textureTarget in chrModelTexLayer[textureLayout])) {
-		console.log("TextureTarget " + textureTarget + " not found in texture layers");
+		console.log('TextureTarget ' + textureTarget + ' not found in texture layers');
 		return false;
 	} else {
 		const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
