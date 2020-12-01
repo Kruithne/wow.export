@@ -96,12 +96,8 @@ class M2Renderer {
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
-			if (this.reactive){
-				let isDefault = false;
-
-				if (skinMesh.submeshID == 0 || skinMesh.submeshID.toString().endsWith("01"))
-					isDefault = true;
-
+			if (this.reactive) {
+				const isDefault = (skinMesh.submeshID == 0 || skinMesh.submeshID.toString().endsWith('01'));
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
 			}
 		}
@@ -149,7 +145,7 @@ class M2Renderer {
 		}
 	}
 
-	async overrideTextureType(type, fileDataID){
+	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
@@ -180,7 +176,7 @@ class M2Renderer {
 		}
 	}
 
-	async applyCharacterCustomizationChoice(choiceID){
+	async applyCharacterCustomizationChoice(choiceID) {
 		// Get target geoset ID
 		const targetGeosetID = dbLogic.getGeosetForChoice(choiceID);
 
@@ -191,9 +187,8 @@ class M2Renderer {
 		if (otherChoices.length > 0) {
 			for (const otherChoice of otherChoices) {
 				const otherGeosetID = dbLogic.getGeosetForChoice(otherChoice.id);
-				if (otherGeosetID) {
+				if (otherGeosetID)
 					otherGeosets.push(otherGeosetID);
-				}
 			}
 		}
 
@@ -202,11 +197,11 @@ class M2Renderer {
 			for (let i = 0; i < currGeosets.length; i++) {
 				if (currGeosets[i].id == targetGeosetID) {
 					currGeosets[i].checked = true;
-					console.log("Checking " + currGeosets[i].id);
+					console.log('Checking ' + currGeosets[i].id);
 				} else {
 					// Check if current geoset is checked and part of another choice in the current option, disable if so.
 					if (currGeosets[i].checked && otherGeosets.includes(currGeosets[i].id)) {
-						console.log("Unchecking " + currGeosets[i].id);
+						console.log('Un-checking ' + currGeosets[i].id);
 						currGeosets[i].checked = false;
 					}
 				}
@@ -236,7 +231,7 @@ class M2Renderer {
 	 * TODO: Build skin material based on several FileDataIDs at specific X/Y offsets.
 	 * Base material should be in [0] with all the other textures in layers on top of that.
 	 */
-	async buildSkinMaterial(skinMats){
+	async buildSkinMaterial(skinMats) {
 		console.log("Building skin material", skinMats);
 		const mergedTexture = await this.mergeSkinMaterials(skinMats);
 		var texture = new THREE.Texture();
@@ -282,9 +277,8 @@ class M2Renderer {
 		gl.compileShader(vertShader);
 
 		var message = gl.getShaderInfoLog(vertShader);
-		if (message.length > 0) {
+		if (message.length > 0)
 			console.log(message);
-		}
 
 		const fragCode = 'precision mediump float;\n'+
 		'varying vec2 v_texcoord;' +
@@ -299,9 +293,8 @@ class M2Renderer {
 		gl.compileShader(fragShader);
 
 		var fragMessage = gl.getShaderInfoLog(fragShader);
-		if (fragMessage.length > 0) {
+		if (fragMessage.length > 0)
 			console.log(fragMessage);
-		}
 
 		const shaderProgram = gl.createProgram();
 		gl.attachShader(shaderProgram, vertShader);
@@ -384,7 +377,7 @@ class M2Renderer {
 
 		gl.enable(gl.BLEND);
 		
-		for (let i = 1; i < skinMats.length; i++){
+		for (let i = 1; i < skinMats.length; i++) {
 			if (!(i in skinMats))
 				continue;
 
@@ -486,11 +479,8 @@ class M2Renderer {
 			this.geosetWatcher();
 
 		// Release bound textures.
-		for (const tex of this.textures){
-			if (tex !== undefined){
-				tex.dispose();
-			}
-		}
+		for (const tex of this.textures)
+			tex?.dispose();
 
 		this.disposeMeshGroup();
 	}

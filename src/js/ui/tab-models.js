@@ -7,11 +7,13 @@ const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const path = require('path');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
+const dbLogic = require('../db/DBLogic');
+
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const BufferWrapper = require('../buffer');
+const ExportHelper = require('../casc/export-helper');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
@@ -19,7 +21,6 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
-const dbLogic = require('../db/DBLogic');
 
 const exportExtensions = {
 	'OBJ': '.obj',
@@ -80,7 +81,7 @@ const previewModel = async (fileName) => {
 
 		if (isM2) {
 			// Check if model is a character model
-			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)){
+			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)) {
 				core.view.modelViewerShowChrCust = true;
 				try {
 					let defaultOptions = new Map();
@@ -90,7 +91,7 @@ const previewModel = async (fileName) => {
 					const optionsForModel = dbLogic.getOptionsByChrModelID(chrModelID);
 
 					for (const chrCustomizationOption of optionsForModel) {
-						if (!(chrCustomizationOption.name in categoryList)){
+						if (!(chrCustomizationOption.name in categoryList)) {
 							categoryList.push({ id: chrCustomizationOption.id, label: chrCustomizationOption.name});
 							let choices = dbLogic.getChoicesByOption(chrCustomizationOption.id);
 							for (const chrCustomizationChoice of choices) {
@@ -117,14 +118,14 @@ const previewModel = async (fileName) => {
 				modelName = path.basename(modelName, '.m2');
 				
 				// Check for item textures
-				if (displays === undefined) {
+				if (displays === undefined)
 					displays = dbLogic.getItemDisplaysByFileDataID(fileDataID);
-				}
 
 				if (displays !== undefined) {
 					for (const display of displays) {
 						if (display.textures.length == 0)
 							continue;
+
 						const texture = display.textures[0];
 
 						let cleanSkinName = "";
@@ -141,16 +142,13 @@ const previewModel = async (fileName) => {
 						if (cleanSkinName == '')
 							cleanSkinName = 'base';
 
-
-						if (display.extraGeosets !== undefined && display.extraGeosets.length > 0){
+						if (display.extraGeosets?.length > 0)
 							skinName = skinName + display.extraGeosets.join(',');
-						}
 
 						cleanSkinName = cleanSkinName + " (" + display.ID + ")";
 
-						if (activeSkins.has(skinName)){
+						if (activeSkins.has(skinName))
 							continue;
-						}
 
 						// Push the skin onto the display list.
 						skinList.push({ id: skinName, label: cleanSkinName });
@@ -400,33 +398,25 @@ core.registerLoadFunc(async () => {
 
 		// Skin selector is single-select, should only be one item.
 		const selected = selection[0];
-
 		const display = activeSkins.get(selected.id);
 
 		let currGeosets = core.view.modelViewerGeosets;
 
 		if (display.extraGeosets !== undefined) {
 			for (let j = 0; j < currGeosets.length; j++) {
-				if (currGeosets[j].id > 0 && currGeosets[j].id < 900) {
+				if (currGeosets[j].id > 0 && currGeosets[j].id < 900)
 					currGeosets[j].checked = false;
-				}
 			}
 
 			for (let i = 0; i < display.extraGeosets.length; i++) {
 				for (let j = 0; j < currGeosets.length; j++) {
-					if (currGeosets[j].id == display.extraGeosets[i]){
+					if (currGeosets[j].id == display.extraGeosets[i])
 						currGeosets[j].checked = true;
-					}
 				}
 			}
 		} else {
-			for (let i = 0; i < currGeosets.length; i++) {
-				if (currGeosets[i].id.toString().endsWith("0") || currGeosets[i].id.toString().endsWith("01")){
-					currGeosets[i].checked = true;
-				} else {
-					currGeosets[i].checked = false;
-				}
-			}
+			for (let i = 0; i < currGeosets.length; i++)
+				currGeosets[i].checked = (currGeosets[i].id.toString().endsWith("0") || currGeosets[i].id.toString().endsWith("01"));
 		}
 
 		const fileDataID = display.textures[0];
@@ -449,9 +439,8 @@ core.registerLoadFunc(async () => {
 
 		// Check if user had already selected a choice, if so, select that later on. 
 		for (let i = 0; i < choiceList.length; i++) {
-			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == choiceList[i].id) {
+			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == choiceList[i].id)
 				currentlySelectedIndex = i;
-			}
 		}
 
 		core.view.modelViewerChrCustChoices = choiceList;

@@ -40,9 +40,8 @@ const loadTables = async () => {
 	await creatureDisplayInfoGeosetData.parse();
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
 	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
-		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID)){
+		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID))
 			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
-		}
 
 		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
 	}
@@ -73,21 +72,19 @@ const loadTables = async () => {
 			const displayIDs = modelIDToDisplayInfoMap.get(modelID);
 			const modelIDHasExtraGeosets = modelRow.CreatureGeosetDataID > 0;
 
-			for (const displayID of displayIDs){
+			for (const displayID of displayIDs) {
 				const display = creatureDisplayInfoMap.get(displayID);
 
-				if (modelIDHasExtraGeosets){
+				if (modelIDHasExtraGeosets) {
 					display.extraGeosets = Array();
-					if (creatureGeosetMap.has(displayID)) {
+					if (creatureGeosetMap.has(displayID))
 						display.extraGeosets = creatureGeosetMap.get(displayID);
-					}
 				}
 
-				if (creatureDisplays.has(fileDataID)) {
+				if (creatureDisplays.has(fileDataID))
 					creatureDisplays.get(fileDataID).push(display);
-				} else {
+				else
 					creatureDisplays.set(fileDataID, [display]);
-				}
 			}
 		}
 	}
@@ -100,11 +97,10 @@ const loadTables = async () => {
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [modelFileDataID, modelFileDataRow] of modelFileData.getAllRows()) {
-		if (modelResIDToFileDataID.has(modelFileDataRow.ModelResourcesID)){
+		if (modelResIDToFileDataID.has(modelFileDataRow.ModelResourcesID))
 			modelResIDToFileDataID.get(modelFileDataRow.ModelResourcesID).push(modelFileDataID);
-		} else {
+		else
 			modelResIDToFileDataID.set(modelFileDataRow.ModelResourcesID, [modelFileDataID]);
-		}
 	}
 	log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
 
@@ -130,27 +126,24 @@ const loadTables = async () => {
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [itemDisplayInfoID, itemDisplayInfoRow] of itemDisplayInfo.getAllRows()) {
 		const modelResIDs = itemDisplayInfoRow.ModelResourcesID.filter(e => e > 0);
-		if (modelResIDs.length == 0) {
+		if (modelResIDs.length == 0)
 			continue;
-		}
 
 		const matResIDs = itemDisplayInfoRow.ModelMaterialResourcesID.filter(e => e > 0);
-		if (matResIDs.length == 0) {
+		if (matResIDs.length == 0)
 			continue;
-		}
 
 		const modelFileDataIDs = modelResIDToFileDataID.get(modelResIDs[0]);
 		const textureFileDataID = matResIDToFileDataID.get(matResIDs[0]);
 
-		if (modelFileDataIDs !== undefined && textureFileDataID !== undefined){
-			for (const modelFileDataID of modelFileDataIDs){
+		if (modelFileDataIDs !== undefined && textureFileDataID !== undefined) {
+			for (const modelFileDataID of modelFileDataIDs) {
 				const display = { ID: itemDisplayInfoID, textures: [textureFileDataID]};
 
-				if (itemDisplays.has(modelFileDataID)) {
+				if (itemDisplays.has(modelFileDataID))
 					itemDisplays.get(modelFileDataID).push(display);
-				} else {
+				else
 					itemDisplays.set(modelFileDataID, [display]);
-				}
 			}
 		}
 	}
@@ -183,9 +176,8 @@ const loadTables = async () => {
 
 				let choiceList = Array();
 
-				if (!optionsByChrModel.has(chrCustomizationOptionRow.ChrModelID)) {
+				if (!optionsByChrModel.has(chrCustomizationOptionRow.ChrModelID))
 					optionsByChrModel.set(chrCustomizationOptionRow.ChrModelID, new Array());
-				}
 
 				optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).push({ id: chrCustomizationOptionID, name: chrCustomizationOptionRow.Name_lang });
 
@@ -195,11 +187,10 @@ const loadTables = async () => {
 
 					// Generate name because Blizz hasn't gotten around to setting it for everything yet.
 					let name = "";
-					if (chrCustomizationChoiceRow.Name_lang != "") {
+					if (chrCustomizationChoiceRow.Name_lang != "")
 						name = chrCustomizationChoiceRow.Name_lang;
-					} else {
+					else
 						name = "Choice " + chrCustomizationChoiceRow.OrderIndex;
-					}
 
 					choiceList.push({ id: chrCustomizationChoiceID, label: name });
 				}
@@ -217,12 +208,11 @@ const loadTables = async () => {
 			if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 				choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID)
 
-			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0){
-				if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID)){
+			if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0) {
+				if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID))
 					choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push(chrCustomizationElementRow);
-				} else {
+				else
 					choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [chrCustomizationElementRow]);
-				}
 
 				const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
 				chrCustMatMap.set(matRow.ID, {ChrModelTextureTargetID: matRow.ChrModelTextureTargetID, MaterialResourcesID: matRow.MaterialResourcesID});
@@ -242,9 +232,8 @@ const loadTables = async () => {
 		await chrModelTextureLayer.parse();
 
 		for (const [chrModelTextureLayerID, chrModelTextureLayerRow] of chrModelTextureLayer.getAllRows()) {
-			if (!(chrModelTextureLayerRow.CharComponentTextureLayoutsID in chrModelTexLayer)){
+			if (!(chrModelTextureLayerRow.CharComponentTextureLayoutsID in chrModelTexLayer))
 				chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID] = new Array();
-			}
 			
 			chrModelTexLayer[chrModelTextureLayerRow.CharComponentTextureLayoutsID][chrModelTextureLayerRow.ChrModelTextureTargetID[0]] = chrModelTextureLayerRow;
 		}
@@ -253,9 +242,8 @@ const loadTables = async () => {
 		await charComponentTextureSections.parse();
 
 		for (const [charComponentTextureSectionsID, charComponentTextureSectionsRow] of charComponentTextureSections.getAllRows()) {
-			if (!charComponentTextureSectionMap.has(charComponentTextureSectionsRow.CharComponentTextureLayoutID)) {
+			if (!charComponentTextureSectionMap.has(charComponentTextureSectionsRow.CharComponentTextureLayoutID))
 				charComponentTextureSectionMap.set(charComponentTextureSectionsRow.CharComponentTextureLayoutID, new Array());
-			}
 
 			charComponentTextureSectionMap.get(charComponentTextureSectionsRow.CharComponentTextureLayoutID)[charComponentTextureSectionsRow.SectionType] = charComponentTextureSectionsRow;
 		}
@@ -338,11 +326,10 @@ const getChoicesByOption = (optionID) => {
  * @returns {integer|boolean}
  */
 const getGeosetForChoice = (choiceID) => {
-	if (choiceToGeoset.has(choiceID)){
+	if (choiceToGeoset.has(choiceID))
 		return geosetMap.get(choiceToGeoset.get(choiceID));
-	} else {
-		return false;
-	}
+	
+	return false;
 };
 
 /** 
@@ -350,11 +337,10 @@ const getGeosetForChoice = (choiceID) => {
  * @returns {integer|boolean}
  */
 const getTextureTargetByChrCustomizationMaterialID = (chrModelMaterialID) => {
-	if (chrCustMatMap.has(chrModelMaterialID)) {
+	if (chrCustMatMap.has(chrModelMaterialID))
 		return chrCustMatMap.get(chrModelMaterialID).ChrModelTextureTargetID;
-	} else {
-		return false;
-	}
+
+	return false;
 }
 
 /**
@@ -365,19 +351,16 @@ const getTextureTargetByChrCustomizationMaterialID = (chrModelMaterialID) => {
 const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 	const chrModelID = fdidToChrModel.get(modelFileDataID);
 	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
-	if (!textureLayout) {
+	if (!textureLayout)
 		return false;
-	}
 	
 	let chrCustMatRows = Array();
 	let materials = choiceToChrCustMaterialID.get(choiceID);
-	for (const material of materials){
+	for (const material of materials)
 		chrCustMatRows.push(chrCustMatMap.get(material.ChrCustomizationMaterialID));
-	}
 
-	if (chrCustMatRows === undefined || chrCustMatRows.length == 0) {
+	if (!chrCustMatRows?.length)
 		return false;
-	}
 
 	if (!charComponentTextureSectionMap.has(textureLayout))
 		return false;
@@ -386,7 +369,7 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 
 	let skinMats = Array();
 
-	for (let i = 0; i < chrCustMatRows.length; i++){
+	for (let i = 0; i < chrCustMatRows.length; i++) {
 		const textureTarget = chrCustMatRows[i].ChrModelTextureTargetID;
 		const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
 
@@ -394,18 +377,17 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
 		if (textureLayer === undefined)
 			continue;
 
-		for (const textureSection of textureSections){
+		for (const textureSection of textureSections) {
 			// Not all texture sections have to be available
 			if (textureSection === undefined)
 				continue;
 
-			if (textureLayer.TextureSectionTypeBitMask == -1){
+			if (textureLayer.TextureSectionTypeBitMask == -1) {
 				// TODO: Non-section texture
 				skinMats[textureLayer.Layer] = { TextureType: textureLayer.TextureType, FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(1024, 512), position: new THREE.Vector2(0, 0) };
 			} else {
-				if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType)) {
+				if (textureLayer.TextureSectionTypeBitMask & (1 << textureSection.SectionType))
 					skinMats[textureLayer.Layer] = { TextureType: textureLayer.TextureType, FileDataID: matResIDToFileDataID.get(chrCustMatRows[i].MaterialResourcesID), size: new THREE.Vector2(textureSection.Width, textureSection.Height), position: new THREE.Vector2(textureSection.X, textureSection.Y) };
-				}
 			}
 		}
 	}
@@ -420,9 +402,9 @@ const getSkinMaterialsForChoice = (modelFileDataID, choiceID) => {
  */
 const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	const chrModelID = fdidToChrModel.get(modelFileDataID);
-	if (!choiceToChrCustMaterialID.has(choiceID)) {
+	if (!choiceToChrCustMaterialID.has(choiceID))
 		return false;
-	}
+
 	console.log(core.view.modelViewerChrCustCurrent);
 
 	let chrCustMatID = 0;
@@ -432,27 +414,24 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	// core.view.modelViewerChrCustCurrent has currently selected choice IDs for by category
 	core.view.modelViewerChrCustCurrent.forEach((entry) => {
 		availableChoices.forEach((availableChoice) => {
-			if (availableChoice.RelatedChrCustomizationChoiceID == entry){
+			if (availableChoice.RelatedChrCustomizationChoiceID == entry)
 				chrCustMatID = availableChoice.ChrCustomizationMaterialID;
-			}
 		});
 	});
 
-	if (chrCustMatID == 0){
+	if (chrCustMatID == 0) {
 		console.log("Unable to find matching choice/related choice combo for choice " + choiceID + ", falling back to first entry");
 		chrCustMatID = availableChoices[0].ChrCustomizationMaterialID;
 	}
 
 	const chrCustMatRow = chrCustMatMap.get(chrCustMatID);
 
-	if (!chrCustMatRow) {
+	if (!chrCustMatRow)
 		return false;
-	}
 
 	const textureLayout = getChrComponentTextureLayoutIDByChrModelID(chrModelID);
-	if (!textureLayout) {
+	if (!textureLayout)
 		return false;
-	}
 
 	const textureTarget = chrCustMatRow.ChrModelTextureTargetID;
 
@@ -462,11 +441,10 @@ const getTextureForFileDataIDAndChoice = (modelFileDataID, choiceID) => {
 	} else {
 		const textureLayer = chrModelTexLayer[textureLayout][textureTarget];
 		const textureType = textureLayer.TextureType;
-		if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID)) {
+		if (matResIDToFileDataID.has(chrCustMatRow.MaterialResourcesID))
 			return { TextureType: textureType, FileDataID: matResIDToFileDataID.get(chrCustMatRow.MaterialResourcesID), TextureSectionTypeBitMask: textureLayer.TextureSectionTypeBitMask };
-		} else {
-			return false;
-		}
+		
+		return false;
 	}
 };
 

@@ -113,7 +113,7 @@ class CASC {
 	/**
 	 * Load tables that are required globally.
 	 */
-	async loadTables(){
+	async loadTables() {
 		await this.progress.step('Loading required tables');
 		await dbLogic.loadTables();
 	}
