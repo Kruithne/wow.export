@@ -809,7 +809,7 @@ class BufferWrapper {
 		}
 
 		// Ensure consuming this buffer won't overflow us.
-		this._checkBounds(buf.byteLength);
+		this._checkBounds(copyLength);
 
 		buf.copy(this._buf, this._ofs, startIndex, startIndex + copyLength);
 		this._ofs += copyLength;
