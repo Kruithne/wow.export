@@ -478,14 +478,11 @@ class BufferWrapper {
 
 	/**
 	 * Read a buffer from this buffer.
-	 * @param {number} length How many bytes to read into the buffer.
+	 * @param {?number} length How many bytes to read into the buffer.
 	 * @param {boolean} wrap If true, returns BufferWrapper, else raw buffer.
 	 * @param {boolean} inflate If true, data will be decompressed using inflate.
 	 */
-	readBuffer(length = -1, wrap = true, inflate = false) {
-		if (length === -1) // Default to consuming all remaining bytes.
-			length = this.remainingBytes;
-
+	readBuffer(length = this.remainingBytes, wrap = true, inflate = false) {
 		// Ensure we have enough data left to fulfill this.
 		this._checkBounds(length);
 
@@ -501,18 +498,30 @@ class BufferWrapper {
 
 	/**
 	 * Read a string from the buffer.
-	 * @param {number} length 
-	 * @param {string} encoding 
+	 * @param {?number} length 
+	 * @param {string} [encoding=utf8]
+	 * @returns {string}
 	 */
-	readString(length = -1, encoding = 'utf8') {
-		if (length === -1) // Default to consuming all remaining bytes.
-			length = this.remainingBytes;
+	readString(length = this.remainingBytes, encoding = 'utf8') {
+		// If length is zero, just return an empty string.
+		if (length === 0)
+			return '';
 
 		this._checkBounds(length);
 		const str = this._buf.toString(encoding, this._ofs, this._ofs + length);
 		this._ofs += length;
 
 		return str;
+	}
+
+	/**
+	 * Read a string from the buffer and parse it as JSON.
+	 * @param {?number} length
+	 * @param {encoding} [encoding=utf8]
+	 * @returns {object}
+	 */
+	readJSON(length = this.remainingBytes, encoding = 'utf8') {
+		return JSON.parse(this.readString(length, encoding));
 	}
 
 	/**
@@ -524,7 +533,7 @@ class BufferWrapper {
 		const ofs = this._ofs;
 		this.seek(0);
 
-		const str = this.readString(-1, encoding);
+		const str = this.readString(this.remainingBytes, encoding);
 		this.seek(ofs);
 
 		return str.split(/\r\n|\n|\r/);
@@ -817,19 +826,27 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Get the index of the given char from start.
+	 * Defaults to the current reader offset.
+	 * @param {string} char 
+	 * @param {number} start 
+	 * @returns {number}
+	 */
+	indexOfChar(char, start = this.offset) {
+		if (char.length > 1)
+			throw new Error('BufferWrapper.indexOfChar() given string, expected single character.');
+
+		return this.indexOf(char.charCodeAt(0), start);
+	}
+
+	/**
 	 * Get the index of the given byte from start.
 	 * Defaults to the current reader offset.
-	 * @param {number|string} byte
+	 * @param {number} byte
 	 * @param {number} start 
+	 * @returns {number}
 	 */
 	indexOf(byte, start = this.offset) {
-		if (typeof byte === 'string') {
-			if (byte.length > 1)
-				throw new Error('.indexOf() given string, expected single character.');
-
-			byte = byte.charCodeAt(0);
-		}
-
 		const resetPos = this.offset;
 		this.seek(start);
 		

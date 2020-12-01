@@ -14,6 +14,7 @@ const WMOLoader = require('../loaders/WMOLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const CSVWriter = require('../writers/CSVWriter');
+const GLTFWriter = require('../writers/GLTFWriter');
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
 

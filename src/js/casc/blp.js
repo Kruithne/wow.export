@@ -69,15 +69,17 @@ class BLPImage {
 
 		// Calculate available mipmaps..
 		this.mapCount = 0;
-		for (let ofs of this.mapOffsets)
+		for (let ofs of this.mapOffsets) {
 			if (ofs !== 0)
 				this.mapCount++;
+		}
 
 		// Read colour palette..
 		this.palette = [];
-		if (this.encoding === 1)
+		if (this.encoding === 1) {
 			for (let i = 0; i < 256; i++)
 				this.palette[i] = this.data.readUInt8(4);
+		}
 	}
 
 	/**

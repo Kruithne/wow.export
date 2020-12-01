@@ -247,10 +247,11 @@ Vue.component('listboxb', {
 						const lowest = Math.min(lastSelectIndex, thisSelectIndex);
 						const range = this.items.slice(lowest, lowest + delta + 1);
 
-						for (const select of range)
+						for (const select of range) {
 							if (this.selection.indexOf(select) === -1)
 								this.selection.push(select);
-					}				
+						}
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 					// Normal click, replace entire selection.
 					this.selection.splice(0);

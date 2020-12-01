@@ -1,11 +1,9 @@
-0.2.0 (??-??-2020)
-- Added initial support for new character customization system in Shadowlands.
+0.1.24 (In Development)
+- Added initial character customization support.
 - Added support for enabling geosets for certain creature skins.
-- Changed which geosets get selected by default.
-- Skin names should be shorter for many models (and fit on screen now).
-- Improved DB2 reading support.
-- Fix issue with M2 texture reading.
-- Update three.js.
+- Improved skin names for most models to fit on the screen.
+- Improved default selected geosets for models.
+- Fixed missing escape slashes in regex guide tooltip.
 
 0.1.23 (28-11-2020)
 - Added a warning to the configuration screen for export directories that contain spaces.

@@ -38,11 +38,10 @@ core.registerLoadFunc(async () => {
 					helper.mark(fileName, true);
 				} catch (e) {
 					// Corrupted file, often caused by users cancelling a cinematic while it is streaming.
-					if (e instanceof BLTEIntegrityError) {
+					if (e instanceof BLTEIntegrityError)
 						isCorrupted = true;
-					} else {
+					else
 						helper.mark(fileName, false, e.message);
-					}
 				}
 
 				if (isCorrupted) {

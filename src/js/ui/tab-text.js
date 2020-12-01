@@ -8,6 +8,7 @@ const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const generics = require('../generics');
+const util = require('util');
 
 let selectedFile = null;
 
@@ -19,7 +20,7 @@ core.registerLoadFunc(async () => {
 		if (!core.view.isBusy && first && selectedFile !== first) {
 			try {
 				const file = await core.view.casc.getFileByName(first);
-				core.view.textViewerSelectedText = file.readString(-1, 'utf8');
+				core.view.textViewerSelectedText = file.readString(undefined, 'utf8');
 
 				selectedFile = first;
 			} catch (e) {

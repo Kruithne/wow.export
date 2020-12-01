@@ -192,8 +192,6 @@ class WDCReader {
 			else
 				this.schema.set(field.name, fieldType);
 		}
-
-		console.log(this.schema);
 	}
 
 	/**

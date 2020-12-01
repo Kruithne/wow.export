@@ -216,6 +216,10 @@ body {
 		}
 	}
 
+	&-tests::before {
+		content: '\f188';
+	}
+
 	&-reload::before {
 		content: '\f0e2';
 	}

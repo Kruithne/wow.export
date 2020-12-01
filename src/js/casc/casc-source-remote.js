@@ -43,9 +43,10 @@ class CASCRemote extends CASC {
 		const results = await Promise.allSettled(promises);
 
 		// Iterate through successful requests and extract product config for our region.
-		for (const result of results)
+		for (const result of results) {
 			if (result.status === 'fulfilled')
 				this.builds.push(result.value.find(e => e.Region === this.region));
+		}
 
 		log.write('%o', this.builds);
 	}
@@ -104,7 +105,7 @@ class CASCRemote extends CASC {
 
 		if (data === null) {
 			const archive = this.archives.get(encodingKey);
-			if (archive !== undefined){
+			if (archive !== undefined) {
 				data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
 				
 				if (!suppressLog)

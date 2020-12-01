@@ -422,13 +422,15 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		// bundle that we don't want included in our final output.
 		const extractFilter = (entry) => {
 			// Whitelist takes priority over blacklist.
-			for (const check of build.filter.whitelist)
+			for (const check of build.filter.whitelist) {
 				if (entry.match(check))
 					return true;
+			}
 
-			for (const check of build.filter.blacklist)
+			for (const check of build.filter.blacklist) {
 				if (entry.match(check))
 					return false;
+			}
 
 			// Default to inclusion.
 			return true;
@@ -477,15 +479,17 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 		// File remappings: Source -and- target are relative to build directory.
 		const remaps = Object.entries(build.remap || {});
-		if (remaps.length > 0)
+		if (remaps.length > 0) {
 			for (const [origName, target] of remaps)
 				mappings.push({ source: path.join(buildDir, origName), target });
+		}
 
 		// Additional source merges: Source is relative to cwd, target relative to build directory.
 		const include = Object.entries(build.include || {});
-		if (include.length > 0)
+		if (include.length > 0) {
 			for (const [source, target] of include)
 				mappings.push({ source: path.resolve(source), target, clone: true });
+		}
 
 		for (const map of mappings) {
 			const targetPath = path.join(buildDir, map.target);
@@ -552,9 +556,10 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			const moduleTree = await buildModuleTree(jsEntry);
 
 			// Ensure that there are no cyclic dependencies in the tree.
-			for (const mod of moduleTree)
+			for (const mod of moduleTree) {
 				if (mod.deps.has(mod.path))
 					throw new Error(util.format('Cyclic dependency: Module %s depends on itself.', mod.path));
+			}
 
 			// Structure the module tree in order of dependencies.
 			orderDependencies(moduleTree, moduleTree[0]);
