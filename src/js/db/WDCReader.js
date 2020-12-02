@@ -72,6 +72,7 @@ class WDCReader {
 
 		this.isInflated = false;
 		this.isLoaded = false;
+		this.idField = null;
 	}
 
 	/**
@@ -548,8 +549,10 @@ class WDCReader {
 						}
 					}
 
-					if (!hasIDMap && fieldIndex === idIndex)
+					if (!hasIDMap && fieldIndex === idIndex) {
 						recordID = out[prop];
+						this.idField = prop;
+					}
 
 					fieldIndex++;
 				}

@@ -403,6 +403,14 @@ class CASCRemote extends CASC {
 	getBuildName() {
 		return this.build.VersionsName;
 	}
+
+	/**
+	 * Returns the build configuration key.
+	 * @returns {string}
+	 */
+	getBuildKey() {
+		return this.build.BuildConfig;
+	}
 }
 
 module.exports = CASCRemote;

@@ -336,6 +336,14 @@ class CASCLocal extends CASC {
 	getBuildName() {
 		return this.build.Version;
 	}
+
+	/**
+	 * Returns the build configuration key.
+	 * @returns {string}
+	 */
+	getBuildKey() {
+		return this.build.BuildKey;
+	}
 }
 
 module.exports = CASCLocal;

@@ -4,13 +4,46 @@
 	License: MIT
  */
 const assert = require('assert');
+const path = require('path');
+const util = require('util');
+
 const IntegrationTest = require('../integration-test');
 const WDCReader = require('../../db/WDCReader');
 const listfile = require('../../casc/listfile');
 const generics = require('../../generics');
-const path = require('path');
+const log = require('../../log');
 
+/**
+ * Defines the DBD repository tree used to match DBD file names.
+ * @type {string}
+ */
 const DBD_REPO_TREE = 'https://api.github.com/repos/wowdev/WoWDBDefs/git/trees/master?recursive=1';
+
+/**
+ * Defines the base URL for DB validation files.
+ * @type {string}
+ */
+const DB_DATA_URL = 'https://kruithne.net/wow.export/dbc/';
+
+/**
+ * Defines the URL at which DB validation files are found.
+ * @type {string}
+ */
+const DB_DATA_CSV_URL = DB_DATA_URL + 'data/';
+
+/**
+ * Defines the URL at which a data validation manifest is found.
+ * Format token is the build ID.
+ * @type {string}
+ */
+const DB_DATA_MANIFEST = DB_DATA_URL + '%s/manifest.json';
+
+/**
+ * Defines the file name format for a data validation CSV.
+ * Format tokens are the tableName and CSV MD5 hash.
+ * @type {string}
+ */
+const DB_DATA_CSV = '%s.%s.csv';
 
 class DB2Test extends IntegrationTest {
 	/**
@@ -41,13 +74,20 @@ class DB2Test extends IntegrationTest {
 			}
 		}
 
-		console.log(this.dbdMap);
-
+		// For every DB2 file in the listfile, generate a test function.
 		const tables = listfile.getFilenamesByExtension('.db2');
 		for (const table of tables) {
 			const tableName = 'testTable_' + path.basename(table);
 			this._tests.push({[tableName]: async () => await this.testTable(table)}[tableName]);
 		}
+
+		// Download data validation manifest for this build.
+		this.validationMap = new Map();
+		const manifestURL = util.format(DB_DATA_MANIFEST, this.casc.getBuildKey());
+		const manifest = (await generics.downloadFile(manifestURL)).readJSON();
+
+		for (const [csvName, csvHash] of Object.entries(manifest))
+			this.validationMap.set(csvName, csvHash);
 	}
 
 	/**
@@ -80,6 +120,48 @@ class DB2Test extends IntegrationTest {
 
 		const table = new WDCReader('DBFilesClient/' + dbdName + '.db2');
 		await table.parse();
+
+		const csvHash = this.validationMap.get(tableName);
+		if (csvHash === undefined)
+			throw new Error('No entry for' + tableName + ' in data validation manifest');
+
+		const csvFile = util.format(DB_DATA_CSV, tableName, csvHash);
+		let rawCsv = await this.casc.cache.getFile(csvFile);
+
+		if (rawCsv === null) {
+			const csvUrl = DB_DATA_CSV_URL + csvFile;
+			log.write('DB2 validation file not cached, downloading from %s', csvUrl);
+
+			rawCsv = await generics.downloadFile(csvUrl);
+			this.casc.cache.storeFile(csvFile, rawCsv);
+		} else {
+			log.write('Using DB2 validation file %s from cache', csvFile);
+		}
+
+		const csvLines = rawCsv.readLines();
+
+		let checkHeader = [];
+		for (const [fieldName, fieldType] of table.schema) {
+			if (Array.isArray(fieldType)) {
+				// Format array field headers as FieldName[5]
+				checkHeader.push(util.format('%s[%d]', fieldName, fieldType[1]));
+			} else {
+				// Format normal fields as just their name.
+				checkHeader.push(fieldName);
+			}
+		}
+
+		// Validate the schema against the CSV header (first line).
+		assert.strictEqual(checkHeader.join(','), csvLines.shift(), 'DB2 schema does not match expected header');
+
+		for (const [rowID, row] of table.getAllRows()) {
+			const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
+
+			if (table.idField === null)
+				checkRow.unshift(rowID);
+
+			assert.strictEqual(checkRow.join(','), csvLines.shift(), 'DB2 row does not match CSV');
+		}
 	}
 }
 
