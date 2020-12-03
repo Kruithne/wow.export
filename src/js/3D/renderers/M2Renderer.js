@@ -252,12 +252,27 @@ class M2Renderer {
 		});
 
 		const compiledSkinMat = new THREE.MeshPhongMaterial({ name: 'compiledSkinMaterial', map: texture, side: THREE.DoubleSide });
+		compiledSkinMat.userData.users = 0;
+		compiledSkinMat.userData.texture = texture;
 
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] != 1)
 				continue;
+
+			// Keep on top of material usage and dispose unused ones.
+			const oldMaterial = this.materials[i];
+			if (oldMaterial) {
+				const oldData = oldMaterial.userData;
+				oldData.users--;
+
+				if (oldData.users < 1) {
+					oldData.texture?.dispose();
+					oldMaterial.dispose();
+					console.log('Disposing of baked material %s', oldMaterial.uuid);
+				}
+			}
 
 			this.materials[i] = compiledSkinMat;
 		}
