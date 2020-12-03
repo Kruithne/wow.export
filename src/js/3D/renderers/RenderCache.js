@@ -16,7 +16,7 @@ class RenderCache {
 	 */
 	register(material, tex) {
 		this.users.set(material, 0);
-		this.texture.set(material, tex);
+		this.textures.set(material, tex);
 	}
 
 	/**
