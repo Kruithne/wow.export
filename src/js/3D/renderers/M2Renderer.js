@@ -232,14 +232,16 @@ class M2Renderer {
 
 		const loader = new THREE.ImageLoader();
 		loader.load(mergedTexture, image => {
-			texture.image = image; // TODO: Should we update once after drawing all or after every draw? Hmmmmm
+			texture.image = image;
 			texture.format = THREE.RGBAFormat;
 			texture.needsUpdate = true;
 			texture.generateMipmaps = true;
+
+			// Revoke resource URL once loaded.
+			URL.revokeObjectURL(mergedTexture);
 		});
 
 		const textureTypes = this.m2.textureTypes;
-		console.log(textureTypes);
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] != 1)
@@ -250,153 +252,25 @@ class M2Renderer {
 	}
 
 	/**
-	 * Merges different skin materials
+	 * Merges multiple skin files to one baked texture.
+	 * @param {object[]} skinMats
+	 * @returns {string}
 	 */
 	async mergeSkinMaterials(skinMats) {
-		const debugCanvas = document.createElement('canvas');
-		const gl = debugCanvas.getContext('webgl');
-		debugCanvas.width = skinMats[0].size.x;
-		debugCanvas.height = skinMats[0].size.y;
+		const baseSize = skinMats[0].size;
+		const canvas = new OffscreenCanvas(baseSize.width, baseSize.height);
 
-		const vertCode = 'attribute vec4 a_position;\n' +
-		'attribute vec2 a_texcoord;\n' + 
-		'varying vec2 v_texcoord;\n' +
-		'void main() {\n' +
-		'gl_Position = a_position;' +
-		'v_texcoord = a_texcoord;' +
-		'}';
-
-		const vertShader = gl.createShader(gl.VERTEX_SHADER);
-		gl.shaderSource(vertShader, vertCode);
-		gl.compileShader(vertShader);
-
-		var message = gl.getShaderInfoLog(vertShader);
-		if (message.length > 0)
-			console.log(message);
-
-		const fragCode = 'precision mediump float;\n'+
-		'varying vec2 v_texcoord;' +
-		'uniform sampler2D u_texture;' +
-		'void main() {'+
-		'gl_FragColor = texture2D(u_texture, v_texcoord);' +
-		'}';
-
-		const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-		gl.shaderSource(fragShader, fragCode);
-		gl.compileShader(fragShader);
-
-		var fragMessage = gl.getShaderInfoLog(fragShader);
-		if (fragMessage.length > 0)
-			console.log(fragMessage);
-
-		const shaderProgram = gl.createProgram();
-		gl.attachShader(shaderProgram, vertShader);
-		gl.attachShader(shaderProgram, fragShader);
-		gl.linkProgram(shaderProgram);
-		gl.validateProgram(shaderProgram);
-
-		if ( !gl.getProgramParameter( shaderProgram, gl.LINK_STATUS) ) {
-			var info = gl.getProgramInfoLog(shaderProgram);
-			throw 'Could not compile WebGL program. \n\n' + info;
-		}
-
-		gl.useProgram(shaderProgram);
-
-		const positionLocation = gl.getAttribLocation(shaderProgram, 'a_position');
-		const texcoordLocation = gl.getAttribLocation(shaderProgram, 'a_texcoord');
-		const textureLocation = gl.getUniformLocation(shaderProgram, 'u_texture');
-
-		// Create a buffer.
-		var positionBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-		// GL position space goes from -1.0 to 1.0
-		var positions = [
-			-1.0,  -1.0,
-			1.0,  -1.0,
-			-1.0,  1.0,
-			-1.0,  1.0,
-			1.0,  -1.0,
-			1.0,  1.0,
-		];
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-		var texcoordBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-
-		var texcoords = [
-			0.0,  1.0,
-			1.0,  1.0,
-			0.0,  0.0,
-			0.0,  0.0,
-			1.0,  1.0,
-			1.0,  0.0,
-		];
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
-
-		var tex = gl.createTexture();
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, tex);
-
-		const blp = new BLPFile(await core.view.casc.getFile(skinMats[0].FileDataID));
-		const blpData = blp.toUInt8Array(0);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, skinMats[0].size.x, skinMats[0].size.y, 0, gl.RGBA, gl.UNSIGNED_BYTE, blpData);
-
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-		gl.viewport(0, 0, skinMats[0].size.x, skinMats[0].size.y);
-
-		gl.clear(gl.COLOR_BUFFER_BIT);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, tex);
-
-		gl.useProgram(shaderProgram);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-		gl.enableVertexAttribArray(positionLocation);
-		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-		gl.enableVertexAttribArray(texcoordLocation);
-		gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-		gl.uniform1i(textureLocation, 0);
-
-		gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-		gl.enable(gl.BLEND);
-		
-		for (let i = 1; i < skinMats.length; i++) {
-			if (!(i in skinMats))
+		for (const skinMat of skinMats) {
+			// Skip empty slots.
+			if (skinMat === undefined)
 				continue;
 
-			// Only overlay skin textures
-			if (skinMats[i].TextureType != 1)
-				continue;
-
-			const overlayBLP = new BLPFile(await core.view.casc.getFile(skinMats[i].FileDataID));
-			const overlayBLPData = overlayBLP.toUInt8Array(0);
-			
-			const emptyTextureData = new Uint8Array(skinMats[0].size.x * skinMats[0].size.y * 4);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, skinMats[0].size.x, skinMats[0].size.y, 0, gl.RGBA, gl.UNSIGNED_BYTE, emptyTextureData);
-			gl.texSubImage2D(gl.TEXTURE_2D, 0, skinMats[i].position.x, skinMats[i].position.y, skinMats[i].size.x, skinMats[i].size.y, gl.RGBA, gl.UNSIGNED_BYTE, overlayBLPData);
-
-			// Do blending magic
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-			// Draw another time
-			gl.drawArrays(gl.TRIANGLES, 0, 6);
+			const blp = new BLPFile(await core.view.casc.getFile(skinMat.FileDataID));
+			blp.drawToCanvas(canvas, 0, true, skinMat.position.x, skinMat.position.y);
 		}
 
-		gl.deleteBuffer(positionBuffer);
-		gl.deleteBuffer(texcoordBuffer);
-
-		return debugCanvas.toDataURL();
+		const blob = await canvas.convertToBlob();
+		return URL.createObjectURL(blob);
 	}
 
 	/**
