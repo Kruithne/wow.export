@@ -251,13 +251,15 @@ class M2Renderer {
 			URL.revokeObjectURL(mergedTexture);
 		});
 
+		const compiledSkinMat = new THREE.MeshPhongMaterial({ name: 'compiledSkinMaterial', map: texture, side: THREE.DoubleSide });
+
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] != 1)
 				continue;
 
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: 'compiledSkinTexture', map: texture, side: THREE.DoubleSide });
+			this.materials[i] = compiledSkinMat;
 		}
 	}
 
