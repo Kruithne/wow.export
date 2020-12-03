@@ -10,6 +10,7 @@ const BufferWrapper = require('../../buffer');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const RenderCache = require('./RenderCache');
 
 const DBCharacters = require('../../db/caches/DBCharacter');
 
@@ -26,7 +27,8 @@ class M2Renderer {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
-		this.textures = [];
+		this.renderCache = new RenderCache();
+		this.materials = [];
 	}
 
 	/**
@@ -157,10 +159,7 @@ class M2Renderer {
 			if (textureTypes[i] != type)
 				continue;
 			
-			let tex = this.textures[i];
-			if (tex === undefined)
-				tex = this.textures[i] = new THREE.Texture();
-
+			const tex = new THREE.Texture();
 			const loader = new THREE.ImageLoader();
 
 			const data = await core.view.casc.getFile(fileDataID);
@@ -177,7 +176,14 @@ class M2Renderer {
 
 			// if (texture.flags & 0x2)
 				// tex.wrapT = THREE.RepeatWrapping;*/
-			this.materials[i] = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
 		}
 	}
 
@@ -252,8 +258,7 @@ class M2Renderer {
 		});
 
 		const compiledSkinMat = new THREE.MeshPhongMaterial({ name: 'compiledSkinMaterial', map: texture, side: THREE.DoubleSide });
-		compiledSkinMat.userData.users = 0;
-		compiledSkinMat.userData.texture = texture;
+		this.renderCache.register(compiledSkinMat, texture);
 
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
@@ -262,18 +267,9 @@ class M2Renderer {
 				continue;
 
 			// Keep on top of material usage and dispose unused ones.
-			const oldMaterial = this.materials[i];
-			if (oldMaterial) {
-				const oldData = oldMaterial.userData;
-				oldData.users--;
+			this.renderCache.retire(this.materials[i]);
 
-				if (oldData.users < 1) {
-					oldData.texture?.dispose();
-					oldMaterial.dispose();
-					console.log('Disposing of baked material %s', oldMaterial.uuid);
-				}
-			}
-
+			this.renderCache.addUser(compiledSkinMat);
 			this.materials[i] = compiledSkinMat;
 		}
 	}
@@ -305,7 +301,10 @@ class M2Renderer {
 	 */
 	loadTextures() {
 		const textures = this.m2.textures;
+
+		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
+
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
 
@@ -330,8 +329,11 @@ class M2Renderer {
 				if (texture.flags & 0x2)
 					tex.wrapT = THREE.RepeatWrapping;
 
-				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+				this.renderCache.register(material, tex);
+
+				this.materials[i] = material;
+				this.renderCache.addUser(material);
 			} else {
 				if (!this.defaultMaterial)
 					this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
@@ -373,9 +375,7 @@ class M2Renderer {
 		if (this.geosetWatcher)
 			this.geosetWatcher();
 
-		// Release bound textures.
-		for (const tex of this.textures)
-			tex?.dispose();
+		this.renderCache.retire(...this.materials);
 
 		this.disposeMeshGroup();
 	}
