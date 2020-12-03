@@ -238,7 +238,7 @@ class M2Renderer {
 	async buildSkinMaterial(skinMats) {
 		console.log('Building skin material', skinMats);
 		const mergedTexture = await this.mergeSkinMaterials(skinMats);
-		var texture = new THREE.Texture();
+		const texture = new THREE.Texture();
 
 		const loader = new THREE.ImageLoader();
 		loader.load(mergedTexture, image => {
