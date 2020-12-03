@@ -111,10 +111,6 @@ const loadListfile = async (buildConfig, cache) => {
 		nameLookup.set(fileName, fileDataID);
 	}
 
-	//let unknownCount = 0;
-	//unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', '.m2');
-	//unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', '.blp');
-
 	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;
 }
