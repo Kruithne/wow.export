@@ -29,6 +29,7 @@
 	"modelsShowM2": true,
 	"modelsShowWMO": true,
 	"modelsAutoPreview": true,
+	"modelViewerShowGrid": true,
 	"modelsShowSidebar": false,
 	"modelsExportCollision": false,
 	"modelsExportMeta": false,
