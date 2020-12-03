@@ -212,13 +212,6 @@ class M2Renderer {
 		const textureForChoice = DBCharacters.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, choiceID);
 		if (textureForChoice) {
 			if (textureForChoice.TextureType == 1 && textureForChoice.TextureSectionTypeBitMask == -1) {
-				// TODO: Skin texture!
-				// This requires generating a texture based on several textures from ChrModelTextureLayer.
-				// Type 1 & TextureSectionTypeBitMask == -1 & Layer = 0 is the base layer, every other type 1 is laid on top of the base texture based on values.
-				// To do this, go from TextureSectionTypeBitMask => CharComponentTextureSections.SectionType based on the correct ChrComponentTextureLayoutID
-				// let skinMats = Array();
-				// skinMats[0] = { fileDataID: 1027767 };
-				// skinMats[1] = { position: new THREE.Vector2(256, 192), fileDataID: 1027743 };
 				const skinMats = DBCharacters.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
 				this.buildSkinMaterial(skinMats);
 			} else {
