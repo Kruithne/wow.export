@@ -155,8 +155,7 @@ const updateCameraBounding = () => {
 
 	const minZ = boundingBox.min.z;
 	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
-
-	camera.far = cameraToFarEdge * 3;
+	
 	camera.updateProjectionMatrix();
 
 	const controls = core.view.modelViewerContext.controls;
