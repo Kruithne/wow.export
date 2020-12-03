@@ -33,7 +33,7 @@ let selectedVariantTexID = 0;
 let selectedFile = null;
 let isFirstModel = true;
 
-let camera, scene;
+let camera, scene, grid;
 const renderGroup = new THREE.Group();
 
 let activeRenderer;
@@ -155,7 +155,7 @@ const updateCameraBounding = () => {
 
 	const minZ = boundingBox.min.z;
 	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
-	
+
 	camera.updateProjectionMatrix();
 
 	const controls = core.view.modelViewerContext.controls;
@@ -306,12 +306,17 @@ core.registerDropHandler({
 
 // The first time the user opens up the model tab, initialize 3D preview.
 core.events.once('screen-tab-models', () => {
-	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 10000);
+	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 	scene = new THREE.Scene();
 	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
 	scene.add(light);
 	scene.add(renderGroup);
+
+	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
+
+	if (core.view.config.modelViewerShowGrid)
+		scene.add(grid);
 
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
@@ -389,6 +394,13 @@ core.registerLoadFunc(async () => {
 			selectedVariantTexID = fileDataID;
 			activeRenderer.loadNPCVariantTexture(fileDataID);
 		}
+	});
+
+	core.view.$watch('config.modelViewerShowGrid', () => {
+		if (core.view.config.modelViewerShowGrid)
+			scene.add(grid);
+		else
+			scene.remove(grid);
 	});
 
 	// Track selection changes on the model listbox and preview first model.

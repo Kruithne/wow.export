@@ -1,5 +1,6 @@
 0.1.24 (In Development)
 - Fixed missing escape slashes in regex guide tooltip.
+- Added a 3D grid to the model viewer (can be toggled on the sidebar).
 
 0.1.23 (28-11-2020)
 - Added a warning to the configuration screen for export directories that contain spaces.
