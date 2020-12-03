@@ -146,6 +146,10 @@ class M2Renderer {
 		}
 	}
 
+	/**
+	 * @param {number} type 
+	 * @param {number} fileDataID 
+	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
@@ -177,6 +181,10 @@ class M2Renderer {
 		}
 	}
 
+	/**
+	 * Apply a character customization choice.
+	 * @param {number} choiceID 
+	 */
 	async applyCharacterCustomizationChoice(choiceID) {
 		// Get target geoset ID
 		const targetGeosetID = DBCharacters.getGeosetForChoice(choiceID);
@@ -222,8 +230,10 @@ class M2Renderer {
 	}
 
 	/**
-	 * TODO: Build skin material based on several FileDataIDs at specific X/Y offsets.
+	 * Build skin material based on several FileDataIDs at specific X/Y offsets.
 	 * Base material should be in [0] with all the other textures in layers on top of that.
+	 * @param {object[]} skinMats
+	 * @returns {string} Texture URL.
 	 */
 	async buildSkinMaterial(skinMats) {
 		console.log('Building skin material', skinMats);
