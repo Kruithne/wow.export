@@ -9,7 +9,10 @@ const util = require('util');
 const path = require('path');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
-const dbLogic = require('../db/DBLogic');
+
+const DBItemDisplays = require('../db/caches/DBItemDisplays');
+const DBCharacters = require('../db/caches/DBCharacter');
+const DBCreatures = require('../db/caches/DBCreatures');
 
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const BufferWrapper = require('../buffer');
@@ -81,19 +84,19 @@ const previewModel = async (fileName) => {
 
 		if (isM2) {
 			// Check if model is a character model
-			if (dbLogic.isCharacterCustomizationAvailable() && dbLogic.isFileDataIDCharacterModel(fileDataID)) {
+			if (DBCharacters.isCharacterCustomizationAvailable() && DBCharacters.isFileDataIDCharacterModel(fileDataID)) {
 				core.view.modelViewerShowChrCust = true;
 				try {
 					let defaultOptions = new Map();
 
 					let categoryList = new Array();
-					const chrModelID = dbLogic.getChrModelIDByFileDataID(fileDataID);
-					const optionsForModel = dbLogic.getOptionsByChrModelID(chrModelID);
+					const chrModelID = DBCharacters.getChrModelIDByFileDataID(fileDataID);
+					const optionsForModel = DBCharacters.getOptionsByChrModelID(chrModelID);
 
 					for (const chrCustomizationOption of optionsForModel) {
 						if (!(chrCustomizationOption.name in categoryList)) {
 							categoryList.push({ id: chrCustomizationOption.id, label: chrCustomizationOption.name});
-							let choices = dbLogic.getChoicesByOption(chrCustomizationOption.id);
+							let choices = DBCharacters.getChoicesByOption(chrCustomizationOption.id);
 							for (const chrCustomizationChoice of choices) {
 								if (!(chrCustomizationOption.id in defaultOptions)) {
 									defaultOptions.set(chrCustomizationOption.id, chrCustomizationChoice.id);
@@ -111,7 +114,7 @@ const previewModel = async (fileName) => {
 				}
 			} else {
 				// Not a character model, check for creature skins.
-				let displays = dbLogic.getCreatureDisplaysByFileDataID(fileDataID);
+				let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
 				let isFirst = true;
 				const skinList = [];
 				let modelName = listfile.getByID(fileDataID);
@@ -119,7 +122,7 @@ const previewModel = async (fileName) => {
 				
 				// Check for item textures
 				if (displays === undefined)
-					displays = dbLogic.getItemDisplaysByFileDataID(fileDataID);
+					displays = DBItemDisplays.getItemDisplaysByFileDataID(fileDataID);
 
 				if (displays !== undefined) {
 					for (const display of displays) {
@@ -434,7 +437,7 @@ core.registerLoadFunc(async () => {
 		// Option selector is single-select, should only be one item.
 		const selectedOptionID = selection[0].id;
 
-		let choiceList = dbLogic.getChoicesByOption(selectedOptionID);
+		let choiceList = DBCharacters.getChoicesByOption(selectedOptionID);
 		let currentlySelectedIndex = 0;
 
 		// Check if user had already selected a choice, if so, select that later on. 

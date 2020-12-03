@@ -11,6 +11,8 @@ const log = require('../log');
 const BufferWrapper = require('../buffer');
 
 const WDCReader = require('../db/WDCReader');
+const DBTextureFileData = require('../db/caches/DBTextureFileData');
+const DBModelFileData = require('../db/caches/DBModelFileData');
 
 const nameLookup = new Map();
 const idLookup = new Map();
@@ -109,26 +111,35 @@ const loadListfile = async (buildConfig, cache) => {
 		nameLookup.set(fileName, fileDataID);
 	}
 
-	let unknownCount = 0;
-	unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', '.m2');
-	unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', '.blp');
+	//let unknownCount = 0;
+	//unknownCount += await loadIDTable('DBFilesClient/ModelFileData.db2', '.m2');
+	//unknownCount += await loadIDTable('DBFilesClient/TextureFileData.db2', '.blp');
 
-	log.write('%d listfile entries loaded (%d unknown entries)', idLookup.size, unknownCount);
+	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;
 }
 
 /**
+ * Load unknown files from TextureFileData/ModelFileData.
+ * Must be called after DBTextureFileData/DBModelFileData have loaded.
+ */
+const loadUnknowns = async () => {
+	let unknownCount = 0;
+	unknownCount += await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
+	unknownCount += await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
+
+	log.write('Added %d unknown entries to listfile', unknownCount);
+};
+
+/**
  * Load file IDs from a data table.
- * @param {string} tableFile 
+ * @param {Set} ids 
  * @param {string} ext 
  */
-const loadIDTable = async (tableFile, ext) => {
+const loadIDTable = async (ids, ext) => {
 	let loadCount = 0;
-	const table = new WDCReader(tableFile);
-	await table.parse();
 
-	for (const row of table.rows.values()) {
-		const fileDataID = row.FileDataID;
+	for (const fileDataID of ids) {
 		if (!idLookup.has(fileDataID)) {
 			const fileName = 'unknown_' + fileDataID + ext;
 			idLookup.set(fileDataID, fileName);
@@ -136,6 +147,10 @@ const loadIDTable = async (tableFile, ext) => {
 			loadCount++;
 		}
 	}
+
+	// Reset the fileDataID caches for each table to conserve memory.
+	// If these sets are needed elsewhere, remove this call.
+	ids.clear();
 
 	return loadCount;
 };
@@ -188,4 +203,10 @@ const getByFilename = (filename) => {
 	return nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
 };
 
-module.exports = { loadListfile, getByID, getByFilename, getFilenamesByExtension };
+module.exports = {
+	loadListfile,
+	loadUnknowns,
+	getByID,
+	getByFilename,
+	getFilenamesByExtension
+};

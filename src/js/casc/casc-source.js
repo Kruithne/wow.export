@@ -6,12 +6,18 @@
 const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
-const dbLogic = require('../db/DBLogic');
 const log = require('../log');
 const core = require('../core');
 const constants = require('../constants');
 const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
+
+const WDCReader = require('../db/WDCReader');
+const DBModelFileData = require('../db/caches/DBModelFileData');
+const DBTextureFileData = require('../db/caches/DBTextureFileData');
+const DBItemDisplays = require('../db/caches/DBItemDisplays');
+const DBCreatures = require('../db/caches/DBCreatures');
+const DBCharacters = require('../db/caches/DBCharacter');
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
@@ -114,8 +120,29 @@ class CASC {
 	 * Load tables that are required globally.
 	 */
 	async loadTables() {
-		await this.progress.step('Loading required tables');
-		await dbLogic.loadTables();
+		await this.progress.step('Loading model file data');
+		await DBModelFileData.initializeModelFileData();
+
+		await this.progress.step('Loading texture file data');
+		await DBTextureFileData.initializeTextureFileData();
+
+		// Once the above two tables have loaded, consume fileDataIDs as
+		// unknown entries to the listfile.
+		await listfile.loadUnknowns();
+
+		await this.progress.step('Loading item displays');
+		await DBItemDisplays.initializeItemDisplays();
+
+		await this.progress.step('Loading creature/character data');
+
+		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
+		await creatureDisplayInfo.parse();
+
+		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
+		await creatureModelData.parse();
+
+		await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+		await DBCharacters.initializeCharacterData(creatureDisplayInfo, creatureModelData);
 	}
 
 	/**

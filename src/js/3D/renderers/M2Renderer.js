@@ -10,7 +10,8 @@ const BufferWrapper = require('../../buffer');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
-const dbLogic = require('../../db/DBLogic');
+
+const DBCharacters = require('../../db/caches/DBCharacter');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -178,15 +179,15 @@ class M2Renderer {
 
 	async applyCharacterCustomizationChoice(choiceID) {
 		// Get target geoset ID
-		const targetGeosetID = dbLogic.getGeosetForChoice(choiceID);
+		const targetGeosetID = DBCharacters.getGeosetForChoice(choiceID);
 
 		// Get other choices for this option 
-		const otherChoices = dbLogic.getChoicesByOption(core.view.modelViewerSelectedChrCustCategory[0].id);
+		const otherChoices = DBCharacters.getChoicesByOption(core.view.modelViewerSelectedChrCustCategory[0].id);
 
 		let otherGeosets = new Array();
 		if (otherChoices.length > 0) {
 			for (const otherChoice of otherChoices) {
-				const otherGeosetID = dbLogic.getGeosetForChoice(otherChoice.id);
+				const otherGeosetID = DBCharacters.getGeosetForChoice(otherChoice.id);
 				if (otherGeosetID)
 					otherGeosets.push(otherGeosetID);
 			}
@@ -208,7 +209,7 @@ class M2Renderer {
 			}
 		}
 
-		const textureForChoice = dbLogic.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, choiceID);
+		const textureForChoice = DBCharacters.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, choiceID);
 		if (textureForChoice) {
 			if (textureForChoice.TextureType == 1 && textureForChoice.TextureSectionTypeBitMask == -1) {
 				// TODO: Skin texture!
@@ -218,7 +219,7 @@ class M2Renderer {
 				// let skinMats = Array();
 				// skinMats[0] = { fileDataID: 1027767 };
 				// skinMats[1] = { position: new THREE.Vector2(256, 192), fileDataID: 1027743 };
-				const skinMats = dbLogic.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
+				const skinMats = DBCharacters.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
 				this.buildSkinMaterial(skinMats);
 			} else {
 				console.log('Overriding texture slot ' + textureForChoice.TextureType + ' with ' + textureForChoice.FileDataID);
