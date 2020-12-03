@@ -29,6 +29,7 @@ class M2Renderer {
 		this.reactive = reactive;
 		this.renderCache = new RenderCache();
 		this.materials = [];
+		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
 	/**
@@ -124,8 +125,6 @@ class M2Renderer {
 	async loadNPCVariantTexture(fileDataID) {
 		try {
 			log.write('Loading variant texture %d', fileDataID);
-			if (!this.defaultMaterial)
-				throw new Error('Model does not have a default material to replace.');
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
@@ -335,9 +334,6 @@ class M2Renderer {
 				this.materials[i] = material;
 				this.renderCache.addUser(material);
 			} else {
-				if (!this.defaultMaterial)
-					this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
-
 				this.materials[i] = this.defaultMaterial;
 			}
 		}
