@@ -161,9 +161,20 @@
 						</label>
 					</div>
 					<div>
-						<h1>Map Texture Split Threshold</h1>
-						<p>Defines the texture size at which map textures are split.</p>
-						<input type="number" v-model.number="configEdit.mapTextureSplitThreshold"/>
+						<h1>Split Large Terrain Maps (Recommended)</h1>
+						<p>If enabled, exporting baked terrain above 8k will be split into smaller files rather than one large file.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.splitLargeTerrainBakes"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Split Alpha Maps</h1>
+						<p>If enabled, terrain alpha maps will be exported as individual images for each ADT chunk.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.splitAlphaMaps"/>
+							<span>Enable</span>
+						</label>
 					</div>
 					<div>
 						<h1>Cache Expiry</h1>

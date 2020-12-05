@@ -263,7 +263,10 @@ class ADTExporter {
 		const firstChunkX = firstChunk.position[0];
 		const firstChunkY = firstChunk.position[1];
 
-		const splitTextures = quality >= core.view.config.mapTextureSplitThreshold;
+		const isAlphaMaps = quality === -1;
+		const isLargeBake = quality >= 8192;
+		const isSplittingAlphaMaps = isAlphaMaps && core.view.config.splitAlphaMaps;
+		const isSplittingTextures = isLargeBake && core.view.config.splitLargeTerrainBakes;
 		const includeHoles = core.view.config.mapsIncludeHoles;
 	
 		let ofs = 0;
@@ -326,7 +329,7 @@ class ADTExporter {
 						if (quality === 0) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = (row * 0.5) / 8;
-						} else if (splitTextures || quality === -1) {
+						} else if (isSplittingTextures || isSplittingAlphaMaps) {
 							uvs[uvIndex + 0] = uvIdx / 8;
 							uvs[uvIndex + 1] = 1 - (row / 16);
 						} else {
@@ -375,7 +378,7 @@ class ADTExporter {
 			
 				ofs = midX;
 
-				if (splitTextures || quality === -1) {
+				if (isSplittingTextures || isSplittingAlphaMaps) {
 					const objName = this.tileID + '_' + chunkID;
 					const matName = 'tex_' + objName;
 					mtl.addMaterial(matName, matName + '.png');
@@ -389,7 +392,7 @@ class ADTExporter {
 			}
 		}
 
-		if (!splitTextures && quality !== -1)
+		if (!isSplittingTextures || (isAlphaMaps && !isSplittingAlphaMaps))
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(vertices);
@@ -403,7 +406,7 @@ class ADTExporter {
 		await mtl.write(config.overwriteFiles);
 
 		if (quality !== 0) {
-			if (quality === -1) {
+			if (isAlphaMaps) {
 				// Export alpha maps.
 
 				// Create a 2D canvas for drawing the alpha maps.
@@ -433,49 +436,58 @@ class ADTExporter {
 				}
 
 				// Alpha maps are 64x64, we're not up-scaling here.
-				canvas.width = 64;
-				canvas.height = 64;
+				if (isSplittingAlphaMaps) {
+					// Each individual tile will be exported separately.
+					canvas.width = 64;
+					canvas.height = 64;
+				} else {
+					// Tiles will be drawn onto one big image.
+					canvas.width = 64 * 16;
+					canvas.height = 64 * 16;
+				}
+
+				const chunks = texAdt.texChunks;
+				const chunkCount = chunks.length;
 
 				helper.setCurrentTaskName('Tile ' + this.tileID + ' alpha maps');
 				helper.setCurrentTaskMax(16 * 16);
 
-				let chunkID = 0;
-				for (let x = 0; x < 16; x++) {
-					for (let y = 0; y < 16; y++) {
-						// Abort if the export has been cancelled.
-						if (helper.isCancelled())
-							return;
+				let lines = [];
+				for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
 
-						helper.setCurrentTaskValue(chunkID);
+					helper.setCurrentTaskValue(chunkIndex);
 
-						const chunkIndex = (x * 16) + y;
-						const texChunk = texAdt.texChunks[chunkIndex];
+					const texChunk = texAdt.texChunks[chunkIndex];
 
-						const alphaLayers = texChunk.alphaLayers || [];
-						const imageData = ctx.createImageData(64, 64);
+					const alphaLayers = texChunk.alphaLayers || [];
+					const imageData = ctx.createImageData(64, 64);
 
-						// Write each layer as RGB.
-						for (let i = 1; i < alphaLayers.length; i++) {
-							const layer = alphaLayers[i];
+					// Write each layer as RGB.
+					for (let i = 1; i < alphaLayers.length; i++) {
+						const layer = alphaLayers[i];
 
-							for (let j = 0; j < layer.length; j++)
-								imageData.data[(j * 4) + (i - 1)] = layer[j];
-						}
+						for (let j = 0; j < layer.length; j++)
+							imageData.data[(j * 4) + (i - 1)] = layer[j];
+					}
 
-						// Set all the alpha values to max.
-						for (let i = 0; i < 64 * 64; i++)
-							imageData.data[(i * 4) + 3] = 255;
+					// Set all the alpha values to max.
+					for (let i = 0; i < 64 * 64; i++)
+						imageData.data[(i * 4) + 3] = 255;
 
+					if (isSplittingAlphaMaps) {
+						// Export tile as an individual file.
 						ctx.putImageData(imageData, 0, 0);
 
-						const prefix = this.tileID + '_' + (chunkID++);
+						const prefix = this.tileID + '_' + chunkIndex;
 						const tilePath = path.join(dir, 'tex_' + prefix + '.png');
 
 						const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
 						await buf.writeToFile(tilePath);
 
 						const texLayers = texChunk.layers;
-						const lines = [];
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
 							lines.push([i, mat.id, mat.scale].join(','));
@@ -483,7 +495,31 @@ class ADTExporter {
 
 						const metaOut = path.join(dir, 'tex_' + prefix + '.csv');
 						await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
+
+						lines.length = 0;
+					} else {
+						const chunkX = chunkIndex % 16;
+						const chunkY = Math.floor(chunkIndex / 16);
+
+						// Export as part of a merged alpha map.
+						ctx.putImageData(imageData, 64 * chunkX, 64 * chunkY);
+					
+						const texLayers = texChunk.layers;
+						for (let i = 0, n = texLayers.length; i < n; i++) {
+							const mat = materials[texLayers[i].textureId];
+							lines.push([chunkIndex, i, mat.id, mat.scale].join(','));
+						}
 					}
+				}
+
+				// For combined alpha maps, export everything together once done.
+				if (!isSplittingAlphaMaps) {
+					const mergedPath = path.join(dir, 'tex_' + this.tileID + '.png');
+					const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+					await buf.writeToFile(mergedPath);
+
+					const metaOut = path.join(dir, 'tex_' + this.tileID + '.csv');
+					await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
 				}
 			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.
@@ -517,7 +553,13 @@ class ADTExporter {
 				const hasHeightTexturing = (wdt.flags & 0x80) === 0x80;
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
 
-				if (splitTextures || config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
+				let composite, compositeCtx;
+				if (!isSplittingTextures) {
+					composite = new OffscreenCanvas(quality, quality);
+					compositeCtx = composite.getContext('2d');
+				}
+
+				if (isSplittingTextures || config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
 					// Create new GL context and compile shaders.
 					if (!gl) {
 						glCanvas = document.createElement('canvas');
@@ -592,13 +634,15 @@ class ADTExporter {
 					const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
 					const uZoom = gl.getUniformLocation(glShaderProg, 'uZoom');
 
-					if (splitTextures) {
-						glCanvas.width = quality / 16;
-						glCanvas.height = quality / 16;
-					} else {
-						glCanvas.width = quality;
-						glCanvas.height = quality;
-					}
+					glCanvas.width = quality / 16;
+					glCanvas.height = quality / 16;
+
+					// Set up a rotation canvas.
+					const rotateCanvas = new OffscreenCanvas(glCanvas.width, glCanvas.height);
+					const rotateCtx = rotateCanvas.getContext('2d');
+
+					rotateCtx.translate(rotateCanvas.width / 2, rotateCanvas.height / 2);
+					rotateCtx.rotate(Math.PI / 180 * 180);
 
 					clearCanvas();
 
@@ -626,13 +670,12 @@ class ADTExporter {
 					const deltaX = firstChunk.position[1] - TILE_SIZE;
 					const deltaY = firstChunk.position[0] - TILE_SIZE;
 
-					if (!splitTextures)
-						gl.uniform2f(uTranslation, -deltaX, -deltaY);
-
-					gl.uniform1f(uZoom, splitTextures ? 0.0625 : 1);
+					gl.uniform1f(uZoom, 0.0625);
 
 					helper.setCurrentTaskName('Tile ' + this.tileID + ', baking textures');
 					helper.setCurrentTaskMax(16 * 16);
+					
+					const tileSize = quality / 16;
 
 					let chunkID = 0;
 					for (let x = 0; x < 16; x++) {
@@ -643,12 +686,10 @@ class ADTExporter {
 
 							helper.setCurrentTaskValue(chunkID);
 
-							if (splitTextures) {
-								const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
-								const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
+							const ofsX = -deltaX - (CHUNK_SIZE * 7.5) + (y * CHUNK_SIZE);
+							const ofsY = -deltaY - (CHUNK_SIZE * 7.5) + (x * CHUNK_SIZE);
 
-								gl.uniform2f(uTranslation, ofsX, ofsY);
-							}
+							gl.uniform2f(uTranslation, ofsX, ofsY);
 
 							const chunkIndex = (x * 16) + y;
 							const texChunk = texAdt.texChunks[chunkIndex];
@@ -710,19 +751,32 @@ class ADTExporter {
 							for (const tex of alphaTextures)
 								gl.deleteTexture(tex);
 
-							// Save this individual chunk.
-							if (splitTextures) {
+							if (isSplittingTextures) {
+								// Save this individual chunk.
 								const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
 
-								if (config.overwriteFiles || !await generics.fileExists(tilePath))
-									await saveCanvas(tilePath);
+								if (config.overwriteFiles || !await generics.fileExists(tilePath)) {
+									rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
+
+									const buf = await BufferWrapper.fromCanvas(rotateCanvas, 'image/png');
+									await buf.writeToFile(tilePath);
+								}
+							} else {
+								// Store as part of a larger composite.
+								rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
+
+								const chunkX = chunkIndex % 16;
+								const chunkY = Math.floor(chunkIndex / 16);
+								compositeCtx.drawImage(rotateCanvas, chunkX * tileSize, chunkY * tileSize);
 							}
 						}
 					}
 
-					// Save the completed tile.
-					if (!splitTextures)
-						await saveCanvas(path.join(dir, 'tex_' + this.tileID + '.png'));
+					// Save the completed composite tile.
+					if (!isSplittingTextures) {
+						const buf = await BufferWrapper.fromCanvas(composite, 'image/png');
+						await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
+					}
 
 					// Clear buffer.
 					gl.bindBuffer(gl.ARRAY_BUFFER, null);
