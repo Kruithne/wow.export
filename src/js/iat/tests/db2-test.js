@@ -144,7 +144,8 @@ class DB2Test extends IntegrationTest {
 		for (const [fieldName, fieldType] of table.schema) {
 			if (Array.isArray(fieldType)) {
 				// Format array field headers as FieldName[5]
-				checkHeader.push(util.format('%s[%d]', fieldName, fieldType[1]));
+				for (let i = 0; i < fieldType[1]; i++) 
+					checkHeader.push(util.format('%s[%d]', fieldName, i));
 			} else {
 				// Format normal fields as just their name.
 				checkHeader.push(fieldName);
