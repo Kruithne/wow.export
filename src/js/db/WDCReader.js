@@ -437,8 +437,12 @@ class WDCReader {
 						continue;
 					}
 
-					if (type === FieldType.NonInlineID)
+					if (type === FieldType.NonInlineID) {
+						if (hasIDMap)
+							out[prop] = section.idList[i];
+						
 						continue;
+					}
 
 					const recordFieldInfo = fieldInfo[fieldIndex];
 
