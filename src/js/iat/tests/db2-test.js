@@ -23,20 +23,20 @@ const DBD_REPO_TREE = 'https://api.github.com/repos/wowdev/WoWDBDefs/git/trees/m
  * Defines the base URL for DB validation files.
  * @type {string}
  */
-const DB_DATA_URL = 'https://kruithne.net/wow.export/dbc/';
+const DB_DATA_URL = 'https://wow.tools/dbc/cachedexports/';
 
 /**
  * Defines the URL at which DB validation files are found.
  * @type {string}
  */
-const DB_DATA_CSV_URL = DB_DATA_URL + 'data/';
+const DB_DATA_CSV_URL = DB_DATA_URL;
 
 /**
  * Defines the URL at which a data validation manifest is found.
  * Format token is the build ID.
  * @type {string}
  */
-const DB_DATA_MANIFEST = DB_DATA_URL + '%s/manifest.json';
+const DB_DATA_MANIFEST = DB_DATA_URL + '%s.json';
 
 /**
  * Defines the file name format for a data validation CSV.
@@ -86,7 +86,7 @@ class DB2Test extends IntegrationTest {
 		const manifestURL = util.format(DB_DATA_MANIFEST, this.casc.getBuildKey());
 		const manifest = (await generics.downloadFile(manifestURL)).readJSON();
 
-		for (const [csvName, csvHash] of Object.entries(manifest))
+		for (const [csvName, csvHash] of Object.entries(manifest.entries))
 			this.validationMap.set(csvName, csvHash);
 	}
 
