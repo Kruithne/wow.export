@@ -155,8 +155,29 @@ class DB2Test extends IntegrationTest {
 		// Validate the schema against the CSV header (first line).
 		assert.strictEqual(checkHeader.join(','), csvLines.shift(), 'DB2 schema does not match expected header');
 
+		var quotableChars = [',', '"', '\r', '\n'];
+
 		for (const [rowID, row] of table.getAllRows()) {
-			const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
+			let checkRow = Array();
+			// const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
+			
+			for (const [fieldName, fieldType] of table.schema) {
+				if (Array.isArray(fieldType)) {
+					for (let i = 0; i < fieldType[1]; i++) {
+						const fieldValue = row[fieldName][i].toString();
+						if (quotableChars.some(quotableChar => fieldValue.includes(quotableChar))) 
+							checkRow.push('"' + fieldValue.replace('"', '\\"') + '"');
+						 else 
+							checkRow.push(fieldValue);
+					}
+				} else {
+					const fieldValue = row[fieldName].toString();
+					if (quotableChars.some(quotableChar => fieldValue.includes(quotableChar))) 
+						checkRow.push('"' + fieldValue.replace('"', '\\"') + '"');
+					else 
+						checkRow.push(fieldValue);
+				}
+			}
 			assert.strictEqual(checkRow.join(','), csvLines.shift(), 'DB2 row does not match CSV');
 		}
 	}
