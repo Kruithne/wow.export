@@ -33,6 +33,9 @@ const convertDBDToSchemaType = (entry) => {
 	if (!entry.isInline && entry.isRelation)
 		return FieldType.Relation;
 
+	if (!entry.isInline && entry.isID)
+		return FieldType.NonInlineID;
+
 	// TODO: Handle string separate to locstring in the event we need it.
 	if (entry.type === 'string' || entry.type === 'locstring')
 		return FieldType.String;
@@ -184,8 +187,6 @@ class WDCReader {
 	buildSchemaFromDBDStructure(structure) {
 		for (const field of structure.fields) {
 			// Skip ID, non-inlined and relation fields.
-			if (!field.isInline && !field.isRelation)
-				continue;
 
 			const fieldType = convertDBDToSchemaType(field);
 			if (field.arrayLength > -1)
@@ -435,6 +436,9 @@ class WDCReader {
 						out[prop] = section.relationshipMap.get(i);
 						continue;
 					}
+
+					if (type === FieldType.NonInlineID)
+						continue;
 
 					const recordFieldInfo = fieldInfo[fieldIndex];
 

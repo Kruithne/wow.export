@@ -157,10 +157,6 @@ class DB2Test extends IntegrationTest {
 
 		for (const [rowID, row] of table.getAllRows()) {
 			const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
-
-			if (table.idField === null)
-				checkRow.unshift(rowID);
-
 			assert.strictEqual(checkRow.join(','), csvLines.shift(), 'DB2 row does not match CSV');
 		}
 	}
