@@ -31,7 +31,7 @@ const exportExtensions = {
 };
 
 const activeSkins = new Map();
-let selectedVariantTexID = 0;
+let selectedVariantTextureIDs = new Array();
 
 let selectedFile = null;
 let isFirstModel = true;
@@ -61,7 +61,7 @@ const previewModel = async (fileName) => {
 
 		// Clear the active skin map.
 		activeSkins.clear();
-		selectedVariantTexID = 0;
+		selectedVariantTextureIDs = new Array();
 
 		const fileDataID = listfile.getByFilename(fileName);
 		core.view.modelViewerCurrFileDataID = fileDataID;
@@ -266,7 +266,7 @@ const exportFiles = async (files, isLocal = false) => {
 						await data.writeToFile(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
-							const exporter = new M2Exporter(data, selectedVariantTexID);
+							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
 							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
@@ -287,7 +287,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileNameLower.endsWith('.m2')) {
-							const exporter = new M2Exporter(data, selectedVariantTexID);
+							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
@@ -427,11 +427,10 @@ core.registerLoadFunc(async () => {
 				currGeosets[i].checked = (currGeosets[i].id.toString().endsWith('0') || currGeosets[i].id.toString().endsWith('01'));
 		}
 
-		const fileDataID = display.textures[0];
-		if (fileDataID !== undefined) {
-			selectedVariantTexID = fileDataID;
-			activeRenderer.loadNPCVariantTexture(fileDataID);
-		}
+		if (display.textures.length > 0)
+			selectedVariantTextureIDs = display.textures;
+
+		activeRenderer.applyDisplay(display);
 	});
 
 	// When the selected customization option is changed, update choice listbox.

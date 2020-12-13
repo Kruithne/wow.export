@@ -119,31 +119,19 @@ class M2Renderer {
 	}
 
 	/**
-	 * Load an NPC variant texture onto this model.
-	 * @param {number} fileDataID 
+	 * Apply replacable textures to this model.
+	 * @param {array} displays
 	 */
-	async loadNPCVariantTexture(fileDataID) {
-		try {
-			log.write('Loading variant texture %d', fileDataID);
-
-			const data = await core.view.casc.getFile(fileDataID);
-			const blp = new BLPFile(data);
-
-			const loader = new THREE.ImageLoader();
-			loader.load(blp.getDataURL(false), image => {
-				const tex = new THREE.Texture();
-				const mat = this.defaultMaterial;
-
-				tex.image = image;
-				tex.format = THREE.RGBAFormat;
-				tex.needsUpdate = true;
-
-				mat.map = tex;
-				mat.color = 0x0;
-				mat.needsUpdate = true;
-			});
-		} catch (e) {
-			log.write('Failed to set variant texture: %s', e.message);
+	async applyDisplay(display) {
+		for (let i = 0; i < this.m2.textureTypes.length; i++) {
+			const textureType = this.m2.textureTypes[i];
+			if (textureType >= 11 && textureType < 14) {
+				// Creature textures
+				this.overrideTextureType(textureType, display.textures[textureType - 11]);
+			} else if (textureType > 1 && textureType < 5) {
+				// Item textures
+				this.overrideTextureType(textureType, display.textures[textureType - 2]);
+			}
 		}
 	}
 
