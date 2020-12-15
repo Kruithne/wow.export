@@ -226,10 +226,11 @@ class GLTFWriter {
 			};
 
 			let parentPos = [0, 0, 0];
-			if (node.parentNode > -1)
+			if (bone.parentBone > -1)
 				parentPos = bones[bone.parentBone].pivot;
 				
-			node.translation = bone.pivot.map((v, i) => v -= parentPos[i]);
+			let rawTranslation = bone.pivot.map((v, i) => v -= parentPos[i]);
+			node.translation = [rawTranslation[0],rawTranslation[2],-rawTranslation[1]];
 			nodes.push(node);
 		}
 
