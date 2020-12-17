@@ -1,4 +1,4 @@
-0.1.24 (In Development)
+0.1.24 (17-12-2020)
 - Fixed missing escape slashes in regex guide tooltip.
 - Fixed an issue that prevented exporting Classic WMOs with missing materials.
 - Added a 3D grid to the model viewer (can be toggled on the sidebar).
