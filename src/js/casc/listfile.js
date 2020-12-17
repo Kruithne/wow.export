@@ -185,10 +185,6 @@ const getByID = (id) => {
  * @returns {number|undefined} 
  */
 const getByFilename = (filename) => {
-	// Prevent exception if provided with nullish.
-	if (filename === undefined || filename === null)
-		return undefined;
-
 	return nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
 };
 
