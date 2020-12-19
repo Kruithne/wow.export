@@ -47,5 +47,6 @@
 	"mapsIncludeHoles": true,
 	"regexFilters": false,
 	"exportMapQuality": 4096,
-	"mapTextureSplitThreshold": 8192
+	"splitLargeTerrainBakes": true,
+	"splitAlphaMaps": true
 }

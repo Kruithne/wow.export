@@ -75,12 +75,12 @@ class WMOExporter {
 			const material = this.wmo.materials[i];
 			helper.setCurrentTaskValue(i);
 
-			let fileDataID;
+			let fileDataID = 0;
 			let fileName;
 
 			if (isClassic) {
 				// Classic, lookup fileDataID using file name.
-				fileName = this.wmo.textureNames[material.texture];
+				fileName = this.wmo.textureNames[material.texture1];
 				fileDataID = listfile.getByFilename(fileName) ?? 0;
 
 				// Remove all whitespace from exported textures due to MTL incompatibility.

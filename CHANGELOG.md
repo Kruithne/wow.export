@@ -1,10 +1,16 @@
-0.1.24 (In Development)
+0.1.25 (In Development)
 - Added initial character customization support.
 - Added support for enabling geosets for certain creature skins.
 - Improved skin names for most models to fit on the screen.
 - Improved default selected geosets for models.
+
+0.1.24 (17-12-2020)
 - Fixed missing escape slashes in regex guide tooltip.
+- Fixed an issue that prevented exporting Classic WMOs with missing materials.
 - Added a 3D grid to the model viewer (can be toggled on the sidebar).
+- Added the 'Split Large Terrain Maps' options to settings.
+- Added the 'Split Alpha Maps option to settings.
+- Removed the 'Map Texture Split Threshold' option from settings.
 
 0.1.23 (28-11-2020)
 - Added a warning to the configuration screen for export directories that contain spaces.
