@@ -150,14 +150,18 @@ class BLPImage {
 
 	/**
 	 * Draw the contents of this BLP file onto a canvas.
-	 * @param {HTMLElement} canvas 
-	 * @param {number} mipmap 
-	 * @param {boolean} useAlpha
+	 * @param {HTMLElement} targetCanvas 
+	 * @param {number} [mipmap=0]
+	 * @param {boolean} [useAlpha=true]
+	 * @param {number} [dX=0]
+	 * @param {number} [dY=0]
 	 */
-	drawToCanvas(canvas, mipmap = 0, useAlpha = true) {
+	drawToCanvas(targetCanvas, mipmap = 0, useAlpha = true, dX = 0, dY = 0) {
 		this._prepare(mipmap);
 
+		const canvas = new OffscreenCanvas(this.scaledWidth, this.scaledHeight);
 		const ctx = canvas.getContext('2d');
+
 		const canvasData = ctx.createImageData(this.scaledWidth, this.scaledHeight);
 
 		switch (this.encoding) {
@@ -167,6 +171,9 @@ class BLPImage {
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
+
+		const targetCtx = targetCanvas.getContext('2d');
+		targetCtx.drawImage(canvas, dX, dY);
 	}
 
 	/**

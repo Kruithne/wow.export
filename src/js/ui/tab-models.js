@@ -1,17 +1,22 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const path = require('path');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
+
+const DBItemDisplays = require('../db/caches/DBItemDisplays');
+const DBCharacters = require('../db/caches/DBCharacter');
+const DBCreatures = require('../db/caches/DBCreatures');
+
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const BufferWrapper = require('../buffer');
+const ExportHelper = require('../casc/export-helper');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
@@ -19,16 +24,14 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
-const WDCReader = require('../db/WDCReader');
 
 const exportExtensions = {
 	'OBJ': '.obj',
 	'GLTF': '.gltf'
 };
 
-const creatureTextures = new Map();
 const activeSkins = new Map();
-let selectedVariantTexID = 0;
+let selectedVariantTextureIDs = new Array();
 
 let selectedFile = null;
 let isFirstModel = true;
@@ -52,11 +55,17 @@ const previewModel = async (fileName) => {
 			activePath = null;
 		}
 
+		// Hide controls by default.
+		core.view.modelViewerShowChrCust = false;
+		core.view.modelViewerShowSkins = false;
+
 		// Clear the active skin map.
 		activeSkins.clear();
-		selectedVariantTexID = 0;
+		selectedVariantTextureIDs = new Array();
 
 		const fileDataID = listfile.getByFilename(fileName);
+		core.view.modelViewerCurrFileDataID = fileDataID;
+
 		const file = await core.view.casc.getFile(fileDataID);
 		let isM2 = false;
 
@@ -75,40 +84,94 @@ const previewModel = async (fileName) => {
 		await activeRenderer.load();
 
 		if (isM2) {
-			// Check for creature skins.
-			const skins = creatureTextures.get(fileDataID);
-			let isFirst = true;
-			const skinList = [];
+			// Check if model is a character model
+			if (DBCharacters.isCharacterCustomizationAvailable() && DBCharacters.isFileDataIDCharacterModel(fileDataID)) {
+				core.view.modelViewerShowChrCust = true;
+				try {
+					let defaultOptions = new Map();
 
-			if (skins !== undefined) {
-				for (const skin of skins) {
-					let skinName = listfile.getByID(skin);
-					if (skinName !== undefined) {
-						// Display the texture name without path/extension.
-						skinName = path.basename(skinName, '.blp');
-					} else {
-						// Handle unknown textures.
-						skinName = 'unknown_' + skin;
+					let categoryList = new Array();
+					const chrModelID = DBCharacters.getChrModelIDByFileDataID(fileDataID);
+					const optionsForModel = DBCharacters.getOptionsByChrModelID(chrModelID);
+
+					for (const chrCustomizationOption of optionsForModel) {
+						if (!(chrCustomizationOption.name in categoryList)) {
+							categoryList.push({ id: chrCustomizationOption.id, label: chrCustomizationOption.name});
+							let choices = DBCharacters.getChoicesByOption(chrCustomizationOption.id);
+							for (const chrCustomizationChoice of choices) {
+								if (!(chrCustomizationOption.id in defaultOptions)) {
+									defaultOptions.set(chrCustomizationOption.id, chrCustomizationChoice.id);
+									break;
+								}
+							}
+						}
 					}
 
-					// Push the skin onto the display list.
-					skinList.push(skinName);
-
-					// Keep a mapping of the name -> fileDataID for user selects.
-					activeSkins.set(skinName, skin);
-					isFirst = false;
+					core.view.modelViewerChrCustCategories = categoryList;
+					core.view.modelViewerSelectedChrCustCategory = categoryList.slice(0, 1);		
+					core.view.modelViewerChrCustCurrent = defaultOptions;
+				} catch (e) {
+					log.write('Unable to load character customization system: %s', e.message);
 				}
-			}
+			} else {
+				// Not a character model, check for creature skins.
+				let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
+				let isFirst = true;
+				const skinList = [];
+				let modelName = listfile.getByID(fileDataID);
+				modelName = path.basename(modelName, '.m2');
+				
+				// Check for item textures
+				if (displays === undefined)
+					displays = DBItemDisplays.getItemDisplaysByFileDataID(fileDataID);
 
-			core.view.modelViewerSkins = skinList;
-			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
+				if (displays !== undefined) {
+					for (const display of displays) {
+						if (display.textures.length == 0)
+							continue;
+
+						const texture = display.textures[0];
+
+						let cleanSkinName = '';
+						let skinName = listfile.getByID(texture);
+						if (skinName !== undefined) {
+							// Display the texture name without path/extension.
+							skinName = path.basename(skinName, '.blp');
+							cleanSkinName = skinName.replace(modelName, '').replace('_', '');
+						} else {
+							// Handle unknown textures.
+							skinName = 'unknown_' + texture;
+						}
+
+						if (cleanSkinName == '')
+							cleanSkinName = 'base';
+
+						if (display.extraGeosets?.length > 0)
+							skinName = skinName + display.extraGeosets.join(',');
+
+						cleanSkinName = cleanSkinName + ' (' + display.ID + ')';
+
+						if (activeSkins.has(skinName))
+							continue;
+
+						// Push the skin onto the display list.
+						skinList.push({ id: skinName, label: cleanSkinName });
+
+						// Keep a mapping of the name -> fileDataID for user selects.
+						activeSkins.set(skinName, display);
+						isFirst = false;
+					}
+				}
+
+				core.view.modelViewerShowSkins = true;
+				core.view.modelViewerSkins = skinList;
+				core.view.modelViewerSkinsSelection = skinList.slice(0, 1);		
+			}
 		}
 
 		updateCameraBounding();
 
 		activePath = fileName;
-
-		console.log(activeRenderer);
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
@@ -203,7 +266,7 @@ const exportFiles = async (files, isLocal = false) => {
 						await data.writeToFile(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
-							const exporter = new M2Exporter(data, selectedVariantTexID);
+							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
 							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
@@ -224,7 +287,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileNameLower.endsWith('.m2')) {
-							const exporter = new M2Exporter(data, selectedVariantTexID);
+							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
@@ -325,51 +388,6 @@ core.events.once('screen-tab-models', () => {
 });
 
 core.registerLoadFunc(async () => {
-	// Attempt to load creature model data.
-	try {
-		log.write('Loading creature textures...');
-
-		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-		await creatureDisplayInfo.parse();
-
-		const textureMap = new Map();
-
-		// Map all available texture fileDataIDs to model IDs.
-		for (const displayRow of creatureDisplayInfo.getAllRows().values()) {
-			const textures = displayRow.TextureVariationFileDataID.filter(e => e > 0);
-
-			if (textures.length > 0) {
-				if (textureMap.has(displayRow.ModelID))
-					textureMap.get(displayRow.ModelID).push(...textures);
-				else
-					textureMap.set(displayRow.ModelID, textures);
-			}
-		}
-
-		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-		await creatureModelData.parse();
-
-		// Using the texture mapping, map all model fileDataIDs to used textures.
-		for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
-			const textures = textureMap.get(modelID);
-			if (textures !== undefined) {
-				const fileDataID = modelRow.FileDataID;
-				const entry = creatureTextures.get(fileDataID);
-
-				if (entry !== undefined) {
-					for (const texture of textures)
-						entry.add(texture);
-				} else {
-					creatureTextures.set(fileDataID, new Set(textures));
-				}
-			}
-		}
-
-		log.write('Loaded textures for %d creatures', creatureTextures.size);
-	} catch (e) {
-		log.write('Unable to load creature model info or creature model data: %s', e.message);
-	}
-
 	// Track changes to the visible model listfile types.
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);
@@ -388,12 +406,65 @@ core.registerLoadFunc(async () => {
 
 		// Skin selector is single-select, should only be one item.
 		const selected = selection[0];
+		const display = activeSkins.get(selected.id);
 
-		const fileDataID = activeSkins.get(selected);
-		if (fileDataID !== undefined) {
-			selectedVariantTexID = fileDataID;
-			activeRenderer.loadNPCVariantTexture(fileDataID);
+		let currGeosets = core.view.modelViewerGeosets;
+
+		if (display.extraGeosets !== undefined) {
+			for (let j = 0; j < currGeosets.length; j++) {
+				if (currGeosets[j].id > 0 && currGeosets[j].id < 900)
+					currGeosets[j].checked = false;
+			}
+
+			for (let i = 0; i < display.extraGeosets.length; i++) {
+				for (let j = 0; j < currGeosets.length; j++) {
+					if (currGeosets[j].id == display.extraGeosets[i])
+						currGeosets[j].checked = true;
+				}
+			}
+		} else {
+			for (let i = 0; i < currGeosets.length; i++)
+				currGeosets[i].checked = (currGeosets[i].id.toString().endsWith('0') || currGeosets[i].id.toString().endsWith('01'));
 		}
+
+		if (display.textures.length > 0)
+			selectedVariantTextureIDs = display.textures;
+
+		activeRenderer.applyDisplay(display);
+	});
+
+	// When the selected customization option is changed, update choice listbox.
+	core.view.$watch('modelViewerSelectedChrCustCategory', async selection => {
+		if (!activeRenderer)
+			return;
+
+		// Option selector is single-select, should only be one item.
+		const selectedOptionID = selection[0].id;
+
+		let choiceList = DBCharacters.getChoicesByOption(selectedOptionID);
+		let currentlySelectedIndex = 0;
+
+		// Check if user had already selected a choice, if so, select that later on. 
+		for (let i = 0; i < choiceList.length; i++) {
+			if (core.view.modelViewerChrCustCurrent.has(selectedOptionID) && core.view.modelViewerChrCustCurrent.get(selectedOptionID) == choiceList[i].id)
+				currentlySelectedIndex = i;
+		}
+
+		core.view.modelViewerChrCustChoices = choiceList;
+		core.view.modelViewerSelectedChrCustChoice = [choiceList[currentlySelectedIndex]];	
+	});
+
+	// When the selected customization choice is changed, update geosets.
+	core.view.$watch('modelViewerSelectedChrCustChoice', async selection => {
+		if (!activeRenderer)
+			return;
+
+		// Option selector is single-select, should only be one item.
+		const selectedChoiceID = selection[0].id;
+		activeRenderer.applyCharacterCustomizationChoice(selectedChoiceID);
+
+		// Set current choice for this option to the newly selected choice.
+		core.view.modelViewerChrCustCurrent.set(core.view.modelViewerSelectedChrCustCategory[0].id, selectedChoiceID);
 	});
 
 	core.view.$watch('config.modelViewerShowGrid', () => {

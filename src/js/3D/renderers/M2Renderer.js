@@ -1,14 +1,18 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
 const log = require('../../log');
 
+const BufferWrapper = require('../../buffer');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const RenderCache = require('./RenderCache');
+
+const DBCharacters = require('../../db/caches/DBCharacter');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -23,7 +27,9 @@ class M2Renderer {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
-		this.textures = [];
+		this.renderCache = new RenderCache();
+		this.materials = [];
+		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
 	/**
@@ -94,8 +100,10 @@ class M2Renderer {
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
-			if (this.reactive)
-				this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
+			if (this.reactive) {
+				const isDefault = (skinMesh.submeshID == 0 || skinMesh.submeshID.toString().endsWith('01'));
+				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+			}
 		}
 
 		if (this.reactive) {
@@ -105,37 +113,174 @@ class M2Renderer {
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Update geosets once (so defaults are applied correctly)
+		this.updateGeosets();
 	}
 
 	/**
-	 * Load an NPC variant texture onto this model.
+	 * Apply replacable textures to this model.
+	 * @param {array} displays
+	 */
+	async applyDisplay(display) {
+		for (let i = 0; i < this.m2.textureTypes.length; i++) {
+			const textureType = this.m2.textureTypes[i];
+			if (textureType >= 11 && textureType < 14) {
+				// Creature textures
+				this.overrideTextureType(textureType, display.textures[textureType - 11]);
+			} else if (textureType > 1 && textureType < 5) {
+				// Item textures
+				this.overrideTextureType(textureType, display.textures[textureType - 2]);
+			}
+		}
+	}
+
+	/**
+	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
-	async loadNPCVariantTexture(fileDataID) {
-		try {
-			log.write('Loading variant texture %d', fileDataID);
-			if (!this.defaultMaterial)
-				throw new Error('Model does not have a default material to replace.');
+	async overrideTextureType(type, fileDataID) {
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] != type)
+				continue;
+			
+			const tex = new THREE.Texture();
+			const loader = new THREE.ImageLoader();
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
-
-			const loader = new THREE.ImageLoader();
 			loader.load(blp.getDataURL(false), image => {
-				const tex = new THREE.Texture();
-				const mat = this.defaultMaterial;
-
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
-
-				mat.map = tex;
-				mat.color = 0x0;
-				mat.needsUpdate = true;
 			});
-		} catch (e) {
-			log.write('Failed to set variant texture: %s', e.message);
+
+			// TODO: Flags from one of the DB2s?
+			/*// if (texture.flags & 0x1)
+				// tex.wrapS = THREE.RepeatWrapping;
+
+			// if (texture.flags & 0x2)
+				// tex.wrapT = THREE.RepeatWrapping;*/
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
 		}
+	}
+
+	/**
+	 * Apply a character customization choice.
+	 * @param {number} choiceID 
+	 */
+	async applyCharacterCustomizationChoice(choiceID) {
+		// Get target geoset ID
+		const targetGeosetID = DBCharacters.getGeosetForChoice(choiceID);
+
+		// Get other choices for this option 
+		const otherChoices = DBCharacters.getChoicesByOption(core.view.modelViewerSelectedChrCustCategory[0].id);
+
+		let otherGeosets = new Array();
+		if (otherChoices.length > 0) {
+			for (const otherChoice of otherChoices) {
+				const otherGeosetID = DBCharacters.getGeosetForChoice(otherChoice.id);
+				if (otherGeosetID)
+					otherGeosets.push(otherGeosetID);
+			}
+		}
+
+		if (targetGeosetID) {
+			let currGeosets = core.view.modelViewerGeosets;
+			for (let i = 0; i < currGeosets.length; i++) {
+				if (currGeosets[i].id == targetGeosetID) {
+					currGeosets[i].checked = true;
+					console.log('Checking ' + currGeosets[i].id);
+				} else {
+					// Check if current geoset is checked and part of another choice in the current option, disable if so.
+					if (currGeosets[i].checked && otherGeosets.includes(currGeosets[i].id)) {
+						console.log('Un-checking ' + currGeosets[i].id);
+						currGeosets[i].checked = false;
+					}
+				}
+			}
+		}
+
+		const textureForChoice = DBCharacters.getTextureForFileDataIDAndChoice(core.view.modelViewerCurrFileDataID, choiceID);
+		if (textureForChoice) {
+			if (textureForChoice.TextureType == 1 && textureForChoice.TextureSectionTypeBitMask == -1) {
+				const skinMats = DBCharacters.getSkinMaterialsForChoice(core.view.modelViewerCurrFileDataID, choiceID);
+				this.buildSkinMaterial(skinMats);
+			} else {
+				console.log('Overriding texture slot ' + textureForChoice.TextureType + ' with ' + textureForChoice.FileDataID);
+				this.overrideTextureType(textureForChoice.TextureType, textureForChoice.FileDataID);
+			}
+		}
+	}
+
+	/**
+	 * Build skin material based on several FileDataIDs at specific X/Y offsets.
+	 * Base material should be in [0] with all the other textures in layers on top of that.
+	 * @param {object[]} skinMats
+	 * @returns {string} Texture URL.
+	 */
+	async buildSkinMaterial(skinMats) {
+		console.log('Building skin material', skinMats);
+		const mergedTexture = await this.mergeSkinMaterials(skinMats);
+		const texture = new THREE.Texture();
+
+		const loader = new THREE.ImageLoader();
+		loader.load(mergedTexture, image => {
+			texture.image = image;
+			texture.format = THREE.RGBAFormat;
+			texture.needsUpdate = true;
+			texture.generateMipmaps = true;
+
+			// Revoke resource URL once loaded.
+			URL.revokeObjectURL(mergedTexture);
+		});
+
+		const compiledSkinMat = new THREE.MeshPhongMaterial({ name: 'compiledSkinMaterial', map: texture, side: THREE.DoubleSide });
+		this.renderCache.register(compiledSkinMat, texture);
+
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] != 1)
+				continue;
+
+			// Keep on top of material usage and dispose unused ones.
+			this.renderCache.retire(this.materials[i]);
+
+			this.renderCache.addUser(compiledSkinMat);
+			this.materials[i] = compiledSkinMat;
+		}
+	}
+
+	/**
+	 * Merges multiple skin files to one baked texture.
+	 * @param {object[]} skinMats
+	 * @returns {string}
+	 */
+	async mergeSkinMaterials(skinMats) {
+		const baseSize = skinMats[0].size;
+		const canvas = new OffscreenCanvas(baseSize.width, baseSize.height);
+
+		for (const skinMat of skinMats) {
+			// Skip empty slots.
+			if (skinMat === undefined)
+				continue;
+
+			const blp = new BLPFile(await core.view.casc.getFile(skinMat.FileDataID));
+			blp.drawToCanvas(canvas, 0, true, skinMat.position.x, skinMat.position.y);
+		}
+
+		const blob = await canvas.convertToBlob();
+		return URL.createObjectURL(blob);
 	}
 
 	/**
@@ -143,7 +288,10 @@ class M2Renderer {
 	 */
 	loadTextures() {
 		const textures = this.m2.textures;
+
+		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
+
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
 
@@ -168,12 +316,12 @@ class M2Renderer {
 				if (texture.flags & 0x2)
 					tex.wrapT = THREE.RepeatWrapping;
 
-				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
-			} else {
-				if (!this.defaultMaterial)
-					this.defaultMaterial = new THREE.MeshPhongMaterial({ color: DEFAULT_MODEL_COLOR });
+				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+				this.renderCache.register(material, tex);
 
+				this.materials[i] = material;
+				this.renderCache.addUser(material);
+			} else {
 				this.materials[i] = this.defaultMaterial;
 			}
 		}
@@ -211,9 +359,7 @@ class M2Renderer {
 		if (this.geosetWatcher)
 			this.geosetWatcher();
 
-		// Release bound textures.
-		for (const tex of this.textures)
-			tex.dispose();
+		this.renderCache.retire(...this.materials);
 
 		this.disposeMeshGroup();
 	}

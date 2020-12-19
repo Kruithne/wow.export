@@ -9,6 +9,7 @@ const path = require('path');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
+const BoneMapper = require('../BoneMapper');
 
 class GLTFWriter {
 	/**
@@ -220,15 +221,16 @@ class GLTFWriter {
 			skin.joints.push(i);
 
 			const node = {
-				name: this.name + '_bone_' + i,
+				name: BoneMapper.getBoneName(i),
 				children: bone.children
 			};
 
 			let parentPos = [0, 0, 0];
-			if (node.parentNode > -1)
+			if (bone.parentBone > -1)
 				parentPos = bones[bone.parentBone].pivot;
 				
-			node.translation = bone.pivot.map((v, i) => v -= parentPos[i]);
+			let rawTranslation = bone.pivot.map((v, i) => v -= parentPos[i]);
+			node.translation = [rawTranslation[0],rawTranslation[2],-rawTranslation[1]];
 			nodes.push(node);
 		}
 

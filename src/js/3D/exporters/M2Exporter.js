@@ -22,11 +22,11 @@ class M2Exporter {
 	/**
 	 * Construct a new M2Exporter instance.
 	 * @param {BufferWrapper}
-	 * @param {number} variantTexture
+	 * @param {number} variantTextures
 	 */
-	constructor(data, variantTexture = 0) {
+	constructor(data, variantTextures) {
 		this.m2 = new M2Loader(data);
-		this.variantTexture = variantTexture;
+		this.variantTextures = variantTextures;
 	}
 
 	/**
@@ -53,20 +53,33 @@ class M2Exporter {
 		const useAlpha = config.modelsIncludeAlpha;
 
 		const validTextures = new Map();
-		for (const texture of this.m2.textures) {
+		for (let i = 0; i < this.m2.textures.length; i++) {
+			const texture = this.m2.textures[i];
+			const textureType = this.m2.textureTypes[i];
+
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
 				
 			let texFileDataID = texture.fileDataID;
 
-			// Blank texture, do we have a variant texture?
-			if (texFileDataID === 0) {
-				texFileDataID = this.variantTexture;
+			// If texture type > 0, this should come from variant textures
+			if (textureType > 0) {
+				let targetFileDataID = 0;
+
+				if (textureType >= 11 && textureType < 14) {
+					// Creature textures
+					targetFileDataID = this.variantTextures[textureType - 11];
+				} else if (textureType > 1 && textureType < 5) {
+					// Item textures
+					targetFileDataID = this.variantTextures[textureType - 2];
+				}
+				
+				texFileDataID = targetFileDataID;
 
 				// Backward patch the variant texture into the M2 instance so that
 				// the MTL exports with the correct texture once we swap it here.
-				texture.fileDataID = this.variantTexture;
+				texture.fileDataID = targetFileDataID;
 			}
 
 			if (texFileDataID > 0) {

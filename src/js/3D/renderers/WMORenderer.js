@@ -13,7 +13,7 @@ const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
 const listfile = require('../../casc/listfile');
 
-const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2 });
+const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
 class WMORenderer {
 	/**
@@ -129,7 +129,7 @@ class WMORenderer {
 					tex.wrapT = THREE.RepeatWrapping;
 
 				this.textures.push(tex);
-				materials[i] = new THREE.MeshPhongMaterial({ map: tex });
+				materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}

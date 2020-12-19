@@ -1,3 +1,9 @@
+0.1.25 (In Development)
+- Added initial character customization support.
+- Added support for enabling geosets for certain creature skins.
+- Improved skin names for most models to fit on the screen.
+- Improved default selected geosets for models.
+
 0.1.24 (17-12-2020)
 - Fixed missing escape slashes in regex guide tooltip.
 - Fixed an issue that prevented exporting Classic WMOs with missing materials.
