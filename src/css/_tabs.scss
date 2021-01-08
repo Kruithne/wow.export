@@ -233,12 +233,26 @@
 	position: relative;
 	margin: 20px 10px 0 20px;
 
+	.list-status {
+		position: absolute;
+		bottom: -5px;
+		background: #1f1f20;
+		left: 10px;
+		height: 27px;
+		right: 10px;
+		border-bottom-right-radius: 10px;
+		border-bottom-left-radius: 10px;
+		font-weight: bold;
+		padding-left: 10px;
+		padding-top: 3px;
+	}
+
 	.ui-listbox {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: 0;
+		bottom: 25px;
 	}
 }
 
