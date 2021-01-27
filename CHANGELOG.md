@@ -1,3 +1,7 @@
+0.1.25 (27-01-2021)
+- Added legacy fallback support for MDX/MDL files in old WMOs.
+- Added a file count indicator under listfiles.
+
 0.1.24 (17-12-2020)
 - Fixed missing escape slashes in regex guide tooltip.
 - Fixed an issue that prevented exporting Classic WMOs with missing materials.

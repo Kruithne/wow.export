@@ -9,6 +9,7 @@ const constants = require('../constants');
 const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
+const ExportHelper = require('../casc/export-helper');
 
 const WDCReader = require('../db/WDCReader');
 
@@ -185,7 +186,14 @@ const getByID = (id) => {
  * @returns {number|undefined} 
  */
 const getByFilename = (filename) => {
-	return nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
+	let lookup = nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
+	
+	// In the rare occasion we have a reference to an MDL/MDX file and it fails
+	// to resolve (as expected), attempt to resolve the M2 of the same name.
+	if (!lookup && (filename.endsWith('.mdl') || filename.endsWith('mdx')))
+		lookup = nameLookup.get(ExportHelper.replaceExtension(filename, '.m2').replace(/\\/g, '/'));
+
+	return lookup;
 };
 
 module.exports = { loadListfile, getByID, getByFilename, getFilenamesByExtension };
