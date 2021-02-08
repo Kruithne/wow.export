@@ -78,8 +78,13 @@ class M2Exporter {
 					let matName = 'mat_' + texFileDataID;
 					let fileName = listfile.getByID(texFileDataID);
 
-					if (fileName !== undefined)
+					if (fileName !== undefined) {
 						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+
+						// Remove spaces from material name for MTL compatibility.
+						if (core.view.config.removePathSpaces)
+							matName = matName.replace(/\s/g, '');
+					}
 
 					// Map texture files relative to its own path.
 					if (config.enableSharedTextures) {

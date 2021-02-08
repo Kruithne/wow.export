@@ -104,8 +104,13 @@ class WMOExporter {
 						fileName = listfile.getByID(fileDataID);
 
 					// If we have a valid file name, use it for the material name.
-					if (fileName !== undefined)
+					if (fileName !== undefined) {
 						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						
+						// Remove spaces from material name for MTL compatibility.
+						if (core.view.config.removePathSpaces)
+							matName = matName.replace(/\s/g, '');
+					}
 
 					// Map texture files relative to shared directory.
 					if (config.enableSharedTextures) {
