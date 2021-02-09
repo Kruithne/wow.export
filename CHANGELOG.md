@@ -1,3 +1,8 @@
+0.1.26 (09-02-2021)
+- Added a 'Paste Selection' feature for selecting from clipboard input.
+- Added a selection counter underneath listfiles.
+- Fixed an issue with broken selection information appearing under the skin menu.
+
 0.1.25 (27-01-2021)
 - Added legacy fallback support for MDX/MDL files in old WMOs.
 - Added a file count indicator under listfiles.
