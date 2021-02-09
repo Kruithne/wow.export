@@ -15,11 +15,12 @@ Vue.component('listbox', {
 	 * keyinput: If true, listbox registers for keyboard input.
 	 * regex: If true, filter will be treated as a regular expression.
 	 * copydir: If true, CTRL + C will only copy directories.
+	 * pasteselection: If true, CTRL + V will load a selection.
 	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'copytrimwhitespace', 'includefilecount', 'unittype'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype'],
 
 	/**
 	 * Reactive instance data.
@@ -41,9 +42,12 @@ Vue.component('listbox', {
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
+		this.onPaste = e => this.handlePaste(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
+
+		document.addEventListener('paste', this.onPaste);
 
 		if (this.keyinput) {
 			this.onKeyDown = e => this.handleKey(e);
@@ -63,6 +67,8 @@ Vue.component('listbox', {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+
+		document.removeEventListener('paste', this.onPaste);
 
 		if (this.keyinput)
 			document.removeEventListener('keydown', this.onKeyDown);
@@ -186,6 +192,23 @@ Vue.component('listbox', {
 		 */
 		stopMouse: function(e) {
 			this.isScrolling = false;
+		},
+
+		/**
+		 * Invoked when a user attempts to paste a selection.
+		 * @param {ClipboardEvent} e 
+		 */
+		handlePaste: function(e) {
+			// Paste selection must be enabled for this feature.
+			if (!this.pasteselection)
+				return;
+
+			// Replace the current selection with one from the clipboard.
+			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.items.includes(i));
+			this.selection.splice(0);
+			this.selection.push(...entries);
+
+			e.preventDefault();
 		},
 
 		/**
