@@ -19,6 +19,7 @@ module.exports = {
 	INSTALL_PATH, // Path to the application installation.
 	DATA_PATH, // Path to the users data directory.
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
+	LAST_EXPORT: path.join(DATA_PATH, 'last_export'), // Location of the last export.
 	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
 
 	// Location of GL shaders.

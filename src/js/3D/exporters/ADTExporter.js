@@ -211,6 +211,7 @@ class ADTExporter {
 	 * @param {number} textureRes
 	 * @param {Set|undefined} gameObjects Additional game objects to export.
 	 * @param {ExportHelper} helper
+	 * @returns {string}
 	 */
 	async export(dir, quality, gameObjects, helper) {
 		const casc = core.view.casc;
@@ -256,7 +257,8 @@ class ADTExporter {
 
 		const chunkMeshes = new Array(256);
 
-		const obj = new OBJWriter(path.join(dir, 'adt_' + this.tileID + '.obj'));
+		const objOut = path.join(dir, 'adt_' + this.tileID + '.obj');
+		const obj = new OBJWriter(objOut);
 		const mtl = new MTLWriter(path.join(dir, 'adt_' + this.tileID + '.mtl'));
 
 		const firstChunk = rootAdt.chunks[0];
@@ -1045,6 +1047,8 @@ class ADTExporter {
 					return;
 			}
 		}
+
+		return objOut;
 	}
 
 	/**

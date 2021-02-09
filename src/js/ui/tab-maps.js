@@ -16,6 +16,7 @@ const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
 const ExportHelper = require('../casc/export-helper');
 const WMOExporter = require('../3D/exporters/WMOExporter');
+const FileWriter = require('../file-writer');
 
 let selectedMapID;
 let selectedMapDir;
@@ -210,6 +211,8 @@ const exportSelectedMap = async () => {
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
 
+	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
+
 	// The export helper provides the user with a link to the directory of the last exported
 	// item. Since we're using directory paths, we just append another segment here so that
 	// when the path is trimmed, users end up in the right place. Bit hack-y, but quicker.
@@ -237,12 +240,15 @@ const exportSelectedMap = async () => {
 		}
 
 		try {
-			await adt.export(dir, exportQuality, gameObjects, helper);
+			const outputPath = await adt.export(dir, exportQuality, gameObjects, helper);
+			exportPaths.writeLine('ADT_OBJ:' + outputPath);
 			helper.mark(markPath, true);
 		} catch (e) {
 			helper.mark(markPath, false, e.message);
 		}
 	}
+
+	await exportPaths.close();
 
 	// Clear the internal ADTLoader cache.
 	ADTExporter.clearCache();

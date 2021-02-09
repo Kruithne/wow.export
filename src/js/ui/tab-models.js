@@ -12,6 +12,7 @@ const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const FileWriter = require('../file-writer');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
@@ -166,6 +167,7 @@ const updateCameraBounding = () => {
 };
 
 const exportFiles = async (files, isLocal = false) => {
+	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
 	const format = core.view.config.exportModelFormat;
 	if (format === 'PNG') {
 		// For PNG exports, we only export the viewport, not the selected files.
@@ -175,7 +177,10 @@ const exportFiles = async (files, isLocal = false) => {
 
 			const canvas = document.getElementById('model-preview').querySelector('canvas');
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
-			await buf.writeToFile(ExportHelper.replaceExtension(exportPath, '.png'));
+
+			const outFile = ExportHelper.replaceExtension(exportPath, '.png');
+			await buf.writeToFile(outFile);
+			exportPaths.writeLine('PNG:' + outFile);
 
 			log.write('Saved 3D preview screenshot to %s', exportPath);
 			core.setToast('success', util.format('Successfully exported preview to %s!', exportPath));
@@ -201,6 +206,7 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'RAW':
 						// Export as raw file with no conversions.
 						await data.writeToFile(exportPath);
+						exportPaths.writeLine(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
 							const exporter = new M2Exporter(data, selectedVariantTexID);
@@ -230,10 +236,13 @@ const exportFiles = async (files, isLocal = false) => {
 							if (fileName == activePath)
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
-							if (format === 'OBJ')
+							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper);
-							else if (format === 'GLTF')
+								exportPaths.writeLine('M2_OBJ:' + exportPath);
+							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper);
+								exportPaths.writeLine('M2_GLTF:' + exportPath);
+							}
 
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())
@@ -252,10 +261,14 @@ const exportFiles = async (files, isLocal = false) => {
 								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
 							}
 
-							if (format === 'OBJ')
+							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, helper);
-							else if (format === 'GLTF')
+								exportPaths.writeLine('WMO_OBJ:' + exportPath);
+							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper);
+								exportPaths.writeLine('WMO_GLTF:' + exportPath);
+							}
+
 							WMOExporter.clearCache();
 
 							// Abort if the export has been cancelled.
@@ -264,6 +277,7 @@ const exportFiles = async (files, isLocal = false) => {
 						} else {
 							throw new Error('Unexpected model format: ' + fileName);
 						}
+
 						break;
 
 					default:
@@ -278,6 +292,9 @@ const exportFiles = async (files, isLocal = false) => {
 
 		helper.finish();
 	}
+
+	// Write export information.
+	await exportPaths.close();
 };
 
 /**

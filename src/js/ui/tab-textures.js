@@ -7,10 +7,12 @@ const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const generics = require('../generics');
+const constants = require('../constants');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const FileWriter = require('../file-writer');
 
 let selectedFile = null;
 
@@ -49,6 +51,8 @@ const exportFiles = async (files, isLocal = false) => {
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
+	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
+
 	const format = core.view.config.exportTextureFormat;
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 
@@ -68,10 +72,12 @@ const exportFiles = async (files, isLocal = false) => {
 				if (format === 'BLP') {
 					// Export as raw file with no conversion.
 					await data.writeToFile(exportPath);
+					exportPaths.writeLine('BLP:' + exportPath);
 				} else {
 					// Export as PNG.
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportTextureAlpha);
+					exportPaths.writeLine('PNG:' + exportPath);
 				}
 			} else {
 				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
@@ -82,6 +88,8 @@ const exportFiles = async (files, isLocal = false) => {
 			helper.mark(fileName, false, e.message);
 		}
 	}
+
+	await exportPaths.close();
 
 	helper.finish();
 };
