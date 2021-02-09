@@ -343,5 +343,5 @@ Vue.component('listbox', {
 			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
 		</div>
 	</div>
-	<div class="list-status">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found.</div></div>`
+	<div class="list-status">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
 });
