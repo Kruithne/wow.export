@@ -103,18 +103,17 @@ def importWoWOBJ(objectFile, givenParent = None):
     newmesh = bpy.data.meshes.new(objname)
     obj = bpy.data.objects.new(objname, newmesh)
 
-    ## Textures
-    # TODO: Must be a better way to do this!
-    materialmapping = dict()
-
     # Create a new material instance for each material entry.
-    for matname, textureLocation in materials.items():
-        if (matname not in bpy.data.materials):
-            mat = bpy.data.materials.new(name=matname)
-            mat.use_nodes = True
-            mat.blend_method = 'CLIP'
+    for materialName, textureLocation in materials.items():
+        material = None
+        if materialName in bpy.data.materials:
+            material = bpy.data.materials[materialName]
+        else:
+            material = bpy.data.materials.new(name=materialName)
+            material.use_nodes = True
+            material.blend_method = 'CLIP'
 
-            node_tree = mat.node_tree
+            node_tree = material.node_tree
             nodes = node_tree.nodes
 
             # Note on socket reference localization:
@@ -160,10 +159,7 @@ def importWoWOBJ(objectFile, givenParent = None):
             # Set the specular value to 0 by default.
             principled.inputs['Specular'].default_value = 0
 
-        obj.data.materials.append(bpy.data.materials[matname])
-
-        # TODO: Must be a better way to do this!
-        materialmapping[matname] = len(obj.data.materials) - 1
+        obj.data.materials.append(bpy.data.materials[materialName])
 
     ## Meshes
     bm = bmesh.new()
@@ -189,8 +185,10 @@ def importWoWOBJ(objectFile, givenParent = None):
                         bm.verts[face[2] - 1]
                     ))
                     bm.faces.ensure_lookup_table()
+
                     if mesh.usemtl:
-                        bm.faces[-1].material_index = materialmapping[mesh.usemtl]
+                        bm.faces[-1].material_index = obj.data.materials.find(mesh.usemtl)
+
                     bm.faces[-1].smooth = True
                     exampleFace = bm.faces[-1]
                     exampleFaceSet = True
