@@ -5,7 +5,6 @@ import csv
 
 from math import radians
 from mathutils import Quaternion
-from datetime import datetime
 
 def importWoWOBJAddon(objectFile):
     importWoWOBJ(objectFile)
@@ -290,7 +289,7 @@ def importWoWOBJ(objectFile, givenParent = None):
 
                         if row['ScaleFactor']:
                             parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
-                            
+
                         bpy.context.scene.collection.objects.link(parent)
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
