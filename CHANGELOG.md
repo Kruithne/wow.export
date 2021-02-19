@@ -1,4 +1,5 @@
 0.1.27 (TBD)
+- Fixed issue that could cause alpha channel to be linked incorrectly in imported material shaders.
 - Fixed issue that preventing pasting into a listfile search under some circumstances.
 
 0.1.26 (09-02-2021)
