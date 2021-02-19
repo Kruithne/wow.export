@@ -1,3 +1,6 @@
+0.1.27 (TBD)
+- Fixed issue that preventing pasting into a listfile search under some circumstances.
+
 0.1.26 (09-02-2021)
 - Added a 'Paste Selection' feature for selecting from clipboard input.
 - Added a selection counter underneath listfiles.
