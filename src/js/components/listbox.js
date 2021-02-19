@@ -207,8 +207,6 @@ Vue.component('listbox', {
 			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.items.includes(i));
 			this.selection.splice(0);
 			this.selection.push(...entries);
-
-			e.preventDefault();
 		},
 
 		/**
