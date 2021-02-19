@@ -5,8 +5,6 @@ import csv
 
 from math import radians
 from mathutils import Quaternion
-from bpy_extras.node_shader_utils import PrincipledBSDFWrapper
-from bpy_extras.image_utils import load_image
 from datetime import datetime
 
 def importWoWOBJAddon(objectFile):
@@ -109,19 +107,58 @@ def importWoWOBJ(objectFile, givenParent = None):
     # TODO: Must be a better way to do this!
     materialmapping = dict()
 
-    for matname, texturelocation in materials.items():
-        # Import material only once
-        if(matname not in bpy.data.materials):
+    # Create a new material instance for each material entry.
+    for matname, textureLocation in materials.items():
+        if (matname not in bpy.data.materials):
             mat = bpy.data.materials.new(name=matname)
             mat.use_nodes = True
             mat.blend_method = 'CLIP'
-            principled = PrincipledBSDFWrapper(mat, is_readonly=False)
-            principled.specular = 0.0
-            principled.base_color_texture.image = load_image(texturelocation)
-            imageTextureNode = getFirstNodeOfType(mat.node_tree.nodes, 'TEX_IMAGE')
-            principledNode = getFirstNodeOfType(mat.node_tree.nodes, 'BSDF_PRINCIPLED')
-            if imageTextureNode is not None and principledNode is not None:
-                mat.node_tree.links.new(imageTextureNode.outputs[1], principledNode.inputs[18])
+
+            node_tree = mat.node_tree
+            nodes = node_tree.nodes
+
+            # Note on socket reference localization:
+            # Unlike nodes, sockets can be referenced in English regardless of localization.
+            # This will break if the user sets the socket names to any non-default value.
+
+            # Create new Principled BSDF and Image Texture nodes.
+            principled = None
+            outNode = None
+
+            for node in nodes:
+                if not principled and node.type == 'BSDF_PRINCIPLED':
+                    principled = node
+
+                if not outNode and node.type == 'OUTPUT_MATERIAL':
+                    outNode = node
+
+                if principled and outNode:
+                    break
+
+            # If there is no Material Output node, create one.
+            if not outNode:
+                outNode = nodes.new('ShaderNodeOutputMaterial')
+
+            # If there is no default Principled BSDF node, create one and link it to material output.
+            if not principled:
+                principled = nodes.new('ShaderNodeBsdfPrincipled')
+                node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+
+            # Create a new Image Texture node.
+            image = nodes.new('ShaderNodeTexImage')
+
+            # Load the image file itself if necessary.
+            imageName = os.path.basename(textureLocation)
+            if not imageName in bpy.data.images:
+                bpy.data.images.load(textureLocation)
+
+            image.image = bpy.data.images[imageName]
+
+            node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+            node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+
+            # Set the specular value to 0 by default.
+            principled.inputs['Specular'].default_value = 0
 
         obj.data.materials.append(bpy.data.materials[matname])
 
