@@ -6,6 +6,8 @@ import csv
 from math import radians
 from mathutils import Quaternion
 
+MAP_COORD_BASE = 51200 / 3
+
 def importWoWOBJAddon(objectFile):
     importWoWOBJ(objectFile)
     return {'FINISHED'}
@@ -281,7 +283,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         # Make WMO parent that holds WMO and doodads
                         parent = bpy.data.objects.new(os.path.basename(row['ModelFile']) + ' parent', None)
                         parent.parent = wmoparent
-                        parent.location = (17066 - float(row['PositionX']), (17066 - float(row['PositionZ'])) * -1, float(row['PositionY']))
+                        parent.location = (MAP_COORD_BASE - float(row['PositionX']), (MAP_COORD_BASE - float(row['PositionZ'])) * -1, float(row['PositionY']))
                         parent.rotation_euler = [0, 0, 0]
                         parent.rotation_euler.x += radians(float(row['RotationZ']))
                         parent.rotation_euler.y += radians(float(row['RotationX']))
@@ -321,8 +323,8 @@ def importWoWOBJ(objectFile, givenParent = None):
 
                         importedFile.parent = doodadparent
 
-                        importedFile.location.x = (17066 - float(row['PositionX']))
-                        importedFile.location.y = (17066 - float(row['PositionZ'])) * -1
+                        importedFile.location.x = (MAP_COORD_BASE - float(row['PositionX']))
+                        importedFile.location.y = (MAP_COORD_BASE - float(row['PositionZ'])) * -1
                         importedFile.location.z = float(row['PositionY'])
                         importedFile.rotation_euler.x += radians(float(row['RotationZ']))
                         importedFile.rotation_euler.y += radians(float(row['RotationX']))
