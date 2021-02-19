@@ -187,7 +187,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         bm.verts[face[0] - 1],
                         bm.verts[face[1] - 1],
                         bm.verts[face[2] - 1]
-                    ));
+                    ))
                     bm.faces.ensure_lookup_table()
                     if mesh.usemtl:
                         bm.faces[-1].material_index = materialmapping[mesh.usemtl]
@@ -273,7 +273,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                         tempModelIDList = []
                     if row['ModelId'] in tempModelIDList:
                         print('Skipping already imported model ' + row['ModelId'])
-                        continue;
+                        continue
                     else:
                         tempModelIDList.append(row['ModelId'])
 
