@@ -24,7 +24,7 @@ def importWoWOBJ(objectFile, givenParent = None):
     print('Parsing OBJ: ' + fileName)
     ### OBJ wide
     material_libs = set()
-    mtlfile = ""
+    mtlfile = ''
     verts = []
     normals = []
     uv = []
@@ -33,8 +33,8 @@ def importWoWOBJ(objectFile, givenParent = None):
     ### Per group
     class OBJMesh:
         def __init__(self):
-            self.usemtl = ""
-            self.name = ""
+            self.usemtl = ''
+            self.name = ''
             self.faces = []
 
     curMesh = OBJMesh()
@@ -63,17 +63,17 @@ def importWoWOBJ(objectFile, givenParent = None):
             elif line_start == b'g':
                 meshIndex += 1
                 meshes.append(OBJMesh())
-                meshes[meshIndex].name = line_split[1].decode("utf-8")
+                meshes[meshIndex].name = line_split[1].decode('utf-8')
             elif line_start == b'usemtl':
-                meshes[meshIndex].usemtl = line_split[1].decode("utf-8")
+                meshes[meshIndex].usemtl = line_split[1].decode('utf-8')
 
 
     ## Materials file (.mtl)
     materials = dict()
-    matname = ""
-    matfile = ""
-    if mtlfile != "":
-	    with open(os.path.join(baseDir, mtlfile.decode("utf-8") ), 'r') as f:
+    matname = ''
+    matfile = ''
+    if mtlfile != '':
+	    with open(os.path.join(baseDir, mtlfile.decode('utf-8') ), 'r') as f:
 	        for line in f:
 	            line_split = line.split()
 	            if not line_split:
@@ -233,23 +233,23 @@ def importWoWOBJ(objectFile, givenParent = None):
             if 'Type' in reader.fieldnames:
                 importType = 'ADT'
 
-                wmoparent = bpy.data.objects.new("WMOs", None)
+                wmoparent = bpy.data.objects.new('WMOs', None)
                 wmoparent.parent = obj
-                wmoparent.name = "WMOs"
+                wmoparent.name = 'WMOs'
                 wmoparent.rotation_euler = [0, 0, 0]
                 wmoparent.rotation_euler.x = radians(-90)
                 bpy.context.scene.collection.objects.link(wmoparent)
 
-                doodadparent = bpy.data.objects.new("Doodads", None)
+                doodadparent = bpy.data.objects.new('Doodads', None)
                 doodadparent.parent = obj
-                doodadparent.name = "Doodads"
+                doodadparent.name = 'Doodads'
                 doodadparent.rotation_euler = [0, 0, 0]
                 doodadparent.rotation_euler.x = radians(-90)
                 bpy.context.scene.collection.objects.link(doodadparent)
 
-                gobjparent = bpy.data.objects.new("GameObjects", None)
+                gobjparent = bpy.data.objects.new('GameObjects', None)
                 gobjparent.parent = obj
-                gobjparent.name = "GameObjects"
+                gobjparent.name = 'GameObjects'
                 gobjparent.rotation_euler = [0, 0, 0]
                 gobjparent.rotation_euler.x = radians(-90)
                 bpy.context.scene.collection.objects.link(gobjparent)
@@ -257,9 +257,9 @@ def importWoWOBJ(objectFile, givenParent = None):
                 importType = 'WMO'
                 if not givenParent:
                     print('WMO import without given parent, creating..')
-                    givenParent = bpy.data.objects.new("WMO parent", None)
+                    givenParent = bpy.data.objects.new('WMO parent', None)
                     givenParent.parent = obj
-                    givenParent.name = "Doodads"
+                    givenParent.name = 'Doodads'
                     givenParent.rotation_euler = [0, 0, 0]
                     givenParent.rotation_euler.x = radians(-90)
                     bpy.context.scene.collection.objects.link(givenParent)
@@ -280,15 +280,17 @@ def importWoWOBJ(objectFile, givenParent = None):
                         print('ADT WMO import: ' + row['ModelFile'])
 
                         # Make WMO parent that holds WMO and doodads
-                        parent = bpy.data.objects.new(os.path.basename(row['ModelFile']) + " parent", None)
+                        parent = bpy.data.objects.new(os.path.basename(row['ModelFile']) + ' parent', None)
                         parent.parent = wmoparent
                         parent.location = (17066 - float(row['PositionX']), (17066 - float(row['PositionZ'])) * -1, float(row['PositionY']))
                         parent.rotation_euler = [0, 0, 0]
                         parent.rotation_euler.x += radians(float(row['RotationZ']))
                         parent.rotation_euler.y += radians(float(row['RotationX']))
                         parent.rotation_euler.z = radians((90 + float(row['RotationY'])))
+
                         if row['ScaleFactor']:
                             parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                            
                         bpy.context.scene.collection.objects.link(parent)
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
