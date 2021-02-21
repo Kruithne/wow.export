@@ -19,6 +19,7 @@ class OBJWriter {
 		this.verts = [];
 		this.normals = [];
 		this.uvs = [];
+		this.uvs2 = [];
 
 		this.meshes = [];
 		this.name = 'Mesh';
@@ -65,6 +66,15 @@ class OBJWriter {
 	}
 
 	/**
+	 * Set the UV2 array for this writer.
+	 * This is a non-standard property feature for wow.export
+	 * @param {Array} uvs 
+	 */
+	setUV2Array(uvs) {
+		this.uvs2 = uvs;
+	}
+
+	/**
 	 * Add a mesh to this writer.
 	 * @param {string} name
 	 * @param {Array} triangles 
@@ -108,6 +118,12 @@ class OBJWriter {
 		const uvs = this.uvs;
 		for (let i = 0, n = uvs.length; i < n; i += 2)
 			writer.writeLine('vt ' + uvs[i] + ' ' + uvs[i + 1]);
+
+		// We've had one, but what about second UVs?
+		// This is a non-standard property for wow.export
+		const uv2 = this.uvs2;
+		for (let i = 0, n = uv2.length; i < n; i += 2)
+			writer.writeLine('vt2 ' + uv2[i] + ' ' + uv2[i + 1]);
 
 		// Write meshes.
 		for (const mesh of this.meshes) {

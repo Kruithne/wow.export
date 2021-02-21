@@ -127,6 +127,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Export UV2 Data</h1>
+						<p>If enabled, UV2 data will be exported for M2 models, included as the non-standard vt2 property in OBJ files.</p>
+						<p>Use the wow.export Blender add-on to import OBJ models with UV2 maps.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.modelsExportUV2"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Export Model Meta Data</h1>
 						<p>If enabled, M2 models exported as OBJ will also have meta data exported into a .json file.</p>
 						<label class="ui-checkbox">

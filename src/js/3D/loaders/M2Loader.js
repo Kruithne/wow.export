@@ -316,6 +316,7 @@ class M2Loader {
 		const vertices = this.vertices = new Array(verticesCount * 3);
 		const normals = this.normals = new Array(verticesCount * 3);
 		const uv = this.uv = new Array(verticesCount * 2);
+		const uv2 = this.uv2 = new Array(verticesCount * 2);
 		const boneWeights = this.boneWeights = Array(verticesCount * 4);
 		const boneIndices = this.boneIndices = Array(verticesCount * 4);
 	
@@ -339,7 +340,8 @@ class M2Loader {
 			uv[uvIndex] = this.data.readFloatLE();
 			uv[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 
-			this.data.move(8); // texCoordX2, texCoordY2?
+			uv2[uvIndex] = this.data.readFloatLE();
+			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
 
 		this.data.seek(base);

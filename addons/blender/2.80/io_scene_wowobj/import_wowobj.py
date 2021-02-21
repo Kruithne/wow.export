@@ -29,6 +29,7 @@ def importWoWOBJ(objectFile, givenParent = None):
     verts = []
     normals = []
     uv = []
+    uv2 = []
     meshes = []
 
     ### Per group
@@ -52,6 +53,8 @@ def importWoWOBJ(objectFile, givenParent = None):
                 verts.append([float(v) for v in line_split[1:]])
             elif line_start == b'vn':
                 normals.append([float(v) for v in line_split[1:]])
+            elif line_start == b'vt2':
+                uv2.append([float(v) for v in line_split[1:]])
             elif line_start == b'vt':
                 uv.append([float(v) for v in line_split[1:]])
             elif line_start == b'f':
@@ -74,18 +77,18 @@ def importWoWOBJ(objectFile, givenParent = None):
     matname = ''
     matfile = ''
     if mtlfile != '':
-	    with open(os.path.join(baseDir, mtlfile.decode('utf-8') ), 'r') as f:
-	        for line in f:
-	            line_split = line.split()
-	            if not line_split:
-	                continue
-	            line_start = line_split[0]
+        with open(os.path.join(baseDir, mtlfile.decode('utf-8') ), 'r') as f:
+            for line in f:
+                line_split = line.split()
+                if not line_split:
+                    continue
+                line_start = line_split[0]
 
-	            if line_start == 'newmtl':
-	                matname = line_split[1]
-	            elif line_start == 'map_Kd':
-	                matfile = line_split[1]
-	                materials[matname] = os.path.join(baseDir, matfile)
+                if line_start == 'newmtl':
+                    matname = line_split[1]
+                elif line_start == 'map_Kd':
+                    matfile = line_split[1]
+                    materials[matname] = os.path.join(baseDir, matfile)
 
     if bpy.ops.object.select_all.poll():
         bpy.ops.object.select_all(action='DESELECT')
@@ -209,6 +212,12 @@ def importWoWOBJ(objectFile, givenParent = None):
     for face in bm.faces:
         for loop in face.loops:
             loop[uv_layer].uv = uv[loop.vert.index]
+
+    if len(uv2) > 0:
+        uv2_layer = bm.loops.layers.uv.new('UV2Map')
+        for face in bm.faces:
+            for loop in face.loops:
+                loop[uv2_layer].uv = uv2[loop.vert.index]
 
     bm.to_mesh(newmesh)
     bm.free()
