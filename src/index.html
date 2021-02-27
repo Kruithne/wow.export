@@ -136,12 +136,13 @@
 						</label>
 					</div>
 					<div>
-						<h1>Export Model Meta Data</h1>
-						<p>If enabled, M2 models exported as OBJ will also have meta data exported into a .json file.</p>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="configEdit.modelsExportMeta"/>
-							<span>Enable</span>
-						</label>
+						<h1>Export Meta Data</h1>
+						<p>If enabled, verbose data will be exported for enabled formats into relative .json files.</p>
+						<ul class="ui-multi-button" id="export-meta-multi">
+							<li :class="{ selected: configEdit.exportM2Meta }" @click.stop="configEdit.exportM2Meta = !configEdit.exportM2Meta">M2</li>
+							<li :class="{ selected: configEdit.exportWMOMeta }" @click.stop="configEdit.exportWMOMeta = !configEdit.exportWMOMeta">WMO</li>
+							<li :class="{ selected: configEdit.exportBLPMeta }" @click.stop="configEdit.exportBLPMeta = !configEdit.exportBLPMeta">BLP</li>
+						</ul>
 					</div>
 					<div>
 						<h1>Always Overwrite Existing Files (Recommended)</h1>
@@ -486,7 +487,7 @@
 							<div class="source-icon"></div>
 							<div class="source-text">
 								Use Blizzard CDN
-								<ul id="source-cdn">
+								<ul id="source-cdn" class="ui-multi-button">
 									<li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
 										{{ region.tag.toUpperCase() }}
 										<span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>

@@ -189,7 +189,7 @@ class M2Exporter {
 		const skin = await this.m2.getSkin(0);
 
 		const config = core.view.config;
-		const exportMeta = core.view.config.modelsExportMeta;
+		const exportMeta = core.view.config.exportM2Meta;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));

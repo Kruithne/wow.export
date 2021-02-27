@@ -286,37 +286,12 @@ body {
 
 	#source-cdn {
 		position: absolute;
-		list-style: none;
 		margin-top: 20px;
 		text-align: center;
 		left: 0;
 		right: 0;
 
-		li:first-child {
-			border-top-left-radius: 5px;
-			border-bottom-left-radius: 5px;
-		}
-
-		li:last-child {
-			border-top-right-radius: 5px;
-			border-bottom-right-radius: 5px;
-		}
-
-		li:not(:first-child) {
-			margin-left: 1px;
-		}
-
 		li {
-			background: var(--form-button-base);
-			position: relative;
-			padding: 10px;
-			color: white;
-			display: inline-block;
-
-			&:hover, &.selected {
-				background: var(--form-button-hover);
-			}
-
 			span {
 				position: absolute;
 				font-size: 12px;

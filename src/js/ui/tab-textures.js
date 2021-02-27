@@ -13,6 +13,7 @@ const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const JSONWriter = require('../3D/writers/JSONWriter');
 const FileWriter = require('../file-writer');
 
 let selectedFile = null;
@@ -74,6 +75,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 	const format = core.view.config.exportTextureFormat;
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
+	const exportMeta = core.view.config.exportBLPMeta;
 
 	for (const fileName of files) {
 		// Abort if the export has been cancelled.
@@ -97,6 +99,20 @@ const exportFiles = async (files, isLocal = false) => {
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportTextureAlpha);
 					exportPaths.writeLine('PNG:' + exportPath);
+
+					if (exportMeta) {
+						const json = new JSONWriter(ExportHelper.replaceExtension(exportPath, '.json'));
+						json.addProperty('encoding', blp.encoding);
+						json.addProperty('alphaDepth', blp.alphaDepth);
+						json.addProperty('alphaEncoding', blp.alphaEncoding);
+						json.addProperty('mipmaps', blp.containsMipmaps);
+						json.addProperty('width', blp.width);
+						json.addProperty('height', blp.height);
+						json.addProperty('mipmapCount', blp.mapCount);
+						json.addProperty('mipmapSizes', blp.mapSizes);
+						
+						await json.write(overwriteFiles);
+					}
 				}
 			} else {
 				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);

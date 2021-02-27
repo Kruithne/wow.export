@@ -15,6 +15,7 @@ const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const CSVWriter = require('../writers/CSVWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
+const JSONWriter = require('../writers/JSONWriter');
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
 
@@ -420,7 +421,7 @@ class WMOExporter {
 				const count = set.doodadCount;
 				log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
 
-				helper.setCurrentTaskName(wmoName + ', doodad set ' + set.name)
+				helper.setCurrentTaskName(wmoName + ', doodad set ' + set.name);
 				helper.setCurrentTaskMax(count);
 
 				for (let i = 0; i < count; i++) {
@@ -503,6 +504,62 @@ class WMOExporter {
 
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
+
+		if (core.view.config.exportWMOMeta) {
+			helper.clearCurrentTask();
+			helper.setCurrentTaskName(wmoName + ', writing meta data');
+			
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+			json.addProperty('fileDataID', wmo.fileDataID);
+			json.addProperty('fileName', wmo.fileName);
+			json.addProperty('version', wmo.version);
+			json.addProperty('counts', {
+				material: wmo.materialCount,
+				group: wmo.groupCount,
+				portal: wmo.portalCount,
+				light: wmo.lightCount,
+				model: wmo.modelCount,
+				doodad: wmo.doodadCount,
+				set: wmo.setCount,
+				lod: wmo.lodCount
+			});
+
+			json.addProperty('ambientColor', wmo.ambientColor);
+			json.addProperty('areaTableID', wmo.areaTableID);
+			json.addProperty('boundingBox1', wmo.boundingBox1);
+			json.addProperty('boundingBox2', wmo.boundingBox2);
+			json.addProperty('flags', wmo.flags);
+
+			const groups = Array(wmo.groups.length);
+			for (let i = 0, n = wmo.groups.length; i < n; i++) {
+				const group = wmo.groups[i];
+				groups[i] = {
+					version: group.version,
+					flags: group.flags,
+					boundingBox1: group.boundingBox1,
+					boundingBox2: group.boundingBox2,
+					numPortals: group.numPortals,
+					numBatchesA: group.numBatchesA,
+					numBatchesB: group.numBatchesB,
+					numBatchesC: group.numBatchesC,
+					liquidType: group.liquidType,
+					groupID: group.groupID,
+					materialInfo: group.materialInfo,
+					renderBatches: group.renderBatches
+				};
+			}
+
+			json.addProperty('groups', groups);
+			json.addProperty('groupNames', wmo.groupNames);
+			json.addProperty('groupInfo', wmo.groupInfo);
+			json.addProperty('materials', wmo.materials);
+			json.addProperty('doodadSets', wmo.doodadSets);
+			json.addProperty('fileDataIDs', wmo.fileDataIDs);
+			json.addProperty('doodads', wmo.doodads);
+			json.addProperty('groupIDs', wmo.groupIDs);
+
+			await json.write(config.overwriteFiles);
+		}
 	}
 
 	/**

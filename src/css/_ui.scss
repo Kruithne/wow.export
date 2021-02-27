@@ -31,6 +31,37 @@ input[type="button"] {
 	}
 }
 
+.ui-multi-button {
+	list-style: none;
+
+	li:first-child {
+		border-top-left-radius: 5px;
+		border-bottom-left-radius: 5px;
+	}
+
+	li:last-child {
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+	}
+
+	li:not(:first-child) {
+		margin-left: 1px;
+	}
+
+	li {
+		background: var(--form-button-base);
+		position: relative;
+		padding: 10px;
+		color: white;
+		display: inline-block;
+		cursor: pointer;
+
+		&:hover, &.selected {
+			background: var(--form-button-hover);
+		}
+	}
+}
+
 .ui-checkbox {
 	font-size: 18px;
 	display: flex;
