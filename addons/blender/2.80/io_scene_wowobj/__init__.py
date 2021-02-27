@@ -19,52 +19,38 @@
 # <pep8-80 compliant>
 
 bl_info = {
-    "name": "Import WoW OBJ files with doodads",
-    "author": "Marlamin, Kruithne",
-    "version": (0, 3, 7),
-    "blender": (2, 80, 0),
-    "location": "File > Import-Export > WoW OBJ (.obj)",
-    "description": "Import OBJ files exported by wow.export with WMOs and doodads",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
-    "category": "Import-Export"}
+    'name': 'Import WoW OBJ files with doodads',
+    'author': 'Marlamin, Kruithne',
+    'version': (0, 3, 7),
+    'blender': (2, 80, 0),
+    'location': 'File > Import-Export > WoW M2/WMO/ADT (.obj)',
+    'description': 'Import OBJ files exported by wow.export with WMOs and doodads',
+    'warning': '',
+    'wiki_url': '',
+    'tracker_url': '',
+    'category': 'Import-Export'}
 
-
-
-if "bpy" in locals():
+if 'bpy' in locals():
     import importlib
-    if "import_wowobj" in locals():
+    if 'import_wowobj' in locals():
         importlib.reload(import_wowobj)
 
 import bpy
 
-from bpy.props import (
-        BoolProperty,
-        FloatProperty,
-        StringProperty,
-        EnumProperty,
-        )
-from bpy_extras.io_utils import (
-        ImportHelper,
-        orientation_helper,
-        )
+from bpy_extras.io_utils import (ImportHelper, orientation_helper)
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
-    """Load a Wavefront OBJ File with additional ADT metadata"""
-    bl_idname = "import_scene.wowobj"
-    bl_label = "Import WoW OBJ"
+    '''Load a Wavefront OBJ File with additional ADT metadata'''
+    bl_idname = 'import_scene.wowobj'
+    bl_label = 'Import WoW OBJ'
     bl_options = {'PRESET', 'UNDO'}
 
-    filename_ext = ".obj"
-    filter_glob = StringProperty(
-            default="*.obj",
-            options={'HIDDEN'},
-            )
+    filename_ext = '.obj'
+    filter_glob = bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
 
-    useAlpha = BoolProperty(name = "Use Alpha", description = "Link alpha channel for materials", default = 1)
+    useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
 
     def execute(self, context):
         from . import import_wowobj
@@ -78,10 +64,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
 
         box.prop(self, 'useAlpha')
 
-
 def menu_func_import(self, context):
-    self.layout.operator(ImportWoWOBJ.bl_idname, text="WoW OBJ (.obj) (experimental)")
-
+    self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')
 
 def register():
     from bpy.utils import register_class
@@ -94,5 +78,5 @@ def unregister():
     unregister_class(ImportWoWOBJ)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     register()
