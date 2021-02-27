@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const path = require('path');
 const generics = require('../generics');
 const constants = require('../constants');
 const BLPFile = require('../casc/blp');
@@ -29,6 +30,24 @@ const previewTexture = async (texture) => {
 		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
+
+		let info = '';
+
+		switch (blp.encoding) {
+			case 1:
+				info = 'Palette';
+				break;
+			case 2:
+				info = 'Compressed ' + (blp.alphaDepth > 1 ? (blp.alphaEncoding === 7 ? 'DXT5' : 'DXT3') : 'DXT1');
+				break;
+			case 3:
+				info = 'ARGB';
+				break;
+			default:
+				info = 'Unsupported [' + blp.encoding + ']';
+		}
+
+		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
 
 		selectedFile = texture;
 		core.hideToast();

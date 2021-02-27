@@ -24,6 +24,7 @@
 	"removePathSpacesCopy": true,
 	"exportTextureFormat": "PNG",
 	"exportTextureAlpha": true,
+	"showTextureInfo": true,
 	"exportModelFormat": "OBJ",
 	"overwriteFiles": true,
 	"modelsShowM2": true,

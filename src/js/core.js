@@ -78,6 +78,7 @@ const view = {
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.
+	texturePreviewInfo: '', // Text information for a displayed texture.
 	mapViewerMaps: [], // Available maps for the map viewer.
 	mapViewerHasWorldModel: false, // Does selected map have a world model?
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.

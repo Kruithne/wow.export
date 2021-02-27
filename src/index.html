@@ -246,11 +246,16 @@
 							<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
 						</div>
 						<div class="preview-container">
+							<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
 							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
 								<div :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
 							</div>
 						</div>
 						<div class="preview-controls">
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.showTextureInfo"/>
+								<span>Show Info</span>
+							</label>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.exportTextureAlpha"/>
 								<span>Transparency</span>

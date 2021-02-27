@@ -186,6 +186,25 @@
 	}
 }
 
+#tab-textures {
+	.preview-container {
+		position: relative;
+
+		.preview-info {
+			position: absolute;
+			left: 0;
+			bottom: 0;
+			right: 0;
+			text-align: center;
+			padding: 5px;
+			background: rgba(0, 0, 0, 0.753);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+	}
+}
+
 #tab-text {
 	.preview-container {
 		.preview-background {

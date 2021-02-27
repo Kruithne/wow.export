@@ -1,5 +1,6 @@
 0.1.27 (TBD)
 - Added option to export UV2 data for M2 models as non-standard OBJ property.
+- Added texture information (name, dimensions, encoding) to the texture preview window.
 - Fixed issue that could cause alpha channel to be linked incorrectly in imported material shaders.
 - Fixed issue that preventing pasting into a listfile search under some circumstances.
 
