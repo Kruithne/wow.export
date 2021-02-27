@@ -27,6 +27,7 @@ const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
 const WMOExporter = require('../../3D/exporters/WMOExporter');
 const CSVWriter = require('../../3D/writers/CSVWriter');
+const JSONWriter = require('../../3D/writers/JSONWriter');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
@@ -427,9 +428,27 @@ class ADTExporter {
 
 					const diffuseFileDataID = materialIDs[i];
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-					await blp.saveToPNG(path.join(dir, diffuseFileDataID + '.png'), false);
 
-					const mat = materials[i] = { scale: 1, id: diffuseFileDataID };
+					const mat = materials[i] = { scale: 1, fileDataID: diffuseFileDataID };
+
+					let fileName = listfile.getByID(diffuseFileDataID);
+					if (fileName !== undefined)
+						fileName = ExportHelper.replaceExtension(fileName, '.png');
+					else
+						fileName = 'unknown/' + diffuseFileDataID + '.png';
+
+					let texFile;
+					let texPath;
+					if (config.enableSharedTextures) {
+						texPath = ExportHelper.getExportPath(fileName);
+						texFile = path.relative(dir, texPath);
+					} else {
+						texPath = path.join(dir, path.basename(fileName));
+						texFile = path.basename(texPath);
+					}
+
+					await blp.saveToPNG(texPath);
+					mat.file = texFile;
 
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
@@ -454,7 +473,7 @@ class ADTExporter {
 				helper.setCurrentTaskName('Tile ' + this.tileID + ' alpha maps');
 				helper.setCurrentTaskMax(16 * 16);
 
-				let lines = [];
+				const layers = [];
 				for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
@@ -492,13 +511,14 @@ class ADTExporter {
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
-							lines.push([i, mat.id, mat.scale].join(','));
+							layers.push({ index: i, fileDataID: mat.fileDataID, scale: mat.scale, file: mat.file });
 						}
 
-						const metaOut = path.join(dir, 'tex_' + prefix + '.csv');
-						await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
+						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
+						json.addProperty('layers', layers);
+						await json.write();
 
-						lines.length = 0;
+						layers.length = 0;
 					} else {
 						const chunkX = chunkIndex % 16;
 						const chunkY = Math.floor(chunkIndex / 16);
@@ -509,7 +529,7 @@ class ADTExporter {
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
-							lines.push([chunkIndex, i, mat.id, mat.scale].join(','));
+							layers.push({ index: i, chunkIndex, fileDataID: mat.fileDataID, scale: mat.scale });
 						}
 					}
 				}
@@ -520,8 +540,9 @@ class ADTExporter {
 					const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
 					await buf.writeToFile(mergedPath);
 
-					const metaOut = path.join(dir, 'tex_' + this.tileID + '.csv');
-					await fsp.writeFile(metaOut, lines.join('\n'), 'utf8');
+					const json = new JSONWriter(path.join(dir, 'tex_' + this.tileID + '.json'));
+					json.addProperty('layers', layers);
+					await json.write();
 				}
 			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.

@@ -3,6 +3,9 @@
 - Added texture information (name, dimensions, encoding) to the texture preview window.
 - Added option to export meta data for BLP files (disabled by default).
 - Added option to export meta data for WMO files (disabled by default).
+- Layer meta data for ADT alpha maps is now exported in JSON format.
+- Textures for ADT alpha maps are now exported to their own relative path if 'Enabled Shared Textures' is enabled.
+- Textures for ADT alpha maps now have resolved names from the listfile, rather than fileDataIDs.
 - Fixed issue that could cause alpha channel to be linked incorrectly in imported material shaders.
 - Fixed issue that preventing pasting into a listfile search under some circumstances.
 
