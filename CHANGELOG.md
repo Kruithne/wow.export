@@ -3,6 +3,7 @@
 - Added texture information (name, dimensions, encoding) to the texture preview window.
 - Added option to export meta data for BLP files (disabled by default).
 - Added option to export meta data for WMO files (disabled by default).
+- Added 'Use Alpha' option to the Blender add-on. If unchecked, alpha channel is disabled and unlinked in the shader.
 - Layer meta data for ADT alpha maps is now exported in JSON format.
 - Textures for ADT alpha maps are now exported to their own relative path if 'Enabled Shared Textures' is enabled.
 - Textures for ADT alpha maps now have resolved names from the listfile, rather than fileDataIDs.
