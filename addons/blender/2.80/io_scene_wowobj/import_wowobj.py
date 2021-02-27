@@ -6,8 +6,8 @@ import csv
 from math import radians
 from mathutils import Quaternion
 
-def importWoWOBJAddon(objectFile):
-    importWoWOBJ(objectFile)
+def importWoWOBJAddon(objectFile, useAlpha = True):
+    importWoWOBJ(objectFile, None, useAlpha)
     return {'FINISHED'}
 
 def getFirstNodeOfType(nodes, nodeType):
@@ -17,7 +17,7 @@ def getFirstNodeOfType(nodes, nodeType):
 
     return None
 
-def importWoWOBJ(objectFile, givenParent = None):
+def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
     baseDir, fileName = os.path.split(objectFile)
 
     print('Parsing OBJ: ' + fileName)
@@ -156,7 +156,11 @@ def importWoWOBJ(objectFile, givenParent = None):
             image.image = bpy.data.images[imageName]
 
             node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
-            node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+
+            if useAlpha:
+                node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+            else:
+                image.image.alpha_mode = 'NONE'
 
             # Set the specular value to 0 by default.
             principled.inputs['Specular'].default_value = 0
@@ -303,11 +307,11 @@ def importWoWOBJ(objectFile, givenParent = None):
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent)
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha)
                         else:
                             ## Don't copy WMOs with doodads!
                             if os.path.exists(os.path.join(baseDir, row['ModelFile'].replace('.obj', '_ModelPlacementInformation.csv'))):
-                                importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent)
+                                importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha)
                             else:
                                 originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                                 importedFile = originalObject.copy()
@@ -320,7 +324,7 @@ def importWoWOBJ(objectFile, givenParent = None):
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']))
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
                         else:
                             originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                             importedFile = originalObject.copy()
@@ -340,7 +344,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
                     elif row['Type'] == 'gobj':
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']))
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
                         else:
                             originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                             importedFile = originalObject.copy()
@@ -360,7 +364,7 @@ def importWoWOBJ(objectFile, givenParent = None):
                     # WMO CSV
                     print('WMO M2 import: ' + row['ModelFile'])
                     if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                        importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']))
+                        importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
                     else:
                         originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                         importedFile = originalObject.copy()

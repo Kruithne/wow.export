@@ -64,16 +64,19 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             options={'HIDDEN'},
             )
 
+    useAlpha = BoolProperty(name = "Use Alpha", description = "Link alpha channel for materials", default = 1)
 
     def execute(self, context):
         from . import import_wowobj
-        return import_wowobj.importWoWOBJAddon(self.filepath)
+        return import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha)
 
     def draw(self, context):
         layout = self.layout
 
         row = layout.row(align=True)
         box = layout.box()
+
+        box.prop(self, 'useAlpha')
 
 
 def menu_func_import(self, context):
