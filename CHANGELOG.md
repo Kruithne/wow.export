@@ -1,4 +1,4 @@
-0.1.27 (TBD)
+0.1.27 (27-02-2021)
 - Added option to export UV2 data for M2 models as non-standard OBJ property (disabled by default).
 - Added texture information (name, dimensions, encoding) to the texture preview window.
 - Added option to export meta data for BLP files (disabled by default).
