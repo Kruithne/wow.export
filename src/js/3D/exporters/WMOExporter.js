@@ -508,7 +508,7 @@ class WMOExporter {
 		if (core.view.config.exportWMOMeta) {
 			helper.clearCurrentTask();
 			helper.setCurrentTaskName(wmoName + ', writing meta data');
-			
+
 			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
 			json.addProperty('fileDataID', wmo.fileDataID);
 			json.addProperty('fileName', wmo.fileName);
@@ -545,7 +545,8 @@ class WMOExporter {
 					liquidType: group.liquidType,
 					groupID: group.groupID,
 					materialInfo: group.materialInfo,
-					renderBatches: group.renderBatches
+					renderBatches: group.renderBatches,
+					vertexColours: group.vertexColours
 				};
 			}
 

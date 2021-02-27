@@ -122,6 +122,7 @@ const WMOChunkHandlers = {
 		this.groups = new Array(this.groupCount);
 	},
 
+
 	// MOTX (Textures) [Classic, WMO Root]
 	0x4D4F5458: function(data, chunkSize) {
 		this.textureNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
@@ -220,6 +221,11 @@ const WMOChunkHandlers = {
 	// GFID (Group file Data IDs) [WMO Root]
 	0x47464944: function(data, chunkSize) {
 		this.groupIDs = data.readUInt32LE(chunkSize / 4);
+	},
+
+	// MOCV (Vertex Colouring) [WMO Group]
+	0x4D4F4356: function(data, chunkSize) {
+		this.vertexColours = data.readUInt32LE(chunkSize / 4);
 	},
 
 	// MOGP (Group Header) [WMO Group]
