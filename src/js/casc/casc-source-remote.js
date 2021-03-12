@@ -170,7 +170,7 @@ class CASCRemote extends CASC {
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
-		this.progress = core.createProgress(11);
+		this.progress = core.createProgress(15);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
@@ -179,6 +179,7 @@ class CASCRemote extends CASC {
 		core.view.casc = this;
 
 		await this.loadListfile(this.build.BuildConfig);
+		await this.loadTables();
 		await this.initializeComponents();
 	}
 
@@ -396,11 +397,19 @@ class CASCRemote extends CASC {
 	}
 
 	/**
-     * Get the current build ID.
-     * @returns {string}
-     */
+	 * Get the current build ID.
+	 * @returns {string}
+	 */
 	getBuildName() {
 		return this.build.VersionsName;
+	}
+
+	/**
+	 * Returns the build configuration key.
+	 * @returns {string}
+	 */
+	getBuildKey() {
+		return this.build.BuildConfig;
 	}
 }
 

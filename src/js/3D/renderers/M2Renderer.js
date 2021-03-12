@@ -9,6 +9,7 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const RenderCache = require('./RenderCache');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -23,7 +24,9 @@ class M2Renderer {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
-		this.textures = [];
+		this.materials = [];
+		this.renderCache = new RenderCache();
+		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
 	/**
@@ -94,8 +97,10 @@ class M2Renderer {
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
-			if (this.reactive)
-				this.geosetArray[i] = { label: 'Geoset ' + i, checked: true, id: skinMesh.submeshID };
+			if (this.reactive) {
+				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString.endsWith('01'));
+				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+			}
 		}
 
 		if (this.reactive) {
@@ -105,36 +110,59 @@ class M2Renderer {
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Update geosets once (so defaults are applied correctly).
+		this.updateGeosets();
 	}
 
 	/**
-	 * Load an NPC variant texture onto this model.
+	 * Apply replaceable textures to this model.
+	 * @param {Array} displays
+	 */
+	async applyReplaceableTextures(displays) {
+		for (let i = 0, n = this.m2.textureTypes.length; i < n; i++) {
+			const textureType = this.m2.textureTypes[i];
+			if (textureType >= 11 && textureType < 14) {
+				// Creature textures.
+				this.overrideTextureType(textureType, displays.textures[textureType - 11]);
+			} else if (textureType > 1 && textureType < 5) {
+				// Item textures.
+				this.overrideTextureType(textureType, displays.textures[textureType - 2]);
+			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
-	async loadNPCVariantTexture(fileDataID) {
-		try {
-			log.write('Loading variant texture %d', fileDataID);
-			if (!this.defaultMaterial)
-				throw new Error('Model does not have a default material to replace.');
+	async overrideTextureType(type, fileDataID) {
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] !== type)
+				continue;
+
+			const tex = new THREE.Texture();
+			const loader = new THREE.ImageLoader();
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
 
-			const loader = new THREE.ImageLoader();
 			loader.load(blp.getDataURL(false), image => {
-				const tex = new THREE.Texture();
-				const mat = this.defaultMaterial;
-
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
-
-				mat.map = tex;
-				mat.color = 0x0;
-				mat.needsUpdate = true;
 			});
-		} catch (e) {
-			log.write('Failed to set variant texture: %s', e.message);
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
 		}
 	}
 
@@ -143,6 +171,7 @@ class M2Renderer {
 	 */
 	loadTextures() {
 		const textures = this.m2.textures;
+		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
@@ -168,12 +197,12 @@ class M2Renderer {
 				if (texture.flags & 0x2)
 					tex.wrapT = THREE.RepeatWrapping;
 
-				this.textures.push(tex);
-				this.materials[i] = new THREE.MeshPhongMaterial({ map: tex });
-			} else {
-				if (!this.defaultMaterial)
-					this.defaultMaterial = new THREE.MeshPhongMaterial({ color: DEFAULT_MODEL_COLOR });
+				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+				this.renderCache.register(material, tex);
 
+				this.materials[i] = material;
+				this.renderCache.addUser(material);
+			} else {
 				this.materials[i] = this.defaultMaterial;
 			}
 		}
@@ -211,9 +240,7 @@ class M2Renderer {
 		if (this.geosetWatcher)
 			this.geosetWatcher();
 
-		// Release bound textures.
-		for (const tex of this.textures)
-			tex.dispose();
+		this.renderCache.retire(...this.materials);
 
 		this.disposeMeshGroup();
 	}

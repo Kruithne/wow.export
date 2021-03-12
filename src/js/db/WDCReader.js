@@ -30,6 +30,12 @@ const TABLE_FORMATS = {
  * @returns {symbol}
  */
 const convertDBDToSchemaType = (entry) => {
+	if (!entry.isInline && entry.isRelation)
+		return FieldType.Relation;
+
+	if (!entry.isInline && entry.isID)
+		return FieldType.NonInlineID;
+
 	// TODO: Handle string separate to locstring in the event we need it.
 	if (entry.type === 'string' || entry.type === 'locstring')
 		return FieldType.String;
@@ -69,6 +75,7 @@ class WDCReader {
 
 		this.isInflated = false;
 		this.isLoaded = false;
+		this.idField = null;
 	}
 
 	/**
@@ -179,10 +186,6 @@ class WDCReader {
 	 */
 	buildSchemaFromDBDStructure(structure) {
 		for (const field of structure.fields) {
-			// Skip ID, non-inlined and relation fields.
-			if (!field.isInline || field.isRelation)
-				continue;
-
 			const fieldType = convertDBDToSchemaType(field);
 			if (field.arrayLength > -1)
 				this.schema.set(field.name, [fieldType, field.arrayLength]);
@@ -196,6 +199,8 @@ class WDCReader {
 	 * @param {object} [data] 
 	 */
 	async parse(data) {
+		log.write('Loading DB file %s from CASC', this.fileName);
+
 		if (!data)
 			data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
@@ -430,6 +435,13 @@ class WDCReader {
 						continue;
 					}
 
+					if (type === FieldType.NonInlineID) {
+						if (hasIDMap)
+							out[prop] = section.idList[i];
+
+						continue;
+					}
+
 					const recordFieldInfo = fieldInfo[fieldIndex];
 
 					let count;
@@ -478,8 +490,16 @@ class WDCReader {
 							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
-							// TODO: Properly deal with not enough bytes remaining, this patch works for now but will likely fail with other DBs that have this issue.
-							const rawValue = data.remainingBytes >= 8 ? data.readUInt64LE() : BigInt(data.readUIntLE(data.remainingBytes));
+							let rawValue;
+							if (data.remainingBytes >= 8) {
+								rawValue = data.readUInt64LE();
+							} else {
+								castBuffer.seek(0);
+								castBuffer.writeBuffer(data);
+
+								castBuffer.seek(0);
+								rawValue = castBuffer.readUInt64LE();
+							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
 							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
@@ -492,7 +512,7 @@ class WDCReader {
 								if (bitpackedValue in palletData[fieldIndex])
 									out[prop] = palletData[fieldIndex][bitpackedValue];
 								else
-									throw new Error("Encountered missing pallet data entry for key " + bitpackedValue + ", field " + fieldIndex);
+									throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
 							} else {
 								out[prop] = bitpackedValue;
 							}
@@ -509,7 +529,7 @@ class WDCReader {
 							castBuffer.seek(0);
 							switch (fieldType) {
 								case FieldType.String:
-									throw new Error("Strings currently not supported.");
+									throw new Error('Strings currently not supported.');
 
 								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
 								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
@@ -534,8 +554,10 @@ class WDCReader {
 						}
 					}
 
-					if (!hasIDMap && fieldIndex === idIndex)
+					if (!hasIDMap && fieldIndex === idIndex) {
 						recordID = out[prop];
+						this.idField = prop;
+					}
 
 					fieldIndex++;
 				}
