@@ -18,7 +18,7 @@ core.registerLoadFunc(async () => {
 			return;
 		}
 
-		const helper = new ExportHelper(userSelection.length, 'videos');
+		const helper = new ExportHelper(userSelection.length, 'video');
 		helper.start();
 		
 		const overwriteFiles = core.view.config.overwriteFiles;
