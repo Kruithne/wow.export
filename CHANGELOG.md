@@ -1,6 +1,7 @@
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
 - Added double-sided rendering to M2/WMO 3D previews.
+- Added option to display/search file data IDs in listfiles.
 - Improved skin naming to fit on screen.
 - Improved default selected geosets for models.
 

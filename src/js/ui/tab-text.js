@@ -9,6 +9,7 @@ const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const generics = require('../generics');
 const util = require('util');
+const listfile = require('../casc/listfile');
 
 let selectedFile = null;
 
@@ -16,7 +17,7 @@ core.registerLoadFunc(async () => {
 	// Track selection changes on the text listbox and set first as active entry.
 	core.view.$watch('selectionText', async selection => {
 		// Check if the first file in the selection is "new".
-		const first = selection[0];
+		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && selectedFile !== first) {
 			try {
 				const file = await core.view.casc.getFileByName(first);
@@ -49,10 +50,12 @@ core.registerLoadFunc(async () => {
 		helper.start();
 		
 		const overwriteFiles = core.view.config.overwriteFiles;
-		for (const fileName of userSelection) {
+		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
+
+			fileName = listfile.stripFileEntry(fileName);
 				
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);

@@ -68,6 +68,14 @@
 						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
 					</div>
 					<div>
+						<h1>Show File Data IDs</h1>
+						<p>If enabled, all capable listfiles will have entries suffixed with their fileDataID.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.listfileShowFileDataIDs"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>

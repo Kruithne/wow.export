@@ -9,6 +9,7 @@ const util = require('util');
 const path = require('path');
 const generics = require('../generics');
 const constants = require('../constants');
+const listfile = require('../casc/listfile');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
@@ -77,11 +78,13 @@ const exportFiles = async (files, isLocal = false) => {
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
 
-	for (const fileName of files) {
+	for (let fileName of files) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
 			
+		fileName = listfile.stripFileEntry(fileName);
+		
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')
@@ -147,7 +150,7 @@ core.registerLoadFunc(async () => {
 	// Track selection changes on the texture listbox and preview first texture.
 	core.view.$watch('selectionTextures', async selection => {
 		// Check if the first file in the selection is "new".
-		const first = selection[0];
+		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && selectedFile !== first)
 			previewTexture(first);
 	});

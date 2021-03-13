@@ -8,6 +8,7 @@ const log = require('../log');
 const path = require('path');
 const util = require('util');
 const generics = require('../generics');
+const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
@@ -144,7 +145,7 @@ core.registerLoadFunc(async () => {
 	// Track selection changes on the sound listbox and set first as active entry.
 	core.view.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
-		const first = selection[0];
+		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && selectedFile !== first) {
 			core.view.soundPlayerTitle = path.basename(first);
 
@@ -168,10 +169,12 @@ core.registerLoadFunc(async () => {
 		helper.start();
 		
 		const overwriteFiles = core.view.config.overwriteFiles;
-		for (const fileName of userSelection) {
+		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
+
+			fileName = listfile.stripFileEntry(fileName);
 				
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);

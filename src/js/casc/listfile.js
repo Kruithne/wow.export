@@ -156,22 +156,28 @@ const loadIDTable = async (ids, ext) => {
  * Return an array of filenames ending with the given extension(s).
  * @param {string|Array} exts 
  */
-const getFilenamesByExtension = (exts) => {
+const getFilenamesByExtension = (exts, includeID = false) => {
 	// Box into an array for reduced code.
 	if (!Array.isArray(exts))
 		exts = [exts];
 
 	const entries = [];
-	for (const filename of idLookup.values()) {
+	for (const [fileDataID, filename] of idLookup.entries()) {
 		for (const ext of exts) {
 			if (Array.isArray(ext)) {
 				if (filename.endsWith(ext[0]) && !filename.match(ext[1])) {
-					entries.push(filename);
+					if (includeID)
+						entries.push(filename + ' [' + fileDataID + ']');
+					else
+						entries.push(filename);
 					continue;
 				}
 			} else {
 				if (filename.endsWith(ext)) {
-					entries.push(filename);
+					if (includeID)
+						entries.push(filename + ' [' + fileDataID + ']');
+					else
+						entries.push(filename);
 					continue;
 				}
 			}
@@ -207,10 +213,23 @@ const getByFilename = (filename) => {
 	return lookup;
 };
 
+/**
+ * Strips a prefixed file ID from a listfile entry.
+ * @param {string} entry 
+ * @returns {string}
+ */
+const stripFileEntry = (entry) => {
+	if (typeof entry === 'string' && entry.includes(' ['))
+		return entry.substring(0, entry.lastIndexOf(' ['));
+
+	return entry;
+};
+
 module.exports = {
 	loadListfile,
 	loadUnknowns,
 	getByID,
 	getByFilename,
-	getFilenamesByExtension
+	getFilenamesByExtension,
+	stripFileEntry
 };

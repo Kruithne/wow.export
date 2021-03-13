@@ -219,11 +219,13 @@ const exportFiles = async (files, isLocal = false) => {
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
-		for (const fileName of files) {
+		for (let fileName of files) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
 
+			fileName = listfile.stripFileEntry(fileName);
+			
 			try {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
 				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
@@ -338,7 +340,7 @@ const updateListfile = () => {
 		modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
 	// Create a new listfile using the given configuration.
-	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, core.view.config.listfileShowFileDataIDs);
 };
 
 // Register a drop handler for M2 files.
@@ -430,7 +432,7 @@ core.registerLoadFunc(async () => {
 			return;
 
 		// Check if the first file in the selection is "new".
-		const first = selection[0];
+		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && selectedFile !== first)
 			previewModel(first);
 	});

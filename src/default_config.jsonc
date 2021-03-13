@@ -32,6 +32,7 @@
 	"exportBLPMeta": false,
 	"modelsShowM2": true,
 	"modelsShowWMO": true,
+	"listfileShowFileDataIDs": false,
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,
 	"modelsShowSidebar": false,
