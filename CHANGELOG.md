@@ -1,8 +1,8 @@
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
+- Added double-sided rendering to M2/WMO 3D previews.
 - Improved skin naming to fit on screen.
 - Improved default selected geosets for models.
-- 3D previews for M2/WMOs are now rendered double-sided.
 
 0.1.27 (27-02-2021)
 - Added option to export UV2 data for M2 models as non-standard OBJ property (disabled by default).
