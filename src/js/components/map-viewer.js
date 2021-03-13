@@ -308,7 +308,7 @@ Vue.component('map-viewer', {
 			if (event.ctrlKey === true && event.key === 'a') {
 				// Without a WDT mask, we can't reliably select everything.
 				if (!this.mask) {
-					core.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)');
+					core.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)', null, -1);
 					return;
 				}
 

@@ -167,11 +167,11 @@ module.exports = {
 				core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
 			} else {
 				log.write('No valid Blender installation found, add-on install failed.');
-				core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.');
+				core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
 			}
 		} catch (e) {
 			log.write('Installation failed due to exception: %s', e.message);
-			core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.');
+			core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 		}
 
 		core.view.isBusy--;

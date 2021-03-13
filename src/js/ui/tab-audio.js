@@ -103,11 +103,11 @@ const loadSelectedTrack = async () => {
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key));
+			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
 			log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
 		} else {
 			// Error reading/parsing audio.
-			core.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() });
+			core.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}

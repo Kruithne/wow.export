@@ -55,11 +55,11 @@ const previewTexture = async (texture) => {
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key));
+			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() });
+			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}

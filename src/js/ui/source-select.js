@@ -49,7 +49,7 @@ const loadInstall = (index) => {
 			log.write('Failed to load CASC: %o', e);
 			core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', {
 				'View Log': () => log.openRuntimeLog()
-			});
+			}, -1);
 			core.view.setScreen('source-select');
 		}
 	});
@@ -102,7 +102,7 @@ core.events.once('screen-source-select', async () => {
 			else
 				core.view.availableLocalBuilds = cascSource.getProductList();
 		} catch (e) {
-			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value));
+			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
 			log.write('Failed to initialize local CASC source: %s', e.message);
 
 			// In the event the given installation directory is now invalid, remove all
@@ -144,7 +144,7 @@ core.events.once('screen-source-select', async () => {
 				
 				core.view.availableRemoteBuilds = cascSource.getProductList();
 			} catch (e) {
-				core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()));
+				core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
 				log.write('Failed to initialize remote CASC source: %s', e.message);
 			}
 		});

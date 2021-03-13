@@ -204,7 +204,7 @@ const exportSelectedMap = async () => {
 
 	// User has not selected any tiles.
 	if (exportTiles.length === 0)
-		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.');
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();

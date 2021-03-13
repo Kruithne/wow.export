@@ -148,11 +148,11 @@ const previewModel = async (fileName) => {
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key));
+			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), -1, null);
 			log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
-			core.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => log.openRuntimeLog() });
+			core.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
@@ -212,7 +212,7 @@ const exportFiles = async (files, isLocal = false) => {
 			log.write('Saved 3D preview screenshot to %s', exportPath);
 			core.setToast('success', util.format('Successfully exported preview to %s!', exportPath));
 		} else {
-			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!');
+			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
 		const exportSkins = core.view.config.modelsExportSkin;

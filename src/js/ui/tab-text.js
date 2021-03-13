@@ -26,11 +26,11 @@ core.registerLoadFunc(async () => {
 			} catch (e) {
 				if (e instanceof EncryptionError) {
 					// Missing decryption key.
-					core.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key));
+					core.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
 					log.write('Failed to decrypt texture %s (%s)', first, e.key);
 				} else {
 					// Error reading/parsing text file.
-					core.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => log.openRuntimeLog() });
+					core.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
 					log.write('Failed to open CASC file: %s', e.message);
 				}
 			}

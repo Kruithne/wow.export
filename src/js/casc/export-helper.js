@@ -139,7 +139,7 @@ class ExportHelper {
 			if (core.view.exportCancelled)	
 				core.setToast('info', 'Export was cancelled by the user.', null);
 			else
-				core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG);
+				core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
 		}
 
 		this.isFinished = true;

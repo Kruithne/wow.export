@@ -100,16 +100,16 @@ core.events.on('click-config-apply', () => {
 	const cfg = core.view.configEdit;
 
 	if (cfg.exportDirectory.length === 0)
-		return core.setToast('error', 'A valid export directory must be provided');
+		return core.setToast('error', 'A valid export directory must be provided', null, -1);
 
 	if (cfg.listfileURL.length === 0)
-		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL });
+		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
-		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL });
+		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
 
 	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
-		return core.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL });
+		return core.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
 
 	// Everything checks out, apply.
 	core.view.config = cfg;
@@ -123,7 +123,7 @@ core.events.on('click-tact-key', () => {
 	if (tactKeys.addKey(core.view.userInputTactKeyName, core.view.userInputTactKey))
 		core.setToast('success', 'Successfully added decryption key.');
 	else
-		core.setToast('error', 'Invalid encryption key.');
+		core.setToast('error', 'Invalid encryption key.', null, -1);
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply
