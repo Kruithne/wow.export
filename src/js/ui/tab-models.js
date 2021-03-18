@@ -122,7 +122,6 @@ const previewModel = async (fileName) => {
 
 					// Keep a mapping of the name -> fileDataID for user selects.
 					activeSkins.set(skinName, display);
-					isFirst = false;
 				}
 			}
 
