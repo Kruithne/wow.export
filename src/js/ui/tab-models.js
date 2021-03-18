@@ -41,6 +41,20 @@ const renderGroup = new THREE.Group();
 let activeRenderer;
 let activePath;
 
+/**
+ * Lookup model displays for items/creatures.
+ * @param {number} fileDataID 
+ * @returns {Array}
+ */
+const getModelDisplays = (fileDataID) => {
+	let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
+
+	if (displays === undefined)
+		displays = DBItemDisplays.getItemDisplaysByFileDataID(fileDataID);
+
+	return displays ?? [];
+};
+
 const previewModel = async (fileName) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
@@ -77,51 +91,45 @@ const previewModel = async (fileName) => {
 		await activeRenderer.load();
 
 		if (isM2) {
-			let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
+			const displays = getModelDisplays(fileDataID);
 
 			const skinList = [];
 			let modelName = listfile.getByID(fileDataID);
 			modelName = path.basename(modelName, 'm2');
 
-			// Check for item textures.
-			if (displays === undefined)
-				displays = DBItemDisplays.getItemDisplaysByFileDataID(fileDataID);
+			for (const display of displays) {
+				if (display.textures.length === 0)
+					continue;
 
-			if (displays !== undefined) {
-				for (const display of displays) {
-					if (display.textures.length === 0)
-						continue;
+				const texture = display.textures[0];
 
-					const texture = display.textures[0];
-
-					let cleanSkinName = '';
-					let skinName = listfile.getByID(texture);
-					if (skinName !== undefined) {
-						// Display the texture name without path/extension.
-						skinName = path.basename(skinName, '.blp');
-						cleanSkinName = skinName.replace(modelName, '').replace('_', '');
-					} else {
-						// Handle unknown textures.
-						skinName = 'unknown_' + texture;
-					}
-
-					if (cleanSkinName.length === 0)
-						cleanSkinName = 'base';
-
-					if (display.extraGeosets?.length > 0)
-						skinName += display.extraGeosets.join(',');
-
-					cleanSkinName += ' (' + display.ID + ')';
-
-					if (activeSkins.has(skinName))
-						continue;
-
-					// Push the skin onto the display list.
-					skinList.push({ id: skinName, label: cleanSkinName });
-
-					// Keep a mapping of the name -> fileDataID for user selects.
-					activeSkins.set(skinName, display);
+				let cleanSkinName = '';
+				let skinName = listfile.getByID(texture);
+				if (skinName !== undefined) {
+					// Display the texture name without path/extension.
+					skinName = path.basename(skinName, '.blp');
+					cleanSkinName = skinName.replace(modelName, '').replace('_', '');
+				} else {
+					// Handle unknown textures.
+					skinName = 'unknown_' + texture;
 				}
+
+				if (cleanSkinName.length === 0)
+					cleanSkinName = 'base';
+
+				if (display.extraGeosets?.length > 0)
+					skinName += display.extraGeosets.join(',');
+
+				cleanSkinName += ' (' + display.ID + ')';
+
+				if (activeSkins.has(skinName))
+					continue;
+
+				// Push the skin onto the display list.
+				skinList.push({ id: skinName, label: cleanSkinName });
+
+				// Keep a mapping of the name -> fileDataID for user selects.
+				activeSkins.set(skinName, display);
 			}
 
 			core.view.modelViewerShowSkins = true;
@@ -187,6 +195,24 @@ const updateCameraBounding = () => {
 	}
 };
 
+/**
+ * Resolves variant texture IDs based on user selection.
+ * @param {string} fileName 
+ * @returns {Array}
+ */
+const getVariantTextureIDs = (fileName) => {
+	if (fileName === activePath) {
+		// Selected model may have user-selected skins, use them.
+		return selectedVariantTextureIDs;
+	} else {
+		// Resolve default skins for auxiliary selections.
+		const fileDataID = listfile.getByFilename(fileName);
+		const displays = getModelDisplays(fileDataID);
+
+		return displays.find(e => e.textures.length > 0)?.textures ?? [];
+	}
+};
+
 const exportFiles = async (files, isLocal = false) => {
 	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
 	const format = core.view.config.exportModelFormat;
@@ -232,7 +258,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPaths.writeLine(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
-							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
+							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName));
 							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
@@ -253,7 +279,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileNameLower.endsWith('.m2')) {
-							const exporter = new M2Exporter(data, selectedVariantTextureIDs);
+							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName));
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
