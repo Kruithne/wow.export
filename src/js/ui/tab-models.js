@@ -33,7 +33,6 @@ const exportExtensions = {
 const activeSkins = new Map();
 let selectedVariantTextureIDs = new Array();
 
-let selectedFile = null;
 let isFirstModel = true;
 
 let camera, scene, grid;
@@ -133,7 +132,6 @@ const previewModel = async (fileName) => {
 		updateCameraBounding();
 
 		activePath = fileName;
-
 		console.log(activeRenderer);
 
 		// Renderer did not provide any 3D data.
@@ -141,8 +139,6 @@ const previewModel = async (fileName) => {
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 		else
 			core.hideToast();
-
-		selectedFile = fileName;
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
@@ -431,7 +427,7 @@ core.registerLoadFunc(async () => {
 
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
-		if (!core.view.isBusy && first && selectedFile !== first)
+		if (!core.view.isBusy && first && activePath !== first)
 			previewModel(first);
 	});
 
