@@ -17,6 +17,7 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
+const DBItemSparse = require('../db/caches/DBItemSparse');
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
@@ -108,11 +109,15 @@ class CASC {
 
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
-		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
-		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3']);
-		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
-		core.view.listfileModels = listfile.getFilenamesByExtension(modelExt);
+
+		core.view.$watch('config.listfileShowFileDataIDs', () => {
+			const showFileIDs = core.view.config.listfileShowFileDataIDs;
+			core.view.listfileTextures = listfile.getFilenamesByExtension('.blp', showFileIDs);
+			core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3'], showFileIDs);
+			core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
+			core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
+			core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, showFileIDs);
+		}, { immediate: true });
 	}
 
 	/**
@@ -131,6 +136,9 @@ class CASC {
 
 		await this.progress.step('Loading item displays');
 		await DBItemDisplays.initializeItemDisplays();
+
+		await this.progress.step('Loading item names');
+		//await DBItemSparse.initializeItemData();
 
 		await this.progress.step('Loading creature data');
 		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
