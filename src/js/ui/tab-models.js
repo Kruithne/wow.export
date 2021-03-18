@@ -79,7 +79,6 @@ const previewModel = async (fileName) => {
 
 		if (isM2) {
 			let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
-			let isFirst = true;
 
 			const skinList = [];
 			let modelName = listfile.getByID(fileDataID);
