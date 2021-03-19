@@ -425,8 +425,11 @@ class WDCReader {
 				const actualRecordSize = isNormal ? recordSize : offsetMap[i].size;
 				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
 
-				data.seek(section.recordDataOfs + recordOfs);
-
+				if (!isNormal) 
+					data.seek(recordOfs);
+				else 
+					data.seek(section.recordDataOfs + recordOfs);
+				
 				const out = {};
 				let fieldIndex = 0;
 				for (const [prop, type] of this.schema.entries()) {
@@ -455,13 +458,18 @@ class WDCReader {
 						case CompressionType.None:
 							switch (fieldType) {
 								case FieldType.String:
-									const ofs = data.readUInt32LE();
-									const pos = data.offset;
+									if (isNormal) {
+										const ofs = data.readUInt32LE();
+										const pos = data.offset;
 
-									data.move((ofs - 4) - outsideDataSize);
-									out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+										data.move((ofs - 4) - outsideDataSize);
+										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
 
-									data.seek(pos);
+										data.seek(pos);
+									} else {
+										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+										data.readInt8(); // Read NUL character
+									}
 									break;
 
 								case FieldType.Int8: out[prop] = data.readInt8(count); break;
