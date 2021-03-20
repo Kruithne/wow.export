@@ -18,18 +18,21 @@ const JSONWriter = require('../3D/writers/JSONWriter');
 const FileWriter = require('../file-writer');
 
 let selectedFile = null;
+let selectedBLP = null;
 
 const previewTexture = async (texture) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
-	try {			
+	try {
+		// Revoke data URL from existing BLP.
+		selectedBLP?.revokeDataURL();
+
 		const file = await core.view.casc.getFileByName(texture);
-		const blp = new BLPFile(file);
+		const blp = selectedBLP = new BLPFile(file);
 
 		const view = core.view;
-		URL.revokeObjectURL(view.texturePreviewURL);
 		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
