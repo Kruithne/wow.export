@@ -85,23 +85,12 @@ class BLPImage {
 	}
 
 	/**
-	 * Assign a data URL to this image and return it.
-	 * If a URL is already bound, it is revoked and reassigned.
+	 * Encode this image as a data URL and return it.
 	 * @param {boolean} useAlpha 
+	 * @returns {string}
 	 */
 	getDataURL(useAlpha = true) {
-		if (this.dataURL)
-			this.revokeDataURL();
-
-		this.dataURL = this.toCanvas(useAlpha).toDataURL();
-		return this.dataURL;
-	}
-
-	/**
-	 * Revoke the data URL associated with this BLP.
-	 */
-	revokeDataURL() {
-		URL.revokeObjectURL(this.dataURL);
+		return this.toCanvas(useAlpha).toDataURL();
 	}
 
 	/**

@@ -16,11 +16,9 @@ const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
 const FileWriter = require('../file-writer');
-const URLRegister = require('../URLRegister');
 
 let selectedFile = null;
 
-const urlRegister = new URLRegister();
 const previewTexture = async (texture) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
@@ -28,15 +26,13 @@ const previewTexture = async (texture) => {
 
 	try {
 		const view = core.view;
-		urlRegister.purge();
 
 		const fileDataID = listfile.getByFilename(texture);
 		const file = await core.view.casc.getFile(fileDataID);
 
 		const blp = new BLPFile(file);
-		const url = urlRegister.register(blp.getDataURL(view.config.exportTextureAlpha));
 
-		view.texturePreviewURL = url;
+		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
 

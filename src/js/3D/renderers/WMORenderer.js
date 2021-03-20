@@ -8,7 +8,6 @@ const core = require('../../core');
 const log = require('../../log');
 
 const BLPFile = require('../../casc/blp');
-const URLRegister = require('../../URLRegister');
 const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
@@ -30,7 +29,6 @@ class WMORenderer {
 		this.textures = [];
 		this.m2Renderers = new Map();
 		this.m2Clones = [];
-		this.urlRegister = new URLRegister();
 	}
 
 	/**
@@ -115,9 +113,8 @@ class WMORenderer {
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const url = this.urlRegister.register(blp.getDataURL(false));
 
-					loader.load(url, image => {
+					loader.load(blp.getDataURL(false), image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -261,9 +258,6 @@ class WMORenderer {
 			// Drop the reference to the mesh group.
 			this.meshGroup = null;
 		}
-
-		// Unassign/dispose of loaded BLP instances.
-		this.urlRegister.purge();
 
 		// Dispose of all M2 renderers for doodad sets.
 		for (const renderer of this.m2Renderers.values())
