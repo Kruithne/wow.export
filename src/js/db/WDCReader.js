@@ -76,6 +76,7 @@ class WDCReader {
 		this.isInflated = false;
 		this.isLoaded = false;
 		this.idField = null;
+		this.idFieldIndex = null;
 	}
 
 	/**
@@ -96,6 +97,9 @@ class WDCReader {
 		if (!this.isLoaded)
 			throw new Error('Attempted to read a data table row before table was loaded.');
 
+		// Ensure incoming recordID is always an integer
+		recordID = parseInt(recordID);
+
 		// Look this row up as a normal entry.
 		const record = this.rows.get(recordID);
 		if (record !== undefined)
@@ -105,8 +109,11 @@ class WDCReader {
 		const copyID = this.copyTable.get(recordID);
 		if (copyID !== undefined) {
 			const copy = this.rows.get(copyID);
-			if (copy !== undefined)
-				return copy;
+			if (copy !== undefined) {
+				let tempCopy = Object.assign({}, copy);
+				tempCopy.ID = recordID;
+				return tempCopy;
+			}
 		}
 
 		// Row does not exist.
@@ -127,8 +134,11 @@ class WDCReader {
 
 		// Inflate all copy table data before returning.
 		if (!this.isInflated) {
-			for (const [destID, srcID] of this.copyTable)
-				rows.set(destID, rows.get(srcID));
+			for (const [destID, srcID] of this.copyTable) {
+				let rowData = Object.assign({}, rows.get(srcID));
+				rowData.ID = destID;
+				rows.set(destID, rowData);
+			}
 
 			this.isInflated = true;
 		}
@@ -195,6 +205,16 @@ class WDCReader {
 	}
 
 	/**
+	 * Gets index of ID field
+	 */
+	getIDIndex() {
+		if (!this.isLoaded)
+			throw new Error('Attempted to get ID index before table was loaded.');
+
+		return this.idFieldIndex;
+	}
+
+	/**
 	 * Parse the data table.
 	 * @param {object} [data] 
 	 */
@@ -226,6 +246,7 @@ class WDCReader {
 		const locale = data.readUInt32LE();
 		const flags = data.readUInt16LE();
 		const idIndex = data.readUInt16LE();
+		this.idFieldIndex = idIndex;
 		const totalFieldCount = data.readUInt32LE();
 		const bitpackedDataOffset = data.readUInt32LE();
 		const lookupColumnCount = data.readUInt32LE();
