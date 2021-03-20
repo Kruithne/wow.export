@@ -10,6 +10,7 @@ const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
 const RenderCache = require('./RenderCache');
+const URLRegister = require('../../URLRegister');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -27,6 +28,7 @@ class M2Renderer {
 		this.materials = [];
 		this.renderCache = new RenderCache();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
+		this.urlRegister = new URLRegister();
 	}
 
 	/**
@@ -149,8 +151,9 @@ class M2Renderer {
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
+			const url = this.urlRegister.register(blp.getDataURL(false));
 
-			loader.load(blp.getDataURL(false), image => {
+			loader.load(url, image => {
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
@@ -182,7 +185,9 @@ class M2Renderer {
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					loader.load(blp.getDataURL(false), image => {
+					const url = this.urlRegister.register(blp.getDataURL(false));
+
+					loader.load(url, image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -241,6 +246,7 @@ class M2Renderer {
 			this.geosetWatcher();
 
 		this.renderCache.retire(...this.materials);
+		this.urlRegister.purge();
 
 		this.disposeMeshGroup();
 	}

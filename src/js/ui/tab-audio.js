@@ -11,12 +11,13 @@ const generics = require('../generics');
 const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const URLRegister = require('../URLRegister');
 
 let selectedFile = null;
 let isTrackLoaded = false;
 
 let audioNode = null;
-let data = null;
+const urlRegister = new URLRegister();
 
 /**
  * Update the current status of the sound player seek bar.
@@ -73,8 +74,7 @@ const unloadSelectedTrack = () => {
 	audioNode.src = '';
 
 	// Free assigned data URL.
-	if (data)
-		data.revokeDataURL();
+	urlRegister.purge();
 };
 
 /**
@@ -88,8 +88,8 @@ const loadSelectedTrack = async () => {
 	log.write('Previewing sound file %s', selectedFile);
 
 	try {
-		data = await core.view.casc.getFileByName(selectedFile);
-		audioNode.src = data.getDataURL();
+		const data = await core.view.casc.getFileByName(selectedFile);
+		audioNode.src = urlRegister.register(data.getDataURL());
 
 		await new Promise(res => {
 			audioNode.onloadeddata = res;
