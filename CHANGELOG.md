@@ -1,5 +1,5 @@
 0.1.29 (In Development)
-- Greatly improved memory efficiency for the model, texture and audio viewers.
+- Implemented item viewer.
 
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
