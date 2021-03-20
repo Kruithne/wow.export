@@ -41,6 +41,11 @@
 #tab-items {
 	display: grid;
 	grid-template-rows: 1fr 70px;
+	grid-template-columns: 1fr auto;
+
+	.ui-checkboxlist {
+		height: 156px;
+	}
 
 	.filter {
 		height: 70px;

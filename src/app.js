@@ -204,6 +204,15 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Mark all item types to the given state.
+			 * @param {boolean} state 
+			 */
+			setAllItemTypes: function(state) {
+				for (const entry of this.itemViewerTypeMask)
+					entry.checked = state;
+			},
+
+			/**
 			 * Return a tag for a given product.
 			 * @param {string} product 
 			 */

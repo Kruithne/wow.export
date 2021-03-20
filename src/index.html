@@ -330,6 +330,13 @@
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterItems" placeholder="Filter items..."/>
 						</div>
+						<div id="items-sidebar" class="sidebar">
+							<span class="header">Item Types</span>
+							<checkboxlist :items="itemViewerTypeMask"></checkboxlist>
+							<div class="list-toggles">
+								<a @click="setAllItemTypes(true)">Enable All</a> / <a @click="setAllItemTypes(false)">Disable All</a>
+							</div>
+						</div>
 					</div>
 				</keep-alive>
 				<keep-alive>

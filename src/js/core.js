@@ -79,6 +79,7 @@ const view = {
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	modelViewerAutoAdjust: true, // Automatic camera adjustment.
+	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.

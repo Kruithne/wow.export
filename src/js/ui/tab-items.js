@@ -8,6 +8,27 @@ const core = require('../core');
 const WDCReader = require('../db/WDCReader');
 const ItemSlot = require('../wow/ItemSlot');
 
+const ITEM_SLOTS_MERGED = {
+	'Miscellaneous': [0, 18, 11, 12, 24, 25, 27, 28],
+	'Head': [1],
+	'Neck': [2],
+	'Shoulder': [3],
+	'Shirt': [4],
+	'Chest': [5, 20],
+	'Waist': [6],
+	'Legs': [7],
+	'Feet': [8],
+	'Wrist': [9],
+	'Hands': [10],
+	'One-hand': [13],
+	'Off-hand': [14, 22, 23],
+	'Two-hand': [17],
+	'Main-hand': [21],
+	'Ranged': [15, 26],
+	'Back': [16],
+	'Tabard': [19]
+};
+
 class Item {
 	/**
 	 * Construct a new Item instance.
@@ -66,10 +87,33 @@ core.events.once('screen-tab-items', async () => {
 		items[index++] = Object.freeze(new Item(itemID, itemRow, itemAppearanceRow));
 	}
 
-	core.view.listfileItems = items;
+	//core.view.listfileItems = items;
 
 	// Show the item viewer screen.
 	core.view.loadPct = -1;
 	core.view.isBusy--;
 	core.view.setScreen('tab-items');
+
+	// Load initial configuration for the type control from config.
+	const enabledTypes = core.view.config.itemViewerEnabledTypes;
+	const mask = [];
+
+	for (const label of Object.keys(ITEM_SLOTS_MERGED))
+		mask.push({ label, checked: enabledTypes.includes(label) });
+
+	// Register a watcher for the item type control.
+	core.view.$watch('itemViewerTypeMask', () => {
+		// Refilter the listfile based on what the new selection.
+		const filter = core.view.itemViewerTypeMask.filter(e => e.checked);
+		const mask = [];
+
+		filter.forEach(e => mask.push(...ITEM_SLOTS_MERGED[e.label]));
+		const test = items.filter(item => mask.includes(item.inventoryType));
+		core.view.listfileItems = test;
+
+		// Save just the names of user enabled types, preventing incompatibilities if we change things.
+		core.view.config.itemViewerEnabledTypes = core.view.itemViewerTypeMask.map(e => e.label);
+	}, { deep: true });
+
+	core.view.itemViewerTypeMask = mask;
 });
