@@ -432,7 +432,6 @@ class WDCReader {
 					actualRecordSize = recordSize;
 				} else {
 					if (wdcVersion == 2) {
-						console.log(i, recordID);
 						recordOfs = offsetMap[recordID].offset;
 						actualRecordSize = offsetMap[recordID].size;
 					} else { 
