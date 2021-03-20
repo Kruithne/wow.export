@@ -77,7 +77,7 @@ const queueItem = (fileDataID, rule) => {
 		processQueue();
 };
 
-const loadIcon = async (fileDataID) => {
+const loadIcon = (fileDataID) => {
 	const selector = '.icon-' + fileDataID;
 	if (!iconRuleExists(selector)) {
 		const sheet = getStylesheet();
