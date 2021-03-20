@@ -92,7 +92,7 @@ const viewItemTextures = (item) => {
 
 core.events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = core.createProgress(3);
+	const progress = core.createProgress(4);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
