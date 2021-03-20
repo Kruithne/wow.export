@@ -319,7 +319,7 @@ Vue.component('itemlistbox', {
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
 			<div :class="['item-icon', 'icon-' + item.icon ]"></div>
-			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }}</div>
+			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }} <span class="item-id">({{ item.id }})</span></div>
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
