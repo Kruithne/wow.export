@@ -8,8 +8,9 @@ const core = require('../core');
 const WDCReader = require('../db/WDCReader');
 const ItemSlot = require('../wow/ItemSlot');
 
+const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
+
 const ITEM_SLOTS_MERGED = {
-	'Miscellaneous': [0, 18, 11, 12, 24, 25, 27, 28],
 	'Head': [1],
 	'Neck': [2],
 	'Shoulder': [3],
@@ -81,17 +82,19 @@ core.events.once('screen-tab-items', async () => {
 	await progress.step('Building item relationships...');
 
 	const rows = itemSparse.getAllRows();
-	const items = Array(rows.size);
+	const items = [];
 
 	const appearanceMap = new Map();
 	for (const row of itemModifiedAppearance.getAllRows().values())
 		appearanceMap.set(row.ItemID, row.ItemAppearanceID);
 
-	let index = 0;
 	for (const [itemID, itemRow] of rows) {
+		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
+			continue;
+			
 		const itemAppearanceID = appearanceMap.get(itemID);
 		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
-		items[index++] = Object.freeze(new Item(itemID, itemRow, itemAppearanceRow));
+		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow)));
 	}
 
 	//core.view.listfileItems = items;
