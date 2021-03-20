@@ -28,7 +28,6 @@ class URLRegister {
 		for (const url of this.track)
 			URL.revokeObjectURL(url);
 
-		console.log('PURGING %d TRACKED URLS', this.track.size);
 		this.track.clear();
 	}
 }
