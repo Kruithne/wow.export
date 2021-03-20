@@ -29,6 +29,7 @@ const previewTexture = async (texture) => {
 		const blp = new BLPFile(file);
 
 		const view = core.view;
+		URL.revokeObjectURL(view.texturePreviewURL);
 		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
