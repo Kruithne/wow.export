@@ -102,14 +102,14 @@ Vue.component('itemlistbox', {
 			if (this.regex) {
 				try {
 					const filter = new RegExp(this.filter.trim());
-					res = res.filter(e => e.name.match(filter));
+					res = res.filter(e => e.displayName.match(filter));
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.
 				}
 			} else {
 				const filter = this.filter.trim().toLowerCase();
 				if (filter.length > 0)
-					res = res.filter(e => e.name.toLowerCase().includes(filter));
+					res = res.filter(e => e.displayName.toLowerCase().includes(filter));
 			}
 
 			// Remove anything from the user selection that has now been filtered out.
@@ -219,7 +219,7 @@ Vue.component('itemlistbox', {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.map(e => e.name).join('\n'), 'text');
+				nw.Clipboard.get().set(this.selection.map(e => e.displayName).join('\n'), 'text');
 			} else {
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';

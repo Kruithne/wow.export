@@ -52,6 +52,13 @@ class Item {
 	get itemSlotName() {
 		return ItemSlot.getSlotName(this.inventoryType);
 	}
+
+	/**
+	 * Returns the display name for this item entry.
+	 */
+	get displayName() {
+		return this.name + ' (' + this.id + ')';
+	}
 }
 
 core.events.once('screen-tab-items', async () => {
