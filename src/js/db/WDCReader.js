@@ -326,14 +326,16 @@ class WDCReader {
 
 			let offsetMap;
 			if (wdcVersion === 2 && !isNormal) {
+				data.seek(header.offsetMapOffset);
 				// offset_map_entry offset_map[header.max_id - header.min_id + 1];
 				const offsetMapCount = maxID - minID + 1;
 				offsetMap = new Array(offsetMapCount);
 				for (let i = 0, n = offsetMapCount; i < n; i++)
-					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+					offsetMap[minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
 
-			data.seek(stringBlockOfs + header.stringTableSize);
+			if (wdcVersion === 3 || isNormal) 
+				data.seek(stringBlockOfs + header.stringTableSize);
 
 			// uint32_t id_list[section_headers.id_list_size / 4];
 			const idList = data.readUInt32LE(header.idListSize / 4);
@@ -421,8 +423,24 @@ class WDCReader {
 				if (hasIDMap)
 					recordID = section.idList[i];
 
-				const recordOfs = isNormal ? i * recordSize : offsetMap[i].offset;
-				const actualRecordSize = isNormal ? recordSize : offsetMap[i].size;
+				let recordOfs;
+				let actualRecordSize;
+
+				if (isNormal) 
+				{
+					recordOfs = i * recordSize;
+					actualRecordSize = recordSize;
+				} else {
+					if (wdcVersion == 2) {
+						console.log(i, recordID);
+						recordOfs = offsetMap[recordID].offset;
+						actualRecordSize = offsetMap[recordID].size;
+					} else { 
+						recordOfs = offsetMap[i].offset;
+						actualRecordSize = offsetMap[i].size;
+					}
+				}
+
 				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
 
 				if (!isNormal) 
