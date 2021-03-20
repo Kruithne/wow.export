@@ -96,6 +96,13 @@ class BLPImage {
 	}
 
 	/**
+	 * Revoke the data URL associated with this BLP.
+	 */
+	revokeDataURL() {
+		URL.revokeObjectURL(this.dataURL);
+	}
+
+	/**
 	 * Return a canvas with this BLP painted onto it.
 	 * @param {boolean} useAlpha 
 	 */
