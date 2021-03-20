@@ -80,11 +80,13 @@ class BLPImage {
 			for (let i = 0; i < 256; i++)
 				this.palette[i] = this.data.readUInt8(4);
 		}
+
+		this.dataURL = null;
 	}
 
 	/**
 	 * Assign a data URL to this image and return it.
-	 * If a URL is already bound, it is reassigned.
+	 * If a URL is already bound, it is revoked and reassigned.
 	 * @param {boolean} useAlpha 
 	 */
 	getDataURL(useAlpha = true) {
