@@ -59,6 +59,19 @@
 			display: flex;
 		}
 
+		.item-buttons {
+			list-style: none;
+			margin-left: auto;
+			margin-right: 15px;
+			
+			li {
+				margin-left: 5px;
+				font-weight: bold;
+				cursor: pointer;
+				display: inline;
+			}
+		}
+
 		.item-icon {
 			width: 32px;
 			height: 32px;

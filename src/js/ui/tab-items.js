@@ -5,6 +5,9 @@
  */
 const core = require('../core');
 
+const DBModelFileData = require('../db/caches/DBModelFileData');
+const DBTextureFileData = require('../db/caches/DBTextureFileData');
+
 const WDCReader = require('../db/WDCReader');
 const ItemSlot = require('../wow/ItemSlot');
 
@@ -36,14 +39,21 @@ class Item {
 	 * @param {number} id 
 	 * @param {object} itemSparseRow 
 	 * @param {?object} itemAppearanceRow
+	 * @param {?object} itemDisplayInfoRow
 	 */
-	constructor(id, itemSparseRow, itemAppearanceRow) {
+	constructor(id, itemSparseRow, itemAppearanceRow, itemDisplayInfoRow) {
 		this.id = id;
 		this.name = itemSparseRow.Display_lang;
 		this.inventoryType = itemSparseRow.InventoryType;
 		this.quality = itemSparseRow.OverallQualityID;
 
 		this.icon = itemAppearanceRow?.DefaultIconFileDataID ?? 0;
+		
+		this.models = itemDisplayInfoRow?.ModelResourcesID;
+		this.textures = itemDisplayInfoRow?.ModelMaterialResourcesID;
+
+		this.modelCount = this.models?.filter(e => e !== 0).length ?? 0;
+		this.textureCount = this.textures?.filter(e => e !== 0).length ?? 0;
 	}
 
 	/**
@@ -62,6 +72,24 @@ class Item {
 	}
 }
 
+/**
+ * Switches to the model viewer, selecting the models for the given item.
+ * @param {object} item 
+ */
+const viewItemModels = (item) => {
+	// TODO: Implement.
+	console.log(item);
+};
+
+/**
+ * Switches to the texture viewer, selecting the models for the given item.
+ * @param {object} item 
+ */
+const viewItemTextures = (item) => {
+	// TODO: Implement.
+	console.log(item);
+};
+
 core.events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
 	const progress = core.createProgress(3);
@@ -71,6 +99,10 @@ core.events.once('screen-tab-items', async () => {
 	await progress.step('Loading item data...');
 	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');
 	await itemSparse.parse();
+
+	await progress.step('Loading item display info...');
+	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
+	await itemDisplayInfo.parse();
 
 	await progress.step('Loading item appearances...');
 	const itemModifiedAppearance = new WDCReader('DBFilesClient/ItemModifiedAppearance.db2');
@@ -91,13 +123,16 @@ core.events.once('screen-tab-items', async () => {
 	for (const [itemID, itemRow] of rows) {
 		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
 			continue;
-			
+
 		const itemAppearanceID = appearanceMap.get(itemID);
 		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
-		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow)));
-	}
 
-	//core.view.listfileItems = items;
+		let itemDisplayInfoRow = null;
+		if (itemAppearanceRow !== null)
+			itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+
+		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow, itemDisplayInfoRow)));
+	}
 
 	// Show the item viewer screen.
 	core.view.loadPct = -1;
@@ -127,3 +162,5 @@ core.events.once('screen-tab-items', async () => {
 
 	core.view.itemViewerTypeMask = mask;
 });
+
+module.exports = { viewItemModels, viewItemTextures };

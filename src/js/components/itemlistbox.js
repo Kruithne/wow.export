@@ -4,6 +4,7 @@
 	License: MIT
  */
 const IconRender = require('../icon-render');
+const TabItems = require('../ui/tab-items');
 
 Vue.component('itemlistbox', {
 	/**
@@ -299,6 +300,22 @@ Vue.component('itemlistbox', {
 
 				this.lastSelectItem = item;
 			}
+		},
+
+		/**
+		 * Invoked when the user selects the models button on an item.
+		 * @param {object} item 
+		 */
+		viewModels: function(item) {
+			TabItems.viewItemModels(item);
+		},
+
+		/**
+		 * Invoked when the user selects the textures button on an item.
+		 * @param {object} item 
+		 */
+		viewTextures: function(item) {
+			TabItems.viewItemTextures(item);
 		}
 	},
 
@@ -320,6 +337,10 @@ Vue.component('itemlistbox', {
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
 			<div :class="['item-icon', 'icon-' + item.icon ]"></div>
 			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }} <span class="item-id">({{ item.id }})</span></div>
+			<ul class="item-buttons">
+				<li v-if="item.modelCount > 0" @click.self="viewModels(item)">Models ({{ item.modelCount }})</li>
+				<li v-if="item.textureCount > 0" @click.self="viewTextures(item)">Textures ({{ item.textureCount }})</li>
+			</ul>
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`

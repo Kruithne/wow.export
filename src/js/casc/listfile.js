@@ -145,10 +145,6 @@ const loadIDTable = async (ids, ext) => {
 		}
 	}
 
-	// Reset the fileDataID caches for each table to conserve memory.
-	// If these sets are needed elsewhere, remove this call.
-	ids.clear();
-
 	return loadCount;
 };
 
