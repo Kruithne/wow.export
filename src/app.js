@@ -85,6 +85,7 @@ const TestRunner = require('./js/iat/test-runner');
 
 require('./js/components/listbox');
 require('./js/components/listboxb');
+require('./js/components/itemlistbox');
 require('./js/components/checkboxlist');
 require('./js/components/menu-button');
 require('./js/components/file-field');
@@ -99,6 +100,7 @@ require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
+require('./js/ui/tab-items');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

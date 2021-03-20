@@ -49,17 +49,20 @@ const view = {
 	userInputFilterText: '', // Value of the 'filter' field for text files.
 	userInputFilterModels: '', // Value of the 'filter' field for models.
 	userInputFilterMaps: '', // Value of the 'filter' field for maps.
+	userInputFilterItems: '', // Value of the 'filter' field of items.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
 	selectionVideos: [],  // Current user selection of videos.
 	selectionText: [], // Current user selection of text files.
 	selectionMaps: [], // Current user selection of maps.
+	selectionItems: [], // Current user selection of items.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
 	listfileText: [], // Filtered listfile for text files.
 	listfileModels: [], // Filtered listfile for M2/WMO models.
+	listfileItems: [], // Filtered item entries.
 	availableLocale: Locale, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	textViewerSelectedText: '', // Active text for the text viewer.

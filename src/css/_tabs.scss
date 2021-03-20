@@ -38,6 +38,67 @@
 	margin-left: 5px;
 }
 
+#tab-items {
+	display: grid;
+	grid-template-rows: 1fr 70px;
+
+	.filter {
+		height: 70px;
+	}
+
+	#listbox-items {
+		.item {
+			align-items: center;
+			height: 46px;
+			font-size: 1.2em;
+			display: flex;
+		}
+
+		.item-icon {
+			width: 32px;
+			height: 32px;
+			border: 1px solid #8a8a8a;
+			background-size: 115%;
+			background-position: center;
+			background-repeat: no-repeat;
+			margin-right: 10px;
+			float: left;
+		}
+
+		.item-quality-0 {
+			color: #9d9d9d;
+		}
+
+		.item-quality-1 {
+			color: #ffffff;
+		}
+
+		.item-quality-2 {
+			color: #1eff00;
+		}
+
+		.item-quality-3 {
+			color: #0070dd;
+		}
+
+		.item-quality-4 {
+			color: #a335ee;
+		}
+
+		.item-quality-5 {
+			color: #ff8000;
+		}
+
+		.item-quality-6 {
+			color: #e6cc80;
+		}
+
+		.item-quality-7, .item-quality-8 {
+			color: #00ccff;
+		}
+	}
+}
+
 #tab-models {
 	grid-template-columns: 1fr 1fr auto;
 

@@ -15,6 +15,7 @@
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
 						<div class="option" id="nav-models" @click="setScreen('tab-models')">Models</div>
+						<div class="option" id="nav-items" @click="setScreen('tab-items')">Items</div>
 						<div class="option" id="nav-textures" @click="setScreen('tab-textures')">Textures</div>
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')">Audio</div>
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')">Videos</div>
@@ -317,6 +318,17 @@
 							</label>
 							<span class="header">Terrain Texture Quality</span>
 							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
+						<div class="list-container">
+							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item"></itemlistbox>
+						</div>
+						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+							<input type="text" v-model="userInputFilterItems" placeholder="Filter items..."/>
 						</div>
 					</div>
 				</keep-alive>

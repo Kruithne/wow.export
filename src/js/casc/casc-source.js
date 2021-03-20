@@ -17,7 +17,6 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
-const DBItemSparse = require('../db/caches/DBItemSparse');
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
@@ -136,9 +135,6 @@ class CASC {
 
 		await this.progress.step('Loading item displays');
 		await DBItemDisplays.initializeItemDisplays();
-
-		await this.progress.step('Loading item names');
-		//await DBItemSparse.initializeItemData();
 
 		await this.progress.step('Loading creature data');
 		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
