@@ -416,6 +416,8 @@ class WDCReader {
 			// Skip parsing entries from encrypted sections.
 			if (header.tactKeyHash !== BigInt(0)) {
 				let isZeroed = true;
+
+				// Check if record data is all zeroes
 				data.seek(section.recordDataOfs);
 				for (let i = 0, n = section.recordDataSize; i < n; i++) {
 					if (data.readUInt8() !== 0x0) {
@@ -424,8 +426,20 @@ class WDCReader {
 					}
 				}
 
-				if (isZeroed)
+				// Check if first integer after string block (from id list or copy table) is non-0
+				if (isZeroed && wdcVersion === 3 && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
+					data.seek(section.stringBlockOfs + header.stringTableSize);
+					isZeroed = data.readUInt32LE() === 0;
+				}
+
+				// Check if first entry in offsetMap has size 0
+				if (isZeroed && wdcVersion === 3 && header.offsetMapIDCount > 0) 
+					isZeroed = offsetMap[0].size === 0;
+				
+				if (isZeroed) {
+					log.write("Skipping all-zero encrypted section " + sectionIndex + " in file " + this.fileName);
 					continue;
+				}
 			}
 
 			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
