@@ -548,7 +548,11 @@ class WDCReader {
 							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
-							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
+
+							// Get the remaining amount of bits that remain (we read to the nearest byte)
+							const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
+							const bitSize = BigInt(1 << recordFieldInfo.fieldSizeBits);
+							const bitpackedValue = rawValue >> bitOffset & (bitSize - BigInt(1));
 
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
@@ -563,6 +567,9 @@ class WDCReader {
 								out[prop] = bitpackedValue;
 							}
 
+							if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned) 
+								out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
+
 							break;
 					}
 
@@ -571,7 +578,11 @@ class WDCReader {
 						// TODO: Can arrays of other types than uint be bitpacked? If so, this needs support. Also, strings.
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
-							castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+							if (out[prop] < 0) 
+								castBuffer.writeBigInt64LE(BigInt(out[prop]));
+							else 
+								castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+							
 							castBuffer.seek(0);
 							switch (fieldType) {
 								case FieldType.String:
@@ -586,6 +597,30 @@ class WDCReader {
 								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
 								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
 								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
+							}
+						} else {
+							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
+								castBuffer.seek(0);
+								if (out[prop] < 0) 
+									castBuffer.writeBigInt64LE(BigInt(out[prop][i]));
+								else 
+									castBuffer.writeBigUInt64LE(BigInt(out[prop][i]));
+							
+								castBuffer.seek(0);
+								switch (fieldType) {
+									case FieldType.String:
+										throw new Error('Strings currently not supported.');
+
+									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
+									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
+									case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
+									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
+									case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
+									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
+									case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
+									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
+									case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
+								}
 							}
 						}
 					}
