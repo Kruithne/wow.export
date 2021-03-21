@@ -113,7 +113,7 @@ class OBJWriter {
 
 		// Write verts.
 		const verts = this.verts;
-		for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j += 1, i+= 3) {
+		for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j++, i+= 3) {
 			if (usedIndices.has(j)) {
 				vertMap.set(j, u++);
 				writer.writeLine('v ' + verts[i] + ' ' + verts[i + 1] + ' ' + verts[i + 2]);
@@ -122,7 +122,7 @@ class OBJWriter {
 
 		// Write normals.
 		const normals = this.normals;
-		for (let i = 0, j = 0, u = 0, n = normals.length; i < n; j += 1, i += 3) {
+		for (let i = 0, j = 0, u = 0, n = normals.length; i < n; j++, i += 3) {
 			if (usedIndices.has(j)) {
 				normalMap.set(j, u++);
 				writer.writeLine('vn ' + normals[i] + ' ' + normals[i + 1] + ' ' + normals[i + 2]);
@@ -131,7 +131,7 @@ class OBJWriter {
 
 		// Write UVs
 		const uvs = this.uvs;
-		for (let i = 0, j = 0, u = 0, n = uvs.length; i < n; j += 1, i += 2) {
+		for (let i = 0, j = 0, u = 0, n = uvs.length; i < n; j ++, i += 2) {
 			if (usedIndices.has(j)) {
 				uvMap.set(j, u++);
 				writer.writeLine('vt ' + uvs[i] + ' ' + uvs[i + 1]);
@@ -141,7 +141,7 @@ class OBJWriter {
 		// We've had one, but what about second UVs?
 		// This is a non-standard property for wow.export
 		const uv2 = this.uvs2;
-		for (let i = 0, j = 0, n = uv2.length; i < n; j += 1, i += 2) {
+		for (let i = 0, j = 0, n = uv2.length; i < n; j++, i += 2) {
 			if (usedIndices.has(j))
 				writer.writeLine('vt2 ' + uv2[i] + ' ' + uv2[i + 1]);
 		}
