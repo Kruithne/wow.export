@@ -246,10 +246,20 @@
 					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
 					<div class="close" v-if="toast.closable" @click="hideToast(true)"></div>
 				</div>
+				<div id="toast" v-if="!toast && screen === 'tab-models' && overrideModelList.length > 0" class="progress">
+					Filtering models for item: {{ overrideModelName }}
+					<span @click="removeOverrideModels">Remove</span>
+					<div class="close" @click="removeOverrideModels"></div>
+				</div>
+				<div id="toast" v-if="!toast && screen === 'tab-textures' && overrideTextureList.length > 0" class="progress">
+					Filtering textures for item: {{ overrideTextureName }}
+					<span @click="removeOverrideTextures">Remove</span>
+					<div class="close" @click="removeOverrideTextures"></div>
+				</div>
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -342,7 +352,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>

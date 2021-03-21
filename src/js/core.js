@@ -84,6 +84,10 @@ const view = {
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.
 	texturePreviewInfo: '', // Text information for a displayed texture.
+	overrideModelList: [], // Override list of models.
+	overrideModelName: '', // Override model name.
+	overrideTextureList: [], // Override list of textures.
+	overrideTextureName: '', // Override texture name.
 	mapViewerMaps: [], // Available maps for the map viewer.
 	mapViewerHasWorldModel: false, // Does selected map have a world model?
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.

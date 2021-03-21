@@ -4,6 +4,7 @@
 	License: MIT
  */
 const core = require('../core');
+const listfile = require('../casc/listfile');
 
 const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
@@ -49,11 +50,11 @@ class Item {
 
 		this.icon = itemAppearanceRow?.DefaultIconFileDataID ?? 0;
 		
-		this.models = itemDisplayInfoRow?.ModelResourcesID;
-		this.textures = itemDisplayInfoRow?.ModelMaterialResourcesID;
+		this.models = itemDisplayInfoRow?.ModelResourcesID.filter(e => e !== 0);
+		this.textures = itemDisplayInfoRow?.ModelMaterialResourcesID.filter(e => e !== 0);
 
-		this.modelCount = this.models?.filter(e => e !== 0).length ?? 0;
-		this.textureCount = this.textures?.filter(e => e !== 0).length ?? 0;
+		this.modelCount = this.models?.length ?? 0;
+		this.textureCount = this.textures?.length ?? 0;
 	}
 
 	/**
@@ -77,8 +78,27 @@ class Item {
  * @param {object} item 
  */
 const viewItemModels = (item) => {
-	// TODO: Implement.
-	console.log(item);
+	core.view.setScreen('tab-models');
+
+	const list = new Set();
+
+	for (const modelID of item.models) {
+		const fileDataIDs = DBModelFileData.getModelFileDataID(modelID);
+		for (const fileDataID of fileDataIDs) {
+			let entry = listfile.getByID(fileDataID);
+
+			if (entry !== undefined) {
+				if (core.view.config.listfileShowFileDataIDs)
+					entry += ' [' + fileDataID + ']';
+
+				list.add(entry);
+			}
+		}
+	}
+	
+	core.view.overrideModelList = [...list];
+	core.view.selectionModels = [...list];
+	core.view.overrideModelName = item.name;
 };
 
 /**
@@ -86,8 +106,25 @@ const viewItemModels = (item) => {
  * @param {object} item 
  */
 const viewItemTextures = (item) => {
-	// TODO: Implement.
-	console.log(item);
+	core.view.setScreen('tab-textures');
+
+	const list = new Set();
+
+	for (const textureID of item.textures) {
+		const fileDataID = DBTextureFileData.getTextureFileDataID(textureID);
+		let entry = listfile.getByID(fileDataID);
+
+		if (entry !== undefined) {
+			if (core.view.config.listfileShowFileDataIDs)
+				entry += ' [' + fileDataID + ']';
+
+			list.add(entry);
+		}
+	}
+	
+	core.view.overrideTextureList = [...list];
+	core.view.selectionTextures = [...list];
+	core.view.overrideTextureName = item.name;
 };
 
 core.events.once('screen-tab-items', async () => {

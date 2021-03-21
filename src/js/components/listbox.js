@@ -19,8 +19,9 @@ Vue.component('listbox', {
 	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
+	 * override: If provided, used as an override listfile.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
 
 	/**
 	 * Reactive instance data.
@@ -96,15 +97,23 @@ Vue.component('listbox', {
 		},
 
 		/**
+		 * Returns the active item list to
+		 * @returns 
+		 */
+		itemList: function() {
+			return this.override?.length > 0 ? this.override : this.items;
+		},
+
+		/**
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
 			if (!this.filter)
-				return this.items;
+				return this.itemList;
 
-			let res = this.items;
+			let res = this.itemList;
 
 			if (this.regex) {
 				try {
@@ -204,7 +213,7 @@ Vue.component('listbox', {
 				return;
 
 			// Replace the current selection with one from the clipboard.
-			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.items.includes(i));
+			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.itemList.includes(i));
 			this.selection.splice(0);
 			this.selection.push(...entries);
 		},

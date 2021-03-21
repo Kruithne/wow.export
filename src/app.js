@@ -268,6 +268,22 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Invoked when a user cancels a model override filter.
+			 */
+			removeOverrideModels: function() {
+				this.overrideModelList = [];
+				this.overrideModelName = '';
+			},
+
+			/**
+			 * Invoked when a user cancels a texture override filter.
+			 */
+			removeOverrideTextures: function() {
+				this.overrideTextureList = [];
+				this.overrideTextureName = '';
+			},
+
+			/**
 			 * Invoked when the user manually selects a CDN region.
 			 * @param {object} region 
 			 */
