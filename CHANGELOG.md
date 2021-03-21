@@ -1,5 +1,6 @@
 0.1.29 (In Development)
 - Implemented item viewer.
+- OBJ models are no longer exported with unused/loose vertices.
 
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
