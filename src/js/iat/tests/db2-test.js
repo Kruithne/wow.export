@@ -9,6 +9,7 @@ const util = require('util');
 
 const IntegrationTest = require('../integration-test');
 const WDCReader = require('../../db/WDCReader');
+const FieldType = require('../../db/FieldType');
 const listfile = require('../../casc/listfile');
 const generics = require('../../generics');
 const log = require('../../log');
@@ -29,7 +30,7 @@ const DB_DATA_URL = 'https://wow.tools/dbc/cachedexports/';
  * Defines the URL at which DB validation files are found.
  * @type {string}
  */
-const DB_DATA_CSV_URL = DB_DATA_URL;
+const DB_DATA_JSON_URL = DB_DATA_URL;
 
 /**
  * Defines the URL at which a data validation manifest is found.
@@ -39,11 +40,11 @@ const DB_DATA_CSV_URL = DB_DATA_URL;
 const DB_DATA_MANIFEST = DB_DATA_URL + '%s.json';
 
 /**
- * Defines the file name format for a data validation CSV.
- * Format tokens are the tableName and CSV MD5 hash.
+ * Defines the file name format for a data validation JSON.
+ * Format tokens are the tableName and JSON MD5 hash.
  * @type {string}
  */
-const DB_DATA_CSV = '%s.%s.csv';
+const DB_DATA_JSON = '%s.%s.json';
 
 class DB2Test extends IntegrationTest {
 	/**
@@ -121,64 +122,110 @@ class DB2Test extends IntegrationTest {
 		const table = new WDCReader('DBFilesClient/' + dbdName + '.db2');
 		await table.parse();
 
-		const csvHash = this.validationMap.get(tableName);
-		if (csvHash === undefined)
+		const jsonHash = this.validationMap.get(tableName);
+		if (jsonHash === undefined)
 			throw new Error('No entry for' + tableName + ' in data validation manifest');
 
-		const csvFile = util.format(DB_DATA_CSV, tableName, csvHash);
-		let rawCsv = await this.casc.cache.getFile(csvFile);
+		const jsonFile = util.format(DB_DATA_JSON, tableName, jsonHash);
+		let rawJson = await this.casc.cache.getFile(jsonFile);
 
-		if (rawCsv === null) {
-			const csvUrl = DB_DATA_CSV_URL + csvFile;
-			log.write('DB2 validation file not cached, downloading from %s', csvUrl);
+		if (rawJson === null) {
+			const jsonUrl = DB_DATA_JSON_URL + jsonFile;
+			log.write('DB2 validation file not cached, downloading from %s', jsonUrl);
 
-			rawCsv = await generics.downloadFile(csvUrl);
-			this.casc.cache.storeFile(csvFile, rawCsv);
+			rawJson = await generics.downloadFile(jsonUrl);
+			this.casc.cache.storeFile(jsonFile, rawJson);
 		} else {
-			log.write('Using DB2 validation file %s from cache', csvFile);
+			log.write('Using DB2 validation file %s from cache', jsonFile);
 		}
 
-		const csvLines = rawCsv.readLines();
+		const db2json = rawJson.readJSON().data;
 
-		let checkHeader = [];
-		for (const [fieldName, fieldType] of table.schema) {
-			if (Array.isArray(fieldType)) {
-				// Format array field headers as FieldName[5]
-				for (let i = 0; i < fieldType[1]; i++) 
-					checkHeader.push(util.format('%s[%d]', fieldName, i));
-			} else {
-				// Format normal fields as just their name.
-				checkHeader.push(fieldName);
-			}
+		var entities = {
+			'amp': '&',
+			'apos': '\'',
+			'#x27': '\'',
+			'#x2F': '/',
+			'#39': '\'',
+			'#47': '/',
+			'#163': '£',
+			'#165': '¥',
+			'#223': 'ß',
+			'#228': 'ä',
+			'#233': 'é',
+			'#246': 'ö',
+			'#252': 'ü',
+			'lt': '<',
+			'gt': '>',
+			'nbsp': ' ',
+			'quot': '"'
 		}
 
-		// Validate the schema against the CSV header (first line).
-		assert.strictEqual(checkHeader.join(','), csvLines.shift(), 'DB2 schema does not match expected header');
+		var idIndex = table.getIDIndex();
 
-		var quotableChars = [',', '"', '\r', '\n'];
+		if (idIndex == null) 
+			assert.fail("No ID col, NYI");
+		
+		table.getAllRows();
 
-		for (const [rowID, row] of table.getAllRows()) {
+		for (const row of db2json) {
 			let checkRow = Array();
 			// const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
 			
+			for (const [key, val] of Object.entries(row)) 
+				row[key] = val.replace(/&([^;]+);/gm, function (match, entity) { return entities[entity] || match  });
+			
+			let colIndex = 0;
+			let ourColIndex = 0;
+			let actualIDIndex = 0;
+			for (const [fieldName, fieldType] of table.schema) {
+				if (idIndex == ourColIndex) 
+					actualIDIndex = colIndex;
+
+				if (Array.isArray(fieldType)) {
+					for (let i = 0; i < fieldType[1]; i++) 
+						colIndex++;
+				} else {
+					colIndex++;
+				}
+
+				ourColIndex++;
+			}
+
+			var ourRow = table.getRow(row[actualIDIndex]);
+			if (ourRow === null) 
+				assert.fail("No row returned for ID " + row[actualIDIndex]);
+			
+			let anotherColIndex = 0;
 			for (const [fieldName, fieldType] of table.schema) {
 				if (Array.isArray(fieldType)) {
 					for (let i = 0; i < fieldType[1]; i++) {
-						const fieldValue = row[fieldName][i].toString();
-						if (quotableChars.some(quotableChar => fieldValue.includes(quotableChar))) 
-							checkRow.push('"' + fieldValue.replace('"', '\\"') + '"');
-						else 
+						if(fieldType[0] == FieldType.Float){
+							const fieldValue = Math.round(ourRow[fieldName][i]);
 							checkRow.push(fieldValue);
+							row[anotherColIndex] = Math.round(row[anotherColIndex]);
+						}else{
+							const fieldValue = ourRow[fieldName][i].toString();
+							checkRow.push(fieldValue);
+						}
+
+						anotherColIndex++;
 					}
 				} else {
-					const fieldValue = row[fieldName].toString();
-					if (quotableChars.some(quotableChar => fieldValue.includes(quotableChar))) 
-						checkRow.push('"' + fieldValue.replace('"', '\\"') + '"');
-					else 
+					if(fieldType == FieldType.Float){
+						const fieldValue = Math.round(ourRow[fieldName]);
 						checkRow.push(fieldValue);
+						row[anotherColIndex] = Math.round(row[anotherColIndex]);
+					}else{
+						const fieldValue = ourRow[fieldName].toString();
+						checkRow.push(fieldValue);
+					}
+
+					anotherColIndex++;
 				}
 			}
-			assert.strictEqual(checkRow.join(','), csvLines.shift(), 'DB2 row does not match CSV');
+
+			assert.deepStrictEqual(checkRow, row, 'DB2 row does not match CSV,\nWE: ' + checkRow + '\nWT: ' + row + '\n');
 		}
 	}
 }
