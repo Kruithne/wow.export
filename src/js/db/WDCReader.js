@@ -575,7 +575,6 @@ class WDCReader {
 
 					// Reinterpret field correctly for compression types other than None
 					if (recordFieldInfo.fieldCompression !== CompressionType.None) {
-						// TODO: Can arrays of other types than uint be bitpacked? If so, this needs support. Also, strings.
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
 							if (out[prop] < 0) 
@@ -586,7 +585,7 @@ class WDCReader {
 							castBuffer.seek(0);
 							switch (fieldType) {
 								case FieldType.String:
-									throw new Error('Strings currently not supported.');
+									throw new Error('Compressed string arrays currently not used/supported.');
 
 								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
 								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
@@ -609,7 +608,7 @@ class WDCReader {
 								castBuffer.seek(0);
 								switch (fieldType) {
 									case FieldType.String:
-										throw new Error('Strings currently not supported.');
+										throw new Error('Compressed string arrays currently not used/supported.');
 
 									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
 									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
