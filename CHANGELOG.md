@@ -3,6 +3,7 @@
 - The 'successfully exported' toast will now remain visible until dismissed.
 - Models exported as OBJ no longer export with unused/loose vertices.
 - Objects imported via the wow.export Blender add-on now have sub-mesh specific vertex groups.
+- Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.

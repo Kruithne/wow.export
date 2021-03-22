@@ -427,6 +427,9 @@ class ADTExporter {
 						return;
 
 					const diffuseFileDataID = materialIDs[i];
+					if (diffuseFileDataID === 0)
+						continue;
+
 					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
 
 					const mat = materials[i] = { scale: 1, fileDataID: diffuseFileDataID };
@@ -511,7 +514,8 @@ class ADTExporter {
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
-							layers.push({ index: i, fileDataID: mat.fileDataID, scale: mat.scale, file: mat.file });
+							if (mat !== undefined)
+								layers.push({ index: i, fileDataID: mat.fileDataID, scale: mat.scale, file: mat.file });
 						}
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
@@ -529,7 +533,8 @@ class ADTExporter {
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
-							layers.push({ index: i, chunkIndex, fileDataID: mat.fileDataID, scale: mat.scale });
+							if (mat !== undefined)
+								layers.push({ index: i, chunkIndex, fileDataID: mat.fileDataID, scale: mat.scale });
 						}
 					}
 				}
@@ -609,6 +614,9 @@ class ADTExporter {
 
 						const diffuseFileDataID = materialIDs[i];
 						const heightFileDataID = heightIDs[i];
+
+						if (diffuseFileDataID === 0)
+							continue;
 
 						const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 };
 						mat.diffuseTex = await loadTexture(diffuseFileDataID);
@@ -742,6 +750,9 @@ class ADTExporter {
 
 							for (let i = 0, n = texLayers.length; i < n; i++) {
 								const mat = materials[texLayers[i].textureId];
+								if (mat === undefined)
+									continue;
+
 								gl.activeTexture(gl.TEXTURE0 + i);
 								gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
 
@@ -805,8 +816,10 @@ class ADTExporter {
 					gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 					// Delete loaded textures.
-					for (const mat of materials)
-						gl.deleteTexture(mat.texture);
+					for (const mat of materials) {
+						if (mat !== undefined)
+							gl.deleteTexture(mat.texture);
+					}
 				}
 			}
 		}
