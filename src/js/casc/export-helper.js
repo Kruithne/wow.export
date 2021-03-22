@@ -91,8 +91,10 @@ class ExportHelper {
 		this.updateCurrentTask();
 
 		core.events.once('toast-cancelled', () => {
-			core.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
-			core.view.exportCancelled = true;
+			if (!this.isFinished) {
+				core.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
+				core.view.exportCancelled = true;
+			}
 		});
 	}
 
