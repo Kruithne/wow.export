@@ -127,9 +127,9 @@ class ExportHelper {
 			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
 
 			if (this.count > 1)
-				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null);
+				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
 			else
-				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null);
+				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			const cancelled = core.view.exportCancelled;

@@ -1,5 +1,6 @@
 0.1.29 (In Development)
-- Implement new 'Items' tab, allowing model/texture look-up of specific game items.
+- Added new 'Items' tab, allowing model/texture look-up of specific game items.
+- The 'successfully exported' toast will now remain visible until dismissed.
 - Models exported as OBJ no longer export with unused/loose vertices.
 - Objects imported via the wow.export Blender add-on now have sub-mesh specific vertex groups.
 
