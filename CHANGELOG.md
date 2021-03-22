@@ -1,6 +1,7 @@
 0.1.29 (In Development)
-- Implemented item viewer.
-- OBJ models are no longer exported with unused/loose vertices.
+- Implement new 'Items' tab, allowing model/texture look-up of specific game items.
+- Models exported as OBJ no longer export with unused/loose vertices.
+- Objects imported via the wow.export Blender add-on now have sub-mesh specific vertex groups.
 
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
