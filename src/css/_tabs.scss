@@ -274,6 +274,27 @@
 	.preview-container {
 		position: relative;
 
+		.preview-channels {
+			position: absolute;
+			bottom: 35px;
+			left: 0;
+			list-style: none;
+
+			li {
+				width: 20px;
+				height: 20px;
+				background: rgba(0, 0, 0, 0.753);
+				display: inline-flex;
+				justify-content: center;
+				align-items: center;
+				cursor: pointer;
+
+				&:hover, &.selected {
+					background: var(--font-alt);
+				}
+			}
+		}
+
 		.preview-info {
 			position: absolute;
 			left: 0;

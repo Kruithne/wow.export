@@ -132,7 +132,7 @@ class WMOExporter {
 						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToPNG(texPath, useAlpha); // material.blendMode !== 0
+						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
 					} else {
 						log.write('Skipping WMo texture export %s (file exists, overwrite disabled)', texPath);
 					}

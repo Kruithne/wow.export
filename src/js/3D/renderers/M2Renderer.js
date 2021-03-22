@@ -150,7 +150,7 @@ class M2Renderer {
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
 
-			loader.load(blp.getDataURL(false), image => {
+			loader.load(blp.getDataURL(0b0111), image => {
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
@@ -182,7 +182,7 @@ class M2Renderer {
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					loader.load(blp.getDataURL(false), image => {
+					loader.load(blp.getDataURL(0b0111), image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;

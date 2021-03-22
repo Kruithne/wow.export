@@ -267,6 +267,12 @@
 						</div>
 						<div class="preview-container">
 							<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
+							<ul class="preview-channels" v-if="texturePreviewURL.length > 0">
+								<li id="channel-red" :class="{ selected: (config.exportChannelMask & 0b1) }" @click.self="config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
+								<li id="channel-green" :class="{ selected: (config.exportChannelMask & 0b10) }" @click.self="config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
+								<li id="channel-blue" :class="{ selected: (config.exportChannelMask & 0b100) }" @click.self="config.exportChannelMask ^= 0b100" title="Toggle blue colour channel.">B</li>
+								<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
+							</ul>
 							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
 								<div :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
 							</div>
@@ -277,7 +283,7 @@
 								<span>Show Info</span>
 							</label>
 							<label class="ui-checkbox">
-								<input type="checkbox" v-model="config.exportTextureAlpha"/>
+								<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
 								<span>Transparency</span>
 							</label>
 							<menu-button :label="'Export as %s'" :options="['PNG', 'BLP']" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" class="upward" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>

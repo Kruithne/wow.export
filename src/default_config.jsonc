@@ -23,7 +23,7 @@
 	"removePathSpaces": true,
 	"removePathSpacesCopy": true,
 	"exportTextureFormat": "PNG",
-	"exportTextureAlpha": true,
+	"exportChannelMask": 15,
 	"showTextureInfo": true,
 	"exportModelFormat": "OBJ",
 	"overwriteFiles": true,

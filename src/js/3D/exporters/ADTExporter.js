@@ -559,7 +559,7 @@ class ADTExporter {
 					const blp = new BLPFile(data);
 
 					// Draw the BLP onto a raw-sized canvas.
-					const canvas = blp.toCanvas(false);
+					const canvas = blp.toCanvas(0b0111);
 
 					// Scale the image down by copying the raw canvas onto a
 					// scaled canvas, and then returning the scaled image data.

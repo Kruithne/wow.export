@@ -2,6 +2,7 @@
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
 - Added ability to select multiple files for import with the Blender add-on.
 - Added per-submesh vertex groups to objects imported with the Blender-add-on.
+- Added ability to toggle individual colour channels in the texture browser.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - The 'successfully exported' toast will now remain visible until dismissed.

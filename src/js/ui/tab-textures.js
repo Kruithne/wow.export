@@ -32,7 +32,7 @@ const previewTexture = async (texture) => {
 
 		const blp = new BLPFile(file);
 
-		view.texturePreviewURL = blp.getDataURL(view.config.exportTextureAlpha);
+		view.texturePreviewURL = blp.getDataURL(view.config.exportChannelMask);
 		view.texturePreviewWidth = blp.width;
 		view.texturePreviewHeight = blp.height;
 
@@ -103,7 +103,7 @@ const exportFiles = async (files, isLocal = false) => {
 				} else {
 					// Export as PNG.
 					const blp = new BLPFile(data);
-					await blp.saveToPNG(exportPath, core.view.config.exportTextureAlpha);
+					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
 					exportPaths.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {
@@ -167,5 +167,11 @@ core.registerLoadFunc(async () => {
 		}
 
 		await exportFiles(userSelection);
+	});
+
+	// Track when the user changes the colour channel mask.
+	core.view.$watch('config.exportChannelMask', () => {
+		if (!core.view.isBusy && selectedFile !== null)
+			previewTexture(selectedFile);
 	});
 });

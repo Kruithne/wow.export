@@ -86,42 +86,42 @@ class BLPImage {
 
 	/**
 	 * Encode this image as a data URL and return it.
-	 * @param {boolean} useAlpha 
+	 * @param {number} mask
 	 * @returns {string}
 	 */
-	getDataURL(useAlpha = true) {
-		return this.toCanvas(useAlpha).toDataURL();
+	getDataURL(mask = 0b1111) {
+		return this.toCanvas(mask).toDataURL();
 	}
 
 	/**
 	 * Return a canvas with this BLP painted onto it.
-	 * @param {boolean} useAlpha 
+	 * @param {number} mask
 	 */
-	toCanvas(useAlpha = true) {
+	toCanvas(mask = 0b1111) {
 		const canvas = document.createElement('canvas');
 		canvas.width = this.width;
 		canvas.height = this.height;
 
-		this.drawToCanvas(canvas, 0, useAlpha);
+		this.drawToCanvas(canvas, 0, mask);
 		return canvas;
 	}
 
 	/**
 	 * Save this BLP as PNG file.
 	 * @param {string} file 
-	 * @param {boolean} useAlpha 
+	 * @param {number} mask
 	 * @param {number} mipmap
 	 */
-	async saveToPNG(file, useAlpha = true, mipmap = 0) {
+	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
 		this._prepare(mipmap);
 
 		const png = new PNGWriter(this.scaledWidth, this.scaledHeight);
 		const pixelData = png.getPixelData();
 
 		switch (this.encoding) {
-			case 1: this._getUncompressed(pixelData, useAlpha); break;
-			case 2: this._getCompressed(pixelData, useAlpha); break;
-			case 3: this._marshalBGRA(pixelData, useAlpha); break;
+			case 1: this._getUncompressed(pixelData, mask); break;
+			case 2: this._getCompressed(pixelData, mask); break;
+			case 3: this._marshalBGRA(pixelData, mask); break;
 		}
 
 		await png.write(file);
@@ -150,18 +150,18 @@ class BLPImage {
 	 * Draw the contents of this BLP file onto a canvas.
 	 * @param {HTMLElement} canvas 
 	 * @param {number} mipmap 
-	 * @param {boolean} useAlpha
+	 * @param {number} mask
 	 */
-	drawToCanvas(canvas, mipmap = 0, useAlpha = true) {
+	drawToCanvas(canvas, mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
 		const ctx = canvas.getContext('2d');
 		const canvasData = ctx.createImageData(this.scaledWidth, this.scaledHeight);
 
 		switch (this.encoding) {
-			case 1: this._getUncompressed(canvasData.data, useAlpha); break;
-			case 2: this._getCompressed(canvasData.data, useAlpha); break;
-			case 3: this._marshalBGRA(canvasData.data, useAlpha); break;
+			case 1: this._getUncompressed(canvasData.data, mask); break;
+			case 2: this._getCompressed(canvasData.data, mask); break;
+			case 3: this._marshalBGRA(canvasData.data, mask); break;
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
@@ -170,16 +170,16 @@ class BLPImage {
 	/**
 	 * Get the contents of this BLP as an RGBA UInt8 array.
 	 * @param {number} mipmap 
-	 * @param {boolean} useAlpha 
+	 * @param {number} mask
 	 */
-	toUInt8Array(mipmap = 0, useAlpha = true) {
+	toUInt8Array(mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
 		const arr = new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
 		switch (this.encoding) {
-			case 1: this._getUncompressed(arr, useAlpha); break;
-			case 2: this._getCompressed(arr, useAlpha); break;
-			case 3: this._marshalBGRA(arr, useAlpha); break;
+			case 1: this._getUncompressed(arr, mask); break;
+			case 2: this._getCompressed(arr, mask); break;
+			case 3: this._marshalBGRA(arr, mask); break;
 		}
 
 		return arr;
@@ -212,10 +212,10 @@ class BLPImage {
 	/**
 	 * Extract compressed data.
 	 * @param {ImageData} canvasData
-	 * @param {boolean} useAlpha
+	 * @param {number} mask
 	 * @private
 	 */
-	_getCompressed(canvasData, useAlpha) {
+	_getCompressed(canvasData, mask = 0b1111) {
 		const flags = this.alphaDepth > 1 ? (this.alphaEncoding === 7 ? DXT5 : DXT3) : DXT1;
 		const data = canvasData ? canvasData : new Array(this.scaledWidth * this.scaledHeight * 4);
 
@@ -328,10 +328,10 @@ class BLPImage {
 
 						if (sX < sw && sY < sh) {
 							let pixel = 4 * (sw * sY + sX);
-							for (let i = 0; i < 3; i++)
-								data[pixel + i] = target[blockPos + i];
-
-							data[pixel + 3] = useAlpha ? target[blockPos + 3] : 255;
+							data[pixel + 0] = (mask & 0b1) ? target[blockPos + 0] : 0;
+							data[pixel + 1] = (mask & 0b10) ? target[blockPos + 1] : 0;
+							data[pixel + 2] = (mask & 0b100) ? target[blockPos + 2] : 0;
+							data[pixel + 3] = (mask & 0b1000) ? target[blockPos + 3] : 255;
 						}
 						blockPos += 4;
 					}
@@ -347,26 +347,31 @@ class BLPImage {
 	/**
 	 * Match the uncompressed data with the palette.
 	 * @param {ImageData} canvasData
-	 * @param {boolean} useAlpha
+	 * @param {number} mask
 	 * @returns {BufferWrapper|undefined}
 	 * @private
 	 */
-	_getUncompressed(canvasData, useAlpha) {
+	_getUncompressed(canvasData, mask) {
 		if (canvasData) {
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const ofs = i * 4;
 				const colour = this.palette[this.rawData[i]];
 				
-				canvasData[ofs] = colour[2];
-				canvasData[ofs + 1] = colour[1];
-				canvasData[ofs + 2] = colour[0];
-				canvasData[ofs + 3] = useAlpha ? this._getAlpha(i) : 255;
+				canvasData[ofs] = (mask & 0b1) ? colour[2] : 0;
+				canvasData[ofs + 1] = (mask & 0b10) ? colour[1] : 0;
+				canvasData[ofs + 2] = (mask & 0b100) ? colour[0] : 0;
+				canvasData[ofs + 3] = (mask & 0b1000) ? this._getAlpha(i) : 255;
 			}
 		} else {
 			const buf = BufferWrapper.alloc(this.scaledLength * 4);
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const colour = this.palette[this.rawData[i]];
-				buf.writeUInt8([colour[2], colour[1], colour[0], useAlpha ? this._getAlpha(i) : 255]);
+				buf.writeUInt8([
+					(mask & 0b1) ? colour[2] : 0,
+					(mask & 0b10) ? colour[1] : 0,
+					(mask & 0b100) ? colour[0] : 0,
+					(mask & 0b1000) ? this._getAlpha(i) : 255
+				]);
 			}
 			buf.seek(0);
 			return buf;
@@ -376,27 +381,30 @@ class BLPImage {
 	/**
 	 * Marshal a BGRA array into an RGBA ordered buffer.
 	 * @param {ImageData} canvasData
-	 * @param {boolean} useAlpha
+	 * @param {number} mask
 	 * @returns {BufferWrapper|undefined}
 	 * @private
 	 */
-	_marshalBGRA(canvasData, useAlpha) {
+	_marshalBGRA(canvasData, mask) {
 		const data = this.rawData;
 		
 		if (canvasData) {
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;
-				canvasData[ofs] = data[ofs + 2];
-				canvasData[ofs + 1] = data[ofs + 1];
-				canvasData[ofs + 2] = data[ofs];
-				canvasData[ofs + 3] = useAlpha ? data[ofs + 3] : 255;
+				canvasData[ofs] = (mask & 0b1) ? data[ofs + 2] : 0;
+				canvasData[ofs + 1] = (mask & 0b10) ? data[ofs + 1] : 0;
+				canvasData[ofs + 2] = (mask & 0b100) ? data[ofs] : 0;
+				canvasData[ofs + 3] = (mask & 0b1000) ? data[ofs + 3] : 255;
 			}
 		} else {
 			const buf = BufferWrapper.alloc(data.length);
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;
 				buf.writeUInt8([
-					data[ofs + 2], data[ofs + 1], data[ofs], useAlpha ? data[ofs + 3] : 255
+					(mask & 0b1) ? data[ofs + 2] : 0,
+					(mask & 0b10) ? data[ofs + 1] : 0,
+					(mask & 0b100) ? data[ofs] : 0,
+					(mask & 0b1000) ? data[ofs + 3] : 255
 				]);
 			}
 			buf.seek(0);

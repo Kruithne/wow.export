@@ -56,7 +56,7 @@ const processQueue = () => {
 	const entry = _queue.pop();
 	core.view.casc.getFile(entry.fileDataID).then(data => {
 		const blp = new BLPFile(data);
-		entry.rule.style.backgroundImage = 'url(' + blp.getDataURL(false) + ')';
+		entry.rule.style.backgroundImage = 'url(' + blp.getDataURL(0b0111) + ')';
 	}).catch(() => {
 		// Icon failed to load. Keep the rule and leave it empty.
 	}).finally(() => {
