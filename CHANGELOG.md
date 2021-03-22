@@ -1,5 +1,6 @@
 0.1.29 (In Development)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
+- Added ability to select multiple files for import with the Blender add-on.
 - The 'successfully exported' toast will now remain visible until dismissed.
 - Models exported as OBJ no longer export with unused/loose vertices.
 - Objects imported via the wow.export Blender add-on now have sub-mesh specific vertex groups.

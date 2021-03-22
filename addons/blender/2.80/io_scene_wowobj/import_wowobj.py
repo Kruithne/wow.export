@@ -8,7 +8,6 @@ from mathutils import Quaternion
 
 def importWoWOBJAddon(objectFile, useAlpha = True):
     importWoWOBJ(objectFile, None, useAlpha)
-    return {'FINISHED'}
 
 def getFirstNodeOfType(nodes, nodeType):
     for node in nodes:

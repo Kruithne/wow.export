@@ -36,6 +36,7 @@ if 'bpy' in locals():
         importlib.reload(import_wowobj)
 
 import bpy
+import os
 
 from bpy_extras.io_utils import (ImportHelper, orientation_helper)
 
@@ -49,12 +50,17 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
 
     filename_ext = '.obj'
     filter_glob = bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
+    files = bpy.props.CollectionProperty(name = 'Files', type= bpy.types.OperatorFileListElement)
+    directory = bpy.props.StringProperty(subtype = 'DIR_PATH')
 
     useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
 
     def execute(self, context):
         from . import import_wowobj
-        return import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha)
+        for importFile in self.files:
+            import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha)
+
+        return {'FINISHED'}
 
     def draw(self, context):
         layout = self.layout
