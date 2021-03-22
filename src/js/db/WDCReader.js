@@ -416,6 +416,8 @@ class WDCReader {
 			// Skip parsing entries from encrypted sections.
 			if (header.tactKeyHash !== BigInt(0)) {
 				let isZeroed = true;
+
+				// Check if record data is all zeroes
 				data.seek(section.recordDataOfs);
 				for (let i = 0, n = section.recordDataSize; i < n; i++) {
 					if (data.readUInt8() !== 0x0) {
@@ -424,8 +426,20 @@ class WDCReader {
 					}
 				}
 
-				if (isZeroed)
+				// Check if first integer after string block (from id list or copy table) is non-0
+				if (isZeroed && wdcVersion === 3 && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
+					data.seek(section.stringBlockOfs + header.stringTableSize);
+					isZeroed = data.readUInt32LE() === 0;
+				}
+
+				// Check if first entry in offsetMap has size 0
+				if (isZeroed && wdcVersion === 3 && header.offsetMapIDCount > 0) 
+					isZeroed = offsetMap[0].size === 0;
+				
+				if (isZeroed) {
+					log.write("Skipping all-zero encrypted section " + sectionIndex + " in file " + this.fileName);
 					continue;
+				}
 			}
 
 			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
@@ -548,7 +562,11 @@ class WDCReader {
 							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
-							const bitpackedValue = rawValue >> (BigInt(recordFieldInfo.fieldOffsetBits) & BigInt(7)) & ((BigInt(1) << BigInt(recordFieldInfo.fieldSizeBits)) - BigInt(1));
+
+							// Get the remaining amount of bits that remain (we read to the nearest byte)
+							const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
+							const bitSize = BigInt(1 << recordFieldInfo.fieldSizeBits);
+							const bitpackedValue = rawValue >> bitOffset & (bitSize - BigInt(1));
 
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
@@ -563,19 +581,25 @@ class WDCReader {
 								out[prop] = bitpackedValue;
 							}
 
+							if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned) 
+								out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
+
 							break;
 					}
 
 					// Reinterpret field correctly for compression types other than None
 					if (recordFieldInfo.fieldCompression !== CompressionType.None) {
-						// TODO: Can arrays of other types than uint be bitpacked? If so, this needs support. Also, strings.
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
-							castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+							if (out[prop] < 0) 
+								castBuffer.writeBigInt64LE(BigInt(out[prop]));
+							else 
+								castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+							
 							castBuffer.seek(0);
 							switch (fieldType) {
 								case FieldType.String:
-									throw new Error('Strings currently not supported.');
+									throw new Error('Compressed string arrays currently not used/supported.');
 
 								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
 								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
@@ -586,6 +610,30 @@ class WDCReader {
 								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
 								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
 								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
+							}
+						} else {
+							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
+								castBuffer.seek(0);
+								if (out[prop] < 0) 
+									castBuffer.writeBigInt64LE(BigInt(out[prop][i]));
+								else 
+									castBuffer.writeBigUInt64LE(BigInt(out[prop][i]));
+							
+								castBuffer.seek(0);
+								switch (fieldType) {
+									case FieldType.String:
+										throw new Error('Compressed string arrays currently not used/supported.');
+
+									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
+									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
+									case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
+									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
+									case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
+									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
+									case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
+									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
+									case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
+								}
 							}
 						}
 					}

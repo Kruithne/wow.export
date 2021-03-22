@@ -35,6 +35,7 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
         def __init__(self):
             self.usemtl = ''
             self.name = ''
+            self.verts = set()
             self.faces = []
 
     curMesh = OBJMesh()
@@ -57,11 +58,9 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
                 uv.append([float(v) for v in line_split[1:]])
             elif line_start == b'f':
                 line_split = line_split[1:]
-                meshes[meshIndex].faces.append((
-                    int(line_split[0].split(b'/')[0]),
-                    int(line_split[1].split(b'/')[0]),
-                    int(line_split[2].split(b'/')[0])
-                ))
+                fv = [int(v.split(b'/')[0]) for v in line_split]
+                meshes[meshIndex].faces.append((fv[0], fv[1], fv[2]))
+                meshes[meshIndex].verts.update([i - 1 for i in fv])
             elif line_start == b'g':
                 meshIndex += 1
                 meshes.append(OBJMesh())
@@ -223,6 +222,11 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
 
     bm.to_mesh(newmesh)
     bm.free()
+
+    # needed to have a mesh before we can create vertex groups, so do that now
+    for mesh in sorted(meshes, key=lambda m: m.name.lower()):
+        vg = obj.vertex_groups.new(name=f"{mesh.name}")
+        vg.add(list(mesh.verts), 1.0, "REPLACE")
 
     ## Rotate object the right way
     obj.rotation_euler = [0, 0, 0]
