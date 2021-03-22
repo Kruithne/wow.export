@@ -231,7 +231,8 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
     obj.rotation_euler = [0, 0, 0]
     obj.rotation_euler.x = radians(90)
 
-    bpy.context.scene.collection.objects.link(obj)
+    # Defaults to master collection if no collection exists.
+    bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)
     obj.select_set(True)
 
     ## WoW coordinate system
