@@ -62,7 +62,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
                 import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha)
         elif self.filepath:
             # Backwards compatibility for old API for custom tooling.
-            import_wowobj.importWoWOBJAddon(self.filepath)
+            import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha)
 
         return {'FINISHED'}
 
