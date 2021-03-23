@@ -57,8 +57,12 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         from . import import_wowobj
-        for importFile in self.files:
-            import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha)
+        if self.files:
+            for importFile in self.files:
+                import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha)
+        elif self.filepath:
+            # Backwards compatibility for old API for custom tooling.
+            import_wowobj.importWoWOBJAddon(self.filepath)
 
         return {'FINISHED'}
 
