@@ -5,6 +5,7 @@
  */
 const core = require('../core');
 const listfile = require('../casc/listfile');
+const MultiMap = require('../MultiMap');
 
 const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
@@ -40,18 +41,19 @@ class Item {
 	 * @param {number} id 
 	 * @param {object} itemSparseRow 
 	 * @param {?object} itemAppearanceRow
-	 * @param {?object} itemDisplayInfoRow
+	 * @param {?Array} textures
+	 * @param {?Array} models
 	 */
-	constructor(id, itemSparseRow, itemAppearanceRow, itemDisplayInfoRow) {
+	constructor(id, itemSparseRow, itemAppearanceRow, textures, models) {
 		this.id = id;
 		this.name = itemSparseRow.Display_lang;
 		this.inventoryType = itemSparseRow.InventoryType;
 		this.quality = itemSparseRow.OverallQualityID;
 
 		this.icon = itemAppearanceRow?.DefaultIconFileDataID ?? 0;
-		
-		this.models = itemDisplayInfoRow?.ModelResourcesID.filter(e => e !== 0);
-		this.textures = itemDisplayInfoRow?.ModelMaterialResourcesID.filter(e => e !== 0);
+
+		this.models = models;
+		this.textures = textures;
 
 		this.modelCount = this.models?.length ?? 0;
 		this.textureCount = this.textures?.length ?? 0;
@@ -129,7 +131,7 @@ const viewItemTextures = (item) => {
 
 core.events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = core.createProgress(4);
+	const progress = core.createProgress(5);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
@@ -145,6 +147,10 @@ core.events.once('screen-tab-items', async () => {
 	const itemModifiedAppearance = new WDCReader('DBFilesClient/ItemModifiedAppearance.db2');
 	await itemModifiedAppearance.parse();
 
+	await progress.step('Loading item materials...');
+	const itemDisplayInfoMaterialRes = new WDCReader('DBFilesClient/ItemDisplayInfoMaterialRes.db2');
+	await itemDisplayInfoMaterialRes.parse();
+
 	const itemAppearance = new WDCReader('DBFilesClient/ItemAppearance.db2');
 	await itemAppearance.parse();
 
@@ -157,6 +163,10 @@ core.events.once('screen-tab-items', async () => {
 	for (const row of itemModifiedAppearance.getAllRows().values())
 		appearanceMap.set(row.ItemID, row.ItemAppearanceID);
 
+	const materialMap = new MultiMap();
+	for (const row of itemDisplayInfoMaterialRes.getAllRows().values())
+		materialMap.set(row.ItemDisplayInfoID, row.MaterialResourcesID);
+
 	for (const [itemID, itemRow] of rows) {
 		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
 			continue;
@@ -164,11 +174,27 @@ core.events.once('screen-tab-items', async () => {
 		const itemAppearanceID = appearanceMap.get(itemID);
 		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
 
-		let itemDisplayInfoRow = null;
-		if (itemAppearanceRow !== null)
-			itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+		let materials = null;
+		let models = null;
+		if (itemAppearanceRow !== null) {
+			materials = [];
+			models = [];
 
-		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow, itemDisplayInfoRow)));
+			const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+			if (itemDisplayInfoRow !== null) {
+				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
+				models.push(...itemDisplayInfoRow.ModelResourcesID);
+			}
+
+			const materialRes = materialMap.get(itemAppearanceRow.ItemDisplayInfoID);
+			if (materialRes !== undefined)
+				Array.isArray(materialRes) ? materials.push(...materialRes) : materials.push(materialRes);
+
+			materials = materials.filter(e => e !== 0);
+			models = models.filter(e => e !== 0);
+		}
+
+		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow, materials, models)));
 	}
 
 	// Show the item viewer screen.
