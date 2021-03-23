@@ -64,14 +64,27 @@ const processQueue = () => {
 	});
 };
 
+const removeRule = (rule) => {
+	const sheet = getStylesheet();
+	for (let i = 0; i < sheet.rules.length; i++) {
+		if (sheet.rules[i] === rule) {
+			sheet.deleteRule(i);
+			break;
+		}
+	}
+};
+
 const queueItem = (fileDataID, rule) => {
 	_queue.push({ fileDataID, rule });
 
 	// If the queue is full, remove an element from the front rather than the back
 	// since we want to prioritize the most recently requested icons, as they're
 	// most likely the ones the user can see.
-	if (_queue.length > QUEUE_LIMIT)
-		_queue.shift();
+	if (_queue.length > QUEUE_LIMIT) {
+		// Since we're dropping the rule, we need to make sure to remove the rule itself.
+		const removed = _queue.shift();
+		removeRule(removed.rule);
+	}
 
 	if (!_loading)
 		processQueue();
