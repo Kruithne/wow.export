@@ -983,7 +983,7 @@ class ADTExporter {
 								const wmo = new WMOExporter(data, fileDataID);
 
 								if (config.mapsIncludeWMOSets)
-									wmo.setDoodadSetMask({ [model.doodadSet]: { checked: true } });
+									wmo.setDoodadSetMask({ 0: { checked: true }, [model.doodadSet]: { checked: true }});
 
 								await wmo.exportAsOBJ(modelPath, helper);
 

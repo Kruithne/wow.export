@@ -5,6 +5,7 @@
 - Added ability to toggle individual colour channels in the texture browser.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
+- Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
 - The 'successfully exported' toast will now remain visible until dismissed.
 - Models imported with the Blender add-on will now be added to the active collection.
 - Models exported as OBJ no longer export with unused/loose vertices.
