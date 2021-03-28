@@ -54,15 +54,16 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     directory = bpy.props.StringProperty(subtype = 'DIR_PATH')
 
     useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
+    createVertexGroups = bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
 
     def execute(self, context):
         from . import import_wowobj
         if self.files:
             for importFile in self.files:
-                import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha)
+                import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha, self.createVertexGroups)
         elif self.filepath:
             # Backwards compatibility for old API for custom tooling.
-            import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha)
+            import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha, self.createVertexGroups)
 
         return {'FINISHED'}
 
@@ -73,6 +74,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box = layout.box()
 
         box.prop(self, 'useAlpha')
+        box.prop(self, 'createVertexGroups')
 
 def menu_func_import(self, context):
     self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')

@@ -3,11 +3,11 @@
 - Added ability to select multiple files for import with the Blender add-on.
 - Added per-submesh vertex groups to objects imported with the Blender-add-on.
 - Added ability to toggle individual colour channels in the texture browser.
+- Added option in Blender add-on to create vertex groups for submeshes.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
 - The 'successfully exported' toast will now remain visible until dismissed.
-- Models imported with the Blender add-on will now be added to the active collection.
 - Models exported as OBJ no longer export with unused/loose vertices.
 
 0.1.28 (12-03-2021)

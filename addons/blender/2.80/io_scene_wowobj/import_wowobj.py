@@ -6,8 +6,8 @@ import csv
 from math import radians
 from mathutils import Quaternion
 
-def importWoWOBJAddon(objectFile, useAlpha = True):
-    importWoWOBJ(objectFile, None, useAlpha)
+def importWoWOBJAddon(objectFile, useAlpha = True, createVertexGroups = False):
+    importWoWOBJ(objectFile, None, useAlpha, createVertexGroups)
 
 def getFirstNodeOfType(nodes, nodeType):
     for node in nodes:
@@ -16,7 +16,7 @@ def getFirstNodeOfType(nodes, nodeType):
 
     return None
 
-def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
+def importWoWOBJ(objectFile, givenParent = None, useAlpha = True, createVertexGroups = False):
     baseDir, fileName = os.path.split(objectFile)
 
     print('Parsing OBJ: ' + fileName)
@@ -223,9 +223,10 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
     bm.free()
 
     # needed to have a mesh before we can create vertex groups, so do that now
-    for mesh in sorted(meshes, key=lambda m: m.name.lower()):
-        vg = obj.vertex_groups.new(name=f"{mesh.name}")
-        vg.add(list(mesh.verts), 1.0, "REPLACE")
+    if createVertexGroups:
+        for mesh in sorted(meshes, key=lambda m: m.name.lower()):
+            vg = obj.vertex_groups.new(name=f"{mesh.name}")
+            vg.add(list(mesh.verts), 1.0, "REPLACE")
 
     ## Rotate object the right way
     obj.rotation_euler = [0, 0, 0]
@@ -311,11 +312,11 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha)
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha, createVertexGroups)
                         else:
                             ## Don't copy WMOs with doodads!
                             if os.path.exists(os.path.join(baseDir, row['ModelFile'].replace('.obj', '_ModelPlacementInformation.csv'))):
-                                importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha)
+                                importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, useAlpha, createVertexGroups)
                             else:
                                 originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                                 importedFile = originalObject.copy()
@@ -328,7 +329,7 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha, createVertexGroups)
                         else:
                             originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                             importedFile = originalObject.copy()
@@ -348,7 +349,7 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
                     elif row['Type'] == 'gobj':
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha, createVertexGroups)
                         else:
                             originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                             importedFile = originalObject.copy()
@@ -368,7 +369,7 @@ def importWoWOBJ(objectFile, givenParent = None, useAlpha = True):
                     # WMO CSV
                     print('WMO M2 import: ' + row['ModelFile'])
                     if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                        importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha)
+                        importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, useAlpha, createVertexGroups)
                     else:
                         originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                         importedFile = originalObject.copy()
