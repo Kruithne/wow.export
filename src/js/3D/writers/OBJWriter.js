@@ -156,7 +156,7 @@ class OBJWriter {
 
 			const triangles = mesh.triangles;
 			for (let i = 0, n = triangles.length; i < n; i += 3) {
-				const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (uvMap.get(triangles[i] + 1)) + '/' + (normalMap.get(triangles[i]) + 1);
+				const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (uvMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
 				const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (uvMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
 				const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (uvMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
 
