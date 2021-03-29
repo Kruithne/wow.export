@@ -6,8 +6,8 @@
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
+- Fixed issue that caused OBJ models to export with unused/loose vertices.
 - The 'successfully exported' toast will now remain visible until dismissed.
-- Models exported as OBJ no longer export with unused/loose vertices.
 
 0.1.28 (12-03-2021)
 - Added skin selection/export support for creatures/items.
