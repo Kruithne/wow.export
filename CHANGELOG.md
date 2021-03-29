@@ -1,7 +1,6 @@
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
 - Added ability to select multiple files for import with the Blender add-on.
-- Added per-submesh vertex groups to objects imported with the Blender-add-on.
 - Added ability to toggle individual colour channels in the texture browser.
 - Added option in Blender add-on to create vertex groups for submeshes.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
