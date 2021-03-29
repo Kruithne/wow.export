@@ -229,6 +229,7 @@ class M2Exporter {
 
 		if (exportMeta) {
 			json.addProperty('textures', this.m2.textures);
+			json.addProperty('materials', this.m2.materials);
 			json.addProperty('textureCombos', this.m2.textureCombos);
 			json.addProperty('skin', {
 				subMeshes: skin.subMeshes,

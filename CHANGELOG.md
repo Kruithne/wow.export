@@ -3,6 +3,7 @@
 - Added ability to select multiple files for import with the Blender add-on.
 - Added ability to toggle individual colour channels in the texture browser.
 - Added option in Blender add-on to create vertex groups for submeshes.
+- Added render flags and blending mode data to M2 meta data exports.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
