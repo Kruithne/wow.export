@@ -1,4 +1,4 @@
-0.1.29 (In Development)
+0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
 - Added ability to select multiple files for import with the Blender add-on.
 - Added per-submesh vertex groups to objects imported with the Blender-add-on.
