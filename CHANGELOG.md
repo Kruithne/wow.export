@@ -8,6 +8,7 @@
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
 - Fixed issue that caused OBJ models to export with unused/loose vertices.
+- Fixed issue that caused skins to disappear when switching between item models.
 - The 'successfully exported' toast will now remain visible until dismissed.
 
 0.1.28 (12-03-2021)

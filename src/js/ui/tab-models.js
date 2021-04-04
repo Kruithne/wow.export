@@ -433,7 +433,7 @@ core.registerLoadFunc(async () => {
 		}
 
 		if (display.textures.length > 0)
-			selectedVariantTextureIDs = display.textures;
+			selectedVariantTextureIDs = [...display.textures];
 
 		activeRenderer.applyReplaceableTextures(display);
 	});
