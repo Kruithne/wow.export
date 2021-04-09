@@ -21,7 +21,7 @@
 bl_info = {
     'name': 'Import WoW OBJ files with doodads',
     'author': 'Marlamin, Kruithne',
-    'version': (0, 3, 9),
+    'version': (0, 3, 10),
     'blender': (2, 92, 0),
     'location': 'File > Import-Export > WoW M2/WMO/ADT (.obj)',
     'description': 'Import OBJ files exported by wow.export with WMOs and doodads',
@@ -42,6 +42,14 @@ from bpy_extras.io_utils import (ImportHelper, orientation_helper)
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 
+class Settings:
+    useAlpha = True
+    createVertexGroups = False
+    allowDuplicates = False
+
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False):
+        self.useAlpha, self.createVertexGroups, self.allowDuplicates = useAlpha, createVertexGroups, allowDuplicates
+
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File with additional ADT metadata'''
     bl_idname = 'import_scene.wowobj'
@@ -55,15 +63,18 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
 
     useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
     createVertexGroups = bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
+    allowDuplicates = bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
 
     def execute(self, context):
+        settings = Settings(useAlpha = self.useAlpha, createVertexGroups = self.createVertexGroups, allowDuplicates = self.allowDuplicates)
+
         from . import import_wowobj
         if self.files:
             for importFile in self.files:
-                import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), self.useAlpha, self.createVertexGroups)
+                import_wowobj.importWoWOBJAddon(os.path.join(self.directory, importFile.name), settings)
         elif self.filepath:
             # Backwards compatibility for old API for custom tooling.
-            import_wowobj.importWoWOBJAddon(self.filepath, self.useAlpha, self.createVertexGroups)
+            import_wowobj.importWoWOBJAddon(self.filepath, settings)
 
         return {'FINISHED'}
 
@@ -75,6 +86,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
 
         box.prop(self, 'useAlpha')
         box.prop(self, 'createVertexGroups')
+        box.prop(self, 'allowDuplicates')
 
 def menu_func_import(self, context):
     self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')
