@@ -5,6 +5,7 @@
 - Added option in Blender add-on to create vertex groups for submeshes.
 - Added option in Blender add-on to bypass anti-duplication check for ADT imports.
 - Added render flags and blending mode data to M2 meta data exports.
+- Added texture types to M2 meta data exports.
 - Fixed issue that prevented tiles with missing textures (such as Pandaria_20_20) from exporting.
 - Fixed issue that caused exports to 'cancel' after closing the 'export successful' toast.
 - Fixed issue that caused default doodad sets in WMOs to not export for ADT tiles.
