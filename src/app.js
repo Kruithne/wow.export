@@ -92,6 +92,7 @@ require('./js/components/file-field');
 require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
+require('./js/components/data-table');
 
 require('./js/ui/source-select');
 require('./js/ui/tab-textures');
@@ -101,6 +102,7 @@ require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
 require('./js/ui/tab-items');
+require('./js/ui/tab-db2');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

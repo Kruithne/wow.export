@@ -330,6 +330,13 @@
 	}
 }
 
+#tab-db2 {
+	grid-template-columns: 1fr 3fr;
+	.list-container{
+		min-width: 20vw;
+	}
+}
+
 .filter {
 	display: flex;
 	align-items: center;
@@ -377,6 +384,14 @@
 		left: 0;
 		right: 0;
 		bottom: 25px;
+	}
+
+	.ui-datatable {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0px;
 	}
 }
 

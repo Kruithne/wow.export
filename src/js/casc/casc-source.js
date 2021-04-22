@@ -116,6 +116,7 @@ class CASC {
 			core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
 			core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
 			core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, showFileIDs);
+			core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2', showFileIDs);
 		}, { immediate: true });
 	}
 

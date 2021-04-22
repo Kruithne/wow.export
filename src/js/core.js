@@ -50,6 +50,7 @@ const view = {
 	userInputFilterModels: '', // Value of the 'filter' field for models.
 	userInputFilterMaps: '', // Value of the 'filter' field for maps.
 	userInputFilterItems: '', // Value of the 'filter' field of items.
+	userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
@@ -57,12 +58,16 @@ const view = {
 	selectionText: [], // Current user selection of text files.
 	selectionMaps: [], // Current user selection of maps.
 	selectionItems: [], // Current user selection of items.
+	selectionDB2s: [], // Current user selection of DB2s.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
 	listfileText: [], // Filtered listfile for text files.
 	listfileModels: [], // Filtered listfile for M2/WMO models.
 	listfileItems: [], // Filtered item entries.
+	listfileDB2s: [], // Filtered DB2 entries.
+	tableBrowserHeaders: [], // DB2 headers
+	tableBrowserRows: [], // DB2 rows
 	availableLocale: Locale, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	textViewerSelectedText: '', // Active text for the text viewer.
