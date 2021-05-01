@@ -22,6 +22,7 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
+const WMOLoader = require('../3D/loaders/WMOLoader');
 
 const WDCReader = require('../db/WDCReader');
 
@@ -234,7 +235,9 @@ const exportFiles = async (files, isLocal = false) => {
 			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
+		const casc = core.view.casc;
 		const exportSkins = core.view.config.modelsExportSkin;
+		const exportWMOGroups = core.view.config.modelsExportWMOGroups;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
@@ -247,7 +250,7 @@ const exportFiles = async (files, isLocal = false) => {
 			const fileDataID = listfile.getByFilename(fileName);
 			
 			try {
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
+				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFileByName(fileName));
 				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 				const fileNameLower = fileName.toLowerCase();
 
@@ -257,19 +260,37 @@ const exportFiles = async (files, isLocal = false) => {
 						await data.writeToFile(exportPath);
 						exportPaths.writeLine(exportPath);
 
+						const outDir = path.dirname(exportPath);
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
-							const skinPath = path.dirname(exportPath);
 							for (const skin of skins) {
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
 									return;
 
-								const skinData = await core.view.casc.getFile(skin.fileDataID);
-								await skinData.writeToFile(path.join(skinPath, path.basename(skin.fileName)));
+								const skinData = await casc.getFile(skin.fileDataID);
+								await skinData.writeToFile(path.join(outDir, path.basename(skin.fileName)));
+							}
+						} else if (exportWMOGroups == true && fileNameLower.endsWith('.wmo') === true) {
+							const wmo = new WMOLoader(data, fileDataID);
+							await wmo.load();
+							
+							for (let i = 0, n = wmo.groupCount; i < n; i++) {
+								// Abort if the export has been cancelled.
+								if (helper.isCancelled())
+									return;
+
+								const groupName = fileName.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
+								let groupData;
+								if (wmo.groupIDs)
+									groupData = await casc.getFile(wmo.groupIDs[i]);
+								else
+									groupData = await casc.getFileByName(groupName);
+
+								await groupData.writeToFile(path.join(outDir, path.basename(groupName)));
 							}
 						}
 						break;

@@ -400,7 +400,7 @@
 							<span class="header">Export</span>
 							<label class="ui-checkbox" title="Include textures when exporting models">
 								<input type="checkbox" v-model="config.modelsExportTextures"/>
-								<span>Export Textures</span>
+								<span>Textures</span>
 							</label>
 							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
 								<input type="checkbox" v-model="config.modelsExportTextures"/>
@@ -409,7 +409,11 @@
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
-									<span>Export .skin files</span>
+									<span>M2 Skin Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export WMO group files">
+									<input type="checkbox" v-model="config.modelsExportWMOGroups"/>
+									<span>WMO Groups</span>
 								</label>
 							</template>
 							<template v-if="modelViewerActiveType === 'm2'">

@@ -39,6 +39,7 @@
 	"modelsExportTextures": true,
 	"modelsExportCollision": false,
 	"modelsExportSkin": false,
+	"modelsExportWMOGroups": false,
 	"modelsExportUV2": false,
 	"modelsIncludeAlpha": true,
 	"soundPlayerVolume": 0.7,

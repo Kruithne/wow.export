@@ -1,6 +1,7 @@
 0.1.30 (In Development)
 - Added 'Export Textures' option to sidebar to allow models to be exported without textures.
 - Added fileDataID, fileName and internalName fields to exported M2 meta data.
+- Added option to export raw WMO group files (when exporting raw WMO models).
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
 - Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 
