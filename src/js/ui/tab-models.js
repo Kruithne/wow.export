@@ -61,6 +61,10 @@ const previewModel = async (fileName) => {
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	log.write('Previewing model %s', fileName);
 
+	// Reset skin selection.
+	core.view.modelViewerSkins = [];
+	core.view.modelViewerSkinsSelection = [];
+
 	try {
 		// Dispose the currently active renderer.
 		if (activeRenderer) {
@@ -150,7 +154,7 @@ const previewModel = async (fileName) => {
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), -1, null);
+			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
 			log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
