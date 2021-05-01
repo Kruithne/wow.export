@@ -953,6 +953,7 @@ class ADTExporter {
 					let worldModelIndex = 0;
 					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
+						const useADTSets = model & 0x80;
 						helper.setCurrentTaskValue(worldModelIndex++);
 
 						let fileDataID;
@@ -976,14 +977,23 @@ class ADTExporter {
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
-							const cacheID = fileDataID + '-' + model.doodadSet;
+							const cacheID = fileDataID + '-' + (useADTSets ? objAdt.doodadSets.join(',') : model.doodadSet);
 
 							if (!objectCache.has(cacheID)) {
 								const data = await casc.getFile(fileDataID);
 								const wmo = new WMOExporter(data, fileDataID);
 
-								if (config.mapsIncludeWMOSets)
-									wmo.setDoodadSetMask({ 0: { checked: true }, [model.doodadSet]: { checked: true }});
+								if (config.mapsIncludeWMOSets) {
+									const mask = { 0: { checked: true } };
+									if (useADTSets) {
+										for (const setIndex of objAdt.doodadSets)
+											mask[setIndex] = { checked: true };
+									} else {
+										mask[model.doodadSet] = { checked: true }
+									}
+									
+									wmo.setDoodadSetMask(mask);
+								}
 
 								await wmo.exportAsOBJ(modelPath, helper);
 

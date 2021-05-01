@@ -395,6 +395,11 @@ const ADTObjChunkHandlers = {
 				scale: data.readUInt16LE()
 			};
 		}
+	},
+
+	// MWDS
+	0x4D574453: function(data, chunkSize) {
+		this.doodadSets = data.readUInt16LE(chunkSize / 2);
 	}
 };
 
