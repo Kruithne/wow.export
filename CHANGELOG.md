@@ -1,3 +1,6 @@
+0.1.30 (In Development)
+- Here be strange things.
+
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
 - Added ability to select multiple files for import with the Blender add-on.
