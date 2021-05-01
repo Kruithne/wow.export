@@ -67,6 +67,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             elif line_start == b'usemtl':
                 meshes[meshIndex].usemtl = line_split[1].decode('utf-8')
 
+    # Defaults to master collection if no collection exists.
+    collection = bpy.context.view_layer.active_layer_collection.collection.objects
 
     ## Materials file (.mtl)
     materials = dict()
@@ -232,8 +234,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     obj.rotation_euler = [0, 0, 0]
     obj.rotation_euler.x = radians(90)
 
-    # Defaults to master collection if no collection exists.
-    bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)
+    collection.link(obj)
     obj.select_set(True)
 
     ## WoW coordinate system
@@ -255,21 +256,21 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 wmoparent.name = 'WMOs'
                 wmoparent.rotation_euler = [0, 0, 0]
                 wmoparent.rotation_euler.x = radians(-90)
-                bpy.context.scene.collection.objects.link(wmoparent)
+                collection.link(wmoparent)
 
                 doodadparent = bpy.data.objects.new('Doodads', None)
                 doodadparent.parent = obj
                 doodadparent.name = 'Doodads'
                 doodadparent.rotation_euler = [0, 0, 0]
                 doodadparent.rotation_euler.x = radians(-90)
-                bpy.context.scene.collection.objects.link(doodadparent)
+                collection.link(doodadparent)
 
                 gobjparent = bpy.data.objects.new('GameObjects', None)
                 gobjparent.parent = obj
                 gobjparent.name = 'GameObjects'
                 gobjparent.rotation_euler = [0, 0, 0]
                 gobjparent.rotation_euler.x = radians(-90)
-                bpy.context.scene.collection.objects.link(gobjparent)
+                collection.link(gobjparent)
             else:
                 importType = 'WMO'
                 if not givenParent:
@@ -279,7 +280,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     givenParent.name = 'Doodads'
                     givenParent.rotation_euler = [0, 0, 0]
                     givenParent.rotation_euler.x = radians(-90)
-                    bpy.context.scene.collection.objects.link(givenParent)
+                    collection.link(givenParent)
             for row in reader:
                 if importType == 'ADT':
                     if 'importedModelIDs' in bpy.context.scene:
@@ -309,7 +310,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         if row['ScaleFactor']:
                             parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
 
-                        bpy.context.scene.collection.objects.link(parent)
+                        collection.link(parent)
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
@@ -322,7 +323,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                                 originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                                 importedFile = originalObject.copy()
                                 importedFile.data = originalObject.data.copy()
-                                bpy.context.scene.collection.objects.link(importedFile)
+                                collection.link(importedFile)
 
                         importedFile.parent = parent
                     elif row['Type'] == 'm2':
@@ -336,7 +337,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                             importedFile = originalObject.copy()
                             importedFile.rotation_euler = [0, 0, 0]
                             importedFile.rotation_euler.x = radians(90)
-                            bpy.context.scene.collection.objects.link(importedFile)
+                            collection.link(importedFile)
 
                         importedFile.parent = doodadparent
 
@@ -356,7 +357,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                             importedFile = originalObject.copy()
                             importedFile.rotation_euler = [0, 0, 0]
                             importedFile.rotation_euler.x = radians(90)
-                            bpy.context.scene.collection.objects.link(importedFile)
+                            collection.link(importedFile)
 
                         importedFile.parent = gobjparent
                         importedFile.location = (float(row['PositionY']), -float(row['PositionX']), float(row['PositionZ']))
@@ -374,7 +375,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     else:
                         originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                         importedFile = originalObject.copy()
-                        bpy.context.scene.collection.objects.link(importedFile)
+                        collection.link(importedFile)
 
                     importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
 
