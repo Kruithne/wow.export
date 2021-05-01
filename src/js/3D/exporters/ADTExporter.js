@@ -859,7 +859,7 @@ class ADTExporter {
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
-								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								const m2 = new M2Exporter(await casc.getFile(fileDataID), undefined, fileDataID);
 								await m2.exportAsOBJ(modelPath, false, helper);
 
 								// Abort if the export has been cancelled.
@@ -914,7 +914,7 @@ class ADTExporter {
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
-								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								const m2 = new M2Exporter(await casc.getFile(fileDataID), undefined, fileDataID);
 								await m2.exportAsOBJ(modelPath, false, helper);
 
 								// Abort if the export has been cancelled.
@@ -1072,7 +1072,7 @@ class ADTExporter {
 				const modelName = path.basename(listfile.getByID(modelID));
 				const data = await casc.getFile(modelID);
 
-				const exporter = new M2Exporter(data);
+				const exporter = new M2Exporter(data, undefined, modelID);
 				const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
 				await exporter.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
 

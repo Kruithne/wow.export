@@ -463,7 +463,7 @@ class WMOExporter {
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
-								const m2Export = new M2Exporter(data);
+								const m2Export = new M2Exporter(data, undefined, fileDataID);
 								await m2Export.exportAsOBJ(m2Path, false, helper);
 
 								// Abort if the export has been cancelled.

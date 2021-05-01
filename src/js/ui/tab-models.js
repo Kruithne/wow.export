@@ -131,7 +131,7 @@ const previewModel = async (fileName) => {
 				// Keep a mapping of the name -> fileDataID for user selects.
 				activeSkins.set(skinName, display);
 			}
-			
+
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
 		}
@@ -244,6 +244,7 @@ const exportFiles = async (files, isLocal = false) => {
 				return;
 
 			fileName = listfile.stripFileEntry(fileName);
+			const fileDataID = listfile.getByFilename(fileName);
 			
 			try {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFileByName(fileName));
@@ -257,7 +258,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPaths.writeLine(exportPath);
 
 						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
-							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName));
+							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 							await exporter.exportTextures(exportPath, true, null, helper);
 
 							const skins = exporter.m2.getSkinList();
@@ -278,7 +279,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileNameLower.endsWith('.m2')) {
-							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName));
+							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)

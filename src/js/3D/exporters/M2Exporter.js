@@ -23,9 +23,11 @@ class M2Exporter {
 	 * Construct a new M2Exporter instance.
 	 * @param {BufferWrapper}
 	 * @param {Array} variantTextures
+	 * @param {number} fileDataID
 	 */
-	constructor(data, variantTextures) {
+	constructor(data, variantTextures, fileDataID) {
 		this.m2 = new M2Loader(data);
+		this.fileDataID = fileDataID;
 		this.variantTextures = variantTextures;
 	}
 
@@ -232,6 +234,9 @@ class M2Exporter {
 			return;
 
 		if (exportMeta) {
+			json.addProperty('fileDataID', this.fileDataID);
+			json.addProperty('fileName', listfile.getByID(this.fileDataID));
+			json.addProperty('internalName', this.m2.name);
 			json.addProperty('textures', this.m2.textures);
 			json.addProperty('textureTypes', this.m2.textureTypes);
 			json.addProperty('materials', this.m2.materials);
