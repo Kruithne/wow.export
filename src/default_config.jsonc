@@ -35,6 +35,7 @@
 	"listfileShowFileDataIDs": false,
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,
+	"modelViewerWireframe": false,
 	"modelsShowSidebar": false,
 	"modelsExportTextures": true,
 	"modelsExportCollision": false,

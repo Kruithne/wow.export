@@ -3,6 +3,7 @@
 - Added fileDataID, fileName and internalName fields to exported M2 meta data.
 - Added option to export raw WMO group files (when exporting raw WMO models).
 - Added support for MWDS, allowing ADT-defined multi-group support on WMO models.
+- Added a wireframe rendering mode to the 3D model preview for both M2 and WMO.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
 - Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 - Fixed issue that caused a crash when selecting an encrypted model with an unknown TACT key.

@@ -81,9 +81,13 @@ class WMORenderer {
 		view.modelViewerWMOSets = this.setArray;
 		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
 		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Update wireframe rendering.
+		this.updateWireframe();
 
 		// Drop reference to raw data, we don't need it now.
 		this.data = undefined;
@@ -222,6 +226,38 @@ class WMORenderer {
 	}
 
 	/**
+	 * Update the wireframe state for all active materials.
+	 */
+	updateWireframe() {
+		const renderWireframe = core.view.config.modelViewerWireframe;
+		const materials = this.getRenderMaterials(this.renderGroup, new Set());
+
+		for (const material of materials) {
+			material.wireframe = renderWireframe;
+			material.needsUpdate = true;
+		}
+	}
+
+	/**
+	 * Recursively collect render materials.
+	 * @param {object} root 
+	 * @param {Set} out 
+	 * @returns 
+	 */
+	getRenderMaterials(root, out) {
+		if (root.children) {
+			for (const child of root.children)
+				this.getRenderMaterials(child, out);
+		}
+		
+		if (root.material) {
+			for (const material of root.material)
+				out.add(material);
+		}
+		return out;
+	}
+
+	/**
 	 * Update the visibility status of doodad sets.
 	 */
 	async updateSets() {
@@ -279,8 +315,9 @@ class WMORenderer {
 		this.m2Clones = undefined;
 
 		// Unregister reactive watchers.
-		if (this.groupWatcher) this.groupWatcher();
-		if (this.setWatcher) this.setWatcher();
+		this.groupWatcher?.();
+		this.setWatcher?.();
+		this.wireframeWatcher?.();
 
 		// Empty reactive arrays.
 		if (this.groupArray) this.groupArray.splice(0);

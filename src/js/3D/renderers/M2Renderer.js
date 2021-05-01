@@ -41,12 +41,25 @@ class M2Renderer {
 			this.loadTextures();
 			await this.loadSkin(0);
 
-			if (this.reactive)
+			if (this.reactive) {
 				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+			}
 		}
 
 		// Drop reference to raw data, we don't need it now.
 		this.data = undefined;
+	}
+
+	/**
+	 * Update the wireframe state for all materials.
+	 */
+	updateWireframe() {
+		const renderWireframe = core.view.config.modelViewerWireframe;
+		for (const material of this.materials) {
+			material.wireframe = renderWireframe;
+			material.needsUpdate = true;
+		}
 	}
 
 	/**
@@ -139,6 +152,8 @@ class M2Renderer {
 	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
+		const renderWireframe = core.view.config.modelViewerWireframe;
+
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] !== type)
@@ -158,7 +173,7 @@ class M2Renderer {
 
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe });
 			this.renderCache.register(material, tex);
 
 			this.materials[i] = material;
@@ -171,8 +186,10 @@ class M2Renderer {
 	 */
 	loadTextures() {
 		const textures = this.m2.textures;
+
 		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
+
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
 
@@ -206,6 +223,8 @@ class M2Renderer {
 				this.materials[i] = this.defaultMaterial;
 			}
 		}
+
+		this.updateWireframe();
 	}
 
 	/**
@@ -236,9 +255,9 @@ class M2Renderer {
 	 * Dispose of this instance and release all resources.
 	 */
 	dispose() {
-		// Unregister geoset array watcher.
-		if (this.geosetWatcher)
-			this.geosetWatcher();
+		// Unregister reactive watchers.
+		this.geosetWatcher?.();
+		this.wireframeWatcher?.();
 
 		this.renderCache.retire(...this.materials);
 
