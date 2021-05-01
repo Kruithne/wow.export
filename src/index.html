@@ -414,7 +414,7 @@
 								<div class="list-toggles">
 									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 								</div>
-								<template v-if="modelViewerShowSkins">
+								<template>
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>

@@ -131,7 +131,7 @@ const previewModel = async (fileName) => {
 				// Keep a mapping of the name -> fileDataID for user selects.
 				activeSkins.set(skinName, display);
 			}
-
+			
 			core.view.modelViewerShowSkins = true;
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
