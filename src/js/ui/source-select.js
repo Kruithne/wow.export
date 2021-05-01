@@ -93,6 +93,8 @@ core.events.once('screen-source-select', async () => {
 		recentLocal = core.view.config.recentLocal = [];
 
 	const openInstall = async (installPath, product) => {
+		core.hideToast();
+		
 		try {
 			cascSource = new CASCLocal(installPath);
 			await cascSource.init();

@@ -7,6 +7,7 @@
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
 - Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 - Fixed issue that caused a crash when selecting an encrypted model with an unknown TACT key.
+- Fixed issue that caused 'invalid installation' error message from not dismissing after retry.
 
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
