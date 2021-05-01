@@ -1,4 +1,4 @@
-0.1.30 (In Development)
+0.1.30 (01-05-2021)
 - Added 'Export Textures' option to sidebar to allow models to be exported without textures.
 - Added fileDataID, fileName and internalName fields to exported M2 meta data.
 - Added option to export raw WMO group files (when exporting raw WMO models).
