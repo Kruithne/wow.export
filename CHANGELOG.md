@@ -1,6 +1,7 @@
 0.1.30 (In Development)
 - Added 'Export Textures' option to sidebar to allow models to be exported without textures.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
+- Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.

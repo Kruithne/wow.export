@@ -395,7 +395,7 @@ class ADTExporter {
 			}
 		}
 
-		if (!isSplittingTextures || (isAlphaMaps && !isSplittingAlphaMaps))
+		if ((!isAlphaMaps && !isSplittingTextures) || (isAlphaMaps && !isSplittingAlphaMaps))
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(vertices);
