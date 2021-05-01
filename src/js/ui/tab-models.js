@@ -132,7 +132,6 @@ const previewModel = async (fileName) => {
 				activeSkins.set(skinName, display);
 			}
 			
-			core.view.modelViewerShowSkins = true;
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
 		}

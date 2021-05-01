@@ -1,5 +1,5 @@
 0.1.30 (In Development)
-- Here be strange things.
+- Added 'Export Textures' option to sidebar to allow models to be exported without textures.
 
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.

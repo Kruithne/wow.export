@@ -398,8 +398,12 @@
 								<span>Show Grid</span>
 							</label>
 							<span class="header">Export</span>
-							<label class="ui-checkbox" title="Include alpha channel in exported model textures">
-								<input type="checkbox" v-model="config.modelsIncludeAlpha"/>
+							<label class="ui-checkbox" title="Include textures when exporting models">
+								<input type="checkbox" v-model="config.modelsExportTextures"/>
+								<span>Export Textures</span>
+							</label>
+							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
+								<input type="checkbox" v-model="config.modelsExportTextures"/>
 								<span>Texture Alpha</span>
 							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
@@ -414,7 +418,7 @@
 								<div class="list-toggles">
 									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 								</div>
-								<template>
+								<template v-if="config.modelsExportTextures">
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>

@@ -36,6 +36,7 @@
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,
 	"modelsShowSidebar": false,
+	"modelsExportTextures": true,
 	"modelsExportCollision": false,
 	"modelsExportSkin": false,
 	"modelsExportUV2": false,

@@ -48,11 +48,15 @@ class M2Exporter {
 	 */
 	async exportTextures(out, raw = false, mtl = null, helper, fullTexPaths = false) {
 		const config = core.view.config;
+		const validTextures = new Map();
+
+		if (!config.modelsExportTextures)
+			return validTextures;
+
 		await this.m2.load();
 
 		const useAlpha = config.modelsIncludeAlpha;
 
-		const validTextures = new Map();
 		let textureIndex = 0;
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.

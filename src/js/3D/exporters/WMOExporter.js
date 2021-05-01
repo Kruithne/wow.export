@@ -57,15 +57,18 @@ class WMOExporter {
 		const config = core.view.config;
 		const casc = core.view.casc;
 
+		const textureMap = new Map();
+		const materialMap = new Map();
+
+		if (!config.modelsExportTextures)
+			return { textureMap, materialMap };
+
 		// Ensure the WMO is loaded before reading materials.
 		await this.wmo.load();
 
 		const useAlpha = config.modelsIncludeAlpha;
 		const isClassic = !!this.wmo.textureNames;
 		const materialCount = this.wmo.materials.length;
-
-		const textureMap = new Map();
-		const materialMap = new Map();
 
 		helper.setCurrentTaskMax(materialCount);
 
