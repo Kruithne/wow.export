@@ -332,6 +332,15 @@
 								<input type="checkbox" v-model="config.mapsIncludeHoles"/>
 								<span>Include Holes</span>
 							</label>
+							<span class="header">Model Textures</span>
+							<label class="ui-checkbox" title="Include textures when exporting models">
+								<input type="checkbox" v-model="config.modelsExportTextures"/>
+								<span>Textures</span>
+							</label>
+							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
+								<input type="checkbox" v-model="config.modelsExportAlpha"/>
+								<span>Texture Alpha</span>
+							</label>
 							<span class="header">Terrain Texture Quality</span>
 							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</div>
@@ -407,7 +416,7 @@
 								<span>Textures</span>
 							</label>
 							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
-								<input type="checkbox" v-model="config.modelsExportTextures"/>
+								<input type="checkbox" v-model="config.modelsExportAlpha"/>
 								<span>Texture Alpha</span>
 							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">

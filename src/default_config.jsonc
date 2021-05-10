@@ -42,6 +42,7 @@
 	"modelsExportSkin": false,
 	"modelsExportWMOGroups": false,
 	"modelsExportUV2": false,
+	"modelsExportAlpha": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,

@@ -57,6 +57,8 @@ class M2Exporter {
 
 		await this.m2.load();
 
+		const useAlpha = config.modelsExportAlpha;
+
 		let textureIndex = 0;
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
@@ -125,7 +127,7 @@ class M2Exporter {
 						} else {
 							// Convert BLP to PNG.
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, 0b1111);
+							await blp.saveToPNG(texPath, useAlpha? 0b1111 : 0b0111);
 						}
 					} else {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);

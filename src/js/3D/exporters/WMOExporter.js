@@ -66,6 +66,7 @@ class WMOExporter {
 		// Ensure the WMO is loaded before reading materials.
 		await this.wmo.load();
 
+		const useAlpha = config.modelsExportAlpha;
 		const isClassic = !!this.wmo.textureNames;
 		const materialCount = this.wmo.materials.length;
 
