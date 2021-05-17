@@ -6,6 +6,16 @@
 
 const path = require('path');
 
+const fid_filter = (e) => {
+	const start = e.indexOf(' [');
+	const end = e.lastIndexOf(']');
+
+	if (start > -1 && end > -1)
+		return e.substring(start + 2, end);
+
+	return e;
+};
+
 Vue.component('listbox', {
 	/**
 	 * items: Item entries displayed in the list.
@@ -14,14 +24,14 @@ Vue.component('listbox', {
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
 	 * regex: If true, filter will be treated as a regular expression.
-	 * copydir: If true, CTRL + C will only copy directories.
+	 * copymode: Defines the behavior of CTRL + C.
 	 * pasteselection: If true, CTRL + V will load a selection.
 	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 * override: If provided, used as an override listfile.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copydir', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
 
 	/**
 	 * Reactive instance data.
@@ -251,8 +261,10 @@ Vue.component('listbox', {
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
 				let entries = this.selection;
-				if (this.copydir)
+				if (this.copymode == 'DIR')
 					entries = entries.map(e => path.dirname(e));
+				else if (this.copymode == 'FID')
+					entries = entries.map(fid_filter);
 
 				// Remove whitespace from paths to keep consistency with exports.
 				if (this.copytrimwhitespace)

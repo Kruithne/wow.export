@@ -6,6 +6,7 @@
 - Added a wireframe rendering mode to the 3D model preview for both M2 and WMO.
 - Added model texture controls to the map exporter interface.
 - Added product support for Classic TBC / PTR builds.
+- Replaced the 'Copy File Directories' setting with a 'Copy Mode' control, with a FileDataID option.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
 - Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 - Fixed issue that caused a crash when selecting an encrypted model with an unknown TACT key.
