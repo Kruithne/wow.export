@@ -7,6 +7,7 @@
 - Added model texture controls to the map exporter interface.
 - Added product support for Classic TBC / PTR builds.
 - Replaced the 'Copy File Directories' setting with a 'Copy Mode' control, with a FileDataID option.
+- Changed the default alpha mode to CHANNEL_PACKED in the Blender add-on.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
 - Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
 - Fixed issue that caused a crash when selecting an encrypted model with an unknown TACT key.

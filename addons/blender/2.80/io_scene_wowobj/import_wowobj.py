@@ -157,10 +157,9 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
             node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
 
+            image.image.alpha_mode = 'CHANNEL_PACKED'
             if settings.useAlpha:
                 node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
-            else:
-                image.image.alpha_mode = 'NONE'
 
             # Set the specular value to 0 by default.
             principled.inputs['Specular'].default_value = 0
