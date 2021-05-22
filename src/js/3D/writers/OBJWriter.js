@@ -130,20 +130,23 @@ class OBJWriter {
 		}
 
 		// Write UVs
-		const uvs = this.uvs;
-		for (let i = 0, j = 0, u = 0, n = uvs.length; i < n; j ++, i += 2) {
-			if (usedIndices.has(j)) {
-				uvMap.set(j, u++);
-				writer.writeLine('vt ' + uvs[i] + ' ' + uvs[i + 1]);
+		const hasUV = this.uvs.length > 0;
+		if (hasUV) {
+			const uvs = this.uvs;
+			for (let i = 0, j = 0, u = 0, n = uvs.length; i < n; j ++, i += 2) {
+				if (usedIndices.has(j)) {
+					uvMap.set(j, u++);
+					writer.writeLine('vt ' + uvs[i] + ' ' + uvs[i + 1]);
+				}
 			}
-		}
 
-		// We've had one, but what about second UVs?
-		// This is a non-standard property for wow.export
-		const uv2 = this.uvs2;
-		for (let i = 0, j = 0, n = uv2.length; i < n; j++, i += 2) {
-			if (usedIndices.has(j))
-				writer.writeLine('vt2 ' + uv2[i] + ' ' + uv2[i + 1]);
+			// We've had one, but what about second UVs?
+			// This is a non-standard property for wow.export
+			const uv2 = this.uvs2;
+			for (let i = 0, j = 0, n = uv2.length; i < n; j++, i += 2) {
+				if (usedIndices.has(j))
+					writer.writeLine('vt2 ' + uv2[i] + ' ' + uv2[i + 1]);
+			}
 		}
 
 		// Write meshes.
@@ -155,12 +158,22 @@ class OBJWriter {
 				writer.writeLine('usemtl ' + mesh.matName);
 
 			const triangles = mesh.triangles;
-			for (let i = 0, n = triangles.length; i < n; i += 3) {
-				const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (uvMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
-				const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (uvMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
-				const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (uvMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
+			if (hasUV) {
+				for (let i = 0, n = triangles.length; i < n; i += 3) {
+					const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (uvMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
+					const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (uvMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
+					const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (uvMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
 
-				writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
+					writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
+				}
+			} else {
+				for (let i = 0, n = triangles.length; i < n; i += 3) {
+					const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
+					const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
+					const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
+
+					writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
+				}
 			}
 		}
 
