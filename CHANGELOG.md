@@ -6,6 +6,7 @@
 - Added a wireframe rendering mode to the 3D model preview for both M2 and WMO.
 - Added model texture controls to the map exporter interface.
 - Added product support for Classic TBC / PTR builds.
+- Added portal information to exported WMO meta data.
 - Replaced the 'Copy File Directories' setting with a 'Copy Mode' control, with a FileDataID option.
 - Changed the default alpha mode to CHANNEL_PACKED in the Blender add-on.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
