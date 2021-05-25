@@ -154,8 +154,9 @@ const WMOChunkHandlers = {
 
 	// MOPV (Portal Vertices) [WMO Root]
 	0x4D4F5056: function(data, chunkSize) {
-		this.portalVertices = new Array(this.portalCount);
-		for (let i = 0; i < this.portalCount; i++)
+		const vertexCount = chunkSize / (3 * 4);
+		this.portalVertices = new Array(vertexCount);
+		for (let i = 0; i < vertexCount; i++)
 			this.portalVertices[i] = data.readFloatLE(3)
 	},
 
