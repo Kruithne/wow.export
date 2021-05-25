@@ -526,7 +526,10 @@ class WMOExporter {
 				set: wmo.setCount,
 				lod: wmo.lodCount
 			});
-
+			
+			json.addProperty('portalVertices', wmo.portalVertices);
+			json.addProperty('portalInfo', wmo.portalInfo);
+			json.addProperty('portalMapObjectRef', wmo.mopr);
 			json.addProperty('ambientColor', wmo.ambientColor);
 			json.addProperty('areaTableID', wmo.areaTableID);
 			json.addProperty('boundingBox1', wmo.boundingBox1);

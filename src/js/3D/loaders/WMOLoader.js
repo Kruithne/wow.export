@@ -152,6 +152,41 @@ const WMOChunkHandlers = {
 		}
 	},
 
+	// MOPV (Portal Vertices) [WMO Root]
+	0x4D4F5056: function(data, chunkSize) {
+		this.portalVertices = new Array(this.portalCount);
+		for (let i = 0; i < this.portalCount; i++)
+			this.portalVertices[i] = data.readFloatLE(3)
+	},
+
+	// MOPT (Portal Information) [WMO Root]
+	0x4D4F5054: function(data, chunkSize) {
+		this.portalInfo = new Array(this.portalCount);
+		for (let i = 0; i < this.portalCount; i++) {
+			this.portalInfo[i] = {
+				startVertex: data.readUInt16LE(),
+				count: data.readUInt16LE(),
+				plane: data.readFloatLE(4)
+			}
+		}
+	},
+
+	// MOPR (Map Object Portal References) [WMO Root]
+	0x4D4F5052: function(data, chunkSize) {
+		const entryCount = chunkSize / 8;
+		this.mopr = new  Array(entryCount);
+
+		for (let i = 0; i < entryCount; i++) {
+			this.mopr[i] = {
+				portalIndex: data.readUInt16LE(),
+				groupIndex: data.readUInt16LE(),
+				side: data.readInt16LE()
+			}
+
+			data.move(4); // Filler
+		}
+	},
+
 	// MOGN (Group Names) [WMO Root]
 	0x4D4F474E: function(data, chunkSize) {
 		this.groupNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
