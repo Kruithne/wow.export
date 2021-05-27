@@ -417,7 +417,7 @@ class WMOExporter {
 			const doodadSets = wmo.doodadSets;
 			for (let i = 0, n = doodadSets.length; i < n; i++) {
 				// Skip disabled doodad sets.
-				if (doodadSetMask && (!doodadSetMask[i] || !doodadSetMask[i].checked))
+				if (!doodadSetMask?.[i]?.checked)
 					continue;
 
 				const set = doodadSets[i];
