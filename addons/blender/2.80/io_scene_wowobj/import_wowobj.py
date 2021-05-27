@@ -106,65 +106,66 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     obj = bpy.data.objects.new(objname, newmesh)
 
     # Create a new material instance for each material entry.
-    for materialName, textureLocation in materials.items():
-        material = None
-        if materialName in bpy.data.materials:
-            material = bpy.data.materials[materialName]
-        else:
-            material = bpy.data.materials.new(name=materialName)
-            material.use_nodes = True
-            material.blend_method = 'CLIP'
+    if settings.importTextures:
+        for materialName, textureLocation in materials.items():
+            material = None
+            if materialName in bpy.data.materials:
+                material = bpy.data.materials[materialName]
+            else:
+                material = bpy.data.materials.new(name=materialName)
+                material.use_nodes = True
+                material.blend_method = 'CLIP'
 
-            node_tree = material.node_tree
-            nodes = node_tree.nodes
+                node_tree = material.node_tree
+                nodes = node_tree.nodes
 
-            # Note on socket reference localization:
-            # Unlike nodes, sockets can be referenced in English regardless of localization.
-            # This will break if the user sets the socket names to any non-default value.
+                # Note on socket reference localization:
+                # Unlike nodes, sockets can be referenced in English regardless of localization.
+                # This will break if the user sets the socket names to any non-default value.
 
-            # Create new Principled BSDF and Image Texture nodes.
-            principled = None
-            outNode = None
+                # Create new Principled BSDF and Image Texture nodes.
+                principled = None
+                outNode = None
 
-            for node in nodes:
-                if not principled and node.type == 'BSDF_PRINCIPLED':
-                    principled = node
+                for node in nodes:
+                    if not principled and node.type == 'BSDF_PRINCIPLED':
+                        principled = node
 
-                if not outNode and node.type == 'OUTPUT_MATERIAL':
-                    outNode = node
+                    if not outNode and node.type == 'OUTPUT_MATERIAL':
+                        outNode = node
 
-                if principled and outNode:
-                    break
+                    if principled and outNode:
+                        break
 
-            # If there is no Material Output node, create one.
-            if not outNode:
-                outNode = nodes.new('ShaderNodeOutputMaterial')
+                # If there is no Material Output node, create one.
+                if not outNode:
+                    outNode = nodes.new('ShaderNodeOutputMaterial')
 
-            # If there is no default Principled BSDF node, create one and link it to material output.
-            if not principled:
-                principled = nodes.new('ShaderNodeBsdfPrincipled')
-                node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+                # If there is no default Principled BSDF node, create one and link it to material output.
+                if not principled:
+                    principled = nodes.new('ShaderNodeBsdfPrincipled')
+                    node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
 
-            # Create a new Image Texture node.
-            image = nodes.new('ShaderNodeTexImage')
+                # Create a new Image Texture node.
+                image = nodes.new('ShaderNodeTexImage')
 
-            # Load the image file itself if necessary.
-            imageName = os.path.basename(textureLocation)
-            if not imageName in bpy.data.images:
-                bpy.data.images.load(textureLocation)
+                # Load the image file itself if necessary.
+                imageName = os.path.basename(textureLocation)
+                if not imageName in bpy.data.images:
+                    bpy.data.images.load(textureLocation)
 
-            image.image = bpy.data.images[imageName]
+                image.image = bpy.data.images[imageName]
 
-            node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+                node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
 
-            image.image.alpha_mode = 'CHANNEL_PACKED'
-            if settings.useAlpha:
-                node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+                image.image.alpha_mode = 'CHANNEL_PACKED'
+                if settings.useAlpha:
+                    node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
-            # Set the specular value to 0 by default.
-            principled.inputs['Specular'].default_value = 0
+                # Set the specular value to 0 by default.
+                principled.inputs['Specular'].default_value = 0
 
-        obj.data.materials.append(bpy.data.materials[materialName])
+            obj.data.materials.append(bpy.data.materials[materialName])
 
     ## Meshes
     bm = bmesh.new()
@@ -250,36 +251,43 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             if 'Type' in reader.fieldnames:
                 importType = 'ADT'
 
-                wmoparent = bpy.data.objects.new('WMOs', None)
-                wmoparent.parent = obj
-                wmoparent.name = 'WMOs'
-                wmoparent.rotation_euler = [0, 0, 0]
-                wmoparent.rotation_euler.x = radians(-90)
-                collection.link(wmoparent)
+                wmoparent = None
+                if settings.importWMO:
+                    wmoparent = bpy.data.objects.new('WMOs', None)
+                    wmoparent.parent = obj
+                    wmoparent.name = 'WMOs'
+                    wmoparent.rotation_euler = [0, 0, 0]
+                    wmoparent.rotation_euler.x = radians(-90)
+                    collection.link(wmoparent)
 
-                doodadparent = bpy.data.objects.new('Doodads', None)
-                doodadparent.parent = obj
-                doodadparent.name = 'Doodads'
-                doodadparent.rotation_euler = [0, 0, 0]
-                doodadparent.rotation_euler.x = radians(-90)
-                collection.link(doodadparent)
+                doodadparent = None
+                if settings.importM2:
+                    doodadparent = bpy.data.objects.new('Doodads', None)
+                    doodadparent.parent = obj
+                    doodadparent.name = 'Doodads'
+                    doodadparent.rotation_euler = [0, 0, 0]
+                    doodadparent.rotation_euler.x = radians(-90)
+                    collection.link(doodadparent)
 
-                gobjparent = bpy.data.objects.new('GameObjects', None)
-                gobjparent.parent = obj
-                gobjparent.name = 'GameObjects'
-                gobjparent.rotation_euler = [0, 0, 0]
-                gobjparent.rotation_euler.x = radians(-90)
-                collection.link(gobjparent)
+                gobjparent = None
+                if settings.importGOBJ:
+                    gobjparent = bpy.data.objects.new('GameObjects', None)
+                    gobjparent.parent = obj
+                    gobjparent.name = 'GameObjects'
+                    gobjparent.rotation_euler = [0, 0, 0]
+                    gobjparent.rotation_euler.x = radians(-90)
+                    collection.link(gobjparent)
             else:
                 importType = 'WMO'
                 if not givenParent:
                     print('WMO import without given parent, creating..')
-                    givenParent = bpy.data.objects.new('WMO parent', None)
-                    givenParent.parent = obj
-                    givenParent.name = 'Doodads'
-                    givenParent.rotation_euler = [0, 0, 0]
-                    givenParent.rotation_euler.x = radians(-90)
-                    collection.link(givenParent)
+                    if settings.importWMOSets:
+                        givenParent = bpy.data.objects.new('WMO parent', None)
+                        givenParent.parent = obj
+                        givenParent.name = 'Doodads'
+                        givenParent.rotation_euler = [0, 0, 0]
+                        givenParent.rotation_euler.x = radians(-90)
+                        collection.link(givenParent)
             for row in reader:
                 if importType == 'ADT':
                     if 'importedModelIDs' in bpy.context.scene:
@@ -294,7 +302,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         tempModelIDList.append(row['ModelId'])
 
                     # ADT CSV
-                    if row['Type'] == 'wmo':
+                    if row['Type'] == 'wmo' and settings.importWMO:
                         print('ADT WMO import: ' + row['ModelFile'])
 
                         # Make WMO parent that holds WMO and doodads
@@ -325,7 +333,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                                 collection.link(importedFile)
 
                         importedFile.parent = parent
-                    elif row['Type'] == 'm2':
+                    elif row['Type'] == 'm2' and settings.importM2:
                         print('ADT M2 import: ' + row['ModelFile'])
 
                         ## Only import OBJ if model is not yet in scene, otherwise copy existing
@@ -348,7 +356,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         importedFile.rotation_euler.z = radians(90 + float(row['RotationY']))
                         if row['ScaleFactor']:
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
-                    elif row['Type'] == 'gobj':
+                    elif row['Type'] == 'gobj' and settings.importGOBJ:
                         if os.path.basename(row['ModelFile']) not in bpy.data.objects:
                             importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, settings)
                         else:
@@ -366,7 +374,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         if row['ScaleFactor']:
                             importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
                     bpy.context.scene['importedModelIDs'] = tempModelIDList
-                else:
+                elif settings.importWMOSets:
                     # WMO CSV
                     print('WMO M2 import: ' + row['ModelFile'])
                     if os.path.basename(row['ModelFile']) not in bpy.data.objects:
