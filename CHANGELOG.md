@@ -16,6 +16,7 @@
 - Fixed issue that caused 'invalid installation' error message from not dismissing after retry.
 - Fixed issue that caused missing alpha channels on ADT exports for some users.
 - Fixed issue that caused invalid collision OBJ files to be exported.
+- Fixed issue that caused WMO doodad sets to be incorrectly exported.
 
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
