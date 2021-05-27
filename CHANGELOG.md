@@ -7,6 +7,7 @@
 - Added model texture controls to the map exporter interface.
 - Added product support for Classic TBC / PTR builds.
 - Added portal information to exported WMO meta data.
+- Added import controls to the Blender importer add-on.
 - Replaced the 'Copy File Directories' setting with a 'Copy Mode' control, with a FileDataID option.
 - Changed the default alpha mode to CHANNEL_PACKED in the Blender add-on.
 - Fixed issue that caused incorrect nesting when imported with the Blender add-on.
