@@ -244,7 +244,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     ## Import doodads and/or WMOs
     csvPath = objectFile.replace('.obj', '_ModelPlacementInformation.csv')
-	use_csv = settings.importWMO or settings.importM2 or settings.importWMOSets or settings.importGOBJ
+    use_csv = settings.importWMO or settings.importM2 or settings.importWMOSets or settings.importGOBJ
 
     if use_csv and os.path.exists(csvPath):
          with open(csvPath) as csvFile:
