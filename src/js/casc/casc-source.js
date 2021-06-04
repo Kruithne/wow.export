@@ -83,7 +83,7 @@ class CASC {
 	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
-			throw new Error('File not mapping in listfile: %s', fileName);
+			throw new Error('File not mapping in listfile: ' + fileName);
 
 		return await this.getFile(fileDataID, partialDecrypt, suppressLog, supportFallback, forceFallback);
 	}
