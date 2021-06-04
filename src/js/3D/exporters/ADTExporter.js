@@ -551,7 +551,9 @@ class ADTExporter {
 				}
 			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.
-				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
+				const paddedX = this.tileY.toString().padStart(2, '0');
+				const paddedY = this.tileX.toString().padStart(2, '0');
+				const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', this.mapDir, paddedX, paddedY);
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
 
 				if (config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
