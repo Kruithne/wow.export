@@ -69,18 +69,18 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.obj'
-    filter_glob = bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
-    files = bpy.props.CollectionProperty(name = 'Files', type= bpy.types.OperatorFileListElement)
-    directory = bpy.props.StringProperty(subtype = 'DIR_PATH')
+    filter_glob: bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
+    files: bpy.props.CollectionProperty(name = 'Files', type= bpy.types.OperatorFileListElement)
+    directory: bpy.props.StringProperty(subtype = 'DIR_PATH')
 
-    importWMO = bpy.props.BoolProperty(name = 'Import WMO', description = 'If exported, WMOs will be imported', default = 1)
-    importWMOSets = bpy.props.BoolProperty(name = 'Import WMO Sets', description = 'If exported, WMO sets will be imported', default = 1)
-    importM2 = bpy.props.BoolProperty(name = 'Import M2', description = 'If exported, M2s will be imported', default = 1)
-    importGOBJ = bpy.props.BoolProperty(name = 'Import GOBJ', description = 'If exported, GOBJs will be imported', default = 1)
-    importTextures = bpy.props.BoolProperty(name = 'Import Textures', description = 'If exported, textures will be imported', default = 1)
-    useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
-    createVertexGroups = bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
-    allowDuplicates = bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
+    importWMO: bpy.props.BoolProperty(name = 'Import WMO', description = 'If exported, WMOs will be imported', default = 1)
+    importWMOSets: bpy.props.BoolProperty(name = 'Import WMO Sets', description = 'If exported, WMO sets will be imported', default = 1)
+    importM2: bpy.props.BoolProperty(name = 'Import M2', description = 'If exported, M2s will be imported', default = 1)
+    importGOBJ: bpy.props.BoolProperty(name = 'Import GOBJ', description = 'If exported, GOBJs will be imported', default = 1)
+    importTextures: bpy.props.BoolProperty(name = 'Import Textures', description = 'If exported, textures will be imported', default = 1)
+    useAlpha: bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
+    createVertexGroups: bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
+    allowDuplicates: bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
 
     def execute(self, context):
         settings = Settings(
