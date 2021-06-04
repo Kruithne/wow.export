@@ -1,3 +1,7 @@
+0.1.31 (04-06-2021)
+- Updated Blender add-on to support Blender version 2.93.
+- Fixed issue that prevented certain map tiles from preview/exporting.
+
 0.1.30 (01-05-2021)
 - Added 'Export Textures' option to sidebar to allow models to be exported without textures.
 - Added fileDataID, fileName and internalName fields to exported M2 meta data.
