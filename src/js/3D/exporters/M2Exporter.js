@@ -58,6 +58,7 @@ class M2Exporter {
 		await this.m2.load();
 
 		const useAlpha = config.modelsExportAlpha;
+		const usePosix = config.pathFormat === 'posix';
 
 		let textureIndex = 0;
 		for (const texture of this.m2.textures) {
@@ -132,6 +133,9 @@ class M2Exporter {
 					} else {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
 					}
+
+					if (usePosix)
+						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
 					validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);

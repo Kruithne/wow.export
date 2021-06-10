@@ -103,6 +103,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Path Separator Format</h1>
+						<p>Sets the path separator format used in exported files.</p>
+						<ul class="ui-multi-button" id="export-meta-multi">
+							<li :class="{ selected: configEdit.pathFormat == 'win32' }" @click.stop="configEdit.pathFormat = 'win32'">Windows</li>
+							<li :class="{ selected: configEdit.pathFormat == 'posix' }" @click.stop="configEdit.pathFormat = 'posix'">POSIX</li>
+						</ul>
+					</div>
+					<div>
 						<h1>Use Absolute MTL Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>

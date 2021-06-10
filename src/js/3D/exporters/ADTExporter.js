@@ -218,6 +218,7 @@ class ADTExporter {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
+		const usePosix = config.pathFormat === 'posix';
 		const prefix = util.format('world/maps/%s/%s', this.mapDir, this.mapDir);
 
 		// Load the WDT. We cache this to speed up exporting large amounts of tiles
@@ -451,7 +452,11 @@ class ADTExporter {
 					}
 
 					await blp.saveToPNG(texPath);
-					mat.file = texFile;
+
+					if (usePosix)
+						mat.file = ExportHelper.win32ToPosix(texFile);
+					else
+						mat.file = texFile;
 
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
@@ -870,9 +875,13 @@ class ADTExporter {
 
 								objectCache.add(fileDataID);
 							}
+
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
 							
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.Position[0],
 								PositionY: model.Position[1],
 								PositionZ: model.Position[2],
@@ -926,8 +935,12 @@ class ADTExporter {
 								objectCache.add(fileDataID);
 							}
 
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
+
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.position[0],
 								PositionY: model.position[1],
 								PositionZ: model.position[2],
@@ -1006,8 +1019,12 @@ class ADTExporter {
 								objectCache.add(cacheID);
 							}
 
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
+
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.position[0],
 								PositionY: model.position[1],
 								PositionZ: model.position[2],

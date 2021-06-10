@@ -48,6 +48,17 @@ class ExportHelper {
 	}
 
 	/**
+	 * Converts a win32 compatible path to a POSIX compatible path.
+	 * @param {string} str 
+	 * @returns {string}
+	 */
+	static win32ToPosix(str) {
+		// path module does not expose any decent conversion API, so simply
+		// convert slashes like a cave-person and call it a day.
+		return str.replaceAll('\\', '/');
+	}
+
+	/**
 	 * Construct a new ExportHelper instance.
 	 * @param {number} count 
 	 * @param {string} unit 

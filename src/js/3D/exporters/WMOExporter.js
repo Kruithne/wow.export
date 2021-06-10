@@ -67,6 +67,7 @@ class WMOExporter {
 		await this.wmo.load();
 
 		const useAlpha = config.modelsExportAlpha;
+		const usePosix = config.pathFormat === 'posix';
 		const isClassic = !!this.wmo.textureNames;
 		const materialCount = this.wmo.materials.length;
 
@@ -139,6 +140,9 @@ class WMOExporter {
 					} else {
 						log.write('Skipping WMo texture export %s (file exists, overwrite disabled)', texPath);
 					}
+
+					if (usePosix)
+						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
 					materialMap.set(i, matName);
@@ -409,6 +413,7 @@ class WMOExporter {
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
+			const usePosix = core.view.config.pathFormat === 'posix';
 			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
@@ -474,8 +479,12 @@ class WMOExporter {
 							}
 
 							let modelPath = path.relative(outDir, m2Path);
+
 							if (useAbsolute === true)
 								modelPath = path.resolve(outDir, modelPath);
+
+							if (usePosix)
+								modelPath = ExportHelper.win32ToPosix(modelPath);
 
 							csv.addRow({
 								ModelFile: modelPath,

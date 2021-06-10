@@ -1,5 +1,6 @@
 0.1.31 (04-06-2021)
 - Updated Blender add-on to support Blender version 2.93.
+- Added option for POSIX-style path formatting in exported files.
 - Fixed issue that prevented certain map tiles from preview/exporting.
 
 0.1.30 (01-05-2021)
