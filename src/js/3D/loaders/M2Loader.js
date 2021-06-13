@@ -12,6 +12,8 @@ const MAGIC_MD20 = 0x3032444D;
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
+const CHUNK_SKID = 0x44494B53;
+const CHUNK_BFID = 0x44494642;
 
 class M2Track {
 	/**
@@ -56,6 +58,8 @@ class M2Loader {
 				case MAGIC_MD21: await this.parseChunk_MD21(); break;
 				case CHUNK_SFID: this.parseChunk_SFID(); break;
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
+				case CHUNK_SKID: this.parseChunk_SKID(); break;
+				case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -108,6 +112,21 @@ class M2Loader {
 
 		for (let i = 0, n = this.textures.length; i < n; i++)
 			this.textures[i].fileDataID = this.data.readUInt32LE();
+	}
+
+	/**
+	 * Parse SKID chunk for .skel file data ID.
+	 */
+	parseChunk_SKID() {
+		this.skeletonFileID = this.data.readUInt32LE();
+	}
+
+	/**
+	 * Parse BFID chunk for .bone file data IDs.
+	 * @param {number} chunkSize
+	 */
+	parseChunk_BFID(chunkSize) {
+		this.boneFileIDs = this.data.readUInt32LE(chunkSize / 4);
 	}
 
 	/**

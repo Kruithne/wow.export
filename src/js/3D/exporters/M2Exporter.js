@@ -245,6 +245,8 @@ class M2Exporter {
 			json.addProperty('textureTypes', this.m2.textureTypes);
 			json.addProperty('materials', this.m2.materials);
 			json.addProperty('textureCombos', this.m2.textureCombos);
+			json.addProperty('skeletonFileID', this.m2.skeletonFileID);
+			json.addProperty('boneFileIDs', this.m2.boneFileIDs);
 			json.addProperty('skin', {
 				subMeshes: skin.subMeshes,
 				textureUnits: skin.textureUnits

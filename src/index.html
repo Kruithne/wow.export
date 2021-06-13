@@ -432,7 +432,15 @@
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
-									<span>M2 Skin Files</span>
+									<span>M2 .skin Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export raw .skel files with M2 exports">
+									<input type="checkbox" v-model="config.modelsExportSkel"/>
+									<span>M2 .skel Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export raw .bone files with M2 exports">
+									<input type="checkbox" v-model="config.modelsExportBone"/>
+									<span>M2 .bone Files</span>
 								</label>
 								<label class="ui-checkbox" title="Export WMO group files">
 									<input type="checkbox" v-model="config.modelsExportWMOGroups"/>

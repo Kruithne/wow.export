@@ -240,7 +240,8 @@ const exportFiles = async (files, isLocal = false) => {
 		}
 	} else {
 		const casc = core.view.casc;
-		const exportSkins = core.view.config.modelsExportSkin;
+		const config = core.view.config;
+
 		const exportWMOGroups = core.view.config.modelsExportWMOGroups;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
@@ -265,18 +266,37 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPaths.writeLine(exportPath);
 
 						const outDir = path.dirname(exportPath);
-						if (exportSkins === true && fileNameLower.endsWith('.m2') === true) {
+						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone;
+						if (loadM2 && fileNameLower.endsWith('.m2') === true) {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
-							await exporter.exportTextures(exportPath, true, null, helper);
+							const m2 = exporter.m2;
+							await m2.load();
 
-							const skins = exporter.m2.getSkinList();
-							for (const skin of skins) {
-								// Abort if the export has been cancelled.
-								if (helper.isCancelled())
-									return;
+							if (config.modelsExportSkin === true) {
+								await exporter.exportTextures(exportPath, true, null, helper);
 
-								const skinData = await casc.getFile(skin.fileDataID);
-								await skinData.writeToFile(path.join(outDir, path.basename(skin.fileName)));
+								const skins = m2.getSkinList();
+								for (const skin of skins) {
+									// Abort if the export has been cancelled.
+									if (helper.isCancelled())
+										return;
+
+									const skinData = await casc.getFile(skin.fileDataID);
+									await skinData.writeToFile(path.join(outDir, path.basename(skin.fileName)));
+								}
+							}
+
+							const basename = path.basename(fileName);
+							if (config.modelsExportSkel && m2.skeletonFileID) {
+								const skelData = await casc.getFile(m2.skeletonFileID);
+								await skelData.writeToFile(path.join(outDir, basename + '.skel'));
+							}
+
+							if (config.modelsExportBone && m2.boneFileIDs) {
+								for (let i = 0, n = m2.boneFileIDs.length; i < n; i++) {
+									const boneData = await casc.getFile(m2.boneFileIDs[i]);
+									await boneData.writeToFile(path.join(outDir, basename + '_' + i + '.bone'));
+								}
 							}
 						} else if (exportWMOGroups == true && fileNameLower.endsWith('.wmo') === true) {
 							const wmo = new WMOLoader(data, fileDataID);
