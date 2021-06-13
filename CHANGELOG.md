@@ -3,6 +3,7 @@
 - Added option for POSIX-style path formatting in exported files.
 - Added option for exporting linked .skel/.bone files with raw M2 exports.
 - Added skeletonFileID/boneFileIDs fields to exported M2 metadata.
+- Added export support for secondary/tertiary textures on WMO models.
 - Fixed issue that prevented certain map tiles from preview/exporting.
 
 0.1.30 (01-05-2021)

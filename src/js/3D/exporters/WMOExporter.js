@@ -80,23 +80,32 @@ class WMOExporter {
 			const material = this.wmo.materials[i];
 			helper.setCurrentTaskValue(i);
 
-			let fileDataID = 0;
-			let fileName;
+			const materialTextures = [material.texture1, material.texture2, material.texture3];
+			for (const materialTexture of materialTextures) {
+				// Skip unused material slots.
+				if (materialTexture === 0)
+					continue;
 
-			if (isClassic) {
-				// Classic, lookup fileDataID using file name.
-				fileName = this.wmo.textureNames[material.texture1];
-				fileDataID = listfile.getByFilename(fileName) ?? 0;
+				let fileDataID = 0;
+				let fileName;
 
-				// Remove all whitespace from exported textures due to MTL incompatibility.
-				if (config.removePathSpaces)
-					fileName = fileName.replace(/\s/g, '');
-			} else {
-				// Retail, user fileDataID directly.
-				fileDataID = material.texture1;
-			}
+				if (isClassic) {
+					// Classic, lookup fileDataID using file name.
+					fileName = this.wmo.textureNames[materialTexture];
+					fileDataID = listfile.getByFilename(fileName) ?? 0;
 
-			if (fileDataID > 0) {
+					// Remove all whitespace from exported textures due to MTL incompatibility.
+					if (config.removePathSpaces)
+						fileName = fileName.replace(/\s/g, '');
+				} else {
+					// Retail, use fileDataID directly.
+					fileDataID = materialTexture;
+				}
+
+				// Skip unknown/missing files.
+				if (fileDataID === 0)
+					continue;
+
 				try {
 					let texFile = fileDataID + '.png';
 					let texPath = path.join(path.dirname(out), texFile);
@@ -145,8 +154,11 @@ class WMOExporter {
 						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
-					materialMap.set(i, matName);
 					textureMap.set(fileDataID, texFile);
+
+					// MTL only supports one texture per material, only link the first.
+					if (!materialMap.has(i))
+						materialMap.set(i, matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for WMO: %s', fileDataID, e.message);
 				}
