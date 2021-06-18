@@ -561,6 +561,7 @@ class WMOExporter {
 			for (let i = 0, n = wmo.groups.length; i < n; i++) {
 				const group = wmo.groups[i];
 				groups[i] = {
+					groupName: wmo.groupNames[group.nameOfs],
 					version: group.version,
 					flags: group.flags,
 					boundingBox1: group.boundingBox1,
@@ -578,7 +579,7 @@ class WMOExporter {
 			}
 
 			json.addProperty('groups', groups);
-			json.addProperty('groupNames', wmo.groupNames);
+			json.addProperty('groupNames', Object.values(wmo.groupNames));
 			json.addProperty('groupInfo', wmo.groupInfo);
 			json.addProperty('materials', wmo.materials);
 			json.addProperty('doodadSets', wmo.doodadSets);
