@@ -1,5 +1,6 @@
 0.1.31 (04-06-2021)
 - Updated Blender add-on to support Blender version 2.93.
+- Improved group names in WMO meta data exporting.
 - Added option for POSIX-style path formatting in exported files.
 - Added option for exporting linked .skel/.bone files with raw M2 exports.
 - Added skeletonFileID/boneFileIDs fields to exported M2 metadata.
