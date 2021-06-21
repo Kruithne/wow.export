@@ -562,6 +562,7 @@ class WMOExporter {
 				const group = wmo.groups[i];
 				groups[i] = {
 					groupName: wmo.groupNames[group.nameOfs],
+					groupDescription: wmo.groupNames[group.descOfs],
 					version: group.version,
 					flags: group.flags,
 					boundingBox1: group.boundingBox1,
