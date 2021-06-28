@@ -1,5 +1,6 @@
 0.1.32 (28-06-2021)
 - Added export/import support for additional UV layers in WMO objects.
+- Added export support for additional vertex colour layers in WMO objects.
 
 0.1.31 (04-06-2021)
 - Updated Blender add-on to support Blender version 2.93.

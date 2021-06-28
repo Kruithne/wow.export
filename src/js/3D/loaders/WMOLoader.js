@@ -261,7 +261,10 @@ const WMOChunkHandlers = {
 
 	// MOCV (Vertex Colouring) [WMO Group]
 	0x4D4F4356: function(data, chunkSize) {
-		this.vertexColours = data.readUInt32LE(chunkSize / 4);
+		if (!this.vertexColours)
+			this.vertexColours = [];
+
+		this.vertexColors.push(data.readUInt32LE(chunkSize / 4));
 	},
 
 	// MOGP (Group Header) [WMO Group]
