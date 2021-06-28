@@ -51,9 +51,10 @@ class WMOExporter {
 	 * @param {string} out 
 	 * @param {?MTLWriter} mtl 
 	 * @param {ExportHelper}
+	 * @param {boolean} [raw=false]
 	 * @returns {{ textureMap: Map, materialMap: Map }}
 	 */
-	async exportTextures(out, mtl = null, helper) {
+	async exportTextures(out, mtl = null, helper, raw = false) {
 		const config = core.view.config;
 		const casc = core.view.casc;
 
@@ -107,7 +108,7 @@ class WMOExporter {
 					continue;
 
 				try {
-					let texFile = fileDataID + '.png';
+					let texFile = fileDataID + (raw ? '.blp' : '.png');
 					let texPath = path.join(path.dirname(out), texFile);
 
 					// Default MTl name to the file ID (prefixed for Maya).
@@ -130,10 +131,11 @@ class WMOExporter {
 					if (config.enableSharedTextures) {
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
-							fileName = ExportHelper.replaceExtension(fileName, '.png');
+							if (raw === false)
+								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = 'unknown/' + fileDataID + '.png';
+							fileName = 'unknown/' + texFile;
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -142,10 +144,14 @@ class WMOExporter {
 
 					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 						const data = await casc.getFile(fileDataID);
-						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+						if (raw) {
+							await data.writeToFile(texPath);
+						} else {
+							const blp = new BLPFile(data);
+							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+						}
 					} else {
 						log.write('Skipping WMo texture export %s (file exists, overwrite disabled)', texPath);
 					}

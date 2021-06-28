@@ -298,23 +298,29 @@ const exportFiles = async (files, isLocal = false) => {
 									await boneData.writeToFile(path.join(outDir, basename + '_' + i + '.bone'));
 								}
 							}
-						} else if (exportWMOGroups == true && fileNameLower.endsWith('.wmo') === true) {
-							const wmo = new WMOLoader(data, fileDataID);
+						} else if (fileNameLower.endsWith('.wmo') === true) {
+							const exporter = new WMOExporter(data, fileDataID);
+							const wmo = exporter.wmo;
 							await wmo.load();
-							
-							for (let i = 0, n = wmo.groupCount; i < n; i++) {
-								// Abort if the export has been cancelled.
-								if (helper.isCancelled())
-									return;
 
-								const groupName = fileName.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
-								let groupData;
-								if (wmo.groupIDs)
-									groupData = await casc.getFile(wmo.groupIDs[i]);
-								else
-									groupData = await casc.getFileByName(groupName);
+							// Export raw textures.
+							await exporter.exportTextures(exportPath, null, helper, true);
 
-								await groupData.writeToFile(path.join(outDir, path.basename(groupName)));
+							if (exportWMOGroups === true) {
+								for (let i = 0, n = wmo.groupCount; i < n; i++) {
+									// Abort if the export has been cancelled.
+									if (helper.isCancelled())
+										return;
+
+									const groupName = fileName.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
+									let groupData;
+									if (wmo.groupIDs)
+										groupData = await casc.getFile(wmo.groupIDs[i]);
+									else
+										groupData = await casc.getFileByName(groupName);
+
+									await groupData.writeToFile(path.join(outDir, path.basename(groupName)));
+								}
 							}
 						}
 						break;
