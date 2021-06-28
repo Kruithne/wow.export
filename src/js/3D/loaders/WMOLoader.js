@@ -264,7 +264,7 @@ const WMOChunkHandlers = {
 		if (!this.vertexColours)
 			this.vertexColours = [];
 
-		this.vertexColors.push(data.readUInt32LE(chunkSize / 4));
+		this.vertexColours.push(data.readUInt32LE(chunkSize / 4));
 	},
 
 	// MOGP (Group Header) [WMO Group]
