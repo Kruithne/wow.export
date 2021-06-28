@@ -225,10 +225,10 @@ class M2Exporter {
 		// Verts, normals, UVs
 		obj.setVertArray(this.m2.vertices);
 		obj.setNormalArray(this.m2.normals);
-		obj.setUVArray(this.m2.uv);
+		obj.addUVArray(this.m2.uv);
 
 		if (core.view.config.modelsExportUV2)
-			obj.setUV2Array(this.m2.uv2);
+			obj.addUVArray(this.m2.uv2);
 
 		// Textures
 		const validTextures = await this.exportTextures(out, false, mtl, helper);

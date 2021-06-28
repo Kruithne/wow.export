@@ -401,7 +401,7 @@ class ADTExporter {
 
 		obj.setVertArray(vertices);
 		obj.setNormalArray(normals);
-		obj.setUVArray(uvs);
+		obj.addUVArray(uvs);
 
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));

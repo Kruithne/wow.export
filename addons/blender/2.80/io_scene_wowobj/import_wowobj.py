@@ -25,8 +25,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     mtlfile = ''
     verts = []
     normals = []
-    uv = []
-    uv2 = []
+    uvs = []
     meshes = []
 
     ### Per group
@@ -51,10 +50,17 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 verts.append([float(v) for v in line_split[1:]])
             elif line_start == b'vn':
                 normals.append([float(v) for v in line_split[1:]])
-            elif line_start == b'vt2':
-                uv2.append([float(v) for v in line_split[1:]])
-            elif line_start == b'vt':
-                uv.append([float(v) for v in line_split[1:]])
+            elif line_start.startswith(b'vt'):
+                layer_index = 0
+
+                if len(line_start) > 2:
+                    line_str = line_start.decode('utf8')
+                    layer_index = int(line_str[-1]) - 1
+
+                if len(uvs) <= layer_index:
+                    uvs.append([])
+
+                uvs[layer_index].append([float(v) for v in line_split[1:]])
             elif line_start == b'f':
                 line_split = line_split[1:]
                 fv = [int(v.split(b'/')[0]) for v in line_split]
@@ -209,17 +215,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 ## TODO: Duplicate faces happen for some reason
                 pass
 
+    for layer_index, layer in enumerate(uvs):
+        uv_name = layer_index > 0 and ('UV' + str(layer_index + 1) + 'Map') or 'UVMap'
+        uv_layer = bm.loops.layers.uv.new(uv_name)
 
-    uv_layer = bm.loops.layers.uv.new()
-    for face in bm.faces:
-        for loop in face.loops:
-            loop[uv_layer].uv = uv[loop.vert.index]
-
-    if len(uv2) > 0:
-        uv2_layer = bm.loops.layers.uv.new('UV2Map')
         for face in bm.faces:
             for loop in face.loops:
-                loop[uv2_layer].uv = uv2[loop.vert.index]
+                loop[uv_layer].uv = layer[loop.vert.index]
 
     bm.to_mesh(newmesh)
     bm.free()

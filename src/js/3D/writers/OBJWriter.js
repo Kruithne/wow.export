@@ -19,7 +19,6 @@ class OBJWriter {
 		this.verts = [];
 		this.normals = [];
 		this.uvs = [];
-		this.uvs2 = [];
 
 		this.meshes = [];
 		this.name = 'Mesh';
@@ -58,20 +57,11 @@ class OBJWriter {
 	}
 
 	/**
-	 * Set the UV array for this writer.
-	 * @param {Array} uvs 
+	 * Add a UV array for this writer.
+	 * @param {Array} uv 
 	 */
-	setUVArray(uvs) {
-		this.uvs = uvs;
-	}
-
-	/**
-	 * Set the UV2 array for this writer.
-	 * This is a non-standard property feature for wow.export
-	 * @param {Array} uvs 
-	 */
-	setUV2Array(uvs) {
-		this.uvs2 = uvs;
+	addUVArray(uv) {
+		this.uvs.push(uv);
 	}
 
 	/**
@@ -130,22 +120,28 @@ class OBJWriter {
 		}
 
 		// Write UVs
-		const hasUV = this.uvs.length > 0;
+		const layerCount = this.uvs.length;
+		const hasUV = layerCount > 0;
 		if (hasUV) {
-			const uvs = this.uvs;
-			for (let i = 0, j = 0, u = 0, n = uvs.length; i < n; j ++, i += 2) {
-				if (usedIndices.has(j)) {
-					uvMap.set(j, u++);
-					writer.writeLine('vt ' + uvs[i] + ' ' + uvs[i + 1]);
-				}
-			}
+			for (let uvIndex = 0; uvIndex < layerCount; uvIndex++) {
+				const uv = this.uvs[uvIndex];
 
-			// We've had one, but what about second UVs?
-			// This is a non-standard property for wow.export
-			const uv2 = this.uvs2;
-			for (let i = 0, j = 0, n = uv2.length; i < n; j++, i += 2) {
-				if (usedIndices.has(j))
-					writer.writeLine('vt2 ' + uv2[i] + ' ' + uv2[i + 1]);
+				let prefix = 'vt';
+
+				// Use non-standard properties (vt2, vt3, etc) for additional UV layers.
+				if (uvIndex > 0)
+					prefix += (uvIndex + 1);
+
+				for (let i = 0, j = 0, u = 0, n = uv.length; i < n; j++, i += 2) {
+					if (usedIndices.has(j)) {
+						// Build the index reference using just the first layer
+						// since it will be identical for all other layers.
+						if (uvIndex === 0)
+							uvMap.set(j, u++);
+
+						writer.writeLine(prefix + ' ' + uv[i] + ' ' + uv[i + 1]);
+					}
+				}
 			}
 		}
 

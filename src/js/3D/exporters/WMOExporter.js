@@ -326,6 +326,7 @@ class WMOExporter {
 
 		const groups = [];
 		let nInd = 0;
+		let maxLayerCount = 0;
 
 		let mask;
 
@@ -365,13 +366,24 @@ class WMOExporter {
 			// 3 verts per indices.
 			nInd += group.vertices.length / 3;
 
+			// UV counts vary between groups, allocate for the max.
+			maxLayerCount = Math.max(group.uvs.length, maxLayerCount);
+
 			// Store the valid groups for quicker iteration later.
 			groups.push(group);
 		}
 
+		// Restrict to first UV layer if additional UV layers are not enabled.
+		if (!core.view.config.modelsExportUV2)
+			maxLayerCount = Math.min(maxLayerCount, 1);
+
 		const vertsArray = new Array(nInd * 3);
 		const normalsArray = new Array(nInd * 3);
-		const uvsArray = new Array(nInd * 2);
+		const uvArrays = new Array(maxLayerCount);
+
+		// Create all necessary UV layer arrays.
+		for (let i = 0; i < maxLayerCount; i++)
+			uvArrays[i] = new Array(nInd * 2);
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -389,16 +401,14 @@ class WMOExporter {
 				normalsArray[vertOfs + i] = groupNormals[i];
 
 			const uvsOfs = indOfs * 2;
-			if (group.uvs) {
-				// UVs exist, use the first array available.
-				const groupUvs = group.uvs[0];
-				for (let i = 0, n = groupUvs.length; i < n; i++)
-					uvsArray[uvsOfs + i] = groupUvs[i];
-			} else {
-				// No UVs available for the mesh, zero-fill.
-				const uvCount = indCount * 2;
-				for (let i = 0; i < uvCount; i++)
-					uvsArray[uvsOfs + i] = 0;
+			const groupUVs = group.uvs ?? [];
+			const uvCount = indCount * 2;
+
+			// Write to all UV layers, even if we have no data.
+			for (let i = 0; i < maxLayerCount; i++) {
+				const uv = groupUVs[i];
+				for (let j = 0; j < uvCount; j++)
+					uvArrays[i][uvsOfs + j] = uv?.[j] ?? 0;
 			}
 
 			const groupName = wmo.groupNames[group.nameOfs];
@@ -420,7 +430,9 @@ class WMOExporter {
 
 		obj.setVertArray(vertsArray);
 		obj.setNormalArray(normalsArray);
-		obj.setUVArray(uvsArray);
+
+		for (const arr of uvArrays)
+			obj.addUVArray(arr);
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {

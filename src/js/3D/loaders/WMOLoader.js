@@ -325,10 +325,10 @@ const WMOChunkHandlers = {
 	0x4D4F5456: function(data, chunkSize) {
 		if (!this.uvs)
 			this.uvs = [];
-
+		
 		const count = chunkSize / 4;
 		const uvs = new Array(count);
-		for (let i = 0; i < count; i+=2) {
+		for (let i = 0; i < count; i += 2) {
 			uvs[i] = data.readFloatLE();
 			uvs[i + 1] = (data.readFloatLE() - 1) * -1;
 		}
