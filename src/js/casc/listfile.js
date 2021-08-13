@@ -121,11 +121,29 @@ const loadListfile = async (buildConfig, cache) => {
  * Must be called after DBTextureFileData/DBModelFileData have loaded.
  */
 const loadUnknowns = async () => {
-	let unknownCount = 0;
-	unknownCount += await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
-	unknownCount += await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
+	const unkBlp = await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
+	const unkM2 = await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
 
-	log.write('Added %d unknown entries to listfile', unknownCount);
+	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
+	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
+	
+	// Load unknown sounds from SoundKitEntry table.
+	const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
+	await soundKitEntries.parse();
+	
+	let unknownCount = 0;
+	for (const entry of soundKitEntries.getAllRows().values()) {
+		if (!idLookup.has(entry.FileDataID)) {
+			// TODO: We're naively assuming .ogg here, but it could be something else.
+			// Is there any way we can improve this without having to scan file headers?
+			const fileName = 'unknown_' + entry.FileDataID + '.ogg';
+			idLookup.set(entry.FileDataID, fileName);
+			nameLookup.set(fileName, entry.FileDataID);
+			unknownCount++;
+		}
+	}
+
+	log.write('Added %d unknown sound files from SoundKitEntry to listfile', unknownCount);
 };
 
 /**
