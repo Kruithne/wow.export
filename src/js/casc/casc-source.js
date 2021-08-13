@@ -97,7 +97,12 @@ class CASC {
 		const entries = await listfile.loadListfile(buildKey, this.cache, this);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
+	}
 
+	/**
+	 * Creates filtered versions of the master listfile.
+	 */
+	async filterListfile() {
 		// Filters for the model viewer depending on user settings.
 		const modelExt = [];
 		if (core.view.config.modelsShowM2)

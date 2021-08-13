@@ -101,6 +101,7 @@ class CASCLocal extends CASC {
 
 		await this.loadListfile(this.build.BuildKey);
 		await this.loadTables();
+		await this.filterListfile();
 		await this.initializeComponents();
 	}
 
