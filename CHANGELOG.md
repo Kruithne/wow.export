@@ -1,3 +1,7 @@
+0.1.33 (13-08-2021)
+- Added support for unknown sound files, now listed as "unknown_xxx.ogg".
+- Fixed issue that prevented unknown model/textures from appearing in the listfiles.
+
 0.1.32 (28-06-2021)
 - Added export/import support for additional UV layers in WMO objects.
 - Added export support for additional vertex colour layers in WMO objects.
