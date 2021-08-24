@@ -418,7 +418,32 @@ class ADTExporter {
 				const ctx = canvas.getContext('2d');
 
 				const materialIDs = texAdt.diffuseTextureFileDataIDs;
+				const heightIDs = texAdt.heightTextureFileDataIDs;
 				const texParams = texAdt.texParams;
+
+				const saveLayerTexture = async (fileDataID) => {
+					const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+					let fileName = listfile.getByID(fileDataID);
+					if (fileName !== undefined)
+						fileName = ExportHelper.replaceExtension(fileName, '.png');
+					else
+						fileName = 'unknown/' + fileDataID + '.png';
+				
+					let texFile;
+					let texPath;
+				
+					if (config.enableSharedTextures) {
+						texPath = ExportHelper.getExportPath(fileName);
+						texFile = path.relative(dir, texPath);
+					} else {
+						texPath = path.join(dir, path.basename(fileName));
+						texFile = path.basename(texPath);
+					}
+				
+					await blp.saveToPNG(texPath);
+				
+					return usePosix ? ExportHelper.win32ToPosix(texFile) : texFile;
+				};
 
 				// Export the raw diffuse textures to disk.
 				const materials = new Array(materialIDs.length);
@@ -428,35 +453,18 @@ class ADTExporter {
 						return;
 
 					const diffuseFileDataID = materialIDs[i];
+					const heightFileDataID = heightIDs[i] ?? 0;
 					if (diffuseFileDataID === 0)
 						continue;
 
-					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-
 					const mat = materials[i] = { scale: 1, fileDataID: diffuseFileDataID };
+					mat.file = await saveLayerTexture(diffuseFileDataID);
 
-					let fileName = listfile.getByID(diffuseFileDataID);
-					if (fileName !== undefined)
-						fileName = ExportHelper.replaceExtension(fileName, '.png');
-					else
-						fileName = 'unknown/' + diffuseFileDataID + '.png';
-
-					let texFile;
-					let texPath;
-					if (config.enableSharedTextures) {
-						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(dir, texPath);
-					} else {
-						texPath = path.join(dir, path.basename(fileName));
-						texFile = path.basename(texPath);
+					// Include a reference to the height map texture if it exists.
+					if (heightFileDataID > 0) {
+						mat.heightFile = await saveLayerTexture(heightFileDataID);
+						mat.heightFileDataID = heightFileDataID;
 					}
-
-					await blp.saveToPNG(texPath);
-
-					if (usePosix)
-						mat.file = ExportHelper.win32ToPosix(texFile);
-					else
-						mat.file = texFile;
 
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
@@ -520,7 +528,7 @@ class ADTExporter {
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, fileDataID: mat.fileDataID, scale: mat.scale, file: mat.file });
+								layers.push(Object.assign({ index: i }, mat));
 						}
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
@@ -539,7 +547,7 @@ class ADTExporter {
 						for (let i = 0, n = texLayers.length; i < n; i++) {
 							const mat = materials[texLayers[i].textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, chunkIndex, fileDataID: mat.fileDataID, scale: mat.scale });
+								layers.push({ index: i, chunkIndex }, mat);
 						}
 					}
 				}

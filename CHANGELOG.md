@@ -1,3 +1,6 @@
+0.1.34 (24-08-2021)
+- Exporting ADT alpha maps now includes height textures, mapped in the metadata entries.
+
 0.1.33 (13-08-2021)
 - Added support for unknown sound files, now listed as "unknown_xxx.ogg".
 - Fixed issue that prevented unknown model/textures from appearing in the listfiles.
