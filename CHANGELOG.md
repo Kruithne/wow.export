@@ -1,5 +1,7 @@
 0.1.34 (24-08-2021)
-- Exporting ADT alpha maps now includes height textures, mapped in the metadata entries.
+- Added height textures to ADT alpha map exports, mapped in the metadata layer entries.
+- Added effectID (GroundEffectTexture#ID) property to ADT alpha map layer metadata.
+- Added advanced foliage meta data exporting (disabled by default).
 
 0.1.33 (13-08-2021)
 - Added support for unknown sound files, now listed as "unknown_xxx.ogg".

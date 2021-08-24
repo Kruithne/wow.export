@@ -30,6 +30,7 @@
 	"exportM2Meta": false,
 	"exportWMOMeta": false,
 	"exportBLPMeta": false,
+	"exportFoliageMeta": false,
 	"modelsShowM2": true,
 	"modelsShowWMO": true,
 	"listfileShowFileDataIDs": false,

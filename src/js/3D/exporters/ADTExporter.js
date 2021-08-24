@@ -526,9 +526,10 @@ class ADTExporter {
 
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
-							const mat = materials[texLayers[i].textureId];
+							const layer = texLayers[i];
+							const mat = materials[layer.textureId];
 							if (mat !== undefined)
-								layers.push(Object.assign({ index: i }, mat));
+								layers.push(Object.assign({ index: i, effectID: layer.effectID }, mat));
 						}
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
@@ -545,9 +546,10 @@ class ADTExporter {
 					
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
-							const mat = materials[texLayers[i].textureId];
+							const layer = texLayers[i];
+							const mat = materials[layer.textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, chunkIndex }, mat);
+								layers.push({ index: i, chunkIndex, effectID: layer.effectID }, mat);
 						}
 					}
 				}
@@ -1063,6 +1065,7 @@ class ADTExporter {
 		// Export foliage.
 		if (config.mapsIncludeFoliage && isFoliageAvailable) {
 			const foliageExportCache = new Set();
+			const foliageEffectCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
 			
 			log.write('Exporting foliage to %s', foliageDir);
@@ -1081,6 +1084,16 @@ class ADTExporter {
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
+					// Create a foliage metadata JSON packed with the table data.
+					let foliageJSON;
+					if (core.view.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
+						foliageJSON = new JSONWriter(path.join(foliageDir, layer.effectID + '.json'));
+						foliageJSON.data = groundEffectTexture;
+
+						foliageEffectCache.add(layer.effectID);
+					}
+
+					const doodadModelIDs = {};
 					for (const doodadEntryID of groundEffectTexture.DoodadID) {
 						// Skip empty fields.
 						if (!doodadEntryID)
@@ -1089,11 +1102,23 @@ class ADTExporter {
 						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
+							doodadModelIDs[doodadEntryID] = { fileDataID: modelID };
 							if (!modelID || foliageExportCache.has(modelID))
 								continue;
 
 							foliageExportCache.add(modelID);
 						}
+					}
+
+					if (foliageJSON) {
+						// Map fileDataID to the exported OBJ file names.
+						for (const entry of Object.values(doodadModelIDs)) {
+							const fileName = listfile.getByID(entry.fileDataID);
+							entry.fileName = ExportHelper.replaceExtension(path.basename(fileName), '.obj');
+						}
+
+						foliageJSON.addProperty('DoodadModelIDs', doodadModelIDs);
+						await foliageJSON.write();
 					}
 				}
 			}
