@@ -260,8 +260,8 @@ class M2Exporter {
 
 				textures[i] = Object.assign({
 					fileNameInternal: listfile.getByID(texture.fileDataID),
-					fileNameExternal: textureEntry.matPathRelative,
-					mtlName: textureEntry.matName
+					fileNameExternal: textureEntry?.matPathRelative,
+					mtlName: textureEntry?.matName
 				}, texture);
 			}
 

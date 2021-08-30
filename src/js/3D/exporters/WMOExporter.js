@@ -615,8 +615,8 @@ class WMOExporter {
 					textures.push({
 						fileDataID: materialTexture,
 						fileNameInternal: listfile.getByID(materialTexture),
-						fileNameExternal: textureEntry.matPathRelative,
-						mtlName: textureEntry.matName
+						fileNameExternal: textureEntry?.matPathRelative,
+						mtlName: textureEntry?.matName
 					});
 				}
 			}
