@@ -154,22 +154,13 @@ class OBJWriter {
 				writer.writeLine('usemtl ' + mesh.matName);
 
 			const triangles = mesh.triangles;
-			if (hasUV) {
-				for (let i = 0, n = triangles.length; i < n; i += 3) {
-					const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (uvMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
-					const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (uvMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
-					const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (uvMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
 
-					writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
-				}
-			} else {
-				for (let i = 0, n = triangles.length; i < n; i += 3) {
-					const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (normalMap.get(triangles[i]) + 1);
-					const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (normalMap.get(triangles[i + 1]) + 1);
-					const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (normalMap.get(triangles[i + 2]) + 1);
+			for (let i = 0, n = triangles.length; i < n; i += 3) {
+				const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i]) + 1 : '') + '/' + (normalMap.get(triangles[i]) + 1);
+				const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 1]) + 1 : '') + '/' + (normalMap.get(triangles[i + 1]) + 1);
+				const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 2]) + 1 : '') + '/' + (normalMap.get(triangles[i + 2]) + 1);
 
-					writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
-				}
+				writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
 			}
 		}
 
