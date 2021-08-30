@@ -18,6 +18,7 @@
 	"copyMode": "FULL",
 	"pasteSelection": false,
 	"enableUnknownFiles": true,
+	"enableM2Skins": true,
 	"enableSharedTextures": true,
 	"enableAbsoluteMTLPaths": false,
 	"enableAbsoluteCSVPaths": false,

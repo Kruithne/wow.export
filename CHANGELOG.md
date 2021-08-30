@@ -7,6 +7,7 @@
 - Added `textures.mtlName` property to M2 metadata, linking to an entry in the MTL file.
 - Added `textures` property array to WMO metadata, providing expanded texture mappings.
 - Added 'Load Unknown Files' option to toggle loading of unknown files from DB2 tables.
+- Added 'Load Model Skins' option to toggle loading of M2 skins for creatures and items.
 
 0.1.34 (24-08-2021)
 - Added height textures to ADT alpha map exports, mapped in the metadata layer entries.

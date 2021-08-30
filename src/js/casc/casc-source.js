@@ -141,17 +141,19 @@ class CASC {
 			await listfile.loadUnknowns();
 		}
 
-		await this.progress.step('Loading item displays');
-		await DBItemDisplays.initializeItemDisplays();
+		if (core.view.config.enableM2Skins) {
+			await this.progress.step('Loading item displays');
+			await DBItemDisplays.initializeItemDisplays();
 
-		await this.progress.step('Loading creature data');
-		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-		await creatureDisplayInfo.parse();
+			await this.progress.step('Loading creature data');
+			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
+			await creatureDisplayInfo.parse();
 
-		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-		await creatureModelData.parse();
+			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
+			await creatureModelData.parse();
 
-		await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+		}
 	}
 
 	/**

@@ -85,6 +85,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Load Model Skins (Requires Restart)</h1>
+						<p>If enabled, wow.export will parse creature and item skins from data tables for M2 models.</p>
+						<p>Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableM2Skins"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
