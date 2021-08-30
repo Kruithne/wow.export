@@ -136,7 +136,8 @@ class CASC {
 
 		// Once the above two tables have loaded, ingest fileDataIDs as
 		// unknown entries to the listfile.
-		await listfile.loadUnknowns();
+		if (core.view.config.enableUnknownFiles)
+			await listfile.loadUnknowns();
 
 		await this.progress.step('Loading item displays');
 		await DBItemDisplays.initializeItemDisplays();

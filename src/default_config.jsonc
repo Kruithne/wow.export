@@ -17,6 +17,7 @@
 	"exportDirectory": "",
 	"copyMode": "FULL",
 	"pasteSelection": false,
+	"enableUnknownFiles": true,
 	"enableSharedTextures": true,
 	"enableAbsoluteMTLPaths": false,
 	"enableAbsoluteCSVPaths": false,

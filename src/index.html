@@ -77,6 +77,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Load Unknown Files</h1>
+						<p>If enabled, wow.export will scan various DB2 files in the client to locate unnamed textures, models and sounds.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableUnknownFiles"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
