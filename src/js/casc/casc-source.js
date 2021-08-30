@@ -139,6 +139,8 @@ class CASC {
 		if (core.view.config.enableUnknownFiles) {
 			this.progress.step('Checking data tables for unknown files');
 			await listfile.loadUnknowns();
+		} else {
+			await this.progress.step();
 		}
 
 		if (core.view.config.enableM2Skins) {
@@ -153,6 +155,8 @@ class CASC {
 			await creatureModelData.parse();
 
 			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+		} else {
+			await this.progress.step();
 		}
 	}
 
