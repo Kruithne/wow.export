@@ -140,6 +140,7 @@ class M2Exporter {
 					mtl?.addMaterial(matName, texFile);
 					validTextures.set(texFileDataID, {
 						matName: fullTexPaths ? texFile : matName,
+						matPathRelative: texFile,
 						matPath: texPath
 					});
 				} catch (e) {
@@ -259,7 +260,7 @@ class M2Exporter {
 
 				textures[i] = Object.assign({
 					fileNameInternal: listfile.getByID(texture.fileDataID),
-					fileNameExternal: textureEntry.matPath,
+					fileNameExternal: textureEntry.matPathRelative,
 					mtlName: textureEntry.matName
 				}, texture);
 			}
