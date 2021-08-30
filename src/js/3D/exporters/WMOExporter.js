@@ -153,7 +153,7 @@ class WMOExporter {
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
 						}
 					} else {
-						log.write('Skipping WMo texture export %s (file exists, overwrite disabled)', texPath);
+						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
 					if (usePosix)
