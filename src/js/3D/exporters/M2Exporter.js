@@ -138,7 +138,10 @@ class M2Exporter {
 						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
-					validTextures.set(texFileDataID, fullTexPaths ? texFile : matName);
+					validTextures.set(texFileDataID, {
+						matName: fullTexPaths ? texFile : matName,
+						matPath: texPath
+					});
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
 				}
@@ -247,10 +250,24 @@ class M2Exporter {
 				subMeshes[i] = Object.assign({ enabled: subMeshEnabled }, skin.subMeshes[i]);
 			}
 
+			// Clone M2 textures array and expand the entries to include internal
+			// and external paths/names for external convenience. GH-208
+			const textures = new Array(this.m2.textures.length);
+			for (let i = 0, n = textures.length; i < n; i++) {
+				const texture = this.m2.textures[i];
+				const textureEntry = validTextures.get(texture.fileDataID);
+
+				textures[i] = Object.assign({
+					fileNameInternal: listfile.getByID(texture.fileDataID),
+					fileNameExternal: textureEntry.matPath,
+					mtlName: textureEntry.matName
+				}, texture);
+			}
+
 			json.addProperty('fileDataID', this.fileDataID);
 			json.addProperty('fileName', listfile.getByID(this.fileDataID));
 			json.addProperty('internalName', this.m2.name);
-			json.addProperty('textures', this.m2.textures);
+			json.addProperty('textures', textures);
 			json.addProperty('textureTypes', this.m2.textureTypes);
 			json.addProperty('materials', this.m2.materials);
 			json.addProperty('textureCombos', this.m2.textureCombos);
@@ -280,7 +297,7 @@ class M2Exporter {
 
 			let matName;
 			if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID))
-				matName = validTextures.get(texture.fileDataID);
+				matName = validTextures.get(texture.fileDataID).matName;
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
