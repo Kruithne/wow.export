@@ -160,7 +160,7 @@ class WMOExporter {
 						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
-					textureMap.set(fileDataID, texFile);
+					textureMap.set(fileDataID, { matPathRelative: texFile, matPath: texPath, matName });
 
 					// MTL only supports one texture per material, only link the first.
 					if (!materialMap.has(i))
@@ -329,6 +329,7 @@ class WMOExporter {
 			return;
 			
 		const materialMap = texMaps.materialMap;
+		const textureMap = texMaps.textureMap;
 
 		const groups = [];
 		let nInd = 0;
@@ -598,9 +599,32 @@ class WMOExporter {
 				};
 			}
 
+			// Create a textures array and push every unique fileDataID from the
+			// material stack, expanded with file name/path data for external QoL.
+			const textures = [];
+			const textureCache = new Set();
+			for (const material of wmo.materials) {
+				const materialTextures = [material.texture1, material.texture2, material.texture3];
+				for (const materialTexture of materialTextures) {
+					if (materialTexture === 0 || textureCache.has(materialTexture))
+						continue;
+
+					const textureEntry = textureMap.get(materialTexture);
+
+					textureCache.add(materialTexture);
+					textures.push({
+						fileDataID: materialTexture,
+						fileNameInternal: listfile.getByID(materialTexture),
+						fileNameExternal: textureEntry.matPathRelative,
+						mtlName: textureEntry.matName
+					});
+				}
+			}
+
 			json.addProperty('groups', groups);
 			json.addProperty('groupNames', Object.values(wmo.groupNames));
 			json.addProperty('groupInfo', wmo.groupInfo);
+			json.addProperty('textures', textures);
 			json.addProperty('materials', wmo.materials);
 			json.addProperty('doodadSets', wmo.doodadSets);
 			json.addProperty('fileDataIDs', wmo.fileDataIDs);

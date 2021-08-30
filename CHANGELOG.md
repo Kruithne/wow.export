@@ -5,6 +5,7 @@
 - Added `textures.fileNameInternal` property to M2 metadata, mapping fileDataID to a listfile entry.
 - Added `textures.fileNameExternal` property to M2 metadata, pointing to texture export location (relative to OBJ).
 - Added `textures.mtlName` property to M2 metadata, linking to an entry in the MTL file.
+- Added `textures` property array to WMO metadata, providing expanded texture mappings.
 
 0.1.34 (24-08-2021)
 - Added height textures to ADT alpha map exports, mapped in the metadata layer entries.
