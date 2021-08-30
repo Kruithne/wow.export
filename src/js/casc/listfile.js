@@ -134,9 +134,9 @@ const loadUnknowns = async () => {
 	let unknownCount = 0;
 	for (const entry of soundKitEntries.getAllRows().values()) {
 		if (!idLookup.has(entry.FileDataID)) {
-			// TODO: We're naively assuming .ogg here, but it could be something else.
-			// Is there any way we can improve this without having to scan file headers?
-			const fileName = 'unknown_' + entry.FileDataID + '.ogg';
+			// List unknown sound files using the .unk_sound extension. Files will be
+			// dynamically checked upon export and given the correct extension.
+			const fileName = 'unknown_' + entry.FileDataID + '.unk_sound';
 			idLookup.set(entry.FileDataID, fileName);
 			nameLookup.set(fileName, entry.FileDataID);
 			unknownCount++;

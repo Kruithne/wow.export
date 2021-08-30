@@ -8,6 +8,8 @@
 - Added `textures` property array to WMO metadata, providing expanded texture mappings.
 - Added 'Load Unknown Files' option to toggle loading of unknown files from DB2 tables.
 - Added 'Load Model Skins' option to toggle loading of M2 skins for creatures and items.
+- Unknown sound files are now listed with the `.unk_sound` extension rather than `.ogg`.
+- Unknown sound files are now automatically type-detected on export and given the correct extension.
 
 0.1.34 (24-08-2021)
 - Added height textures to ADT alpha map exports, mapped in the metadata layer entries.

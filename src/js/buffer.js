@@ -520,6 +520,25 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Returns true if the buffer starts with any of the given string(s).
+	 * @param {string|array} input 
+	 * @param {string} [encoding=utf8]
+	 * @returns {boolean}
+	 */
+	startsWith(input, encoding = 'utf8') {
+		if (Array.isArray(input)) {
+			for (const entry of input) {
+				if (this.readString(entry.length, encoding) === entry)
+					return true;
+			}
+
+			return false;
+		} else {
+			return this.readString(input.length, encoding) === input;
+		}
+	}
+
+	/**
 	 * Read a string from the buffer and parse it as JSON.
 	 * @param {?number} length
 	 * @param {encoding} [encoding=utf8]
