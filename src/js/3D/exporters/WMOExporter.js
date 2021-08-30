@@ -581,6 +581,7 @@ class WMOExporter {
 				groups[i] = {
 					groupName: wmo.groupNames[group.nameOfs],
 					groupDescription: wmo.groupNames[group.descOfs],
+					enabled: !mask || mask.has(i),
 					version: group.version,
 					flags: group.flags,
 					boundingBox1: group.boundingBox1,

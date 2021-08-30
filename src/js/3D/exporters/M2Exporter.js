@@ -238,6 +238,15 @@ class M2Exporter {
 			return;
 
 		if (exportMeta) {
+			// Clone the submesh array and add a custom 'enabled' property
+			// to indicate to external readers which submeshes are not included
+			// in the actual geometry file.
+			const subMeshes = Array(skin.subMeshes.length);
+			for (let i = 0, n = subMeshes.length; i < n; i++) {
+				const subMeshEnabled = !this.geosetMask || this.geosetMask[i].checked;
+				subMeshes[i] = Object.assign({ enabled: subMeshEnabled }, skin.subMeshes[i]);
+			}
+
 			json.addProperty('fileDataID', this.fileDataID);
 			json.addProperty('fileName', listfile.getByID(this.fileDataID));
 			json.addProperty('internalName', this.m2.name);
@@ -248,7 +257,7 @@ class M2Exporter {
 			json.addProperty('skeletonFileID', this.m2.skeletonFileID);
 			json.addProperty('boneFileIDs', this.m2.boneFileIDs);
 			json.addProperty('skin', {
-				subMeshes: skin.subMeshes,
+				subMeshes: subMeshes,
 				textureUnits: skin.textureUnits
 			});
 		}

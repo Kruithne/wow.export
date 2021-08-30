@@ -1,3 +1,7 @@
+0.1.35 (30-08-2021)
+- Added `skin.subMeshes.enabled` property to M2 metadata, indicating which submeshes were exported.
+- Added `groups.enabled` property to WMO metadata, indicating which WMO groups were exported.
+
 0.1.34 (24-08-2021)
 - Added height textures to ADT alpha map exports, mapped in the metadata layer entries.
 - Added effectID (GroundEffectTexture#ID) property to ADT alpha map layer metadata.
