@@ -4,6 +4,7 @@
 - Added `transparencyLookup` property to M2 metadata for texture unit mapping to transparency entries.
 - Added `textureTransforms` property to M2 metadata defining texture animation timelines.
 - Added `textureTransformsLookup` property to M2 metadata for texture transform lookups.
+- Added `skin.fileName` and `skin.fileDataID` properties to M2 skin metadata.
 - Added `boundingBox`, `boundingSphereRadius`, `collisionBox`, `collisionSphereRadius` properties to M2 metadata.
 - Added `animFileIDs` property to M2 metadata mapping animation IDs to relative `.anim` files.
 - Added option to export all associated raw `.anim` files with M2 models.

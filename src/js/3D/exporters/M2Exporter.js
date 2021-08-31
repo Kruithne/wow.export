@@ -286,7 +286,9 @@ class M2Exporter {
 			json.addProperty('collisionSphereRadius', this.m2.collisionSphereRadius);
 			json.addProperty('skin', {
 				subMeshes: subMeshes,
-				textureUnits: skin.textureUnits
+				textureUnits: skin.textureUnits,
+				fileName: skin.fileName,
+				fileDataID: skin.fileDataID
 			});
 		}
 
