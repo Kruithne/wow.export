@@ -266,7 +266,7 @@ const exportFiles = async (files, isLocal = false) => {
 						exportPaths.writeLine(exportPath);
 
 						const outDir = path.dirname(exportPath);
-						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone;
+						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim;
 						if (loadM2 && fileNameLower.endsWith('.m2') === true) {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 							const m2 = exporter.m2;
@@ -296,6 +296,21 @@ const exportFiles = async (files, isLocal = false) => {
 								for (let i = 0, n = m2.boneFileIDs.length; i < n; i++) {
 									const boneData = await casc.getFile(m2.boneFileIDs[i]);
 									await boneData.writeToFile(path.join(outDir, basename + '_' + i + '.bone'));
+								}
+							}
+
+							if (config.modelsExportAnim && m2.animFileIDs) {
+								const animCache = new Set();
+								for (const anim of m2.animFileIDs) {
+									if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+										const animData = await casc.getFile(anim.fileDataID);
+										const animIDStr = anim.animID.toString().padStart(4, 0);
+										const animSubIDStr = anim.subAnimID.toString().padStart(2, 0);
+										const animName = ExportHelper.replaceExtension(basename, animIDStr + '-' + animSubIDStr + '.anim');
+										
+										await animData.writeToFile(path.join(outDir, animName));
+										animCache.add(anim.fileDataID);
+									}
 								}
 							}
 						} else if (fileNameLower.endsWith('.wmo') === true) {

@@ -45,6 +45,7 @@
 	"modelsExportSkin": false,
 	"modelsExportSkel": false,
 	"modelsExportBone": false,
+	"modelsExportAnim": false,
 	"modelsExportWMOGroups": false,
 	"modelsExportUV2": false,
 	"modelsExportAlpha": true,

@@ -5,7 +5,8 @@
 - Added `textureTransforms` property to M2 metadata defining texture animation timelines.
 - Added `textureTransformsLookup` property to M2 metadata for texture transform lookups.
 - Added `boundingBox`, `boundingSphereRadius`, `collisionBox`, `collisionSphereRadius` properties to M2 metadata.
-- Added `animFileIDs` property to M2 metadata mapping animation IDs to relative .anim files.
+- Added `animFileIDs` property to M2 metadata mapping animation IDs to relative `.anim` files.
+- Added option to export all associated raw `.anim` files with M2 models.
 
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
