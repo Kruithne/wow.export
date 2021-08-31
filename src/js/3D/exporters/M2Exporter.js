@@ -279,6 +279,10 @@ class M2Exporter {
 			json.addProperty('transparencyLookup', this.m2.transparencyLookup);
 			json.addProperty('textureTransforms', this.m2.textureTransforms);
 			json.addProperty('textureTransformsLookup', this.m2.textureTransformsLookup);
+			json.addProperty('boundingBox', this.m2.boundingBox);
+			json.addProperty('boundingSphereRadius', this.m2.boundingSphereRadius);
+			json.addProperty('collisionBox', this.m2.collisionBox);
+			json.addProperty('collisionSphereRadius', this.m2.collisionSphereRadius);
 			json.addProperty('skin', {
 				subMeshes: subMeshes,
 				textureUnits: skin.textureUnits

@@ -15,6 +15,11 @@ const CHUNK_TXID = 0x44495854;
 const CHUNK_SKID = 0x44494B53;
 const CHUNK_BFID = 0x44494642;
 
+/**
+ * An axis-aligned box.
+ * @typedef {{ min: number, max: number }} CAaBox
+ */
+
 class M2Track {
 	/**
 	 * Construct a new M2Track instance.
@@ -157,7 +162,6 @@ class M2Loader {
 		this.data.move(8); // textureTransformBoneMap
 		this.parseChunk_MD21_transparencyLookup(ofs);
 		this.parseChunk_MD21_textureTransformLookup(ofs);
-		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
 		this.parseChunk_MD21_collision(ofs);
 	}
 
@@ -180,6 +184,14 @@ class M2Loader {
 
 		data.seek(base);
 		return arr;
+	}
+
+	/**
+	 * Read an axis-aligned box with a given min/max.
+	 * @returns {CAaBox}
+	 */
+	readCAaBox() {
+		return { min: this.data.readFloatLE(3), max: this.data.readFloatLE(3) };
 	}
 
 	/**
@@ -231,6 +243,12 @@ class M2Loader {
 	 * @param {number} ofs 
 	 */
 	parseChunk_MD21_collision(ofs) {
+		// Parse collision boxes before the full collision chunk.
+		this.boundingBox = this.readCAaBox();
+		this.boundingSphereRadius = this.data.readFloatLE();
+		this.collisionBox = this.readCAaBox();
+		this.collisionSphereRadius = this.data.readFloatLE();
+
 		const indicesCount = this.data.readUInt32LE();
 		const indicesOfs = this.data.readUInt32LE();
 

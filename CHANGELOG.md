@@ -4,6 +4,7 @@
 - Added `transparencyLookup` property to M2 metadata for texture unit mapping to transparency entries.
 - Added `textureTransforms` property to M2 metadata defining texture animation timelines.
 - Added `textureTransformsLookup` property to M2 metadata for texture transform lookups.
+- Added `boundingBox`, `boundingSphereRadius`, `collisionBox`, `collisionSphereRadius` properties to M2 metadata.
 
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
