@@ -120,6 +120,114 @@ const ADTChunkHandlers = {
 		}
 	},
 
+	// MH2O (Liquids)
+	0x4D48324F: function(data, chunkSize) {
+		const base = data.offset;
+		let dataOffsets = new Set();
+
+		// SMLiquidChunk
+		const chunks = this.liquidChunks = new Array(256);
+		for (let i = 0; i < 256; i++) {
+			const offsetInstances = data.readUInt32LE();
+			const layerCount = data.readUInt32LE();
+			const offsetAttributes = data.readUInt32LE();
+
+			if (offsetAttributes > 0)
+				dataOffsets.add(offsetAttributes);
+
+			const entryOfs = data.offset;
+			const chunk = chunks[i] = {
+				attributes: { fishable: 0, deep: 0 },
+				instances: new Array(layerCount)
+			};
+
+			if (layerCount > 0) {
+				// Read chunk attributes.
+				data.seek(base + offsetAttributes);
+				chunk.attributes.fishable = data.readUInt64LE();
+				chunk.attributes.deep = data.readUInt64LE();
+
+				// Read SMLiquidInstance array.
+				data.seek(base + offsetInstances);
+				for (let j = 0; j < layerCount; j++) {
+					const instance = chunk.instances[j] = {
+						liquidType: data.readUInt16LE(),
+						liquidObject: data.readUInt16LE(),
+						minHeightLevel: data.readFloatLE(), // Use 0.0 if LVF = 2
+						maxHeightLevel: data.readFloatLE(), // Use 0.0 if LVF = 2
+						xOffset: data.readUInt8(), // 0 if liquidObject <= 41
+						yOffset: data.readUInt8(), // 0 if liquidObject <= 41
+						width: data.readUInt8(), // 8 if liquidObject <= 41
+						height: data.readUInt8(), // 8 if liquidObject <= 41
+						bitmap: [], // Empty == All exist.
+						vertexData: {},
+						offsetExistsBitmap: data.readUInt32LE(),
+						offsetVertexData: data.readUInt32LE()
+					};
+
+					if (instance.offsetExistsBitmap > 0)
+						dataOffsets.add(instance.offsetExistsBitmap);
+
+					if (instance.offsetVertexData > 0)
+						dataOffsets.add(instance.offsetVertexData);
+
+					const instanceOfs = data.offset;
+
+					// Rounding up to cover all necessary bytes for the bitmap here. Probably correct?
+					if (instance.offsetExistsBitmap > 0)
+						instance.bitmap = data.readUInt8(Math.ceil((instance.width * instance.height + 7) / 8));
+
+					data.seek(instanceOfs);
+				}
+			}
+
+			data.seek(entryOfs);
+		}
+
+		dataOffsets = Array.from(dataOffsets).sort((a, b) => a - b);
+
+		// Retroactively parse vertex data by assuming the structures based on offsets.
+		for (const chunk of chunks) {
+			for (const instance of chunk.instances) {
+				if (instance.offsetVertexData > 0) {
+					const vertexCount = (instance.width + 1) * (instance.height + 1);
+					const ofsIndex = dataOffsets.indexOf(instance.offsetVertexData);
+					const dataSize = dataOffsets[ofsIndex + 1] - instance.offsetVertexData;
+
+					data.seek(base + instance.offsetVertexData);
+
+					const mtp = dataSize / vertexCount;
+					const vertexData = instance.vertexData = {};
+
+					// MTP
+					// 5 = Height, Depth
+					// 8 = Height, UV
+					// 1 = Depth
+					// 9 = Height, UV, Depth
+
+					// Height
+					if (mtp === 5 || mtp === 8 || mtp === 9)
+						vertexData.height = data.readFloatLE(vertexCount);
+
+					// Texture Coordinates (UV)
+					if (mtp === 8 || mtp === 9) {
+						const uv = vertexData.uv = new Array(vertexCount);
+						for (let i = 0; i < vertexCount; i++) {
+							uv[i] = {
+								x: data.readUInt16LE(),
+								y: data.readUInt16LE()
+							}
+						}
+					}
+
+					// Depth
+					if (mtp === 5 || mtp === 1 || mtp === 9)
+						vertexData.depth = data.readUInt8(vertexCount);
+				}
+			}
+		}
+	},
+
 	// MHDR (Header)
 	0x4D484452: function(data) {
 		this.header = {

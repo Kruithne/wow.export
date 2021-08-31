@@ -1058,6 +1058,16 @@ class ADTExporter {
 			}
 		}
 
+		// Export liquids.
+		if (config.mapsIncludeLiquid && rootAdt.liquidChunks) {
+			const liquidFile = path.join(dir, 'liquid_' + this.tileID + '.json');
+			log.write('Exporting liquid data to %s', liquidFile);
+
+			const liquidJSON = new JSONWriter(liquidFile);
+			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks)
+			await liquidJSON.write();
+		}
+
 		// Prepare foliage data tables if needed.
 		if (config.mapsIncludeFoliage && !hasLoadedFoliage)
 			await loadFoliageTables();

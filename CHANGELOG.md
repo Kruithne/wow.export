@@ -7,6 +7,7 @@
 - Added `boundingBox`, `boundingSphereRadius`, `collisionBox`, `collisionSphereRadius` properties to M2 metadata.
 - Added `animFileIDs` property to M2 metadata mapping animation IDs to relative `.anim` files.
 - Added option to export all associated raw `.anim` files with M2 models.
+- Added option to export liquid (water, lava, etc) data for ADT tiles.
 
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.

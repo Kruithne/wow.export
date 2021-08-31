@@ -57,6 +57,7 @@
 	"mapsIncludeM2": true,
 	"mapsIncludeWMOSets": true,
 	"mapsIncludeFoliage": true,
+	"mapsIncludeLiquid": false,
 	"mapsIncludeGameObjects": true,
 	"mapsIncludeHoles": true,
 	"regexFilters": false,
