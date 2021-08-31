@@ -1,3 +1,6 @@
+0.1.36 (31-08-2021)
+- Added `colors` property to M2 meta data containing color/alpha timelines for models.
+
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
 - Added `skin.subMeshes.enabled` property to M2 metadata, indicating which submeshes were exported.

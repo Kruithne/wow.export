@@ -146,7 +146,7 @@ class M2Loader {
 		this.data.move(8);
 		this.parseChunk_MD21_vertices(ofs);
 		this.viewCount = this.data.readUInt32LE();
-		this.data.move(8); // coloursCount, coloursOfs
+		this.parseChunk_MD21_colors(ofs);
 		this.parseChunk_MD21_textures(ofs);
 		this.data.move(4 * 4); // texture_weights, texture_transforms
 		this.parseChunk_MD21_replaceableTextureLookup(ofs);
@@ -362,6 +362,30 @@ class M2Loader {
 			uv2[uvIndex] = this.data.readFloatLE();
 			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse color/transparency data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_colors(ofs) {
+		const colorsCount = this.data.readUInt32LE();
+		const colorsOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(colorsOfs + ofs);
+
+		const colors = this.colors = new Array(colorsCount);
+		for (let i = 0; i < colorsCount; i++) {
+			colors[i] = {
+				color: this.readM2Track(() => this.data.readFloatLE(3)),
+				alpha: this.readM2Track(() => this.data.readInt16LE())
+			}
+		}
+
+		console.log(colors);
 
 		this.data.seek(base);
 	}
