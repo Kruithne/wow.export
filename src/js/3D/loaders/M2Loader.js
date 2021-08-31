@@ -385,8 +385,6 @@ class M2Loader {
 			}
 		}
 
-		console.log(colors);
-
 		this.data.seek(base);
 	}
 
