@@ -277,6 +277,8 @@ class M2Exporter {
 			json.addProperty('colors', this.m2.colors);
 			json.addProperty('textureWeights', this.m2.textureWeights);
 			json.addProperty('transparencyLookup', this.m2.transparencyLookup);
+			json.addProperty('textureTransforms', this.m2.textureTransforms);
+			json.addProperty('textureTransformsLookup', this.m2.textureTransformsLookup);
 			json.addProperty('skin', {
 				subMeshes: subMeshes,
 				textureUnits: skin.textureUnits

@@ -149,14 +149,14 @@ class M2Loader {
 		this.parseChunk_MD21_colors(ofs);
 		this.parseChunk_MD21_textures(ofs);
 		this.parseChunk_MD21_textureWeights(ofs);
-		this.data.move(8); // texture_transforms
+		this.parseChunk_MD21_textureTransforms(ofs);
 		this.parseChunk_MD21_replaceableTextureLookup(ofs);
 		this.parseChunk_MD21_materials(ofs);
 		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
 		this.data.move(8); // textureTransformBoneMap
 		this.parseChunk_MD21_transparencyLookup(ofs);
-		this.data.move(8); // textureTransformCombos
+		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
 		this.parseChunk_MD21_collision(ofs);
 	}
@@ -365,6 +365,47 @@ class M2Loader {
 			uv2[uvIndex] = this.data.readFloatLE();
 			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse texture transformation definitions from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureTransforms(ofs) {
+		const transformCount = this.data.readUInt32LE();
+		const transformOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(transformOfs + ofs);
+
+		const transforms = this.textureTransforms = new Array(transformCount);
+		for (let i = 0; i < transformCount; i++) {
+			transforms[i] = {
+				translation: this.readM2Track(() => this.data.readFloatLE(3)),
+				rotation: this.readM2Track(() => this.data.readFloatLE(4)),
+				scaling: this.readM2Track(() => this.data.readFloatLE(3))
+			};
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse texture transform lookup table from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureTransformLookup(ofs) {
+		const entryCount = this.data.readUInt32LE();
+		const entryOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(entryOfs + ofs);
+
+		const entries = this.textureTransformsLookup = new Array(entryCount);
+		for (let i = 0; i < entryCount; i++)
+			entries[i] = this.data.readUInt16LE();
 
 		this.data.seek(base);
 	}
