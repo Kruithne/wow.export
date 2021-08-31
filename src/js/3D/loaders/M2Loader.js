@@ -14,6 +14,7 @@ const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
 const CHUNK_SKID = 0x44494B53;
 const CHUNK_BFID = 0x44494642;
+const CHUNK_AFID = 0x44494641;
 
 /**
  * An axis-aligned box.
@@ -65,6 +66,7 @@ class M2Loader {
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
 				case CHUNK_SKID: this.parseChunk_SKID(); break;
 				case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
+				case CHUNK_AFID: this.parseChunk_AFID(chunkSize); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -132,6 +134,23 @@ class M2Loader {
 	 */
 	parseChunk_BFID(chunkSize) {
 		this.boneFileIDs = this.data.readUInt32LE(chunkSize / 4);
+	}
+
+	/**
+	 * Parse AFID chunk for animation file data IDs.
+	 * @param {number} chunkSize 
+	 */
+	parseChunk_AFID(chunkSize) {
+		const entryCount = chunkSize / 8;
+		const entries = this.animFileIDs = new Array(entryCount);
+
+		for (let i = 0; i < entryCount; i++) {
+			entries[i] = {
+				animID: this.data.readUInt16LE(),
+				subAnimID: this.data.readUInt16LE(),
+				fileDataID: this.data.readUInt32LE()
+			};
+		}
 	}
 
 	/**
