@@ -148,12 +148,15 @@ class M2Loader {
 		this.viewCount = this.data.readUInt32LE();
 		this.parseChunk_MD21_colors(ofs);
 		this.parseChunk_MD21_textures(ofs);
-		this.data.move(4 * 4); // texture_weights, texture_transforms
+		this.parseChunk_MD21_textureWeights(ofs);
+		this.data.move(8); // texture_transforms
 		this.parseChunk_MD21_replaceableTextureLookup(ofs);
 		this.parseChunk_MD21_materials(ofs);
 		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
-		this.data.move(6 * 4); // textureTransformBoneMap, textureWeightCombos, textureTransformCombos
+		this.data.move(8); // textureTransformBoneMap
+		this.parseChunk_MD21_transparencyLookup(ofs);
+		this.data.move(8); // textureTransformCombos
 		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
 		this.parseChunk_MD21_collision(ofs);
 	}
@@ -362,6 +365,42 @@ class M2Loader {
 			uv2[uvIndex] = this.data.readFloatLE();
 			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse transparency lookup table from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_transparencyLookup(ofs) {
+		const entryCount = this.data.readUInt32LE();
+		const entryOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(entryOfs + ofs);
+
+		const entries = this.transparencyLookup = new Array(entryCount);
+		for (let i = 0; i < entryCount; i++)
+			entries[i] = this.data.readUInt16LE();
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse global transparency weights from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureWeights(ofs) {
+		const weightCount = this.data.readUInt32LE();
+		const weightOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(weightOfs + ofs);
+
+		const weights = this.textureWeights = new Array(weightCount);
+		for (let i = 0; i < weightCount; i++)
+			weights[i] = this.readM2Track(() => this.data.readInt16LE());
 
 		this.data.seek(base);
 	}

@@ -1,5 +1,7 @@
 0.1.36 (31-08-2021)
-- Added `colors` property to M2 meta data containing color/alpha timelines for models.
+- Added `colors` property to M2 metadata containing color/alpha timelines for models.
+- Added `textureWeights` property to M2 metadata containing global texture transparency timelines for models.
+- Added `transparencyLookup` property to M2 metadata for texture unit mapping to transparency entries.
 
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
