@@ -12,7 +12,7 @@
 
 0.1.35 (30-08-2021)
 - Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
-- Added `skin.subMeshes.enabled` property to M2 metadata, indicating which submeshes were exported.
+- Added `skin.subMeshes.enabled` property to M2 metadata, indicating which sub-meshes were exported.
 - Added `groups.enabled` property to WMO metadata, indicating which WMO groups were exported.
 - Added `textures.fileNameInternal` property to M2 metadata, mapping fileDataID to a listfile entry.
 - Added `textures.fileNameExternal` property to M2 metadata, pointing to texture export location (relative to OBJ).
