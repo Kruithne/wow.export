@@ -1,3 +1,6 @@
+0.1.37 (01-09-2021)
+- Selecting textures/models for an item will now reset the respective filter for that panel.
+
 0.1.36 (31-08-2021)
 - Added `colors` property to M2 metadata containing color/alpha timelines for models.
 - Added `textureWeights` property to M2 metadata containing global texture transparency timelines for models.
