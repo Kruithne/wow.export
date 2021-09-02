@@ -1,4 +1,5 @@
 0.1.37 (01-09-2021)
+- Added texture ribbon to model 
 - Selecting textures/models for an item will now reset the respective filter for that panel.
 - Fixed the Discord links in the footer/crash screen to point to the new support location.
 

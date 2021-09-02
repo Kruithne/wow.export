@@ -19,12 +19,9 @@ const STATIC_LINKS = {
 
 /**
  * Defines the URL pattern for locating a specific file on wow.tools.
- * 
- * Currently no filter or param exists for directly accessing a file by
- * fileDataID, so we use the range filter to do so.
  * @type {string}
  */
-const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=range%%3A%d-%d';
+const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=fdid%%3A%d';
 
 module.exports = class ExternalLinks {
 	/**
@@ -43,6 +40,6 @@ module.exports = class ExternalLinks {
 	 * @param {number} fileDataID 
 	 */
 	static wowTools_viewFile(fileDataID) {
-		this.open(util.format(WOW_TOOLS_FILE, fileDataID, fileDataID));
+		this.open(util.format(WOW_TOOLS_FILE, fileDataID));
 	}
 }
