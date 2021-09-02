@@ -249,43 +249,6 @@
 	display: flex;
 	justify-content: center;
 
-	&-context {
-		position: fixed;
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--border);
-		box-shadow: black 0 0 3px 0;
-		background: #232323;
-		z-index: 5;
-		transform: translateY(-100%);
-
-		&-zone {
-			position: absolute;
-			left: -20px;
-			top: -20px;
-			bottom: -20px;
-			right: -20px;
-			z-index: -1;
-		}
-
-		> span {
-			padding: 8px;
-			border-bottom: 1px solid var(--border);
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			overflow: hidden;
-
-			&:hover {
-				background: #353535;
-				cursor: pointer;
-			}
-
-			&:last-child {
-				border-bottom: 0;
-			}
-		}
-	}
-
 	&-next, &-prev {
 		width: 30px;
 		font-weight: bold;

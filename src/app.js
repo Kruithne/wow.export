@@ -97,6 +97,7 @@ require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
 require('./js/components/resize-layer');
+require('./js/components/context-menu');
 
 const TabTextures = require('./js/ui/tab-textures');
 require('./js/ui/source-select');
@@ -338,19 +339,6 @@ document.addEventListener('click', function(e) {
 			 */
 			onTextureRibbonResize: function(width) {
 				textureRibbon.onResize(width);
-			},
-
-			/**
-			 * Displays the texture ribbon context menu with the given texture slot.
-			 * @param {MouseEvent} $event
-			 * @param {object} slot 
-			 */
-			showTextureRibbonContextMenu: function($event, slot) {
-				this.textureRibbonActiveSlot = slot;
-				
-				const pos = this.textureRibbonContextXY;
-				pos.x = $event.clientX;
-				pos.y = $event.clientY;
 			},
 
 			/**

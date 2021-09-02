@@ -28,7 +28,7 @@ const onResize = (width) => {
 const reset = () => {
 	core.view.textureRibbonStack = [];
 	core.view.textureRibbonPage = 0;
-	core.view.textureRibbonActiveSlot = null;
+	core.view.textureRibbonContextNode = null;
 
 	return ++_syncID;
 };
