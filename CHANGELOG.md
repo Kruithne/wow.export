@@ -1,5 +1,5 @@
 0.1.37 (01-09-2021)
-- Added texture ribbon to model 
+- Added texture ribbon to the 3D model viewer, allowing inspection of used textures.
 - Selecting textures/models for an item will now reset the respective filter for that panel.
 - Fixed the Discord links in the footer/crash screen to point to the new support location.
 - Removed hide/show sidebar buttons, sidebar is now always active.
