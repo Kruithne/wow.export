@@ -39,7 +39,10 @@ input[type="button"] {
 	box-shadow: black 0 0 3px 0;
 	background: #232323;
 	z-index: 5;
-	transform: translateY(-100%);
+
+	&.low {
+		transform: translateY(-100%);
+	}
 
 	&-zone {
 		position: absolute;

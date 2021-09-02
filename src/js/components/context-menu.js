@@ -22,7 +22,8 @@ Vue.component('context-menu', {
 	data: function() {
 		return {
 			positionX: 0,
-			positionY: 0
+			positionY: 0,
+			isLow: false
 		}
 	},
 
@@ -33,9 +34,10 @@ Vue.component('context-menu', {
 	beforeUpdate: function() {
 		this.positionX = clientMouseX;
 		this.positionY = clientMouseY;
+		this.isLow = this.positionY > window.innerHeight / 2;
 	},
 
-	template: `<div class="context-menu" v-if="node !== null" :style="{ top: positionY + 'px', left: positionX + 'px' }" @mouseleave="$emit('close')" @click="$emit('close')">
+	template: `<div class="context-menu" v-if="node !== null" :class=" { low: isLow }" :style="{ top: positionY + 'px', left: positionX + 'px' }" @mouseleave="$emit('close')" @click="$emit('close')">
 		<div class="context-menu-zone"></div>
 		<slot v-bind:node="node"></slot>
 	</div>
