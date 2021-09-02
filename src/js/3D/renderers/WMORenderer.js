@@ -12,6 +12,7 @@ const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
 const listfile = require('../../casc/listfile');
+const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
@@ -101,6 +102,8 @@ class WMORenderer {
 		const materialCount = wmo.materials.length;
 		const materials = this.materials = new Array(materialCount);
 
+		this.syncID = textureRibbon.reset();
+
 		const isClassic = !!wmo.textureNames;
 		for (let i = 0; i < materialCount; i++) {
 			const material = wmo.materials[i];
@@ -115,10 +118,16 @@ class WMORenderer {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
+				const ribbonSlot = textureRibbon.addSlot();
+				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
+					const blpURI = blp.getDataURL(0b0111);
 
-					loader.load(blp.getDataURL(0b0111), image => {
+					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+
+					loader.load(blpURI, image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -138,6 +147,30 @@ class WMORenderer {
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}
+
+			// Include texture2/texture3 in the texture ribbon.
+			this.loadAuxiliaryTextureForRibbon(material.texture2, wmo);
+			this.loadAuxiliaryTextureForRibbon(material.texture3, wmo);
+		}
+	}
+
+	/**
+	 * Load an auxiliary texture onto the texture ribbon.
+	 * @param {number|string} textureID 
+	 * @param {WMOLoader} wmo
+	 */
+	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
+		if (wmo.textureNames)
+			textureID = listfile.getByFilename(textureID) || 0;
+
+		if (textureID > 0) {
+			const ribbonSlot = textureRibbon.addSlot();
+			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
+
+			const data = await core.view.casc.getFile(textureID);
+			const blp = new BLPFile(data);
+
+			textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
 		}
 	}
 

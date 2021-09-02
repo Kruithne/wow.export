@@ -11,6 +11,8 @@ const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
 const RenderCache = require('./RenderCache');
 
+const textureRibbon = require('../../ui/texture-ribbon');
+
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
 class M2Renderer {
@@ -26,6 +28,7 @@ class M2Renderer {
 		this.reactive = reactive;
 		this.materials = [];
 		this.renderCache = new RenderCache();
+		this.syncID = -1;
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
@@ -164,8 +167,12 @@ class M2Renderer {
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
+			const blpURI = blp.getDataURL(0b0111);
 
-			loader.load(blp.getDataURL(0b0111), image => {
+			textureRibbon.setSlotFile(i, fileDataID, this.syncID);
+			textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+
+			loader.load(blpURI, image => {
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
@@ -190,16 +197,24 @@ class M2Renderer {
 		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
 
+		this.syncID = textureRibbon.reset();
+
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
+			const ribbonSlot = textureRibbon.addSlot();
 
 			if (texture.fileDataID > 0) {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
+				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					loader.load(blp.getDataURL(0b0111), image => {
+					const blpURI = blp.getDataURL(0b0111);
+					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+
+					loader.load(blpURI, image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;

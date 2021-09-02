@@ -78,6 +78,11 @@ const view = {
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	modelViewerAutoAdjust: true, // Automatic camera adjustment.
+	textureRibbonStack: [], // Texture preview stack for model viewer.
+	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
+	textureRibbonPage: 0, // Active page of texture slots to render.
+	textureRibbonActiveSlot: null, // Active texture slot for the context menu.
+	textureRibbonContextXY: { x: 0, y: 0 }, // Dynamic position of the texture ribbon context menu.
 	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.

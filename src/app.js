@@ -76,12 +76,15 @@ const constants = require('./js/constants');
 const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
+const listfile = require('./js/casc/listfile');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const blender = require('./js/blender');
 const fsp = require('fs').promises;
 const TestRunner = require('./js/iat/test-runner');
+const ExportHelper = require('./js/casc/export-helper');
+const textureRibbon = require('./js/ui/texture-ribbon');
 
 require('./js/components/listbox');
 require('./js/components/listboxb');
@@ -92,9 +95,10 @@ require('./js/components/file-field');
 require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
+require('./js/components/resize-layer');
 
+const TabTextures = require('./js/ui/tab-textures');
 require('./js/ui/source-select');
-require('./js/ui/tab-textures');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
@@ -325,6 +329,76 @@ document.addEventListener('click', function(e) {
 			 */
 			restartApplication: function() {
 				chrome.runtime.reload();
+			},
+
+			/**
+			 * Invoked when the texture ribbon element on the model viewer
+			 * fires a resize event.
+			 */
+			onTextureRibbonResize: function(width) {
+				textureRibbon.onResize(width);
+			},
+
+			/**
+			 * Displays the texture ribbon context menu with the given texture slot.
+			 * @param {MouseEvent} $event
+			 * @param {object} slot 
+			 */
+			showTextureRibbonContextMenu: function($event, slot) {
+				this.textureRibbonActiveSlot = slot;
+				
+				const pos = this.textureRibbonContextXY;
+				pos.x = $event.clientX;
+				pos.y = $event.clientY;
+			},
+
+			/**
+			 * Switches to the textures tab and filters for the given file.
+			 * @param {number} fileDataID 
+			 */
+			goToTexture: function(fileDataID) {
+				const view = core.view;
+				view.setScreen('tab-textures');
+
+				// Directly preview the requested file, even if it's not in the listfile.
+				TabTextures.previewTextureByID(fileDataID);
+
+				// Since we're doing a direct preview, we need to reset the users current
+				// selection, so if they hit export, they get the expected result.
+				view.selectionTextures.splice(0);
+
+				// Despite direct preview, *attempt* to filter for the file as well.
+				if (view.config.listfileShowFileDataIDs) {
+					// If the user has fileDataIDs shown, filter by that.
+					if (view.config.regexFilters)
+						view.userInputFilterTextures = '\\[' + fileDataID + '\\]';
+					else
+						view.userInputFilterTextures = '[' + fileDataID + ']';
+				} else {
+					// Without fileDataIDs, lookup the texture name and filter by that.
+					const fileName = listfile.getByID(fileDataID);
+					if (fileName !== undefined)
+						view.userInputFilterTextures = listfile.getByID(fileName);
+					else if (view.config.enableUnknownFiles)
+						view.userInputFilterTextures = 'unknown/' + fileDataID + '.blp';
+				}
+			},
+
+			/**
+			 * Copy given data as text to the system clipboard.
+			 * @param {string} data 
+			 */
+			copyToClipboard: function(data) {
+				nw.Clipboard.get().set(data.toString(), 'text');
+			},
+
+			/**
+			 * Get the external export path for a given file.
+			 * @param {string} file 
+			 * @returns {string}
+			 */
+			getExportPath: function(file) {
+				return ExportHelper.getExportPath(file);
 			}
 		},
 
@@ -390,6 +464,23 @@ document.addEventListener('click', function(e) {
 			 */
 			soundPlayerSeekFormatted: function() {
 				return generics.formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
+			},
+
+			/**
+			 * Returns the maximum amount of pages needed for the texture ribbon.
+			 * @returns {number}
+			 */
+			textureRibbonMaxPages: function() {
+				return Math.ceil(this.textureRibbonStack.length / this.textureRibbonSlotCount);
+			},
+
+			/**
+			 * Returns the texture ribbon stack array subject to paging.
+			 * @returns {Array}
+			 */
+			textureRibbonDisplay: function() {
+				const startIndex = this.textureRibbonPage * this.textureRibbonSlotCount;
+				return this.textureRibbonStack.slice(startIndex, startIndex + this.textureRibbonSlotCount);
 			}
 		},
 

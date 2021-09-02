@@ -26,6 +26,8 @@ const WMOLoader = require('../3D/loaders/WMOLoader');
 
 const WDCReader = require('../db/WDCReader');
 
+const textureRibbon = require('./texture-ribbon');
+
 const exportExtensions = {
 	'OBJ': '.obj',
 	'GLTF': '.gltf'
@@ -60,6 +62,9 @@ const previewModel = async (fileName) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	log.write('Previewing model %s', fileName);
+
+	// Reset texture ribbon.
+	textureRibbon.reset();
 
 	// Reset skin selection.
 	core.view.modelViewerSkins = [];

@@ -406,6 +406,19 @@
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
 						</div>
 						<div class="preview-container">
+							<resize-layer @resize="onTextureRibbonResize" id="texture-ribbon" v-if="config.modelViewerShowTextures && textureRibbonStack.length > 0">
+								<div id="texture-ribbon-prev" v-if="textureRibbonPage > 0" @click.self="textureRibbonPage--"></div>
+								<div v-for="slot in textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="showTextureRibbonContextMenu($event, slot)"></div>
+								<div id="texture-ribbon-next" v-if="textureRibbonPage < textureRibbonMaxPages - 1" @click.self="textureRibbonPage++"></div>
+								<div id="texture-ribbon-context" v-if="textureRibbonActiveSlot !== null" :style="{ top: textureRibbonContextXY.y + 'px', left: textureRibbonContextXY.x + 'px' }" @mouseleave="textureRibbonActiveSlot = null" @click="textureRibbonActiveSlot = null">
+									<div id="texture-ribbon-context-zone"></div>
+									<span @click.self="goToTexture(textureRibbonActiveSlot.fileDataID)">Go to {{ textureRibbonActiveSlot.displayName }}</span>
+									<span @click.self="copyToClipboard(textureRibbonActiveSlot.fileDataID)">Copy file data ID to clipboard</span>
+									<span @click.self="copyToClipboard(textureRibbonActiveSlot.displayName)">Copy texture name to clipboard</span>
+									<span @click.self="copyToClipboard(textureRibbonActiveSlot.fileName)">Copy file path to clipboard</span>
+									<span @click.self="copyToClipboard(getExportPath(textureRibbonActiveSlot.fileName))">Copy export path to clipboard</span>
+								</div>
+							</resize-layer>
 							<div class="preview-background" id="model-preview">
 								<model-viewer :context="modelViewerContext"></model-viewer>
 							</div>
@@ -441,6 +454,10 @@
 							<label class="ui-checkbox" title="Render the preview model as a wireframe">
 								<input type="checkbox" v-model="config.modelViewerWireframe"/>
 								<span>Show Wireframe</span>
+							</label>
+							<label class="ui-checkbox" title="Show model textures in the preview pane">
+								<input type="checkbox" v-model="config.modelViewerShowTextures"/>
+								<span>Show Textures</span>
 							</label>
 							<span class="header">Export</span>
 							<label class="ui-checkbox" title="Include textures when exporting models">
