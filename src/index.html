@@ -417,7 +417,7 @@
 									<span @click.self="copyToClipboard(textureRibbonActiveSlot.displayName)">Copy texture name to clipboard</span>
 									<span @click.self="copyToClipboard(textureRibbonActiveSlot.fileName)">Copy file path to clipboard</span>
 									<span @click.self="copyToClipboard(getExportPath(textureRibbonActiveSlot.fileName))">Copy export path to clipboard</span>
-									<span @click.self="getExternalLink().wowTools_viewFile(textureRibbonActiveSlot.fileDataID)">View file on wow.tools (web)</span>
+									<span @click.self="getExternalLink().wowTools_viewFile(textureRibbonActiveSlot.fileDataID)">View {{ textureRibbonActiveSlot.displayName }} on wow.tools (web)</span>
 								</div>
 							</resize-layer>
 							<div class="preview-background" id="model-preview">
