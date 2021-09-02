@@ -386,6 +386,7 @@
 								<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
 								<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
 								<span @click.self="copyToClipboard(context.node.id)">Copy item ID to clipboard</span>
+								<span @click.self="getExternalLink().wowHead_viewItem(context.node.id)">View item on Wowhead (web)</span>
 							</context-menu>
 						</div>
 						<div class="filter">

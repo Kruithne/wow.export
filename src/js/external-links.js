@@ -23,6 +23,12 @@ const STATIC_LINKS = {
  */
 const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=fdid%%3A%d&fdidModal=1';
 
+/**
+ * Defines the URL pattern for locating a specific item on Wowhead.
+ * @type {string}
+ */
+const WOWHEAD_ITEM = 'https://www.wowhead.com/item=%d';
+
 module.exports = class ExternalLinks {
 	/**
 	 * Open an external link on the system.
@@ -41,5 +47,13 @@ module.exports = class ExternalLinks {
 	 */
 	static wowTools_viewFile(fileDataID) {
 		this.open(util.format(WOW_TOOLS_FILE, fileDataID));
+	}
+
+	/**
+	 * Open a specific item on Wowhead.
+	 * @param {number} itemID 
+	 */
+	static wowHead_viewItem(itemID) {
+		this.open(util.format(WOWHEAD_ITEM, itemID));
 	}
 }
