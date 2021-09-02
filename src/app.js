@@ -380,7 +380,7 @@ document.addEventListener('click', function(e) {
 					if (fileName !== undefined)
 						view.userInputFilterTextures = listfile.getByID(fileName);
 					else if (view.config.enableUnknownFiles)
-						view.userInputFilterTextures = 'unknown/' + fileDataID + '.blp';
+						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
 				}
 			},
 

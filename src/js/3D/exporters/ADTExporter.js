@@ -427,7 +427,7 @@ class ADTExporter {
 					if (fileName !== undefined)
 						fileName = ExportHelper.replaceExtension(fileName, '.png');
 					else
-						fileName = 'unknown/' + fileDataID + '.png';
+						fileName = listfile.formatUnknownFile(fileDataID, '.png');
 				
 					let texFile;
 					let texPath;
@@ -869,7 +869,7 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown file.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
@@ -928,7 +928,7 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown file.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
@@ -998,7 +998,7 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
 							} else {
 								// Handle unknown WMO files.
-								fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);

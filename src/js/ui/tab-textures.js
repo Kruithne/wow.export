@@ -95,7 +95,7 @@ const exportFiles = async (files, isLocal = false) => {
 		let fileDataID;
 		if (typeof fileEntry === 'number') {
 			fileDataID = fileEntry;
-			fileName = listfile.getByID(fileDataID) ?? 'unknown/' + fileDataID + '.blp';
+			fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
 		} else {
 			fileName = listfile.stripFileEntry(fileEntry);
 			fileDataID = listfile.getByFilename(fileName);

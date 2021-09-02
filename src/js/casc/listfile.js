@@ -239,11 +239,21 @@ const stripFileEntry = (entry) => {
 	return entry;
 };
 
+/**
+ * Returns a file path for an unknown fileDataID.
+ * @param {number} fileDataID 
+ * @param {string} [ext]
+ */
+const formatUnknownFile = (fileDataID, ext = '') => {
+	return 'unknown/' + fileDataID + ext;
+};
+
 module.exports = {
 	loadListfile,
 	loadUnknowns,
 	getByID,
 	getByFilename,
 	getFilenamesByExtension,
-	stripFileEntry
+	stripFileEntry,
+	formatUnknownFile
 };

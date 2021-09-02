@@ -135,7 +135,7 @@ class WMOExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = 'unknown/' + texFile;
+							fileName = listfile.formatUnknownFile(texFile);
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -491,7 +491,7 @@ class WMOExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown files.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const m2Path = ExportHelper.getExportPath(fileName);

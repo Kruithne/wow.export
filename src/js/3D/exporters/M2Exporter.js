@@ -111,7 +111,7 @@ class M2Exporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = 'unknown/' + texFile;
+							fileName = listfile.formatUnknownFile(texFile);
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
