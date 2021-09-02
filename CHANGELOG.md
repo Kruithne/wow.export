@@ -1,6 +1,7 @@
 0.1.37 (01-09-2021)
 - Added texture ribbon to the 3D model viewer, allowing inspection of used textures.
 - Added ability to copy item names/IDs to the clipboard from the item browser.
+- Added ability to view items on Wowhead from the item browser.
 - Texture viewer will now export the previewed texture if no user selection has been made.
 - Selecting textures/models for an item will now reset the respective filter.
 - Consolidated option to view item models/textures into a context menu.
