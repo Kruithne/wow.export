@@ -271,6 +271,9 @@
 		> span {
 			padding: 8px;
 			border-bottom: 1px solid var(--border);
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
 
 			&:hover {
 				background: #353535;
