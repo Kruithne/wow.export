@@ -400,6 +400,14 @@ document.addEventListener('click', function(e) {
 			 */
 			getExportPath: function(file) {
 				return ExportHelper.getExportPath(file);
+			},
+
+			/**
+			 * Returns a reference to the external links module.
+			 * @returns {ExternalLinks}
+			 */
+			getExternalLink: function() {
+				return ExternalLinks;
 			}
 		},
 
