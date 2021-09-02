@@ -21,7 +21,7 @@ const STATIC_LINKS = {
  * Defines the URL pattern for locating a specific file on wow.tools.
  * @type {string}
  */
-const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=fdid%%3A%d';
+const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=fdid%%3A%d&fdidModal=1';
 
 module.exports = class ExternalLinks {
 	/**
