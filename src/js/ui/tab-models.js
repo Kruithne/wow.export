@@ -466,12 +466,6 @@ core.registerLoadFunc(async () => {
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);
 
-	// When users toggle the sidebar, we need to manually dispatch a
-	// resize event for the window so the modelview component corrects.
-	core.view.$watch('config.modelsShowSidebar', () => {
-		window.dispatchEvent(new Event('resize'));
-	});
-
 	// When the selected model skin is changed, update our model.
 	core.view.$watch('modelViewerSkinsSelection', async selection => {
 		// Don't do anything if we're lacking skins.

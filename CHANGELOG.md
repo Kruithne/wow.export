@@ -2,6 +2,7 @@
 - Added texture ribbon to model 
 - Selecting textures/models for an item will now reset the respective filter for that panel.
 - Fixed the Discord links in the footer/crash screen to point to the new support location.
+- Removed hide/show sidebar buttons, sidebar is now always active.
 
 0.1.36 (31-08-2021)
 - Added `colors` property to M2 metadata containing color/alpha timelines for models.
