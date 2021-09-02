@@ -84,6 +84,7 @@ const blender = require('./js/blender');
 const fsp = require('fs').promises;
 const TestRunner = require('./js/iat/test-runner');
 const ExportHelper = require('./js/casc/export-helper');
+const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
 require('./js/components/listbox');
@@ -125,7 +126,7 @@ document.addEventListener('click', function(e) {
 		return;
 
 	e.preventDefault();
-	nw.Shell.openExternal(e.target.getAttribute('data-external'));
+	ExternalLinks.open(e.target.getAttribute('data-external'));
 });
 
 (async () => {
