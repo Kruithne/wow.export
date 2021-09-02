@@ -96,6 +96,7 @@ const view = {
 	mapViewerHasWorldModel: false, // Does selected map have a world model?
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.
 	mapViewerSelectedMap: null, // Currently selected map.
+	mapViewerSelectedDir: null,
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
 	exportCancelled: false, // Export cancellation state.

@@ -33,15 +33,17 @@ let gameObjectsDB2 = null;
  * @param {string} mapDir 
  */
 const loadMap = async (mapID, mapDir) => {
+	const mapDirLower = mapDir.toLowerCase();
+
 	selectedMapID = mapID;
-	selectedMapDir = mapDir;
+	selectedMapDir = mapDirLower;
 
 	selectedWDT = null;
 	core.view.mapViewerHasWorldModel = false;
 
 	// Attempt to load the WDT for this map for chunk masking.
-	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDir, mapDir);
-	log.write('Loading map preview for %s (%d)', mapDir, mapID);
+	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDirLower, mapDirLower);
+	log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
 
 	try {
 		const data = await core.view.casc.getFileByName(wdtPath);
@@ -65,6 +67,10 @@ const loadMap = async (mapID, mapDir) => {
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
 	core.view.mapViewerSelectedMap = mapID;
+
+	// Purposely provide the raw mapDir here as it's used by the external link module
+	// and wow.tools requires a properly cased map name.
+	core.view.mapViewerSelectedDir = mapDir;
 };
 
 /**
@@ -267,7 +273,7 @@ const parseMapEntry = (entry) => {
 	if (!match)
 		throw new Error('Unexpected map entry');
 
-	return { id: parseInt(match[1]), name: match[2], dir: match[3].toLowerCase() };
+	return { id: parseInt(match[1]), name: match[2], dir: match[3] };
 };
 
 // The first time the user opens up the map tab, initialize map names.
