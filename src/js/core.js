@@ -81,7 +81,8 @@ const view = {
 	textureRibbonStack: [], // Texture preview stack for model viewer.
 	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 	textureRibbonPage: 0, // Active page of texture slots to render.
-	textureRibbonContextNode: null, // Active texture slot for the context menu.
+	contextNodeTextureRibbon: null, // Context menu node for the texture ribbon.
+	contextNodeItem: null, // Context menu node for the items listfile.
 	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.

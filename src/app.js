@@ -100,13 +100,13 @@ require('./js/components/resize-layer');
 require('./js/components/context-menu');
 
 const TabTextures = require('./js/ui/tab-textures');
+const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
-require('./js/ui/tab-items');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -396,6 +396,22 @@ document.addEventListener('click', function(e) {
 			 */
 			getExternalLink: function() {
 				return ExternalLinks;
+			},
+
+			/**
+			 * Invoked when the user selects the models button on an item.
+			 * @param {object} item 
+			 */
+			viewModels: function(item) {
+				TabItems.viewItemModels(item);
+			},
+
+			/**
+			 * Invoked when the user selects the textures button on an item.
+			 * @param {object} item 
+			 */
+			viewTextures: function(item) {
+				TabItems.viewItemTextures(item);
 			}
 		},
 
