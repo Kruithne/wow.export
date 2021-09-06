@@ -8,6 +8,7 @@ const core = require('../core');
 const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
+const ExternalLinks = require('../external-links');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
@@ -47,8 +48,9 @@ const loadInstall = (index) => {
 			core.view.setScreen('tab-models');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
-			core.setToast('error', 'Unable to initialize CASC. If this persists, seek assistance!', {
-				'View Log': () => log.openRuntimeLog()
+			core.setToast('error', 'Unable to initialize CASC. Try repairing your installation, or seek support.', {
+				'View Log': () => log.openRuntimeLog(),
+				'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
 			}, -1);
 			core.view.setScreen('source-select');
 		}
