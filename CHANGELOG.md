@@ -1,3 +1,6 @@
+0.1.38 (07-09-2021)
+- Fixed issue that prevented certain models from rendering while the texture ribbon is active.
+
 0.1.37 (01-09-2021)
 - Added texture ribbon to the 3D model viewer, allowing inspection of used textures.
 - Added ability to copy item names/IDs to the clipboard from the item browser.

@@ -48,7 +48,7 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 	if (slot) {
 		slot.fileDataID = fileDataID;
 
-		const fileName = listfile.getByID(fileDataID);
+		const fileName = listfile.getByID(fileDataID) ?? fileDataID.toString();
 		slot.fileName = fileName;
 		slot.displayName = path.basename(fileName, path.extname(fileName));
 	}

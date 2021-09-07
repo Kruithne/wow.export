@@ -25,7 +25,7 @@ let selectedFileDataID = 0;
  * @param {string} [texture]
  */
 const previewTextureByID = async (fileDataID, texture = null) => {
-	texture = texture ?? listfile.getByID(fileDataID);
+	texture = texture ?? listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID);
 
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
