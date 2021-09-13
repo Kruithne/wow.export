@@ -6,9 +6,7 @@
 
 const Texture = require('../Texture');
 const Skin = require('../Skin');
-
-const MAGIC_MD21 = 0x3132444D;
-const MAGIC_MD20 = 0x3032444D;
+const constants = require('../../constants');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -61,7 +59,7 @@ class M2Loader {
 			const nextChunkPos = this.data.offset + chunkSize;
 	
 			switch (chunkID) {
-				case MAGIC_MD21: await this.parseChunk_MD21(); break;
+				case constants.MAGIC.MD21: await this.parseChunk_MD21(); break;
 				case CHUNK_SFID: this.parseChunk_SFID(); break;
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
 				case CHUNK_SKID: this.parseChunk_SKID(); break;
@@ -160,7 +158,7 @@ class M2Loader {
 		const ofs = this.data.offset;
 
 		const magic = this.data.readUInt32LE();
-		if (magic !== MAGIC_MD20)
+		if (magic !== constants.MAGIC.MD20)
 			throw new Error('Invalid M2 magic: ' + magic);
 	
 		this.version = this.data.readUInt32LE();

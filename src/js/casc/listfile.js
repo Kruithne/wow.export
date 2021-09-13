@@ -18,6 +18,8 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const nameLookup = new Map();
 const idLookup = new Map();
 
+let loaded = false;
+
 /**
  * Load listfile for the given build configuration key.
  * Returns the amount of file ID to filename mappings loaded.
@@ -112,6 +114,7 @@ const loadListfile = async (buildConfig, cache) => {
 		nameLookup.set(fileName, fileDataID);
 	}
 
+	loaded = true;
 	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;
 }
@@ -228,6 +231,23 @@ const getByFilename = (filename) => {
 };
 
 /**
+ * Returns an array of listfile entries filtered by the given search term.
+ * @param {string|RegExp} search 
+ * @returns {Array.<object>}
+ */
+const getFilteredEntries = (search) => {
+	const results = [];
+	const isRegExp = search instanceof RegExp;
+
+	for (const [fileDataID, fileName] of idLookup.entries()) {
+		if (isRegExp ? fileName.match(search) : fileName.includes(search))
+			results.push({ fileDataID, fileName });
+	}
+
+	return results;
+};
+
+/**
  * Strips a prefixed file ID from a listfile entry.
  * @param {string} entry 
  * @returns {string}
@@ -248,12 +268,22 @@ const formatUnknownFile = (fileDataID, ext = '') => {
 	return 'unknown/' + fileDataID + ext;
 };
 
+/**
+ * Returns true if a listfile has been loaded.
+ * @returns {boolean}
+ */
+const isLoaded = () => {
+	return loaded;
+};
+
 module.exports = {
 	loadListfile,
 	loadUnknowns,
 	getByID,
 	getByFilename,
 	getFilenamesByExtension,
+	getFilteredEntries,
 	stripFileEntry,
-	formatUnknownFile
+	formatUnknownFile,
+	isLoaded
 };

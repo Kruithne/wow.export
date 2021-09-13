@@ -225,6 +225,9 @@ const getVariantTextureIDs = (fileName) => {
 const exportFiles = async (files, isLocal = false) => {
 	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
 	const format = core.view.config.exportModelFormat;
+
+	const manifest = { type: 'MODELS', succeeded: [], failed: [] };
+
 	if (format === 'PNG') {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath) {
@@ -251,18 +254,53 @@ const exportFiles = async (files, isLocal = false) => {
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
-		for (let fileName of files) {
+		for (const fileEntry of files) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
+			
+			let fileName;
+			let fileDataID;
 
-			fileName = listfile.stripFileEntry(fileName);
-			const fileDataID = listfile.getByFilename(fileName);
+			if (typeof fileEntry === 'number') {
+				fileDataID = fileEntry;
+				fileName = listfile.getByID(fileDataID);
+			} else {
+				fileName = listfile.stripFileEntry(fileEntry);
+				fileDataID = listfile.getByFilename(fileName);
+			}
+
+			const fileManifest = [];
 			
 			try {
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFileByName(fileName));
+				let fileType;
+				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID));
+				
+				if (fileName === undefined) {
+					// In the event that we're exporting a file by ID that does not exist in the listfile
+					// then we can't presume the file type and need to investigate the headers.
+					const magic = data.readUInt32LE();
+					if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
+						fileType = 'M2';
+						fileName = listfile.formatUnknownFile(fileDataID, '.m2');
+					} else {
+						// Naively assume that if it's not M2, then it's WMO. This could be better.
+						fileType = 'WMO';
+						fileName = listfile.formatUnknownFile(fileDataID, '.wmo');
+					}
+				} else {
+					// We already have a filename for this entry, so we can assume the file type via extension.
+					const fileNameLower = fileName.toLowerCase();
+					if (fileNameLower.endsWith('.m2') === true)
+						fileType = 'M2';
+					else if (fileNameLower.endsWith('.wmo') === true)
+						fileType = 'WMO';
+				}
+
+				if (!fileType)
+					throw new Error('Unknown model file type for %d', fileDataID);
+
 				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
-				const fileNameLower = fileName.toLowerCase();
 
 				switch (format) {
 					case 'RAW':
@@ -272,13 +310,17 @@ const exportFiles = async (files, isLocal = false) => {
 
 						const outDir = path.dirname(exportPath);
 						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim;
-						if (loadM2 && fileNameLower.endsWith('.m2') === true) {
+						if (loadM2 && fileType === 'M2') {
+							fileManifest.push({ type: 'M2', fileDataID, file: exportPath });
+
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 							const m2 = exporter.m2;
 							await m2.load();
 
 							if (config.modelsExportSkin === true) {
-								await exporter.exportTextures(exportPath, true, null, helper);
+								const textures = await exporter.exportTextures(exportPath, true, null, helper);
+								for (const [texFileDataID, texInfo] of textures)
+									fileManifest.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
 
 								const skins = m2.getSkinList();
 								for (const skin of skins) {
@@ -287,20 +329,29 @@ const exportFiles = async (files, isLocal = false) => {
 										return;
 
 									const skinData = await casc.getFile(skin.fileDataID);
-									await skinData.writeToFile(path.join(outDir, path.basename(skin.fileName)));
+									const skinFile = path.join(outDir, path.basename(skin.fileName));
+
+									await skinData.writeToFile(skinFile);
+									fileManifest.push({ type: 'SKIN', fileDataID: skin.fileDataID, file: skinFile });
 								}
 							}
 
 							const basename = path.basename(fileName);
 							if (config.modelsExportSkel && m2.skeletonFileID) {
 								const skelData = await casc.getFile(m2.skeletonFileID);
-								await skelData.writeToFile(path.join(outDir, basename + '.skel'));
+								const skelFile = path.join(outDir, basename + '.skel');
+
+								await skelData.writeToFile();
+								fileManifest.push({ type: 'SKEL', fileDataID: m2.skeletonFileID, file: skelFile });
 							}
 
 							if (config.modelsExportBone && m2.boneFileIDs) {
 								for (let i = 0, n = m2.boneFileIDs.length; i < n; i++) {
 									const boneData = await casc.getFile(m2.boneFileIDs[i]);
-									await boneData.writeToFile(path.join(outDir, basename + '_' + i + '.bone'));
+									const boneFile = path.join(outDir, basename + '_' + i + '.bone');
+
+									await boneData.writeToFile(boneFile);
+									fileManifest.push({ type: 'BONE', fileDataID: m2.boneFileIDs[i], file: boneFile });
 								}
 							}
 
@@ -312,19 +363,25 @@ const exportFiles = async (files, isLocal = false) => {
 										const animIDStr = anim.animID.toString().padStart(4, 0);
 										const animSubIDStr = anim.subAnimID.toString().padStart(2, 0);
 										const animName = ExportHelper.replaceExtension(basename, animIDStr + '-' + animSubIDStr + '.anim');
-										
-										await animData.writeToFile(path.join(outDir, animName));
+										const animFile = path.join(outDir, animName);
+
+										await animData.writeToFile(animFile);
+										fileManifest.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
 										animCache.add(anim.fileDataID);
 									}
 								}
 							}
-						} else if (fileNameLower.endsWith('.wmo') === true) {
+						} else if (fileType === 'WMO') {
+							fileManifest.push({ type: 'WMO', fileDataID, file: exportPath });
+
 							const exporter = new WMOExporter(data, fileDataID);
 							const wmo = exporter.wmo;
 							await wmo.load();
 
 							// Export raw textures.
-							await exporter.exportTextures(exportPath, null, helper, true);
+							const textures = await exporter.exportTextures(exportPath, null, helper, true);
+							for (const [texFileDataID, texInfo] of textures.textureMap)
+								fileManifest.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
 
 							if (exportWMOGroups === true) {
 								for (let i = 0, n = wmo.groupCount; i < n; i++) {
@@ -333,13 +390,12 @@ const exportFiles = async (files, isLocal = false) => {
 										return;
 
 									const groupName = fileName.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
-									let groupData;
-									if (wmo.groupIDs)
-										groupData = await casc.getFile(wmo.groupIDs[i]);
-									else
-										groupData = await casc.getFileByName(groupName);
+									const groupFileDataID = wmo.groupIDs?.[i] ?? listfile.getByFilename(groupName);
+									const groupData = await casc.getFile(groupFileDataID);
+									const groupFile = path.join(outDir, path.basename(groupName));
 
-									await groupData.writeToFile(path.join(outDir, path.basename(groupName)));
+									await groupData.writeToFile(groupFile);
+									fileManifest.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
 								}
 							}
 						}
@@ -349,7 +405,7 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'GLTF':
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
-						if (fileNameLower.endsWith('.m2')) {
+						if (fileType === 'M2') {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 
 							// Respect geoset masking for selected model.
@@ -357,17 +413,17 @@ const exportFiles = async (files, isLocal = false) => {
 								exporter.setGeosetMask(core.view.modelViewerGeosets);
 
 							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper);
+								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
 								exportPaths.writeLine('M2_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper);
+								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
 								exportPaths.writeLine('M2_GLTF:' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())
 								return;
-						} else if (fileNameLower.endsWith('.wmo')) {
+						} else if (fileType === 'WMO') {
 							// WMO loading currently loads group objects directly from CASC.
 							// In order to load these properly, we would need to know the internal name here.
 							if (isLocal)
@@ -382,11 +438,11 @@ const exportFiles = async (files, isLocal = false) => {
 							}
 
 							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, helper);
+								await exporter.exportAsOBJ(exportPath, helper, fileManifest);
 								exportPaths.writeLine('WMO_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper);
-								exportPaths.writeLine('WMO_GLTF:' + exportPath);
+								exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
 							}
 
 							WMOExporter.clearCache();
@@ -405,8 +461,10 @@ const exportFiles = async (files, isLocal = false) => {
 				}
 
 				helper.mark(fileName, true);
+				manifest.succeeded.push({ fileDataID, files: fileManifest });
 			} catch (e) {
 				helper.mark(fileName, false, e.message);
+				manifest.failed.push({ fileDataID });
 			}
 		}
 
@@ -415,6 +473,9 @@ const exportFiles = async (files, isLocal = false) => {
 
 	// Write export information.
 	await exportPaths.close();
+
+	// Dispatch file manifest to RCP.
+	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
 };
 
 /**
@@ -459,6 +520,11 @@ core.events.once('screen-tab-models', () => {
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
 	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
+});
+
+core.events.on('rcp-export-models', files => {
+	// RCP should provide an array of fileDataIDs to export.
+	exportFiles(files, false);
 });
 
 core.registerLoadFunc(async () => {

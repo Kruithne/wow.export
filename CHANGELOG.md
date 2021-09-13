@@ -1,4 +1,5 @@
-0.1.38 (07-09-2021)
+0.1.38 (13-09-2021)
+- Implement remote control protocol for advanced users.
 - Fixed issue that prevented certain models from rendering while the texture ribbon is active.
 
 0.1.37 (01-09-2021)

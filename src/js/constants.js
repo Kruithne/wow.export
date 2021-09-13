@@ -105,5 +105,10 @@ module.exports = {
 
 	TIME: {
 		DAY: 86400000 // Milliseconds in a day.
+	},
+
+	MAGIC: {
+		MD21: 0x3132444D, // M2 model magic.
+		MD20: 0x3032444D // M2 model magic (legacy)
 	}
 };

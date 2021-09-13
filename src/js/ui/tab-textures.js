@@ -86,6 +86,8 @@ const exportFiles = async (files, isLocal = false) => {
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
 
+	const manifest = { type: 'TEXTURES', succeeded: [], failed: [] };
+
 	for (let fileEntry of files) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -120,7 +122,8 @@ const exportFiles = async (files, isLocal = false) => {
 					exportPaths.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {
-						const json = new JSONWriter(ExportHelper.replaceExtension(exportPath, '.json'));
+						const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
+						const json = new JSONWriter(jsonOut);
 						json.addProperty('encoding', blp.encoding);
 						json.addProperty('alphaDepth', blp.alphaDepth);
 						json.addProperty('alphaEncoding', blp.alphaEncoding);
@@ -131,6 +134,7 @@ const exportFiles = async (files, isLocal = false) => {
 						json.addProperty('mipmapSizes', blp.mapSizes);
 						
 						await json.write(overwriteFiles);
+						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut })
 					}
 				}
 			} else {
@@ -138,14 +142,19 @@ const exportFiles = async (files, isLocal = false) => {
 			}
 
 			helper.mark(fileName, true);
+			manifest.succeeded.push({ type: format, fileDataID, file: exportPath });
 		} catch (e) {
 			helper.mark(fileName, false, e.message);
+			manifest.failed.push({ type: format, fileDataID });
 		}
 	}
 
 	await exportPaths.close();
 
 	helper.finish();
+
+	// Dispatch file manifest to RCP.
+	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
 };
 
 // Register a drop handler for BLP files.
@@ -153,6 +162,11 @@ core.registerDropHandler({
 	ext: ['.blp'],
 	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
 	process: files => exportFiles(files, true)
+});
+
+core.events.on('rcp-export-textures', files => {
+	// RCP should provide an array of fileDataIDs to export.
+	exportFiles(files, false);
 });
 
 core.registerLoadFunc(async () => {

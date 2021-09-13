@@ -268,6 +268,19 @@
 						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
 						<input type="text" v-model.trim="configEdit.dbdURL"/>
 					</div>
+					<div>
+						<h1>Enable Remote Control Protocol (Advanced)</h1>
+						<p>When enabled, wow.export will listen for remote commands on a specified port.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.rcpEnabled"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>RCP Port</h1>
+						<p>Specifies the port in which wow.export will listen for RCP connections on.</p>
+						<input type="number" v-model.number="configEdit.rcpPort"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}

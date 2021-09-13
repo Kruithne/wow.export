@@ -51,6 +51,23 @@ const load = async () => {
 };
 
 /**
+ * Reset a configuration key to default.
+ * @param {string} key 
+ */
+const resetToDefault = (key) => {
+	if (defaultConfig.hasOwnProperty(key))
+		core.view.config[key] = defaultConfig[key];
+};
+
+/**
+ * Reset all configuration to default.
+ */
+const resetAllToDefault = () => {
+	// Use JSON parse/stringify to ensure deep non-referenced clone.
+	core.view.config = JSON.parse(JSON.stringify(defaultConfig));
+};
+
+/**
  * Mark configuration for saving.
  */
 const save = () => {
@@ -133,7 +150,8 @@ core.events.on('click-config-discard', () => core.view.showPreviousScreen());
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
 core.events.on('click-config-reset', () => {
-	core.view.configEdit = Object.assign({}, defaultConfig);
+	// Use JSON parse/stringify to ensure deep non-referenced clone.
+	core.view.configEdit = JSON.parse(JSON.stringify(defaultConfig));
 });
 
-module.exports = { load };
+module.exports = { load, resetToDefault, resetAllToDefault };

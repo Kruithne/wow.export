@@ -178,8 +178,9 @@ class WMOExporter {
 	 * Export the WMO model as a GLTF file.
 	 * @param {string} out 
 	 * @param {ExportHelper} helper 
+	 * @param {Array} fileManifest
 	 */
-	async exportAsGLTF(out, helper) {
+	async exportAsGLTF(out, helper, fileManifest) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 		
 		// TODO: Skip overwrite if file exists?
@@ -302,8 +303,9 @@ class WMOExporter {
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
 	 */
-	async exportAsOBJ(out, helper) {
+	async exportAsOBJ(out, helper, fileManifest) {
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -330,6 +332,9 @@ class WMOExporter {
 			
 		const materialMap = texMaps.materialMap;
 		const textureMap = texMaps.textureMap;
+
+		for (const [texFileDataID, texInfo] of textureMap)
+			fileManifest.push({ type: 'PNG', fileDataID: texFileDataID, file: texInfo.matPath });
 
 		const groups = [];
 		let nInd = 0;
@@ -538,6 +543,7 @@ class WMOExporter {
 			}
 
 			await csv.write();
+			fileManifest.push({ type: 'PLACEMENT', fileDataID: this.wmo.fileDataID, file: csv.out });
 		} else {
 			log.write('Skipping model placement export %s (file exists, overwrite disabled)', csvPath);
 		}
@@ -546,7 +552,10 @@ class WMOExporter {
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
 		await obj.write(config.overwriteFiles);
+		fileManifest.push({ type: 'OBJ', fileDataID: this.wmo.fileDataID, file: obj.out });
+
 		await mtl.write(config.overwriteFiles);
+		fileManifest.push({ type: 'MTL', fileDataID: this.wmo.fileDataID, file: mtl.out });
 
 		if (core.view.config.exportWMOMeta) {
 			helper.clearCurrentTask();
@@ -632,6 +641,7 @@ class WMOExporter {
 			json.addProperty('groupIDs', wmo.groupIDs);
 
 			await json.write(config.overwriteFiles);
+			fileManifest.push({ type: 'META', fileDataID: this.wmo.fileDataID, file: json.out });
 		}
 	}
 

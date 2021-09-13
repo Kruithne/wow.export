@@ -154,7 +154,7 @@ class M2Exporter {
 		return validTextures;
 	}
 
-	async exportAsGLTF(out, helper) {
+	async exportAsGLTF(out, helper, fileManifest) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 
 		// Skip export if file exists and overwriting is disabled.
@@ -209,8 +209,9 @@ class M2Exporter {
 	 * @param {string} out
 	 * @param {boolean} exportCollision
 	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
 	 */
-	async exportAsOBJ(out, exportCollision = false, helper) {
+	async exportAsOBJ(out, exportCollision = false, helper, fileManifest) {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
@@ -236,6 +237,8 @@ class M2Exporter {
 
 		// Textures
 		const validTextures = await this.exportTextures(out, false, mtl, helper);
+		for (const [texFileDataID, texInfo] of validTextures)
+			fileManifest.push({ type: 'PNG', fileDataID: texFileDataID, file: texInfo.matPath });
 
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -319,9 +322,15 @@ class M2Exporter {
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
 		await obj.write(config.overwriteFiles);
+		fileManifest.push({ type: 'OBJ', fileDataID: this.fileDataID, file: obj.out });
+
 		await mtl.write(config.overwriteFiles);
-		if (json !== null)
+		fileManifest.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
+
+		if (json !== null) {
 			await json.write(config.overwriteFiles);
+			fileManifest.push({ type: 'META', fileDataID: this.fileDataID, file: json.out });
+		}
 
 		if (exportCollision) {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
@@ -330,6 +339,7 @@ class M2Exporter {
 			phys.addMesh('Collision', this.m2.collisionIndices);
 
 			await phys.write(config.overwriteFiles);
+			fileManifest.push({ type: 'PHYS_OBJ', fileDataID: this.fileDataID, file: phys.out });
 		}
 	}
 }
