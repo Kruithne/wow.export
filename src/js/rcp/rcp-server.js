@@ -9,7 +9,7 @@ const log = require('../log');
 const constants = require('../constants');
 const listfile = require('../casc/listfile');
 const RCPConnection = require('./rcp-connection');
-const { resetAllToDefault, resetToDefault } = require('../config');
+const config = require('../config');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
@@ -127,10 +127,10 @@ class RCPServer {
 	 */
 	handleResetConfig(data, client) {
 		if (typeof data.key === 'string') {
-			resetToDefault(data.key);
+			config.resetToDefault(data.key);
 			client.sendData('CONFIG_SINGLE', { key: data.key, value: core.view.config[data.key] });
 		} else {
-			resetAllToDefault();
+			config.resetAllToDefault();
 			client.sendData('CONFIG_FULL', { config: core.view.config });
 		}
 	}
