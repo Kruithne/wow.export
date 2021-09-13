@@ -127,7 +127,7 @@ Vue.component('listbox', {
 
 			if (this.regex) {
 				try {
-					const filter = new RegExp(this.filter.trim());
+					const filter = new RegExp(this.filter.trim(), 'i');
 					res = res.filter(e => e.match(filter));
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.

@@ -378,7 +378,7 @@ class RCPServer {
 		if (!this.validateParameters(client, data, { search: 'string' }))
 			return;
 
-		const filter = data.useRegularExpression ? new RegExp(data.search) : data.search;
+		const filter = data.useRegularExpression ? new RegExp(data.search, 'i') : data.search;
 		client.sendData('LISTFILE_SEARCH_RESULT', { entries: listfile.getFilteredEntries(filter) });
 	}
 
