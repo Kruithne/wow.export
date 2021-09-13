@@ -1,5 +1,5 @@
 0.1.38 (13-09-2021)
-- Implement remote control protocol for advanced users.
+- Implemented remote control protocol for advanced users.
 - Regular expression matching is now case-insensitive.
 - Fixed issue that prevented certain models from rendering while the texture ribbon is active.
 
