@@ -25,6 +25,9 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('./texture-ribbon');
 
+const MODEL_TYPE_M2 = Symbol('modelM2');
+const MODEL_TYPE_WMO = Symbol('modelWMO');
+
 const exportExtensions = {
 	'OBJ': '.obj',
 	'GLTF': '.gltf'
@@ -278,22 +281,22 @@ const exportFiles = async (files, isLocal = false) => {
 					// then we can't presume the file type and need to investigate the headers.
 					const magic = data.readUInt32LE();
 					data.seek(0);
-					
+
 					if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
-						fileType = 'M2';
+						fileType = MODEL_TYPE_M2;
 						fileName = listfile.formatUnknownFile(fileDataID, '.m2');
 					} else {
 						// Naively assume that if it's not M2, then it's WMO. This could be better.
-						fileType = 'WMO';
+						fileType = MODEL_TYPE_WMO;
 						fileName = listfile.formatUnknownFile(fileDataID, '.wmo');
 					}
 				} else {
 					// We already have a filename for this entry, so we can assume the file type via extension.
 					const fileNameLower = fileName.toLowerCase();
 					if (fileNameLower.endsWith('.m2') === true)
-						fileType = 'M2';
+						fileType = MODEL_TYPE_M2;
 					else if (fileNameLower.endsWith('.wmo') === true)
-						fileType = 'WMO';
+						fileType = MODEL_TYPE_WMO;
 				}
 
 				if (!fileType)
@@ -309,7 +312,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 						const outDir = path.dirname(exportPath);
 						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim;
-						if (loadM2 && fileType === 'M2') {
+						if (loadM2 && fileType === MODEL_TYPE_M2) {
 							fileManifest.push({ type: 'M2', fileDataID, file: exportPath });
 
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
@@ -370,7 +373,7 @@ const exportFiles = async (files, isLocal = false) => {
 									}
 								}
 							}
-						} else if (fileType === 'WMO') {
+						} else if (fileType === MODEL_TYPE_WMO) {
 							fileManifest.push({ type: 'WMO', fileDataID, file: exportPath });
 
 							const exporter = new WMOExporter(data, fileDataID);
@@ -404,7 +407,7 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'GLTF':
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
-						if (fileType === 'M2') {
+						if (fileType === MODEL_TYPE_M2) {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 
 							// Respect geoset masking for selected model.
@@ -422,7 +425,7 @@ const exportFiles = async (files, isLocal = false) => {
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())
 								return;
-						} else if (fileType === 'WMO') {
+						} else if (fileType === MODEL_TYPE_WMO) {
 							// WMO loading currently loads group objects directly from CASC.
 							// In order to load these properly, we would need to know the internal name here.
 							if (isLocal)
