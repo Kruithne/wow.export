@@ -20,15 +20,17 @@ class M2Renderer {
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data 
 	 * @param {THREE.Group} renderGroup
-	 * @param {boolean} reactive
+	 * @param {boolean} [reactive=false]
+	 * @param {boolean} [useRibbon=true]
 	 */
-	constructor(data, renderGroup, reactive = false) {
+	constructor(data, renderGroup, reactive = false, useRibbon = true) {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
 		this.materials = [];
 		this.renderCache = new RenderCache();
 		this.syncID = -1;
+		this.useRibbon = useRibbon;
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
@@ -169,8 +171,10 @@ class M2Renderer {
 			const blp = new BLPFile(data);
 			const blpURI = blp.getDataURL(0b0111);
 
-			textureRibbon.setSlotFile(i, fileDataID, this.syncID);
-			textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+			if (this.useRibbon) {
+				textureRibbon.setSlotFile(i, fileDataID, this.syncID);
+				textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+			}
 
 			loader.load(blpURI, image => {
 				tex.image = image;
@@ -197,22 +201,27 @@ class M2Renderer {
 		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
 
-		this.syncID = textureRibbon.reset();
+		if (this.useRibbon)
+			this.syncID = textureRibbon.reset();
 
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
-			const ribbonSlot = textureRibbon.addSlot();
+
+			const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
 
 			if (texture.fileDataID > 0) {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
-				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+				if (ribbonSlot)
+					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
 					const blpURI = blp.getDataURL(0b0111);
-					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+
+					if (ribbonSlot)
+						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
 
 					loader.load(blpURI, image => {
 						tex.image = image;

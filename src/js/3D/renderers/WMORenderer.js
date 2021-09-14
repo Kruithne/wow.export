@@ -216,7 +216,7 @@ class WMORenderer {
 					} else {
 						// New M2, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
-						const m2 = new M2Renderer(data, renderGroup);
+						const m2 = new M2Renderer(data, renderGroup, false, false);
 						
 						await m2.load();
 						await m2.loadSkin(0);
