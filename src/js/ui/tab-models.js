@@ -22,9 +22,6 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
-const WMOLoader = require('../3D/loaders/WMOLoader');
-
-const WDCReader = require('../db/WDCReader');
 
 const textureRibbon = require('./texture-ribbon');
 
