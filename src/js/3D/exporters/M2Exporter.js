@@ -217,10 +217,10 @@ class M2Exporter {
 
 		const config = core.view.config;
 		const exportMeta = core.view.config.exportM2Meta;
+		const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
-		const json = exportMeta ? new JSONWriter(ExportHelper.replaceExtension(out, '.json')) : null;
 
 		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
 
@@ -244,7 +244,18 @@ class M2Exporter {
 		if (helper.isCancelled())
 			return;
 
+		// Export bone data to a separate JSON file due to the excessive size.
+		// A normal meta-data file is around 8kb without bones, 65mb with bones.
+		if (exportBones) {
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
+			json.addProperty('bones', this.m2.bones);
+
+			await json.write(config.overwriteFiles);
+		}
+
 		if (exportMeta) {
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+
 			// Clone the submesh array and add a custom 'enabled' property
 			// to indicate to external readers which submeshes are not included
 			// in the actual geometry file.
@@ -293,6 +304,9 @@ class M2Exporter {
 				fileName: skin.fileName,
 				fileDataID: skin.fileDataID
 			});
+
+			await json.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'META', fileDataID: this.fileDataID, file: json.out });
 		}
 
 		// Faces
@@ -326,11 +340,6 @@ class M2Exporter {
 
 		await mtl.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
-
-		if (json !== null) {
-			await json.write(config.overwriteFiles);
-			fileManifest?.push({ type: 'META', fileDataID: this.fileDataID, file: json.out });
-		}
 
 		if (exportCollision) {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));

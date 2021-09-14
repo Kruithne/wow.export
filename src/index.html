@@ -180,6 +180,14 @@
 						</ul>
 					</div>
 					<div>
+						<h1>Export M2 Bone Data</h1>
+						<p>If enabled, bone data will be exported in a relative _bones.json file.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.exportM2Bones"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Always Overwrite Existing Files (Recommended)</h1>
 						<p>When exporting, files will always be written to disk even if they exist.</p>
 						<p>Disabling this can speed up exporting, but may lead to issues between versions.</p>

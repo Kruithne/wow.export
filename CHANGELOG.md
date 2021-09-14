@@ -1,6 +1,7 @@
 0.1.39 (TBD)
-- Fixed issue with texture ribbon being overwritten by M2 textures when viewing a WMO.
+- Added option to export M2 bone data into a relative *_bones.json file.
 - M2 models exported with a skin will now be named uniquely based on the selected skin.
+- Fixed issue with texture ribbon being overwritten by M2 textures when viewing a WMO.
 
 0.1.38 (13-09-2021)
 - Implemented remote control protocol for advanced users.
