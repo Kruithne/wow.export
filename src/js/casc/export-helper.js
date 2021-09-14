@@ -33,6 +33,7 @@ class ExportHelper {
 	 * Takes the directory from fileA and combines it with the basename of fileB.
 	 * @param {string} fileA 
 	 * @param {string} fileB 
+	 * @returns {string}
 	 */
 	static replaceFile(fileA, fileB) {
 		return path.join(path.dirname(fileA), path.basename(fileB));
@@ -42,6 +43,7 @@ class ExportHelper {
 	 * Replace an extension on a file path with another.
 	 * @param {string} file 
 	 * @param {string} ext 
+	 * @returns {string}
 	 */
 	static replaceExtension(file, ext = '') {
 		return path.join(path.dirname(file), path.basename(file, path.extname(file)) + ext);
