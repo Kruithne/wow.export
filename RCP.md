@@ -325,7 +325,7 @@ A listfile is only loaded if wow.export has an active CASC installation active. 
 
 ### `EXPORT_MODEL`
 
-Instructs wow.export to export one or more 3D models. The `fileDataID` property can be provided as a number, or an array of numbers, each one must be a valid `fileDataID` for an M2 model.
+Instructs wow.export to export one or more 3D models. The `fileDataID` property can be provided as a number, or an array of numbers, each one must be a valid `fileDataID` for an M2/WMO model.
 
 Unlike other commands, no direct response is provided for exports. Instead, applications should register the `HOOK_EXPORT_COMPLETE` hook, which will be triggered with `type` as `MODELS`.
 
@@ -668,6 +668,7 @@ Below is a list of potential types that may be included in an export manifest.
 | SKEL | Raw M2 skeleton file.
 | BONE | Raw M2 bone file.
 | ANIM | Raw M2 animation file.
+| M2 | Raw M2 model file.
 | WMO | Raw WMO model.
 | WMO_GROUP | Raw WMO group file.
 
