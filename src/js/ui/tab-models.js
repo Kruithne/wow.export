@@ -35,6 +35,7 @@ const exportExtensions = {
 
 const activeSkins = new Map();
 let selectedVariantTextureIDs = new Array();
+let selectedSkinName = null;
 
 let isFirstModel = true;
 
@@ -81,6 +82,7 @@ const previewModel = async (fileName) => {
 		// Clear the active skin map.
 		activeSkins.clear();
 		selectedVariantTextureIDs.length = 0;
+		selectedSkinName = null;
 
 		const fileDataID = listfile.getByFilename(fileName);
 		const file = await core.view.casc.getFile(fileDataID);
@@ -302,7 +304,22 @@ const exportFiles = async (files, isLocal = false) => {
 				if (!fileType)
 					throw new Error('Unknown model file type for %d', fileDataID);
 
-				let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+				let exportPath;
+				if (isLocal) {
+					exportPath = fileName;
+				} else if (fileType === MODEL_TYPE_M2 && selectedSkinName !== null) {
+					const baseFileName = path.basename(fileName, path.extname(fileName));
+					let skinnedName;
+
+					if (selectedSkinName.startsWith(baseFileName))
+						skinnedName = ExportHelper.replaceBaseName(fileName, selectedSkinName);
+					else
+						skinnedName = ExportHelper.replaceBaseName(fileName, baseFileName + '_' + selectedSkinName);
+
+					exportPath = ExportHelper.getExportPath(skinnedName);
+				} else {
+					exportPath = ExportHelper.getExportPath(fileName);
+				}
 
 				switch (format) {
 					case 'RAW':
@@ -543,6 +560,7 @@ core.registerLoadFunc(async () => {
 		// Skin selector is single-select, should only be one item.
 		const selected = selection[0];
 		const display = activeSkins.get(selected.id);
+		selectedSkinName = selected.id;
 
 		let currGeosets = core.view.modelViewerGeosets;
 

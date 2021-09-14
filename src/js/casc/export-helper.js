@@ -50,6 +50,16 @@ class ExportHelper {
 	}
 
 	/**
+	 * Replace the base name of a file path, keeping the directory and extension.
+	 * @param {string} filePath 
+	 * @param {string} fileName 
+	 * @returns {string}
+	 */
+	static replaceBaseName(filePath, fileName) {
+		return path.join(path.dirname(filePath), fileName + path.extname(filePath));
+	}
+
+	/**
 	 * Converts a win32 compatible path to a POSIX compatible path.
 	 * @param {string} str 
 	 * @returns {string}

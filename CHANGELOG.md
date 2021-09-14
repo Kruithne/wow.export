@@ -1,5 +1,6 @@
 0.1.39 (TBD)
 - Fixed issue with texture ribbon being overwritten by M2 textures when viewing a WMO.
+- M2 models exported with a skin will now be named uniquely based on the selected skin.
 
 0.1.38 (13-09-2021)
 - Implemented remote control protocol for advanced users.
