@@ -277,6 +277,8 @@ const exportFiles = async (files, isLocal = false) => {
 					// In the event that we're exporting a file by ID that does not exist in the listfile
 					// then we can't presume the file type and need to investigate the headers.
 					const magic = data.readUInt32LE();
+					data.seek(0);
+					
 					if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
 						fileType = 'M2';
 						fileName = listfile.formatUnknownFile(fileDataID, '.m2');
