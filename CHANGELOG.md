@@ -1,3 +1,6 @@
+0.1.39 (TBD)
+- TODO
+
 0.1.38 (13-09-2021)
 - Implemented remote control protocol for advanced users.
 - Regular expression matching is now case-insensitive.
