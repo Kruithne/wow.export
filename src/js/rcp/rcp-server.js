@@ -14,6 +14,8 @@ const config = require('../config');
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
 
+let exportID = 0;
+
 class RCPServer {
 	constructor() {
 		this.connections = new Map();
@@ -395,8 +397,11 @@ class RCPServer {
 		if (!this.validateParameters(client, data, { fileDataID: ['number', 'number[]']}))
 			return;
 
+		const id = exportID++;
+		client.sendData('EXPORT_START', { exportID: id });
+
 		const files = Array.isArray(data.fileDataID) ? data.fileDataID : [data.fileDataID];
-		core.events.emit(exportEvent, files);
+		core.events.emit(exportEvent, files, id);
 	}
 
 	/**

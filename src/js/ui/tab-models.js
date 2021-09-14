@@ -224,11 +224,11 @@ const getVariantTextureIDs = (fileName) => {
 	}
 };
 
-const exportFiles = async (files, isLocal = false) => {
+const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
 	const format = core.view.config.exportModelFormat;
 
-	const manifest = { type: 'MODELS', succeeded: [], failed: [] };
+	const manifest = { type: 'MODELS', exportID, succeeded: [], failed: [] };
 
 	if (format === 'PNG') {
 		// For PNG exports, we only export the viewport, not the selected files.
@@ -541,9 +541,9 @@ core.events.once('screen-tab-models', () => {
 	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
-core.events.on('rcp-export-models', files => {
+core.events.on('rcp-export-models', (files, id) => {
 	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false);
+	exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {

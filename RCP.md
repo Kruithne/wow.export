@@ -327,7 +327,7 @@ A listfile is only loaded if wow.export has an active CASC installation active. 
 
 Instructs wow.export to export one or more 3D models. The `fileDataID` property can be provided as a number, or an array of numbers, each one must be a valid `fileDataID` for an M2/WMO model.
 
-Unlike other commands, no direct response is provided for exports. Instead, applications should register the `HOOK_EXPORT_COMPLETE` hook, which will be triggered with `type` as `MODELS`.
+If the export is successfully started, the server will send a `EXPORT_START` message with an `exportID` property, which can be used in conjunction with the `HOOK_EXPORT_COMPLETE` hook, with the `type` as `MODELS`.
 
 To configure export parameters, such as toggling RGBA channel visibility on an exported BLP texture, you need to adjust the application config before the export. This can be done programmatically in RCP using `CONFIG_SET`.
 
@@ -341,7 +341,7 @@ If no CASC installation is loaded in wow.export, `ERR_NO_CASC` will be returned.
 
 Instructs wow.export to export one or more BLP textures. The `fileDataID` property can be provided as a number, or an array of numbers, each one must be a valid `fileDataID` for an BLP texture.
 
-Unlike other commands, no direct response is provided for exports. Instead, applications should register the `HOOK_EXPORT_COMPLETE` hook, which will be triggered with `type` as `TEXTURES`.
+If the export is successfully started, the server will send a `EXPORT_START` message with an `exportID` property, which can be used in conjunction with the `HOOK_EXPORT_COMPLETE` hook, with the `type` as `TEXTURES`.
 
 If no CASC installation is loaded in wow.export, `ERR_NO_CASC` will be returned.
 
@@ -638,6 +638,7 @@ Triggered when an export task has completed.
 
 | Property | Type | Note |
 | --- | --- | --- |
+| exportID | number | Unique ID returned from an `EXPORT_` command. |
 | type | string | Indicates the export type e.g `MODELS` |
 | succeeded | object[] | Array of successfully exported files. |
 | failed | object[] | Array of failed files. |

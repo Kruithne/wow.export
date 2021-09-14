@@ -76,7 +76,7 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 	core.view.isBusy--;
 };
 
-const exportFiles = async (files, isLocal = false) => {
+const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
@@ -86,7 +86,7 @@ const exportFiles = async (files, isLocal = false) => {
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
 
-	const manifest = { type: 'TEXTURES', succeeded: [], failed: [] };
+	const manifest = { type: 'TEXTURES', exportID, succeeded: [], failed: [] };
 
 	for (let fileEntry of files) {
 		// Abort if the export has been cancelled.
@@ -164,9 +164,9 @@ core.registerDropHandler({
 	process: files => exportFiles(files, true)
 });
 
-core.events.on('rcp-export-textures', files => {
+core.events.on('rcp-export-textures', (files, id) => {
 	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false);
+	exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {

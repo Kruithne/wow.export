@@ -1,5 +1,6 @@
 0.1.39 (TBD)
 - Added option to export M2 bone data into a relative *_bones.json file.
+- Added an `exportID` property to `EXPORT_` and `HOOK_EXPORT_COMPLETE` RCP messages.
 - M2 models exported with a skin will now be named uniquely based on the selected skin.
 - Fixed issue with texture ribbon being overwritten by M2 textures when viewing a WMO.
 
