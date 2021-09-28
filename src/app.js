@@ -239,10 +239,12 @@ document.addEventListener('click', function(e) {
 			setScreen: function(screenID, preserve = false) {
 				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
 				
-				if (preserve)
-					this.screenStack.unshift(screenID);
-				else
+				if (preserve) {
+					if (this.screenStack[0] !== screenID)
+						this.screenStack.unshift(screenID);
+				} else {
 					this.$set(this.screenStack, 0, screenID);
+				}
 			},
 
 			/**
