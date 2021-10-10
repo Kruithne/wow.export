@@ -360,7 +360,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 								const skelData = await casc.getFile(m2.skeletonFileID);
 								const skelFile = path.join(outDir, basename + '.skel');
 
-								await skelData.writeToFile();
+								await skelData.writeToFile(skelFile);
 								fileManifest.push({ type: 'SKEL', fileDataID: m2.skeletonFileID, file: skelFile });
 							}
 
