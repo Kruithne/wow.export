@@ -1044,7 +1044,8 @@ class ADTExporter {
 								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
-								Type: 'wmo'
+								Type: 'wmo',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
