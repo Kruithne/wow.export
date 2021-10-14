@@ -549,7 +549,7 @@ class ADTExporter {
 							const layer = texLayers[i];
 							const mat = materials[layer.textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, chunkIndex, effectID: layer.effectID }, mat);
+								layers.push(Object.assign({ index: i, chunkIndex, effectID: layer.effectID }, mat));
 						}
 					}
 				}
