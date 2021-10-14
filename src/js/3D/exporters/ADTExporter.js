@@ -466,8 +466,6 @@ class ADTExporter {
 						mat.heightFileDataID = heightFileDataID;
 					}
 
-					mat.diffuseTex = await loadTexture(diffuseFileDataID);
-
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
 						mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
