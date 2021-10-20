@@ -1,3 +1,9 @@
+0.1.40 (20-10-2021)
+- Fixed missing fileDataID column in CSV placement file for ADT exports.
+- Fixed issue that caused missing data in merged alpha map exports.
+- Fixed issue that prevented M2 .skel files from exporting in raw exports.
+- Fixed issue that caused navigation issues from the Blender add-on screen.
+
 0.1.39 (14-09-2021)
 - Added option to export M2 bone data into a relative *_bones.json file.
 - Added an `exportID` property to `EXPORT_` and `HOOK_EXPORT_COMPLETE` RCP messages.
