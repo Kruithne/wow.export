@@ -1,4 +1,5 @@
 0.1.40 (20-10-2021)
+- Added texture height scale/offset to alpha map meta exports.
 - Fixed missing fileDataID column in CSV placement file for ADT exports.
 - Fixed issue that caused missing data in merged alpha map exports.
 - Fixed issue that prevented M2 .skel files from exporting in raw exports.
