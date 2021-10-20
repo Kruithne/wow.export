@@ -131,6 +131,18 @@ const clearCanvas = () => {
 };
 
 /**
+ * Convert an RGBA object into an integer.
+ * @param {object} rgba 
+ * @returns {number}
+ */
+const rgbaToInt = (rgba) => {
+	let intval = rgba.r;
+	intval = (intval << 8) + rgba.g;
+	intval = (intval << 8) + rgba.b;
+	return (intval << 8) + rgba.a;
+};
+
+/**
  * Save the current canvas state to a file.
  * @param {string} out
  */
@@ -495,6 +507,8 @@ class ADTExporter {
 				helper.setCurrentTaskMax(16 * 16);
 
 				const layers = [];
+				const vertexColors = [];
+
 				for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
@@ -503,6 +517,7 @@ class ADTExporter {
 					helper.setCurrentTaskValue(chunkIndex);
 
 					const texChunk = texAdt.texChunks[chunkIndex];
+					const rootChunk = rootAdt.chunks[chunkIndex];
 
 					const alphaLayers = texChunk.alphaLayers || [];
 					const imageData = ctx.createImageData(64, 64);
@@ -539,6 +554,10 @@ class ADTExporter {
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
 						json.addProperty('layers', layers);
+						
+						if (rootChunk.vertexShading)
+							json.addProperty('vertexColors', rootChunk.vertexShading.map(e => rgbaToInt(e)));
+
 						await json.write();
 
 						layers.length = 0;
@@ -556,6 +575,9 @@ class ADTExporter {
 							if (mat !== undefined)
 								layers.push(Object.assign({ index: i, chunkIndex, effectID: layer.effectID }, mat));
 						}
+
+						if (rootChunk.vertexShading)
+							vertexColors.push({ chunkIndex, shading: rootChunk.vertexShading.map(e => rgbaToInt(e)) });
 					}
 				}
 
@@ -567,6 +589,10 @@ class ADTExporter {
 
 					const json = new JSONWriter(path.join(dir, 'tex_' + this.tileID + '.json'));
 					json.addProperty('layers', layers);
+
+					if (vertexColors.length > 0)
+						json.addProperty('vertexColors', vertexColors);
+
 					await json.write();
 				}
 			} else if (quality <= 512) {

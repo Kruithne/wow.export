@@ -1,4 +1,5 @@
 0.1.40 (20-10-2021)
+- Added vertex colour data to ADT export meta JSON.
 - Added texture height scale/offset to alpha map meta exports.
 - Fixed missing fileDataID column in CSV placement file for ADT exports.
 - Fixed issue that caused missing data in merged alpha map exports.
