@@ -594,6 +594,7 @@ class WMOExporter {
 					enabled: !mask || mask.has(i),
 					version: group.version,
 					flags: group.flags,
+					ambientColor: group.ambientColor,
 					boundingBox1: group.boundingBox1,
 					boundingBox2: group.boundingBox2,
 					numPortals: group.numPortals,

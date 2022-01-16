@@ -1,3 +1,6 @@
+0.1.41 (16-01-2022)
+- Added `ambientColor` field to WMO groups in JSON metadata (MDAL).
+
 0.1.40 (20-10-2021)
 - Added vertex colour data to ADT export meta JSON.
 - Added texture height scale/offset to alpha map meta exports.

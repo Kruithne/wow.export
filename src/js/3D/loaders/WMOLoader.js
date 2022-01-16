@@ -267,6 +267,11 @@ const WMOChunkHandlers = {
 		this.vertexColours.push(data.readUInt32LE(chunkSize / 4));
 	},
 
+	// MDAL (Ambient Color) [WMO Group]
+	0x4D44414C: function(data) {
+		this.ambientColor = data.readUInt32LE();
+	},
+
 	// MOGP (Group Header) [WMO Group]
 	0x4D4F4750: function(data, chunkSize) {
 		const endOfs = data.offset + chunkSize;
