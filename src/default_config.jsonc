@@ -5,7 +5,7 @@
 //      OSX: ~/Library/Application Support/<name>/Default\wow.export
 //      Linux: ~/.config/<name>/wow.export
 {
-	"listfileURL": "https://www.kruithne.net/wow.export/data/listfile/master",
+	"listfileURL": "https://www.kruithne.net/wow.export/data/listfile/master?v=%s",
 	"listfileCacheRefresh": 3,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/master/definitions/%s.dbd",
 	"updateURL": "https://www.kruithne.net/wow.export/update/%s/",
