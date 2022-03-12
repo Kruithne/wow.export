@@ -25,8 +25,9 @@ let loaded = false;
  * Returns the amount of file ID to filename mappings loaded.
  * @param {string} buildConfig
  * @param {BuildCache} cache
+ * @param {Map} rootEntries
  */
-const loadListfile = async (buildConfig, cache) => {
+const loadListfile = async (buildConfig, cache, rootEntries) => {
 	log.write('Loading listfile for build %s', buildConfig);
 
 	let url = String(core.view.config.listfileURL);
@@ -109,9 +110,12 @@ const loadListfile = async (buildConfig, cache) => {
 			return;
 		}
 
-		const fileName = tokens[1].toLowerCase();
-		idLookup.set(fileDataID, fileName);
-		nameLookup.set(fileName, fileDataID);
+		if (rootEntries.has(fileDataID))
+		{
+			const fileName = tokens[1].toLowerCase();
+			idLookup.set(fileDataID, fileName);
+			nameLookup.set(fileName, fileDataID);
+		}
 	}
 
 	loaded = true;

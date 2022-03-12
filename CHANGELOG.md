@@ -1,3 +1,9 @@
+0.1.42 (12-03-2022)
+- wow.export now has a new website located at https://www.kruithne.net/wow.export/
+- By default, listfiles will now be downloaded from https://www.kruithne.net/wow.export/data/listfile/master
+- By default, TACT encryption keys will now be downloaded from https://www.kruithne.net/wow.export/data/tact/wow
+- Files do not exist in the loaded game installation will no longer appear in file lists.
+
 0.1.41 (16-01-2022)
 - Added `ambientColor` field to WMO groups in JSON metadata (MDAL).
 
