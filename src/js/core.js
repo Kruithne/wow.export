@@ -78,12 +78,16 @@ const view = {
 	modelViewerContext: null, // 3D context for the model viewer.
 	modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
 	modelViewerGeosets: [], // Active M2 model geoset control.
-	modelViewerShowSkins: true, // Whether or not to show skins.
 	modelViewerSkins: [], // Active M2 model skins.
 	modelViewerSkinsSelection: [], // Selected M2 model skins.
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	modelViewerAutoAdjust: true, // Automatic camera adjustment.
+	textureRibbonStack: [], // Texture preview stack for model viewer.
+	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
+	textureRibbonPage: 0, // Active page of texture slots to render.
+	contextNodeTextureRibbon: null, // Context menu node for the texture ribbon.
+	contextNodeItem: null, // Context menu node for the items listfile.
 	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
@@ -97,6 +101,7 @@ const view = {
 	mapViewerHasWorldModel: false, // Does selected map have a world model?
 	mapViewerTileLoader: null, // Tile loader for active map viewer map.
 	mapViewerSelectedMap: null, // Currently selected map.
+	mapViewerSelectedDir: null,
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
 	exportCancelled: false, // Export cancellation state.

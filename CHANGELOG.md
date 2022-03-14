@@ -1,3 +1,110 @@
+0.1.42 (12-03-2022)
+- wow.export now has a new website located at https://www.kruithne.net/wow.export/
+- By default, listfiles will now be downloaded from https://www.kruithne.net/wow.export/data/listfile/master
+- By default, TACT encryption keys will now be downloaded from https://www.kruithne.net/wow.export/data/tact/wow
+- Files do not exist in the loaded game installation will no longer appear in file lists.
+
+0.1.41 (16-01-2022)
+- Added `ambientColor` field to WMO groups in JSON metadata (MDAL).
+
+0.1.40 (20-10-2021)
+- Added vertex colour data to ADT export meta JSON.
+- Added texture height scale/offset to alpha map meta exports.
+- Fixed missing fileDataID column in CSV placement file for ADT exports.
+- Fixed issue that caused missing data in merged alpha map exports.
+- Fixed issue that prevented M2 .skel files from exporting in raw exports.
+- Fixed issue that caused navigation issues from the Blender add-on screen.
+
+0.1.39 (14-09-2021)
+- Added option to export M2 bone data into a relative *_bones.json file.
+- Added an `exportID` property to `EXPORT_` and `HOOK_EXPORT_COMPLETE` RCP messages.
+- M2 models exported with a skin will now be named uniquely based on the selected skin.
+- Fixed issue with texture ribbon being overwritten by M2 textures when viewing a WMO.
+
+0.1.38 (13-09-2021)
+- Implemented remote control protocol for advanced users.
+- Regular expression matching is now case-insensitive.
+- Fixed issue that prevented certain models from rendering while the texture ribbon is active.
+
+0.1.37 (01-09-2021)
+- Added texture ribbon to the 3D model viewer, allowing inspection of used textures.
+- Added ability to copy item names/IDs to the clipboard from the item browser.
+- Added ability to view items on Wowhead (external) from the item browser.
+- Added button to open maps externally in wow.tools (external) on the map viewer.
+- Texture viewer will now export the previewed texture if no user selection has been made.
+- Selecting textures/models for an item will now reset the respective filter.
+- Consolidated option to view item models/textures into a context menu.
+- Removed buttons to toggle sidebar visibility; sidebar is now always visible.
+- Changed Discord links in the footer/crash screen to point to new support location.
+
+0.1.36 (31-08-2021)
+- Added `colors` property to M2 metadata containing color/alpha timelines for models.
+- Added `textureWeights` property to M2 metadata containing global texture transparency timelines for models.
+- Added `transparencyLookup` property to M2 metadata for texture unit mapping to transparency entries.
+- Added `textureTransforms` property to M2 metadata defining texture animation timelines.
+- Added `textureTransformsLookup` property to M2 metadata for texture transform lookups.
+- Added `skin.fileName` and `skin.fileDataID` properties to M2 skin metadata.
+- Added `boundingBox`, `boundingSphereRadius`, `collisionBox`, `collisionSphereRadius` properties to M2 metadata.
+- Added `animFileIDs` property to M2 metadata mapping animation IDs to relative `.anim` files.
+- Added option to export all associated raw `.anim` files with M2 models.
+- Added option to export liquid (water, lava, etc) data for ADT tiles.
+
+0.1.35 (30-08-2021)
+- Fixed issue that caused invalid OBJ files to be produced for M2 collision geometry.
+- Added `skin.subMeshes.enabled` property to M2 metadata, indicating which sub-meshes were exported.
+- Added `groups.enabled` property to WMO metadata, indicating which WMO groups were exported.
+- Added `textures.fileNameInternal` property to M2 metadata, mapping fileDataID to a listfile entry.
+- Added `textures.fileNameExternal` property to M2 metadata, pointing to texture export location (relative to OBJ).
+- Added `textures.mtlName` property to M2 metadata, linking to an entry in the MTL file.
+- Added `textures` property array to WMO metadata, providing expanded texture mappings.
+- Added 'Load Unknown Files' option to toggle loading of unknown files from DB2 tables.
+- Added 'Load Model Skins' option to toggle loading of M2 skins for creatures and items.
+- Unknown sound files are now listed with the `.unk_sound` extension rather than `.ogg`.
+- Unknown sound files are now automatically type-detected on export and given the correct extension.
+
+0.1.34 (24-08-2021)
+- Added height textures to ADT alpha map exports, mapped in the metadata layer entries.
+- Added effectID (GroundEffectTexture#ID) property to ADT alpha map layer metadata.
+- Added advanced foliage meta data exporting (disabled by default).
+
+0.1.33 (13-08-2021)
+- Added support for unknown sound files, now listed as "unknown_xxx.ogg".
+- Fixed issue that prevented unknown model/textures from appearing in the listfiles.
+
+0.1.32 (28-06-2021)
+- Added export/import support for additional UV layers in WMO objects.
+- Added export support for additional vertex colour layers in WMO objects.
+- Added BLP texture exports for raw WMO files.
+
+0.1.31 (04-06-2021)
+- Updated Blender add-on to support Blender version 2.93.
+- Improved group names in WMO meta data exporting.
+- Added option for POSIX-style path formatting in exported files.
+- Added option for exporting linked .skel/.bone files with raw M2 exports.
+- Added skeletonFileID/boneFileIDs fields to exported M2 metadata.
+- Added export support for secondary/tertiary textures on WMO models.
+- Fixed issue that prevented certain map tiles from preview/exporting.
+
+0.1.30 (01-05-2021)
+- Added 'Export Textures' option to sidebar to allow models to be exported without textures.
+- Added fileDataID, fileName and internalName fields to exported M2 meta data.
+- Added option to export raw WMO group files (when exporting raw WMO models).
+- Added support for MWDS, allowing ADT-defined multi-group support on WMO models.
+- Added a wireframe rendering mode to the 3D model preview for both M2 and WMO.
+- Added model texture controls to the map exporter interface.
+- Added product support for Classic TBC / PTR builds.
+- Added portal information to exported WMO meta data.
+- Added import controls to the Blender importer add-on.
+- Replaced the 'Copy File Directories' setting with a 'Copy Mode' control, with a FileDataID option.
+- Changed the default alpha mode to CHANNEL_PACKED in the Blender add-on.
+- Fixed issue that caused incorrect nesting when imported with the Blender add-on.
+- Fixed issue that caused ADT tiles with Alpha Maps to reference missing baked texture.
+- Fixed issue that caused a crash when selecting an encrypted model with an unknown TACT key.
+- Fixed issue that caused 'invalid installation' error message from not dismissing after retry.
+- Fixed issue that caused missing alpha channels on ADT exports for some users.
+- Fixed issue that caused invalid collision OBJ files to be exported.
+- Fixed issue that caused WMO doodad sets to be incorrectly exported.
+
 0.1.29 (29-03-2021)
 - Added new 'Items' tab, allowing model/texture look-up of specific game items.
 - Added ability to select multiple files for import with the Blender add-on.

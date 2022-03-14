@@ -175,12 +175,15 @@ core.events.on('click-cache-clear', async () => {
 	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
 
-	await fsp.rmdir(constants.CACHE.DIR, { recursive: true });
+	await fsp.rm(constants.CACHE.DIR, { recursive: true });
 	await fsp.mkdir(constants.CACHE.DIR);
 
+	
 	core.view.cacheSize = 0;
 	log.write('Purge complete, awaiting mandatory restart.');
 	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => core.view.restartApplication() }, -1, false);
+	
+	core.events.emit('cache-cleared');
 });
 
 // Run cache clean-up once a CASC source has been selected.

@@ -131,6 +131,18 @@ const clearCanvas = () => {
 };
 
 /**
+ * Convert an RGBA object into an integer.
+ * @param {object} rgba 
+ * @returns {number}
+ */
+const rgbaToInt = (rgba) => {
+	let intval = rgba.r;
+	intval = (intval << 8) + rgba.g;
+	intval = (intval << 8) + rgba.b;
+	return (intval << 8) + rgba.a;
+};
+
+/**
  * Save the current canvas state to a file.
  * @param {string} out
  */
@@ -218,6 +230,7 @@ class ADTExporter {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
+		const usePosix = config.pathFormat === 'posix';
 		const prefix = util.format('world/maps/%s/%s', this.mapDir, this.mapDir);
 
 		// Load the WDT. We cache this to speed up exporting large amounts of tiles
@@ -395,12 +408,12 @@ class ADTExporter {
 			}
 		}
 
-		if (!isSplittingTextures || (isAlphaMaps && !isSplittingAlphaMaps))
+		if ((!isAlphaMaps && !isSplittingTextures) || (isAlphaMaps && !isSplittingAlphaMaps))
 			mtl.addMaterial('tex_' + this.tileID, 'tex_' + this.tileID + '.png');
 
 		obj.setVertArray(vertices);
 		obj.setNormalArray(normals);
-		obj.setUVArray(uvs);
+		obj.addUVArray(uvs);
 
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
@@ -417,7 +430,32 @@ class ADTExporter {
 				const ctx = canvas.getContext('2d');
 
 				const materialIDs = texAdt.diffuseTextureFileDataIDs;
+				const heightIDs = texAdt.heightTextureFileDataIDs;
 				const texParams = texAdt.texParams;
+
+				const saveLayerTexture = async (fileDataID) => {
+					const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+					let fileName = listfile.getByID(fileDataID);
+					if (fileName !== undefined)
+						fileName = ExportHelper.replaceExtension(fileName, '.png');
+					else
+						fileName = listfile.formatUnknownFile(fileDataID, '.png');
+				
+					let texFile;
+					let texPath;
+				
+					if (config.enableSharedTextures) {
+						texPath = ExportHelper.getExportPath(fileName);
+						texFile = path.relative(dir, texPath);
+					} else {
+						texPath = path.join(dir, path.basename(fileName));
+						texFile = path.basename(texPath);
+					}
+				
+					await blp.saveToPNG(texPath);
+				
+					return usePosix ? ExportHelper.win32ToPosix(texFile) : texFile;
+				};
 
 				// Export the raw diffuse textures to disk.
 				const materials = new Array(materialIDs.length);
@@ -427,35 +465,27 @@ class ADTExporter {
 						return;
 
 					const diffuseFileDataID = materialIDs[i];
+					const heightFileDataID = heightIDs[i] ?? 0;
 					if (diffuseFileDataID === 0)
 						continue;
 
-					const blp = new BLPFile(await core.view.casc.getFile(diffuseFileDataID));
-
 					const mat = materials[i] = { scale: 1, fileDataID: diffuseFileDataID };
+					mat.file = await saveLayerTexture(diffuseFileDataID);
 
-					let fileName = listfile.getByID(diffuseFileDataID);
-					if (fileName !== undefined)
-						fileName = ExportHelper.replaceExtension(fileName, '.png');
-					else
-						fileName = 'unknown/' + diffuseFileDataID + '.png';
-
-					let texFile;
-					let texPath;
-					if (config.enableSharedTextures) {
-						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(dir, texPath);
-					} else {
-						texPath = path.join(dir, path.basename(fileName));
-						texFile = path.basename(texPath);
+					// Include a reference to the height map texture if it exists.
+					if (heightFileDataID > 0) {
+						mat.heightFile = await saveLayerTexture(heightFileDataID);
+						mat.heightFileDataID = heightFileDataID;
 					}
-
-					await blp.saveToPNG(texPath);
-					mat.file = texFile;
 
 					if (texParams && texParams[i]) {
 						const params = texParams[i];
 						mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
+
+						if (params.height !== 0 || params.offset !== 1) {
+							mat.heightScale = params.height;
+							mat.heightOffset = params.offset;
+						}
 					}
 				}
 
@@ -477,6 +507,8 @@ class ADTExporter {
 				helper.setCurrentTaskMax(16 * 16);
 
 				const layers = [];
+				const vertexColors = [];
+
 				for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
@@ -485,6 +517,7 @@ class ADTExporter {
 					helper.setCurrentTaskValue(chunkIndex);
 
 					const texChunk = texAdt.texChunks[chunkIndex];
+					const rootChunk = rootAdt.chunks[chunkIndex];
 
 					const alphaLayers = texChunk.alphaLayers || [];
 					const imageData = ctx.createImageData(64, 64);
@@ -513,13 +546,18 @@ class ADTExporter {
 
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
-							const mat = materials[texLayers[i].textureId];
+							const layer = texLayers[i];
+							const mat = materials[layer.textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, fileDataID: mat.fileDataID, scale: mat.scale, file: mat.file });
+								layers.push(Object.assign({ index: i, effectID: layer.effectID }, mat));
 						}
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
 						json.addProperty('layers', layers);
+						
+						if (rootChunk.vertexShading)
+							json.addProperty('vertexColors', rootChunk.vertexShading.map(e => rgbaToInt(e)));
+
 						await json.write();
 
 						layers.length = 0;
@@ -532,10 +570,14 @@ class ADTExporter {
 					
 						const texLayers = texChunk.layers;
 						for (let i = 0, n = texLayers.length; i < n; i++) {
-							const mat = materials[texLayers[i].textureId];
+							const layer = texLayers[i];
+							const mat = materials[layer.textureId];
 							if (mat !== undefined)
-								layers.push({ index: i, chunkIndex, fileDataID: mat.fileDataID, scale: mat.scale });
+								layers.push(Object.assign({ index: i, chunkIndex, effectID: layer.effectID }, mat));
 						}
+
+						if (rootChunk.vertexShading)
+							vertexColors.push({ chunkIndex, shading: rootChunk.vertexShading.map(e => rgbaToInt(e)) });
 					}
 				}
 
@@ -547,11 +589,17 @@ class ADTExporter {
 
 					const json = new JSONWriter(path.join(dir, 'tex_' + this.tileID + '.json'));
 					json.addProperty('layers', layers);
+
+					if (vertexColors.length > 0)
+						json.addProperty('vertexColors', vertexColors);
+
 					await json.write();
 				}
 			} else if (quality <= 512) {
 				// Use minimaps for cheap textures.
-				const tilePath = util.format('world/minimaps/%s/map%d_%d.blp', this.mapDir, this.tileY, this.tileX);
+				const paddedX = this.tileY.toString().padStart(2, '0');
+				const paddedY = this.tileX.toString().padStart(2, '0');
+				const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', this.mapDir, paddedX, paddedY);
 				const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
 
 				if (config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
@@ -852,14 +900,14 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown file.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
-								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								const m2 = new M2Exporter(await casc.getFile(fileDataID), undefined, fileDataID);
 								await m2.exportAsOBJ(modelPath, false, helper);
 
 								// Abort if the export has been cancelled.
@@ -868,9 +916,13 @@ class ADTExporter {
 
 								objectCache.add(fileDataID);
 							}
+
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
 							
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.Position[0],
 								PositionY: model.Position[1],
 								PositionZ: model.Position[2],
@@ -907,14 +959,14 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown file.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
-								const m2 = new M2Exporter(await casc.getFile(fileDataID));
+								const m2 = new M2Exporter(await casc.getFile(fileDataID), undefined, fileDataID);
 								await m2.exportAsOBJ(modelPath, false, helper);
 
 								// Abort if the export has been cancelled.
@@ -924,8 +976,12 @@ class ADTExporter {
 								objectCache.add(fileDataID);
 							}
 
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
+
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.position[0],
 								PositionY: model.position[1],
 								PositionZ: model.position[2],
@@ -953,6 +1009,7 @@ class ADTExporter {
 					let worldModelIndex = 0;
 					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
+						const useADTSets = model & 0x80;
 						helper.setCurrentTaskValue(worldModelIndex++);
 
 						let fileDataID;
@@ -972,18 +1029,27 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
 							} else {
 								// Handle unknown WMO files.
-								fileName = 'unknown/' + fileDataID + '_set' + model.doodadSet + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
-							const cacheID = fileDataID + '-' + model.doodadSet;
+							const cacheID = fileDataID + '-' + (useADTSets ? objAdt.doodadSets.join(',') : model.doodadSet);
 
 							if (!objectCache.has(cacheID)) {
 								const data = await casc.getFile(fileDataID);
 								const wmo = new WMOExporter(data, fileDataID);
 
-								if (config.mapsIncludeWMOSets)
-									wmo.setDoodadSetMask({ 0: { checked: true }, [model.doodadSet]: { checked: true }});
+								if (config.mapsIncludeWMOSets) {
+									const mask = { 0: { checked: true } };
+									if (useADTSets) {
+										for (const setIndex of objAdt.doodadSets)
+											mask[setIndex] = { checked: true };
+									} else {
+										mask[model.doodadSet] = { checked: true }
+									}
+									
+									wmo.setDoodadSetMask(mask);
+								}
 
 								await wmo.exportAsOBJ(modelPath, helper);
 
@@ -994,8 +1060,12 @@ class ADTExporter {
 								objectCache.add(cacheID);
 							}
 
+							let modelFile = path.relative(dir, modelPath);
+							if (usePosix)
+								modelFile = ExportHelper.win32ToPosix(modelFile);
+
 							csv.addRow({
-								ModelFile: path.relative(dir, modelPath),
+								ModelFile: modelFile,
 								PositionX: model.position[0],
 								PositionY: model.position[1],
 								PositionZ: model.position[2],
@@ -1005,7 +1075,8 @@ class ADTExporter {
 								RotationW: 0,
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
-								Type: 'wmo'
+								Type: 'wmo',
+								FileDataID: fileDataID
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
@@ -1019,6 +1090,16 @@ class ADTExporter {
 			}
 		}
 
+		// Export liquids.
+		if (config.mapsIncludeLiquid && rootAdt.liquidChunks) {
+			const liquidFile = path.join(dir, 'liquid_' + this.tileID + '.json');
+			log.write('Exporting liquid data to %s', liquidFile);
+
+			const liquidJSON = new JSONWriter(liquidFile);
+			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks)
+			await liquidJSON.write();
+		}
+
 		// Prepare foliage data tables if needed.
 		if (config.mapsIncludeFoliage && !hasLoadedFoliage)
 			await loadFoliageTables();
@@ -1026,6 +1107,7 @@ class ADTExporter {
 		// Export foliage.
 		if (config.mapsIncludeFoliage && isFoliageAvailable) {
 			const foliageExportCache = new Set();
+			const foliageEffectCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
 			
 			log.write('Exporting foliage to %s', foliageDir);
@@ -1044,6 +1126,16 @@ class ADTExporter {
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
+					// Create a foliage metadata JSON packed with the table data.
+					let foliageJSON;
+					if (core.view.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
+						foliageJSON = new JSONWriter(path.join(foliageDir, layer.effectID + '.json'));
+						foliageJSON.data = groundEffectTexture;
+
+						foliageEffectCache.add(layer.effectID);
+					}
+
+					const doodadModelIDs = {};
 					for (const doodadEntryID of groundEffectTexture.DoodadID) {
 						// Skip empty fields.
 						if (!doodadEntryID)
@@ -1052,11 +1144,23 @@ class ADTExporter {
 						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
+							doodadModelIDs[doodadEntryID] = { fileDataID: modelID };
 							if (!modelID || foliageExportCache.has(modelID))
 								continue;
 
 							foliageExportCache.add(modelID);
 						}
+					}
+
+					if (foliageJSON) {
+						// Map fileDataID to the exported OBJ file names.
+						for (const entry of Object.values(doodadModelIDs)) {
+							const fileName = listfile.getByID(entry.fileDataID);
+							entry.fileName = ExportHelper.replaceExtension(path.basename(fileName), '.obj');
+						}
+
+						foliageJSON.addProperty('DoodadModelIDs', doodadModelIDs);
+						await foliageJSON.write();
 					}
 				}
 			}
@@ -1072,7 +1176,7 @@ class ADTExporter {
 				const modelName = path.basename(listfile.getByID(modelID));
 				const data = await casc.getFile(modelID);
 
-				const exporter = new M2Exporter(data);
+				const exporter = new M2Exporter(data, undefined, modelID);
 				const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
 				await exporter.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
 

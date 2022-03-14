@@ -12,6 +12,7 @@ const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
 const listfile = require('../../casc/listfile');
+const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
@@ -61,7 +62,7 @@ class WMORenderer {
 
 			// Load all render batches into the mesh.
 			for (const batch of group.renderBatches) {
-				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
+				const matID = ((batch.flags & 2) === 2) ? batch.possibleBox2[2] : batch.materialID;
 				geometry.addGroup(batch.firstFace, batch.numFaces, matID);
 			}
 
@@ -81,9 +82,13 @@ class WMORenderer {
 		view.modelViewerWMOSets = this.setArray;
 		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
 		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Update wireframe rendering.
+		this.updateWireframe();
 
 		// Drop reference to raw data, we don't need it now.
 		this.data = undefined;
@@ -96,6 +101,8 @@ class WMORenderer {
 		const wmo = this.wmo;
 		const materialCount = wmo.materials.length;
 		const materials = this.materials = new Array(materialCount);
+
+		this.syncID = textureRibbon.reset();
 
 		const isClassic = !!wmo.textureNames;
 		for (let i = 0; i < materialCount; i++) {
@@ -111,10 +118,16 @@ class WMORenderer {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
+				const ribbonSlot = textureRibbon.addSlot();
+				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
+					const blpURI = blp.getDataURL(0b0111);
 
-					loader.load(blp.getDataURL(0b0111), image => {
+					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+
+					loader.load(blpURI, image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -134,6 +147,30 @@ class WMORenderer {
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}
+
+			// Include texture2/texture3 in the texture ribbon.
+			this.loadAuxiliaryTextureForRibbon(material.texture2, wmo);
+			this.loadAuxiliaryTextureForRibbon(material.texture3, wmo);
+		}
+	}
+
+	/**
+	 * Load an auxiliary texture onto the texture ribbon.
+	 * @param {number|string} textureID 
+	 * @param {WMOLoader} wmo
+	 */
+	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
+		if (wmo.textureNames)
+			textureID = listfile.getByFilename(textureID) || 0;
+
+		if (textureID > 0) {
+			const ribbonSlot = textureRibbon.addSlot();
+			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
+
+			const data = await core.view.casc.getFile(textureID);
+			const blp = new BLPFile(data);
+
+			textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
 		}
 	}
 
@@ -179,7 +216,7 @@ class WMORenderer {
 					} else {
 						// New M2, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
-						const m2 = new M2Renderer(data, renderGroup);
+						const m2 = new M2Renderer(data, renderGroup, false, false);
 						
 						await m2.load();
 						await m2.loadSkin(0);
@@ -219,6 +256,38 @@ class WMORenderer {
 		const meshes = this.meshGroup.children;
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.groupArray[i].checked;
+	}
+
+	/**
+	 * Update the wireframe state for all active materials.
+	 */
+	updateWireframe() {
+		const renderWireframe = core.view.config.modelViewerWireframe;
+		const materials = this.getRenderMaterials(this.renderGroup, new Set());
+
+		for (const material of materials) {
+			material.wireframe = renderWireframe;
+			material.needsUpdate = true;
+		}
+	}
+
+	/**
+	 * Recursively collect render materials.
+	 * @param {object} root 
+	 * @param {Set} out 
+	 * @returns 
+	 */
+	getRenderMaterials(root, out) {
+		if (root.children) {
+			for (const child of root.children)
+				this.getRenderMaterials(child, out);
+		}
+		
+		if (root.material) {
+			for (const material of root.material)
+				out.add(material);
+		}
+		return out;
 	}
 
 	/**
@@ -279,8 +348,9 @@ class WMORenderer {
 		this.m2Clones = undefined;
 
 		// Unregister reactive watchers.
-		if (this.groupWatcher) this.groupWatcher();
-		if (this.setWatcher) this.setWatcher();
+		this.groupWatcher?.();
+		this.setWatcher?.();
+		this.wireframeWatcher?.();
 
 		// Empty reactive arrays.
 		if (this.groupArray) this.groupArray.splice(0);

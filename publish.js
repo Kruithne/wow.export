@@ -124,7 +124,7 @@ const log = {
 
 			// Prepare update files for upload.
 			for (const file of publishConfig.updateFiles) {
-				const remote = util.format(publishConfig.remoteUpdateDir, build, file);
+				const remote = util.format(sftpConfig.remoteUpdateDir, build, file);
 				const local = path.join(buildDir, file);
 
 				uploads.push({ local, remote, tmpProtection: true });
@@ -146,7 +146,7 @@ const log = {
 			zip.writeZip(packageOut);
 
 			// Store the package path for upload.
-			const remoteFile = util.format(publishConfig.remotePackageDir, build, packageName);
+			const remoteFile = util.format(sftpConfig.remotePackageDir, build, packageName);
 			uploads.push({ remote: remoteFile, local: packageOut });
 
 			const publishBuildElapsed = (Date.now() - publishBuildStart) / 1000;

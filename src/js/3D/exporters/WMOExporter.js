@@ -51,21 +51,26 @@ class WMOExporter {
 	 * @param {string} out 
 	 * @param {?MTLWriter} mtl 
 	 * @param {ExportHelper}
+	 * @param {boolean} [raw=false]
 	 * @returns {{ textureMap: Map, materialMap: Map }}
 	 */
-	async exportTextures(out, mtl = null, helper) {
+	async exportTextures(out, mtl = null, helper, raw = false) {
 		const config = core.view.config;
 		const casc = core.view.casc;
+
+		const textureMap = new Map();
+		const materialMap = new Map();
+
+		if (!config.modelsExportTextures)
+			return { textureMap, materialMap };
 
 		// Ensure the WMO is loaded before reading materials.
 		await this.wmo.load();
 
-		const useAlpha = config.modelsIncludeAlpha;
+		const useAlpha = config.modelsExportAlpha;
+		const usePosix = config.pathFormat === 'posix';
 		const isClassic = !!this.wmo.textureNames;
 		const materialCount = this.wmo.materials.length;
-
-		const textureMap = new Map();
-		const materialMap = new Map();
 
 		helper.setCurrentTaskMax(materialCount);
 
@@ -76,25 +81,34 @@ class WMOExporter {
 			const material = this.wmo.materials[i];
 			helper.setCurrentTaskValue(i);
 
-			let fileDataID = 0;
-			let fileName;
+			const materialTextures = [material.texture1, material.texture2, material.texture3];
+			for (const materialTexture of materialTextures) {
+				// Skip unused material slots.
+				if (materialTexture === 0)
+					continue;
 
-			if (isClassic) {
-				// Classic, lookup fileDataID using file name.
-				fileName = this.wmo.textureNames[material.texture1];
-				fileDataID = listfile.getByFilename(fileName) ?? 0;
+				let fileDataID = 0;
+				let fileName;
 
-				// Remove all whitespace from exported textures due to MTL incompatibility.
-				if (config.removePathSpaces)
-					fileName = fileName.replace(/\s/g, '');
-			} else {
-				// Retail, user fileDataID directly.
-				fileDataID = material.texture1;
-			}
+				if (isClassic) {
+					// Classic, lookup fileDataID using file name.
+					fileName = this.wmo.textureNames[materialTexture];
+					fileDataID = listfile.getByFilename(fileName) ?? 0;
 
-			if (fileDataID > 0) {
+					// Remove all whitespace from exported textures due to MTL incompatibility.
+					if (config.removePathSpaces)
+						fileName = fileName.replace(/\s/g, '');
+				} else {
+					// Retail, use fileDataID directly.
+					fileDataID = materialTexture;
+				}
+
+				// Skip unknown/missing files.
+				if (fileDataID === 0)
+					continue;
+
 				try {
-					let texFile = fileDataID + '.png';
+					let texFile = fileDataID + (raw ? '.blp' : '.png');
 					let texPath = path.join(path.dirname(out), texFile);
 
 					// Default MTl name to the file ID (prefixed for Maya).
@@ -117,10 +131,11 @@ class WMOExporter {
 					if (config.enableSharedTextures) {
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
-							fileName = ExportHelper.replaceExtension(fileName, '.png');
+							if (raw === false)
+								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = 'unknown/' + fileDataID + '.png';
+							fileName = listfile.formatUnknownFile(texFile);
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -129,17 +144,27 @@ class WMOExporter {
 
 					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 						const data = await casc.getFile(fileDataID);
-						const blp = new BLPFile(data);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
-						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+						if (raw) {
+							await data.writeToFile(texPath);
+						} else {
+							const blp = new BLPFile(data);
+							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+						}
 					} else {
-						log.write('Skipping WMo texture export %s (file exists, overwrite disabled)', texPath);
+						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
 					}
 
+					if (usePosix)
+						texFile = ExportHelper.win32ToPosix(texFile);
+
 					mtl?.addMaterial(matName, texFile);
-					materialMap.set(i, matName);
-					textureMap.set(fileDataID, texFile);
+					textureMap.set(fileDataID, { matPathRelative: texFile, matPath: texPath, matName });
+
+					// MTL only supports one texture per material, only link the first.
+					if (!materialMap.has(i))
+						materialMap.set(i, matName);
 				} catch (e) {
 					log.write('Failed to export texture %d for WMO: %s', fileDataID, e.message);
 				}
@@ -153,8 +178,9 @@ class WMOExporter {
 	 * Export the WMO model as a GLTF file.
 	 * @param {string} out 
 	 * @param {ExportHelper} helper 
+	 * @param {Array} fileManifest
 	 */
-	async exportAsGLTF(out, helper) {
+	async exportAsGLTF(out, helper, fileManifest) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 		
 		// TODO: Skip overwrite if file exists?
@@ -277,8 +303,9 @@ class WMOExporter {
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
 	 */
-	async exportAsOBJ(out, helper) {
+	async exportAsOBJ(out, helper, fileManifest) {
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -304,9 +331,14 @@ class WMOExporter {
 			return;
 			
 		const materialMap = texMaps.materialMap;
+		const textureMap = texMaps.textureMap;
+
+		for (const [texFileDataID, texInfo] of textureMap)
+			fileManifest?.push({ type: 'PNG', fileDataID: texFileDataID, file: texInfo.matPath });
 
 		const groups = [];
 		let nInd = 0;
+		let maxLayerCount = 0;
 
 		let mask;
 
@@ -346,13 +378,24 @@ class WMOExporter {
 			// 3 verts per indices.
 			nInd += group.vertices.length / 3;
 
+			// UV counts vary between groups, allocate for the max.
+			maxLayerCount = Math.max(group.uvs.length, maxLayerCount);
+
 			// Store the valid groups for quicker iteration later.
 			groups.push(group);
 		}
 
+		// Restrict to first UV layer if additional UV layers are not enabled.
+		if (!core.view.config.modelsExportUV2)
+			maxLayerCount = Math.min(maxLayerCount, 1);
+
 		const vertsArray = new Array(nInd * 3);
 		const normalsArray = new Array(nInd * 3);
-		const uvsArray = new Array(nInd * 2);
+		const uvArrays = new Array(maxLayerCount);
+
+		// Create all necessary UV layer arrays.
+		for (let i = 0; i < maxLayerCount; i++)
+			uvArrays[i] = new Array(nInd * 2);
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -370,16 +413,14 @@ class WMOExporter {
 				normalsArray[vertOfs + i] = groupNormals[i];
 
 			const uvsOfs = indOfs * 2;
-			if (group.uvs) {
-				// UVs exist, use the first array available.
-				const groupUvs = group.uvs[0];
-				for (let i = 0, n = groupUvs.length; i < n; i++)
-					uvsArray[uvsOfs + i] = groupUvs[i];
-			} else {
-				// No UVs available for the mesh, zero-fill.
-				const uvCount = indCount * 2;
-				for (let i = 0; i < uvCount; i++)
-					uvsArray[uvsOfs + i] = 0;
+			const groupUVs = group.uvs ?? [];
+			const uvCount = indCount * 2;
+
+			// Write to all UV layers, even if we have no data.
+			for (let i = 0; i < maxLayerCount; i++) {
+				const uv = groupUVs[i];
+				for (let j = 0; j < uvCount; j++)
+					uvArrays[i][uvsOfs + j] = uv?.[j] ?? 0;
 			}
 
 			const groupName = wmo.groupNames[group.nameOfs];
@@ -401,11 +442,14 @@ class WMOExporter {
 
 		obj.setVertArray(vertsArray);
 		obj.setNormalArray(normalsArray);
-		obj.setUVArray(uvsArray);
+
+		for (const arr of uvArrays)
+			obj.addUVArray(arr);
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
+			const usePosix = core.view.config.pathFormat === 'posix';
 			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
@@ -414,7 +458,7 @@ class WMOExporter {
 			const doodadSets = wmo.doodadSets;
 			for (let i = 0, n = doodadSets.length; i < n; i++) {
 				// Skip disabled doodad sets.
-				if (doodadSetMask && (!doodadSetMask[i] || !doodadSetMask[i].checked))
+				if (!doodadSetMask?.[i]?.checked)
 					continue;
 
 				const set = doodadSets[i];
@@ -452,7 +496,7 @@ class WMOExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown files.
-								fileName = 'unknown/' + fileDataID + '.obj';
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
 							const m2Path = ExportHelper.getExportPath(fileName);
@@ -460,7 +504,7 @@ class WMOExporter {
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
-								const m2Export = new M2Exporter(data);
+								const m2Export = new M2Exporter(data, undefined, fileDataID);
 								await m2Export.exportAsOBJ(m2Path, false, helper);
 
 								// Abort if the export has been cancelled.
@@ -471,8 +515,12 @@ class WMOExporter {
 							}
 
 							let modelPath = path.relative(outDir, m2Path);
+
 							if (useAbsolute === true)
 								modelPath = path.resolve(outDir, modelPath);
+
+							if (usePosix)
+								modelPath = ExportHelper.win32ToPosix(modelPath);
 
 							csv.addRow({
 								ModelFile: modelPath,
@@ -495,6 +543,7 @@ class WMOExporter {
 			}
 
 			await csv.write();
+			fileManifest?.push({ type: 'PLACEMENT', fileDataID: this.wmo.fileDataID, file: csv.out });
 		} else {
 			log.write('Skipping model placement export %s (file exists, overwrite disabled)', csvPath);
 		}
@@ -503,7 +552,10 @@ class WMOExporter {
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
 		await obj.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'OBJ', fileDataID: this.wmo.fileDataID, file: obj.out });
+
 		await mtl.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'MTL', fileDataID: this.wmo.fileDataID, file: mtl.out });
 
 		if (core.view.config.exportWMOMeta) {
 			helper.clearCurrentTask();
@@ -523,7 +575,10 @@ class WMOExporter {
 				set: wmo.setCount,
 				lod: wmo.lodCount
 			});
-
+			
+			json.addProperty('portalVertices', wmo.portalVertices);
+			json.addProperty('portalInfo', wmo.portalInfo);
+			json.addProperty('portalMapObjectRef', wmo.mopr);
 			json.addProperty('ambientColor', wmo.ambientColor);
 			json.addProperty('areaTableID', wmo.areaTableID);
 			json.addProperty('boundingBox1', wmo.boundingBox1);
@@ -534,8 +589,12 @@ class WMOExporter {
 			for (let i = 0, n = wmo.groups.length; i < n; i++) {
 				const group = wmo.groups[i];
 				groups[i] = {
+					groupName: wmo.groupNames[group.nameOfs],
+					groupDescription: wmo.groupNames[group.descOfs],
+					enabled: !mask || mask.has(i),
 					version: group.version,
 					flags: group.flags,
+					ambientColor: group.ambientColor,
 					boundingBox1: group.boundingBox1,
 					boundingBox2: group.boundingBox2,
 					numPortals: group.numPortals,
@@ -550,9 +609,32 @@ class WMOExporter {
 				};
 			}
 
+			// Create a textures array and push every unique fileDataID from the
+			// material stack, expanded with file name/path data for external QoL.
+			const textures = [];
+			const textureCache = new Set();
+			for (const material of wmo.materials) {
+				const materialTextures = [material.texture1, material.texture2, material.texture3];
+				for (const materialTexture of materialTextures) {
+					if (materialTexture === 0 || textureCache.has(materialTexture))
+						continue;
+
+					const textureEntry = textureMap.get(materialTexture);
+
+					textureCache.add(materialTexture);
+					textures.push({
+						fileDataID: materialTexture,
+						fileNameInternal: listfile.getByID(materialTexture),
+						fileNameExternal: textureEntry?.matPathRelative,
+						mtlName: textureEntry?.matName
+					});
+				}
+			}
+
 			json.addProperty('groups', groups);
-			json.addProperty('groupNames', wmo.groupNames);
+			json.addProperty('groupNames', Object.values(wmo.groupNames));
 			json.addProperty('groupInfo', wmo.groupInfo);
+			json.addProperty('textures', textures);
 			json.addProperty('materials', wmo.materials);
 			json.addProperty('doodadSets', wmo.doodadSets);
 			json.addProperty('fileDataIDs', wmo.fileDataIDs);
@@ -560,6 +642,7 @@ class WMOExporter {
 			json.addProperty('groupIDs', wmo.groupIDs);
 
 			await json.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'META', fileDataID: this.wmo.fileDataID, file: json.out });
 		}
 	}
 

@@ -520,6 +520,25 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Returns true if the buffer starts with any of the given string(s).
+	 * @param {string|array} input 
+	 * @param {string} [encoding=utf8]
+	 * @returns {boolean}
+	 */
+	startsWith(input, encoding = 'utf8') {
+		if (Array.isArray(input)) {
+			for (const entry of input) {
+				if (this.readString(entry.length, encoding) === entry)
+					return true;
+			}
+
+			return false;
+		} else {
+			return this.readString(input.length, encoding) === input;
+		}
+	}
+
+	/**
 	 * Read a string from the buffer and parse it as JSON.
 	 * @param {?number} length
 	 * @param {encoding} [encoding=utf8]
@@ -799,25 +818,37 @@ class BufferWrapper {
 	/**
 	 * Write the contents of a buffer to this buffer.
 	 * @param {Buffer|BufferWrapper} buf 
+	 * @param {number} copyLength
 	 */
-	writeBuffer(buf) {
+	writeBuffer(buf, copyLength = 0) {
 		let startIndex = 0;
-		let copyLength = 0;
+		let rawBuf = buf;
 
 		// Unwrap the internal buffer if this is a wrapper.
 		if (buf instanceof BufferWrapper) {
 			startIndex = buf.offset;
-			copyLength = buf.remainingBytes;
-			buf = buf.raw;
+			
+			if (copyLength === 0)
+				copyLength = buf.remainingBytes;
+			else
+				buf._checkBounds(copyLength);
+
+			rawBuf = buf.raw;
 		} else {
-			copyLength = buf.byteLength;
+			if (copyLength === 0)
+				copyLength = buf.byteLength;
+			else if (buf.length <= copyLength)
+				new Error(util.format('Buffer operation out-of-bounds: %d > %d', copyLength, buf.byteLength));
 		}
 
 		// Ensure consuming this buffer won't overflow us.
 		this._checkBounds(copyLength);
 
-		buf.copy(this._buf, this._ofs, startIndex, startIndex + copyLength);
+		rawBuf.copy(this._buf, this._ofs, startIndex, startIndex + copyLength);
 		this._ofs += copyLength;
+
+		if (buf instanceof BufferWrapper)
+			buf._ofs += copyLength;
 	}
 
 	/**

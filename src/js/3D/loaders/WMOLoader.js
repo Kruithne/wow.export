@@ -152,6 +152,42 @@ const WMOChunkHandlers = {
 		}
 	},
 
+	// MOPV (Portal Vertices) [WMO Root]
+	0x4D4F5056: function(data, chunkSize) {
+		const vertexCount = chunkSize / (3 * 4);
+		this.portalVertices = new Array(vertexCount);
+		for (let i = 0; i < vertexCount; i++)
+			this.portalVertices[i] = data.readFloatLE(3)
+	},
+
+	// MOPT (Portal Information) [WMO Root]
+	0x4D4F5054: function(data, chunkSize) {
+		this.portalInfo = new Array(this.portalCount);
+		for (let i = 0; i < this.portalCount; i++) {
+			this.portalInfo[i] = {
+				startVertex: data.readUInt16LE(),
+				count: data.readUInt16LE(),
+				plane: data.readFloatLE(4)
+			}
+		}
+	},
+
+	// MOPR (Map Object Portal References) [WMO Root]
+	0x4D4F5052: function(data, chunkSize) {
+		const entryCount = chunkSize / 8;
+		this.mopr = new  Array(entryCount);
+
+		for (let i = 0; i < entryCount; i++) {
+			this.mopr[i] = {
+				portalIndex: data.readUInt16LE(),
+				groupIndex: data.readUInt16LE(),
+				side: data.readInt16LE()
+			}
+
+			data.move(4); // Filler
+		}
+	},
+
 	// MOGN (Group Names) [WMO Root]
 	0x4D4F474E: function(data, chunkSize) {
 		this.groupNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
@@ -225,7 +261,15 @@ const WMOChunkHandlers = {
 
 	// MOCV (Vertex Colouring) [WMO Group]
 	0x4D4F4356: function(data, chunkSize) {
-		this.vertexColours = data.readUInt32LE(chunkSize / 4);
+		if (!this.vertexColours)
+			this.vertexColours = [];
+
+		this.vertexColours.push(data.readUInt32LE(chunkSize / 4));
+	},
+
+	// MDAL (Ambient Color) [WMO Group]
+	0x4D44414C: function(data) {
+		this.ambientColor = data.readUInt32LE();
 	},
 
 	// MOGP (Group Header) [WMO Group]
@@ -289,10 +333,10 @@ const WMOChunkHandlers = {
 	0x4D4F5456: function(data, chunkSize) {
 		if (!this.uvs)
 			this.uvs = [];
-
+		
 		const count = chunkSize / 4;
 		const uvs = new Array(count);
-		for (let i = 0; i < count; i+=2) {
+		for (let i = 0; i < count; i += 2) {
 			uvs[i] = data.readFloatLE();
 			uvs[i + 1] = (data.readFloatLE() - 1) * -1;
 		}

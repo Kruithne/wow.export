@@ -78,6 +78,23 @@
 						</label>
 					</div>
 					<div>
+						<h1>Load Unknown Files (Requires Restart)</h1>
+						<p>If enabled, wow.export will scan various DB2 files in the client to locate unnamed textures, models and sounds.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableUnknownFiles"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Load Model Skins (Requires Restart)</h1>
+						<p>If enabled, wow.export will parse creature and item skins from data tables for M2 models.</p>
+						<p>Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableM2Skins"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
@@ -102,6 +119,14 @@
 							<input type="checkbox" v-model="configEdit.removePathSpacesCopy"/>
 							<span>Enable</span>
 						</label>
+					</div>
+					<div>
+						<h1>Path Separator Format</h1>
+						<p>Sets the path separator format used in exported files.</p>
+						<ul class="ui-multi-button" id="export-meta-multi">
+							<li :class="{ selected: configEdit.pathFormat == 'win32' }" @click.stop="configEdit.pathFormat = 'win32'">Windows</li>
+							<li :class="{ selected: configEdit.pathFormat == 'posix' }" @click.stop="configEdit.pathFormat = 'posix'">POSIX</li>
+						</ul>
 					</div>
 					<div>
 						<h1>Use Absolute MTL Paths</h1>
@@ -137,9 +162,9 @@
 						</label>
 					</div>
 					<div>
-						<h1>Export UV2 Data</h1>
-						<p>If enabled, UV2 data will be exported for M2 models, included as the non-standard vt2 property in OBJ files.</p>
-						<p>Use the wow.export Blender add-on to import OBJ models with UV2 maps.</p>
+						<h1>Export Additional UV Layers</h1>
+						<p>If enabled, additional UV layers will be exported for M2/WMO models, included as non-standard properties (vt2, vt3, etc) in OBJ files.</p>
+						<p>Use the wow.export Blender add-on to import OBJ models with additional UV layers.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.modelsExportUV2"/>
 							<span>Enable</span>
@@ -152,7 +177,16 @@
 							<li :class="{ selected: configEdit.exportM2Meta }" @click.stop="configEdit.exportM2Meta = !configEdit.exportM2Meta">M2</li>
 							<li :class="{ selected: configEdit.exportWMOMeta }" @click.stop="configEdit.exportWMOMeta = !configEdit.exportWMOMeta">WMO</li>
 							<li :class="{ selected: configEdit.exportBLPMeta }" @click.stop="configEdit.exportBLPMeta = !configEdit.exportBLPMeta">BLP</li>
+							<li :class="{ selected: configEdit.exportFoliageMeta }" @click.stop="configEdit.exportFoliageMeta = !configEdit.exportFoliageMeta">Foliage</li>
 						</ul>
+					</div>
+					<div>
+						<h1>Export M2 Bone Data</h1>
+						<p>If enabled, bone data will be exported in a relative _bones.json file.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.exportM2Bones"/>
+							<span>Enable</span>
+						</label>
 					</div>
 					<div>
 						<h1>Always Overwrite Existing Files (Recommended)</h1>
@@ -172,13 +206,15 @@
 						</label>
 					</div>
 					<div>
-						<h1>Copy File Directories</h1>
-						<p>By default, using CTRL + C on a file list in wow.export will copy the paths to your clipboard.</p>
-						<p>If you enable this, only the directories of the selected paths will be copied.</p>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="configEdit.copyFileDirectories"/>
-							<span>Enable</span>
-						</label>
+						<h1>Copy Mode</h1>
+						<p>By default, using CTRL + C on a file list will copy the full entry to your clipboard.</p>
+						<p>Setting this to Directory will instead only copy the directory of the given entry.</p>
+						<p>Setting this to FileDataID will instead only copy the FID of the entry (must have FIDs enabled).</p>
+						<ul class="ui-multi-button" id="export-copy-multi">
+							<li :class="{ selected: configEdit.copyMode == 'FULL' }" @click.stop="configEdit.copyMode = 'FULL'">Full</li>
+							<li :class="{ selected: configEdit.copyMode == 'DIR' }" @click.stop="configEdit.copyMode = 'DIR'">Directory</li>
+							<li :class="{ selected: configEdit.copyMode == 'FID' }" @click.stop="configEdit.copyMode = 'FID'">FileDataID</li>
+						</ul>
 					</div>
 					<div>
 						<h1>Paste Selection</h1>
@@ -241,6 +277,19 @@
 						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
 						<input type="text" v-model.trim="configEdit.dbdURL"/>
 					</div>
+					<div>
+						<h1>Enable Remote Control Protocol (Advanced)</h1>
+						<p>When enabled, wow.export will listen for remote commands on a specified port.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.rcpEnabled"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>RCP Port</h1>
+						<p>Specifies the port in which wow.export will listen for RCP connections on.</p>
+						<input type="number" v-model.number="configEdit.rcpPort"/>
+					</div>
 				</div>
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
@@ -260,7 +309,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -294,7 +343,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -302,12 +351,12 @@
 						</div>
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
 						<div class="spaced-preview-controls">
+							<input type="button" value="View on wow.tools" @click="getExternalLink().wowTools_viewMap(mapViewerSelectedDir)" :class="{ disabled: mapViewerSelectedDir === null }"/>
 							<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
 							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export ' + mapViewerSelection.length + ' Tiles') : 'Export Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy}"/>
-							<input type="button" :value="config.mapsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.mapsShowSidebar = !config.mapsShowSidebar"/>
 						</div>
 
-						<div id="maps-sidebar" class="sidebar" v-if="config.mapsShowSidebar">
+						<div id="maps-sidebar" class="sidebar">
 							<span class="header">Export Options</span>
 							<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
 								<input type="checkbox" v-model="config.mapsIncludeWMO"/>
@@ -325,6 +374,10 @@
 								<input type="checkbox" v-model="config.mapsIncludeFoliage"/>
 								<span>Export Foliage</span>
 							</label>
+							<label class="ui-checkbox" title="Export raw liquid data (water, lava, etc)">
+								<input type="checkbox" v-model="config.mapsIncludeLiquid"/>
+								<span>Export Liquids</span>
+							</label>
 							<label class="ui-checkbox" title="Export client-side interactable objects (signs, banners, etc)">
 								<input type="checkbox" v-model="config.mapsIncludeGameObjects"/>
 								<span>Export G-Objects</span>
@@ -332,6 +385,15 @@
 							<label class="ui-checkbox" title="Include terrain holes for WMOs">
 								<input type="checkbox" v-model="config.mapsIncludeHoles"/>
 								<span>Include Holes</span>
+							</label>
+							<span class="header">Model Textures</span>
+							<label class="ui-checkbox" title="Include textures when exporting models">
+								<input type="checkbox" v-model="config.modelsExportTextures"/>
+								<span>Textures</span>
+							</label>
+							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
+								<input type="checkbox" v-model="config.modelsExportAlpha"/>
+								<span>Texture Alpha</span>
 							</label>
 							<span class="header">Terrain Texture Quality</span>
 							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
@@ -341,7 +403,14 @@
 				<keep-alive>
 					<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
 						<div class="list-container">
-							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item"></itemlistbox>
+							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextNodeItem = $event"></itemlistbox>
+							<context-menu :node="contextNodeItem" v-slot:default="context" @close="contextNodeItem = null">
+								<span v-if="context.node.modelCount > 0" @click.self="viewModels(context.node)">View related models ({{ context.node.modelCount }})</span>
+								<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
+								<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
+								<span @click.self="copyToClipboard(context.node.id)">Copy item ID to clipboard</span>
+								<span @click.self="getExternalLink().wowHead_viewItem(context.node.id)">View item on Wowhead (web)</span>
+							</context-menu>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -359,13 +428,26 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterModels" placeholder="Filter models..."/>
 						</div>
 						<div class="preview-container">
+							<resize-layer @resize="onTextureRibbonResize" id="texture-ribbon" v-if="config.modelViewerShowTextures && textureRibbonStack.length > 0">
+								<div id="texture-ribbon-prev" v-if="textureRibbonPage > 0" @click.self="textureRibbonPage--"></div>
+								<div v-for="slot in textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="contextNodeTextureRibbon = slot"></div>
+								<div id="texture-ribbon-next" v-if="textureRibbonPage < textureRibbonMaxPages - 1" @click.self="textureRibbonPage++"></div>
+								<context-menu :node="contextNodeTextureRibbon" v-slot:default="context" @close="contextNodeTextureRibbon = null">
+									<span @click.self="goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
+									<span @click.self="copyToClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
+									<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
+									<span @click.self="copyToClipboard(context.node.fileName)">Copy file path to clipboard</span>
+									<span @click.self="copyToClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
+									<span @click.self="getExternalLink().wowTools_viewFile(context.node.fileDataID)">View {{ context.displayName }} on wow.tools (web)</span>
+								</context-menu>
+							</resize-layer>
 							<div class="preview-background" id="model-preview">
 								<model-viewer :context="modelViewerContext"></model-viewer>
 							</div>
@@ -373,9 +455,8 @@
 						<div class="preview-controls">
 							<!--<menu-button :label="'Export as %s'" :options="['OBJ', 'GLTF', 'PNG', 'RAW']" :display-names="['OBJ', 'GLTF', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>-->
 							<menu-button :label="'Export as %s'" :options="['OBJ', 'PNG', 'RAW']" :display-names="['OBJ', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
-							<input id="sidebar-button" type="button" :value="config.modelsShowSidebar ? 'Hide Controls' : 'Show Controls'" @click="config.modelsShowSidebar = !config.modelsShowSidebar"/>
 						</div>
-						<div id="model-sidebar" class="sidebar" v-if="config.modelsShowSidebar">
+						<div id="model-sidebar" class="sidebar">
 							<span class="header">Listing</span>
 							<label class="ui-checkbox" title="Include M2 objects in the list">
 								<input type="checkbox" v-model="config.modelsShowM2"/>
@@ -398,15 +479,43 @@
 								<input type="checkbox" v-model="config.modelViewerShowGrid"/>
 								<span>Show Grid</span>
 							</label>
+							<label class="ui-checkbox" title="Render the preview model as a wireframe">
+								<input type="checkbox" v-model="config.modelViewerWireframe"/>
+								<span>Show Wireframe</span>
+							</label>
+							<label class="ui-checkbox" title="Show model textures in the preview pane">
+								<input type="checkbox" v-model="config.modelViewerShowTextures"/>
+								<span>Show Textures</span>
+							</label>
 							<span class="header">Export</span>
-							<label class="ui-checkbox" title="Include alpha channel in exported model textures">
-								<input type="checkbox" v-model="config.modelsIncludeAlpha"/>
+							<label class="ui-checkbox" title="Include textures when exporting models">
+								<input type="checkbox" v-model="config.modelsExportTextures"/>
+								<span>Textures</span>
+							</label>
+							<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
+								<input type="checkbox" v-model="config.modelsExportAlpha"/>
 								<span>Texture Alpha</span>
 							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
-									<span>Export .skin files</span>
+									<span>M2 .skin Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export raw .skel files with M2 exports">
+									<input type="checkbox" v-model="config.modelsExportSkel"/>
+									<span>M2 .skel Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export raw .bone files with M2 exports">
+									<input type="checkbox" v-model="config.modelsExportBone"/>
+									<span>M2 .bone Files</span>
+								</label>
+								<label class="ui-checkbox" title="Export raw .anim files with M2 exports">
+									<input type="checkbox" v-model="config.modelsExportAnim"/>
+									<span>M2 .anim files</span>
+								</label>
+								<label class="ui-checkbox" title="Export WMO group files">
+									<input type="checkbox" v-model="config.modelsExportWMOGroups"/>
+									<span>WMO Groups</span>
 								</label>
 							</template>
 							<template v-if="modelViewerActiveType === 'm2'">
@@ -415,7 +524,7 @@
 								<div class="list-toggles">
 									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 								</div>
-								<template v-if="modelViewerShowSkins">
+								<template v-if="config.modelsExportTextures">
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
@@ -435,7 +544,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -447,7 +556,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-text" v-if="screen === 'tab-text'">
 						<div class="list-container">
-							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file"></listbox>
+							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -466,7 +575,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -570,10 +679,10 @@
 				</template>
 				<template v-else>
 					<span id="footer-links">
-						<a data-external="https://discord.gg/52mHpxC">Discord</a> - 
-						<a data-external="https://patreon.com/Kruithne">Patreon</a> - 
-						<a data-external="https://wow.tools/export/">About</a> - 
-						<a data-external="https://github.com/Kruithne/wow.export">GitHub</a>
+						<a data-external="::DISCORD">Discord</a> - 
+						<a data-external="::PATREON">Patreon</a> - 
+						<a data-external="::ABOUT_WT">About</a> - 
+						<a data-external="::GITHUB">GitHub</a>
 					</span>
 					<span id="footer-copyright">
 						World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
@@ -594,8 +703,8 @@
 					<span id="crash-screen-text-message">Something went so terribly wrong that we don't even have an error message.</span>
 				</div>
 				<div class="form-tray">
-					<input type="button" value="Report Issue" data-external="https://github.com/Kruithne/wow.export/issues"/>
-					<input type="button" value="Get Help on Discord" data-external="https://discord.gg/52mHpxC"/>
+					<input type="button" value="Report Issue" data-external="::ISSUE_TRACKER"/>
+					<input type="button" value="Get Help on Discord" data-external="::DISCORD"/>
 					<input type="button" value="Restart Application" onclick="chrome.runtime.reload()"/>
 				</div>
 				<textarea id="crash-screen-log">No runtime log available.</textarea>

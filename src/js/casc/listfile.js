@@ -18,13 +18,16 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const nameLookup = new Map();
 const idLookup = new Map();
 
+let loaded = false;
+
 /**
  * Load listfile for the given build configuration key.
  * Returns the amount of file ID to filename mappings loaded.
  * @param {string} buildConfig
  * @param {BuildCache} cache
+ * @param {Map} rootEntries
  */
-const loadListfile = async (buildConfig, cache) => {
+const loadListfile = async (buildConfig, cache, rootEntries) => {
 	log.write('Loading listfile for build %s', buildConfig);
 
 	let url = String(core.view.config.listfileURL);
@@ -107,11 +110,15 @@ const loadListfile = async (buildConfig, cache) => {
 			return;
 		}
 
-		const fileName = tokens[1].toLowerCase();
-		idLookup.set(fileDataID, fileName);
-		nameLookup.set(fileName, fileDataID);
+		if (rootEntries.has(fileDataID))
+		{
+			const fileName = tokens[1].toLowerCase();
+			idLookup.set(fileDataID, fileName);
+			nameLookup.set(fileName, fileDataID);
+		}
 	}
 
+	loaded = true;
 	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;
 }
@@ -121,11 +128,29 @@ const loadListfile = async (buildConfig, cache) => {
  * Must be called after DBTextureFileData/DBModelFileData have loaded.
  */
 const loadUnknowns = async () => {
-	let unknownCount = 0;
-	unknownCount += await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
-	unknownCount += await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
+	const unkBlp = await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
+	const unkM2 = await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
 
-	log.write('Added %d unknown entries to listfile', unknownCount);
+	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
+	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
+	
+	// Load unknown sounds from SoundKitEntry table.
+	const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
+	await soundKitEntries.parse();
+	
+	let unknownCount = 0;
+	for (const entry of soundKitEntries.getAllRows().values()) {
+		if (!idLookup.has(entry.FileDataID)) {
+			// List unknown sound files using the .unk_sound extension. Files will be
+			// dynamically checked upon export and given the correct extension.
+			const fileName = 'unknown_' + entry.FileDataID + '.unk_sound';
+			idLookup.set(entry.FileDataID, fileName);
+			nameLookup.set(fileName, entry.FileDataID);
+			unknownCount++;
+		}
+	}
+
+	log.write('Added %d unknown sound files from SoundKitEntry to listfile', unknownCount);
 };
 
 /**
@@ -210,6 +235,23 @@ const getByFilename = (filename) => {
 };
 
 /**
+ * Returns an array of listfile entries filtered by the given search term.
+ * @param {string|RegExp} search 
+ * @returns {Array.<object>}
+ */
+const getFilteredEntries = (search) => {
+	const results = [];
+	const isRegExp = search instanceof RegExp;
+
+	for (const [fileDataID, fileName] of idLookup.entries()) {
+		if (isRegExp ? fileName.match(search) : fileName.includes(search))
+			results.push({ fileDataID, fileName });
+	}
+
+	return results;
+};
+
+/**
  * Strips a prefixed file ID from a listfile entry.
  * @param {string} entry 
  * @returns {string}
@@ -221,11 +263,31 @@ const stripFileEntry = (entry) => {
 	return entry;
 };
 
+/**
+ * Returns a file path for an unknown fileDataID.
+ * @param {number} fileDataID 
+ * @param {string} [ext]
+ */
+const formatUnknownFile = (fileDataID, ext = '') => {
+	return 'unknown/' + fileDataID + ext;
+};
+
+/**
+ * Returns true if a listfile has been loaded.
+ * @returns {boolean}
+ */
+const isLoaded = () => {
+	return loaded;
+};
+
 module.exports = {
 	loadListfile,
 	loadUnknowns,
 	getByID,
 	getByFilename,
 	getFilenamesByExtension,
-	stripFileEntry
+	getFilteredEntries,
+	stripFileEntry,
+	formatUnknownFile,
+	isLoaded
 };

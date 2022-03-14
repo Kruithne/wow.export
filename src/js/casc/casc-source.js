@@ -83,7 +83,7 @@ class CASC {
 	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
-			throw new Error('File not mapping in listfile: %s', fileName);
+			throw new Error('File not mapping in listfile: ' + fileName);
 
 		return await this.getFile(fileDataID, partialDecrypt, suppressLog, supportFallback, forceFallback);
 	}
@@ -94,10 +94,15 @@ class CASC {
 	 */
 	async loadListfile(buildKey) {
 		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(buildKey, this.cache, this);
+		const entries = await listfile.loadListfile(buildKey, this.cache, this.rootEntries);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
+	}
 
+	/**
+	 * Creates filtered versions of the master listfile.
+	 */
+	async filterListfile() {
 		// Filters for the model viewer depending on user settings.
 		const modelExt = [];
 		if (core.view.config.modelsShowM2)
@@ -112,7 +117,7 @@ class CASC {
 		core.view.$watch('config.listfileShowFileDataIDs', () => {
 			const showFileIDs = core.view.config.listfileShowFileDataIDs;
 			core.view.listfileTextures = listfile.getFilenamesByExtension('.blp', showFileIDs);
-			core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3'], showFileIDs);
+			core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound'], showFileIDs);
 			core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
 			core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
 			core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, showFileIDs);
@@ -132,19 +137,28 @@ class CASC {
 
 		// Once the above two tables have loaded, ingest fileDataIDs as
 		// unknown entries to the listfile.
-		await listfile.loadUnknowns();
+		if (core.view.config.enableUnknownFiles) {
+			this.progress.step('Checking data tables for unknown files');
+			await listfile.loadUnknowns();
+		} else {
+			await this.progress.step();
+		}
 
-		await this.progress.step('Loading item displays');
-		await DBItemDisplays.initializeItemDisplays();
+		if (core.view.config.enableM2Skins) {
+			await this.progress.step('Loading item displays');
+			await DBItemDisplays.initializeItemDisplays();
 
-		await this.progress.step('Loading creature data');
-		const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-		await creatureDisplayInfo.parse();
+			await this.progress.step('Loading creature data');
+			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
+			await creatureDisplayInfo.parse();
 
-		const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-		await creatureModelData.parse();
+			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
+			await creatureModelData.parse();
 
-		await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+		} else {
+			await this.progress.step();
+		}
 	}
 
 	/**
@@ -154,6 +168,15 @@ class CASC {
 	async initializeComponents() {
 		await this.progress.step('Initializing components');
 		await core.runLoadFuncs();
+
+		// Dispatch RCP hook.
+		core.rcp.dispatchHook('HOOK_INSTALL_READY', {
+			type: this.constructor.name,
+			build: this.build,
+			buildConfig: this.buildConfig,
+			buildName: this.getBuildName(),
+			buildKey: this.getBuildKey()
+		});
 	}
 
 	/**

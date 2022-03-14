@@ -97,6 +97,9 @@ const viewItemModels = (item) => {
 			}
 		}
 	}
+
+	// Reset the user filter for models.
+	core.view.userInputFilterModels = '';
 	
 	core.view.overrideModelList = [...list];
 	core.view.selectionModels = [...list];
@@ -123,6 +126,9 @@ const viewItemTextures = (item) => {
 			list.add(entry);
 		}
 	}
+
+	// Reset the user filter for textures.
+	core.view.userInputFilterTextures = '';
 	
 	core.view.overrideTextureList = [...list];
 	core.view.selectionTextures = [...list];

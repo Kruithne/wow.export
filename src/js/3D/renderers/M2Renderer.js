@@ -11,6 +11,8 @@ const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
 const RenderCache = require('./RenderCache');
 
+const textureRibbon = require('../../ui/texture-ribbon');
+
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
 class M2Renderer {
@@ -18,14 +20,17 @@ class M2Renderer {
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data 
 	 * @param {THREE.Group} renderGroup
-	 * @param {boolean} reactive
+	 * @param {boolean} [reactive=false]
+	 * @param {boolean} [useRibbon=true]
 	 */
-	constructor(data, renderGroup, reactive = false) {
+	constructor(data, renderGroup, reactive = false, useRibbon = true) {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
 		this.materials = [];
 		this.renderCache = new RenderCache();
+		this.syncID = -1;
+		this.useRibbon = useRibbon;
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
@@ -41,12 +46,25 @@ class M2Renderer {
 			this.loadTextures();
 			await this.loadSkin(0);
 
-			if (this.reactive)
+			if (this.reactive) {
 				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+			}
 		}
 
 		// Drop reference to raw data, we don't need it now.
 		this.data = undefined;
+	}
+
+	/**
+	 * Update the wireframe state for all materials.
+	 */
+	updateWireframe() {
+		const renderWireframe = core.view.config.modelViewerWireframe;
+		for (const material of this.materials) {
+			material.wireframe = renderWireframe;
+			material.needsUpdate = true;
+		}
 	}
 
 	/**
@@ -139,6 +157,8 @@ class M2Renderer {
 	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
+		const renderWireframe = core.view.config.modelViewerWireframe;
+
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] !== type)
@@ -149,8 +169,14 @@ class M2Renderer {
 
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
+			const blpURI = blp.getDataURL(0b0111);
 
-			loader.load(blp.getDataURL(0b0111), image => {
+			if (this.useRibbon) {
+				textureRibbon.setSlotFile(i, fileDataID, this.syncID);
+				textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+			}
+
+			loader.load(blpURI, image => {
 				tex.image = image;
 				tex.format = THREE.RGBAFormat;
 				tex.needsUpdate = true;
@@ -158,7 +184,7 @@ class M2Renderer {
 
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide });
+			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe });
 			this.renderCache.register(material, tex);
 
 			this.materials[i] = material;
@@ -171,18 +197,33 @@ class M2Renderer {
 	 */
 	loadTextures() {
 		const textures = this.m2.textures;
+
 		this.renderCache.retire(...this.materials);
 		this.materials = new Array(textures.length);
+
+		if (this.useRibbon)
+			this.syncID = textureRibbon.reset();
+
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
+
+			const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
 
 			if (texture.fileDataID > 0) {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
+				if (ribbonSlot)
+					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					loader.load(blp.getDataURL(0b0111), image => {
+					const blpURI = blp.getDataURL(0b0111);
+
+					if (ribbonSlot)
+						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+
+					loader.load(blpURI, image => {
 						tex.image = image;
 						tex.format = THREE.RGBAFormat;
 						tex.needsUpdate = true;
@@ -206,6 +247,8 @@ class M2Renderer {
 				this.materials[i] = this.defaultMaterial;
 			}
 		}
+
+		this.updateWireframe();
 	}
 
 	/**
@@ -236,9 +279,9 @@ class M2Renderer {
 	 * Dispose of this instance and release all resources.
 	 */
 	dispose() {
-		// Unregister geoset array watcher.
-		if (this.geosetWatcher)
-			this.geosetWatcher();
+		// Unregister reactive watchers.
+		this.geosetWatcher?.();
+		this.wireframeWatcher?.();
 
 		this.renderCache.retire(...this.materials);
 

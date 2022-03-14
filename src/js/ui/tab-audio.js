@@ -12,6 +12,10 @@ const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 
+const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
+const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
+const AUDIO_TYPE_MP3 = Symbol('AudioTypeMP3');
+
 let selectedFile = null;
 let isTrackLoaded = false;
 
@@ -35,6 +39,24 @@ const updateSeek = () => {
 	}
 
 	requestAnimationFrame(updateSeek);
+};
+
+/**
+ * Detect the file type of a given audio container.
+ * @param {BufferWrapper} data 
+ * @returns 
+ */
+const detectFileType = (data) => {
+	if (data.startsWith('OggS')) {
+		// File magic matches Ogg container format.
+		//selectedFile = ExportHelper.replaceExtension(selectedFile, '.ogg');
+		return AUDIO_TYPE_OGG;
+	} else if (data.startsWith(['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'])) {
+		// File magic matches MP3 ID3v2/v1 container format.
+		return AUDIO_TYPE_MP3;
+	}
+
+	return AUDIO_TYPE_UNKNOWN;
 };
 
 /**
@@ -86,7 +108,17 @@ const loadSelectedTrack = async () => {
 	log.write('Previewing sound file %s', selectedFile);
 
 	try {
-		data = await core.view.casc.getFileByName(selectedFile);
+		const fileDataID = listfile.getByFilename(selectedFile);
+		data = await core.view.casc.getFile(fileDataID);
+
+		if (selectedFile.endsWith('.unk_sound')) {
+			const fileType = detectFileType(data);
+			if (fileType === AUDIO_TYPE_OGG)
+				core.view.soundPlayerTitle += ' (OGG Auto Detected)';
+			else if (fileType === AUDIO_TYPE_MP3)
+				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
+		}
+
 		audioNode.src = data.getDataURL();
 
 		await new Promise(res => {
@@ -172,13 +204,25 @@ core.registerLoadFunc(async () => {
 			if (helper.isCancelled())
 				return;
 
+			let data;
 			fileName = listfile.stripFileEntry(fileName);
+
+			if (fileName.endsWith('.unk_sound')) {
+				data = await core.view.casc.getFileByName(fileName);
+				const fileType = detectFileType(data);
+
+				if (fileType === AUDIO_TYPE_OGG)
+					fileName = ExportHelper.replaceExtension(fileName, '.ogg');
+				else if (fileType === AUDIO_TYPE_MP3)
+					fileName = ExportHelper.replaceExtension(fileName, '.mp3');
+			}
 				
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
-
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
-					const data = await core.view.casc.getFileByName(fileName);
+					if (!data)
+						data = await core.view.casc.getFileByName(fileName);
+
 					await data.writeToFile(exportPath);
 				} else {
 					log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);

@@ -76,12 +76,16 @@ const constants = require('./js/constants');
 const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
+const listfile = require('./js/casc/listfile');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
 const blender = require('./js/blender');
 const fsp = require('fs').promises;
 const TestRunner = require('./js/iat/test-runner');
+const ExportHelper = require('./js/casc/export-helper');
+const ExternalLinks = require('./js/external-links');
+const textureRibbon = require('./js/ui/texture-ribbon');
 
 require('./js/components/listbox');
 require('./js/components/listboxb');
@@ -93,9 +97,12 @@ require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
 require('./js/components/data-table');
+require('./js/components/resize-layer');
+require('./js/components/context-menu');
 
+const TabTextures = require('./js/ui/tab-textures');
+const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
-require('./js/ui/tab-textures');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
@@ -103,6 +110,8 @@ require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
 require('./js/ui/tab-items');
 require('./js/ui/tab-db2');
+
+const RCPServer = require('./js/rcp/rcp-server');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -123,7 +132,7 @@ document.addEventListener('click', function(e) {
 		return;
 
 	e.preventDefault();
-	nw.Shell.openExternal(e.target.getAttribute('data-external'));
+	ExternalLinks.open(e.target.getAttribute('data-external'));
 });
 
 (async () => {
@@ -233,10 +242,12 @@ document.addEventListener('click', function(e) {
 			setScreen: function(screenID, preserve = false) {
 				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
 				
-				if (preserve)
-					this.screenStack.unshift(screenID);
-				else
+				if (preserve) {
+					if (this.screenStack[0] !== screenID)
+						this.screenStack.unshift(screenID);
+				} else {
 					this.$set(this.screenStack, 0, screenID);
+				}
 			},
 
 			/**
@@ -327,6 +338,87 @@ document.addEventListener('click', function(e) {
 			 */
 			restartApplication: function() {
 				chrome.runtime.reload();
+			},
+
+			/**
+			 * Invoked when the texture ribbon element on the model viewer
+			 * fires a resize event.
+			 */
+			onTextureRibbonResize: function(width) {
+				textureRibbon.onResize(width);
+			},
+
+			/**
+			 * Switches to the textures tab and filters for the given file.
+			 * @param {number} fileDataID 
+			 */
+			goToTexture: function(fileDataID) {
+				const view = core.view;
+				view.setScreen('tab-textures');
+
+				// Directly preview the requested file, even if it's not in the listfile.
+				TabTextures.previewTextureByID(fileDataID);
+
+				// Since we're doing a direct preview, we need to reset the users current
+				// selection, so if they hit export, they get the expected result.
+				view.selectionTextures.splice(0);
+
+				// Despite direct preview, *attempt* to filter for the file as well.
+				if (view.config.listfileShowFileDataIDs) {
+					// If the user has fileDataIDs shown, filter by that.
+					if (view.config.regexFilters)
+						view.userInputFilterTextures = '\\[' + fileDataID + '\\]';
+					else
+						view.userInputFilterTextures = '[' + fileDataID + ']';
+				} else {
+					// Without fileDataIDs, lookup the texture name and filter by that.
+					const fileName = listfile.getByID(fileDataID);
+					if (fileName !== undefined)
+						view.userInputFilterTextures = listfile.getByID(fileName);
+					else if (view.config.enableUnknownFiles)
+						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
+				}
+			},
+
+			/**
+			 * Copy given data as text to the system clipboard.
+			 * @param {string} data 
+			 */
+			copyToClipboard: function(data) {
+				nw.Clipboard.get().set(data.toString(), 'text');
+			},
+
+			/**
+			 * Get the external export path for a given file.
+			 * @param {string} file 
+			 * @returns {string}
+			 */
+			getExportPath: function(file) {
+				return ExportHelper.getExportPath(file);
+			},
+
+			/**
+			 * Returns a reference to the external links module.
+			 * @returns {ExternalLinks}
+			 */
+			getExternalLink: function() {
+				return ExternalLinks;
+			},
+
+			/**
+			 * Invoked when the user selects the models button on an item.
+			 * @param {object} item 
+			 */
+			viewModels: function(item) {
+				TabItems.viewItemModels(item);
+			},
+
+			/**
+			 * Invoked when the user selects the textures button on an item.
+			 * @param {object} item 
+			 */
+			viewTextures: function(item) {
+				TabItems.viewItemTextures(item);
 			}
 		},
 
@@ -392,6 +484,23 @@ document.addEventListener('click', function(e) {
 			 */
 			soundPlayerSeekFormatted: function() {
 				return generics.formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
+			},
+
+			/**
+			 * Returns the maximum amount of pages needed for the texture ribbon.
+			 * @returns {number}
+			 */
+			textureRibbonMaxPages: function() {
+				return Math.ceil(this.textureRibbonStack.length / this.textureRibbonSlotCount);
+			},
+
+			/**
+			 * Returns the texture ribbon stack array subject to paging.
+			 * @returns {Array}
+			 */
+			textureRibbonDisplay: function() {
+				const startIndex = this.textureRibbonPage * this.textureRibbonSlotCount;
+				return this.textureRibbonStack.slice(startIndex, startIndex + this.textureRibbonSlotCount);
 			}
 		},
 
@@ -576,4 +685,8 @@ document.addEventListener('click', function(e) {
 
 	// Set source select as the currently active interface screen.
 	core.view.setScreen('source-select');
+
+	// Initiate RCP.
+	core.rcp = new RCPServer();
+	core.rcp.load();
 })();

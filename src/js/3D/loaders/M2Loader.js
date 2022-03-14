@@ -6,12 +6,18 @@
 
 const Texture = require('../Texture');
 const Skin = require('../Skin');
-
-const MAGIC_MD21 = 0x3132444D;
-const MAGIC_MD20 = 0x3032444D;
+const constants = require('../../constants');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
+const CHUNK_SKID = 0x44494B53;
+const CHUNK_BFID = 0x44494642;
+const CHUNK_AFID = 0x44494641;
+
+/**
+ * An axis-aligned box.
+ * @typedef {{ min: number, max: number }} CAaBox
+ */
 
 class M2Track {
 	/**
@@ -53,9 +59,12 @@ class M2Loader {
 			const nextChunkPos = this.data.offset + chunkSize;
 	
 			switch (chunkID) {
-				case MAGIC_MD21: await this.parseChunk_MD21(); break;
+				case constants.MAGIC.MD21: await this.parseChunk_MD21(); break;
 				case CHUNK_SFID: this.parseChunk_SFID(); break;
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
+				case CHUNK_SKID: this.parseChunk_SKID(); break;
+				case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
+				case CHUNK_AFID: this.parseChunk_AFID(chunkSize); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -111,13 +120,45 @@ class M2Loader {
 	}
 
 	/**
+	 * Parse SKID chunk for .skel file data ID.
+	 */
+	parseChunk_SKID() {
+		this.skeletonFileID = this.data.readUInt32LE();
+	}
+
+	/**
+	 * Parse BFID chunk for .bone file data IDs.
+	 * @param {number} chunkSize
+	 */
+	parseChunk_BFID(chunkSize) {
+		this.boneFileIDs = this.data.readUInt32LE(chunkSize / 4);
+	}
+
+	/**
+	 * Parse AFID chunk for animation file data IDs.
+	 * @param {number} chunkSize 
+	 */
+	parseChunk_AFID(chunkSize) {
+		const entryCount = chunkSize / 8;
+		const entries = this.animFileIDs = new Array(entryCount);
+
+		for (let i = 0; i < entryCount; i++) {
+			entries[i] = {
+				animID: this.data.readUInt16LE(),
+				subAnimID: this.data.readUInt16LE(),
+				fileDataID: this.data.readUInt32LE()
+			};
+		}
+	}
+
+	/**
 	 * Parse MD21 chunk.
 	 */
 	async parseChunk_MD21() {
 		const ofs = this.data.offset;
 
 		const magic = this.data.readUInt32LE();
-		if (magic !== MAGIC_MD20)
+		if (magic !== constants.MAGIC.MD20)
 			throw new Error('Invalid M2 magic: ' + magic);
 	
 		this.version = this.data.readUInt32LE();
@@ -127,15 +168,17 @@ class M2Loader {
 		this.data.move(8);
 		this.parseChunk_MD21_vertices(ofs);
 		this.viewCount = this.data.readUInt32LE();
-		this.data.move(8); // coloursCount, coloursOfs
+		this.parseChunk_MD21_colors(ofs);
 		this.parseChunk_MD21_textures(ofs);
-		this.data.move(4 * 4); // texture_weights, texture_transforms
+		this.parseChunk_MD21_textureWeights(ofs);
+		this.parseChunk_MD21_textureTransforms(ofs);
 		this.parseChunk_MD21_replaceableTextureLookup(ofs);
 		this.parseChunk_MD21_materials(ofs);
 		this.data.move(2 * 4); // boneCombos
 		this.parseChunk_MD21_textureCombos(ofs);
-		this.data.move(6 * 4); // textureTransformBoneMap, textureWeightCombos, textureTransformCombos
-		this.data.move((4 + (4 * 6)) * 2); // boundingBox, boundingRadius, collisionBox, collisionRadius
+		this.data.move(8); // textureTransformBoneMap
+		this.parseChunk_MD21_transparencyLookup(ofs);
+		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.parseChunk_MD21_collision(ofs);
 	}
 
@@ -158,6 +201,14 @@ class M2Loader {
 
 		data.seek(base);
 		return arr;
+	}
+
+	/**
+	 * Read an axis-aligned box with a given min/max.
+	 * @returns {CAaBox}
+	 */
+	readCAaBox() {
+		return { min: this.data.readFloatLE(3), max: this.data.readFloatLE(3) };
 	}
 
 	/**
@@ -209,6 +260,12 @@ class M2Loader {
 	 * @param {number} ofs 
 	 */
 	parseChunk_MD21_collision(ofs) {
+		// Parse collision boxes before the full collision chunk.
+		this.boundingBox = this.readCAaBox();
+		this.boundingSphereRadius = this.data.readFloatLE();
+		this.collisionBox = this.readCAaBox();
+		this.collisionSphereRadius = this.data.readFloatLE();
+
 		const indicesCount = this.data.readUInt32LE();
 		const indicesOfs = this.data.readUInt32LE();
 
@@ -342,6 +399,105 @@ class M2Loader {
 
 			uv2[uvIndex] = this.data.readFloatLE();
 			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse texture transformation definitions from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureTransforms(ofs) {
+		const transformCount = this.data.readUInt32LE();
+		const transformOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(transformOfs + ofs);
+
+		const transforms = this.textureTransforms = new Array(transformCount);
+		for (let i = 0; i < transformCount; i++) {
+			transforms[i] = {
+				translation: this.readM2Track(() => this.data.readFloatLE(3)),
+				rotation: this.readM2Track(() => this.data.readFloatLE(4)),
+				scaling: this.readM2Track(() => this.data.readFloatLE(3))
+			};
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse texture transform lookup table from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureTransformLookup(ofs) {
+		const entryCount = this.data.readUInt32LE();
+		const entryOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(entryOfs + ofs);
+
+		const entries = this.textureTransformsLookup = new Array(entryCount);
+		for (let i = 0; i < entryCount; i++)
+			entries[i] = this.data.readUInt16LE();
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse transparency lookup table from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_transparencyLookup(ofs) {
+		const entryCount = this.data.readUInt32LE();
+		const entryOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(entryOfs + ofs);
+
+		const entries = this.transparencyLookup = new Array(entryCount);
+		for (let i = 0; i < entryCount; i++)
+			entries[i] = this.data.readUInt16LE();
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse global transparency weights from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_textureWeights(ofs) {
+		const weightCount = this.data.readUInt32LE();
+		const weightOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(weightOfs + ofs);
+
+		const weights = this.textureWeights = new Array(weightCount);
+		for (let i = 0; i < weightCount; i++)
+			weights[i] = this.readM2Track(() => this.data.readInt16LE());
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse color/transparency data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_colors(ofs) {
+		const colorsCount = this.data.readUInt32LE();
+		const colorsOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(colorsOfs + ofs);
+
+		const colors = this.colors = new Array(colorsCount);
+		for (let i = 0; i < colorsCount; i++) {
+			colors[i] = {
+				color: this.readM2Track(() => this.data.readFloatLE(3)),
+				alpha: this.readM2Track(() => this.data.readInt16LE())
+			}
 		}
 
 		this.data.seek(base);

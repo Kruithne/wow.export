@@ -184,7 +184,7 @@ class PNGWriter {
 	constructor(width, height) {
 		this.width = width;
 		this.height = height;
-		this.data = Array(width * height * 4);
+		this.data = Buffer.alloc(width * height * 4);
 	}
 
 	/**
@@ -199,12 +199,7 @@ class PNGWriter {
 	 * @param {string} file 
 	 */
 	async write(file) {
-		const pixelDataSize = this.data.length;
-		const pixelData = BufferWrapper.alloc(pixelDataSize, false);
-		for (const value of this.data)
-			pixelData.writeUInt8(value);
-
-		const filtered = new BufferWrapper(filter(pixelData.raw, this.width, this.height));
+		const filtered = new BufferWrapper(filter(this.data, this.width, this.height));
 		const deflated = filtered.deflate();
 		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
 

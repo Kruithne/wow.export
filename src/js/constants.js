@@ -85,7 +85,9 @@ module.exports = {
 		{ product: 'wow', title: 'World of Warcraft', tag: 'Retail' },
 		{ product: 'wowt', title: 'PTR: World of Warcraft', tag: 'PTR' },
 		{ product: 'wow_beta', title: 'Beta: World of Warcraft', tag: 'Beta' },
-		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' }
+		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' },
+		{ product: 'wow_classic_beta', title: 'World of Warcraft TBC Classic', tag: 'TBC Classic' },
+		{ product: 'wow_classic_ptr', title: 'World of Warcraft Classic PTR', tag: 'Classic PTR' }
 	],
 
 	PATCH: {
@@ -103,5 +105,10 @@ module.exports = {
 
 	TIME: {
 		DAY: 86400000 // Milliseconds in a day.
+	},
+
+	MAGIC: {
+		MD21: 0x3132444D, // M2 model magic.
+		MD20: 0x3032444D // M2 model magic (legacy)
 	}
 };

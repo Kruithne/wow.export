@@ -21,8 +21,8 @@
 bl_info = {
     'name': 'Import WoW OBJ files with doodads',
     'author': 'Marlamin, Kruithne',
-    'version': (0, 3, 10),
-    'blender': (2, 92, 0),
+    'version': (0, 3, 15),
+    'blender': (2, 93, 0),
     'location': 'File > Import-Export > WoW M2/WMO/ADT (.obj)',
     'description': 'Import OBJ files exported by wow.export with WMOs and doodads',
     'warning': '',
@@ -46,9 +46,21 @@ class Settings:
     useAlpha = True
     createVertexGroups = False
     allowDuplicates = False
+    importWMO = True
+    importWMOSets = True
+    importM2 = True
+    importGOBJ = True
+    importTextures = True
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False):
-        self.useAlpha, self.createVertexGroups, self.allowDuplicates = useAlpha, createVertexGroups, allowDuplicates
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True):
+        self.useAlpha = useAlpha
+        self.createVertexGroups = createVertexGroups
+        self.allowDuplicates = allowDuplicates
+        self.importWMO = importWMO
+        self.importWMOSets = importWMOSets
+        self.importM2 = importM2
+        self.importGOBJ = importGOBJ
+        self.importTextures = importTextures
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File with additional ADT metadata'''
@@ -57,16 +69,30 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.obj'
-    filter_glob = bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
-    files = bpy.props.CollectionProperty(name = 'Files', type= bpy.types.OperatorFileListElement)
-    directory = bpy.props.StringProperty(subtype = 'DIR_PATH')
+    filter_glob: bpy.props.StringProperty(default='*.obj', options={'HIDDEN'})
+    files: bpy.props.CollectionProperty(name = 'Files', type= bpy.types.OperatorFileListElement)
+    directory: bpy.props.StringProperty(subtype = 'DIR_PATH')
 
-    useAlpha = bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
-    createVertexGroups = bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
-    allowDuplicates = bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
+    importWMO: bpy.props.BoolProperty(name = 'Import WMO', description = 'If exported, WMOs will be imported', default = 1)
+    importWMOSets: bpy.props.BoolProperty(name = 'Import WMO Sets', description = 'If exported, WMO sets will be imported', default = 1)
+    importM2: bpy.props.BoolProperty(name = 'Import M2', description = 'If exported, M2s will be imported', default = 1)
+    importGOBJ: bpy.props.BoolProperty(name = 'Import GOBJ', description = 'If exported, GOBJs will be imported', default = 1)
+    importTextures: bpy.props.BoolProperty(name = 'Import Textures', description = 'If exported, textures will be imported', default = 1)
+    useAlpha: bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
+    createVertexGroups: bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
+    allowDuplicates: bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
 
     def execute(self, context):
-        settings = Settings(useAlpha = self.useAlpha, createVertexGroups = self.createVertexGroups, allowDuplicates = self.allowDuplicates)
+        settings = Settings(
+            useAlpha = self.useAlpha,
+            createVertexGroups = self.createVertexGroups,
+            allowDuplicates = self.allowDuplicates,
+            importWMO = self.importWMO,
+            importWMOSets = self.importWMOSets,
+            importM2 = self.importM2,
+            importGOBJ = self.importGOBJ,
+            importTextures = self.importTextures
+        )
 
         from . import import_wowobj
         if self.files:
@@ -84,6 +110,11 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         box = layout.box()
 
+        box.prop(self, 'importWMO')
+        box.prop(self, 'importWMOSets')
+        box.prop(self, 'importM2')
+        box.prop(self, 'importGOBJ')
+        box.prop(self, 'importTextures')
         box.prop(self, 'useAlpha')
         box.prop(self, 'createVertexGroups')
         box.prop(self, 'allowDuplicates')

@@ -98,6 +98,20 @@ const consumeUTF8Stream = async (stream) => {
 };
 
 /**
+ * Attempt to parse JSON, returning undefined on failure.
+ * Inline function to keep code paths clean of unnecessary try/catch blocks.
+ * @param {string} data 
+ * @returns {object}
+ */
+const parseJSON = (data) => {
+	try {
+		return JSON.parse(data);
+	} catch (e) {
+		return undefined;
+	}
+};
+
+/**
  * Obtain JSON from a remote end-point.
  * @param {string} url 
  */
@@ -343,6 +357,7 @@ const formatPlaybackSeconds = (seconds) => {
 module.exports = { 
 	getJSON,
 	readJSON,
+	parseJSON,
 	filesize,
 	getFileHash,
 	createDirectory,
