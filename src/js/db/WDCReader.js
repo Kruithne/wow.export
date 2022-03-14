@@ -565,8 +565,8 @@ class WDCReader {
 
 							// Get the remaining amount of bits that remain (we read to the nearest byte)
 							const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
-							const bitSize = BigInt(1 << recordFieldInfo.fieldSizeBits);
-							const bitpackedValue = rawValue >> bitOffset & (bitSize - BigInt(1));
+							const bitSize = 1n << BigInt(recordFieldInfo.fieldSizeBits);
+							const bitpackedValue = (rawValue >> bitOffset) & (bitSize - BigInt(1));
 
 							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
