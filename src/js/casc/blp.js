@@ -217,7 +217,7 @@ class BLPImage {
 	 */
 	_getCompressed(canvasData, mask = 0b1111) {
 		const flags = this.alphaDepth > 1 ? (this.alphaEncoding === 7 ? DXT5 : DXT3) : DXT1;
-		const data = canvasData ? canvasData : new Array(this.scaledWidth * this.scaledHeight * 4);
+		const data = canvasData ? canvasData : Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
 
 		let pos = 0;
 		const blockBytes = (flags & DXT1) !== 0 ? 8 : 16;
@@ -341,7 +341,7 @@ class BLPImage {
 		}
 		
 		if (!canvasData)
-			return BufferWrapper.from(data);
+			return new BufferWrapper(data);
 	}
 
 	/**
