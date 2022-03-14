@@ -6,7 +6,6 @@
 const core = require('../core');
 const log = require('../log');
 const generics = require('../generics');
-const util = require('util');
 const listfile = require('../casc/listfile');
 const WDCReader = require('../db/WDCReader');
 const path = require('path');
@@ -24,7 +23,7 @@ core.registerLoadFunc(async () => {
 		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {
 			try {
-				const lowercaseTableName = path.basename(first, '.db2')
+				const lowercaseTableName = path.basename(first, '.db2');
 				const tableName = db2NameMap.find(e => e.name == lowercaseTableName)?.displayName;
 
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');

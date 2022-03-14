@@ -3,8 +3,6 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const util = require('util');
-
 Vue.component('data-table', {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
@@ -75,7 +73,7 @@ Vue.component('data-table', {
 
 		/**
 		 * Index which array reading should start at, based on the current
-		 * relative scroll and the overal item count. Value is dynamically
+		 * relative scroll and the overall item count. Value is dynamically
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
