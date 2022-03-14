@@ -398,7 +398,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		const buildDir = path.join(outDir, build.name);
 
 		// Wipe the build directory and then re-create it.
-		await fsp.rmdir(buildDir, { recursive: true });
+		await fsp.rm(buildDir, { recursive: true });
 		await createDirectory(buildDir);
 
 		const bundleArchive = util.format(build.bundle, config.webkitVersion);

@@ -175,7 +175,7 @@ core.events.on('click-cache-clear', async () => {
 	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
 
-	await fsp.rmdir(constants.CACHE.DIR, { recursive: true });
+	await fsp.rm(constants.CACHE.DIR, { recursive: true });
 	await fsp.mkdir(constants.CACHE.DIR);
 
 	
