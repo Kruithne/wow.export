@@ -62,7 +62,7 @@ class WMORenderer {
 
 			// Load all render batches into the mesh.
 			for (const batch of group.renderBatches) {
-				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
+				const matID = ((batch.flags & 2) === 2) ? batch.possibleBox2[2] : batch.materialID;
 				geometry.addGroup(batch.firstFace, batch.numFaces, matID);
 			}
 
