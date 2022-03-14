@@ -257,7 +257,7 @@ input[type="number"]::-webkit-outer-spin-button {
 	}
 }
 
-.ui-listbox, .ui-checkboxlist {
+.ui-listbox, .ui-checkboxlist, .ui-datatable {
 	background: var(--background);
 	position: relative;
 	border: 1px solid var(--border);
@@ -310,6 +310,47 @@ input[type="number"]::-webkit-outer-spin-button {
 				background: var(--font-highlight);
 			}
 		}
+	}
+}
+
+.ui-datatable{
+	width: 100%;
+	height: 100%;
+
+	table {
+		width: 100%;
+		height: 100%;
+		background: var(--background-dark);
+		padding: 0px;
+
+		&:nth-child(even) {
+			background: var(--background-alt);
+		}
+		
+		tr{
+			background: var(--background-dark);
+			box-sizing: border-box;
+			min-height: 32px;
+			max-height: 32px;
+			height: 32px;
+
+			&:nth-child(even) {
+				background: var(--background-alt);
+			}
+
+			th{
+				border: 1px solid var(--border);
+				padding: 10px;
+			}
+			
+			td{
+				padding: 5px;
+			}
+		}
+	}
+
+	.scroller {
+		margin-top: 46px;
 	}
 }
 

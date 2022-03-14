@@ -21,6 +21,7 @@
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')">Maps</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')">Text</div>
+						<div class="option" id="nav-db2" @click="setScreen('tab-db2')">DB2</div>
 					</template>
 					<div v-if="!isBusy" id="nav-right">
 						<div v-if="isDev" title="Run Integration Tests" class="option" id="nav-tests" @click="runIntegrationTests"></div>
@@ -605,6 +606,22 @@
 								<span>Autoplay</span>
 							</label>
 							<input type="button" value="Export Selected" @click="click('export-sound', $event)" :class="{ disabled: isBusy }"/>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab list-tab" id="tab-db2" v-if="screen === 'tab-db2'">
+						<div class="list-container">
+							<listbox :selection="selectionDB2s" :items="listfileDB2s" :filter="userInputFilterDB2s" :keyinput="true"
+								:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"
+								:copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></listbox>
+						</div>
+						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+							<input type="text" v-model="userInputFilterDB2s" placeholder="Filter DB2s.." />
+						</div>
+						<div class="list-container">
+							<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows"></data-table>
 						</div>
 					</div>
 				</keep-alive>

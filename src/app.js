@@ -96,6 +96,7 @@ require('./js/components/file-field');
 require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
+require('./js/components/data-table');
 require('./js/components/resize-layer');
 require('./js/components/context-menu');
 
@@ -107,6 +108,8 @@ require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
+require('./js/ui/tab-items');
+require('./js/ui/tab-db2');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
