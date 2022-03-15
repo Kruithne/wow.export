@@ -238,7 +238,7 @@ class GLTFWriter {
 			const textureIndex = root.textures.length;
 			const materialIndex = root.materials.length;
 
-			root.images.push({ uri: texFile });
+			root.images.push({ uri: texFile.matPathRelative });
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
 				name: fileDataID.toString(),
