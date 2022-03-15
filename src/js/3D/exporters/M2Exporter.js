@@ -170,6 +170,8 @@ class M2Exporter {
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
 		gltf.setUVArray(this.m2.uv);
+		gltf.setBoneWeightArray(this.m2.boneWeights);
+		gltf.setBoneIndiceArray(this.m2.boneIndices)
 		gltf.setBonesArray(this.m2.bones);
 
 		// TODO: Handle UV2 for GLTF.

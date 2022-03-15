@@ -23,6 +23,8 @@ class GLTFWriter {
 		this.vertices = [];
 		this.normals = [];
 		this.uvs = [];
+		this.boneWeights = [];
+		this.boneIndices = [];
 		this.bones = [];
 		
 		this.textures = new Map();
@@ -66,7 +68,23 @@ class GLTFWriter {
 	 * @param {Array} uvs 
 	 */
 	setUVArray(uvs) {
-		this.uvs  = uvs;
+		this.uvs = uvs;
+	}
+
+	/**
+	 * Set the bone weights array for this writer.
+	 * @param {Array} boneWeights 
+	 */
+	setBoneWeightArray(boneWeights) {
+		this.boneWeights = boneWeights;
+	}
+
+	/**
+	 * Set the bone indicies array for this writer.
+	 * @param {Array} boneIndices
+	 */
+	setBoneIndiceArray(boneIndices) {
+		this.boneIndices = boneIndices;
 	}
 
 	/**
@@ -153,6 +171,20 @@ class GLTFWriter {
 					byteLength: 0,
 					byteOffset: 0,
 					target: 0x8892
+				},
+				{
+					// Bone joints/indices ARRAY_BUFFER
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+					target: 0x8892
+				},
+				{
+					// Bone weights ARRAY_BUFFER
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+					target: 0x8892
 				}
 			],
 			accessors: [
@@ -179,6 +211,22 @@ class GLTFWriter {
 					componentType: 0x1406,
 					count: 0,
 					type: 'VEC2'
+				},
+				{
+					// Bone joints/indices (Byte)
+					bufferView: 3,
+					byteOffset: 0,
+					componentType: 0x1401,
+					count: 0,
+					type: 'VEC4'
+				},
+				{
+					// Bone weights (Byte)
+					bufferView: 4,
+					byteOffset: 0,
+					componentType: 0x1401,
+					count: 0,
+					type: 'VEC4'
 				}
 			],
 			skins: [
@@ -262,26 +310,37 @@ class GLTFWriter {
 		for (let i = 0, n = this.uvs.length; i < n; i += 2)
 			this.uvs[i + 1] *= -1;
 
-		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + triangleSize;
+		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize;
 		const bin = BufferWrapper.alloc(binSize, false);
 		root.buffers[0].byteLength = binSize;
 
-		const writeData = (index, arr, stride) => {
+		const writeData = (index, arr, stride, componentType) => {
 			const view = root.bufferViews[index];
 			const accessor = root.accessors[index];
 
 			view.byteOffset = bin.offset;
-			view.byteLength = arr.length * 4;
+
+			if (componentType == 0x1406) 
+				view.byteLength = arr.length * 4;
+			else if (componentType == 0x1401)
+				view.byteLength = arr.length;
+
 			accessor.count = arr.length / stride;
 
 			this.calculateMinMax(arr, stride, accessor);
-			for (const node of arr)
-				bin.writeFloatLE(node);
+			for (const node of arr) {
+				if (componentType == 0x1406) 
+					bin.writeFloatLE(node);
+				else if (componentType == 0x1401)
+					bin.writeUInt8(node);
+			}
 		};
 
-		writeData(0, this.vertices, 3);
-		writeData(1, this.normals, 3);
-		writeData(2, this.uvs, 2);
+		writeData(0, this.vertices, 3, 0x1406);
+		writeData(1, this.normals, 3, 0x1406);
+		writeData(2, this.uvs, 2, 0x1406);
+		writeData(3, this.boneIndices, 4, 0x1401);
+		writeData(4, this.boneWeights, 4, 0x1401);
 
 		for (const mesh of this.meshes) {
 			const bufferViewIndex = root.bufferViews.length;
@@ -316,6 +375,8 @@ class GLTFWriter {
 							POSITION: 0,
 							NORMAL: 1,
 							TEXCOORD_0: 2,
+							JOINTS_0: 3,
+							WEIGHTS_0: 4,
 						},
 						indices: accessorIndex,
 						mode: 4,
