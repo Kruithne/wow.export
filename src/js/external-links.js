@@ -10,9 +10,9 @@ const util = require('util');
  * @type {Object.<string, string>}
  */
 const STATIC_LINKS = {
+	'::WEBSITE': 'https://www.kruithne.net/wow.export/',
 	'::DISCORD': 'https://discord.gg/kC3EzAYBtf',
 	'::PATREON': 'https://patreon.com/Kruithne',
-	'::ABOUT_WT': 'https://wow.tools/export/',
 	'::GITHUB': 'https://github.com/Kruithne/wow.export',
 	'::ISSUE_TRACKER': 'https://github.com/Kruithne/wow.export/issues'
 };
