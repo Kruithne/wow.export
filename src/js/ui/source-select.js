@@ -48,7 +48,7 @@ const loadInstall = (index) => {
 			core.view.setScreen('tab-models');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
-			core.setToast('error', 'Unable to initialize CASC. Try repairing your installation, or seek support.', {
+			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
 			}, -1);
