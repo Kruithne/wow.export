@@ -158,51 +158,57 @@ body {
 	width: 100%;
 
 	.option {
-		margin-left: 10px;
+		margin-left: 40px;
+		background-repeat: no-repeat;
+		background-size: contain;
+		background-position: 0 center;
+		position: relative;
 
 		&:hover {
 			cursor: pointer;
 			color: var(--font-highlight);
 		}
+
+		&::before {
+			content: ' ';
+			width: 25px;
+			height: 100%;
+			position: absolute;
+			left: -30px;
+			background-position: right;
+			background-repeat: no-repeat;
+		}
 	}
 
-	.option {
-		margin-right: 5px;
-		padding-left: 30px;
-		background-repeat: no-repeat;
-		background-size: contain;
-		background-position: 0 center;
-	}
-
-	&-models {
+	&-models::before {
 		background-image: url(./fa-icons/cube.svg);
 	}
 
-	&-items {
+	&-items::before {
 		background-image: url(./fa-icons/cubes.svg);
 	}
 
-	&-textures {
+	&-textures::before {
 		background-image: url(./fa-icons/image.svg);
 	}
 
-	&-sounds {
+	&-sounds::before {
 		background-image: url(./fa-icons/music.svg);
 	}
 
-	&-maps {
+	&-maps::before {
 		background-image: url(./fa-icons/map.svg);
 	}
 
-	&-videos {
+	&-videos::before {
 		background-image: url(./fa-icons/film.svg);
 	}
 
-	&-text {
+	&-text::before {
 		background-image: url(./fa-icons/file-lines.svg);
 	}
 
-	&-data {
+	&-data::before {
 		background-image: url(./fa-icons/database.svg);
 	}
 
