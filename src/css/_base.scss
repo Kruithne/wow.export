@@ -163,10 +163,14 @@ body {
 		background-size: contain;
 		background-position: 0 center;
 		position: relative;
-
+		
 		&:hover {
 			cursor: pointer;
 			color: var(--font-highlight);
+		}
+
+		&.active {
+			color: var(--nav-option-selected);
 		}
 
 		&::before {
