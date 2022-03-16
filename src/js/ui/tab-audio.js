@@ -103,6 +103,9 @@ const unloadSelectedTrack = () => {
  * Ensure unloadSelectedTrack() is called first.
  */
 const loadSelectedTrack = async () => {
+	if (selectedFile === null)
+		return core.setToast('info', 'You need to select an audio track first!', null, -1, true);
+
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	log.write('Previewing sound file %s', selectedFile);
