@@ -351,7 +351,6 @@
 						</div>
 						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
 						<div class="spaced-preview-controls">
-							<input type="button" value="View on wow.tools" @click="getExternalLink().wowTools_viewMap(mapViewerSelectedDir)" :class="{ disabled: mapViewerSelectedDir === null }"/>
 							<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
 							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export ' + mapViewerSelection.length + ' Tiles') : 'Export Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy}"/>
 						</div>
@@ -445,7 +444,6 @@
 									<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
 									<span @click.self="copyToClipboard(context.node.fileName)">Copy file path to clipboard</span>
 									<span @click.self="copyToClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
-									<span @click.self="getExternalLink().wowTools_viewFile(context.node.fileDataID)">View {{ context.displayName }} on wow.tools (web)</span>
 								</context-menu>
 							</resize-layer>
 							<div class="preview-background" id="model-preview">

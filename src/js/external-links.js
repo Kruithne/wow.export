@@ -18,18 +18,6 @@ const STATIC_LINKS = {
 };
 
 /**
- * Defines the URL pattern for locating a specific file on wow.tools.
- * @type {string}
- */
-const WOW_TOOLS_FILE = 'https://wow.tools/files/#search=fdid%%3A%d&fdidModal=1';
-
-/**
- * Defines the URL pattern for locating a map on wow.tools.
- * @type {string}
- */
-const WOW_TOOLS_MAP = 'https://wow.tools/maps/%s';
-
-/**
  * Defines the URL pattern for locating a specific item on Wowhead.
  * @type {string}
  */
@@ -45,22 +33,6 @@ module.exports = class ExternalLinks {
 			link = STATIC_LINKS[link];
 
 		nw.Shell.openExternal(link);
-	}
-
-	/**
-	 * Open a specific file on wow.tools.
-	 * @param {number} fileDataID 
-	 */
-	static wowTools_viewFile(fileDataID) {
-		this.open(util.format(WOW_TOOLS_FILE, fileDataID));
-	}
-
-	/**
-	 * Open a specific map on wow.tools.
-	 * @param {string} mapName
-	 */
-	static wowTools_viewMap(mapName) {
-		this.open(util.format(WOW_TOOLS_MAP, mapName));
 	}
 
 	/**
