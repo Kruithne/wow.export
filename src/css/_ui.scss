@@ -10,11 +10,10 @@
 }
 
 input[type="button"] {
-	padding: 10px 20px;
+	padding: 9px 13px;
 	background: var(--form-button-base);
 	color: var(--font-primary);
-	height: 45px;
-	font-size: 18px;
+	font-size: 17px;
 	border: 0;
 	border-radius: 5px;
 	cursor: pointer;
@@ -122,10 +121,10 @@ input[type="button"] {
 .ui-menu-button {
 	display: inline-block;
 	position: relative;
-	height: 45px;
 
 	input[type="button"] {
-		padding-right: 35px;
+		padding-right: 40px;
+		padding-left: 13px;
 		position: relative;
 		z-index: 2;
 		height: 100%;
@@ -200,6 +199,7 @@ input[type="button"] {
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: 10px;
+		border-left: 1px solid #ffffff52;
 	}
 }
 
