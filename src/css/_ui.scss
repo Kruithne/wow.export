@@ -44,6 +44,10 @@ input[type="button"] {
 		transform: translateY(-100%);
 	}
 
+	&.left {
+		transform: translateX(-100%);
+	}
+
 	&-zone {
 		position: absolute;
 		left: -20px;

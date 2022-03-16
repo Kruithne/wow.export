@@ -88,6 +88,7 @@ const view = {
 	textureRibbonPage: 0, // Active page of texture slots to render.
 	contextNodeTextureRibbon: null, // Context menu node for the texture ribbon.
 	contextNodeItem: null, // Context menu node for the items listfile.
+	hideExtraMenu: true, // Controller for the extra context menu.
 	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.

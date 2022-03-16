@@ -23,14 +23,15 @@
 						<div class="option" id="nav-text" @click="setScreen('tab-text')">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-db2')">Data</div>
 					</template>
-					<div v-if="!isBusy" id="nav-right">
-						<div v-if="isDev" title="Run Integration Tests" class="option" id="nav-tests" @click="runIntegrationTests"></div>
-						<div title="Blender Add-On" class="option" id="nav-blender" @click="setScreen('blender', true)"></div>
-						<div title="Restart" class="option" id="nav-reload" @click="restartApplication"></div>
-						<div id="nav-settings" title="Settings" class="option" @click="setScreen('config', true)"></div>
-						<div id="nav-changes" title="Changelog" class="option" @click="setScreen('changelog', true)"></div>
-						<div id="nav-log" title="View Log" class="option" @click="openRuntimeLog"></div>
-					</div>
+					<div id="nav-extra" v-if="!isBusy" @click="hideExtraMenu = false"></div>
+					<context-menu @close="hideExtraMenu = true" :node="hideExtraMenu" id="menu-extra">
+						<span @click.self="setScreen('blender', true)" id="menu-extra-blender">Install Blender Add-on</span>
+						<span @click.self="setScreen('config', true)" id="menu-extra-settings">Manage Settings</span>
+						<span @click.self="setScreen('changelog', true)" id="menu-extra-changes">View Recent Changes</span>
+						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
+						<span @click.self="openRuntimeLog" id="menu-extra-log">Open Runtime Log</span>
+						<span v-if="isDev" @click.self="runIntegrationTests" id="menu-extra-tests">Run Integration Tests</span>
+					</context-menu>
 				</div>
 			</div>
 			<div id="drop-overlay" v-if="!!fileDropPrompt">
