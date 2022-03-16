@@ -21,7 +21,7 @@
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
-						<div class="option" id="nav-data" @click="setScreen('tab-db2')" :class="{ active: screen === 'tab-db2' }">Data</div>
+						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
 					<div id="nav-extra" v-if="!isBusy" @click="hideExtraMenu = false"></div>
 					<context-menu @close="hideExtraMenu = true" :node="hideExtraMenu" id="menu-extra">
@@ -611,7 +611,7 @@
 					</div>
 				</keep-alive>
 				<keep-alive>
-					<div class="tab list-tab" id="tab-db2" v-if="screen === 'tab-db2'">
+					<div class="tab list-tab" id="tab-data" v-if="screen === 'tab-data'">
 						<div class="list-container">
 							<listbox :selection="selectionDB2s" :items="listfileDB2s" :filter="userInputFilterDB2s" :keyinput="true"
 								:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"

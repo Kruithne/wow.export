@@ -109,7 +109,7 @@ require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
 require('./js/ui/tab-items');
-require('./js/ui/tab-db2');
+require('./js/ui/tab-data');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
