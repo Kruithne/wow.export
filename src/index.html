@@ -4,7 +4,7 @@
 		<script defer type="text/javascript" src="lib/vue.js"></script>
 		<script defer type="text/javascript" src="lib/three.js"></script>
 		<script defer type="text/javascript" src="app.js"></script>
-		<link rel="stylesheet" type="text/css" href="app.css"/>
+		<link rel="stylesheet" type="text/css" data-href="app.css" href="app.css"/>
 		<title>wow.export</title>
 	</head>
 	<body>
@@ -31,6 +31,7 @@
 						<span @click.self="setScreen('config', true)" id="menu-extra-settings">Manage Settings</span>
 						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
 						<span v-if="isDev" @click.self="runIntegrationTests" id="menu-extra-tests">Run Integration Tests</span>
+						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
 					</context-menu>
 				</div>
 			</div>

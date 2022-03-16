@@ -173,6 +173,15 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Reloads all stylesheets in the document.
+			 */
+			reloadStylesheet() {
+				const sheets = document.querySelectorAll('link[rel="stylesheet"]');
+				for (const sheet of sheets)
+					sheet.href = sheet.getAttribute('data-href') + '?v=' + Date.now();
+			},
+
+			/**
 			 * Initiate the integration tests.
 			 */
 			async runIntegrationTests() {
