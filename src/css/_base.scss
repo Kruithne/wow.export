@@ -24,20 +24,21 @@ body {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: var(--background-trans);
 	z-index: 500;
 	font-size: 25px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	text-shadow: black 0 0 20px;
+	background-color: var(--background-trans);
 
-	&::before {
-		font-family: 'FontAwesome';
-		content: '\f0c5';
-		font-size: 100px;
+	&-icon {
+		width: 100px;
+		height: 100px;
 		margin-bottom: 20px;
+		background-image: url(./fa-icons/copy.svg);
+		background-position: center top;
+		background-repeat: no-repeat;
 	}
 }
 
@@ -165,37 +166,40 @@ body {
 		}
 	}
 
-	.option::before {
-		font-family: 'FontAwesome';
+	.option {
 		margin-right: 5px;
+		padding-left: 30px;
+		background-repeat: no-repeat;
+		background-size: contain;
+		background-position: 0 center;
 	}
 
-	&-models::before {
-		content: '\f1b2';
+	&-models {
+		background-image: url(./fa-icons/cube.svg);
 	}
 
-	&-items::before {
-		content: '\f1b3';
+	&-items {
+		background-image: url(./fa-icons/cubes.svg);
 	}
 
-	&-textures::before {
-		content: '\f03e';
+	&-textures {
+		background-image: url(./fa-icons/image.svg);
 	}
 
-	&-sounds::before {
-		content: '\f001';
+	&-sounds {
+		background-image: url(./fa-icons/music.svg);
 	}
 
-	&-maps::before {
-		content: '\f278';
+	&-maps {
+		background-image: url(./fa-icons/map.svg);
 	}
 
-	&-videos::before {
-		content: '\f008';
+	&-videos {
+		background-image: url(./fa-icons/film.svg);
 	}
 
-	&-text::before {
-		content: '\f0f6';
+	&-text {
+		background-image: url(./fa-icons/file-lines.svg);
 	}
 
 	&-right {
@@ -321,10 +325,10 @@ body {
 		flex-direction: column;
 
 		.source-icon {
-			font-family: 'FontAwesome';
-			font-size: 120px;
-			color: var(--font-faded);
-			transition: color linear 0.5s;
+			background-position: center;
+			background-repeat: no-repeat;
+			width: 160px;
+			height: 160px;
 		}
 
 		.source-text {
@@ -343,19 +347,15 @@ body {
 
 		&:hover, &.disabled {
 			border-color: var(--font-highlight);
-	
-			.source-icon {
-				color: var(--font-highlight);
-			}
 		}
 	}
 
-	#source-local .source-icon::before {
-		content: '\f0a0';
+	#source-local .source-icon {
+		background-image: url(./fa-icons/hard-drive.svg);
 	}
 
-	#source-remote .source-icon::before {
-		content: '\f0ac';
+	#source-remote .source-icon {
+		background-image: url(./fa-icons/earth-americas.svg);
 	}
 }
 
@@ -367,9 +367,12 @@ body {
 	font-size: 15px;
 	display: flex;
 	align-items: center;
-	padding-left: 10px;
 	color: var(--font-toast);
 	z-index: 1;
+	padding-left: 30px;
+	background-repeat: no-repeat;
+	background-size: 15px;
+	background-position: 10px center;
 
 	span {
 		margin: 0 5px;
@@ -379,35 +382,32 @@ body {
 	}
 
 	.close {
-		font-family: 'FontAwesome';
-		margin: 0 10px 0 auto;
+		margin-left: auto;
 		cursor: pointer;
-		&::before { content: '\f00d' }
-	}
-
-	&::before {
-		font-family: 'FontAwesome';
-		margin-right: 5px;
+		background: url(./fa-icons/xmark.svg) no-repeat center;
+		background-size: 10px;
+		width: 30px;
+		height: 100%;
 	}
 
 	&.progress {
-		background: var(--toast-progress);
-		&::before { content: '\f017'; }
+		background-color: var(--toast-progress);
+		background-image: url(./fa-icons/timer.svg);
 	}
 
 	&.info {
-		background: var(--toast-info);
-		&::before { content: '\f05a'; }
+		background-color: var(--toast-info);
+		background-image: url(./fa-icons/circle-info.svg);
 	}
 
 	&.error {
-		background: var(--toast-error);
-		&::before { content: '\f071'; }
+		background-color: var(--toast-error);
+		background-image: url(./fa-icons/triangle-exclamation.svg);
 	}
 
 	&.success {
-		background: var(--toast-success);
-		&::before { content: '\f00c'; }
+		background-color: var(--toast-success);
+		background-image: url(./fa-icons/check.svg);
 	}
 }
 
@@ -467,14 +467,11 @@ body {
 	}
 
 	&-icon {
-		font-family: 'FontAwesome';
-		font-size: 80px;
 		margin-bottom: 10px;
 		animation: update-cog-spin 6s infinite linear;
-
-		&::before {
-			content: '\f013';
-		}
+		background: url(./fa-icons/gear.svg) no-repeat center;
+		width: 100px;
+		height: 100px;
 	}
 }
 
@@ -494,11 +491,8 @@ body {
 	}
 
 	h1 {
-		&::before {
-			font-family: 'FontAwesome';
-			content: '\f071';
-			margin-right: 10px;
-		}
+		background: url(./fa-icons/triangle-exclamation-white.svg) no-repeat left center;
+		padding-left: 50px;
 	}
 
 	&-text {

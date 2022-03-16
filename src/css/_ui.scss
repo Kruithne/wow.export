@@ -167,8 +167,7 @@ input[type="button"] {
 
 	&:not(.disabled) {
 		.arrow:hover {
-			background: var(--form-button-hover);
-			color: var(--font-highlight);
+			background-color: var(--form-button-hover);
 			cursor: pointer;
 		}
 
@@ -177,7 +176,6 @@ input[type="button"] {
 
 			input[type="button"], .arrow {
 				background: var(--form-button-hover);
-				color: var(--font-highlight);
 			}
 		}
 	}
@@ -194,13 +192,10 @@ input[type="button"] {
 		justify-content: center;
 		border-top-right-radius: 5px;
 		border-bottom-right-radius: 5px;
-
-		&::before {
-			font-family: 'FontAwesome';
-			content: '\f0d7';
-			margin-bottom: 2px;
-			margin-right: 1px;
-		}
+		background-image: url(./fa-icons/caret-down.svg);
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 10px;
 	}
 }
 
