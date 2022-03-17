@@ -879,7 +879,7 @@ class ADTExporter {
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
 			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
-				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID');
+				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID', 'DoodadSetIndexes', 'DoodadSetNames');
 
 				if (config.mapsIncludeGameObjects === true && gameObjects !== undefined && gameObjects.size > 0) {
 					log.write('Exporting %d game objects for ADT...', gameObjects.size);
@@ -933,7 +933,9 @@ class ADTExporter {
 								ScaleFactor: 1,
 								ModelId: 0,
 								Type: 'gobj',
-								FileDataID: fileDataID
+								FileDataID: fileDataID,
+								DoodadSetIndexes: 0,
+								DoodadSetNames: ''
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
@@ -992,7 +994,9 @@ class ADTExporter {
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
 								Type: 'm2',
-								FileDataID: fileDataID
+								FileDataID: fileDataID,
+								DoodadSetIndexes: 0,
+								DoodadSetNames: ''
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
@@ -1005,6 +1009,8 @@ class ADTExporter {
 
 					helper.setCurrentTaskName('Tile ' + this.tileID + ', WMO objects');
 					helper.setCurrentTaskMax(objAdt.worldModels.length);
+
+					const setNameCache = new Map();
 
 					let worldModelIndex = 0;
 					const usingNames = !!objAdt.wmoNames;
@@ -1033,11 +1039,15 @@ class ADTExporter {
 							}
 
 							const modelPath = ExportHelper.getExportPath(fileName);
-							const cacheID = fileDataID + '-' + (useADTSets ? objAdt.doodadSets.join(',') : model.doodadSet);
+							const doodadSets = useADTSets ? objAdt.doodadSets : [model.doodadSet];
+							const cacheID = fileDataID + '-' + doodadSets.join(',');
 
 							if (!objectCache.has(cacheID)) {
 								const data = await casc.getFile(fileDataID);
-								const wmo = new WMOExporter(data, fileDataID);
+								const wmoLoader = new WMOExporter(data, fileDataID);
+								await wmoLoader.wmo.load();
+
+								setNameCache.set(fileDataID, wmoLoader.wmo.doodadSets.map(e => e.name));
 
 								if (config.mapsIncludeWMOSets) {
 									const mask = { 0: { checked: true } };
@@ -1048,10 +1058,10 @@ class ADTExporter {
 										mask[model.doodadSet] = { checked: true }
 									}
 									
-									wmo.setDoodadSetMask(mask);
+									wmoLoader.setDoodadSetMask(mask);
 								}
 
-								await wmo.exportAsOBJ(modelPath, helper);
+								await wmoLoader.exportAsOBJ(modelPath, helper);
 
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
@@ -1059,6 +1069,8 @@ class ADTExporter {
 
 								objectCache.add(cacheID);
 							}
+
+							const doodadNames = setNameCache.get(fileDataID);
 
 							let modelFile = path.relative(dir, modelPath);
 							if (usePosix)
@@ -1076,7 +1088,9 @@ class ADTExporter {
 								ScaleFactor: model.scale / 1024,
 								ModelId: model.uniqueId,
 								Type: 'wmo',
-								FileDataID: fileDataID
+								FileDataID: fileDataID,
+								DoodadSetIndexes: doodadSets.join(','),
+								DoodadSetNames: doodadSets.map((e, i) => doodadNames[e]).join(',')
 							});
 						} catch {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
