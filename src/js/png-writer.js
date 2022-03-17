@@ -195,10 +195,9 @@ class PNGWriter {
 	}
 
 	/**
-	 * Write this PNG to a file.
-	 * @param {string} file 
+	 * @returns {BufferWrapper}
 	 */
-	async write(file) {
+	getBuffer() {
 		const filtered = new BufferWrapper(filter(this.data, this.width, this.height));
 		const deflated = filtered.deflate();
 		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
@@ -236,7 +235,15 @@ class PNGWriter {
 		buf.writeUInt32LE(0x444E4549); // IEND
 		buf.writeUInt32LE(0x826042AE); // CRC IEND
 
-		await buf.writeToFile(file);
+		return buf;
+	}
+
+	/**
+	 * Write this PNG to a file.
+	 * @param {string} file 
+	 */
+	async write(file) {
+		return await this.getBuffer().writeToFile(file);
 	}
 }
 

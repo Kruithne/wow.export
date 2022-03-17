@@ -161,7 +161,7 @@ class ExportHelper {
 			core.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
-			if (core.view.exportCancelled)	
+			if (core.view.exportCancelled)
 				core.setToast('info', 'Export was cancelled by the user.', null);
 			else
 				core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);

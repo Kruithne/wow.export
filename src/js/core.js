@@ -113,7 +113,8 @@ const view = {
 	},
 	menuButtonTextures: [
 		{ label: 'Export as PNG', value: 'PNG' },
-		{ label: 'Export as BLP (Raw)', value: 'BLP' }
+		{ label: 'Export as BLP (Raw)', value: 'BLP' },
+		{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
 	],
 	menuButtonTextureQuality: [
 		{ label: 'Alpha Maps', value: -1 },

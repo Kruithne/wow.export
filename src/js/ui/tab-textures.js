@@ -76,13 +76,50 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 	core.view.isBusy--;
 };
 
+/**
+ * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
+ * @param {number|string} input 
+ * @returns {object}
+ */
+const getFileInfoPair = (input) => {
+	let fileName;
+	let fileDataID;
+
+	if (typeof input === 'number') {
+		fileDataID = input;
+		fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
+	} else {
+		fileName = listfile.stripFileEntry(input);
+		fileDataID = listfile.getByFilename(fileName);
+	}
+
+	return { fileName, fileDataID };
+};
+
 const exportFiles = async (files, isLocal = false, exportID = -1) => {
+	const format = core.view.config.exportTextureFormat;
+
+	if (format === 'CLIPBOARD') {
+		const { fileName, fileDataID } = getFileInfoPair(files[0]);
+
+		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+		const blp = new BLPFile(data);
+		const png = blp.toPNG(core.view.config.exportChannelMask);
+		
+		const clipboard = nw.Clipboard.get();
+		clipboard.set(png.toBase64(), 'png', true);
+
+		log.write('Copied texture to clipboard (%s)', fileName);
+		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
+
+		return;
+	}
+
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
 	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
 
-	const format = core.view.config.exportTextureFormat;
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
 
@@ -93,20 +130,12 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		if (helper.isCancelled())
 			return;
 			
-		let fileName;
-		let fileDataID;
-		if (typeof fileEntry === 'number') {
-			fileDataID = fileEntry;
-			fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
-		} else {
-			fileName = listfile.stripFileEntry(fileEntry);
-			fileDataID = listfile.getByFilename(fileName);
-		}
+		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
 		
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')
-				exportPath = ExportHelper.replaceExtension(exportPath, '.png');	
+				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));

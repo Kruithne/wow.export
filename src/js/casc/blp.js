@@ -107,12 +107,12 @@ class BLPImage {
 	}
 
 	/**
-	 * Save this BLP as PNG file.
-	 * @param {string} file 
-	 * @param {number} mask
-	 * @param {number} mipmap
+	 * Retrieve this BLP as a PNG image.
+	 * @param {number} mask 
+	 * @param {number} mipmap 
+	 * @returns {BufferWrapper}
 	 */
-	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
+	toPNG(mask = 0b1111, mipmap = 0) {
 		this._prepare(mipmap);
 
 		const png = new PNGWriter(this.scaledWidth, this.scaledHeight);
@@ -124,7 +124,17 @@ class BLPImage {
 			case 3: this._marshalBGRA(pixelData, mask); break;
 		}
 
-		await png.write(file);
+		return png.getBuffer();
+	}
+
+	/**
+	 * Save this BLP as PNG file.
+	 * @param {string} file 
+	 * @param {number} mask
+	 * @param {number} mipmap
+	 */
+	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
+		return await this.toPNG(mask, mipmap).writeToFile(file);
 	}
 
 	/**
@@ -165,6 +175,22 @@ class BLPImage {
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
+	}
+
+	/**
+	 * Get the contents of this BLP as a BufferWrapper instance.
+	 * @param {number} mipmap 
+	 * @param {number} mask 
+	 * @returns {BufferWrapper}
+	 */
+	toBuffer(mipmap = 0, mask = 0b1111) {
+		this._prepare(mipmap);
+
+		switch (this.encoding) {
+			case 1: return this._getUncompressed(null, mask);
+			case 2: return this._getCompressed(null, mask);
+			case 3: return this._marshalBGRA(null, mask);
+		}
 	}
 
 	/**
