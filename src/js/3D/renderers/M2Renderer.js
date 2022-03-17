@@ -42,8 +42,8 @@ class M2Renderer {
 		this.m2 = new M2Loader(this.data);
 		await this.m2.load();
 
+		this.loadTextures();
 		if (this.m2.vertices.length > 0) {
-			this.loadTextures();
 			await this.loadSkin(0);
 
 			if (this.reactive) {
