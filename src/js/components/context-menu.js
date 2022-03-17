@@ -39,7 +39,7 @@ Vue.component('context-menu', {
 		this.isLeft = this.positionX > window.innerWidth / 2;
 	},
 
-	template: `<div class="context-menu" v-if="!node" :class=" { low: isLow, left: isLeft }" :style="{ top: positionY + 'px', left: positionX + 'px' }" @mouseleave="$emit('close')" @click="$emit('close')">
+	template: `<div class="context-menu" v-if="node !== null && node !== false" :class=" { low: isLow, left: isLeft }" :style="{ top: positionY + 'px', left: positionX + 'px' }" @mouseleave="$emit('close')" @click="$emit('close')">
 		<div class="context-menu-zone"></div>
 		<slot v-bind:node="node"></slot>
 	</div>
