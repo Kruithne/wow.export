@@ -8,6 +8,7 @@ const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
 const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
 const generics = require('../generics');
+const listfile = require('../casc/listfile');
 
 core.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.
@@ -22,11 +23,12 @@ core.registerLoadFunc(async () => {
 		helper.start();
 		
 		const overwriteFiles = core.view.config.overwriteFiles;
-		for (const fileName of userSelection) {
+		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
 
+			fileName = listfile.stripFileEntry(fileName);
 			const exportPath = ExportHelper.getExportPath(fileName);
 			let isCorrupted = false;
 
