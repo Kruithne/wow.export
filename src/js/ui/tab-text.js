@@ -38,6 +38,13 @@ core.registerLoadFunc(async () => {
 		}
 	});
 
+	// Track when the user clicks to copy the open text file to clipboard.
+	core.events.on('click-copy-text', async () => {
+		const clipboard = nw.Clipboard.get();
+		clipboard.set(core.view.textViewerSelectedText, 'text');
+		core.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
+	});
+
 	// Track when the user clicks to export selected text files.
 	core.events.on('click-export-text', async () => {
 		const userSelection = core.view.selectionText;

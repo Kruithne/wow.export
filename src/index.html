@@ -571,6 +571,7 @@
 							</div>
 						</div>
 						<div class="preview-controls">
+							<input type="button" value="Copy to Clipboard" @click="click('copy-text', $event)"/>
 							<input type="button" value="Export Selected" @click="click('export-text', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>

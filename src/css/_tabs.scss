@@ -361,6 +361,12 @@
 }
 
 #tab-text {
+	.preview-controls {
+		input {
+			margin-left: 5px;
+		}
+	}
+	
 	.preview-container {
 		.preview-background {
 			background: var(--background-dark);
