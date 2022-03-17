@@ -547,9 +547,11 @@
 						<div class="list-container">
 							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
 						</div>
-						<div class="filter">
-							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
+						<div id="tab-video-tray">
+							<div class="filter">
+								<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+								<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
+							</div>
 							<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>

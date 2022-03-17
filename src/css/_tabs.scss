@@ -215,13 +215,13 @@
 #tab-video {
 	grid-template-columns: unset;
 
-	.filter {
-		> .regex-info {
-			right: 214px;
-		}
+	&-tray {
+		display: grid;
+		grid-template: 1fr auto;
+		margin: 10px;
 
 		input[type="button"] {
-			width: unset;
+			grid-row: 2;
 		}
 	}
 }
