@@ -217,7 +217,7 @@
 
 	&-tray {
 		display: grid;
-		grid-template: 1fr auto;
+		grid-template-columns: 1fr auto;
 		margin: 10px;
 
 		input[type="button"] {
@@ -366,7 +366,7 @@
 			margin-left: 5px;
 		}
 	}
-	
+
 	.preview-container {
 		.preview-background {
 			background: var(--background-dark);
