@@ -213,14 +213,14 @@ class M2Renderer {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
-				if (ribbonSlot)
+				if (ribbonSlot !== null)
 					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
 					const blpURI = blp.getDataURL(0b0111);
 
-					if (ribbonSlot)
+					if (ribbonSlot !== null)
 						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
 
 					loader.load(blpURI, image => {
