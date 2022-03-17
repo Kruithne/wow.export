@@ -86,9 +86,6 @@ const view = {
 	textureRibbonStack: [], // Texture preview stack for model viewer.
 	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 	textureRibbonPage: 0, // Active page of texture slots to render.
-	contextNodeTextureRibbon: null, // Context menu node for the texture ribbon.
-	contextNodeItem: null, // Context menu node for the items listfile.
-	showExtraMenu: false, // Controller for the extra context menu.
 	itemViewerTypeMask: [], // Active item type control.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
@@ -107,7 +104,33 @@ const view = {
 	mapViewerSelection: [], // Map viewer tile selection
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
-	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.'
+	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
+	contextMenus: {
+		nodeTextureRibbon: null, // Context menu node for the texture ribbon.
+		nodeItem: null, // Context menu node for the items listfile.
+		stateNavExtra: false, // State controller for the extra nav menu.
+		stateModelExport: false, // State controller for the model export menu.
+	},
+	menuButtonTextures: [
+		{ label: 'Export as PNG', value: 'PNG' },
+		{ label: 'Export as BLP (Raw)', value: 'BLP' }
+	],
+	menuButtonTextureQuality: [
+		{ label: 'Alpha Maps', value: -1 },
+		{ label: 'None', value: 0 },
+		{ label: 'Minimap (512)', value: 512 },
+		{ label: 'Low (1k)', value: 1024 },
+		{ label: 'Medium (4k)', value: 4096 },
+		{ label: 'High (8k)', value: 8192 },
+		{ label: 'Ultra (16k)', value: 16384 }
+	],
+	menuButtonModels: [
+		{ label: 'Export OBJ', value: 'OBJ' },
+		//{ label: 'Export glTF', value: 'GLTF' },
+		//{ label: 'Export glTF (Binary)', value: 'GLB' },
+		{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
+		{ label: 'Export PNG (3D Preview)', value: 'PNG' }
+	]
 };
 
 /**

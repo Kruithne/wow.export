@@ -466,7 +466,7 @@ document.addEventListener('click', function(e) {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale.flags);
+				return Object.keys(this.availableLocale.flags).map(e => { return { value: e }});
 			},
 
 			/**

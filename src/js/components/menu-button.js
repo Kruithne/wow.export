@@ -7,18 +7,16 @@ const util = require('util');
 
 Vue.component('menu-button', {
 	/**
-	 * options: An array of strings denoting options shown in the menu.
-	 * label: Formattable button label. %s is substituted for the selected option.
-	 * default: Which option to use as a default.
+	 * options: An array of objects with label/value properties.
+	 * default: The default value from the options array.
 	 * disabled: Controls disabled state of the component.
-	 * dropdown: If true, component acts like a drop-down menu.
-	 * displayNames: Optional visual override for values.
+	 * dropdown: If true, the full button prompts the context menu, not just the arrow.
 	 */
-	props: ['options', 'label', 'default', 'disabled', 'dropdown', 'display-names'],
+	props: ['options', 'default', 'disabled', 'dropdown'],
 
 	data: function() {
 		return {
-			selectedOption: '', // Currently selected option.
+			selectedObj: null, // Currently selected option.
 			open: false // If the menu is open or not.
 		}
 	},
@@ -26,12 +24,12 @@ Vue.component('menu-button', {
 	methods: {
 		/**
 		 * Set the selected option for this menu button.
-		 * @param {string} option 
+		 * @param {object} option 
 		 */
 		select: function(option) {
 			this.open = false;
-			this.selectedOption = option;
-			this.$emit('change', option);
+			this.selectedObj = option;
+			this.$emit('change', option.value);
 		},
 
 		/**
@@ -50,35 +48,25 @@ Vue.component('menu-button', {
 				this.openMenu();
 			else
 				this.$emit('click', e);
-		},
-
-		/**
-		 * Return the display name for the provided option.
-		 * @param {string} option 
-		 */
-		getOptionDisplay: function(option) {
-			const optionIndex = this.options.indexOf(option);
-			return (this.displayNames && this.displayNames[optionIndex]) || option;
 		}
 	},
 
 	computed: {
 		/**
-		 * The currently selected option.
-		 * Will return default if the selected option is not a valid option.
+		 * Returns the currently selected option or falls back to the default.
+		 * @returns {object}
 		 */
 		selected: function() {
-			if (this.options.includes(this.selectedOption))
-				return this.selectedOption;
-
-			return this.default;
+			return this.selectedObj ?? this.defaultObj;
 		},
 
 		/**
-		 * Returns the formatted text to display on the button.
+		 * Returns the option with the same value as the provided default or
+		 * falls back to returning the first available option.
+		 * @returns {object}
 		 */
-		displayText: function() {
-			return util.format(this.label, this.getOptionDisplay(this.selected));
+		defaultObj: function() {
+			return this.options.find(e => e.value === this.default) ?? this.options[0];
 		}
 	},
 
@@ -86,10 +74,10 @@ Vue.component('menu-button', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div class="ui-menu-button" :class="{ disabled, dropdown, open }">
-		<input type="button" :value="displayText" :class="{ disabled }" @click="handleClick"/>
+		<input type="button" :value="this.selected.label ?? this.selected.value" :class="{ disabled }" @click="handleClick"/>
 		<div class="arrow" @click="openMenu"></div>
-		<ul class="menu" v-if="open">
-			<li v-for="option in options" @click="select(option)">{{ getOptionDisplay(option) }}</li>
-		</ul>
+		<context-menu :node="open" @close="open = false">
+			<span v-for="option in options" @click="select(option)">{{ option.label ?? option.value }}</span>
+		</context-menu>
 	</div>`
 });

@@ -23,8 +23,8 @@
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
-					<div id="nav-extra" v-if="!isBusy" @click="showExtraMenu = true"></div>
-					<context-menu @close="showExtraMenu = false" :node="showExtraMenu" id="menu-extra">
+					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
+					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
 						<span @click.self="setScreen('blender', true)" id="menu-extra-blender">Install Blender Add-on</span>
 						<span @click.self="setScreen('changelog', true)" id="menu-extra-changes">View Recent Changes</span>
 						<span @click.self="openRuntimeLog" id="menu-extra-log">Open Runtime Log</span>
@@ -154,7 +154,7 @@
 						<h1>CASC Locale</h1>
 						<p>Which locale to use for file reading. This only affects game files.</p>
 						<p>This should match the locale of your client when using local installations.</p>
-						<menu-button class="spaced" :dropdown="true" :label="'%s'" :display-names="availableLocale.names" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
+						<menu-button class="spaced" :dropdown="true" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
 					</div>
 					<div>
 						<h1>Export Model Collision</h1>
@@ -339,7 +339,7 @@
 								<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
 								<span>Transparency</span>
 							</label>
-							<menu-button :label="'Export as %s'" :options="['PNG', 'BLP']" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" class="upward" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
+							<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
 						</div>
 					</div>
 				</keep-alive>
@@ -398,15 +398,15 @@
 								<span>Texture Alpha</span>
 							</label>
 							<span class="header">Terrain Texture Quality</span>
-							<menu-button :label="'%s'" :options="[-1, 0, 512, 1024, 4096, 8192, 16384]" :display-names="['Alpha Maps', 'None', 'Minimap (512)', 'Low (1k)', 'Medium (4k)', 'High (8k)', 'Ultra (16k)']" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
+							<menu-button :options="menuButtonTextureQuality" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</div>
 					</div>
 				</keep-alive>
 				<keep-alive>
 					<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
 						<div class="list-container">
-							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextNodeItem = $event"></itemlistbox>
-							<context-menu :node="contextNodeItem" v-slot:default="context" @close="contextNodeItem = null">
+							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextMenus.nodeItem = $event"></itemlistbox>
+							<context-menu :node="contextMenus.nodeItem" v-slot:default="context" @close="contextMenus.nodeItem = null">
 								<span v-if="context.node.modelCount > 0" @click.self="viewModels(context.node)">View related models ({{ context.node.modelCount }})</span>
 								<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
 								<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
@@ -439,9 +439,9 @@
 						<div class="preview-container">
 							<resize-layer @resize="onTextureRibbonResize" id="texture-ribbon" v-if="config.modelViewerShowTextures && textureRibbonStack.length > 0">
 								<div id="texture-ribbon-prev" v-if="textureRibbonPage > 0" @click.self="textureRibbonPage--"></div>
-								<div v-for="slot in textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="contextNodeTextureRibbon = slot"></div>
+								<div v-for="slot in textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="contextMenus.nodeTextureRibbon = slot"></div>
 								<div id="texture-ribbon-next" v-if="textureRibbonPage < textureRibbonMaxPages - 1" @click.self="textureRibbonPage++"></div>
-								<context-menu :node="contextNodeTextureRibbon" v-slot:default="context" @close="contextNodeTextureRibbon = null">
+								<context-menu :node="contextMenus.nodeTextureRibbon" v-slot:default="context" @close="contextMenus.nodeTextureRibbon = null">
 									<span @click.self="goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
 									<span @click.self="copyToClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
 									<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
@@ -454,8 +454,7 @@
 							</div>
 						</div>
 						<div class="preview-controls">
-							<!--<menu-button :label="'Export as %s'" :options="['OBJ', 'GLTF', 'PNG', 'RAW']" :display-names="['OBJ', 'GLTF', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>-->
-							<menu-button :label="'Export as %s'" :options="['OBJ', 'PNG', 'RAW']" :display-names="['OBJ', 'PNG (Preview Only)', 'M2 / WMO (Raw)']" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
+							<menu-button :options="menuButtonModels" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 						</div>
 						<div id="model-sidebar" class="sidebar">
 							<span class="header">Listing</span>
