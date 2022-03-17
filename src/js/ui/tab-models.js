@@ -240,11 +240,13 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
 
 			const outFile = ExportHelper.replaceExtension(exportPath, '.png');
+			const outDir = path.dirname(outFile);
+
 			await buf.writeToFile(outFile);
 			exportPaths.writeLine('PNG:' + outFile);
 
 			log.write('Saved 3D preview screenshot to %s', outFile);
-			core.setToast('success', util.format('Successfully exported preview to %s!', outFile), null, -1);
+			core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 		} else {
 			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!', null, -1);
 		}
