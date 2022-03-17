@@ -243,8 +243,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			await buf.writeToFile(outFile);
 			exportPaths.writeLine('PNG:' + outFile);
 
-			log.write('Saved 3D preview screenshot to %s', exportPath);
-			core.setToast('success', util.format('Successfully exported preview to %s!', exportPath), null, -1);
+			log.write('Saved 3D preview screenshot to %s', outFile);
+			core.setToast('success', util.format('Successfully exported preview to %s!', outFile), null, -1);
 		} else {
 			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!', null, -1);
 		}
