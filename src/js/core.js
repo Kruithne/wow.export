@@ -129,7 +129,8 @@ const view = {
 		//{ label: 'Export glTF', value: 'GLTF' },
 		//{ label: 'Export glTF (Binary)', value: 'GLB' },
 		{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
-		{ label: 'Export PNG (3D Preview)', value: 'PNG' }
+		{ label: 'Export PNG (3D Preview)', value: 'PNG' },
+		{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 	]
 };
 

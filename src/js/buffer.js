@@ -929,6 +929,14 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Returns the entire buffer encoded as base64.
+	 * @returns {string}
+	 */
+	toBase64() {
+		return this._buf.toString('base64');
+	}
+
+	/**
 	 * Replace the internal buffer with a different capacity.
 	 * If the specified capacity is lower than the current, there may be data loss.
 	 * @param {number} capacity New capacity of the internal buffer.

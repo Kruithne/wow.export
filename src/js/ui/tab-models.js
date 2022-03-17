@@ -230,25 +230,33 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 	const manifest = { type: 'MODELS', exportID, succeeded: [], failed: [] };
 
-	if (format === 'PNG') {
+	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath) {
 			core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
-			const exportPath = ExportHelper.getExportPath(activePath);
-
+			
 			const canvas = document.getElementById('model-preview').querySelector('canvas');
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+			
+			if (format === 'PNG') {
+				const exportPath = ExportHelper.getExportPath(activePath);
+				const outFile = ExportHelper.replaceExtension(exportPath, '.png');
+				const outDir = path.dirname(outFile);
 
-			const outFile = ExportHelper.replaceExtension(exportPath, '.png');
-			const outDir = path.dirname(outFile);
+				await buf.writeToFile(outFile);
+				exportPaths.writeLine('PNG:' + outFile);
 
-			await buf.writeToFile(outFile);
-			exportPaths.writeLine('PNG:' + outFile);
+				log.write('Saved 3D preview screenshot to %s', outFile);
+				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
+			} else if (format === 'CLIPBOARD') {
+				const clipboard = nw.Clipboard.get();
+				clipboard.set(buf.toBase64(), 'png', true);
 
-			log.write('Saved 3D preview screenshot to %s', outFile);
-			core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
+				log.write('Copied 3D preview to clipboard (%s)', activePath);
+				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
+			}
 		} else {
-			core.setToast('error', 'The PNG export option only works for model previews. Preview something first!', null, -1);
+			core.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
 		const casc = core.view.casc;
