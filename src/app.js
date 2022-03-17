@@ -250,6 +250,15 @@ document.addEventListener('click', function(e) {
 			 */
 			setScreen: function(screenID, preserve = false) {
 				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
+
+				// Ensure that all context menus are absorbed by screen changes.
+				const contextMenus = core.view.contextMenus;
+				for (const [key, value] of Object.entries(contextMenus)) {
+					if (value === true)
+						contextMenus[key] = false;
+					else if (value !== false)
+						contextMenus[key] = null;
+				}
 				
 				if (preserve) {
 					if (this.screenStack[0] !== screenID)
