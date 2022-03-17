@@ -20,6 +20,7 @@ const state = {
 	offsetY: 0,
 	zoomFactor: 2,
 	tileQueue: [],
+	selectCache: new Set()
 };
 
 Vue.component('map-viewer', {
@@ -38,6 +39,9 @@ Vue.component('map-viewer', {
 			hoverInfo: '',
 			hoverTile: null,
 			isHovering: false,
+			isPanning: false,
+			isSelecting: false,
+			selectState: true
 		}
 	},
 
@@ -330,12 +334,52 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * @param {MouseEvent} event 
+		 * @returns 
+		 */
+		handleTileInteraction: function(event, isFirst = false) {
+			// Calculate which chunk we shift-clicked on.
+			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
+			const index = (point.tileX * MAP_SIZE) + point.tileY;
+
+			// Prevent toggling a tile that we've already touched during this selection.
+			if (state.selectCache.has(index))
+				return;
+
+			state.selectCache.add(index);
+
+			if (this.mask) {
+				// If we have a WDT, and this tile is not defined, disallow selection.
+				if (this.mask[index] !== 1)
+					return;
+			} else {
+				// No WDT, disallow selection if tile is not rendered.
+				if (typeof state.cache[index] !== 'object')
+					return;
+			}
+
+			const check = this.selection.indexOf(index);
+			if (isFirst)
+				this.selectState = check > -1;
+
+			if (this.selectState && check > -1)
+				this.selection.splice(check, 1);
+			else if (!this.selectState && check === -1)
+				this.selection.push(index);
+
+			// Trigger a re-render so the overlay updates.
+			this.render();
+		},
+
+		/**
 		 * Invoked on mousemove events captured on the document.
 		 * @param {MouseEvent} event
 		 */
 		handleMouseMove: function(event) {
-			if (this.isPanning) {
-				// Calculate the distance from our mousesdown event.
+			if (this.isSelecting) {
+				this.handleTileInteraction(event, false);
+			} else if (this.isPanning) {
+				// Calculate the distance from our mousedown event.
 				const deltaX = this.mouseBaseX - event.clientX;
 				const deltaY = this.mouseBaseY - event.clientY;
 
@@ -355,6 +399,11 @@ Vue.component('map-viewer', {
 		handleMouseUp: function(event) {
 			if (this.isPanning)
 				this.isPanning = false;
+
+			if (this.isSelecting) {
+				this.isSelecting = false;
+				state.selectCache.clear();
+			}
 		},
 
 		/**
@@ -363,29 +412,8 @@ Vue.component('map-viewer', {
 		 */
 		handleMouseDown: function(event) {
 			if (event.shiftKey) {
-				// Calculate which chunk we shift-clicked on.
-				const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
-				const index = (point.tileX * MAP_SIZE) + point.tileY;
-
-				if (this.mask) {
-					// If we have a WDT, and this tile is not defined, disallow selection.
-					if (this.mask[index] !== 1)
-						return;
-				} else {
-					// No WDT, disallow selection if tile is not rendered.
-					if (typeof state.cache[index] !== 'object')
-						return;
-				}
-
-				// Either select or deselect depending on current state.
-				const check = this.selection.indexOf(index);
-				if (check > -1)
-					this.selection.splice(check, 1);
-				else
-					this.selection.push(index);
-
-				// Trigger a re-render so the overlay updates.
-				this.render();
+				this.handleTileInteraction(event, true);
+				this.isSelecting = true;
 			} else if (!this.isPanning) {
 				this.isPanning = true;
 
