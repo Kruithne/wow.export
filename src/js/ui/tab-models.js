@@ -418,7 +418,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							const basename = path.basename(fileName);
 							if (config.modelsExportSkel && m2.skeletonFileID) {
 								const skelData = await casc.getFile(m2.skeletonFileID);
-								const skelFile = path.join(outDir, basename + '.skel');
+								const skelFile = path.join(outDir, ExportHelper.replaceExtension(basename, '.skel'));
 
 								await skelData.writeToFile(skelFile);
 								fileManifest.push({ type: 'SKEL', fileDataID: m2.skeletonFileID, file: skelFile });
@@ -427,7 +427,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							if (config.modelsExportBone && m2.boneFileIDs) {
 								for (let i = 0, n = m2.boneFileIDs.length; i < n; i++) {
 									const boneData = await casc.getFile(m2.boneFileIDs[i]);
-									const boneFile = path.join(outDir, basename + '_' + i + '.bone');
+									const boneFile = path.join(outDir, ExportHelper.replaceExtension(basename, '_' + i + '.bone'));
 
 									await boneData.writeToFile(boneFile);
 									fileManifest.push({ type: 'BONE', fileDataID: m2.boneFileIDs[i], file: boneFile });
