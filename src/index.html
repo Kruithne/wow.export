@@ -81,6 +81,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Display File Lists in Numerical Order (FileDataID)</h1>
+						<p>If enabled, all file lists will be ordered numerically by file ID, otherwise alphabetically by filename.</p>
+						<label class="ui-checkbox">
+						<input type="checkbox" v-model="configEdit.listfileSortByID"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Load Unknown Files (Requires Restart)</h1>
 						<p>If enabled, wow.export will scan various database files in the client to locate unnamed textures, models and sounds.</p>
 						<label class="ui-checkbox">

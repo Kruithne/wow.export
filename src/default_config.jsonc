@@ -7,6 +7,7 @@
 {
 	"listfileURL": "https://www.kruithne.net/wow.export/data/listfile/master?v=%s",
 	"listfileCacheRefresh": 3,
+	"listfileSortByID": false,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/master/definitions/%s.dbd",
 	"updateURL": "https://www.kruithne.net/wow.export/update/%s/",
 	"cacheExpiry": 7,

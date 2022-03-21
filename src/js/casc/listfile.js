@@ -182,30 +182,37 @@ const getFilenamesByExtension = (exts, includeID = false) => {
 	if (!Array.isArray(exts))
 		exts = [exts];
 
-	const entries = [];
+	let entries = [];
+
 	for (const [fileDataID, filename] of idLookup.entries()) {
 		for (const ext of exts) {
 			if (Array.isArray(ext)) {
 				if (filename.endsWith(ext[0]) && !filename.match(ext[1])) {
-					if (includeID)
-						entries.push(filename + ' [' + fileDataID + ']');
-					else
-						entries.push(filename);
+					entries.push(fileDataID);
 					continue;
 				}
 			} else {
 				if (filename.endsWith(ext)) {
-					if (includeID)
-						entries.push(filename + ' [' + fileDataID + ']');
-					else
-						entries.push(filename);
+					entries.push(fileDataID);
 					continue;
 				}
 			}
 		}
 	}
 
-	entries.sort();
+	// If sorting by ID, perform the sort while the array is only IDs.
+	if (core.view.config.listfileSortByID)
+		entries.sort((a, b) => a - b);
+
+	if (includeID)
+		entries = entries.map(e => idLookup.get(e) + ' [' + e + ']');
+	else
+		entries = entries.map(e => idLookup.get(e));
+
+	// If sorting by name, sort now that the filenames have been added.
+	if (!core.view.config.listfileSortByID)
+		entries.sort();
+
 	return entries;
 };
 

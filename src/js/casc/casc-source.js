@@ -100,9 +100,10 @@ class CASC {
 	}
 
 	/**
-	 * Creates filtered versions of the master listfile.
+	 * Returns an array of model formats to display.
+	 * @returns {Array}
 	 */
-	async filterListfile() {
+	getModelFormats() {
 		// Filters for the model viewer depending on user settings.
 		const modelExt = [];
 		if (core.view.config.modelsShowM2)
@@ -111,18 +112,28 @@ class CASC {
 		if (core.view.config.modelsShowWMO)
 			modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
+		return modelExt;
+	}
+
+	updateListfileFilters() {
+		const showFileIDs = core.view.config.listfileShowFileDataIDs;
+		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp', showFileIDs);
+		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound'], showFileIDs);
+		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
+		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
+		core.view.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats(), showFileIDs);
+		core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2', showFileIDs);
+	}
+
+	/**
+	 * Creates filtered versions of the master listfile.
+	 */
+	async filterListfile() {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 
-		core.view.$watch('config.listfileShowFileDataIDs', () => {
-			const showFileIDs = core.view.config.listfileShowFileDataIDs;
-			core.view.listfileTextures = listfile.getFilenamesByExtension('.blp', showFileIDs);
-			core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound'], showFileIDs);
-			core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
-			core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
-			core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, showFileIDs);
-			core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2', showFileIDs);
-		}, { immediate: true });
+		core.view.$watch('config.listfileSortByID', () => this.updateListfileFilters());
+		core.view.$watch('config.listfileShowFileDataIDs', () => this.updateListfileFilters(), { immediate: true });
 	}
 
 	/**
