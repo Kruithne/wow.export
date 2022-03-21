@@ -583,6 +583,7 @@ class WMOExporter {
 			json.addProperty('areaTableID', wmo.areaTableID);
 			json.addProperty('boundingBox1', wmo.boundingBox1);
 			json.addProperty('boundingBox2', wmo.boundingBox2);
+			json.addProperty('fog', wmo.fogs);
 			json.addProperty('flags', wmo.flags);
 
 			const groups = Array(wmo.groups.length);
