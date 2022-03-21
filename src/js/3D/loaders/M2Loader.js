@@ -60,7 +60,7 @@ class M2Loader {
 	
 			switch (chunkID) {
 				case constants.MAGIC.MD21: await this.parseChunk_MD21(); break;
-				case CHUNK_SFID: this.parseChunk_SFID(); break;
+				case CHUNK_SFID: this.parseChunk_SFID(chunkSize); break;
 				case CHUNK_TXID: this.parseChunk_TXID(); break;
 				case CHUNK_SKID: this.parseChunk_SKID(); break;
 				case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
@@ -97,15 +97,21 @@ class M2Loader {
 
 	/**
 	 * Parse SFID chunk for skin file data IDs.
+	 * @param {number} chunkSize
 	 */
-	parseChunk_SFID() {
+	parseChunk_SFID(chunkSize) {
 		if (this.viewCount === undefined)
 			throw new Error('Cannot parse SFID chunk in M2 before MD21 chunk!');
 
+		const lodSkinCount = (chunkSize / 4) - this.viewCount;
 		this.skins = new Array(this.viewCount);
+		this.lodSkins = new Array(lodSkinCount);
 
 		for (let i = 0; i < this.viewCount; i++)
 			this.skins[i] = new Skin(this.data.readUInt32LE());
+
+		for (let i = 0; i < lodSkinCount; i++)
+			this.lodSkins[i] = new Skin(this.data.readUInt32LE());
 	}
 
 	/**

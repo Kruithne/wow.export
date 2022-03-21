@@ -413,6 +413,19 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 									await skinData.writeToFile(skinFile);
 									fileManifest.push({ type: 'SKIN', fileDataID: skin.fileDataID, file: skinFile });
 								}
+
+								const lodSkins = m2.lodSkins;
+								for (const lodSkin of lodSkins) {
+									// Abort if the export has been cancelled.
+									if (helper.isCancelled())
+										return;
+
+									const skinData = await casc.getFile(lodSkin.fileDataID);
+									const skinFile = path.join(outDir, path.basename(lodSkin.fileName));
+
+									await skinData.writeToFile(skinFile);
+									fileManifest.push({ type: 'SKIN_LOD', fileDataID: lodSkin.fileDataID, file: skinFile });
+								}
 							}
 
 							const basename = path.basename(fileName);
