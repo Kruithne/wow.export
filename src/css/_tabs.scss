@@ -216,12 +216,11 @@
 	grid-template-columns: unset;
 
 	&-tray {
-		display: grid;
-		grid-template-columns: 1fr auto;
+		display: flex;
 		margin: 10px;
 
-		input[type="button"] {
-			grid-row: 2;
+		.filter {
+			flex-grow: 1;
 		}
 	}
 }
