@@ -13,6 +13,7 @@ const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const FileWriter = require('../file-writer');
+const BLPFile = require('../casc/blp');
 
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
@@ -59,6 +60,52 @@ const getModelDisplays = (fileDataID) => {
 	return displays ?? [];
 };
 
+/**
+ * Clear the currently active texture preview.
+ */
+const clearTexturePreview = () => {
+	core.view.modelTexturePreviewURL = '';
+};
+
+/**
+ * Preview a texture by the given fileDataID.
+ * @param {number} fileDataID 
+ * @param {string} name
+ */
+const previewTextureByID = async (fileDataID, name) => {
+	const texture = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID);
+
+	core.view.isBusy++;
+	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	log.write('Previewing texture file %s', texture);
+
+	try {
+		const view = core.view;
+		const file = await core.view.casc.getFile(fileDataID);
+
+		const blp = new BLPFile(file);
+
+		view.modelTexturePreviewURL = blp.getDataURL(view.config.exportChannelMask);
+		view.modelTexturePreviewWidth = blp.width;
+		view.modelTexturePreviewHeight = blp.height;
+		view.modelTexturePreviewName = name;
+
+		core.hideToast();
+	} catch (e) {
+		if (e instanceof EncryptionError) {
+			// Missing decryption key.
+			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
+		} else {
+			// Error reading/parsing texture.
+			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
+			log.write('Failed to open CASC file: %s', e.message);
+		}
+	}
+
+	core.view.isBusy--;
+};
+
 const previewModel = async (fileName) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
@@ -66,6 +113,9 @@ const previewModel = async (fileName) => {
 
 	// Reset texture ribbon.
 	textureRibbon.reset();
+
+	// Hide current texture preview.
+	clearTexturePreview();
 
 	// Reset skin selection.
 	core.view.modelViewerSkins = [];
@@ -616,6 +666,11 @@ core.registerLoadFunc(async () => {
 		const first = listfile.stripFileEntry(selection[0]);
 		if (!core.view.isBusy && first && activePath !== first)
 			previewModel(first);
+	});
+
+	// Track when the user clicks to preview a model texture.
+	core.events.on('click-preview-texture', async (fileDataID, displayName) => {
+		await previewTextureByID(fileDataID, displayName);
 	});
 
 	// Track when the user clicks to export selected textures.

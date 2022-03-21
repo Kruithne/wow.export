@@ -442,6 +442,7 @@
 								<div v-for="slot in textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="contextMenus.nodeTextureRibbon = slot"></div>
 								<div id="texture-ribbon-next" v-if="textureRibbonPage < textureRibbonMaxPages - 1" @click.self="textureRibbonPage++"></div>
 								<context-menu :node="contextMenus.nodeTextureRibbon" v-slot:default="context" @close="contextMenus.nodeTextureRibbon = null">
+									<span @click.self="click('preview-texture', $event, context.node.fileDataID, context.node.displayName)">Preview {{ context.node.displayName }}</span>
 									<span @click.self="goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
 									<span @click.self="copyToClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
 									<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
@@ -449,6 +450,12 @@
 									<span @click.self="copyToClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
 								</context-menu>
 							</resize-layer>
+							<div id="model-texture-preview" v-if="modelTexturePreviewURL.length > 0" class="preview-background">
+								<div id="model-texture-preview-toast" @click="modelTexturePreviewURL = ''">Previewing {{ modelTexturePreviewName }}, click here to return to the model</div>
+								<div class="image" :style="{ 'max-width': modelTexturePreviewWidth + 'px', 'max-height': modelTexturePreviewHeight + 'px' }">
+									<div class="image" :style="{ 'background-image': 'url(' + modelTexturePreviewURL + ')' }"></div>
+								</div>
+							</div>
 							<div class="preview-background" id="model-preview">
 								<model-viewer :context="modelViewerContext"></model-viewer>
 							</div>

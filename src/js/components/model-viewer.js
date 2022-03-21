@@ -66,5 +66,5 @@ Vue.component('model-viewer', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-model-viewer"></div>`
+	template: `<div class="image ui-model-viewer"></div>`
 });

@@ -87,6 +87,10 @@ const view = {
 	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 	textureRibbonPage: 0, // Active page of texture slots to render.
 	itemViewerTypeMask: [], // Active item type control.
+	modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
+	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
+	modelTexturePreviewURL: '', // Active URL of the texture preview image on the model viewer.
+	modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.

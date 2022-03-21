@@ -248,6 +248,7 @@
 	right: 0;
 	display: flex;
 	justify-content: center;
+	z-index: 2;
 
 	&-next, &-prev {
 		width: 30px;
@@ -311,12 +312,31 @@
 		width: 100%;
 		height: 100%;
 
-		div {
+		.image {
 			width: 100%;
 			height: 100%;
 			background-repeat: no-repeat;
 			background-size: contain;
 		}
+	}
+}
+
+#model-texture-preview {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+
+	&-toast {
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		text-align: center;
+		padding: 5px;
+		background: rgba(0, 0, 0, 0.753);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 }
 

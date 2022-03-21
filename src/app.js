@@ -365,7 +365,7 @@ document.addEventListener('click', function(e) {
 			onTextureRibbonResize: function(width) {
 				textureRibbon.onResize(width);
 			},
-
+			
 			/**
 			 * Switches to the textures tab and filters for the given file.
 			 * @param {number} fileDataID 
