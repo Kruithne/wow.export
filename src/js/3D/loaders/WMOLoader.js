@@ -128,6 +128,31 @@ const WMOChunkHandlers = {
 		this.textureNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
 	},
 
+	// MFOG (Fog) [WMO Root]
+	0x4D464F47: function(data, chunkSize) {
+		const count = chunkSize / 48;
+		const fogs = this.fogs = new Array(count);
+
+		for (let i = 0; i < count; i++) {
+			fogs[i] = {
+				flags: data.readUInt32LE(),
+				position: data.readFloatLE(3),
+				radiusSmall: data.readFloatLE(),
+				radiusLarge: data.readFloatLE(),
+				fog: {
+					end: data.readFloatLE(),
+					startScalar: data.readFloatLE(),
+					color: data.readUInt32LE()
+				},
+				underwaterFog: {
+					end: data.readFloatLE(),
+					startScalar: data.readFloatLE(),
+					color: data.readUInt32LE()
+				}
+			};
+		}
+	},
+
 	// MOMT (Materials) [WMO Root]
 	0x4D4F4D54: function(data, chunkSize) {
 		const count = chunkSize / 64;
