@@ -222,6 +222,10 @@
 		.filter {
 			flex-grow: 1;
 		}
+
+		input[type="button"] {
+			margin-right: 5px;
+		}
 	}
 }
 

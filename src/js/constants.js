@@ -110,5 +110,11 @@ module.exports = {
 	MAGIC: {
 		MD21: 0x3132444D, // M2 model magic.
 		MD20: 0x3032444D // M2 model magic (legacy)
-	}
+	},
+
+	FILE_IDENTIFIERS: [
+		{ match: 'OggS', ext: '.ogg' },
+		{ match: ['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'], ext: '.mp3' },
+		{ match: 'AFM2', ext: '.anim' }
+	]
 };

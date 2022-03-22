@@ -226,6 +226,16 @@ const formatEntries = (entries) => {
 	return entries;
 };
 
+const ingestIdentifiedFiles = (entries) => {
+	for (const [fileDataID, ext] of entries) {
+		const fileName = 'unknown/' + fileDataID + ext;
+		idLookup.set(fileDataID, fileName);
+		nameLookup.set(fileName, fileDataID);
+	}
+	
+	core.events.emit('listfile-needs-updating');
+};
+
 /**
  * Returns a full listfile, sorted and formatted.
  * @returns {Array}
@@ -325,5 +335,6 @@ module.exports = {
 	stripFileEntry,
 	formatEntries,
 	formatUnknownFile,
+	ingestIdentifiedFiles,
 	isLoaded
 };
