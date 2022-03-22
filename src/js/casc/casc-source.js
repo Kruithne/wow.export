@@ -116,13 +116,12 @@ class CASC {
 	}
 
 	updateListfileFilters() {
-		const showFileIDs = core.view.config.listfileShowFileDataIDs;
-		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp', showFileIDs);
-		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound'], showFileIDs);
-		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi', showFileIDs);
-		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], showFileIDs);
-		core.view.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats(), showFileIDs);
-		core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2', showFileIDs);
+		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
+		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
+		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
+		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
+		core.view.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats());
+		core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2');
 	}
 
 	/**
@@ -132,8 +131,10 @@ class CASC {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 
-		core.view.$watch('config.listfileSortByID', () => this.updateListfileFilters());
-		core.view.$watch('config.listfileShowFileDataIDs', () => this.updateListfileFilters(), { immediate: true });
+		core.events.on('listfile-needs-updating', () => this.updateListfileFilters());
+
+		core.view.$watch('config.listfileSortByID', () => core.events.emit('listfile-needs-updating'));
+		core.view.$watch('config.listfileShowFileDataIDs', () => core.events.emit('listfile-needs-updating'), { immediate: true });
 	}
 
 	/**

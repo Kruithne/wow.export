@@ -216,6 +216,10 @@ body {
 		background-image: url(./fa-icons/database.svg);
 	}
 
+	&-raw::before {
+		background-image: url(./fa-icons/fish.svg);
+	}
+
 	&-extra {
 		margin-left: auto;
 		width: 20px;

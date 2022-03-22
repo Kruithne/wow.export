@@ -51,6 +51,7 @@ const view = {
 	userInputFilterMaps: '', // Value of the 'filter' field for maps.
 	userInputFilterItems: '', // Value of the 'filter' field of items.
 	userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
+	userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
@@ -59,6 +60,7 @@ const view = {
 	selectionMaps: [], // Current user selection of maps.
 	selectionItems: [], // Current user selection of items.
 	selectionDB2s: [], // Current user selection of DB2s.
+	selectionRaw: [], // Current user selection of raw files.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
@@ -66,6 +68,7 @@ const view = {
 	listfileModels: [], // Filtered listfile for M2/WMO models.
 	listfileItems: [], // Filtered item entries.
 	listfileDB2s: [], // Filtered DB2 entries.
+	listfileRaw: [], // Full raw file listfile.
 	tableBrowserHeaders: [], // DB2 headers
 	tableBrowserRows: [], // DB2 rows
 	availableLocale: Locale, // Available CASC locale.

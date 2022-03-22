@@ -143,7 +143,7 @@ const loadUnknowns = async () => {
 		if (!idLookup.has(entry.FileDataID)) {
 			// List unknown sound files using the .unk_sound extension. Files will be
 			// dynamically checked upon export and given the correct extension.
-			const fileName = 'unknown_' + entry.FileDataID + '.unk_sound';
+			const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';
 			idLookup.set(entry.FileDataID, fileName);
 			nameLookup.set(fileName, entry.FileDataID);
 			unknownCount++;
@@ -163,7 +163,7 @@ const loadIDTable = async (ids, ext) => {
 
 	for (const fileDataID of ids) {
 		if (!idLookup.has(fileDataID)) {
-			const fileName = 'unknown_' + fileDataID + ext;
+			const fileName = 'unknown/' + fileDataID + ext;
 			idLookup.set(fileDataID, fileName);
 			nameLookup.set(fileName, fileDataID);
 			loadCount++;
@@ -176,8 +176,9 @@ const loadIDTable = async (ids, ext) => {
 /**
  * Return an array of filenames ending with the given extension(s).
  * @param {string|Array} exts 
+ * @returns {Array}
  */
-const getFilenamesByExtension = (exts, includeID = false) => {
+const getFilenamesByExtension = (exts) => {
 	// Box into an array for reduced code.
 	if (!Array.isArray(exts))
 		exts = [exts];
@@ -200,14 +201,23 @@ const getFilenamesByExtension = (exts, includeID = false) => {
 		}
 	}
 
+	return formatEntries(entries);
+};
+
+/**
+ * Sort and format listfile entries for file list display.
+ * @param {Array} entries 
+ * @returns {Array}
+ */
+const formatEntries = (entries) => {
 	// If sorting by ID, perform the sort while the array is only IDs.
 	if (core.view.config.listfileSortByID)
 		entries.sort((a, b) => a - b);
 
-	if (includeID)
-		entries = entries.map(e => idLookup.get(e) + ' [' + e + ']');
+	if (core.view.config.listfileShowFileDataIDs)
+		entries = entries.map(e => getByIDOrUnknown(e) + ' [' + e + ']');
 	else
-		entries = entries.map(e => idLookup.get(e));
+		entries = entries.map(e => getByIDOrUnknown(e));
 
 	// If sorting by name, sort now that the filenames have been added.
 	if (!core.view.config.listfileSortByID)
@@ -217,12 +227,29 @@ const getFilenamesByExtension = (exts, includeID = false) => {
 };
 
 /**
+ * Returns a full listfile, sorted and formatted.
+ * @returns {Array}
+ */
+const getFullListfile = () => {
+	return formatEntries([...idLookup.keys()]);
+};
+
+/**
  * Get a filename from a given file data ID.
  * @param {number} id 
  * @returns {string|undefined}
  */
 const getByID = (id) => {
 	return idLookup.get(id);
+};
+
+/**
+ * Get a filename from a given file data ID or format it as an unknown file.
+ * @param {number} id 
+ * @returns {string}
+ */
+const getByIDOrUnknown = (id) => {
+	return idLookup.get(id) ?? formatUnknownFile(id);
 };
 
 /**
@@ -292,9 +319,11 @@ module.exports = {
 	loadUnknowns,
 	getByID,
 	getByFilename,
+	getFullListfile,
 	getFilenamesByExtension,
 	getFilteredEntries,
 	stripFileEntry,
+	formatEntries,
 	formatUnknownFile,
 	isLoaded
 };

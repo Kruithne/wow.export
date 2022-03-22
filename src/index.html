@@ -22,6 +22,7 @@
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
+						<div class="option" id="nav-raw" @click="setScreen('tab-raw')" :class="{ active: screen === 'tab-raw' }">Raw</div>
 					</template>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
@@ -89,8 +90,8 @@
 						</label>
 					</div>
 					<div>
-						<h1>Load Unknown Files (Requires Restart)</h1>
-						<p>If enabled, wow.export will scan various database files in the client to locate unnamed textures, models and sounds.</p>
+						<h1>Find Unknown Files (Requires Restart)</h1>
+						<p>If enabled, wow.export will use various methods to locate unknown files.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableUnknownFiles"/>
 							<span>Enable</span>
@@ -553,6 +554,20 @@
 								<span class="header">Doodad Sets</span>
 								<checkboxlist :items="modelViewerWMOSets"></checkboxlist>
 							</template>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab list-tab" id="tab-raw" v-if="screen === 'tab-raw'">
+						<div class="list-container">
+							<listbox :selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file"></listbox>
+						</div>
+						<div id="tab-raw-tray">
+							<div class="filter">
+								<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+								<input type="text" v-model="userInputFilterRaw" placeholder="Filter raw files..."/>
+							</div>
+							<input type="button" value="Export Selected" @click="click('export-raw', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
 				</keep-alive>
