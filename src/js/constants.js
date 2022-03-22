@@ -115,6 +115,12 @@ module.exports = {
 	FILE_IDENTIFIERS: [
 		{ match: 'OggS', ext: '.ogg' },
 		{ match: ['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'], ext: '.mp3' },
-		{ match: 'AFM2', ext: '.anim' }
+		{ match: 'AFM2', ext: '.anim' },
+		{ match: 'BLP2', ext: '.blp' },
+		{ match: 'MD20', ext: '.m2' },
+		{ match: 'MD21', ext: '.m2' },
+		{ match: 'SKIN', ext: '.skin' },
+		{ match: '\x01\x00\x00\x00BIDA', ext: '.bone' },
+		{ match: 'SYHP\x02\x00\x00\x00', ext: '.phys' }
 	]
 };
