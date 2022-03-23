@@ -25,7 +25,7 @@ class CASCLocal extends CASC {
 	 * @param {string} dir Installation path.
 	 */
 	constructor(dir) {
-		super();
+		super(false);
 
 		this.dir = dir;
 		this.dataDir = path.join(dir, constants.BUILD.DATA_DIR);

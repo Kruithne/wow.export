@@ -520,6 +520,29 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Read a null-terminated string from the buffer.
+	 * @param {string} [encoding=utf8]
+	 * @returns 
+	 */
+	readNullTerminatedString(encoding = 'utf8') {
+		const startPos = this.offset;
+		let length = 0;
+
+		while (this.remainingBytes > 0) {
+			if (this.readUInt8() === 0x0)
+				break;
+
+			length++;
+		}
+
+		this.seek(startPos);
+
+		const str = this.readString(length, encoding);
+		this.move(1); // Skip the null-terminator.
+		return str;
+	}
+
+	/**
 	 * Returns true if the buffer starts with any of the given string(s).
 	 * @param {string|array} input 
 	 * @param {string} [encoding=utf8]

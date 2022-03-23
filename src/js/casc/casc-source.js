@@ -11,6 +11,7 @@ const core = require('../core');
 const constants = require('../constants');
 const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
+const InstallManifest = require('./install-manifest');
 
 const WDCReader = require('../db/WDCReader');
 const DBModelFileData = require('../db/caches/DBModelFileData');
@@ -22,11 +23,12 @@ const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
 class CASC {
-	constructor() {
+	constructor(isRemote = false) {
 		this.encodingSizes = new Map();
 		this.encodingKeys = new Map();
 		this.rootTypes = [];
 		this.rootEntries = new Map();
+		this.isRemote = isRemote;
 
 		// Listen for configuration changes to cascLocale.
 		this.unhookConfig = core.view.$watch('config.cascLocale', (locale) => {
@@ -62,6 +64,20 @@ class CASC {
 		}
 
 		return entries;
+	}
+
+	/**
+	 * Retrieves the install manifest for this CASC instance.
+	 * @returns {InstallManifest}
+	 */
+	async getInstallManifest() {
+		const installKeys = this.buildConfig.install.split(' ');
+		const installKey = installKeys.length === 1 ? this.encodingKeys.get(installKeys[0]) : installKeys[1];
+
+		const raw = this.isRemote ? await this.getDataFile(this.formatCDNKey(installKey)) : await this.getDataFileWithRemoteFallback(installKey);
+		const manifest = new BLTEReader(raw, installKey);
+		
+		return new InstallManifest(manifest);
 	}
 
 	/**

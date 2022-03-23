@@ -212,6 +212,24 @@
 	}
 }
 
+#tab-install {
+	grid-template-columns: 1fr auto;
+
+	&-tray {
+		grid-row: 2;
+		display: flex;
+		margin: 10px;
+
+		.filter {
+			flex-grow: 1;
+		}
+	}
+
+	.sidebar {
+		grid-column: 2;
+	}
+}
+
 #tab-video, #tab-raw {
 	grid-template-columns: unset;
 

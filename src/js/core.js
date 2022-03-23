@@ -52,6 +52,7 @@ const view = {
 	userInputFilterItems: '', // Value of the 'filter' field of items.
 	userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 	userInputFilterRaw: '', // Value of the 'filter' field for raw files.
+	userInputFilterInstall: '', // Value of the 'filter' field for install files.
 	selectionTextures: [], // Current user selection of texture files.
 	selectionModels: [], // Current user selection of models.
 	selectionSounds: [], // Current user selection of sounds.
@@ -61,6 +62,7 @@ const view = {
 	selectionItems: [], // Current user selection of items.
 	selectionDB2s: [], // Current user selection of DB2s.
 	selectionRaw: [], // Current user selection of raw files.
+	selectionInstall: [], // Current user selection of install files.
 	listfileTextures: [], // Filtered listfile for texture files.
 	listfileSounds: [], // Filtered listfile for sound files.
 	listfileVideos: [], // Filtered listfile for video files.
@@ -69,6 +71,8 @@ const view = {
 	listfileItems: [], // Filtered item entries.
 	listfileDB2s: [], // Filtered DB2 entries.
 	listfileRaw: [], // Full raw file listfile.
+	listfileInstall: [], // Filtered listfile for install files.
+	installTags: [], // Install manifest tags.
 	tableBrowserHeaders: [], // DB2 headers
 	tableBrowserRows: [], // DB2 rows
 	availableLocale: Locale, // Available CASC locale.

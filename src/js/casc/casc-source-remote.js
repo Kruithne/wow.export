@@ -24,7 +24,7 @@ class CASCRemote extends CASC {
 	 * @param {string} region Region tag (eu, us, etc).
 	 */
 	constructor(region) {
-		super();
+		super(true);
 
 		this.archives = new Map();
 		this.region = region;
