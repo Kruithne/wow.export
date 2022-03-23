@@ -21,8 +21,8 @@ const computeRawFiles = async () => {
 			core.setToast('progress', 'Scanning game client for all files...');
 			await generics.redraw();
 
-			const rootEntries = core.view.casc.rootEntries;
-			core.view.listfileRaw = listfile.formatEntries([...rootEntries.keys()]);
+			const rootEntries = core.view.casc.getValidRootEntries();
+			core.view.listfileRaw = listfile.formatEntries(rootEntries);
 			core.setToast('success', util.format('Found %d files in the game client', core.view.listfileRaw.length));
 		} else {
 			core.setToast('progress', 'Scanning game client for all known files...');
@@ -34,11 +34,10 @@ const computeRawFiles = async () => {
 	}
 };
 
-// When the screen is first accessed, compute all files.
-core.events.on('screen-tab-raw', () => computeRawFiles());
-
-core.events.on('listfile-needs-updating', () => {
-	isDirty = true;
+core.registerLoadFunc(async () => {
+	core.events.on('screen-tab-raw', () => computeRawFiles());
+	core.events.on('listfile-needs-updating', () => { isDirty = true; });
+	core.view.$watch('config.cascLocale', () => { isDirty = true; });
 });
 
 // Track when the user clicks to auto-detect raw files.
@@ -74,7 +73,7 @@ core.events.on('click-detect-raw', async () => {
 		core.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length))
 
 		try {
-			const data = core.view.casc.getFile(fileDataID);
+			const data = await core.view.casc.getFile(fileDataID);
 			for (const check of constants.FILE_IDENTIFIERS) {
 				if (data.startsWith(check.match)) {
 					extensionMap.set(fileDataID, check.ext);
@@ -99,7 +98,7 @@ core.events.on('click-detect-raw', async () => {
 			core.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
 		}
 
-		core.setToast('success', util.format('%d of the %d selected files have been identified and added to '));
+		core.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
 	} else {
 		core.setToast('info', 'Unable to identify any of the selected files.');
 	}

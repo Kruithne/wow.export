@@ -40,6 +40,31 @@ class CASC {
 	}
 
 	/**
+	 * Provides an array of fileDataIDs that match the current locale.
+	 * @returns {Array.<number>}
+	 */
+	getValidRootEntries() {
+		const entries = [];
+
+		for (const [fileDataID, entry] of this.rootEntries.entries()) {
+			let include = false;
+
+			for (const rootTypeIdx of entry.keys()) {
+				const rootType = this.rootTypes[rootTypeIdx];
+				if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+					include = true;
+					break;
+				}
+			}
+
+			if (include)
+				entries.push(fileDataID);
+		}
+
+		return entries;
+	}
+
+	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
 	 */

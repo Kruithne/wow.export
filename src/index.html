@@ -567,7 +567,7 @@
 								<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 								<input type="text" v-model="userInputFilterRaw" placeholder="Filter raw files..."/>
 							</div>
-							<!--<input type="button" value="Auto-Detect Selected" @click="click('detect-raw', $event)" :class="{ disabled: isBusy }"/>-->
+							<input type="button" value="Auto-Detect Selected" @click="click('detect-raw', $event)" :class="{ disabled: isBusy }"/>
 							<input type="button" value="Export Selected" @click="click('export-raw', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
