@@ -48,8 +48,20 @@ class InstallManifest {
 			this.files[i] = {
 				name: data.readNullTerminatedString(),
 				hash: data.readHexString(this.hashSize),
-				size: data.readUInt32BE()
+				size: data.readUInt32BE(),
+				tags: []
 			};
+		}
+
+		// Pre-compute tags.
+		for (const tag of this.tags) {
+			const mask = tag.mask;
+			for (let i = 0, n = mask.length; i < n; i++) {
+				for (let j = 0; j < 8; j++) {
+					if ((mask[i] >>> (7 - j) & 0x1) === 1)
+						this.files[(i % n * 8) + j]?.tags.push(tag.name);
+				}
+			}
 		}
 	}
 }

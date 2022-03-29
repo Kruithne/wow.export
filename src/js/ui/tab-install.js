@@ -12,17 +12,14 @@ const listfile = require('../casc/listfile');
 let manifest = null;
 
 const updateInstallListfile = () => {
-	core.view.listfileInstall = manifest.files.filter((file, index) => {
-		const maskByte = Math.ceil(index / 8);
-		const mask = Math.pow(2, index % 8);
-
+	core.view.listfileInstall = manifest.files.filter((file) => {
 		for (const tag of core.view.installTags) {
-			if (tag.enabled && (tag.mask[maskByte] & mask) === mask)
+			if (tag.enabled && file.tags.includes(tag.label))
 				return true;
 		}
 
 		return false;
-	}).map(e => e.name);
+	}).map(e => e.name + ' [' + e.tags.join(', ') + ']');
 };
 
 core.events.once('screen-tab-install', async () => {
