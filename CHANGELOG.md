@@ -20,6 +20,7 @@
 - Fixed numerous internal issues related to parsing data tables.
 - Fixed an issue that would cause the M2/WMO filtering to break when toggling file data ID visibility.
 - Fixed an issue that caused .skel/.bone files included in M2 raw exports to incorrectly include the .m2 file extension.
+- Replaced the default Data Table Definition Repository URL with a proxy in the interest of users in China, where GitHub is firewalled.
 - Unknown sound, BLP and M2 files dynamically found via data-table scanning will now be placed on file lists as unknown/<id>.<ext> instead of `unknown_<id>.<ext>`.
 - Exporting a raw M2 file with the .skin file option enabled will now also export LOD skin files.
 - The texture ribbon on the 3D model viewer will now show associated textures for models that have no 3D geometry associated, such as spells.
