@@ -56,12 +56,13 @@ class CASCLocal extends CASC {
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
 	 * @param {boolean} [forceFallback=false]
+	 * @param {string} [contentKey=null]
 	 */
-	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false) {
+	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 			
-		const encodingKey = await super.getFile(fileDataID);
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
 		return new BLTEReader(data, encodingKey, partialDecryption);
 	}

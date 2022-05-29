@@ -93,14 +93,17 @@ class CASCRemote extends CASC {
 	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
-	 * @param {boolean} partialDecrypt
-	 * @param {boolean} suppressLog
+	 * @param {boolean} [partialDecryption=false]
+	 * @param {boolean} [suppressLog=false]
+	 * @param {boolean} [supportFallback=true]
+	 * @param {boolean} [forceFallback=false]
+	 * @param {string} [contentKey=null]
 	 */
-	async getFile(fileDataID, partialDecrypt = false, suppressLog = false) {
+	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
 
-		const encodingKey = await super.getFile(fileDataID);
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
 
 		if (data === null) {

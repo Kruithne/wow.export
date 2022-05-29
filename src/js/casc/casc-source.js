@@ -113,6 +113,20 @@ class CASC {
 	}
 
 	/**
+	 * @param {string} contentKey 
+	 * @returns {string}
+	 */
+	getEncodingKeyForContentKey(contentKey) {
+		const encodingKey = this.encodingKeys.get(contentKey);
+		if (encodingKey === undefined)
+			throw new Error('No encoding entry found: ' + contentKey);
+
+		// This underlying implementation returns the encoding key rather than a
+		// data file, allowing CASCLocal and CASCRemote to implement readers.
+		return encodingKey;
+	}
+
+	/**
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
 	 * @param {string} fileName 

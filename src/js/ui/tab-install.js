@@ -49,12 +49,14 @@ core.events.on('click-export-install', async () => {
 		if (helper.isCancelled())
 			return;
 
+			
 		fileName = listfile.stripFileEntry(fileName);
+		const file = manifest.files.find(e => e.name === fileName);
 		const exportPath = ExportHelper.getExportPath(fileName);
 
 		if (overwriteFiles || !await generics.fileExists(exportPath)) {
 			try {
-				const data = await core.view.casc.getFileByName(fileName);
+				const data = await core.view.casc.getFile(0, false, false, true, false, file.hash);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);
