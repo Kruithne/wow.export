@@ -1,5 +1,31 @@
-0.1.42 (29-05-2022)
-- Objection, speculation.
+0.1.43 (29-05-2022)
+- Added ability to click + drag when selecting map tiles, making large selections much quicker.
+- Added a "Copy to Clipboard" button for the model-viewer, allowing the 3D preview to be directly copied to the clipboard without needing to export, complete with transparency.
+- Added a "Copy to Clipboard" button to the texture tab, allowing the currently active  texture to be copied clipboard without needing to export, complete with transparency.
+- Added a "Copy to Clipboard" button for the text/script viewer.
+- Added the 'View in Explorer' option to the toast menu when exporting PNG previews for 3D models.
+- Added 'Preview' option to model viewer texture ribbon, allowing textures to be previewed without switching to the textures tab.
+- Added fog data (MFOG) to the advanced meta-data WMO exports under the fog property.
+- Added 'Display File Lists in Numerical Order' option to order by file data ID instead of alphabetically by filename.
+- Added 'Browse Install Manifest' feature to the right-hand navigation drop-down menu, allowing browsing/exporting of all installation (binary, executable, etc) files for the loaded game client.
+- Added 'Browse Raw Client Files' feature to the right-hand navigation drop-down menu, allowing browsing/exporting of all files in the loaded game client.
+- Added button to auto-detect file types for unknown files, found on the 'Browse Raw Client Files' screen.
+- Fixed an issue that prevented the first texture for an M2 model from showing on the 3D preview texture ribbon.
+- Fixed an issue that caused the PNG preview export for 3D models to display the wrong path in the log/toast.
+- Fixed a memory issue with PNG writing which should improve performance during exports.
+- Fixed an issue that would cause the application to run out of memory and crash when exporting high-resolution textures, or models that included such textures.
+- Fixed an issue which caused WMO models to sometimes show the wrong textures in the 3D preview.
+- Fixed numerous internal issues related to parsing data tables.
+- Fixed an issue that would cause the M2/WMO filtering to break when toggling file data ID visibility.
+- Fixed an issue that caused .skel/.bone files included in M2 raw exports to incorrectly include the .m2 file extension.
+- Unknown sound, BLP and M2 files dynamically found via data-table scanning will now be placed on file lists as unknown/<id>.<ext> instead of `unknown_<id>.<ext>`.
+- Exporting a raw M2 file with the .skin file option enabled will now also export LOD skin files.
+- The texture ribbon on the 3D model viewer will now show associated textures for models that have no 3D geometry associated, such as spells.
+- Adjusted a number of error messages to provide more helpful information.
+- Removed the buttons to view textures/maps on the wow.tools website.
+- Features previously accessed via buttons on the right-hand side of the main navigation menu have been consolidated into a single dedicated button found in the same location.
+- Implemented numerous tweaks to the visual design of wow.export.
+- The default window size of wow.export has been changed to 1370x988.
 
 0.1.42 (12-03-2022)
 - wow.export now has a new website located at https://www.kruithne.net/wow.export/
