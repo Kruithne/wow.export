@@ -21,6 +21,7 @@
 	"enableUnknownFiles": true,
 	"enableM2Skins": true,
 	"enableSharedTextures": true,
+	"enableSharedChildren": true,
 	"enableAbsoluteMTLPaths": false,
 	"enableAbsoluteCSVPaths": false,
 	"removePathSpaces": true,

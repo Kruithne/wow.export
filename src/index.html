@@ -108,11 +108,20 @@
 						</label>
 					</div>
 					<div>
-						<h1>Enable Shared Textures</h1>
+						<h1>Enable Shared Textures (Recommended)</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableSharedTextures"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Enable Shared Children (Recommended)</h1>
+						<p>If enabled, exported models on a WMO/ADT will be exported to their own path rather than with their parent.</p>
+						<p>This dramatically reduces disk space used by not duplicating models.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableSharedChildren"/>
 							<span>Enable</span>
 						</label>
 					</div>

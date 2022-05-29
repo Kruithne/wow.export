@@ -499,7 +499,11 @@ class WMOExporter {
 								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
-							const m2Path = ExportHelper.getExportPath(fileName);
+							let m2Path;
+							if (core.view.config.enableSharedChildren)
+								m2Path = ExportHelper.getExportPath(fileName);
+							else
+								m2Path = ExportHelper.replaceFile(out, fileName);
 
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {

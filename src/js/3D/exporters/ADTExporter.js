@@ -903,7 +903,11 @@ class ADTExporter {
 								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
-							const modelPath = ExportHelper.getExportPath(fileName);
+							let modelPath;
+							if (config.enableSharedChildren)
+								modelPath = ExportHelper.getExportPath(fileName);
+							else
+								modelPath = ExportHelper.replaceFile(out, fileName);
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
@@ -964,7 +968,11 @@ class ADTExporter {
 								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
-							const modelPath = ExportHelper.getExportPath(fileName);
+							let modelPath;
+							if (config.enableSharedChildren)
+								modelPath = ExportHelper.getExportPath(fileName);
+							else
+								modelPath = ExportHelper.replaceFile(out, fileName);
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
@@ -1038,7 +1046,13 @@ class ADTExporter {
 								fileName = listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
 							}
 
-							const modelPath = ExportHelper.getExportPath(fileName);
+							let modelPath;
+							if (config.enableSharedChildren)
+								modelPath = ExportHelper.getExportPath(fileName);
+							else
+								modelPath = ExportHelper.replaceFile(out, fileName);
+
+								
 							const doodadSets = useADTSets ? objAdt.doodadSets : [model.doodadSet];
 							const cacheID = fileDataID + '-' + doodadSets.join(',');
 
