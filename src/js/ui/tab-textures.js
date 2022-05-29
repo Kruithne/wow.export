@@ -118,7 +118,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
-	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
+	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
 
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;

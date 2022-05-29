@@ -11,6 +11,7 @@
 - Added 'Browse Raw Client Files' feature to the right-hand navigation drop-down menu, allowing browsing/exporting of all files in the loaded game client.
 - Added button to auto-detect file types for unknown files, found on the 'Browse Raw Client Files' screen.
 - Added 'Enable Shared Children' option in settings, which can be disabled so that objects within a WMO/ADT are exported into the output directory of the originally selected object instead of to their own directories.
+- Added 'Last Export File Location' option to control where the export manifest is written.
 - Fixed an issue that prevented the first texture for an M2 model from showing on the 3D preview texture ribbon.
 - Fixed an issue that caused the PNG preview export for 3D models to display the wrong path in the log/toast.
 - Fixed a memory issue with PNG writing which should improve performance during exports.

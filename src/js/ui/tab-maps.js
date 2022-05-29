@@ -219,7 +219,7 @@ const exportSelectedMap = async () => {
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
 
-	const exportPaths = new FileWriter(constants.LAST_EXPORT, 'utf8');
+	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
 
 	// The export helper provides the user with a link to the directory of the last exported
 	// item. Since we're using directory paths, we just append another segment here so that

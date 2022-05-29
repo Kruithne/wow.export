@@ -227,6 +227,10 @@ input[type="text"], input[type="number"] {
 	border-radius: 5px;
 	width: 300px;
 
+	&.long {
+		width: 600px;
+	}
+
 	&:focus, &:hover {
 		color: var(--font-highlight);
 	}

@@ -460,6 +460,25 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Returns the location of the last export manifest.
+			 * @returns {string}
+			 */
+			lastExportPath: function() {
+				if (this.config.lastExportFile.length > 0)
+					return this.config.lastExportFile;
+
+				return constants.LAST_EXPORT;
+			},
+
+			/**
+			 * Returns the default location of the last export manifest.
+			 * @returns {string}}
+			 */
+			lastExportPathDefault: function() {
+				return constants.LAST_EXPORT;
+			},
+
+			/**
 			 * Returns the currently 'active' screen, which is first on the stack.
 			 */
 			screen: function() {

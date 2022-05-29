@@ -69,5 +69,6 @@
 	"itemViewerEnabledTypes": ["Head", "Neck", "Shoulder", "Shirt", "Chest", "Waist", "Legs", "Feet", "Wrist", "Hands", "One-hand", "Off-hand", "Two-hand", "Main-hand", "Ranged", "Back", "Tabard"],
 	"pathFormat": "win32",
 	"rcpEnabled": false,
-	"rcpPort": 17751
+	"rcpPort": 17751,
+	"lastExportFile": ""
 }
