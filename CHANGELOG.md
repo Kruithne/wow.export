@@ -27,6 +27,8 @@
 - Features previously accessed via buttons on the right-hand side of the main navigation menu have been consolidated into a single dedicated button found in the same location.
 - Implemented numerous tweaks to the visual design of wow.export.
 - The default window size of wow.export has been changed to 1370x988.
+- Renamed the 'wow_classic_beta' branch to 'Beta: World of Warcraft Classic' with the tag 'Classic Beta'.
+- Renamed the 'wow_classic_ptr' branch to 'PTR: World of Warcraft Classic' with the tag 'Classic PTR'.
 
 0.1.42 (12-03-2022)
 - wow.export now has a new website located at https://www.kruithne.net/wow.export/
