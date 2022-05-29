@@ -34,7 +34,7 @@ core.events.once('screen-tab-install', async () => {
 
 // Track when the user clicks to export selected install files.
 core.events.on('click-export-install', async () => {
-	const userSelection = core.view.selectionRaw;
+	const userSelection = core.view.selectionInstall;
 	if (userSelection.length === 0) {
 		core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
