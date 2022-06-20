@@ -251,6 +251,8 @@ class M2Exporter {
 		if (exportBones) {
 			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
 			json.addProperty('bones', this.m2.bones);
+			json.addProperty('boneWeights', this.m2.boneWeights);
+			json.addProperty('boneIndicies', this.m2.boneIndices);
 
 			await json.write(config.overwriteFiles);
 		}
