@@ -610,7 +610,8 @@ class WMOExporter {
 					groupID: group.groupID,
 					materialInfo: group.materialInfo,
 					renderBatches: group.renderBatches,
-					vertexColours: group.vertexColours
+					vertexColours: group.vertexColours,
+					liquid: group.liquid
 				};
 			}
 

@@ -284,6 +284,63 @@ const WMOChunkHandlers = {
 		this.groupIDs = data.readUInt32LE(chunkSize / 4);
 	},
 
+	// MLIQ (Liquid Data) [WMO Group]
+	0x4D4C4951: function(data) {
+		// See https://wowdev.wiki/WMO#MLIQ_chunk for using this raw data.
+		const liquidVertsX = data.readUInt32LE();
+		const liquidVertsY = data.readUInt32LE();
+
+		const liquidTilesX = data.readUInt32LE();
+		const liquidTilesY = data.readUInt32LE();
+
+		const liquidCorner = data.readFloatLE(3);
+		const liquidMaterialID = data.readUInt16LE();
+
+		const vertCount = liquidVertsX * liquidVertsY;
+		const liquidVertices = new Array(vertCount);
+
+		for (let i = 0; i < vertCount; i++) {
+			// For water (SMOWVert) the data is structured as follows:
+			// uint8_t flow1;
+			// uint8_t flow2;
+			// uint8_t flow1Pct;
+			// uint8_t filler;
+
+			// For magma (SMOMVert) the data is structured as follows:
+			// int16_t s;
+			// int16_t t;
+
+			liquidVertices[i] = {
+				data: data.readUInt32LE(),
+				height: data.readFloatLE()
+			};
+		}
+
+		const tileCount = liquidTilesX * liquidTilesY;
+		const liquidTiles = new Array(tileCount);
+
+		for (let i = 0; i < tileCount; i++) {
+			liquidTiles[i] = {
+				legacyLiquidType: data.readUInt8(),
+				unk1: data.readUInt8(),
+				unk2: data.readUInt8(),
+				fishable: data.readUInt8(),
+				shared: data.readUInt8()
+			};
+		}
+
+		this.liquid = {
+			vertX: liquidVertsX,
+			vertY: liquidVertsY,
+			tileX: liquidTilesX,
+			tileY: liquidTilesY,
+			vertices: liquidVertices,
+			tiles: liquidTiles,
+			corner: liquidCorner,
+			materialID: liquidMaterialID
+		};
+	},
+
 	// MOCV (Vertex Colouring) [WMO Group]
 	0x4D4F4356: function(data, chunkSize) {
 		if (!this.vertexColours)
