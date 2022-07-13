@@ -285,7 +285,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MLIQ (Liquid Data) [WMO Group]
-	0x4D4C4951: function(data) {
+	/*0x4D4C4951: function(data) {
 		// See https://wowdev.wiki/WMO#MLIQ_chunk for using this raw data.
 		const liquidVertsX = data.readUInt32LE();
 		const liquidVertsY = data.readUInt32LE();
@@ -339,7 +339,7 @@ const WMOChunkHandlers = {
 			corner: liquidCorner,
 			materialID: liquidMaterialID
 		};
-	},
+	},*/
 
 	// MOCV (Vertex Colouring) [WMO Group]
 	0x4D4F4356: function(data, chunkSize) {
