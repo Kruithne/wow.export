@@ -109,10 +109,16 @@ class WMORenderer {
 			const material = wmo.materials[i];
 			const texture = new Texture(material.flags);
 
-			if (isClassic)
+			if (isClassic) {
 				texture.setFileName(wmo.textureNames[material.texture1]);
+			}
 			else
-				texture.fileDataID = material.texture1;
+			{
+				if (material.shader == 23)
+					texture.fileDataID = material.texture2;
+				else
+					texture.fileDataID = material.texture1;
+			}
 
 			if (texture.fileDataID > 0) {
 				const tex = new THREE.Texture();
