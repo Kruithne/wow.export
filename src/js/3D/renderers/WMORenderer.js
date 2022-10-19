@@ -157,6 +157,15 @@ class WMORenderer {
 			// Include texture2/texture3 in the texture ribbon.
 			this.loadAuxiliaryTextureForRibbon(material.texture2, wmo);
 			this.loadAuxiliaryTextureForRibbon(material.texture3, wmo);
+
+			if (material.shader == 23) {
+				this.loadAuxiliaryTextureForRibbon(material.color3, wmo);
+				this.loadAuxiliaryTextureForRibbon(material.runtimeData[0], wmo);
+				this.loadAuxiliaryTextureForRibbon(material.runtimeData[1], wmo);
+				this.loadAuxiliaryTextureForRibbon(material.runtimeData[2], wmo);
+				this.loadAuxiliaryTextureForRibbon(material.runtimeData[3], wmo);
+			}
+
 		}
 	}
 

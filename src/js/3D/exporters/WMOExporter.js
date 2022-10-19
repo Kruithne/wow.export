@@ -82,6 +82,16 @@ class WMOExporter {
 			helper.setCurrentTaskValue(i);
 
 			const materialTextures = [material.texture1, material.texture2, material.texture3];
+
+			if (material.shader == 23) {
+				materialTextures.push(material.flags3);
+				materialTextures.push(material.color3);
+				materialTextures.push(material.runtimeData[0]);
+				materialTextures.push(material.runtimeData[1]);
+				materialTextures.push(material.runtimeData[2]);
+				materialTextures.push(material.runtimeData[3]);
+			}
+
 			for (const materialTexture of materialTextures) {
 				// Skip unused material slots.
 				if (materialTexture === 0)
@@ -621,6 +631,16 @@ class WMOExporter {
 			const textureCache = new Set();
 			for (const material of wmo.materials) {
 				const materialTextures = [material.texture1, material.texture2, material.texture3];
+
+				if (material.shader == 23) {
+					materialTextures.push(material.color3);
+					materialTextures.push(material.flags3);
+					materialTextures.push(material.runtimeData[0]);
+					materialTextures.push(material.runtimeData[1]);
+					materialTextures.push(material.runtimeData[2]);
+					materialTextures.push(material.runtimeData[3]);
+				}
+
 				for (const materialTexture of materialTextures) {
 					if (materialTexture === 0 || textureCache.has(materialTexture))
 						continue;
