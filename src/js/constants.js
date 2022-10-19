@@ -87,7 +87,9 @@ module.exports = {
 		{ product: 'wow_beta', title: 'Beta: World of Warcraft', tag: 'Beta' },
 		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' },
 		{ product: 'wow_classic_beta', title: 'Beta: World of Warcraft Classic', tag: 'Classic Beta' },
-		{ product: 'wow_classic_ptr', title: 'PTR: World of Warcraft Classic', tag: 'Classic PTR' }
+		{ product: 'wow_classic_ptr', title: 'PTR: World of Warcraft Classic', tag: 'Classic PTR' },
+		{ product: 'wow_classic_era', title: 'World of Warcraft Classic Era', tag: 'Classic Era' },
+		{ product: 'wow_classic_era_ptr', title: 'PTR: World of Warcraft Classic Era', tag: 'Classic Era PTR' }
 	],
 
 	PATCH: {
