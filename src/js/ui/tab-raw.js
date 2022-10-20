@@ -128,7 +128,7 @@ core.events.on('click-export-raw', async () => {
 
 		if (overwriteFiles || !await generics.fileExists(exportPath)) {
 			try {
-				const data = await core.view.casc.getFileByName(fileName);
+				const data = await core.view.casc.getFileByName(fileName, true);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);
