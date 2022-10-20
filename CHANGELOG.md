@@ -1,3 +1,9 @@
+0.1.44 (Unreleased)
+- Added preview and export support for new texture references used in some Dragonflight WMOs.
+- Added expansion icon for Dragonflight.
+- Added Classic Era (1.14) to product list.
+- Fixed an issue where DB2s could not be exported as raw client files.
+
 0.1.43 (29-05-2022)
 - Added ability to click + drag when selecting map tiles, making large selections much quicker.
 - Added a "Copy to Clipboard" button for the model-viewer, allowing the 3D preview to be directly copied to the clipboard without needing to export, complete with transparency.
