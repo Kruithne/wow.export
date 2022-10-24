@@ -1,4 +1,4 @@
-0.1.44 (Unreleased)
+0.1.44 (24-10-2022)
 - Added preview and export support for new texture references used in some Dragonflight WMOs.
 - Added expansion icon for Dragonflight.
 - Added Classic Era (1.14) to product list.
