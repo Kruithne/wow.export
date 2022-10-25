@@ -26,6 +26,8 @@ const PUBLISH_CONFIG_FILE = path.join(__dirname, 'publish.conf');
 
 /**
  * Defines the location of the SFTP connection configuration.
+ * This is only necessary if not providing connection details
+ * via environment variables.
  * @type {string}
  */
 const SFTP_CONFIG_FILE = path.join(__dirname, 'sftp.conf');
@@ -76,7 +78,21 @@ const log = {
 	try {
 		const buildConfig = JSON.parse(await fsp.readFile(BUILD_CONFIG_FILE));
 		const publishConfig = JSON.parse(await fsp.readFile(PUBLISH_CONFIG_FILE));
-		const sftpConfig = JSON.parse(await fsp.readFile(SFTP_CONFIG_FILE));
+
+		let sftpConfig;
+		if (process.env.SFTP_HOST !== undefined) {
+			sftpConfig = {
+				host: process.env.SFTP_HOST,
+				port: process.env.SFTP_PORT ?? 22,
+				username: process.env.SFTP_USER,
+				password: process.env.SFTP_PASS,
+				privateKey: process.env.SFTP_PRIVATE_KEY,
+				remoteUpdateDir: process.env.SFTP_REMOTE_UPDATE_DIR,
+				remotePackageDir: process.env.SFTP_REMOTE_PACKAGE_DIR
+			};
+		} else {
+			sftpConfig = JSON.parse(await fsp.readFile(SFTP_CONFIG_FILE));
+		}
 
 		// Collect available build names.
 		const builds = buildConfig.builds.map(build => build.name);
