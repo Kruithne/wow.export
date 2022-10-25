@@ -511,16 +511,39 @@ class WDCReader {
 							switch (fieldType) {
 								case FieldType.String:
 									if (isNormal) {
-										const ofs = data.readUInt32LE();
-										const pos = data.offset;
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												const ofs = data.readUInt32LE();
+												const pos = data.offset;
 
-										data.move((ofs - 4) - outsideDataSize);
-										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.move((ofs - 4) - outsideDataSize);
 
-										data.seek(pos);
+												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+												data.seek(pos);
+											}
+										} else {
+											const ofs = data.readUInt32LE();
+											const pos = data.offset;
+
+											data.move((ofs - 4) - outsideDataSize);
+
+											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+											data.seek(pos);
+										}
 									} else {
-										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-										data.readInt8(); // Read NUL character
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.readInt8(); // Read NUL character
+											}
+										} else {
+											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+											data.readInt8(); // Read NUL character
+										}
 									}
 									break;
 
