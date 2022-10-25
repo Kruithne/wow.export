@@ -486,7 +486,11 @@ class WDCReader {
 				let fieldIndex = 0;
 				for (const [prop, type] of this.schema.entries()) {
 					if (type === FieldType.Relation) {
-						out[prop] = section.relationshipMap.get(i);
+						if (section.relationshipMap.has(i)) 
+							out[prop] = section.relationshipMap.get(i);
+						else 
+							out[prop] = 0;
+						
 						continue;
 					}
 
