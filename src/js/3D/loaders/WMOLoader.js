@@ -285,7 +285,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MLIQ (Liquid Data) [WMO Group]
-	/*0x4D4C4951: function(data) {
+	0x4D4C4951: function(data) {
 		// See https://wowdev.wiki/WMO#MLIQ_chunk for using this raw data.
 		const liquidVertsX = data.readUInt32LE();
 		const liquidVertsY = data.readUInt32LE();
@@ -319,15 +319,8 @@ const WMOChunkHandlers = {
 		const tileCount = liquidTilesX * liquidTilesY;
 		const liquidTiles = new Array(tileCount);
 
-		for (let i = 0; i < tileCount; i++) {
-			liquidTiles[i] = {
-				legacyLiquidType: data.readUInt8(),
-				unk1: data.readUInt8(),
-				unk2: data.readUInt8(),
-				fishable: data.readUInt8(),
-				shared: data.readUInt8()
-			};
-		}
+		for (let i = 0; i < tileCount; i++)
+			liquidTiles[i] = data.readUInt8();
 
 		this.liquid = {
 			vertX: liquidVertsX,
@@ -339,7 +332,7 @@ const WMOChunkHandlers = {
 			corner: liquidCorner,
 			materialID: liquidMaterialID
 		};
-	},*/
+	},
 
 	// MOCV (Vertex Colouring) [WMO Group]
 	0x4D4F4356: function(data, chunkSize) {

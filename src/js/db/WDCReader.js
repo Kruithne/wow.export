@@ -240,7 +240,7 @@ class WDCReader {
 		const recordSize = data.readUInt32LE();
 		const stringTableSize = data.readUInt32LE();
 		const tableHash = data.readUInt32LE();
-		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16)).join('').toUpperCase().padStart(8, '0');
+		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
 		const minID = data.readUInt32LE();
 		const maxID = data.readUInt32LE();
 		const locale = data.readUInt32LE();
@@ -486,7 +486,11 @@ class WDCReader {
 				let fieldIndex = 0;
 				for (const [prop, type] of this.schema.entries()) {
 					if (type === FieldType.Relation) {
-						out[prop] = section.relationshipMap.get(i);
+						if (section.relationshipMap.has(i)) 
+							out[prop] = section.relationshipMap.get(i);
+						else 
+							out[prop] = 0;
+						
 						continue;
 					}
 
@@ -511,16 +515,39 @@ class WDCReader {
 							switch (fieldType) {
 								case FieldType.String:
 									if (isNormal) {
-										const ofs = data.readUInt32LE();
-										const pos = data.offset;
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												const ofs = data.readUInt32LE();
+												const pos = data.offset;
 
-										data.move((ofs - 4) - outsideDataSize);
-										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.move((ofs - 4) - outsideDataSize);
 
-										data.seek(pos);
+												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+												data.seek(pos);
+											}
+										} else {
+											const ofs = data.readUInt32LE();
+											const pos = data.offset;
+
+											data.move((ofs - 4) - outsideDataSize);
+
+											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+											data.seek(pos);
+										}
 									} else {
-										out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-										data.readInt8(); // Read NUL character
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.readInt8(); // Read NUL character
+											}
+										} else {
+											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+											data.readInt8(); // Read NUL character
+										}
 									}
 									break;
 
