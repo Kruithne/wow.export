@@ -941,8 +941,9 @@ class ADTExporter {
 								DoodadSetIndexes: 0,
 								DoodadSetNames: ''
 							});
-						} catch {
+						} catch (e) {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
+							log.write('Error: %s', e);
 						}
 					}
 				}
@@ -1006,8 +1007,9 @@ class ADTExporter {
 								DoodadSetIndexes: 0,
 								DoodadSetNames: ''
 							});
-						} catch {
+						} catch (e) {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
+							log.write('Error: %s', e);
 						}
 					}
 				}
@@ -1106,8 +1108,9 @@ class ADTExporter {
 								DoodadSetIndexes: doodadSets.join(','),
 								DoodadSetNames: doodadSets.map((e, i) => doodadNames[e]).join(',')
 							});
-						} catch {
+						} catch (e) {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);
+							log.write('Error: %s', e);
 						}
 					}
 				}
