@@ -549,6 +549,7 @@ class BufferWrapper {
 	 * @returns {boolean}
 	 */
 	startsWith(input, encoding = 'utf8') {
+		this.seek(0);
 		if (Array.isArray(input)) {
 			for (const entry of input) {
 				if (this.readString(entry.length, encoding) === entry)

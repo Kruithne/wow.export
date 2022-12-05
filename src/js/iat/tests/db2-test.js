@@ -82,7 +82,8 @@ class DB2Test extends IntegrationTest {
 
 		// For every DB2 file in the listfile, generate a test function.
 		const tables = listfile.getFilenamesByExtension('.db2');
-		for (const table of tables) {
+		for (let table of tables) {
+			table = table.split(" [")[0];
 			const tableName = 'testTable_' + path.basename(table);
 
 			if (FILTERED_DBS.includes(path.basename(table))) {
@@ -128,7 +129,7 @@ class DB2Test extends IntegrationTest {
 		const dbdName = this.dbdMap.get(tableName);
 
 		if (dbdName === undefined)
-			throw new Error('Unable to locate DBD for ' + dbdName);
+			throw new Error('Unable to locate DBD for ' + tableName);
 
 		const table = new WDCReader('DBFilesClient/' + dbdName + '.db2');
 		await table.parse();
@@ -240,7 +241,7 @@ class DB2Test extends IntegrationTest {
 				}
 			}
 
-			assert.deepStrictEqual(checkRow, row, 'DB2 row does not match CSV,\nWE: ' + checkRow + '\nWT: ' + row + '\n');
+			assert.deepStrictEqual(checkRow, row, 'DB2 row does not match,\nWE: ' + checkRow + '\nWT: ' + row + '\n');
 		}
 	}
 }

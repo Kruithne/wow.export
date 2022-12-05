@@ -1,0 +1,35 @@
+name: Deploy wow.export
+
+on:  
+  push:
+    tags:
+      - '*'
+jobs: 
+  build:
+    name: Build and publish
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: npm
+      - name: npm install
+        run: npm ci
+      - name: Compile wow.export win-x64
+        run: mkdir bin\win-x64 && node build.js win-x64
+      - name: Publish
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASS: ${{ secrets.SFTP_PASS }}
+          SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
+          SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
+        run: node publish.js win-x64
+      - name: Upload release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bin\packages\wow.export-*.zip

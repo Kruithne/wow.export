@@ -178,9 +178,7 @@ class DynamicString {
  * @param {string} dir Directory path.
  */
 const createDirectory = async (dir) => {
-	await fsp.access(dir).catch(async () => {
-		await fsp.mkdir(dir, { recursive: true });
-	});
+	await fsp.mkdir(dir, { recursive: true });
 };
 
 /**
@@ -398,7 +396,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		const buildDir = path.join(outDir, build.name);
 
 		// Wipe the build directory and then re-create it.
-		await fsp.rm(buildDir, { recursive: true });
+		await fsp.rm(buildDir, { recursive: true, force: true });
 		await createDirectory(buildDir);
 
 		const bundleArchive = util.format(build.bundle, config.webkitVersion);
