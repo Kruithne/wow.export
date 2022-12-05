@@ -1,3 +1,10 @@
+0.1.45 (TBD)
+- Fixed exporting of WMO MLIQ data.
+- Fixed an issue that caused models to export with incorrect names when exporting multiple models at once.
+- Fixed issue that would prevent the "Clear Cache" button in settings to work under certain circumstances.
+- Fixed various issues that would prevent certain DB2 files from being read.
+- Dev: Added debug script (`node debug`) and removed need to transpile SCSS files manually.
+
 0.1.44 (24-10-2022)
 - Added preview and export support for new texture references used in some Dragonflight WMOs.
 - Added expansion icon for Dragonflight.
