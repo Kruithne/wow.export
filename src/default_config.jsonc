@@ -50,6 +50,7 @@
 	"modelsExportAnim": false,
 	"modelsExportWMOGroups": false,
 	"modelsExportUV2": false,
+	"modelsExportTextures": true,
 	"modelsExportAlpha": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
