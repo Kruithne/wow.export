@@ -907,7 +907,7 @@ class ADTExporter {
 							if (config.enableSharedChildren)
 								modelPath = ExportHelper.getExportPath(fileName);
 							else
-								modelPath = ExportHelper.replaceFile(out, fileName);
+								modelPath = path.join(dir, path.basename(fileName));
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
@@ -973,7 +973,7 @@ class ADTExporter {
 							if (config.enableSharedChildren)
 								modelPath = ExportHelper.getExportPath(fileName);
 							else
-								modelPath = ExportHelper.replaceFile(out, fileName);
+								modelPath = path.join(dir, path.basename(fileName));
 
 							// Export the model if we haven't done so for this export session.
 							if (!objectCache.has(fileDataID)) {
@@ -1052,7 +1052,7 @@ class ADTExporter {
 							if (config.enableSharedChildren)
 								modelPath = ExportHelper.getExportPath(fileName);
 							else
-								modelPath = ExportHelper.replaceFile(out, fileName);
+								modelPath = path.join(dir, path.basename(fileName));
 
 								
 							const doodadSets = useADTSets ? objAdt.doodadSets : [model.doodadSet];
