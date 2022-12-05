@@ -47,4 +47,4 @@ To debug wow.export, compile a `win-x64-debug` build using the build script. Thi
 
 For the debug build, source code will not be compiled, rather a symlink is created. This means changes to the source code are instantly reflected in the application, simply run `chrome.runtime.reload()` in DevTools console to refresh sources (pressing F5 does not drop references and will lead to memory leaks).
 
-Since stylesheets are written in Sass and no source compilation is done, you will need a transpiler for your IDE to ensure that Sass files are automatically transpiled to raw CSS during development (do not commit these).
+To quickly launch the debug build from the project directory, run `node debug` from your terminal. This will also handle compilation of `.scss` files both on startup and when changes are detected (allowing styling to be hot-reloaded via DevTools).
