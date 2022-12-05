@@ -367,7 +367,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				let exportPath;
 				if (isLocal) {
 					exportPath = fileName;
-				} else if (fileType === MODEL_TYPE_M2 && selectedSkinName !== null) {
+				} else if (fileType === MODEL_TYPE_M2 && selectedSkinName !== null && fileName === activePath) {
 					const baseFileName = path.basename(fileName, path.extname(fileName));
 					let skinnedName;
 
