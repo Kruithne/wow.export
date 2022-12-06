@@ -1,8 +1,19 @@
 0.1.45 (TBD)
+- The "Textures" option for map tile exporting is now enabled by default.
+- Raw .skin files (exported with M2 models) are now resolved using the listfile (fallback: unknown/fileDataID.skin).
+- Raw .skel files (export with M2 models) are now resolved using the listfile (fallback: unknown/fileDataID.skel)
+- The following breaking changes have been made to raw M2 exporting to keep it consistent with the other export systems:
+	- `.skin` files are now named as they appear on the community listfile instead of `{skinName}.skin`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skin` will be used.
+	- `.skel` files are now named as they appear on the community listfile instead of `{modelName}.skel`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skel` will be used.
+	- `.bone` files are now named as they appear on the community listfile instead of `{modelName}_{X}.bone`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.bone` will be used.
+	- `.anim` files are now named as they appear on the community listfile instead of `{modelName}{animID}-{animSubID}.anim`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.anim` will be used.
+	- Raw `.skin`, `.skel`, `.bone` and `.anim` files exported with M2 models now respect the "Enable Shared Children" option and will be exported accordingly.
+	- Raw M2 models will now be exported with a manifest file `{modelName}.manifest.json` which contains metadata about any associated files that were exported with it (textures, bones, skins, etc).
 - Fixed exporting of WMO MLIQ data.
 - Fixed an issue that caused models to export with incorrect names when exporting multiple models at once.
 - Fixed issue that would prevent the "Clear Cache" button in settings to work under certain circumstances.
 - Fixed various issues that would prevent certain DB2 files from being read.
+- Fixed issue that prevented map tile exporting when "Enable Shared Children" is disabled.
 - Dev: Added debug script (`node debug`) and removed need to transpile SCSS files manually.
 
 0.1.44 (24-10-2022)

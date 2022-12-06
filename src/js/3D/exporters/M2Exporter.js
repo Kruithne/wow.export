@@ -89,7 +89,7 @@ class M2Exporter {
 			if (texFileDataID > 0) {
 				try {
 					let texFile = texFileDataID + (raw ? '.blp' : '.png');
-					let texPath = path.join(path.dirname(out), texFile);
+					let texPath = path.join(out, texFile);
 
 					// Default MTL name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + texFileDataID;
@@ -115,7 +115,7 @@ class M2Exporter {
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(path.dirname(out), texPath);
+						texFile = path.relative(out, texPath);
 					}
 
 					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
@@ -156,6 +156,7 @@ class M2Exporter {
 
 	async exportAsGLTF(out, helper, fileManifest) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
+		const outDir = path.dirname(out);
 
 		// Skip export if file exists and overwriting is disabled.
 		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
@@ -177,7 +178,7 @@ class M2Exporter {
 		// TODO: Handle UV2 for GLTF.
 
 		// TODO: full texture paths.
-		const textureMap = await this.exportTextures(out, false, null, helper, true);
+		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
 		gltf.setTextureMap(textureMap);
 
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
@@ -224,6 +225,8 @@ class M2Exporter {
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
+		const outDir = path.dirname(out);
+
 		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
 
 		// Use internal M2 name for object.
@@ -238,7 +241,7 @@ class M2Exporter {
 			obj.addUVArray(this.m2.uv2);
 
 		// Textures
-		const validTextures = await this.exportTextures(out, false, mtl, helper);
+		const validTextures = await this.exportTextures(outDir, false, mtl, helper);
 		for (const [texFileDataID, texInfo] of validTextures)
 			fileManifest?.push({ type: 'PNG', fileDataID: texFileDataID, file: texInfo.matPath });
 
@@ -354,6 +357,137 @@ class M2Exporter {
 			await phys.write(config.overwriteFiles);
 			fileManifest?.push({ type: 'PHYS_OBJ', fileDataID: this.fileDataID, file: phys.out });
 		}
+	}
+
+	/**
+	 * Export the model as a raw M2 file, including related files
+	 * such as textures, bones, animations, etc.
+	 * @param {string} out 
+	 * @param {ExportHelper} helper 
+	 * @param {Array} [fileManifest]
+	 */
+	async exportRaw(out, helper, fileManifest) {
+		const casc = core.view.casc;
+		const config = core.view.config;
+
+		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
+		const manifest = new JSONWriter(manifestFile);
+
+		manifest.addProperty('fileDataID', this.fileDataID);
+
+		// Only load M2 data if we need to export related files.
+		if (config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim)
+			await this.m2.load();
+
+		// Write the M2 file with no conversion.
+		await this.m2.data.writeToFile(out);
+		fileManifest?.push({ type: 'M2', fileDataID: this.fileDataID, file: out });
+
+		// Directory that relative files should be exported to.
+		const outDir = path.dirname(out);
+
+		// Write relative skin files.
+		if (config.modelsExportSkin) {
+			const textures = await this.exportTextures(outDir, true, null, helper);
+			const texturesManifest = [];
+			for (const [texFileDataID, texInfo] of textures) {
+				texturesManifest.push({ fileDataID: texFileDataID, file: texInfo.matPath });
+				fileManifest?.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
+			}
+
+			manifest.addProperty('textures', texturesManifest);
+
+			const exportSkins = async (skins, typeName, manifestName) => {
+				const skinsManifest = [];
+				for (const skin of skins) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
+	
+					const skinData = await casc.getFile(skin.fileDataID);
+
+					let skinFile;
+					if (config.enableSharedChildren)
+						skinFile = ExportHelper.getExportPath(skin.fileName);
+					else
+						skinFile = path.join(outDir, path.basename(skin.fileName));
+	
+					await skinData.writeToFile(skinFile);
+					skinsManifest.push({ fileDataID: skin.fileDataID, file: skinFile });
+					fileManifest?.push({ type: typeName, fileDataID: skin.fileDataID, file: skinFile });
+				}
+
+				manifest.addProperty(manifestName, skinsManifest);
+			};
+
+			await exportSkins(this.m2.getSkinList(), 'SKIN', 'skins');
+			await exportSkins(this.m2.lodSkins, 'LOD_SKIN', 'lodSkins');			
+		}
+
+		// Write relative skeleton files.
+		if (config.modelsExportSkel && this.m2.skeletonFileID) {
+			const skelData = await casc.getFile(this.m2.skeletonFileID);
+			const skelFileName = listfile.getByID(this.m2.skeletonFileID);
+
+			let skelFile;
+			if (config.enableSharedChildren)
+				skelFile = ExportHelper.getExportPath(skelFileName);
+			else
+				skelFile = path.join(outDir, path.basename(skelFileName));
+
+			await skelData.writeToFile(skelFile);
+			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: skelFile });
+			fileManifest?.push({ type: 'SKEL', fileDataID: this.m2.skeletonFileID, file: skelFile });
+		}
+
+		// Write relative bone files.
+		if (config.modelsExportBone && this.m2.boneFileIDs) {
+			const boneManifest = [];
+			for (let i = 0, n = this.m2.boneFileIDs.length; i < n; i++) {
+				const boneFileID = this.m2.boneFileIDs[i];
+				const boneData = await casc.getFile(boneFileID);
+				const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+
+				let boneFile;
+				if (config.enableSharedChildren)
+					boneFile = ExportHelper.getExportPath(boneFileName);
+				else
+					boneFile = path.join(outDir, path.basename(boneFileName));
+
+				await boneData.writeToFile(boneFile);
+				boneManifest.push({ fileDataID: boneFileID, file: boneFile });
+				fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
+			}
+
+			manifest.addProperty('bones', boneManifest);
+		}
+
+		// Write relative animation files.
+		if (config.modelsExportAnim && this.m2.animFileIDs) {
+			const animManifest = [];
+			const animCache = new Set();
+			for (const anim of this.m2.animFileIDs) {
+				if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+					const animData = await casc.getFile(anim.fileDataID);
+					const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+					
+					let animFile;
+					if (config.enableSharedChildren)
+						animFile = ExportHelper.getExportPath(animFileName);
+					else
+						animFile = path.join(outDir, path.basename(animFileName));
+
+					await animData.writeToFile(animFile);
+					animManifest.push({ fileDataID: anim.fileDataID, file: animFile, animID: anim.animID, subAnimID: anim.subAnimID });
+					fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
+					animCache.add(anim.fileDataID);
+				}
+			}
+
+			manifest.addProperty('anims', animManifest);
+		}
+
+		await manifest.write();
 	}
 }
 

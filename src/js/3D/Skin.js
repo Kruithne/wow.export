@@ -13,7 +13,7 @@ const MAGIC_SKIN = 0x4E494B53;
 class Skin {
 	constructor(fileDataID) {
 		this.fileDataID = fileDataID;
-		this.fileName = listfile.getByID(fileDataID);
+		this.fileName = listfile.getByIDOrUnknown(fileDataID, '.skin');
 		this.isLoaded = false;
 	}
 

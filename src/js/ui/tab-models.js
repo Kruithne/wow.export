@@ -383,87 +383,14 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 				switch (format) {
 					case 'RAW':
-						// Export as raw file with no conversions.
-						await data.writeToFile(exportPath);
 						exportPaths.writeLine(exportPath);
 
-						const outDir = path.dirname(exportPath);
-						const loadM2 = config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim;
-						if (loadM2 && fileType === MODEL_TYPE_M2) {
-							fileManifest.push({ type: 'M2', fileDataID, file: exportPath });
-
+						const outDir = path.dirname(exportPath); // Remove later.
+						if (fileType === MODEL_TYPE_M2) {
 							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
-							const m2 = exporter.m2;
-							await m2.load();
-
-							if (config.modelsExportSkin === true) {
-								const textures = await exporter.exportTextures(exportPath, true, null, helper);
-								for (const [texFileDataID, texInfo] of textures)
-									fileManifest.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
-
-								const skins = m2.getSkinList();
-								for (const skin of skins) {
-									// Abort if the export has been cancelled.
-									if (helper.isCancelled())
-										return;
-
-									const skinData = await casc.getFile(skin.fileDataID);
-									const skinFile = path.join(outDir, path.basename(skin.fileName));
-
-									await skinData.writeToFile(skinFile);
-									fileManifest.push({ type: 'SKIN', fileDataID: skin.fileDataID, file: skinFile });
-								}
-
-								const lodSkins = m2.lodSkins;
-								for (const lodSkin of lodSkins) {
-									// Abort if the export has been cancelled.
-									if (helper.isCancelled())
-										return;
-
-									const skinData = await casc.getFile(lodSkin.fileDataID);
-									const skinFile = path.join(outDir, path.basename(lodSkin.fileName));
-
-									await skinData.writeToFile(skinFile);
-									fileManifest.push({ type: 'SKIN_LOD', fileDataID: lodSkin.fileDataID, file: skinFile });
-								}
-							}
-
-							const basename = path.basename(fileName);
-							if (config.modelsExportSkel && m2.skeletonFileID) {
-								const skelData = await casc.getFile(m2.skeletonFileID);
-								const skelFile = path.join(outDir, ExportHelper.replaceExtension(basename, '.skel'));
-
-								await skelData.writeToFile(skelFile);
-								fileManifest.push({ type: 'SKEL', fileDataID: m2.skeletonFileID, file: skelFile });
-							}
-
-							if (config.modelsExportBone && m2.boneFileIDs) {
-								for (let i = 0, n = m2.boneFileIDs.length; i < n; i++) {
-									const boneData = await casc.getFile(m2.boneFileIDs[i]);
-									const boneFile = path.join(outDir, ExportHelper.replaceExtension(basename, '_' + i + '.bone'));
-
-									await boneData.writeToFile(boneFile);
-									fileManifest.push({ type: 'BONE', fileDataID: m2.boneFileIDs[i], file: boneFile });
-								}
-							}
-
-							if (config.modelsExportAnim && m2.animFileIDs) {
-								const animCache = new Set();
-								for (const anim of m2.animFileIDs) {
-									if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
-										const animData = await casc.getFile(anim.fileDataID);
-										const animIDStr = anim.animID.toString().padStart(4, 0);
-										const animSubIDStr = anim.subAnimID.toString().padStart(2, 0);
-										const animName = ExportHelper.replaceExtension(basename, animIDStr + '-' + animSubIDStr + '.anim');
-										const animFile = path.join(outDir, animName);
-
-										await animData.writeToFile(animFile);
-										fileManifest.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
-										animCache.add(anim.fileDataID);
-									}
-								}
-							}
+							await exporter.exportRaw(exportPath, helper, fileManifest);
 						} else if (fileType === MODEL_TYPE_WMO) {
+							await data.writeToFile(exportPath);
 							fileManifest.push({ type: 'WMO', fileDataID, file: exportPath });
 
 							const exporter = new WMOExporter(data, fileDataID);

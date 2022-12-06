@@ -256,10 +256,11 @@ const getByID = (id) => {
 /**
  * Get a filename from a given file data ID or format it as an unknown file.
  * @param {number} id 
+ * @param {string} [ext]
  * @returns {string}
  */
-const getByIDOrUnknown = (id) => {
-	return idLookup.get(id) ?? formatUnknownFile(id);
+const getByIDOrUnknown = (id, ext = '') => {
+	return idLookup.get(id) ?? formatUnknownFile(id, ext);
 };
 
 /**
@@ -332,6 +333,7 @@ module.exports = {
 	getFullListfile,
 	getFilenamesByExtension,
 	getFilteredEntries,
+	getByIDOrUnknown,
 	stripFileEntry,
 	formatEntries,
 	formatUnknownFile,

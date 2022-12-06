@@ -63,6 +63,7 @@
 	"mapsIncludeLiquid": false,
 	"mapsIncludeGameObjects": true,
 	"mapsIncludeHoles": true,
+	"mapsExportRaw": false,
 	"regexFilters": false,
 	"exportMapQuality": 4096,
 	"splitLargeTerrainBakes": true,
