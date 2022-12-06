@@ -3,6 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+const log = require('../../log');
+
 class RenderCache {
 	constructor() {
 		this.users = new WeakMap();
@@ -31,7 +33,7 @@ class RenderCache {
 			let users = this.users.get(material) - 1;
 			if (users < 1) {
 				// No more users, retire the material.
-				console.log('Disposing of abandoned material %s', material.uuid);
+				log.write('Disposing of abandoned material %s', material.uuid)
 
 				material.dispose();
 				this.textures.get(material)?.dispose();
