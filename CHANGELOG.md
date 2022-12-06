@@ -1,7 +1,5 @@
 0.1.45 (TBD)
 - The "Textures" option for map tile exporting is now enabled by default.
-- Raw .skin files (exported with M2 models) are now resolved using the listfile (fallback: unknown/fileDataID.skin).
-- Raw .skel files (export with M2 models) are now resolved using the listfile (fallback: unknown/fileDataID.skel)
 - The following breaking changes have been made to raw M2 exporting to keep it consistent with the other export systems:
 	- `.skin` files are now named as they appear on the community listfile instead of `{skinName}.skin`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skin` will be used.
 	- `.skel` files are now named as they appear on the community listfile instead of `{modelName}.skel`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skel` will be used.
@@ -14,7 +12,6 @@
 - Fixed issue that would prevent the "Clear Cache" button in settings to work under certain circumstances.
 - Fixed various issues that would prevent certain DB2 files from being read.
 - Fixed issue that prevented map tile exporting when "Enable Shared Children" is disabled.
-- Dev: Added debug script (`node debug`) and removed need to transpile SCSS files manually.
 
 0.1.44 (24-10-2022)
 - Added preview and export support for new texture references used in some Dragonflight WMOs.
