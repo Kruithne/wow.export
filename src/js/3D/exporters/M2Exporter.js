@@ -375,13 +375,13 @@ class M2Exporter {
 
 		manifest.addProperty('fileDataID', this.fileDataID);
 
-		// Only load M2 data if we need to export related files.
-		if (config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim)
-			await this.m2.load();
-
 		// Write the M2 file with no conversion.
 		await this.m2.data.writeToFile(out);
 		fileManifest?.push({ type: 'M2', fileDataID: this.fileDataID, file: out });
+
+		// Only load M2 data if we need to export related files.
+		if (config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim)
+			await this.m2.load();
 
 		// Directory that relative files should be exported to.
 		const outDir = path.dirname(out);
