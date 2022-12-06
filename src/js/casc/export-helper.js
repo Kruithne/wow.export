@@ -31,6 +31,15 @@ class ExportHelper {
 	}
 
 	/**
+	 * Returns a relative path from the export directory to the given file.
+	 * @param {string} file 
+	 * @returns {string}
+	 */
+	static getRelativeExport(file) {
+		return path.relative(core.view.config.exportDirectory, file);
+	}
+
+	/**
 	 * Takes the directory from fileA and combines it with the basename of fileB.
 	 * @param {string} fileA 
 	 * @param {string} fileB 
