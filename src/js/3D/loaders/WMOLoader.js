@@ -100,6 +100,12 @@ class WMOLoader {
  */
 const WMOOptionalChunks = [
 	0x4D4C4951, // MLIQ (Liquid)
+	0x4D464F47, // MFOG (Fog)
+	0x4D4F5056, // MOPV (Portal Vertices)
+	0x4D4F5052, // MOPR (Map Object Portal References)
+	0x4D4F5054, // MOPT (Portal Triangles)
+	0x4D4F4356, // MOCV (Vertex Colors)
+	0x4D44414C, // MDAL (Ambient Color)
 ];
 
 const WMOChunkHandlers = {
@@ -192,7 +198,7 @@ const WMOChunkHandlers = {
 			this.portalVertices[i] = data.readFloatLE(3)
 	},
 
-	// MOPT (Portal Information) [WMO Root]
+	// MOPT (Portal Triangles) [WMO Root]
 	0x4D4F5054: function(data, chunkSize) {
 		this.portalInfo = new Array(this.portalCount);
 		for (let i = 0; i < this.portalCount; i++) {
