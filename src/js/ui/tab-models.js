@@ -385,39 +385,13 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 					case 'RAW':
 						exportPaths.writeLine(exportPath);
 
-						const outDir = path.dirname(exportPath); // Remove later.
-						if (fileType === MODEL_TYPE_M2) {
-							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
-							await exporter.exportRaw(exportPath, helper, fileManifest);
-						} else if (fileType === MODEL_TYPE_WMO) {
-							await data.writeToFile(exportPath);
-							fileManifest.push({ type: 'WMO', fileDataID, file: exportPath });
+						let exporter;
+						if (fileType === MODEL_TYPE_M2)
+							exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+						else if (fileType === MODEL_TYPE_WMO)
+							exporter = new WMOExporter(data, fileDataID);
 
-							const exporter = new WMOExporter(data, fileDataID);
-							const wmo = exporter.wmo;
-							await wmo.load();
-
-							// Export raw textures.
-							const textures = await exporter.exportTextures(exportPath, null, helper, true);
-							for (const [texFileDataID, texInfo] of textures.textureMap)
-								fileManifest.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
-
-							if (exportWMOGroups === true) {
-								for (let i = 0, n = wmo.groupCount; i < n; i++) {
-									// Abort if the export has been cancelled.
-									if (helper.isCancelled())
-										return;
-
-									const groupName = fileName.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
-									const groupFileDataID = wmo.groupIDs?.[i] ?? listfile.getByFilename(groupName);
-									const groupData = await casc.getFile(groupFileDataID);
-									const groupFile = path.join(outDir, path.basename(groupName));
-
-									await groupData.writeToFile(groupFile);
-									fileManifest.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
-								}
-							}
-						}
+						await exporter.exportRaw(exportPath, helper, fileManifest);
 						break;
 
 					case 'OBJ':

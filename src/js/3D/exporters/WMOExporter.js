@@ -681,6 +681,67 @@ class WMOExporter {
 	}
 
 	/**
+	 * 
+	 * @param {string} out 
+	 * @param {ExportHelper} helper 
+	 * @param {Array} [fileManifest]
+	 */
+	async exportRaw(out, helper, fileManifest) {
+		const casc = core.view.casc;
+		const config = core.view.config;
+
+		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
+		const manifest = new JSONWriter(manifestFile);
+
+		manifest.addProperty('fileDataID', this.wmo.fileDataID);
+
+		// Write the raw WMO file with no conversion.
+		await this.wmo.data.writeToFile(out);
+		fileManifest?.push({ type: 'WMO', fileDataID: this.wmo.fileDataID, file: out });
+
+		await this.wmo.load();
+
+		// Export raw textures.
+		const textures = await this.exportTextures(out, null, helper, true);
+		const texturesManifest = [];
+		for (const [texFileDataID, texInfo] of textures.textureMap) {
+			fileManifest?.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
+			texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(out, texInfo.matPath) });
+		}
+
+		manifest.addProperty('textures', texturesManifest);
+
+		if (config.modelsExportWMOGroups) {
+			const groupManifest = [];
+			const wmoFileName = this.wmo.fileName;
+			for (let i = 0, n = this.wmo.groupCount; i < n; i++) {
+				// Abort if the export has been cancelled.
+				if (helper.isCancelled())
+					return;
+
+				const groupName = ExportHelper.replaceExtension(wmoFileName, '_' + i.toString().padStart(3, '0') + '.wmo');
+				const groupFileDataID = this.wmo.groupIDs?.[i] ?? listfile.getByFilename(groupName);
+				const groupData = await casc.getFile(groupFileDataID);
+
+				let groupFile;
+				if (config.enableSharedChildren)
+					groupFile = ExportHelper.getExportPath(groupName);
+				else
+					groupFile = path.join(out, path.basename(groupName));
+
+				await groupData.writeToFile(groupFile);
+
+				fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
+				groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+			}
+
+			manifest.addProperty('groups', groupManifest);
+		}
+
+		await manifest.write();
+	}
+
+	/**
 	 * Clear the WMO exporting cache.
 	 */
 	static clearCache() {
