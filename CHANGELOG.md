@@ -1,5 +1,6 @@
 0.1.45 (TBD)
 - The "Textures" option for map tile exporting is now enabled by default.
+- Improved load times when previewing large WMO models.
 - The following breaking changes have been made to raw M2 exporting to keep it consistent with the other export systems:
 	- `.skin` files are now named as they appear on the community listfile instead of `{skinName}.skin`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skin` will be used.
 	- `.skel` files are now named as they appear on the community listfile instead of `{modelName}.skel`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.skel` will be used.

@@ -37,7 +37,7 @@ class WMORenderer {
 	 */
 	async load() {
 		// Parse the WMO data.
-		const wmo = this.wmo = new WMOLoader(this.data, this.fileID);
+		const wmo = this.wmo = new WMOLoader(this.data, this.fileID, true);
 		await wmo.load();
 		await this.loadTextures();
 

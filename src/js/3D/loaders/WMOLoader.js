@@ -13,10 +13,12 @@ class WMOLoader {
 	 * Construct a new WMOLoader instance.
 	 * @param {BufferWrapper} data 
 	 * @param {number|string} fileID File name or fileDataID
+	 * @param {boolean} [renderingOnly=false]
 	 */
-	constructor(data, fileID) {
+	constructor(data, fileID, renderingOnly = false) {
 		this.data = data;
 		this.loaded = false;
+		this.renderingOnly = renderingOnly;
 
 		if (fileID !== undefined) {
 			if (typeof fileID === 'string') {
@@ -43,7 +45,7 @@ class WMOLoader {
 			const nextChunkPos = this.data.offset + chunkSize;
 
 			const handler = WMOChunkHandlers[chunkID];
-			if (handler)
+			if (handler && (!this.renderingOnly || !WMOOptionalChunks.includes(chunkID)))
 				handler.call(this, this.data, chunkSize);
 	
 			// Ensure that we start at the next chunk exactly.
@@ -74,7 +76,7 @@ class WMOLoader {
 		else
 			data = await casc.getFileByName(this.fileName.replace('.wmo', '_' + index.toString().padStart(3, '0') + '.wmo'));
 
-		group = this.groups[index] = new WMOLoader(data);
+		group = this.groups[index] = new WMOLoader(data, undefined, this.renderingOnly);
 		await group.load();
 
 		return group;
@@ -91,6 +93,14 @@ class WMOLoader {
 		return [x, y, z];
 	}
 }
+
+/**
+ * Optional chunks that are not required for rendering.
+ * @type {Array<number>}
+ */
+const WMOOptionalChunks = [
+	0x4D4C4951, // MLIQ (Liquid)
+];
 
 const WMOChunkHandlers = {
 	// MVER (Version) [WMO Root, WMO Group]
