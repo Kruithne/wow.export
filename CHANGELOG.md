@@ -9,6 +9,7 @@
 	- Raw `.skin`, `.skel`, `.bone` and `.anim` files exported with M2 models now respect the "Enable Shared Children" option and will be exported accordingly.
 	- Raw M2 models will now be exported with a manifest file `{modelName}.manifest.json` which contains metadata about any associated files that were exported with it (textures, bones, skins, etc).
 - Added ability to export complete ADT tiles as raw client files.
+- Fixed issue that prevented unknown sound files from being auto-detected in "Browse Raw Client Files".
 - Fixed exporting of WMO MLIQ data.
 - Fixed an issue that caused models to export with incorrect names when exporting multiple models at once.
 - Fixed issue that would prevent the "Clear Cache" button in settings to work under certain circumstances.
