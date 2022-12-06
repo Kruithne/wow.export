@@ -248,8 +248,8 @@ const exportSelectedMap = async () => {
 		}
 
 		try {
-			const outputPath = await adt.export(dir, exportQuality, gameObjects, helper);
-			exportPaths.writeLine('ADT_OBJ:' + outputPath);
+			const out = await adt.export(dir, exportQuality, gameObjects, helper);
+			exportPaths.writeLine(out.type + ':' + out.path);
 			helper.mark(markPath, true);
 		} catch (e) {
 			helper.mark(markPath, false, e.message);

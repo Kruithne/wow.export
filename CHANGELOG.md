@@ -7,6 +7,7 @@
 	- `.anim` files are now named as they appear on the community listfile instead of `{modelName}{animID}-{animSubID}.anim`. If the fileDataID does not appear on the listfile, `unknown/{fileDataID}.anim` will be used.
 	- Raw `.skin`, `.skel`, `.bone` and `.anim` files exported with M2 models now respect the "Enable Shared Children" option and will be exported accordingly.
 	- Raw M2 models will now be exported with a manifest file `{modelName}.manifest.json` which contains metadata about any associated files that were exported with it (textures, bones, skins, etc).
+- Added ability to export complete ADT tiles as raw client files.
 - Fixed exporting of WMO MLIQ data.
 - Fixed an issue that caused models to export with incorrect names when exporting multiple models at once.
 - Fixed issue that would prevent the "Clear Cache" button in settings to work under certain circumstances.

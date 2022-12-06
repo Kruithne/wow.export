@@ -72,7 +72,6 @@ class M2Loader {
 		}
 
 		this.isLoaded = true;
-		this.data = undefined;
 	}
 
 	/**

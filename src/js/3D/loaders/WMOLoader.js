@@ -52,9 +52,6 @@ class WMOLoader {
 
 		// Mark this instance as loaded.
 		this.loaded = true;
-
-		// Drop internal reference to raw data.
-		this.data = undefined;
 	}
 
 	/**
