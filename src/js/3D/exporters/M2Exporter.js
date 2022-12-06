@@ -391,7 +391,7 @@ class M2Exporter {
 			const textures = await this.exportTextures(outDir, true, null, helper);
 			const texturesManifest = [];
 			for (const [texFileDataID, texInfo] of textures) {
-				texturesManifest.push({ fileDataID: texFileDataID, file: ExportHelper.getRelativeExport(texInfo.matPath) });
+				texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(outDir, texInfo.matPath) });
 				fileManifest?.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
 			}
 
@@ -413,7 +413,7 @@ class M2Exporter {
 						skinFile = path.join(outDir, path.basename(skin.fileName));
 	
 					await skinData.writeToFile(skinFile);
-					skinsManifest.push({ fileDataID: skin.fileDataID, file: ExportHelper.getRelativeExport(skinFile) });
+					skinsManifest.push({ fileDataID: skin.fileDataID, file: path.relative(outDir, skinFile) });
 					fileManifest?.push({ type: typeName, fileDataID: skin.fileDataID, file: skinFile });
 				}
 
@@ -436,7 +436,7 @@ class M2Exporter {
 				skelFile = path.join(outDir, path.basename(skelFileName));
 
 			await skelData.writeToFile(skelFile);
-			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: ExportHelper.getRelativeExport(skelFile) });
+			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: path.relative(outDir, skelFile) });
 			fileManifest?.push({ type: 'SKEL', fileDataID: this.m2.skeletonFileID, file: skelFile });
 		}
 
@@ -455,7 +455,7 @@ class M2Exporter {
 					boneFile = path.join(outDir, path.basename(boneFileName));
 
 				await boneData.writeToFile(boneFile);
-				boneManifest.push({ fileDataID: boneFileID, file: ExportHelper.getRelativeExport(boneFile) });
+				boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
 				fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
 			}
 
@@ -478,7 +478,7 @@ class M2Exporter {
 						animFile = path.join(outDir, path.basename(animFileName));
 
 					await animData.writeToFile(animFile);
-					animManifest.push({ fileDataID: anim.fileDataID, file: ExportHelper.getRelativeExport(animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+					animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
 					fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
 					animCache.add(anim.fileDataID);
 				}
