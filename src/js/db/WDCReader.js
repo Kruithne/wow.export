@@ -523,8 +523,14 @@ class WDCReader {
 											out[prop] = new Array(count);
 											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
 												const ofs = data.readUInt32LE();
-												const pos = data.offset;
 
+												if (ofs == 0) {
+													out[prop][stringArrayIndex] = "";
+													continue;
+												}
+
+												const pos = data.offset;
+													
 												data.move((ofs - 4) - outsideDataSize);
 
 												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
@@ -533,13 +539,18 @@ class WDCReader {
 											}
 										} else {
 											const ofs = data.readUInt32LE();
-											const pos = data.offset;
 
-											data.move((ofs - 4) - outsideDataSize);
+											if (ofs == 0) {
+												out[prop] = "";
+											} else {
+												const pos = data.offset;
 
-											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.move((ofs - 4) - outsideDataSize);
 
-											data.seek(pos);
+												out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+												data.seek(pos);
+											}
 										}
 									} else {
 										if (count > 0) {
