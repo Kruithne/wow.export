@@ -70,6 +70,7 @@ class WDCReader {
 
 		this.rows = new Map();
 		this.copyTable = new Map();
+		this.stringTable = new Map();
 
 		this.schema = new Map();
 
@@ -336,6 +337,8 @@ class WDCReader {
 		// data_sections[header.section_count];
 		const sections = new Array(sectionCount);
 		const copyTable = this.copyTable;
+		const stringTable = this.stringTable;
+		let previousStringTableSize = 0;
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
 			const header = sectionHeaders[sectionIndex];
 			const isNormal = !(flags & 1);
@@ -355,8 +358,26 @@ class WDCReader {
 					offsetMap[minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
 
-			if (wdcVersion === 3 || isNormal) 
-				data.seek(stringBlockOfs + header.stringTableSize);
+			if (wdcVersion === 3 && isNormal) {
+				data.seek(stringBlockOfs);
+				for (let i = 0; i < header.stringTableSize;)
+				{
+					const oldPos = data.offset;
+					const stringResult = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+
+					if (stringResult != "")
+						stringTable.set(i + previousStringTableSize, stringResult);
+					
+					if (data.offset == oldPos)
+						data.seek(oldPos + 1);
+
+					i += (data.offset - oldPos);
+				}
+
+				previousStringTableSize += header.stringTableSize;
+			}
+
+			data.seek(stringBlockOfs + header.stringTableSize);
 
 			// uint32_t id_list[section_headers.id_list_size / 4];
 			const idList = data.readUInt32LE(header.idListSize / 4);
@@ -446,13 +467,12 @@ class WDCReader {
 				}
 			}
 
-			// Total recordDataSize of all forward sections and stringBlockSize of all past sections.
+			// Total recordDataSize of all forward sections
 			let outsideDataSize = 0;
+
 			for (let i = 0; i < sectionCount; i++) {
-				if (i > sectionIndex)
+				if (i < sectionIndex)
 					outsideDataSize += sections[i].recordDataSize;
-				else if (i < sectionIndex)
-					outsideDataSize += sections[i].header.stringTableSize;
 			}
 
 			const hasIDMap = section.idList.length > 0;
@@ -479,7 +499,7 @@ class WDCReader {
 					}
 				}
 
-				const recordEnd = section.recordDataOfs + recordOfs + actualRecordSize;
+				const absoluteRecordOffs = recordOfs - (recordCount * recordSize);
 
 				if (!isNormal) 
 					data.seek(recordOfs);
@@ -522,34 +542,33 @@ class WDCReader {
 										if (count > 0) {
 											out[prop] = new Array(count);
 											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
 												const ofs = data.readUInt32LE();
 
-												if (ofs == 0) {
+												const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+
+												if (ofs == 0 || stringTableIndex == 0) {
 													out[prop][stringArrayIndex] = "";
-													continue;
+												} else {
+													if (stringTable.has(stringTableIndex))
+														out[prop][stringArrayIndex] = stringTable.get(stringTableIndex);
+													else
+														throw new Error('Missing stringtable entry');
 												}
-
-												const pos = data.offset;
-													
-												data.move((ofs - 4) - outsideDataSize);
-
-												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-
-												data.seek(pos);
 											}
 										} else {
+											const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
 											const ofs = data.readUInt32LE();
 
-											if (ofs == 0) {
+											const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+
+											if (ofs == 0 || stringTableIndex == 0) {
 												out[prop] = "";
 											} else {
-												const pos = data.offset;
-
-												data.move((ofs - 4) - outsideDataSize);
-
-												out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-
-												data.seek(pos);
+												if (stringTable.has(stringTableIndex))
+													out[prop] = stringTable.get(stringTableIndex);
+												else
+													throw new Error('Missing stringtable entry');
 											}
 										}
 									} else {
