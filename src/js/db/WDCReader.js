@@ -363,8 +363,12 @@ class WDCReader {
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount
-			for (let i = 0; i < copyTableCount; i++)
-				copyTable.set(data.readInt32LE(), data.readInt32LE());
+			for (let i = 0; i < copyTableCount; i++) {
+				let destinationRowID = data.readInt32LE();
+				let sourceRowID = data.readInt32LE();
+				if (destinationRowID != sourceRowID)
+					copyTable.set(destinationRowID, sourceRowID);
+			}
 
 			if (wdcVersion === 3) {
 				// offset_map_entry offset_map[section_headers.offset_map_id_count];
