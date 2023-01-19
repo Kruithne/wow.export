@@ -3,6 +3,7 @@
 	"description": "Export Toolkit for World of Warcraft",
 	"license": "MIT",
 	"version": "0.1.44",
+	"type": "module",
 	"contributors": [
 		"Kruithne <kruithne@gmail.com> (https://kruithne.net/)",
 		"Martin Benjamins <marlamin@marlamin.com> (https://wow.tools/)"
