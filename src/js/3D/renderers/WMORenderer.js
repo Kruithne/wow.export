@@ -121,9 +121,7 @@ class WMORenderer {
 			}
 
 			if (texture.fileDataID > 0) {
-				const tex = new THREE.Texture();
-				const loader = new THREE.ImageLoader();
-
+				materials[i] = DEFAULT_MATERIAL;
 				const ribbonSlot = textureRibbon.addSlot();
 				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
@@ -133,23 +131,20 @@ class WMORenderer {
 
 					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
 
-					loader.load(blpURI, image => {
-						tex.image = image;
-						tex.format = THREE.RGBAFormat;
-						tex.needsUpdate = true;
-					});
+					const tex = new THREE.DataTexture(new Uint8Array(blp.toBuffer().raw.buffer), blp.width, blp.height, THREE.RGBAFormat);
+					tex.needsUpdate = true;
+
+					if (!(texture.flags & 0x40))
+						tex.wrapS = THREE.RepeatWrapping;
+
+					if (!(texture.flags & 0x80))
+						tex.wrapT = THREE.RepeatWrapping;
+
+					this.textures.push(tex);
+					materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 				}).catch(e => {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
-
-				if (!(texture.flags & 0x40))
-					tex.wrapS = THREE.RepeatWrapping;
-
-				if (!(texture.flags & 0x80))
-					tex.wrapT = THREE.RepeatWrapping;
-
-				this.textures.push(tex);
-				materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}
