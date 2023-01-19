@@ -17,7 +17,8 @@ module.exports = {
 	},
 	'env': {
 		'node': true,
-		'es2020': true
+		'es2020': true,
+		'browser': true
 	},
 	'rules': {
 		'indent': [ 'error', 'tab' ],
@@ -39,4 +40,4 @@ module.exports = {
 		'plugin:@typescript-eslint/recommended',
 		'plugin:vue/base'
 	]
-}
+};
