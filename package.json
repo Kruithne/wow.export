@@ -15,11 +15,8 @@
 		"url": "https://github.com/Kruithne/wow.export/issues"
 	},
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
-	"engines": {
-		"node": ">=18.10.0"
-	},
 	"scripts": {
-		"test": "node ./runTests.js"
+		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js"
 	},
 	"dependencies": {
 		"acorn": "^8.0.4",
