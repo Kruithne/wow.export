@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"module": "esnext",
+		"target": "esnext",
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true
+	},
+	"include": [
+		"src/app.ts"
+	]
+}
