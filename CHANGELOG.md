@@ -1,5 +1,5 @@
 0.1.45 (TBD)
-- Updated to support World of Warcraft v10.0.5+.
+- Updated to support World of Warcraft v10.0.5+ and v3.4.1+.
 - The "Textures" option for map tile exporting is now enabled by default.
 - Improved load times when previewing large WMO models.
 - The following breaking changes have been made to raw M2 exporting to keep it consistent with the other export systems:
