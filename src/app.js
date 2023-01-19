@@ -656,9 +656,6 @@ document.addEventListener('click', function(e) {
 			core.view.fileDropPrompt = null;
 	};
 
-	//window.ondragover = e => { e.preventDefault(); return false; };
-	//window.ondrop = e => { e.preventDefault(); return false; };
-
 	// Load cachesize, a file used to track the overall size of the cache directory
 	// without having to calculate the real size before showing to users. Fast and reliable.
 	fsp.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
