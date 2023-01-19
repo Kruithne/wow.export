@@ -17,7 +17,7 @@ jobs:
           node-version: 16
           cache: npm
       - name: npm install
-        run: npm ci
+        run: npm ci --dev
       - name: Compile wow.export win-x64
         run: mkdir bin\win-x64 && node build.js win-x64
       - name: Publish
