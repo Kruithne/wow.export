@@ -9,6 +9,7 @@ const path = require('path');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
+const BoneMapper = require('../BoneMapper');
 
 class GLTFWriter {
 	/**
@@ -268,7 +269,7 @@ class GLTFWriter {
 			skin.joints.push(i);
 
 			const node = {
-				name: this.name + '_bone_' + i,
+				name: BoneMapper.getBoneName(i),
 				children: bone.children
 			};
 
