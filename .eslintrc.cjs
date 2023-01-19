@@ -6,6 +6,7 @@ module.exports = {
 		'sourceType': 'module'
 	},
 	'globals': {
+		'Vue': true,
 		'THREE': true,
 		'nw': true,
 		'BUILD_RELEASE': true,
