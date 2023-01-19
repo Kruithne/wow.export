@@ -80,7 +80,7 @@ class RCPServer {
 		}
 
 		// Check for a numeric payload identifier and a matching handler.
-		if (typeof data.id === 'string' && SERVER_HANDLERS.hasOwnProperty(data.id)) {
+		if (typeof data.id === 'string' && Object.prototype.hasOwnProperty.call(SERVER_HANDLERS, data.id)) {
 			this.isBusy = true;
 			connection.log('Received %s: %o', data.id, data);
 			await SERVER_HANDLERS[data.id].call(this, data, connection);

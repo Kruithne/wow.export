@@ -20,9 +20,6 @@
         "node": true
     },
     "rules": {
-        /* Overrides from recommended ruleset */
-		"no-prototype-builtins": "off",
-
 		/* Custom */
 		"space-before-blocks": "error",
 		"curly": [2, "multi-or-nest", "consistent"],

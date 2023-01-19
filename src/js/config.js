@@ -55,7 +55,7 @@ const load = async () => {
  * @param {string} key 
  */
 const resetToDefault = (key) => {
-	if (defaultConfig.hasOwnProperty(key))
+	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
 		core.view.config[key] = defaultConfig[key];
 };
 
@@ -87,7 +87,7 @@ const doSave = async () => {
 	const configSave = {};
 	for (const [key, value] of Object.entries(core.view.config)) {
 		// Only persist configuration values that do not match defaults.
-		if (defaultConfig.hasOwnProperty(key) && defaultConfig[key] === value)
+		if (Object.prototype.hasOwnProperty.call(defaultConfig, key) && defaultConfig[key] === value)
 			continue;
 
 		configSave[key] = value;
