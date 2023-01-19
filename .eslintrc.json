@@ -1,6 +1,6 @@
 {
     "root": true,
-    "ignorePatterns": ["lib/", "src/js/3D/lib/"],
+    "ignorePatterns": ["lib/", "src/js/3D/lib/", "bin/"],
     "parserOptions": {
         "ecmaVersion": 2020
     },
