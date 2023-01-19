@@ -1,6 +1,7 @@
 module.exports = {
 	'root': true,
 	'ignorePatterns': ['lib/', 'src/js/3D/lib/', 'bin/'],
+	'parser': '@typescript-eslint/parser',
 	'parserOptions': {
 		'ecmaVersion': 'latest',
 		'sourceType': 'module'
