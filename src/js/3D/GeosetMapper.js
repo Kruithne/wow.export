@@ -5,22 +5,23 @@
  */
 
 const GEOSET_GROUPS = {
-	0: 'Hair',
-	100: 'FacialA',
-	200: 'FacialB',
-	300: 'FacialC',
+	0: 'Head',
+	100: 'Beard',
+	200: 'Sideburns',
+	300: 'Moustache',
 	400: 'Gloves',
 	500: 'Boots',
-	600: 'Tail',
+	600: 'Shirt/Tail',
 	700: 'Ears',
-	800: 'Wrists',
-	900: 'Kneepads',
+	800: 'WristSleeves',
+	900: 'Legs',
 	1000: 'Chest',
 	1100: 'Pants',
 	1200: 'Tabard',
-	1300: 'Trousers',
-	1500: 'Cloak',
-	1600: 'Chins',
+	1300: 'Robe',
+	1400: 'Loincloth',
+	1500: 'Cape',
+	1600: 'Jewelry/Chins',
 	1700: 'Eyeglow',
 	1800: 'Belt',
 	1900: 'Bone/Tail',
@@ -43,7 +44,9 @@ const GEOSET_GROUPS = {
 	3800: 'Tails',
 	3900: 'Vines',
 	4000: 'Chins/Tusks',
-	4100: 'Noses'
+	4100: 'Noses',
+	4200: 'HairDecoration',
+	4300: 'HornDecoration'
 };
 
 /**
