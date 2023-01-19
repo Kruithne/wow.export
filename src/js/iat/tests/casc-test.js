@@ -3,7 +3,6 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const assert = require('assert');
 const IntegrationTest = require('../integration-test');
 
 class CASCTest extends IntegrationTest {

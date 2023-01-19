@@ -154,7 +154,7 @@ class M2Exporter {
 		return validTextures;
 	}
 
-	async exportAsGLTF(out, helper, fileManifest) {
+	async exportAsGLTF(out, helper) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 		const outDir = path.dirname(out);
 

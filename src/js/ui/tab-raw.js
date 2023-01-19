@@ -66,9 +66,8 @@ core.events.on('click-detect-raw', async () => {
 	core.view.isBusy++;
 
 	const extensionMap = new Map();
-	let errorCount = 0;
-
 	let currentIndex = 1;
+
 	for (const fileDataID of filteredSelection) {
 		core.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length))
 
@@ -83,7 +82,6 @@ core.events.on('click-detect-raw', async () => {
 			}
 		} catch (e) {
 			log.write('Failed to identify file %d due to CASC error', fileDataID);
-			errorCount++;
 		}
 	}
 

@@ -5,7 +5,6 @@
  */
 const path = require('path');
 const util = require('util');
-const constants = require('../constants');
 const core = require('../core');
 const log = require('../log');
 

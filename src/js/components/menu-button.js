@@ -3,8 +3,6 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const util = require('util');
-
 Vue.component('menu-button', {
 	/**
 	 * options: An array of objects with label/value properties.

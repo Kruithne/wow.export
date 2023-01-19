@@ -310,9 +310,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		}
 	} else {
 		const casc = core.view.casc;
-		const config = core.view.config;
-
-		const exportWMOGroups = core.view.config.modelsExportWMOGroups;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 

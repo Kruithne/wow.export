@@ -139,10 +139,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming RESTART_APP request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
 	 */
-	async handleRestartApp(data, client) {
+	async handleRestartApp() {
 		// Enforce a small delay to prevent RCP DoS.
 		this.isBusy = true;
 		core.view.isBusy++;

@@ -3,9 +3,6 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-
-const path = require('path');
-
 Vue.component('listboxb', {
 	/**
 	 * items: Item entries displayed in the list.
@@ -142,9 +139,8 @@ Vue.component('listboxb', {
 
 		/**
 		 * Invoked when a mouse-up event is captured globally.
-		 * @param {MouseEvent} e 
 		 */
-		stopMouse: function(e) {
+		stopMouse: function() {
 			this.isScrolling = false;
 		},
 

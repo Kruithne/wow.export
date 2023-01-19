@@ -3,7 +3,6 @@
 	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
-const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const log = require('../log');

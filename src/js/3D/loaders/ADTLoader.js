@@ -121,7 +121,7 @@ const ADTChunkHandlers = {
 	},
 
 	// MH2O (Liquids)
-	0x4D48324F: function(data, chunkSize) {
+	0x4D48324F: function(data) {
 		const base = data.offset;
 		let dataOffsets = new Set();
 

@@ -199,7 +199,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOPT (Portal Triangles) [WMO Root]
-	0x4D4F5054: function(data, chunkSize) {
+	0x4D4F5054: function(data) {
 		this.portalInfo = new Array(this.portalCount);
 		for (let i = 0; i < this.portalCount; i++) {
 			this.portalInfo[i] = {

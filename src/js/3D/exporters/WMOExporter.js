@@ -196,9 +196,8 @@ class WMOExporter {
 	 * Export the WMO model as a GLTF file.
 	 * @param {string} out 
 	 * @param {ExportHelper} helper 
-	 * @param {Array} fileManifest
 	 */
-	async exportAsGLTF(out, helper, fileManifest) {
+	async exportAsGLTF(out, helper) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
 		
 		// TODO: Skip overwrite if file exists?

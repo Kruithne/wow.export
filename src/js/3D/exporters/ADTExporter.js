@@ -143,25 +143,6 @@ const rgbaToInt = (rgba) => {
 };
 
 /**
- * Save the current canvas state to a file.
- * @param {string} out
- */
-const saveCanvas = async (out) => {
-	// This is a quick and easy fix to rotate tiles to their correct orientation.
-	const rotate = document.createElement('canvas');
-	rotate.width = glCanvas.width;
-	rotate.height = glCanvas.height;
-
-	const ctx = rotate.getContext('2d');
-	ctx.translate(rotate.width / 2, rotate.height / 2);
-	ctx.rotate(Math.PI / 180 * 180);
-	ctx.drawImage(glCanvas, -(rotate.width / 2), -(rotate.height / 2));
-
-	const buf = await BufferWrapper.fromCanvas(rotate, 'image/png');
-	await buf.writeToFile(out);
-};
-
-/**
  * Compile the vertex and fragment shaders used for baking.
  * Will be attached to the current GL context.
  */
@@ -1079,7 +1060,7 @@ class ADTExporter {
 								Type: 'wmo',
 								FileDataID: fileDataID,
 								DoodadSetIndexes: doodadSets.join(','),
-								DoodadSetNames: doodadSets.map((e, i) => doodadNames[e]).join(',')
+								DoodadSetNames: doodadSets.map(e => doodadNames[e]).join(',')
 							});
 						} catch (e) {
 							log.write('Failed to export %s [%d]', fileName, fileDataID);

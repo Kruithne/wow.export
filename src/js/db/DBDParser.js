@@ -335,7 +335,7 @@ class DBDParser {
 			const match = entry.match(PATTERN_COLUMN);
 			if (match !== null) {
 				const columnType = match[1]; // int|float|locstring|string
-				const columnForeignKey = match[2]; // <TableName::ColumnName> or undefined
+				//const columnForeignKey = match[2]; // <TableName::ColumnName> or undefined
 				const columnName = match[3].replace('?', ''); // Field_6_0_1_18179_000?
 
 				// TODO: Support foreign key support.

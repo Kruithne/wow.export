@@ -8,7 +8,6 @@ const log = require('../log');
 const util = require('util');
 const path = require('path');
 const generics = require('../generics');
-const constants = require('../constants');
 const listfile = require('../casc/listfile');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');

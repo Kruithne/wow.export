@@ -13,7 +13,6 @@ const VersionConfig = require('./version-config');
 const CDNConfig = require('./cdn-config');
 const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
-const BufferWrapper = require('../buffer');
 const BLTEReader = require('./blte-reader').BLTEReader;
 
 const EMPTY_HASH = '00000000000000000000000000000000';
@@ -99,6 +98,8 @@ class CASCRemote extends CASC {
 	 * @param {boolean} [forceFallback=false]
 	 * @param {string} [contentKey=null]
 	 */
+	// TODO: This could do with being an interface.
+	// eslint-disable-next-line no-unused-vars
 	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));

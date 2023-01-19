@@ -394,9 +394,8 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Invoked on mouseup events captured on the document.
-		 * @param {MouseEvent} event
 		 */
-		handleMouseUp: function(event) {
+		handleMouseUp: function() {
 			if (this.isPanning)
 				this.isPanning = false;
 
@@ -502,9 +501,8 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Invoked when the mouse leaves the component.
-		 * @param {MouseEvent} event 
 		 */
-		handleMouseOut: function(event) {
+		handleMouseOut: function() {
 			this.isHovering = false;
 
 			// Remove the current hover overlay.

@@ -70,9 +70,8 @@ Vue.component('slider', {
 
 		/**
 		 * Invoked when a mouse-up event is captured globally.
-		 * @param {MouseEvent} e 
 		 */
-		stopMouse: function(e) {
+		stopMouse: function() {
 			this.isScrolling = false;
 		},
 

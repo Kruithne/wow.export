@@ -237,20 +237,20 @@ class WDCReader {
 
 		// wdc_db2_header
 		const recordCount = data.readUInt32LE();
-		const fieldCount = data.readUInt32LE();
+		data.move(4); // fieldCount
 		const recordSize = data.readUInt32LE();
-		const stringTableSize = data.readUInt32LE();
-		const tableHash = data.readUInt32LE();
+		data.move(4); // stringTableSize
+		data.move(4); // tableHash
 		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
 		const minID = data.readUInt32LE();
 		const maxID = data.readUInt32LE();
-		const locale = data.readUInt32LE();
+		data.move(4); // locale
 		const flags = data.readUInt16LE();
 		const idIndex = data.readUInt16LE();
 		this.idFieldIndex = idIndex;
 		const totalFieldCount = data.readUInt32LE();
-		const bitpackedDataOffset = data.readUInt32LE();
-		const lookupColumnCount = data.readUInt32LE();
+		data.move(4); // bitpackedDataOffset
+		data.move(4); // lookupColumnCount
 		const fieldStorageInfoSize = data.readUInt32LE();
 		const commonDataSize = data.readUInt32LE();
 		const palletDataSize = data.readUInt32LE();
@@ -405,8 +405,7 @@ class WDCReader {
 
 			if (header.relationshipDataSize > 0) {
 				const relationshipEntryCount = data.readUInt32LE();
-				const relationshipMinID = data.readUInt32LE(); // What are these used for?
-				const relationshipMaxID = data.readUInt32LE(); // What are these used for?
+				data.move(8); // relationshipMinID (UInt32) and relationshipMaxID (UInt32)
 
 				relationshipMap = new Map();
 				for (let i = 0; i < relationshipEntryCount; i++) {
@@ -482,23 +481,7 @@ class WDCReader {
 				if (hasIDMap)
 					recordID = section.idList[i];
 
-				let recordOfs;
-				let actualRecordSize;
-
-				if (isNormal) 
-				{
-					recordOfs = i * recordSize;
-					actualRecordSize = recordSize;
-				} else {
-					if (wdcVersion == 2) {
-						recordOfs = offsetMap[recordID].offset;
-						actualRecordSize = offsetMap[recordID].size;
-					} else { 
-						recordOfs = offsetMap[i].offset;
-						actualRecordSize = offsetMap[i].size;
-					}
-				}
-
+				const recordOfs = isNormal ? (i * recordSize) : offsetMap[wdcVersion === 2 ? i : recordID].offset;
 				const absoluteRecordOffs = recordOfs - (recordCount * recordSize);
 
 				if (!isNormal) 

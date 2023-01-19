@@ -192,7 +192,7 @@ class DB2Test extends IntegrationTest {
 			let colIndex = 0;
 			let ourColIndex = 0;
 			let actualIDIndex = 0;
-			for (const [fieldName, fieldType] of table.schema) {
+			for (const fieldType of table.schema.values()) {
 				if (idIndex == ourColIndex) 
 					actualIDIndex = colIndex;
 
