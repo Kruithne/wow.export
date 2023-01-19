@@ -147,16 +147,8 @@ const delay = async (ms) => {
 	}
 
 	// We can never be 100% sure that the entire process tree terminated.
-	// To that end, send an OS specific termination command.
-
-	// [GH-1] Expand this with support for further platforms as needed.
-	let command;
-	switch (process.platform) {
-		case 'win32':
-			command = 'taskkill /f /im wow.export.exe';
-	}
-
-	log('Sending auxiliary termination command (%s) %s', process.platform, command);
+	const command = 'taskkill /f /im wow.export.exe';
+	log('Sending termination command `%s`', command);
 	await new Promise(resolve => cp.exec(command, resolve));
 
 	const installDir = path.dirname(path.resolve(process.execPath));
@@ -199,12 +191,7 @@ const delay = async (ms) => {
 		log('WARN: Update directory does not exist. No update to apply.');
 	}
 	
-	// [GH-1] Expand this with support for further platforms as needed.
-	let binary;
-	switch (process.platform) {
-		case 'win32': binary = 'wow.export.exe'; break;
-	}
-
+	const binary = 'wow.export.exe';
 	log('Re-launching main process %s (%s)', binary, process.platform);
 
 	// Re-launch application.
