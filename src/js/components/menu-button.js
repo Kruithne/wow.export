@@ -16,13 +16,13 @@ Vue.component('menu-button', {
 		return {
 			selectedObj: null, // Currently selected option.
 			open: false // If the menu is open or not.
-		}
+		};
 	},
 
 	methods: {
 		/**
 		 * Set the selected option for this menu button.
-		 * @param {object} option 
+		 * @param {object} option
 		 */
 		select: function(option) {
 			this.open = false;

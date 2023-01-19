@@ -26,7 +26,7 @@ const WOWHEAD_ITEM = 'https://www.wowhead.com/item=%d';
 module.exports = class ExternalLinks {
 	/**
 	 * Open an external link on the system.
-	 * @param {string} link 
+	 * @param {string} link
 	 */
 	static open(link) {
 		if (link.startsWith('::'))
@@ -37,9 +37,9 @@ module.exports = class ExternalLinks {
 
 	/**
 	 * Open a specific item on Wowhead.
-	 * @param {number} itemID 
+	 * @param {number} itemID
 	 */
 	static wowHead_viewItem(itemID) {
 		this.open(util.format(WOWHEAD_ITEM, itemID));
 	}
-}
+};

@@ -96,10 +96,10 @@ const applyUpdate = async () => {
 
 	progress = core.createProgress(requiredFiles.length);
 	core.view.loadingTitle = 'Downloading updates...';
-	
+
 	const remoteEndpoint = util.format(core.view.config.updateURL, nw.App.manifest.flavour) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
-		const node = requiredFiles[i];		
+		const node = requiredFiles[i];
 		const localFile = path.join(constants.UPDATE.DIRECTORY, node.file);
 		log.write('Downloading %s to %s', node.file, localFile);
 

@@ -47,7 +47,7 @@ core.events.on('click-detect-raw', async () => {
 		core.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
 		return;
 	}
-	
+
 	const filteredSelection = [];
 	for (let fileName of userSelection) {
 		fileName = listfile.stripFileEntry(fileName);
@@ -57,7 +57,7 @@ core.events.on('click-detect-raw', async () => {
 			filteredSelection.push(parseInt(match[1]));
 	}
 
-	
+
 	if (filteredSelection.length === 0) {
 		core.setToast('info', 'You haven\'t selected any unknown files to identify.');
 		return;
@@ -69,7 +69,7 @@ core.events.on('click-detect-raw', async () => {
 	let currentIndex = 1;
 
 	for (const fileDataID of filteredSelection) {
-		core.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length))
+		core.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
 
 		try {
 			const data = await core.view.casc.getFile(fileDataID);
@@ -114,7 +114,7 @@ core.events.on('click-export-raw', async () => {
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
-	
+
 	const overwriteFiles = core.view.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.

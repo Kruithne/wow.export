@@ -9,7 +9,7 @@ const core = require('../core');
 class Texture {
 	/**
 	 * Construct a new Texture instance.
-	 * @param {number} flags 
+	 * @param {number} flags
 	 * @param {number} fileDataID
 	 */
 	constructor(flags, fileDataID) {
@@ -19,7 +19,7 @@ class Texture {
 
 	/**
 	 * Set the texture file using a file name.
-	 * @param {string} fileName 
+	 * @param {string} fileName
 	 */
 	setFileName(fileName) {
 		this.fileDataID = listfile.getByFilename(fileName) || 0;

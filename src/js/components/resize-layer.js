@@ -7,7 +7,7 @@ Vue.component('resize-layer', {
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html
-	 * 
+	 *
 	 */
 	mounted: function() {
 		this.observer = new ResizeObserver(() => this.$emit('resize', this.$el.clientWidth));
@@ -22,5 +22,5 @@ Vue.component('resize-layer', {
 		this.observer.disconnect();
 	},
 
-	template: `<div><slot></slot></div>`
+	template: '<div><slot></slot></div>'
 });

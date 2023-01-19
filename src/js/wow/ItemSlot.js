@@ -38,7 +38,7 @@ const ITEM_SLOTS = {
 
 /**
  * Get the label for an item slot based on the ID.
- * @param {number} id 
+ * @param {number} id
  */
 const getSlotName = (id) => {
 	return ITEM_SLOTS[id] ?? 'Unknown';

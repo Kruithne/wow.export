@@ -108,8 +108,8 @@ class BLPImage {
 
 	/**
 	 * Retrieve this BLP as a PNG image.
-	 * @param {number} mask 
-	 * @param {number} mipmap 
+	 * @param {number} mask
+	 * @param {number} mipmap
 	 * @returns {BufferWrapper}
 	 */
 	toPNG(mask = 0b1111, mipmap = 0) {
@@ -119,9 +119,9 @@ class BLPImage {
 		const pixelData = png.getPixelData();
 
 		switch (this.encoding) {
-			case 1: this._getUncompressed(pixelData, mask); break;
-			case 2: this._getCompressed(pixelData, mask); break;
-			case 3: this._marshalBGRA(pixelData, mask); break;
+		case 1: this._getUncompressed(pixelData, mask); break;
+		case 2: this._getCompressed(pixelData, mask); break;
+		case 3: this._marshalBGRA(pixelData, mask); break;
 		}
 
 		return png.getBuffer();
@@ -129,7 +129,7 @@ class BLPImage {
 
 	/**
 	 * Save this BLP as PNG file.
-	 * @param {string} file 
+	 * @param {string} file
 	 * @param {number} mask
 	 * @param {number} mipmap
 	 */
@@ -139,7 +139,7 @@ class BLPImage {
 
 	/**
 	 * Prepare BLP for processing.
-	 * @param {number} mipmap 
+	 * @param {number} mipmap
 	 */
 	_prepare(mipmap = 0) {
 		// Constrict the requested mipmap to a valid range..
@@ -158,8 +158,8 @@ class BLPImage {
 
 	/**
 	 * Draw the contents of this BLP file onto a canvas.
-	 * @param {HTMLElement} canvas 
-	 * @param {number} mipmap 
+	 * @param {HTMLElement} canvas
+	 * @param {number} mipmap
 	 * @param {number} mask
 	 */
 	drawToCanvas(canvas, mipmap = 0, mask = 0b1111) {
@@ -169,9 +169,9 @@ class BLPImage {
 		const canvasData = ctx.createImageData(this.scaledWidth, this.scaledHeight);
 
 		switch (this.encoding) {
-			case 1: this._getUncompressed(canvasData.data, mask); break;
-			case 2: this._getCompressed(canvasData.data, mask); break;
-			case 3: this._marshalBGRA(canvasData.data, mask); break;
+		case 1: this._getUncompressed(canvasData.data, mask); break;
+		case 2: this._getCompressed(canvasData.data, mask); break;
+		case 3: this._marshalBGRA(canvasData.data, mask); break;
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
@@ -179,23 +179,23 @@ class BLPImage {
 
 	/**
 	 * Get the contents of this BLP as a BufferWrapper instance.
-	 * @param {number} mipmap 
-	 * @param {number} mask 
+	 * @param {number} mipmap
+	 * @param {number} mask
 	 * @returns {BufferWrapper}
 	 */
 	toBuffer(mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
 		switch (this.encoding) {
-			case 1: return this._getUncompressed(null, mask);
-			case 2: return this._getCompressed(null, mask);
-			case 3: return this._marshalBGRA(null, mask);
+		case 1: return this._getUncompressed(null, mask);
+		case 2: return this._getCompressed(null, mask);
+		case 3: return this._marshalBGRA(null, mask);
 		}
 	}
 
 	/**
 	 * Get the contents of this BLP as an RGBA UInt8 array.
-	 * @param {number} mipmap 
+	 * @param {number} mipmap
 	 * @param {number} mask
 	 */
 	toUInt8Array(mipmap = 0, mask = 0b1111) {
@@ -203,14 +203,14 @@ class BLPImage {
 
 		const arr = new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
 		switch (this.encoding) {
-			case 1: this._getUncompressed(arr, mask); break;
-			case 2: this._getCompressed(arr, mask); break;
-			case 3: this._marshalBGRA(arr, mask); break;
+		case 1: this._getUncompressed(arr, mask); break;
+		case 2: this._getCompressed(arr, mask); break;
+		case 3: this._marshalBGRA(arr, mask); break;
 		}
 
 		return arr;
 	}
-	
+
 	/**
 	 * Calculate the alpha using this files alpha depth.
 	 * @param {number} index Alpha index.
@@ -219,19 +219,19 @@ class BLPImage {
 	_getAlpha(index) {
 		let byte;
 		switch (this.alphaDepth) {
-			case 1:
-				byte = this.rawData[this.scaledLength + (index / 8)];
-				return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
+		case 1:
+			byte = this.rawData[this.scaledLength + (index / 8)];
+			return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
 
-			case 4:
-				byte = this.rawData[this.scaledLength + (index / 2)];
-				return (index % 2 === 0 ? (byte & 0x0F) << 4 : byte & 0xF0);
+		case 4:
+			byte = this.rawData[this.scaledLength + (index / 2)];
+			return (index % 2 === 0 ? (byte & 0x0F) << 4 : byte & 0xF0);
 
-			case 8:
-				return this.rawData[this.scaledLength + index];
+		case 8:
+			return this.rawData[this.scaledLength + index];
 
-			default:
-				return 0xFF;
+		default:
+			return 0xFF;
 		}
 	}
 
@@ -365,7 +365,7 @@ class BLPImage {
 				pos += blockBytes;
 			}
 		}
-		
+
 		if (!canvasData)
 			return new BufferWrapper(data);
 	}
@@ -382,7 +382,7 @@ class BLPImage {
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const ofs = i * 4;
 				const colour = this.palette[this.rawData[i]];
-				
+
 				canvasData[ofs] = (mask & 0b1) ? colour[2] : 0;
 				canvasData[ofs + 1] = (mask & 0b10) ? colour[1] : 0;
 				canvasData[ofs + 2] = (mask & 0b100) ? colour[0] : 0;
@@ -413,7 +413,7 @@ class BLPImage {
 	 */
 	_marshalBGRA(canvasData, mask) {
 		const data = this.rawData;
-		
+
 		if (canvasData) {
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;

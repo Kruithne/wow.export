@@ -76,7 +76,7 @@ core.events.once('screen-source-select', async () => {
 		if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION))
 			core.view.selectedCDNRegion = node;
 
-		// Run a rudimentary ping check for each CDN. 
+		// Run a rudimentary ping check for each CDN.
 		pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
 			node.delay = -1;
 			log.write('Failed ping to %s: %s', cdnURL, e.message);
@@ -96,7 +96,7 @@ core.events.once('screen-source-select', async () => {
 
 	const openInstall = async (installPath, product) => {
 		core.hideToast();
-		
+
 		try {
 			cascSource = new CASCLocal(installPath);
 			await cascSource.init();
@@ -145,7 +145,7 @@ core.events.once('screen-source-select', async () => {
 				// No builds available, likely CDN is not available.
 				if (cascSource.builds.length === 0)
 					throw new Error('No builds available.');
-				
+
 				core.view.availableRemoteBuilds = cascSource.getProductList();
 			} catch (e) {
 				core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);

@@ -19,7 +19,7 @@ const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: TH
 class WMORenderer {
 	/**
 	 * Construct a new WMORenderer instance.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 * @param {string|number} fileID
 	 * @param {THREE.Group} renderGroup
 	 */
@@ -171,7 +171,7 @@ class WMORenderer {
 
 	/**
 	 * Load an auxiliary texture onto the texture ribbon.
-	 * @param {number|string} textureID 
+	 * @param {number|string} textureID
 	 * @param {WMOLoader} wmo
 	 */
 	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
@@ -191,7 +191,7 @@ class WMORenderer {
 
 	/**
 	 * Load a doodad set for this WMO.
-	 * @param {number} index 
+	 * @param {number} index
 	 */
 	async loadDoodadSet(index) {
 		const wmo = this.wmo;
@@ -232,7 +232,7 @@ class WMORenderer {
 						// New M2, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
 						const m2 = new M2Renderer(data, renderGroup, false, false);
-						
+
 						await m2.load();
 						await m2.loadSkin(0);
 
@@ -288,16 +288,16 @@ class WMORenderer {
 
 	/**
 	 * Recursively collect render materials.
-	 * @param {object} root 
-	 * @param {Set} out 
-	 * @returns 
+	 * @param {object} root
+	 * @param {Set} out
+	 * @returns
 	 */
 	getRenderMaterials(root, out) {
 		if (root.children) {
 			for (const child of root.children)
 				this.getRenderMaterials(child, out);
 		}
-		
+
 		if (root.material) {
 			for (const material of root.material)
 				out.add(material);

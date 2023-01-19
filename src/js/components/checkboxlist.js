@@ -18,7 +18,7 @@ Vue.component('checkboxlist', {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1
-		}
+		};
 	},
 
 	/**
@@ -92,7 +92,7 @@ Vue.component('checkboxlist', {
 		resize: function() {
 			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor(this.$el.clientHeight / 26);
-			
+
 		},
 
 		/**
@@ -107,7 +107,7 @@ Vue.component('checkboxlist', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -117,7 +117,7 @@ Vue.component('checkboxlist', {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -151,7 +151,7 @@ Vue.component('checkboxlist', {
 
 		/**
 		 * Propagate entry clicks to the child checkbox.
-		 * @param {MouseEvent} event 
+		 * @param {MouseEvent} event
 		 */
 		propagateClick: function(event) {
 			let target = event.target;

@@ -35,7 +35,7 @@ const exportExtensions = {
 };
 
 const activeSkins = new Map();
-let selectedVariantTextureIDs = new Array();
+let selectedVariantTextureIDs = [];
 let selectedSkinName = null;
 
 let isFirstModel = true;
@@ -48,7 +48,7 @@ let activePath;
 
 /**
  * Lookup model displays for items/creatures.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @returns {Array}
  */
 const getModelDisplays = (fileDataID) => {
@@ -69,7 +69,7 @@ const clearTexturePreview = () => {
 
 /**
  * Preview a texture by the given fileDataID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @param {string} name
  */
 const previewTextureByID = async (fileDataID, name) => {
@@ -258,7 +258,7 @@ const updateCameraBounding = () => {
 
 /**
  * Resolves variant texture IDs based on user selection.
- * @param {string} fileName 
+ * @param {string} fileName
  * @returns {Array}
  */
 const getVariantTextureIDs = (fileName) => {
@@ -284,10 +284,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath) {
 			core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
-			
+
 			const canvas = document.getElementById('model-preview').querySelector('canvas');
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
-			
+
 			if (format === 'PNG') {
 				const exportPath = ExportHelper.getExportPath(activePath);
 				const outFile = ExportHelper.replaceExtension(exportPath, '.png');
@@ -317,7 +317,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
-			
+
 			let fileName;
 			let fileDataID;
 
@@ -330,11 +330,11 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			}
 
 			const fileManifest = [];
-			
+
 			try {
 				let fileType;
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID));
-				
+
 				if (fileName === undefined) {
 					// In the event that we're exporting a file by ID that does not exist in the listfile
 					// then we can't presume the file type and need to investigate the headers.
@@ -379,75 +379,75 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				}
 
 				switch (format) {
-					case 'RAW': {
-						exportPaths.writeLine(exportPath);
+				case 'RAW': {
+					exportPaths.writeLine(exportPath);
 
-						let exporter;
-						if (fileType === MODEL_TYPE_M2)
-							exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
-						else if (fileType === MODEL_TYPE_WMO)
-							exporter = new WMOExporter(data, fileDataID);
+					let exporter;
+					if (fileType === MODEL_TYPE_M2)
+						exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+					else if (fileType === MODEL_TYPE_WMO)
+						exporter = new WMOExporter(data, fileDataID);
 
-						await exporter.exportRaw(exportPath, helper, fileManifest);
-						break;
-					}
-					case 'OBJ':
-					case 'GLTF':
-						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
+					await exporter.exportRaw(exportPath, helper, fileManifest);
+					break;
+				}
+				case 'OBJ':
+				case 'GLTF':
+					exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
-						if (fileType === MODEL_TYPE_M2) {
-							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+					if (fileType === MODEL_TYPE_M2) {
+						const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 
-							// Respect geoset masking for selected model.
-							if (fileName == activePath)
-								exporter.setGeosetMask(core.view.modelViewerGeosets);
+						// Respect geoset masking for selected model.
+						if (fileName == activePath)
+							exporter.setGeosetMask(core.view.modelViewerGeosets);
 
-							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
-								exportPaths.writeLine('M2_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-								exportPaths.writeLine('M2_GLTF:' + exportPath);
-							}
-
-							// Abort if the export has been cancelled.
-							if (helper.isCancelled())
-								return;
-						} else if (fileType === MODEL_TYPE_WMO) {
-							// WMO loading currently loads group objects directly from CASC.
-							// In order to load these properly, we would need to know the internal name here.
-							if (isLocal)
-								throw new Error('Converting local WMO objects is currently not supported.');
-
-							const exporter = new WMOExporter(data, fileName);
-
-							// Respect group/set masking for selected WMO.
-							if (fileName === activePath) {
-								exporter.setGroupMask(core.view.modelViewerWMOGroups);
-								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
-							}
-
-							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, helper, fileManifest);
-								exportPaths.writeLine('WMO_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper);
-								exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
-							}
-
-							WMOExporter.clearCache();
-
-							// Abort if the export has been cancelled.
-							if (helper.isCancelled())
-								return;
-						} else {
-							throw new Error('Unexpected model format: ' + fileName);
+						if (format === 'OBJ') {
+							await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
+							exportPaths.writeLine('M2_OBJ:' + exportPath);
+						} else if (format === 'GLTF') {
+							await exporter.exportAsGLTF(exportPath, helper, fileManifest);
+							exportPaths.writeLine('M2_GLTF:' + exportPath);
 						}
 
-						break;
+						// Abort if the export has been cancelled.
+						if (helper.isCancelled())
+							return;
+					} else if (fileType === MODEL_TYPE_WMO) {
+						// WMO loading currently loads group objects directly from CASC.
+						// In order to load these properly, we would need to know the internal name here.
+						if (isLocal)
+							throw new Error('Converting local WMO objects is currently not supported.');
 
-					default:
-						throw new Error('Unexpected model export format: ' + format);
+						const exporter = new WMOExporter(data, fileName);
+
+						// Respect group/set masking for selected WMO.
+						if (fileName === activePath) {
+							exporter.setGroupMask(core.view.modelViewerWMOGroups);
+							exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
+						}
+
+						if (format === 'OBJ') {
+							await exporter.exportAsOBJ(exportPath, helper, fileManifest);
+							exportPaths.writeLine('WMO_OBJ:' + exportPath);
+						} else if (format === 'GLTF') {
+							await exporter.exportAsGLTF(exportPath, helper);
+							exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
+						}
+
+						WMOExporter.clearCache();
+
+						// Abort if the export has been cancelled.
+						if (helper.isCancelled())
+							return;
+					} else {
+						throw new Error('Unexpected model format: ' + fileName);
+					}
+
+					break;
+
+				default:
+					throw new Error('Unexpected model export format: ' + format);
 				}
 
 				helper.mark(fileName, true);
@@ -477,7 +477,7 @@ const updateListfile = () => {
 	const modelExt = [];
 	if (core.view.config.modelsShowM2)
 		modelExt.push('.m2');
-	
+
 	if (core.view.config.modelsShowWMO)
 		modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 

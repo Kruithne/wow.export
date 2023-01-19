@@ -3,7 +3,7 @@ const INSTALL_SIG = 0x4E49; // IN
 class InstallManifest {
 	/**
 	 * Construct a new InstallManifest instance.
-	 * @param {BLTEReader} data 
+	 * @param {BLTEReader} data
 	 */
 	constructor(data) {
 		this.version = 0;
@@ -20,7 +20,7 @@ class InstallManifest {
 
 	/**
 	 * Parse data for this install manifest.
-	 * @param {BLTEReader} data 
+	 * @param {BLTEReader} data
 	 */
 	parse(data) {
 		if (data.readUInt16LE() !== INSTALL_SIG)

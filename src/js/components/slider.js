@@ -12,7 +12,7 @@ Vue.component('slider', {
 	data: function() {
 		return {
 			isScrolling: false, // True if the slider is being dragged.
-		}
+		};
 	},
 
 	/**
@@ -40,7 +40,7 @@ Vue.component('slider', {
 	methods: {
 		/**
 		 * Set the current value of this slider.
-		 * @param {number} value 
+		 * @param {number} value
 		 */
 		setValue: function(value) {
 			this.$emit('input', Math.min(1, Math.max(0, value)));
@@ -48,17 +48,17 @@ Vue.component('slider', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the slider handle.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
-			this.scrollStartX = e.clientX
+			this.scrollStartX = e.clientX;
 			this.scrollStart = this.value;
 			this.isScrolling = true;
 		},
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -77,7 +77,7 @@ Vue.component('slider', {
 
 		/**
 		 * Invoked when the user clicks somewhere on the slider.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		handleClick: function(e) {
 			// Don't handle click events on the draggable handle.

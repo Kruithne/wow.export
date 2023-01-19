@@ -33,7 +33,7 @@ class M2Exporter {
 
 	/**
 	 * Set the mask array used for geoset control.
-	 * @param {Array} mask 
+	 * @param {Array} mask
 	 */
 	setGeosetMask(mask) {
 		this.geosetMask = mask;
@@ -41,7 +41,7 @@ class M2Exporter {
 
 	/**
 	 * Export the textures for this M2 model.
-	 * @param {string} out 
+	 * @param {string} out
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
 	 * @param {ExportHelper} helper
@@ -172,7 +172,7 @@ class M2Exporter {
 		gltf.setNormalArray(this.m2.normals);
 		gltf.setUVArray(this.m2.uv);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
-		gltf.setBoneIndiceArray(this.m2.boneIndices)
+		gltf.setBoneIndiceArray(this.m2.boneIndices);
 		gltf.setBonesArray(this.m2.bones);
 
 		// TODO: Handle UV2 for GLTF.
@@ -362,8 +362,8 @@ class M2Exporter {
 	/**
 	 * Export the model as a raw M2 file, including related files
 	 * such as textures, bones, animations, etc.
-	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 * @param {string} out
+	 * @param {ExportHelper} helper
 	 * @param {Array} [fileManifest]
 	 */
 	async exportRaw(out, helper, fileManifest) {
@@ -403,7 +403,7 @@ class M2Exporter {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
 						return;
-	
+
 					const skinData = await casc.getFile(skin.fileDataID);
 
 					let skinFile;
@@ -411,7 +411,7 @@ class M2Exporter {
 						skinFile = ExportHelper.getExportPath(skin.fileName);
 					else
 						skinFile = path.join(outDir, path.basename(skin.fileName));
-	
+
 					await skinData.writeToFile(skinFile);
 					skinsManifest.push({ fileDataID: skin.fileDataID, file: path.relative(outDir, skinFile) });
 					fileManifest?.push({ type: typeName, fileDataID: skin.fileDataID, file: skinFile });
@@ -421,7 +421,7 @@ class M2Exporter {
 			};
 
 			await exportSkins(this.m2.getSkinList(), 'SKIN', 'skins');
-			await exportSkins(this.m2.lodSkins, 'LOD_SKIN', 'lodSkins');			
+			await exportSkins(this.m2.lodSkins, 'LOD_SKIN', 'lodSkins');
 		}
 
 		// Write relative skeleton files.
@@ -470,7 +470,7 @@ class M2Exporter {
 				if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
 					const animData = await casc.getFile(anim.fileDataID);
 					const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
-					
+
 					let animFile;
 					if (config.enableSharedChildren)
 						animFile = ExportHelper.getExportPath(animFileName);

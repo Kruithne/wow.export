@@ -43,5 +43,5 @@ Vue.component('file-field', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<input type="text" :value="value" @focus="openDialog" @input="$emit('input', $event.target.value)"/>`
+	template: '<input type="text" :value="value" @focus="openDialog" @input="$emit(\'input\', $event.target.value)"/>'
 });

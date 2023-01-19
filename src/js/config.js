@@ -17,8 +17,8 @@ let defaultConfig = {};
 /**
  * Clone one config object into another.
  * Arrays are cloned rather than passed by reference.
- * @param {object} src 
- * @param {object} target 
+ * @param {object} src
+ * @param {object} target
  */
 const copyConfig = (src, target) => {
 	for (const [key, value] of Object.entries(src)) {
@@ -52,7 +52,7 @@ const load = async () => {
 
 /**
  * Reset a configuration key to default.
- * @param {string} key 
+ * @param {string} key
  */
 const resetToDefault = (key) => {
 	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
@@ -95,7 +95,7 @@ const doSave = async () => {
 
 	const out = JSON.stringify(configSave, null, '\t');
 	await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
-	
+
 	// If another save was attempted during this one, re-save.
 	if (isQueued) {
 		isQueued = false;

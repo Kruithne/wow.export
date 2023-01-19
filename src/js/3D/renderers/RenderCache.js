@@ -13,8 +13,8 @@ class RenderCache {
 
 	/**
 	 * Register a material to the cache.
-	 * @param {THREE.material} material 
-	 * @param {THREE.Texture} tex 
+	 * @param {THREE.material} material
+	 * @param {THREE.Texture} tex
 	 */
 	register(material, tex) {
 		this.users.set(material, 0);
@@ -23,7 +23,7 @@ class RenderCache {
 
 	/**
 	 * Potentially retire the provided materials, if no users remain.
-	 * @param {THREE.material} material 
+	 * @param {THREE.material} material
 	 */
 	retire(...materials) {
 		for (const material of materials) {
@@ -33,7 +33,7 @@ class RenderCache {
 			let users = this.users.get(material) - 1;
 			if (users < 1) {
 				// No more users, retire the material.
-				log.write('Disposing of abandoned material %s', material.uuid)
+				log.write('Disposing of abandoned material %s', material.uuid);
 
 				material.dispose();
 				this.textures.get(material)?.dispose();
@@ -49,7 +49,7 @@ class RenderCache {
 
 	/**
 	 * Add another user for the provided material.
-	 * @param {THREE.material} material 
+	 * @param {THREE.material} material
 	 */
 	addUser(material) {
 		this.users.set(material, this.users.get(material) + 1);

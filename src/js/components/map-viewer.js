@@ -42,7 +42,7 @@ Vue.component('map-viewer', {
 			isPanning: false,
 			isSelecting: false,
 			selectState: true
-		}
+		};
 	},
 
 	/**
@@ -143,10 +143,10 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Add a tile to the queue to be loaded.
-		 * @param {number} x 
-		 * @param {number} y 
-		 * @param {number} index 
-		 * @param {number} tileSize 
+		 * @param {number} x
+		 * @param {number} y
+		 * @param {number} index
+		 * @param {number} tileSize
 		 */
 		queueTile: function(x, y, index, tileSize) {
 			const node = [x, y, index, tileSize];
@@ -160,7 +160,7 @@ Vue.component('map-viewer', {
 		/**
 		 * Load a given tile into the cache.
 		 * Triggers a re-render and queue-check once loaded.
-		 * @param {Array} tile 
+		 * @param {Array} tile
 		 */
 		loadTile: function(tile) {
 			this.awaitingTile = true;
@@ -169,7 +169,7 @@ Vue.component('map-viewer', {
 
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
-			// after a new map has been selected. 
+			// after a new map has been selected.
 			const cache = state.cache;
 
 			this.loader(x, y, tileSize).then(data => {
@@ -195,7 +195,7 @@ Vue.component('map-viewer', {
 				// Check if we have a center chunk, if so we can leave the default as 0,0.
 				const center = Math.floor(MAP_COORD_BASE / TILE_SIZE);
 				const centerIndex = this.mask[(center * MAP_SIZE) + center];
-				
+
 				// No center chunk, find first chunk available.
 				if (centerIndex !== 1) {
 					const index = this.mask.findIndex(e => e === 1);
@@ -244,7 +244,7 @@ Vue.component('map-viewer', {
 
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
-			// after a new map has been selected. 
+			// after a new map has been selected.
 			const cache = state.cache;
 
 			// Iterate over all possible tiles in a map and render as needed.
@@ -288,7 +288,7 @@ Vue.component('map-viewer', {
 					// Draw the selection overlay if this tile is selected.
 					if (this.selection.includes(index)) {
 						ctx.fillStyle = 'rgba(159, 241, 161, 0.5)';
-						ctx.fillRect(drawX, drawY, tileSize, tileSize);	
+						ctx.fillRect(drawX, drawY, tileSize, tileSize);
 					}
 
 					// Draw the hover overlay if this tile is hovered over.
@@ -302,7 +302,7 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Invoked when a key press event is fired on the document.
-		 * @param {KeyboardEvent} event 
+		 * @param {KeyboardEvent} event
 		 */
 		handleKeyPress: function(event) {
 			// Check if the user cursor is over the map viewer.
@@ -317,7 +317,7 @@ Vue.component('map-viewer', {
 				}
 
 				this.selection.length = 0; // Reset the selection array.
-				
+
 				// Iterate over all available tiles in the mask and select them.
 				for (let i = 0, n = this.mask.length; i < n; i++) {
 					if (this.mask[i] === 1)
@@ -326,7 +326,7 @@ Vue.component('map-viewer', {
 
 				// Trigger a re-render to show the new selection.
 				this.render();
-				
+
 				// Absorb this event preventing further action.
 				event.preventDefault();
 				event.stopPropagation();
@@ -334,8 +334,8 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * @param {MouseEvent} event 
-		 * @returns 
+		 * @param {MouseEvent} event
+		 * @returns
 		 */
 		handleTileInteraction: function(event, isFirst = false) {
 			// Calculate which chunk we shift-clicked on.
@@ -430,12 +430,12 @@ Vue.component('map-viewer', {
 		/**
 		 * Convert an absolute client point (such as cursor position) to a relative
 		 * position on the map. Returns { tileX, tileY posX, posY }
-		 * @param {number} x 
-		 * @param {number} y 
+		 * @param {number} x
+		 * @param {number} y
 		 */
 		mapPositionFromClientPoint: function(x, y) {
 			const viewport = this.$el.getBoundingClientRect();
-			
+
 			const viewOfsX = (x - viewport.x) - state.offsetX;
 			const viewOfsY = (y - viewport.y) - state.offsetY;
 
@@ -452,8 +452,8 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Centers the map on a given X, Y in-game position.
-		 * @param {number} x 
-		 * @param {number} y 
+		 * @param {number} x
+		 * @param {number} y
 		 */
 		setMapPosition: function(x, y) {
 			// Translate to WoW co-ordinates.
@@ -475,7 +475,7 @@ Vue.component('map-viewer', {
 		/**
 		 * Set the zoom factor. This will invalidate the cache.
 		 * This function will not re-render the preview.
-		 * @param {number} factor 
+		 * @param {number} factor
 		 */
 		setZoomFactor: function(factor) {
 			state.zoomFactor = factor;
@@ -486,7 +486,7 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Invoked when the mouse is moved over the component.
-		 * @param {MouseEvent} event 
+		 * @param {MouseEvent} event
 		 */
 		handleMouseOver: function(event) {
 			this.isHovering = true;
@@ -511,7 +511,7 @@ Vue.component('map-viewer', {
 
 		/**
 		 * Invoked on mousewheel events captured on the container element.
-		 * @param {WheelEvent} event 
+		 * @param {WheelEvent} event
 		 */
 		handleMouseWheel: function(event) {
 			const delta = event.deltaY > 0 ? 1 : -1;

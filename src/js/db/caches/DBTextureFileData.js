@@ -34,7 +34,7 @@ const initializeTextureFileData = async () => {
 
 /**
  * Retrieve a texture file data ID by a material resource ID.
- * @param {number} matResID 
+ * @param {number} matResID
  * @returns {?number}
  */
 const getTextureFileDataID = (matResID) => {

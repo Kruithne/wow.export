@@ -35,8 +35,8 @@ const reset = () => {
 
 /**
  * Set the file displayed in a given ribbon slot.
- * @param {number} slotIndex 
- * @param {number} fileDataID 
+ * @param {number} slotIndex
+ * @param {number} fileDataID
  * @param {number} syncID
  */
 const setSlotFile = (slotIndex, fileDataID, syncID) => {
@@ -56,8 +56,8 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 
 /**
  * Set the render source for a given ribbon slot.
- * @param {number} slotIndex 
- * @param {string} src 
+ * @param {number} slotIndex
+ * @param {string} src
  * @param {number} syncID
  */
 const setSlotSrc = (slotIndex, src, syncID) => {

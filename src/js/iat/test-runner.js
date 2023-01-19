@@ -17,7 +17,7 @@ class TestRunner {
 		this.testCount = 0;
 		this.currentTest = 1;
 	}
-	
+
 	/**
 	 * Defines available test units.
 	 * @returns {function[]}
@@ -32,7 +32,7 @@ class TestRunner {
 
 	/**
 	 * Mark the currently active test.
-	 * @param {string} name 
+	 * @param {string} name
 	 */
 	async markTest(name) {
 		core.view.loadingProgress = util.format('Running test %d / %d (%s)', this.currentTest, this.testCount, name);

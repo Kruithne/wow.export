@@ -14,7 +14,7 @@ let isSaving = false;
 
 /**
  * Retrieve a registered decryption key.
- * @param {string} keyName 
+ * @param {string} keyName
  */
 const getKey = (keyName) => {
 	return KEY_RING[keyName.toLowerCase()];
@@ -22,8 +22,8 @@ const getKey = (keyName) => {
 
 /**
  * Validate a keyName/key pair.
- * @param {string} keyName 
- * @param {string} key 
+ * @param {string} keyName
+ * @param {string} key
  */
 const validateKeyPair = (keyName, key) => {
 	if (keyName.length !== 16)
@@ -39,8 +39,8 @@ const validateKeyPair = (keyName, key) => {
  * Add a decryption key. Subject to validation.
  * Decryption keys will be saved to disk on next tick.
  * Returns true if added, else false if the pair failed validation.
- * @param {string} keyName 
- * @param {string} key 
+ * @param {string} keyName
+ * @param {string} key
  */
 const addKey = (keyName, key) => {
 	if (!validateKeyPair(keyName, key))
@@ -90,7 +90,7 @@ const load = async () => {
 		const data = await generics.consumeUTF8Stream(res);
 		const lines = data.split(/\r\n|\n|\r/);
 		let remoteAdded = 0;
-		
+
 		for (const line of lines) {
 			const parts = line.split(' ');
 			if (parts.length !== 2)

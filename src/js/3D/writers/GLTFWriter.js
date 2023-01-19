@@ -14,8 +14,8 @@ const BoneMapper = require('../BoneMapper');
 class GLTFWriter {
 	/**
 	 * Construct a new GLTF writer instance.
-	 * @param {string} out 
-	 * @param {string} name 
+	 * @param {string} out
+	 * @param {string} name
 	 */
 	constructor(out, name) {
 		this.out = out;
@@ -27,7 +27,7 @@ class GLTFWriter {
 		this.boneWeights = [];
 		this.boneIndices = [];
 		this.bones = [];
-		
+
 		this.textures = new Map();
 		this.meshes = [];
 	}
@@ -42,7 +42,7 @@ class GLTFWriter {
 
 	/**
 	 * Set the bones array for this writer.
-	 * @param {Array} bones 
+	 * @param {Array} bones
 	 */
 	setBonesArray(bones) {
 		this.bones = bones;
@@ -50,7 +50,7 @@ class GLTFWriter {
 
 	/**
 	 * Set the vertices array for this writer.
-	 * @param {Array} vertices 
+	 * @param {Array} vertices
 	 */
 	setVerticesArray(vertices) {
 		this.vertices = vertices;
@@ -58,7 +58,7 @@ class GLTFWriter {
 
 	/**
 	 * Set the normals array for this writer.
-	 * @param {Array} normals 
+	 * @param {Array} normals
 	 */
 	setNormalArray(normals) {
 		this.normals = normals;
@@ -66,7 +66,7 @@ class GLTFWriter {
 
 	/**
 	 * Set the UV array for this writer.
-	 * @param {Array} uvs 
+	 * @param {Array} uvs
 	 */
 	setUVArray(uvs) {
 		this.uvs = uvs;
@@ -74,7 +74,7 @@ class GLTFWriter {
 
 	/**
 	 * Set the bone weights array for this writer.
-	 * @param {Array} boneWeights 
+	 * @param {Array} boneWeights
 	 */
 	setBoneWeightArray(boneWeights) {
 		this.boneWeights = boneWeights;
@@ -90,9 +90,9 @@ class GLTFWriter {
 
 	/**
 	 * Add a mesh to this writer.
-	 * @param {string} name 
-	 * @param {Array} triangles 
-	 * @param {string} matName 
+	 * @param {string} name
+	 * @param {Array} triangles
+	 * @param {string} matName
 	 */
 	addMesh(name, triangles, matName) {
 		this.meshes.push({ name, triangles, matName });
@@ -100,9 +100,9 @@ class GLTFWriter {
 
 	/**
 	 * Calculate the minimum/maximum values of an array buffer.
-	 * @param {Array} values 
-	 * @param {number} stride 
-	 * @param {object} target 
+	 * @param {Array} values
+	 * @param {number} stride
+	 * @param {object} target
 	 */
 	calculateMinMax(values, stride, target) {
 		const min = target.min = Array(stride);
@@ -116,7 +116,7 @@ class GLTFWriter {
 
 				if (currentMin === undefined || value < currentMin)
 					min[ofs] = value;
-				
+
 				if (currentMax === undefined || value > currentMax)
 					max[ofs] = value;
 			}
@@ -250,7 +250,7 @@ class GLTFWriter {
 
 		//const boneOffset = nodes.length;
 		const bones = this.bones;
-		
+
 		// Bone child lookup.
 		for (let i = 0, n = bones.length; i < n; i++) {
 			const bone = bones[i];
@@ -276,7 +276,7 @@ class GLTFWriter {
 			let parentPos = [0, 0, 0];
 			if (node.parentNode > -1)
 				parentPos = bones[bone.parentBone].pivot;
-				
+
 			node.translation = bone.pivot.map((v, i) => v -= parentPos[i]);
 			nodes.push(node);
 		}
@@ -321,7 +321,7 @@ class GLTFWriter {
 
 			view.byteOffset = bin.offset;
 
-			if (componentType == 0x1406) 
+			if (componentType == 0x1406)
 				view.byteLength = arr.length * 4;
 			else if (componentType == 0x1401)
 				view.byteLength = arr.length;
@@ -330,7 +330,7 @@ class GLTFWriter {
 
 			this.calculateMinMax(arr, stride, accessor);
 			for (const node of arr) {
-				if (componentType == 0x1406) 
+				if (componentType == 0x1406)
 					bin.writeFloatLE(node);
 				else if (componentType == 0x1401)
 					bin.writeUInt8(node);

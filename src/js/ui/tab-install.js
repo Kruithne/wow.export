@@ -26,7 +26,7 @@ core.events.once('screen-tab-install', async () => {
 	core.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await core.view.casc.getInstallManifest();
 
-	core.view.installTags = manifest.tags.map(e => { return { label: e.name, enabled: true, mask: e.mask } });
+	core.view.installTags = manifest.tags.map(e => { return { label: e.name, enabled: true, mask: e.mask }; });
 	core.view.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
 
 	core.hideToast();
@@ -42,14 +42,14 @@ core.events.on('click-export-install', async () => {
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
-	
+
 	const overwriteFiles = core.view.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
 
-			
+
 		fileName = listfile.stripFileEntry(fileName);
 		const file = manifest.files.find(e => e.name === fileName);
 		const exportPath = ExportHelper.getExportPath(fileName);

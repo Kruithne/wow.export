@@ -11,7 +11,7 @@ const path = require('path');
 const isUnitTest = typeof nw === 'undefined';
 
 const INSTALL_PATH = isUnitTest ? process.cwd() : path.dirname(process.execPath);
-const DATA_PATH = isUnitTest ? "./tests/user_data" : nw.App.dataPath;
+const DATA_PATH = isUnitTest ? './tests/user_data' : nw.App.dataPath;
 
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
@@ -26,13 +26,13 @@ module.exports = {
 	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
 
 	// Current version of wow.export
-	VERSION: isUnitTest ? "0.0.0" : nw.App.manifest.version,
+	VERSION: isUnitTest ? '0.0.0' : nw.App.manifest.version,
 
 	// Filter used to filter out WMO LOD files.
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
 	// User-agent used for HTTP/HTTPs requests.
-	USER_AGENT: 'wow.export (' + (isUnitTest ? "0.0.0" : nw.App.manifest.version) + ')',
+	USER_AGENT: 'wow.export (' + (isUnitTest ? '0.0.0' : nw.App.manifest.version) + ')',
 
 	// Defines Blender constants.
 	BLENDER: {

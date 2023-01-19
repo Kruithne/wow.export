@@ -19,7 +19,7 @@ const inflate = util.promisify(zlib.inflate);
 /**
  * Async wrapper for http.get()/https.get().
  * The module used is determined by the prefix of the URL.
- * @param {string} url 
+ * @param {string} url
  * @param {object} options
  */
 const get = async (url, options = {}) => {
@@ -75,18 +75,18 @@ const queue = async (items, handler, limit) => {
  * Ping a URL and measure the response time.
  * Not perfectly accurate, but good enough for our purposes.
  * Throws on error or HTTP code other than 200.
- * @param {string} url 
+ * @param {string} url
  */
 const ping = async (url) => {
 	const pingStart = Date.now();
-	
+
 	await get(url);
 	return (Date.now() - pingStart);
 };
 
 /**
  * Consume the entire contents of a stream as a UTF8 string.
- * @param {object} stream 
+ * @param {object} stream
  */
 const consumeUTF8Stream = async (stream) => {
 	return new Promise(resolve => {
@@ -100,7 +100,7 @@ const consumeUTF8Stream = async (stream) => {
 /**
  * Attempt to parse JSON, returning undefined on failure.
  * Inline function to keep code paths clean of unnecessary try/catch blocks.
- * @param {string} data 
+ * @param {string} data
  * @returns {object}
  */
 const parseJSON = (data) => {
@@ -113,11 +113,11 @@ const parseJSON = (data) => {
 
 /**
  * Obtain JSON from a remote end-point.
- * @param {string} url 
+ * @param {string} url
  */
 const getJSON = async (url) => {
 	let res = await get(url);
-	
+
 	// Abort with anything other than HTTP 200 OK at this point.
 	if (res.statusCode !== 200)
 		throw new Error('Unable to request JSON from end-point. HTTP ' + res.statusCode);
@@ -128,7 +128,7 @@ const getJSON = async (url) => {
 /**
  * Read a JSON file from disk, returning NULL on error.
  * Provides basic pruning for comments (lines starting with //) with ignoreComments.
- * @param {string} file 
+ * @param {string} file
  * @param {boolean} ignoreComments
  */
 const readJSON = async (file, ignoreComments = false) => {
@@ -215,12 +215,12 @@ const redraw = async () => {
 	});
 };
 
-const JEDEC = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+const JEDEC = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
 /**
  * Format a number (bytes) to a displayable file size.
  * Simplified version of https://github.com/avoidwork/filesize.js
- * @param {number} input 
+ * @param {number} input
  */
 const filesize = (input) => {
 	if (isNaN(input))
@@ -263,8 +263,8 @@ const filesize = (input) => {
 	// Decorating a 'diff'.
 	if (isNegative)
 		result[0] = -result[0];
-	
-	return result.join(" ");
+
+	return result.join(' ');
 };
 
 /**
@@ -277,7 +277,7 @@ const getFileHash = async (file, method, encoding) => {
 	return new Promise(resolve => {
 		const fd = fs.createReadStream(file);
 		const hash = crypto.createHash(method);
-		
+
 		fd.on('data', chunk => hash.update(chunk));
 		fd.on('end', () => resolve(hash.digest(encoding)));
 	});
@@ -285,7 +285,7 @@ const getFileHash = async (file, method, encoding) => {
 
 /**
  * Wrapper for asynchronously checking if a file exists.
- * @param {string} file 
+ * @param {string} file
  */
 const fileExists = async (file) => {
 	try {
@@ -315,7 +315,7 @@ const readFile = async (file, offset, length) => {
 /**
  * Recursively delete a directory and everything inside of it.
  * Returns the total size of all files deleted.
- * @param {string} dir 
+ * @param {string} dir
  */
 const deleteDirectory = async (dir) => {
 	let deleteSize = 0;
@@ -337,24 +337,24 @@ const deleteDirectory = async (dir) => {
 	} catch (e) {
 		// Something failed to delete.
 	}
-	
+
 	return deleteSize;
 };
 
 /**
  * Return a formatted representation of seconds.
  * Example: 26 will return 00:26
- * @param {number} seconds 
+ * @param {number} seconds
  * @returns {string}
  */
 const formatPlaybackSeconds = (seconds) => {
 	if (isNaN(seconds))
 		return '00:00';
-		
+
 	return Math.floor(seconds / 60).toString().padStart(2, 0) + ':' + Math.round(seconds % 60).toString().padStart(2, 0);
 };
 
-module.exports = { 
+module.exports = {
 	getJSON,
 	readJSON,
 	parseJSON,

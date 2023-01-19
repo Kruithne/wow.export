@@ -10,7 +10,7 @@ const FileWriter = require('../../file-writer');
 class JSONWriter {
 	/**
 	 * Construct a new JSONWriter instance.
-	 * @param {string} out 
+	 * @param {string} out
 	 */
 	constructor(out) {
 		this.out = out;
@@ -19,8 +19,8 @@ class JSONWriter {
 
 	/**
 	 * Add a property to this JSON.
-	 * @param {string} name 
-	 * @param {object} data 
+	 * @param {string} name
+	 * @param {object} data
 	 */
 	addProperty(name, data) {
 		this.data[name] = data;
@@ -39,7 +39,7 @@ class JSONWriter {
 		const writer = new FileWriter(this.out);
 		writer.writeLine(JSON.stringify(this.data, (key, value) => {
 			// Handle serialization of BigInt, as JS will not handle it as per spec (TC39)
-			return typeof value === 'bigint' ? value.toString() : value
+			return typeof value === 'bigint' ? value.toString() : value;
 		}, '\t'));
 		await writer.close();
 	}

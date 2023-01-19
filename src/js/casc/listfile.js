@@ -121,7 +121,7 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
 	loaded = true;
 	log.write('%d listfile entries loaded', idLookup.size);
 	return idLookup.size;
-}
+};
 
 /**
  * Load unknown files from TextureFileData/ModelFileData.
@@ -133,11 +133,11 @@ const loadUnknowns = async () => {
 
 	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
 	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
-	
+
 	// Load unknown sounds from SoundKitEntry table.
 	const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
 	await soundKitEntries.parse();
-	
+
 	let unknownCount = 0;
 	for (const entry of soundKitEntries.getAllRows().values()) {
 		if (!idLookup.has(entry.FileDataID)) {
@@ -156,7 +156,7 @@ const loadUnknowns = async () => {
 /**
  * Load file IDs from a data table.
  * @param {Set} ids
- * @param {string} ext 
+ * @param {string} ext
  */
 const loadIDTable = async (ids, ext) => {
 	let loadCount = 0;
@@ -175,7 +175,7 @@ const loadIDTable = async (ids, ext) => {
 
 /**
  * Return an array of filenames ending with the given extension(s).
- * @param {string|Array} exts 
+ * @param {string|Array} exts
  * @returns {Array}
  */
 const getFilenamesByExtension = (exts) => {
@@ -206,7 +206,7 @@ const getFilenamesByExtension = (exts) => {
 
 /**
  * Sort and format listfile entries for file list display.
- * @param {Array} entries 
+ * @param {Array} entries
  * @returns {Array}
  */
 const formatEntries = (entries) => {
@@ -232,7 +232,7 @@ const ingestIdentifiedFiles = (entries) => {
 		idLookup.set(fileDataID, fileName);
 		nameLookup.set(fileName, fileDataID);
 	}
-	
+
 	core.events.emit('listfile-needs-updating');
 };
 
@@ -246,7 +246,7 @@ const getFullListfile = () => {
 
 /**
  * Get a filename from a given file data ID.
- * @param {number} id 
+ * @param {number} id
  * @returns {string|undefined}
  */
 const getByID = (id) => {
@@ -255,7 +255,7 @@ const getByID = (id) => {
 
 /**
  * Get a filename from a given file data ID or format it as an unknown file.
- * @param {number} id 
+ * @param {number} id
  * @param {string} [ext]
  * @returns {string}
  */
@@ -266,11 +266,11 @@ const getByIDOrUnknown = (id, ext = '') => {
 /**
  * Get a file data ID by a given file name.
  * @param {string} filename
- * @returns {number|undefined} 
+ * @returns {number|undefined}
  */
 const getByFilename = (filename) => {
 	let lookup = nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
-	
+
 	// In the rare occasion we have a reference to an MDL/MDX file and it fails
 	// to resolve (as expected), attempt to resolve the M2 of the same name.
 	if (!lookup && (filename.endsWith('.mdl') || filename.endsWith('mdx')))
@@ -281,7 +281,7 @@ const getByFilename = (filename) => {
 
 /**
  * Returns an array of listfile entries filtered by the given search term.
- * @param {string|RegExp} search 
+ * @param {string|RegExp} search
  * @returns {Array.<object>}
  */
 const getFilteredEntries = (search) => {
@@ -298,7 +298,7 @@ const getFilteredEntries = (search) => {
 
 /**
  * Strips a prefixed file ID from a listfile entry.
- * @param {string} entry 
+ * @param {string} entry
  * @returns {string}
  */
 const stripFileEntry = (entry) => {
@@ -310,7 +310,7 @@ const stripFileEntry = (entry) => {
 
 /**
  * Returns a file path for an unknown fileDataID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @param {string} [ext]
  */
 const formatUnknownFile = (fileDataID, ext = '') => {

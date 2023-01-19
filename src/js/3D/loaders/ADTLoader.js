@@ -8,7 +8,7 @@ const LoaderGenerics = require('./LoaderGenerics');
 class ADTLoader {
 	/**
 	 * Construct a new ADTLoader instance.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 */
 	constructor(data) {
 		this.data = data;
@@ -58,7 +58,7 @@ class ADTLoader {
 			const handler = this.handlers[chunkID];
 			if (handler)
 				handler.call(this, this.data, chunkSize);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			this.data.seek(nextChunkPos);
 		}
@@ -114,7 +114,7 @@ const ADTChunkHandlers = {
 			const handler = RootMCNKChunkHandlers[chunkID];
 			if (handler)
 				handler.call(chunk, data, subChunkSize);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			data.seek(nextChunkPos);
 		}
@@ -216,7 +216,7 @@ const ADTChunkHandlers = {
 							uv[i] = {
 								x: data.readUInt16LE(),
 								y: data.readUInt16LE()
-							}
+							};
 						}
 					}
 
@@ -263,7 +263,7 @@ const RootMCNKChunkHandlers = {
 				g: data.readUInt8(),
 				b: data.readUInt8(),
 				a: data.readUInt8()
-			}
+			};
 		}
 	},
 
@@ -323,7 +323,7 @@ const ADTTexChunkHandlers = {
 			const handler = TexMCNKChunkHandlers[chunkID];
 			if (handler)
 				handler.call(chunk, data, subChunkSize, this.wdt);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			data.seek(nextChunkPos);
 		}
@@ -434,7 +434,7 @@ const TexMCNKChunkHandlers = {
 					alphaLayer[2 * j + 0] = ((rawLayer[j] & 0x0F) >> 0) * 17;
 					alphaLayer[2 * j + 1] = ((rawLayer[j] & 0xF0) >> 4) * 17;
 				}
-			} 
+			}
 		}
 	}
 };

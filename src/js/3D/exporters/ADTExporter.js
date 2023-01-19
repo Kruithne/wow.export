@@ -52,7 +52,7 @@ let gl;
 
 /**
  * Load a texture from CASC and bind it to the GL context.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  */
 const loadTexture = async (fileDataID) => {
 	const texture = gl.createTexture();
@@ -94,7 +94,7 @@ const loadFoliageTables = async () => {
 
 /**
  * Bind an alpha layer to the GL context.
- * @param {Array} layer 
+ * @param {Array} layer
  */
 const bindAlphaLayer = (layer) => {
 	const texture = gl.createTexture();
@@ -132,7 +132,7 @@ const clearCanvas = () => {
 
 /**
  * Convert an RGBA object into an integer.
- * @param {object} rgba 
+ * @param {object} rgba
  * @returns {number}
  */
 const rgbaToInt = (rgba) => {
@@ -174,7 +174,7 @@ const compileShaders = async (useOld = false) => {
 	gl.attachShader(glShaderProg, vertShader);
 
 	// Link program.
-	gl.linkProgram(glShaderProg);	
+	gl.linkProgram(glShaderProg);
 	if (!gl.getProgramParameter(glShaderProg, gl.LINK_STATUS)) {
 		log.write('Unable to link shader program: %s', gl.getProgramInfoLog(glShaderProg));
 		throw new Error('Failed to link shader program');
@@ -186,9 +186,9 @@ const compileShaders = async (useOld = false) => {
 class ADTExporter {
 	/**
 	 * Construct a new ADTLoader instance.
-	 * @param {number} mapID 
-	 * @param {string} mapDir 
-	 * @param {number} tileIndex 
+	 * @param {number} mapID
+	 * @param {string} mapDir
+	 * @param {number} tileIndex
 	 */
 	constructor(mapID, mapDir, tileIndex) {
 		this.mapID = mapID;
@@ -261,7 +261,7 @@ class ADTExporter {
 		objAdt.loadObj();
 
 		if (config.mapsExportRaw) {
-			// 
+			//
 		} else {
 			const vertices = new Array(16 * 16 * 145 * 3);
 			const normals = new Array(16 * 16 * 145 * 3);
@@ -286,7 +286,7 @@ class ADTExporter {
 			const isSplittingAlphaMaps = isAlphaMaps && core.view.config.splitAlphaMaps;
 			const isSplittingTextures = isLargeBake && core.view.config.splitLargeTerrainBakes;
 			const includeHoles = core.view.config.mapsIncludeHoles;
-		
+
 			let ofs = 0;
 			let chunkID = 0;
 			for (let x = 0, midX = 0; x < 16; x++) {
@@ -393,7 +393,7 @@ class ADTExporter {
 						if (!((j + 1) % (9 + 8)))
 							j += 9;
 					}
-				
+
 					ofs = midX;
 
 					if (isSplittingTextures || isSplittingAlphaMaps) {
@@ -419,7 +419,7 @@ class ADTExporter {
 
 			if (!mtl.isEmpty)
 				obj.setMaterialLibrary(path.basename(mtl.out));
-			
+
 			await obj.write(config.overwriteFiles);
 			await mtl.write(config.overwriteFiles);
 
@@ -442,10 +442,10 @@ class ADTExporter {
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
 						else
 							fileName = listfile.formatUnknownFile(fileDataID, '.png');
-					
+
 						let texFile;
 						let texPath;
-					
+
 						if (config.enableSharedTextures) {
 							texPath = ExportHelper.getExportPath(fileName);
 							texFile = path.relative(dir, texPath);
@@ -453,9 +453,9 @@ class ADTExporter {
 							texPath = path.join(dir, path.basename(fileName));
 							texFile = path.basename(texPath);
 						}
-					
+
 						await blp.saveToPNG(texPath);
-					
+
 						return usePosix ? ExportHelper.win32ToPosix(texFile) : texFile;
 					};
 
@@ -556,7 +556,7 @@ class ADTExporter {
 
 							const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
 							json.addProperty('layers', layers);
-							
+
 							if (rootChunk.vertexShading)
 								json.addProperty('vertexColors', rootChunk.vertexShading.map(e => rgbaToInt(e)));
 
@@ -569,7 +569,7 @@ class ADTExporter {
 
 							// Export as part of a merged alpha map.
 							ctx.putImageData(imageData, 64 * chunkX, 64 * chunkY);
-						
+
 							const texLayers = texChunk.layers;
 							for (let i = 0, n = texLayers.length; i < n; i++) {
 								const layer = texLayers[i];
@@ -755,7 +755,7 @@ class ADTExporter {
 
 						helper.setCurrentTaskName('Tile ' + this.tileID + ', baking textures');
 						helper.setCurrentTaskMax(16 * 16);
-						
+
 						const tileSize = quality / 16;
 
 						let chunkID = 0;
@@ -784,7 +784,7 @@ class ADTExporter {
 
 									const alphaTex = bindAlphaLayer(alphaLayers[i]);
 									gl.bindTexture(gl.TEXTURE_2D, alphaTex);
-									
+
 									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -830,7 +830,7 @@ class ADTExporter {
 								gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
 								unbindAllTextures();
-								
+
 								// Destroy alpha layers rendered for the tile.
 								for (const tex of alphaTextures)
 									gl.deleteTexture(tex);
@@ -922,7 +922,7 @@ class ADTExporter {
 
 									await m2.exportAsOBJ(modelPath, false, helper);
 								}
-								
+
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
 									return;
@@ -1024,7 +1024,7 @@ class ADTExporter {
 									} else {
 										mask[model.doodadSet] = { checked: true };
 									}
-									
+
 									wmoLoader.setDoodadSetMask(mask);
 								}
 
@@ -1081,7 +1081,7 @@ class ADTExporter {
 			log.write('Exporting liquid data to %s', liquidFile);
 
 			const liquidJSON = new JSONWriter(liquidFile);
-			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks)
+			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks);
 			await liquidJSON.write();
 		}
 
@@ -1094,7 +1094,7 @@ class ADTExporter {
 			const foliageExportCache = new Set();
 			const foliageEffectCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
-			
+
 			log.write('Exporting foliage to %s', foliageDir);
 
 			for (const chunk of texAdt.texChunks) {
@@ -1161,9 +1161,9 @@ class ADTExporter {
 			let foliageIndex = 0;
 			for (const modelID of foliageExportCache) {
 				helper.setCurrentTaskValue(foliageIndex++);
-				
+
 				const modelName = path.basename(listfile.getByID(modelID));
-				
+
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);
 

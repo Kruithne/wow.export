@@ -11,7 +11,7 @@ const LoaderGenerics = require('./LoaderGenerics');
 class WMOLoader {
 	/**
 	 * Construct a new WMOLoader instance.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 * @param {number|string} fileID File name or fileDataID
 	 * @param {boolean} [renderingOnly=false]
 	 */
@@ -47,7 +47,7 @@ class WMOLoader {
 			const handler = WMOChunkHandlers[chunkID];
 			if (handler && (!this.renderingOnly || !WMOOptionalChunks.includes(chunkID)))
 				handler.call(this, this.data, chunkSize);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			this.data.seek(nextChunkPos);
 		}
@@ -58,7 +58,7 @@ class WMOLoader {
 
 	/**
 	 * Get a group from this WMO.
-	 * @param {number} index 
+	 * @param {number} index
 	 */
 	async getGroup(index) {
 		if (!this.groups)
@@ -195,7 +195,7 @@ const WMOChunkHandlers = {
 		const vertexCount = chunkSize / (3 * 4);
 		this.portalVertices = new Array(vertexCount);
 		for (let i = 0; i < vertexCount; i++)
-			this.portalVertices[i] = data.readFloatLE(3)
+			this.portalVertices[i] = data.readFloatLE(3);
 	},
 
 	// MOPT (Portal Triangles) [WMO Root]
@@ -206,7 +206,7 @@ const WMOChunkHandlers = {
 				startVertex: data.readUInt16LE(),
 				count: data.readUInt16LE(),
 				plane: data.readFloatLE(4)
-			}
+			};
 		}
 	},
 
@@ -220,7 +220,7 @@ const WMOChunkHandlers = {
 				portalIndex: data.readUInt16LE(),
 				groupIndex: data.readUInt16LE(),
 				side: data.readInt16LE()
-			}
+			};
 
 			data.move(4); // Filler
 		}
@@ -382,7 +382,7 @@ const WMOChunkHandlers = {
 
 		this.liquidType = data.readUInt32LE();
 		this.groupID = data.readUInt32LE();
-		
+
 		data.move(8); // Unknown.
 
 		// Read sub-chunks.
@@ -394,7 +394,7 @@ const WMOChunkHandlers = {
 			const handler = WMOChunkHandlers[chunkID];
 			if (handler)
 				handler.call(this, data, chunkSize);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			data.seek(nextChunkPos);
 		}
@@ -421,7 +421,7 @@ const WMOChunkHandlers = {
 	0x4D4F5456: function(data, chunkSize) {
 		if (!this.uvs)
 			this.uvs = [];
-		
+
 		const count = chunkSize / 4;
 		const uvs = new Array(count);
 		for (let i = 0; i < count; i += 2) {

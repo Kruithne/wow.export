@@ -23,10 +23,10 @@ class OBJWriter {
 		this.meshes = [];
 		this.name = 'Mesh';
 	}
-	
+
 	/**
 	 * Set the name of the material library.
-	 * @param {string} name 
+	 * @param {string} name
 	 */
 	setMaterialLibrary(name) {
 		this.mtl = name;
@@ -34,7 +34,7 @@ class OBJWriter {
 
 	/**
 	 * Set the name of this model.
-	 * @param {string} name 
+	 * @param {string} name
 	 */
 	setName(name) {
 		this.name = name;
@@ -42,7 +42,7 @@ class OBJWriter {
 
 	/**
 	 * Set the vertex array for this writer.
-	 * @param {Array} verts 
+	 * @param {Array} verts
 	 */
 	setVertArray(verts) {
 		this.verts = verts;
@@ -50,7 +50,7 @@ class OBJWriter {
 
 	/**
 	 * Set the normals array for this writer.
-	 * @param {Array} normals 
+	 * @param {Array} normals
 	 */
 	setNormalArray(normals) {
 		this.normals = normals;
@@ -58,7 +58,7 @@ class OBJWriter {
 
 	/**
 	 * Add a UV array for this writer.
-	 * @param {Array} uv 
+	 * @param {Array} uv
 	 */
 	addUVArray(uv) {
 		this.uvs.push(uv);
@@ -67,7 +67,7 @@ class OBJWriter {
 	/**
 	 * Add a mesh to this writer.
 	 * @param {string} name
-	 * @param {Array} triangles 
+	 * @param {Array} triangles
 	 * @param {string} matName
 	 */
 	addMesh(name, triangles, matName) {

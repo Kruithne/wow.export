@@ -33,7 +33,7 @@ class WMOExporter {
 
 	/**
 	 * Set the mask used for group control.
-	 * @param {Array} mask 
+	 * @param {Array} mask
 	 */
 	setGroupMask(mask) {
 		this.groupMask = mask;
@@ -48,8 +48,8 @@ class WMOExporter {
 
 	/**
 	 * Export textures for this WMO.
-	 * @param {string} out 
-	 * @param {?MTLWriter} mtl 
+	 * @param {string} out
+	 * @param {?MTLWriter} mtl
 	 * @param {ExportHelper}
 	 * @param {boolean} [raw=false]
 	 * @returns {{ textureMap: Map, materialMap: Map }}
@@ -136,7 +136,7 @@ class WMOExporter {
 					// If we have a valid file name, use it for the material name.
 					if (fileName !== undefined) {
 						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
-						
+
 						// Remove spaces from material name for MTL compatibility.
 						if (core.view.config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
@@ -194,12 +194,12 @@ class WMOExporter {
 
 	/**
 	 * Export the WMO model as a GLTF file.
-	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 * @param {string} out
+	 * @param {ExportHelper} helper
 	 */
 	async exportAsGLTF(out, helper) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-		
+
 		// TODO: Skip overwrite if file exists?
 
 		const wmoName = path.basename(out, '.wmo');
@@ -346,7 +346,7 @@ class WMOExporter {
 
 		if (helper.isCancelled())
 			return;
-			
+
 		const materialMap = texMaps.materialMap;
 		const textureMap = texMaps.textureMap;
 
@@ -369,7 +369,7 @@ class WMOExporter {
 				}
 			}
 		}
-	
+
 		helper.setCurrentTaskName(wmoName + ' groups');
 		helper.setCurrentTaskMax(wmo.groupCount);
 
@@ -495,7 +495,7 @@ class WMOExporter {
 					const doodad = wmo.doodads[set.firstInstanceIndex + i];
 					let fileDataID = 0;
 					let fileName;
-		
+
 					if (wmo.fileDataIDs) {
 						// Retail, use fileDataID and lookup the filename.
 						fileDataID = wmo.fileDataIDs[doodad.offset];
@@ -505,7 +505,7 @@ class WMOExporter {
 						fileName = wmo.doodadNames[doodad.offset];
 						fileDataID = listfile.getByFilename(fileName) || 0;
 					}
-		
+
 					if (fileDataID > 0) {
 						try {
 							if (fileName !== undefined) {
@@ -596,7 +596,7 @@ class WMOExporter {
 				set: wmo.setCount,
 				lod: wmo.lodCount
 			});
-			
+
 			json.addProperty('portalVertices', wmo.portalVertices);
 			json.addProperty('portalInfo', wmo.portalInfo);
 			json.addProperty('portalMapObjectRef', wmo.mopr);
@@ -680,9 +680,9 @@ class WMOExporter {
 	}
 
 	/**
-	 * 
-	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 *
+	 * @param {string} out
+	 * @param {ExportHelper} helper
 	 * @param {Array} [fileManifest]
 	 */
 	async exportRaw(out, helper, fileManifest) {

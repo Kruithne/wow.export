@@ -52,7 +52,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download the remote version config for a specific product.
-	 * @param {string} product 
+	 * @param {string} product
 	 */
 	async getVersionConfig(product) {
 		const config = await this.getConfig(product, constants.PATCH.VERSION_CONFIG);
@@ -62,8 +62,8 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a version config file.
-	 * @param {string} product 
-	 * @param {string} file 
+	 * @param {string} product
+	 * @param {string} file
 	 */
 	async getConfig(product, file) {
 		const url = this.host + product + file;
@@ -77,7 +77,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a CDN config file.
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	async getCDNConfig(key) {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
@@ -91,7 +91,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID 
+	 * @param {number} fileDataID
 	 * @param {boolean} [partialDecryption=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -111,7 +111,7 @@ class CASCRemote extends CASC {
 			const archive = this.archives.get(encodingKey);
 			if (archive !== undefined) {
 				data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
-				
+
 				if (!suppressLog)
 					log.write('Downloading CASC file %d from archive %s', fileDataID, archive.key);
 			} else {
@@ -235,11 +235,11 @@ class CASCRemote extends CASC {
 		if (root === null) {
 			// Root file not cached, download.
 			log.write('Root file for build %s not cached, downloading.', this.cache.key);
-			
+
 			root = await this.getDataFile(this.formatCDNKey(rootKey));
 			this.cache.storeFile(constants.CACHE.BUILD_ROOT, root);
 		}
-		
+
 		log.timeEnd('Loaded root file (%s)', generics.filesize(root.byteLength));
 
 		// Parse root file.
@@ -261,7 +261,7 @@ class CASCRemote extends CASC {
 
 		if (this.progress)
 			await this.progress.step('Loading archives');
-			
+
 		await generics.queue(archiveKeys, async key => await this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
@@ -290,7 +290,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Load and parse the contents of an archive index.
 	 * Will use global cache and download if missing.
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	async parseArchiveIndex(key) {
 		const fileName = key + '.index';
@@ -324,7 +324,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download a data file from the CDN.
-	 * @param {string} file 
+	 * @param {string} file
 	 * @returns {BufferWrapper}
 	 */
 	async getDataFile(file) {
@@ -333,7 +333,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download a partial chunk of a data file from the CDN.
-	 * @param {string} file 
+	 * @param {string} file
 	 * @param {number} ofs
 	 * @param {number} len
 	 * @returns {BufferWrapper}
@@ -395,7 +395,7 @@ class CASCRemote extends CASC {
 	/**
 	 * Format a CDN key for use in CDN requests.
 	 * 49299eae4e3a195953764bb4adb3c91f -> 49/29/49299eae4e3a195953764bb4adb3c91f
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	formatCDNKey(key) {
 		return key.substring(0, 2) + '/' + key.substring(2, 4) + '/' + key;

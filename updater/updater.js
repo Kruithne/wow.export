@@ -33,8 +33,8 @@ const getTimestamp = () => {
 
 /**
  * Write a message to the log file which will be written upon exit.
- * @param {string} message 
- * @param  {...any} params 
+ * @param {string} message
+ * @param  {...any} params
  */
 const log = (message, ...params) => {
 	const out = '[' + getTimestamp() + '] ' + util.format(message, ...params);
@@ -81,11 +81,11 @@ const deleteDirectory = (dir) => {
 
 		fs.rmdirSync(dir);
 	}
-}
+};
 
 /**
  * Returns true if the provided file/directory exists.
- * @param {string} file 
+ * @param {string} file
  * @returns {boolean}
  */
 const fileExists = async (file) => {
@@ -99,7 +99,7 @@ const fileExists = async (file) => {
 
 /**
  * Returns true if the provided file is locked.
- * @param {string} file 
+ * @param {string} file
  * @returns {boolean}
  */
 const isFileLocked = async (file) => {
@@ -113,7 +113,7 @@ const isFileLocked = async (file) => {
 
 /**
  * Async function that resolves after the provided amount of milliseconds.
- * @param {number} ms 
+ * @param {number} ms
  */
 const delay = async (ms) => {
 	await new Promise(resolve => setTimeout(resolve, ms));
@@ -190,7 +190,7 @@ const delay = async (ms) => {
 	} else {
 		log('WARN: Update directory does not exist. No update to apply.');
 	}
-	
+
 	const binary = 'wow.export.exe';
 	log('Re-launching main process %s (%s)', binary, process.platform);
 

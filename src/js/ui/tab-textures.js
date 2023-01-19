@@ -20,7 +20,7 @@ let selectedFileDataID = 0;
 
 /**
  * Preview a texture by the given fileDataID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @param {string} [texture]
  */
 const previewTextureByID = async (fileDataID, texture = null) => {
@@ -43,17 +43,17 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 		let info = '';
 
 		switch (blp.encoding) {
-			case 1:
-				info = 'Palette';
-				break;
-			case 2:
-				info = 'Compressed ' + (blp.alphaDepth > 1 ? (blp.alphaEncoding === 7 ? 'DXT5' : 'DXT3') : 'DXT1');
-				break;
-			case 3:
-				info = 'ARGB';
-				break;
-			default:
-				info = 'Unsupported [' + blp.encoding + ']';
+		case 1:
+			info = 'Palette';
+			break;
+		case 2:
+			info = 'Compressed ' + (blp.alphaDepth > 1 ? (blp.alphaEncoding === 7 ? 'DXT5' : 'DXT3') : 'DXT1');
+			break;
+		case 3:
+			info = 'ARGB';
+			break;
+		default:
+			info = 'Unsupported [' + blp.encoding + ']';
 		}
 
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
@@ -77,7 +77,7 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
- * @param {number|string} input 
+ * @param {number|string} input
  * @returns {object}
  */
 const getFileInfoPair = (input) => {
@@ -104,7 +104,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
 		const blp = new BLPFile(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
-		
+
 		const clipboard = nw.Clipboard.get();
 		clipboard.set(png.toBase64(), 'png', true);
 
@@ -128,9 +128,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
-			
+
 		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
-		
+
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')
@@ -160,9 +160,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 						json.addProperty('height', blp.height);
 						json.addProperty('mipmapCount', blp.mapCount);
 						json.addProperty('mipmapSizes', blp.mapSizes);
-						
+
 						await json.write(overwriteFiles);
-						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut })
+						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut });
 					}
 				}
 			} else {
@@ -224,7 +224,7 @@ core.registerLoadFunc(async () => {
 			await exportFiles(userSelection);
 		} else if (selectedFileDataID > 0) {
 			// Less common, but we might have a direct preview that isn't selected.
-			await exportFiles([selectedFileDataID]); 
+			await exportFiles([selectedFileDataID]);
 		} else {
 			// Nothing to be exported, show the user an error.
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');

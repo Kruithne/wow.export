@@ -51,8 +51,8 @@ const GEOSET_GROUPS = {
 
 /**
  * Get the label for a geoset based on the group.
- * @param {number} index 
- * @param {number} id 
+ * @param {number} index
+ * @param {number} id
  */
 const getGeosetName = (index, id) => {
 	if (id === 0)
@@ -64,7 +64,7 @@ const getGeosetName = (index, id) => {
 	if (group)
 		return group + (id - base);
 
-	return 'Geoset' + index + "_" + base;
+	return 'Geoset' + index + '_' + base;
 };
 
 /**

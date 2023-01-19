@@ -43,8 +43,8 @@ const updateSeek = () => {
 
 /**
  * Detect the file type of a given audio container.
- * @param {BufferWrapper} data 
- * @returns 
+ * @param {BufferWrapper} data
+ * @returns
  */
 const detectFileType = (data) => {
 	if (data.startsWith('OggS')) {
@@ -200,7 +200,7 @@ core.registerLoadFunc(async () => {
 
 		const helper = new ExportHelper(userSelection.length, 'sound files');
 		helper.start();
-		
+
 		const overwriteFiles = core.view.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
@@ -219,7 +219,7 @@ core.registerLoadFunc(async () => {
 				else if (fileType === AUDIO_TYPE_MP3)
 					fileName = ExportHelper.replaceExtension(fileName, '.mp3');
 			}
-				
+
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {

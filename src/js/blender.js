@@ -20,7 +20,7 @@ const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
 
 /**
  * Parse a Blender add-on manifest file for the version.
- * @param {string} file 
+ * @param {string} file
  */
 const parseManifestVersion = async (file) => {
 	try {

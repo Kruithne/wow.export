@@ -36,7 +36,7 @@ class Skin {
 			const textureUnitsCount = data.readUInt32LE();
 			const textureUnitsOfs = data.readUInt32LE();
 			this.bones = data.readUInt32LE();
-			
+
 			// Read indices.
 			data.seek(indicesOfs);
 			this.indices = data.readUInt16LE(indicesCount);

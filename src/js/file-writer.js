@@ -8,8 +8,8 @@ const fsp = require('fs').promises;
 class FileWriter {
 	/**
 	 * Construct a new FileWriter instance.
-	 * @param {string} file 
-	 * @param {string} encoding 
+	 * @param {string} file
+	 * @param {string} encoding
 	 */
 	constructor(file, encoding = 'utf8') {
 		this.file = file;
@@ -19,9 +19,9 @@ class FileWriter {
 
 	/**
 	 * Write a line to the file.
-	 * @param {string} line 
+	 * @param {string} line
 	 */
-	writeLine(line) {	
+	writeLine(line) {
 		this.queue.push(line);
 	}
 

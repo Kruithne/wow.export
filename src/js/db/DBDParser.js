@@ -49,7 +49,7 @@ const PATTERN_BUILD_ID = /(\d+).(\d+).(\d+).(\d+)/;
 
 /**
  * Parse a build ID into components.
- * @param {string} buildID 
+ * @param {string} buildID
  * @returns {object}
  */
 const parseBuildID = (buildID) => {
@@ -68,9 +68,9 @@ const parseBuildID = (buildID) => {
 
 /**
  * Returns true if the provided build falls within the provided range.
- * @param {string} build 
- * @param {string} min 
- * @param {string} max 
+ * @param {string} build
+ * @param {string} min
+ * @param {string} max
  * @returns {boolean}
  */
 const isBuildInRange = (build, min, max) => {
@@ -125,8 +125,8 @@ class DBDEntry {
 
 	/**
 	 * Add a build to this DBD entry.
-	 * @param {string} min 
-	 * @param {string} max 
+	 * @param {string} min
+	 * @param {string} max
 	 */
 	addBuild(min, max) {
 		if (max !== undefined)
@@ -134,7 +134,7 @@ class DBDEntry {
 		else
 			this.builds.add(min);
 	}
-	
+
 	/**
 	 * Add a layout hash to this DBD entry.
 	 * @param {string[]} hashes
@@ -146,7 +146,7 @@ class DBDEntry {
 
 	/**
 	 * Add a field to this DBD entry.
-	 * @param {DBDField} field 
+	 * @param {DBDField} field
 	 */
 	addField(field) {
 		this.fields.add(field);
@@ -154,8 +154,8 @@ class DBDEntry {
 
 	/**
 	 * Check if this entry is valid for the provided buildID or layout hash.
-	 * @param {string} buildID 
-	 * @param {string} layoutHash 
+	 * @param {string} buildID
+	 * @param {string} layoutHash
 	 * @returns {boolean}
 	 */
 	isValidFor(buildID, layoutHash) {
@@ -180,7 +180,7 @@ class DBDEntry {
 class DBDParser {
 	/**
 	 * Construct a new DBDParser instance.
-	 * @param {BufferReader} data 
+	 * @param {BufferReader} data
 	 */
 	constructor(data) {
 		this.entries = new Set();
@@ -191,8 +191,8 @@ class DBDParser {
 
 	/**
 	 * Get a DBD structure for the provided buildID and layoutHash.
-	 * @param {string} buildID 
-	 * @param {string} layoutHash 
+	 * @param {string} buildID
+	 * @param {string} layoutHash
 	 * @returns {?DBDEntry}
 	 */
 	getStructure(buildID, layoutHash) {
@@ -206,7 +206,7 @@ class DBDParser {
 
 	/**
 	 * Parse the contents of a DBD document.
-	* @param {BufferReader} data 
+	* @param {BufferReader} data
 	 */
 	parse(data) {
 		const lines = data.readLines();
@@ -225,14 +225,14 @@ class DBDParser {
 		// Ensure last chunk is accounted for.
 		if (chunk.length > 0)
 			this.parseChunk(chunk);
-		
+
 		if (this.columns.size === 0)
 			throw new Error('Invalid DBD: No columns defined.');
 	}
 
 	/**
 	 * Parse a chunk from this DBD document.
-	 * @param {string[]} chunk 
+	 * @param {string[]} chunk
 	 */
 	parseChunk(chunk) {
 		if (chunk[0] === 'COLUMNS') {
@@ -273,7 +273,7 @@ class DBDParser {
 
 				const fieldMatch = line.match(PATTERN_FIELD);
 				if (fieldMatch !== null) {
-					const fieldName = fieldMatch[3]
+					const fieldName = fieldMatch[3];
 					const fieldType = this.columns.get(fieldName);
 
 					if (fieldType === undefined)
@@ -322,7 +322,7 @@ class DBDParser {
 
 	/**
 	 * Parse the column definition of a DBD document.
-	 * @param {string[]} chunk 
+	 * @param {string[]} chunk
 	 */
 	parseColumnChunk(chunk) {
 		if (chunk === undefined)

@@ -205,7 +205,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all WMO groups to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 */
 			setAllWMOGroups: function(state) {
 				if (this.modelViewerWMOGroups) {
@@ -216,7 +216,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all geosets to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 */
 			setAllGeosets: function(state) {
 				if (this.modelViewerGeosets) {
@@ -227,7 +227,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all item types to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 */
 			setAllItemTypes: function(state) {
 				for (const entry of this.itemViewerTypeMask)
@@ -236,7 +236,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Return a tag for a given product.
-			 * @param {string} product 
+			 * @param {string} product
 			 */
 			getProductTag: function(product) {
 				const entry = constants.PRODUCTS.find(e => e.product === product);
@@ -247,7 +247,7 @@ document.addEventListener('click', function(e) {
 			 * Set the currently active screen.
 			 * If `preserve` is true, the current screen ID will be pushed further onto the stack.
 			 * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
-			 * @param {string} screenID 
+			 * @param {string} screenID
 			 * @param {boolean} preserve
 			 */
 			setScreen: function(screenID, preserve = false) {
@@ -261,7 +261,7 @@ document.addEventListener('click', function(e) {
 					else if (value !== false)
 						contextMenus[key] = null;
 				}
-				
+
 				if (preserve) {
 					if (this.screenStack[0] !== screenID)
 						this.screenStack.unshift(screenID);
@@ -291,11 +291,11 @@ document.addEventListener('click', function(e) {
 			/**
 			 * Invoked when a toast option is clicked.
 			 * The tag is passed to our global event emitter.
-			 * @param {string} tag 
+			 * @param {string} tag
 			 */
 			handleToastOptionClick: function(func) {
 				this.toast = null;
-				
+
 				if (typeof func === 'function')
 					func();
 			},
@@ -318,7 +318,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the user manually selects a CDN region.
-			 * @param {object} region 
+			 * @param {object} region
 			 */
 			setSelectedCDN: function(region) {
 				this.selectedCDNRegion = region;
@@ -338,8 +338,8 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Pass-through function to emit events from reactive markup.
-			 * @param {string} tag 
-			 * @param  {...any} params 
+			 * @param {string} tag
+			 * @param  {...any} params
 			 */
 			emit: function(tag, ...params) {
 				core.events.emit(tag, ...params);
@@ -350,7 +350,7 @@ document.addEventListener('click', function(e) {
 			 * @param {boolean} userCancel
 			 */
 			hideToast: function(userCancel = false) {
-				core.hideToast(userCancel)
+				core.hideToast(userCancel);
 			},
 
 			/**
@@ -367,10 +367,10 @@ document.addEventListener('click', function(e) {
 			onTextureRibbonResize: function(width) {
 				textureRibbon.onResize(width);
 			},
-			
+
 			/**
 			 * Switches to the textures tab and filters for the given file.
-			 * @param {number} fileDataID 
+			 * @param {number} fileDataID
 			 */
 			goToTexture: function(fileDataID) {
 				const view = core.view;
@@ -402,7 +402,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Copy given data as text to the system clipboard.
-			 * @param {string} data 
+			 * @param {string} data
 			 */
 			copyToClipboard: function(data) {
 				nw.Clipboard.get().set(data.toString(), 'text');
@@ -410,7 +410,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Get the external export path for a given file.
-			 * @param {string} file 
+			 * @param {string} file
 			 * @returns {string}
 			 */
 			getExportPath: function(file) {
@@ -427,7 +427,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the user selects the models button on an item.
-			 * @param {object} item 
+			 * @param {object} item
 			 */
 			viewModels: function(item) {
 				TabItems.viewItemModels(item);
@@ -435,7 +435,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the user selects the textures button on an item.
-			 * @param {object} item 
+			 * @param {object} item
 			 */
 			viewTextures: function(item) {
 				TabItems.viewItemTextures(item);
@@ -496,7 +496,7 @@ document.addEventListener('click', function(e) {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale.flags).map(e => { return { value: e }});
+				return Object.keys(this.availableLocale.flags).map(e => { return { value: e };});
 			},
 
 			/**
@@ -546,7 +546,7 @@ document.addEventListener('click', function(e) {
 		watch: {
 			/**
 			 * Invoked when the active 'screen' is changed.
-			 * @param {string} val 
+			 * @param {string} val
 			 */
 			screen: function(val) {
 				core.events.emit('screen-' + val);
@@ -554,7 +554,7 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the active loading percentage is changed.
-			 * @param {float} val 
+			 * @param {float} val
 			 */
 			loadPct: function(val) {
 				win.setProgressBar(val);

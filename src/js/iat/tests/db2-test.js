@@ -49,12 +49,12 @@ const DB_DATA_JSON = '%s.%s.json';
 /**
  * Tables to skip, these tables should only be skipped due to having unsupported unicode characters (our fault) or issues on Blizz's end (not our fault).
  */
-const FILTERED_DBS = ["chatprofanity.db2", "namesprofanity.db2", "namesreserved.db2", "spell.db2", "unittestsparse.db2"];
+const FILTERED_DBS = ['chatprofanity.db2', 'namesprofanity.db2', 'namesreserved.db2', 'spell.db2', 'unittestsparse.db2'];
 
 class DB2Test extends IntegrationTest {
 	/**
 	 * DB2Test constructor.
-	 * @param {TestRunner} runner 
+	 * @param {TestRunner} runner
 	 * @param {CASC} casc
 	 */
 	constructor(runner, casc) {
@@ -83,11 +83,11 @@ class DB2Test extends IntegrationTest {
 		// For every DB2 file in the listfile, generate a test function.
 		const tables = listfile.getFilenamesByExtension('.db2');
 		for (let table of tables) {
-			table = table.split(" [")[0];
+			table = table.split(' [')[0];
 			const tableName = 'testTable_' + path.basename(table);
 
 			if (FILTERED_DBS.includes(path.basename(table))) {
-				console.log("Skipping " + tableName + " due to it being filtered out for having unsupported unicode characters.");
+				console.log('Skipping ' + tableName + ' due to it being filtered out for having unsupported unicode characters.');
 				continue;
 			}
 
@@ -122,7 +122,7 @@ class DB2Test extends IntegrationTest {
 
 	/**
 	 * Test an individual data table.
-	 * @param {string} file 
+	 * @param {string} file
 	 */
 	async testTable(file) {
 		const tableName = path.basename(file, '.db2');
@@ -173,31 +173,31 @@ class DB2Test extends IntegrationTest {
 			'gt': '>',
 			'nbsp': ' ',
 			'quot': '"'
-		}
+		};
 
 		var idIndex = table.getIDIndex();
 
-		if (idIndex == null) 
-			assert.fail("No ID col, NYI");
-		
+		if (idIndex == null)
+			assert.fail('No ID col, NYI');
+
 		table.getAllRows();
 
 		for (const row of db2json) {
-			let checkRow = Array();
+			let checkRow = [];
 			// const checkRow = Object.values(row).map(e => { e = e.toString(); return e.includes(',') ? '"' + e + '"' : e; });
-			
-			for (const [key, val] of Object.entries(row)) 
-				row[key] = val.replace(/&([^;]+);/gm, function (match, entity) { return entities[entity] || match  });
-			
+
+			for (const [key, val] of Object.entries(row))
+				row[key] = val.replace(/&([^;]+);/gm, function (match, entity) { return entities[entity] || match;  });
+
 			let colIndex = 0;
 			let ourColIndex = 0;
 			let actualIDIndex = 0;
 			for (const fieldType of table.schema.values()) {
-				if (idIndex == ourColIndex) 
+				if (idIndex == ourColIndex)
 					actualIDIndex = colIndex;
 
 				if (Array.isArray(fieldType)) {
-					for (let i = 0; i < fieldType[1]; i++) 
+					for (let i = 0; i < fieldType[1]; i++)
 						colIndex++;
 				} else {
 					colIndex++;
@@ -207,9 +207,9 @@ class DB2Test extends IntegrationTest {
 			}
 
 			var ourRow = table.getRow(row[actualIDIndex]);
-			if (ourRow === null) 
-				assert.fail("No row returned for ID " + row[actualIDIndex]);
-			
+			if (ourRow === null)
+				assert.fail('No row returned for ID ' + row[actualIDIndex]);
+
 			let anotherColIndex = 0;
 			for (const [fieldName, fieldType] of table.schema) {
 				if (Array.isArray(fieldType)) {

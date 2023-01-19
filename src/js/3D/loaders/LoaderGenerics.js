@@ -7,7 +7,7 @@
 /**
  * Process a null-terminated string block.
  * @param {BufferWrapped} data
- * @param {number} chunkSize 
+ * @param {number} chunkSize
  */
 const ReadStringBlock = (data, chunkSize) => {
 	const chunk = data.readBuffer(chunkSize, false);
@@ -21,13 +21,13 @@ const ReadStringBlock = (data, chunkSize) => {
 				readOfs += 1;
 				continue;
 			}
-			
+
 			entries[readOfs] = chunk.toString('utf8', readOfs, i).replace(/\0/g, '');
 			readOfs = i + 1;
 		}
 	}
 
 	return entries;
-}
+};
 
 module.exports = { ReadStringBlock };

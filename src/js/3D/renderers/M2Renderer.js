@@ -18,7 +18,7 @@ const DEFAULT_MODEL_COLOR = 0x57afe2;
 class M2Renderer {
 	/**
 	 * Construct a new M2Renderer instance.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 * @param {THREE.Group} renderGroup
 	 * @param {boolean} [reactive=false]
 	 * @param {boolean} [useRibbon=true]
@@ -78,7 +78,7 @@ class M2Renderer {
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.geosetArray[i].checked;
 	}
-	
+
 	/**
 	 * Load a skin with a given index.
 	 */
@@ -151,9 +151,9 @@ class M2Renderer {
 	}
 
 	/**
-	 * 
-	 * @param {number} type 
-	 * @param {number} fileDataID 
+	 *
+	 * @param {number} type
+	 * @param {number} fileDataID
 	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;

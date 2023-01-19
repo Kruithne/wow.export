@@ -10,7 +10,7 @@ const FileWriter = require('../../file-writer');
 class CSVWriter {
 	/**
 	 * Construct a new CSVWriter instance.
-	 * @param {string} out 
+	 * @param {string} out
 	 */
 	constructor(out) {
 		this.out = out;
@@ -20,7 +20,7 @@ class CSVWriter {
 
 	/**
 	 * Add fields to this CSV.
-	 * @param  {...string} fields 
+	 * @param  {...string} fields
 	 */
 	addField(...fields) {
 		this.fields.push(...fields);

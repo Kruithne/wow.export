@@ -32,7 +32,7 @@ const getStylesheet = () => {
 
 /**
  * Returns true if a given rule exists in the dynamic stylesheet.
- * @param {string} selector 
+ * @param {string} selector
  * @returns {boolean}
  */
 const iconRuleExists = (selector) => {
@@ -98,7 +98,7 @@ const loadIcon = (fileDataID) => {
 		const rule = sheet.rules[ruleIndex];
 
 		rule.style.backgroundImage = DEFAULT_ICON;
-		
+
 		if (fileDataID === 0)
 			return;
 

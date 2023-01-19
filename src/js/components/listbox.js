@@ -43,7 +43,7 @@ Vue.component('listbox', {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -108,7 +108,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Returns the active item list to
-		 * @returns 
+		 * @returns
 		 */
 		itemList: function() {
 			return this.override?.length > 0 ? this.override : this.items;
@@ -186,7 +186,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -196,7 +196,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -214,7 +214,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Invoked when a user attempts to paste a selection.
-		 * @param {ClipboardEvent} e 
+		 * @param {ClipboardEvent} e
 		 */
 		handlePaste: function(e) {
 			// Paste selection must be enabled for this feature.
@@ -245,7 +245,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -305,7 +305,7 @@ Vue.component('listbox', {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
@@ -340,7 +340,7 @@ Vue.component('listbox', {
 							if (this.selection.indexOf(select) === -1)
 								this.selection.push(select);
 						}
-					}				
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 					// Normal click, replace entire selection.
 					this.selection.splice(0);

@@ -59,7 +59,7 @@ const timeLog = () => {
 /**
  * Logs the time (in milliseconds) between the last log.timeLog()
  * call and this call, with the given label prefixed.
- * @param {string} label 
+ * @param {string} label
  */
 const timeEnd = (label, ...params) => {
 	write(label + ' (%dms)', ...params, (Date.now() - markTimer));

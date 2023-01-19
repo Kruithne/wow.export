@@ -8,7 +8,7 @@ const KEY_VAR_PATTERN = /([^\s]+)\s?=\s?(.*)/;
 /**
  * Convert a config key such as 'encoding-sizes' to 'encodingSizes'.
  * This helps keep things consistent when accessing key properties.
- * @param {string} key 
+ * @param {string} key
  */
 const normalizeKey = (key) => {
 	const keyParts = key.split('-');
@@ -40,6 +40,6 @@ module.exports = data => {
 
 		entries[normalizeKey(match[1])] = match[2];
 	}
-	
+
 	return entries;
 };

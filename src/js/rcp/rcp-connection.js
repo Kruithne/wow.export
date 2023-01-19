@@ -19,7 +19,7 @@ class RCPConnection extends EventEmitter {
 	/**
 	 * Construct a new RCPConnection instance.
 	 * @param {number} id
-	 * @param {net.Socket} socket 
+	 * @param {net.Socket} socket
 	 */
 	constructor(id, socket) {
 		super();
@@ -61,7 +61,7 @@ class RCPConnection extends EventEmitter {
 
 	/**
 	 * Invoked when this connection receives data.
-	 * @param {string} data 
+	 * @param {string} data
 	 */
 	onData(data) {
 		this.buffer += data;
@@ -105,7 +105,7 @@ class RCPConnection extends EventEmitter {
 
 	/**
 	 * Write a message to the log, prefixed with this RCP ID.
-	 * @param {string} message 
+	 * @param {string} message
 	 */
 	log(message, ...params) {
 		log.write('[RCP:' + this.id + '] ' + message, ...params);
@@ -121,7 +121,7 @@ class RCPConnection extends EventEmitter {
 
 	/**
 	 * Invoked when this connection encounters an error.
-	 * @param {Error} err 
+	 * @param {Error} err
 	 */
 	onError(err) {
 		this.log('Disconnected (%s)', err.message);

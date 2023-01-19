@@ -28,7 +28,7 @@ Vue.component('itemlistbox', {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -160,7 +160,7 @@ Vue.component('itemlistbox', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -170,7 +170,7 @@ Vue.component('itemlistbox', {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -204,7 +204,7 @@ Vue.component('itemlistbox', {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -254,7 +254,7 @@ Vue.component('itemlistbox', {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
@@ -289,7 +289,7 @@ Vue.component('itemlistbox', {
 							if (this.selection.indexOf(select) === -1)
 								this.selection.push(select);
 						}
-					}				
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
 					// Normal click, replace entire selection.
 					this.selection.splice(0);

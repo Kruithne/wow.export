@@ -141,9 +141,9 @@ const paeth = (left, up, upLeft) => {
 
 /**
  * Apply adapative filtering to RGBA data.
- * @param {Buffer} data 
- * @param {number} width 
- * @param {number} height 
+ * @param {Buffer} data
+ * @param {number} width
+ * @param {number} height
  * @returns {Buffer}
  */
 const filter = (data, width, height) => {
@@ -167,7 +167,7 @@ const filter = (data, width, height) => {
 
 		raw[rawOfs] = selectedFilter;
 		rawOfs++;
-	
+
 		FILTERS[selectedFilter](data, dataOfs, byteWidth, raw, rawOfs);
 		rawOfs += byteWidth;
 		dataOfs += byteWidth;
@@ -240,7 +240,7 @@ class PNGWriter {
 
 	/**
 	 * Write this PNG to a file.
-	 * @param {string} file 
+	 * @param {string} file
 	 */
 	async write(file) {
 		return await this.getBuffer().writeToFile(file);

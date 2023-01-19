@@ -149,7 +149,7 @@ const log = {
 			const zip = new AdmZip();
 			zip.addLocalFolder(buildDir, '', entry => {
 				// Do not package update files with the download archive.
-				return !publishConfig.updateFiles.includes(entry)
+				return !publishConfig.updateFiles.includes(entry);
 			});
 
 			const packageName = util.format(publishConfig.packageName, buildManifest.version);

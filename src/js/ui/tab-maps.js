@@ -29,8 +29,8 @@ let gameObjectsDB2 = null;
 
 /**
  * Load a map into the map viewer.
- * @param {number} mapID 
- * @param {string} mapDir 
+ * @param {number} mapID
+ * @param {string} mapDir
  */
 const loadMap = async (mapID, mapDir) => {
 	const mapDirLower = mapDir.toLowerCase();
@@ -75,9 +75,9 @@ const loadMap = async (mapID, mapDir) => {
 
 /**
  * Load a map tile.
- * @param {number} x 
- * @param {number} y 
- * @param {number} size 
+ * @param {number} x
+ * @param {number} y
+ * @param {number} size
  */
 const loadMapTile = async (x, y, size) => {
 	// If no map has been selected, abort.
@@ -105,7 +105,7 @@ const loadMapTile = async (x, y, size) => {
 		const ctx = scaled.getContext('2d');
 		ctx.scale(scale, scale);
 		ctx.drawImage(canvas, 0, 0);
-		
+
 		return ctx.getImageData(0, 0, size, size);
 	} catch (e) {
 		// Map tile does not exist or cannot be read.
@@ -181,7 +181,7 @@ const exportSelectedMapWMO = async () => {
 		} else {
 			if (placement.id === 0)
 				throw new Error('Map does not define a valid world model.');
-			
+
 			fileDataID = placement.id;
 			fileName = listfile.getByID(fileDataID) || 'unknown_' + fileDataID + '.wmo';
 		}
@@ -266,7 +266,7 @@ const exportSelectedMap = async () => {
 
 /**
  * Parse a map entry from the listbox.
- * @param {string} entry 
+ * @param {string} entry
  */
 const parseMapEntry = (entry) => {
 	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^)]+)\)/);
@@ -292,7 +292,7 @@ core.events.once('screen-tab-maps', async () => {
 	}
 
 	core.view.mapViewerMaps = maps;
-	
+
 	core.hideToast();
 	core.view.isBusy--;
 });

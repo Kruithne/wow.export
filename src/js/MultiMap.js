@@ -13,8 +13,8 @@ class MultiMap extends Map {
 
 	/**
 	 * Set a value for a specific key in this map.
-	 * @param {string} key 
-	 * @param {any} value 
+	 * @param {string} key
+	 * @param {any} value
 	 */
 	set(key, value) {
 		const check = this.get(key);

@@ -10,7 +10,7 @@ class IntegrationTest {
 	/**
 	 * IntegrationTest constructor.
 	 * Do not call this directly, use extending classes.
-	 * @param {TestRunner} runner 
+	 * @param {TestRunner} runner
 	 * @param {CASC} [casc=null]
 	 */
 	constructor(runner, casc = null) {
@@ -19,7 +19,7 @@ class IntegrationTest {
 		this.casc = casc;
 		this.enabled = true;
 	}
-	
+
 	/**
 	 * Initialize the testing unit.
 	 */
@@ -52,7 +52,7 @@ class IntegrationTest {
 	get testCount() {
 		return this.tests.length;
 	}
-	
+
 	/**
 	 * Returns the name of this test unit.
 	 * @returns {string}

@@ -51,7 +51,7 @@ class CASCLocal extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID 
+	 * @param {number} fileDataID
 	 * @param {boolean} [partialDecryption=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -61,7 +61,7 @@ class CASCLocal extends CASC {
 	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
-			
+
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
 		return new BLTEReader(data, encodingKey, partialDecryption);
@@ -223,7 +223,7 @@ class CASCLocal extends CASC {
 	/**
 	 * Obtain a data file from the local archives.
 	 * If not stored locally, file will be downloaded from a CDN.
-	 * @param {string} key 
+	 * @param {string} key
 	 * @param {boolean} [forceFallback=false]
 	 */
 	async getDataFileWithRemoteFallback(key, forceFallback = false) {
@@ -297,7 +297,7 @@ class CASCLocal extends CASC {
 	/**
 	 * Format a local path to a data archive.
 	 * 67 -> <install>/Data/data/data.067
-	 * @param {number} id 
+	 * @param {number} id
 	 */
 	formatDataPath(id) {
 		return path.join(this.dataDir, 'data', 'data.' + id.toString().padStart(3, '0'));
@@ -306,7 +306,7 @@ class CASCLocal extends CASC {
 	/**
 	 * Format a local path to an archive index from the key.
 	 * 0b45bd2721fd6c86dac2176cbdb7fc5b -> <install>/Data/indices/0b45bd2721fd6c86dac2176cbdb7fc5b.index
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	formatIndexPath(key) {
 		return path.join(this.dataDir, 'indices', key + '.index');
@@ -315,7 +315,7 @@ class CASCLocal extends CASC {
 	/**
 	 * Format a local path to a config file from the key.
 	 * 0af716e8eca5aeff0a3965d37e934ffa -> <install>/Data/config/0a/f7/0af716e8eca5aeff0a3965d37e934ffa
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	formatConfigPath(key) {
 		return path.join(this.dataDir, 'config', this.formatCDNKey(key));
@@ -325,7 +325,7 @@ class CASCLocal extends CASC {
 	 * Format a CDN key for use in local file reading.
 	 * Path separators used by this method are platform specific.
 	 * 49299eae4e3a195953764bb4adb3c91f -> 49\29\49299eae4e3a195953764bb4adb3c91f
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	formatCDNKey(key) {
 		return path.join(key.substring(0, 2), key.substring(2, 4), key);

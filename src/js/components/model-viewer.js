@@ -12,7 +12,7 @@ Vue.component('model-viewer', {
 		render: function() {
 			if (!this.isRendering)
 				return;
-	
+
 			this.controls.update();
 			this.renderer.render(this.context.scene, this.context.camera);
 			requestAnimationFrame(() => this.render());
@@ -66,5 +66,5 @@ Vue.component('model-viewer', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="image ui-model-viewer"></div>`
+	template: '<div class="image ui-model-viewer"></div>'
 });

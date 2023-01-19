@@ -33,7 +33,7 @@ const initializeModelFileData = async () => {
 
 /**
  * Retrieve a model file data ID.
- * @param {number} modelResID 
+ * @param {number} modelResID
  * @returns {?number}
  */
 const getModelFileDataID = (modelResID) => {

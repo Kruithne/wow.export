@@ -14,8 +14,8 @@ let selectedFile = null;
 let db2NameMap = undefined;
 
 core.registerLoadFunc(async () => {
-	log.write('Downloading DB2 filename mapping from %s', "https://api.wow.tools/databases/");
-	generics.getJSON("https://api.wow.tools/databases/").then(raw => db2NameMap = raw);
+	log.write('Downloading DB2 filename mapping from %s', 'https://api.wow.tools/databases/');
+	generics.getJSON('https://api.wow.tools/databases/').then(raw => db2NameMap = raw);
 
 	// Track selection changes on the text listbox and set first as active entry.
 	core.view.$watch('selectionDB2s', async selection => {
@@ -28,13 +28,13 @@ core.registerLoadFunc(async () => {
 
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
-				
+
 				core.view.tableBrowserHeaders = [...db2Reader.schema.keys()];
 
 				const rows = db2Reader.getAllRows();
-				if (rows.size == 0) 
+				if (rows.size == 0)
 					core.setToast('info', 'Selected DB2 has no rows.', null);
-				else 
+				else
 					core.hideToast(false);
 
 				const parsed = Array(rows.size);

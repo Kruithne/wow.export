@@ -34,7 +34,7 @@ class BufferTest extends IntegrationTest {
 			this.testBufferCalculateHash,
 			this.testBufferSetCapacity,
 			this.testBufferIsZeroed
-		]
+		];
 	}
 
 	/**
@@ -61,7 +61,7 @@ class BufferTest extends IntegrationTest {
 		const buf = BufferWrapper.from(str);
 
 		assert.strictEqual(buf.byteLength, raw.byteLength, 'Size of Buffer.from() and BufferWrapper.from() do not match');
-		assert.strictEqual(buf.offset, 0, 'Non-zero offset for BufferWrapper.from() construction')
+		assert.strictEqual(buf.offset, 0, 'Non-zero offset for BufferWrapper.from() construction');
 		assert.strictEqual(buf.remainingBytes, raw.byteLength, 'Unexpected amount of remaining bytes after BufferWrapper.from() construction');
 
 		for (let i = 0; i < raw.byteLength; i++)
@@ -81,7 +81,7 @@ class BufferTest extends IntegrationTest {
 
 	testBufferNavigation() {
 		const buf = BufferWrapper.from('This string is 28 bytes long');
-		
+
 		// A newly constructed BufferWrapper should always start with an offset of zero.
 		assert.strictEqual(buf.offset, 0, 'Buffer does not start at zero offset');
 
@@ -123,22 +123,22 @@ class BufferTest extends IntegrationTest {
 	testBufferString() {
 		const text = 'Keep your feet on the ground.';
 		const textByteLength = Buffer.byteLength(text);
-	
+
 		const buf = BufferWrapper.from(text);
 		assert.strictEqual(buf.byteLength, Buffer.byteLength(text), 'Buffer from string does not match string length');
-	
+
 		// Read full string back from buffer.
 		const outFull = buf.readString(textByteLength);
 		assert.strictEqual(outFull, text, 'readString(x) does not return expected string');
-	
+
 		buf.seek(0);
-	
+
 		// Read entire buffer as a string.
 		const outAll = buf.readString();
 		assert.strictEqual(outAll, text, 'readString() does not return expected string');
-	
+
 		buf.seek(0);
-	
+
 		// Read partial string.
 		const outShort = buf.readString(6);
 		assert.strictEqual(outShort, text.slice(0, 6), 'readString(x) does not return expected string');
@@ -156,29 +156,29 @@ class BufferTest extends IntegrationTest {
 	testBufferIndexOf() {
 		const buf = BufferWrapper.from('The Brotherhood shall prevail');
 		const startOffset = buf.offset;
-	
+
 		// Obtain position of a given numerical character from the start of the buffer.
 		assert.strictEqual(buf.indexOf(0x70, 0), 22, 'indexOf(number, 0) did not return correct character position');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(number, 0) did not reset cursor properly');
-	
+
 		// Obtain position of a given string character from the start of the buffer.
 		assert.strictEqual(buf.indexOfChar('B', 0), 4, 'indexOf(char, 0) did not return correct character position');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char, 0) did not reset cursor properly');
-	
+
 		// Obtain position of a given character, from the start of the cursor (default start index).
 		buf.seek(22);
 		assert.strictEqual(buf.indexOfChar('a'), 26, 'indexOf(char) did not return correct character position');
 		assert.strictEqual(buf.offset, 22, 'indexOf(char) did not reset cursor properly');
 		buf.seek(startOffset);
-	
+
 		// Obtain position of a character that does not exist in the string.
 		assert.strictEqual(buf.indexOfChar('x', 0), -1, 'indexOf(char) did not return -1 for non-existent character');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char) did not reset cursor after non-existent character');
-	
+
 		// Obtain position of character that is in string, but before cursor.
 		assert.strictEqual(buf.indexOfChar('B', 22), -1, 'indexOf(char) did not return -1 for character before cursor');
 		assert.strictEqual(buf.offset, startOffset, 'indexOf(char) did not reset cursor after pre-cursor character');
-	
+
 		// Providing a string rather than a single character should throw.
 		assert.throws(() => buf.indexOfChar('Anduin'), 'indexOf(string) did not throw an error');
 	}
@@ -228,7 +228,7 @@ class BufferTest extends IntegrationTest {
 		// The following string contains three possible line-endings, a blank line
 		// and trailing/leading empty lines.
 		const input = '\nLineA\nLineB\n\nLineC\r\nLineD\rLineE\n';
-		const expected = ["", "LineA", "LineB", "", "LineC", "LineD", "LineE", ""];
+		const expected = ['', 'LineA', 'LineB', '', 'LineC', 'LineD', 'LineE', ''];
 
 		const buf = BufferWrapper.from(input);
 		const lines = buf.readLines();

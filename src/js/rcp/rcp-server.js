@@ -69,8 +69,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming payload from an RCP client.
-	 * @param {object} data 
-	 * @param {RCPConnection} connection 
+	 * @param {object} data
+	 * @param {RCPConnection} connection
 	 */
 	async handlePayload(data, connection) {
 		// If the application is busy, queue the given payload for layer.
@@ -124,8 +124,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming RESET_CONFIG request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleResetConfig(data, client) {
 		if (typeof data.key === 'string') {
@@ -152,8 +152,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming GET_CONSTANTS request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleGetConstants(data, client) {
 		client.sendData('CONSTANTS', { constants });
@@ -161,8 +161,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming GET_CDN_REGIONS request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleGetCDNRegions(data, client) {
 		client.sendData('CDN_REGIONS', { regions: core.view.cdnRegions });
@@ -170,8 +170,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming REGISTER_HOOK request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleRegisterHook(data, client) {
 		if (!this.validateParameters(client, data, { hookID: 'string' }))
@@ -192,8 +192,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming DEREGISTER_HOOK request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleDeregisterHook(data, client) {
 		if (!this.validateParameters(client, data, { hookID: 'string'}))
@@ -216,8 +216,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming GET_CASC_INFO request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleGetCASCInfo(data, client) {
 		const casc = core.view.casc;
@@ -235,8 +235,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LOAD_CASC_LOCAL request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	async handleLoadCASCLocal(data, client) {
 		// Do not attempt to initialize CASC if it's already active.
@@ -259,8 +259,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LOAD_CASC_REMOTE request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	async handleLoadCASCRemote(data, client) {
 		// Do not attempt to initialize CASC if it's already active.
@@ -283,8 +283,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LOAD_CASC_BUILD request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	async handleLoadCASCBuild(data, client) {
 		const casc = client._casc;
@@ -318,8 +318,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming CACHE_CLEAR request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleClearCache(data, client) {
 		// Register an event for when the cache is cleared.
@@ -334,8 +334,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LISTFILE_QUERY_ID request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleListfileQueryID(data, client) {
 		if (!listfile.isLoaded())
@@ -351,8 +351,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LISTFILE_QUERY_NAME request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleListfileQueryName(data, client) {
 		if (!listfile.isLoaded())
@@ -368,8 +368,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming LISTFILE_SEARCH request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleListfileSearch(data, client) {
 		if (!listfile.isLoaded())
@@ -385,8 +385,8 @@ class RCPServer {
 	/**
 	 * Handle an incoming export request.
 	 * @param {string} exportEvent
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleExport(exportEvent, data, client) {
 		if (!core.view.casc)
@@ -404,8 +404,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming EXPORT_MODEL request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleExportModel(data, client) {
 		this.handleExport('rcp-export-models', data, client);
@@ -413,8 +413,8 @@ class RCPServer {
 
 	/**
 	 * Handle an incoming EXPORT_TEXTURE request.
-	 * @param {object} data 
-	 * @param {RCPConnection} client 
+	 * @param {object} data
+	 * @param {RCPConnection} client
 	 */
 	handleExportTexture(data, client) {
 		this.handleExport('rcp-export-textures', data, client);
@@ -422,7 +422,7 @@ class RCPServer {
 
 	/**
 	 * Dispatch a payload to hooked clients.
-	 * @param {string} hookID 
+	 * @param {string} hookID
 	 * @param {object} [data]
 	 */
 	dispatchHook(hookID, data = {}) {
@@ -464,9 +464,9 @@ class RCPServer {
 
 	/**
 	 * Validate a set of parameters for a request.
-	 * @param {RCPConnection} client 
-	 * @param {object} data 
-	 * @param {object} required 
+	 * @param {RCPConnection} client
+	 * @param {object} data
+	 * @param {object} required
 	 * @returns {boolean}
 	 */
 	validateParameters(client, data, required) {

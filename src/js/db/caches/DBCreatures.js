@@ -10,8 +10,8 @@ const creatureDisplays = new Map();
 
 /**
  * Initialize creature data.
- * @param {WDCReader} creatureDisplayInfo 
- * @param {WDCReader} creatureModelData 
+ * @param {WDCReader} creatureDisplayInfo
+ * @param {WDCReader} creatureModelData
  */
 const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) => {
 	log.write('Loading creature textures...');
@@ -23,7 +23,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
 	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
 		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID))
-			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
+			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, []);
 
 		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
 	}
@@ -33,8 +33,8 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 
 	// Map all available texture fileDataIDs to model IDs.
 	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
-		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
-		
+		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)});
+
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
 			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
 		else
@@ -52,7 +52,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 				const display = creatureDisplayInfoMap.get(displayID);
 
 				if (modelIDHasExtraGeosets) {
-					display.extraGeosets = Array();
+					display.extraGeosets = [];
 					if (creatureGeosetMap.has(displayID))
 						display.extraGeosets = creatureGeosetMap.get(displayID);
 				}
@@ -70,7 +70,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 
 /**
  * Gets creature skins from a given file data ID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @returns {string|undefined}
  */
 const getCreatureDisplaysByFileDataID = (fileDataID) => {

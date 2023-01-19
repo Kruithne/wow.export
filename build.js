@@ -202,9 +202,9 @@ const collectFiles = async (dir, out = []) => {
 /**
  * Check if an AST node matches a structure.
  * Returns AST_NO_MATCH or an object containing exports.
- * @param {object} target 
- * @param {object} struct 
- * @param {object} out 
+ * @param {object} target
+ * @param {object} struct
+ * @param {object} out
  */
 const matchAST = (target, struct, out = {}) => {
 	for (const [key, value] of Object.entries(struct)) {
@@ -262,7 +262,7 @@ const matchAST = (target, struct, out = {}) => {
 
 /**
  * Parse a source module for imports.
- * @param {string} mod 
+ * @param {string} mod
  */
 const parseModule = async (mod) => {
 	const out = {
@@ -306,8 +306,8 @@ const parseModule = async (mod) => {
 
 /**
  * Build a module tree starting from the entry-point.
- * @param {string} entry 
- * @param {array|Set} out 
+ * @param {string} entry
+ * @param {array|Set} out
  */
 const buildModuleTree = async (entry, out = [], root = true) => {
 	const mod = await parseModule(entry);
@@ -326,14 +326,14 @@ const buildModuleTree = async (entry, out = [], root = true) => {
 				mod.deps.add(subDep);
 		}
 	}
-	
+
 	return root ? out : mod.deps;
 };
 
 /**
  * Order a module tree array based on dependencies.
- * @param {array} tree 
- * @param {object} mod 
+ * @param {array} tree
+ * @param {object} mod
  */
 const orderDependencies = (tree, mod) => {
 	const modIndex = tree.indexOf(mod);
@@ -343,7 +343,7 @@ const orderDependencies = (tree, mod) => {
 
 		if (depIndex > modIndex)
 			tree.splice(modIndex, 0, tree.splice(depIndex, 1)[0]);
-		
+
 		orderDependencies(tree, depModule);
 	}
 };
@@ -450,7 +450,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				if (extractFilter(entryName)) {
 					const entryPath = entryName.substr(bundleName.length);
 					const entryDir = path.join(buildDir, path.dirname(entryPath));
-	
+
 					await createDirectory(entryDir);
 					zip.extractEntryTo(entryName, entryDir, false, true);
 					extractCount++;
@@ -604,7 +604,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			if (minified.error)
 				throw minified.error;
-			
+
 			await fsp.writeFile(path.join(sourceTarget, bundleConfig.jsEntry), minified.code, 'utf8');
 			log.success('*%d* sources bundled *%s* -> *%s* (*%d%*)', moduleTree.length, filesize(rawSize), filesize(minified.code.length), 100 - Math.round((minified.code.length / rawSize) * 100));
 
@@ -715,7 +715,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				entryCount++;
 			}
 
-			const manifestData = { contents, guid: buildGUID }
+			const manifestData = { contents, guid: buildGUID };
 			const manifestOut = path.join(buildDir, build.updateBundle.manifest);
 			await fsp.writeFile(manifestOut, JSON.stringify(manifestData, null, '\t'), 'utf8');
 			log.info('Update package built (*%s* (*%s* deflated) in *%d* files)', filesize(totalSize), filesize(compSize), entryCount);

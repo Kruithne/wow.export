@@ -49,7 +49,7 @@ const initializeItemDisplays = async () => {
 
 /**
  * Gets item skins from a given file data ID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @returns {string|undefined}
  */
 const getItemDisplaysByFileDataID = (fileDataID) => {

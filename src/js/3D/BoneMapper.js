@@ -88,11 +88,11 @@ const BONE_NAMES = {
 
 /**
  * Get the label for a bone.
- * @param {number} index 
+ * @param {number} index
  */
 const getBoneName = (index) => {
 	if (index in BONE_NAMES)
-		return BONE_NAMES[index]
+		return BONE_NAMES[index];
 	else
 		return 'Bone' + index;
 };

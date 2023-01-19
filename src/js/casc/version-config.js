@@ -21,7 +21,7 @@ module.exports = data => {
 		// Skip empty lines/comments.
 		if (entry.trim().length === 0 || entry.startsWith('#'))
 			continue;
-			
+
 		const node = {};
 		const entryFields = entry.split('|');
 		for (let i = 0, n = entryFields.length; i < n; i++)

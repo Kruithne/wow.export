@@ -12,7 +12,7 @@ const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 class WDTLoader {
 	/**
 	 * Construct a new WDTLoader instance.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 */
 	constructor(data) {
 		this.data = data;
@@ -30,7 +30,7 @@ class WDTLoader {
 			const handler = WDTChunkHandlers[chunkID];
 			if (handler)
 				handler.call(this, this.data, chunkSize);
-	
+
 			// Ensure that we start at the next chunk exactly.
 			this.data.seek(nextChunkPos);
 		}

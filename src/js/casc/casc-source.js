@@ -75,13 +75,13 @@ class CASC {
 
 		const raw = this.isRemote ? await this.getDataFile(this.formatCDNKey(installKey)) : await this.getDataFileWithRemoteFallback(installKey);
 		const manifest = new BLTEReader(raw, installKey);
-		
+
 		return new InstallManifest(manifest);
 	}
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID 
+	 * @param {number} fileDataID
 	 */
 	async getFile(fileDataID) {
 		const root = this.rootEntries.get(fileDataID);
@@ -112,7 +112,7 @@ class CASC {
 	}
 
 	/**
-	 * @param {string} contentKey 
+	 * @param {string} contentKey
 	 * @returns {string}
 	 */
 	getEncodingKeyForContentKey(contentKey) {
@@ -128,7 +128,7 @@ class CASC {
 	/**
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
-	 * @param {string} fileName 
+	 * @param {string} fileName
 	 * @param {boolean} [partialDecrypt=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -144,7 +144,7 @@ class CASC {
 
 	/**
 	 * Load the listfile for selected build.
-	 * @param {string} buildKey 
+	 * @param {string} buildKey
 	 */
 	async loadListfile(buildKey) {
 		await this.progress.step('Loading listfile');
@@ -162,7 +162,7 @@ class CASC {
 		const modelExt = [];
 		if (core.view.config.modelsShowM2)
 			modelExt.push('.m2');
-		
+
 		if (core.view.config.modelsShowWMO)
 			modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
@@ -247,8 +247,8 @@ class CASC {
 
 	/**
 	 * Parse entries from a root file.
-	 * @param {BufferWrapper} data 
-	 * @param {string} hash 
+	 * @param {BufferWrapper} data
+	 * @param {string} hash
 	 * @returns {number}
 	 */
 	async parseRootFile(data, hash) {
@@ -262,10 +262,10 @@ class CASC {
 			const totalFileCount = root.readUInt32LE();
 			const namedFileCount = root.readUInt32LE();
 			const allowNamelessFiles = totalFileCount !== namedFileCount;
-		
+
 			while (root.remainingBytes > 0) {
 				const numRecords = root.readUInt32LE();
-				
+
 				const contentFlags = root.readUInt32LE();
 				const localeFlags = root.readUInt32LE();
 
@@ -340,11 +340,11 @@ class CASC {
 
 		return rootEntries.size;
 	}
-	
+
 	/**
 	 * Parse entries from an encoding file.
-	 * @param {BufferWrapper} data 
-	 * @param {string} hash 
+	 * @param {BufferWrapper} data
+	 * @param {string} hash
 	 * @returns {object}
 	 */
 	async parseEncodingFile(data, hash) {

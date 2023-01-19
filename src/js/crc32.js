@@ -29,7 +29,7 @@ const crc32 = (buf) => {
 	let res = -1;
 	for (let i = 0; i < buf.length; i++)
 		res = table[(res ^ buf[i]) & 0xFF] ^ (res >>> 8);
-		
+
 	return res ^ -1;
 };
 

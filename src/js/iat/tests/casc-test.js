@@ -21,8 +21,8 @@ class CASCTest extends IntegrationTest {
 	 */
 	get tests() {
 		return [
-			
-		]
+
+		];
 	}
 }
 

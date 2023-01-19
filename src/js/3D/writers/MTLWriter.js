@@ -11,7 +11,7 @@ const core = require('../../core');
 class MTLWriter {
 	/**
 	 * Construct a new MTLWriter instance.
-	 * @param {string} out 
+	 * @param {string} out
 	 */
 	constructor(out) {
 		this.out = out;
@@ -20,8 +20,8 @@ class MTLWriter {
 
 	/**
 	 * Add a material to this material library.
-	 * @param {string} name 
-	 * @param {string} file 
+	 * @param {string} name
+	 * @param {string} file
 	 */
 	addMaterial(name, file) {
 		this.materials.push({ name, file });

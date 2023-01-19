@@ -25,7 +25,7 @@ class EncryptionError extends Error {
 class BLTEIntegrityError extends Error {
 	constructor(expected, actual) {
 		super(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', expected, actual));
-		
+
 		// Maintain stack trace (V8).
 		Error.captureStackTrace?.(this, BLTEIntegrityError);
 	}
@@ -34,7 +34,7 @@ class BLTEIntegrityError extends Error {
 class BLTEReader extends BufferWrapper {
 	/**
 	 * Check if the given data is a BLTE file.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 */
 	static check(data) {
 		if (data.byteLength < 4)
@@ -47,8 +47,8 @@ class BLTEReader extends BufferWrapper {
 	}
 	/**
 	 * Construct a new BLTEReader instance.
-	 * @param {BufferWrapper} buf 
-	 * @param {string} hash 
+	 * @param {BufferWrapper} buf
+	 * @param {string} hash
 	 * @param {boolean} partialDecrypt
 	 */
 	constructor(buf, hash, partialDecrypt = false) {
@@ -165,48 +165,48 @@ class BLTEReader extends BufferWrapper {
 	 * Handle a BLTE block.
 	 * @param {BufferWrapper} block
 	 * @param {number} blockEnd
-	 * @param {number} index 
+	 * @param {number} index
 	 */
 	_handleBlock(block, blockEnd, index) {
 		const flag = block.readUInt8();
 		switch (flag) {
-			case 0x45: // Encrypted
-				try {
-					const decrypted = this._decryptBlock(block, blockEnd, index);
-					this._handleBlock(decrypted, decrypted.byteLength, index);
-				} catch (e) {
-					if (e instanceof EncryptionError) {
-						// Partial decryption allows us to leave zeroed data.
-						if (this.partialDecrypt)
-							this._ofs += this.blocks[index].DecompSize;
-						else
-							throw e;
-					}
+		case 0x45: // Encrypted
+			try {
+				const decrypted = this._decryptBlock(block, blockEnd, index);
+				this._handleBlock(decrypted, decrypted.byteLength, index);
+			} catch (e) {
+				if (e instanceof EncryptionError) {
+					// Partial decryption allows us to leave zeroed data.
+					if (this.partialDecrypt)
+						this._ofs += this.blocks[index].DecompSize;
+					else
+						throw e;
 				}
+			}
 
-				break;
-			
-			case 0x46: // Frame (Recursive)
-				throw new Error('[BLTE] No frame decoder implemented!');
+			break;
 
-			case 0x4E: // Frame (Normal)
-				this._writeBufferBLTE(block, blockEnd);
-				break;
+		case 0x46: // Frame (Recursive)
+			throw new Error('[BLTE] No frame decoder implemented!');
 
-			case 0x5A: // Compressed
-				this._decompressBlock(block, blockEnd, index);
-				break;
+		case 0x4E: // Frame (Normal)
+			this._writeBufferBLTE(block, blockEnd);
+			break;
 
-			default:
-				throw new Error('Unknown block: ' + flag);
+		case 0x5A: // Compressed
+			this._decompressBlock(block, blockEnd, index);
+			break;
+
+		default:
+			throw new Error('Unknown block: ' + flag);
 		}
 	}
 
 	/**
 	 * Decompress BLTE block.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 * @param {number} blockEnd
-	 * @param {number} index 
+	 * @param {number} index
 	 */
 	_decompressBlock(data, blockEnd, index) {
 		const decomp = data.readBuffer(blockEnd - data.offset, true, true);
@@ -221,9 +221,9 @@ class BLTEReader extends BufferWrapper {
 
 	/**
 	 * Decrypt BLTE block.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 * @param {number} blockEnd
-	 * @param {number} index 
+	 * @param {number} index
 	 */
 	_decryptBlock(data, blockEnd, index) {
 		const keyNameSize = data.readUInt8();
@@ -266,7 +266,7 @@ class BLTEReader extends BufferWrapper {
 	/**
 	 * Write the contents of a buffer to this instance.
 	 * Skips bound checking for BLTE internal writing.
-	 * @param {BufferWrapper} buf 
+	 * @param {BufferWrapper} buf
 	 * @param {number} blockEnd
 	 */
 	_writeBufferBLTE(buf, blockEnd) {
@@ -276,7 +276,7 @@ class BLTEReader extends BufferWrapper {
 
 	/**
 	 * Check a given length does not exceed current capacity.
-	 * @param {number} length 
+	 * @param {number} length
 	 */
 	_checkBounds(length) {
 		// Check that this read won't go out-of-bounds anyway.
@@ -293,7 +293,7 @@ class BLTEReader extends BufferWrapper {
 	/**
 	 * Write the contents of this buffer to a file.
 	 * Directory path will be created if needed.
-	 * @param {string} file 
+	 * @param {string} file
 	 */
 	async writeToFile(file) {
 		this.processAllBlocks();
@@ -302,7 +302,7 @@ class BLTEReader extends BufferWrapper {
 
 	/**
 	 * Decode this buffer using the given audio context.
-	 * @param {AudioContext} context 
+	 * @param {AudioContext} context
 	 */
 	async decodeAudio(context) {
 		this.processAllBlocks();

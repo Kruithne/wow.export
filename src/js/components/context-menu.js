@@ -25,7 +25,7 @@ Vue.component('context-menu', {
 			positionY: 0,
 			isLow: false,
 			isLeft: false,
-		}
+		};
 	},
 
 	/**

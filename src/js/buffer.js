@@ -56,7 +56,7 @@ class BufferWrapper {
 
 	/**
 	 * Create a buffer from a source using Buffer.from().
-	 * @param {Array} source 
+	 * @param {Array} source
 	 */
 	static from(source) {
 		return new BufferWrapper(Buffer.from(source));
@@ -64,8 +64,8 @@ class BufferWrapper {
 
 	/**
 	 * Create a BufferWrapper from a canvas element.
-	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas 
-	 * @param {string} mimeType 
+	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas
+	 * @param {string} mimeType
 	 */
 	static async fromCanvas(canvas, mimeType) {
 		let blob;
@@ -87,7 +87,7 @@ class BufferWrapper {
 
 	/**
 	 * Construct a new BufferWrapper.
-	 * @param {Buffer} buf 
+	 * @param {Buffer} buf
 	 */
 	constructor(buf) {
 		this._ofs = 0;
@@ -137,7 +137,7 @@ class BufferWrapper {
 	/**
 	 * Set the absolute position of this buffer.
 	 * Negative values will set the position from the end of the buffer.
-	 * @param {number} ofs 
+	 * @param {number} ofs
 	 */
 	seek(ofs) {
 		const pos = ofs < 0 ? this.byteLength + ofs : ofs;
@@ -150,7 +150,7 @@ class BufferWrapper {
 	/**
 	 * Shift the position of the buffer relative to its current position.
 	 * Positive numbers seek forward, negative seek backwards.
-	 * @param {number} ofs 
+	 * @param {number} ofs
 	 */
 	move(ofs) {
 		const pos = this.offset + ofs;
@@ -162,7 +162,7 @@ class BufferWrapper {
 
 	/**
 	 * Read one or more signed integers of variable byte length in little endian.
-	 * @param {number} byteLength 
+	 * @param {number} byteLength
 	 * @param {number} [count=1]
 	 * @returns {number|number[]}
 	 */
@@ -172,7 +172,7 @@ class BufferWrapper {
 
 	/**
 	 * Read one or more unsigned integers of variable byte length in little endian.
-	 * @param {number} byteLength 
+	 * @param {number} byteLength
 	 * @param {number} [count=1]
 	 * @returns {number|number[]}
 	 */
@@ -182,17 +182,17 @@ class BufferWrapper {
 
 	/**
 	 * Read one or more signed integers of variable byte length in big endian.
-	 * @param {number} byteLength 
+	 * @param {number} byteLength
 	 * @param {number} [count=1]
 	 * @returns {number}
 	 */
 	readIntBE(byteLength, count = 1) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, byteLength);
 	}
-	
+
 	/**
 	 * Read one or more unsigned integers of variable byte length in big endian.
-	 * @param {number} byteLength 
+	 * @param {number} byteLength
 	 * @param {number} [count=1]
 	 * @returns {number}
 	 */
@@ -352,7 +352,7 @@ class BufferWrapper {
 	readInt40BE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_INT, 5);
 	}
-	
+
 	/**
 	 * Read one or more unsigned 40-bit integers in big endian.
 	 * @param {number} count How many to read.
@@ -451,7 +451,7 @@ class BufferWrapper {
 	readFloatBE(count) {
 		return this._readInt(count, BIG_ENDIAN.READ_FLOAT, 4);
 	}
-	
+
 	/**
 	 * Read one or more doubles in little endian.
 	 * @param {number} count How many to read.
@@ -472,7 +472,7 @@ class BufferWrapper {
 
 	/**
 	 * Read a portion of this buffer as a hex string.
-	 * @param {number} length 
+	 * @param {number} length
 	 */
 	readHexString(length) {
 		this._checkBounds(length);
@@ -503,7 +503,7 @@ class BufferWrapper {
 
 	/**
 	 * Read a string from the buffer.
-	 * @param {?number} length 
+	 * @param {?number} length
 	 * @param {string} [encoding=utf8]
 	 * @returns {string}
 	 */
@@ -522,7 +522,7 @@ class BufferWrapper {
 	/**
 	 * Read a null-terminated string from the buffer.
 	 * @param {string} [encoding=utf8]
-	 * @returns 
+	 * @returns
 	 */
 	readNullTerminatedString(encoding = 'utf8') {
 		const startPos = this.offset;
@@ -544,7 +544,7 @@ class BufferWrapper {
 
 	/**
 	 * Returns true if the buffer starts with any of the given string(s).
-	 * @param {string|array} input 
+	 * @param {string|array} input
 	 * @param {string} [encoding=utf8]
 	 * @returns {boolean}
 	 */
@@ -575,7 +575,7 @@ class BufferWrapper {
 	/**
 	 * Read the entire buffer split by lines (\r\n, \n, \r).
 	 * Preserves current offset of the wrapper.
-	 * @param {string} encoding 
+	 * @param {string} encoding
 	 */
 	readLines(encoding = 'utf8') {
 		const ofs = this._ofs;
@@ -739,7 +739,7 @@ class BufferWrapper {
 	writeInt40BE(value) {
 		return this._writeInt(value, BIG_ENDIAN.WRITE_INT, 5);
 	}
-	
+
 	/**
 	 * Write a unsigned 40-bit integer in big endian.
 	 * @param {number} value
@@ -841,7 +841,7 @@ class BufferWrapper {
 
 	/**
 	 * Write the contents of a buffer to this buffer.
-	 * @param {Buffer|BufferWrapper} buf 
+	 * @param {Buffer|BufferWrapper} buf
 	 * @param {number} copyLength
 	 */
 	writeBuffer(buf, copyLength = 0) {
@@ -851,7 +851,7 @@ class BufferWrapper {
 		// Unwrap the internal buffer if this is a wrapper.
 		if (buf instanceof BufferWrapper) {
 			startIndex = buf.offset;
-			
+
 			if (copyLength === 0)
 				copyLength = buf.remainingBytes;
 			else
@@ -878,7 +878,7 @@ class BufferWrapper {
 	/**
 	 * Write the contents of this buffer to a file.
 	 * Directory path will be created if needed.
-	 * @param {string} file 
+	 * @param {string} file
 	 */
 	async writeToFile(file) {
 		await fsp.mkdir(path.dirname(file), { recursive: true });
@@ -888,8 +888,8 @@ class BufferWrapper {
 	/**
 	 * Get the index of the given char from start.
 	 * Defaults to the current reader offset.
-	 * @param {string} char 
-	 * @param {number} start 
+	 * @param {string} char
+	 * @param {number} start
 	 * @returns {number}
 	 */
 	indexOfChar(char, start = this.offset) {
@@ -903,13 +903,13 @@ class BufferWrapper {
 	 * Get the index of the given byte from start.
 	 * Defaults to the current reader offset.
 	 * @param {number} byte
-	 * @param {number} start 
+	 * @param {number} start
 	 * @returns {number}
 	 */
 	indexOf(byte, start = this.offset) {
 		const resetPos = this.offset;
 		this.seek(start);
-		
+
 		while (this.remainingBytes > 0) {
 			const mark = this.offset;
 			if (this.readUInt8() === byte) {
@@ -924,7 +924,7 @@ class BufferWrapper {
 
 	/**
 	 * Decode this buffer using the given audio context.
-	 * @param {AudioContext} context 
+	 * @param {AudioContext} context
 	 */
 	async decodeAudio(context) {
 		return await context.decodeAudioData(this._buf.buffer);
@@ -1015,7 +1015,7 @@ class BufferWrapper {
 
 	/**
 	 * Check a given length does not exceed current capacity.
-	 * @param {number} length 
+	 * @param {number} length
 	 */
 	_checkBounds(length) {
 		if (this.remainingBytes < length)

@@ -16,7 +16,7 @@ Vue.component('data-table', {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -152,7 +152,7 @@ Vue.component('data-table', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -162,7 +162,7 @@ Vue.component('data-table', {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {

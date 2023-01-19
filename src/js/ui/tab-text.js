@@ -55,7 +55,7 @@ core.registerLoadFunc(async () => {
 
 		const helper = new ExportHelper(userSelection.length, 'file');
 		helper.start();
-		
+
 		const overwriteFiles = core.view.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
@@ -63,7 +63,7 @@ core.registerLoadFunc(async () => {
 				return;
 
 			fileName = listfile.stripFileEntry(fileName);
-				
+
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
