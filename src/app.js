@@ -663,7 +663,9 @@ document.addEventListener('click', function(e) {
 	// without having to calculate the real size before showing to users. Fast and reliable.
 	fsp.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
 		core.view.cacheSize = Number(data) || 0;
-	}).catch(() => {}).finally(() => {
+	}).catch(() => {
+		// File doesn't exist yet, don't error.
+	}).finally(() => {
 		let updateTimer = -1;
 
 		// Create a watcher programmatically *after* assigning the initial value
