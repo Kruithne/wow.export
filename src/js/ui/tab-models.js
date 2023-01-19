@@ -274,11 +274,9 @@ const getVariantTextureIDs = (fileName) => {
 	}
 };
 
-const exportFiles = async (files, isLocal = false, exportID = -1) => {
+const exportFiles = async (files, isLocal = false) => {
 	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
 	const format = core.view.config.exportModelFormat;
-
-	const manifest = { type: 'MODELS', exportID, succeeded: [], failed: [] };
 
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
@@ -451,10 +449,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				}
 
 				helper.mark(fileName, true);
-				manifest.succeeded.push({ fileDataID, files: fileManifest });
 			} catch (e) {
 				helper.mark(fileName, false, e.message);
-				manifest.failed.push({ fileDataID });
 			}
 		}
 
@@ -463,9 +459,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 	// Write export information.
 	await exportPaths.close();
-
-	// Dispatch file manifest to RCP.
-	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
 };
 
 /**
@@ -510,11 +503,6 @@ core.events.once('screen-tab-models', () => {
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
 	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
-});
-
-core.events.on('rcp-export-models', (files, id) => {
-	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {

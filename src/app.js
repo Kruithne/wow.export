@@ -87,6 +87,9 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
+const fudge = 5;
+
+
 require('./js/components/listbox');
 require('./js/components/listboxb');
 require('./js/components/itemlistbox');
@@ -112,8 +115,6 @@ require('./js/ui/tab-items');
 require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
-
-const RCPServer = require('./js/rcp/rcp-server');
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -723,8 +724,4 @@ document.addEventListener('click', function(e) {
 
 	// Set source select as the currently active interface screen.
 	core.view.setScreen('source-select');
-
-	// Initiate RCP.
-	core.rcp = new RCPServer();
-	core.rcp.load();
 })();

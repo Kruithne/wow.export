@@ -17,6 +17,7 @@
 - Fixed various issues that would prevent certain DB2 files from being read.
 - Fixed issue that prevented map tile exporting when "Enable Shared Children" is disabled.
 - Fixed an issue where strings from decrypted DB2 data could be corrupt.
+- The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
 
 0.1.44 (24-10-2022)
 - Added preview and export support for new texture references used in some Dragonflight WMOs.

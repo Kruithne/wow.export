@@ -95,7 +95,7 @@ const getFileInfoPair = (input) => {
 	return { fileName, fileDataID };
 };
 
-const exportFiles = async (files, isLocal = false, exportID = -1) => {
+const exportFiles = async (files, isLocal = false) => {
 	const format = core.view.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
@@ -121,8 +121,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
-
-	const manifest = { type: 'TEXTURES', exportID, succeeded: [], failed: [] };
 
 	for (let fileEntry of files) {
 		// Abort if the export has been cancelled.
@@ -162,7 +160,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 						json.addProperty('mipmapSizes', blp.mapSizes);
 
 						await json.write(overwriteFiles);
-						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut });
 					}
 				}
 			} else {
@@ -170,19 +167,13 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			}
 
 			helper.mark(fileName, true);
-			manifest.succeeded.push({ type: format, fileDataID, file: exportPath });
 		} catch (e) {
 			helper.mark(fileName, false, e.message);
-			manifest.failed.push({ type: format, fileDataID });
 		}
 	}
 
 	await exportPaths.close();
-
 	helper.finish();
-
-	// Dispatch file manifest to RCP.
-	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
 };
 
 // Register a drop handler for BLP files.
@@ -190,11 +181,6 @@ core.registerDropHandler({
 	ext: ['.blp'],
 	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
 	process: files => exportFiles(files, true)
-});
-
-core.events.on('rcp-export-textures', (files, id) => {
-	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {
