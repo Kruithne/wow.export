@@ -75,11 +75,7 @@ class BLPImage {
 		}
 
 		// Read colour palette..
-		this.palette = [];
-		if (this.encoding === 1) {
-			for (let i = 0; i < 256; i++)
-				this.palette[i] = this.data.readUInt8(4);
-		}
+		this.palette = this.encoding === 1 ? this.data.readBuffer(256 * 4, false) : Buffer.alloc(0);
 
 		this.dataURL = null;
 	}
