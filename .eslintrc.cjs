@@ -17,7 +17,7 @@ module.exports = {
 	},
 	'env': {
 		'node': true,
-		'es2021': true
+		'es2020': true
 	},
 	'rules': {
 		'indent': [ 'error', 'tab' ],
