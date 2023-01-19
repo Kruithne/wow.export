@@ -16,7 +16,7 @@
 	},
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"engines": {
-		"node": ">=12.12.0"
+		"node": ">=18.10.0"
 	},
 	"scripts": {
 		"test": "node ./runTests.js"
