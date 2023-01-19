@@ -590,7 +590,7 @@ class WDCReader {
 						case CompressionType.Bitpacked:
 						case CompressionType.BitpackedSigned:
 						case CompressionType.BitpackedIndexed:
-						case CompressionType.BitpackedIndexedArray:
+						case CompressionType.BitpackedIndexedArray: {
 							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
 							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
 
@@ -629,6 +629,7 @@ class WDCReader {
 								out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
 
 							break;
+						}
 					}
 
 					// Reinterpret field correctly for compression types other than None

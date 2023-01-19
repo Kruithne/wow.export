@@ -21,7 +21,6 @@
     },
     "rules": {
         /* Overrides from recommended ruleset */
-		"no-case-declarations": "off",
 		"no-prototype-builtins": "off",
 
 		/* Custom */

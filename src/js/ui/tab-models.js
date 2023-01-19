@@ -379,7 +379,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				}
 
 				switch (format) {
-					case 'RAW':
+					case 'RAW': {
 						exportPaths.writeLine(exportPath);
 
 						let exporter;
@@ -390,7 +390,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 						await exporter.exportRaw(exportPath, helper, fileManifest);
 						break;
-
+					}
 					case 'OBJ':
 					case 'GLTF':
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
