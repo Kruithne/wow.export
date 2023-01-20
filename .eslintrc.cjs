@@ -21,6 +21,8 @@ module.exports = {
 		'browser': true
 	},
 	'rules': {
+		'@typescript-eslint/no-explicit-any': 'warn',
+		'@typescript-eslint/no-inferrable-types': 'off',
 		'indent': [ 'error', 'tab' ],
 		'linebreak-style': [ 'error', process.platform === 'win32' ? 'windows' : 'unix' ],
 		'quotes': [ 'error', 'single' ],
