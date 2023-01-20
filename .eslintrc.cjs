@@ -23,7 +23,7 @@ module.exports = {
 	'rules': {
 		'@typescript-eslint/no-explicit-any': 'warn',
 		'@typescript-eslint/no-inferrable-types': 'off',
-		'indent': [ 'error', 'tab' ],
+		'indent': [ 'error', 'tab', { 'SwitchCase': 1 } ],
 		'linebreak-style': [ 'error', process.platform === 'win32' ? 'windows' : 'unix' ],
 		'quotes': [ 'error', 'single' ],
 		'semi': [ 'error', 'always' ],
