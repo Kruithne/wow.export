@@ -1,4 +1,4 @@
-0.1.45 (TBD)
+0.1.45 (22-01-2023)
 - Updated to support World of Warcraft v10.0.5+ and v3.4.1+.
 - The "Textures" option for map tile exporting is now enabled by default.
 - Improved load times when previewing large WMO models.
