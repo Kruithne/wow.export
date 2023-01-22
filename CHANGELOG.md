@@ -1,4 +1,10 @@
-0.1.45 (TBD)
+x.x.xx (TBD)
+- Updated geoset names to match those on the wowdev wiki.
+- Updated 3D rendering library (three.js) used in the modelviewer in preparation for future modelviewer improvements.
+- Improved WMO preview loading speed.
+- The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
+
+0.1.45 (22-01-2023)
 - Updated to support World of Warcraft v10.0.5+ and v3.4.1+.
 - The "Textures" option for map tile exporting is now enabled by default.
 - Improved load times when previewing large WMO models.
@@ -17,7 +23,6 @@
 - Fixed various issues that would prevent certain DB2 files from being read.
 - Fixed issue that prevented map tile exporting when "Enable Shared Children" is disabled.
 - Fixed an issue where strings from decrypted DB2 data could be corrupt.
-- The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
 
 0.1.44 (24-10-2022)
 - Added preview and export support for new texture references used in some Dragonflight WMOs.
