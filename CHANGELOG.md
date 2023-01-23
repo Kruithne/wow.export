@@ -1,3 +1,6 @@
+0.1.46 (23-01-2023)
+- Fixes an issue that causes M2 models exported as part of an ADT to have the wrong file extension.
+
 0.1.45 (22-01-2023)
 - Updated to support World of Warcraft v10.0.5+ and v3.4.1+.
 - The "Textures" option for map tile exporting is now enabled by default.
