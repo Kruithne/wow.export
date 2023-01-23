@@ -481,7 +481,8 @@ class WDCReader {
 				if (hasIDMap)
 					recordID = section.idList[i];
 
-				const recordOfs = isNormal ? (i * recordSize) : offsetMap[wdcVersion === 2 ? i : recordID].offset;
+				const recordOfs = isNormal ? (i * recordSize) : offsetMap[wdcVersion === 2 ? recordID : i].offset;
+
 				const absoluteRecordOffs = recordOfs - (recordCount * recordSize);
 
 				if (!isNormal) 

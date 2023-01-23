@@ -1,3 +1,6 @@
+0.1.47 (23-01-2023)
+- Fixes an issue with DB2 reading for certain DB2 tables.
+
 0.1.46 (23-01-2023)
 - Fixes an issue that causes M2 models exported as part of an ADT to have the wrong file extension.
 - Removed China as a supported region, as the CDN is no longer available.
