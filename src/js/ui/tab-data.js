@@ -3,6 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
+const util = require('util');
 const core = require('../core');
 const log = require('../log');
 const generics = require('../generics');
