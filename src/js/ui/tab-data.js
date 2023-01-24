@@ -14,8 +14,9 @@ let selectedFile = null;
 let db2NameMap = undefined;
 
 core.registerLoadFunc(async () => {
-	log.write('Downloading DB2 filename mapping from %s', 'https://api.wow.tools/databases/');
-	generics.getJSON('https://api.wow.tools/databases/').then(raw => db2NameMap = raw);
+	const manifestURL = util.format(core.view.config.dbdURL, "manifest");
+	log.write('Downloading DB2 filename mapping from %s', manifestURL);
+	generics.getJSON(manifestURL).then(raw => db2NameMap = raw);
 
 	// Track selection changes on the text listbox and set first as active entry.
 	core.view.$watch('selectionDB2s', async selection => {
@@ -24,7 +25,7 @@ core.registerLoadFunc(async () => {
 		if (!core.view.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {
 			try {
 				const lowercaseTableName = path.basename(first, '.db2');
-				const tableName = db2NameMap.find(e => e.name == lowercaseTableName)?.displayName;
+				const tableName = db2NameMap.find(e => e.tableName.toLowerCase() == lowercaseTableName)?.tableName;
 
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
