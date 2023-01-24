@@ -2,6 +2,7 @@ x.x.xx (TBD)
 - Updated geoset names to match those on the wowdev wiki.
 - Updated 3D rendering library (three.js) used in the modelviewer in preparation for future modelviewer improvements.
 - Improved WMO preview loading speed.
+- Improved error handling in case of outdated/incorrect database definitions during startup.
 - The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
 
 0.1.47 (23-01-2023)

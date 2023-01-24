@@ -19,6 +19,15 @@ const initializeItemDisplays = async () => {
 	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
 	await itemDisplayInfo.parse();
 
+	if (!itemDisplayInfo.schema.has("ModelResourcesID") || !itemDisplayInfo.schema.has("ModelMaterialResourcesID")){
+		log.write('Unable to load item textures, ItemDisplayInfo is missing required fields.');
+		core.setToast('error', 'Item textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+			'Clear Cache': () => core.events.emit('click-cache-clear'),
+			'Not Now': () => false
+		}, -1, false);
+		return;
+	}
+
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [itemDisplayInfoID, itemDisplayInfoRow] of itemDisplayInfo.getAllRows()) {
 		const modelResIDs = itemDisplayInfoRow.ModelResourcesID.filter(e => e > 0);
