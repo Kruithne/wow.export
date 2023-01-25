@@ -19,20 +19,6 @@
 	"scripts": {
 		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js"
 	},
-	"dependencies": {
-		"acorn": "^8.0.4",
-		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
-		"chalk": "^2.4.2",
-		"filesize": "^5.0.3",
-		"pkg": "^4.4.0",
-		"rcedit": "^2.0.0",
-		"request": "^2.88.0",
-		"sass": "^1.52.1",
-		"ssh2-sftp-client": "^9.0.4",
-		"tar": "^5.0.10",
-		"terser": "^5.14.2",
-		"uuid": "^3.3.3"
-	},
 	"devDependencies": {
 		"@types/node": "^18.11.18",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
