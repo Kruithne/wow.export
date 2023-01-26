@@ -1,4 +1,4 @@
-x.x.xx (TBD)
+0.2.0 (TBD)
 - Updated geoset names to match those on the wowdev wiki.
 - Updated 3D rendering library (three.js) used in the modelviewer in preparation for future modelviewer improvements.
 - Improved WMO preview loading speed.
