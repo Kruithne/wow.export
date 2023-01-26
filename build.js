@@ -2,6 +2,7 @@ import meta from './package.json' assert { type: 'json' };
 import log, { formatArray } from '@kogs/logger';
 import { execSync } from 'child_process';
 import { copySync, collectFiles } from '@kogs/utils';
+import { parse } from '@kogs/argv';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
@@ -35,13 +36,11 @@ try {
 		execSync(cmd, { stdio: 'inherit' });
 	};
 
-	const BUILD_TYPES = ['debug', 'release'];
-	const buildType = process.argv.slice(2)[0];
+	const argv = parse();
 
-	if (!BUILD_TYPES.includes(buildType))
-		throw new Error(`Invalid build type: {${buildType}}, must be one of: ${formatArray(BUILD_TYPES)}`);
+	const isDebugBuild = argv.options.asBoolean('debug');
+	const buildType = isDebugBuild ? 'debug' : 'release';
 
-	const isDebugBuild = buildType === 'debug';
 	const buildDir = path.join('bin', isDebugBuild ? 'win-x64-debug' : 'win-x64');
 	log.info('Building {%s} in {%s}...', buildType, path.resolve(buildDir));
 
