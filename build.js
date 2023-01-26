@@ -1,5 +1,5 @@
 import meta from './package.json' assert { type: 'json' };
-import log, { formatArray } from '@kogs/logger';
+import log from '@kogs/logger';
 import { execSync } from 'child_process';
 import { copySync, collectFiles } from '@kogs/utils';
 import { parse } from '@kogs/argv';
