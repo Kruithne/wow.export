@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import { copySync, collectFiles } from '@kogs/utils';
 import { parse } from '@kogs/argv';
 import { v4 as uuidv4 } from 'uuid';
+import JSZip from 'jszip';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import util from 'node:util';
@@ -173,9 +174,31 @@ try {
 			const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
 			log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
 		}
-
-		log.outdent();
 	}
+
+	// Step 9: Pacakge build into a ZIP file.
+	if (argv.options.asBoolean('package')) {
+		const zipArchive = path.join('bin', 'packages', 'wow.export-' + meta.version + '.zip');
+		log.info('Packaging build into {%s}...', zipArchive);
+
+		const zip = new JSZip();
+		const files = await collectFiles(buildDir);
+		let totalSize = 0;
+
+		for (const file of files) {
+			const filePath = path.join(buildDir, file);
+			const fileData = fs.readFileSync(filePath);
+
+			totalSize += fileData.length;
+			zip.file(file, fileData);
+		}
+		
+		const zipData = await zip.async({ type: 'nodebuffer' });
+		fs.writeFileSync(zipArchive, zipData);
+		log.success('Packaged {%s} files ({%smb})', files.length, (totalSize / 1024 / 1024).toFixed(2));
+	}
+
+	log.outdent();
 } catch (err) {
 	log.error('{Failed} %s: ' + err.message, err.name);
 }
