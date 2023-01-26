@@ -19,7 +19,9 @@
 	"scripts": {
 		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
 		"build-release": "node --no-warnings ./build.js",
-		"build-debug": "node --no-warnings ./build.js --debug"
+		"build-debug": "node --no-warnings ./build.js --debug",
+		"update-release": "node --no-warnings ./build.js --update",
+		"update-debug": "node --no-warnings ./build.js --update --debug"
 	},
 	"devDependencies": {
 		"@kogs/argv": "^1.1.0",

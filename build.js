@@ -39,6 +39,7 @@ try {
 	const argv = parse();
 
 	const isDebugBuild = argv.options.asBoolean('debug');
+	const isUpdatingBuild = argv.options.asBoolean('update');
 	const buildType = isDebugBuild ? 'debug' : 'release';
 
 	const buildDir = path.join('bin', isDebugBuild ? 'win-x64-debug' : 'win-x64');
@@ -57,120 +58,124 @@ try {
 	log.info('Running {sass}...');
 	run('sass src/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
 
-	// Step 3: Build nw.js distribution using `@kogs/nwjs'.
-	// See https://github.com/Kruithne/kogs-nwjs for usage information.
-	log.info('Running {@kogs/nwjs}...');
-	run('nwjs --target-dir "%s" --version 0.69.1 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+	// The following section is only required for full builds. We don't need to repeat any
+	// of this if we're just updating the code.
+	if (!isUpdatingBuild) {
+		// Step 3: Build nw.js distribution using `@kogs/nwjs'.
+		// See https://github.com/Kruithne/kogs-nwjs for usage information.
+		log.info('Running {@kogs/nwjs}...');
+		run('nwjs --target-dir "%s" --version 0.69.1 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
-	// Step 4: Copy and adjust the package manifest.
-	log.info('Generating {package.json} for distribution...');
-	const manifest = JSON.parse(fs.readFileSync('./src/package.json', 'utf8'));
-	for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
-		manifest[key] = meta[key];
+		// Step 4: Copy and adjust the package manifest.
+		log.info('Generating {package.json} for distribution...');
+		const manifest = JSON.parse(fs.readFileSync('./src/package.json', 'utf8'));
+		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
+			manifest[key] = meta[key];
 
-	manifest.guid = uuidv4(); // Unique build ID for updater.
-	manifest.flavour = 'win-x64' + (isDebugBuild ? '-debug' : '');
+		manifest.guid = uuidv4(); // Unique build ID for updater.
+		manifest.flavour = 'win-x64' + (isDebugBuild ? '-debug' : '');
 
-	fs.writeFileSync(path.join(buildDir, 'package.json'), JSON.stringify(manifest, null, '\t'), 'utf8');
+		fs.writeFileSync(path.join(buildDir, 'package.json'), JSON.stringify(manifest, null, '\t'), 'utf8');
 
-	// Step 5: Copy additional source files.
-	log.info('Copying files...');
-	log.indent();
-	for (let [src, dest] of Object.entries(INCLUDE)) {
-		dest = path.join(buildDir, dest);
-		fs.mkdirSync(path.dirname(dest), { recursive: true });
+		// Step 5: Copy additional source files.
+		log.info('Copying files...');
+		log.indent();
+		for (let [src, dest] of Object.entries(INCLUDE)) {
+			dest = path.join(buildDir, dest);
+			fs.mkdirSync(path.dirname(dest), { recursive: true });
 
-		copySync(src, dest, { overwrite: 'newer' });
-		log.success('{%s} -> {%s}', src, dest);
-	}
-	log.outdent();
+			copySync(src, dest, { overwrite: 'newer' });
+			log.success('{%s} -> {%s}', src, dest);
+		}
+		log.outdent();
 
-	// Step 6: File remapping.
-	log.info('Remapping build files...');
-	log.indent();
-	for (let [src, dest] of Object.entries(REMAP)) {
-		dest = path.join(buildDir, dest);
-		fs.mkdirSync(path.dirname(dest), { recursive: true });
+		// Step 6: File remapping.
+		log.info('Remapping build files...');
+		log.indent();
+		for (let [src, dest] of Object.entries(REMAP)) {
+			dest = path.join(buildDir, dest);
+			fs.mkdirSync(path.dirname(dest), { recursive: true });
 
-		fs.renameSync(path.join(buildDir, src), dest);
-		log.success('{%s} -> {%s}', src, dest);
-	}
-	log.outdent();
+			fs.renameSync(path.join(buildDir, src), dest);
+			log.success('{%s} -> {%s}', src, dest);
+		}
+		log.outdent();
 
-	// Step 7: Run `resedit` to edit the executable metadata.
-	// See https://github.com/jet2jet/resedit-js for usage information.
-	log.info('Modifying PE resources for {wow.export.exe}...');
-	run('resedit ' + Object.entries({
-		'in': path.join(buildDir, 'wow.export.exe'),
-		'out': path.join(buildDir, 'wow.export.exe'),
-		'icon': 'IDR_MAINFRAME,resources/icon.ico',
-		'product-name': 'wow.export',
-		'product-version': meta.version + '.0',
-		'file-description': 'wow.export',
-		'file-version': meta.version + '.0',
-		'original-filename': 'wow.export.exe',
-		'company-name': 'Kruithne, Marlamin, and contributors',
-		'internal-name': 'wow.export'
-	}).map(([key, value]) => `--${key} "${value}"`).join(' '));
-
-	// Step 8: Build updater executable, bundle and manifest (release builds only).
-	if (!isDebugBuild) {
-		// Step 8.1: Compile updater executable using `pkg`.
-		// See https://github.com/vercel/pkg for usage information.
-		log.info('Compiling {updater.exe}...');
-		run('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater.js'));
-
-		// Step 8.1.1: Reuse the PE modification code from above to edit the updater executable.
-		// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
-		log.info('Modifying PE resources for {updater.exe}...');
-		run('resedit --no-grow ' + Object.entries({
-			'in': path.join(buildDir, 'updater.exe'),
-			'out': path.join(buildDir, 'updater.exe'),
-			'icon': '1,resources/icon.ico',
+		// Step 7: Run `resedit` to edit the executable metadata.
+		// See https://github.com/jet2jet/resedit-js for usage information.
+		log.info('Modifying PE resources for {wow.export.exe}...');
+		run('resedit ' + Object.entries({
+			'in': path.join(buildDir, 'wow.export.exe'),
+			'out': path.join(buildDir, 'wow.export.exe'),
+			'icon': 'IDR_MAINFRAME,resources/icon.ico',
 			'product-name': 'wow.export',
 			'product-version': meta.version + '.0',
 			'file-description': 'wow.export',
-			'file-version': '2.0.0.0',
+			'file-version': meta.version + '.0',
 			'original-filename': 'wow.export.exe',
 			'company-name': 'Kruithne, Marlamin, and contributors',
 			'internal-name': 'wow.export'
 		}).map(([key, value]) => `--${key} "${value}"`).join(' '));
 
-		// Step 8.2: Compile update file/manifest.
-		log.info('Writing update package...');
+		// Step 8: Build updater executable, bundle and manifest (release builds only).
+		if (!isDebugBuild) {
+			// Step 8.1: Compile updater executable using `pkg`.
+			// See https://github.com/vercel/pkg for usage information.
+			log.info('Compiling {updater.exe}...');
+			run('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater.js'));
 
-		const updateManifest = {};
-		const updateFiles = await collectFiles(buildDir);
-		const updatePath = path.join(buildDir, 'update');
+			// Step 8.1.1: Reuse the PE modification code from above to edit the updater executable.
+			// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
+			log.info('Modifying PE resources for {updater.exe}...');
+			run('resedit --no-grow ' + Object.entries({
+				'in': path.join(buildDir, 'updater.exe'),
+				'out': path.join(buildDir, 'updater.exe'),
+				'icon': '1,resources/icon.ico',
+				'product-name': 'wow.export',
+				'product-version': meta.version + '.0',
+				'file-description': 'wow.export',
+				'file-version': '2.0.0.0',
+				'original-filename': 'wow.export.exe',
+				'company-name': 'Kruithne, Marlamin, and contributors',
+				'internal-name': 'wow.export'
+			}).map(([key, value]) => `--${key} "${value}"`).join(' '));
 
-		let entryCount = 0;
-		let totalSize = 0;
-		let compSize = 0;
+			// Step 8.2: Compile update file/manifest.
+			log.info('Writing update package...');
 
-		for (const file of updateFiles) {
-			const relative = path.posix.relative(buildDir, file);
-			const data = fs.readFileSync(file);
-			const hash = crypto.createHash('sha256').update(data).digest('hex');
+			const updateManifest = {};
+			const updateFiles = await collectFiles(buildDir);
+			const updatePath = path.join(buildDir, 'update');
 
-			const dataCompressed = zlib.deflateSync(data);
-			fs.writeFileSync(updatePath, dataCompressed, { flag: 'a' });
+			let entryCount = 0;
+			let totalSize = 0;
+			let compSize = 0;
 
-			updateManifest[relative] = { hash, size: data.length, compSize: dataCompressed.length, ofs: compSize };
-			totalSize += data.length;
-			compSize += dataCompressed.length;
+			for (const file of updateFiles) {
+				const relative = path.posix.relative(buildDir, file);
+				const data = fs.readFileSync(file);
+				const hash = crypto.createHash('sha256').update(data).digest('hex');
 
-			entryCount++;
+				const dataCompressed = zlib.deflateSync(data);
+				fs.writeFileSync(updatePath, dataCompressed, { flag: 'a' });
+
+				updateManifest[relative] = { hash, size: data.length, compSize: dataCompressed.length, ofs: compSize };
+				totalSize += data.length;
+				compSize += dataCompressed.length;
+
+				entryCount++;
+			}
+
+			const manifestData = { contents: updateManifest, guid: manifest.guid };
+			fs.writeFileSync(path.join(buildDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
+			
+			const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+			const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
+			log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
 		}
 
-		const manifestData = { contents: updateManifest, guid: manifest.guid };
-		fs.writeFileSync(path.join(buildDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
-		
-		const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
-		const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
-		log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
+		log.outdent();
 	}
-
-	log.outdent();
 } catch (err) {
 	log.error('{Failed} %s: ' + err.message, err.name);
 }
