@@ -1,0 +1,15 @@
+{
+	"name": "wow.export",
+	"main": "./src/index.html",
+	"chromium-args": "--disable-devtools --disable-raf-throttling --mixed-context --enable-node-worker --disable-logging",
+	"product_string": "wow.export",
+	"user-agent": "wow.export (%ver); %osinfo",
+	"window": {
+		"id": "wow-export-main",
+		"icon": "./res/icon.png",
+		"width": 1370,
+		"height": 988,
+		"min_width": 1115,
+		"min_height": 988
+	}
+}

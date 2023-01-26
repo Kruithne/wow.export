@@ -17,15 +17,25 @@
 	},
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"scripts": {
-		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js"
+		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
+		"build-release": "node --no-warnings ./build.js release",
+		"build-debug": "node --no-warnings ./build.js debug"
 	},
 	"devDependencies": {
+		"@kogs/logger": "^3.3.7",
+		"@kogs/nwjs": "^1.0.0",
+		"@kogs/utils": "^1.4.9",
+		"@rollup/plugin-terser": "^0.3.0",
 		"@types/node": "^18.11.18",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
 		"eslint": "^8.32.0",
 		"eslint-plugin-jest": "^27.2.1",
 		"eslint-plugin-vue": "^9.9.0",
-		"jest": "^29.3.1"
+		"jest": "^29.3.1",
+		"pkg": "^5.8.0",
+		"rcedit": "^3.0.1",
+		"rollup-plugin-typescript2": "^0.34.1",
+		"uuid": "^9.0.0"
 	}
 }
