@@ -7,7 +7,6 @@ import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import util from 'node:util';
 import path from 'node:path';
-import rcedit from 'rcedit';
 import fs from 'node:fs';
 
 const INCLUDE = {
@@ -99,21 +98,21 @@ try {
 	}
 	log.outdent();
 
-	// Step 7: Run `rcedit` to edit the executable metadata.
-	// See https://www.npmjs.com/package/rcedit for usage information.
-	log.info('Modifying executable metadata for {wow.export.exe}...');
-	await rcedit(path.join(buildDir, 'wow.export.exe'), {
-		'icon': './resources/icon.ico',
-		'file-version': meta.version,
-		'product-version': meta.version,
-		'version-string': {
-			'CompanyName': 'kruithne.net',
-			'FileDescription': 'Export Toolkit for World of Warcraft',
-			'LegalCopyright': 'MIT License',
-			'ProductName': 'wow.export',
-			'OriginalFilename': 'wow.export.exe'
-		}
-	});
+	// Step 7: Run `resedit` to edit the executable metadata.
+	// See https://github.com/jet2jet/resedit-js for usage information.
+	log.info('Modifying PE resources for {wow.export.exe}...');
+	run('resedit ' + Object.entries({
+		'in': path.join(buildDir, 'wow.export.exe'),
+		'out': path.join(buildDir, 'wow.export.exe'),
+		'icon': 'IDR_MAINFRAME,resources/icon.ico',
+		'product-name': 'wow.export',
+		'product-version': meta.version + '.0',
+		'file-description': 'wow.export',
+		'file-version': meta.version + '.0',
+		'original-filename': 'wow.export.exe',
+		'company-name': 'Kruithne, Marlamin, and contributors',
+		'internal-name': 'wow.export'
+	}).map(([key, value]) => `--${key} "${value}"`).join(' '));
 
 	// Step 8: Build updater executable, bundle and manifest (release builds only).
 	if (!isDebugBuild) {
@@ -122,21 +121,21 @@ try {
 		log.info('Compiling {updater.exe}...');
 		run('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater.js'));
 
-		// Step 8.1.1: Run `rcedit` to edit the updater executable metadata.
-		// See https://www.npmjs.com/package/rcedit for usage information.
-		log.info('Modifying executable metadata for {updater.exe}...');
-		await rcedit(path.join(buildDir, 'updater.exe'), {
-			'icon': './resources/icon.ico',
-			'file-version': '2.0', // Avoid incrementing every build.
-			'product-version': '2.0', // Avoid incrementing with every build.
-			'version-string': {
-				'CompanyName': 'kruithne.net',
-				'FileDescription': 'wow.export updater',
-				'LegalCopyright': 'MIT License',
-				'ProductName': 'wow.export',
-				'OriginalFilename': 'updater.exe'
-			}
-		});
+		// Step 8.1.1: Reuse the PE modification code from above to edit the updater executable.
+		// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
+		log.info('Modifying PE resources for {updater.exe}...');
+		run('resedit --no-grow ' + Object.entries({
+			'in': path.join(buildDir, 'updater.exe'),
+			'out': path.join(buildDir, 'updater.exe'),
+			'icon': '1,resources/icon.ico',
+			'product-name': 'wow.export',
+			'product-version': meta.version + '.0',
+			'file-description': 'wow.export',
+			'file-version': '2.0.0.0',
+			'original-filename': 'wow.export.exe',
+			'company-name': 'Kruithne, Marlamin, and contributors',
+			'internal-name': 'wow.export'
+		}).map(([key, value]) => `--${key} "${value}"`).join(' '));
 
 		// Step 8.2: Compile update file/manifest.
 		log.info('Writing update package...');
