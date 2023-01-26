@@ -218,8 +218,26 @@ class CASC {
 			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
 			await creatureDisplayInfo.parse();
 
+			if (!creatureDisplayInfo.schema.has("ModelID") || !creatureDisplayInfo.schema.has("TextureVariationFileDataID")) {
+				log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
+				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+					'Clear Cache': () => core.events.emit('click-cache-clear'),
+					'Not Now': () => false
+				}, -1, false);
+				return;
+			}
+
 			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
 			await creatureModelData.parse();
+
+			if (!creatureModelData.schema.has("FileDataID") || !creatureModelData.schema.has("CreatureGeosetDataID")) {
+				log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
+				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+					'Clear Cache': () => core.events.emit('click-cache-clear'),
+					'Not Now': () => false
+				}, -1, false);
+				return;
+			}
 
 			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
 		} else {

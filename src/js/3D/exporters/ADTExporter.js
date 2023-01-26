@@ -898,6 +898,16 @@ class ADTExporter {
 						const fileDataID = model.FileDataID ?? model.mmidEntry;
 						let fileName = listfile.getByID(fileDataID);
 
+						if (!config.mapsExportRaw) {
+							if (fileName !== undefined) {
+								// Replace M2 extension with OBJ.
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								// Handle unknown file.
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
+							}
+						}
+
 						let modelPath;
 						if (config.enableSharedChildren)
 							modelPath = ExportHelper.getExportPath(fileName);
@@ -909,19 +919,10 @@ class ADTExporter {
 								const data = await casc.getFile(fileDataID);
 								const m2 = new M2Exporter(data, undefined, fileDataID);
 
-								if (config.mapsExportRaw) {
+								if (config.mapsExportRaw)
 									await m2.exportRaw(modelPath, helper);
-								} else {
-									if (fileName !== undefined) {
-										// Replace M2 extension with OBJ.
-										fileName = ExportHelper.replaceExtension(fileName, '.obj');
-									} else {
-										// Handle unknown file.
-										fileName = listfile.formatUnknownFile(fileDataID, '.obj');
-									}
-
+								else
 									await m2.exportAsOBJ(modelPath, false, helper);
-								}
 
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())

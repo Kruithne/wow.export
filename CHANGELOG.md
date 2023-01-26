@@ -2,7 +2,15 @@
 - Updated geoset names to match those on the wowdev wiki.
 - Updated 3D rendering library (three.js) used in the modelviewer in preparation for future modelviewer improvements.
 - Improved WMO preview loading speed.
+- Improved error handling in case of outdated/incorrect database definitions during startup.
 - The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
+
+0.1.47 (23-01-2023)
+- Fixes an issue with DB2 reading for certain DB2 tables.
+
+0.1.46 (23-01-2023)
+- Fixes an issue that causes M2 models exported as part of an ADT to have the wrong file extension.
+- Removed China as a supported region, as the CDN is no longer available.
 
 0.1.45 (22-01-2023)
 - Updated to support World of Warcraft v10.0.5+ and v3.4.1+.

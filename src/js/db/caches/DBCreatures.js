@@ -20,6 +20,16 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 
 	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2');
 	await creatureDisplayInfoGeosetData.parse();
+
+	if (!creatureDisplayInfoGeosetData.schema.has("CreatureDisplayInfoID") || !creatureDisplayInfoGeosetData.schema.has("GeosetValue")) {
+		log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
+		core.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+			'Clear Cache': () => core.events.emit('click-cache-clear'),
+			'Not Now': () => false
+		}, -1, false);
+		return;
+	}
+
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
 	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
 		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID))

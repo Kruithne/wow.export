@@ -171,6 +171,7 @@ class BuildCache {
 
 // Invoked when the user requests a cache purge.
 core.events.on('click-cache-clear', async () => {
+	core.view.setScreen('config', true);
 	core.view.isBusy++;
 	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
