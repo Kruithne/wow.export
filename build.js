@@ -40,29 +40,46 @@ try {
 	const argv = parse();
 
 	const isDebugBuild = argv.options.asBoolean('debug');
-	const isUpdatingBuild = argv.options.asBoolean('update');
 	const buildType = isDebugBuild ? 'debug' : 'release';
 
 	const buildDir = path.join('bin', isDebugBuild ? 'win-x64-debug' : 'win-x64');
 	log.info('Building {%s} in {%s}...', buildType, path.resolve(buildDir));
 
-	// Step 1: Run `rollup` to bundle our app to a single `app.js` file.
-	// This will run `tsc` (via `rollup-plugin-typescript2`) to compile TypeScript source code.
-	// This will also run `terser` (via `@rollup/plugin-terser`) to minify/optimize the output.
-	// See `rollup.config.js` for how these are configured.
-	// See https://rollupjs.org/command-line-interface/ for usage information.
-	log.info('Running {tsc}, {terser}, {rollup}...');
-	run('rollup --config rollup.config.js --environment "BUILD_TYPE:%s,BUILD_DIR:%s"', buildType, buildDir);
+	// If --code is set, update the code files in the build directory.
+	// Having this separate is useful for development, as we don't need to rebuild everything.
+	if (argv.options.asBoolean('code')) {
+		// Step 1: Run `rollup` to bundle our app to a single `app.js` file.
+		// This will run `tsc` (via `rollup-plugin-typescript2`) to compile TypeScript source code.
+		// This will also run `terser` (via `@rollup/plugin-terser`) to minify/optimize the output.
+		// See `rollup.config.js` for how these are configured.
+		// See https://rollupjs.org/command-line-interface/ for usage information.
+		log.info('Running {tsc}, {terser}, {rollup}...');
+		run('rollup --config rollup.config.js --environment "BUILD_TYPE:%s,BUILD_DIR:%s"', buildType, buildDir);
 
-	// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
-	// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
-	log.info('Running {sass}...');
-	run('sass src/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
+		// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
+		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
+		log.info('Running {sass}...');
+		run('sass src/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
+	}
 
-	// The following section is only required for full builds. We don't need to repeat any
-	// of this if we're just updating the code.
-	if (!isUpdatingBuild) {
-		// Step 3: Build nw.js distribution using `@kogs/nwjs'.
+	// If --assets is set, update the build directory with asset files.
+	if (argv.options.asBoolean('assets')) {
+		// Step 3: Copy additional source files.
+		log.info('Copying files...');
+		log.indent();
+		for (let [src, dest] of Object.entries(INCLUDE)) {
+			dest = path.join(buildDir, dest);
+			fs.mkdirSync(path.dirname(dest), { recursive: true });
+
+			copySync(src, dest, { overwrite: 'newer' });
+			log.success('{%s} -> {%s}', src, dest);
+		}
+		log.outdent();
+	}
+
+	// If --framework is set, update the build directory with distribution files.
+	if (argv.options.asBoolean('framework')) {
+		// Step 4: Build nw.js distribution using `@kogs/nwjs'.
 		// See https://github.com/Kruithne/kogs-nwjs for usage information.
 		log.info('Running {@kogs/nwjs}...');
 		run('nwjs --target-dir "%s" --version 0.69.1 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
@@ -78,19 +95,7 @@ try {
 
 		fs.writeFileSync(path.join(buildDir, 'package.json'), JSON.stringify(manifest, null, '\t'), 'utf8');
 
-		// Step 5: Copy additional source files.
-		log.info('Copying files...');
-		log.indent();
-		for (let [src, dest] of Object.entries(INCLUDE)) {
-			dest = path.join(buildDir, dest);
-			fs.mkdirSync(path.dirname(dest), { recursive: true });
-
-			copySync(src, dest, { overwrite: 'newer' });
-			log.success('{%s} -> {%s}', src, dest);
-		}
-		log.outdent();
-
-		// Step 6: File remapping.
+		// Step 5: File remapping.
 		log.info('Remapping build files...');
 		log.indent();
 		for (let [src, dest] of Object.entries(REMAP)) {
@@ -102,7 +107,7 @@ try {
 		}
 		log.outdent();
 
-		// Step 7: Run `resedit` to edit the executable metadata.
+		// Step 6: Run `resedit` to edit the executable metadata.
 		// See https://github.com/jet2jet/resedit-js for usage information.
 		log.info('Modifying PE resources for {wow.export.exe}...');
 		run('resedit ' + Object.entries({
@@ -118,14 +123,14 @@ try {
 			'internal-name': 'wow.export'
 		}).map(([key, value]) => `--${key} "${value}"`).join(' '));
 
-		// Step 8: Build updater executable, bundle and manifest (release builds only).
+		// Step 7: Build updater executable, bundle and manifest (release builds only).
 		if (!isDebugBuild) {
-			// Step 8.1: Compile updater executable using `pkg`.
+			// Step 7.1: Compile updater executable using `pkg`.
 			// See https://github.com/vercel/pkg for usage information.
 			log.info('Compiling {updater.exe}...');
 			run('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater.js'));
 
-			// Step 8.1.1: Reuse the PE modification code from above to edit the updater executable.
+			// Step 7.1.1: Reuse the PE modification code from above to edit the updater executable.
 			// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
 			log.info('Modifying PE resources for {updater.exe}...');
 			run('resedit --no-grow ' + Object.entries({
@@ -140,44 +145,50 @@ try {
 				'company-name': 'Kruithne, Marlamin, and contributors',
 				'internal-name': 'wow.export'
 			}).map(([key, value]) => `--${key} "${value}"`).join(' '));
-
-			// Step 8.2: Compile update file/manifest.
-			log.info('Writing update package...');
-
-			const updateManifest = {};
-			const updateFiles = await collectFiles(buildDir);
-			const updatePath = path.join(buildDir, 'update');
-
-			let entryCount = 0;
-			let totalSize = 0;
-			let compSize = 0;
-
-			for (const file of updateFiles) {
-				const relative = path.posix.relative(buildDir, file);
-				const data = fs.readFileSync(file);
-				const hash = crypto.createHash('sha256').update(data).digest('hex');
-
-				const dataCompressed = zlib.deflateSync(data);
-				fs.writeFileSync(updatePath, dataCompressed, { flag: 'a' });
-
-				updateManifest[relative] = { hash, size: data.length, compSize: dataCompressed.length, ofs: compSize };
-				totalSize += data.length;
-				compSize += dataCompressed.length;
-
-				entryCount++;
-			}
-
-			const manifestData = { contents: updateManifest, guid: manifest.guid };
-			fs.writeFileSync(path.join(buildDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
-			
-			const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
-			const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
-			log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
 		}
 	}
 
-	// Step 9: Pacakge build into a ZIP file.
+	// If --update is set, generate the files used by the update server.
+	// These files will generate to /bin/update/* and are not included in the final package.
+	if (argv.options.asBoolean('update')) {
+		// Step 8: Compile update file/manifest.
+		log.info('Writing update package...');
+
+		const updateManifest = {};
+		const updateFiles = await collectFiles(buildDir);
+		const updateDir = path.join('bin', 'update');
+
+		let entryCount = 0;
+		let totalSize = 0;
+		let compSize = 0;
+
+		for (const file of updateFiles) {
+			const relative = path.posix.relative(buildDir, file);
+			const data = fs.readFileSync(file);
+			const hash = crypto.createHash('sha256').update(data).digest('hex');
+
+			const dataCompressed = zlib.deflateSync(data);
+			fs.writeFileSync(path.join(updateDir, 'update'), dataCompressed, { flag: 'a' });
+
+			updateManifest[relative] = { hash, size: data.length, compSize: dataCompressed.length, ofs: compSize };
+			totalSize += data.length;
+			compSize += dataCompressed.length;
+
+			entryCount++;
+		}
+
+		const manifestData = { contents: updateManifest, guid: manifest.guid };
+		fs.writeFileSync(path.join(updateDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
+		
+		const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+		const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
+		log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
+	}
+
+	// If --package is set, package the build into a ZIP file.
+	// Packages are generated to /bin/packages/*
 	if (argv.options.asBoolean('package')) {
+		// Step 9: Pacakge build into a ZIP file.
 		const zipArchive = path.join('bin', 'packages', 'wow.export-' + meta.version + '.zip');
 		log.info('Packaging build into {%s}...', zipArchive);
 

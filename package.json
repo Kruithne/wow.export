@@ -18,10 +18,11 @@
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"scripts": {
 		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
-		"build-release": "node --no-warnings ./build.js",
-		"build-debug": "node --no-warnings ./build.js --debug",
-		"update-release": "node --no-warnings ./build.js --update",
-		"update-debug": "node --no-warnings ./build.js --update --debug"
+		"build": "node --no-warnings ./build.js --code --assets --framework",
+		"build-debug": "node --no-warnings ./build.js --debug --code --assets --framework",
+		"update": "node --no-warnings ./build.js --code",
+		"update-debug": "node --no-warnings ./build.js --code",
+		"build-release": "node --no-warnings ./build.js --code --assets --framework --update --package"
 	},
 	"devDependencies": {
 		"@kogs/argv": "^1.1.0",
