@@ -9,15 +9,22 @@ const log = require('../log');
 const generics = require('../generics');
 const listfile = require('../casc/listfile');
 const WDCReader = require('../db/WDCReader');
+const HTFXReader = require('../db/HTFXReader');
 const path = require('path');
 
 let selectedFile = null;
 let db2NameMap = undefined;
 
 core.registerLoadFunc(async () => {
+	// TODO: Cache manifest with sane expiry (e.g. same as DBD) instead of requesting each time
 	const manifestURL = util.format(core.view.config.dbdURL, "manifest");
 	log.write('Downloading DB2 filename mapping from %s', manifestURL);
-	generics.getJSON(manifestURL).then(raw => db2NameMap = raw);
+	const db2NameMap = await generics.getJSON(manifestURL);
+
+	if (core.view.config.hotfixesEnabled){
+		let htfxReader = new HTFXReader(db2NameMap);
+		htfxReader.parse();
+	}
 
 	// Track selection changes on the text listbox and set first as active entry.
 	core.view.$watch('selectionDB2s', async selection => {

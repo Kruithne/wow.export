@@ -195,6 +195,8 @@ class CASC {
 	 * Load tables that are required globally.
 	 */
 	async loadTables() {
+		// TODO: Load hotfixes first if enabled and we are loading a local CASC installation
+
 		await this.progress.step('Loading model file data');
 		await DBModelFileData.initializeModelFileData();
 
