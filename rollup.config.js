@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const config = {
 	input: './src/app/app.ts',
+	external: id => id.startsWith('node:'),
 	output: {
 		file: path.join(process.env.BUILD_DIR, 'src', 'app.js'),
 		format: 'esm'
