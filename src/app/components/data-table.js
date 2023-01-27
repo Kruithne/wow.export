@@ -1,8 +1,5 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
-	License: MIT
- */
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
 Vue.component('data-table', {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.

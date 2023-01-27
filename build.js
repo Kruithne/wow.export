@@ -21,8 +21,7 @@ const INCLUDE = {
 	'assets/src/fa-icons': 'src/fa-icons',
 	'src/shaders': 'src/shaders',
 	'assets/src/images': 'src/images',
-	'assets/src/fonts': 'src/fonts',
-	'src/lib': 'src/lib',
+	'assets/src/fonts': 'src/fonts'
 };
 
 const REMAP = {

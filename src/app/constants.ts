@@ -1,21 +1,16 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-
-// This file defines constants used throughout the application.
-const path = require('path');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import path from 'node:path';
 
 // Whether or not we're currently unit testing
-const isUnitTest = typeof nw === 'undefined';
+const isUnitTest = typeof nw === 'undefined'; // NIT: Remove.
 
 const INSTALL_PATH = isUnitTest ? process.cwd() : path.dirname(process.execPath);
 const DATA_PATH = isUnitTest ? './tests/user_data' : nw.App.dataPath;
 
-const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
+const UPDATER_EXT = { win32: '.exe', darwin: '.app' }; // NIT: Remove.
 
-module.exports = {
+export default {
 	INSTALL_PATH, // Path to the application installation.
 	DATA_PATH, // Path to the users data directory.
 	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.

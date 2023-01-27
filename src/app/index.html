@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<script defer type="text/javascript" src="lib/vue.js"></script>
-		<script defer type="text/javascript" src="lib/three.js"></script>
 		<script defer type="text/javascript" src="app.js"></script>
 		<link rel="stylesheet" type="text/css" data-href="app.css" href="app.css"/>
 		<title>wow.export</title>
@@ -428,7 +426,7 @@
 								<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
 								<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
 								<span @click.self="copyToClipboard(context.node.id)">Copy item ID to clipboard</span>
-								<span @click.self="getExternalLink().wowHead_viewItem(context.node.id)">View item on Wowhead (web)</span>
+								<span @click.self="openItemOnWowhead(context.node.id)">View item on Wowhead (web)</span>
 							</context-menu>
 						</div>
 						<div class="filter">

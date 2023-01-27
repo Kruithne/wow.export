@@ -1,9 +1,8 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-require('../3D/lib/OrbitControls');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+
+import OrbitControls from './3D/lib/OrbitControls';
+import * as THREE from 'three';
 
 Vue.component('model-viewer', {
 	props: ['context'],

@@ -1,13 +1,11 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const log = require('../log');
-const fsp = require('fs').promises;
-const generics = require('../generics');
-const constants = require('../constants');
-const core = require('../core');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import log from '../log';
+import fs from 'node:fs/promises';
+import constants from '../constants';
+import { get, consumeUTF8Stream } from '../generics';
+
+// const core = require('../core');
 
 const KEY_RING = {};
 let isSaving = false;
@@ -16,16 +14,16 @@ let isSaving = false;
  * Retrieve a registered decryption key.
  * @param {string} keyName
  */
-const getKey = (keyName) => {
+export const getKey = (keyName: string) => {
 	return KEY_RING[keyName.toLowerCase()];
 };
 
 /**
  * Validate a keyName/key pair.
- * @param {string} keyName
- * @param {string} key
+ * @param keyName - Key name
+ * @param key - Key bytes
  */
-const validateKeyPair = (keyName, key) => {
+export const validateKeyPair = (keyName: string, key: string) : boolean => {
 	if (keyName.length !== 16)
 		return false;
 
@@ -42,7 +40,7 @@ const validateKeyPair = (keyName, key) => {
  * @param {string} keyName
  * @param {string} key
  */
-const addKey = (keyName, key) => {
+export const addKey = (keyName, key) => {
 	if (!validateKeyPair(keyName, key))
 		return false;
 
@@ -62,10 +60,10 @@ const addKey = (keyName, key) => {
  * Load tact keys from disk cache and request updated
  * keys from remote server.
  */
-const load = async () => {
+export const load = async () => {
 	// Load from local cache.
 	try {
-		const tactKeys = JSON.parse(await fsp.readFile(constants.CACHE.TACT_KEYS, 'utf8'));
+		const tactKeys = JSON.parse(await fs.readFile(constants.CACHE.TACT_KEYS, 'utf8'));
 
 		// Validate/add our cached keys manually rather than passing to addKey()
 		// to skip over redundant logging/saving calls.
@@ -85,9 +83,9 @@ const load = async () => {
 	}
 
 	// Update from remote server.
-	const res = await generics.get(core.view.config.tactKeysURL);
+	const res = await get(core.view.config.tactKeysURL);
 	if (res.statusCode === 200) {
-		const data = await generics.consumeUTF8Stream(res);
+		const data = await consumeUTF8Stream(res);
 		const lines = data.split(/\r\n|\n|\r/);
 		let remoteAdded = 0;
 
@@ -118,7 +116,7 @@ const load = async () => {
  * Request for tact keys to be saved on the next tick.
  * Multiple calls can be chained in the same tick.
  */
-const save = async () => {
+export const save = async () => {
 	if (!isSaving) {
 		isSaving = true;
 		setImmediate(doSave);
@@ -128,9 +126,7 @@ const save = async () => {
 /**
  * Saves the tact keys to disk.
  */
-const doSave = async () => {
-	await fsp.writeFile(constants.CACHE.TACT_KEYS, JSON.stringify(KEY_RING, null, '\t'), 'utf8');
+export const doSave = async () => {
+	await fs.writeFile(constants.CACHE.TACT_KEYS, JSON.stringify(KEY_RING, null, '\t'), 'utf8');
 	isSaving = false;
 };
-
-module.exports = { load, getKey, addKey };

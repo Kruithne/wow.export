@@ -1,8 +1,6 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
-	License: MIT
- */
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import BufferWrapper from '../buffer';
 
 /**
  * Pattern to match column definitions in a DBD document.
@@ -48,11 +46,11 @@ const PATTERN_FIELD = /^(\$([^$]+)\$)?([^<[]+)(<(u|)(\d+)>)?(\[(\d+)\])?$/;
 const PATTERN_BUILD_ID = /(\d+).(\d+).(\d+).(\d+)/;
 
 /**
- * Parse a build ID into components.
- * @param {string} buildID
- * @returns {object}
+ * Parse a build string into components.
+ * @param buildID String representation of build (x.x.x.xxxxx)
+ * @returns Build
  */
-const parseBuildID = (buildID) => {
+const parseBuildID = (buildID: string) : Build => {
 	const parts = buildID.match(PATTERN_BUILD_ID);
 	const entry = { major: 0, minor: 0, patch: 0, rev: 0 };
 
@@ -66,99 +64,113 @@ const parseBuildID = (buildID) => {
 	return entry;
 };
 
+type BuildRange = {
+	min: string;
+	max: string;
+}
+
+type Build = {
+	major: number;
+	minor: number;
+	patch: number;
+	rev: number;
+}
+
 /**
  * Returns true if the provided build falls within the provided range.
- * @param {string} build
- * @param {string} min
- * @param {string} max
- * @returns {boolean}
+ * @param build - Build to check
+ * @param min - Minimum build
+ * @param max - Maximum build
+ * @returns If build falls in range
  */
-const isBuildInRange = (build, min, max) => {
-	build = parseBuildID(build);
-	min = parseBuildID(min);
-	max = parseBuildID(max);
+const isBuildInRange = (build: string, min: string, max: string) : boolean => {
+	const buildToCheck = parseBuildID(build);
+	const minBuild = parseBuildID(min);
+	const maxBuild = parseBuildID(max);
 
-	if (build.major < min.major || build.major > max.major)
+	if (buildToCheck.major < minBuild.major || buildToCheck.major > maxBuild.major)
 		return false;
 
-	if (build.minor < min.minor || build.minor > max.minor)
+	if (buildToCheck.minor < minBuild.minor || buildToCheck.minor > maxBuild.minor)
 		return false;
 
-	if (build.patch < min.patch || build.patch > max.patch)
+	if (buildToCheck.patch < minBuild.patch || buildToCheck.patch > maxBuild.patch)
 		return false;
 
-	if (build.rev < min.rev || build.rev > max.rev)
+	if (buildToCheck.rev < minBuild.rev || buildToCheck.rev > maxBuild.rev)
 		return false;
 
 	return true;
 };
 
-class DBDField {
+export class DBDField {
+	type: string;
+	name: string;
+	isSigned: boolean = true;
+	isID: boolean = false;
+	isInline: boolean = true;
+	isRelation: boolean = false;
+	arrayLength: number = -1;
+	size: number = -1;
+
 	/**
 	 * Construct a new DBDField instance.
-	 * @param {string} fieldName
-	 * @param {string} fieldType
+	 * @param fieldName - Name of the field
+	 * @param fieldType - Type of the field
 	 */
-	constructor(fieldName, fieldType) {
+	constructor(fieldName: string, fieldType: string) {
 		this.type = fieldType;
 		this.name = fieldName;
-
-		this.isSigned = true;
-		this.isID = false;
-		this.isInline = true;
-		this.isRelation = false;
-		this.arrayLength = -1;
-		this.size = -1;
 	}
 }
 
-class DBDEntry {
-	/**
-	 * Construct a new DBDEntry instance.
-	 */
-	constructor() {
-		this.builds = new Set();
-		this.buildRanges = new Set();
-		this.layoutHashes = new Set();
-		this.fields = new Set();
-	}
+export class DBDEntry {
+	builds: Set<string> = new Set();
+	buildRanges: Set<BuildRange> = new Set();
+	layoutHashes: Set<string> = new Set();
+	fields: Set<DBDField> = new Set();
 
 	/**
 	 * Add a build to this DBD entry.
-	 * @param {string} min
-	 * @param {string} max
+	 * @param build - Build to add
 	 */
-	addBuild(min, max) {
-		if (max !== undefined)
-			this.buildRanges.add({ min, max });
-		else
-			this.builds.add(min);
+	addBuild(build: string): void {
+		this.builds.add(build);
 	}
 
 	/**
-	 * Add a layout hash to this DBD entry.
-	 * @param {string[]} hashes
+	 * Add a build range to this DBD entry.
+	 * @param min - Minimum build
+	 * @param max - Maximum build
 	 */
-	addLayoutHashes(...hashes) {
+	addBuildRange(min: string, max: string) : void {
+		this.buildRanges.add({ min: min, max: max });
+	}
+
+	/**
+	 * Adds layouthashes to this DBD entry.
+	 * @param hashes
+	 */
+	addLayoutHashes(...hashes: string[]) : void {
 		for (const hash of hashes)
 			this.layoutHashes.add(hash);
 	}
 
 	/**
 	 * Add a field to this DBD entry.
-	 * @param {DBDField} field
+	 * @param field
 	 */
-	addField(field) {
+	addField(field: DBDField) : void {
 		this.fields.add(field);
 	}
 
 	/**
 	 * Check if this entry is valid for the provided buildID or layout hash.
-	 * @param {string} buildID
-	 * @param {string} layoutHash
+	 * @param buildID - Build
+	 * @param layoutHash - LayoutHash
 	 * @returns {boolean}
 	 */
-	isValidFor(buildID, layoutHash) {
+	isValidFor(buildID: string, layoutHash: string) : boolean {
 		// Layout hash takes priority, being the quickest to check.
 		if (this.layoutHashes.has(layoutHash))
 			return true;
@@ -177,25 +189,25 @@ class DBDEntry {
 	}
 }
 
-class DBDParser {
+export class DBDParser {
+	entries: Set<DBDEntry> = new Set();
+	columns: Map<string, string> = new Map();
+
 	/**
 	 * Construct a new DBDParser instance.
-	 * @param {BufferReader} data
+	 * @param data
 	 */
-	constructor(data) {
-		this.entries = new Set();
-		this.columns = new Map();
-
+	constructor(data: BufferWrapper) {
 		this.parse(data);
 	}
 
 	/**
 	 * Get a DBD structure for the provided buildID and layoutHash.
-	 * @param {string} buildID
-	 * @param {string} layoutHash
-	 * @returns {?DBDEntry}
+	 * @param buildID - Build to find definitions for
+	 * @param layoutHash - Layouthash to find definitions for
+	 * @returns DBDEntry if found, otherwise null
 	 */
-	getStructure(buildID, layoutHash) {
+	getStructure(buildID: string, layoutHash: string): DBDEntry | null {
 		for (const entry of this.entries) {
 			if (entry.isValidFor(buildID, layoutHash))
 				return entry;
@@ -206,13 +218,14 @@ class DBDParser {
 
 	/**
 	 * Parse the contents of a DBD document.
-	* @param {BufferReader} data
+	 * @param data
 	 */
-	parse(data) {
+	parse(data: BufferWrapper) : void {
 		const lines = data.readLines();
 
 		// Separate the file into chunks separated by empty lines.
-		let chunk = [];
+
+		let chunk: Array<string> = [];
 		for (const line of lines) {
 			if (line.trim().length > 0) {
 				chunk.push(line);
@@ -232,9 +245,9 @@ class DBDParser {
 
 	/**
 	 * Parse a chunk from this DBD document.
-	 * @param {string[]} chunk
+	 * @param chunk
 	 */
-	parseChunk(chunk) {
+	parseChunk(chunk: string[]) : void {
 		if (chunk[0] === 'COLUMNS') {
 			this.parseColumnChunk(chunk);
 		} else {
@@ -250,7 +263,7 @@ class DBDParser {
 					for (const build of builds) {
 						const buildRange = build.match(PATTERN_BUILD_RANGE);
 						if (buildRange !== null)
-							entry.addBuild(buildRange[1], buildRange[2]);
+							entry.addBuildRange(buildRange[1], buildRange[2]);
 						else
 							entry.addBuild(build.trim());
 					}
@@ -322,9 +335,9 @@ class DBDParser {
 
 	/**
 	 * Parse the column definition of a DBD document.
-	 * @param {string[]} chunk
+	 * @param chunk
 	 */
-	parseColumnChunk(chunk) {
+	parseColumnChunk(chunk: string[]) : void {
 		if (chunk === undefined)
 			throw new Error('Invalid DBD: Missing column definitions.');
 
@@ -345,5 +358,3 @@ class DBDParser {
 		}
 	}
 }
-
-module.exports = DBDParser;

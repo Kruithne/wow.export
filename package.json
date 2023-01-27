@@ -29,10 +29,15 @@
 		"@kogs/logger": "^3.3.7",
 		"@kogs/nwjs": "^1.0.0",
 		"@kogs/utils": "^1.4.9",
+		"@rollup/plugin-alias": "^4.0.3",
+		"@rollup/plugin-node-resolve": "^15.0.1",
+		"@rollup/plugin-replace": "^5.0.2",
 		"@rollup/plugin-terser": "^0.3.0",
 		"@types/chrome": "^0.0.210",
 		"@types/node": "^18.11.18",
 		"@types/nw.js": "^0.13.16",
+		"@types/offscreencanvas": "^2019.7.0",
+		"@types/three": "^0.148.1",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
 		"eslint": "^8.32.0",
@@ -42,6 +47,8 @@
 		"jszip": "^3.10.1",
 		"pkg": "^5.8.0",
 		"rollup-plugin-typescript2": "^0.34.1",
-		"uuid": "^9.0.0"
+		"three": "^0.149.0",
+		"uuid": "^9.0.0",
+		"vue": "^3.2.45"
 	}
 }

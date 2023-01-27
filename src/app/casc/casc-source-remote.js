@@ -1,8 +1,5 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
 const util = require('util');
 const constants = require('../constants');
 const generics = require('../generics');
@@ -262,7 +259,7 @@ class CASCRemote extends CASC {
 		if (this.progress)
 			await this.progress.step('Loading archives');
 
-		await generics.queue(archiveKeys, async key => await this.parseArchiveIndex(key), 50);
+		await generics.queue(archiveKeys, key => this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
 		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));

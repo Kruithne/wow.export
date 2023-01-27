@@ -1,19 +1,16 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
-	License: MIT
- */
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-const log = require('../../log');
-const WDCReader = require('../WDCReader');
+import log from '../../log';
+import WDCReader from '../WDCReader';
 
-const matResIDToFileDataID = new Map();
-const fileDataIDs = new Set();
+const matResIDToFileDataID : Map<number, number> = new Map();
+const fileDataIDs : Set<number> = new Set();
 
 /**
  * Initialize texture file data ID from TextureFileData.db2
  */
-const initializeTextureFileData = async () => {
+export const initializeTextureFileData = async () : Promise<void> => {
 	log.write('Loading texture mapping...');
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
@@ -34,24 +31,18 @@ const initializeTextureFileData = async () => {
 
 /**
  * Retrieve a texture file data ID by a material resource ID.
- * @param {number} matResID
- * @returns {?number}
+ * @param matResID - Material
+ * @returns FileDataID if found, otherwise undefined
  */
-const getTextureFileDataID = (matResID) => {
+export const getTextureFileDataID = (matResID: number) : number | undefined => {
 	return matResIDToFileDataID.get(matResID);
 };
 
 /**
  * Retrieve a list of all file data IDs cached from TextureFileData.db2
  * NOTE: This is reset once called by the listfile module; adjust if needed elsewhere.
- * @returns {Set}
+ * @returns List of all file data IDs cached from TextureFileData.db2
  */
-const getFileDataIDs = () => {
+export const getFileDataIDs = () : Set<number> => {
 	return fileDataIDs;
-};
-
-module.exports = {
-	initializeTextureFileData,
-	getTextureFileDataID,
-	getFileDataIDs
 };

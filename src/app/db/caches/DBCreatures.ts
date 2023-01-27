@@ -1,19 +1,16 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
-	License: MIT
- */
-const log = require('../../log');
-const WDCReader = require('../WDCReader');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import log from '../../log';
+import WDCReader from '../WDCReader';
 
 const creatureDisplays = new Map();
 
 /**
  * Initialize creature data.
- * @param {WDCReader} creatureDisplayInfo
- * @param {WDCReader} creatureModelData
+ * @param creatureDisplayInfo - CreatureDisplayInfo reader
+ * @param creatureModelData - CreatureModelData reader
  */
-const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) => {
+export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, creatureModelData: WDCReader) : Promise<void> => {
 	log.write('Loading creature textures...');
 
 	const creatureGeosetMap = new Map();
@@ -21,7 +18,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2');
 	await creatureDisplayInfoGeosetData.parse();
 
-	if (!creatureDisplayInfoGeosetData.schema.has("CreatureDisplayInfoID") || !creatureDisplayInfoGeosetData.schema.has("GeosetValue")) {
+	if (!creatureDisplayInfoGeosetData.schema.has('CreatureDisplayInfoID') || !creatureDisplayInfoGeosetData.schema.has('GeosetValue')) {
 		log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
 		core.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 			'Clear Cache': () => core.events.emit('click-cache-clear'),
@@ -35,7 +32,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID))
 			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, []);
 
-		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
+		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push(((geosetRow.GeosetIndex as number) + 1) * 100 + (geosetRow.GeosetValue as number));
 	}
 
 	const creatureDisplayInfoMap = new Map();
@@ -43,7 +40,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 
 	// Map all available texture fileDataIDs to model IDs.
 	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
-		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)});
+		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: (displayRow.TextureVariationFileDataID as number[]).filter(e => e > 0)});
 
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
 			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
@@ -80,14 +77,9 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 
 /**
  * Gets creature skins from a given file data ID.
- * @param {number} fileDataID
- * @returns {string|undefined}
+ * @param fileDataID
+ * @returns String when found or undefined if not
  */
-const getCreatureDisplaysByFileDataID = (fileDataID) => {
+export const getCreatureDisplaysByFileDataID = (fileDataID: number): string | undefined => {
 	return creatureDisplays.get(fileDataID);
-};
-
-module.exports = {
-	initializeCreatureData,
-	getCreatureDisplaysByFileDataID
 };

@@ -1,22 +1,17 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
-	License: MIT
- */
-const util = require('util');
-const path = require('path');
-const assert = require('assert').strict;
-const log = require('../log');
-const core = require('../core');
-const generics = require('../generics');
-const constants = require('../constants');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import util from 'node:util';
+import path from 'node:path';
+import assert from 'node:assert';
 
-const ExportHelper = require('../casc/export-helper');
-const DBDParser = require('./DBDParser');
+import log from '../log';
+import core from '../core';
+import constants from '../constants';
+import { downloadFile } from '../generics';
 
-const FieldType = require('./FieldType');
-const CompressionType = require('./CompressionType');
-const BufferWrapper = require('../buffer');
+import ExportHelper from '../casc/export-helper';
+import { DBDParser, DBDField, DBDEntry } from './DBDParser';
+import BufferWrapper from '../buffer';
 
 const TABLE_FORMATS = {
 	0x32434457: { name: 'WDC2', wdcVersion: 2 },
@@ -24,12 +19,42 @@ const TABLE_FORMATS = {
 	0x33434457: { name: 'WDC3', wdcVersion: 3 }
 };
 
+enum CompressionType {
+	None,
+	Bitpacked,
+	CommonData,
+	BitpackedIndexed,
+	BitpackedIndexedArray,
+	BitpackedSigned
+}
+
+enum FieldType {
+	String,
+	Int8,
+	UInt8,
+	Int16,
+	UInt16,
+	Int32,
+	UInt32,
+	Int64,
+	UInt64,
+	Float,
+	Relation,
+	NonInlineID
+}
+
+type DataTableValue = string|number|bigint;
+interface DataTableRow {
+	[key: string]: DataTableValue | DataTableValue[];
+}
+
 /**
  * Returns the schema type symbol for a DBD field.
- * @param {DBDField} entry
- * @returns {symbol}
+ * @param entry
+ * @returns Field type
  */
-const convertDBDToSchemaType = (entry) => {
+
+const convertDBDToSchemaType = (entry: DBDField) : FieldType => {
 	if (!entry.isInline && entry.isRelation)
 		return FieldType.Relation;
 
@@ -45,11 +70,11 @@ const convertDBDToSchemaType = (entry) => {
 
 	if (entry.type === 'int') {
 		switch (entry.size) {
-		case 8: return entry.isSigned ? FieldType.Int8 : FieldType.UInt8;
-		case 16: return entry.isSigned ? FieldType.Int16 : FieldType.UInt16;
-		case 32: return entry.isSigned ? FieldType.Int32 : FieldType.UInt32;
-		case 64: return entry.isSigned ? FieldType.Int64 : FieldType.UInt64;
-		default: throw new Error('Unsupported DBD integer size ' + entry.size);
+			case 8: return entry.isSigned ? FieldType.Int8 : FieldType.UInt8;
+			case 16: return entry.isSigned ? FieldType.Int16 : FieldType.UInt16;
+			case 32: return entry.isSigned ? FieldType.Int32 : FieldType.UInt32;
+			case 64: return entry.isSigned ? FieldType.Int64 : FieldType.UInt64;
+			default: throw new Error('Unsupported DBD integer size ' + entry.size);
 		}
 	}
 
@@ -60,46 +85,42 @@ const convertDBDToSchemaType = (entry) => {
  * Defines unified logic between WDC2 and WDC3.
  * @class WDC
  */
-class WDCReader {
+export default class WDCReader {
+	fileName: string;
+	rows: Map<number, DataTableRow> = new Map();
+	copyTable: Map<number, number> = new Map();
+	stringTable: Map<number, string> = new Map();
+	schema: Map<string, object|FieldType> = new Map();
+	isInflated: boolean = false;
+	isLoaded: boolean = false;
+	idField: string;
+	idFieldIndex: number;
+
 	/**
 	 * Construct a new WDCReader instance.
-	 * @param {string} fileName
+	 * @param fileName - The name of the file to read.
 	 */
-	constructor(fileName) {
+	constructor(fileName: string) {
 		this.fileName = fileName;
-
-		this.rows = new Map();
-		this.copyTable = new Map();
-		this.stringTable = new Map();
-
-		this.schema = new Map();
-
-		this.isInflated = false;
-		this.isLoaded = false;
-		this.idField = null;
-		this.idFieldIndex = null;
 	}
 
 	/**
 	 * Returns the amount of rows available in the table.
 	 */
-	get size() {
+	get size() : number {
 		return this.rows.size + this.copyTable.size;
 	}
 
 	/**
 	 * Get a row from this table.
 	 * Returns NULL if the row does not exist.
-	 * @param {number} recordID
+	 * @param number - recordID
 	 */
-	getRow(recordID) {
+	getRow(recordID: number) : DataTableRow | null {
 		// The table needs to be loaded before we attempt to access a row.
 		// We could just return a NULL here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
 			throw new Error('Attempted to read a data table row before table was loaded.');
-
-		// Ensure incoming recordID is always an integer
-		recordID = parseInt(recordID);
 
 		// Look this row up as a normal entry.
 		const record = this.rows.get(recordID);
@@ -111,8 +132,8 @@ class WDCReader {
 		if (copyID !== undefined) {
 			const copy = this.rows.get(copyID);
 			if (copy !== undefined) {
-				let tempCopy = Object.assign({}, copy);
-				tempCopy.ID = recordID;
+				const tempCopy = Object.assign({}, copy);
+				tempCopy['ID'] = recordID;
 				return tempCopy;
 			}
 		}
@@ -125,7 +146,7 @@ class WDCReader {
 	 * Returns all available rows in the table.
 	 * Calling this will permanently inflate internal copy data; use wisely.
 	 */
-	getAllRows() {
+	getAllRows() : Map<number, DataTableRow> {
 		// The table needs to be loaded before we attempt to access the rows.
 		// We could just return an empty Map here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
@@ -136,8 +157,8 @@ class WDCReader {
 		// Inflate all copy table data before returning.
 		if (!this.isInflated) {
 			for (const [destID, srcID] of this.copyTable) {
-				let rowData = Object.assign({}, rows.get(srcID));
-				rowData.ID = destID;
+				const rowData = Object.assign({}, rows.get(srcID));
+				rowData['ID'] = destID;
 				rows.set(destID, rowData);
 			}
 
@@ -149,16 +170,16 @@ class WDCReader {
 
 	/**
 	 * Load the schema for this table.
-	 * @param {string} layoutHash
+	 * @param layoutHash - The layout hash of the table.
 	 */
-	async loadSchema(layoutHash) {
+	async loadSchema(layoutHash: string) : Promise<void> {
 		const casc = core.view.casc;
 		const buildID = casc.getBuildName();
 
 		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
 		const dbdName = tableName + '.dbd';
 
-		let structure = null;
+		let structure: DBDEntry | null = null;
 		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
 
 		// First check if a valid DBD exists in cache and contains a definition for this build.
@@ -172,7 +193,7 @@ class WDCReader {
 				const dbdUrl = util.format(core.view.config.dbdURL, tableName);
 				log.write('No cached DBD, downloading new from %s', dbdUrl);
 
-				rawDbd = await generics.downloadFile(dbdUrl);
+				rawDbd = await downloadFile(dbdUrl);
 
 				// Persist the newly download DBD to disk for future loads.
 				await casc.cache.storeFile(dbdName, rawDbd, constants.CACHE.DIR_DBD);
@@ -193,22 +214,22 @@ class WDCReader {
 
 	/**
 	 * Builds a schema for this data table using the provided DBD structure.
-	 * @param {DBDEntry} structure
+	 * @param structure
 	 */
-	buildSchemaFromDBDStructure(structure) {
+	buildSchemaFromDBDStructure(structure: DBDEntry) : void {
 		for (const field of structure.fields) {
 			const fieldType = convertDBDToSchemaType(field);
 			if (field.arrayLength > -1)
 				this.schema.set(field.name, [fieldType, field.arrayLength]);
 			else
-				this.schema.set(field.name, fieldType);
+				this.schema.set(field.name, fieldType); // NIT: Improve typing.
 		}
 	}
 
 	/**
 	 * Gets index of ID field
 	 */
-	getIDIndex() {
+	getIDIndex() : number {
 		if (!this.isLoaded)
 			throw new Error('Attempted to get ID index before table was loaded.');
 
@@ -217,13 +238,11 @@ class WDCReader {
 
 	/**
 	 * Parse the data table.
-	 * @param {object} [data]
 	 */
-	async parse(data) {
+	async parse() : Promise<void> {
 		log.write('Loading DB file %s from CASC', this.fileName);
 
-		if (!data)
-			data = await core.view.casc.getFileByName(this.fileName, true, false, true);
+		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
 		const magic = data.readUInt32LE();
@@ -385,8 +404,8 @@ class WDCReader {
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount;
 			for (let i = 0; i < copyTableCount; i++) {
-				let destinationRowID = data.readInt32LE();
-				let sourceRowID = data.readInt32LE();
+				const destinationRowID = data.readInt32LE();
+				const sourceRowID = data.readInt32LE();
 				if (destinationRowID != sourceRowID)
 					copyTable.set(destinationRowID, sourceRowID);
 			}
@@ -489,7 +508,7 @@ class WDCReader {
 				else
 					data.seek(section.recordDataOfs + recordOfs);
 
-				const out = {};
+				const out: DataTableRow = {};
 				let fieldIndex = 0;
 				for (const [prop, type] of this.schema.entries()) {
 					if (type === FieldType.Relation) {
@@ -518,118 +537,121 @@ class WDCReader {
 					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
 
 					switch (recordFieldInfo.fieldCompression) {
-					case CompressionType.None:
-						switch (fieldType) {
-						case FieldType.String:
-							if (isNormal) {
-								if (count > 0) {
-									out[prop] = new Array(count);
-									for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
-										const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
-										const ofs = data.readUInt32LE();
+						case CompressionType.None:
+							switch (fieldType) {
+								case FieldType.String:
+									if (isNormal) {
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
+												const ofs = data.readUInt32LE();
 
-										const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+												const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
 
-										if (ofs == 0 || stringTableIndex == 0) {
-											out[prop][stringArrayIndex] = '';
+												if (ofs == 0 || stringTableIndex == 0) {
+													out[prop][stringArrayIndex] = '';
+												} else {
+													if (stringTable.has(stringTableIndex))
+														out[prop][stringArrayIndex] = stringTable.get(stringTableIndex);
+													else
+														throw new Error('Missing stringtable entry');
+												}
+											}
 										} else {
-											if (stringTable.has(stringTableIndex))
-												out[prop][stringArrayIndex] = stringTable.get(stringTableIndex);
-											else
-												throw new Error('Missing stringtable entry');
+											const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
+											const ofs = data.readUInt32LE();
+
+											const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+
+											if (ofs == 0 || stringTableIndex == 0) {
+												out[prop] = '';
+											} else {
+												const value = stringTable.get(stringTableIndex);
+												if (value === undefined)
+													throw new Error('Missing stringtable entry');
+
+												out[prop] = value;
+											}
+										}
+									} else {
+										if (count > 0) {
+											out[prop] = new Array(count);
+											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+												data.readInt8(); // Read NUL character
+											}
+										} else {
+											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+											data.readInt8(); // Read NUL character
 										}
 									}
-								} else {
-									const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
-									const ofs = data.readUInt32LE();
+									break;
 
-									const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
-
-									if (ofs == 0 || stringTableIndex == 0) {
-										out[prop] = '';
-									} else {
-										if (stringTable.has(stringTableIndex))
-											out[prop] = stringTable.get(stringTableIndex);
-										else
-											throw new Error('Missing stringtable entry');
-									}
-								}
-							} else {
-								if (count > 0) {
-									out[prop] = new Array(count);
-									for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
-										out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-										data.readInt8(); // Read NUL character
-									}
-								} else {
-									out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-									data.readInt8(); // Read NUL character
-								}
+								case FieldType.Int8: out[prop] = data.readInt8(count); break;
+								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
+								case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
+								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
+								case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
+								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
+								case FieldType.Int64: out[prop] = data.readInt64LE(count); break;
+								case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
+								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
 							}
 							break;
 
-						case FieldType.Int8: out[prop] = data.readInt8(count); break;
-						case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
-						case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
-						case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
-						case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
-						case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
-						case FieldType.Int64: out[prop] = data.readInt64LE(count); break;
-						case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
-						case FieldType.Float: out[prop] = data.readFloatLE(count); break;
-						}
-						break;
-
-					case CompressionType.CommonData:
-						if (commonData[fieldIndex].has(recordID))
-							out[prop] = commonData[fieldIndex].get(recordID);
-						else
-							out[prop] = recordFieldInfo.fieldCompressionPacking[0]; // Default value
-						break;
-
-					case CompressionType.Bitpacked:
-					case CompressionType.BitpackedSigned:
-					case CompressionType.BitpackedIndexed:
-					case CompressionType.BitpackedIndexedArray: {
-						// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
-						data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
-
-						let rawValue;
-						if (data.remainingBytes >= 8) {
-							rawValue = data.readUInt64LE();
-						} else {
-							castBuffer.seek(0);
-							castBuffer.writeBuffer(data);
-
-							castBuffer.seek(0);
-							rawValue = castBuffer.readUInt64LE();
-						}
-
-						// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
-
-						// Get the remaining amount of bits that remain (we read to the nearest byte)
-						const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
-						const bitSize = 1n << BigInt(recordFieldInfo.fieldSizeBits);
-						const bitpackedValue = (rawValue >> bitOffset) & (bitSize - BigInt(1));
-
-						if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
-							out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
-							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
-								out[prop][i] = palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)];
-						} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
-							if (bitpackedValue in palletData[fieldIndex])
-								out[prop] = palletData[fieldIndex][bitpackedValue];
+						case CompressionType.CommonData:
+							if (commonData[fieldIndex].has(recordID))
+								out[prop] = commonData[fieldIndex].get(recordID);
 							else
-								throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
-						} else {
-							out[prop] = bitpackedValue;
+								out[prop] = recordFieldInfo.fieldCompressionPacking[0]; // Default value
+							break;
+
+						case CompressionType.Bitpacked:
+						case CompressionType.BitpackedSigned:
+						case CompressionType.BitpackedIndexed:
+						case CompressionType.BitpackedIndexedArray: {
+							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
+							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
+
+							let rawValue;
+							if (data.remainingBytes >= 8) {
+								rawValue = data.readUInt64LE();
+							} else {
+								castBuffer.seek(0);
+								castBuffer.writeBuffer(data);
+
+								castBuffer.seek(0);
+								rawValue = castBuffer.readUInt64LE();
+							}
+
+							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
+
+							// Get the remaining amount of bits that remain (we read to the nearest byte)
+							const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
+							const bitSize = 1n << BigInt(recordFieldInfo.fieldSizeBits);
+							const bitpackedValue = (rawValue >> bitOffset) & (bitSize - BigInt(1));
+
+							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
+								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
+								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
+									const bitpackedIndexKey = (bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i);
+									out[prop][i] = palletData[fieldIndex][Number(bitpackedIndexKey)];
+								}
+							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
+								if (Number(bitpackedValue) in palletData[fieldIndex])
+									out[prop] = palletData[fieldIndex][Number(bitpackedValue)];
+								else
+									throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
+							} else {
+								out[prop] = bitpackedValue;
+							}
+
+							if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned)
+								out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
+
+							break;
 						}
-
-						if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned)
-							out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
-
-						break;
-					}
 					}
 
 					// Reinterpret field correctly for compression types other than None
@@ -637,24 +659,24 @@ class WDCReader {
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
 							if (out[prop] < 0)
-								castBuffer.writeBigInt64LE(BigInt(out[prop]));
+								castBuffer.writeBigInt64LE(BigInt(out[prop] as number));
 							else
-								castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+								castBuffer.writeBigUInt64LE(BigInt(out[prop] as number));
 
 							castBuffer.seek(0);
 							switch (fieldType) {
-							case FieldType.String:
-								throw new Error('Compressed string arrays currently not used/supported.');
+								case FieldType.String:
+									throw new Error('Compressed string arrays currently not used/supported.');
 
-							case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
-							case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
-							case FieldType.Int16: out[prop] = castBuffer.readInt16LE(); break;
-							case FieldType.UInt16: out[prop] = castBuffer.readUInt16LE(); break;
-							case FieldType.Int32: out[prop] = castBuffer.readInt32LE(); break;
-							case FieldType.UInt32: out[prop] = castBuffer.readUInt32LE(); break;
-							case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
-							case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
-							case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
+								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
+								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
+								case FieldType.Int16: out[prop] = castBuffer.readInt16LE(); break;
+								case FieldType.UInt16: out[prop] = castBuffer.readUInt16LE(); break;
+								case FieldType.Int32: out[prop] = castBuffer.readInt32LE(); break;
+								case FieldType.UInt32: out[prop] = castBuffer.readUInt32LE(); break;
+								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
+								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
+								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
 							}
 						} else {
 							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
@@ -666,18 +688,18 @@ class WDCReader {
 
 								castBuffer.seek(0);
 								switch (fieldType) {
-								case FieldType.String:
-									throw new Error('Compressed string arrays currently not used/supported.');
+									case FieldType.String:
+										throw new Error('Compressed string arrays currently not used/supported.');
 
-								case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
-								case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
-								case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
-								case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
-								case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
-								case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
-								case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
-								case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
-								case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
+									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
+									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
+									case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
+									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
+									case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
+									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
+									case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
+									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
+									case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
 								}
 							}
 						}
@@ -689,7 +711,7 @@ class WDCReader {
 							for (let i = 0; i < count; i++)
 								out[prop][i] = Math.round(out[prop][i] * 100) / 100;
 						} else {
-							out[prop] = Math.round(out[prop] * 100) / 100;
+							out[prop] = Math.round(Number(out[prop]) * 100) / 100;
 						}
 					}
 
@@ -709,5 +731,3 @@ class WDCReader {
 		this.isLoaded = true;
 	}
 }
-
-module.exports = WDCReader;

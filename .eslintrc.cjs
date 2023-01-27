@@ -1,19 +1,10 @@
 module.exports = {
 	'root': true,
-	'ignorePatterns': ['src/lib', 'src/app/3D/lib', 'bin/', '*.js'],
+	'ignorePatterns': ['src/app/3D/lib', 'bin/', '*.js'],
 	'parser': '@typescript-eslint/parser',
 	'parserOptions': {
 		'ecmaVersion': 'latest',
 		'sourceType': 'module'
-	},
-	'globals': {
-		'Vue': true,
-		'THREE': true,
-		'nw': true,
-		'BUILD_RELEASE': true,
-		'chrome': true,
-		'crash': true,
-		'getErrorDump': true
 	},
 	'env': {
 		'node': true,

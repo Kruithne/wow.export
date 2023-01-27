@@ -1,10 +1,7 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const BufferWrapper = require('../buffer');
-const PNGWriter = require('../png-writer');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import BufferWrapper from '../buffer';
+import PNGWriter from '../png-writer';
 
 const DXT1 = 0x1;
 const DXT3 = 0x2;
@@ -14,19 +11,19 @@ const BLP_MAGIC = 0x32504c42;
 
 /**
  * Unpack a colour value.
- * @param {Array} block
- * @param {number} index
- * @param {number} ofs
- * @param {Array} colour
- * @param {number} colourOfs
- * @private
+ * @param block - The block to unpack from.
+ * @param index - The index of the block.
+ * @param ofs - The offset of the block.
+ * @param colour - The colour to unpack to.
+ * @param colourOfs - The offset of the colour.
+ * @returns The unpacked colour value.
  */
-const unpackColour = (block, index, ofs, colour, colourOfs) => {
-	let value = block[index + ofs] | (block[index + 1 + ofs] << 8);
+function unpackColour(block: Array<number>, index: number, ofs: number, colour: Array<number>, colourOfs: number): number {
+	const value = block[index + ofs] | (block[index + 1 + ofs] << 8);
 
-	let r = (value >> 11) & 0x1F;
-	let g = (value >> 5) & 0x3F;
-	let b = value & 0x1F;
+	const r = (value >> 11) & 0x1F;
+	const g = (value >> 5) & 0x3F;
+	const b = value & 0x1F;
 
 	colour[colourOfs] = (r << 3) | (r >> 2);
 	colour[colourOfs + 1] = (g << 2) | (g >> 4);
@@ -34,14 +31,24 @@ const unpackColour = (block, index, ofs, colour, colourOfs) => {
 	colour[colourOfs + 3] = 255;
 
 	return value;
-};
+}
 
-class BLPImage {
+export class BLPImage {
+	data: BufferWrapper;
+	encoding: number;
+	alphaDepth: number;
+	alphaEncoding: number;
+	containsMipmaps: number;
+	width: number;
+	height: number;
+	mapOffsets: Array<number>;
+	mapSizes: Array<number>;
+
 	/**
 	 * Construct a new BLPImage instance.
-	 * @param {BufferWrapper}
+	 * @param data - The BLP file data.
 	 */
-	constructor(data) {
+	constructor(data: BufferWrapper) {
 		this.data = data;
 
 		// Check magic value..
@@ -49,23 +56,23 @@ class BLPImage {
 			throw new Error('Provided data is not a BLP file (invalid header magic).');
 
 		// Check the BLP file type..
-		let type = this.data.readUInt32LE();
+		const type = this.data.readUInt32LE();
 		if (type !== 1)
 			throw new Error('Unsupported BLP type: ' + type);
 
 		// Read file flags..
-		this.encoding = this.data.readUInt8();
-		this.alphaDepth = this.data.readUInt8();
-		this.alphaEncoding = this.data.readUInt8();
-		this.containsMipmaps = this.data.readUInt8();
+		this.encoding = this.data.readUInt8() as number; // NIT: Get rid of `as number`.
+		this.alphaDepth = this.data.readUInt8() as number;
+		this.alphaEncoding = this.data.readUInt8() as number;
+		this.containsMipmaps = this.data.readUInt8() as number;
 
 		// Read file dimensions..
-		this.width = this.data.readUInt32LE();
-		this.height = this.data.readUInt32LE();
+		this.width = this.data.readUInt32LE() as number;
+		this.height = this.data.readUInt32LE() as number;
 
 		// Read mipmap data..
-		this.mapOffsets = this.data.readUInt32LE(16);
-		this.mapSizes = this.data.readUInt32LE(16);
+		this.mapOffsets = this.data.readUInt32LE(16) as number[];
+		this.mapSizes = this.data.readUInt32LE(16) as number[];
 
 		// Calculate available mipmaps..
 		this.mapCount = 0;
@@ -434,5 +441,3 @@ class BLPImage {
 		}
 	}
 }
-
-module.exports = BLPImage;

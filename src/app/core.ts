@@ -1,11 +1,7 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const EventEmitter = require('events');
-const generics = require('./generics');
-const Locale = require('./casc/locale-flags');
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
+import EventEmitter from 'node:events';
+import { redraw } from './generics';
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -75,7 +71,6 @@ const view = {
 	installTags: [], // Install manifest tags.
 	tableBrowserHeaders: [], // DB2 headers
 	tableBrowserRows: [], // DB2 rows
-	availableLocale: Locale, // Available CASC locale.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	textViewerSelectedText: '', // Active text for the text viewer.
 	soundPlayerSeek: 0, // Current seek of the sound player.
@@ -174,7 +169,7 @@ const createProgress = (segments = 1) => {
 			if (text)
 				view.loadingProgress = text;
 
-			await generics.redraw();
+			await redraw();
 		}
 	};
 };
