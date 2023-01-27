@@ -21,7 +21,7 @@
 		"build": "node --no-warnings ./build.js --code --assets --framework",
 		"build-debug": "node --no-warnings ./build.js --debug --code --assets --framework",
 		"update": "node --no-warnings ./build.js --code",
-		"update-debug": "node --no-warnings ./build.js --code",
+		"update-debug": "node --no-warnings ./build.js --debug --code",
 		"build-release": "node --no-warnings ./build.js --code --assets --framework --update --package"
 	},
 	"devDependencies": {
