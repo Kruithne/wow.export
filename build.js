@@ -16,12 +16,12 @@ const INCLUDE = {
 	'CHANGELOG.md': 'src/CHANGELOG.md',
 	'resources/icon.png': 'res/icon.png',
 	'addons/blender/io_scene_wowobj': 'addon/io_scene_wowobj',
-	'src/default_config.jsonc': 'src/default_config.jsonc',
-	'src/index.html': 'src/index.html',
-	'src/fa-icons': 'src/fa-icons',
+	'src/config/default_config.jsonc': 'src/default_config.jsonc',
+	'src/app/index.html': 'src/index.html',
+	'assets/src/fa-icons': 'src/fa-icons',
 	'src/shaders': 'src/shaders',
-	'src/images': 'src/images',
-	'src/fonts': 'src/fonts',
+	'assets/src/images': 'src/images',
+	'assets/src/fonts': 'src/fonts',
 	'src/lib': 'src/lib',
 };
 
@@ -59,7 +59,7 @@ try {
 		// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
 		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
 		log.info('Running {sass}...');
-		run('sass src/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
+		run('sass src/css/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
 	}
 
 	// If --assets is set, update the build directory with asset files.

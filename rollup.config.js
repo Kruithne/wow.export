@@ -3,7 +3,7 @@ import terser from '@rollup/plugin-terser';
 import path from 'node:path';
 
 const config = {
-	input: './src/app.ts',
+	input: './src/app/app.ts',
 	output: {
 		file: path.join(process.env.BUILD_DIR, 'src', 'app.js'),
 		format: 'esm'

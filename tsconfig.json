@@ -7,6 +7,6 @@
 		"allowSyntheticDefaultImports": true
 	},
 	"include": [
-		"src/app.ts"
+		"src/app/app.ts"
 	]
 }
