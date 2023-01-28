@@ -1,5 +1,8 @@
-/* Copyright (c) wow.export contributors. All rights reserved. */
-/* Licensed under the MIT license. See LICENSE in project root for license information. */
+/*!
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	License: MIT
+ */
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const log = require('../log');
@@ -403,5 +406,3 @@ class CASC {
 		this.unhookConfig();
 	}
 }
-
-module.exports = CASC;

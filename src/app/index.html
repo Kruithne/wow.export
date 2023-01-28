@@ -261,6 +261,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Use hotfixes</h1>
+						<p><i>(Local mode only, experimental)</i> If enabled, reads cached hotfixes from the currently loaded WoW
+							installation.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.hotfixesEnabled" />
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>

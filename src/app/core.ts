@@ -71,6 +71,7 @@ const view = {
 	installTags: [], // Install manifest tags.
 	tableBrowserHeaders: [], // DB2 headers
 	tableBrowserRows: [], // DB2 rows
+	hotfixesEnabled: false, // Whether or not hotfixes are used when reading DB2s.
 	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	textViewerSelectedText: '', // Active text for the text viewer.
 	soundPlayerSeek: 0, // Current seek of the sound player.
@@ -275,5 +276,3 @@ const core = {
 	registerLoadFunc,
 	runLoadFuncs
 };
-
-module.exports = core;
