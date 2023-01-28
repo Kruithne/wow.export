@@ -2,19 +2,27 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 /* Based off original works by Dmitry Chestnykh <dmitry@codingrobots.com> */
 
-const BufferWrapper = require('../buffer');
+import BufferWrapper from '../buffer';
 
 const SIGMA_32 = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574];
 const SIGMA_16 = [0x61707865, 0x3120646e, 0x79622d36, 0x6b206574];
 
-class Salsa20 {
+export default class Salsa20 {
+	rounds: number = 20;
+	sigma: number[];
+	keyWords: number[];
+	nonceWords: number[];
+	counter: number[];
+	blockUsed: number;
+	block: number[];
+
 	/**
 	 * Construct a new Salsa20 instance.
-	 * @param {Array} nonce 8 byte nonce.
-	 * @param {string} key 16 or 32 byte key.
-	 * @param {number} rounds Defaults to 20.
+	 * @param nonce - 8 byte nonce.
+	 * @param key - 16 or 32 byte key.
+	 * @param rounds - Defaults to 20.
 	 */
-	constructor(nonce, key, rounds = 20) {
+	constructor(nonce: Array<number>, key: string, rounds: number = 20) {
 		if (nonce.length !== 8)
 			throw new Error('Unexpected nonce length. 8 bytes expected, got ' + nonce.length);
 
@@ -37,9 +45,9 @@ class Salsa20 {
 
 	/**
 	 * Set the key used by this instance.
-	 * @param {Array} key
+	 * @param key
 	 */
-	setKey(key) {
+	setKey(key: Array<number>) {
 		// Expand 16-byte (4-word) key into a 32-byte (8-word) key.
 		if (key.length === 16) {
 			for (let i = 0; i < 16; i++)
@@ -56,7 +64,7 @@ class Salsa20 {
 	 * Set the nonce used by this instance.
 	 * @param nonce
 	 */
-	setNonce(nonce) {
+	setNonce(nonce: number[]) {
 		this.nonceWords[0] = (nonce[0] & 0xFF) | ((nonce[1] & 0xFF) << 8)| ((nonce[2] & 0xFF) << 16)| ((nonce[3] & 0xFF) << 24);
 		this.nonceWords[1] = (nonce[4] & 0xFF) | ((nonce[5] & 0xFF) << 8)| ((nonce[6] & 0xFF) << 16)| ((nonce[7] & 0xFF) << 24);
 
@@ -65,10 +73,10 @@ class Salsa20 {
 
 	/**
 	 * Generated a specific amount of bytes.
-	 * @param {number} byteCount
-	 * @returns {BufferWrapper}
+	 * @param byteCount
+	 * @returns
 	 */
-	getBytes(byteCount) {
+	getBytes(byteCount: number): BufferWrapper {
 		const out = BufferWrapper.alloc(byteCount);
 		for (let i = 0; i < byteCount; i++) {
 			if (this.blockUsed === 64) {
@@ -87,16 +95,16 @@ class Salsa20 {
 
 	/**
 	 * Process the given input.
-	 * @param {BufferWrapper} buf
-	 * @returns {BufferWrapper}
+	 * @param buf
+	 * @returns
 	 */
-	process(buf) {
+	process(buf: BufferWrapper): BufferWrapper {
 		const out = BufferWrapper.alloc(buf.byteLength);
 		const bytes = this.getBytes(buf.byteLength);
 
 		buf.seek(0);
 		for (let i = 0, n = buf.byteLength; i < n; i++)
-			out.writeUInt8(bytes.readUInt8() ^ buf.readUInt8());
+			out.writeUInt8((bytes.readUInt8() as number ^ buf.readUInt8() as number));
 
 		out.seek(0);
 		return out;
@@ -106,7 +114,7 @@ class Salsa20 {
 	 * Reset the internal block counter.
 	 * @private
 	 */
-	_reset() {
+	_reset() : void {
 		this.counter[0] = 0;
 		this.counter[1] = 0;
 
@@ -117,7 +125,7 @@ class Salsa20 {
 	 * Increment the internal block counter.
 	 * @private
 	 */
-	_increment() {
+	_increment() : void {
 		this.counter[0] = (this.counter[0] + 1) & 0xffffffff;
 		if (this.counter[0] === 0)
 			this.counter[1] = (this.counter[1] + 1) & 0xffffffff;
@@ -127,7 +135,7 @@ class Salsa20 {
 	 * Generate a 64-byte block from the key, nonce and counter.
 	 * @private
 	 */
-	_generateBlock() {
+	_generateBlock() : void {
 		const j0 = this.sigma[0],
 			j1 = this.keyWords[0],
 			j2 = this.keyWords[1],
@@ -148,7 +156,7 @@ class Salsa20 {
 		let x0 = j0, x1 = j1, x2 = j2, x3 = j3, x4 = j4, x5 = j5, x6 = j6, x7 = j7,
 			x8 = j8, x9 = j9, x10 = j10, x11 = j11, x12 = j12, x13 = j13, x14 = j14, x15 = j15;
 
-		let u;
+		let u: number;
 		for (let i = 0, n = this.rounds; i < n; i += 2) {
 			u = x0 + x12;
 			x4 ^= (u << 7) | (u >>> (32 - 7));
@@ -274,5 +282,3 @@ class Salsa20 {
 		this.block[62] = (x15 >>> 16) & 0xFF; this.block[63] = (x15 >>> 24) & 0xFF;
 	}
 }
-
-module.exports = Salsa20;

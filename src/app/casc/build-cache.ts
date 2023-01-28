@@ -1,15 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const path = require('path');
-const fs = require('fs');
-const fsp = fs.promises;
-const log = require('../log');
-const constants = require('../constants');
-const generics = require('../generics');
-const core = require('../core');
-const BufferWrapper = require('../buffer');
+import path from 'node:path';
+import fsp from 'node:fs/promises';
+import * as log from '../log';
+import constants from '../constants';
+import * as generics from '../generics';
+import * as core from '../core';
+import BufferWrapper from '../buffer';
 
-let cacheIntegrity;
+let cacheIntegrity: { [x: string]: string; };
 
 /**
  * Returns a promise that resolves once cache integrity is available.
@@ -18,7 +17,7 @@ const cacheIntegrityReady = async () => {
 	return new Promise(res => {
 		// Cache integrity already available.
 		if (cacheIntegrity)
-			return res();
+			return res;
 
 		// Wait for initialization event to fire.
 		log.write('Cache integrity is not ready, waiting!');
@@ -26,12 +25,16 @@ const cacheIntegrityReady = async () => {
 	});
 };
 
-class BuildCache {
+export default class BuildCache {
+	key: string;
+	meta: any;
+	cacheDir: string;
+	manifestPath: string;
 	/**
 	 * Construct a new BuildCache instance.
 	 * @param {string} key
 	 */
-	constructor(key) {
+	constructor(key: string) {
 		this.key = key;
 		this.meta = {};
 
@@ -62,10 +65,10 @@ class BuildCache {
 	/**
 	 * Attempt to get a file from this build cache.
 	 * Returns NULL if the file is not cached.
-	 * @param {string} file File path relative to build cache.
-	 * @param {string} dir Optional override directory.
+	 * @param file - File path relative to build cache.
+	 * @param dir - Optional override directory.
 	 */
-	async getFile(file, dir) {
+	async getFile(file: string, dir: string): Promise<BufferWrapper>|null {
 		try {
 			const filePath = this.getFilePath(file, dir);
 
@@ -98,20 +101,20 @@ class BuildCache {
 
 	/**
 	 * Get a direct path to a cached file.
-	 * @param {string} file File path relative to build cache.
-	 * @param {string} dir Optional override directory.
+	 * @param file - File path relative to build cache.
+	 * @param dir - Optional override directory.
 	 */
-	getFilePath(file, dir) {
+	getFilePath(file: string, dir: string): string {
 		return path.join(dir || this.cacheDir, file);
 	}
 
 	/**
 	 * Store a file in this build cache.
-	 * @param {string} file File path relative to build cache.
-	 * @param {BufferWrapper} data Data to store in the file.
-	 * @param {string} dir Optional override directory.
+	 * @param file - File path relative to build cache.
+	 * @param data - Data to store in the file.
+	 * @param dir - Optional override directory.
 	 */
-	async storeFile(file, data, dir) {
+	async storeFile(file: string, data: BufferWrapper, dir: string): Promise<void> {
 		if (!(data instanceof BufferWrapper))
 			throw new Error('Data provided to cache.storeFile() must be of BufferWrapper type.');
 
@@ -136,14 +139,14 @@ class BuildCache {
 	/**
 	 * Save the cache integrity to disk.
 	 */
-	async saveCacheIntegrity() {
+	async saveCacheIntegrity(): Promise<void> {
 		await fsp.writeFile(constants.CACHE.INTEGRITY_FILE, JSON.stringify(cacheIntegrity), 'utf8');
 	}
 
 	/**
 	 * Save the manifest for this build cache.
 	 */
-	async saveManifest() {
+	async saveManifest(): Promise<void> {
 		await fsp.writeFile(this.manifestPath, JSON.stringify(this.meta), 'utf8');
 	}
 }
@@ -245,5 +248,3 @@ core.events.once('casc-source-changed', async () => {
 		}
 	}
 });
-
-module.exports = BuildCache;

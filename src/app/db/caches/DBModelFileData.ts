@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import log from '../../log';
+import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
 const modelResIDToFileDataID : Map<number, number[]> = new Map();

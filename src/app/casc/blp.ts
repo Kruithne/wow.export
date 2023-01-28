@@ -41,8 +41,15 @@ export class BLPImage {
 	containsMipmaps: number;
 	width: number;
 	height: number;
+	scale: number;
+	scaledWidth: number;
+	scaledHeight: number;
+	scaledLength: number;
 	mapOffsets: Array<number>;
 	mapSizes: Array<number>;
+	mapCount: number;
+	rawData: Array<number>;
+	palette: Buffer;
 
 	/**
 	 * Construct a new BLPImage instance.
@@ -76,31 +83,29 @@ export class BLPImage {
 
 		// Calculate available mipmaps..
 		this.mapCount = 0;
-		for (let ofs of this.mapOffsets) {
+		for (const ofs of this.mapOffsets) {
 			if (ofs !== 0)
 				this.mapCount++;
 		}
 
 		// Read colour palette..
-		this.palette = this.encoding === 1 ? this.data.readBuffer(256 * 4, false) : Buffer.alloc(0);
-
-		this.dataURL = null;
+		this.palette = this.encoding === 1 ? this.data.readBuffer(256 * 4, false) as Buffer : Buffer.alloc(0); // NIT: No idea how this is supposed to be a number[] and buffer
 	}
 
 	/**
 	 * Encode this image as a data URL and return it.
-	 * @param {number} mask
-	 * @returns {string}
+	 * @param mask
+	 * @returns
 	 */
-	getDataURL(mask = 0b1111) {
+	getDataURL(mask: number = 0b1111): string {
 		return this.toCanvas(mask).toDataURL();
 	}
 
 	/**
 	 * Return a canvas with this BLP painted onto it.
-	 * @param {number} mask
+	 * @param mask
 	 */
-	toCanvas(mask = 0b1111) {
+	toCanvas(mask: number = 0b1111) {
 		const canvas = document.createElement('canvas');
 		canvas.width = this.width;
 		canvas.height = this.height;
@@ -111,20 +116,20 @@ export class BLPImage {
 
 	/**
 	 * Retrieve this BLP as a PNG image.
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 * @returns {BufferWrapper}
+	 * @param mask
+	 * @param mipmap
+	 * @returns BLP buffer
 	 */
-	toPNG(mask = 0b1111, mipmap = 0) {
+	toPNG(mask: number = 0b1111, mipmap: number = 0): BufferWrapper {
 		this._prepare(mipmap);
 
 		const png = new PNGWriter(this.scaledWidth, this.scaledHeight);
 		const pixelData = png.getPixelData();
 
 		switch (this.encoding) {
-		case 1: this._getUncompressed(pixelData, mask); break;
-		case 2: this._getCompressed(pixelData, mask); break;
-		case 3: this._marshalBGRA(pixelData, mask); break;
+			case 1: this._getUncompressed(pixelData, mask); break;
+			case 2: this._getCompressed(pixelData, mask); break;
+			case 3: this._marshalBGRA(pixelData, mask); break;
 		}
 
 		return png.getBuffer();
@@ -132,19 +137,19 @@ export class BLPImage {
 
 	/**
 	 * Save this BLP as PNG file.
-	 * @param {string} file
-	 * @param {number} mask
-	 * @param {number} mipmap
+	 * @param file
+	 * @param mask
+	 * @param mipmap - Mipmap level
 	 */
-	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
+	async saveToPNG(file: string, mask: number = 0b1111, mipmap: number = 0) {
 		return await this.toPNG(mask, mipmap).writeToFile(file);
 	}
 
 	/**
 	 * Prepare BLP for processing.
-	 * @param {number} mipmap
+	 * @param mipmap - Mipmap level
 	 */
-	_prepare(mipmap = 0) {
+	_prepare(mipmap: number = 0) {
 		// Constrict the requested mipmap to a valid range..
 		mipmap = Math.max(0, Math.min(mipmap || 0, this.mapCount - 1));
 
@@ -156,25 +161,28 @@ export class BLPImage {
 
 		// Extract the raw data we need..
 		this.data.seek(this.mapOffsets[mipmap]);
-		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]);
+		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]) as number[];
 	}
 
 	/**
 	 * Draw the contents of this BLP file onto a canvas.
-	 * @param {HTMLElement} canvas
-	 * @param {number} mipmap
-	 * @param {number} mask
+	 * @param canvas
+	 * @param mipmap
+	 * @param mask
 	 */
-	drawToCanvas(canvas, mipmap = 0, mask = 0b1111) {
+	drawToCanvas(canvas: HTMLCanvasElement, mipmap: number = 0, mask: number = 0b1111) {
 		this._prepare(mipmap);
 
 		const ctx = canvas.getContext('2d');
+		if (!ctx)
+			throw Error('Failed to initialize canvas');
+
 		const canvasData = ctx.createImageData(this.scaledWidth, this.scaledHeight);
 
 		switch (this.encoding) {
-		case 1: this._getUncompressed(canvasData.data, mask); break;
-		case 2: this._getCompressed(canvasData.data, mask); break;
-		case 3: this._marshalBGRA(canvasData.data, mask); break;
+			case 1: this._getUncompressed(canvasData.data, mask); break;
+			case 2: this._getCompressed(canvasData.data, mask); break;
+			case 3: this._marshalBGRA(canvasData.data, mask); break;
 		}
 
 		ctx.putImageData(canvasData, 0, 0);
@@ -182,33 +190,33 @@ export class BLPImage {
 
 	/**
 	 * Get the contents of this BLP as a BufferWrapper instance.
-	 * @param {number} mipmap
-	 * @param {number} mask
-	 * @returns {BufferWrapper}
+	 * @param mipmap
+	 * @param mask
+	 * @returns Buffer
 	 */
-	toBuffer(mipmap = 0, mask = 0b1111) {
+	toBuffer(mipmap: number = 0, mask: number = 0b1111): BufferWrapper | undefined {
 		this._prepare(mipmap);
 
 		switch (this.encoding) {
-		case 1: return this._getUncompressed(null, mask);
-		case 2: return this._getCompressed(null, mask);
-		case 3: return this._marshalBGRA(null, mask);
+			case 1: return this._getUncompressed(null, mask);
+			case 2: return this._getCompressed(null, mask);
+			case 3: return this._marshalBGRA(null, mask);
 		}
 	}
 
 	/**
 	 * Get the contents of this BLP as an RGBA UInt8 array.
-	 * @param {number} mipmap
-	 * @param {number} mask
+	 * @param mipmap
+	 * @param mask
 	 */
-	toUInt8Array(mipmap = 0, mask = 0b1111) {
+	toUInt8Array(mipmap: number = 0, mask: number = 0b1111): Uint8Array {
 		this._prepare(mipmap);
 
 		const arr = new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
 		switch (this.encoding) {
-		case 1: this._getUncompressed(arr, mask); break;
-		case 2: this._getCompressed(arr, mask); break;
-		case 3: this._marshalBGRA(arr, mask); break;
+			case 1: this._getUncompressed(arr, mask); break;
+			case 2: this._getCompressed(arr, mask); break;
+			case 3: this._marshalBGRA(arr, mask); break;
 		}
 
 		return arr;
@@ -216,35 +224,35 @@ export class BLPImage {
 
 	/**
 	 * Calculate the alpha using this files alpha depth.
-	 * @param {number} index Alpha index.
+	 * @param index - Alpha index.
 	 * @private
 	 */
-	_getAlpha(index) {
+	_getAlpha(index: number) {
 		let byte;
 		switch (this.alphaDepth) {
-		case 1:
-			byte = this.rawData[this.scaledLength + (index / 8)];
-			return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
+			case 1:
+				byte = this.rawData[this.scaledLength + (index / 8)];
+				return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
 
-		case 4:
-			byte = this.rawData[this.scaledLength + (index / 2)];
-			return (index % 2 === 0 ? (byte & 0x0F) << 4 : byte & 0xF0);
+			case 4:
+				byte = this.rawData[this.scaledLength + (index / 2)];
+				return (index % 2 === 0 ? (byte & 0x0F) << 4 : byte & 0xF0);
 
-		case 8:
-			return this.rawData[this.scaledLength + index];
+			case 8:
+				return this.rawData[this.scaledLength + index];
 
-		default:
-			return 0xFF;
+			default:
+				return 0xFF;
 		}
 	}
 
 	/**
 	 * Extract compressed data.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
+	 * @param canvasData
+	 * @param mask
 	 * @private
 	 */
-	_getCompressed(canvasData, mask = 0b1111) {
+	_getCompressed(canvasData: ImageData | Buffer | Uint8Array | Uint8ClampedArray | null, mask: number = 0b1111) {
 		const flags = this.alphaDepth > 1 ? (this.alphaEncoding === 7 ? DXT5 : DXT3) : DXT1;
 		const data = canvasData ? canvasData : Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
 
@@ -264,14 +272,14 @@ export class BLPImage {
 					colourIndex += 8;
 
 				// Decompress colour..
-				let isDXT1 = (flags & DXT1) !== 0;
-				let colours = [];
-				let a = unpackColour(this.rawData, colourIndex, 0, colours, 0);
-				let b = unpackColour(this.rawData, colourIndex, 2, colours, 4);
+				const isDXT1 = (flags & DXT1) !== 0;
+				const colours: Array<number> = [];
+				const a = unpackColour(this.rawData, colourIndex, 0, colours, 0);
+				const b = unpackColour(this.rawData, colourIndex, 2, colours, 4);
 
 				for (let i = 0; i < 3; i++) {
-					let c = colours[i];
-					let d = colours[i + 4];
+					const c = colours[i];
+					const d = colours[i + 4];
 
 					if (isDXT1 && a <= b) {
 						colours[i + 8] = (c + d) / 2;
@@ -285,9 +293,9 @@ export class BLPImage {
 				colours[8 + 3] = 255;
 				colours[12 + 3] = (isDXT1 && a <= b) ? 0 : 255;
 
-				let index = [];
+				const index: Array<number> = [];
 				for (let i = 0; i < 4; i++) {
-					let packed = this.rawData[colourIndex + 4 + i];
+					const packed = this.rawData[colourIndex + 4 + i];
 					index[i * 4] = packed & 0x3;
 					index[1 + i * 4] = (packed >> 2) & 0x3;
 					index[2 + i * 4] = (packed >> 4) & 0x3;
@@ -295,7 +303,7 @@ export class BLPImage {
 				}
 
 				for (let i = 0; i < 16; i++) {
-					let ofs = index[i] * 4;
+					const ofs = index[i] * 4;
 					target[4 * i] = colours[ofs];
 					target[4 * i + 1] = colours[ofs + 1];
 					target[4 * i + 2] = colours[ofs + 2];
@@ -304,19 +312,19 @@ export class BLPImage {
 
 				if ((flags & DXT3) !== 0) {
 					for (let i = 0; i < 8; i++) {
-						let quant = this.rawData[pos + i];
+						const quant = this.rawData[pos + i];
 
-						let low = (quant & 0x0F);
-						let high = (quant & 0xF0);
+						const low = (quant & 0x0F);
+						const high = (quant & 0xF0);
 
 						target[8 * i + 3] = (low | (low << 4));
 						target[8 * i + 7] = (high | (high >> 4));
 					}
 				} else if ((flags & DXT5) !== 0) {
-					let a0 = this.rawData[pos];
-					let a1 = this.rawData[pos + 1];
+					const a0 = this.rawData[pos];
+					const a1 = this.rawData[pos + 1];
 
-					let colours = [];
+					const colours: Array<number> = [];
 					colours[0] = a0;
 					colours[1] = a1;
 
@@ -331,14 +339,14 @@ export class BLPImage {
 							colours[i + 1] = (((7 - i) * a0 + i * a1) / 7) | 0;
 					}
 
-					let indices = [];
+					const indices: Array<number> = [];
 					let blockPos = 2;
 					let indicesPos = 0;
 
 					for (let i = 0; i < 2; i++) {
 						let value = 0;
 						for (let j = 0; j < 3; j++) {
-							let byte = this.rawData[pos + blockPos++];
+							const byte = this.rawData[pos + blockPos++];
 							value |= (byte << 8 * j);
 						}
 
@@ -352,11 +360,11 @@ export class BLPImage {
 
 				for (let pY = 0; pY < 4; pY++) {
 					for (let pX = 0; pX < 4; pX++) {
-						let sX = x + pX;
-						let sY = y + pY;
+						const sX = x + pX;
+						const sY = y + pY;
 
 						if (sX < sw && sY < sh) {
-							let pixel = 4 * (sw * sY + sX);
+							const pixel = 4 * (sw * sY + sX);
 							data[pixel + 0] = (mask & 0b1) ? target[blockPos + 0] : 0;
 							data[pixel + 1] = (mask & 0b10) ? target[blockPos + 1] : 0;
 							data[pixel + 2] = (mask & 0b100) ? target[blockPos + 2] : 0;
@@ -370,17 +378,17 @@ export class BLPImage {
 		}
 
 		if (!canvasData)
-			return new BufferWrapper(data);
+			return new BufferWrapper(data as Buffer);
 	}
 
 	/**
 	 * Match the uncompressed data with the palette.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
-	 * @returns {BufferWrapper|undefined}
+	 * @param canvasData
+	 * @param mask
+	 * @returns If canvasData is not set, returns BufferWrapper
 	 * @private
 	 */
-	_getUncompressed(canvasData, mask) {
+	_getUncompressed(canvasData: ImageData | Buffer | Uint8Array | Uint8ClampedArray | null, mask: number): BufferWrapper | undefined {
 		if (canvasData) {
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const ofs = i * 4;
@@ -409,17 +417,17 @@ export class BLPImage {
 
 	/**
 	 * Marshal a BGRA array into an RGBA ordered buffer.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
-	 * @returns {BufferWrapper|undefined}
+	 * @param canvasData
+	 * @param mask
+	 * @returns
 	 * @private
 	 */
-	_marshalBGRA(canvasData, mask) {
+	_marshalBGRA(canvasData: ImageData | Buffer | Uint8ClampedArray | Uint8Array | null, mask: number): BufferWrapper | undefined {
 		const data = this.rawData;
 
 		if (canvasData) {
 			for (let i = 0, n = data.length / 4; i < n; i++) {
-				let ofs = i * 4;
+				const ofs = i * 4;
 				canvasData[ofs] = (mask & 0b1) ? data[ofs + 2] : 0;
 				canvasData[ofs + 1] = (mask & 0b10) ? data[ofs + 1] : 0;
 				canvasData[ofs + 2] = (mask & 0b100) ? data[ofs] : 0;
@@ -428,7 +436,7 @@ export class BLPImage {
 		} else {
 			const buf = BufferWrapper.alloc(data.length);
 			for (let i = 0, n = data.length / 4; i < n; i++) {
-				let ofs = i * 4;
+				const ofs = i * 4;
 				buf.writeUInt8([
 					(mask & 0b1) ? data[ofs + 2] : 0,
 					(mask & 0b10) ? data[ofs + 1] : 0,

@@ -4,8 +4,8 @@ import util from 'node:util';
 import path from 'node:path';
 import assert from 'node:assert';
 
-import log from '../log';
-import core from '../core';
+import * as log from '../log';
+import * as core from '../core';
 import constants from '../constants';
 import { downloadFile } from '../generics';
 

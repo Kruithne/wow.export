@@ -8,7 +8,16 @@
 import { createApp } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
 import { openExternalLink, openItemOnWowhead } from './external-links';
+import * as core from './core';
+import * as log from './log';
+import constants from './constants';
+import * as generics from './generics';
+import * as blender from './blender';
+import * as listfile from './casc/listfile';
+import * as ExportHelper from './casc/export-helper';
+import * as tactKeys from './casc/tact-keys';
 import os from 'node:os';
+import fs from 'node:fs/promises';
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
@@ -569,7 +578,7 @@ document.addEventListener('click', function(e) {
 
 	// Load cachesize, a file used to track the overall size of the cache directory
 	// without having to calculate the real size before showing to users. Fast and reliable.
-	fsp.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
+	fs.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
 		core.view.cacheSize = Number(data) || 0;
 	}).catch(() => {
 		// File doesn't exist yet, don't error.
@@ -586,7 +595,7 @@ document.addEventListener('click', function(e) {
 			// to the file constantly during heavy cache usage. Postponing until
 			// next tick would not help due to async and potential IO/net delay.
 			updateTimer = setTimeout(() => {
-				fsp.writeFile(constants.CACHE.SIZE, nv.toString(), 'utf8');
+				fs.writeFile(constants.CACHE.SIZE, nv.toString(), 'utf8');
 			}, constants.CACHE.SIZE_UPDATE_DELAY);
 		});
 	});
@@ -621,7 +630,7 @@ document.addEventListener('click', function(e) {
 
 			if (BUILD_RELEASE) {
 				try {
-					const text = await fsp.readFile('./src/CHANGELOG.md', 'utf8');
+					const text = await fs.readFile('./src/CHANGELOG.md', 'utf8');
 					element.textContent = text;
 				} catch (e) {
 					element.textContent = 'Error loading changelog';

@@ -1,27 +1,35 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const path = require('path');
-const fsp = require('fs').promises;
-const util = require('util');
-const log = require('../log');
-const constants = require('../constants');
-const CASC = require('./casc-source');
-const VersionConfig = require('./version-config');
-const CDNConfig = require('./cdn-config');
-const BufferWrapper = require('../buffer');
-const BuildCache = require('./build-cache');
-const BLTEReader = require('./blte-reader').BLTEReader;
-const listfile = require('./listfile');
-const core = require('../core');
-const generics = require('../generics');
-const CASCRemote = require('./casc-source-remote');
+import util from 'node:util';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import * as core from '../core';
+import * as generics from '../generics';
+import * as log from '../log';
+import constants from '../constants';
+import BufferWrapper from '../buffer';
+import * as listfile from './listfile';
 
-class CASCLocal extends CASC {
+import * as VersionConfig from './version-config';
+import * as CDNConfig from './cdn-config';
+import BuildCache from './build-cache';
+import BLTEReader from './blte-reader';
+
+import CASC from './casc-source';
+import CASCRemote from './casc-source-remote';
+
+type IndexEntry = { index: number, offset: number, size: number };
+
+export default class CASCLocal extends CASC {
+	dir: string;
+	dataDir: string;
+	storageDir: string;
+	localIndexes: Map<string, IndexEntry> = new Map();
 	/**
 	 * Create a new CASC source using a local installation.
-	 * @param {string} dir Installation path.
+	 * @param dir - Installation path.
 	 */
-	constructor(dir) {
+	constructor(dir: string) {
 		super(false);
 
 		this.dir = dir;
@@ -38,10 +46,10 @@ class CASCLocal extends CASC {
 		log.write('Initializing local CASC installation: %s', this.dir);
 
 		const buildInfo = path.join(this.dir, constants.BUILD.MANIFEST);
-		const config = VersionConfig(await fsp.readFile(buildInfo, 'utf8'));
+		const config = VersionConfig(await fs.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
-		this.builds = config.filter(entry => constants.PRODUCTS.some(e => e.product === entry.Product));
+		this.builds = config.filter((entry: { Product: string; }) => constants.PRODUCTS.some(e => e.product === entry.Product));
 
 		log.write('%o', this.builds);
 	}
@@ -57,7 +65,7 @@ class CASCLocal extends CASC {
 	 */
 	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
-			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID) as string);
 
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
@@ -109,8 +117,8 @@ class CASCLocal extends CASC {
 	async loadConfigs() {
 		// Load and parse BuildConfig from disk.
 		await this.progress.step('Fetching build configurations');
-		this.buildConfig = CDNConfig(await fsp.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
-		this.cdnConfig = CDNConfig(await fsp.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
+		this.buildConfig = CDNConfig(await fs.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
+		this.cdnConfig = CDNConfig(await fs.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
 
 		log.write('BuildConfig: %o', this.buildConfig);
 		log.write('CDNConfig: %o', this.cdnConfig);
@@ -125,7 +133,7 @@ class CASCLocal extends CASC {
 
 		let indexCount = 0;
 
-		const entries = await fsp.readdir(this.storageDir, { withFileTypes: true });
+		const entries = await fs.readdir(this.storageDir, { withFileTypes: true });
 		for (const entry of entries) {
 			if (entry.isFile() && entry.name.endsWith('.idx')) {
 				await this.parseIndex(path.join(this.storageDir, entry.name));
@@ -344,5 +352,3 @@ class CASCLocal extends CASC {
 		return this.build.BuildKey;
 	}
 }
-
-module.exports = CASCLocal;

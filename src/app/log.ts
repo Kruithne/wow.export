@@ -1,8 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const fs = require('fs');
-const util = require('util');
-const constants = require('./constants');
+import constants from './constants';
+import util from 'node:util';
+import fs from 'node:fs';
 
 const MAX_LOG_POOL = 1000;
 const MAX_DRAIN_PER_TICK = 10;
@@ -49,30 +49,31 @@ const drainPool = () => {
  * Internally mark the current timestamp for measuring
  * performance times with log.timeEnd();
  */
-const timeLog = () => {
+export const timeLog = () => {
 	markTimer = Date.now();
 };
 
 /**
  * Logs the time (in milliseconds) between the last log.timeLog()
  * call and this call, with the given label prefixed.
- * @param {string} label
+ * @param label
+ * @param params - Addition parameters
  */
-const timeEnd = (label, ...params) => {
+export const timeEnd = (label: string, ...params: (string | number)[]) : void => {
 	write(label + ' (%dms)', ...params, (Date.now() - markTimer));
 };
 
 /**
  * Open the runtime log in the users external editor.
  */
-const openRuntimeLog = () => {
+export const openRuntimeLog = () : void => {
 	nw.Shell.openItem(constants.RUNTIME_LOG);
 };
 
 /**
  * Write a message to the log.
  */
-const write = (...parameters) => {
+export const write = (...parameters: (string | number)[]) : void => {
 	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
 	if (!isClogged) {
@@ -96,7 +97,7 @@ const write = (...parameters) => {
  * This is defined as a global as it is requested during
  * an application crash where modules may not be loaded.
  */
-getErrorDump = async () => {
+getErrorDump = async () => { // NIT: Help what to do
 	try {
 		return await fs.promises.readFile(constants.RUNTIME_LOG, 'utf8');
 	} catch (e) {
@@ -107,5 +108,3 @@ getErrorDump = async () => {
 // Initialize the logging stream.
 const stream = fs.createWriteStream(constants.RUNTIME_LOG);
 stream.on('drain', drainPool);
-
-module.exports = { write, timeLog, timeEnd, openRuntimeLog };

@@ -1,30 +1,32 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const generics = require('../generics');
-const constants = require('../constants');
-const core = require('../core');
-const log = require('../log');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
 
-const WDCReader = require('../db/WDCReader');
-const DBTextureFileData = require('../db/caches/DBTextureFileData');
-const DBModelFileData = require('../db/caches/DBModelFileData');
+import util from 'node:util';
+import * as log from '../log';
+import * as core from '../core';
+import constants from '../constants';
+import * as generics from '../generics';
+import BufferWrapper from '../buffer';
+import WDCReader from '../db/WDCReader';
+import BuildCache from './build-cache';
+import ExportHelper from './export-helper';
 
-const nameLookup = new Map();
-const idLookup = new Map();
+import * as DBTextureFileData from '../db/caches/DBTextureFileData';
+import * as DBModelFileData from '../db/caches/DBModelFileData';
+
+const nameLookup: Map<string, number> = new Map();
+const idLookup: Map<number, string> = new Map();
 
 let loaded = false;
 
 /**
  * Load listfile for the given build configuration key.
  * Returns the amount of file ID to filename mappings loaded.
- * @param {string} buildConfig
- * @param {BuildCache} cache
- * @param {Map} rootEntries
+ * @param buildConfig
+ * @param cache
+ * @param rootEntries
  */
-const loadListfile = async (buildConfig, cache, rootEntries) => {
+export const loadListfile = async (buildConfig: string, cache: BuildCache, rootEntries: Map<number, Map<number, string>>): Promise<number> => {
 	log.write('Loading listfile for build %s', buildConfig);
 
 	let url = String(core.view.config.listfileURL);
@@ -124,7 +126,7 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
  * Load unknown files from TextureFileData/ModelFileData.
  * Must be called after DBTextureFileData/DBModelFileData have loaded.
  */
-const loadUnknowns = async () => {
+export const loadUnknowns = async () => {
 	const unkBlp = await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
 	const unkM2 = await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
 
@@ -137,12 +139,12 @@ const loadUnknowns = async () => {
 
 	let unknownCount = 0;
 	for (const entry of soundKitEntries.getAllRows().values()) {
-		if (!idLookup.has(entry.FileDataID)) {
+		if (!idLookup.has(entry.FileDataID as number)) {
 			// List unknown sound files using the .unk_sound extension. Files will be
 			// dynamically checked upon export and given the correct extension.
 			const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';
-			idLookup.set(entry.FileDataID, fileName);
-			nameLookup.set(fileName, entry.FileDataID);
+			idLookup.set(entry.FileDataID as number, fileName);
+			nameLookup.set(fileName, entry.FileDataID as number);
 			unknownCount++;
 		}
 	}
@@ -152,10 +154,10 @@ const loadUnknowns = async () => {
 
 /**
  * Load file IDs from a data table.
- * @param {Set} ids
- * @param {string} ext
+ * @param ids
+ * @param ext
  */
-const loadIDTable = async (ids, ext) => {
+export const loadIDTable = async (ids: Set<number>, ext: string): Promise<number> => {
 	let loadCount = 0;
 
 	for (const fileDataID of ids) {
@@ -172,15 +174,15 @@ const loadIDTable = async (ids, ext) => {
 
 /**
  * Return an array of filenames ending with the given extension(s).
- * @param {string|Array} exts
- * @returns {Array}
+ * @param exts - Extension (or array of extensions) of files to return
+ * @returns Array of filenames
  */
-const getFilenamesByExtension = (exts) => {
+export const getFilenamesByExtension = (exts: string|Array<string>): Array<any> => {
 	// Box into an array for reduced code.
 	if (!Array.isArray(exts))
 		exts = [exts];
 
-	let entries = [];
+	const entries = [];
 
 	for (const [fileDataID, filename] of idLookup.entries()) {
 		for (const ext of exts) {
@@ -203,10 +205,10 @@ const getFilenamesByExtension = (exts) => {
 
 /**
  * Sort and format listfile entries for file list display.
- * @param {Array} entries
- * @returns {Array}
+ * @param entries - Unsorted entries
+ * @returns Sorted entries
  */
-const formatEntries = (entries) => {
+export const formatEntries = (entries: Array<any>): Array<any> => { // NIT
 	// If sorting by ID, perform the sort while the array is only IDs.
 	if (core.view.config.listfileSortByID)
 		entries.sort((a, b) => a - b);
@@ -223,7 +225,7 @@ const formatEntries = (entries) => {
 	return entries;
 };
 
-const ingestIdentifiedFiles = (entries) => {
+export const ingestIdentifiedFiles = (entries: Map<number, string>) => {
 	for (const [fileDataID, ext] of entries) {
 		const fileName = 'unknown/' + fileDataID + ext;
 		idLookup.set(fileDataID, fileName);
@@ -235,37 +237,37 @@ const ingestIdentifiedFiles = (entries) => {
 
 /**
  * Returns a full listfile, sorted and formatted.
- * @returns {Array}
+ * @returns Full listfile
  */
-const getFullListfile = () => {
+export const getFullListfile = () => {
 	return formatEntries([...idLookup.keys()]);
 };
 
 /**
  * Get a filename from a given file data ID.
- * @param {number} id
- * @returns {string|undefined}
+ * @param id - FileDataID
+ * @returns Filename if found, otherwise undefined
  */
-const getByID = (id) => {
+export const getByID = (id: number): string|undefined => {
 	return idLookup.get(id);
 };
 
 /**
  * Get a filename from a given file data ID or format it as an unknown file.
- * @param {number} id
- * @param {string} [ext]
- * @returns {string}
+ * @param id - FileDataID
+ * @param ext - Optional extension to use for unknown files
+ * @returns Known filename or formatted unknown name
  */
-const getByIDOrUnknown = (id, ext = '') => {
+export const getByIDOrUnknown = (id: number, ext: string = ''): string => {
 	return idLookup.get(id) ?? formatUnknownFile(id, ext);
 };
 
 /**
  * Get a file data ID by a given file name.
- * @param {string} filename
- * @returns {number|undefined}
+ * @param filename
+ * @returns FileDataID if found, undefined otherwise
  */
-const getByFilename = (filename) => {
+export const getByFilename = (filename: string): number|undefined => {
 	let lookup = nameLookup.get(filename.toLowerCase().replace(/\\/g, '/'));
 
 	// In the rare occasion we have a reference to an MDL/MDX file and it fails
@@ -278,10 +280,10 @@ const getByFilename = (filename) => {
 
 /**
  * Returns an array of listfile entries filtered by the given search term.
- * @param {string|RegExp} search
- * @returns {Array.<object>}
+ * @param search Search string (can be a regular expression)
+ * @returns Filtered listfile entries
  */
-const getFilteredEntries = (search) => {
+export const getFilteredEntries = (search: string | RegExp): Array<object> => { // NIT: array<object> ew
 	const results = [];
 	const isRegExp = search instanceof RegExp;
 
@@ -295,10 +297,10 @@ const getFilteredEntries = (search) => {
 
 /**
  * Strips a prefixed file ID from a listfile entry.
- * @param {string} entry
- * @returns {string}
+ * @param entry
+ * @returns Listfile entry without prefixed file ID
  */
-const stripFileEntry = (entry) => {
+export const stripFileEntry = (entry: string): string => {
 	if (typeof entry === 'string' && entry.includes(' ['))
 		return entry.substring(0, entry.lastIndexOf(' ['));
 
@@ -307,33 +309,17 @@ const stripFileEntry = (entry) => {
 
 /**
  * Returns a file path for an unknown fileDataID.
- * @param {number} fileDataID
- * @param {string} [ext]
+ * @param fileDataID
+ * @param ext - Optional extension
  */
-const formatUnknownFile = (fileDataID, ext = '') => {
+export const formatUnknownFile = (fileDataID: number, ext: string = '') => {
 	return 'unknown/' + fileDataID + ext;
 };
 
 /**
  * Returns true if a listfile has been loaded.
- * @returns {boolean}
+ * @returns If listfile is loaded
  */
-const isLoaded = () => {
+export const isLoaded = (): boolean => {
 	return loaded;
-};
-
-module.exports = {
-	loadListfile,
-	loadUnknowns,
-	getByID,
-	getByFilename,
-	getFullListfile,
-	getFilenamesByExtension,
-	getFilteredEntries,
-	getByIDOrUnknown,
-	stripFileEntry,
-	formatEntries,
-	formatUnknownFile,
-	ingestIdentifiedFiles,
-	isLoaded
 };

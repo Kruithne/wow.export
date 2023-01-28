@@ -7,7 +7,7 @@ let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
 // core.events is a global event handler used for dispatching
 // events from any point in the system, to any other point.
-const events = new EventEmitter();
+export const events = new EventEmitter();
 events.setMaxListeners(666);
 
 // dropHandlers contains handlers for drag/drop support.
@@ -20,7 +20,7 @@ let loaders = [];
 
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
-const view = {
+export const view: any = { // NIT: Defined this as any for now to make things error less.
 	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
 	isDev: !BUILD_RELEASE, // True if in development environment.
@@ -147,7 +147,7 @@ const view = {
  * This is heavily used in UI to disable components during big tasks.
  * @param {function} func
  */
-const block = async (func) => {
+export const block = async (func) => {
 	view.isBusy++;
 	await func();
 	view.isBusy--;
@@ -158,12 +158,12 @@ const block = async (func) => {
  * @param {number} segments
  * @returns {Progress}
  */
-const createProgress = (segments = 1) => {
+export const createProgress = (segments: number = 1): any => { // NIT: Where does Progress come from?
 	view.loadPct = 0;
 	return {
 		segWeight: 1 / segments,
 		value: 0,
-		step: async function(text) {
+		step: async function(text: string) {
 			this.value++;
 			view.loadPct = Math.min(this.value * this.segWeight, 1);
 
@@ -177,9 +177,9 @@ const createProgress = (segments = 1) => {
 
 /**
  * Hide the currently active toast prompt.
- * @param {boolean} userCancel
+ * @param userCancel
  */
-const hideToast = (userCancel = false) => {
+const hideToast = (userCancel: boolean = false) => {
 	// Cancel outstanding toast expiry timer.
 	if (toastTimer > -1) {
 		clearTimeout(toastTimer);
@@ -194,13 +194,13 @@ const hideToast = (userCancel = false) => {
 
 /**
  * Display a toast message.
- * @param {string} toastType 'error', 'info', 'success', 'progress'
- * @param {string} message
- * @param {object} options
- * @param {number} ttl Time in milliseconds before removing the toast.
- * @param {boolean} closable If true, toast can manually be closed.
+ * @param toastType - 'error', 'info', 'success', 'progress'
+ * @param message
+ * @param options
+ * @param ttl - Time in milliseconds before removing the toast.
+ * @param closable - If true, toast can manually be closed.
  */
-const setToast = (toastType, message, options = null, ttl = 10000, closable = true) => {
+export const setToast = (toastType: string, message: string, options: object = null, ttl: number = 10000, closable: boolean = true) => {
 	view.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.
@@ -214,7 +214,7 @@ const setToast = (toastType, message, options = null, ttl = 10000, closable = tr
 /**
  * Open user-configured export directory with OS default.
  */
-const openExportDirectory = () => {
+export const openExportDirectory = () => {
 	nw.Shell.openItem(view.config.exportDirectory);
 };
 
@@ -222,7 +222,7 @@ const openExportDirectory = () => {
  * Register a handler for file drops.
  * @param {object} handler
  */
-const registerDropHandler = (handler) => {
+export const registerDropHandler = (handler) => {
 	// Ensure the extensions are all lower-case.
 	handler.ext = handler.ext.map(e => e.toLowerCase());
 	dropHandlers.push(handler);
@@ -232,7 +232,7 @@ const registerDropHandler = (handler) => {
  * Get a drop handler for the given file path.
  * @param {string} file
  */
-const getDropHandler = (file) => {
+export const getDropHandler = (file) => {
 	file = file.toLowerCase();
 
 	for (const handler of dropHandlers) {
@@ -249,30 +249,16 @@ const getDropHandler = (file) => {
  * Register a promise to be resolved during the last loading step.
  * @param {function} func
  */
-const registerLoadFunc = (func) => {
+export const registerLoadFunc = (func) => {
 	loaders.push(func);
 };
 
 /**
  * Resolve all registered loader functions.
  */
-const runLoadFuncs = async () => {
+export const runLoadFuncs = async () => {
 	while (loaders.length > 0)
 		await loaders.shift()();
 
 	loaders = undefined;
-};
-
-const core = {
-	events,
-	view,
-	block,
-	createProgress,
-	setToast,
-	hideToast,
-	openExportDirectory,
-	registerDropHandler,
-	getDropHandler,
-	registerLoadFunc,
-	runLoadFuncs
 };

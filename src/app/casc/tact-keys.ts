@@ -1,6 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import log from '../log';
+import * as log from '../log';
+import * as core from '../core';
+
 import fs from 'node:fs/promises';
 import constants from '../constants';
 import { get, consumeUTF8Stream } from '../generics';
@@ -37,10 +39,10 @@ export const validateKeyPair = (keyName: string, key: string) : boolean => {
  * Add a decryption key. Subject to validation.
  * Decryption keys will be saved to disk on next tick.
  * Returns true if added, else false if the pair failed validation.
- * @param {string} keyName
- * @param {string} key
+ * @param keyName
+ * @param key
  */
-export const addKey = (keyName, key) => {
+export const addKey = (keyName: string, key: string) => {
 	if (!validateKeyPair(keyName, key))
 		return false;
 
@@ -108,7 +110,7 @@ export const load = async () => {
 		if (remoteAdded > 0)
 			log.write('Added %d new tact keys from %s', remoteAdded, core.view.config.tactKeysURL);
 	} else {
-		log.write('Unable to update tactKeys, HTTP %d', res.statusCode);
+		log.write('Unable to update tactKeys, HTTP %d', res.statusCode?.toString());
 	}
 };
 

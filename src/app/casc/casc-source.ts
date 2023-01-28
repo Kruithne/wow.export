@@ -3,56 +3,65 @@
 	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
 	License: MIT
  */
-const BLTEReader = require('./blte-reader').BLTEReader;
-const listfile = require('./listfile');
-const log = require('../log');
-const core = require('../core');
-const constants = require('../constants');
-const LocaleFlag = require('./locale-flags').flags;
-const ContentFlag = require('./content-flags');
-const InstallManifest = require('./install-manifest');
+import BLTEReader from './blte-reader';
 
-const WDCReader = require('../db/WDCReader');
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBTextureFileData = require('../db/caches/DBTextureFileData');
-const DBItemDisplays = require('../db/caches/DBItemDisplays');
-const DBCreatures = require('../db/caches/DBCreatures');
+import * as listfile from './listfile';
+import * as log from '../log';
+import * as core from '../core';
+import constants from '../constants';
+import { LocaleFlags } from './locale-flags';
+import { ContentFlags } from './content-flags';
+import InstallManifest from  './install-manifest';
+
+import WDCReader from '../db/WDCReader';
+import * as DBTextureFileData from '../db/caches/DBTextureFileData';
+import * as DBModelFileData from '../db/caches/DBModelFileData';
+import * as DBItemDisplays from '../db/caches/DBItemDisplays';
+import * as DBCreatures from '../db/caches/DBCreatures';
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
-class CASC {
+export default class CASC {
+	locale: LocaleFlags;
+	isRemote: boolean;
+	unhookConfig: () => void;
+	encodingSizes: Map<string, number> = new Map();
+	encodingKeys: Map<string, string> = new Map();
+	progress: any;
+	rootEntries: Map<number, any> = new Map();
+	rootTypes: Array<any>;
+
 	constructor(isRemote = false) {
-		this.encodingSizes = new Map();
-		this.encodingKeys = new Map();
 		this.rootTypes = [];
-		this.rootEntries = new Map();
 		this.isRemote = isRemote;
 
+		this.progress = core.createProgress(10);
+
 		// Listen for configuration changes to cascLocale.
-		this.unhookConfig = core.view.$watch('config.cascLocale', (locale) => {
+		this.unhookConfig = core.view.$watch('config.cascLocale', (locale: number) => {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
 				log.write('Invalid locale set in configuration, defaulting to enUS');
-				this.locale = LocaleFlag.enUS;
+				this.locale = LocaleFlags.enUS;
 			}
 		}, { immediate: true });
 	}
 
 	/**
 	 * Provides an array of fileDataIDs that match the current locale.
-	 * @returns {Array.<number>}
+	 * @returns
 	 */
-	getValidRootEntries() {
-		const entries = [];
+	getValidRootEntries(): Array<number> {
+		const entries: Array<number> = [];
 
 		for (const [fileDataID, entry] of this.rootEntries.entries()) {
 			let include = false;
 
 			for (const rootTypeIdx of entry.keys()) {
 				const rootType = this.rootTypes[rootTypeIdx];
-				if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+				if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlags.LowViolence) === 0)) {
 					include = true;
 					break;
 				}
@@ -67,9 +76,9 @@ class CASC {
 
 	/**
 	 * Retrieves the install manifest for this CASC instance.
-	 * @returns {InstallManifest}
+	 * @returns
 	 */
-	async getInstallManifest() {
+	async getInstallManifest(): Promise<InstallManifest> {
 		const installKeys = this.buildConfig.install.split(' ');
 		const installKey = installKeys.length === 1 ? this.encodingKeys.get(installKeys[0]) : installKeys[1];
 
@@ -81,9 +90,9 @@ class CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID
+	 * @param fileDataID
 	 */
-	async getFile(fileDataID) {
+	async getFile(fileDataID: number) {
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
@@ -93,7 +102,7 @@ class CASC {
 			const rootType = this.rootTypes[rootTypeIdx];
 
 			// Select the first root entry that has a matching locale and no LowViolence flag set.
-			if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+			if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlags.LowViolence) === 0)) {
 				contentKey = key;
 				break;
 			}
@@ -112,10 +121,10 @@ class CASC {
 	}
 
 	/**
-	 * @param {string} contentKey
-	 * @returns {string}
+	 * @param contentKey
+	 * @returns
 	 */
-	getEncodingKeyForContentKey(contentKey) {
+	getEncodingKeyForContentKey(contentKey: string): string {
 		const encodingKey = this.encodingKeys.get(contentKey);
 		if (encodingKey === undefined)
 			throw new Error('No encoding entry found: ' + contentKey);
@@ -134,7 +143,7 @@ class CASC {
 	 * @param {boolean} [supportFallback=true]
 	 * @param {boolean} [forceFallback=false]
 	 */
-	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
+	async getFileByName(fileName: string, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
@@ -146,7 +155,7 @@ class CASC {
 	 * Load the listfile for selected build.
 	 * @param {string} buildKey
 	 */
-	async loadListfile(buildKey) {
+	async loadListfile(buildKey: string) {
 		await this.progress.step('Loading listfile');
 		const entries = await listfile.loadListfile(buildKey, this.cache, this.rootEntries);
 		if (entries === 0)
@@ -181,7 +190,7 @@ class CASC {
 	/**
 	 * Creates filtered versions of the master listfile.
 	 */
-	async filterListfile() {
+	async filterListfile(): Promise<void> {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 
@@ -194,7 +203,7 @@ class CASC {
 	/**
 	 * Load tables that are required globally.
 	 */
-	async loadTables() {
+	async loadTables(): Promise<void> {
 		await this.progress.step('Loading model file data');
 		await DBModelFileData.initializeModelFileData();
 
@@ -218,7 +227,7 @@ class CASC {
 			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
 			await creatureDisplayInfo.parse();
 
-			if (!creatureDisplayInfo.schema.has("ModelID") || !creatureDisplayInfo.schema.has("TextureVariationFileDataID")) {
+			if (!creatureDisplayInfo.schema.has('ModelID') || !creatureDisplayInfo.schema.has('TextureVariationFileDataID')) {
 				log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
 				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => core.events.emit('click-cache-clear'),
@@ -230,7 +239,7 @@ class CASC {
 			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
 			await creatureModelData.parse();
 
-			if (!creatureModelData.schema.has("FileDataID") || !creatureModelData.schema.has("CreatureGeosetDataID")) {
+			if (!creatureModelData.schema.has('FileDataID') || !creatureModelData.schema.has('CreatureGeosetDataID')) {
 				log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
 				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => core.events.emit('click-cache-clear'),
@@ -249,7 +258,7 @@ class CASC {
 	 * Initialize external components as part of the CASC load process.
 	 * This allows us to do it seamlessly under the cover of the same loading screen.
 	 */
-	async initializeComponents() {
+	async initializeComponents(): Promise<void> {
 		await this.progress.step('Initializing components');
 		await core.runLoadFuncs();
 	}
@@ -273,16 +282,16 @@ class CASC {
 			const allowNamelessFiles = totalFileCount !== namedFileCount;
 
 			while (root.remainingBytes > 0) {
-				const numRecords = root.readUInt32LE();
+				const numRecords = root.readUInt32LE() as number;
 
-				const contentFlags = root.readUInt32LE();
+				const contentFlags = root.readUInt32LE() as number;
 				const localeFlags = root.readUInt32LE();
 
 				const fileDataIDs = new Array(numRecords);
 
 				let fileDataID = 0;
 				for (let i = 0; i < numRecords; i++)  {
-					const nextID = fileDataID + root.readInt32LE();
+					const nextID = fileDataID + (root.readInt32LE() as number);
 					fileDataIDs[i] = nextID;
 					fileDataID = nextID + 1;
 				}
@@ -301,7 +310,7 @@ class CASC {
 				}
 
 				// Skip lookup hashes for entries.
-				if (!(allowNamelessFiles && contentFlags & ContentFlag.NoNameHash))
+				if (!(allowNamelessFiles && contentFlags & ContentFlags.NoNameHash))
 					root.move(8 * numRecords);
 
 				// Push the rootType after parsing the block so that
@@ -311,16 +320,16 @@ class CASC {
 		} else { // Classic
 			root.seek(0);
 			while (root.remainingBytes > 0) {
-				const numRecords = root.readUInt32LE();
+				const numRecords = root.readUInt32LE() as number;
 
 				const contentFlags = root.readUInt32LE();
 				const localeFlags = root.readUInt32LE();
 
 				const fileDataIDs = new Array(numRecords);
 
-				let fileDataID = 0;
+				let fileDataID: number = 0;
 				for (let i = 0; i < numRecords; i++)  {
-					const nextID = fileDataID + root.readInt32LE();
+					const nextID = fileDataID + (root.readInt32LE() as number);
 					fileDataIDs[i] = nextID;
 					fileDataID = nextID + 1;
 				}
@@ -367,13 +376,13 @@ class CASC {
 			throw new Error('Invalid encoding magic: ' + magic);
 
 		encoding.move(1); // version
-		const hashSizeCKey = encoding.readUInt8();
-		const hashSizeEKey = encoding.readUInt8();
-		const cKeyPageSize = encoding.readInt16BE() * 1024;
+		const hashSizeCKey = encoding.readUInt8() as number;
+		const hashSizeEKey = encoding.readUInt8() as number;
+		const cKeyPageSize = encoding.readInt16BE() as number * 1024;
 		encoding.move(2); // eKeyPageSize
-		const cKeyPageCount = encoding.readInt32BE();
+		const cKeyPageCount = encoding.readInt32BE() as number;
 		encoding.move(4 + 1); // eKeyPageCount + unk11
-		const specBlockSize = encoding.readInt32BE();
+		const specBlockSize = encoding.readInt32BE() as number;
 
 		encoding.move(specBlockSize + (cKeyPageCount * (hashSizeCKey + 16)));
 
@@ -383,11 +392,11 @@ class CASC {
 			encoding.seek(pageStart);
 
 			while (encoding.offset < (pageStart + pagesStart)) {
-				const keysCount = encoding.readUInt8();
+				const keysCount = encoding.readUInt8() as number;
 				if (keysCount === 0)
 					break;
 
-				const size = encoding.readInt40BE();
+				const size = encoding.readInt40BE() as number;
 				const cKey = encoding.readHexString(hashSizeCKey);
 
 				encodingSizes.set(cKey, size);

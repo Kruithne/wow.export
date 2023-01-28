@@ -7,7 +7,7 @@ const KEY_VAR_PATTERN = /([^\s]+)\s?=\s?(.*)/;
  * This helps keep things consistent when accessing key properties.
  * @param {string} key
  */
-const normalizeKey = (key) => {
+export const normalizeKey = (key) => {
 	const keyParts = key.split('-');
 
 	// Nothing to split, just use the normal key.
@@ -22,9 +22,9 @@ const normalizeKey = (key) => {
 	return keyParts.join('');
 };
 
-module.exports = data => {
+export default (data: string) => {
 	const entries = {};
-	let lines = data.split(/\r?\n/);
+	const lines = data.split(/\r?\n/);
 
 	for (const line of lines) {
 		// Skip empty lines/comments.

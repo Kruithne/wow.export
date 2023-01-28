@@ -1,17 +1,18 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const BufferWrapper = require('../buffer');
-const Salsa20 = require('./salsa20');
-const tactKeys = require('./tact-keys');
+import util from 'node:util';
+import BufferWrapper from '../buffer';
+import * as tactKeys from './tact-keys';
+import Salsa20 from './salsa20';
 
 const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
 const EMPTY_HASH = '00000000000000000000000000000000';
 
 class EncryptionError extends Error {
-	constructor(key, ...params) {
-		super('[BLTE] Missing decryption key ' + key, ...params);
+	key: string;
+	constructor(key: string) {
+		super('[BLTE] Missing decryption key ' + key);
 		this.key = key;
 
 		// Maintain stack trace (V8).
@@ -20,7 +21,7 @@ class EncryptionError extends Error {
 }
 
 class BLTEIntegrityError extends Error {
-	constructor(expected, actual) {
+	constructor(expected: string, actual: string) {
 		super(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', expected, actual));
 
 		// Maintain stack trace (V8).
@@ -28,12 +29,18 @@ class BLTEIntegrityError extends Error {
 	}
 }
 
-class BLTEReader extends BufferWrapper {
+export default class BLTEReader extends BufferWrapper {
+	_blte: BufferWrapper;
+	blockIndex: number;
+	blockWriteIndex: number;
+	partialDecrypt: boolean;
+	blocks: Array<any>; // NIT: Probably make into own type
+
 	/**
 	 * Check if the given data is a BLTE file.
-	 * @param {BufferWrapper} data
+	 * @param data
 	 */
-	static check(data) {
+	static check(data: BufferWrapper): boolean {
 		if (data.byteLength < 4)
 			return false;
 
@@ -44,12 +51,12 @@ class BLTEReader extends BufferWrapper {
 	}
 	/**
 	 * Construct a new BLTEReader instance.
-	 * @param {BufferWrapper} buf
-	 * @param {string} hash
-	 * @param {boolean} partialDecrypt
+	 * @param buf
+	 * @param hash
+	 * @param partialDecrypt
 	 */
-	constructor(buf, hash, partialDecrypt = false) {
-		super(null);
+	constructor(buf: BufferWrapper, hash: string, partialDecrypt: boolean = false) {
+		super(Buffer.alloc(0)); // NIT: This was null, just setting it to new empty buffer now. Is this OK?
 
 		this._blte = buf;
 		this.blockIndex = 0;
@@ -64,12 +71,12 @@ class BLTEReader extends BufferWrapper {
 		if (magic !== BLTE_MAGIC)
 			throw new Error('[BLTE] Invalid magic: ' + magic);
 
-		const headerSize = buf.readInt32BE();
+		const headerSize = buf.readInt32BE() as number;
 		const origPos = buf.offset;
 
 		buf.seek(0);
 
-		let hashCheck = headerSize > 0 ? buf.readBuffer(headerSize).calculateHash() : buf.calculateHash();
+		const hashCheck = headerSize > 0 ? (buf.readBuffer(headerSize) as BufferWrapper).calculateHash() : buf.calculateHash();
 		if (hashCheck !== hash)
 			throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
 
@@ -98,7 +105,7 @@ class BLTEReader extends BufferWrapper {
 		let allocSize = 0;
 
 		for (let i = 0; i < numBlocks; i++) {
-			const block = {};
+			const block: any = {}; // Nit: Make own type
 			if (headerSize !== 0) {
 				block.CompSize = buf.readInt32BE();
 				block.DecompSize = buf.readInt32BE();
@@ -119,7 +126,7 @@ class BLTEReader extends BufferWrapper {
 	/**
 	 * Process all BLTE blocks in the reader.
 	 */
-	processAllBlocks() {
+	processAllBlocks(): void {
 		while (this.blockIndex < this.blocks.length)
 			this._processBlock();
 	}
@@ -127,7 +134,7 @@ class BLTEReader extends BufferWrapper {
 	/**
 	 * Process the next BLTE block.
 	 */
-	_processBlock() {
+	_processBlock(): boolean|void {
 		// No more blocks to process.
 		if (this.blockIndex === this.blocks.length)
 			return false;
@@ -140,7 +147,7 @@ class BLTEReader extends BufferWrapper {
 
 		if (block.Hash !== EMPTY_HASH) {
 			const blockData = this._blte.readBuffer(block.CompSize);
-			const blockHash = blockData.calculateHash();
+			const blockHash = (blockData as BufferWrapper).calculateHash();
 
 			// Reset after reading the hash.
 			this._blte.seek(bltePos);
@@ -160,52 +167,52 @@ class BLTEReader extends BufferWrapper {
 
 	/**
 	 * Handle a BLTE block.
-	 * @param {BufferWrapper} block
-	 * @param {number} blockEnd
-	 * @param {number} index
+	 * @param block
+	 * @param blockEnd
+	 * @param index
 	 */
-	_handleBlock(block, blockEnd, index) {
+	_handleBlock(block: BufferWrapper, blockEnd: number, index: number): void {
 		const flag = block.readUInt8();
 		switch (flag) {
-		case 0x45: // Encrypted
-			try {
-				const decrypted = this._decryptBlock(block, blockEnd, index);
-				this._handleBlock(decrypted, decrypted.byteLength, index);
-			} catch (e) {
-				if (e instanceof EncryptionError) {
-					// Partial decryption allows us to leave zeroed data.
-					if (this.partialDecrypt)
-						this._ofs += this.blocks[index].DecompSize;
-					else
-						throw e;
+			case 0x45: // Encrypted
+				try {
+					const decrypted = this._decryptBlock(block, blockEnd, index);
+					this._handleBlock(decrypted, decrypted.byteLength, index);
+				} catch (e) {
+					if (e instanceof EncryptionError) {
+						// Partial decryption allows us to leave zeroed data.
+						if (this.partialDecrypt)
+							this._ofs += this.blocks[index].DecompSize;
+						else
+							throw e;
+					}
 				}
-			}
 
-			break;
+				break;
 
-		case 0x46: // Frame (Recursive)
-			throw new Error('[BLTE] No frame decoder implemented!');
+			case 0x46: // Frame (Recursive)
+				throw new Error('[BLTE] No frame decoder implemented!');
 
-		case 0x4E: // Frame (Normal)
-			this._writeBufferBLTE(block, blockEnd);
-			break;
+			case 0x4E: // Frame (Normal)
+				this._writeBufferBLTE(block, blockEnd);
+				break;
 
-		case 0x5A: // Compressed
-			this._decompressBlock(block, blockEnd, index);
-			break;
+			case 0x5A: // Compressed
+				this._decompressBlock(block, blockEnd, index);
+				break;
 
-		default:
-			throw new Error('Unknown block: ' + flag);
+			default:
+				throw new Error('Unknown block: ' + flag);
 		}
 	}
 
 	/**
 	 * Decompress BLTE block.
-	 * @param {BufferWrapper} data
-	 * @param {number} blockEnd
-	 * @param {number} index
+	 * @param data
+	 * @param blockEnd
+	 * @param index
 	 */
-	_decompressBlock(data, blockEnd, index) {
+	_decompressBlock(data: BufferWrapper, blockEnd: number, index: number): void {
 		const decomp = data.readBuffer(blockEnd - data.offset, true, true);
 		const expectedSize = this.blocks[index].DecompSize;
 
@@ -213,16 +220,16 @@ class BLTEReader extends BufferWrapper {
 		if (decomp.byteLength > expectedSize)
 			this.setCapacity(this.byteLength + (decomp.byteLength - expectedSize));
 
-		this._writeBufferBLTE(decomp, decomp.byteLength);
+		this._writeBufferBLTE(decomp as BufferWrapper, decomp.byteLength);
 	}
 
 	/**
 	 * Decrypt BLTE block.
-	 * @param {BufferWrapper} data
-	 * @param {number} blockEnd
-	 * @param {number} index
+	 * @param data
+	 * @param blockEnd
+	 * @param index
 	 */
-	_decryptBlock(data, blockEnd, index) {
+	_decryptBlock(data: BufferWrapper, blockEnd: number, index: number): BufferWrapper {
 		const keyNameSize = data.readUInt8();
 		if (keyNameSize === 0 || keyNameSize !== 8)
 			throw new Error('[BLTE] Unexpected keyNameSize: ' + keyNameSize);
@@ -237,7 +244,7 @@ class BLTEReader extends BufferWrapper {
 		if (ivSize !== 4)
 			throw new Error('[BLTE] Unexpected ivSize: ' + ivSize);
 
-		const ivShort = data.readUInt8(ivSize);
+		const ivShort = data.readUInt8(ivSize) as number[];
 		if (data.remainingBytes === 0)
 			throw new Error('[BLTE] Unexpected end of data before encryption flag.');
 
@@ -252,30 +259,30 @@ class BLTEReader extends BufferWrapper {
 		if (typeof key !== 'string')
 			throw new EncryptionError(keyName);
 
-		const nonce = [];
+		const nonce: Array<number> = [];
 		for (let i = 0; i < 8; i++)
 			nonce[i] = (i < ivShort.length ? ivShort[i] : 0x0);
 
 		const instance = new Salsa20(nonce, key);
-		return instance.process(data.readBuffer(blockEnd - data.offset));
+		return instance.process(data.readBuffer(blockEnd - data.offset) as BufferWrapper);
 	}
 
 	/**
 	 * Write the contents of a buffer to this instance.
 	 * Skips bound checking for BLTE internal writing.
-	 * @param {BufferWrapper} buf
-	 * @param {number} blockEnd
+	 * @param buf
+	 * @param blockEnd
 	 */
-	_writeBufferBLTE(buf, blockEnd) {
+	_writeBufferBLTE(buf: BufferWrapper, blockEnd: number): void {
 		buf.raw.copy(this._buf, this._ofs, buf.offset, blockEnd);
 		this._ofs += blockEnd - buf.offset;
 	}
 
 	/**
 	 * Check a given length does not exceed current capacity.
-	 * @param {number} length
+	 * @param length
 	 */
-	_checkBounds(length) {
+	_checkBounds(length: number): void {
 		// Check that this read won't go out-of-bounds anyway.
 		super._checkBounds(length);
 
@@ -290,27 +297,27 @@ class BLTEReader extends BufferWrapper {
 	/**
 	 * Write the contents of this buffer to a file.
 	 * Directory path will be created if needed.
-	 * @param {string} file
+	 * @param file
 	 */
-	async writeToFile(file) {
+	async writeToFile(file: string): Promise<void> {
 		this.processAllBlocks();
 		await super.writeToFile(file);
 	}
 
 	/**
 	 * Decode this buffer using the given audio context.
-	 * @param {AudioContext} context
+	 * @param context
 	 */
-	async decodeAudio(context) {
+	async decodeAudio(context: AudioContext): Promise<AudioBuffer> {
 		this.processAllBlocks();
 		return super.decodeAudio(context);
 	}
 
 	/**
 	 * Assign a data URL for this buffer.
-	 * @returns {string}
+	 * @returns Data URL
 	 */
-	getDataURL() {
+	getDataURL(): string {
 		if (!this.dataURL) {
 			this.processAllBlocks();
 			return super.getDataURL();
@@ -319,5 +326,3 @@ class BLTEReader extends BufferWrapper {
 		return this.dataURL;
 	}
 }
-
-module.exports = { BLTEReader, EncryptionError, BLTEIntegrityError };

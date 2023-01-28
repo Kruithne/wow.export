@@ -1,25 +1,27 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const constants = require('../constants');
-const generics = require('../generics');
-const core = require('../core');
-const log = require('../log');
-const CASC = require('./casc-source');
-const VersionConfig = require('./version-config');
-const CDNConfig = require('./cdn-config');
-const BuildCache = require('./build-cache');
-const listfile = require('./listfile');
-const BLTEReader = require('./blte-reader').BLTEReader;
+import util from 'node:util';
+import * as core from '../core';
+import * as generics from '../generics';
+import * as log from '../log';
+import constants from '../constants';
+import * as listfile from './listfile';
+
+import * as VersionConfig from './version-config';
+import * as CDNConfig from './cdn-config';
+import BuildCache from './build-cache';
+import BLTEReader from './blte-reader';
+
+import CASC from './casc-source';
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 
-class CASCRemote extends CASC {
+export default class CASCRemote extends CASC {
 	/**
 	 * Create a new CASC source using a Blizzard CDN.
-	 * @param {string} region Region tag (eu, us, etc).
+	 * @param region - Region tag (eu, us, etc).
 	 */
-	constructor(region) {
+	constructor(region: string) {
 		super(true);
 
 		this.archives = new Map();
@@ -414,5 +416,3 @@ class CASCRemote extends CASC {
 		return this.build.BuildConfig;
 	}
 }
-
-module.exports = CASCRemote;

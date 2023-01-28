@@ -1,35 +1,39 @@
 const INSTALL_SIG = 0x4E49; // IN
+import BLTEReader from './blte-reader';
 
-class InstallManifest {
+type InstallTag = { name: string, type: number, mask: number[] };
+type InstallFile = { name: string, hash: string, size: number, tags: string[]};
+
+export default class InstallManifest {
+	version: number = 0;
+	hashSize: number = 0;
+	numTags: number = 0;
+	numFiles: number = 0;
+	maskSize: number = 0;
+
+	tags: Array<InstallTag> = [];
+	files: Array<InstallFile> = [];
+
 	/**
 	 * Construct a new InstallManifest instance.
-	 * @param {BLTEReader} data
+	 * @param data
 	 */
-	constructor(data) {
-		this.version = 0;
-		this.hashSize = 0;
-		this.numTags = 0;
-		this.numFiles = 0;
-		this.maskSize = 0;
-
-		this.tags = [];
-		this.files = [];
-
+	constructor(data: BLTEReader) {
 		this.parse(data);
 	}
 
 	/**
 	 * Parse data for this install manifest.
-	 * @param {BLTEReader} data
+	 * @param data
 	 */
-	parse(data) {
+	parse(data: BLTEReader): void {
 		if (data.readUInt16LE() !== INSTALL_SIG)
 			throw new Error('Invalid file signature for install manifest');
 
-		this.version = data.readUInt8();
-		this.hashSize = data.readUInt8();
-		this.numTags = data.readUInt16BE();
-		this.numFiles = data.readUInt32BE();
+		this.version = data.readUInt8() as number;
+		this.hashSize = data.readUInt8() as number;
+		this.numTags = data.readUInt16BE() as number;
+		this.numFiles = data.readUInt32BE() as number;
 
 		this.tags = Array(this.numTags);
 		this.files = Array(this.numFiles);
@@ -39,8 +43,8 @@ class InstallManifest {
 		for (let i = 0; i < this.numTags; i++) {
 			this.tags[i] = {
 				name: data.readNullTerminatedString(),
-				type: data.readUInt16BE(),
-				mask: data.readUInt8(this.maskSize)
+				type: data.readUInt16BE() as number,
+				mask: data.readUInt8(this.maskSize) as number[]
 			};
 		}
 
@@ -48,7 +52,7 @@ class InstallManifest {
 			this.files[i] = {
 				name: data.readNullTerminatedString(),
 				hash: data.readHexString(this.hashSize),
-				size: data.readUInt32BE(),
+				size: data.readUInt32BE() as number,
 				tags: []
 			};
 		}
@@ -65,5 +69,3 @@ class InstallManifest {
 		}
 	}
 }
-
-module.exports = InstallManifest;

@@ -1,12 +1,16 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-module.exports = data => {
-	const entries = [];
+export default (data: string) => {
+	const entries: Array<string[]> = [];
 	const lines = data.split(/\r?\n/);
 
 	// First line contains field definitions.
 	// Example: Name!STRING:0|Path!STRING:0|Hosts!STRING:0|Servers!STRING:0|ConfigPath!STRING:0
-	const headers = lines.shift().split('|');
+	const shiftedHeaders = lines.shift();
+	if (shiftedHeaders === undefined)
+		throw new Error('Invalid buildconfig');
+
+	const headers = shiftedHeaders.split('|');
 	const fields = new Array(headers.length);
 
 	// Whitespace is replaced so that a field like 'Install Key' becomes 'InstallKey'.
@@ -19,7 +23,7 @@ module.exports = data => {
 		if (entry.trim().length === 0 || entry.startsWith('#'))
 			continue;
 
-		const node = {};
+		const node: Array<string> = [];
 		const entryFields = entry.split('|');
 		for (let i = 0, n = entryFields.length; i < n; i++)
 			node[fields[i]] = entryFields[i];
