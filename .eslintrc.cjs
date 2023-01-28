@@ -14,6 +14,7 @@ module.exports = {
 	'rules': {
 		'@typescript-eslint/no-explicit-any': 'warn',
 		'@typescript-eslint/no-inferrable-types': 'off',
+		'@typescript-eslint/type-annotation-spacing': 'warn',
 		'indent': [ 'error', 'tab', { 'SwitchCase': 1 } ],
 		'linebreak-style': [ 'error', process.platform === 'win32' ? 'windows' : 'unix' ],
 		'quotes': [ 'error', 'single' ],
