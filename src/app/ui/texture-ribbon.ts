@@ -1,15 +1,15 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const path = require('path');
-const core = require('../core');
-const listfile = require('../casc/listfile');
+import path from 'node:path';
+import * as core from '../core';
+import * as listfile from '../casc/listfile';
 
-let _syncID = 0;
+let _syncID: number = 0;
 
 /**
  * Invoked when the texture ribbon element resizes.
  */
-const onResize = (width) => {
+export const onResize = (width: number): void => {
 	// Take the total available space of the texture ribbon element and reduce
 	// it by the width of the next/previous buttons (30 each).
 	width -= 60;
@@ -22,7 +22,7 @@ const onResize = (width) => {
 /**
  * Reset the texture ribbon.
  */
-const reset = () => {
+export const reset = (): number => {
 	core.view.textureRibbonStack = [];
 	core.view.textureRibbonPage = 0;
 	core.view.contextMenus.nodeTextureRibbon = null;
@@ -32,11 +32,11 @@ const reset = () => {
 
 /**
  * Set the file displayed in a given ribbon slot.
- * @param {number} slotIndex
- * @param {number} fileDataID
- * @param {number} syncID
+ * @param slotIndex
+ * @param fileDataID
+ * @param syncID
  */
-const setSlotFile = (slotIndex, fileDataID, syncID) => {
+export const setSlotFile = (slotIndex: number, fileDataID: number, syncID: number): void => {
 	// Only accept data from the latest preparation.
 	if (syncID !== _syncID)
 		return;
@@ -53,11 +53,11 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 
 /**
  * Set the render source for a given ribbon slot.
- * @param {number} slotIndex
- * @param {string} src
- * @param {number} syncID
+ * @param slotIndex
+ * @param src
+ * @param syncID
  */
-const setSlotSrc = (slotIndex, src, syncID) => {
+export const setSlotSrc = (slotIndex: number, src: string, syncID: number): void => {
 	// Only accept data from the latest preparation.
 	if (syncID !== _syncID)
 		return;
@@ -69,20 +69,12 @@ const setSlotSrc = (slotIndex, src, syncID) => {
 
 /**
  * Add an empty slot to the texture ribbon.
- * @returns {number}
+ * @returns
  */
-const addSlot = () => {
+export const addSlot = (): number => {
 	const stack = core.view.textureRibbonStack;
 	const slotIndex = stack.length;
 
 	stack.push({ fileDataID: 0, displayName: 'Empty', fileName: '', src: '' });
 	return slotIndex;
-};
-
-module.exports = {
-	reset,
-	setSlotFile,
-	setSlotSrc,
-	onResize,
-	addSlot
 };

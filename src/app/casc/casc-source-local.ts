@@ -25,6 +25,13 @@ export default class CASCLocal extends CASC {
 	dataDir: string;
 	storageDir: string;
 	localIndexes: Map<string, IndexEntry> = new Map();
+
+	builds: Array<any>; // NIT: Make type for builds
+	build: any;
+
+	cache: BuildCache;
+	remote: CASCRemote;
+
 	/**
 	 * Create a new CASC source using a local installation.
 	 * @param dir - Installation path.
@@ -56,12 +63,12 @@ export default class CASCLocal extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID
-	 * @param {boolean} [partialDecryption=false]
-	 * @param {boolean} [suppressLog=false]
-	 * @param {boolean} [supportFallback=true]
-	 * @param {boolean} [forceFallback=false]
-	 * @param {string} [contentKey=null]
+	 * @param fileDataID
+	 * @param partialDecryption
+	 * @param suppressLog
+	 * @param supportFallback
+	 * @param forceFallback
+	 * @param contentKey
 	 */
 	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
@@ -88,9 +95,9 @@ export default class CASCLocal extends CASC {
 
 	/**
 	 * Load the CASC interface with the given build.
-	 * @param {number} buildIndex
+	 * @param buildIndex
 	 */
-	async load(buildIndex) {
+	async load(buildIndex: number) {
 		this.build = this.builds[buildIndex];
 		log.write('Loading local CASC build: %o', this.build);
 
@@ -154,14 +161,14 @@ export default class CASCLocal extends CASC {
 
 		const headerHashSize = index.readInt32LE();
 		index.move(4); // headerHash uint32
-		index.move(headerHashSize); // headerHash byte[headerHashSize]
+		index.move(headerHashSize as number); // headerHash byte[headerHashSize]
 
-		index.seek((8 + headerHashSize + 0x0F) & 0xFFFFFFF0); // Next 0x10 boundary.
+		index.seek((8 + (headerHashSize as number) + 0x0F) & 0xFFFFFFF0); // Next 0x10 boundary.
 
 		const dataLength = index.readInt32LE();
 		index.move(4);
 
-		const nBlocks = dataLength / 18;
+		const nBlocks = dataLength as number / 18;
 		for (let i = 0; i < nBlocks; i++) {
 			const key = index.readHexString(9);
 			if (entries.has(key)) {
@@ -173,9 +180,9 @@ export default class CASCLocal extends CASC {
 			const idxLow = index.readInt32BE();
 
 			entries.set(key, {
-				index: (idxHigh << 2 | ((idxLow & 0xC0000000) >>> 30)),
-				offset: idxLow & 0x3FFFFFFF,
-				size: index.readInt32LE()
+				index: (idxHigh as number << 2 | ((idxLow as number & 0xC0000000) >>> 30)),
+				offset: idxLow as number & 0x3FFFFFFF,
+				size: index.readInt32LE() as number
 			});
 		}
 	}
@@ -275,9 +282,9 @@ export default class CASCLocal extends CASC {
 
 	/**
 	 * Obtain a data file from the local archives.
-	 * @param {string} key
+	 * @param key
 	 */
-	async getDataFile(key) {
+	async getDataFile(key: string) {
 		const entry = this.localIndexes.get(key.substring(0, 18));
 		if (!entry)
 			throw new Error('Requested file does not exist in local data: ' + key);
@@ -302,27 +309,27 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Format a local path to a data archive.
 	 * 67 -> <install>/Data/data/data.067
-	 * @param {number} id
+	 * @param id
 	 */
-	formatDataPath(id) {
+	formatDataPath(id: number): string {
 		return path.join(this.dataDir, 'data', 'data.' + id.toString().padStart(3, '0'));
 	}
 
 	/**
 	 * Format a local path to an archive index from the key.
 	 * 0b45bd2721fd6c86dac2176cbdb7fc5b -> <install>/Data/indices/0b45bd2721fd6c86dac2176cbdb7fc5b.index
-	 * @param {string} key
+	 * @param key
 	 */
-	formatIndexPath(key) {
+	formatIndexPath(key: string): string {
 		return path.join(this.dataDir, 'indices', key + '.index');
 	}
 
 	/**
 	 * Format a local path to a config file from the key.
 	 * 0af716e8eca5aeff0a3965d37e934ffa -> <install>/Data/config/0a/f7/0af716e8eca5aeff0a3965d37e934ffa
-	 * @param {string} key
+	 * @param key
 	 */
-	formatConfigPath(key) {
+	formatConfigPath(key: string): string {
 		return path.join(this.dataDir, 'config', this.formatCDNKey(key));
 	}
 
@@ -330,25 +337,25 @@ export default class CASCLocal extends CASC {
 	 * Format a CDN key for use in local file reading.
 	 * Path separators used by this method are platform specific.
 	 * 49299eae4e3a195953764bb4adb3c91f -> 49\29\49299eae4e3a195953764bb4adb3c91f
-	 * @param {string} key
+	 * @param key
 	 */
-	formatCDNKey(key) {
+	formatCDNKey(key: string): string {
 		return path.join(key.substring(0, 2), key.substring(2, 4), key);
 	}
 
 	/**
 	* Get the current build ID.
-	* @returns {string}
+	* @returns
 	*/
-	getBuildName() {
+	getBuildName(): string {
 		return this.build.Version;
 	}
 
 	/**
 	 * Returns the build configuration key.
-	 * @returns {string}
+	 * @returns
 	 */
-	getBuildKey() {
+	getBuildKey(): string {
 		return this.build.BuildKey;
 	}
 }

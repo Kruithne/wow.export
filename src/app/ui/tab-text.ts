@@ -1,14 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const generics = require('../generics');
-const util = require('util');
-const listfile = require('../casc/listfile');
+import * as core from '../core';
+import * as log from '../log';
+import ExportHelper from '../casc/export-helper';
+import { EncryptionError } from '../casc/blte-reader';
+import util from 'node:util';
+import * as generics from '../generics';
+import * as listfile from '../casc/listfile';
 
-let selectedFile = null;
+let selectedFile: string;
 
 core.registerLoadFunc(async () => {
 	// Track selection changes on the text listbox and set first as active entry.

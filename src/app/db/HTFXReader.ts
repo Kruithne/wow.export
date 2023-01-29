@@ -6,8 +6,8 @@ import * as log from '../log';
  * Reader for DBCache.bin (hotfix) files
  * @class HTFXReader
  */
-export class HTFXReader {
-	tableHashMap : Map<string, string> = new Map();
+export default class HTFXReader {
+	tableHashMap: Map<string, string> = new Map();
 	fileName: string;
 
 	/**
@@ -31,7 +31,7 @@ export class HTFXReader {
 	/**
      * Parse the hotfix file.
      */
-	async parse() : void {
+	async parse(): Promise<void> {
 		const data = new BufferWrapper(await fs.readFile(this.fileName));
 
 		data.readUInt32LE(); // XFTH magic
@@ -69,5 +69,3 @@ export class HTFXReader {
 		}
 	}
 }
-
-module.exports = HTFXReader;

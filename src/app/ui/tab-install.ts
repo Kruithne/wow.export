@@ -1,12 +1,12 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
+import * as core from '../core';
+import * as listfile from '../casc/listfile';
+import * as log from '../log';
+import ExportHelper from '../casc/export-helper';
+import * as generics from '../generics';
 
-let manifest = null;
+let manifest: any = null;
 
 const updateInstallListfile = () => {
 	core.view.listfileInstall = manifest.files.filter((file) => {

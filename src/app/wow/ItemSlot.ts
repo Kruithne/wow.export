@@ -35,10 +35,8 @@ const ITEM_SLOTS = {
 
 /**
  * Get the label for an item slot based on the ID.
- * @param {number} id
+ * @param id
  */
-const getSlotName = (id) => {
+export const getSlotName = (id: number): string => {
 	return ITEM_SLOTS[id] ?? 'Unknown';
 };
-
-module.exports = { getSlotName };

@@ -1,14 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const listfile = require('../casc/listfile');
-const MultiMap = require('../MultiMap');
+import * as core from '../core';
+import * as listfile from '../casc/listfile';
+import MultiMap from '../MultiMap';
 
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBTextureFileData = require('../db/caches/DBTextureFileData');
+import * as DBTextureFileData from '../db/caches/DBTextureFileData';
+import * as DBModelFileData from '../db/caches/DBModelFileData';
 
-const WDCReader = require('../db/WDCReader');
-const ItemSlot = require('../wow/ItemSlot');
+import WDCReader from '../db/WDCReader';
+import * as ItemSlot from '../wow/ItemSlot';
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -32,16 +32,26 @@ const ITEM_SLOTS_MERGED = {
 	'Tabard': [19]
 };
 
-class Item {
+export default class Item {
+	id: number;
+	name: string;
+	inventoryType: number;
+	quality: number;
+	icon: number;
+	models: string[];
+	textures: string[];
+	modelCount: number;
+	textureCount: number;
+
 	/**
 	 * Construct a new Item instance.
-	 * @param {number} id
-	 * @param {object} itemSparseRow
-	 * @param {?object} itemAppearanceRow
-	 * @param {?Array} textures
-	 * @param {?Array} models
+	 * @param id
+	 * @param itemSparseRow
+	 * @param itemAppearanceRow
+	 * @param textures
+	 * @param models
 	 */
-	constructor(id, itemSparseRow, itemAppearanceRow, textures, models) {
+	constructor(id: number, itemSparseRow: any, itemAppearanceRow: any | null, textures: Array<string> | null, models: Array<string> | null) {
 		this.id = id;
 		this.name = itemSparseRow.Display_lang;
 		this.inventoryType = itemSparseRow.InventoryType;
@@ -58,25 +68,24 @@ class Item {
 
 	/**
 	 * Returns item slot name for this items inventory type.
-	 * @returns {string}
 	 */
-	get itemSlotName() {
+	get itemSlotName(): string {
 		return ItemSlot.getSlotName(this.inventoryType);
 	}
 
 	/**
 	 * Returns the display name for this item entry.
 	 */
-	get displayName() {
+	get displayName(): string {
 		return this.name + ' (' + this.id + ')';
 	}
 }
 
 /**
  * Switches to the model viewer, selecting the models for the given item.
- * @param {object} item
+ * @param item
  */
-const viewItemModels = (item) => {
+export const viewItemModels = (item) => {
 	core.view.setScreen('tab-models');
 
 	const list = new Set();
@@ -105,9 +114,9 @@ const viewItemModels = (item) => {
 
 /**
  * Switches to the texture viewer, selecting the models for the given item.
- * @param {object} item
+ * @param item
  */
-const viewItemTextures = (item) => {
+export const viewItemTextures = (item) => {
 	core.view.setScreen('tab-textures');
 
 	const list = new Set();
@@ -171,7 +180,7 @@ core.events.once('screen-tab-items', async () => {
 		materialMap.set(row.ItemDisplayInfoID, row.MaterialResourcesID);
 
 	for (const [itemID, itemRow] of rows) {
-		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
+		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType as number))
 			continue;
 
 		const itemAppearanceID = appearanceMap.get(itemID);
@@ -183,10 +192,10 @@ core.events.once('screen-tab-items', async () => {
 			materials = [];
 			models = [];
 
-			const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+			const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID as number);
 			if (itemDisplayInfoRow !== null) {
-				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
-				models.push(...itemDisplayInfoRow.ModelResourcesID);
+				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID as number[]);
+				models.push(...itemDisplayInfoRow.ModelResourcesID as number[]);
 			}
 
 			const materialRes = materialMap.get(itemAppearanceRow.ItemDisplayInfoID);
@@ -228,5 +237,3 @@ core.events.once('screen-tab-items', async () => {
 
 	core.view.itemViewerTypeMask = mask;
 });
-
-module.exports = { viewItemModels, viewItemTextures };

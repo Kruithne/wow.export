@@ -68,7 +68,7 @@ export default class BuildCache {
 	 * @param file - File path relative to build cache.
 	 * @param dir - Optional override directory.
 	 */
-	async getFile(file: string, dir: string): Promise<BufferWrapper>|null {
+	async getFile(file: string, dir?: string): Promise<BufferWrapper>|null {
 		try {
 			const filePath = this.getFilePath(file, dir);
 
@@ -104,7 +104,7 @@ export default class BuildCache {
 	 * @param file - File path relative to build cache.
 	 * @param dir - Optional override directory.
 	 */
-	getFilePath(file: string, dir: string): string {
+	getFilePath(file: string, dir?: string): string {
 		return path.join(dir || this.cacheDir, file);
 	}
 
@@ -114,7 +114,7 @@ export default class BuildCache {
 	 * @param data - Data to store in the file.
 	 * @param dir - Optional override directory.
 	 */
-	async storeFile(file: string, data: BufferWrapper, dir: string): Promise<void> {
+	async storeFile(file: string, data: BufferWrapper, dir?: string): Promise<void> {
 		if (!(data instanceof BufferWrapper))
 			throw new Error('Data provided to cache.storeFile() must be of BufferWrapper type.');
 

@@ -1,25 +1,24 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../core');
-const log = require('../log');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const WDCReader = require('../db/WDCReader');
-const HTFXReader = require('../db/HTFXReader');
-const path = require('path');
+import util from 'node:util';
+import path from 'node:path';
+import * as core from '../core';
+import * as listfile from '../casc/listfile';
+import * as log from '../log';
+import * as generics from '../generics';
+import WDCReader from '../db/WDCReader';
+import HTFXReader from '../db/HTFXReader';
 
-let selectedFile = null;
-let db2NameMap = undefined;
+let selectedFile: string;
 
 core.registerLoadFunc(async () => {
 	// TODO: Cache manifest with sane expiry (e.g. same as DBD) instead of requesting each time
-	const manifestURL = util.format(core.view.config.dbdURL, "manifest");
+	const manifestURL = util.format(core.view.config.dbdURL, 'manifest');
 	log.write('Downloading DB2 filename mapping from %s', manifestURL);
 	const db2NameMap = await generics.getJSON(manifestURL);
 
-	if (core.view.config.hotfixesEnabled){
-		let htfxReader = new HTFXReader(db2NameMap);
+	if (core.view.config.hotfixesEnabled) {
+		const htfxReader = new HTFXReader(db2NameMap);
 		htfxReader.parse();
 	}
 

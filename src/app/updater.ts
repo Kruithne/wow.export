@@ -1,14 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const path = require('path');
-const assert = require('assert').strict;
-const fsp = require('fs').promises;
-const cp = require('child_process');
-const constants = require('./constants');
-const generics = require('./generics');
-const core = require('./core');
-const log = require('./log');
+import util from 'node:util';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import cp from 'node:child_process';
+import constants from './constants';
+import * as generics from './generics';
+import * as core from './core';
+import * as log from './log';
 
 let updateManifest;
 
@@ -16,13 +16,13 @@ let updateManifest;
  * Check if there are any available updates.
  * Returns a Promise that resolves to true if an update is available.
  */
-const checkForUpdates = async () => {
+export const checkForUpdates = async () => {
 	try {
 		const localManifest = nw.App.manifest;
 		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + 'update.json';
 		log.write('Checking for updates (%s)...', manifestURL);
 
-		const manifest = await generics.getJSON(manifestURL);
+		const manifest: any = await generics.getJSON(manifestURL); // NIT: I can't figure out a way where JSON isn't any
 
 		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
 		assert(typeof manifest.contents === 'object', 'Update manifest does not contain a valid contents list');
@@ -44,13 +44,13 @@ const checkForUpdates = async () => {
 /**
  * Apply an outstanding update.
  */
-const applyUpdate = async () => {
+export const applyUpdate = async () => {
 	core.view.isBusy++;
 	core.view.showLoadScreen('Updating, please wait...');
 
 	log.write('Starting update to %s...', updateManifest.guid);
 
-	const requiredFiles = [];
+	const requiredFiles: any[] = []; // NIT: Again, any stuff here because magic object keys
 	const entries = Object.entries(updateManifest.contents);
 
 	let progress = core.createProgress(entries.length);
@@ -65,19 +65,19 @@ const applyUpdate = async () => {
 		const node = { file, meta };
 
 		try {
-			const stats = await fsp.stat(localPath);
+			const stats = await fs.stat(localPath);
 
 			// If the file size is different, skip hashing and just mark for update.
-			if (stats.size !== meta.size) {
-				log.write('Marking %s for update due to size mismatch (%d != %d)', file, stats.size, meta.size);
+			if (stats.size !== (meta as any).size) {
+				log.write('Marking %s for update due to size mismatch (%d != %d)', file, stats.size, (meta as any).size);
 				requiredFiles.push(node);
 				continue;
 			}
 
 			// Verify local sha256 hash with remote one.
 			const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
-			if (localHash !== meta.hash) {
-				log.write('Marking %s for update due to hash mismatch (%s != %s)', file, localHash, meta.hash);
+			if (localHash !== (meta as any).hash) {
+				log.write('Marking %s for update due to hash mismatch (%s != %s)', file, localHash, (meta as any).hash);
 				requiredFiles.push(node);
 				continue;
 			}
@@ -120,15 +120,15 @@ const launchUpdater = async () => {
 	try {
 		const updaterExists = await generics.fileExists(updatedApp);
 		if (updaterExists)
-			await fsp.rename(updatedApp, helperApp);
+			await fs.rename(updatedApp, helperApp);
 
 		// Launch the updater application.
-		const child = cp.spawn(helperApp, [process.pid], { detached: true, stdio: 'ignore' });
+		// NIT: Something changed here and process.pid is no longer a valid argument there, I've removed it for now.
+		// const child = cp.spawn(helperApp, [process.pid], { detached: true, stdio: 'ignore' });
+		const child = cp.spawn(helperApp, { detached: true, stdio: 'ignore' });
 		child.unref();
 		process.exit();
 	} catch (e) {
 		log.write('Failed to restart for update: %s', e.message);
 	}
 };
-
-module.exports = { checkForUpdates, applyUpdate };

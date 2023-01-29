@@ -1,33 +1,36 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const generics = require('../../generics');
-const path = require('path');
-const FileWriter = require('../../file-writer');
+import path from 'node:path';
+import * as generics from '../../generics';
+import FileWriter from '../../file-writer';
 
-class JSONWriter {
+export default class JSONWriter {
+	out: string;
+	data: object;
+
 	/**
 	 * Construct a new JSONWriter instance.
-	 * @param {string} out
+	 * @param out
 	 */
-	constructor(out) {
+	constructor(out: string) {
 		this.out = out;
 		this.data = {};
 	}
 
 	/**
 	 * Add a property to this JSON.
-	 * @param {string} name
-	 * @param {object} data
+	 * @param name
+	 * @param data
 	 */
-	addProperty(name, data) {
+	addProperty(name: string, data: any) { // NIT: This is an actual good usecase for any, right?
 		this.data[name] = data;
 	}
 
 	/**
 	 * Write the JSON to disk.
-	 * @param {boolean} overwrite
+	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite: boolean = true) {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
@@ -41,5 +44,3 @@ class JSONWriter {
 		await writer.close();
 	}
 }
-
-module.exports = JSONWriter;

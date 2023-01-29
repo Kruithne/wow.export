@@ -1,12 +1,12 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../core');
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const generics = require('../generics');
-const constants = require('../constants');
-const listfile = require('../casc/listfile');
+import util from 'node:util';
+import * as core from '../core';
+import * as log from '../log';
+import ExportHelper from '../casc/export-helper';
+import * as constants from '../constants';
+import * as generics from '../generics';
+import * as listfile from '../casc/listfile';
 
 let isDirty = true;
 
@@ -45,7 +45,7 @@ core.events.on('click-detect-raw', async () => {
 		return;
 	}
 
-	const filteredSelection = [];
+	const filteredSelection: number[] = [];
 	for (let fileName of userSelection) {
 		fileName = listfile.stripFileEntry(fileName);
 		const match = fileName.match(/^unknown\/(\d+)(\.[a-zA-Z_]+)$/);

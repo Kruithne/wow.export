@@ -241,7 +241,7 @@ export default class ExportHelper {
 	 * @param state
 	 * @param error
 	 */
-	mark(item: string, state: boolean, error: string): void {
+	mark(item: string, state: boolean, error: string|null = null): void {
 		if (state) {
 			log.write('Successfully exported %s', item);
 			this.lastItem = item;

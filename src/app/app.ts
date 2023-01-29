@@ -6,18 +6,27 @@
 // and vice-versa.
 
 import { createApp } from 'vue';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+
 import { LocaleFlags } from './casc/locale-flags';
-import { openExternalLink, openItemOnWowhead } from './external-links';
+import constants from './constants';
+import ExportHelper from './casc/export-helper';
+
+import * as TabTextures from './ui/tab-textures';
+import * as TabItems from './ui/tab-items';
+import * as ExternalLinks from './external-links';
 import * as core from './core';
 import * as log from './log';
-import constants from './constants';
+import * as config from './config';
 import * as generics from './generics';
 import * as blender from './blender';
 import * as listfile from './casc/listfile';
-import * as ExportHelper from './casc/export-helper';
 import * as tactKeys from './casc/tact-keys';
-import os from 'node:os';
-import fs from 'node:fs/promises';
+import * as updater from './updater';
+import * as textureRibbon from './ui/texture-ribbon';
+
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
@@ -50,7 +59,7 @@ document.addEventListener('click', function(e) {
 		return;
 
 	e.preventDefault();
-	openExternalLink(target.getAttribute('data-external'));
+	ExternalLinks.openExternalLink(target.getAttribute('data-external'));
 });
 
 (async () => {
@@ -91,35 +100,15 @@ document.addEventListener('click', function(e) {
 			 */
 			reloadStylesheet() {
 				const sheets = document.querySelectorAll('link[rel="stylesheet"]');
-				for (const sheet of sheets)
+				for (const sheet of sheets as NodeListOf<HTMLLinkElement>)
 					sheet.href = sheet.getAttribute('data-href') + '?v=' + Date.now();
 			},
 
 			/**
-			 * Initiate the integration tests.
-			 */
-			async runIntegrationTests() {
-				this.setScreen('loading', true);
-
-				this.loadingTitle = 'Running integration tests...';
-				this.loadingProgress = 'Initializing';
-				this.loadPct = 0;
-
-				const runner = new TestRunner();
-				await runner.run();
-
-				this.showPreviousScreen();
-				core.setToast('success', 'Integration tests have completed, see runtime log for results.', { 'View Log': () => log.openRuntimeLog() });
-
-				// Reset the load progress (to hide Windows taskbar progress).
-				this.loadPct = -1;
-			},
-
-			/**
 			 * Mark all WMO groups to the given state.
-			 * @param {boolean} state
+			 * @param state
 			 */
-			setAllWMOGroups: function(state) {
+			setAllWMOGroups: function(state: boolean) {
 				if (this.modelViewerWMOGroups) {
 					for (const node of this.modelViewerWMOGroups)
 						node.checked = state;
@@ -128,9 +117,9 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all geosets to the given state.
-			 * @param {boolean} state
+			 * @param state
 			 */
-			setAllGeosets: function(state) {
+			setAllGeosets: function(state: boolean) {
 				if (this.modelViewerGeosets) {
 					for (const node of this.modelViewerGeosets)
 						node.checked = state;
@@ -139,18 +128,18 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all item types to the given state.
-			 * @param {boolean} state
+			 * @param state
 			 */
-			setAllItemTypes: function(state) {
+			setAllItemTypes: function(state: boolean) {
 				for (const entry of this.itemViewerTypeMask)
 					entry.checked = state;
 			},
 
 			/**
 			 * Return a tag for a given product.
-			 * @param {string} product
+			 * @param product
 			 */
-			getProductTag: function(product) {
+			getProductTag: function(product: string) {
 				const entry = constants.PRODUCTS.find(e => e.product === product);
 				return entry ? entry.tag : 'Unknown';
 			},
@@ -159,10 +148,10 @@ document.addEventListener('click', function(e) {
 			 * Set the currently active screen.
 			 * If `preserve` is true, the current screen ID will be pushed further onto the stack.
 			 * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
-			 * @param {string} screenID
-			 * @param {boolean} preserve
+			 * @param screenID
+			 * @param preserve
 			 */
-			setScreen: function(screenID, preserve = false) {
+			setScreen: function(screenID: string, preserve: boolean = false) {
 				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
 
 				// Ensure that all context menus are absorbed by screen changes.
@@ -184,9 +173,9 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Show the loading screen with a given message.
-			 * @param {string} text Defaults to 'Loading, please wait'
+			 * @param text Defaults to 'Loading, please wait'
 			 */
-			showLoadScreen: function(text) {
+			showLoadScreen: function(text: string) {
 				this.setScreen('loading');
 				this.loadingTitle = text || 'Loading, please wait...';
 			},
@@ -203,9 +192,9 @@ document.addEventListener('click', function(e) {
 			/**
 			 * Invoked when a toast option is clicked.
 			 * The tag is passed to our global event emitter.
-			 * @param {string} tag
+			 * @param tag
 			 */
-			handleToastOptionClick: function(func) {
+			handleToastOptionClick: function(func: () => void) {
 				this.toast = null;
 
 				if (typeof func === 'function')
@@ -230,9 +219,9 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the user manually selects a CDN region.
-			 * @param {object} region
+			 * @param region
 			 */
-			setSelectedCDN: function(region) {
+			setSelectedCDN: function(region: any) {
 				this.selectedCDNRegion = region;
 				this.lockCDNRegion = true;
 				this.config.sourceSelectUserRegion = region.tag;
@@ -240,28 +229,28 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Emit an event using the global event emitter.
-			 * @param {string} tag
-			 * @param {object} event
+			 * @param tag
+			 * @param event
 			 */
-			click: function(tag, event, ...params) {
+			click: function(tag: string, event: any, ...params) {
 				if (!event.target.classList.contains('disabled'))
 					core.events.emit('click-' + tag, ...params);
 			},
 
 			/**
 			 * Pass-through function to emit events from reactive markup.
-			 * @param {string} tag
-			 * @param  {...any} params
+			 * @param tag
+			 * @param params
 			 */
-			emit: function(tag, ...params) {
+			emit: function(tag: string | symbol, ...params: any) {
 				core.events.emit(tag, ...params);
 			},
 
 			/**
 			 * Hide the toast bar.
-			 * @param {boolean} userCancel
+			 * @param userCancel
 			 */
-			hideToast: function(userCancel = false) {
+			hideToast: function(userCancel: boolean = false) {
 				core.hideToast(userCancel);
 			},
 
@@ -282,9 +271,9 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Switches to the textures tab and filters for the given file.
-			 * @param {number} fileDataID
+			 * @param fileDataID
 			 */
-			goToTexture: function(fileDataID) {
+			goToTexture: function(fileDataID: number) {
 				const view = core.view;
 				view.setScreen('tab-textures');
 
@@ -306,7 +295,7 @@ document.addEventListener('click', function(e) {
 					// Without fileDataIDs, lookup the texture name and filter by that.
 					const fileName = listfile.getByID(fileDataID);
 					if (fileName !== undefined)
-						view.userInputFilterTextures = listfile.getByID(fileName);
+						view.userInputFilterTextures = fileName;
 					else if (view.config.enableUnknownFiles)
 						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
 				}
@@ -314,24 +303,24 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Copy given data as text to the system clipboard.
-			 * @param {string} data
+			 * @param data
 			 */
-			copyToClipboard: function(data) {
+			copyToClipboard: function(data: string) {
 				nw.Clipboard.get().set(data.toString(), 'text');
 			},
 
 			/**
 			 * Get the external export path for a given file.
-			 * @param {string} file
-			 * @returns {string}
+			 * @param file
+			 * @returns
 			 */
-			getExportPath: function(file) {
+			getExportPath: function(file: string): string {
 				return ExportHelper.getExportPath(file);
 			},
 
 			/**
 			 * Returns a reference to the external links module.
-			 * @returns {ExternalLinks}
+			 * @returns
 			 */
 			getExternalLink: function() {
 				return ExternalLinks;
@@ -339,17 +328,17 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the user selects the models button on an item.
-			 * @param {object} item
+			 * @param item
 			 */
-			viewModels: function(item) {
+			viewModels: function(item: object) {
 				TabItems.viewItemModels(item);
 			},
 
 			/**
 			 * Invoked when the user selects the textures button on an item.
-			 * @param {object} item
+			 * @param item
 			 */
-			viewTextures: function(item) {
+			viewTextures: function(item: object) {
 				TabItems.viewItemTextures(item);
 			}
 		},
@@ -384,9 +373,9 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Returns the default location of the last export manifest.
-			 * @returns {string}}
+			 * @return Default location of the last export manifest
 			 */
-			lastExportPathDefault: function() {
+			lastExportPathDefault: function(): string {
 				return constants.LAST_EXPORT;
 			},
 
@@ -466,10 +455,10 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Invoked when the active loading percentage is changed.
-			 * @param {float} val
+			 * @param val
 			 */
-			loadPct: function(val) {
-				win.setProgressBar(val);
+			loadPct: function(val: number) {
+				nwjsWin.setProgressBar(val);
 			},
 
 			/**
@@ -493,7 +482,7 @@ document.addEventListener('click', function(e) {
 	const manifest = nw.App.manifest;
 	const cpus = os.cpus();
 	log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
-	log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
+	log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, generics.filesize(os.freemem()), generics.filesize(os.totalmem()));
 	log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
 
 	// Load configuration.
@@ -583,7 +572,7 @@ document.addEventListener('click', function(e) {
 	}).catch(() => {
 		// File doesn't exist yet, don't error.
 	}).finally(() => {
-		let updateTimer = -1;
+		let updateTimer: ReturnType<typeof setTimeout>;
 
 		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
@@ -604,7 +593,7 @@ document.addEventListener('click', function(e) {
 	tactKeys.load();
 
 	// Check for updates (without blocking).
-	if (BUILD_RELEASE) {
+	if (!(process.env.NODE_ENV === 'development')) {
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
 				// Update is available, prompt to update. If user declines,
@@ -628,7 +617,7 @@ document.addEventListener('click', function(e) {
 		setImmediate(async () => {
 			const element = document.getElementById('changelog-text');
 
-			if (BUILD_RELEASE) {
+			if (!(process.env.NODE_ENV === 'development')) {
 				try {
 					const text = await fs.readFile('./src/CHANGELOG.md', 'utf8');
 					element.textContent = text;

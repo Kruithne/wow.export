@@ -1,26 +1,26 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const log = require('../log');
-const util = require('util');
-const path = require('path');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const BLPFile = require('../casc/blp');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const JSONWriter = require('../3D/writers/JSONWriter');
-const FileWriter = require('../file-writer');
+import * as core from '../core';
+import * as log from '../log';
+import util from 'node:util';
+import path from 'node:path';
+import * as generics from '../generics';
+import * as listfile from '../casc/listfile';
+import BLPImage from '../casc/blp';
+import BufferWrapper from '../buffer';
+import ExportHelper from '../casc/export-helper';
+import { EncryptionError } from '../casc/blte-reader';
+import JSONWriter from '../3D/writers/JSONWriter';
+import FileWriter from '../file-writer';
 
 let selectedFileDataID = 0;
 
 /**
  * Preview a texture by the given fileDataID.
- * @param {number} fileDataID
- * @param {string} [texture]
+ * @param fileDataID
+ * @param texture
  */
-const previewTextureByID = async (fileDataID, texture = null) => {
+export const previewTextureByID = async (fileDataID: number, texture: string|null = null) => {
 	texture = texture ?? listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID);
 
 	core.view.isBusy++;
@@ -31,7 +31,7 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 		const view = core.view;
 		const file = await core.view.casc.getFile(fileDataID);
 
-		const blp = new BLPFile(file);
+		const blp = new BLPImage(file);
 
 		view.texturePreviewURL = blp.getDataURL(view.config.exportChannelMask);
 		view.texturePreviewWidth = blp.width;
@@ -40,17 +40,17 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 		let info = '';
 
 		switch (blp.encoding) {
-		case 1:
-			info = 'Palette';
-			break;
-		case 2:
-			info = 'Compressed ' + (blp.alphaDepth > 1 ? (blp.alphaEncoding === 7 ? 'DXT5' : 'DXT3') : 'DXT1');
-			break;
-		case 3:
-			info = 'ARGB';
-			break;
-		default:
-			info = 'Unsupported [' + blp.encoding + ']';
+			case 1:
+				info = 'Palette';
+				break;
+			case 2:
+				info = 'Compressed ' + (blp.alphaDepth > 1 ? (blp.alphaEncoding === 7 ? 'DXT5' : 'DXT3') : 'DXT1');
+				break;
+			case 3:
+				info = 'ARGB';
+				break;
+			default:
+				info = 'Unsupported [' + blp.encoding + ']';
 		}
 
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
@@ -74,19 +74,19 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
- * @param {number|string} input
- * @returns {object}
+ * @param input
+ * @returns
  */
-const getFileInfoPair = (input) => {
-	let fileName;
-	let fileDataID;
+const getFileInfoPair = (input: number | string): object => {
+	let fileName: string;
+	let fileDataID: number;
 
 	if (typeof input === 'number') {
 		fileDataID = input;
 		fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
 	} else {
 		fileName = listfile.stripFileEntry(input);
-		fileDataID = listfile.getByFilename(fileName);
+		fileDataID = listfile.getByFilename(fileName) as number;
 	}
 
 	return { fileName, fileDataID };
@@ -96,10 +96,10 @@ const exportFiles = async (files, isLocal = false) => {
 	const format = core.view.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
-		const { fileName, fileDataID } = getFileInfoPair(files[0]);
+		const { fileName, fileDataID }: any = getFileInfoPair(files[0]);
 
 		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
-		const blp = new BLPFile(data);
+		const blp = new BLPImage(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
 
 		const clipboard = nw.Clipboard.get();
@@ -119,12 +119,14 @@ const exportFiles = async (files, isLocal = false) => {
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
 
-	for (let fileEntry of files) {
+	for (const fileEntry of files) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
 
-		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
+		const filePair: any = getFileInfoPair(fileEntry);
+		const fileName = filePair.fileName;
+		const fileDataID = filePair.fileDataID;
 
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
@@ -140,7 +142,7 @@ const exportFiles = async (files, isLocal = false) => {
 					exportPaths.writeLine('BLP:' + exportPath);
 				} else {
 					// Export as PNG.
-					const blp = new BLPFile(data);
+					const blp = new BLPImage(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
 					exportPaths.writeLine('PNG:' + exportPath);
 
@@ -195,7 +197,7 @@ core.registerLoadFunc(async () => {
 		if (first && !core.view.isBusy) {
 			const fileDataID = listfile.getByFilename(first);
 			if (selectedFileDataID !== fileDataID)
-				previewTextureByID(fileDataID);
+				previewTextureByID(fileDataID as number);
 		}
 	});
 
@@ -220,5 +222,3 @@ core.registerLoadFunc(async () => {
 			previewTextureByID(selectedFileDataID);
 	});
 });
-
-module.exports = { previewTextureByID };

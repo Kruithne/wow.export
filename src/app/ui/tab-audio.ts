@@ -1,22 +1,23 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const log = require('../log');
-const path = require('path');
-const util = require('util');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
+import * as core from '../core';
+import * as log from '../log';
+import path from 'node:path';
+import util from 'node:util';
+import * as generics from '../generics';
+import * as listfile from '../casc/listfile';
+import ExportHelper from '../casc/export-helper';
+import { EncryptionError } from '../casc/blte-reader';
+import BufferWrapper from '../buffer';
 
 const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
 const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
 const AUDIO_TYPE_MP3 = Symbol('AudioTypeMP3');
 
-let selectedFile = null;
+let selectedFile: string;
 let isTrackLoaded = false;
 
-let audioNode = null;
+let audioNode: any;
 let data;
 
 /**
@@ -40,10 +41,10 @@ const updateSeek = () => {
 
 /**
  * Detect the file type of a given audio container.
- * @param {BufferWrapper} data
+ * @param data
  * @returns
  */
-const detectFileType = (data) => {
+const detectFileType = (data: BufferWrapper) => {
 	if (data.startsWith('OggS')) {
 		// File magic matches Ogg container format.
 		//selectedFile = ExportHelper.replaceExtension(selectedFile, '.ogg');

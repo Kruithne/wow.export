@@ -9,6 +9,7 @@ import * as listfile from './listfile';
 
 import * as VersionConfig from './version-config';
 import * as CDNConfig from './cdn-config';
+import BufferWrapper from '../buffer';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';
 
@@ -17,6 +18,13 @@ import CASC from './casc-source';
 const EMPTY_HASH = '00000000000000000000000000000000';
 
 export default class CASCRemote extends CASC {
+	builds: Array<any>; // NIT: Make type for builds
+	build: any;
+	archives: Map<string, any>;
+	host: string;
+	region: string;
+	cache: BuildCache;
+
 	/**
 	 * Create a new CASC source using a Blizzard CDN.
 	 * @param region - Region tag (eu, us, etc).
@@ -51,9 +59,9 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Download the remote version config for a specific product.
-	 * @param {string} product
+	 * @param product
 	 */
-	async getVersionConfig(product) {
+	async getVersionConfig(product: string) {
 		const config = await this.getConfig(product, constants.PATCH.VERSION_CONFIG);
 		config.forEach(entry => entry.Product = product);
 		return config;
@@ -61,10 +69,10 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a version config file.
-	 * @param {string} product
-	 * @param {string} file
+	 * @param product
+	 * @param file
 	 */
-	async getConfig(product, file) {
+	async getConfig(product: string, file: string) {
 		const url = this.host + product + file;
 		const res = await generics.get(url);
 
@@ -76,9 +84,9 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a CDN config file.
-	 * @param {string} key
+	 * @param key
 	 */
-	async getCDNConfig(key) {
+	async getCDNConfig(key: string) {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
 		const res = await generics.get(url);
 
@@ -90,18 +98,18 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID
-	 * @param {boolean} [partialDecryption=false]
-	 * @param {boolean} [suppressLog=false]
-	 * @param {boolean} [supportFallback=true]
-	 * @param {boolean} [forceFallback=false]
-	 * @param {string} [contentKey=null]
+	 * @param fileDataID
+	 * @param partialDecryption
+	 * @param suppressLog
+	 * @param supportFallback
+	 * @param forceFallback
+	 * @param contentKey
 	 */
 	// TODO: This could do with being an interface.
 	// eslint-disable-next-line no-unused-vars
 	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
-			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID) as string);
 
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
@@ -136,7 +144,7 @@ export default class CASCRemote extends CASC {
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
 	getProductList() {
-		const products = [];
+		const products: string[] = [];
 		for (const entry of this.builds) {
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s %s', product.title, entry.VersionsName));
@@ -148,10 +156,10 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Preload requirements for reading remote files without initializing the
 	 * entire instance. Used by local CASC install for CDN fallback.
-	 * @param {number} buildIndex
-	 * @param {Object} cache
+	 * @param buildIndex
+	 * @param cache
 	 */
-	async preload(buildIndex, cache = null) {
+	async preload(buildIndex: number, cache?: BuildCache) {
 		this.build = this.builds[buildIndex];
 		log.write('Preloading remote CASC build: %o', this.build);
 
@@ -264,7 +272,7 @@ export default class CASCRemote extends CASC {
 		await generics.queue(archiveKeys, key => this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
-		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
+		const archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
 		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
 	}
 
@@ -289,9 +297,9 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Load and parse the contents of an archive index.
 	 * Will use global cache and download if missing.
-	 * @param {string} key
+	 * @param key
 	 */
-	async parseArchiveIndex(key) {
+	async parseArchiveIndex(key: string) {
 		const fileName = key + '.index';
 
 		let data = await this.cache.getFile(fileName, constants.CACHE.DIR_INDEXES);
@@ -303,7 +311,7 @@ export default class CASCRemote extends CASC {
 
 		// Skip to the end of the archive to find the count.
 		data.seek(-12);
-		const count = data.readInt32LE();
+		const count = data.readInt32LE() as number;
 
 		if (count * 24 > data.byteLength)
 			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
@@ -332,12 +340,12 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Download a partial chunk of a data file from the CDN.
-	 * @param {string} file
-	 * @param {number} ofs
-	 * @param {number} len
-	 * @returns {BufferWrapper}
+	 * @param file
+	 * @param ofs
+	 * @param len
+	 * @returns
 	 */
-	async getDataFilePartial(file, ofs, len) {
+	async getDataFilePartial(file: string, ofs: number, len: number): Promise<BufferWrapper> {
 		return await generics.downloadFile(this.host + 'data/' + file, null, ofs, len);
 	}
 
@@ -394,25 +402,25 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Format a CDN key for use in CDN requests.
 	 * 49299eae4e3a195953764bb4adb3c91f -> 49/29/49299eae4e3a195953764bb4adb3c91f
-	 * @param {string} key
+	 * @param key
 	 */
-	formatCDNKey(key) {
+	formatCDNKey(key: string) {
 		return key.substring(0, 2) + '/' + key.substring(2, 4) + '/' + key;
 	}
 
 	/**
 	 * Get the current build ID.
-	 * @returns {string}
+	 * @returns
 	 */
-	getBuildName() {
+	getBuildName(): string {
 		return this.build.VersionsName;
 	}
 
 	/**
 	 * Returns the build configuration key.
-	 * @returns {string}
+	 * @returns
 	 */
-	getBuildKey() {
+	getBuildKey(): string {
 		return this.build.BuildConfig;
 	}
 }

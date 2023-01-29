@@ -88,7 +88,7 @@ export const write = (...parameters: (string | number)[]) : void => {
 	}
 
 	// Mirror output to debugger.
-	if (!BUILD_RELEASE)
+	if (process.env.NODE_ENV === 'development')
 		console.log(line);
 };
 
@@ -97,7 +97,7 @@ export const write = (...parameters: (string | number)[]) : void => {
  * This is defined as a global as it is requested during
  * an application crash where modules may not be loaded.
  */
-getErrorDump = async () => { // NIT: Help what to do
+export const getErrorDump = async () => { // NIT: Help what to do
 	try {
 		return await fs.promises.readFile(constants.RUNTIME_LOG, 'utf8');
 	} catch (e) {

@@ -3,7 +3,7 @@
 import EventEmitter from 'node:events';
 import { redraw } from './generics';
 
-let toastTimer = -1; // Used by setToast() for TTL toast prompts.
+let toastTimer: number = -1; // Used by setToast() for TTL toast prompts.
 
 // core.events is a global event handler used for dispatching
 // events from any point in the system, to any other point.
@@ -23,7 +23,7 @@ let loaders = [];
 export const view: any = { // NIT: Defined this as any for now to make things error less.
 	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-	isDev: !BUILD_RELEASE, // True if in development environment.
+	isDev: process.env.NODE_ENV === 'development', // True if in development environment.
 	loadingProgress: '', // Sets the progress text for the loading screen.
 	loadingTitle: '', // Sets the title text for the loading screen.
 	loadPct: -1, // Controls active loading bar percentage.
@@ -179,7 +179,7 @@ export const createProgress = (segments: number = 1): any => { // NIT: Where doe
  * Hide the currently active toast prompt.
  * @param userCancel
  */
-const hideToast = (userCancel: boolean = false) => {
+export const hideToast = (userCancel: boolean = false) => {
 	// Cancel outstanding toast expiry timer.
 	if (toastTimer > -1) {
 		clearTimeout(toastTimer);
@@ -200,7 +200,7 @@ const hideToast = (userCancel: boolean = false) => {
  * @param ttl - Time in milliseconds before removing the toast.
  * @param closable - If true, toast can manually be closed.
  */
-export const setToast = (toastType: string, message: string, options: object = null, ttl: number = 10000, closable: boolean = true) => {
+export const setToast = (toastType: string, message: string, options: object|null = null, ttl: number = 10000, closable: boolean = true) => {
 	view.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.
@@ -208,7 +208,8 @@ export const setToast = (toastType: string, message: string, options: object = n
 
 	// Create a timer to remove this toast.
 	if (ttl > -1)
-		toastTimer = setTimeout(hideToast, ttl);
+		// toastTimer = setTimeout(hideToast, ttl); // NIT: This assignment seems bogus? Commented out and replaced without assignment below.
+		setTimeout(hideToast, ttl);
 };
 
 /**

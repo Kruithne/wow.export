@@ -44,7 +44,7 @@ export const loadListfile = async (buildConfig: string, cache: BuildCache, rootE
 	if (url.startsWith('http')) {
 		// Listfile URL is http, check for cache/updates.
 		let requireDownload = false;
-		const cached = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+		const cached = await cache.getFile(constants.CACHE.BUILD_LISTFILE, null);
 
 		if (cache.meta.lastListfileUpdate) {
 			let ttl = Number(core.view.config.listfileCacheRefresh) || 0;

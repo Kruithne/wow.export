@@ -9,7 +9,7 @@ const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
 const EMPTY_HASH = '00000000000000000000000000000000';
 
-class EncryptionError extends Error {
+export class EncryptionError extends Error {
 	key: string;
 	constructor(key: string) {
 		super('[BLTE] Missing decryption key ' + key);
@@ -20,7 +20,7 @@ class EncryptionError extends Error {
 	}
 }
 
-class BLTEIntegrityError extends Error {
+export class BLTEIntegrityError extends Error {
 	constructor(expected: string, actual: string) {
 		super(util.format('[BLTE] Invalid block data hash. Expected %s, got %s!', expected, actual));
 

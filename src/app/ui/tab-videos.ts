@@ -1,11 +1,11 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const core = require('../core');
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
+import * as core from '../core';
+import * as log from '../log';
+import ExportHelper from '../casc/export-helper';
+import { BLTEIntegrityError } from '../casc/blte-reader';
+import * as generics from '../generics';
+import * as listfile from '../casc/listfile';
 
 core.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.

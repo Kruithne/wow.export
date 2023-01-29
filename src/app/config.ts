@@ -1,15 +1,15 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const fsp = require('fs').promises;
-const constants = require('./constants');
-const generics = require('./generics');
-const tactKeys = require('./casc/tact-keys');
-const core = require('./core');
-const log = require('./log');
+import fs from 'node:fs/promises';
+import constants from './constants';
+import * as generics from './generics';
+import * as tactKeys from './casc/tact-keys';
+import * as core from './core';
+import * as log from './log';
 
 let isSaving = false;
 let isQueued = false;
-let defaultConfig = {};
+let defaultConfig: any = {};
 
 /**
  * Clone one config object into another.
@@ -32,7 +32,7 @@ const copyConfig = (src, target) => {
 /**
  * Load configuration from disk.
  */
-const load = async () => {
+export const load = async () => {
 	defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
 	const userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
 
@@ -51,7 +51,7 @@ const load = async () => {
  * Reset a configuration key to default.
  * @param {string} key
  */
-const resetToDefault = (key) => {
+export const resetToDefault = (key) => {
 	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
 		core.view.config[key] = defaultConfig[key];
 };
@@ -59,7 +59,7 @@ const resetToDefault = (key) => {
 /**
  * Reset all configuration to default.
  */
-const resetAllToDefault = () => {
+export const resetAllToDefault = () => {
 	// Use JSON parse/stringify to ensure deep non-referenced clone.
 	core.view.config = JSON.parse(JSON.stringify(defaultConfig));
 };
@@ -91,7 +91,7 @@ const doSave = async () => {
 	}
 
 	const out = JSON.stringify(configSave, null, '\t');
-	await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
+	await fs.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
 
 	// If another save was attempted during this one, re-save.
 	if (isQueued) {
@@ -150,5 +150,3 @@ core.events.on('click-config-reset', () => {
 	// Use JSON parse/stringify to ensure deep non-referenced clone.
 	core.view.configEdit = JSON.parse(JSON.stringify(defaultConfig));
 });
-
-module.exports = { load, resetToDefault, resetAllToDefault };

@@ -24,7 +24,7 @@ export const initializeTextureFileData = async () : Promise<void> => {
 		if (textureFileDataRow.UsageType !== 0)
 			continue;
 
-		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID, textureFileDataID);
+		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID as number, textureFileDataID);
 	}
 	log.write('Loaded texture mapping for %d materials', matResIDToFileDataID.size);
 };

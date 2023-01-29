@@ -1,16 +1,17 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../core');
-const constants = require('../constants');
-const generics = require('../generics');
-const log = require('../log');
-const ExternalLinks = require('../external-links');
+import util from 'node:util';
+import * as core from '../core';
+import * as constants from '../constants';
+import * as generics from '../generics';
+import * as log from '../log';
+import * as ExternalLinks from '../external-links';
 
-const CASCLocal = require('../casc/casc-source-local');
-const CASCRemote = require('../casc/casc-source-remote');
+import CASC from '../casc/casc-source';
+import CASCLocal from '../casc/casc-source-local';
+import CASCRemote from '../casc/casc-source-remote';
 
-let cascSource = null;
+let cascSource: CASC;
 
 const loadInstall = (index) => {
 	core.block(async () => {
@@ -47,7 +48,7 @@ const loadInstall = (index) => {
 			log.write('Failed to load CASC: %o', e);
 			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => log.openRuntimeLog(),
-				'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
+				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
 			core.view.setScreen('source-select');
 		}
@@ -161,7 +162,7 @@ core.events.once('screen-source-select', async () => {
 		if (core.view.lockCDNRegion)
 			return;
 
-		let selectedRegion = core.view.selectedCDNRegion;
+		const selectedRegion = core.view.selectedCDNRegion;
 		for (const region of regions) {
 			// Skip regions that don't have a valid ping.
 			if (region.delay === null || region.delay < 0)

@@ -33,7 +33,7 @@ function unpackColour(block: Array<number>, index: number, ofs: number, colour: 
 	return value;
 }
 
-export class BLPImage {
+export default class BLPImage {
 	data: BufferWrapper;
 	encoding: number;
 	alphaDepth: number;
