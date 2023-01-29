@@ -8,7 +8,7 @@ import constants from '../constants';
 import * as listfile from './listfile';
 
 import * as VersionConfig from './version-config';
-import * as CDNConfig from './config-reader';
+import * as ConfigReader from './config-reader';
 import BufferWrapper from '../buffer';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';
@@ -79,21 +79,21 @@ export default class CASCRemote extends CASC {
 		if (res.statusCode !== 200)
 			throw new Error(util.format('HTTP %d from remote CASC endpoint: %s', res.statusCode, url));
 
-		return VersionConfig(await generics.consumeUTF8Stream(res));
+		return VersionConfig.parse(await generics.consumeUTF8Stream(res));
 	}
 
 	/**
 	 * Download and parse a CDN config file.
 	 * @param key
 	 */
-	async getCDNConfig(key: string) {
+	async getCDNConfig(key: string): Promise<any> {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
 		const res = await generics.get(url);
 
 		if (res.statusCode !== 200)
 			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d)', key, res.statusCode));
 
-		return CDNConfig(await generics.consumeUTF8Stream(res));
+		return ConfigReader.parse(await generics.consumeUTF8Stream(res));
 	}
 
 	/**
@@ -269,7 +269,7 @@ export default class CASCRemote extends CASC {
 		if (this.progress)
 			await this.progress.step('Loading archives');
 
-		await generics.queue(archiveKeys, key => this.parseArchiveIndex(key), 50);
+		await generics.queue(archiveKeys, key => this.parseArchiveIndex(key as string), 50);
 
 		// Quick and dirty way to get the total archive size using config.
 		const archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
@@ -346,7 +346,7 @@ export default class CASCRemote extends CASC {
 	 * @returns
 	 */
 	async getDataFilePartial(file: string, ofs: number, len: number): Promise<BufferWrapper> {
-		return await generics.downloadFile(this.host + 'data/' + file, null, ofs, len);
+		return await generics.downloadFile(this.host + 'data/' + file, undefined, ofs, len);
 	}
 
 	/**
@@ -374,9 +374,9 @@ export default class CASCRemote extends CASC {
 
 		log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
-		let bestHost = null;
+		let bestHost: any = null;
 		const hosts = this.serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
-		const hostPings = [];
+		const hostPings: Array<Promise<void>> = [];
 
 		for (const host of hosts) {
 			hostPings.push(generics.ping(host).then(ping => {

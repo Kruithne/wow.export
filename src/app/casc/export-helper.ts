@@ -8,6 +8,12 @@ import * as core from '../core';
 const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
 //const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
 
+export type ExportTexture = {
+	matPathRelative: string;
+	matPath: string;
+	matName: string;
+}
+
 /**
  * ExportHelper is a unified way to provide feedback to the user and to
  * the logger about a generic export progress.

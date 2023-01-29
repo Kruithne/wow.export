@@ -1,26 +1,40 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const fsp = require('fs').promises;
-const path = require('path');
-const generics = require('../../generics');
-const ExportHelper = require('../../casc/export-helper');
-const BufferWrapper = require('../../buffer');
-const BoneMapper = require('../BoneMapper');
+import util from 'node:util';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import * as generics from '../../generics';
+import ExportHelper, { ExportTexture } from '../../casc/export-helper';
+import BufferWrapper from '../../buffer';
+import * as BoneMapper from '../BoneMapper';
 
-class GLTFWriter {
+type GLTFMesh = {
+	name: string;
+	triangles: Array<number>;
+	matName: string;
+}
+
+export default class GLTFWriter {
+	out: string;
+	name: string;
+	vertices: Array<number> = [];
+	normals: Array<number> = [];
+	uvs: Array<number> = []; // TODO: GLTF writer does not support multiple UVs?
+	boneWeights: Array<number> = [];
+	boneIndices: Array<number> = [];
+	bones: Array<M2Bone> = [];
+	meshes: Array<GLTFMesh> = [];
+	textures: Map<number, ExportTexture>;
+
 	/**
 	 * Construct a new GLTF writer instance.
-	 * @param {string} out
-	 * @param {string} name
+	 * @param out
+	 * @param name
 	 */
-	constructor(out, name) {
+	constructor(out: string, name: string) {
 		this.out = out;
 		this.name = name;
 
-		this.vertices = [];
-		this.normals = [];
-		this.uvs = [];
 		this.boneWeights = [];
 		this.boneIndices = [];
 		this.bones = [];
@@ -31,77 +45,77 @@ class GLTFWriter {
 
 	/**
 	 * Set the texture map used for this writer.
-	 * @param {Map} textures
+	 * @param textures
 	 */
-	setTextureMap(textures) {
+	setTextureMap(textures: Map<number, ExportTexture>): void {
 		this.textures = textures;
 	}
 
 	/**
 	 * Set the bones array for this writer.
-	 * @param {Array} bones
+	 * @param bones
 	 */
-	setBonesArray(bones) {
+	setBonesArray(bones: Array<M2Bone>): void {
 		this.bones = bones;
 	}
 
 	/**
 	 * Set the vertices array for this writer.
-	 * @param {Array} vertices
+	 * @param vertices
 	 */
-	setVerticesArray(vertices) {
+	setVerticesArray(vertices: Array<number>): void {
 		this.vertices = vertices;
 	}
 
 	/**
 	 * Set the normals array for this writer.
-	 * @param {Array} normals
+	 * @param normals
 	 */
-	setNormalArray(normals) {
+	setNormalArray(normals: Array<number>): void {
 		this.normals = normals;
 	}
 
 	/**
 	 * Set the UV array for this writer.
-	 * @param {Array} uvs
+	 * @param uvs
 	 */
-	setUVArray(uvs) {
+	setUVArray(uvs: Array<number>): void {
 		this.uvs = uvs;
 	}
 
 	/**
 	 * Set the bone weights array for this writer.
-	 * @param {Array} boneWeights
+	 * @param boneWeights
 	 */
-	setBoneWeightArray(boneWeights) {
+	setBoneWeightArray(boneWeights: Array<number>): void {
 		this.boneWeights = boneWeights;
 	}
 
 	/**
 	 * Set the bone indicies array for this writer.
-	 * @param {Array} boneIndices
+	 * @param boneIndices
 	 */
-	setBoneIndiceArray(boneIndices) {
+	setBoneIndiceArray(boneIndices: Array<number>): void {
 		this.boneIndices = boneIndices;
 	}
 
 	/**
 	 * Add a mesh to this writer.
-	 * @param {string} name
-	 * @param {Array} triangles
-	 * @param {string} matName
+	 * @param name
+	 * @param triangles
+	 * @param matName
 	 */
-	addMesh(name, triangles, matName) {
-		this.meshes.push({ name, triangles, matName });
+	addMesh(name: string, triangles: Array<number>, matName: string): void {
+		this.meshes.push({ name: name, triangles: triangles, matName: matName });
 	}
 
 	/**
 	 * Calculate the minimum/maximum values of an array buffer.
-	 * @param {Array} values
-	 * @param {number} stride
-	 * @param {object} target
+	 * @param values
+	 * @param stride
+	 * @param target
 	 */
-	calculateMinMax(values, stride, target) {
+	calculateMinMax(values: Array<number>, stride: number, target: object): void {
 		const min = target.min = Array(stride);
 		const max = target.max = Array(stride);
 
@@ -389,9 +403,7 @@ class GLTFWriter {
 		}
 
 		await generics.createDirectory(path.dirname(this.out));
-		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
+		await fs.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
 		await bin.writeToFile(outBIN);
 	}
 }
-
-module.exports = GLTFWriter;

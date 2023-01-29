@@ -11,7 +11,7 @@ import BufferWrapper from '../buffer';
 import * as listfile from './listfile';
 
 import * as VersionConfig from './version-config';
-import * as CDNConfig from './config-reader';
+import * as ConfigReader from './config-reader';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';
 
@@ -53,7 +53,7 @@ export default class CASCLocal extends CASC {
 		log.write('Initializing local CASC installation: %s', this.dir);
 
 		const buildInfo = path.join(this.dir, constants.BUILD.MANIFEST);
-		const config = VersionConfig(await fs.readFile(buildInfo, 'utf8'));
+		const config = VersionConfig.parse(await fs.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
 		this.builds = config.filter((entry: { Product: string; }) => constants.PRODUCTS.some(e => e.product === entry.Product));
@@ -84,7 +84,7 @@ export default class CASCLocal extends CASC {
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
 	getProductList() {
-		const products = [];
+		const products: string[] = [];
 		for (const entry of this.builds) {
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version));
@@ -124,8 +124,8 @@ export default class CASCLocal extends CASC {
 	async loadConfigs() {
 		// Load and parse BuildConfig from disk.
 		await this.progress.step('Fetching build configurations');
-		this.buildConfig = CDNConfig(await fs.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
-		this.cdnConfig = CDNConfig(await fs.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
+		this.buildConfig = ConfigReader.parse(await fs.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
+		this.cdnConfig = ConfigReader.parse(await fs.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
 
 		log.write('BuildConfig: %o', this.buildConfig);
 		log.write('CDNConfig: %o', this.cdnConfig);

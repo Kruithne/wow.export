@@ -51,7 +51,7 @@ const GEOSET_GROUPS = {
  * @param {number} index
  * @param {number} id
  */
-const getGeosetName = (index, id) => {
+export const getGeosetName = (index: number, id: number): string => {
 	if (id === 0)
 		return 'Geoset' + index;
 
@@ -66,13 +66,11 @@ const getGeosetName = (index, id) => {
 
 /**
  * Map geoset names for subMeshes.
- * @param {Array} geosets
+ * @param geosets
  */
-const map = async (geosets) => {
+export const map = async (geosets: Array<any>): Promise<void> => {
 	for (let i = 0, n = geosets.length; i < n; i++) {
 		const geoset = geosets[i];
 		geoset.label = getGeosetName(i, geoset.id);
 	}
 };
-
-module.exports = { map, getGeosetName };

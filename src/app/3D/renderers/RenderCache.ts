@@ -1,34 +1,36 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const log = require('../../log');
+import * as log from '../../log';
 
 class RenderCache {
-	constructor() {
-		this.users = new WeakMap();
-		this.textures = new WeakMap();
-	}
+	users: WeakMap<THREE.Material, number> = new WeakMap();
+	textures: WeakMap<THREE.Material, THREE.Texture> = new WeakMap();
 
 	/**
 	 * Register a material to the cache.
-	 * @param {THREE.material} material
-	 * @param {THREE.Texture} tex
+	 * @param material
+	 * @param tex
 	 */
-	register(material, tex) {
+	register(material: THREE.Material, tex: THREE.Texture): void {
 		this.users.set(material, 0);
 		this.textures.set(material, tex);
 	}
 
 	/**
 	 * Potentially retire the provided materials, if no users remain.
-	 * @param {THREE.material} material
+	 * @param material
 	 */
-	retire(...materials) {
+	retire(...materials: THREE.Material[]): void {
 		for (const material of materials) {
 			if (!material)
 				continue;
 
-			let users = this.users.get(material) - 1;
-			if (users < 1) {
+			const currentUsers = this.users.get(material);
+			if (!currentUsers)
+				continue;
+
+			const newUsers = currentUsers - 1;
+			if (newUsers < 1) {
 				// No more users, retire the material.
 				log.write('Disposing of abandoned material %s', material.uuid);
 
@@ -39,17 +41,20 @@ class RenderCache {
 				this.textures.delete(material);
 			} else {
 				// Material still in use, do not retire yet.
-				this.users.set(material, users);
+				this.users.set(material, newUsers);
 			}
 		}
 	}
 
 	/**
 	 * Add another user for the provided material.
-	 * @param {THREE.material} material
+	 * @param material
 	 */
-	addUser(material) {
-		this.users.set(material, this.users.get(material) + 1);
+	addUser(material: THREE.Material): void {
+		const currentUsers = this.users.get(material);
+		if (!currentUsers)
+			return;
+		this.users.set(material, currentUsers + 1);
 	}
 }
 

@@ -1,41 +1,48 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const path = require('path');
-const generics = require('../../generics');
-const FileWriter = require('../../file-writer');
-const core = require('../../core');
+import path from 'node:path';
+import * as generics from '../../generics';
+import * as core from '../../core';
+import FileWriter from '../../file-writer';
 
-class MTLWriter {
+type MTLMaterial = {
+	name: string;
+	file: string;
+}
+
+export default class MTLWriter {
+	out: string;
+	materials: Array<MTLMaterial> = [];
+
 	/**
 	 * Construct a new MTLWriter instance.
-	 * @param {string} out
+	 * @param out
 	 */
-	constructor(out) {
+	constructor(out: string) {
 		this.out = out;
-		this.materials = [];
 	}
 
 	/**
 	 * Add a material to this material library.
-	 * @param {string} name
-	 * @param {string} file
+	 * @param name
+	 * @param file
 	 */
-	addMaterial(name, file) {
-		this.materials.push({ name, file });
+	addMaterial(name: string, file: string): void {
+		this.materials.push({ name: name, file: file });
 	}
 
 	/**
 	 * Returns true if this material library is empty.
 	 */
-	get isEmpty() {
+	get isEmpty(): boolean {
 		return this.materials.length === 0;
 	}
 
 	/**
 	 * Write the material library to disk.
-	 * @param {boolean} overwrite
+	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite: boolean = true): Promise<void> {
 		// Don't bother writing an empty material library.
 		if (this.isEmpty)
 			return;
@@ -64,5 +71,3 @@ class MTLWriter {
 		await writer.close();
 	}
 }
-
-module.exports = MTLWriter;

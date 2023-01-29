@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 import * as core from '../core';
-import * as constants from '../constants';
+import constants from '../constants';
 import * as generics from '../generics';
 import * as log from '../log';
 import * as ExternalLinks from '../external-links';

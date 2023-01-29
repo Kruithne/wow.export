@@ -87,11 +87,9 @@ const BONE_NAMES = {
  * Get the label for a bone.
  * @param {number} index
  */
-const getBoneName = (index) => {
+export const getBoneName = (index) => {
 	if (index in BONE_NAMES)
 		return BONE_NAMES[index];
 	else
 		return 'Bone' + index;
 };
-
-module.exports = { getBoneName };

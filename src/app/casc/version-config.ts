@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export default (data: string) => {
+export const parse = (data: string) => {
 	const entries: Array<string[]> = [];
 	const lines = data.split(/\r?\n/);
 

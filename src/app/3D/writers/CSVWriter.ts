@@ -1,41 +1,43 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const generics = require('../../generics');
-const path = require('path');
-const FileWriter = require('../../file-writer');
+import path from 'node:path';
+import * as generics from '../../generics';
+import FileWriter from '../../file-writer';
 
-class CSVWriter {
+export default class CSVWriter {
+	out: string;
+	fields: string[];
+	rows: object[];
+
 	/**
 	 * Construct a new CSVWriter instance.
 	 * @param {string} out
 	 */
-	constructor(out) {
+	constructor(out: string) {
 		this.out = out;
-		this.fields = [];
-		this.rows = [];
 	}
 
 	/**
 	 * Add fields to this CSV.
-	 * @param  {...string} fields
+	 * @param fields
 	 */
-	addField(...fields) {
+	addField(...fields: string[]): void {
 		this.fields.push(...fields);
 	}
 
 	/**
 	 * Add a row to this CSV.
-	 * @param {object} row
+	 * @param row
 	 */
-	addRow(row) {
+	addRow(row: object): void {
 		this.rows.push(row);
 	}
 
 	/**
 	 * Write the CSV to disk.
-	 * @param {boolean} overwrite
+	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite: boolean = true): Promise<void> {
 		// Don't bother writing an empty CSV file.
 		if (this.rows.length === 0)
 			return;
@@ -63,5 +65,3 @@ class CSVWriter {
 		await writer.close();
 	}
 }
-
-module.exports = CSVWriter;

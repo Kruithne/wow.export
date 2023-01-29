@@ -1,20 +1,29 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-const util = require('util');
-const listfile = require('../casc/listfile');
-const core = require('../core');
+import util from 'node:util';
+import * as listfile from '../casc/listfile';
+import * as core from '../core';
 
 const MAGIC_SKIN = 0x4E494B53;
 
-class Skin {
-	constructor(fileDataID) {
+export default class Skin {
+	fileDataID: number;
+	fileName: string;
+	isLoaded: boolean = false;
+	bones: number;
+	indices: number[];
+	triangles: number[];
+	properties: number[];
+	subMeshes: Array<any>; // TODO: Make custom type
+	textureUnits: Array<any>; // TODO: Make custom type
+
+	constructor(fileDataID: number) {
 		this.fileDataID = fileDataID;
 		this.fileName = listfile.getByIDOrUnknown(fileDataID, '.skin');
-		this.isLoaded = false;
 	}
 
-	async load() {
+	async load(): Promise<void> {
 		try {
 			const data = await core.view.casc.getFile(this.fileDataID);
 
@@ -96,5 +105,3 @@ class Skin {
 		}
 	}
 }
-
-module.exports = Skin;

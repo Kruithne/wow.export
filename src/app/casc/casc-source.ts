@@ -24,17 +24,19 @@ import BuildCache from './build-cache';
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
-export default abstract class CASC {
+export default class CASC {
 	locale: LocaleFlags;
 	isRemote: boolean;
 	unhookConfig: () => void;
 	encodingSizes: Map<string, number> = new Map();
 	encodingKeys: Map<string, string> = new Map();
-	progress: any;
+	progress: any; // NIT: No idea what type this is
 	rootEntries: Map<number, any> = new Map();
 	rootTypes: Array<any>;
 	cache: BuildCache;
 	buildConfig: any;
+	cdnConfig: any;
+	serverConfig: any;
 
 	constructor(isRemote = false) {
 		this.rootTypes = [];

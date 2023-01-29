@@ -1,81 +1,90 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const path = require('path');
-const constants = require('../../constants');
-const generics = require('../../generics');
-const FileWriter = require('../../file-writer');
+import path from 'node:path';
+import * as generics from '../../generics';
+import constants from '../../constants';
+import FileWriter from '../../file-writer';
 
-class OBJWriter {
+type OBJMesh = {
+	name: string;
+	triangles: Array<number>;
+	matName: string;
+}
+
+export default class OBJWriter {
+	out: string;
+	name: string;
+	verts: Array<number> = [];
+	normals: Array<number> = [];
+	uvs: Array<number[]> = [];
+	meshes: Array<OBJMesh> = [];
+	mtl: string;
+
 	/**
 	 * Construct a new OBJWriter instance.
 	 * @param {string} out Output path to write to.
 	 */
-	constructor(out) {
+	constructor(out: string) {
 		this.out = out;
 
-		this.verts = [];
-		this.normals = [];
-		this.uvs = [];
-
-		this.meshes = [];
 		this.name = 'Mesh';
 	}
 
 	/**
 	 * Set the name of the material library.
-	 * @param {string} name
+	 * @param name
 	 */
-	setMaterialLibrary(name) {
+	setMaterialLibrary(name: string) {
 		this.mtl = name;
 	}
 
 	/**
 	 * Set the name of this model.
-	 * @param {string} name
+	 * @param name
 	 */
-	setName(name) {
+	setName(name: string) {
 		this.name = name;
 	}
 
 	/**
 	 * Set the vertex array for this writer.
-	 * @param {Array} verts
+	 * @param verts
 	 */
-	setVertArray(verts) {
+	setVertArray(verts: number[]) {
 		this.verts = verts;
 	}
 
 	/**
 	 * Set the normals array for this writer.
-	 * @param {Array} normals
+	 * @param normals
 	 */
-	setNormalArray(normals) {
+	setNormalArray(normals: Array<number>) {
 		this.normals = normals;
 	}
 
 	/**
 	 * Add a UV array for this writer.
-	 * @param {Array} uv
+	 * @param uv
 	 */
-	addUVArray(uv) {
+	addUVArray(uv: Array<number>) {
 		this.uvs.push(uv);
 	}
 
 	/**
 	 * Add a mesh to this writer.
-	 * @param {string} name
-	 * @param {Array} triangles
-	 * @param {string} matName
+	 * @param name
+	 * @param triangles
+	 * @param matName
 	 */
-	addMesh(name, triangles, matName) {
-		this.meshes.push({ name, triangles, matName });
+	addMesh(name: string, triangles: Array<number>, matName: string) {
+		this.meshes.push({ name: name, triangles: triangles, matName: matName });
 	}
 
 	/**
 	 * Write the OBJ file (and associated MTLs).
-	 * @param {boolean} overwrite
+	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite: boolean = true) {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
@@ -164,5 +173,3 @@ class OBJWriter {
 		await writer.close();
 	}
 }
-
-module.exports = OBJWriter;
