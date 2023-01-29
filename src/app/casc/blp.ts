@@ -403,12 +403,19 @@ export default class BLPImage {
 			const buf = BufferWrapper.alloc(this.scaledLength * 4);
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const colour = this.palette[this.rawData[i]];
+				// NIT: Original code below, used to feed a number[] to writeUInt8 which I'm not sure was supported. Made it 4x separate calls for now.
+				/*
 				buf.writeUInt8([
 					(mask & 0b1) ? colour[2] : 0,
 					(mask & 0b10) ? colour[1] : 0,
 					(mask & 0b100) ? colour[0] : 0,
 					(mask & 0b1000) ? this._getAlpha(i) : 255
 				]);
+				*/
+				buf.writeUInt8((mask & 0b1) ? colour[2] : 0);
+				buf.writeUInt8((mask & 0b10) ? colour[1] : 0);
+				buf.writeUInt8((mask & 0b100) ? colour[0] : 0);
+				buf.writeUInt8((mask & 0b1000) ? this._getAlpha(i) : 255);
 			}
 			buf.seek(0);
 			return buf;
@@ -437,12 +444,19 @@ export default class BLPImage {
 			const buf = BufferWrapper.alloc(data.length);
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				const ofs = i * 4;
+				// NIT: Original code below, used to feed a number[] to writeUInt8 which I'm not sure was supported. Made it 4x separate calls for now.
+				/*
 				buf.writeUInt8([
 					(mask & 0b1) ? data[ofs + 2] : 0,
 					(mask & 0b10) ? data[ofs + 1] : 0,
 					(mask & 0b100) ? data[ofs] : 0,
 					(mask & 0b1000) ? data[ofs + 3] : 255
 				]);
+				*/
+				buf.writeUInt8((mask & 0b1) ? data[ofs + 2] : 0);
+				buf.writeUInt8((mask & 0b10) ? data[ofs + 1] : 0);
+				buf.writeUInt8((mask & 0b100) ? data[ofs] : 0);
+				buf.writeUInt8((mask & 0b1000) ? data[ofs + 3] : 255);
 			}
 			buf.seek(0);
 			return buf;

@@ -18,10 +18,10 @@ const INCLUDE = {
 	'addons/blender/io_scene_wowobj': 'addon/io_scene_wowobj',
 	'src/config/default_config.jsonc': 'src/default_config.jsonc',
 	'src/app/index.html': 'src/index.html',
-	'assets/src/fa-icons': 'src/fa-icons',
+	'src/assets/fa-icons': 'src/fa-icons',
 	'src/shaders': 'src/shaders',
-	'assets/src/images': 'src/images',
-	'assets/src/fonts': 'src/fonts'
+	'src/assets/images': 'src/images',
+	'src/assets/fonts': 'src/fonts'
 };
 
 const REMAP = {
@@ -85,7 +85,7 @@ try {
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
-		const manifest = JSON.parse(fs.readFileSync('./src/package.json', 'utf8'));
+		const manifest = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
 			manifest[key] = meta[key];
 

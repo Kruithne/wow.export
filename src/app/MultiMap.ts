@@ -13,7 +13,7 @@ export default class MultiMap extends Map {
 	 * @param key
 	 * @param value
 	 */
-	set(key: (string | number | bigint) | (string | number | bigint)[], value: any) { // NIT: AAAAAAAAAAA help
+	set(key: number, value: number): this {
 		const check = this.get(key);
 		if (check !== undefined) {
 			if (Array.isArray(check))
@@ -23,5 +23,7 @@ export default class MultiMap extends Map {
 		} else {
 			super.set(key, value);
 		}
+
+		return this;
 	}
 }

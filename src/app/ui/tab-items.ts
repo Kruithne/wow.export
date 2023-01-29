@@ -177,7 +177,7 @@ core.events.once('screen-tab-items', async () => {
 
 	const materialMap = new MultiMap();
 	for (const row of itemDisplayInfoMaterialRes.getAllRows().values())
-		materialMap.set(row.ItemDisplayInfoID, row.MaterialResourcesID);
+		materialMap.set(row.ItemDisplayInfoID as number, row.MaterialResourcesID as number);
 
 	for (const [itemID, itemRow] of rows) {
 		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType as number))

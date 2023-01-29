@@ -25,7 +25,7 @@ export const getKey = (keyName: string) => {
  * @param keyName - Key name
  * @param key - Key bytes
  */
-export const validateKeyPair = (keyName: string, key: string) : boolean => {
+export const validateKeyPair = (keyName: string, key: string): boolean => {
 	if (keyName.length !== 16)
 		return false;
 
@@ -71,11 +71,11 @@ export const load = async () => {
 		// to skip over redundant logging/saving calls.
 		let added = 0;
 		for (const [keyName, key] of Object.entries(tactKeys)) {
-			if (validateKeyPair(keyName, key)) {
-				KEY_RING[keyName.toLowerCase()] = key.toLowerCase();
+			if (validateKeyPair(keyName, (key as string))) {
+				KEY_RING[keyName.toLowerCase()] = (key as string).toLowerCase();
 				added++;
 			} else {
-				log.write('Skipping invalid tact key from cache: %s -> %s', keyName, key);
+				log.write('Skipping invalid tact key from cache: %s -> %s', keyName, (key as string));
 			}
 		}
 
