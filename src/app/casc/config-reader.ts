@@ -22,7 +22,7 @@ export const normalizeKey = (key) => {
 	return keyParts.join('');
 };
 
-export default (data: string) => {
+export const parse = (data: string) => {
 	const entries = {};
 	const lines = data.split(/\r?\n/);
 
@@ -33,7 +33,7 @@ export default (data: string) => {
 
 		const match = line.match(KEY_VAR_PATTERN);
 		if (match === null)
-			throw new Error('Invalid token encountered parsing CDN config');
+			throw new Error('Invalid token encountered parsing config');
 
 		entries[normalizeKey(match[1])] = match[2];
 	}
