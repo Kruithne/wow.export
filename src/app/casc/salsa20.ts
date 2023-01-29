@@ -114,7 +114,7 @@ export default class Salsa20 {
 	 * Reset the internal block counter.
 	 * @private
 	 */
-	_reset() : void {
+	_reset(): void {
 		this.counter[0] = 0;
 		this.counter[1] = 0;
 
@@ -125,7 +125,7 @@ export default class Salsa20 {
 	 * Increment the internal block counter.
 	 * @private
 	 */
-	_increment() : void {
+	_increment(): void {
 		this.counter[0] = (this.counter[0] + 1) & 0xffffffff;
 		if (this.counter[0] === 0)
 			this.counter[1] = (this.counter[1] + 1) & 0xffffffff;
@@ -135,7 +135,7 @@ export default class Salsa20 {
 	 * Generate a 64-byte block from the key, nonce and counter.
 	 * @private
 	 */
-	_generateBlock() : void {
+	_generateBlock(): void {
 		const j0 = this.sigma[0],
 			j1 = this.keyWords[0],
 			j2 = this.keyWords[1],

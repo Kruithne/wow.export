@@ -50,7 +50,7 @@ const PATTERN_BUILD_ID = /(\d+).(\d+).(\d+).(\d+)/;
  * @param buildID String representation of build (x.x.x.xxxxx)
  * @returns Build
  */
-const parseBuildID = (buildID: string) : Build => {
+const parseBuildID = (buildID: string): Build => {
 	const parts = buildID.match(PATTERN_BUILD_ID);
 	const entry = { major: 0, minor: 0, patch: 0, rev: 0 };
 
@@ -83,7 +83,7 @@ type Build = {
  * @param max - Maximum build
  * @returns If build falls in range
  */
-const isBuildInRange = (build: string, min: string, max: string) : boolean => {
+const isBuildInRange = (build: string, min: string, max: string): boolean => {
 	const buildToCheck = parseBuildID(build);
 	const minBuild = parseBuildID(min);
 	const maxBuild = parseBuildID(max);
@@ -143,7 +143,7 @@ export class DBDEntry {
 	 * @param min - Minimum build
 	 * @param max - Maximum build
 	 */
-	addBuildRange(min: string, max: string) : void {
+	addBuildRange(min: string, max: string): void {
 		this.buildRanges.add({ min: min, max: max });
 	}
 
@@ -151,7 +151,7 @@ export class DBDEntry {
 	 * Adds layouthashes to this DBD entry.
 	 * @param hashes
 	 */
-	addLayoutHashes(...hashes: string[]) : void {
+	addLayoutHashes(...hashes: string[]): void {
 		for (const hash of hashes)
 			this.layoutHashes.add(hash);
 	}
@@ -160,7 +160,7 @@ export class DBDEntry {
 	 * Add a field to this DBD entry.
 	 * @param field
 	 */
-	addField(field: DBDField) : void {
+	addField(field: DBDField): void {
 		this.fields.add(field);
 	}
 
@@ -170,7 +170,7 @@ export class DBDEntry {
 	 * @param layoutHash - LayoutHash
 	 * @returns {boolean}
 	 */
-	isValidFor(buildID: string, layoutHash: string) : boolean {
+	isValidFor(buildID: string, layoutHash: string): boolean {
 		// Layout hash takes priority, being the quickest to check.
 		if (this.layoutHashes.has(layoutHash))
 			return true;
@@ -220,7 +220,7 @@ export class DBDParser {
 	 * Parse the contents of a DBD document.
 	 * @param data
 	 */
-	parse(data: BufferWrapper) : void {
+	parse(data: BufferWrapper): void {
 		const lines = data.readLines();
 
 		// Separate the file into chunks separated by empty lines.
@@ -247,7 +247,7 @@ export class DBDParser {
 	 * Parse a chunk from this DBD document.
 	 * @param chunk
 	 */
-	parseChunk(chunk: string[]) : void {
+	parseChunk(chunk: string[]): void {
 		if (chunk[0] === 'COLUMNS') {
 			this.parseColumnChunk(chunk);
 		} else {
@@ -337,7 +337,7 @@ export class DBDParser {
 	 * Parse the column definition of a DBD document.
 	 * @param chunk
 	 */
-	parseColumnChunk(chunk: string[]) : void {
+	parseColumnChunk(chunk: string[]): void {
 		if (chunk === undefined)
 			throw new Error('Invalid DBD: Missing column definitions.');
 

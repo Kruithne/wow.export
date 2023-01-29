@@ -12,17 +12,19 @@ import constants from '../constants';
 import { LocaleFlags } from './locale-flags';
 import { ContentFlags } from './content-flags';
 import InstallManifest from  './install-manifest';
-
 import WDCReader from '../db/WDCReader';
 import * as DBTextureFileData from '../db/caches/DBTextureFileData';
 import * as DBModelFileData from '../db/caches/DBModelFileData';
 import * as DBItemDisplays from '../db/caches/DBItemDisplays';
 import * as DBCreatures from '../db/caches/DBCreatures';
+import CASCRemote from './casc-source-remote';
+import CASCLocal from './casc-source-local';
+import BuildCache from './build-cache';
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
-export default class CASC {
+export default abstract class CASC {
 	locale: LocaleFlags;
 	isRemote: boolean;
 	unhookConfig: () => void;
@@ -31,6 +33,8 @@ export default class CASC {
 	progress: any;
 	rootEntries: Map<number, any> = new Map();
 	rootTypes: Array<any>;
+	cache: BuildCache;
+	buildConfig: any;
 
 	constructor(isRemote = false) {
 		this.rootTypes = [];
@@ -82,7 +86,7 @@ export default class CASC {
 		const installKeys = this.buildConfig.install.split(' ');
 		const installKey = installKeys.length === 1 ? this.encodingKeys.get(installKeys[0]) : installKeys[1];
 
-		const raw = this.isRemote ? await this.getDataFile(this.formatCDNKey(installKey)) : await this.getDataFileWithRemoteFallback(installKey);
+		const raw = this.isRemote ? await (this as unknown as CASCRemote).getDataFile((this as unknown as CASCRemote).formatCDNKey(installKey)) : await (this as unknown as CASCLocal).getDataFileWithRemoteFallback(installKey);
 		const manifest = new BLTEReader(raw, installKey);
 
 		return new InstallManifest(manifest);
@@ -92,7 +96,7 @@ export default class CASC {
 	 * Obtain a file by it's fileDataID.
 	 * @param fileDataID
 	 */
-	async getFile(fileDataID: number) {
+	async getFile(fileDataID: number, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false) {
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
@@ -153,7 +157,7 @@ export default class CASC {
 
 	/**
 	 * Load the listfile for selected build.
-	 * @param {string} buildKey
+	 * @param buildKey
 	 */
 	async loadListfile(buildKey: string) {
 		await this.progress.step('Loading listfile');
@@ -164,11 +168,11 @@ export default class CASC {
 
 	/**
 	 * Returns an array of model formats to display.
-	 * @returns {Array}
+	 * @returns
 	 */
-	getModelFormats() {
+	getModelFormats(): Array<any> {
 		// Filters for the model viewer depending on user settings.
-		const modelExt = [];
+		const modelExt: Array<any> = []; // NIT: We push both a string and [string, RegExp] into it here
 		if (core.view.config.modelsShowM2)
 			modelExt.push('.m2');
 

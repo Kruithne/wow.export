@@ -4,13 +4,13 @@
 import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
-const modelResIDToFileDataID : Map<number, number[]> = new Map();
-const fileDataIDs : Set<number> = new Set();
+const modelResIDToFileDataID: Map<number, number[]> = new Map();
+const fileDataIDs: Set<number> = new Set();
 
 /**
  * Initialize model file data from ModelFileData.db2
  */
-export const initializeModelFileData = async () => {
+export const initializeModelFileData = async (): Promise<void> => {
 	log.write('Loading model mapping...');
 	const modelFileData = new WDCReader('DBFilesClient/ModelFileData.db2');
 	await modelFileData.parse();
@@ -34,7 +34,7 @@ export const initializeModelFileData = async () => {
  * @param modelResID - ModelResourceID
  * @returns FileDataIDs if found, otherwise undefined
  */
-export const getModelFileDataID = (modelResID: number) : number[] | undefined => {
+export const getModelFileDataID = (modelResID: number): number[] | undefined => {
 	return modelResIDToFileDataID.get(modelResID);
 };
 
@@ -43,6 +43,6 @@ export const getModelFileDataID = (modelResID: number) : number[] | undefined =>
  * NOTE: This is reset once called by the listfile module; adjust if needed elsewhere.
  * @returns List of all file data IDs cached from ModelFileData.db2
  */
-export const getFileDataIDs = () : Set<number> => {
+export const getFileDataIDs = (): Set<number> => {
 	return fileDataIDs;
 };

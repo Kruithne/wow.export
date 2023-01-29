@@ -54,7 +54,7 @@ interface DataTableRow {
  * @returns Field type
  */
 
-const convertDBDToSchemaType = (entry: DBDField) : FieldType => {
+const convertDBDToSchemaType = (entry: DBDField): FieldType => {
 	if (!entry.isInline && entry.isRelation)
 		return FieldType.Relation;
 
@@ -107,7 +107,7 @@ export default class WDCReader {
 	/**
 	 * Returns the amount of rows available in the table.
 	 */
-	get size() : number {
+	get size(): number {
 		return this.rows.size + this.copyTable.size;
 	}
 
@@ -116,7 +116,7 @@ export default class WDCReader {
 	 * Returns NULL if the row does not exist.
 	 * @param number - recordID
 	 */
-	getRow(recordID: number) : DataTableRow | null {
+	getRow(recordID: number): DataTableRow | null {
 		// The table needs to be loaded before we attempt to access a row.
 		// We could just return a NULL here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
@@ -146,7 +146,7 @@ export default class WDCReader {
 	 * Returns all available rows in the table.
 	 * Calling this will permanently inflate internal copy data; use wisely.
 	 */
-	getAllRows() : Map<number, DataTableRow> {
+	getAllRows(): Map<number, DataTableRow> {
 		// The table needs to be loaded before we attempt to access the rows.
 		// We could just return an empty Map here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
@@ -172,7 +172,7 @@ export default class WDCReader {
 	 * Load the schema for this table.
 	 * @param layoutHash - The layout hash of the table.
 	 */
-	async loadSchema(layoutHash: string) : Promise<void> {
+	async loadSchema(layoutHash: string): Promise<void> {
 		const casc = core.view.casc;
 		const buildID = casc.getBuildName();
 
@@ -216,7 +216,7 @@ export default class WDCReader {
 	 * Builds a schema for this data table using the provided DBD structure.
 	 * @param structure
 	 */
-	buildSchemaFromDBDStructure(structure: DBDEntry) : void {
+	buildSchemaFromDBDStructure(structure: DBDEntry): void {
 		for (const field of structure.fields) {
 			const fieldType = convertDBDToSchemaType(field);
 			if (field.arrayLength > -1)
@@ -229,7 +229,7 @@ export default class WDCReader {
 	/**
 	 * Gets index of ID field
 	 */
-	getIDIndex() : number {
+	getIDIndex(): number {
 		if (!this.isLoaded)
 			throw new Error('Attempted to get ID index before table was loaded.');
 
@@ -239,7 +239,7 @@ export default class WDCReader {
 	/**
 	 * Parse the data table.
 	 */
-	async parse() : Promise<void> {
+	async parse(): Promise<void> {
 		log.write('Loading DB file %s from CASC', this.fileName);
 
 		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);

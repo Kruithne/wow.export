@@ -4,13 +4,13 @@
 import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
-const matResIDToFileDataID : Map<number, number> = new Map();
-const fileDataIDs : Set<number> = new Set();
+const matResIDToFileDataID: Map<number, number> = new Map();
+const fileDataIDs: Set<number> = new Set();
 
 /**
  * Initialize texture file data ID from TextureFileData.db2
  */
-export const initializeTextureFileData = async () : Promise<void> => {
+export const initializeTextureFileData = async (): Promise<void> => {
 	log.write('Loading texture mapping...');
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
@@ -34,7 +34,7 @@ export const initializeTextureFileData = async () : Promise<void> => {
  * @param matResID - Material
  * @returns FileDataID if found, otherwise undefined
  */
-export const getTextureFileDataID = (matResID: number) : number | undefined => {
+export const getTextureFileDataID = (matResID: number): number | undefined => {
 	return matResIDToFileDataID.get(matResID);
 };
 
@@ -43,6 +43,6 @@ export const getTextureFileDataID = (matResID: number) : number | undefined => {
  * NOTE: This is reset once called by the listfile module; adjust if needed elsewhere.
  * @returns List of all file data IDs cached from TextureFileData.db2
  */
-export const getFileDataIDs = () : Set<number> => {
+export const getFileDataIDs = (): Set<number> => {
 	return fileDataIDs;
 };

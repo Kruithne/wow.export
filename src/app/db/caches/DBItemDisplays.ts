@@ -1,18 +1,19 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
+import * as core from '../../core';
 import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
 import { getModelFileDataID } from './DBModelFileData';
 import { getTextureFileDataID } from './DBTextureFileData';
 
-const itemDisplays : Map<number, object> = new Map();
+const itemDisplays: Map<number, object> = new Map();
 
 /**
  * Initialize item displays from ItemDisplayInfo.db2
  */
-export const initializeItemDisplays = async () : Promise<void> => {
+export const initializeItemDisplays = async (): Promise<void> => {
 	log.write('Loading item textures...');
 	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
 	await itemDisplayInfo.parse();
@@ -59,6 +60,6 @@ export const initializeItemDisplays = async () : Promise<void> => {
  * @param fileDataID
  * @returns Display object if found, otherwise undefined
  */
-export const getItemDisplaysByFileDataID = (fileDataID: number) : object|undefined => {
+export const getItemDisplaysByFileDataID = (fileDataID: number): object|undefined => {
 	return itemDisplays.get(fileDataID);
 };

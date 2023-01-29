@@ -973,7 +973,7 @@ export default class BufferWrapper {
 	/**
 	 * @returns True if all bytes are zero.
 	 */
-	isZeroed():boolean {
+	isZeroed(): boolean {
 		for (let i = 0, n = this.byteLength; i < n; i++) {
 			if (this._buf[i] !== 0x0)
 				return false;

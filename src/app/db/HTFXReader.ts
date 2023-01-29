@@ -23,7 +23,7 @@ export default class HTFXReader {
 	/**
      * Locate DBCache.bin for this product.
      */
-	locateDBCache() : string {
+	locateDBCache(): string {
 		// TODO: Make work
 		return 'C:\\World of Warcraft\\_retail_\\Cache\\ADB\\enUS\\DBCache.bin';
 	}
@@ -41,13 +41,13 @@ export default class HTFXReader {
 			throw new Error('Unsupported DBCache.bin version: ' + version);
 
 		// TODO: Verify if build is the same as currently loaded build (DBCache might be outdated)
-		const build = data.readUInt32LE();
+		data.readUInt32LE(); // Build
 
 		data.readUInt32LE(8); // Verification hash (32 bytes)
 
 		// Hotfix entries for the rest of the file
 		while (data.remainingBytes) {
-			const entryMagic = data.readUInt32LE(); // TODO: Verify
+			data.readUInt32LE(); // TODO: Verify magic
 
 			data.readInt32LE(); // RegionID
 			const pushID = data.readInt32LE() as number;
@@ -59,10 +59,9 @@ export default class HTFXReader {
 			const dataSize = data.readUInt32LE() as number;
 			const status = data.readUInt8() as number;
 			data.readUInt8(3); // Unused
-			let recordData: number | number[];
 
-			if(dataSize)
-				recordData = data.readUInt8(dataSize as number);
+			if (dataSize)
+				data.readUInt8(dataSize as number); // TODO: Save/expose record data
 
 			if (!this.tableHashMap.has(tableHash))
 				log.write('Found hotfix for UNKNOWN TABLE %s, ID %s, PushID %s, Status %s', tableHash, recordID.toString(), pushID, status);

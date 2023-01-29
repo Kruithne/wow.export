@@ -59,21 +59,21 @@ export const timeLog = () => {
  * @param label
  * @param params - Addition parameters
  */
-export const timeEnd = (label: string, ...params: (string | number)[]) : void => {
+export const timeEnd = (label: string, ...params: (string | number)[]): void => {
 	write(label + ' (%dms)', ...params, (Date.now() - markTimer));
 };
 
 /**
  * Open the runtime log in the users external editor.
  */
-export const openRuntimeLog = () : void => {
+export const openRuntimeLog = (): void => {
 	nw.Shell.openItem(constants.RUNTIME_LOG);
 };
 
 /**
  * Write a message to the log.
  */
-export const write = (...parameters: (string | number)[]) : void => {
+export const write = (...parameters: (string | number)[]): void => {
 	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
 	if (!isClogged) {

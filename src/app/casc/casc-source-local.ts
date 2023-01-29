@@ -11,7 +11,7 @@ import BufferWrapper from '../buffer';
 import * as listfile from './listfile';
 
 import * as VersionConfig from './version-config';
-import * as CDNConfig from './cdn-config';
+import * as CDNConfig from './config-reader';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';
 
@@ -235,10 +235,10 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Obtain a data file from the local archives.
 	 * If not stored locally, file will be downloaded from a CDN.
-	 * @param {string} key
-	 * @param {boolean} [forceFallback=false]
+	 * @param key
+	 * @param forceFallback Whether or not to force fallback to CDN, defaults to false
 	 */
-	async getDataFileWithRemoteFallback(key, forceFallback = false) {
+	async getDataFileWithRemoteFallback(key: string, forceFallback: boolean = false): Promise<BufferWrapper> {
 		try {
 			// If forceFallback is true, we have corrupt local data.
 			if (forceFallback)
@@ -284,7 +284,7 @@ export default class CASCLocal extends CASC {
 	 * Obtain a data file from the local archives.
 	 * @param key
 	 */
-	async getDataFile(key: string) {
+	async getDataFile(key: string): Promise<BufferWrapper> {
 		const entry = this.localIndexes.get(key.substring(0, 18));
 		if (!entry)
 			throw new Error('Requested file does not exist in local data: ' + key);

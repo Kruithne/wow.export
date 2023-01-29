@@ -8,7 +8,7 @@ import constants from '../constants';
 import * as listfile from './listfile';
 
 import * as VersionConfig from './version-config';
-import * as CDNConfig from './cdn-config';
+import * as CDNConfig from './config-reader';
 import BufferWrapper from '../buffer';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';

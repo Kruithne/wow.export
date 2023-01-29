@@ -1,5 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import * as core from '../../core';
 import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
@@ -10,7 +11,7 @@ const creatureDisplays = new Map();
  * @param creatureDisplayInfo - CreatureDisplayInfo reader
  * @param creatureModelData - CreatureModelData reader
  */
-export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, creatureModelData: WDCReader) : Promise<void> => {
+export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, creatureModelData: WDCReader): Promise<void> => {
 	log.write('Loading creature textures...');
 
 	const creatureGeosetMap = new Map();

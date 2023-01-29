@@ -68,7 +68,7 @@ const getBlenderInstallations = async () => {
  * Open the local directory containing our Blender add-on
  * using the default explorer application for this OS.
  */
-export async function openAddonDirectory() : Promise<void> {
+export async function openAddonDirectory(): Promise<void> {
 	nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
 }
 
@@ -76,7 +76,7 @@ export async function openAddonDirectory() : Promise<void> {
  * Attempts to check if the user has the latest version of our Blender
  * add-on installed. If not, they will be prompted to update it.
  */
-export async function checkLocalVersion() : Promise<void> {
+export async function checkLocalVersion(): Promise<void> {
 	log.write('Checking local Blender add-on version...');
 
 	// Ensure we actually have a Blender installation.
@@ -122,7 +122,7 @@ export async function checkLocalVersion() : Promise<void> {
  * Attempts to locate the latest Blender installation and automatically
  * install the Blender add-on shipped with this application.
  */
-export async function startAutomaticInstall() : Promise<void> {
+export async function startAutomaticInstall(): Promise<void> {
 	core.view.isBusy++;
 	core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
 	log.write('Starting automatic installation of Blender add-on...');
