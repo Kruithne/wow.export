@@ -3,12 +3,10 @@
 import path from 'node:path';
 import util from 'node:util';
 import fs from 'node:fs';
-import zlib, { Gunzip } from 'node:zlib';
+import zlib from 'node:zlib';
 import crypto, { BinaryToTextEncoding } from 'node:crypto';
 import Constants from './constants';
 import BufferWrapper from './buffer';
-
-const inflate = util.promisify(zlib.inflate); // NIT: Replace with native async or use stream.
 
 type Primitive = string | number | boolean;
 
@@ -117,60 +115,39 @@ export async function readJSON(file: string, ignoreComments: boolean = false) {
 
 /**
  * Download a file.
- *
- * @remarks
- * This function will automatically decompress GZIP data if the server sets the header.
- * If `out` is provided, the file will be written to disk.
- * If `partialOfs` and `partialLen` are provided, the file will be downloaded as a partial content request.
- * If `deflate` is true, the data will be decompressed regardless of the header.
- * Data is always returned even if `out` is provided.
  * @param url - Remote URL of the file to download.
- * @param out - File to write file to.
+ * @param out - If provided, the file will be written to disk.
  * @param partialOfs - Partial content start offset.
  * @param partialLen - Partial content size.
  * @param deflate - If true, will deflate data regardless of header.
+ * @returns The file contents.
  */
 export async function downloadFile(url: string, out?: string, partialOfs: number = -1, partialLen: number = -1, deflate: boolean = false): Promise<BufferWrapper> {
-	const headers: OutgoingHttpHeaders = { 'Accept-Encoding': 'gzip' };
-
-	if (partialOfs > -1 && partialLen > -1)
-		headers.Range = util.format('bytes=%d-%d', partialOfs, partialOfs + partialLen - 1);
-
-	const res = await get(url, { headers });
-
-	if (res.statusCode !== 200 && res.statusCode !== 206)
-		throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
-
-	const buffers: Array<Buffer> = [];
-	let totalBytes: number = 0;
-
-	let source: IncomingMessage|Gunzip = res;
-	if (res.headers['content-encoding'] === 'gzip') {
-		source = zlib.createGunzip();
-		res.pipe(source);
-	}
-
-	await new Promise(resolve => {
-		source.on('data', chunk => {
-			totalBytes += chunk.byteLength;
-			buffers.push(chunk);
-		});
-
-		source.on('end', resolve);
+	const res = await fetch(url, {
+		headers: {
+			'User-Agent': Constants.USER_AGENT,
+			'Range': partialOfs > -1 && partialLen > -1 ? util.format('bytes=%d-%d', partialOfs, partialOfs + partialLen - 1) : undefined
+		}
 	});
 
-	let merged = Buffer.concat(buffers, totalBytes);
+	if (!res.ok)
+		throw new Error(util.format('Unable to download file %s: HTTP %d %s', url, res.status, res.statusText));
 
+	let data: ArrayBuffer = await res.arrayBuffer();
+
+	// Deflate the file regardless of the headers.
 	if (deflate)
-		merged = await inflate(merged);
+		data = await new Promise(resolve => zlib.inflate(data, (err, result) => resolve(result)));
+
+	const wrapped = BufferWrapper.from(data);
 
 	// Write the file to disk if requested.
 	if (out) {
 		await createDirectory(path.dirname(out));
-		await fs.promises.writeFile(out, merged);
+		await wrapped.writeToFile(out);
 	}
 
-	return new BufferWrapper(merged);
+	return wrapped;
 }
 
 /**

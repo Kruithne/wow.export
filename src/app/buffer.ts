@@ -54,7 +54,9 @@ export default class BufferWrapper {
 	 * @param source - Source to create the buffer from.
 	 * @returns The created buffer wrapped in a BufferWrapper.
 	 */
-	static from(source: Uint8Array | readonly number[]): BufferWrapper {
+	static from(source: ArrayBuffer): BufferWrapper;
+	static from(source: Uint8Array | readonly number[]): BufferWrapper;
+	static from(source: any): BufferWrapper {
 		return new BufferWrapper(Buffer.from(source));
 	}
 
