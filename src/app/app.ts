@@ -98,7 +98,7 @@ window.ondragenter = e => {
 
 	const files = e.dataTransfer.files;
 	if (files.length > 0) {
-		const handler = core.getDropHandler(files[0].path);
+		const handler = State.getDropHandler(files[0].path);
 		if (handler) {
 			// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 			let count = 0;
@@ -124,7 +124,7 @@ window.ondrop = e => {
 
 	const files = e.dataTransfer.files;
 	if (files.length > 0) {
-		const handler = core.getDropHandler(files[0].path);
+		const handler = State.getDropHandler(files[0].path);
 		if (handler) {
 			// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 			const include = [];
@@ -184,7 +184,7 @@ if (!(process.env.NODE_ENV === 'development')) {
 		if (updateAvailable) {
 			// Update is available, prompt to update. If user declines,
 			// begin checking the local Blender add-on version.
-			core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+			State.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
 				'Update Now': () => Updater.applyUpdate(),
 				'Maybe Later': () => Blender.checkLocalVersion()
 			}, -1, false);
