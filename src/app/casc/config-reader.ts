@@ -7,7 +7,7 @@ const KEY_VAR_PATTERN = /([^\s]+)\s?=\s?(.*)/;
  * This helps keep things consistent when accessing key properties.
  * @param {string} key
  */
-export const normalizeKey = (key) => {
+export function normalizeKey(key: string): string {
 	const keyParts = key.split('-');
 
 	// Nothing to split, just use the normal key.
@@ -20,9 +20,9 @@ export const normalizeKey = (key) => {
 	}
 
 	return keyParts.join('');
-};
+}
 
-export const parse = (data: string) => {
+export function parse(data: string): Record<string, string> {
 	const entries = {};
 	const lines = data.split(/\r?\n/);
 
@@ -39,4 +39,4 @@ export const parse = (data: string) => {
 	}
 
 	return entries;
-};
+}

@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export const parse = (data: string) => {
-	const entries: Array<string[]> = [];
+export function parse(data: string): Array<Record<string, string>> {
+	const entries: Array<Record<string, string>> = [];
 	const lines = data.split(/\r?\n/);
 
 	// First line contains field definitions.
@@ -23,7 +23,7 @@ export const parse = (data: string) => {
 		if (entry.trim().length === 0 || entry.startsWith('#'))
 			continue;
 
-		const node: Array<string> = [];
+		const node: Record<string, string> = {};
 		const entryFields = entry.split('|');
 		for (let i = 0, n = entryFields.length; i < n; i++)
 			node[fields[i]] = entryFields[i];
@@ -31,4 +31,4 @@ export const parse = (data: string) => {
 		entries.push(node);
 	}
 	return entries;
-};
+}

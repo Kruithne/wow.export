@@ -7,8 +7,9 @@ import * as log from '../log';
 import constants from '../constants';
 import * as listfile from './listfile';
 
-import * as VersionConfig from './version-config';
 import * as ConfigReader from './config-reader';
+import * as VersionConfig from './version-config';
+
 import BufferWrapper from '../buffer';
 import BuildCache from './build-cache';
 import BLTEReader from './blte-reader';
@@ -61,7 +62,7 @@ export default class CASCRemote extends CASC {
 	 * Download the remote version config for a specific product.
 	 * @param product
 	 */
-	async getVersionConfig(product: string) {
+	async getVersionConfig(product: string): Promise<Array<Record<string, string>>> {
 		const config = await this.getConfig(product, constants.PATCH.VERSION_CONFIG);
 		config.forEach(entry => entry.Product = product);
 		return config;
@@ -72,7 +73,7 @@ export default class CASCRemote extends CASC {
 	 * @param product
 	 * @param file
 	 */
-	async getConfig(product: string, file: string) {
+	async getConfig(product: string, file: string): Promise<Array<Record<string, string>>> {
 		const url = this.host + product + file;
 		const res = await generics.get(url);
 
@@ -84,9 +85,10 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a CDN config file.
-	 * @param key
+	 * @param key - CDN config key.
+	 * @return Parsed CDN configuration.
 	 */
-	async getCDNConfig(key: string): Promise<any> {
+	async getCDNConfig(key: string): Promise<Record<string, string>> {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
 		const res = await generics.get(url);
 
