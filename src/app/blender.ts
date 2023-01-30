@@ -88,11 +88,12 @@ export async function checkLocalVersion(): Promise<void> {
 	}
 
 	Log.write('Available Blender installations: %s', versions.length > 0 ? versions.join(', ') : 'None');
-	const blenderVersion = versions.sort().pop(); // NIT: This isn't great.
+	versions.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
 	// Check the users latest version meets our minimum requirement.
-	if (blenderVersion < Constants.BLENDER.MIN_VER) {
-		Log.write('Latest Blender install does not meet minimum requirements (%s < %s)', blenderVersion, Constants.BLENDER.MIN_VER);
+	const latestVersion = versions.pop();
+	if (latestVersion.localeCompare(Constants.BLENDER.MIN_VER, undefined, { numeric: true, sensitivity: 'base' }) < 0) {
+		Log.write('Latest Blender install does not meet minimum requirements (%s < %s)', latestVersion, Constants.BLENDER.MIN_VER);
 		return;
 	}
 
@@ -105,7 +106,7 @@ export async function checkLocalVersion(): Promise<void> {
 		return;
 	}
 
-	const blenderManifest = path.join(Constants.BLENDER.DIR, blenderVersion, Constants.BLENDER.ADDON_DIR, Constants.BLENDER.ADDON_ENTRY);
+	const blenderManifest = path.join(Constants.BLENDER.DIR, latestVersion, Constants.BLENDER.ADDON_DIR, Constants.BLENDER.ADDON_ENTRY);
 	const blenderAddonVersion = await parseManifestVersion(blenderManifest);
 
 	Log.write('Latest add-on version: %s, Blender add-on version: %s', latestAddonVersion, blenderAddonVersion);
