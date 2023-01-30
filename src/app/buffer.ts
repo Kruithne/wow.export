@@ -6,8 +6,6 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import crc32 from './crc32';
 
-const IS_DEBUG_BUILD = process.env.NODE_ENV === 'development';
-
 /**
  * @param canvas - Canvas element to create the buffer from.
  * @param mimeType - MIME type of the canvas data.
@@ -558,162 +556,108 @@ export default class BufferWrapper {
 
 	/** Write a 8-bit integer to the buffer. */
 	writeInt8(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 1)
-			throw new Error(util.format('BufferWrapper.writeInt8(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeInt8(value, this.offset);
 		this.offset += 1;
 	}
 
 	/** Write a 8-bit unsigned integer to the buffer. */
 	writeUInt8(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 1)
-			throw new Error(util.format('BufferWrapper.writeUInt8(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeUInt8(value, this.offset);
 		this.offset += 1;
 	}
 
 	/** Write a 16-bit (little-endian) signed integer to the buffer. */
 	writeInt16(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 2)
-			throw new Error(util.format('BufferWrapper.writeInt16(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeInt16LE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 16-bit (little-endian) unsigned integer to the buffer. */
 	writeUInt16(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 2)
-			throw new Error(util.format('BufferWrapper.writeUInt16(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeUInt16LE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 32-bit (little-endian) signed integer to the buffer. */
 	writeInt32(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeInt32(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeInt32LE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 32-bit (little-endian) unsigned integer to the buffer. */
 	writeUInt32(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeUInt32(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeUInt32LE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 64-bit (little-endian) signed integer to the buffer. */
 	writeInt64(value: bigint) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeInt64(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeBigInt64LE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 64-bit (little-endian) unsigned integer to the buffer. */
 	writeUInt64(value: bigint) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeUInt64(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeBigUInt64LE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a float (little-endian) to the buffer. */
 	writeFloat(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeFloat(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeFloatLE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a double (little-endian) to the buffer. */
 	writeDouble(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeFloat64(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeDoubleLE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 16-bit (big-endian) signed integer to the buffer. */
 	writeInt16BE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 2)
-			throw new Error(util.format('BufferWrapper.writeInt16BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeInt16BE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 16-bit (big-endian) unsigned integer to the buffer. */
 	writeUInt16BE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 2)
-			throw new Error(util.format('BufferWrapper.writeUInt16BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeUInt16BE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 32-bit (big-endian) signed integer to the buffer. */
 	writeInt32BE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeInt32BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeInt32BE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 32-bit (big-endian) unsigned integer to the buffer. */
 	writeUInt32BE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeUInt32BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeUInt32BE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 64-bit (big-endian) signed integer to the buffer. */
 	writeInt64BE(value: bigint) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeInt64BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeBigInt64BE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 64-bit (big-endian) unsigned integer to the buffer. */
 	writeUInt64BE(value: bigint) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeUInt64BE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeBigUInt64BE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a float (big-endian) to the buffer. */
 	writeFloatBE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 4)
-			throw new Error(util.format('BufferWrapper.writeFloatBE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeFloatBE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a double (big-endian) to the buffer. */
 	writeDoubleBE(value: number) {
-		if (IS_DEBUG_BUILD && this.remainingBytes < 8)
-			throw new Error(util.format('BufferWrapper.writeDoubleBE(%d) out-of-bounds [> %d]', value, this.remainingBytes));
-
 		this.buffer.writeDoubleBE(value, this.offset);
 		this.offset += 8;
 	}
