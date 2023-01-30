@@ -313,7 +313,7 @@ export default class CASC {
 						rootEntries.set(fileDataID, entry);
 					}
 
-					entry.set(rootTypes.length, root.readString(16), 'hex'));
+					entry.set(rootTypes.length, root.readString(16, 'hex'));
 				}
 
 				// Skip lookup hashes for entries.
@@ -343,7 +343,7 @@ export default class CASC {
 
 				// Parse MD5 content keys for entries.
 				for (let i = 0; i < numRecords; i++) {
-					const key = root.readString(16), 'hex');
+					const key = root.readString(16, 'hex');
 					root.move(8); // hash
 
 					const fileDataID = fileDataIDs[i];
