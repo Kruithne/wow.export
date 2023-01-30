@@ -73,7 +73,7 @@ export const openRuntimeLog = (): void => {
 /**
  * Write a message to the log.
  */
-export const write = (...parameters: (string | number)[]): void => {
+export const write = (...parameters: (string | number | object)[]): void => {
 	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
 	if (!isClogged) {
