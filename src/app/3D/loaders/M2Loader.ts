@@ -1,9 +1,10 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-const Texture = require('../Texture');
-const Skin = require('../Skin');
-const constants = require('../../constants');
+import BufferWrapper from '../../buffer';
+import Texture from '../Texture';
+import Skin from '../Skin';
+import Constants from '../../constants';
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -11,20 +12,23 @@ const CHUNK_SKID = 0x44494B53;
 const CHUNK_BFID = 0x44494642;
 const CHUNK_AFID = 0x44494641;
 
-/**
- * An axis-aligned box.
- * @typedef {{ min: number, max: number }} CAaBox
- */
+type CAaBox = { min: number[], max: number[] };
+type M2Material = { flags: number, blendingMode: number };
 
 class M2Track {
+	globalSeq: number;
+	interpolation: number;
+	timestamps: Array<number>;
+	values: Array<any>;
+
 	/**
 	 * Construct a new M2Track instance.
-	 * @param {number} globalSeq
-	 * @param {number} interpolation
-	 * @param {Array} timestamps
-	 * @param {Array} values
+	 * @param globalSeq
+	 * @param interpolation
+	 * @param timestamps
+	 * @param values
 	 */
-	constructor(globalSeq, interpolation, timestamps, values) {
+	constructor(globalSeq: number, interpolation: number, timestamps: Array<number>, values: Array<any>) {
 		this.globalSeq = globalSeq;
 		this.interpolation = interpolation;
 		this.timestamps = timestamps;
@@ -32,12 +36,49 @@ class M2Track {
 	}
 }
 
-class M2Loader {
+export default class M2Loader {
+	data: BufferWrapper;
+	isLoaded: boolean;
+	md21Ofs: number;
+
+	version: number;
+	name: string;
+	skins: Array<Skin>;
+	lodSkins: Array<Skin>;
+	viewCount: number;
+	textures: Array<Texture>;
+	skeletonFileID: number;
+	animFileIDs: Array<number>;
+	boneFileIDs: Array<number>;
+	boundingBox: CAaBox;
+	boundingSphereRadius: number;
+	collisionBox: CAaBox;
+	collisionSphereRadius: number;
+	bones: Array<any>; // TODO: Type
+	collisionIndices: Array<number>;
+	collisionPositions: Array<number>;
+	collisionNormals: Array<number>;
+	replaceableTextureLookup: Array<number>;
+	vertices: Array<number>;
+	normals: Array<number>;
+	uv: Array<number>;
+	uv2: Array<number>;
+	boneWeights: Array<number>;
+	boneIndices: Array<number>;
+	textureTransforms: Array<number>;
+	textureTransformsLookup: Array<number>;
+	textureCombos: Array<number>;
+	textureTypes: Array<number>;
+	textureWeights: Array<number>;
+	transparencyLookup: Array<number>;
+	materials: Array<M2Material>;
+	colors: Array<any>; // TODO: Type
+
 	/**
 	 * Construct a new M2Loader instance.
 	 * @param {BufferWrapper} data
 	 */
-	constructor(data) {
+	constructor(data: BufferWrapper) {
 		this.data = data;
 		this.isLoaded = false;
 	}
@@ -56,12 +97,12 @@ class M2Loader {
 			const nextChunkPos = this.data.offset + chunkSize;
 
 			switch (chunkID) {
-			case constants.MAGIC.MD21: await this.parseChunk_MD21(); break;
-			case CHUNK_SFID: this.parseChunk_SFID(chunkSize); break;
-			case CHUNK_TXID: this.parseChunk_TXID(); break;
-			case CHUNK_SKID: this.parseChunk_SKID(); break;
-			case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
-			case CHUNK_AFID: this.parseChunk_AFID(chunkSize); break;
+				case Constants.MAGIC.MD21: await this.parseChunk_MD21(); break;
+				case CHUNK_SFID: this.parseChunk_SFID(chunkSize); break;
+				case CHUNK_TXID: this.parseChunk_TXID(); break;
+				case CHUNK_SKID: this.parseChunk_SKID(); break;
+				case CHUNK_BFID: this.parseChunk_BFID(chunkSize); break;
+				case CHUNK_AFID: this.parseChunk_AFID(chunkSize); break;
 			}
 
 			// Ensure that we start at the next chunk exactly.
@@ -73,9 +114,9 @@ class M2Loader {
 
 	/**
 	 * Get a skin at a given index from this.skins.
-	 * @param {number} index
+	 * @param index
 	 */
-	async getSkin(index) {
+	async getSkin(index: number) {
 		const skin = this.skins[index];
 		if (!skin.isLoaded)
 			await skin.load();
@@ -86,17 +127,17 @@ class M2Loader {
 	/**
 	 * Returns the internal array of Skin objects.
 	 * Note: Unlike getSkin(), this does not load any of the skins.
-	 * @returns {Skin[]}
+	 * @returns
 	 */
-	getSkinList() {
+	getSkinList(): Skin[] {
 		return this.skins;
 	}
 
 	/**
 	 * Parse SFID chunk for skin file data IDs.
-	 * @param {number} chunkSize
+	 * @param chunkSize
 	 */
-	parseChunk_SFID(chunkSize) {
+	parseChunk_SFID(chunkSize: number) {
 		if (this.viewCount === undefined)
 			throw new Error('Cannot parse SFID chunk in M2 before MD21 chunk!');
 
@@ -134,14 +175,14 @@ class M2Loader {
 	 * @param {number} chunkSize
 	 */
 	parseChunk_BFID(chunkSize) {
-		this.boneFileIDs = this.data.readUInt32(chunkSize / 4);
+		this.boneFileIDs = this.data.readUInt32Array(chunkSize / 4);
 	}
 
 	/**
 	 * Parse AFID chunk for animation file data IDs.
 	 * @param {number} chunkSize
 	 */
-	parseChunk_AFID(chunkSize) {
+	parseChunk_AFID(chunkSize: number) {
 		const entryCount = chunkSize / 8;
 		const entries = this.animFileIDs = new Array(entryCount);
 
@@ -161,7 +202,7 @@ class M2Loader {
 		const ofs = this.data.offset;
 
 		const magic = this.data.readUInt32();
-		if (magic !== constants.MAGIC.MD20)
+		if (magic !== Constants.MAGIC.MD20)
 			throw new Error('Invalid M2 magic: ' + magic);
 
 		this.version = this.data.readUInt32();
@@ -187,10 +228,10 @@ class M2Loader {
 
 	/**
 	 * Read an M2Array.
-	 * @param {function} read
-	 * @returns {Array}
+	 * @param read
+	 * @returns
 	 */
-	readM2Array(read) {
+	readM2Array(read): Array<any> {
 		const data = this.data;
 		const arrCount = data.readUInt32();
 		const arrOfs = data.readUInt32();
@@ -208,18 +249,18 @@ class M2Loader {
 
 	/**
 	 * Read an axis-aligned box with a given min/max.
-	 * @returns {CAaBox}
+	 * @returns
 	 */
-	readCAaBox() {
-		return { min: this.data.readFloat(3), max: this.data.readFloat(3) };
+	readCAaBox(): CAaBox {
+		return { min: this.data.readFloat32Array(3), max: this.data.readFloat32Array(3) } as CAaBox;
 	}
 
 	/**
 	 * Read an M2 track.
-	 * @param {function} read
-	 * @returns {M2Track}
+	 * @param read
+	 * @returns
 	 */
-	readM2Track(read) {
+	readM2Track(read): M2Track {
 		const data = this.data;
 		const interpolation = data.readUInt16();
 		const globalSeq = data.readUInt16();
@@ -230,7 +271,7 @@ class M2Loader {
 		return new M2Track(globalSeq, interpolation, timestamps, values);
 	}
 
-	parseChunk_MD21_bones(ofs) {
+	parseChunk_MD21_bones(ofs: number) {
 		const data = this.data;
 		const boneCount = data.readUInt32();
 		const boneOfs = data.readUInt32();
@@ -248,10 +289,10 @@ class M2Loader {
 				parentBone: data.readInt16(),
 				subMeshID: data.readUInt16(),
 				boneNameCRC: data.readUInt32(),
-				translation: this.readM2Track(() => data.readFloat(3)),
-				rotation: this.readM2Track(() => data.readUInt16(4).map(e => (e / 65565) - 1)),
-				scale: this.readM2Track(() => data.readFloat(3)),
-				pivot: data.readFloat(3)
+				translation: this.readM2Track(() => data.readFloat32Array(3)),
+				rotation: this.readM2Track(() => data.readUInt16Array(4).map(e => (e / 65565) - 1)),
+				scale: this.readM2Track(() => data.readFloat32Array(3)),
+				pivot: data.readFloat32Array(3)
 			};
 		}
 
@@ -260,9 +301,9 @@ class M2Loader {
 
 	/**
 	 * Parse collision data from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_collision(ofs) {
+	parseChunk_MD21_collision(ofs: number) {
 		// Parse collision boxes before the full collision chunk.
 		this.boundingBox = this.readCAaBox();
 		this.boundingSphereRadius = this.data.readFloat();
@@ -282,7 +323,7 @@ class M2Loader {
 
 		// indices
 		this.data.seek(indicesOfs + ofs);
-		this.collisionIndices = this.data.readUInt16(indicesCount);
+		this.collisionIndices = this.data.readUInt16Array(indicesCount);
 
 		// Positions
 		this.data.seek(positionsOfs + ofs);
@@ -311,43 +352,43 @@ class M2Loader {
 
 	/**
 	 * Parse replaceable texture lookups from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_replaceableTextureLookup(ofs) {
+	parseChunk_MD21_replaceableTextureLookup(ofs: number) {
 		const lookupCount = this.data.readUInt32();
 		const lookupOfs = this.data.readUInt32();
 
 		const base = this.data.offset;
 		this.data.seek(lookupOfs + ofs);
 
-		this.replaceableTextureLookup = this.data.readInt16(lookupCount);
+		this.replaceableTextureLookup = this.data.readInt16Array(lookupCount);
 
 		this.data.seek(base);
 	}
 
 	/**
 	 * Parse material meta-data from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_materials(ofs) {
+	parseChunk_MD21_materials(ofs: number) {
 		const materialCount = this.data.readUInt32();
 		const materialOfs = this.data.readUInt32();
 
 		const base = this.data.offset;
 		this.data.seek(materialOfs + ofs);
 
-		this.materials = new Array(materialCount);
+		this.materials = new Array<M2Material>(materialCount);
 		for (let i = 0; i < materialCount; i++)
-			this.materials[i] = { flags: this.data.readUInt16(), blendingMode: this.data.readUInt16() };
+			this.materials[i] = { flags: this.data.readUInt16(), blendingMode: this.data.readUInt16() } as M2Material;
 
 		this.data.seek(base);
 	}
 
 	/**
 	 * Parse the model name from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_modelName(ofs) {
+	parseChunk_MD21_modelName(ofs: number) {
 		const modelNameLength = this.data.readUInt32();
 		const modelNameOfs = this.data.readUInt32();
 
@@ -363,9 +404,9 @@ class M2Loader {
 
 	/**
 	 * Parse vertices from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_vertices(ofs) {
+	parseChunk_MD21_vertices(ofs: number) {
 		const verticesCount = this.data.readUInt32();
 		const verticesOfs = this.data.readUInt32();
 
@@ -409,9 +450,9 @@ class M2Loader {
 
 	/**
 	 * Parse texture transformation definitions from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_textureTransforms(ofs) {
+	parseChunk_MD21_textureTransforms(ofs: number) {
 		const transformCount = this.data.readUInt32();
 		const transformOfs = this.data.readUInt32();
 
@@ -421,9 +462,9 @@ class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: this.readM2Track(() => this.data.readFloat(3)),
-				rotation: this.readM2Track(() => this.data.readFloat(4)),
-				scaling: this.readM2Track(() => this.data.readFloat(3))
+				translation: this.readM2Track(() => this.data.readFloat32Array(3)),
+				rotation: this.readM2Track(() => this.data.readFloat32Array(4)),
+				scaling: this.readM2Track(() => this.data.readFloat32Array(3))
 			};
 		}
 
@@ -432,9 +473,9 @@ class M2Loader {
 
 	/**
 	 * Parse texture transform lookup table from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_textureTransformLookup(ofs) {
+	parseChunk_MD21_textureTransformLookup(ofs: number) {
 		const entryCount = this.data.readUInt32();
 		const entryOfs = this.data.readUInt32();
 
@@ -450,9 +491,9 @@ class M2Loader {
 
 	/**
 	 * Parse transparency lookup table from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_transparencyLookup(ofs) {
+	parseChunk_MD21_transparencyLookup(ofs: number) {
 		const entryCount = this.data.readUInt32();
 		const entryOfs = this.data.readUInt32();
 
@@ -468,9 +509,9 @@ class M2Loader {
 
 	/**
 	 * Parse global transparency weights from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_textureWeights(ofs) {
+	parseChunk_MD21_textureWeights(ofs: number) {
 		const weightCount = this.data.readUInt32();
 		const weightOfs = this.data.readUInt32();
 
@@ -486,9 +527,9 @@ class M2Loader {
 
 	/**
 	 * Parse color/transparency data from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_colors(ofs) {
+	parseChunk_MD21_colors(ofs: number) {
 		const colorsCount = this.data.readUInt32();
 		const colorsOfs = this.data.readUInt32();
 
@@ -498,7 +539,7 @@ class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: this.readM2Track(() => this.data.readFloat(3)),
+				color: this.readM2Track(() => this.data.readFloat32Array(3)),
 				alpha: this.readM2Track(() => this.data.readInt16())
 			};
 		}
@@ -508,9 +549,9 @@ class M2Loader {
 
 	/**
 	 * Parse textures from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_textures(ofs) {
+	parseChunk_MD21_textures(ofs: number) {
 		const texturesCount = this.data.readUInt32();
 		const texturesOfs = this.data.readUInt32();
 
@@ -550,17 +591,15 @@ class M2Loader {
 
 	/**
 	 * Parse texture combos from an MD21 chunk.
-	 * @param {number} ofs
+	 * @param ofs
 	 */
-	parseChunk_MD21_textureCombos(ofs) {
+	parseChunk_MD21_textureCombos(ofs: number) {
 		const textureComboCount = this.data.readUInt32();
 		const textureComboOfs = this.data.readUInt32();
 
 		const base = this.data.offset;
 		this.data.seek(textureComboOfs + ofs);
-		this.textureCombos = this.data.readUInt16(textureComboCount);
+		this.textureCombos = this.data.readUInt16Array(textureComboCount);
 		this.data.seek(base);
 	}
 }
-
-module.exports = M2Loader;

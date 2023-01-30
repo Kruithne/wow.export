@@ -4,7 +4,8 @@
 import util from 'node:util';
 import fs from 'node:fs';
 import * as log from '../log';
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import constants from '../constants';
 import * as generics from '../generics';
 import BufferWrapper from '../buffer';
@@ -30,7 +31,7 @@ let loaded = false;
 export const loadListfile = async (buildConfig: string, cache: BuildCache, rootEntries: Map<number, Map<number, string>>): Promise<number> => {
 	log.write('Loading listfile for build %s', buildConfig);
 
-	let url = String(core.view.config.listfileURL);
+	let url = String(State.config.listfileURL);
 	if (typeof url !== 'string')
 		throw new Error('Missing/malformed listfileURL in configuration!');
 
@@ -48,7 +49,7 @@ export const loadListfile = async (buildConfig: string, cache: BuildCache, rootE
 		const cached = await cache.getFile(constants.CACHE.BUILD_LISTFILE, null);
 
 		if (cache.meta.lastListfileUpdate) {
-			let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
+			let ttl = Number(State.config.listfileCacheRefresh) || 0;
 			ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
 
 			if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
@@ -211,16 +212,16 @@ export const getFilenamesByExtension = (exts: string|Array<string>): Array<any> 
  */
 export const formatEntries = (entries: Array<any>): Array<any> => { // NIT
 	// If sorting by ID, perform the sort while the array is only IDs.
-	if (core.view.config.listfileSortByID)
+	if (State.config.listfileSortByID)
 		entries.sort((a, b) => a - b);
 
-	if (core.view.config.listfileShowFileDataIDs)
+	if (State.config.listfileShowFileDataIDs)
 		entries = entries.map(e => getByIDOrUnknown(e) + ' [' + e + ']');
 	else
 		entries = entries.map(e => getByIDOrUnknown(e));
 
 	// If sorting by name, sort now that the filenames have been added.
-	if (!core.view.config.listfileSortByID)
+	if (!State.config.listfileSortByID)
 		entries.sort();
 
 	return entries;
@@ -233,7 +234,7 @@ export const ingestIdentifiedFiles = (entries: Map<number, string>) => {
 		nameLookup.set(fileName, fileDataID);
 	}
 
-	core.events.emit('listfile-needs-updating');
+	Events.emit('listfile-needs-updating');
 };
 
 /**

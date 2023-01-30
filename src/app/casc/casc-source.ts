@@ -7,7 +7,8 @@ import BLTEReader from './blte-reader';
 
 import * as listfile from './listfile';
 import * as log from '../log';
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import constants from '../constants';
 import { LocaleFlags } from './locale-flags';
 import { ContentFlags } from './content-flags';
@@ -42,10 +43,10 @@ export default class CASC {
 		this.rootTypes = [];
 		this.isRemote = isRemote;
 
-		this.progress = core.createProgress(10);
+		this.progress = State.createProgress(10);
 
 		// Listen for configuration changes to cascLocale.
-		this.unhookConfig = core.view.$watch('config.cascLocale', (locale: number) => {
+		this.unhookConfig = State.$watch('config.cascLocale', (locale: number) => {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
@@ -175,22 +176,22 @@ export default class CASC {
 	getModelFormats(): Array<any> {
 		// Filters for the model viewer depending on user settings.
 		const modelExt: Array<any> = []; // NIT: We push both a string and [string, RegExp] into it here
-		if (core.view.config.modelsShowM2)
+		if (State.config.modelsShowM2)
 			modelExt.push('.m2');
 
-		if (core.view.config.modelsShowWMO)
+		if (State.config.modelsShowWMO)
 			modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 
 		return modelExt;
 	}
 
 	updateListfileFilters() {
-		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
-		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
-		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
-		core.view.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats());
-		core.view.listfileDB2s = listfile.getFilenamesByExtension('.db2');
+		State.listfileTextures = listfile.getFilenamesByExtension('.blp');
+		State.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
+		State.listfileVideos = listfile.getFilenamesByExtension('.avi');
+		State.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
+		State.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats());
+		State.listfileDB2s = listfile.getFilenamesByExtension('.db2');
 	}
 
 	/**
@@ -200,10 +201,10 @@ export default class CASC {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 
-		core.events.on('listfile-needs-updating', () => this.updateListfileFilters());
+		Events.on('listfile-needs-updating', () => this.updateListfileFilters());
 
-		core.view.$watch('config.listfileSortByID', () => core.events.emit('listfile-needs-updating'));
-		core.view.$watch('config.listfileShowFileDataIDs', () => core.events.emit('listfile-needs-updating'), { immediate: true });
+		State.$watch('config.listfileSortByID', () => Events.emit('listfile-needs-updating'));
+		State.$watch('config.listfileShowFileDataIDs', () => Events.emit('listfile-needs-updating'), { immediate: true });
 	}
 
 	/**
@@ -218,14 +219,14 @@ export default class CASC {
 
 		// Once the above two tables have loaded, ingest fileDataIDs as
 		// unknown entries to the listfile.
-		if (core.view.config.enableUnknownFiles) {
+		if (State.config.enableUnknownFiles) {
 			this.progress.step('Checking data tables for unknown files');
 			await listfile.loadUnknowns();
 		} else {
 			await this.progress.step();
 		}
 
-		if (core.view.config.enableM2Skins) {
+		if (State.config.enableM2Skins) {
 			await this.progress.step('Loading item displays');
 			await DBItemDisplays.initializeItemDisplays();
 
@@ -235,8 +236,8 @@ export default class CASC {
 
 			if (!creatureDisplayInfo.schema.has('ModelID') || !creatureDisplayInfo.schema.has('TextureVariationFileDataID')) {
 				log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
-				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
-					'Clear Cache': () => core.events.emit('click-cache-clear'),
+				State.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false
 				}, -1, false);
 				return;
@@ -247,8 +248,8 @@ export default class CASC {
 
 			if (!creatureModelData.schema.has('FileDataID') || !creatureModelData.schema.has('CreatureGeosetDataID')) {
 				log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
-				core.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
-					'Clear Cache': () => core.events.emit('click-cache-clear'),
+				State.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false
 				}, -1, false);
 				return;
@@ -267,7 +268,7 @@ export default class CASC {
 	async initializeComponents(): Promise<void> {
 		await this.progress.step('Initializing components');
 
-		await core.view.resolveLoadFuncs();
+		await State.resolveLoadFuncs();
 	}
 
 	/**

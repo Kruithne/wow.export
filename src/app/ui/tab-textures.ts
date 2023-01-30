@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as log from '../log';
 import util from 'node:util';
 import path from 'node:path';
@@ -24,13 +25,13 @@ let selectedFileDataID = 0;
 export const previewTextureByID = async (fileDataID: number, texture: string|null = null) => {
 	texture = texture ?? listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID);
 
-	core.view.isBusy++;
-	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	State.isBusy++;
+	State.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
 	try {
-		const view = core.view;
-		const file = await core.view.casc.getFile(fileDataID);
+		const view = State;
+		const file = await State.casc.getFile(fileDataID);
 
 		const blp = new BLPImage(file);
 
@@ -57,20 +58,20 @@ export const previewTextureByID = async (fileDataID: number, texture: string|nul
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
 
 		selectedFileDataID = fileDataID;
-		core.hideToast();
+		State.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			State.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
+			State.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	core.view.isBusy--;
+	State.isBusy--;
 };
 
 /**
@@ -94,20 +95,20 @@ const getFileInfoPair = (input: number | string): object => {
 };
 
 const exportFiles = async (files, isLocal = false) => {
-	const format = core.view.config.exportTextureFormat;
+	const format = State.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
 		const { fileName, fileDataID }: any = getFileInfoPair(files[0]);
 
-		const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await core.view.casc.getFile(fileDataID);
+		const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await State.casc.getFile(fileDataID);
 		const blp = new BLPImage(data);
-		const png = blp.toPNG(core.view.config.exportChannelMask);
+		const png = blp.toPNG(State.config.exportChannelMask);
 
 		const clipboard = nw.Clipboard.get();
 		clipboard.set(png.toString('base64'), 'png', true);
 
 		log.write('Copied texture to clipboard (%s)', fileName);
-		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
+		State.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
 
 		return;
 	}
@@ -115,10 +116,10 @@ const exportFiles = async (files, isLocal = false) => {
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
-	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
 
-	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
-	const exportMeta = core.view.config.exportBLPMeta;
+	const overwriteFiles = isLocal || State.config.overwriteFiles;
+	const exportMeta = State.config.exportBLPMeta;
 
 	for (const fileEntry of files) {
 		// Abort if the export has been cancelled.
@@ -135,7 +136,7 @@ const exportFiles = async (files, isLocal = false) => {
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
-				const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await core.view.casc.getFile(fileDataID);
+				const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await State.casc.getFile(fileDataID);
 
 				if (format === 'BLP') {
 					// Export as raw file with no conversion.
@@ -144,7 +145,7 @@ const exportFiles = async (files, isLocal = false) => {
 				} else {
 					// Export as PNG.
 					const blp = new BLPImage(data);
-					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
+					await blp.saveToPNG(exportPath, State.config.exportChannelMask);
 					exportPaths.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {
@@ -177,25 +178,25 @@ const exportFiles = async (files, isLocal = false) => {
 };
 
 // Register a drop handler for BLP files.
-core.registerDropHandler({
+State.registerDropHandler({
 	ext: ['.blp'],
-	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
+	prompt: count => util.format('Export %d textures as %s', count, State.config.exportTextureFormat),
 	process: files => exportFiles(files, true)
 });
 
-core.registerLoadFunc(async () => {
+State.registerLoadFunc(async () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
-	core.view.$watch('config.exportTextureAlpha', () => {
-		if (!core.view.isBusy && selectedFileDataID > 0)
+	State.$watch('config.exportTextureAlpha', () => {
+		if (!State.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});
 
 	// Track selection changes on the texture listbox and preview first texture.
-	core.view.$watch('selectionTextures', async selection => {
+	State.$watch('selectionTextures', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
-		if (first && !core.view.isBusy) {
+		if (first && !State.isBusy) {
 			const fileDataID = listfile.getByFilename(first);
 			if (selectedFileDataID !== fileDataID)
 				previewTextureByID(fileDataID as number);
@@ -203,8 +204,8 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Track when the user clicks to export selected textures.
-	core.events.on('click-export-texture', async () => {
-		const userSelection = core.view.selectionTextures;
+	Events.on('click-export-texture', async () => {
+		const userSelection = State.selectionTextures;
 		if (userSelection.length > 0) {
 			// In most scenarios, we have a user selection to export.
 			await exportFiles(userSelection);
@@ -213,13 +214,13 @@ core.registerLoadFunc(async () => {
 			await exportFiles([selectedFileDataID]);
 		} else {
 			// Nothing to be exported, show the user an error.
-			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		}
 	});
 
 	// Track when the user changes the colour channel mask.
-	core.view.$watch('config.exportChannelMask', () => {
-		if (!core.view.isBusy && selectedFileDataID > 0)
+	State.$watch('config.exportChannelMask', () => {
+		if (!State.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});
 });

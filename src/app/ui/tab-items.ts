@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as listfile from '../casc/listfile';
 import MultiMap from '../MultiMap';
 
@@ -86,7 +87,7 @@ export default class Item {
  * @param item
  */
 export const viewItemModels = (item) => {
-	core.view.setScreen('tab-models');
+	State.setScreen('tab-models');
 
 	const list = new Set();
 
@@ -96,7 +97,7 @@ export const viewItemModels = (item) => {
 			let entry = listfile.getByID(fileDataID);
 
 			if (entry !== undefined) {
-				if (core.view.config.listfileShowFileDataIDs)
+				if (State.config.listfileShowFileDataIDs)
 					entry += ' [' + fileDataID + ']';
 
 				list.add(entry);
@@ -105,11 +106,11 @@ export const viewItemModels = (item) => {
 	}
 
 	// Reset the user filter for models.
-	core.view.userInputFilterModels = '';
+	State.userInputFilterModels = '';
 
-	core.view.overrideModelList = [...list];
-	core.view.selectionModels = [...list];
-	core.view.overrideModelName = item.name;
+	State.overrideModelList = [...list];
+	State.selectionModels = [...list];
+	State.overrideModelName = item.name;
 };
 
 /**
@@ -117,7 +118,7 @@ export const viewItemModels = (item) => {
  * @param item
  */
 export const viewItemTextures = (item) => {
-	core.view.setScreen('tab-textures');
+	State.setScreen('tab-textures');
 
 	const list = new Set();
 
@@ -126,7 +127,7 @@ export const viewItemTextures = (item) => {
 		let entry = listfile.getByID(fileDataID);
 
 		if (entry !== undefined) {
-			if (core.view.config.listfileShowFileDataIDs)
+			if (State.config.listfileShowFileDataIDs)
 				entry += ' [' + fileDataID + ']';
 
 			list.add(entry);
@@ -134,18 +135,18 @@ export const viewItemTextures = (item) => {
 	}
 
 	// Reset the user filter for textures.
-	core.view.userInputFilterTextures = '';
+	State.userInputFilterTextures = '';
 
-	core.view.overrideTextureList = [...list];
-	core.view.selectionTextures = [...list];
-	core.view.overrideTextureName = item.name;
+	State.overrideTextureList = [...list];
+	State.selectionTextures = [...list];
+	State.overrideTextureName = item.name;
 };
 
-core.events.once('screen-tab-items', async () => {
+Events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = core.createProgress(5);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	const progress = State.createProgress(5);
+	State.setScreen('loading');
+	State.isBusy++;
 
 	await progress.step('Loading item data...');
 	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');
@@ -210,30 +211,30 @@ core.events.once('screen-tab-items', async () => {
 	}
 
 	// Show the item viewer screen.
-	core.view.loadPct = -1;
-	core.view.isBusy--;
-	core.view.setScreen('tab-items');
+	State.loadPct = -1;
+	State.isBusy--;
+	State.setScreen('tab-items');
 
 	// Load initial configuration for the type control from config.
-	const enabledTypes = core.view.config.itemViewerEnabledTypes;
+	const enabledTypes = State.config.itemViewerEnabledTypes;
 	const mask = [];
 
 	for (const label of Object.keys(ITEM_SLOTS_MERGED))
 		mask.push({ label, checked: enabledTypes.includes(label) });
 
 	// Register a watcher for the item type control.
-	core.view.$watch('itemViewerTypeMask', () => {
+	State.$watch('itemViewerTypeMask', () => {
 		// Refilter the listfile based on what the new selection.
-		const filter = core.view.itemViewerTypeMask.filter(e => e.checked);
+		const filter = State.itemViewerTypeMask.filter(e => e.checked);
 		const mask = [];
 
 		filter.forEach(e => mask.push(...ITEM_SLOTS_MERGED[e.label]));
 		const test = items.filter(item => mask.includes(item.inventoryType));
-		core.view.listfileItems = test;
+		State.listfileItems = test;
 
 		// Save just the names of user enabled types, preventing incompatibilities if we change things.
-		core.view.config.itemViewerEnabledTypes = core.view.itemViewerTypeMask.map(e => e.label);
+		State.config.itemViewerEnabledTypes = State.itemViewerTypeMask.map(e => e.label);
 	}, { deep: true });
 
-	core.view.itemViewerTypeMask = mask;
+	State.itemViewerTypeMask = mask;
 });

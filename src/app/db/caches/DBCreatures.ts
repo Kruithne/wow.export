@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../../core';
+import State from '../../state';
+import Events from '../../events';
 import * as log from '../../log';
 import WDCReader from '../WDCReader';
 
@@ -21,8 +22,8 @@ export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, cre
 
 	if (!creatureDisplayInfoGeosetData.schema.has('CreatureDisplayInfoID') || !creatureDisplayInfoGeosetData.schema.has('GeosetValue')) {
 		log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
-		core.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
-			'Clear Cache': () => core.events.emit('click-cache-clear'),
+		State.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+			'Clear Cache': () => Events.emit('click-cache-clear'),
 			'Not Now': () => false
 		}, -1, false);
 		return;

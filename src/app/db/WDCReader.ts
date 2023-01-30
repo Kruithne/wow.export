@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert';
 
 import * as log from '../log';
-import * as core from '../core';
+import State from '../state';
 import constants from '../constants';
 import { downloadFile } from '../generics';
 
@@ -173,7 +173,7 @@ export default class WDCReader {
 	 * @param layoutHash - The layout hash of the table.
 	 */
 	async loadSchema(layoutHash: string): Promise<void> {
-		const casc = core.view.casc;
+		const casc = State.casc;
 		const buildID = casc.getBuildName();
 
 		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
@@ -190,7 +190,7 @@ export default class WDCReader {
 		// No cached definition, download updated DBD and check again.
 		if (structure === null) {
 			try {
-				const dbdUrl = util.format(core.view.config.dbdURL, tableName);
+				const dbdUrl = util.format(State.config.dbdURL, tableName);
 				log.write('No cached DBD, downloading new from %s', dbdUrl);
 
 				rawDbd = await downloadFile(dbdUrl);
@@ -242,7 +242,7 @@ export default class WDCReader {
 	async parse(): Promise<void> {
 		log.write('Loading DB file %s from CASC', this.fileName);
 
-		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);
+		const data: BufferWrapper = await State.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
 		const magic = data.readUInt32();
@@ -260,7 +260,7 @@ export default class WDCReader {
 		const recordSize = data.readUInt32();
 		data.move(4); // stringTableSize
 		data.move(4); // tableHash
-		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
+		const layoutHash = data.readUInt8Array(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
 		const minID = data.readUInt32();
 		const maxID = data.readUInt32();
 		data.move(4); // locale
@@ -316,7 +316,7 @@ export default class WDCReader {
 				fieldSizeBits: data.readUInt16(),
 				additionalDataSize: data.readUInt32(),
 				fieldCompression: data.readUInt32(),
-				fieldCompressionPacking: data.readUInt32(3)
+				fieldCompressionPacking: data.readUInt32Array(3)
 			};
 		}
 
@@ -399,7 +399,7 @@ export default class WDCReader {
 			data.seek(stringBlockOfs + header.stringTableSize);
 
 			// uint32_t id_list[section_headers.id_list_size / 4];
-			const idList = data.readUInt32(header.idListSize / 4);
+			const idList = data.readUInt32Array(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount;
@@ -447,7 +447,7 @@ export default class WDCReader {
 			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, relationshipMap };
 		}
 
-		const castBuffer = BufferWrapper.alloc(8, true);
+		const castBuffer = new BufferWrapper(Buffer.alloc(8));
 
 		// Parse section records.
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
@@ -529,7 +529,7 @@ export default class WDCReader {
 
 					const recordFieldInfo = fieldInfo[fieldIndex];
 
-					let count;
+					let count: number;
 					let fieldType = type;
 					if (Array.isArray(type))
 						[fieldType, count] = type;
@@ -588,15 +588,15 @@ export default class WDCReader {
 									}
 									break;
 
-								case FieldType.Int8: out[prop] = data.readInt8(count); break;
-								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
-								case FieldType.Int16: out[prop] = data.readInt16(count); break;
-								case FieldType.UInt16: out[prop] = data.readUInt16(count); break;
-								case FieldType.Int32: out[prop] = data.readInt32(count); break;
-								case FieldType.UInt32: out[prop] = data.readUInt32(count); break;
-								case FieldType.Int64: out[prop] = data.readInt64(count); break;
-								case FieldType.UInt64: out[prop] = data.readUInt64(count); break;
-								case FieldType.Float: out[prop] = data.readFloat(count); break;
+								case FieldType.Int8: out[prop] = data.readInt8Array(count); break;
+								case FieldType.UInt8: out[prop] = data.readUInt8Array(count); break;
+								case FieldType.Int16: out[prop] = data.readInt16Array(count); break;
+								case FieldType.UInt16: out[prop] = data.readUInt16Array(count); break;
+								case FieldType.Int32: out[prop] = data.readInt32Array(count); break;
+								case FieldType.UInt32: out[prop] = data.readUInt32Array(count); break;
+								case FieldType.Int64: out[prop] = data.readInt64Array(count); break;
+								case FieldType.UInt64: out[prop] = data.readUInt64Array(count); break;
+								case FieldType.Float: out[prop] = data.readFloat32Array(count); break;
 							}
 							break;
 
@@ -659,9 +659,9 @@ export default class WDCReader {
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
 							if (out[prop] < 0)
-								castBuffer.writeBigInt64(BigInt(out[prop] as number));
+								castBuffer.writeInt64(BigInt(out[prop] as number));
 							else
-								castBuffer.writeBigUInt64(BigInt(out[prop] as number));
+								castBuffer.writeUInt64(BigInt(out[prop] as number));
 
 							castBuffer.seek(0);
 							switch (fieldType) {
@@ -682,9 +682,9 @@ export default class WDCReader {
 							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
 								castBuffer.seek(0);
 								if (out[prop] < 0)
-									castBuffer.writeBigInt64(BigInt(out[prop][i]));
+									castBuffer.writeInt64(BigInt(out[prop][i]));
 								else
-									castBuffer.writeBigUInt64(BigInt(out[prop][i]));
+									castBuffer.writeUInt64(BigInt(out[prop][i]));
 
 								castBuffer.seek(0);
 								switch (fieldType) {

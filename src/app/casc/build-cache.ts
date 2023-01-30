@@ -5,7 +5,8 @@ import fsp from 'node:fs/promises';
 import * as log from '../log';
 import constants from '../constants';
 import * as generics from '../generics';
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import BufferWrapper from '../buffer';
 
 let cacheIntegrity: { [x: string]: string; };
@@ -21,7 +22,7 @@ const cacheIntegrityReady = async () => {
 
 		// Wait for initialization event to fire.
 		log.write('Cache integrity is not ready, waiting!');
-		core.events.once('cache-integrity-ready', res);
+		Events.once('cache-integrity-ready', res);
 	});
 };
 
@@ -131,7 +132,7 @@ export default class BuildCache {
 		cacheIntegrity[filePath] = hash;
 
 		await fsp.writeFile(filePath, data.buffer);
-		core.view.cacheSize += data.length;
+		State.cacheSize += data.length;
 
 		await this.saveCacheIntegrity();
 	}
@@ -166,31 +167,31 @@ export default class BuildCache {
 		cacheIntegrity = {};
 	}
 
-	core.events.emit('cache-integrity-ready');
+	Events.emit('cache-integrity-ready');
 })();
 
 // Invoked when the user requests a cache purge.
-core.events.on('click-cache-clear', async () => {
-	core.view.setScreen('config', true);
-	core.view.isBusy++;
-	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
-	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
+Events.on('click-cache-clear', async () => {
+	State.setScreen('config', true);
+	State.isBusy++;
+	State.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
+	log.write('Manual cache purge requested by user! (Cache size: %s)', State.cacheSizeFormatted);
 
 	await fsp.rm(constants.CACHE.DIR, { recursive: true, force: true });
 	await fsp.mkdir(constants.CACHE.DIR);
 
-	core.view.cacheSize = 0;
+	State.cacheSize = 0;
 	log.write('Purge complete, awaiting mandatory restart.');
-	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => core.view.restartApplication() }, -1, false);
+	State.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => State.restartApplication() }, -1, false);
 
-	core.events.emit('cache-cleared');
+	Events.emit('cache-cleared');
 });
 
 // Run cache clean-up once a CASC source has been selected.
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
-core.events.once('casc-source-changed', async () => {
-	let cacheExpire = Number(core.view.config.cacheExpiry) || 0;
+Events.once('casc-source-changed', async () => {
+	let cacheExpire = Number(State.config.cacheExpiry) || 0;
 	cacheExpire *= 24 * 60 * 60 * 1000;
 
 	// If user sets cacheExpiry to 0 in the configuration, we completely
@@ -244,7 +245,7 @@ core.events.once('casc-source-changed', async () => {
 			// sure we don't subtract the size of it from our total to maintain accuracy.
 			deleteSize -= manifestSize;
 
-			core.view.cacheSize -= deleteSize;
+			State.cacheSize -= deleteSize;
 		}
 	}
 });

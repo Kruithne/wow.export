@@ -77,7 +77,7 @@ export default class Salsa20 {
 	 * @returns
 	 */
 	getBytes(byteCount: number): BufferWrapper {
-		const out = BufferWrapper.alloc(byteCount);
+		const out = new BufferWrapper(Buffer.alloc(byteCount));
 		for (let i = 0; i < byteCount; i++) {
 			if (this.blockUsed === 64) {
 				this._generateBlock();

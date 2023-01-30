@@ -1,7 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as log from '../log';
 import ExportHelper from '../casc/export-helper';
 import constants from '../constants';
@@ -14,34 +15,34 @@ const computeRawFiles = async () => {
 	if (isDirty) {
 		isDirty = false;
 
-		if (core.view.config.enableUnknownFiles) {
-			core.setToast('progress', 'Scanning game client for all files...');
+		if (State.config.enableUnknownFiles) {
+			State.setToast('progress', 'Scanning game client for all files...');
 			await generics.redraw();
 
-			const rootEntries = core.view.casc.getValidRootEntries();
-			core.view.listfileRaw = listfile.formatEntries(rootEntries);
-			core.setToast('success', util.format('Found %d files in the game client', core.view.listfileRaw.length));
+			const rootEntries = State.casc.getValidRootEntries();
+			State.listfileRaw = listfile.formatEntries(rootEntries);
+			State.setToast('success', util.format('Found %d files in the game client', State.listfileRaw.length));
 		} else {
-			core.setToast('progress', 'Scanning game client for all known files...');
+			State.setToast('progress', 'Scanning game client for all known files...');
 			await generics.redraw();
 
-			core.view.listfileRaw = listfile.getFullListfile();
-			core.setToast('success', util.format('Found %d known files in the game client', core.view.listfileRaw.length));
+			State.listfileRaw = listfile.getFullListfile();
+			State.setToast('success', util.format('Found %d known files in the game client', State.listfileRaw.length));
 		}
 	}
 };
 
-core.registerLoadFunc(async () => {
-	core.events.on('screen-tab-raw', () => computeRawFiles());
-	core.events.on('listfile-needs-updating', () => { isDirty = true; });
-	core.view.$watch('config.cascLocale', () => { isDirty = true; });
+State.registerLoadFunc(async () => {
+	Events.on('screen-tab-raw', () => computeRawFiles());
+	Events.on('listfile-needs-updating', () => { isDirty = true; });
+	State.$watch('config.cascLocale', () => { isDirty = true; });
 });
 
 // Track when the user clicks to auto-detect raw files.
-core.events.on('click-detect-raw', async () => {
-	const userSelection = core.view.selectionRaw;
+Events.on('click-detect-raw', async () => {
+	const userSelection = State.selectionRaw;
 	if (userSelection.length === 0) {
-		core.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
+		State.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
 		return;
 	}
 
@@ -56,20 +57,20 @@ core.events.on('click-detect-raw', async () => {
 
 
 	if (filteredSelection.length === 0) {
-		core.setToast('info', 'You haven\'t selected any unknown files to identify.');
+		State.setToast('info', 'You haven\'t selected any unknown files to identify.');
 		return;
 	}
 
-	core.view.isBusy++;
+	State.isBusy++;
 
 	const extensionMap = new Map();
 	let currentIndex = 1;
 
 	for (const fileDataID of filteredSelection) {
-		core.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
+		State.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
 
 		try {
-			const data = await core.view.casc.getFile(fileDataID);
+			const data = await State.casc.getFile(fileDataID);
 			for (const check of constants.FILE_IDENTIFIERS) {
 				if (data.startsWith(check.match)) {
 					extensionMap.set(fileDataID, check.ext);
@@ -88,31 +89,31 @@ core.events.on('click-detect-raw', async () => {
 
 		if (extensionMap.size === 1) {
 			const [fileDataID, ext] = extensionMap.entries().next().value;
-			core.setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
+			State.setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
 		} else {
-			core.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
+			State.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
 		}
 
-		core.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
+		State.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
 	} else {
-		core.setToast('info', 'Unable to identify any of the selected files.');
+		State.setToast('info', 'Unable to identify any of the selected files.');
 	}
 
-	core.view.isBusy--;
+	State.isBusy--;
 });
 
 // Track when the user clicks to export selected raw files.
-core.events.on('click-export-raw', async () => {
-	const userSelection = core.view.selectionRaw;
+Events.on('click-export-raw', async () => {
+	const userSelection = State.selectionRaw;
 	if (userSelection.length === 0) {
-		core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
 
-	const overwriteFiles = core.view.config.overwriteFiles;
+	const overwriteFiles = State.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -123,7 +124,7 @@ core.events.on('click-export-raw', async () => {
 
 		if (overwriteFiles || !await generics.fileExists(exportPath)) {
 			try {
-				const data = await core.view.casc.getFileByName(fileName, true);
+				const data = await State.casc.getFileByName(fileName, true);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);

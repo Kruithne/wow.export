@@ -125,7 +125,7 @@ export async function downloadFile(url: string, out?: string, partialOfs: number
 	if (deflate)
 		data = await new Promise(resolve => zlib.inflate(data, (err, result) => resolve(result)));
 
-	const wrapped = BufferWrapper.from(data);
+	const wrapped = new BufferWrapper(data);
 
 	// Write the file to disk if requested.
 	if (out) {
@@ -245,9 +245,9 @@ export async function fileExists(file: string): Promise<boolean> {
  */
 export async function readFile(file: string, offset: number, length: number): Promise<BufferWrapper> {
 	const fd = await fs.promises.open(file);
-	const buf = BufferWrapper.alloc(length);
+	const buf = new BufferWrapper(Buffer.allocUnsafe(length));
 
-	await fd.read(buf.raw, 0, length, offset);
+	await fd.read(buf.buffer, 0, length, offset);
 	await fd.close();
 
 	return buf;

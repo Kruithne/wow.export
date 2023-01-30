@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as listfile from '../casc/listfile';
 import * as log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -9,8 +10,8 @@ import * as generics from '../generics';
 let manifest: any = null;
 
 const updateInstallListfile = () => {
-	core.view.listfileInstall = manifest.files.filter((file) => {
-		for (const tag of core.view.installTags) {
+	State.listfileInstall = manifest.files.filter((file) => {
+		for (const tag of State.installTags) {
 			if (tag.enabled && file.tags.includes(tag.label))
 				return true;
 		}
@@ -19,28 +20,28 @@ const updateInstallListfile = () => {
 	}).map(e => e.name + ' [' + e.tags.join(', ') + ']');
 };
 
-core.events.once('screen-tab-install', async () => {
-	core.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
-	manifest = await core.view.casc.getInstallManifest();
+Events.once('screen-tab-install', async () => {
+	State.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
+	manifest = await State.casc.getInstallManifest();
 
-	core.view.installTags = manifest.tags.map(e => { return { label: e.name, enabled: true, mask: e.mask }; });
-	core.view.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
+	State.installTags = manifest.tags.map(e => { return { label: e.name, enabled: true, mask: e.mask }; });
+	State.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
 
-	core.hideToast();
+	State.hideToast();
 });
 
 // Track when the user clicks to export selected install files.
-core.events.on('click-export-install', async () => {
-	const userSelection = core.view.selectionInstall;
+Events.on('click-export-install', async () => {
+	const userSelection = State.selectionInstall;
 	if (userSelection.length === 0) {
-		core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
 
-	const overwriteFiles = core.view.config.overwriteFiles;
+	const overwriteFiles = State.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -53,7 +54,7 @@ core.events.on('click-export-install', async () => {
 
 		if (overwriteFiles || !await generics.fileExists(exportPath)) {
 			try {
-				const data = await core.view.casc.getFile(0, false, false, true, false, file.hash);
+				const data = await State.casc.getFile(0, false, false, true, false, file.hash);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);

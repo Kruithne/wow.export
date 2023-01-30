@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
-import * as core from '../core';
+import State from '../state';
 import * as generics from '../generics';
 import * as log from '../log';
 import constants from '../constants';
@@ -24,7 +24,6 @@ export default class CASCRemote extends CASC {
 	archives: Map<string, any>;
 	host: string;
 	region: string;
-	cache: BuildCache;
 
 	/**
 	 * Create a new CASC source using a Blizzard CDN.
@@ -183,13 +182,13 @@ export default class CASCRemote extends CASC {
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
-		this.progress = core.createProgress(16);
+		this.progress = State.createProgress(16);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
 		await this.loadRoot();
 
-		core.view.casc = this;
+		State.casc = this;
 
 		await this.loadListfile(this.build.BuildConfig);
 		await this.loadTables();

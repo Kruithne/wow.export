@@ -3,7 +3,7 @@
 
 import util from 'node:util';
 import * as listfile from '../casc/listfile';
-import * as core from '../core';
+import State from '../state';
 
 const MAGIC_SKIN = 0x4E494B53;
 
@@ -25,7 +25,7 @@ export default class Skin {
 
 	async load(): Promise<void> {
 		try {
-			const data = await core.view.casc.getFile(this.fileDataID);
+			const data = await State.casc.getFile(this.fileDataID);
 
 			const magic = data.readUInt32();
 			if (magic !== MAGIC_SKIN)

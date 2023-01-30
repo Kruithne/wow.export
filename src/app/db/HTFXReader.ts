@@ -43,7 +43,7 @@ export default class HTFXReader {
 		// TODO: Verify if build is the same as currently loaded build (DBCache might be outdated)
 		data.readUInt32(); // Build
 
-		data.readUInt32(8); // Verification hash (32 bytes)
+		data.readUInt32Array(8); // Verification hash (32 bytes)
 
 		// Hotfix entries for the rest of the file
 		while (data.remainingBytes) {
@@ -58,10 +58,10 @@ export default class HTFXReader {
 			const recordID = data.readUInt32() as number;
 			const dataSize = data.readUInt32() as number;
 			const status = data.readUInt8() as number;
-			data.readUInt8(3); // Unused
+			data.readUInt8Array(3); // Unused
 
 			if (dataSize)
-				data.readUInt8(dataSize as number); // TODO: Save/expose record data
+				data.readUInt8Array(dataSize as number); // TODO: Save/expose record data
 
 			if (!this.tableHashMap.has(tableHash))
 				log.write('Found hotfix for UNKNOWN TABLE %s, ID %s, PushID %s, Status %s', tableHash, recordID.toString(), pushID, status);

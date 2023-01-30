@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 import * as generics from '../../generics';
-import * as core from '../../core';
+import State from '../../state';
 import FileWriter from '../../file-writer';
 
 type MTLMaterial = {
@@ -54,7 +54,7 @@ export default class MTLWriter {
 		const mtlDir = path.dirname(this.out);
 		await generics.createDirectory(mtlDir);
 
-		const useAbsolute = core.view.config.enableAbsoluteMTLPaths;
+		const useAbsolute = State.config.enableAbsoluteMTLPaths;
 		const writer = new FileWriter(this.out);
 
 		for (const material of this.materials) {

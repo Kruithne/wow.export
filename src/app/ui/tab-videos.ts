@@ -1,25 +1,26 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as log from '../log';
 import ExportHelper from '../casc/export-helper';
 import { BLTEIntegrityError } from '../casc/blte-reader';
 import * as generics from '../generics';
 import * as listfile from '../casc/listfile';
 
-core.registerLoadFunc(async () => {
+State.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.
-	core.events.on('click-export-video', async () => {
-		const userSelection = core.view.selectionVideos;
+	Events.on('click-export-video', async () => {
+		const userSelection = State.selectionVideos;
 		if (userSelection.length === 0) {
-			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'video');
 		helper.start();
 
-		const overwriteFiles = core.view.config.overwriteFiles;
+		const overwriteFiles = State.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -31,7 +32,7 @@ core.registerLoadFunc(async () => {
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
 				try {
-					const data = await core.view.casc.getFileByName(fileName);
+					const data = await State.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
 
 					helper.mark(fileName, true);
@@ -48,7 +49,7 @@ core.registerLoadFunc(async () => {
 						log.write('Local cinematic file is corrupted, forcing fallback.');
 
 						// In the event of a corrupted cinematic, try again with forced fallback.
-						const data = await core.view.casc.getFileByName(fileName, false, false, true, true);
+						const data = await State.casc.getFileByName(fileName, false, false, true, true);
 						await data.writeToFile(exportPath);
 
 						helper.mark(fileName, true);

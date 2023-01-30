@@ -3,7 +3,8 @@
 import path from 'node:path';
 import util from 'node:util';
 import * as log from '../log';
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 
 const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
 //const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
@@ -35,10 +36,10 @@ export default class ExportHelper {
 	 */
 	static getExportPath(file: string) {
 		// Remove whitespace due to MTL incompatibility for textures.
-		if (core.view.config.removePathSpaces)
+		if (State.config.removePathSpaces)
 			file = file.replace(/\s/g, '');
 
-		return path.normalize(path.join(core.view.config.exportDirectory, file));
+		return path.normalize(path.join(State.config.exportDirectory, file));
 	}
 
 	/**
@@ -47,7 +48,7 @@ export default class ExportHelper {
 	 * @returns Relative path of given file
 	 */
 	static getRelativeExport(file: string): string {
-		return path.relative(core.view.config.exportDirectory, file);
+		return path.relative(State.config.exportDirectory, file);
 	}
 
 	/**
@@ -123,16 +124,16 @@ export default class ExportHelper {
 		this.succeeded = 0;
 		this.isFinished = false;
 
-		core.view.isBusy++;
-		core.view.exportCancelled = false;
+		State.isBusy++;
+		State.exportCancelled = false;
 
 		log.write('Starting export of %d %s items', this.count, this.unit);
 		this.updateCurrentTask();
 
-		core.events.once('toast-cancelled', () => {
+		Events.once('toast-cancelled', () => {
 			if (!this.isFinished) {
-				core.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
-				core.view.exportCancelled = true;
+				State.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
+				State.exportCancelled = true;
 			}
 		});
 	}
@@ -143,7 +144,7 @@ export default class ExportHelper {
 	 * @returns If exported is cancelled
 	 */
 	isCancelled(): boolean {
-		if (core.view.exportCancelled) {
+		if (State.exportCancelled) {
 			this.finish();
 			return true;
 		}
@@ -168,23 +169,23 @@ export default class ExportHelper {
 			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
 
 			if (this.count > 1)
-				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
+				State.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
 			else
-				core.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
+				State.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
-			const cancelled = core.view.exportCancelled;
-			core.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
+			const cancelled = State.exportCancelled;
+			State.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
-			if (core.view.exportCancelled)
-				core.setToast('info', 'Export was cancelled by the user.', null);
+			if (State.exportCancelled)
+				State.setToast('info', 'Export was cancelled by the user.', null);
 			else
-				core.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
+				State.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
 		}
 
 		this.isFinished = true;
-		core.view.isBusy--;
+		State.isBusy--;
 	}
 
 	/**
@@ -238,7 +239,7 @@ export default class ExportHelper {
 			exportProgress += ')';
 		}
 
-		core.setToast('progress', exportProgress, null, -1, true);
+		State.setToast('progress', exportProgress, null, -1, true);
 	}
 
 	/**

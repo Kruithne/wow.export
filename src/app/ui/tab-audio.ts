@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as core from '../core';
+import State from '../state';
+import Events from '../events';
 import * as log from '../log';
 import path from 'node:path';
 import util from 'node:util';
@@ -24,16 +25,16 @@ let data;
  * Update the current status of the sound player seek bar.
  */
 const updateSeek = () => {
-	if (!core.view.soundPlayerState || !audioNode)
+	if (!State.soundPlayerState || !audioNode)
 		return;
 
-	core.view.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
+	State.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
 
-	if (core.view.soundPlayerSeek === 1) {
-		if (core.view.config.soundPlayerLoop)
+	if (State.soundPlayerSeek === 1) {
+		if (State.config.soundPlayerLoop)
 			audioNode.play();
 		else
-			core.view.soundPlayerState = false;
+			State.soundPlayerState = false;
 	}
 
 	requestAnimationFrame(updateSeek);
@@ -67,7 +68,7 @@ const playSelectedTrack = async () => {
 
 	// Ensure the track actually loaded.
 	if (isTrackLoaded) {
-		core.view.soundPlayerState = true;
+		State.soundPlayerState = true;
 		audioNode.play();
 		updateSeek();
 	}
@@ -77,7 +78,7 @@ const playSelectedTrack = async () => {
  * Pause the currently playing track.
  */
 const pauseSelectedTrack = () => {
-	core.view.soundPlayerState = false;
+	State.soundPlayerState = false;
 	audioNode.pause();
 };
 
@@ -87,9 +88,9 @@ const pauseSelectedTrack = () => {
  */
 const unloadSelectedTrack = () => {
 	isTrackLoaded = false;
-	core.view.soundPlayerState = false;
-	core.view.soundPlayerDuration = 0;
-	core.view.soundPlayerSeek = 0;
+	State.soundPlayerState = false;
+	State.soundPlayerDuration = 0;
+	State.soundPlayerSeek = 0;
 	audioNode.src = '';
 
 	data?.revokeDataURL();
@@ -102,22 +103,22 @@ const unloadSelectedTrack = () => {
  */
 const loadSelectedTrack = async () => {
 	if (selectedFile === null)
-		return core.setToast('info', 'You need to select an audio track first!', null, -1, true);
+		return State.setToast('info', 'You need to select an audio track first!', null, -1, true);
 
-	core.view.isBusy++;
-	core.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
+	State.isBusy++;
+	State.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	log.write('Previewing sound file %s', selectedFile);
 
 	try {
 		const fileDataID = listfile.getByFilename(selectedFile);
-		data = await core.view.casc.getFile(fileDataID);
+		data = await State.casc.getFile(fileDataID);
 
 		if (selectedFile.endsWith('.unk_sound')) {
 			const fileType = detectFileType(data);
 			if (fileType === AUDIO_TYPE_OGG)
-				core.view.soundPlayerTitle += ' (OGG Auto Detected)';
+				State.soundPlayerTitle += ' (OGG Auto Detected)';
 			else if (fileType === AUDIO_TYPE_MP3)
-				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
+				State.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
 		audioNode.src = data.getDataURL();
@@ -131,75 +132,75 @@ const loadSelectedTrack = async () => {
 			throw new Error('Invalid audio duration.');
 
 		isTrackLoaded = true;
-		core.hideToast();
+		State.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
+			State.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
 			log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
 		} else {
 			// Error reading/parsing audio.
-			core.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
+			State.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	core.view.isBusy--;
+	State.isBusy--;
 };
 
-core.registerLoadFunc(async () => {
+State.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
-	audioNode.volume = core.view.config.soundPlayerVolume;
-	audioNode.ondurationchange = () => core.view.soundPlayerDuration = audioNode.duration;
+	audioNode.volume = State.config.soundPlayerVolume;
+	audioNode.ondurationchange = () => State.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
-	core.view.$watch('config.soundPlayerVolume', value => {
+	State.$watch('config.soundPlayerVolume', value => {
 		audioNode.volume = value;
 	});
 
 	// Track requests to seek the current sound file and directly edit the
-	// time of the audio node. core.view.soundPlayerSeek will automatically update.
-	core.events.on('click-sound-seek', seek => {
+	// time of the audio node. State.soundPlayerSeek will automatically update.
+	Events.on('click-sound-seek', seek => {
 		if (audioNode && isTrackLoaded)
 			audioNode.currentTime = audioNode.duration * seek;
 	});
 
 	// Track sound-player-toggle events.
-	core.events.on('click-sound-toggle', () => {
-		if (core.view.soundPlayerState)
+	Events.on('click-sound-toggle', () => {
+		if (State.soundPlayerState)
 			pauseSelectedTrack();
 		else
 			playSelectedTrack();
 	});
 
 	// Track selection changes on the sound listbox and set first as active entry.
-	core.view.$watch('selectionSounds', async selection => {
+	State.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
-		if (!core.view.isBusy && first && selectedFile !== first) {
-			core.view.soundPlayerTitle = path.basename(first);
+		if (!State.isBusy && first && selectedFile !== first) {
+			State.soundPlayerTitle = path.basename(first);
 
 			selectedFile = first;
 			unloadSelectedTrack();
 
-			if (core.view.config.soundPlayerAutoPlay)
+			if (State.config.soundPlayerAutoPlay)
 				playSelectedTrack();
 		}
 	});
 
 	// Track when the user clicks to export selected sound files.
-	core.events.on('click-export-sound', async () => {
-		const userSelection = core.view.selectionSounds;
+	Events.on('click-export-sound', async () => {
+		const userSelection = State.selectionSounds;
 		if (userSelection.length === 0) {
-			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'sound files');
 		helper.start();
 
-		const overwriteFiles = core.view.config.overwriteFiles;
+		const overwriteFiles = State.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -209,7 +210,7 @@ core.registerLoadFunc(async () => {
 			fileName = listfile.stripFileEntry(fileName);
 
 			if (fileName.endsWith('.unk_sound')) {
-				data = await core.view.casc.getFileByName(fileName);
+				data = await State.casc.getFileByName(fileName);
 				const fileType = detectFileType(data);
 
 				if (fileType === AUDIO_TYPE_OGG)
@@ -222,7 +223,7 @@ core.registerLoadFunc(async () => {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
 					if (!data)
-						data = await core.view.casc.getFileByName(fileName);
+						data = await State.casc.getFileByName(fileName);
 
 					await data.writeToFile(exportPath);
 				} else {
@@ -239,7 +240,7 @@ core.registerLoadFunc(async () => {
 	});
 
 	// If the application crashes, we need to make sure to stop playing sound.
-	core.events.on('crash', () => {
+	Events.on('crash', () => {
 		if (audioNode)
 			audioNode.remove();
 

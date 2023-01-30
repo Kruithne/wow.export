@@ -1,12 +1,12 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
-import * as core from '../core';
 import constants from '../constants';
 import * as generics from '../generics';
 import * as log from '../log';
 import * as ExternalLinks from '../external-links';
 import State from '../state';
+import Events from '../events';
 
 import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
@@ -18,15 +18,15 @@ let cascSource: CASC;
 
 const loadInstall = (index) => {
 	State.block(async () => {
-		core.view.showLoadScreen();
+		State.showLoadScreen();
 
 		// Wipe the available build lists.
-		core.view.availableLocalBuilds = null;
-		core.view.availableRemoteBuilds = null;
+		State.availableLocalBuilds = null;
+		State.availableRemoteBuilds = null;
 
 		if (cascSource instanceof CASCLocal) {
 			// Update the recent local installation list..
-			const recentLocal = core.view.config.recentLocal;
+			const recentLocal = State.config.recentLocal;
 			const installPath = cascSource.dir;
 			const build = cascSource.builds[index];
 			const preIndex = recentLocal.findIndex(e => e.path === installPath && e.product === build.Product);
@@ -46,26 +46,26 @@ const loadInstall = (index) => {
 
 		try {
 			await cascSource.load(index);
-			core.view.setScreen('tab-models');
+			State.setScreen('tab-models');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
-			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
+			State.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
-			core.view.setScreen('source-select');
+			State.setScreen('source-select');
 		}
 	});
 };
 
-core.events.once('screen-source-select', async () => {
+Events.once('screen-source-select', async () => {
 	const pings = [];
-	const regions = core.view.cdnRegions;
-	const userRegion = core.view.config.sourceSelectUserRegion;
+	const regions = State.cdnRegions;
+	const userRegion = State.config.sourceSelectUserRegion;
 
 	// User has pre-selected a CDN, lock choice from changing.
 	if (typeof userRegion === 'string')
-		core.view.lockCDNRegion = true;
+		State.lockCDNRegion = true;
 
 	// Iterate CDN regions and create data nodes.
 	for (const region of constants.PATCH.REGIONS) {
@@ -75,7 +75,7 @@ core.events.once('screen-source-select', async () => {
 
 		// Mark this region as the selected one.
 		if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION))
-			core.view.selectedCDNRegion = node;
+			State.selectedCDNRegion = node;
 
 		// Run a rudimentary ping check for each CDN.
 		pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
@@ -91,12 +91,12 @@ core.events.once('screen-source-select', async () => {
 	selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
 	// Grab recent local installations from config.
-	let recentLocal = core.view.config.recentLocal;
+	let recentLocal = State.config.recentLocal;
 	if (!Array.isArray(recentLocal))
-		recentLocal = core.view.config.recentLocal = [];
+		recentLocal = State.config.recentLocal = [];
 
-	const openInstall = async (installPath, product) => {
-		core.hideToast();
+	const openInstall = async (installPath: string, product: string|undefined = undefined) => {
+		State.hideToast();
 
 		try {
 			cascSource = new CASCLocal(installPath);
@@ -105,9 +105,9 @@ core.events.once('screen-source-select', async () => {
 			if (product)
 				loadInstall(cascSource.builds.findIndex(build => build.Product === product));
 			else
-				core.view.availableLocalBuilds = cascSource.getProductList();
+				State.availableLocalBuilds = cascSource.getProductList();
 		} catch (e) {
-			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
+			State.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
 			log.write('Failed to initialize local CASC source: %s', e.message);
 
 			// In the event the given installation directory is now invalid, remove all
@@ -123,7 +123,7 @@ core.events.once('screen-source-select', async () => {
 
 	// Register for the 'click-source-local' event fired when the user clicks 'Open Local Installation'.
 	// Prompt the user with a directory selection dialog to locate their local installation.
-	core.events.on('click-source-local', () => {
+	Events.on('click-source-local', () => {
 		selector.value = ''; // Wipe the existing value to ensure onchange triggers.
 		selector.click();
 	});
@@ -131,13 +131,13 @@ core.events.once('screen-source-select', async () => {
 	// Both selecting a file using the directory selector, and clicking on a recent local
 	// installation (click-source-local-recent) should then attempt to open an install.
 	selector.onchange = () => openInstall(selector.value);
-	core.events.on('click-source-local-recent', entry => openInstall(entry.path, entry.product));
+	Events.on('click-source-local-recent', entry => openInstall(entry.path, entry.product));
 
 	// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 	// Attempt to initialize a remote CASC source using the selected region.
-	core.events.on('click-source-remote', () => {
+	Events.on('click-source-remote', () => {
 		State.block(async () => {
-			const tag = core.view.selectedCDNRegion.tag;
+			const tag = State.selectedCDNRegion.tag;
 
 			try {
 				cascSource = new CASCRemote(tag);
@@ -147,9 +147,9 @@ core.events.once('screen-source-select', async () => {
 				if (cascSource.builds.length === 0)
 					throw new Error('No builds available.');
 
-				core.view.availableRemoteBuilds = cascSource.getProductList();
+				State.availableRemoteBuilds = cascSource.getProductList();
 			} catch (e) {
-				core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
+				State.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
 				log.write('Failed to initialize remote CASC source: %s', e.message);
 			}
 		});
@@ -157,15 +157,15 @@ core.events.once('screen-source-select', async () => {
 
 	// Register for 'click-source-build' events which are fired when the user selects
 	// a build either for remote or local installations.
-	core.events.on('click-source-build', loadInstall);
+	Events.on('click-source-build', loadInstall);
 
 	// Once all pings are resolved, pick the fastest.
 	Promise.all(pings).then(() => {
 		// CDN region choice is locked, do nothing.
-		if (core.view.lockCDNRegion)
+		if (State.lockCDNRegion)
 			return;
 
-		const selectedRegion = core.view.selectedCDNRegion;
+		const selectedRegion = State.selectedCDNRegion;
 		for (const region of regions) {
 			// Skip regions that don't have a valid ping.
 			if (region.delay === null || region.delay < 0)
@@ -173,7 +173,7 @@ core.events.once('screen-source-select', async () => {
 
 			// Switch the selected region for the fastest one.
 			if (region.delay < selectedRegion.delay)
-				core.view.selectedCDNRegion = region;
+				State.selectedCDNRegion = region;
 		}
 	});
 });

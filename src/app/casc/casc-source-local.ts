@@ -3,7 +3,7 @@
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import * as core from '../core';
+import State from '../state';
 import * as generics from '../generics';
 import * as log from '../log';
 import constants from '../constants';
@@ -29,7 +29,6 @@ export default class CASCLocal extends CASC {
 	builds: Array<any>; // NIT: Make type for builds
 	build: any;
 
-	cache: BuildCache;
 	remote: CASCRemote;
 
 	/**
@@ -104,13 +103,13 @@ export default class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = core.createProgress(13);
+		this.progress = State.createProgress(13);
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
 		await this.loadRoot();
 
-		core.view.casc = this;
+		State.casc = this;
 
 		await this.loadListfile(this.build.BuildKey);
 		await this.loadTables();
@@ -223,7 +222,7 @@ export default class CASCLocal extends CASC {
 	 * files needed during local initialization.
 	 */
 	async initializeRemoteCASC() {
-		const remote = new CASCRemote(core.view.selectedCDNRegion.tag);
+		const remote = new CASCRemote(State.selectedCDNRegion.tag);
 		await remote.init();
 
 		const buildIndex = remote.builds.findIndex(build => build.Product === this.build.Product);
