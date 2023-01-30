@@ -44,7 +44,7 @@ export default class InstallManifest {
 			this.tags[i] = {
 				name: data.readNullTerminatedString(),
 				type: data.readUInt16BE() as number,
-				mask: data.readUInt8(this.maskSize) as number[]
+				mask: data.readUInt8Array(this.maskSize)
 			};
 		}
 

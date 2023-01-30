@@ -251,7 +251,7 @@ export default class BLTEReader extends BufferWrapper {
 		if (ivSize !== 4)
 			throw new Error('[BLTE] Unexpected ivSize: ' + ivSize);
 
-		const ivShort = data.readUInt8(ivSize) as number[];
+		const ivShort = data.readUInt8Array(ivSize);
 		if (data.remainingBytes === 0)
 			throw new Error('[BLTE] Unexpected end of data before encryption flag.');
 

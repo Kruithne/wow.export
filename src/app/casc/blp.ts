@@ -78,8 +78,8 @@ export default class BLPImage {
 		this.height = this.data.readUInt32() as number;
 
 		// Read mipmap data..
-		this.mapOffsets = this.data.readUInt32(16) as number[];
-		this.mapSizes = this.data.readUInt32(16) as number[];
+		this.mapOffsets = this.data.readUInt32Array(16);
+		this.mapSizes = this.data.readUInt32Array(16);
 
 		// Calculate available mipmaps..
 		this.mapCount = 0;
@@ -161,7 +161,7 @@ export default class BLPImage {
 
 		// Extract the raw data we need..
 		this.data.seek(this.mapOffsets[mipmap]);
-		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]) as number[];
+		this.rawData = this.data.readUInt8Array(this.mapSizes[mipmap]);
 	}
 
 	/**
