@@ -10,11 +10,10 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 
 import { filesize } from './generics';
-
-import * as Blender from './blender';
-import * as Updater from './updater';
 import { win } from './nwjs';
 
+import Updater from './updater';
+import Blender from './blender';
 import ExternalLinks from './external-links';
 import Constants from './constants';
 import Log from './log';
