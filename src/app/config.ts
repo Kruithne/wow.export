@@ -130,8 +130,7 @@ export function resetToDefault(key: string) {
  * Reset all configuration to default.
  */
 export function resetAllToDefault() {
-	// Use JSON parse/stringify to ensure deep non-referenced clone.
-	State.config = JSON.parse(JSON.stringify(defaultConfig));
+	State.config = structuredClone(defaultConfig);
 }
 
 /**
@@ -217,8 +216,7 @@ Events.on('click-config-discard', () => State.showPreviousScreen());
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
 Events.on('click-config-reset', () => {
-	// Use JSON parse/stringify to ensure deep non-referenced clone.
-	State.configEdit = JSON.parse(JSON.stringify(defaultConfig));
+	State.configEdit = structuredClone(defaultConfig);
 });
 
 export default {
