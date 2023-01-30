@@ -6,6 +6,13 @@ import * as listfile from '../casc/listfile';
 
 let _syncID: number = 0;
 
+export type TextureRibbonSlot = {
+	fileDataID: number;
+	displayName: string;
+	fileName: string;
+	src: string;
+};
+
 /**
  * Invoked when the texture ribbon element resizes.
  */
