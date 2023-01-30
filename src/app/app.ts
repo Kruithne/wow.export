@@ -233,8 +233,9 @@ document.addEventListener('click', function(e) {
 			 * @param tag
 			 * @param event
 			 */
-			click: function(tag: string, event: any, ...params) {
-				if (!event.target.classList.contains('disabled'))
+			click: function(tag: string, event: MouseEvent, ...params) {
+				const target = event.target as HTMLElement;
+				if (!target.classList.contains('disabled'))
 					core.events.emit('click-' + tag, ...params);
 			},
 
