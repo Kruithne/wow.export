@@ -109,7 +109,7 @@ export default class BLTEReader extends BufferWrapper {
 			if (headerSize !== 0) {
 				block.CompSize = buf.readInt32BE();
 				block.DecompSize = buf.readInt32BE();
-				block.Hash = buf.readHexString(16);
+				block.Hash = buf.readString(16), 'hex');
 			} else {
 				block.CompSize = size - 8;
 				block.DecompSize = size - 9;
@@ -241,7 +241,7 @@ export default class BLTEReader extends BufferWrapper {
 
 		const keyNameBytes = new Array(keyNameSize);
 		for (let i = 0; i < keyNameSize; i++)
-			keyNameBytes[i] = data.readHexString(1);
+			keyNameBytes[i] = data.readString(1), 'hex');
 
 		const keyName = keyNameBytes.reverse().join('');
 		const ivSize = data.readUInt8();

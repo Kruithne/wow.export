@@ -321,11 +321,11 @@ export default class CASCRemote extends CASC {
 		data.seek(0); // Reset position.
 
 		for (let i = 0; i < count; i++) {
-			let hash = data.readHexString(16);
+			let hash = data.readString(16), 'hex');
 
 			// Skip zero hashes.
 			if (hash === EMPTY_HASH)
-				hash = data.readHexString(16);
+				hash = data.readString(16), 'hex');
 
 			this.archives.set(hash, { key, size: data.readInt32BE(), offset: data.readInt32BE() });
 		}

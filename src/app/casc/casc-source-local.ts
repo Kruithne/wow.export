@@ -170,7 +170,7 @@ export default class CASCLocal extends CASC {
 
 		const nBlocks = dataLength as number / 18;
 		for (let i = 0; i < nBlocks; i++) {
-			const key = index.readHexString(9);
+			const key = index.readString(9), 'hex');
 			if (entries.has(key)) {
 				index.move(1 + 4 + 4); // idxHigh + idxLow + size
 				continue;
