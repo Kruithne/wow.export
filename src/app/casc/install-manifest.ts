@@ -51,7 +51,7 @@ export default class InstallManifest {
 		for (let i = 0; i < this.numFiles; i++) {
 			this.files[i] = {
 				name: data.readNullTerminatedString(),
-				hash: data.readHexString(this.hashSize),
+				hash: data.readString(this.hashSize, 'hex'),
 				size: data.readUInt32BE() as number,
 				tags: []
 			};

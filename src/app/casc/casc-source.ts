@@ -404,10 +404,10 @@ export default class CASC {
 					break;
 
 				const size = encoding.readInt40BE() as number;
-				const cKey = encoding.readHexString(hashSizeCKey);
+				const cKey = encoding.readString(hashSizeCKey, 'hex');
 
 				encodingSizes.set(cKey, size);
-				encodingKeys.set(cKey, encoding.readHexString(hashSizeEKey));
+				encodingKeys.set(cKey, encoding.readString(hashSizeEKey, 'hex'));
 
 				encoding.move(hashSizeEKey * (keysCount - 1));
 			}
