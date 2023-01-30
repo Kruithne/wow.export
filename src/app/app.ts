@@ -266,8 +266,9 @@ document.addEventListener('click', function(e) {
 			/**
 			 * Invoked when the texture ribbon element on the model viewer
 			 * fires a resize event.
+			 * @param width - The new width of the ribbon.
 			 */
-			onTextureRibbonResize: function(width) {
+			onTextureRibbonResize: function(width: number) {
 				textureRibbon.onResize(width);
 			},
 
