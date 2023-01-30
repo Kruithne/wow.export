@@ -342,7 +342,7 @@ export default class GLTFWriter {
 			this.calculateMinMax(arr, stride, accessor);
 			for (const node of arr) {
 				if (componentType == 0x1406)
-					bin.writeFloatLE(node);
+					bin.writeFloat(node);
 				else if (componentType == 0x1401)
 					bin.writeUInt8(node);
 			}
@@ -377,7 +377,7 @@ export default class GLTFWriter {
 
 			// Write indices into the binary.
 			for (const idx of mesh.triangles)
-				bin.writeUInt16LE(idx);
+				bin.writeUInt16(idx);
 
 			const meshIndex = root.meshes.length;
 			root.meshes.push({

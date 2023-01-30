@@ -285,11 +285,11 @@ export default class PNGWriter {
 		const buf = new BufferWrapper(Buffer.allocUnsafe(8 + 25 + deflated.length + 12 + 12));
 
 		// 8-byte PNG signature.
-		buf.writeUInt32LE(0x474E5089);
-		buf.writeUInt32LE(0x0A1A0A0D);
+		buf.writeUInt32(0x474E5089);
+		buf.writeUInt32(0x0A1A0A0D);
 
 		const ihdr = BufferWrapper.alloc(4 + 13, false);
-		ihdr.writeUInt32LE(0x52444849); // IHDR
+		ihdr.writeUInt32(0x52444849); // IHDR
 		ihdr.writeUInt32BE(this.width); // Image width
 		ihdr.writeUInt32BE(this.height); // Image height
 		ihdr.writeUInt8(8); // Bit-depth (1, 2, 4, 8, or 16)
@@ -304,7 +304,7 @@ export default class PNGWriter {
 		buf.writeInt32BE(ihdr.toCRC32());
 
 		const idat = BufferWrapper.alloc(4 + deflated.byteLength, false);
-		idat.writeUInt32LE(0x54414449); // IDAT
+		idat.writeUInt32(0x54414449); // IDAT
 		idat.writeBuffer(deflated);
 
 		idat.seek(0); // NIT: Remove?
@@ -314,8 +314,8 @@ export default class PNGWriter {
 		buf.writeInt32BE(idat.toCRC32());
 
 		buf.writeUInt32BE(0);
-		buf.writeUInt32LE(0x444E4549); // IEND
-		buf.writeUInt32LE(0x826042AE); // CRC IEND
+		buf.writeUInt32(0x444E4549); // IEND
+		buf.writeUInt32(0x826042AE); // CRC IEND
 
 		return buf;
 	}
