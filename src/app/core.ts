@@ -23,7 +23,7 @@ let loaders = [];
 export const view: any = { // NIT: Defined this as any for now to make things error less.
 	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-	isDev: process.env.NODE_ENV === 'development', // True if in development environment.
+	isDebugBuild: process.env.NODE_ENV === 'development', // True if in development environment.
 	loadingProgress: '', // Sets the progress text for the loading screen.
 	loadingTitle: '', // Sets the title text for the loading screen.
 	loadPct: -1, // Controls active loading bar percentage.
