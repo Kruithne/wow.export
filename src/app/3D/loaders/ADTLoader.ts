@@ -1,7 +1,5 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const LoaderGenerics = require('./LoaderGenerics');
-
 class ADTLoader {
 	/**
 	 * Construct a new ADTLoader instance.
@@ -303,7 +301,7 @@ const ADTTexChunkHandlers = {
 
 	// MTEX (Textures)
 	0x4D544558: function(data, chunkSize) {
-		this.textures = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.textures = data.readStringBlock(chunkSize);
 	},
 
 	// MCNK (Texture Chunks)
@@ -446,7 +444,7 @@ const ADTObjChunkHandlers = {
 
 	// MMDX (Doodad Filenames)
 	0x4D4D4458: function(data, chunkSize) {
-		this.m2Names = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.m2Names = data.readStringBlock(chunkSize);
 	},
 
 	// MMID (M2 Offsets)
@@ -456,7 +454,7 @@ const ADTObjChunkHandlers = {
 
 	// MWMO (WMO Filenames)
 	0x4D574D4F: function(data, chunkSize) {
-		this.wmoNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.wmoNames = data.readStringBlock(chunkSize);
 	},
 
 	// MWID (WMO Offsets)

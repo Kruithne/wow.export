@@ -135,7 +135,7 @@ const WMOChunkHandlers = {
 
 	// MOTX (Textures) [Classic, WMO Root]
 	0x4D4F5458: function(data, chunkSize) {
-		this.textureNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.textureNames = data.readStringBlock(chunkSize);
 	},
 
 	// MFOG (Fog) [WMO Root]
@@ -225,7 +225,7 @@ const WMOChunkHandlers = {
 
 	// MOGN (Group Names) [WMO Root]
 	0x4D4F474E: function(data, chunkSize) {
-		this.groupNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.groupNames = data.readStringBlock(chunkSize);
 	},
 
 	// MOGI (Group Info) [WMO Root]
@@ -265,7 +265,7 @@ const WMOChunkHandlers = {
 
 	// MODN (Doodad Names) [WMO Root]
 	0x4D4F444E: function(data, chunkSize) {
-		this.doodadNames = LoaderGenerics.ReadStringBlock(data, chunkSize);
+		this.doodadNames = data.readStringBlock(chunkSize);
 
 		// Doodads are still reference as MDX in Classic doodad names, replace them with m2.
 		for (const [ofs, file] of Object.entries(this.doodadNames))

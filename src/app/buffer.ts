@@ -554,6 +554,32 @@ export default class BufferWrapper {
 		return str;
 	}
 
+	/**
+	 * Read a string block from the buffer.
+	 * @param chunkSize - The size of the string block in bytes.
+	 * @returns A map of offsets to strings.
+	 */
+	readStringBlock(chunkSize: number): Map<number, string> {
+		const chunk = this.readBuffer(chunkSize);
+		const entries = new Map<number, string>();
+
+		let readOfs = 0;
+		for (let i = 0; i < chunkSize; i++) {
+			if (chunk[i] === 0x0) {
+				// Skip padding bytes.
+				if (readOfs === i) {
+					readOfs += 1;
+					continue;
+				}
+
+				entries.set(readOfs, chunk.toString('utf8', readOfs, i).replace(/\0/g, ''));
+				readOfs = i + 1;
+			}
+		}
+
+		return entries;
+	}
+
 	/** Write a 8-bit integer to the buffer. */
 	writeInt8(value: number) {
 		this.buffer.writeInt8(value, this.offset);
