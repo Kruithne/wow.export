@@ -3,7 +3,7 @@
 
 import fs from 'node:fs/promises';
 
-import { get, consumeUTF8Stream } from '../generics';
+import { get } from '../generics';
 
 import Constants from '../constants';
 import State from '../state';
