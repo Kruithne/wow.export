@@ -287,6 +287,26 @@ export default class BufferWrapper {
 		return val;
 	}
 
+	/** @returns Array of signed 8-bit integers at the current position. */
+	readInt8Array(length: number): number[] {
+		const arr = new Array(length);
+		for (let i = 0; i < length; i++)
+			arr[i] = this.buffer.readInt8(this.offset + i);
+
+		this.offset += length;
+		return arr;
+	}
+
+	/** @returns Array of unsigned 8-bit integers at the current position. */
+	readUInt8Array(length: number): number[] {
+		const arr = new Array(length);
+		for (let i = 0; i < length; i++)
+			arr[i] = this.buffer.readUInt8(this.offset + i);
+
+		this.offset += length;
+		return arr;
+	}
+
 	/** @returns Array of signed 16-bit integers (little-endian) at the current position. */
 	readInt16Array(length: number): number[] {
 		const arr = new Array(length);
