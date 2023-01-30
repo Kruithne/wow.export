@@ -313,7 +313,7 @@ export default class CASCRemote extends CASC {
 
 		// Skip to the end of the archive to find the count.
 		data.seek(-12);
-		const count = data.readInt32LE() as number;
+		const count = data.readInt32() as number;
 
 		if (count * 24 > data.byteLength)
 			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);

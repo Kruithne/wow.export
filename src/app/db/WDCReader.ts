@@ -245,7 +245,7 @@ export default class WDCReader {
 		const data = await core.view.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
-		const magic = data.readUInt32LE();
+		const magic = data.readUInt32();
 		const format = TABLE_FORMATS[magic];
 
 		if (!format)
@@ -255,25 +255,25 @@ export default class WDCReader {
 		log.write('Processing DB file %s as %s', this.fileName, format.name);
 
 		// wdc_db2_header
-		const recordCount = data.readUInt32LE();
+		const recordCount = data.readUInt32();
 		data.move(4); // fieldCount
-		const recordSize = data.readUInt32LE();
+		const recordSize = data.readUInt32();
 		data.move(4); // stringTableSize
 		data.move(4); // tableHash
 		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
-		const minID = data.readUInt32LE();
-		const maxID = data.readUInt32LE();
+		const minID = data.readUInt32();
+		const maxID = data.readUInt32();
 		data.move(4); // locale
-		const flags = data.readUInt16LE();
-		const idIndex = data.readUInt16LE();
+		const flags = data.readUInt16();
+		const idIndex = data.readUInt16();
 		this.idFieldIndex = idIndex;
-		const totalFieldCount = data.readUInt32LE();
+		const totalFieldCount = data.readUInt32();
 		data.move(4); // bitpackedDataOffset
 		data.move(4); // lookupColumnCount
-		const fieldStorageInfoSize = data.readUInt32LE();
-		const commonDataSize = data.readUInt32LE();
-		const palletDataSize = data.readUInt32LE();
-		const sectionCount = data.readUInt32LE();
+		const fieldStorageInfoSize = data.readUInt32();
+		const commonDataSize = data.readUInt32();
+		const palletDataSize = data.readUInt32();
+		const sectionCount = data.readUInt32();
 
 		// Load the DBD and parse a schema from it.
 		await this.loadSchema(layoutHash);
@@ -282,41 +282,41 @@ export default class WDCReader {
 		const sectionHeaders = new Array(sectionCount);
 		for (let i = 0; i < sectionCount; i++) {
 			sectionHeaders[i] = wdcVersion === 2 ? {
-				tactKeyHash: data.readUInt64LE(),
-				fileOffset: data.readUInt32LE(),
-				recordCount: data.readUInt32LE(),
-				stringTableSize: data.readUInt32LE(),
-				copyTableSize: data.readUInt32LE(),
-				offsetMapOffset: data.readUInt32LE(),
-				idListSize: data.readUInt32LE(),
-				relationshipDataSize: data.readUInt32LE()
+				tactKeyHash: data.readUInt64(),
+				fileOffset: data.readUInt32(),
+				recordCount: data.readUInt32(),
+				stringTableSize: data.readUInt32(),
+				copyTableSize: data.readUInt32(),
+				offsetMapOffset: data.readUInt32(),
+				idListSize: data.readUInt32(),
+				relationshipDataSize: data.readUInt32()
 			} : {
-				tactKeyHash: data.readUInt64LE(),
-				fileOffset: data.readUInt32LE(),
-				recordCount: data.readUInt32LE(),
-				stringTableSize: data.readUInt32LE(),
-				offsetRecordsEnd: data.readUInt32LE(),
-				idListSize: data.readUInt32LE(),
-				relationshipDataSize: data.readUInt32LE(),
-				offsetMapIDCount: data.readUInt32LE(),
-				copyTableCount: data.readUInt32LE()
+				tactKeyHash: data.readUInt64(),
+				fileOffset: data.readUInt32(),
+				recordCount: data.readUInt32(),
+				stringTableSize: data.readUInt32(),
+				offsetRecordsEnd: data.readUInt32(),
+				idListSize: data.readUInt32(),
+				relationshipDataSize: data.readUInt32(),
+				offsetMapIDCount: data.readUInt32(),
+				copyTableCount: data.readUInt32()
 			};
 		}
 
 		// fields[header.total_field_count]
 		const fields = new Array(totalFieldCount);
 		for (let i = 0; i < totalFieldCount; i++)
-			fields[i] = { size: data.readInt16LE(), position: data.readUInt16LE() };
+			fields[i] = { size: data.readInt16(), position: data.readUInt16() };
 
 		// field_info[header.field_storage_info_size / sizeof(field_storage_info)]
 		const fieldInfo = new Array(fieldStorageInfoSize / (4 * 6));
 		for (let i = 0, n = fieldInfo.length; i < n; i++) {
 			fieldInfo[i] = {
-				fieldOffsetBits: data.readUInt16LE(),
-				fieldSizeBits: data.readUInt16LE(),
-				additionalDataSize: data.readUInt32LE(),
-				fieldCompression: data.readUInt32LE(),
-				fieldCompressionPacking: data.readUInt32LE(3)
+				fieldOffsetBits: data.readUInt16(),
+				fieldSizeBits: data.readUInt16(),
+				additionalDataSize: data.readUInt32(),
+				fieldCompression: data.readUInt32(),
+				fieldCompressionPacking: data.readUInt32(3)
 			};
 		}
 
@@ -329,7 +329,7 @@ export default class WDCReader {
 			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
 				palletData[fieldIndex] = [];
 				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++)
-					palletData[fieldIndex][i] = data.readUInt32LE();
+					palletData[fieldIndex][i] = data.readUInt32();
 			}
 		}
 
@@ -346,7 +346,7 @@ export default class WDCReader {
 				const commonDataMap = commonData[fieldIndex] = new Map();
 
 				for (let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
-					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
+					commonDataMap.set(data.readUInt32(), data.readUInt32());
 			}
 		}
 
@@ -374,7 +374,7 @@ export default class WDCReader {
 				const offsetMapCount = maxID - minID + 1;
 				offsetMap = new Array(offsetMapCount);
 				for (let i = 0, n = offsetMapCount; i < n; i++)
-					offsetMap[minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+					offsetMap[minID + i] = { offset: data.readUInt32(), size: data.readUInt16() };
 			}
 
 			if (wdcVersion === 3 && isNormal) {
@@ -399,13 +399,13 @@ export default class WDCReader {
 			data.seek(stringBlockOfs + header.stringTableSize);
 
 			// uint32_t id_list[section_headers.id_list_size / 4];
-			const idList = data.readUInt32LE(header.idListSize / 4);
+			const idList = data.readUInt32(header.idListSize / 4);
 
 			// copy_table_entry copy_table[section_headers.copy_table_count];
 			const copyTableCount = wdcVersion === 2 ? (header.copyTableSize / 8) : header.copyTableCount;
 			for (let i = 0; i < copyTableCount; i++) {
-				const destinationRowID = data.readInt32LE();
-				const sourceRowID = data.readInt32LE();
+				const destinationRowID = data.readInt32();
+				const sourceRowID = data.readInt32();
 				if (destinationRowID != sourceRowID)
 					copyTable.set(destinationRowID, sourceRowID);
 			}
@@ -414,7 +414,7 @@ export default class WDCReader {
 				// offset_map_entry offset_map[section_headers.offset_map_id_count];
 				offsetMap = new Array(header.offsetMapIDCount);
 				for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
-					offsetMap[i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+					offsetMap[i] = { offset: data.readUInt32(), size: data.readUInt16() };
 			}
 
 			prevPos = data.offset;
@@ -423,13 +423,13 @@ export default class WDCReader {
 			let relationshipMap;
 
 			if (header.relationshipDataSize > 0) {
-				const relationshipEntryCount = data.readUInt32LE();
+				const relationshipEntryCount = data.readUInt32();
 				data.move(8); // relationshipMinID (UInt32) and relationshipMaxID (UInt32)
 
 				relationshipMap = new Map();
 				for (let i = 0; i < relationshipEntryCount; i++) {
-					const foreignID = data.readUInt32LE();
-					const recordIndex = data.readUInt32LE();
+					const foreignID = data.readUInt32();
+					const recordIndex = data.readUInt32();
 					relationshipMap.set(recordIndex, foreignID);
 				}
 
@@ -472,7 +472,7 @@ export default class WDCReader {
 				// Check if first integer after string block (from id list or copy table) is non-0
 				if (isZeroed && wdcVersion === 3 && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
 					data.seek(section.stringBlockOfs + header.stringTableSize);
-					isZeroed = data.readUInt32LE() === 0;
+					isZeroed = data.readUInt32() === 0;
 				}
 
 				// Check if first entry in offsetMap has size 0
@@ -545,7 +545,7 @@ export default class WDCReader {
 											out[prop] = new Array(count);
 											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
 												const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
-												const ofs = data.readUInt32LE();
+												const ofs = data.readUInt32();
 
 												const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
 
@@ -560,7 +560,7 @@ export default class WDCReader {
 											}
 										} else {
 											const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
-											const ofs = data.readUInt32LE();
+											const ofs = data.readUInt32();
 
 											const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
 
@@ -590,13 +590,13 @@ export default class WDCReader {
 
 								case FieldType.Int8: out[prop] = data.readInt8(count); break;
 								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
-								case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
-								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
-								case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
-								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
-								case FieldType.Int64: out[prop] = data.readInt64LE(count); break;
-								case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
-								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
+								case FieldType.Int16: out[prop] = data.readInt16(count); break;
+								case FieldType.UInt16: out[prop] = data.readUInt16(count); break;
+								case FieldType.Int32: out[prop] = data.readInt32(count); break;
+								case FieldType.UInt32: out[prop] = data.readUInt32(count); break;
+								case FieldType.Int64: out[prop] = data.readInt64(count); break;
+								case FieldType.UInt64: out[prop] = data.readUInt64(count); break;
+								case FieldType.Float: out[prop] = data.readFloat(count); break;
 							}
 							break;
 
@@ -616,13 +616,13 @@ export default class WDCReader {
 
 							let rawValue;
 							if (data.remainingBytes >= 8) {
-								rawValue = data.readUInt64LE();
+								rawValue = data.readUInt64();
 							} else {
 								castBuffer.seek(0);
 								castBuffer.writeBuffer(data.buffer, data.offset);
 
 								castBuffer.seek(0);
-								rawValue = castBuffer.readUInt64LE();
+								rawValue = castBuffer.readUInt64();
 							}
 
 							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
@@ -670,13 +670,13 @@ export default class WDCReader {
 
 								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
 								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
-								case FieldType.Int16: out[prop] = castBuffer.readInt16LE(); break;
-								case FieldType.UInt16: out[prop] = castBuffer.readUInt16LE(); break;
-								case FieldType.Int32: out[prop] = castBuffer.readInt32LE(); break;
-								case FieldType.UInt32: out[prop] = castBuffer.readUInt32LE(); break;
-								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
-								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
-								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
+								case FieldType.Int16: out[prop] = castBuffer.readInt16(); break;
+								case FieldType.UInt16: out[prop] = castBuffer.readUInt16(); break;
+								case FieldType.Int32: out[prop] = castBuffer.readInt32(); break;
+								case FieldType.UInt32: out[prop] = castBuffer.readUInt32(); break;
+								case FieldType.Int64: out[prop] = castBuffer.readInt64(); break;
+								case FieldType.UInt64: out[prop] = castBuffer.readUInt64(); break;
+								case FieldType.Float: out[prop] = castBuffer.readFloat(); break;
 							}
 						} else {
 							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
@@ -693,13 +693,13 @@ export default class WDCReader {
 
 									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
 									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
-									case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
-									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
-									case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
-									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
-									case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
-									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
-									case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
+									case FieldType.Int16: out[prop][i] = castBuffer.readInt16(); break;
+									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16(); break;
+									case FieldType.Int32: out[prop][i] = castBuffer.readInt32(); break;
+									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32(); break;
+									case FieldType.Int64: out[prop][i] = castBuffer.readInt64(); break;
+									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64(); break;
+									case FieldType.Float: out[prop][i] = castBuffer.readFloat(); break;
 								}
 							}
 						}

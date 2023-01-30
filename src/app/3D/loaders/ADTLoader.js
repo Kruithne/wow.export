@@ -48,8 +48,8 @@ class ADTLoader {
 	 */
 	_load() {
 		while (this.data.remainingBytes > 0) {
-			const chunkID = this.data.readUInt32LE();
-			const chunkSize = this.data.readUInt32LE();
+			const chunkID = this.data.readUInt32();
+			const chunkSize = this.data.readUInt32();
 			const nextChunkPos = this.data.offset + chunkSize;
 
 			const handler = this.handlers[chunkID];
@@ -65,7 +65,7 @@ class ADTLoader {
 const ADTChunkHandlers = {
 	// MVER (Version)
 	0x4D564552: function(data) {
-		this.version = data.readUInt32LE();
+		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
@@ -74,38 +74,38 @@ const ADTChunkHandlers = {
 	0x4D434E4B: function(data, chunkSize) {
 		const endOfs = data.offset + chunkSize;
 		const chunk = this.chunks[this.chunkIndex++] = {
-			flags: data.readUInt32LE(),
-			indexX: data.readUInt32LE(),
-			indexY: data.readUInt32LE(),
-			nLayers: data.readUInt32LE(),
-			nDoodadRefs: data.readUInt32LE(),
+			flags: data.readUInt32(),
+			indexX: data.readUInt32(),
+			indexY: data.readUInt32(),
+			nLayers: data.readUInt32(),
+			nDoodadRefs: data.readUInt32(),
 			holesHighRes: data.readUInt8(8),
-			ofsMCLY: data.readUInt32LE(),
-			ofsMCRF: data.readUInt32LE(),
-			ofsMCAL: data.readUInt32LE(),
-			sizeAlpha: data.readUInt32LE(),
-			ofsMCSH: data.readUInt32LE(),
-			sizeShadows: data.readUInt32LE(),
-			areaID: data.readUInt32LE(),
-			nMapObjRefs: data.readUInt32LE(),
-			holesLowRes: data.readUInt16LE(),
-			unk1: data.readUInt16LE(),
-			lowQualityTextureMap: data.readInt16LE(8),
-			noEffectDoodad: data.readInt64LE(),
-			ofsMCSE: data.readUInt32LE(),
-			numMCSE: data.readUInt32LE(),
-			ofsMCLQ: data.readUInt32LE(),
-			sizeMCLQ: data.readUInt32LE(),
-			position: data.readFloatLE(3),
-			ofsMCCV: data.readUInt32LE(),
-			ofsMCLW: data.readUInt32LE(),
-			unk2: data.readUInt32LE()
+			ofsMCLY: data.readUInt32(),
+			ofsMCRF: data.readUInt32(),
+			ofsMCAL: data.readUInt32(),
+			sizeAlpha: data.readUInt32(),
+			ofsMCSH: data.readUInt32(),
+			sizeShadows: data.readUInt32(),
+			areaID: data.readUInt32(),
+			nMapObjRefs: data.readUInt32(),
+			holesLowRes: data.readUInt16(),
+			unk1: data.readUInt16(),
+			lowQualityTextureMap: data.readInt16(8),
+			noEffectDoodad: data.readInt64(),
+			ofsMCSE: data.readUInt32(),
+			numMCSE: data.readUInt32(),
+			ofsMCLQ: data.readUInt32(),
+			sizeMCLQ: data.readUInt32(),
+			position: data.readFloat(3),
+			ofsMCCV: data.readUInt32(),
+			ofsMCLW: data.readUInt32(),
+			unk2: data.readUInt32()
 		};
 
 		// Read sub-chunks.
 		while (data.offset < endOfs) {
-			const chunkID = data.readUInt32LE();
-			const subChunkSize = data.readUInt32LE();
+			const chunkID = data.readUInt32();
+			const subChunkSize = data.readUInt32();
 			const nextChunkPos = data.offset + subChunkSize;
 
 			const handler = RootMCNKChunkHandlers[chunkID];
@@ -125,9 +125,9 @@ const ADTChunkHandlers = {
 		// SMLiquidChunk
 		const chunks = this.liquidChunks = new Array(256);
 		for (let i = 0; i < 256; i++) {
-			const offsetInstances = data.readUInt32LE();
-			const layerCount = data.readUInt32LE();
-			const offsetAttributes = data.readUInt32LE();
+			const offsetInstances = data.readUInt32();
+			const layerCount = data.readUInt32();
+			const offsetAttributes = data.readUInt32();
 
 			if (offsetAttributes > 0)
 				dataOffsets.add(offsetAttributes);
@@ -141,25 +141,25 @@ const ADTChunkHandlers = {
 			if (layerCount > 0) {
 				// Read chunk attributes.
 				data.seek(base + offsetAttributes);
-				chunk.attributes.fishable = data.readUInt64LE();
-				chunk.attributes.deep = data.readUInt64LE();
+				chunk.attributes.fishable = data.readUInt64();
+				chunk.attributes.deep = data.readUInt64();
 
 				// Read SMLiquidInstance array.
 				data.seek(base + offsetInstances);
 				for (let j = 0; j < layerCount; j++) {
 					const instance = chunk.instances[j] = {
-						liquidType: data.readUInt16LE(),
-						liquidObject: data.readUInt16LE(),
-						minHeightLevel: data.readFloatLE(), // Use 0.0 if LVF = 2
-						maxHeightLevel: data.readFloatLE(), // Use 0.0 if LVF = 2
+						liquidType: data.readUInt16(),
+						liquidObject: data.readUInt16(),
+						minHeightLevel: data.readFloat(), // Use 0.0 if LVF = 2
+						maxHeightLevel: data.readFloat(), // Use 0.0 if LVF = 2
 						xOffset: data.readUInt8(), // 0 if liquidObject <= 41
 						yOffset: data.readUInt8(), // 0 if liquidObject <= 41
 						width: data.readUInt8(), // 8 if liquidObject <= 41
 						height: data.readUInt8(), // 8 if liquidObject <= 41
 						bitmap: [], // Empty == All exist.
 						vertexData: {},
-						offsetExistsBitmap: data.readUInt32LE(),
-						offsetVertexData: data.readUInt32LE()
+						offsetExistsBitmap: data.readUInt32(),
+						offsetVertexData: data.readUInt32()
 					};
 
 					if (instance.offsetExistsBitmap > 0)
@@ -204,15 +204,15 @@ const ADTChunkHandlers = {
 
 					// Height
 					if (mtp === 5 || mtp === 8 || mtp === 9)
-						vertexData.height = data.readFloatLE(vertexCount);
+						vertexData.height = data.readFloat(vertexCount);
 
 					// Texture Coordinates (UV)
 					if (mtp === 8 || mtp === 9) {
 						const uv = vertexData.uv = new Array(vertexCount);
 						for (let i = 0; i < vertexCount; i++) {
 							uv[i] = {
-								x: data.readUInt16LE(),
-								y: data.readUInt16LE()
+								x: data.readUInt16(),
+								y: data.readUInt16()
 							};
 						}
 					}
@@ -228,19 +228,19 @@ const ADTChunkHandlers = {
 	// MHDR (Header)
 	0x4D484452: function(data) {
 		this.header = {
-			flags: data.readUInt32LE(),
-			ofsMCIN: data.readUInt32LE(),
-			ofsMTEX: data.readUInt32LE(),
-			ofsMMDX: data.readUInt32LE(),
-			ofsMMID: data.readUInt32LE(),
-			ofsMWMO: data.readUInt32LE(),
-			ofsMWID: data.readUInt32LE(),
-			ofsMDDF: data.readUInt32LE(),
-			ofsMODF: data.readUInt32LE(),
-			ofsMFBO: data.readUInt32LE(),
-			ofsMH20: data.readUInt32LE(),
-			ofsMTXF: data.readUInt32LE(),
-			unk: data.readUInt32LE(4)
+			flags: data.readUInt32(),
+			ofsMCIN: data.readUInt32(),
+			ofsMTEX: data.readUInt32(),
+			ofsMMDX: data.readUInt32(),
+			ofsMMID: data.readUInt32(),
+			ofsMWMO: data.readUInt32(),
+			ofsMWID: data.readUInt32(),
+			ofsMDDF: data.readUInt32(),
+			ofsMODF: data.readUInt32(),
+			ofsMFBO: data.readUInt32(),
+			ofsMH20: data.readUInt32(),
+			ofsMTXF: data.readUInt32(),
+			unk: data.readUInt32(4)
 		};
 	}
 };
@@ -248,7 +248,7 @@ const ADTChunkHandlers = {
 const RootMCNKChunkHandlers = {
 	// MCVT (vertices)
 	0x4D435654: function(data) {
-		this.vertices = data.readFloatLE(145);
+		this.vertices = data.readFloat(145);
 	},
 
 	// MCCV (Vertex Shading)
@@ -283,11 +283,11 @@ const RootMCNKChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			blend[i] = {
-				mbmhIndex: data.readUInt32LE(),
-				indexCount: data.readUInt32LE(),
-				indexFirst: data.readUInt32LE(),
-				vertexCount: data.readUInt32LE(),
-				vertexFirst: data.readUInt32LE()
+				mbmhIndex: data.readUInt32(),
+				indexCount: data.readUInt32(),
+				indexFirst: data.readUInt32(),
+				vertexCount: data.readUInt32(),
+				vertexFirst: data.readUInt32()
 			};
 		}
 	}
@@ -296,7 +296,7 @@ const RootMCNKChunkHandlers = {
 const ADTTexChunkHandlers = {
 	// MVER (Version)
 	0x4D564552: function(data) {
-		this.version = data.readUInt32LE();
+		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
@@ -313,8 +313,8 @@ const ADTTexChunkHandlers = {
 
 		// Read sub-chunks.
 		while (data.offset < endOfs) {
-			const chunkID = data.readUInt32LE();
-			const subChunkSize = data.readUInt32LE();
+			const chunkID = data.readUInt32();
+			const subChunkSize = data.readUInt32();
 			const nextChunkPos = data.offset + subChunkSize;
 
 			const handler = TexMCNKChunkHandlers[chunkID];
@@ -333,22 +333,22 @@ const ADTTexChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			params[i] = {
-				flags: data.readUInt32LE(),
-				height: data.readFloatLE(),
-				offset: data.readFloatLE(),
-				unk3: data.readUInt32LE()
+				flags: data.readUInt32(),
+				height: data.readFloat(),
+				offset: data.readFloat(),
+				unk3: data.readUInt32()
 			};
 		}
 	},
 
 	// MHID
 	0x4D484944: function(data, chunkSize) {
-		this.heightTextureFileDataIDs = data.readUInt32LE(chunkSize / 4);
+		this.heightTextureFileDataIDs = data.readUInt32(chunkSize / 4);
 	},
 
 	// MDID
 	0x4D444944: function(data, chunkSize) {
-		this.diffuseTextureFileDataIDs = data.readUInt32LE(chunkSize / 4);
+		this.diffuseTextureFileDataIDs = data.readUInt32(chunkSize / 4);
 	}
 };
 
@@ -360,10 +360,10 @@ const TexMCNKChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			layers[i] = {
-				textureId: data.readUInt32LE(),
-				flags: data.readUInt32LE(),
-				offsetMCAL: data.readUInt32LE(),
-				effectID: data.readInt32LE()
+				textureId: data.readUInt32(),
+				flags: data.readUInt32(),
+				offsetMCAL: data.readUInt32(),
+				effectID: data.readInt32()
 			};
 		}
 	},
@@ -439,7 +439,7 @@ const TexMCNKChunkHandlers = {
 const ADTObjChunkHandlers = {
 	// MVER (Version)
 	0x4D564552: function(data) {
-		this.version = data.readUInt32LE();
+		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
@@ -451,7 +451,7 @@ const ADTObjChunkHandlers = {
 
 	// MMID (M2 Offsets)
 	0x4D4D4944: function(data, chunkSize) {
-		this.m2Offsets = data.readUInt32LE(chunkSize / 4);
+		this.m2Offsets = data.readUInt32(chunkSize / 4);
 	},
 
 	// MWMO (WMO Filenames)
@@ -461,7 +461,7 @@ const ADTObjChunkHandlers = {
 
 	// MWID (WMO Offsets)
 	0x4D574944: function(data, chunkSize) {
-		this.wmoOffsets = data.readUInt32LE(chunkSize / 4);
+		this.wmoOffsets = data.readUInt32(chunkSize / 4);
 	},
 
 	// MDDF
@@ -471,12 +471,12 @@ const ADTObjChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			entries[i] = {
-				mmidEntry: data.readUInt32LE(),
-				uniqueId: data.readUInt32LE(),
-				position: data.readFloatLE(3),
-				rotation: data.readFloatLE(3),
-				scale: data.readUInt16LE(),
-				flags: data.readUInt16LE()
+				mmidEntry: data.readUInt32(),
+				uniqueId: data.readUInt32(),
+				position: data.readFloat(3),
+				rotation: data.readFloat(3),
+				scale: data.readUInt16(),
+				flags: data.readUInt16()
 			};
 		}
 	},
@@ -488,23 +488,23 @@ const ADTObjChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			entries[i] = {
-				mwidEntry: data.readUInt32LE(),
-				uniqueId: data.readUInt32LE(),
-				position: data.readFloatLE(3),
-				rotation: data.readFloatLE(3),
-				lowerBounds: data.readFloatLE(3),
-				upperBounds: data.readFloatLE(3),
-				flags: data.readUInt16LE(),
-				doodadSet: data.readUInt16LE(),
-				nameSet: data.readUInt16LE(),
-				scale: data.readUInt16LE()
+				mwidEntry: data.readUInt32(),
+				uniqueId: data.readUInt32(),
+				position: data.readFloat(3),
+				rotation: data.readFloat(3),
+				lowerBounds: data.readFloat(3),
+				upperBounds: data.readFloat(3),
+				flags: data.readUInt16(),
+				doodadSet: data.readUInt16(),
+				nameSet: data.readUInt16(),
+				scale: data.readUInt16()
 			};
 		}
 	},
 
 	// MWDS
 	0x4D574453: function(data, chunkSize) {
-		this.doodadSets = data.readUInt16LE(chunkSize / 2);
+		this.doodadSets = data.readUInt16(chunkSize / 2);
 	}
 };
 

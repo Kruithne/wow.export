@@ -20,8 +20,8 @@ class WDTLoader {
 	 */
 	load() {
 		while (this.data.remainingBytes > 0) {
-			const chunkID = this.data.readUInt32LE();
-			const chunkSize = this.data.readUInt32LE();
+			const chunkID = this.data.readUInt32();
+			const chunkSize = this.data.readUInt32();
 			const nextChunkPos = this.data.offset + chunkSize;
 
 			const handler = WDTChunkHandlers[chunkID];
@@ -37,7 +37,7 @@ class WDTLoader {
 const WDTChunkHandlers = {
 	// MPHD (Flags)
 	0x4D504844: function(data) {
-		this.flags = data.readUInt32LE();
+		this.flags = data.readUInt32();
 		// 7 * UInt32 fileDataIDs
 	},
 
@@ -46,7 +46,7 @@ const WDTChunkHandlers = {
 		const tiles = this.tiles = new Array(MAP_SIZE_SQ);
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let y = 0; y < MAP_SIZE; y++) {
-				tiles[(y * MAP_SIZE) + x] = data.readUInt32LE();
+				tiles[(y * MAP_SIZE) + x] = data.readUInt32();
 				data.move(4);
 			}
 		}
@@ -59,14 +59,14 @@ const WDTChunkHandlers = {
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let y = 0; y < MAP_SIZE; y++) {
 				entries[(y * MAP_SIZE) + x] = {
-					rootADT: data.readUInt32LE(),
-					obj0ADT: data.readUInt32LE(),
-					obj1ADT: data.readUInt32LE(),
-					tex0ADT: data.readUInt32LE(),
-					lodADT: data.readUInt32LE(),
-					mapTexture: data.readUInt32LE(),
-					mapTextureN: data.readUInt32LE(),
-					minimapTexture: data.readUInt32LE()
+					rootADT: data.readUInt32(),
+					obj0ADT: data.readUInt32(),
+					obj1ADT: data.readUInt32(),
+					tex0ADT: data.readUInt32(),
+					lodADT: data.readUInt32(),
+					mapTexture: data.readUInt32(),
+					mapTextureN: data.readUInt32(),
+					minimapTexture: data.readUInt32()
 				};
 			}
 		}
@@ -80,16 +80,16 @@ const WDTChunkHandlers = {
 	// MODF (World WMO Placement)
 	0x4D4F4446: function(data) {
 		this.worldModelPlacement = {
-			id: data.readUInt32LE(),
-			uid: data.readUInt32LE(),
-			position: data.readFloatLE(3),
-			rotation: data.readFloatLE(3),
-			upperExtents: data.readFloatLE(3),
-			lowerExtents: data.readFloatLE(3),
-			flags: data.readUInt16LE(),
-			doodadSetIndex: data.readUInt16LE(),
-			nameSet: data.readUInt16LE(),
-			padding: data.readUInt16LE()
+			id: data.readUInt32(),
+			uid: data.readUInt32(),
+			position: data.readFloat(3),
+			rotation: data.readFloat(3),
+			upperExtents: data.readFloat(3),
+			lowerExtents: data.readFloat(3),
+			flags: data.readUInt16(),
+			doodadSetIndex: data.readUInt16(),
+			nameSet: data.readUInt16(),
+			padding: data.readUInt16()
 		};
 	}
 };

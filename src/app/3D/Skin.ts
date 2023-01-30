@@ -27,29 +27,29 @@ export default class Skin {
 		try {
 			const data = await core.view.casc.getFile(this.fileDataID);
 
-			const magic = data.readUInt32LE();
+			const magic = data.readUInt32();
 			if (magic !== MAGIC_SKIN)
 				throw new Error('Invalid magic: ' + magic);
 
-			const indicesCount = data.readUInt32LE();
-			const indicesOfs = data.readUInt32LE();
-			const trianglesCount = data.readUInt32LE();
-			const trianglesOfs = data.readUInt32LE();
-			const propertiesCount = data.readUInt32LE();
-			const propertiesOfs = data.readUInt32LE();
-			const subMeshesCount = data.readUInt32LE();
-			const subMeshesOfs = data.readUInt32LE();
-			const textureUnitsCount = data.readUInt32LE();
-			const textureUnitsOfs = data.readUInt32LE();
-			this.bones = data.readUInt32LE();
+			const indicesCount = data.readUInt32();
+			const indicesOfs = data.readUInt32();
+			const trianglesCount = data.readUInt32();
+			const trianglesOfs = data.readUInt32();
+			const propertiesCount = data.readUInt32();
+			const propertiesOfs = data.readUInt32();
+			const subMeshesCount = data.readUInt32();
+			const subMeshesOfs = data.readUInt32();
+			const textureUnitsCount = data.readUInt32();
+			const textureUnitsOfs = data.readUInt32();
+			this.bones = data.readUInt32();
 
 			// Read indices.
 			data.seek(indicesOfs);
-			this.indices = data.readUInt16LE(indicesCount);
+			this.indices = data.readUInt16(indicesCount);
 
 			// Read triangles.
 			data.seek(trianglesOfs);
-			this.triangles = data.readUInt16LE(trianglesCount);
+			this.triangles = data.readUInt16(trianglesCount);
 
 			// Read properties.
 			data.seek(propertiesOfs);
@@ -60,19 +60,19 @@ export default class Skin {
 			this.subMeshes = new Array(subMeshesCount);
 			for (let i = 0; i < subMeshesCount; i++) {
 				this.subMeshes[i] = {
-					submeshID: data.readUInt16LE(),
-					level: data.readUInt16LE(),
-					vertexStart: data.readUInt16LE(),
-					vertexCount: data.readUInt16LE(),
-					triangleStart: data.readUInt16LE(),
-					triangleCount: data.readUInt16LE(),
-					boneCount: data.readUInt16LE(),
-					boneStart: data.readUInt16LE(),
-					boneInfluences: data.readUInt16LE(),
-					centerBoneIndex: data.readUInt16LE(),
-					centerPosition: data.readFloatLE(3),
-					sortCenterPosition: data.readFloatLE(3),
-					sortRadius: data.readFloatLE()
+					submeshID: data.readUInt16(),
+					level: data.readUInt16(),
+					vertexStart: data.readUInt16(),
+					vertexCount: data.readUInt16(),
+					triangleStart: data.readUInt16(),
+					triangleCount: data.readUInt16(),
+					boneCount: data.readUInt16(),
+					boneStart: data.readUInt16(),
+					boneInfluences: data.readUInt16(),
+					centerBoneIndex: data.readUInt16(),
+					centerPosition: data.readFloat(3),
+					sortCenterPosition: data.readFloat(3),
+					sortRadius: data.readFloat()
 				};
 
 				this.subMeshes[i].triangleStart += this.subMeshes[i].level << 16;
@@ -85,17 +85,17 @@ export default class Skin {
 				this.textureUnits[i] = {
 					flags: data.readUInt8(),
 					priority: data.readUInt8(),
-					shaderID: data.readUInt16LE(),
-					skinSectionIndex: data.readUInt16LE(),
-					geosetIndex: data.readUInt16LE(),
-					colorIndex: data.readUInt16LE(),
-					materialIndex: data.readUInt16LE(),
-					materialLayer: data.readUInt16LE(),
-					textureCount: data.readUInt16LE(),
-					textureComboIndex: data.readUInt16LE(),
-					textureCoordComboIndex: data.readUInt16LE(),
-					textureWeightComboIndex: data.readUInt16LE(),
-					textureTransformComboIndex: data.readUInt16LE()
+					shaderID: data.readUInt16(),
+					skinSectionIndex: data.readUInt16(),
+					geosetIndex: data.readUInt16(),
+					colorIndex: data.readUInt16(),
+					materialIndex: data.readUInt16(),
+					materialLayer: data.readUInt16(),
+					textureCount: data.readUInt16(),
+					textureComboIndex: data.readUInt16(),
+					textureCoordComboIndex: data.readUInt16(),
+					textureWeightComboIndex: data.readUInt16(),
+					textureTransformComboIndex: data.readUInt16()
 				};
 			}
 

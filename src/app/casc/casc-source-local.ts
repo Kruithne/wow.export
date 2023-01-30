@@ -159,13 +159,13 @@ export default class CASCLocal extends CASC {
 		const entries = this.localIndexes;
 		const index = new BufferWrapper(await fs.readFile(file));
 
-		const headerHashSize = index.readInt32LE();
+		const headerHashSize = index.readInt32();
 		index.move(4); // headerHash uint32
 		index.move(headerHashSize as number); // headerHash byte[headerHashSize]
 
 		index.seek((8 + (headerHashSize as number) + 0x0F) & 0xFFFFFFF0); // Next 0x10 boundary.
 
-		const dataLength = index.readInt32LE();
+		const dataLength = index.readInt32();
 		index.move(4);
 
 		const nBlocks = dataLength as number / 18;
@@ -182,7 +182,7 @@ export default class CASCLocal extends CASC {
 			entries.set(key, {
 				index: (idxHigh as number << 2 | ((idxLow as number & 0xC0000000) >>> 30)),
 				offset: idxLow as number & 0x3FFFFFFF,
-				size: index.readInt32LE() as number
+				size: index.readInt32() as number
 			});
 		}
 	}

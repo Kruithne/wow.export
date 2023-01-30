@@ -34,29 +34,29 @@ export default class HTFXReader {
 	async parse(): Promise<void> {
 		const data = new BufferWrapper(await fs.readFile(this.fileName));
 
-		data.readUInt32LE(); // XFTH magic
-		const version = data.readUInt32LE();
+		data.readUInt32(); // XFTH magic
+		const version = data.readUInt32();
 
 		if (version < 8 || version > 9)
 			throw new Error('Unsupported DBCache.bin version: ' + version);
 
 		// TODO: Verify if build is the same as currently loaded build (DBCache might be outdated)
-		data.readUInt32LE(); // Build
+		data.readUInt32(); // Build
 
-		data.readUInt32LE(8); // Verification hash (32 bytes)
+		data.readUInt32(8); // Verification hash (32 bytes)
 
 		// Hotfix entries for the rest of the file
 		while (data.remainingBytes) {
-			data.readUInt32LE(); // TODO: Verify magic
+			data.readUInt32(); // TODO: Verify magic
 
-			data.readInt32LE(); // RegionID
-			const pushID = data.readInt32LE() as number;
-			data.readUInt32LE(); // UniqueID
+			data.readInt32(); // RegionID
+			const pushID = data.readInt32() as number;
+			data.readUInt32(); // UniqueID
 
-			const tableHash = data.readUInt32LE().toString(16).toUpperCase().padStart(8, '0');
+			const tableHash = data.readUInt32().toString(16).toUpperCase().padStart(8, '0');
 
-			const recordID = data.readUInt32LE() as number;
-			const dataSize = data.readUInt32LE() as number;
+			const recordID = data.readUInt32() as number;
+			const dataSize = data.readUInt32() as number;
 			const status = data.readUInt8() as number;
 			data.readUInt8(3); // Unused
 

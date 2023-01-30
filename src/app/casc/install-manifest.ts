@@ -27,7 +27,7 @@ export default class InstallManifest {
 	 * @param data
 	 */
 	parse(data: BLTEReader): void {
-		if (data.readUInt16LE() !== INSTALL_SIG)
+		if (data.readUInt16() !== INSTALL_SIG)
 			throw new Error('Invalid file signature for install manifest');
 
 		this.version = data.readUInt8() as number;

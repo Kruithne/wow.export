@@ -59,11 +59,11 @@ export default class BLPImage {
 		this.data = data;
 
 		// Check magic value..
-		if (this.data.readUInt32LE() !== BLP_MAGIC)
+		if (this.data.readUInt32() !== BLP_MAGIC)
 			throw new Error('Provided data is not a BLP file (invalid header magic).');
 
 		// Check the BLP file type..
-		const type = this.data.readUInt32LE();
+		const type = this.data.readUInt32();
 		if (type !== 1)
 			throw new Error('Unsupported BLP type: ' + type);
 
@@ -74,12 +74,12 @@ export default class BLPImage {
 		this.containsMipmaps = this.data.readUInt8() as number;
 
 		// Read file dimensions..
-		this.width = this.data.readUInt32LE() as number;
-		this.height = this.data.readUInt32LE() as number;
+		this.width = this.data.readUInt32() as number;
+		this.height = this.data.readUInt32() as number;
 
 		// Read mipmap data..
-		this.mapOffsets = this.data.readUInt32LE(16) as number[];
-		this.mapSizes = this.data.readUInt32LE(16) as number[];
+		this.mapOffsets = this.data.readUInt32(16) as number[];
+		this.mapSizes = this.data.readUInt32(16) as number[];
 
 		// Calculate available mipmaps..
 		this.mapCount = 0;

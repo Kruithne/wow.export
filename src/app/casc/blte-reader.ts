@@ -44,7 +44,7 @@ export default class BLTEReader extends BufferWrapper {
 		if (data.byteLength < 4)
 			return false;
 
-		const magic = data.readUInt32LE();
+		const magic = data.readUInt32();
 		data.seek(0);
 
 		return magic === BLTE_MAGIC;
@@ -67,7 +67,7 @@ export default class BLTEReader extends BufferWrapper {
 		if (size < 8)
 			throw new Error('[BLTE] Not enough data (< 8)');
 
-		const magic = buf.readUInt32LE();
+		const magic = buf.readUInt32();
 		if (magic !== BLTE_MAGIC)
 			throw new Error('[BLTE] Invalid magic: ' + magic);
 

@@ -37,8 +37,8 @@ class WMOLoader {
 			return;
 
 		while (this.data.remainingBytes > 0) {
-			const chunkID = this.data.readUInt32LE();
-			const chunkSize = this.data.readUInt32LE();
+			const chunkID = this.data.readUInt32();
+			const chunkSize = this.data.readUInt32();
 			const nextChunkPos = this.data.offset + chunkSize;
 
 			const handler = WMOChunkHandlers[chunkID];
@@ -83,9 +83,9 @@ class WMOLoader {
 	 * Read a position, corrected from WoW's co-ordinate system.
 	 */
 	readPosition() {
-		const x = this.data.readFloatLE();
-		const z = this.data.readFloatLE();
-		const y = this.data.readFloatLE() * -1;
+		const x = this.data.readFloat();
+		const z = this.data.readFloat();
+		const y = this.data.readFloat() * -1;
 
 		return [x, y, z];
 	}
@@ -108,26 +108,26 @@ const WMOOptionalChunks = [
 const WMOChunkHandlers = {
 	// MVER (Version) [WMO Root, WMO Group]
 	0x4D564552: function(data) {
-		this.version = data.readUInt32LE();
+		this.version = data.readUInt32();
 		if (this.version !== 17)
 			throw new Error('Unsupported WMO version: %d', this.version);
 	},
 
 	// MOHD (Header) [WMO Root]
 	0x4D4F4844: function(data) {
-		this.materialCount = data.readUInt32LE();
-		this.groupCount = data.readUInt32LE();
-		this.portalCount = data.readUInt32LE();
-		this.lightCount = data.readUInt32LE();
-		this.modelCount = data.readUInt32LE();
-		this.doodadCount = data.readUInt32LE();
-		this.setCount = data.readUInt32LE();
-		this.ambientColor = data.readUInt32LE();
-		this.areaTableID = data.readUInt32LE();
-		this.boundingBox1 = data.readFloatLE(3);
-		this.boundingBox2 = data.readFloatLE(3);
-		this.flags = data.readUInt16LE();
-		this.lodCount = data.readUInt16LE();
+		this.materialCount = data.readUInt32();
+		this.groupCount = data.readUInt32();
+		this.portalCount = data.readUInt32();
+		this.lightCount = data.readUInt32();
+		this.modelCount = data.readUInt32();
+		this.doodadCount = data.readUInt32();
+		this.setCount = data.readUInt32();
+		this.ambientColor = data.readUInt32();
+		this.areaTableID = data.readUInt32();
+		this.boundingBox1 = data.readFloat(3);
+		this.boundingBox2 = data.readFloat(3);
+		this.flags = data.readUInt16();
+		this.lodCount = data.readUInt16();
 
 		this.groups = new Array(this.groupCount);
 	},
@@ -145,19 +145,19 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			fogs[i] = {
-				flags: data.readUInt32LE(),
-				position: data.readFloatLE(3),
-				radiusSmall: data.readFloatLE(),
-				radiusLarge: data.readFloatLE(),
+				flags: data.readUInt32(),
+				position: data.readFloat(3),
+				radiusSmall: data.readFloat(),
+				radiusLarge: data.readFloat(),
 				fog: {
-					end: data.readFloatLE(),
-					startScalar: data.readFloatLE(),
-					color: data.readUInt32LE()
+					end: data.readFloat(),
+					startScalar: data.readFloat(),
+					color: data.readUInt32()
 				},
 				underwaterFog: {
-					end: data.readFloatLE(),
-					startScalar: data.readFloatLE(),
-					color: data.readUInt32LE()
+					end: data.readFloat(),
+					startScalar: data.readFloat(),
+					color: data.readUInt32()
 				}
 			};
 		}
@@ -170,19 +170,19 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			materials[i] = {
-				flags: data.readUInt32LE(),
-				shader: data.readUInt32LE(),
-				blendMode: data.readUInt32LE(),
-				texture1: data.readUInt32LE(),
-				color1: data.readUInt32LE(),
-				color1b: data.readUInt32LE(),
-				texture2: data.readUInt32LE(),
-				color2: data.readUInt32LE(),
-				groupType: data.readUInt32LE(),
-				texture3: data.readUInt32LE(),
-				color3: data.readUInt32LE(),
-				flags3: data.readUInt32LE(),
-				runtimeData: data.readUInt32LE(4)
+				flags: data.readUInt32(),
+				shader: data.readUInt32(),
+				blendMode: data.readUInt32(),
+				texture1: data.readUInt32(),
+				color1: data.readUInt32(),
+				color1b: data.readUInt32(),
+				texture2: data.readUInt32(),
+				color2: data.readUInt32(),
+				groupType: data.readUInt32(),
+				texture3: data.readUInt32(),
+				color3: data.readUInt32(),
+				flags3: data.readUInt32(),
+				runtimeData: data.readUInt32(4)
 			};
 		}
 	},
@@ -192,7 +192,7 @@ const WMOChunkHandlers = {
 		const vertexCount = chunkSize / (3 * 4);
 		this.portalVertices = new Array(vertexCount);
 		for (let i = 0; i < vertexCount; i++)
-			this.portalVertices[i] = data.readFloatLE(3);
+			this.portalVertices[i] = data.readFloat(3);
 	},
 
 	// MOPT (Portal Triangles) [WMO Root]
@@ -200,9 +200,9 @@ const WMOChunkHandlers = {
 		this.portalInfo = new Array(this.portalCount);
 		for (let i = 0; i < this.portalCount; i++) {
 			this.portalInfo[i] = {
-				startVertex: data.readUInt16LE(),
-				count: data.readUInt16LE(),
-				plane: data.readFloatLE(4)
+				startVertex: data.readUInt16(),
+				count: data.readUInt16(),
+				plane: data.readFloat(4)
 			};
 		}
 	},
@@ -214,9 +214,9 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < entryCount; i++) {
 			this.mopr[i] = {
-				portalIndex: data.readUInt16LE(),
-				groupIndex: data.readUInt16LE(),
-				side: data.readInt16LE()
+				portalIndex: data.readUInt16(),
+				groupIndex: data.readUInt16(),
+				side: data.readInt16()
 			};
 
 			data.move(4); // Filler
@@ -235,10 +235,10 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			groupInfo[i] = {
-				flags: data.readUInt32LE(),
-				boundingBox1: data.readFloatLE(3),
-				boundingBox2: data.readFloatLE(3),
-				nameIndex: data.readInt32LE()
+				flags: data.readUInt32(),
+				boundingBox1: data.readFloat(3),
+				boundingBox2: data.readFloat(3),
+				nameIndex: data.readInt32()
 			};
 		}
 	},
@@ -251,16 +251,16 @@ const WMOChunkHandlers = {
 		for (let i = 0; i < count; i++) {
 			doodadSets[i] = {
 				name: data.readString(20).replace(/\0/g, ''),
-				firstInstanceIndex: data.readUInt32LE(),
-				doodadCount: data.readUInt32LE(),
-				unused: data.readUInt32LE()
+				firstInstanceIndex: data.readUInt32(),
+				doodadCount: data.readUInt32(),
+				unused: data.readUInt32()
 			};
 		}
 	},
 
 	// MODI (Doodad IDs) [WMO Root]
 	0x4D4F4449: function(data, chunkSize) {
-		this.fileDataIDs = data.readUInt32LE(chunkSize / 4);
+		this.fileDataIDs = data.readUInt32(chunkSize / 4);
 	},
 
 	// MODN (Doodad Names) [WMO Root]
@@ -279,11 +279,11 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			doodads[i] = {
-				offset: data.readUInt24LE(),
+				offset: data.readUInt24(),
 				flags: data.readUInt8(),
-				position: data.readFloatLE(3),
-				rotation: data.readFloatLE(4),
-				scale: data.readFloatLE(),
+				position: data.readFloat(3),
+				rotation: data.readFloat(4),
+				scale: data.readFloat(),
 				color: data.readUInt8(4)
 			};
 		}
@@ -291,20 +291,20 @@ const WMOChunkHandlers = {
 
 	// GFID (Group file Data IDs) [WMO Root]
 	0x47464944: function(data, chunkSize) {
-		this.groupIDs = data.readUInt32LE(chunkSize / 4);
+		this.groupIDs = data.readUInt32(chunkSize / 4);
 	},
 
 	// MLIQ (Liquid Data) [WMO Group]
 	0x4D4C4951: function(data) {
 		// See https://wowdev.wiki/WMO#MLIQ_chunk for using this raw data.
-		const liquidVertsX = data.readUInt32LE();
-		const liquidVertsY = data.readUInt32LE();
+		const liquidVertsX = data.readUInt32();
+		const liquidVertsY = data.readUInt32();
 
-		const liquidTilesX = data.readUInt32LE();
-		const liquidTilesY = data.readUInt32LE();
+		const liquidTilesX = data.readUInt32();
+		const liquidTilesY = data.readUInt32();
 
-		const liquidCorner = data.readFloatLE(3);
-		const liquidMaterialID = data.readUInt16LE();
+		const liquidCorner = data.readFloat(3);
+		const liquidMaterialID = data.readUInt16();
 
 		const vertCount = liquidVertsX * liquidVertsY;
 		const liquidVertices = new Array(vertCount);
@@ -321,8 +321,8 @@ const WMOChunkHandlers = {
 			// int16_t t;
 
 			liquidVertices[i] = {
-				data: data.readUInt32LE(),
-				height: data.readFloatLE()
+				data: data.readUInt32(),
+				height: data.readFloat()
 			};
 		}
 
@@ -349,43 +349,43 @@ const WMOChunkHandlers = {
 		if (!this.vertexColours)
 			this.vertexColours = [];
 
-		this.vertexColours.push(data.readUInt32LE(chunkSize / 4));
+		this.vertexColours.push(data.readUInt32(chunkSize / 4));
 	},
 
 	// MDAL (Ambient Color) [WMO Group]
 	0x4D44414C: function(data) {
-		this.ambientColor = data.readUInt32LE();
+		this.ambientColor = data.readUInt32();
 	},
 
 	// MOGP (Group Header) [WMO Group]
 	0x4D4F4750: function(data, chunkSize) {
 		const endOfs = data.offset + chunkSize;
 
-		this.nameOfs = data.readUInt32LE();
-		this.descOfs = data.readUInt32LE();
+		this.nameOfs = data.readUInt32();
+		this.descOfs = data.readUInt32();
 
-		this.flags = data.readUInt32LE();
-		this.boundingBox1 = data.readFloatLE(3);
-		this.boundingBox2 = data.readFloatLE(3);
+		this.flags = data.readUInt32();
+		this.boundingBox1 = data.readFloat(3);
+		this.boundingBox2 = data.readFloat(3);
 
-		this.ofsPortals = data.readUInt16LE();
-		this.numPortals = data.readUInt16LE();
+		this.ofsPortals = data.readUInt16();
+		this.numPortals = data.readUInt16();
 
-		this.numBatchesA = data.readUInt16LE();
-		this.numBatchesB = data.readUInt16LE();
-		this.numBatchesC = data.readUInt32LE();
+		this.numBatchesA = data.readUInt16();
+		this.numBatchesB = data.readUInt16();
+		this.numBatchesC = data.readUInt32();
 
 		data.move(4); // Unused.
 
-		this.liquidType = data.readUInt32LE();
-		this.groupID = data.readUInt32LE();
+		this.liquidType = data.readUInt32();
+		this.groupID = data.readUInt32();
 
 		data.move(8); // Unknown.
 
 		// Read sub-chunks.
 		while (data.offset < endOfs) {
-			const chunkID = data.readUInt32LE();
-			const chunkSize = data.readUInt32LE();
+			const chunkID = data.readUInt32();
+			const chunkSize = data.readUInt32();
 			const nextChunkPos = data.offset + chunkSize;
 
 			const handler = WMOChunkHandlers[chunkID];
@@ -399,7 +399,7 @@ const WMOChunkHandlers = {
 
 	// MOVI (indices) [WMO Group]
 	0x4D4F5649: function(data, chunkSize) {
-		this.indices = data.readUInt16LE(chunkSize / 2);
+		this.indices = data.readUInt16(chunkSize / 2);
 	},
 
 	// MOVT (vertices) [WMO Group]
@@ -408,9 +408,9 @@ const WMOChunkHandlers = {
 		const vertices = this.vertices = new Array(count);
 
 		for (let i = 0; i < count; i += 3) {
-			vertices[i] = data.readFloatLE();
-			vertices[i + 2] = data.readFloatLE() * -1;
-			vertices[i + 1] = data.readFloatLE();
+			vertices[i] = data.readFloat();
+			vertices[i + 2] = data.readFloat() * -1;
+			vertices[i + 1] = data.readFloat();
 		}
 	},
 
@@ -422,8 +422,8 @@ const WMOChunkHandlers = {
 		const count = chunkSize / 4;
 		const uvs = new Array(count);
 		for (let i = 0; i < count; i += 2) {
-			uvs[i] = data.readFloatLE();
-			uvs[i + 1] = (data.readFloatLE() - 1) * -1;
+			uvs[i] = data.readFloat();
+			uvs[i + 1] = (data.readFloat() - 1) * -1;
 		}
 
 		this.uvs.push(uvs);
@@ -435,9 +435,9 @@ const WMOChunkHandlers = {
 		const normals = this.normals = new Array(count);
 
 		for (let i = 0; i < count; i += 3) {
-			normals[i] = data.readFloatLE();
-			normals[i + 2] = data.readFloatLE() * -1;
-			normals[i + 1] = data.readFloatLE();
+			normals[i] = data.readFloat();
+			normals[i + 2] = data.readFloat() * -1;
+			normals[i + 1] = data.readFloat();
 		}
 	},
 
@@ -448,12 +448,12 @@ const WMOChunkHandlers = {
 
 		for (let i = 0; i < count; i++) {
 			batches[i] = {
-				possibleBox1: data.readUInt16LE(3),
-				possibleBox2: data.readUInt16LE(3),
-				firstFace: data.readUInt32LE(),
-				numFaces: data.readUInt16LE(),
-				firstVertex: data.readUInt16LE(),
-				lastVertex: data.readUInt16LE(),
+				possibleBox1: data.readUInt16(3),
+				possibleBox2: data.readUInt16(3),
+				firstFace: data.readUInt32(),
+				numFaces: data.readUInt16(),
+				firstVertex: data.readUInt16(),
+				lastVertex: data.readUInt16(),
 				flags: data.readUInt8(),
 				materialID: data.readUInt8()
 			};

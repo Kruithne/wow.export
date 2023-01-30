@@ -279,26 +279,26 @@ export default class CASC {
 	async parseRootFile(data, hash) {
 		const root = new BLTEReader(data, hash);
 
-		const magic = root.readUInt32LE();
+		const magic = root.readUInt32();
 		const rootTypes = this.rootTypes;
 		const rootEntries = this.rootEntries;
 
 		if (magic == ROOT_MAGIC) { // 8.2
-			const totalFileCount = root.readUInt32LE();
-			const namedFileCount = root.readUInt32LE();
+			const totalFileCount = root.readUInt32();
+			const namedFileCount = root.readUInt32();
 			const allowNamelessFiles = totalFileCount !== namedFileCount;
 
 			while (root.remainingBytes > 0) {
-				const numRecords = root.readUInt32LE() as number;
+				const numRecords = root.readUInt32() as number;
 
-				const contentFlags = root.readUInt32LE() as number;
-				const localeFlags = root.readUInt32LE();
+				const contentFlags = root.readUInt32() as number;
+				const localeFlags = root.readUInt32();
 
 				const fileDataIDs = new Array(numRecords);
 
 				let fileDataID = 0;
 				for (let i = 0; i < numRecords; i++)  {
-					const nextID = fileDataID + (root.readInt32LE() as number);
+					const nextID = fileDataID + (root.readInt32() as number);
 					fileDataIDs[i] = nextID;
 					fileDataID = nextID + 1;
 				}
@@ -327,16 +327,16 @@ export default class CASC {
 		} else { // Classic
 			root.seek(0);
 			while (root.remainingBytes > 0) {
-				const numRecords = root.readUInt32LE() as number;
+				const numRecords = root.readUInt32() as number;
 
-				const contentFlags = root.readUInt32LE();
-				const localeFlags = root.readUInt32LE();
+				const contentFlags = root.readUInt32();
+				const localeFlags = root.readUInt32();
 
 				const fileDataIDs = new Array(numRecords);
 
 				let fileDataID: number = 0;
 				for (let i = 0; i < numRecords; i++)  {
-					const nextID = fileDataID + (root.readInt32LE() as number);
+					const nextID = fileDataID + (root.readInt32() as number);
 					fileDataIDs[i] = nextID;
 					fileDataID = nextID + 1;
 				}
@@ -378,7 +378,7 @@ export default class CASC {
 
 		const encoding = new BLTEReader(data, hash);
 
-		const magic = encoding.readUInt16LE();
+		const magic = encoding.readUInt16();
 		if (magic !== ENC_MAGIC)
 			throw new Error('Invalid encoding magic: ' + magic);
 
