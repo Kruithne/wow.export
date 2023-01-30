@@ -219,7 +219,7 @@ export default class CASCRemote extends CASC {
 			log.write('Encoding for build %s cached locally.', this.cache.key);
 		}
 
-		log.timeEnd('Loaded encoding table (%s)', generics.filesize(encRaw.byteLength));
+		log.timeEnd('Loaded encoding table (%s)', generics.filesize(encRaw.length));
 
 		// Parse encoding file.
 		log.timeLog();
@@ -249,7 +249,7 @@ export default class CASCRemote extends CASC {
 			this.cache.storeFile(constants.CACHE.BUILD_ROOT, root);
 		}
 
-		log.timeEnd('Loaded root file (%s)', generics.filesize(root.byteLength));
+		log.timeEnd('Loaded root file (%s)', generics.filesize(root.length));
 
 		// Parse root file.
 		log.timeLog();
@@ -315,8 +315,8 @@ export default class CASCRemote extends CASC {
 		data.seek(-12);
 		const count = data.readInt32() as number;
 
-		if (count * 24 > data.byteLength)
-			throw new Error('Unable to parse archive, unexpected size: ' + data.byteLength);
+		if (count * 24 > data.length)
+			throw new Error('Unable to parse archive, unexpected size: ' + data.length);
 
 		data.seek(0); // Reset position.
 

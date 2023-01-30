@@ -99,11 +99,11 @@ export default class Salsa20 {
 	 * @returns
 	 */
 	process(buf: BufferWrapper): BufferWrapper {
-		const out = BufferWrapper.alloc(buf.byteLength);
-		const bytes = this.getBytes(buf.byteLength);
+		const out = new BufferWrapper(Buffer.allocUnsafe(buf.length));
+		const bytes = this.getBytes(buf.length);
 
 		buf.seek(0);
-		for (let i = 0, n = buf.byteLength; i < n; i++)
+		for (let i = 0, n = buf.length; i < n; i++)
 			out.writeUInt8((bytes.readUInt8() as number ^ buf.readUInt8() as number));
 
 		out.seek(0);

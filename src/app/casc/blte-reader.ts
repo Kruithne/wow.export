@@ -1,6 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
+import zlib from 'node:zlib';
+
 import BufferWrapper from '../buffer';
 import * as tactKeys from './tact-keys';
 import Salsa20 from './salsa20';
@@ -41,7 +43,7 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param data
 	 */
 	static check(data: BufferWrapper): boolean {
-		if (data.byteLength < 4)
+		if (data.length < 4)
 			return false;
 
 		const magic = data.readUInt32();
@@ -63,7 +65,7 @@ export default class BLTEReader extends BufferWrapper {
 		this.blockWriteIndex = 0;
 		this.partialDecrypt = partialDecrypt;
 
-		const size = buf.byteLength;
+		const size = buf.length;
 		if (size < 8)
 			throw new Error('[BLTE] Not enough data (< 8)');
 
@@ -177,7 +179,7 @@ export default class BLTEReader extends BufferWrapper {
 			case 0x45: // Encrypted
 				try {
 					const decrypted = this._decryptBlock(block, blockEnd, index);
-					this._handleBlock(decrypted, decrypted.byteLength, index);
+					this._handleBlock(decrypted, decrypted.length, index);
 				} catch (e) {
 					if (e instanceof EncryptionError) {
 						// Partial decryption allows us to leave zeroed data.
@@ -213,19 +215,19 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param index
 	 */
 	_decompressBlock(data: BufferWrapper, blockEnd: number, index: number): void {
-		const decomp = data.readBuffer(blockEnd - data.offset, true, true); // TODO: INFLATE HERE.
+		const decomp = new BufferWrapper(zlib.inflateSync(data.readBuffer(blockEnd - data.offset)));
 		const expectedSize = this.blocks[index].DecompSize;
 
 		// Reallocate buffer to compensate.
-		if (decomp.byteLength !== expectedSize) {
-			const newCapacity = this.length + (decomp.byteLength - expectedSize);
+		if (decomp.length !== expectedSize) {
+			const newCapacity = this.length + (decomp.length - expectedSize);
 			const newBuffer = Buffer.allocUnsafe(newCapacity);
 
 			this.buffer.copy(newBuffer, 0, 0, Math.min(this.length, newCapacity));
 			this.buffer = newBuffer;
 		}
 
-		this._writeBufferBLTE(decomp as BufferWrapper, decomp.byteLength);
+		this._writeBufferBLTE(decomp, decomp.length);
 	}
 
 	/**

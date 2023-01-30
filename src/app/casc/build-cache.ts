@@ -130,8 +130,8 @@ export default class BuildCache {
 		const hash = data.toHash('sha1', 'hex');
 		cacheIntegrity[filePath] = hash;
 
-		await fsp.writeFile(filePath, data.raw);
-		core.view.cacheSize += data.byteLength;
+		await fsp.writeFile(filePath, data.buffer);
+		core.view.cacheSize += data.length;
 
 		await this.saveCacheIntegrity();
 	}
