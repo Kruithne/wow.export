@@ -174,3 +174,10 @@ export async function startAutomaticInstall(): Promise<void> {
 
 	State.view.isBusy--;
 }
+
+export default {
+	checkLocalVersion,
+	getBlenderInstallations,
+	openAddonDirectory,
+	startAutomaticInstall
+};
