@@ -20,7 +20,7 @@ let loaders = [];
 
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
-export const view: any = { // NIT: Defined this as any for now to make things error less.
+export const view = { // NIT: Defined this as any for now to make things error less.
 	screenStack: [], // Controls the currently active interface screen.
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
 	isDebugBuild: process.env.NODE_ENV === 'development', // True if in development environment.
