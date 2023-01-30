@@ -49,7 +49,7 @@ const detectFileType = (data: BufferWrapper) => {
 		// File magic matches Ogg container format.
 		//selectedFile = ExportHelper.replaceExtension(selectedFile, '.ogg');
 		return AUDIO_TYPE_OGG;
-	} else if (data.startsWith(['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'])) {
+	} else if (data.startsWith('ID3') || data.startsWith('\xFF\xFB') || data.startsWith('\xFF\xF3') || data.startsWith('\xFF\xF2')) {
 		// File magic matches MP3 ID3v2/v1 container format.
 		return AUDIO_TYPE_MP3;
 	}

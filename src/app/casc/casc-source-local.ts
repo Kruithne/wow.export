@@ -157,7 +157,7 @@ export default class CASCLocal extends CASC {
 	 */
 	async parseIndex(file) {
 		const entries = this.localIndexes;
-		const index = await BufferWrapper.readFile(file);
+		const index = new BufferWrapper(await fs.readFile(file));
 
 		const headerHashSize = index.readInt32LE();
 		index.move(4); // headerHash uint32

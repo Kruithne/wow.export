@@ -295,7 +295,7 @@ const exportFiles = async (files, isLocal = false) => {
 				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toBase64(), 'png', true);
+				clipboard.set(buf.toString('base64'), 'png', true);
 
 				log.write('Copied 3D preview to clipboard (%s)', activePath);
 				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
@@ -328,7 +328,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 			try {
 				let fileType;
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID));
+				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID)); // TODO: Replace with fs.promises.readFile() call.
 
 				if (fileName === undefined) {
 					// In the event that we're exporting a file by ID that does not exist in the listfile

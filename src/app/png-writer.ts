@@ -1,5 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import zlib from 'node:zlib';
 import BufferWrapper from './buffer';
 
 const BITS_PER_PIXEL = 4;
@@ -278,9 +279,10 @@ export default class PNGWriter {
 	 * @returns BufferWrapper
 	 */
 	getBuffer(): BufferWrapper {
-		const filtered = new BufferWrapper(filter(this.data, this.width, this.height));
-		const deflated = filtered.deflate();
-		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
+		const filtered = filter(this.data, this.width, this.height);
+		const deflated = new BufferWrapper(zlib.deflateSync(filtered));
+
+		const buf = new BufferWrapper(Buffer.allocUnsafe(8 + 25 + deflated.length + 12 + 12));
 
 		// 8-byte PNG signature.
 		buf.writeUInt32LE(0x474E5089);
@@ -295,21 +297,21 @@ export default class PNGWriter {
 		ihdr.writeUInt8(0); // Compression (0)
 		ihdr.writeUInt8(0); // Filter (0)
 		ihdr.writeUInt8(0); // Interlace (0)
-		ihdr.seek(0);
+		ihdr.seek(0); // NIT: Remove?
 
 		buf.writeUInt32BE(13);
 		buf.writeBuffer(ihdr);
-		buf.writeInt32BE(ihdr.getCRC32());
+		buf.writeInt32BE(ihdr.toCRC32());
 
 		const idat = BufferWrapper.alloc(4 + deflated.byteLength, false);
 		idat.writeUInt32LE(0x54414449); // IDAT
 		idat.writeBuffer(deflated);
 
-		idat.seek(0);
+		idat.seek(0); // NIT: Remove?
 
 		buf.writeUInt32BE(deflated.byteLength);
 		buf.writeBuffer(idat);
-		buf.writeInt32BE(idat.getCRC32());
+		buf.writeInt32BE(idat.toCRC32());
 
 		buf.writeUInt32BE(0);
 		buf.writeUInt32LE(0x444E4549); // IEND

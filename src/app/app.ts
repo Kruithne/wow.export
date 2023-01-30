@@ -22,7 +22,6 @@ import TactKeys from './casc/tact-keys';
 import State from './state';
 import Events from './events';
 
-
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
 window.ondragover = (e: DragEvent) => { e.preventDefault(); return false; };

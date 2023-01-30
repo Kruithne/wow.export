@@ -221,7 +221,7 @@ export class DBDParser {
 	 * @param data
 	 */
 	parse(data: BufferWrapper): void {
-		const lines = data.readLines();
+		const lines = data.readString().split(/\r?\n/);
 
 		// Separate the file into chunks separated by empty lines.
 

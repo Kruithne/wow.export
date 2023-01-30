@@ -84,8 +84,8 @@ export default class BuildCache {
 				return null;
 			}
 
-			const data = await BufferWrapper.readFile(filePath);
-			const dataHash = data.calculateHash('sha1', 'hex');
+			const data = new BufferWrapper(await fsp.readFile(filePath));
+			const dataHash = data.toHash('sha1', 'hex');
 
 			// Reject cache if hash does not match.
 			if (dataHash !== integrityHash) {
@@ -127,7 +127,7 @@ export default class BuildCache {
 			await cacheIntegrityReady();
 
 		// Integrity checking.
-		const hash = data.calculateHash('sha1', 'hex');
+		const hash = data.toHash('sha1', 'hex');
 		cacheIntegrity[filePath] = hash;
 
 		await fsp.writeFile(filePath, data.raw);

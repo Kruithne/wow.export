@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
 import util from 'node:util';
+import fs from 'node:fs';
 import * as log from '../log';
 import * as core from '../core';
 import constants from '../constants';
@@ -89,12 +90,12 @@ export const loadListfile = async (buildConfig: string, cache: BuildCache, rootE
 	} else {
 		// User has configured a local listfile location.
 		log.write('Loading user-defined local listfile: %s', url);
-		data = await BufferWrapper.readFile(url);
+		data = new BufferWrapper(await fs.promises.readFile(url));
 	}
 
 	// Parse all lines in the listfile.
 	// Example: 53187;sound/music/citymusic/darnassus/druid grove.mp3
-	const lines = data.readLines();
+	const lines = data.readString().split(/\r?\n/);
 	for (const line of lines) {
 		const tokens = line.split(';');
 

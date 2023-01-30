@@ -4,6 +4,7 @@ import * as core from '../core';
 import * as log from '../log';
 import util from 'node:util';
 import path from 'node:path';
+import fs from 'node:fs';
 import * as generics from '../generics';
 import * as listfile from '../casc/listfile';
 import BLPImage from '../casc/blp';
@@ -98,12 +99,12 @@ const exportFiles = async (files, isLocal = false) => {
 	if (format === 'CLIPBOARD') {
 		const { fileName, fileDataID }: any = getFileInfoPair(files[0]);
 
-		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+		const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await core.view.casc.getFile(fileDataID);
 		const blp = new BLPImage(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
 
 		const clipboard = nw.Clipboard.get();
-		clipboard.set(png.toBase64(), 'png', true);
+		clipboard.set(png.toString('base64'), 'png', true);
 
 		log.write('Copied texture to clipboard (%s)', fileName);
 		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
@@ -134,7 +135,7 @@ const exportFiles = async (files, isLocal = false) => {
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+				const data = isLocal ? new BufferWrapper(await fs.promises.readFile(fileName)) : await core.view.casc.getFile(fileDataID);
 
 				if (format === 'BLP') {
 					// Export as raw file with no conversion.

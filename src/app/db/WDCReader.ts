@@ -619,7 +619,7 @@ export default class WDCReader {
 								rawValue = data.readUInt64LE();
 							} else {
 								castBuffer.seek(0);
-								castBuffer.writeBuffer(data);
+								castBuffer.writeBuffer(data.buffer, data.offset);
 
 								castBuffer.seek(0);
 								rawValue = castBuffer.readUInt64LE();

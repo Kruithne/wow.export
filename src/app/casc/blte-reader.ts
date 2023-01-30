@@ -76,7 +76,7 @@ export default class BLTEReader extends BufferWrapper {
 
 		buf.seek(0);
 
-		const hashCheck = headerSize > 0 ? (buf.readBuffer(headerSize) as BufferWrapper).calculateHash() : buf.calculateHash();
+		const hashCheck = headerSize > 0 ? (buf.readBuffer(headerSize) as BufferWrapper).toHash() : buf.toHash();
 		if (hashCheck !== hash)
 			throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
 
@@ -147,7 +147,7 @@ export default class BLTEReader extends BufferWrapper {
 
 		if (block.Hash !== EMPTY_HASH) {
 			const blockData = this._blte.readBuffer(block.CompSize);
-			const blockHash = (blockData as BufferWrapper).calculateHash();
+			const blockHash = (blockData as BufferWrapper).toHash();
 
 			// Reset after reading the hash.
 			this._blte.seek(bltePos);
@@ -213,12 +213,17 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param index
 	 */
 	_decompressBlock(data: BufferWrapper, blockEnd: number, index: number): void {
-		const decomp = data.readBuffer(blockEnd - data.offset, true, true);
+		const decomp = data.readBuffer(blockEnd - data.offset, true, true); // TODO: INFLATE HERE.
 		const expectedSize = this.blocks[index].DecompSize;
 
 		// Reallocate buffer to compensate.
-		if (decomp.byteLength > expectedSize)
-			this.setCapacity(this.byteLength + (decomp.byteLength - expectedSize));
+		if (decomp.byteLength !== expectedSize) {
+			const newCapacity = this.length + (decomp.byteLength - expectedSize);
+			const newBuffer = Buffer.allocUnsafe(newCapacity);
+
+			this.buffer.copy(newBuffer, 0, 0, Math.min(this.length, newCapacity));
+			this.buffer = newBuffer;
+		}
 
 		this._writeBufferBLTE(decomp as BufferWrapper, decomp.byteLength);
 	}
@@ -302,15 +307,6 @@ export default class BLTEReader extends BufferWrapper {
 	async writeToFile(file: string): Promise<void> {
 		this.processAllBlocks();
 		await super.writeToFile(file);
-	}
-
-	/**
-	 * Decode this buffer using the given audio context.
-	 * @param context
-	 */
-	async decodeAudio(context: AudioContext): Promise<AudioBuffer> {
-		this.processAllBlocks();
-		return super.decodeAudio(context);
 	}
 
 	/**
