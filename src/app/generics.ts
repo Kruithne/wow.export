@@ -69,20 +69,6 @@ export async function ping (url: string): Promise<number> {
 }
 
 /**
- * Consume the entire contents of a stream as a UTF8 string.
- * @param object stream
- */
-export async function consumeUTF8Stream(stream: NodeJS.ReadableStream): Promise<string> {
-	return new Promise(resolve => {
-		let data = '';
-
-		stream.setEncoding('utf8');
-		stream.on('data', chunk => data += chunk);
-		stream.on('end', () => resolve(data));
-	});
-}
-
-/**
  * Attempt to parse JSON, returning undefined on failure.
  * @param data - The JSON string to parse.
  * @returns The parsed object or undefined.
