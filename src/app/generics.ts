@@ -8,41 +8,24 @@ import crypto, { BinaryToTextEncoding } from 'node:crypto';
 import Constants from './constants';
 import BufferWrapper from './buffer';
 
-// NIT: Remove http/https modules in favor of fetch().
-import https, { RequestOptions } from 'node:https';
-import http, { IncomingMessage, OutgoingHttpHeaders } from 'node:http';
-
-const MAX_HTTP_REDIRECT = 4;
-
 const inflate = util.promisify(zlib.inflate); // NIT: Replace with native async or use stream.
 
-type Primitive = string|number|boolean;
+type Primitive = string | number | boolean;
 
 /**
- * Async wrapper for http.get()/https.get().
- * The module used is determined by the prefix of the URL.
+ * Async wrapper for the fetch() API.
  * @param url - The URL to GET.
  * @param options - Options to pass to the request.
  * @returns The response object.
  */
-export async function get(url: string, options: RequestOptions = {}) {
-	const mod = url.startsWith('https') ? https : http; // NIT: Replace with fetch(), drop https/http modules.
-	let redirects = 0;
-	let res: IncomingMessage | null = null;
+export async function get(url: string): Promise<Response> {
+	return await fetch(url, {
+		headers: {
+			'User-Agent': Constants.USER_AGENT
+		},
 
-	const headers = options.headers = options.headers ?? {};
-	headers['User-Agent'] = Constants.USER_AGENT;
-
-	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
-	while (res === null || (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT)) {
-		if (res && res.statusCode === 301 && res.headers.location !== undefined)
-			url = res.headers.location;
-
-		res = await new Promise((resolve, reject) => mod.get(url, options, () => resolve).on('error', reject));
-		redirects++;
-	}
-
-	return res;
+		redirect: 'follow'
+	});
 }
 
 /**
@@ -112,22 +95,6 @@ export function parseJSON(data: string): object|undefined {
 	} catch (e) {
 		return undefined;
 	}
-}
-
-/**
- * Obtain JSON from a remote end-point.
- * @param url - The URL to retrieve JSOn from.
- * @throws {@link error} On error or HTTP code other than 200.
- * @returns The parsed JSON object.
- */
-export async function getJSON(url: string): Promise<object> {
-	const res = await get(url);
-
-	// Abort with anything other than HTTP 200 OK at this point.
-	if (res.statusCode !== 200)
-		throw new Error('Unable to request JSON from end-point. HTTP ' + res.statusCode);
-
-	return JSON.parse(await consumeUTF8Stream(res));
 }
 
 /**

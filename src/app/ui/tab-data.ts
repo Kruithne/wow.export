@@ -15,7 +15,7 @@ core.registerLoadFunc(async () => {
 	// TODO: Cache manifest with sane expiry (e.g. same as DBD) instead of requesting each time
 	const manifestURL = util.format(core.view.config.dbdURL, 'manifest');
 	log.write('Downloading DB2 filename mapping from %s', manifestURL);
-	const db2NameMap = await generics.getJSON(manifestURL);
+	const db2NameMap = await generics.get(manifestURL).then(res => res.json());
 
 	if (core.view.config.hotfixesEnabled) {
 		const htfxReader = new HTFXReader(db2NameMap);

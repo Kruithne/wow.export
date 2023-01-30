@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import cp from 'node:child_process';
 
-import { getJSON, downloadFile, filesize, getFileHash, fileExists } from './generics';
+import { get, downloadFile, filesize, getFileHash, fileExists } from './generics';
 
 import Log from './log';
 import Constants from './constants';
@@ -43,7 +43,7 @@ export async function checkForUpdates(): Promise<boolean> {
 		const manifestURL = util.format(State.config.updateURL, localManifest.flavour) + 'update.json';
 		Log.write('Checking for updates (%s)...', manifestURL);
 
-		const manifest: UpdateManifest = await getJSON(manifestURL);
+		const manifest: UpdateManifest = await get(manifestURL).then(res => res.json());
 
 		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
 		assert(typeof manifest.contents === 'object', 'Update manifest does not contain a valid contents list');
