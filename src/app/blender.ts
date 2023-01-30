@@ -7,20 +7,21 @@ import path from 'node:path';
 import util from 'node:util';
 import fs from 'node:fs/promises';
 
-import * as log from './log';
-import constants from './constants';
+import { createDirectory, deleteDirectory } from './generics';
 
-import * as core from './core';
-import * as generics from './generics';
+import Log from './log';
+import Constants from './constants';
+import State from './state';
 
 const PATTERN_ADDON_VER = /"version": \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
 
 /**
  * Parse a Blender add-on manifest file for the version.
- * @param file
+ * @param file - Path to manifest file.
+ * @returns Version string or null if not found.
  */
-const parseManifestVersion = async (file: string) => {
+async function parseManifestVersion(file: string): Promise<string | null> {
 	try {
 		const data = await fs.readFile(file, 'utf8');
 		const match = data.match(PATTERN_ADDON_VER);
@@ -32,17 +33,17 @@ const parseManifestVersion = async (file: string) => {
 	}
 
 	return null;
-};
+}
 
 /**
  * Locate available Blender installations on the system.
- * Returns a list of versions.
+ * @returns Array of version strings.
  */
-const getBlenderInstallations = async () => {
+async function getBlenderInstallations(): Promise<string[]> {
 	const installs = [];
 
 	try {
-		const entries = await fs.readdir(constants.BLENDER.DIR, { withFileTypes: true });
+		const entries = await fs.readdir(Constants.BLENDER.DIR, { withFileTypes: true });
 
 		for (const entry of entries) {
 			// Skip non-directories.
@@ -51,7 +52,7 @@ const getBlenderInstallations = async () => {
 
 			// Validate version directory names.
 			if (!entry.name.match(PATTERN_BLENDER_VER)) {
-				log.write('Skipping invalid Blender installation dir: %s', entry.name);
+				Log.write('Skipping invalid Blender installation dir: %s', entry.name);
 				continue;
 			}
 
@@ -62,14 +63,14 @@ const getBlenderInstallations = async () => {
 	}
 
 	return installs;
-};
+}
 
 /**
  * Open the local directory containing our Blender add-on
  * using the default explorer application for this OS.
  */
 export async function openAddonDirectory(): Promise<void> {
-	nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
+	nw.Shell.openItem(Constants.BLENDER.LOCAL_DIR);
 }
 
 /**
@@ -77,42 +78,42 @@ export async function openAddonDirectory(): Promise<void> {
  * add-on installed. If not, they will be prompted to update it.
  */
 export async function checkLocalVersion(): Promise<void> {
-	log.write('Checking local Blender add-on version...');
+	Log.write('Checking local Blender add-on version...');
 
 	// Ensure we actually have a Blender installation.
 	const versions = await getBlenderInstallations();
 	if (versions.length === 0) {
-		log.write('Error: User does not have any Blender installations.');
+		Log.write('Error: User does not have any Blender installations.');
 		return;
 	}
 
-	log.write('Available Blender installations: %s', versions.length > 0 ? versions.join(', ') : 'None');
-	const blenderVersion = versions.sort().pop();
+	Log.write('Available Blender installations: %s', versions.length > 0 ? versions.join(', ') : 'None');
+	const blenderVersion = versions.sort().pop(); // NIT: This isn't great.
 
 	// Check the users latest version meets our minimum requirement.
-	if (blenderVersion < constants.BLENDER.MIN_VER) {
-		log.write('Latest Blender install does not meet minimum requirements (%s < %s)', blenderVersion, constants.BLENDER.MIN_VER);
+	if (blenderVersion < Constants.BLENDER.MIN_VER) {
+		Log.write('Latest Blender install does not meet minimum requirements (%s < %s)', blenderVersion, Constants.BLENDER.MIN_VER);
 		return;
 	}
 
-	const latestManifest = path.join(constants.BLENDER.LOCAL_DIR, constants.BLENDER.ADDON_ENTRY);
+	const latestManifest = path.join(Constants.BLENDER.LOCAL_DIR, Constants.BLENDER.ADDON_ENTRY);
 	const latestAddonVersion = await parseManifestVersion(latestManifest);
 
 	// Files are not included with the installation. Deployment error or user removed them?
 	if (latestAddonVersion === null) {
-		log.write('Error: Installation is missing Blender add-on source files?');
+		Log.write('Error: Installation is missing Blender add-on source files?');
 		return;
 	}
 
-	const blenderManifest = path.join(constants.BLENDER.DIR, blenderVersion, constants.BLENDER.ADDON_DIR, constants.BLENDER.ADDON_ENTRY);
+	const blenderManifest = path.join(Constants.BLENDER.DIR, blenderVersion, Constants.BLENDER.ADDON_DIR, Constants.BLENDER.ADDON_ENTRY);
 	const blenderAddonVersion = await parseManifestVersion(blenderManifest);
 
-	log.write('Latest add-on version: %s, Blender add-on version: %s', latestAddonVersion, blenderAddonVersion);
+	Log.write('Latest add-on version: %s, Blender add-on version: %s', latestAddonVersion, blenderAddonVersion);
 
 	if (latestAddonVersion > blenderAddonVersion) {
-		log.write('Prompting user for Blender add-on update...');
-		core.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-			'Install': () => core.view.setScreen('blender', true),
+		Log.write('Prompting user for Blender add-on update...');
+		State.setToast('info', 'A newer version of the Blender add-on is available for you.', {
+			'Install': () => State.setScreen('blender', true),
 			'Maybe Later': () => false
 		}, -1, false);
 	}
@@ -123,35 +124,35 @@ export async function checkLocalVersion(): Promise<void> {
  * install the Blender add-on shipped with this application.
  */
 export async function startAutomaticInstall(): Promise<void> {
-	core.view.isBusy++;
-	core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
-	log.write('Starting automatic installation of Blender add-on...');
+	State.isBusy++;
+	State.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
+	Log.write('Starting automatic installation of Blender add-on...');
 
 	try {
 		const versions = await getBlenderInstallations();
 		let installed = false;
 
 		for (const version of versions) {
-			if (version >= constants.BLENDER.MIN_VER) {
-				const addonPath = path.join(constants.BLENDER.DIR, version, constants.BLENDER.ADDON_DIR);
-				log.write('Targeting Blender version %s (%s)', version, addonPath);
+			if (version >= Constants.BLENDER.MIN_VER) {
+				const addonPath = path.join(Constants.BLENDER.DIR, version, Constants.BLENDER.ADDON_DIR);
+				Log.write('Targeting Blender version %s (%s)', version, addonPath);
 
 				// Delete and re-create our add-on to ensure no cache.
-				await generics.deleteDirectory(addonPath);
-				await generics.createDirectory(addonPath);
+				await deleteDirectory(addonPath);
+				await createDirectory(addonPath);
 
 				// Clone our new files over.
-				const files = await fs.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
+				const files = await fs.readdir(Constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
 				for (const file of files) {
 					// We don't expect any directories in our add-on.
 					// Adjust this to be recursive if we ever need to.
 					if (file.isDirectory())
 						continue;
 
-					const srcPath = path.join(constants.BLENDER.LOCAL_DIR, file.name);
+					const srcPath = path.join(Constants.BLENDER.LOCAL_DIR, file.name);
 					const destPath = path.join(addonPath, file.name);
 
-					log.write('%s -> %s', srcPath, destPath);
+					Log.write('%s -> %s', srcPath, destPath);
 					await fs.copyFile(srcPath, destPath);
 				}
 
@@ -160,15 +161,15 @@ export async function startAutomaticInstall(): Promise<void> {
 		}
 
 		if (installed) {
-			core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
+			State.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
 		} else {
-			log.write('No valid Blender installation found, add-on install failed.');
-			core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
+			Log.write('No valid Blender installation found, add-on install failed.');
+			State.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
 		}
 	} catch (e) {
-		log.write('Installation failed due to exception: %s', e.message);
-		core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
+		Log.write('Installation failed due to exception: %s', e.message);
+		State.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 	}
 
-	core.view.isBusy--;
+	State.view.isBusy--;
 }

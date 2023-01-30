@@ -1,32 +1,36 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import constants from './constants';
 import util from 'node:util';
 import fs from 'node:fs';
 
-const MAX_LOG_POOL = 1000;
-const MAX_DRAIN_PER_TICK = 10;
+import Constants from './constants';
 
-let markTimer = 0;
-let isClogged = false;
-const pool = [];
+const MAX_LOG_POOL: number = 1000;
+const MAX_DRAIN_PER_TICK: number = 10;
+
+let markTimer: number = 0;
+let isClogged: boolean = false;
+
+const pool: Array<string> = [];
+const stream = fs.createWriteStream(Constants.RUNTIME_LOG);
+stream.on('drain', drainPool);
 
 /**
- * Return a HH:MM:SS formatted timestamp.
+ * @returns A HH:MM:SS formatted timestamp.
  */
-const getTimestamp = () => {
+function getTimestamp(): string {
 	const time = new Date();
 	return util.format(
 		'%s:%s:%s',
 		time.getHours().toString().padStart(2, '0'),
 		time.getMinutes().toString().padStart(2, '0'),
 		time.getSeconds().toString().padStart(2, '0'));
-};
+}
 
 /**
- * Invoked when the stream has finished flushing.
+ * Drains the log pool.
  */
-const drainPool = () => {
+function drainPool(): void {
 	isClogged = false;
 
 	// If the pool is empty, don't slip into a loop.
@@ -43,37 +47,36 @@ const drainPool = () => {
 	// something remaining in the pool.
 	if (!isClogged && pool.length > 0)
 		process.nextTick(drainPool);
-};
+}
 
 /**
- * Internally mark the current timestamp for measuring
- * performance times with log.timeEnd();
+ * Internally mark the current timestamp for measuring performance times with `Log.timeEnd`.
  */
-export const timeLog = () => {
+export function timeLog(): void {
 	markTimer = Date.now();
-};
+}
 
 /**
- * Logs the time (in milliseconds) between the last log.timeLog()
+ * Logs the time (in milliseconds) between the last Log.timeLog()
  * call and this call, with the given label prefixed.
- * @param label
+ * @param label - Label to prefix the time with
  * @param params - Addition parameters
  */
-export const timeEnd = (label: string, ...params: (string | number)[]): void => {
+export function timeEnd(label: string, ...params: (string | number)[]): void {
 	write(label + ' (%dms)', ...params, (Date.now() - markTimer));
-};
+}
 
 /**
  * Open the runtime log in the users external editor.
  */
-export const openRuntimeLog = (): void => {
-	nw.Shell.openItem(constants.RUNTIME_LOG);
-};
+export function openRuntimeLog(): void {
+	nw.Shell.openItem(Constants.RUNTIME_LOG);
+}
 
 /**
  * Write a message to the log.
  */
-export const write = (...parameters: (string | number | object)[]): void => {
+export function write(...parameters: (string | number | object)[]): void {
 	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
 	if (!isClogged) {
@@ -90,21 +93,25 @@ export const write = (...parameters: (string | number | object)[]): void => {
 	// Mirror output to debugger.
 	if (process.env.NODE_ENV === 'development')
 		console.log(line);
-};
+}
 
 /**
  * Attempts to return the contents of the runtime log.
  * This is defined as a global as it is requested during
  * an application crash where modules may not be loaded.
  */
-export const getErrorDump = async () => { // NIT: Help what to do
+export async function getErrorDump(): Promise<string> {
 	try {
-		return await fs.promises.readFile(constants.RUNTIME_LOG, 'utf8');
+		return await fs.promises.readFile(Constants.RUNTIME_LOG, 'utf8');
 	} catch (e) {
 		return 'Unable to obtain runtime log: ' + e.message;
 	}
-};
+}
 
-// Initialize the logging stream.
-const stream = fs.createWriteStream(constants.RUNTIME_LOG);
-stream.on('drain', drainPool);
+export default {
+	timeLog,
+	timeEnd,
+	openRuntimeLog,
+	write,
+	getErrorDump
+};

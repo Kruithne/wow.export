@@ -3,19 +3,24 @@
 
 import { createApp, defineComponent } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
-import Constants from './constants';
-import ExportHelper from './casc/export-helper';
+import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
+import { filesize, formatPlaybackSeconds, redraw } from './generics';
 
 import * as TabTextures from './ui/tab-textures';
 import * as TabItems from './ui/tab-items';
 import * as ExternalLinks from './external-links';
-import * as Log from './log';
-import * as Generics from './generics';
 import * as Blender from './blender';
 import * as Listfile from './casc/listfile';
 import * as TextureRibbon from './ui/texture-ribbon';
-import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
+
+import Log from './log';
+import ExportHelper from './casc/export-helper';
+import Constants from './constants';
 import Events from './events';
+
+type ToastType = 'info' | 'success' | 'warning' | 'error';
+type ProgressObject = { segWeight: number; value: number; step: (text: string) => Promise<void>; };
+type DropHandler = { ext: string[]; prompt: () => string; process: (file: File) => Promise<void>; };
 
 const app = createApp({
 	el: '#container',
@@ -110,6 +115,9 @@ const app = createApp({
 			mapViewerChunkMask: null, // Map viewer chunk mask.
 			mapViewerSelection: [], // Map viewer tile selection
 			exportCancelled: false, // Export cancellation state.
+			toastTimer: -1, // Timer ID for toast expiration.
+			dropHandlers: Array<DropHandler>, // Handlers for file drag/drops.
+			loaders: Array<Promise<void>>, // Loading step promises.
 			isXmas: (new Date().getMonth() === 11),
 			regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
 			contextMenus: {
@@ -144,6 +152,127 @@ const app = createApp({
 	},
 
 	methods: {
+		/**
+		 * Hide the currently active toast prompt.
+		 * @param userCancel - If true, toast was cancelled by the user.
+		 */
+		hideToast: function(userCancel: boolean = false) {
+			// Cancel outstanding toast expiry timer.
+			if (this.toastTimer > -1) {
+				clearTimeout(this.toastTimer);
+				this.toastTimer = -1;
+			}
+
+			this.toast = null;
+
+			if (userCancel)
+				Events.emit('toast-cancelled');
+		},
+
+		/**
+		 * Display a toast message.
+		 * @param toastType - Type of toast to display.
+		 * @param message - Message to display.
+		 * @param options - Options to pass to the toast.
+		 * @param ttl - Time in milliseconds before removing the toast.
+		 * @param closable - If true, toast can manually be closed.
+		 */
+		setToast: function(toastType: ToastType, message: string, options: object|null = null, ttl: number = 10000, closable: boolean = true) {
+			this.toast = { type: toastType, message, options, closable };
+
+			// Remove any outstanding toast timer we may have.
+			clearTimeout(this.toastTimer);
+
+			// Create a timer to remove this toast.
+			if (ttl > -1)
+				this.toastTimer = setTimeout(() => this.hideToast(), ttl);
+		},
+
+		/**
+		 * Open user-configured export directory with OS default.
+		 */
+		openExportDirectory: function() {
+			nw.Shell.openItem(this.config.exportDirectory);
+		},
+
+		/**
+		 * Register a function to be invoked when the user drops a file onto the application.
+		 * @param handler - Handler to register.
+		 */
+		registerDropHandler: function(handler: DropHandler) {
+			// Ensure the extensions are all lower-case.
+			handler.ext = handler.ext.map(e => e.toLowerCase());
+			this.dropHandlers.push(handler);
+		},
+
+		/**
+		 * Get a drop handler for the given file path.
+		 * @param file - File path to get handler for.
+		 * @returns Drop handler, or null if none found.
+		 */
+		getDropHandler: function (file: string): DropHandler|null {
+			file = file.toLowerCase();
+
+			for (const handler of this.dropHandlers) {
+				for (const ext of handler.ext) {
+					if (file.endsWith(ext))
+						return handler;
+				}
+			}
+
+			return null;
+		},
+
+		/**
+		 * Register a promise to be resolved during the last loading step.
+		 * @param func - Promise to resolve.
+		 */
+		registerLoadFunc: function(func: Promise<void>) {
+			this.loaders.push(func);
+		},
+
+		/**
+		 * Resolves all registered load functions.
+		 * @returns Promise that resolves when all load functions have been resolved.
+		 */
+		resolveLoadFuncs: async function() {
+			await Promise.all(this.loaders);
+			this.loaders.length = 0;
+		},
+
+		/**
+		 * Resolves an async function and blocks the UI until it's done.
+		 * @param func - Function to execute.
+		 */
+		block: async function(func: () => Promise<void>) {
+			this.isBusy++;
+			await func();
+			this.isBusy--;
+		},
+
+		/**
+		 * Creates a progress object for the given number of segments.
+		 * @param segments - Number of segments to split the progress into.
+		 * @returns Progress object.
+		 */
+		createProgress: function(segments: number = 1): ProgressObject {
+			this.loadPct = 0;
+
+			return {
+				segWeight: 1 / segments,
+				value: 0,
+				step: async function(text: string) {
+					this.value++;
+					this.loadPct = Math.min(this.value * this.segWeight, 1);
+
+					if (text)
+						this.loadingProgress = text;
+
+					await redraw();
+				}
+			};
+		},
+
 		/**
 		 * Invoked when the user chooses to manually install the Blender add-on.
 		 */
@@ -318,14 +447,6 @@ const app = createApp({
 		},
 
 		/**
-		 * Hide the toast bar.
-		 * @param userCancel
-		 */
-		hideToast: function(userCancel: boolean = false) {
-			this.hideToast(userCancel);
-		},
-
-		/**
 		 * Restart the application.
 		 */
 		restartApplication: function() {
@@ -461,7 +582,7 @@ const app = createApp({
 		 * Returns the cache size formatted as a file size.
 		 */
 		cacheSizeFormatted: function() {
-			return Generics.filesize(this.cacheSize);
+			return filesize(this.cacheSize);
 		},
 
 		/**
@@ -487,14 +608,14 @@ const app = createApp({
 		 * Return the formatted duration of the selected track on the sound player.
 		 */
 		soundPlayerDurationFormatted: function() {
-			return Generics.formatPlaybackSeconds(this.soundPlayerDuration);
+			return formatPlaybackSeconds(this.soundPlayerDuration);
 		},
 
 		/**
 		 * Return the formatted current seek of the selected track on the sound player.
 		 */
 		soundPlayerSeekFormatted: function() {
-			return Generics.formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
+			return formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
 		},
 
 		/**

@@ -9,18 +9,17 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
-import constants from './constants';
+import { filesize } from './generics';
 
-import * as ExternalLinks from './external-links';
-import * as core from './core';
-import * as log from './log';
-import * as config from './config';
-import * as generics from './generics';
-import * as blender from './blender';
-import * as tactKeys from './casc/tact-keys';
-import * as updater from './updater';
+import * as Blender from './blender';
+import * as Updater from './updater';
 import { win } from './nwjs';
 
+import ExternalLinks from './external-links';
+import Constants from './constants';
+import Log from './log';
+import Config from './config';
+import TactKeys from './casc/tact-keys';
 import State from './state';
 import Events from './events';
 
@@ -69,17 +68,17 @@ document.title += ' v' + nw.App.manifest.version;
 // Log some basic information for potential diagnostics.
 const manifest = nw.App.manifest;
 const cpus = os.cpus();
-log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
-log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, generics.filesize(os.freemem()), generics.filesize(os.totalmem()));
-log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
+Log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
+Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
+Log.write('INSTALL_PATH %s DATA_PATH %s', Constants.INSTALL_PATH, Constants.DATA_PATH);
 
 // Load configuration.
-await config.load();
+await Config.load();
 
 // Set-up default export directory if none configured.
 if (State.config.exportDirectory === '') {
 	State.config.exportDirectory = path.join(os.homedir(), 'wow.export');
-	log.write('No export directory set, setting to %s', State.config.exportDirectory);
+	Log.write('No export directory set, setting to %s', State.config.exportDirectory);
 }
 
 // Set-up proper drag/drop handlers.
@@ -155,7 +154,7 @@ window.ondragleave = e => {
 
 // Load cachesize, a file used to track the overall size of the cache directory
 // without having to calculate the real size before showing to users. Fast and reliable.
-fs.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
+fs.readFile(Constants.CACHE.SIZE, 'utf8').then(data => {
 	State.cacheSize = Number(data) || 0;
 }).catch(() => {
 	// File doesn't exist yet, don't error.
@@ -172,32 +171,32 @@ fs.readFile(constants.CACHE.SIZE, 'utf8').then(data => {
 		// to the file constantly during heavy cache usage. Postponing until
 		// next tick would not help due to async and potential IO/net delay.
 		updateTimer = setTimeout(() => {
-			fs.writeFile(constants.CACHE.SIZE, nv.toString(), 'utf8');
-		}, constants.CACHE.SIZE_UPDATE_DELAY);
+			fs.writeFile(Constants.CACHE.SIZE, nv.toString(), 'utf8');
+		}, Constants.CACHE.SIZE_UPDATE_DELAY);
 	});
 });
 
 // Load/update BLTE decryption keys.
-tactKeys.load();
+TactKeys.load();
 
 // Check for updates (without blocking).
 if (!(process.env.NODE_ENV === 'development')) {
-	updater.checkForUpdates().then(updateAvailable => {
+	Updater.checkForUpdates().then(updateAvailable => {
 		if (updateAvailable) {
 			// Update is available, prompt to update. If user declines,
 			// begin checking the local Blender add-on version.
 			core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-				'Update Now': () => updater.applyUpdate(),
-				'Maybe Later': () => blender.checkLocalVersion()
+				'Update Now': () => Updater.applyUpdate(),
+				'Maybe Later': () => Blender.checkLocalVersion()
 			}, -1, false);
 		} else {
 			// No update available, start checking Blender add-on.
-			blender.checkLocalVersion();
+			Blender.checkLocalVersion();
 		}
 	});
 } else {
 	// Debug mode, go straight to Blender add-on check.
-	blender.checkLocalVersion();
+	Blender.checkLocalVersion();
 }
 
 // Load the changelog when the user opens the screen.

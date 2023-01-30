@@ -266,7 +266,8 @@ export default class CASC {
 	 */
 	async initializeComponents(): Promise<void> {
 		await this.progress.step('Initializing components');
-		await core.runLoadFuncs();
+
+		await core.view.resolveLoadFuncs();
 	}
 
 	/**

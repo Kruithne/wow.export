@@ -1,31 +1,33 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as log from '../log';
-import * as core from '../core';
 
 import fs from 'node:fs/promises';
-import constants from '../constants';
+
 import { get, consumeUTF8Stream } from '../generics';
 
-// const core = require('../core');
+import Constants from '../constants';
+import State from '../state';
+import Log from '../log';
 
-const KEY_RING = {};
-let isSaving = false;
+type KeyRing = Record<string, string>;
+
+const KEY_RING: KeyRing = {};
+let isSaving: boolean = false;
 
 /**
  * Retrieve a registered decryption key.
  * @param {string} keyName
  */
-export const getKey = (keyName: string) => {
+export function getKey (keyName: string): string {
 	return KEY_RING[keyName.toLowerCase()];
-};
+}
 
 /**
  * Validate a keyName/key pair.
- * @param keyName - Key name
- * @param key - Key bytes
+ * @param keyName - Key name.
+ * @param key - Key bytes.
  */
-export const validateKeyPair = (keyName: string, key: string): boolean => {
+export function validateKeyPair(keyName: string, key: string): boolean {
 	if (keyName.length !== 16)
 		return false;
 
@@ -33,16 +35,18 @@ export const validateKeyPair = (keyName: string, key: string): boolean => {
 		return false;
 
 	return true;
-};
+}
 
 /**
  * Add a decryption key. Subject to validation.
+ *
+ * @remarks
  * Decryption keys will be saved to disk on next tick.
- * Returns true if added, else false if the pair failed validation.
- * @param keyName
- * @param key
+ * @param keyName - Key name.
+ * @param key - Key bytes.
+ * @returns True if added, else false if the pair failed validation.
  */
-export const addKey = (keyName: string, key: string) => {
+export function addKey(keyName: string, key: string): boolean {
 	if (!validateKeyPair(keyName, key))
 		return false;
 
@@ -51,21 +55,20 @@ export const addKey = (keyName: string, key: string) => {
 
 	if (KEY_RING[keyName] !== key) {
 		KEY_RING[keyName] = key;
-		log.write('Registered new decryption key %s -> %s', keyName, key);
+		Log.write('Registered new decryption key %s -> %s', keyName, key);
 		save();
 	}
 
 	return true;
-};
+}
 
 /**
- * Load tact keys from disk cache and request updated
- * keys from remote server.
+ * Load tact keys from disk cache and request updated keys from remote server.
  */
-export const load = async () => {
+export async function load() {
 	// Load from local cache.
 	try {
-		const tactKeys = JSON.parse(await fs.readFile(constants.CACHE.TACT_KEYS, 'utf8'));
+		const tactKeys = JSON.parse(await fs.readFile(Constants.CACHE.TACT_KEYS, 'utf8'));
 
 		// Validate/add our cached keys manually rather than passing to addKey()
 		// to skip over redundant logging/saving calls.
@@ -75,17 +78,17 @@ export const load = async () => {
 				KEY_RING[keyName.toLowerCase()] = (key as string).toLowerCase();
 				added++;
 			} else {
-				log.write('Skipping invalid tact key from cache: %s -> %s', keyName, (key as string));
+				Log.write('Skipping invalid tact key from cache: %s -> %s', keyName, (key as string));
 			}
 		}
 
-		log.write('Loaded %d tact keys from local cache.', added);
+		Log.write('Loaded %d tact keys from local cache.', added);
 	} catch (e) {
 		// No tactKeys cached locally, doesn't matter.
 	}
 
 	// Update from remote server.
-	const res = await get(core.view.config.tactKeysURL);
+	const res = await get(State.config.tactKeysURL);
 	if (res.statusCode === 200) {
 		const data = await consumeUTF8Stream(res);
 		const lines = data.split(/\r\n|\n|\r/);
@@ -103,32 +106,36 @@ export const load = async () => {
 				KEY_RING[keyName.toLowerCase()] = key.toLowerCase();
 				remoteAdded++;
 			} else {
-				log.write('Skipping invalid remote tact key: %s -> %s', keyName, key);
+				Log.write('Skipping invalid remote tact key: %s -> %s', keyName, key);
 			}
 		}
 
 		if (remoteAdded > 0)
-			log.write('Added %d new tact keys from %s', remoteAdded, core.view.config.tactKeysURL);
+			Log.write('Added %d new tact keys from %s', remoteAdded, State.config.tactKeysURL);
 	} else {
-		log.write('Unable to update tactKeys, HTTP %d', res.statusCode?.toString());
+		Log.write('Unable to update tactKeys, HTTP %d', res.statusCode?.toString());
 	}
-};
+}
 
 /**
- * Request for tact keys to be saved on the next tick.
- * Multiple calls can be chained in the same tick.
+ * Asyncronously save tact keys to disk.
  */
-export const save = async () => {
+export async function save() {
 	if (!isSaving) {
 		isSaving = true;
-		setImmediate(doSave);
-	}
-};
 
-/**
- * Saves the tact keys to disk.
- */
-export const doSave = async () => {
-	await fs.writeFile(constants.CACHE.TACT_KEYS, JSON.stringify(KEY_RING, null, '\t'), 'utf8');
-	isSaving = false;
+		// This is delayed until the next tick so that calls to addKey() can be batched
+		// when loading from cache without saving to the disk on every call.
+		setImmediate(async () => {
+			await fs.writeFile(Constants.CACHE.TACT_KEYS, JSON.stringify(KEY_RING, null, '\t'), 'utf8');
+			isSaving = false;
+		});
+	}
+}
+
+export default {
+	getKey,
+	addKey,
+	load,
+	save
 };

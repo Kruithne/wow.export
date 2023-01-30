@@ -6,6 +6,7 @@ import constants from '../constants';
 import * as generics from '../generics';
 import * as log from '../log';
 import * as ExternalLinks from '../external-links';
+import State from '../state';
 
 import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
@@ -16,7 +17,7 @@ export type CDNRegion = { tag: string, url: string, delay: number | null };
 let cascSource: CASC;
 
 const loadInstall = (index) => {
-	core.block(async () => {
+	State.block(async () => {
 		core.view.showLoadScreen();
 
 		// Wipe the available build lists.
@@ -135,7 +136,7 @@ core.events.once('screen-source-select', async () => {
 	// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 	// Attempt to initialize a remote CASC source using the selected region.
 	core.events.on('click-source-remote', () => {
-		core.block(async () => {
+		State.block(async () => {
 			const tag = core.view.selectedCDNRegion.tag;
 
 			try {

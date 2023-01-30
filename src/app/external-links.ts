@@ -32,3 +32,8 @@ export function openExternalLink(link: string) {
 export function openItemOnWowhead(itemID: number) {
 	open(util.format(WOWHEAD_ITEM, itemID));
 }
+
+export default {
+	openExternalLink,
+	openItemOnWowhead
+};
