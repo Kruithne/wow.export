@@ -4,7 +4,7 @@ import path from 'node:path';
 import util from 'node:util';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import crypto, { BinaryToTextEncoding } from 'node:crypto';
+import crypto from 'node:crypto';
 import Constants from './constants';
 import BufferWrapper from './buffer';
 
@@ -213,7 +213,7 @@ export function filesize(input: number): string {
  * @param encoding - Output encoding.
  * @returns Hash of the file.
  */
-export async function getFileHash(file: string, method: string, encoding: BinaryToTextEncoding): Promise<string> {
+export async function getFileHash(file: string, method: string, encoding: crypto.BinaryToTextEncoding): Promise<string> {
 	return new Promise(resolve => {
 		const fd = fs.createReadStream(file);
 		const hash = crypto.createHash(method);
