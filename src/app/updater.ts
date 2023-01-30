@@ -145,3 +145,8 @@ export async function applyUpdate() {
 		Log.write('Failed to restart for update: %s', e.message);
 	}
 }
+
+export default {
+	checkForUpdates,
+	applyUpdate
+};
