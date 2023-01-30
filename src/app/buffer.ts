@@ -119,49 +119,49 @@ export default class BufferWrapper {
 
 	/** @returns Signed 16-bit integer (little-endian) at the current position. */
 	readInt16(): number {
-		const val = this.buffer.readInt16(this.offset);
+		const val = this.buffer.readInt16LE(this.offset);
 		this.offset += 2;
 		return val;
 	}
 
 	/** @returns Unsigned 16-bit integer (little-endian) at the current position. */
 	readUInt16(): number {
-		const val = this.buffer.readUInt16(this.offset);
+		const val = this.buffer.readUInt16LE(this.offset);
 		this.offset += 2;
 		return val;
 	}
 
 	/** @returns Signed 24-bit integer (little-endian) at the current position. */
 	readInt24(): number {
-		const val = this.buffer.readInt(this.offset, 3);
+		const val = this.buffer.readIntLE(this.offset, 3);
 		this.offset += 3;
 		return val;
 	}
 
 	/** @returns Unsigned 24-bit integer (little-endian) at the current position. */
 	readUInt24(): number {
-		const val = this.buffer.readUInt(this.offset, 3);
+		const val = this.buffer.readUIntLE(this.offset, 3);
 		this.offset += 3;
 		return val;
 	}
 
 	/** @returns Signed 32-bit integer (little-endian) at the current position. */
 	readInt32(): number {
-		const val = this.buffer.readInt32(this.offset);
+		const val = this.buffer.readInt32LE(this.offset);
 		this.offset += 4;
 		return val;
 	}
 
 	/** @returns Unsigned 32-bit integer (little-endian) at the current position. */
 	readUInt32(): number {
-		const val = this.buffer.readUInt32(this.offset);
+		const val = this.buffer.readUInt32LE(this.offset);
 		this.offset += 4;
 		return val;
 	}
 
 	/** @returns Signed 40-bit integer (little-endian) at the current position. */
 	readInt40(): number {
-		const val = this.buffer.readInt(this.offset, 5);
+		const val = this.buffer.readIntLE(this.offset, 5);
 
 		this.offset += 5;
 		return val;
@@ -169,7 +169,7 @@ export default class BufferWrapper {
 
 	/** @returns Unsigned 40-bit integer (little-endian) at the current position. */
 	readUInt40(): number {
-		const val = this.buffer.readUInt(this.offset, 5);
+		const val = this.buffer.readUIntLE(this.offset, 5);
 
 		this.offset += 5;
 		return val;
@@ -177,28 +177,28 @@ export default class BufferWrapper {
 
 	/** @returns Signed 64-bit integer (little-endian) at the current position. */
 	readInt64(): bigint {
-		const val = this.buffer.readBigInt64(this.offset);
+		const val = this.buffer.readBigInt64LE(this.offset);
 		this.offset += 8;
 		return val;
 	}
 
 	/** @returns Unsigned 64-bit integer (little-endian) at the current position. */
 	readUInt64(): bigint {
-		const val = this.buffer.readBigUInt64(this.offset);
+		const val = this.buffer.readBigUInt64LE(this.offset);
 		this.offset += 8;
 		return val;
 	}
 
 	/** @returns Float (little-endian) at the current position. */
 	readFloat(): number {
-		const val = this.buffer.readFloat(this.offset);
+		const val = this.buffer.readFloatLE(this.offset);
 		this.offset += 4;
 		return val;
 	}
 
 	/** @returns Double (little-endian) at the current position. */
 	readDouble(): number {
-		const val = this.buffer.readDouble(this.offset);
+		const val = this.buffer.readDoubleLE(this.offset);
 		this.offset += 8;
 		return val;
 	}
@@ -291,7 +291,7 @@ export default class BufferWrapper {
 	readInt16Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readInt16(this.offset + i * 2);
+			arr[i] = this.buffer.readInt16LE(this.offset + i * 2);
 
 		this.offset += length * 2;
 		return arr;
@@ -301,7 +301,7 @@ export default class BufferWrapper {
 	readUInt16Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readUInt16(this.offset + i * 2);
+			arr[i] = this.buffer.readUInt16LE(this.offset + i * 2);
 
 		this.offset += length * 2;
 		return arr;
@@ -311,7 +311,7 @@ export default class BufferWrapper {
 	readInt24Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readInt(this.offset, 3);
+			arr[i] = this.buffer.readIntLE(this.offset, 3);
 
 		this.offset += length * 3;
 		return arr;
@@ -321,7 +321,7 @@ export default class BufferWrapper {
 	readUInt24Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readUInt(this.offset, 3);
+			arr[i] = this.buffer.readUIntLE(this.offset, 3);
 
 		this.offset += length * 3;
 		return arr;
@@ -331,7 +331,7 @@ export default class BufferWrapper {
 	readInt32Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readInt32(this.offset + i * 4);
+			arr[i] = this.buffer.readInt32LE(this.offset + i * 4);
 
 		this.offset += length * 4;
 		return arr;
@@ -341,7 +341,7 @@ export default class BufferWrapper {
 	readUInt32Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readUInt32(this.offset + i * 4);
+			arr[i] = this.buffer.readUInt32LE(this.offset + i * 4);
 
 		this.offset += length * 4;
 		return arr;
@@ -351,7 +351,7 @@ export default class BufferWrapper {
 	readInt64Array(length: number): bigint[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readBigInt64(this.offset + i * 8);
+			arr[i] = this.buffer.readBigInt64LE(this.offset + i * 8);
 
 		this.offset += length * 8;
 		return arr;
@@ -361,7 +361,7 @@ export default class BufferWrapper {
 	readUInt64Array(length: number): bigint[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readBigUInt64(this.offset + i * 8);
+			arr[i] = this.buffer.readBigUInt64LE(this.offset + i * 8);
 
 		this.offset += length * 8;
 		return arr;
@@ -371,7 +371,7 @@ export default class BufferWrapper {
 	readFloat32Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readFloat(this.offset + i * 4);
+			arr[i] = this.buffer.readFloatLE(this.offset + i * 4);
 
 		this.offset += length * 4;
 		return arr;
@@ -381,7 +381,7 @@ export default class BufferWrapper {
 	readFloat64Array(length: number): number[] {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
-			arr[i] = this.buffer.readDouble(this.offset + i * 8);
+			arr[i] = this.buffer.readDoubleLE(this.offset + i * 8);
 
 		this.offset += length * 8;
 		return arr;
