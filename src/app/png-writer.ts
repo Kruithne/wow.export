@@ -288,7 +288,7 @@ export default class PNGWriter {
 		buf.writeUInt32(0x474E5089);
 		buf.writeUInt32(0x0A1A0A0D);
 
-		const ihdr = BufferWrapper.alloc(4 + 13, false);
+		const ihdr = new BufferWrapper(Buffer.allocUnsafe(4 + 13));
 		ihdr.writeUInt32(0x52444849); // IHDR
 		ihdr.writeUInt32BE(this.width); // Image width
 		ihdr.writeUInt32BE(this.height); // Image height
@@ -300,17 +300,17 @@ export default class PNGWriter {
 		ihdr.seek(0); // NIT: Remove?
 
 		buf.writeUInt32BE(13);
-		buf.writeBuffer(ihdr);
+		buf.writeBuffer(ihdr.buffer);
 		buf.writeInt32BE(ihdr.toCRC32());
 
-		const idat = BufferWrapper.alloc(4 + deflated.byteLength, false);
+		const idat = new BufferWrapper(Buffer.allocUnsafe(4 + deflated.length));
 		idat.writeUInt32(0x54414449); // IDAT
-		idat.writeBuffer(deflated);
+		idat.writeBuffer(deflated.buffer);
 
 		idat.seek(0); // NIT: Remove?
 
-		buf.writeUInt32BE(deflated.byteLength);
-		buf.writeBuffer(idat);
+		buf.writeUInt32BE(deflated.length);
+		buf.writeBuffer(idat.buffer);
 		buf.writeInt32BE(idat.toCRC32());
 
 		buf.writeUInt32BE(0);
