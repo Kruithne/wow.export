@@ -11,6 +11,8 @@ import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
 import CASCRemote from '../casc/casc-source-remote';
 
+export type CDNRegion = { tag: string, url: string, delay: number | null };
+
 let cascSource: CASC;
 
 const loadInstall = (index) => {
@@ -66,8 +68,8 @@ core.events.once('screen-source-select', async () => {
 
 	// Iterate CDN regions and create data nodes.
 	for (const region of constants.PATCH.REGIONS) {
-		const cdnURL = util.format(constants.PATCH.HOST, region);
-		const node = { tag: region, url: cdnURL, delay: null };
+		const cdnURL: string = util.format(constants.PATCH.HOST, region);
+		const node: CDNRegion = { tag: region, url: cdnURL, delay: null };
 		regions.push(node);
 
 		// Mark this region as the selected one.

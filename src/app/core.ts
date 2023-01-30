@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import EventEmitter from 'node:events';
 import { redraw } from './generics';
+import { CDNRegion } from './ui/source-select'; // NIT: Better place to store this.
 
 let toastTimer: number = -1; // Used by setToast() for TTL toast prompts.
 

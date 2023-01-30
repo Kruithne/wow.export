@@ -26,6 +26,7 @@ import * as listfile from './casc/listfile';
 import * as tactKeys from './casc/tact-keys';
 import * as updater from './updater';
 import * as textureRibbon from './ui/texture-ribbon';
+import { CDNRegion } from './ui/source-select'; // NIT: Bette place for this.
 
 
 // Prevent files from being dropped onto the window. These are over-written
@@ -221,7 +222,7 @@ document.addEventListener('click', function(e) {
 			 * Invoked when the user manually selects a CDN region.
 			 * @param region
 			 */
-			setSelectedCDN: function(region: any) {
+			setSelectedCDN: function(region: CDNRegion) {
 				this.selectedCDNRegion = region;
 				this.lockCDNRegion = true;
 				this.config.sourceSelectUserRegion = region.tag;
