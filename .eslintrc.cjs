@@ -20,6 +20,7 @@ module.exports = {
 		'quotes': [ 'error', 'single' ],
 		'semi': [ 'error', 'always' ],
 		'space-before-blocks': 'error',
+		'brace-style': [ 'error', '1tbs' ],
 		'curly': [ 2, 'multi-or-nest', 'consistent' ],
 		'no-trailing-spaces': 'error',
 		'keyword-spacing': 'error'
