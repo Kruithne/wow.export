@@ -2,13 +2,8 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 
-// Whether or not we're currently unit testing
-const isUnitTest = typeof nw === 'undefined'; // NIT: Remove.
-
-const INSTALL_PATH = isUnitTest ? process.cwd() : path.dirname(process.execPath);
-const DATA_PATH = isUnitTest ? './tests/user_data' : nw.App.dataPath;
-
-const UPDATER_EXT = { win32: '.exe', darwin: '.app' }; // NIT: Remove.
+const INSTALL_PATH = path.dirname(process.execPath);
+const DATA_PATH = nw.App.dataPath;
 
 export default {
 	INSTALL_PATH, // Path to the application installation.
@@ -21,13 +16,13 @@ export default {
 	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
 
 	// Current version of wow.export
-	VERSION: isUnitTest ? '0.0.0' : nw.App.manifest.version,
+	VERSION: nw.App.manifest.version,
 
 	// Filter used to filter out WMO LOD files.
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
 	// User-agent used for HTTP/HTTPs requests.
-	USER_AGENT: 'wow.export (' + (isUnitTest ? '0.0.0' : nw.App.manifest.version) + ')',
+	USER_AGENT: 'wow.export (' + nw.App.manifest.version + ')',
 
 	// Defines Blender constants.
 	BLENDER: {
@@ -70,7 +65,7 @@ export default {
 
 	UPDATE: {
 		DIRECTORY: path.join(INSTALL_PATH, '.update'), // Temporary directory for storing update data.
-		HELPER: 'updater' + (UPDATER_EXT[process.platform] || '') // Path to update helper application.
+		HELPER: 'updater.exe' // Path to update helper application.
 	},
 
 	// product: Internal product ID.
