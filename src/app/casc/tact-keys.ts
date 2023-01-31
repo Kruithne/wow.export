@@ -12,7 +12,7 @@ import Log from '../log';
 type KeyRing = Record<string, string>;
 
 const KEY_RING: KeyRing = {};
-let isSaving: boolean = false;
+let isSaving = false;
 
 /**
  * Retrieve a registered decryption key.

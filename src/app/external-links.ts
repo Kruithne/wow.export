@@ -12,7 +12,7 @@ const STATIC_LINKS: Record<string, string> = {
 };
 
 /** Defines the URL pattern for locating a specific item on Wowhead. */
-const WOWHEAD_ITEM: string = 'https://www.wowhead.com/item=%d';
+const WOWHEAD_ITEM = 'https://www.wowhead.com/item=%d';
 
 /**
  * Open an external link on the system.

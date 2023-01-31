@@ -10,11 +10,11 @@ const MAGIC_SKIN = 0x4E494B53;
 export default class Skin {
 	fileDataID: number;
 	fileName: string;
-	isLoaded: boolean = false;
+	isLoaded = false;
 	bones: number;
-	indices: number[];
-	triangles: number[];
-	properties: number[];
+	indices: Array<number>;
+	triangles: Array<number>;
+	properties: Array<number>;
 	subMeshes: Array<any>; // TODO: Make custom type
 	textureUnits: Array<any>; // TODO: Make custom type
 

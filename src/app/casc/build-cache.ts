@@ -69,7 +69,7 @@ export default class BuildCache {
 	 * @param file - File path relative to build cache.
 	 * @param dir - Optional override directory.
 	 */
-	async getFile(file: string, dir?: string): Promise<BufferWrapper>|null {
+	async getFile(file: string, dir?: string): Promise<BufferWrapper> | null {
 		try {
 			const filePath = this.getFilePath(file, dir);
 

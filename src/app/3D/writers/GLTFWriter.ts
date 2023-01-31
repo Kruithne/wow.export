@@ -6,7 +6,7 @@ import path from 'node:path';
 import * as generics from '../../generics';
 import ExportHelper, { ExportTexture } from '../../casc/export-helper';
 import BufferWrapper from '../../buffer';
-import * as BoneMapper from '../BoneMapper';
+import getBoneName from '../BoneMapper';
 
 type GLTFMesh = {
 	name: string;
@@ -280,7 +280,7 @@ export default class GLTFWriter {
 			skin.joints.push(i);
 
 			const node = {
-				name: BoneMapper.getBoneName(i),
+				name: getBoneName(i),
 				children: bone.children
 			};
 

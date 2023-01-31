@@ -83,7 +83,7 @@ export default class CASCLocal extends CASC {
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
 	getProductList() {
-		const products: string[] = [];
+		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version));
@@ -237,7 +237,7 @@ export default class CASCLocal extends CASC {
 	 * @param key
 	 * @param forceFallback Whether or not to force fallback to CDN, defaults to false
 	 */
-	async getDataFileWithRemoteFallback(key: string, forceFallback: boolean = false): Promise<BufferWrapper> {
+	async getDataFileWithRemoteFallback(key: string, forceFallback = false): Promise<BufferWrapper> {
 		try {
 			// If forceFallback is true, we have corrupt local data.
 			if (forceFallback)

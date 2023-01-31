@@ -85,11 +85,12 @@ const BONE_NAMES = {
 
 /**
  * Get the label for a bone.
- * @param {number} index
+ * @param index - The bone index.
+ * @returns The bone label.
  */
-export const getBoneName = (index) => {
+export default function getBoneName(index: number): string {
 	if (index in BONE_NAMES)
 		return BONE_NAMES[index];
 	else
 		return 'Bone' + index;
-};
+}

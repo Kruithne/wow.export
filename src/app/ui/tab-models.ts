@@ -74,7 +74,7 @@ const previewTextureByID = async (fileDataID, name) => {
 
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
-	log.write('Previewing texture file %s', texture);
+	Log.write('Previewing texture file %s', texture);
 
 	try {
 		const view = core.view;
@@ -92,11 +92,11 @@ const previewTextureByID = async (fileDataID, name) => {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
-			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
+			Log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
-			log.write('Failed to open CASC file: %s', e.message);
+			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
@@ -106,7 +106,7 @@ const previewTextureByID = async (fileDataID, name) => {
 const previewModel = async (fileName) => {
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
-	log.write('Previewing model %s', fileName);
+	Log.write('Previewing model %s', fileName);
 
 	// Reset texture ribbon.
 	textureRibbon.reset();
@@ -209,11 +209,11 @@ const previewModel = async (fileName) => {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
-			log.write('Failed to decrypt model %s (%s)', fileName, e.key);
+			Log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
-			core.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => log.openRuntimeLog() }, -1);
-			log.write('Failed to open CASC file: %s', e.message);
+			core.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
@@ -291,13 +291,13 @@ const exportFiles = async (files, isLocal = false) => {
 				await buf.writeToFile(outFile);
 				exportPaths.writeLine('PNG:' + outFile);
 
-				log.write('Saved 3D preview screenshot to %s', outFile);
+				Log.write('Saved 3D preview screenshot to %s', outFile);
 				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
 				clipboard.set(buf.toString('base64'), 'png', true);
 
-				log.write('Copied 3D preview to clipboard (%s)', activePath);
+				Log.write('Copied 3D preview to clipboard (%s)', activePath);
 				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
 			}
 		} else {
@@ -323,8 +323,6 @@ const exportFiles = async (files, isLocal = false) => {
 				fileName = listfile.stripFileEntry(fileEntry);
 				fileDataID = listfile.getByFilename(fileName);
 			}
-
-			const fileManifest = [];
 
 			try {
 				let fileType;
@@ -383,7 +381,7 @@ const exportFiles = async (files, isLocal = false) => {
 					else if (fileType === MODEL_TYPE_WMO)
 						exporter = new WMOExporter(data, fileDataID);
 
-					await exporter.exportRaw(exportPath, helper, fileManifest);
+					await exporter.exportRaw(exportPath, helper);
 					break;
 				}
 				case 'OBJ':
@@ -398,10 +396,10 @@ const exportFiles = async (files, isLocal = false) => {
 							exporter.setGeosetMask(core.view.modelViewerGeosets);
 
 						if (format === 'OBJ') {
-							await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
+							await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper);
 							exportPaths.writeLine('M2_OBJ:' + exportPath);
 						} else if (format === 'GLTF') {
-							await exporter.exportAsGLTF(exportPath, helper, fileManifest);
+							await exporter.exportAsGLTF(exportPath, helper);
 							exportPaths.writeLine('M2_GLTF:' + exportPath);
 						}
 
@@ -423,11 +421,11 @@ const exportFiles = async (files, isLocal = false) => {
 						}
 
 						if (format === 'OBJ') {
-							await exporter.exportAsOBJ(exportPath, helper, fileManifest);
+							await exporter.exportAsOBJ(exportPath, helper);
 							exportPaths.writeLine('WMO_OBJ:' + exportPath);
 						} else if (format === 'GLTF') {
 							await exporter.exportAsGLTF(exportPath, helper);
-							exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
+							exportPaths.writeLine('WMO_GLTF:' + exportPath);
 						}
 
 						WMOExporter.clearCache();

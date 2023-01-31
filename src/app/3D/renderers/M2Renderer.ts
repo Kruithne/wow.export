@@ -3,15 +3,15 @@
 
 import * as THREE from 'three';
 
-const core = require('../../core');
-const log = require('../../log');
+import BLPFile from '../../casc/blp';
+import M2Loader from '../loaders/M2Loader';
+import RenderCache from './RenderCache';
+import TextureRibbon from '../../ui/texture-ribbon';
+import Log from '../../log';
+import State from '../../state';
 
-const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
-const GeosetMapper = require('../GeosetMapper');
-const RenderCache = require('./RenderCache');
-
-const textureRibbon = require('../../ui/texture-ribbon');
+import getGeosetName from '../GeosetMapper';
+import GeosetEntry from '../GeosetEntry';
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
@@ -47,8 +47,8 @@ class M2Renderer {
 			await this.loadSkin(0);
 
 			if (this.reactive) {
-				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
-				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+				this.geosetWatcher = State.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.wireframeWatcher = State.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 			}
 		}
 
@@ -60,7 +60,7 @@ class M2Renderer {
 	 * Update the wireframe state for all materials.
 	 */
 	updateWireframe() {
-		const renderWireframe = core.view.config.modelViewerWireframe;
+		const renderWireframe = State.config.modelViewerWireframe;
 		for (const material of this.materials) {
 			material.wireframe = renderWireframe;
 			material.needsUpdate = true;
@@ -122,8 +122,10 @@ class M2Renderer {
 		}
 
 		if (this.reactive) {
-			core.view.modelViewerGeosets = this.geosetArray;
-			GeosetMapper.map(this.geosetArray);
+			State.modelViewerGeosets = this.geosetArray;
+			this.geosetArray.map((geoset: GeosetEntry, i: number) => {
+				geoset.label = getGeosetName(i, geoset.id);
+			});
 		}
 
 		// Add mesh group to the render group.
@@ -157,7 +159,7 @@ class M2Renderer {
 	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
-		const renderWireframe = core.view.config.modelViewerWireframe;
+		const renderWireframe = State.config.modelViewerWireframe;
 
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
@@ -167,13 +169,13 @@ class M2Renderer {
 			const tex = new THREE.Texture();
 			const loader = new THREE.ImageLoader();
 
-			const data = await core.view.casc.getFile(fileDataID);
+			const data = await State.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
 			const blpURI = blp.getDataURL(0b0111);
 
 			if (this.useRibbon) {
-				textureRibbon.setSlotFile(i, fileDataID, this.syncID);
-				textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+				TextureRibbon.setSlotFile(i, fileDataID, this.syncID);
+				TextureRibbon.setSlotSrc(i, blpURI, this.syncID);
 			}
 
 			loader.load(blpURI, image => {
@@ -202,26 +204,26 @@ class M2Renderer {
 		this.materials = new Array(textures.length);
 
 		if (this.useRibbon)
-			this.syncID = textureRibbon.reset();
+			this.syncID = TextureRibbon.reset();
 
 		for (let i = 0, n = textures.length; i < n; i++) {
 			const texture = textures[i];
 
-			const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
+			const ribbonSlot = this.useRibbon ? TextureRibbon.addSlot() : null;
 
 			if (texture.fileDataID > 0) {
 				const tex = new THREE.Texture();
 				const loader = new THREE.ImageLoader();
 
 				if (ribbonSlot !== null)
-					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+					TextureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
 					const blpURI = blp.getDataURL(0b0111);
 
 					if (ribbonSlot !== null)
-						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+						TextureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
 
 					loader.load(blpURI, image => {
 						tex.image = image;
@@ -229,7 +231,7 @@ class M2Renderer {
 						tex.needsUpdate = true;
 					});
 				}).catch(e => {
-					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
+					Log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
 
 				if (texture.flags & 0x1)

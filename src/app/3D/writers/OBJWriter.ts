@@ -16,7 +16,7 @@ export default class OBJWriter {
 	name: string;
 	verts: Array<number> = [];
 	normals: Array<number> = [];
-	uvs: Array<number[]> = [];
+	uvs: Array<Array<number>> = [];
 	meshes: Array<OBJMesh> = [];
 	mtl: string;
 
@@ -50,7 +50,7 @@ export default class OBJWriter {
 	 * Set the vertex array for this writer.
 	 * @param verts
 	 */
-	setVertArray(verts: number[]) {
+	setVertArray(verts: Array<number>) {
 		this.verts = verts;
 	}
 
@@ -84,7 +84,7 @@ export default class OBJWriter {
 	 * Write the OBJ file (and associated MTLs).
 	 * @param overwrite
 	 */
-	async write(overwrite: boolean = true) {
+	async write(overwrite = true) {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
@@ -109,7 +109,7 @@ export default class OBJWriter {
 
 		// Write verts.
 		const verts = this.verts;
-		for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j++, i+= 3) {
+		for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j++, i += 3) {
 			if (usedIndices.has(j)) {
 				vertMap.set(j, u++);
 				writer.writeLine('v ' + verts[i] + ' ' + verts[i + 1] + ' ' + verts[i + 2]);

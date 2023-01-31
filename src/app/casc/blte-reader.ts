@@ -57,7 +57,7 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param hash
 	 * @param partialDecrypt
 	 */
-	constructor(buf: BufferWrapper, hash: string, partialDecrypt: boolean = false) {
+	constructor(buf: BufferWrapper, hash: string, partialDecrypt = false) {
 		super(Buffer.alloc(0)); // NIT: This was null, just setting it to new empty buffer now. Is this OK?
 
 		this._blte = buf;
@@ -136,7 +136,7 @@ export default class BLTEReader extends BufferWrapper {
 	/**
 	 * Process the next BLTE block.
 	 */
-	_processBlock(): boolean|void {
+	_processBlock(): boolean | void {
 		// No more blocks to process.
 		if (this.blockIndex === this.blocks.length)
 			return false;

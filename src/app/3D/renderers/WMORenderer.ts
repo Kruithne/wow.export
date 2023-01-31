@@ -64,7 +64,7 @@ class WMORenderer {
 			}
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true, groupIndex: i });
+			this.groupArray.push({ label: wmo.groupNames[group.nameOfs], checked: true, index: i });
 		}
 
 		const setCount = wmo.doodadSets.length;
@@ -108,9 +108,7 @@ class WMORenderer {
 
 			if (isClassic) {
 				texture.setFileName(wmo.textureNames[material.texture1]);
-			}
-			else
-			{
+			} else {
 				if (material.shader == 23)
 					texture.fileDataID = material.texture2;
 				else

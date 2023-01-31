@@ -39,8 +39,8 @@ async function parseManifestVersion(file: string): Promise<string | null> {
  * Locate available Blender installations on the system.
  * @returns Array of version strings.
  */
-async function getBlenderInstallations(): Promise<string[]> {
-	const installs = [];
+async function getBlenderInstallations(): Promise<Array<string>> {
+	const installs = Array<string>();
 
 	try {
 		const entries = await fs.readdir(Constants.BLENDER.DIR, { withFileTypes: true });

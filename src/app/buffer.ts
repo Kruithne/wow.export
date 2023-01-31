@@ -23,7 +23,7 @@ export async function canvasToBuffer(canvas: HTMLCanvasElement | OffscreenCanvas
 
 export default class BufferWrapper {
 	buffer: Buffer;
-	offset: number = 0;
+	offset = 0;
 	dataURL: string | undefined;
 
 	/**
@@ -54,7 +54,7 @@ export default class BufferWrapper {
 	 * @param encoding - Output encoding (default 'hex')
 	 * @returns The calculated hash.
 	 */
-	toHash(algorithm: string = 'md5', encoding: crypto.BinaryToTextEncoding = 'hex'): string {
+	toHash(algorithm = 'md5', encoding: crypto.BinaryToTextEncoding = 'hex'): string {
 		return crypto.createHash(algorithm).update(this.buffer).digest(encoding);
 	}
 
@@ -288,7 +288,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 8-bit integers at the current position. */
-	readInt8Array(length: number): number[] {
+	readInt8Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt8(this.offset + i);
@@ -298,7 +298,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 8-bit integers at the current position. */
-	readUInt8Array(length: number): number[] {
+	readUInt8Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt8(this.offset + i);
@@ -308,7 +308,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 16-bit integers (little-endian) at the current position. */
-	readInt16Array(length: number): number[] {
+	readInt16Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt16LE(this.offset + i * 2);
@@ -318,7 +318,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 16-bit integers (little-endian) at the current position. */
-	readUInt16Array(length: number): number[] {
+	readUInt16Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt16LE(this.offset + i * 2);
@@ -328,7 +328,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 24-bit integers (little-endian) at the current position. */
-	readInt24Array(length: number): number[] {
+	readInt24Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readIntLE(this.offset, 3);
@@ -338,7 +338,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 24-bit integers (little-endian) at the current position. */
-	readUInt24Array(length: number): number[] {
+	readUInt24Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUIntLE(this.offset, 3);
@@ -348,7 +348,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 32-bit integers (little-endian) at the current position. */
-	readInt32Array(length: number): number[] {
+	readInt32Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt32LE(this.offset + i * 4);
@@ -358,7 +358,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 32-bit integers (little-endian) at the current position. */
-	readUInt32Array(length: number): number[] {
+	readUInt32Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt32LE(this.offset + i * 4);
@@ -368,7 +368,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 64-bit integers (little-endian) at the current position. */
-	readInt64Array(length: number): bigint[] {
+	readInt64Array(length: number): Array<bigint> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readBigInt64LE(this.offset + i * 8);
@@ -378,7 +378,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 64-bit integers (little-endian) at the current position. */
-	readUInt64Array(length: number): bigint[] {
+	readUInt64Array(length: number): Array<bigint> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readBigUInt64LE(this.offset + i * 8);
@@ -388,7 +388,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of 32-bit floats (little-endian) at the current position. */
-	readFloat32Array(length: number): number[] {
+	readFloat32Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readFloatLE(this.offset + i * 4);
@@ -398,7 +398,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of 64-bit floats (little-endian) at the current position. */
-	readFloat64Array(length: number): number[] {
+	readFloat64Array(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readDoubleLE(this.offset + i * 8);
@@ -408,7 +408,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 8-bit integers (big-endian) at the current position. */
-	readInt8BEArray(length: number): number[] {
+	readInt8BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt8(this.offset + i);
@@ -418,7 +418,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 8-bit integers (big-endian) at the current position. */
-	readUInt8BEArray(length: number): number[] {
+	readUInt8BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt8(this.offset + i);
@@ -428,7 +428,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 16-bit integers (big-endian) at the current position. */
-	readInt16BEArray(length: number): number[] {
+	readInt16BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt16BE(this.offset + i * 2);
@@ -438,7 +438,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 16-bit integers (big-endian) at the current position. */
-	readUInt16BEArray(length: number): number[] {
+	readUInt16BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt16BE(this.offset + i * 2);
@@ -448,7 +448,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 32-bit integers (big-endian) at the current position. */
-	readInt32BEArray(length: number): number[] {
+	readInt32BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readInt32BE(this.offset + i * 4);
@@ -458,7 +458,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 32-bit integers (big-endian) at the current position. */
-	readUInt32BEArray(length: number): number[] {
+	readUInt32BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readUInt32BE(this.offset + i * 4);
@@ -468,7 +468,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of signed 64-bit integers (big-endian) at the current position. */
-	readInt64BEArray(length: number): bigint[] {
+	readInt64BEArray(length: number): Array<bigint> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readBigInt64BE(this.offset + i * 8);
@@ -478,7 +478,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of unsigned 64-bit integers (big-endian) at the current position. */
-	readUInt64BEArray(length: number): bigint[] {
+	readUInt64BEArray(length: number): Array<bigint> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readBigUInt64BE(this.offset + i * 8);
@@ -488,7 +488,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of 32-bit floats (big-endian) at the current position. */
-	readFloat32BEArray(length: number): number[] {
+	readFloat32BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readFloatBE(this.offset + i * 4);
@@ -498,7 +498,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of 64-bit floats (big-endian) at the current position. */
-	readFloat64BEArray(length: number): number[] {
+	readFloat64BEArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readDoubleBE(this.offset + i * 8);
@@ -714,7 +714,7 @@ export default class BufferWrapper {
 	 * @param copyOfs - The offset to start copying from. Defaults to 0.
 	 * @param copyLength - The number of bytes to copy. Defaults to the entire buffer.
 	 */
-	writeBuffer(source: Buffer, copyOfs = 0, copyLength: number = 0) {
+	writeBuffer(source: Buffer, copyOfs = 0, copyLength = 0) {
 		if (copyLength === 0)
 			copyLength = source.byteLength;
 

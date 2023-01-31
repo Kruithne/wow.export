@@ -5,11 +5,11 @@ import fs from 'node:fs';
 
 import Constants from './constants';
 
-const MAX_LOG_POOL: number = 1000;
-const MAX_DRAIN_PER_TICK: number = 10;
+const MAX_LOG_POOL = 1000;
+const MAX_DRAIN_PER_TICK = 10;
 
-let markTimer: number = 0;
-let isClogged: boolean = false;
+let markTimer = 0;
+let isClogged = false;
 
 const pool: Array<string> = [];
 const stream = fs.createWriteStream(Constants.RUNTIME_LOG);

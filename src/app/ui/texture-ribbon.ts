@@ -1,10 +1,11 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import State from '../state';
-import * as listfile from '../casc/listfile';
 
-let _syncID: number = 0;
+import State from '../state';
+import Listfile from '../casc/listfile';
+
+let _syncID = 0;
 
 export type TextureRibbonSlot = {
 	fileDataID: number;
@@ -13,10 +14,8 @@ export type TextureRibbonSlot = {
 	src: string;
 };
 
-/**
- * Invoked when the texture ribbon element resizes.
- */
-export const onResize = (width: number): void => {
+/** Invoked when the texture ribbon element resizes. */
+export function onResize(width: number): void {
 	// Take the total available space of the texture ribbon element and reduce
 	// it by the width of the next/previous buttons (30 each).
 	width -= 60;
@@ -24,18 +23,16 @@ export const onResize = (width: number): void => {
 	// Divide the available space by the true size of the slot elements.
 	// Slot = 64 width, 1 + 1 border, 5 + 5 margin.
 	State.textureRibbonSlotCount = Math.floor(width / 76);
-};
+}
 
-/**
- * Reset the texture ribbon.
- */
-export const reset = (): number => {
+/** Reset the texture ribbon. */
+export function reset(): number {
 	State.textureRibbonStack = [];
 	State.textureRibbonPage = 0;
 	State.contextMenus.nodeTextureRibbon = null;
 
 	return ++_syncID;
-};
+}
 
 /**
  * Set the file displayed in a given ribbon slot.
@@ -43,7 +40,7 @@ export const reset = (): number => {
  * @param fileDataID
  * @param syncID
  */
-export const setSlotFile = (slotIndex: number, fileDataID: number, syncID: number): void => {
+export function setSlotFile(slotIndex: number, fileDataID: number, syncID: number): void {
 	// Only accept data from the latest preparation.
 	if (syncID !== _syncID)
 		return;
@@ -52,11 +49,11 @@ export const setSlotFile = (slotIndex: number, fileDataID: number, syncID: numbe
 	if (slot) {
 		slot.fileDataID = fileDataID;
 
-		const fileName = listfile.getByID(fileDataID) ?? fileDataID.toString();
+		const fileName = Listfile.getByID(fileDataID) ?? fileDataID.toString();
 		slot.fileName = fileName;
 		slot.displayName = path.basename(fileName, path.extname(fileName));
 	}
-};
+}
 
 /**
  * Set the render source for a given ribbon slot.
@@ -64,7 +61,7 @@ export const setSlotFile = (slotIndex: number, fileDataID: number, syncID: numbe
  * @param src
  * @param syncID
  */
-export const setSlotSrc = (slotIndex: number, src: string, syncID: number): void => {
+export function setSlotSrc(slotIndex: number, src: string, syncID: number): void {
 	// Only accept data from the latest preparation.
 	if (syncID !== _syncID)
 		return;
@@ -72,16 +69,24 @@ export const setSlotSrc = (slotIndex: number, src: string, syncID: number): void
 	const slot = State.textureRibbonStack[slotIndex];
 	if (slot)
 		slot.src = src;
-};
+}
 
 /**
  * Add an empty slot to the texture ribbon.
  * @returns
  */
-export const addSlot = (): number => {
+export function addSlot(): number {
 	const stack = State.textureRibbonStack;
 	const slotIndex = stack.length;
 
 	stack.push({ fileDataID: 0, displayName: 'Empty', fileName: '', src: '' });
 	return slotIndex;
+}
+
+export default {
+	onResize,
+	reset,
+	setSlotFile,
+	setSlotSrc,
+	addSlot
 };

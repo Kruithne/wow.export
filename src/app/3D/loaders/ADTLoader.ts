@@ -1,14 +1,168 @@
-import BufferWrapper from '../../buffer';
-import WDTLoader from './WDTLoader';
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export default class ADTLoader {
+import BufferWrapper from '../../buffer';
+import WDTLoader from './WDTLoader';
+import RGBA from '../RGBA';
+
+type VertexData = {
+	height: Array<number>;
+	depth: Array<number>;
+	uv: Array<number>;
+}
+
+type ADTHandler = (data: BufferWrapper, chunkSize: number) => void;
+
+type ADTBlendBatch = {
+	mbmhIndex: number,
+	indexCount: number,
+	indexFirst: number,
+	vertexCount: number,
+	vertexFirst: number
+}
+
+type ADTRootChunk = {
+	flags: number,
+	indexX: number,
+	indexY: number,
+	nLayers: number,
+	nDoodadRefs: number,
+	holesHighRes: Array<number>,
+	ofsMCLY: number,
+	ofsMCRF: number,
+	ofsMCAL: number,
+	sizeAlpha: number,
+	ofsMCSH: number,
+	sizeShadows: number,
+	areaID: number,
+	nMapObjRefs: number,
+	holesLowRes: number,
+	unk1: number,
+	lowQualityTextureMap: Array<number>,
+	noEffectDoodad: bigint,
+	ofsMCSE: number,
+	numMCSE: number,
+	ofsMCLQ: number,
+	sizeMCLQ: number,
+	position: Array<number>,
+	ofsMCCV: number,
+	ofsMCLW: number,
+	unk2: number,
+
+	vertices?: Array<number>,
+	vertexShading?: Array<RGBA>,
+	normals?: Array<[number, number, number]>,
+	blendBatches?: Array<ADTBlendBatch>,
+};
+
+type ADTLiquidInstance = {
+	liquidType: number,
+	liquidObject: number,
+	minHeightLevel: number, // Use 0.0 if LVF = 2
+	maxHeightLevel: number, // Use 0.0 if LVF = 2
+	xOffset: number, // 0 if liquidObject <= 41
+	yOffset: number, // 0 if liquidObject <= 41
+	width: number, // 8 if liquidObject <= 41
+	height: number, // 8 if liquidObject <= 41
+	bitmap: Array<number>, // Empty == All exist.
+	vertexData: VertexData,
+	offsetExistsBitmap: number,
+	offsetVertexData: number
+};
+
+type ADTLiquidChunk = {
+	attributes: {
+		fishable: bigint,
+		deep: bigint
+	},
+	instances: Array<ADTLiquidInstance>
+}
+
+type ADTHeader = {
+	flags: number,
+	ofsMCIN: number,
+	ofsMTEX: number,
+	ofsMMDX: number,
+	ofsMMID: number,
+	ofsMWMO: number,
+	ofsMWID: number,
+	ofsMDDF: number,
+	ofsMODF: number,
+	ofsMFBO: number,
+	ofsMH20: number,
+	ofsMTXF: number,
+	unk: Array<number>
+}
+
+type ADTModel = {
+	mmidEntry: number,
+	uniqueId: number,
+	position: Array<number>,
+	rotation: Array<number>,
+	scale: number,
+	flags: number
+}
+
+type ADTWorldModel = {
+	mwidEntry: number,
+	uniqueId: number,
+	position: Array<number>,
+	rotation: Array<number>,
+	lowerBounds: Array<number>,
+	upperBounds: Array<number>,
+	flags: number,
+	doodadSet: number,
+	nameSet: number,
+	scale: number
+}
+
+type ADTTextureParams = {
+	flags: number,
+	height: number,
+	offset: number,
+	unk3: number
+}
+
+type ADTTextureChunkLayer = {
+	textureId: number,
+	flags: number,
+	offsetMCAL: number,
+	effectID: number
+}
+
+type ADTTextureChunk = {
+	layers: Array<ADTTextureChunkLayer>,
+	alphaLayers: Array<Array<number>>
+}
+
+class ADTLoader {
 	data: BufferWrapper;
 	chunkIndex: number;
-	chunks: Array<object>;
-	texChunks: Array<object>;
-	handlers: any;
+	chunks: Array<ADTRootChunk>;
+	handlers: Record<number, ADTHandler>;
 	wdt: WDTLoader;
+
+	// Available on all files.
+	version?: number;
+
+	// Available on root files.
+	liquidChunks?: Array<ADTLiquidChunk>;
+	header?: ADTHeader;
+
+	// Available on object files.
+	m2Names?: Map<number, string>;
+	m2Offsets?: Array<number>;
+	wmoNames?: Map<number, string>;
+	wmoOffsets?: Array<number>;
+	models?: Array<ADTModel>;
+	worldModels?: Array<ADTWorldModel>;
+	doodadSets?: Array<number>;
+
+	// Available on texture files.
+	textures?: Map<number, string>;
+	texParams?: Array<ADTTextureParams>;
+	heightTextureFileDataIDs?: Array<number>;
+	diffuseTextureFileDataIDs?: Array<number>;
+	texChunks: Array<ADTTextureChunk>;
 
 	/**
 	 * Construct a new ADTLoader instance.
@@ -22,7 +176,7 @@ export default class ADTLoader {
 	 * Parse this ADT as a root file.
 	 */
 	loadRoot() {
-		this.chunks = new Array(16 * 16);
+		this.chunks = new Array<ADTRootChunk>(16 * 16);
 		this.chunkIndex = 0;
 
 		this.handlers = ADTChunkHandlers;
@@ -42,7 +196,7 @@ export default class ADTLoader {
 	 * @param wdt
 	 */
 	loadTex(wdt: WDTLoader) {
-		this.texChunks = new Array(16 * 16);
+		this.texChunks = new Array<ADTTextureChunk>(16 * 16);
 		this.chunkIndex = 0;
 		this.wdt = wdt;
 
@@ -71,14 +225,14 @@ export default class ADTLoader {
 
 const ADTChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MCNK
-	0x4D434E4B: function(data: BufferWrapper, chunkSize: number) {
+	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		const endOfs = data.offset + chunkSize;
 		const chunk = this.chunks[this.chunkIndex++] = {
 			flags: data.readUInt32(),
@@ -125,12 +279,12 @@ const ADTChunkHandlers = {
 	},
 
 	// MH2O (Liquids)
-	0x4D48324F: function(data: BufferWrapper) {
+	0x4D48324F: function(this: ADTLoader, data: BufferWrapper) {
 		const base = data.offset;
 		const dataOffsetSet: Set<number> = new Set();
 
 		// SMLiquidChunk
-		const chunks = this.liquidChunks = new Array(256);
+		const chunks = this.liquidChunks = new Array<ADTLiquidChunk>(256);
 		for (let i = 0; i < 256; i++) {
 			const offsetInstances = data.readUInt32();
 			const layerCount = data.readUInt32();
@@ -142,7 +296,7 @@ const ADTChunkHandlers = {
 			const entryOfs = data.offset;
 			const chunk = chunks[i] = {
 				attributes: { fishable: 0n, deep: 0n },
-				instances: new Array(layerCount)
+				instances: new Array<ADTLiquidInstance>(layerCount)
 			};
 
 			if (layerCount > 0) {
@@ -163,8 +317,8 @@ const ADTChunkHandlers = {
 						yOffset: data.readUInt8(), // 0 if liquidObject <= 41
 						width: data.readUInt8(), // 8 if liquidObject <= 41
 						height: data.readUInt8(), // 8 if liquidObject <= 41
-						bitmap: [] as Array<number>, // Empty == All exist.
-						vertexData: {},
+						bitmap: Array<number>(), // Empty == All exist.
+						vertexData: { height: Array<number>(), depth: Array<number>(), uv: Array<number>() },
 						offsetExistsBitmap: data.readUInt32(),
 						offsetVertexData: data.readUInt32()
 					};
@@ -201,7 +355,11 @@ const ADTChunkHandlers = {
 					data.seek(base + instance.offsetVertexData);
 
 					const mtp = dataSize / vertexCount;
-					const vertexData = instance.vertexData = {};
+					const vertexData: VertexData = instance.vertexData = {
+						height: [],
+						uv: [],
+						depth: []
+					};
 
 					// MTP
 					// 5 = Height, Depth
@@ -233,7 +391,7 @@ const ADTChunkHandlers = {
 	},
 
 	// MHDR (Header)
-	0x4D484452: function(data: BufferWrapper) {
+	0x4D484452: function(this: ADTLoader, data: BufferWrapper) {
 		this.header = {
 			flags: data.readUInt32(),
 			ofsMCIN: data.readUInt32(),
@@ -254,13 +412,13 @@ const ADTChunkHandlers = {
 
 const RootMCNKChunkHandlers = {
 	// MCVT (vertices)
-	0x4D435654: function(data: BufferWrapper) {
+	0x4D435654: function(this: ADTRootChunk, data: BufferWrapper) {
 		this.vertices = data.readFloat32Array(145);
 	},
 
 	// MCCV (Vertex Shading)
-	0x4D434356: function(data: BufferWrapper) {
-		const shading = this.vertexShading = new Array(145);
+	0x4D434356: function(this: ADTRootChunk, data: BufferWrapper) {
+		const shading = this.vertexShading = new Array<RGBA>(145);
 		for (let i = 0; i < 145; i++) {
 			shading[i] = {
 				r: data.readUInt8(),
@@ -272,8 +430,8 @@ const RootMCNKChunkHandlers = {
 	},
 
 	// MCNR (Normals)
-	0x4D434E52: function(data: BufferWrapper) {
-		const normals = this.normals = new Array(145);
+	0x4D434E52: function(this: ADTRootChunk, data: BufferWrapper) {
+		const normals = this.normals = new Array<[number, number, number]>(145);
 		for (let i = 0; i < 145; i++) {
 			const x = data.readInt8();
 			const z = data.readInt8();
@@ -284,9 +442,9 @@ const RootMCNKChunkHandlers = {
 	},
 
 	// MCBB (Blend Batches)
-	0x4D434242: function(data: BufferWrapper, chunkSize: number) {
+	0x4D434242: function(this: ADTRootChunk, data: BufferWrapper, chunkSize: number) {
 		const count = chunkSize / 20;
-		const blend = this.blendBatches = new Array(count);
+		const blend = this.blendBatches = new Array<ADTBlendBatch>(count);
 
 		for (let i = 0; i < count; i++) {
 			blend[i] = {
@@ -302,21 +460,24 @@ const RootMCNKChunkHandlers = {
 
 const ADTTexChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MTEX (Textures)
-	0x4D544558: function(data: BufferWrapper, chunkSize: number) {
+	0x4D544558: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.textures = data.readStringBlock(chunkSize);
 	},
 
 	// MCNK (Texture Chunks)
-	0x4D434E4B: function(data: BufferWrapper, chunkSize: number) {
+	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		const endOfs = data.offset + chunkSize;
-		const chunk = this.texChunks[this.chunkIndex++] = {};
+		const chunk = this.texChunks[this.chunkIndex++] = {
+			layers: [],
+			alphaLayers: []
+		};
 
 		// Read sub-chunks.
 		while (data.offset < endOfs) {
@@ -334,9 +495,9 @@ const ADTTexChunkHandlers = {
 	},
 
 	// MTXP
-	0x4D545850: function(data: BufferWrapper, chunkSize: number) {
+	0x4D545850: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		const count = chunkSize / 16;
-		const params = this.texParams = new Array(count);
+		const params = this.texParams = new Array<ADTTextureParams>(count);
 
 		for (let i = 0; i < count; i++) {
 			params[i] = {
@@ -349,21 +510,21 @@ const ADTTexChunkHandlers = {
 	},
 
 	// MHID
-	0x4D484944: function(data: BufferWrapper, chunkSize: number) {
+	0x4D484944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.heightTextureFileDataIDs = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MDID
-	0x4D444944: function(data: BufferWrapper, chunkSize: number) {
+	0x4D444944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.diffuseTextureFileDataIDs = data.readUInt32Array(chunkSize / 4);
 	}
 };
 
 const TexMCNKChunkHandlers = {
 	// MCLY
-	0x4D434C59: function(data: BufferWrapper, chunkSize: number) {
+	0x4D434C59: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number) {
 		const count = chunkSize / 16;
-		const layers = this.layers = new Array(count);
+		const layers = this.layers = new Array<ADTTextureChunkLayer>(count);
 
 		for (let i = 0; i < count; i++) {
 			layers[i] = {
@@ -376,10 +537,10 @@ const TexMCNKChunkHandlers = {
 	},
 
 	// MCAL
-	0x4D43414C: function(data: BufferWrapper, chunkSize: number, root) {
+	0x4D43414C: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number, root) {
 		const layerCount = this.layers.length;
-		const alphaLayers = this.alphaLayers = new Array(layerCount);
-		alphaLayers[0] = new Array(64 * 64).fill(255);
+		const alphaLayers = this.alphaLayers = new Array<Array<number>>(layerCount);
+		alphaLayers[0] = new Array<number>(64 * 64).fill(255);
 
 		let ofs = 0;
 		for (let i = 1; i < layerCount; i++) {
@@ -445,36 +606,36 @@ const TexMCNKChunkHandlers = {
 
 const ADTObjChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MMDX (Doodad Filenames)
-	0x4D4D4458: function(data: BufferWrapper, chunkSize: number) {
+	0x4D4D4458: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.m2Names = data.readStringBlock(chunkSize);
 	},
 
 	// MMID (M2 Offsets)
-	0x4D4D4944: function(data: BufferWrapper, chunkSize: number) {
+	0x4D4D4944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.m2Offsets = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MWMO (WMO Filenames)
-	0x4D574D4F: function(data: BufferWrapper, chunkSize: number) {
+	0x4D574D4F: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.wmoNames = data.readStringBlock(chunkSize);
 	},
 
 	// MWID (WMO Offsets)
-	0x4D574944: function(data: BufferWrapper, chunkSize: number) {
+	0x4D574944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.wmoOffsets = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MDDF
-	0x4D444446: function(data: BufferWrapper, chunkSize: number) {
+	0x4D444446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		const count = chunkSize / 36;
-		const entries = this.models = new Array(count);
+		const entries = this.models = new Array<ADTModel>(count);
 
 		for (let i = 0; i < count; i++) {
 			entries[i] = {
@@ -489,9 +650,9 @@ const ADTObjChunkHandlers = {
 	},
 
 	// MODF
-	0x4D4F4446: function(data: BufferWrapper, chunkSize: number) {
+	0x4D4F4446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		const count = chunkSize / 64;
-		const entries = this.worldModels = new Array(count);
+		const entries = this.worldModels = new Array<ADTWorldModel>(count);
 
 		for (let i = 0; i < count; i++) {
 			entries[i] = {
@@ -510,7 +671,7 @@ const ADTObjChunkHandlers = {
 	},
 
 	// MWDS
-	0x4D574453: function(data: BufferWrapper, chunkSize: number) {
+	0x4D574453: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
 		this.doodadSets = data.readUInt16Array(chunkSize / 2);
 	}
 };

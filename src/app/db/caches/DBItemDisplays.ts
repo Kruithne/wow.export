@@ -14,7 +14,7 @@ const itemDisplays: Map<number, object> = new Map();
 /**
  * Initialize item displays from ItemDisplayInfo.db2
  */
-export const initializeItemDisplays = async (): Promise<void> => {
+export async function initializeItemDisplays(): Promise<void> {
 	log.write('Loading item textures...');
 	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
 	await itemDisplayInfo.parse();
@@ -30,11 +30,11 @@ export const initializeItemDisplays = async (): Promise<void> => {
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [itemDisplayInfoID, itemDisplayInfoRow] of itemDisplayInfo.getAllRows()) {
-		const modelResIDs = (itemDisplayInfoRow.ModelResourcesID as number[]).filter(e => e > 0);
+		const modelResIDs = (itemDisplayInfoRow.ModelResourcesID as Array<number>).filter(e => e > 0);
 		if (modelResIDs.length == 0)
 			continue;
 
-		const matResIDs = (itemDisplayInfoRow.ModelMaterialResourcesID as number[]).filter(e => e > 0);
+		const matResIDs = (itemDisplayInfoRow.ModelMaterialResourcesID as Array<number>).filter(e => e > 0);
 		if (matResIDs.length == 0)
 			continue;
 
@@ -54,13 +54,13 @@ export const initializeItemDisplays = async (): Promise<void> => {
 	}
 
 	log.write('Loaded textures for %d items', itemDisplays.size);
-};
+}
 
 /**
  * Gets item skins from a given file data ID.
  * @param fileDataID
  * @returns Display object if found, otherwise undefined
  */
-export const getItemDisplaysByFileDataID = (fileDataID: number): object|undefined => {
+export function getItemDisplaysByFileDataID(fileDataID: number): object | undefined {
 	return itemDisplays.get(fileDataID);
-};
+}

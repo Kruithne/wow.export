@@ -34,8 +34,12 @@ const computeRawFiles = async () => {
 
 State.registerLoadFunc(async () => {
 	Events.on('screen-tab-raw', () => computeRawFiles());
-	Events.on('listfile-needs-updating', () => { isDirty = true; });
-	State.$watch('config.cascLocale', () => { isDirty = true; });
+	Events.on('listfile-needs-updating', () => {
+		isDirty = true;
+	});
+	State.$watch('config.cascLocale', () => {
+		isDirty = true;
+	});
 });
 
 // Track when the user clicks to auto-detect raw files.
@@ -46,7 +50,7 @@ Events.on('click-detect-raw', async () => {
 		return;
 	}
 
-	const filteredSelection: number[] = [];
+	const filteredSelection: Array<number> = [];
 	for (let fileName of userSelection) {
 		fileName = listfile.stripFileEntry(fileName);
 		const match = fileName.match(/^unknown\/(\d+)(\.[a-zA-Z_]+)$/);

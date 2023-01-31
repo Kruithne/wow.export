@@ -30,7 +30,7 @@ export default class JSONWriter {
 	 * Write the JSON to disk.
 	 * @param overwrite
 	 */
-	async write(overwrite: boolean = true) {
+	async write(overwrite = true) {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(this.out))
 			return;

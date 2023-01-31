@@ -12,7 +12,7 @@ const creatureDisplays = new Map();
  * @param creatureDisplayInfo - CreatureDisplayInfo reader
  * @param creatureModelData - CreatureModelData reader
  */
-export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, creatureModelData: WDCReader): Promise<void> => {
+export async function initializeCreatureData(creatureDisplayInfo: WDCReader, creatureModelData: WDCReader): Promise<void> {
 	log.write('Loading creature textures...');
 
 	const creatureGeosetMap = new Map();
@@ -42,7 +42,7 @@ export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, cre
 
 	// Map all available texture fileDataIDs to model IDs.
 	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
-		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: (displayRow.TextureVariationFileDataID as number[]).filter(e => e > 0)});
+		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: (displayRow.TextureVariationFileDataID as Array<number>).filter(e => e > 0)});
 
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
 			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
@@ -75,13 +75,13 @@ export const initializeCreatureData = async (creatureDisplayInfo: WDCReader, cre
 	}
 
 	log.write('Loaded textures for %d creatures', creatureDisplays.size);
-};
+}
 
 /**
  * Gets creature skins from a given file data ID.
  * @param fileDataID
  * @returns String when found or undefined if not
  */
-export const getCreatureDisplaysByFileDataID = (fileDataID: number): string | undefined => {
+export function getCreatureDisplaysByFileDataID(fileDataID: number): string | undefined {
 	return creatureDisplays.get(fileDataID);
-};
+}

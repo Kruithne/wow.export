@@ -42,7 +42,7 @@ export default class MTLWriter {
 	 * Write the material library to disk.
 	 * @param overwrite
 	 */
-	async write(overwrite: boolean = true): Promise<void> {
+	async write(overwrite = true): Promise<void> {
 		// Don't bother writing an empty material library.
 		if (this.isEmpty)
 			return;

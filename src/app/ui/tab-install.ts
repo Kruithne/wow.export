@@ -24,7 +24,9 @@ Events.once('screen-tab-install', async () => {
 	State.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await State.casc.getInstallManifest();
 
-	State.installTags = manifest.tags.map(e => { return { label: e.name, enabled: true, mask: e.mask }; });
+	State.installTags = manifest.tags.map(e => {
+		return { label: e.name, enabled: true, mask: e.mask };
+	});
 	State.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
 
 	State.hideToast();

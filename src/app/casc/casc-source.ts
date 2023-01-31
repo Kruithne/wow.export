@@ -99,7 +99,7 @@ export default class CASC {
 	 * Obtain a file by it's fileDataID.
 	 * @param fileDataID
 	 */
-	async getFile(fileDataID: number, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false) {
+	async getFile(fileDataID: number, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
@@ -150,7 +150,7 @@ export default class CASC {
 	 * @param {boolean} [supportFallback=true]
 	 * @param {boolean} [forceFallback=false]
 	 */
-	async getFileByName(fileName: string, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false) {
+	async getFileByName(fileName: string, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
 		const fileDataID = listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
@@ -335,7 +335,7 @@ export default class CASC {
 
 				const fileDataIDs = new Array(numRecords);
 
-				let fileDataID: number = 0;
+				let fileDataID = 0;
 				for (let i = 0; i < numRecords; i++)  {
 					const nextID = fileDataID + (root.readInt32() as number);
 					fileDataIDs[i] = nextID;

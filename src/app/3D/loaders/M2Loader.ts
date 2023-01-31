@@ -12,14 +12,36 @@ const CHUNK_SKID = 0x44494B53;
 const CHUNK_BFID = 0x44494642;
 const CHUNK_AFID = 0x44494641;
 
-type CAaBox = { min: number[], max: number[] };
+type CAaBox = { min: Array<number>, max: Array<number> };
 type M2Material = { flags: number, blendingMode: number };
+
+// M2Array and M2Track can return a wide variety of types. To avoid declaring
+// them as `any`, use these union types to define any types we expect to see.
+type M2ArrayValue = number | object;
+type M2TrackValue = M2ArrayValue;
+
+type M2Bone = {
+	boneID: number,
+	flags: number,
+	parentBone: number,
+	subMeshID: number,
+	boneNameCRC: number,
+	translation: M2Track,
+	rotation: M2Track,
+	scale: M2Track,
+	pivot: Array<number>
+}
+
+type M2Color = {
+	color: M2Track,
+	alpha: M2Track
+}
 
 class M2Track {
 	globalSeq: number;
 	interpolation: number;
-	timestamps: Array<number>;
-	values: Array<any>;
+	timestamps: Array<M2ArrayValue>;
+	values: Array<M2ArrayValue>;
 
 	/**
 	 * Construct a new M2Track instance.
@@ -28,7 +50,7 @@ class M2Track {
 	 * @param timestamps
 	 * @param values
 	 */
-	constructor(globalSeq: number, interpolation: number, timestamps: Array<number>, values: Array<any>) {
+	constructor(globalSeq: number, interpolation: number, timestamps: Array<M2ArrayValue>, values: Array<M2ArrayValue>) {
 		this.globalSeq = globalSeq;
 		this.interpolation = interpolation;
 		this.timestamps = timestamps;
@@ -54,7 +76,7 @@ export default class M2Loader {
 	boundingSphereRadius: number;
 	collisionBox: CAaBox;
 	collisionSphereRadius: number;
-	bones: Array<any>; // TODO: Type
+	bones: Array<M2Bone>;
 	collisionIndices: Array<number>;
 	collisionPositions: Array<number>;
 	collisionNormals: Array<number>;
@@ -72,7 +94,7 @@ export default class M2Loader {
 	textureWeights: Array<number>;
 	transparencyLookup: Array<number>;
 	materials: Array<M2Material>;
-	colors: Array<any>; // TODO: Type
+	colors: Array<M2Color>;
 
 	/**
 	 * Construct a new M2Loader instance.
@@ -129,7 +151,7 @@ export default class M2Loader {
 	 * Note: Unlike getSkin(), this does not load any of the skins.
 	 * @returns
 	 */
-	getSkinList(): Skin[] {
+	getSkinList(): Array<Skin> {
 		return this.skins;
 	}
 
@@ -228,10 +250,10 @@ export default class M2Loader {
 
 	/**
 	 * Read an M2Array.
-	 * @param read
-	 * @returns
+	 * @param read - Function to read data.
+	 * @returns Array of data.
 	 */
-	readM2Array(read): Array<any> {
+	readM2Array(read: () => M2ArrayValue): Array<M2ArrayValue> {
 		const data = this.data;
 		const arrCount = data.readUInt32();
 		const arrOfs = data.readUInt32();
@@ -247,20 +269,20 @@ export default class M2Loader {
 		return arr;
 	}
 
-	/**
-	 * Read an axis-aligned box with a given min/max.
-	 * @returns
-	 */
+	/** @returns An axis-aligned box with a given min/max. */
 	readCAaBox(): CAaBox {
-		return { min: this.data.readFloat32Array(3), max: this.data.readFloat32Array(3) } as CAaBox;
+		return {
+			min: this.data.readFloat32Array(3),
+			max: this.data.readFloat32Array(3)
+		};
 	}
 
 	/**
 	 * Read an M2 track.
-	 * @param read
-	 * @returns
+	 * @param read - Function to read data.
+	 * @returns M2 track.
 	 */
-	readM2Track(read): M2Track {
+	readM2Track(read: () => M2TrackValue): M2Track {
 		const data = this.data;
 		const interpolation = data.readUInt16();
 		const globalSeq = data.readUInt16();

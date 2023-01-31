@@ -85,7 +85,7 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Download and parse a CDN config file.
 	 * @param key - CDN config key.
-	 * @return Parsed CDN configuration.
+	 * @returns Parsed CDN configuration.
 	 */
 	async getCDNConfig(key: string): Promise<Record<string, string>> {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
@@ -145,7 +145,7 @@ export default class CASCRemote extends CASC {
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
 	getProductList() {
-		const products: string[] = [];
+		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s %s', product.title, entry.VersionsName));

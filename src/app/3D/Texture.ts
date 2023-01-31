@@ -31,7 +31,7 @@ export default class Texture {
 	 * Obtain the texture file for this texture, instance cached.
 	 * Returns NULL if fileDataID is not set.
 	 */
-	async getTextureFile(): Promise<BufferWrapper|null> {
+	async getTextureFile(): Promise<BufferWrapper | null> {
 		if (this.fileDataID > 0) {
 			if (!this.data)
 				this.data = await State.casc.getFile(this.fileDataID);

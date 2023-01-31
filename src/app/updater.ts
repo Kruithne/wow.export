@@ -71,7 +71,7 @@ export async function applyUpdate() {
 
 	Log.write('Starting update to %s...', updateManifest.guid);
 
-	const requiredFiles: UpdateRequiredFile[] = [];
+	const requiredFiles: Array<UpdateRequiredFile> = [];
 	const entries = Object.entries(updateManifest.contents);
 
 	let progress = State.createProgress(entries.length);

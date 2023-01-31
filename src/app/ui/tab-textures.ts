@@ -22,7 +22,7 @@ let selectedFileDataID = 0;
  * @param fileDataID
  * @param texture
  */
-export const previewTextureByID = async (fileDataID: number, texture: string|null = null) => {
+export async function previewTextureByID(fileDataID: number, texture: string | null = null) {
 	texture = texture ?? listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID);
 
 	State.isBusy++;
@@ -72,7 +72,7 @@ export const previewTextureByID = async (fileDataID: number, texture: string|nul
 	}
 
 	State.isBusy--;
-};
+}
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.

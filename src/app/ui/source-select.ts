@@ -59,7 +59,7 @@ const loadInstall = (index) => {
 };
 
 Events.once('screen-source-select', async () => {
-	const pings = [];
+	const pings = Array<Promise<number | void>>();
 	const regions = State.cdnRegions;
 	const userRegion = State.config.sourceSelectUserRegion;
 
@@ -95,7 +95,7 @@ Events.once('screen-source-select', async () => {
 	if (!Array.isArray(recentLocal))
 		recentLocal = State.config.recentLocal = [];
 
-	const openInstall = async (installPath: string, product: string|undefined = undefined) => {
+	const openInstall = async (installPath: string, product: string | undefined = undefined) => {
 		State.hideToast();
 
 		try {

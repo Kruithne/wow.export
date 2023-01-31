@@ -10,8 +10,8 @@ import Constants from './constants';
 import State from './state';
 import Events from './events';
 
-let isSaving: boolean = false;
-let isQueued: boolean = false;
+let isSaving = false;
+let isQueued = false;
 
 const defaultConfig = {
 	listfileURL: 'https://www.kruithne.net/wow.export/data/listfile/master?v=%s',

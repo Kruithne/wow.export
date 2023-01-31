@@ -106,12 +106,12 @@ const isBuildInRange = (build: string, min: string, max: string): boolean => {
 export class DBDField {
 	type: string;
 	name: string;
-	isSigned: boolean = true;
-	isID: boolean = false;
-	isInline: boolean = true;
-	isRelation: boolean = false;
-	arrayLength: number = -1;
-	size: number = -1;
+	isSigned = true;
+	isID = false;
+	isInline = true;
+	isRelation = false;
+	arrayLength = -1;
+	size = -1;
 
 	/**
 	 * Construct a new DBDField instance.
@@ -151,7 +151,7 @@ export class DBDEntry {
 	 * Adds layouthashes to this DBD entry.
 	 * @param hashes
 	 */
-	addLayoutHashes(...hashes: string[]): void {
+	addLayoutHashes(...hashes: Array<string>): void {
 		for (const hash of hashes)
 			this.layoutHashes.add(hash);
 	}
@@ -247,7 +247,7 @@ export class DBDParser {
 	 * Parse a chunk from this DBD document.
 	 * @param chunk
 	 */
-	parseChunk(chunk: string[]): void {
+	parseChunk(chunk: Array<string>): void {
 		if (chunk[0] === 'COLUMNS') {
 			this.parseColumnChunk(chunk);
 		} else {
@@ -337,7 +337,7 @@ export class DBDParser {
 	 * Parse the column definition of a DBD document.
 	 * @param chunk
 	 */
-	parseColumnChunk(chunk: string[]): void {
+	parseColumnChunk(chunk: Array<string>): void {
 		if (chunk === undefined)
 			throw new Error('Invalid DBD: Missing column definitions.');
 

@@ -1,8 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import * as log from '../../log';
+import Log from '../../log';
 
-class RenderCache {
+export default class RenderCache {
 	users: WeakMap<THREE.Material, number> = new WeakMap();
 	textures: WeakMap<THREE.Material, THREE.Texture> = new WeakMap();
 
@@ -20,7 +20,7 @@ class RenderCache {
 	 * Potentially retire the provided materials, if no users remain.
 	 * @param material
 	 */
-	retire(...materials: THREE.Material[]): void {
+	retire(...materials: THREE.Array<Material>): void {
 		for (const material of materials) {
 			if (!material)
 				continue;
@@ -32,7 +32,7 @@ class RenderCache {
 			const newUsers = currentUsers - 1;
 			if (newUsers < 1) {
 				// No more users, retire the material.
-				log.write('Disposing of abandoned material %s', material.uuid);
+				Log.write('Disposing of abandoned material %s', material.uuid);
 
 				material.dispose();
 				this.textures.get(material)?.dispose();
@@ -57,5 +57,3 @@ class RenderCache {
 		this.users.set(material, currentUsers + 1);
 	}
 }
-
-module.exports = RenderCache;

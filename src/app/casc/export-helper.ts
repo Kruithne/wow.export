@@ -24,10 +24,10 @@ export default class ExportHelper {
 	count: number;
 	succeeded: number;
 	unit: string;
-	isFinished: boolean = false;
+	isFinished = false;
 	currentTaskName: string;
-	currentTaskMax: number = -1;
-	currentTaskValue: number = -1;
+	currentTaskMax = -1;
+	currentTaskValue = -1;
 	lastItem: string;
 
 	/**
@@ -67,7 +67,7 @@ export default class ExportHelper {
 	 * @param ext
 	 * @returns File with replaced extension
 	 */
-	static replaceExtension(file: string, ext: string = ''): string {
+	static replaceExtension(file: string, ext = ''): string {
 		return path.join(path.dirname(file), path.basename(file, path.extname(file)) + ext);
 	}
 
@@ -97,7 +97,7 @@ export default class ExportHelper {
 	 * @param count
 	 * @param unit
 	 */
-	constructor(count: number, unit: string = 'item') {
+	constructor(count: number, unit = 'item') {
 		this.count = count;
 		this.unit = unit;
 	}
@@ -156,7 +156,7 @@ export default class ExportHelper {
 	 * Finish the export.
 	 * @param includeDirLink
 	 */
-	finish(includeDirLink: boolean = true): void {
+	finish(includeDirLink = true): void {
 		// Prevent duplicate calls to finish() in the event of user cancellation.
 		if (this.isFinished)
 			return;
@@ -248,7 +248,7 @@ export default class ExportHelper {
 	 * @param state
 	 * @param error
 	 */
-	mark(item: string, state: boolean, error: string|null = null): void {
+	mark(item: string, state: boolean, error: string | null = null): void {
 		if (state) {
 			log.write('Successfully exported %s', item);
 			this.lastItem = item;

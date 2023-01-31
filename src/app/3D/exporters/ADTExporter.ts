@@ -1,60 +1,63 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-const util = require('util');
-const core = require('../../core');
-const path = require('path');
-const fsp = require('fs').promises;
-const constants = require('../../constants');
-const generics = require('../../generics');
-const listfile = require('../../casc/listfile');
-const log = require('../../log');
+import util from 'node:util';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const BufferWrapper = require('../../buffer');
-const BLPFile = require('../../casc/blp');
+import Constants from '../../constants';
+import Listfile from '../../casc/listfile';
+import Log from '../../log';
+import BufferWrapper from '../../buffer';
+import BLPFile from '../../casc/blp';
+import State from '../../state';
+import RGBA from '../RGBA';
 
-const WDTLoader = require('../loaders/WDTLoader');
-const ADTLoader = require('../loaders/ADTLoader');
+import WDTLoader from '../loaders/WDTLoader';
+import ADTLoader from '../loaders/ADTLoader';
 
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
+import OBJWriter from '../writers/OBJWriter';
+import MTLWriter from '../writers/MTLWriter';
 
-const WDCReader = require('../../db/WDCReader');
+import WDCReader from '../../db/WDCReader';
 
-const ExportHelper = require('../../casc/export-helper');
-const M2Exporter = require('../../3D/exporters/M2Exporter');
-const WMOExporter = require('../../3D/exporters/WMOExporter');
-const CSVWriter = require('../../3D/writers/CSVWriter');
-const JSONWriter = require('../../3D/writers/JSONWriter');
+import ExportHelper from '../../casc/export-helper';
+import M2Exporter from '../../3D/exporters/M2Exporter';
+import WMOExporter from '../../3D/exporters/WMOExporter';
+import CSVWriter from '../../3D/writers/CSVWriter';
+import JSONWriter from '../../3D/writers/JSONWriter';
 
-const MAP_SIZE = constants.GAME.MAP_SIZE;
-const TILE_SIZE = constants.GAME.TILE_SIZE;
+import GameObjects from '../../db/types/GameObjects';
+
+const MAP_SIZE = Constants.GAME.MAP_SIZE;
+const TILE_SIZE = Constants.GAME.TILE_SIZE;
 const CHUNK_SIZE = TILE_SIZE / 16;
 const UNIT_SIZE = CHUNK_SIZE / 8;
 const UNIT_SIZE_HALF = UNIT_SIZE / 2;
 
 const wdtCache = new Map();
 
-const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.shader');
-const FRAG_SHADER_OLD_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.old.shader');
-const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.vertex.shader');
+const FRAG_SHADER_SRC = path.join(Constants.SHADER_PATH, 'adt.fragment.shader');
+const FRAG_SHADER_OLD_SRC = path.join(Constants.SHADER_PATH, 'adt.fragment.old.shader');
+const VERT_SHADER_SRC = path.join(Constants.SHADER_PATH, 'adt.vertex.shader');
 
 let isFoliageAvailable = false;
 let hasLoadedFoliage = false;
-let dbTextures;
-let dbDoodads;
+let dbTextures: WDCReader;
+let dbDoodads: WDCReader;
 
-let glShaderProg;
-let glCanvas;
-let gl;
+let glShaderProg: WebGLProgram;
+let glCanvas: HTMLCanvasElement;
+let gl: WebGLRenderingContext;
 
 /**
  * Load a texture from CASC and bind it to the GL context.
- * @param {number} fileDataID
+ * @param fileDataID - The fileDataID of the texture to load.
+ * @returns The texture object or null if the texture could not be bound.
  */
-const loadTexture = async (fileDataID) => {
+async function loadTexture(fileDataID: number): Promise<WebGLTexture | null> {
 	const texture = gl.createTexture();
-	const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+	const blp = new BLPFile(await State.casc.getFile(fileDataID));
 
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -65,15 +68,13 @@ const loadTexture = async (fileDataID) => {
 	gl.generateMipmap(gl.TEXTURE_2D);
 
 	return texture;
-};
+}
 
-/**
- * Load and cache GroundEffectDoodad and GroundEffectTexture data tables.
- */
-const loadFoliageTables = async () => {
+/** Load and cache GroundEffectDoodad and GroundEffectTexture data tables. */
+async function loadFoliageTables() {
 	if (!hasLoadedFoliage) {
 		try {
-			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2',);
+			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2');
 			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2');
 
 			await dbDoodads.parse();
@@ -83,19 +84,20 @@ const loadFoliageTables = async () => {
 			isFoliageAvailable = true;
 		} catch (e) {
 			isFoliageAvailable = false;
-			log.write('Unable to load foliage tables, foliage exporting will be unavailable for all tiles.');
+			Log.write('Unable to load foliage tables, foliage exporting will be unavailable for all tiles.');
 		}
 
 		hasLoadedFoliage = true;
 	}
-};
+}
 
 /**
  * Bind an alpha layer to the GL context.
- * @param {Array} layer
+ * @param layer - The alpha layer to bind.
+ * @returns The texture object or null if the texture could not be bound.
  */
-const bindAlphaLayer = (layer) => {
-	const texture = gl.createTexture();
+function bindAlphaLayer(layer: Array<number>): WebGLTexture {
+	const texture = gl.createTexture() as WebGLTexture;
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	const data = new Uint8Array(layer.length * 4);
@@ -106,22 +108,18 @@ const bindAlphaLayer = (layer) => {
 	gl.generateMipmap(gl.TEXTURE_2D);
 
 	return texture;
-};
+}
 
-/**
- * Unbind all textures from the GL context.
- */
-const unbindAllTextures = () => {
+/** Unbind all textures from the GL context. */
+function unbindAllTextures() {
 	// Unbind textures.
 	for (let i = 0, n = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS); i < n; i++) {
 		gl.activeTexture(gl.TEXTURE0 + i);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
-};
+}
 
-/**
- * Clear the canvas, resetting it to black.
- */
+/** Clear the canvas, resetting it to black. */
 const clearCanvas = () => {
 	gl.viewport(0, 0, glCanvas.width, glCanvas.height);
 	gl.clearColor(0, 0, 0, 1);
@@ -130,10 +128,10 @@ const clearCanvas = () => {
 
 /**
  * Convert an RGBA object into an integer.
- * @param {object} rgba
- * @returns {number}
+ * @param rgba - The RGBA object to convert.
+ * @returns The integer representation of the RGBA object.
  */
-const rgbaToInt = (rgba) => {
+const rgbaToInt = (rgba: RGBA): number => {
 	let intval = rgba.r;
 	intval = (intval << 8) + rgba.g;
 	intval = (intval << 8) + rgba.b;
@@ -142,28 +140,28 @@ const rgbaToInt = (rgba) => {
 
 /**
  * Compile the vertex and fragment shaders used for baking.
- * Will be attached to the current GL context.
+ * @param useOld - Whether to use the old shader.
  */
-const compileShaders = async (useOld = false) => {
-	glShaderProg = gl.createProgram();
+async function compileShaders(useOld = false) {
+	glShaderProg = gl.createProgram() as WebGLProgram;
 
 	// Compile fragment shader.
-	const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-	gl.shaderSource(fragShader, await fsp.readFile(useOld ? FRAG_SHADER_OLD_SRC : FRAG_SHADER_SRC, 'utf8'));
+	const fragShader = gl.createShader(gl.FRAGMENT_SHADER) as WebGLShader;
+	gl.shaderSource(fragShader, await fs.promises.readFile(useOld ? FRAG_SHADER_OLD_SRC : FRAG_SHADER_SRC, 'utf8'));
 	gl.compileShader(fragShader);
 
 	if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
-		log.write('Fragment shader failed to compile: %s', gl.getShaderInfoLog(fragShader));
+		Log.write('Fragment shader failed to compile: %s', gl.getShaderInfoLog(fragShader) as string);
 		throw new Error('Failed to compile fragment shader');
 	}
 
 	// Compile vertex shader.
-	const vertShader = gl.createShader(gl.VERTEX_SHADER);
-	gl.shaderSource(vertShader, await fsp.readFile(VERT_SHADER_SRC, 'utf8'));
+	const vertShader = gl.createShader(gl.VERTEX_SHADER) as WebGLShader;
+	gl.shaderSource(vertShader, await fs.promises.readFile(VERT_SHADER_SRC, 'utf8'));
 	gl.compileShader(vertShader);
 
 	if (!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
-		log.write('Vertex shader failed to compile: %s', gl.getShaderInfoLog(vertShader));
+		Log.write('Vertex shader failed to compile: %s', gl.getShaderInfoLog(vertShader) as string);
 		throw new Error('Failed to compile vertex shader');
 	}
 
@@ -174,21 +172,28 @@ const compileShaders = async (useOld = false) => {
 	// Link program.
 	gl.linkProgram(glShaderProg);
 	if (!gl.getProgramParameter(glShaderProg, gl.LINK_STATUS)) {
-		log.write('Unable to link shader program: %s', gl.getProgramInfoLog(glShaderProg));
+		Log.write('Unable to link shader program: %s', gl.getProgramInfoLog(glShaderProg) as string);
 		throw new Error('Failed to link shader program');
 	}
 
 	gl.useProgram(glShaderProg);
-};
+}
 
 class ADTExporter {
+	mapID: number;
+	mapDir: string;
+	tileX: number;
+	tileY: number;
+	tileID: string;
+	tileIndex: number;
+
 	/**
 	 * Construct a new ADTLoader instance.
-	 * @param {number} mapID
-	 * @param {string} mapDir
-	 * @param {number} tileIndex
+	 * @param mapID - The map ID of the tile.
+	 * @param mapDir - The directory of the map.
+	 * @param tileIndex - The tile index of the tile.
 	 */
-	constructor(mapID, mapDir, tileIndex) {
+	constructor(mapID: number, mapDir: string, tileIndex: number) {
 		this.mapID = mapID;
 		this.mapDir = mapDir;
 		this.tileX = tileIndex % MAP_SIZE;
@@ -199,15 +204,15 @@ class ADTExporter {
 
 	/**
 	 * Export the ADT tile.
-	 * @param {string} dir Directory to export the tile into.
-	 * @param {number} textureRes
-	 * @param {Set|undefined} gameObjects Additional game objects to export.
-	 * @param {ExportHelper} helper
-	 * @returns {string}
+	 * @param dir - Directory to export the tile into.
+	 * @param quality - The quality of the exported tile.
+	 * @param gameObjects - Additional game objects to export.
+	 * @param helper
+	 * @returns The path to the exported tile.
 	 */
-	async export(dir, quality, gameObjects, helper) {
-		const casc = core.view.casc;
-		const config = core.view.config;
+	async export(dir: string, quality: number, gameObjects: Set<GameObjects>, helper: ExportHelper): Promise<string> {
+		const casc = State.casc;
+		const config = State.config;
 
 		const out = { type: config.mapsExportRaw ? 'ADT_RAW' : 'ADT_OBJ', path: '' };
 
@@ -231,9 +236,9 @@ class ADTExporter {
 		const tilePrefix = prefix + '_' + this.tileID;
 
 		const maid = wdt.entries[this.tileIndex];
-		const rootFileDataID = maid.rootADT > 0 ? maid.rootADT : listfile.getByFilename(tilePrefix + '.adt');
-		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : listfile.getByFilename(tilePrefix + '_obj0.adt');
-		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : listfile.getByFilename(tilePrefix + '_tex0.adt');
+		const rootFileDataID = maid.rootADT > 0 ? maid.rootADT : Listfile.getByFilename(tilePrefix + '.adt');
+		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : Listfile.getByFilename(tilePrefix + '_obj0.adt');
+		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : Listfile.getByFilename(tilePrefix + '_tex0.adt');
 
 		// Ensure we actually have the fileDataIDs for the files we need.
 		if (rootFileDataID === 0 || tex0FileDataID === 0 || obj0FileDataID === 0)
@@ -281,15 +286,15 @@ class ADTExporter {
 
 			const isAlphaMaps = quality === -1;
 			const isLargeBake = quality >= 8192;
-			const isSplittingAlphaMaps = isAlphaMaps && core.view.config.splitAlphaMaps;
-			const isSplittingTextures = isLargeBake && core.view.config.splitLargeTerrainBakes;
-			const includeHoles = core.view.config.mapsIncludeHoles;
+			const isSplittingAlphaMaps = isAlphaMaps && State.config.splitAlphaMaps;
+			const isSplittingTextures = isLargeBake && State.config.splitLargeTerrainBakes;
+			const includeHoles = State.config.mapsIncludeHoles;
 
 			let ofs = 0;
 			let chunkID = 0;
 			for (let x = 0, midX = 0; x < 16; x++) {
 				for (let y = 0; y < 16; y++) {
-					const indices = [];
+					const indices = Array<number>();
 
 					const chunkIndex = (x * 16) + y;
 					const chunk = rootAdt.chunks[chunkIndex];
@@ -304,8 +309,8 @@ class ADTExporter {
 
 						for (let col = 0; col < colCount; col++) {
 							let vx = chunkY - (col * UNIT_SIZE);
-							let vy = chunk.vertices[idx] + chunkZ;
-							let vz = chunkX - (row * UNIT_SIZE_HALF);
+							const vy = chunk.vertices[idx] + chunkZ;
+							const vz = chunkX - (row * UNIT_SIZE_HALF);
 
 							if (isShort)
 								vx -= UNIT_SIZE_HALF;
@@ -434,12 +439,12 @@ class ADTExporter {
 					const texParams = texAdt.texParams;
 
 					const saveLayerTexture = async (fileDataID) => {
-						const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
-						let fileName = listfile.getByID(fileDataID);
+						const blp = new BLPFile(await State.casc.getFile(fileDataID));
+						let fileName = Listfile.getByID(fileDataID);
 						if (fileName !== undefined)
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
 						else
-							fileName = listfile.formatUnknownFile(fileDataID, '.png');
+							fileName = Listfile.formatUnknownFile(fileDataID, '.png');
 
 						let texFile;
 						let texPath;
@@ -602,7 +607,7 @@ class ADTExporter {
 					const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', this.mapDir, paddedX, paddedY);
 					const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
 
-					if (config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
+					if (config.overwriteFiles || !await Generics.fileExists(tileOutPath)) {
 						const data = await casc.getFileByName(tilePath, false, true);
 						const blp = new BLPFile(data);
 
@@ -623,7 +628,7 @@ class ADTExporter {
 						const buf = await BufferWrapper.fromCanvas(scaled, 'image/png');
 						await buf.writeToFile(tileOutPath);
 					} else {
-						log.write('Skipping ADT bake of %s (file exists, overwrite disabled)', tileOutPath);
+						Log.write('Skipping ADT bake of %s (file exists, overwrite disabled)', tileOutPath);
 					}
 				} else {
 					const hasHeightTexturing = (wdt.flags & 0x80) === 0x80;
@@ -635,7 +640,7 @@ class ADTExporter {
 						compositeCtx = composite.getContext('2d');
 					}
 
-					if (isSplittingTextures || config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
+					if (isSplittingTextures || config.overwriteFiles || !await Generics.fileExists(tileOutPath)) {
 						// Create new GL context and compile shaders.
 						if (!gl) {
 							glCanvas = document.createElement('canvas');
@@ -837,7 +842,7 @@ class ADTExporter {
 									// Save this individual chunk.
 									const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
 
-									if (config.overwriteFiles || !await generics.fileExists(tilePath)) {
+									if (config.overwriteFiles || !await Generics.fileExists(tilePath)) {
 										rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
 
 										const buf = await BufferWrapper.fromCanvas(rotateCanvas, 'image/png');
@@ -878,13 +883,13 @@ class ADTExporter {
 			const objectCache = new Set();
 
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
-			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
+			if (config.overwriteFiles || !await Generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
 				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID', 'DoodadSetIndexes', 'DoodadSetNames');
 
 				const exportObjects = async (exportType, objects, csvName) => {
 					const nObjects = objects?.length ?? objects.size;
-					log.write('Exporting %d %s for ADT...', nObjects, exportType);
+					Log.write('Exporting %d %s for ADT...', nObjects, exportType);
 
 					helper.setCurrentTaskName('Tile ' + this.tileID + ', ' + exportType);
 					helper.setCurrentTaskMax(nObjects);
@@ -894,7 +899,7 @@ class ADTExporter {
 						helper.setCurrentTaskValue(index++);
 
 						const fileDataID = model.FileDataID ?? model.mmidEntry;
-						let fileName = listfile.getByID(fileDataID);
+						let fileName = Listfile.getByID(fileDataID);
 
 						if (!config.mapsExportRaw) {
 							if (fileName !== undefined) {
@@ -902,7 +907,7 @@ class ADTExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
 								// Handle unknown file.
-								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
+								fileName = Listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 						}
 
@@ -950,8 +955,8 @@ class ADTExporter {
 								DoodadSetNames: ''
 							});
 						} catch (e) {
-							log.write('Failed to export %s [%d]', fileName, fileDataID);
-							log.write('Error: %s', e);
+							Log.write('Failed to export %s [%d]', fileName, fileDataID);
+							Log.write('Error: %s', e);
 						}
 					}
 				};
@@ -963,7 +968,7 @@ class ADTExporter {
 					await exportObjects('doodads', objAdt.models, 'm2');
 
 				if (config.mapsIncludeWMO) {
-					log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
+					Log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
 
 					helper.setCurrentTaskName('Tile ' + this.tileID + ', WMO objects');
 					helper.setCurrentTaskMax(objAdt.worldModels.length);
@@ -982,10 +987,10 @@ class ADTExporter {
 						try {
 							if (usingNames) {
 								fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
-								fileDataID = listfile.getByFilename(fileName);
+								fileDataID = Listfile.getByFilename(fileName);
 							} else {
 								fileDataID = model.mwidEntry;
-								fileName = listfile.getByID(fileDataID);
+								fileName = Listfile.getByID(fileDataID);
 							}
 
 							if (!config.mapsExportRaw) {
@@ -994,7 +999,7 @@ class ADTExporter {
 									fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
 								} else {
 									// Handle unknown WMO files.
-									fileName = listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
+									fileName = Listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
 								}
 							}
 
@@ -1062,22 +1067,22 @@ class ADTExporter {
 								DoodadSetNames: doodadSets.map(e => doodadNames[e]).join(',')
 							});
 						} catch (e) {
-							log.write('Failed to export %s [%d]', fileName, fileDataID);
-							log.write('Error: %s', e);
+							Log.write('Failed to export %s [%d]', fileName, fileDataID);
+							Log.write('Error: %s', e);
 						}
 					}
 				}
 
 				await csv.write();
 			} else {
-				log.write('Skipping model placement export %s (file exists, overwrite disabled)', csvPath);
+				Log.write('Skipping model placement export %s (file exists, overwrite disabled)', csvPath);
 			}
 		}
 
 		// Export liquids.
 		if (config.mapsIncludeLiquid && rootAdt.liquidChunks) {
 			const liquidFile = path.join(dir, 'liquid_' + this.tileID + '.json');
-			log.write('Exporting liquid data to %s', liquidFile);
+			Log.write('Exporting liquid data to %s', liquidFile);
 
 			const liquidJSON = new JSONWriter(liquidFile);
 			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks);
@@ -1094,7 +1099,7 @@ class ADTExporter {
 			const foliageEffectCache = new Set();
 			const foliageDir = path.join(dir, 'foliage');
 
-			log.write('Exporting foliage to %s', foliageDir);
+			Log.write('Exporting foliage to %s', foliageDir);
 
 			for (const chunk of texAdt.texChunks) {
 				// Skip chunks that have no layers?
@@ -1112,7 +1117,7 @@ class ADTExporter {
 
 					// Create a foliage metadata JSON packed with the table data.
 					let foliageJSON;
-					if (core.view.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
+					if (State.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
 						foliageJSON = new JSONWriter(path.join(foliageDir, layer.effectID + '.json'));
 						foliageJSON.data = groundEffectTexture;
 
@@ -1139,7 +1144,7 @@ class ADTExporter {
 					if (foliageJSON) {
 						// Map fileDataID to the exported OBJ file names.
 						for (const entry of Object.values(doodadModelIDs)) {
-							const fileName = listfile.getByID(entry.fileDataID);
+							const fileName = Listfile.getByID(entry.fileDataID);
 
 							if (config.mapsExportRaw)
 								entry.fileName = path.basename(fileName);
@@ -1161,7 +1166,7 @@ class ADTExporter {
 			for (const modelID of foliageExportCache) {
 				helper.setCurrentTaskValue(foliageIndex++);
 
-				const modelName = path.basename(listfile.getByID(modelID));
+				const modelName = path.basename(Listfile.getByID(modelID));
 
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);

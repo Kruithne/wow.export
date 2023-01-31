@@ -1,28 +1,35 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../core');
-const log = require('../log');
-const path = require('path');
-const listfile = require('../casc/listfile');
-const constants = require('../constants');
+import util from 'node:util';
+import path from 'node:path';
 
-const WDCReader = require('../db/WDCReader');
-const BLPFile = require('../casc/blp');
-const WDTLoader = require('../3D/loaders/WDTLoader');
-const ADTExporter = require('../3D/exporters/ADTExporter');
-const ExportHelper = require('../casc/export-helper');
-const WMOExporter = require('../3D/exporters/WMOExporter');
-const FileWriter = require('../file-writer');
+import Log from '../log';
+import Listfile from '../casc/listfile';
+import Constants from '../constants';
 
-let selectedMapID;
-let selectedMapDir;
+import WDCReader from '../db/WDCReader';
+import BLPFile from '../casc/blp';
+import WDTLoader from '../3D/loaders/WDTLoader';
+import ADTExporter from '../3D/exporters/ADTExporter';
+import ExportHelper from '../casc/export-helper';
+import WMOExporter from '../3D/exporters/WMOExporter';
+import FileWriter from '../file-writer';
+
+import GameObjectDisplayInfo from '../db/types/GameObjectDisplayInfo';
+import GameObjects from '../db/types/GameObjects';
+
+let selectedMapID: number;
+let selectedMapDir: string;
 let selectedWDT;
 
-const TILE_SIZE = constants.GAME.TILE_SIZE;
-const MAP_OFFSET = constants.GAME.MAP_OFFSET;
+const TILE_SIZE = Constants.GAME.TILE_SIZE;
+const MAP_OFFSET = Constants.GAME.MAP_OFFSET;
 
-let gameObjectsDB2 = null;
+let gameObjectsDB2: Map<number, Set<GameObjects>>;
+
+interface GameObjectEntry extends GameObjects {
+	FileDataID: number;
+}
 
 /**
  * Load a map into the map viewer.
@@ -40,7 +47,7 @@ const loadMap = async (mapID, mapDir) => {
 
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDirLower, mapDirLower);
-	log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
+	Log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
 
 	try {
 		const data = await core.view.casc.getFileByName(wdtPath);
@@ -54,7 +61,7 @@ const loadMap = async (mapID, mapDir) => {
 		core.view.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
-		log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
+		Log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
 		core.view.mapViewerChunkMask = null;
 	}
 
@@ -112,12 +119,13 @@ const loadMapTile = async (x, y, size) => {
 
 /**
  * Collect game objects from GameObjects.db2 for export.
- * @param {number} mapID
- * @param {function} filter
+ * @param mapID - Map ID to collect game objects for.
+ * @param filter - Filter function to apply to the game objects.
+ * @returns Set of game objects.
  */
-const collectGameObjects = async (mapID, filter) => {
+async function collectGameObjects(mapID: number, filter: (row: GameObjects) => boolean): Promise<Set<GameObjects>> {
 	// Load GameObjects.db2/GameObjectDisplayInfo.db2 on-demand.
-	if (gameObjectsDB2 === null) {
+	if (gameObjectsDB2 === undefined) {
 		const objTable = new WDCReader('DBFilesClient/GameObjects.db2');
 		await objTable.parse();
 
@@ -125,26 +133,28 @@ const collectGameObjects = async (mapID, filter) => {
 		await idTable.parse();
 
 		// Index all of the rows by the map ID.
-		gameObjectsDB2 = new Map();
-		for (const row of objTable.getAllRows().values()) {
+		gameObjectsDB2 = new Map<number, Set<GameObjects>>();
+		for (const row of objTable.getAllRows().values() as IterableIterator<GameObjects>) {
 			// Look-up the fileDataID ahead of time.
-			const fidRow = idTable.getRow(row.DisplayID);
-			if (fidRow !== null) {
-				row.FileDataID = fidRow.FileDataID;
+			const fidRow = idTable.getRow(row.DisplayID) as GameObjectDisplayInfo;
 
-				let map = gameObjectsDB2.get(row.OwnerID);
+			if (fidRow !== null) {
+				const entry = row as GameObjectEntry;
+				entry.FileDataID = fidRow.FileDataID;
+
+				let map = gameObjectsDB2.get(entry.OwnerID);
 				if (map === undefined) {
 					map = new Set();
-					map.add(row);
-					gameObjectsDB2.set(row.OwnerID, map);
+					map.add(entry);
+					gameObjectsDB2.set(entry.OwnerID, map);
 				} else {
-					map.add(row);
+					map.add(entry);
 				}
 			}
 		}
 	}
 
-	const result = new Set();
+	const result = new Set<GameObjects>();
 	const mapObjects = gameObjectsDB2.get(mapID);
 
 	if (mapObjects !== undefined) {
@@ -155,9 +165,9 @@ const collectGameObjects = async (mapID, filter) => {
 	}
 
 	return result;
-};
+}
 
-const exportSelectedMapWMO = async () => {
+async function exportSelectedMapWMO() {
 	const helper = new ExportHelper(1, 'WMO');
 	helper.start();
 
@@ -166,21 +176,21 @@ const exportSelectedMapWMO = async () => {
 			throw new Error('Map does not contain a world model.');
 
 		const placement = selectedWDT.worldModelPlacement;
-		let fileDataID = 0;
-		let fileName;
+		let fileDataID: number | undefined = 0;
+		let fileName: string;
 
 		if (selectedWDT.worldModel) {
 			fileName = selectedWDT.worldModel;
-			fileDataID = listfile.getByFilename(fileName);
+			fileDataID = Listfile.getByFilename(fileName);
 
-			if (!fileDataID)
+			if (fileDataID === undefined)
 				throw new Error('Invalid world model path: ' + fileName);
 		} else {
 			if (placement.id === 0)
 				throw new Error('Map does not define a valid world model.');
 
 			fileDataID = placement.id;
-			fileName = listfile.getByID(fileDataID) || 'unknown_' + fileDataID + '.wmo';
+			fileName = Listfile.getByID(fileDataID as number) || 'unknown_' + fileDataID + '.wmo';
 		}
 
 		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), '.obj');
@@ -201,9 +211,9 @@ const exportSelectedMapWMO = async () => {
 	}
 
 	helper.finish();
-};
+}
 
-const exportSelectedMap = async () => {
+async function exportSelectedMap() {
 	const exportTiles = core.view.mapViewerSelection;
 	const exportQuality = core.view.config.exportMapQuality;
 
@@ -231,7 +241,7 @@ const exportSelectedMap = async () => {
 		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
 
 		// Locate game objects within the tile for exporting.
-		let gameObjects = undefined;
+		let gameObjects: Set<GameObject> = new Set();
 		if (core.view.config.mapsIncludeGameObjects === true) {
 			const startX = MAP_OFFSET - (adt.tileX * TILE_SIZE) - TILE_SIZE;
 			const startY = MAP_OFFSET - (adt.tileY * TILE_SIZE) - TILE_SIZE;
@@ -259,7 +269,7 @@ const exportSelectedMap = async () => {
 	ADTExporter.clearCache();
 
 	helper.finish();
-};
+}
 
 /**
  * Parse a map entry from the listbox.
@@ -281,10 +291,10 @@ core.events.once('screen-tab-maps', async () => {
 	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();
 
-	const maps = [];
+	const maps = Array<string>();
 	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
-		if (listfile.getByFilename(wdtPath))
+		if (Listfile.getByFilename(wdtPath))
 			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 

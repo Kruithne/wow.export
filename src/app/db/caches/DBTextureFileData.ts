@@ -10,7 +10,7 @@ const fileDataIDs: Set<number> = new Set();
 /**
  * Initialize texture file data ID from TextureFileData.db2
  */
-export const initializeTextureFileData = async (): Promise<void> => {
+export async function initializeTextureFileData(): Promise<void> {
 	log.write('Loading texture mapping...');
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
@@ -27,22 +27,22 @@ export const initializeTextureFileData = async (): Promise<void> => {
 		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID as number, textureFileDataID);
 	}
 	log.write('Loaded texture mapping for %d materials', matResIDToFileDataID.size);
-};
+}
 
 /**
  * Retrieve a texture file data ID by a material resource ID.
  * @param matResID - Material
  * @returns FileDataID if found, otherwise undefined
  */
-export const getTextureFileDataID = (matResID: number): number | undefined => {
+export function getTextureFileDataID(matResID: number): number | undefined {
 	return matResIDToFileDataID.get(matResID);
-};
+}
 
 /**
  * Retrieve a list of all file data IDs cached from TextureFileData.db2
  * NOTE: This is reset once called by the listfile module; adjust if needed elsewhere.
  * @returns List of all file data IDs cached from TextureFileData.db2
  */
-export const getFileDataIDs = (): Set<number> => {
+export function getFileDataIDs(): Set<number> {
 	return fileDataIDs;
-};
+}

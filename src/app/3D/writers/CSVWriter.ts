@@ -6,8 +6,8 @@ import FileWriter from '../../file-writer';
 
 export default class CSVWriter {
 	out: string;
-	fields: string[];
-	rows: object[];
+	fields: Array<string>;
+	rows: Array<object>;
 
 	/**
 	 * Construct a new CSVWriter instance.
@@ -21,7 +21,7 @@ export default class CSVWriter {
 	 * Add fields to this CSV.
 	 * @param fields
 	 */
-	addField(...fields: string[]): void {
+	addField(...fields: Array<string>): void {
 		this.fields.push(...fields);
 	}
 
@@ -37,7 +37,7 @@ export default class CSVWriter {
 	 * Write the CSV to disk.
 	 * @param overwrite
 	 */
-	async write(overwrite: boolean = true): Promise<void> {
+	async write(overwrite = true): Promise<void> {
 		// Don't bother writing an empty CSV file.
 		if (this.rows.length === 0)
 			return;

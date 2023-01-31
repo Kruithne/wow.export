@@ -7,20 +7,47 @@ import Constants from '../../constants';
 const MAP_SIZE = Constants.GAME.MAP_SIZE;
 const MAP_SIZE_SQ = Constants.GAME.MAP_SIZE_SQ;
 
+type WDTEntry = {
+	rootADT: number,
+	obj0ADT: number,
+	obj1ADT: number,
+	tex0ADT: number,
+	lodADT: number,
+	mapTexture: number,
+	mapTextureN: number,
+	minimapTexture: number
+}
+
+type WDTWorldPlacement = {
+	id: number,
+	uid: number,
+	position: Array<number>,
+	rotation: Array<number>,
+	upperExtents: Array<number>,
+	lowerExtents: Array<number>,
+	flags: number,
+	doodadSetIndex: number,
+	nameSet: number,
+	padding: number
+}
+
 export default class WDTLoader {
 	data: BufferWrapper;
+	flags?: number;
+	tiles?: Array<number>;
+	entries?: Array<WDTEntry>;
+	worldModel?: string;
+	worldModelPlacement?: WDTWorldPlacement;
 
 	/**
 	 * Construct a new WDTLoader instance.
-	 * @param {BufferWrapper} data
+	 * @param data
 	 */
 	constructor(data: BufferWrapper) {
 		this.data = data;
 	}
 
-	/**
-	 * Load the WDT file, parsing it.
-	 */
+	/** Load the WDT file, parsing it. */
 	load() {
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32();
@@ -39,13 +66,13 @@ export default class WDTLoader {
 
 const WDTChunkHandlers = {
 	// MPHD (Flags)
-	0x4D504844: function(data: BufferWrapper) {
+	0x4D504844: function(this: WDTLoader, data: BufferWrapper) {
 		this.flags = data.readUInt32();
 		// 7 * UInt32 fileDataIDs
 	},
 
 	// MAIN (Tiles)
-	0x4D41494E: function(data: BufferWrapper) {
+	0x4D41494E: function(this: WDTLoader, data: BufferWrapper) {
 		const tiles = this.tiles = new Array(MAP_SIZE_SQ);
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let y = 0; y < MAP_SIZE; y++) {
@@ -56,7 +83,7 @@ const WDTChunkHandlers = {
 	},
 
 	// MAID (File IDs)
-	0x4D414944: function(data: BufferWrapper) {
+	0x4D414944: function(this: WDTLoader, data: BufferWrapper) {
 		const entries = this.entries = new Array(MAP_SIZE_SQ);
 
 		for (let x = 0; x < MAP_SIZE; x++) {
@@ -76,12 +103,12 @@ const WDTChunkHandlers = {
 	},
 
 	// MWMO (World WMO)
-	0x4D574D4F: function(data: BufferWrapper, chunkSize: number) {
+	0x4D574D4F: function(this: WDTLoader, data: BufferWrapper, chunkSize: number) {
 		this.worldModel = data.readString(chunkSize).replace('\0', '');
 	},
 
 	// MODF (World WMO Placement)
-	0x4D4F4446: function(data: BufferWrapper) {
+	0x4D4F4446: function(this: WDTLoader, data: BufferWrapper) {
 		this.worldModelPlacement = {
 			id: data.readUInt32(),
 			uid: data.readUInt32(),

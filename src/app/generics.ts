@@ -73,7 +73,7 @@ export async function ping (url: string): Promise<number> {
  * @param data - The JSON string to parse.
  * @returns The parsed object or undefined.
  */
-export function parseJSON(data: string): object|undefined {
+export function parseJSON(data: string): object | undefined {
 	try {
 		return JSON.parse(data);
 	} catch (e) {
@@ -87,7 +87,7 @@ export function parseJSON(data: string): object|undefined {
  * @param ignoreComments - If true, will remove lines starting with //.
  * @returns The parsed JSON object or NULL on error.
  */
-export async function readJSON(file: string, ignoreComments: boolean = false) {
+export async function readJSON(file: string, ignoreComments = false) {
 	try {
 		const raw = await fs.promises.readFile(file, 'utf8');
 		if (ignoreComments)
@@ -108,7 +108,7 @@ export async function readJSON(file: string, ignoreComments: boolean = false) {
  * @param deflate - If true, will deflate data regardless of header.
  * @returns The file contents.
  */
-export async function downloadFile(url: string, out?: string, partialOfs: number = -1, partialLen: number = -1, deflate: boolean = false): Promise<BufferWrapper> {
+export async function downloadFile(url: string, out?: string, partialOfs = -1, partialLen = -1, deflate = false): Promise<BufferWrapper> {
 	const res = await fetch(url, {
 		headers: {
 			'User-Agent': Constants.USER_AGENT,
@@ -167,7 +167,7 @@ const JEDEC = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 export function filesize(input: number): string {
 	input = Number(input);
 	const isNegative = input < 0;
-	const result: Array<number|string> = [];
+	const result: Array<number | string> = [];
 
 	// Flipping a negative number to determine the size.
 	if (isNegative)

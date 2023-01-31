@@ -9,10 +9,10 @@ import { filesize, formatPlaybackSeconds, redraw } from './generics';
 import * as TabTextures from './ui/tab-textures';
 import * as TabItems from './ui/tab-items';
 import * as ExternalLinks from './external-links';
-import * as Blender from './blender';
 import * as Listfile from './casc/listfile';
 import * as TextureRibbon from './ui/texture-ribbon';
 
+import Blender from './blender';
 import Log from './log';
 import ExportHelper from './casc/export-helper';
 import Constants from './constants';
@@ -20,7 +20,7 @@ import Events from './events';
 
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 type ProgressObject = { segWeight: number; value: number; step: (text: string) => Promise<void>; };
-type DropHandler = { ext: string[]; prompt: () => string; process: (file: File) => Promise<void>; };
+type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };
 
 const app = createApp({
 	el: '#container',
@@ -156,7 +156,7 @@ const app = createApp({
 		 * Hide the currently active toast prompt.
 		 * @param userCancel - If true, toast was cancelled by the user.
 		 */
-		hideToast: function(userCancel: boolean = false) {
+		hideToast: function(userCancel = false) {
 			// Cancel outstanding toast expiry timer.
 			if (this.toastTimer > -1) {
 				clearTimeout(this.toastTimer);
@@ -177,7 +177,7 @@ const app = createApp({
 		 * @param ttl - Time in milliseconds before removing the toast.
 		 * @param closable - If true, toast can manually be closed.
 		 */
-		setToast: function(toastType: ToastType, message: string, options: object|null = null, ttl: number = 10000, closable: boolean = true) {
+		setToast: function(toastType: ToastType, message: string, options: object | null = null, ttl = 10000, closable = true) {
 			this.toast = { type: toastType, message, options, closable };
 
 			// Remove any outstanding toast timer we may have.
@@ -210,7 +210,7 @@ const app = createApp({
 		 * @param file - File path to get handler for.
 		 * @returns Drop handler, or null if none found.
 		 */
-		getDropHandler: function (file: string): DropHandler|null {
+		getDropHandler: function (file: string): DropHandler | null {
 			file = file.toLowerCase();
 
 			for (const handler of this.dropHandlers) {
@@ -255,7 +255,7 @@ const app = createApp({
 		 * @param segments - Number of segments to split the progress into.
 		 * @returns Progress object.
 		 */
-		createProgress: function(segments: number = 1): ProgressObject {
+		createProgress: function(segments = 1): ProgressObject {
 			this.loadPct = 0;
 
 			return {
@@ -350,7 +350,7 @@ const app = createApp({
 		 * @param screenID
 		 * @param preserve
 		 */
-		setScreen: function(screenID: string, preserve: boolean = false) {
+		setScreen: function(screenID: string, preserve = false) {
 			this.loadPct = -1; // Ensure we reset if coming from a loading screen.
 
 			// Ensure that all context menus are absorbed by screen changes.
@@ -565,7 +565,7 @@ const app = createApp({
 
 		/**
 		 * Returns the default location of the last export manifest.
-		 * @return Default location of the last export manifest
+		 * @returns Default location of the last export manifest
 		 */
 		lastExportPathDefault: function(): string {
 			return Constants.LAST_EXPORT;
@@ -589,7 +589,9 @@ const app = createApp({
 		 * Returns an Array of available locale keys.
 		 */
 		availableLocaleKeys: function() {
-			return Object.keys(LocaleFlags).map(e => { return { value: e }; });
+			return Object.keys(LocaleFlags).map(e => {
+				return { value: e };
+			});
 		},
 
 		/**

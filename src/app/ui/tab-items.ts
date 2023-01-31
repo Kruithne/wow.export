@@ -39,8 +39,8 @@ export default class Item {
 	inventoryType: number;
 	quality: number;
 	icon: number;
-	models: string[];
-	textures: string[];
+	models: Array<string>;
+	textures: Array<string>;
 	modelCount: number;
 	textureCount: number;
 
@@ -86,7 +86,7 @@ export default class Item {
  * Switches to the model viewer, selecting the models for the given item.
  * @param item
  */
-export const viewItemModels = (item) => {
+export function viewItemModels(item) {
 	State.setScreen('tab-models');
 
 	const list = new Set();
@@ -111,13 +111,13 @@ export const viewItemModels = (item) => {
 	State.overrideModelList = [...list];
 	State.selectionModels = [...list];
 	State.overrideModelName = item.name;
-};
+}
 
 /**
  * Switches to the texture viewer, selecting the models for the given item.
  * @param item
  */
-export const viewItemTextures = (item) => {
+export function viewItemTextures(item) {
 	State.setScreen('tab-textures');
 
 	const list = new Set();
@@ -140,7 +140,7 @@ export const viewItemTextures = (item) => {
 	State.overrideTextureList = [...list];
 	State.selectionTextures = [...list];
 	State.overrideTextureName = item.name;
-};
+}
 
 Events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
@@ -170,7 +170,7 @@ Events.once('screen-tab-items', async () => {
 	await progress.step('Building item relationships...');
 
 	const rows = itemSparse.getAllRows();
-	const items = [];
+	const items = Array<Item>();
 
 	const appearanceMap = new Map();
 	for (const row of itemModifiedAppearance.getAllRows().values())
@@ -195,8 +195,8 @@ Events.once('screen-tab-items', async () => {
 
 			const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID as number);
 			if (itemDisplayInfoRow !== null) {
-				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID as number[]);
-				models.push(...itemDisplayInfoRow.ModelResourcesID as number[]);
+				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID as Array<number>);
+				models.push(...itemDisplayInfoRow.ModelResourcesID as Array<number>);
 			}
 
 			const materialRes = materialMap.get(itemAppearanceRow.ItemDisplayInfoID);

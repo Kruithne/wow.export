@@ -33,8 +33,12 @@ interface NWFile {
 (async () => {
 	// Prevent files from being dropped onto the window. These are over-written
 	// later but we disable here to prevent them working if init fails.
-	window.ondragover = (e: DragEvent) => { e.preventDefault(); return false; };
-	window.ondrop = (e: DragEvent) => { e.preventDefault(); return false; };
+	window.ondragover = (e: DragEvent) => {
+		e.preventDefault(); return false;
+	};
+	window.ondrop = (e: DragEvent) => {
+		e.preventDefault(); return false;
+	};
 
 	// Reset taskbar progress in-case it's stuck.
 	win.setProgressBar(-1);
@@ -138,7 +142,7 @@ interface NWFile {
 
 			if (handler) {
 				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
-				const include = [];
+				const include = Array<string>();
 				for (const file of files) {
 					const check = file.name.toLowerCase();
 					if (handler.ext.some((ext: string) => check.endsWith(ext))) {

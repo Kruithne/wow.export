@@ -8,13 +8,13 @@ const SIGMA_32 = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574];
 const SIGMA_16 = [0x61707865, 0x3120646e, 0x79622d36, 0x6b206574];
 
 export default class Salsa20 {
-	rounds: number = 20;
-	sigma: number[];
-	keyWords: number[];
-	nonceWords: number[];
-	counter: number[];
+	rounds = 20;
+	sigma: Array<number>;
+	keyWords: Array<number>;
+	nonceWords: Array<number>;
+	counter: Array<number>;
 	blockUsed: number;
-	block: number[];
+	block: Array<number>;
 
 	/**
 	 * Construct a new Salsa20 instance.
@@ -22,7 +22,7 @@ export default class Salsa20 {
 	 * @param key - 16 or 32 byte key.
 	 * @param rounds - Defaults to 20.
 	 */
-	constructor(nonce: Array<number>, key: string, rounds: number = 20) {
+	constructor(nonce: Array<number>, key: string, rounds = 20) {
 		if (nonce.length !== 8)
 			throw new Error('Unexpected nonce length. 8 bytes expected, got ' + nonce.length);
 
@@ -64,9 +64,9 @@ export default class Salsa20 {
 	 * Set the nonce used by this instance.
 	 * @param nonce
 	 */
-	setNonce(nonce: number[]) {
-		this.nonceWords[0] = (nonce[0] & 0xFF) | ((nonce[1] & 0xFF) << 8)| ((nonce[2] & 0xFF) << 16)| ((nonce[3] & 0xFF) << 24);
-		this.nonceWords[1] = (nonce[4] & 0xFF) | ((nonce[5] & 0xFF) << 8)| ((nonce[6] & 0xFF) << 16)| ((nonce[7] & 0xFF) << 24);
+	setNonce(nonce: Array<number>) {
+		this.nonceWords[0] = (nonce[0] & 0xFF) | ((nonce[1] & 0xFF) << 8) | ((nonce[2] & 0xFF) << 16) | ((nonce[3] & 0xFF) << 24);
+		this.nonceWords[1] = (nonce[4] & 0xFF) | ((nonce[5] & 0xFF) << 8) | ((nonce[6] & 0xFF) << 16) | ((nonce[7] & 0xFF) << 24);
 
 		this._reset();
 	}
@@ -210,7 +210,7 @@ export default class Salsa20 {
 			u = x7 + x6;
 			x4 ^= (u << 13) | (u >>> (32 - 13));
 			u = x4 + x7;
-			x5 ^= (u <<18) | (u >>> (32 - 18));
+			x5 ^= (u << 18) | (u >>> (32 - 18));
 
 			u = x10 + x9;
 			x11 ^= (u << 7) | (u >>> (32 - 7));

@@ -43,9 +43,9 @@ enum FieldType {
 	NonInlineID
 }
 
-type DataTableValue = string|number|bigint;
+type DataTableValue = string | number | bigint;
 interface DataTableRow {
-	[key: string]: DataTableValue | DataTableValue[];
+	[key: string]: DataTableValue | Array<DataTableValue>;
 }
 
 /**
@@ -90,9 +90,9 @@ export default class WDCReader {
 	rows: Map<number, DataTableRow> = new Map();
 	copyTable: Map<number, number> = new Map();
 	stringTable: Map<number, string> = new Map();
-	schema: Map<string, object|FieldType> = new Map();
-	isInflated: boolean = false;
-	isLoaded: boolean = false;
+	schema: Map<string, object | FieldType> = new Map();
+	isInflated = false;
+	isLoaded = false;
 	idField: string;
 	idFieldIndex: number;
 
@@ -379,8 +379,7 @@ export default class WDCReader {
 
 			if (wdcVersion === 3 && isNormal) {
 				data.seek(stringBlockOfs);
-				for (let i = 0; i < header.stringTableSize;)
-				{
+				for (let i = 0; i < header.stringTableSize;) {
 					const oldPos = data.offset;
 					const stringResult = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
 

@@ -5,14 +5,14 @@ import fs from 'node:fs/promises';
 export default class FileWriter {
 	file: string;
 	encoding: string;
-	queue: string[];
+	queue: Array<string>;
 
 	/**
 	 * Construct a new FileWriter instance.
 	 * @param file
 	 * @param encoding
 	 */
-	constructor(file: string, encoding: string = 'utf8') {
+	constructor(file: string, encoding = 'utf8') {
 		this.file = file;
 		this.encoding = encoding;
 		this.queue = [];
