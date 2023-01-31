@@ -175,7 +175,7 @@ interface NWFile {
 
 		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
-		State.$watch('cacheSize', function(nv) {
+		State.$watch('cacheSize', function(nv: number) {
 			// Clear any existing timer running.
 			clearTimeout(updateTimer);
 
