@@ -22,198 +22,198 @@ import TactKeys from './casc/tact-keys';
 import State from './state';
 import Events from './events';
 
-// Prevent files from being dropped onto the window. These are over-written
-// later but we disable here to prevent them working if init fails.
-window.ondragover = (e: DragEvent) => { e.preventDefault(); return false; };
-window.ondrop = (e: DragEvent) => { e.preventDefault(); return false; };
+(async () => {
+	// Prevent files from being dropped onto the window. These are over-written
+	// later but we disable here to prevent them working if init fails.
+	window.ondragover = (e: DragEvent) => { e.preventDefault(); return false; };
+	window.ondrop = (e: DragEvent) => { e.preventDefault(); return false; };
 
-// Reset taskbar progress in-case it's stuck.
-win.setProgressBar(-1);
+	// Reset taskbar progress in-case it's stuck.
+	win.setProgressBar(-1);
 
-// Ensure we exit when the window is closed.
-win.on('close', () => process.exit(0));
+	// Ensure we exit when the window is closed.
+	win.on('close', () => process.exit(0));
 
-if (process.env.NODE_ENV === 'development') {
-	// Open DevTools if we're in debug mode.
-	win.showDevTools();
+	if (process.env.NODE_ENV === 'development') {
+		// Open DevTools if we're in debug mode.
+		win.showDevTools();
 
-	// Add a quick-reload keybinding.
-	document.addEventListener('keydown', (e) => {
-		if (e.key === 'F5')
-			chrome.runtime.reload();
+		// Add a quick-reload keybinding.
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'F5')
+				chrome.runtime.reload();
+		});
+	}
+
+	// Force all links to open in the users default application.
+	document.addEventListener('click', function(e) {
+		const target = e.target as HTMLAnchorElement;
+		if (!target.matches('[data-external]'))
+			return;
+
+		e.preventDefault();
+		ExternalLinks.openExternalLink(target.getAttribute('data-external'));
 	});
-}
 
-// Force all links to open in the users default application.
-document.addEventListener('click', function(e) {
-	const target = e.target as HTMLAnchorElement;
-	if (!target.matches('[data-external]'))
-		return;
+	// Wait for the DOM to be loaded.
+	if (document.readyState === 'loading')
+		await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
 
-	e.preventDefault();
-	ExternalLinks.openExternalLink(target.getAttribute('data-external'));
-});
+	// Append the application version to the title bar.
+	document.title += ' v' + nw.App.manifest.version;
 
-// Wait for the DOM to be loaded.
-if (document.readyState === 'loading')
-	await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+	const manifest = nw.App.manifest;
+	const cpus = os.cpus();
 
-// Append the application version to the title bar.
-document.title += ' v' + nw.App.manifest.version;
+	Log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
+	Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
+	Log.write('INSTALL_PATH %s DATA_PATH %s', Constants.INSTALL_PATH, Constants.DATA_PATH);
 
+	// Load configuration.
+	await Config.load();
 
-// TODO: Don't poison the global scope.
-// Log some basic information for potential diagnostics.
-const manifest = nw.App.manifest;
-const cpus = os.cpus();
-Log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
-Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
-Log.write('INSTALL_PATH %s DATA_PATH %s', Constants.INSTALL_PATH, Constants.DATA_PATH);
-
-// Load configuration.
-await Config.load();
-
-// Set-up default export directory if none configured.
-if (State.config.exportDirectory === '') {
-	State.config.exportDirectory = path.join(os.homedir(), 'wow.export');
-	Log.write('No export directory set, setting to %s', State.config.exportDirectory);
-}
-
-// Set-up proper drag/drop handlers.
-let dropStack = 0;
-window.ondragenter = e => {
-	e.preventDefault();
-
-	// Converting local files while busy shouldn't end badly, but it seems
-	// weird to let people do this on loading screens.
-	if (State.isBusy)
-		return false;
-
-	dropStack++;
-
-	// We're already showing a prompt, don't re-process it.
-	if (State.fileDropPrompt !== null)
-		return false;
-
-	const files = e.dataTransfer.files;
-	if (files.length > 0) {
-		const handler = State.getDropHandler(files[0].path);
-		if (handler) {
-			// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
-			let count = 0;
-			for (const file of files) {
-				const check = file.name.toLowerCase();
-				if (handler.ext.some(ext => check.endsWith(ext)))
-					count++;
-			}
-
-			if (count > 0)
-				State.fileDropPrompt = handler.prompt(count);
-		} else {
-			State.fileDropPrompt = 'That file cannot be converted.';
-		}
+	// Set-up default export directory if none configured.
+	if (State.config.exportDirectory === '') {
+		State.config.exportDirectory = path.join(os.homedir(), 'wow.export');
+		Log.write('No export directory set, setting to %s', State.config.exportDirectory);
 	}
 
-	return false;
-};
+	// Set-up proper drag/drop handlers.
+	let dropStack = 0;
+	window.ondragenter = e => {
+		e.preventDefault();
 
-window.ondrop = e => {
-	e.preventDefault();
-	State.fileDropPrompt = null;
+		// Converting local files while busy shouldn't end badly, but it seems
+		// weird to let people do this on loading screens.
+		if (State.isBusy)
+			return false;
 
-	const files = e.dataTransfer.files;
-	if (files.length > 0) {
-		const handler = State.getDropHandler(files[0].path);
-		if (handler) {
-			// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
-			const include = [];
-			for (const file of files) {
-				const check = file.name.toLowerCase();
-				if (handler.ext.some(ext => check.endsWith(ext)))
-					include.push(file.path);
+		dropStack++;
+
+		// We're already showing a prompt, don't re-process it.
+		if (State.fileDropPrompt !== null)
+			return false;
+
+		const files = e.dataTransfer.files;
+		if (files.length > 0) {
+			const handler = State.getDropHandler(files[0].path);
+			if (handler) {
+				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
+				let count = 0;
+				for (const file of files) {
+					const check = file.name.toLowerCase();
+					if (handler.ext.some(ext => check.endsWith(ext)))
+						count++;
+				}
+
+				if (count > 0)
+					State.fileDropPrompt = handler.prompt(count);
+			} else {
+				State.fileDropPrompt = 'That file cannot be converted.';
 			}
-
-			if (include.length > 0)
-				handler.process(include);
 		}
-	}
-	return false;
-};
 
-window.ondragleave = e => {
-	e.preventDefault();
+		return false;
+	};
 
-	// Window drag events trigger for all elements. Ensure that there is currently
-	// nothing being dragged once the dropStack is empty.
-	dropStack--;
-	if (dropStack === 0)
+	window.ondrop = e => {
+		e.preventDefault();
 		State.fileDropPrompt = null;
-};
 
-// Load cachesize, a file used to track the overall size of the cache directory
-// without having to calculate the real size before showing to users. Fast and reliable.
-fs.readFile(Constants.CACHE.SIZE, 'utf8').then(data => {
-	State.cacheSize = Number(data) || 0;
-}).catch(() => {
-	// File doesn't exist yet, don't error.
-}).finally(() => {
-	let updateTimer: ReturnType<typeof setTimeout>;
+		const files = e.dataTransfer.files;
+		if (files.length > 0) {
+			const handler = State.getDropHandler(files[0].path);
+			if (handler) {
+				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
+				const include = [];
+				for (const file of files) {
+					const check = file.name.toLowerCase();
+					if (handler.ext.some(ext => check.endsWith(ext)))
+						include.push(file.path);
+				}
 
-	// Create a watcher programmatically *after* assigning the initial value
-	// to prevent a needless file write by triggering itself during init.
-	State.$watch('cacheSize', function(nv) {
-		// Clear any existing timer running.
-		clearTimeout(updateTimer);
-
-		// We buffer this call by SIZE_UPDATE_DELAY so that we're not writing
-		// to the file constantly during heavy cache usage. Postponing until
-		// next tick would not help due to async and potential IO/net delay.
-		updateTimer = setTimeout(() => {
-			fs.writeFile(Constants.CACHE.SIZE, nv.toString(), 'utf8');
-		}, Constants.CACHE.SIZE_UPDATE_DELAY);
-	});
-});
-
-// Load/update BLTE decryption keys.
-TactKeys.load();
-
-// Check for updates (without blocking).
-if (!(process.env.NODE_ENV === 'development')) {
-	Updater.checkForUpdates().then(updateAvailable => {
-		if (updateAvailable) {
-			// Update is available, prompt to update. If user declines,
-			// begin checking the local Blender add-on version.
-			State.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-				'Update Now': () => Updater.applyUpdate(),
-				'Maybe Later': () => Blender.checkLocalVersion()
-			}, -1, false);
-		} else {
-			// No update available, start checking Blender add-on.
-			Blender.checkLocalVersion();
-		}
-	});
-} else {
-	// Debug mode, go straight to Blender add-on check.
-	Blender.checkLocalVersion();
-}
-
-// Load the changelog when the user opens the screen.
-Events.on('screen-changelog', () => {
-	setImmediate(async () => {
-		const element = document.getElementById('changelog-text');
-
-		if (!(process.env.NODE_ENV === 'development')) {
-			try {
-				const text = await fs.readFile('./src/CHANGELOG.md', 'utf8');
-				element.textContent = text;
-			} catch (e) {
-				element.textContent = 'Error loading changelog';
+				if (include.length > 0)
+					handler.process(include);
 			}
-		} else {
-			element.textContent = 'Cannot load changelog in DEBUG mode';
 		}
-	});
-});
+		return false;
+	};
 
-// Set source select as the currently active interface screen.
-State.setScreen('source-select');
+	window.ondragleave = e => {
+		e.preventDefault();
+
+		// Window drag events trigger for all elements. Ensure that there is currently
+		// nothing being dragged once the dropStack is empty.
+		dropStack--;
+		if (dropStack === 0)
+			State.fileDropPrompt = null;
+	};
+
+	// Load cachesize, a file used to track the overall size of the cache directory
+	// without having to calculate the real size before showing to users. Fast and reliable.
+	fs.readFile(Constants.CACHE.SIZE, 'utf8').then(data => {
+		State.cacheSize = Number(data) || 0;
+	}).catch(() => {
+		// File doesn't exist yet, don't error.
+	}).finally(() => {
+		let updateTimer: ReturnType<typeof setTimeout>;
+
+		// Create a watcher programmatically *after* assigning the initial value
+		// to prevent a needless file write by triggering itself during init.
+		State.$watch('cacheSize', function(nv) {
+			// Clear any existing timer running.
+			clearTimeout(updateTimer);
+
+			// We buffer this call by SIZE_UPDATE_DELAY so that we're not writing
+			// to the file constantly during heavy cache usage. Postponing until
+			// next tick would not help due to async and potential IO/net delay.
+			updateTimer = setTimeout(() => {
+				fs.writeFile(Constants.CACHE.SIZE, nv.toString(), 'utf8');
+			}, Constants.CACHE.SIZE_UPDATE_DELAY);
+		});
+	});
+
+	// Load/update BLTE decryption keys.
+	TactKeys.load();
+
+	// Check for updates (without blocking).
+	if (!(process.env.NODE_ENV === 'development')) {
+		Updater.checkForUpdates().then(updateAvailable => {
+			if (updateAvailable) {
+				// Update is available, prompt to update. If user declines,
+				// begin checking the local Blender add-on version.
+				State.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+					'Update Now': () => Updater.applyUpdate(),
+					'Maybe Later': () => Blender.checkLocalVersion()
+				}, -1, false);
+			} else {
+				// No update available, start checking Blender add-on.
+				Blender.checkLocalVersion();
+			}
+		});
+	} else {
+		// Debug mode, go straight to Blender add-on check.
+		Blender.checkLocalVersion();
+	}
+
+	// Load the changelog when the user opens the screen.
+	Events.on('screen-changelog', () => {
+		setImmediate(async () => {
+			const element = document.getElementById('changelog-text');
+
+			if (!(process.env.NODE_ENV === 'development')) {
+				try {
+					const text = await fs.readFile('./src/CHANGELOG.md', 'utf8');
+					element.textContent = text;
+				} catch (e) {
+					element.textContent = 'Error loading changelog';
+				}
+			} else {
+				element.textContent = 'Cannot load changelog in DEBUG mode';
+			}
+		});
+	});
+
+	// Set source select as the currently active interface screen.
+	State.setScreen('source-select');
+})();
