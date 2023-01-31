@@ -1,26 +1,37 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../../core');
-const log = require('../../log');
 
-const BLPFile = require('../../casc/blp');
-const Texture = require('../Texture');
-const WMOLoader = require('../loaders/WMOLoader');
-const M2Renderer = require('./M2Renderer');
-const listfile = require('../../casc/listfile');
-const textureRibbon = require('../../ui/texture-ribbon');
+import BufferWrapper from '../../buffer';
+import WMOLoader from '../loaders/WMOLoader';
+import State from '../../state';
+import util from 'node:util';
+import Log from '../../log';
+import M2Renderer from './M2Renderer';
+import Texture from '../Texture';
+import Listfile from '../../casc/listfile';
+import BLPImage from '../../casc/blp';
+import textureRibbon from '../../ui/texture-ribbon';
+
+import * as THREE from 'three';
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
-class WMORenderer {
+export default class WMORenderer {
+	wmo: WMOLoader;
+	data: BufferWrapper;
+	fileID: number;
+	meshGroup: THREE.Group;
+	renderGroup: THREE.Group;
+	syncID: number;
+	m2Renderers: Map<number, M2Renderer> = new Map();
+
 	/**
 	 * Construct a new WMORenderer instance.
-	 * @param {BufferWrapper} data
-	 * @param {string|number} fileID
-	 * @param {THREE.Group} renderGroup
+	 * @param data
+	 * @param fileID
+	 * @param renderGroup
 	 */
-	constructor(data, fileID, renderGroup) {
+	constructor(data: BufferWrapper, fileID: number, renderGroup: THREE.Group) {
 		this.data = data;
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
@@ -36,7 +47,7 @@ class WMORenderer {
 		// Parse the WMO data.
 		const wmo = this.wmo = new WMOLoader(this.data, this.fileID, true);
 		await wmo.load();
-		await this.loadTextures();
+		this.loadTextures();
 
 		this.meshGroup = new THREE.Group();
 		this.groupArray = [];
@@ -74,12 +85,11 @@ class WMORenderer {
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
 		// Set-up reactive controls.
-		const view = core.view;
-		view.modelViewerWMOGroups = this.groupArray;
-		view.modelViewerWMOSets = this.setArray;
-		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
-		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
-		this.wireframeWatcher = view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+		State.modelViewerWMOGroups = this.groupArray;
+		State.modelViewerWMOSets = this.setArray;
+		this.groupWatcher = State.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
+		this.setWatcher = State.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = State.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
@@ -121,7 +131,7 @@ class WMORenderer {
 				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
-					const blp = new BLPFile(data);
+					const blp = new BLPImage(data);
 					const blpURI = blp.getDataURL(0b0111);
 
 					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
@@ -138,7 +148,7 @@ class WMORenderer {
 					this.textures.push(tex);
 					materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 				}).catch(e => {
-					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
+					Log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
@@ -161,19 +171,19 @@ class WMORenderer {
 
 	/**
 	 * Load an auxiliary texture onto the texture ribbon.
-	 * @param {number|string} textureID
-	 * @param {WMOLoader} wmo
+	 * @param textureID
+	 * @param wmo
 	 */
-	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
+	async loadAuxiliaryTextureForRibbon(textureID: number | string, wmo: WMOLoader) {
 		if (wmo.textureNames)
-			textureID = listfile.getByFilename(textureID) || 0;
+			textureID = Listfile.getByFilename(textureID) || 0;
 
 		if (textureID > 0) {
 			const ribbonSlot = textureRibbon.addSlot();
 			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
 
-			const data = await core.view.casc.getFile(textureID);
-			const blp = new BLPFile(data);
+			const data = await State.casc.getFile(textureID);
+			const blp = new BLPImage(data);
 
 			textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
 		}
@@ -181,25 +191,25 @@ class WMORenderer {
 
 	/**
 	 * Load a doodad set for this WMO.
-	 * @param {number} index
+	 * @param index
 	 */
-	async loadDoodadSet(index) {
+	async loadDoodadSet(index: number) {
 		const wmo = this.wmo;
 		const set = wmo.doodadSets[index];
-		const casc = core.view.casc;
+		const casc = State.casc;
 
 		if (!set)
-			throw new Error('Invalid doodad set requested: %s', index);
+			throw new Error(util.format('Invalid doodad set requested: %s', index));
 
-		log.write('Loading doodad set: %s', set.name);
+		Log.write('Loading doodad set: %s', set.name);
 
 		const renderGroup = new THREE.Group();
 
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
 
-		core.view.isBusy++;
-		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
+		State.isBusy++;
+		State.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
 		for (let i = 0; i < count; i++) {
 			const doodad = wmo.doodads[firstIndex + i];
@@ -208,7 +218,7 @@ class WMORenderer {
 			if (wmo.fileDataIDs)
 				fileDataID = wmo.fileDataIDs[doodad.offset];
 			else
-				fileDataID = listfile.getByFilename(wmo.doodadNames[doodad.offset]) || 0;
+				fileDataID = Listfile.getByFilename(wmo.doodadNames[doodad.offset]) || 0;
 
 			if (fileDataID > 0) {
 				try {
@@ -247,8 +257,8 @@ class WMORenderer {
 		this.renderGroup.add(renderGroup);
 		this.doodadSets[index] = renderGroup;
 
-		core.hideToast();
-		core.view.isBusy--;
+		State.hideToast();
+		State.isBusy--;
 	}
 
 	/**
@@ -267,7 +277,7 @@ class WMORenderer {
 	 * Update the wireframe state for all active materials.
 	 */
 	updateWireframe() {
-		const renderWireframe = core.view.config.modelViewerWireframe;
+		const renderWireframe = State.config.modelViewerWireframe;
 		const materials = this.getRenderMaterials(this.renderGroup, new Set());
 
 		for (const material of materials) {
@@ -278,11 +288,11 @@ class WMORenderer {
 
 	/**
 	 * Recursively collect render materials.
-	 * @param {object} root
-	 * @param {Set} out
+	 * @param root
+	 * @param out
 	 * @returns
 	 */
-	getRenderMaterials(root, out) {
+	getRenderMaterials(root: object, out: Set<>) {
 		if (root.children) {
 			for (const child of root.children)
 				this.getRenderMaterials(child, out);
@@ -366,5 +376,3 @@ class WMORenderer {
 			tex.dispose();
 	}
 }
-
-module.exports = WMORenderer;

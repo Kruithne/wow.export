@@ -15,7 +15,7 @@ import GeosetEntry from '../GeosetEntry';
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
-class M2Renderer {
+export default class M2Renderer {
 	/**
 	 * Construct a new M2Renderer instance.
 	 * @param {BufferWrapper} data

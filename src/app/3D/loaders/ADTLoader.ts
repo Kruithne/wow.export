@@ -134,7 +134,7 @@ type ADTTextureChunk = {
 	alphaLayers: Array<Array<number>>
 }
 
-class ADTLoader {
+export default class ADTLoader {
 	data: BufferWrapper;
 	chunkIndex: number;
 	chunks: Array<ADTRootChunk>;

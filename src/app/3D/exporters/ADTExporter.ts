@@ -5,6 +5,7 @@ import util from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import Generics from '../../generics';
 import Constants from '../../constants';
 import Listfile from '../../casc/listfile';
 import Log from '../../log';
@@ -179,7 +180,7 @@ async function compileShaders(useOld = false) {
 	gl.useProgram(glShaderProg);
 }
 
-class ADTExporter {
+export default class ADTExporter {
 	mapID: number;
 	mapDir: string;
 	tileX: number;
@@ -911,11 +912,11 @@ class ADTExporter {
 							}
 						}
 
-						let modelPath;
+						let modelPath: string;
 						if (config.enableSharedChildren)
-							modelPath = ExportHelper.getExportPath(fileName);
+							modelPath = ExportHelper.getExportPath(fileName as string);
 						else
-							modelPath = path.join(dir, path.basename(fileName));
+							modelPath = path.join(dir, path.basename(fileName as string));
 
 						try {
 							if (!objectCache.has(fileDataID)) {
@@ -1194,5 +1195,3 @@ class ADTExporter {
 		wdtCache.clear();
 	}
 }
-
-module.exports = ADTExporter;
