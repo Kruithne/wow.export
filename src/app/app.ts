@@ -22,6 +22,14 @@ import TactKeys from './casc/tact-keys';
 import State from './state';
 import Events from './events';
 
+// The `File` class does not implement the `path` property in the official File API.
+// However, nw.js adds this property to get the native path of a file.
+// See: https://developer.mozilla.org/en-US/docs/Web/API/File
+// See: https://docs.nwjs.io/en/latest/References/Changes%20to%20DOM/#fileitempath
+interface NWFile {
+	path: string;
+}
+
 (async () => {
 	// Prevent files from being dropped onto the window. These are over-written
 	// later but we disable here to prevent them working if init fails.
@@ -80,7 +88,7 @@ import Events from './events';
 
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;
-	window.ondragenter = e => {
+	window.ondragenter = (e: DragEvent) => {
 		e.preventDefault();
 
 		// Converting local files while busy shouldn't end badly, but it seems
@@ -96,13 +104,15 @@ import Events from './events';
 
 		const files = e.dataTransfer.files;
 		if (files.length > 0) {
-			const handler = State.getDropHandler(files[0].path);
+			// See comments on NWFile interface above.
+			const firstFilePath: string = (files[0] as unknown as NWFile).path;
+			const handler = State.getDropHandler(firstFilePath);
+
 			if (handler) {
-				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 				let count = 0;
 				for (const file of files) {
 					const check = file.name.toLowerCase();
-					if (handler.ext.some(ext => check.endsWith(ext)))
+					if (handler.ext.some((ext: string) => check.endsWith(ext)))
 						count++;
 				}
 
@@ -116,20 +126,25 @@ import Events from './events';
 		return false;
 	};
 
-	window.ondrop = e => {
+	window.ondrop = (e: DragEvent) => {
 		e.preventDefault();
 		State.fileDropPrompt = null;
 
 		const files = e.dataTransfer.files;
 		if (files.length > 0) {
-			const handler = State.getDropHandler(files[0].path);
+			// See comments on NWFile interface above.
+			const firstFilePath = (files[0] as unknown as NWFile).path;
+			const handler = State.getDropHandler(firstFilePath);
+
 			if (handler) {
 				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
 				const include = [];
 				for (const file of files) {
 					const check = file.name.toLowerCase();
-					if (handler.ext.some(ext => check.endsWith(ext)))
-						include.push(file.path);
+					if (handler.ext.some((ext: string) => check.endsWith(ext))) {
+						const filePath = (file as unknown as NWFile).path;
+						include.push(filePath);
+					}
 				}
 
 				if (include.length > 0)
@@ -139,7 +154,7 @@ import Events from './events';
 		return false;
 	};
 
-	window.ondragleave = e => {
+	window.ondragleave = (e: DragEvent) => {
 		e.preventDefault();
 
 		// Window drag events trigger for all elements. Ensure that there is currently
@@ -156,7 +171,7 @@ import Events from './events';
 	}).catch(() => {
 		// File doesn't exist yet, don't error.
 	}).finally(() => {
-		let updateTimer: ReturnType<typeof setTimeout>;
+		let updateTimer: NodeJS.Timeout;
 
 		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
