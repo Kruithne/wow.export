@@ -192,7 +192,7 @@ interface NWFile {
 	TactKeys.load();
 
 	// Check for updates (without blocking).
-	if (!(process.env.NODE_ENV === 'development')) {
+	if (process.env.NODE_ENV !== 'development') {
 		Updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
 				// Update is available, prompt to update. If user declines,
@@ -216,7 +216,7 @@ interface NWFile {
 		setImmediate(async () => {
 			const element = document.getElementById('changelog-text');
 
-			if (!(process.env.NODE_ENV === 'development')) {
+			if (process.env.NODE_ENV !== 'development') {
 				try {
 					const text = await fs.readFile('./src/CHANGELOG.md', 'utf8');
 					element.textContent = text;
