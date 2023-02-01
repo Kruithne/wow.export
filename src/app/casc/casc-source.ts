@@ -5,11 +5,11 @@
  */
 import BLTEReader from './blte-reader';
 
-import * as listfile from './listfile';
-import * as log from '../log';
+import Listfile, { ListfileFilter } from './listfile';
+import Log from '../log';
 import State from '../state';
 import Events from '../events';
-import constants from '../constants';
+import Constants from '../constants';
 import { LocaleFlags } from './locale-flags';
 import { ContentFlags } from './content-flags';
 import InstallManifest from  './install-manifest';
@@ -50,7 +50,7 @@ export default class CASC {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
-				log.write('Invalid locale set in configuration, defaulting to enUS');
+				Log.write('Invalid locale set in configuration, defaulting to enUS');
 				this.locale = LocaleFlags.enUS;
 			}
 		}, { immediate: true });
@@ -151,7 +151,7 @@ export default class CASC {
 	 * @param {boolean} [forceFallback=false]
 	 */
 	async getFileByName(fileName: string, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
-		const fileDataID = listfile.getByFilename(fileName);
+		const fileDataID = Listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
 
@@ -164,7 +164,7 @@ export default class CASC {
 	 */
 	async loadListfile(buildKey: string) {
 		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(buildKey, this.cache, this.rootEntries);
+		const entries = await Listfile.loadListfile(buildKey, this.cache, this.rootEntries);
 		if (entries === 0)
 			throw new Error('No listfile entries found');
 	}
@@ -173,25 +173,25 @@ export default class CASC {
 	 * Returns an array of model formats to display.
 	 * @returns
 	 */
-	getModelFormats(): Array<any> {
+	getModelFormats(): Array<ListfileFilter> {
 		// Filters for the model viewer depending on user settings.
-		const modelExt: Array<any> = []; // NIT: We push both a string and [string, RegExp] into it here
+		const modelExt = new Array<ListfileFilter>();
 		if (State.config.modelsShowM2)
 			modelExt.push('.m2');
 
 		if (State.config.modelsShowWMO)
-			modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
+			modelExt.push({ ext: '.wmo', pattern: Constants.LISTFILE_MODEL_FILTER });
 
 		return modelExt;
 	}
 
 	updateListfileFilters() {
-		State.listfileTextures = listfile.getFilenamesByExtension('.blp');
-		State.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
-		State.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		State.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
-		State.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats());
-		State.listfileDB2s = listfile.getFilenamesByExtension('.db2');
+		State.listfileTextures = Listfile.getFilenamesByExtension('.blp');
+		State.listfileSounds = Listfile.getFilenamesByExtension('.ogg', '.mp3', '.unk_sound');
+		State.listfileVideos = Listfile.getFilenamesByExtension('.avi');
+		State.listfileText = Listfile.getFilenamesByExtension('.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd');
+		State.listfileModels = Listfile.getFilenamesByExtension(...this.getModelFormats());
+		State.listfileDB2s = Listfile.getFilenamesByExtension('.db2');
 	}
 
 	/**
@@ -221,7 +221,7 @@ export default class CASC {
 		// unknown entries to the listfile.
 		if (State.config.enableUnknownFiles) {
 			this.progress.step('Checking data tables for unknown files');
-			await listfile.loadUnknowns();
+			await Listfile.loadUnknowns();
 		} else {
 			await this.progress.step();
 		}
@@ -235,7 +235,7 @@ export default class CASC {
 			await creatureDisplayInfo.parse();
 
 			if (!creatureDisplayInfo.schema.has('ModelID') || !creatureDisplayInfo.schema.has('TextureVariationFileDataID')) {
-				log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
+				Log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
 				State.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false
@@ -247,7 +247,7 @@ export default class CASC {
 			await creatureModelData.parse();
 
 			if (!creatureModelData.schema.has('FileDataID') || !creatureModelData.schema.has('CreatureGeosetDataID')) {
-				log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
+				Log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
 				State.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false

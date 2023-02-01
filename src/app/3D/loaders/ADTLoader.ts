@@ -257,7 +257,7 @@ const ADTChunkHandlers = {
 			numMCSE: data.readUInt32(),
 			ofsMCLQ: data.readUInt32(),
 			sizeMCLQ: data.readUInt32(),
-			position: data.readFloat32Array(3),
+			position: data.readFloatArray(3),
 			ofsMCCV: data.readUInt32(),
 			ofsMCLW: data.readUInt32(),
 			unk2: data.readUInt32()
@@ -369,7 +369,7 @@ const ADTChunkHandlers = {
 
 					// Height
 					if (mtp === 5 || mtp === 8 || mtp === 9)
-						vertexData.height = data.readFloat32Array(vertexCount);
+						vertexData.height = data.readFloatArray(vertexCount);
 
 					// Texture Coordinates (UV)
 					if (mtp === 8 || mtp === 9) {
@@ -413,7 +413,7 @@ const ADTChunkHandlers = {
 const RootMCNKChunkHandlers = {
 	// MCVT (vertices)
 	0x4D435654: function(this: ADTRootChunk, data: BufferWrapper) {
-		this.vertices = data.readFloat32Array(145);
+		this.vertices = data.readFloatArray(145);
 	},
 
 	// MCCV (Vertex Shading)
@@ -641,8 +641,8 @@ const ADTObjChunkHandlers = {
 			entries[i] = {
 				mmidEntry: data.readUInt32(),
 				uniqueId: data.readUInt32(),
-				position: data.readFloat32Array(3),
-				rotation: data.readFloat32Array(3),
+				position: data.readFloatArray(3),
+				rotation: data.readFloatArray(3),
 				scale: data.readUInt16(),
 				flags: data.readUInt16()
 			};
@@ -658,10 +658,10 @@ const ADTObjChunkHandlers = {
 			entries[i] = {
 				mwidEntry: data.readUInt32(),
 				uniqueId: data.readUInt32(),
-				position: data.readFloat32Array(3),
-				rotation: data.readFloat32Array(3),
-				lowerBounds: data.readFloat32Array(3),
-				upperBounds: data.readFloat32Array(3),
+				position: data.readFloatArray(3),
+				rotation: data.readFloatArray(3),
+				lowerBounds: data.readFloatArray(3),
+				upperBounds: data.readFloatArray(3),
 				flags: data.readUInt16(),
 				doodadSet: data.readUInt16(),
 				nameSet: data.readUInt16(),

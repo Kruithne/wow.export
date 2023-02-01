@@ -2,10 +2,43 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
 import util from 'node:util';
-import * as listfile from '../casc/listfile';
+import Listfile from '../casc/listfile';
 import State from '../state';
+import BufferWrapper from '../buffer';
 
 const MAGIC_SKIN = 0x4E494B53;
+
+type SkinSubMesh = {
+	submeshID: number,
+	level: number,
+	vertexStart: number,
+	vertexCount: number,
+	triangleStart: number,
+	triangleCount: number,
+	boneCount: number,
+	boneStart: number,
+	boneInfluences: number,
+	centerBoneIndex: number,
+	centerPosition: Array<number>,
+	sortCenterPosition: Array<number>,
+	sortRadius: number
+};
+
+type SkinTextureUnit = {
+	flags: number,
+	priority: number,
+	shaderID: number,
+	skinSectionIndex: number,
+	geosetIndex: number,
+	colorIndex: number,
+	materialIndex: number,
+	materialLayer: number,
+	textureCount: number,
+	textureComboIndex: number,
+	textureCoordComboIndex: number,
+	textureWeightComboIndex: number,
+	textureTransformComboIndex: number,
+};
 
 export default class Skin {
 	fileDataID: number;
@@ -15,17 +48,17 @@ export default class Skin {
 	indices: Array<number>;
 	triangles: Array<number>;
 	properties: Array<number>;
-	subMeshes: Array<any>; // TODO: Make custom type
-	textureUnits: Array<any>; // TODO: Make custom type
+	subMeshes: Array<SkinSubMesh>;
+	textureUnits: Array<SkinTextureUnit>;
 
 	constructor(fileDataID: number) {
 		this.fileDataID = fileDataID;
-		this.fileName = listfile.getByIDOrUnknown(fileDataID, '.skin');
+		this.fileName = Listfile.getByIDOrUnknown(fileDataID, '.skin');
 	}
 
 	async load(): Promise<void> {
 		try {
-			const data = await State.casc.getFile(this.fileDataID);
+			const data: BufferWrapper = await State.casc.getFile(this.fileDataID);
 
 			const magic = data.readUInt32();
 			if (magic !== MAGIC_SKIN)
@@ -45,15 +78,15 @@ export default class Skin {
 
 			// Read indices.
 			data.seek(indicesOfs);
-			this.indices = data.readUInt16(indicesCount);
+			this.indices = data.readUInt16Array(indicesCount);
 
 			// Read triangles.
 			data.seek(trianglesOfs);
-			this.triangles = data.readUInt16(trianglesCount);
+			this.triangles = data.readUInt16Array(trianglesCount);
 
 			// Read properties.
 			data.seek(propertiesOfs);
-			this.properties = data.readUInt8(propertiesCount);
+			this.properties = data.readUInt8Array(propertiesCount);
 
 			// Read subMeshes.
 			data.seek(subMeshesOfs);
@@ -70,8 +103,8 @@ export default class Skin {
 					boneStart: data.readUInt16(),
 					boneInfluences: data.readUInt16(),
 					centerBoneIndex: data.readUInt16(),
-					centerPosition: data.readFloat(3),
-					sortCenterPosition: data.readFloat(3),
+					centerPosition: data.readFloatArray(3),
+					sortCenterPosition: data.readFloatArray(3),
 					sortRadius: data.readFloat()
 				};
 

@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import * as generics from '../../generics';
+import { fileExists, createDirectory } from '../../generics';
 import State from '../../state';
 import FileWriter from '../../file-writer';
 
@@ -48,11 +48,11 @@ export default class MTLWriter {
 			return;
 
 		// If overwriting is disabled, check file existence.
-		if (!overwrite && await generics.fileExists(this.out))
+		if (!overwrite && await fileExists(this.out))
 			return;
 
 		const mtlDir = path.dirname(this.out);
-		await generics.createDirectory(mtlDir);
+		await createDirectory(mtlDir);
 
 		const useAbsolute = State.config.enableAbsoluteMTLPaths;
 		const writer = new FileWriter(this.out);

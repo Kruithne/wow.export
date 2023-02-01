@@ -89,7 +89,10 @@ export default class BLPImage {
 		}
 
 		// Read colour palette..
-		this.palette = this.encoding === 1 ? this.data.readBuffer(256 * 4, false) as Buffer : Buffer.alloc(0); // NIT: No idea how this is supposed to be a Array<number> and buffer
+		if (this.encoding === 1)
+			this.palette = this.data.readBuffer(256 * 4);
+		else
+			this.palette = Buffer.alloc(0);
 	}
 
 	/**
@@ -194,7 +197,7 @@ export default class BLPImage {
 	 * @param mask
 	 * @returns Buffer
 	 */
-	toBuffer(mipmap = 0, mask = 0b1111): BufferWrapper | undefined {
+	toBuffer(mipmap = 0, mask = 0b1111): BufferWrapper {
 		this._prepare(mipmap);
 
 		switch (this.encoding) {
@@ -202,6 +205,8 @@ export default class BLPImage {
 			case 2: return this._getCompressed(null, mask);
 			case 3: return this._marshalBGRA(null, mask);
 		}
+
+		throw new Error('Invalid BLP encoding');
 	}
 
 	/**
@@ -400,22 +405,16 @@ export default class BLPImage {
 				canvasData[ofs + 3] = (mask & 0b1000) ? this._getAlpha(i) : 255;
 			}
 		} else {
-			const buf = BufferWrapper.alloc(this.scaledLength * 4);
+			const buf = new BufferWrapper(Buffer.allocUnsafe(this.scaledLength * 4));
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const colour = this.palette[this.rawData[i]];
-				// NIT: Original code below, used to feed a Array<number> to writeUInt8 which I'm not sure was supported. Made it 4x separate calls for now.
-				/*
-				buf.writeUInt8([
-					(mask & 0b1) ? colour[2] : 0,
-					(mask & 0b10) ? colour[1] : 0,
-					(mask & 0b100) ? colour[0] : 0,
-					(mask & 0b1000) ? this._getAlpha(i) : 255
-				]);
-				*/
-				buf.writeUInt8((mask & 0b1) ? colour[2] : 0);
-				buf.writeUInt8((mask & 0b10) ? colour[1] : 0);
-				buf.writeUInt8((mask & 0b100) ? colour[0] : 0);
-				buf.writeUInt8((mask & 0b1000) ? this._getAlpha(i) : 255);
+
+				buf.writeUInt32(
+					(mask & 0b1 ? colour[2] : 0) << 24 |
+					(mask & 0b10 ? colour[1] : 0) << 16 |
+					(mask & 0b100 ? colour[0] : 0) << 8 |
+					(mask & 0b1000 ? this._getAlpha(i) : 255)
+				);
 			}
 			buf.seek(0);
 			return buf;
@@ -441,7 +440,7 @@ export default class BLPImage {
 				canvasData[ofs + 3] = (mask & 0b1000) ? data[ofs + 3] : 255;
 			}
 		} else {
-			const buf = BufferWrapper.alloc(data.length);
+			const buf = new BufferWrapper(Buffer.allocUnsafe(data.length));
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				const ofs = i * 4;
 				// NIT: Original code below, used to feed a Array<number> to writeUInt8 which I'm not sure was supported. Made it 4x separate calls for now.

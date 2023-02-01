@@ -1,8 +1,10 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import * as log from '../../log';
+import Log from '../../log';
 import WDCReader from '../WDCReader';
+
+import ModelFileData from '../types/ModelFileData';
 
 const modelResIDToFileDataID: Map<number, Array<number>> = new Map();
 const fileDataIDs: Set<number> = new Set();
@@ -11,12 +13,12 @@ const fileDataIDs: Set<number> = new Set();
  * Initialize model file data from ModelFileData.db2
  */
 export async function initializeModelFileData(): Promise<void> {
-	log.write('Loading model mapping...');
+	Log.write('Loading model mapping...');
 	const modelFileData = new WDCReader('DBFilesClient/ModelFileData.db2');
 	await modelFileData.parse();
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
-	for (const [modelFileDataID, modelFileDataRow] of modelFileData.getAllRows()) {
+	for (const [modelFileDataID, modelFileDataRow] of modelFileData.getAllRows() as Map<number, ModelFileData>) {
 		// Keep a list of all FIDs for listfile unknowns.
 		fileDataIDs.add(modelFileDataID);
 
@@ -26,7 +28,7 @@ export async function initializeModelFileData(): Promise<void> {
 		else
 			modelResIDToFileDataID.set(modelResourcesID, [modelFileDataID]);
 	}
-	log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
+	Log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
 }
 
 /**

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import BufferWrapper from '../buffer';
-import * as log from '../log';
+import Log from '../log';
 
 /**
  * Reader for DBCache.bin (hotfix) files
@@ -64,7 +64,7 @@ export default class HTFXReader {
 				data.readUInt8Array(dataSize as number); // TODO: Save/expose record data
 
 			if (!this.tableHashMap.has(tableHash))
-				log.write('Found hotfix for UNKNOWN TABLE %s, ID %s, PushID %s, Status %s', tableHash, recordID.toString(), pushID, status);
+				Log.write('Found hotfix for UNKNOWN TABLE %s, ID %s, PushID %s, Status %s', tableHash, recordID.toString(), pushID, status);
 		}
 	}
 }

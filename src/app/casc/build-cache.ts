@@ -1,34 +1,38 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import fsp from 'node:fs/promises';
-import * as log from '../log';
-import constants from '../constants';
-import * as generics from '../generics';
+import fs from 'node:fs';
+import Log from '../log';
+import Constants from '../constants';
+import { createDirectory, deleteDirectory, readJSON } from '../generics';
 import State from '../state';
 import Events from '../events';
 import BufferWrapper from '../buffer';
+
+type BuildMeta = {
+	lastAccess?: number;
+}
 
 let cacheIntegrity: { [x: string]: string; };
 
 /**
  * Returns a promise that resolves once cache integrity is available.
  */
-const cacheIntegrityReady = async () => {
+async function cacheIntegrityReady() {
 	return new Promise(res => {
 		// Cache integrity already available.
 		if (cacheIntegrity)
 			return res;
 
 		// Wait for initialization event to fire.
-		log.write('Cache integrity is not ready, waiting!');
+		Log.write('Cache integrity is not ready, waiting!');
 		Events.once('cache-integrity-ready', res);
 	});
-};
+}
 
 export default class BuildCache {
 	key: string;
-	meta: any;
+	meta: BuildMeta;
 	cacheDir: string;
 	manifestPath: string;
 	/**
@@ -39,8 +43,8 @@ export default class BuildCache {
 		this.key = key;
 		this.meta = {};
 
-		this.cacheDir = path.join(constants.CACHE.DIR_BUILDS, key);
-		this.manifestPath = path.join(this.cacheDir, constants.CACHE.BUILD_MANIFEST);
+		this.cacheDir = path.join(Constants.CACHE.DIR_BUILDS, key);
+		this.manifestPath = path.join(this.cacheDir, Constants.CACHE.BUILD_MANIFEST);
 	}
 
 	/**
@@ -48,14 +52,14 @@ export default class BuildCache {
 	 */
 	async init() {
 		// Create cache directory if needed.
-		await fsp.mkdir(this.cacheDir, { recursive: true });
+		await fs.promises.mkdir(this.cacheDir, { recursive: true });
 
 		// Load manifest values.
 		try {
-			const manifest = JSON.parse(await fsp.readFile(this.manifestPath, 'utf8'));
+			const manifest = JSON.parse(await fs.promises.readFile(this.manifestPath, 'utf8'));
 			Object.assign(this.meta, manifest);
 		} catch (e) {
-			log.write('No cache manifest found for %s', this.key);
+			Log.write('No cache manifest found for %s', this.key);
 		}
 
 		// Save access update without blocking.
@@ -81,16 +85,16 @@ export default class BuildCache {
 
 			// File integrity cannot be verified, reject.
 			if (typeof integrityHash !== 'string') {
-				log.write('Cannot verify integrity of file, rejecting cache (%s)', filePath);
+				Log.write('Cannot verify integrity of file, rejecting cache (%s)', filePath);
 				return null;
 			}
 
-			const data = new BufferWrapper(await fsp.readFile(filePath));
+			const data = new BufferWrapper(await fs.promises.readFile(filePath));
 			const dataHash = data.toHash('sha1', 'hex');
 
 			// Reject cache if hash does not match.
 			if (dataHash !== integrityHash) {
-				log.write('Bad integrity for file %s, rejecting cache (%s != %s)', filePath, dataHash, integrityHash);
+				Log.write('Bad integrity for file %s, rejecting cache (%s != %s)', filePath, dataHash, integrityHash);
 				return null;
 			}
 
@@ -121,7 +125,7 @@ export default class BuildCache {
 
 		const filePath = this.getFilePath(file, dir);
 		if (dir)
-			await generics.createDirectory(path.dirname(filePath));
+			await createDirectory(path.dirname(filePath));
 
 		// Cache integrity is not loaded yet, wait for it.
 		if (!cacheIntegrity)
@@ -131,7 +135,7 @@ export default class BuildCache {
 		const hash = data.toHash('sha1', 'hex');
 		cacheIntegrity[filePath] = hash;
 
-		await fsp.writeFile(filePath, data.buffer);
+		await fs.promises.writeFile(filePath, data.buffer);
 		State.cacheSize += data.length;
 
 		await this.saveCacheIntegrity();
@@ -141,28 +145,28 @@ export default class BuildCache {
 	 * Save the cache integrity to disk.
 	 */
 	async saveCacheIntegrity(): Promise<void> {
-		await fsp.writeFile(constants.CACHE.INTEGRITY_FILE, JSON.stringify(cacheIntegrity), 'utf8');
+		await fs.promises.writeFile(Constants.CACHE.INTEGRITY_FILE, JSON.stringify(cacheIntegrity), 'utf8');
 	}
 
 	/**
 	 * Save the manifest for this build cache.
 	 */
 	async saveManifest(): Promise<void> {
-		await fsp.writeFile(this.manifestPath, JSON.stringify(this.meta), 'utf8');
+		await fs.promises.writeFile(this.manifestPath, JSON.stringify(this.meta), 'utf8');
 	}
 }
 
 // Initialize cache integrity system.
 (async () => {
 	try {
-		const integrity = await generics.readJSON(constants.CACHE.INTEGRITY_FILE, false);
+		const integrity = await readJSON(Constants.CACHE.INTEGRITY_FILE, false);
 		if (integrity === null)
-			throw new Error('File cannot be accessed or contains malformed JSON: ' + constants.CACHE.INTEGRITY_FILE);
+			throw new Error('File cannot be accessed or contains malformed JSON: ' + Constants.CACHE.INTEGRITY_FILE);
 
 		cacheIntegrity = integrity;
 	} catch (e) {
-		log.write('Unable to load cache integrity file; entire cache will be invalidated.');
-		log.write(e.message);
+		Log.write('Unable to load cache integrity file; entire cache will be invalidated.');
+		Log.write(e.message);
 
 		cacheIntegrity = {};
 	}
@@ -175,13 +179,13 @@ Events.on('click-cache-clear', async () => {
 	State.setScreen('config', true);
 	State.isBusy++;
 	State.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
-	log.write('Manual cache purge requested by user! (Cache size: %s)', State.cacheSizeFormatted);
+	Log.write('Manual cache purge requested by user! (Cache size: %s)', State.cacheSizeFormatted);
 
-	await fsp.rm(constants.CACHE.DIR, { recursive: true, force: true });
-	await fsp.mkdir(constants.CACHE.DIR);
+	await fs.promises.rm(Constants.CACHE.DIR, { recursive: true, force: true });
+	await fs.promises.mkdir(Constants.CACHE.DIR);
 
 	State.cacheSize = 0;
-	log.write('Purge complete, awaiting mandatory restart.');
+	Log.write('Purge complete, awaiting mandatory restart.');
 	State.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => State.restartApplication() }, -1, false);
 
 	Events.emit('cache-cleared');
@@ -197,12 +201,12 @@ Events.once('casc-source-changed', async () => {
 	// If user sets cacheExpiry to 0 in the configuration, we completely
 	// skip the clean-up process. This is generally considered a bad idea.
 	if (cacheExpire === 0) {
-		log.write('WARNING: Cache clean-up has been skipped due to cacheExpiry being %d', cacheExpire);
+		Log.write('WARNING: Cache clean-up has been skipped due to cacheExpiry being %d', cacheExpire);
 		return;
 	}
 
-	log.write('Running clean-up for stale build caches...');
-	const entries = await fsp.readdir(constants.CACHE.DIR_BUILDS, { withFileTypes: true });
+	Log.write('Running clean-up for stale build caches...');
+	const entries = await fs.promises.readdir(Constants.CACHE.DIR_BUILDS, { withFileTypes: true });
 	const ts = Date.now();
 
 	for (const entry of entries) {
@@ -213,11 +217,11 @@ Events.once('casc-source-changed', async () => {
 
 		let deleteEntry = false;
 		let manifestSize = 0;
-		const entryDir = path.join(constants.CACHE.DIR_BUILDS, entry.name);
-		const entryManifest = path.join(entryDir, constants.CACHE.BUILD_MANIFEST);
+		const entryDir = path.join(Constants.CACHE.DIR_BUILDS, entry.name);
+		const entryManifest = path.join(entryDir, Constants.CACHE.BUILD_MANIFEST);
 
 		try {
-			const manifestRaw = await fsp.readFile(entryManifest, 'utf8');
+			const manifestRaw = await fs.promises.readFile(entryManifest, 'utf8');
 			const manifest = JSON.parse(manifestRaw);
 			manifestSize = Buffer.byteLength(manifestRaw, 'utf8');
 
@@ -225,21 +229,21 @@ Events.once('casc-source-changed', async () => {
 				const delta = ts - manifest.lastAccess;
 				if (delta > cacheExpire) {
 					deleteEntry = true;
-					log.write('Build cache %s has expired (%d), marking for deletion.', entry.name, delta);
+					Log.write('Build cache %s has expired (%d), marking for deletion.', entry.name, delta);
 				}
 			} else {
 				// lastFile property missing from manifest?
 				deleteEntry = true;
-				log.write('Unable to read lastAccess from %s, marking for deletion.', entry.name);
+				Log.write('Unable to read lastAccess from %s, marking for deletion.', entry.name);
 			}
 		} catch (e) {
 			// Manifest is missing or malformed.
 			deleteEntry = true;
-			log.write('Unable to read manifest for %s, marking for deletion.', entry.name);
+			Log.write('Unable to read manifest for %s, marking for deletion.', entry.name);
 		}
 
 		if (deleteEntry) {
-			let deleteSize = await generics.deleteDirectory(entryDir);
+			let deleteSize = await deleteDirectory(entryDir);
 
 			// We don't include manifests in the cache size, so we need to make
 			// sure we don't subtract the size of it from our total to maintain accuracy.

@@ -3,12 +3,13 @@
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+
 import State from '../state';
-import * as generics from '../generics';
-import * as log from '../log';
-import constants from '../constants';
+import { readFile } from '../generics';
+import Log from '../log';
+import Constants from '../constants';
 import BufferWrapper from '../buffer';
-import * as listfile from './listfile';
+import Listfile from './listfile';
 
 import * as VersionConfig from './version-config';
 import * as ConfigReader from './config-reader';
@@ -39,7 +40,7 @@ export default class CASCLocal extends CASC {
 		super(false);
 
 		this.dir = dir;
-		this.dataDir = path.join(dir, constants.BUILD.DATA_DIR);
+		this.dataDir = path.join(dir, Constants.BUILD.DATA_DIR);
 		this.storageDir = path.join(this.dataDir, 'data');
 
 		this.localIndexes = new Map();
@@ -49,15 +50,15 @@ export default class CASCLocal extends CASC {
 	 * Initialize local CASC source.
 	 */
 	async init() {
-		log.write('Initializing local CASC installation: %s', this.dir);
+		Log.write('Initializing local CASC installation: %s', this.dir);
 
-		const buildInfo = path.join(this.dir, constants.BUILD.MANIFEST);
+		const buildInfo = path.join(this.dir, Constants.BUILD.MANIFEST);
 		const config = VersionConfig.parse(await fs.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
-		this.builds = config.filter((entry: { Product: string; }) => constants.PRODUCTS.some(e => e.product === entry.Product));
+		this.builds = config.filter((entry: { Product: string; }) => Constants.PRODUCTS.some(e => e.product === entry.Product));
 
-		log.write('%o', this.builds);
+		Log.write('%o', this.builds);
 	}
 
 	/**
@@ -71,7 +72,7 @@ export default class CASCLocal extends CASC {
 	 */
 	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
-			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID) as string);
+			Log.write('Loading local CASC file %d (%s)', fileDataID, Listfile.getByID(fileDataID) as string);
 
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
@@ -85,7 +86,7 @@ export default class CASCLocal extends CASC {
 	getProductList() {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
-			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
+			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version));
 		}
 
@@ -98,7 +99,7 @@ export default class CASCLocal extends CASC {
 	 */
 	async load(buildIndex: number) {
 		this.build = this.builds[buildIndex];
-		log.write('Loading local CASC build: %o', this.build);
+		Log.write('Loading local CASC build: %o', this.build);
 
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
@@ -126,15 +127,15 @@ export default class CASCLocal extends CASC {
 		this.buildConfig = ConfigReader.parse(await fs.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
 		this.cdnConfig = ConfigReader.parse(await fs.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
 
-		log.write('BuildConfig: %o', this.buildConfig);
-		log.write('CDNConfig: %o', this.cdnConfig);
+		Log.write('BuildConfig: %o', this.buildConfig);
+		Log.write('CDNConfig: %o', this.cdnConfig);
 	}
 
 	/**
 	 * Load and parse storage indexes from the local installation.
 	 */
 	async loadIndexes() {
-		log.timeLog();
+		Log.timeLog();
 		await this.progress.step('Loading indexes');
 
 		let indexCount = 0;
@@ -147,7 +148,7 @@ export default class CASCLocal extends CASC {
 			}
 		}
 
-		log.timeEnd('Loaded %d entries from %d journal indexes', this.localIndexes.size, indexCount);
+		Log.timeEnd('Loaded %d entries from %d journal indexes', this.localIndexes.size, indexCount);
 	}
 
 	/**
@@ -191,13 +192,13 @@ export default class CASCLocal extends CASC {
 	 */
 	async loadEncoding() {
 		// Parse encoding file.
-		log.timeLog();
+		Log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' ');
 
 		await this.progress.step('Loading encoding table');
 		const encRaw = await this.getDataFileWithRemoteFallback(encKeys[1]);
 		await this.parseEncodingFile(encRaw, encKeys[1]);
-		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
+		Log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
 	}
 
 	/**
@@ -210,11 +211,11 @@ export default class CASCLocal extends CASC {
 			throw new Error('No encoding entry found for root key');
 
 		// Parse root file.
-		log.timeLog();
+		Log.timeLog();
 		await this.progress.step('Loading root file');
 		const root = await this.getDataFileWithRemoteFallback(rootKey);
 		const rootEntryCount = await this.parseRootFile(root, rootKey);
-		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
+		Log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
 	}
 
 	/**
@@ -252,13 +253,13 @@ export default class CASCLocal extends CASC {
 			return local;
 		} catch (e) {
 			// Attempt 2: Load from cache from previous fallback.
-			log.write('Local file %s does not exist, falling back to cache...', key);
-			const cached = await this.cache.getFile(key, constants.CACHE.DIR_DATA);
+			Log.write('Local file %s does not exist, falling back to cache...', key);
+			const cached = await this.cache.getFile(key, Constants.CACHE.DIR_DATA);
 			if (cached !== null)
 				return cached;
 
 			// Attempt 3: Download from CDN.
-			log.write('Local file %s not cached, falling back to CDN...', key);
+			Log.write('Local file %s not cached, falling back to CDN...', key);
 			if (!this.remote)
 				await this.initializeRemoteCASC();
 
@@ -266,15 +267,15 @@ export default class CASCLocal extends CASC {
 			let data;
 			if (archive !== undefined) {
 				// Archive exists for key, attempt partial remote download.
-				log.write('Local file %s has archive, attempt partial download...', key);
+				Log.write('Local file %s has archive, attempt partial download...', key);
 				data = await this.remote.getDataFilePartial(this.remote.formatCDNKey(archive.key), archive.offset, archive.size);
 			} else {
 				// No archive for this file, attempt direct download.
-				log.write('Local file %s has no archive, attempting direct download...', key);
+				Log.write('Local file %s has no archive, attempting direct download...', key);
 				data = await this.remote.getDataFile(this.remote.formatCDNKey(key));
 			}
 
-			this.cache.storeFile(key, data, constants.CACHE.DIR_DATA);
+			this.cache.storeFile(key, data, Constants.CACHE.DIR_DATA);
 			return data;
 		}
 	}
@@ -288,7 +289,7 @@ export default class CASCLocal extends CASC {
 		if (!entry)
 			throw new Error('Requested file does not exist in local data: ' + key);
 
-		const data = await generics.readFile(this.formatDataPath(entry.index), entry.offset + 0x1E, entry.size - 0x1E);
+		const data = await readFile(this.formatDataPath(entry.index), entry.offset + 0x1E, entry.size - 0x1E);
 
 		let isZeroed = true;
 		for (let i = 0, n = data.remainingBytes; i < n; i++) {

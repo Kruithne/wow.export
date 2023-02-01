@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import BufferWrapper from '../buffer';
-import * as listfile from '../casc/listfile';
+import Listfile from '../casc/listfile';
 import State from '../state';
 
 export default class Texture {
@@ -24,14 +24,15 @@ export default class Texture {
 	 * @param fileName
 	 */
 	setFileName(fileName: string): void {
-		this.fileDataID = listfile.getByFilename(fileName) || 0;
+		this.fileDataID = Listfile.getByFilename(fileName) || 0;
 	}
 
 	/**
 	 * Obtain the texture file for this texture, instance cached.
-	 * Returns NULL if fileDataID is not set.
+	 * @throws {Error} If the texture fileDataID is not set.
+	 * @returns The texture file.
 	 */
-	async getTextureFile(): Promise<BufferWrapper | null> {
+	async getTextureFile(): Promise<BufferWrapper> {
 		if (this.fileDataID > 0) {
 			if (!this.data)
 				this.data = await State.casc.getFile(this.fileDataID);
@@ -39,6 +40,6 @@ export default class Texture {
 			return this.data;
 		}
 
-		return null;
+		throw new Error('Texture fileDataID is not set.');
 	}
 }

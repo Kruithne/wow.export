@@ -20,7 +20,7 @@ export default class RenderCache {
 	 * Potentially retire the provided materials, if no users remain.
 	 * @param material
 	 */
-	retire(...materials: THREE.Array<Material>): void {
+	retire(...materials: Array<THREE.Material>): void {
 		for (const material of materials) {
 			if (!material)
 				continue;

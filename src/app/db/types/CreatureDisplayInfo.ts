@@ -1,0 +1,30 @@
+// Source https://github.com/wowdev/WoWDBDefs/blob/master/definitions/CreatureDisplayInfo.dbd
+type CreatureDisplayInfo = {
+	ID: number,
+	ModelID: number,
+	SoundID: number,
+	SizeClass: number,
+	CreatureModelScale: number,
+	CreatureModelAlpha: number,
+	BloodID: number,
+	ExtendedDisplayInfoID: number,
+	NPCSoundID: number,
+	ParticleColorID: number,
+	PortraitCreatureDisplayInfoID: number,
+	PortraitTextureFileDataID: number,
+	ObjectEffectPackageID: number,
+	AnimReplacementSetID: number,
+	Flags: number,
+	StateSpellVisualKitID: number,
+	PlayerOverrideScale: number,
+	PetInstanceScale: number,
+	UnarmedWeaponType: number,
+	MountPoofSpellVisualKitID: number,
+	DissolveEffectID: number,
+	Gender: number,
+	DissolveOutEffectID: number,
+	CreatureModelMinLod: number,
+	TextureVariationFileDataID: Array<number>,
+}
+
+export default CreatureDisplayInfo;

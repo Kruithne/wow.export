@@ -1,8 +1,10 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import * as generics from '../../generics';
+import { fileExists, createDirectory } from '../../generics';
 import FileWriter from '../../file-writer';
+
+type JSONPropertyType = string | number | boolean | null | JSONPropertyType[] | { [key: string]: JSONPropertyType };
 
 export default class JSONWriter {
 	out: string;
@@ -22,7 +24,7 @@ export default class JSONWriter {
 	 * @param name
 	 * @param data
 	 */
-	addProperty(name: string, data: any) { // NIT: This is an actual good usecase for any, right?
+	addProperty(name: string, data: JSONPropertyType) {
 		this.data[name] = data;
 	}
 
@@ -32,10 +34,10 @@ export default class JSONWriter {
 	 */
 	async write(overwrite = true) {
 		// If overwriting is disabled, check file existence.
-		if (!overwrite && await generics.fileExists(this.out))
+		if (!overwrite && await fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await createDirectory(path.dirname(this.out));
 		const writer = new FileWriter(this.out);
 		writer.writeLine(JSON.stringify(this.data, (key, value) => {
 			// Handle serialization of BigInt, as JS will not handle it as per spec (TC39)

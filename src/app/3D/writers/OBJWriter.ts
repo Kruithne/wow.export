@@ -1,8 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import * as generics from '../../generics';
-import constants from '../../constants';
+import { fileExists, createDirectory } from '../../generics';
+import Constants from '../../constants';
 import FileWriter from '../../file-writer';
 
 type OBJMesh = {
@@ -86,14 +86,14 @@ export default class OBJWriter {
 	 */
 	async write(overwrite = true) {
 		// If overwriting is disabled, check file existence.
-		if (!overwrite && await generics.fileExists(this.out))
+		if (!overwrite && await fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await createDirectory(path.dirname(this.out));
 		const writer = new FileWriter(this.out);
 
 		// Write header.
-		writer.writeLine('# Exported using wow.export v' + constants.VERSION);
+		writer.writeLine('# Exported using wow.export v' + Constants.VERSION);
 		writer.writeLine('o ' + this.name);
 
 		// Link material library.

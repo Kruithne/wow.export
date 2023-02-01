@@ -20,7 +20,7 @@ type M2Material = { flags: number, blendingMode: number };
 type M2ArrayValue = number | object;
 type M2TrackValue = M2ArrayValue;
 
-type M2Bone = {
+export type M2Bone = {
 	boneID: number,
 	flags: number,
 	parentBone: number,
@@ -272,8 +272,8 @@ export default class M2Loader {
 	/** @returns An axis-aligned box with a given min/max. */
 	readCAaBox(): CAaBox {
 		return {
-			min: this.data.readFloat32Array(3),
-			max: this.data.readFloat32Array(3)
+			min: this.data.readFloatArray(3),
+			max: this.data.readFloatArray(3)
 		};
 	}
 
@@ -311,10 +311,10 @@ export default class M2Loader {
 				parentBone: data.readInt16(),
 				subMeshID: data.readUInt16(),
 				boneNameCRC: data.readUInt32(),
-				translation: this.readM2Track(() => data.readFloat32Array(3)),
+				translation: this.readM2Track(() => data.readFloatArray(3)),
 				rotation: this.readM2Track(() => data.readUInt16Array(4).map(e => (e / 65565) - 1)),
-				scale: this.readM2Track(() => data.readFloat32Array(3)),
-				pivot: data.readFloat32Array(3)
+				scale: this.readM2Track(() => data.readFloatArray(3)),
+				pivot: data.readFloatArray(3)
 			};
 		}
 
@@ -484,9 +484,9 @@ export default class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: this.readM2Track(() => this.data.readFloat32Array(3)),
-				rotation: this.readM2Track(() => this.data.readFloat32Array(4)),
-				scaling: this.readM2Track(() => this.data.readFloat32Array(3))
+				translation: this.readM2Track(() => this.data.readFloatArray(3)),
+				rotation: this.readM2Track(() => this.data.readFloatArray(4)),
+				scaling: this.readM2Track(() => this.data.readFloatArray(3))
 			};
 		}
 
@@ -561,7 +561,7 @@ export default class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: this.readM2Track(() => this.data.readFloat32Array(3)),
+				color: this.readM2Track(() => this.data.readFloatArray(3)),
 				alpha: this.readM2Track(() => this.data.readInt16())
 			};
 		}

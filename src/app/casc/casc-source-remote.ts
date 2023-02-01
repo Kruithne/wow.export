@@ -2,10 +2,10 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 import State from '../state';
-import * as generics from '../generics';
-import * as log from '../log';
-import constants from '../constants';
-import * as listfile from './listfile';
+import { get, filesize, downloadFile, queue, ping } from '../generics';
+import Log from '../log';
+import Constants from '../constants';
+import Listfile from './listfile';
 
 import * as ConfigReader from './config-reader';
 import * as VersionConfig from './version-config';
@@ -40,12 +40,12 @@ export default class CASCRemote extends CASC {
 	 * Initialize remote CASC source.
 	 */
 	async init() {
-		log.write('Initializing remote CASC source (%s)', this.region);
-		this.host = util.format(constants.PATCH.HOST, this.region);
+		Log.write('Initializing remote CASC source (%s)', this.region);
+		this.host = util.format(Constants.PATCH.HOST, this.region);
 		this.builds = [];
 
 		// Collect version configs for all products.
-		const promises = constants.PRODUCTS.map(p => this.getVersionConfig(p.product));
+		const promises = Constants.PRODUCTS.map(p => this.getVersionConfig(p.product));
 		const results = await Promise.allSettled(promises);
 
 		// Iterate through successful requests and extract product config for our region.
@@ -54,7 +54,7 @@ export default class CASCRemote extends CASC {
 				this.builds.push(result.value.find(e => e.Region === this.region));
 		}
 
-		log.write('%o', this.builds);
+		Log.write('%o', this.builds);
 	}
 
 	/**
@@ -62,7 +62,7 @@ export default class CASCRemote extends CASC {
 	 * @param product
 	 */
 	async getVersionConfig(product: string): Promise<Array<Record<string, string>>> {
-		const config = await this.getConfig(product, constants.PATCH.VERSION_CONFIG);
+		const config = await this.getConfig(product, Constants.PATCH.VERSION_CONFIG);
 		config.forEach(entry => entry.Product = product);
 		return config;
 	}
@@ -74,7 +74,7 @@ export default class CASCRemote extends CASC {
 	 */
 	async getConfig(product: string, file: string): Promise<Array<Record<string, string>>> {
 		const url = this.host + product + file;
-		const res = await generics.get(url);
+		const res = await get(url);
 
 		if (!res.ok)
 			throw new Error(util.format('HTTP %d %s from remote CASC endpoint: %s', res.status, res.statusText, url));
@@ -89,7 +89,7 @@ export default class CASCRemote extends CASC {
 	 */
 	async getCDNConfig(key: string): Promise<Record<string, string>> {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
-		const res = await generics.get(url);
+		const res = await get(url);
 
 		if (!res.ok)
 			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d %s)', key, res.status, res.statusText));
@@ -110,10 +110,10 @@ export default class CASCRemote extends CASC {
 	// eslint-disable-next-line no-unused-vars
 	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
-			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID) as string);
+			Log.write('Loading remote CASC file %d (%s)', fileDataID, Listfile.getByID(fileDataID) as string);
 
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
-		let data = await this.cache.getFile(encodingKey, constants.CACHE.DIR_DATA);
+		let data = await this.cache.getFile(encodingKey, Constants.CACHE.DIR_DATA);
 
 		if (data === null) {
 			const archive = this.archives.get(encodingKey);
@@ -121,20 +121,20 @@ export default class CASCRemote extends CASC {
 				data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
 
 				if (!suppressLog)
-					log.write('Downloading CASC file %d from archive %s', fileDataID, archive.key);
+					Log.write('Downloading CASC file %d from archive %s', fileDataID, archive.key);
 			} else {
 				data = await this.getDataFile(this.formatCDNKey(encodingKey));
 
 				if (!suppressLog)
-					log.write('Downloading unarchived CASC file %d', fileDataID);
+					Log.write('Downloading unarchived CASC file %d', fileDataID);
 
 				if (data === null)
 					throw new Error('No remote unarchived/archive indexed for encoding key: ' + encodingKey);
 			}
 
-			this.cache.storeFile(encodingKey, data, constants.CACHE.DIR_DATA);
+			this.cache.storeFile(encodingKey, data, Constants.CACHE.DIR_DATA);
 		} else if (!suppressLog) {
-			log.write('Loaded CASC file %d from cache', fileDataID);
+			Log.write('Loaded CASC file %d from cache', fileDataID);
 		}
 
 		return new BLTEReader(data, encodingKey, partialDecrypt);
@@ -147,7 +147,7 @@ export default class CASCRemote extends CASC {
 	getProductList() {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
-			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
+			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s %s', product.title, entry.VersionsName));
 		}
 
@@ -162,7 +162,7 @@ export default class CASCRemote extends CASC {
 	 */
 	async preload(buildIndex: number, cache?: BuildCache) {
 		this.build = this.builds[buildIndex];
-		log.write('Preloading remote CASC build: %o', this.build);
+		Log.write('Preloading remote CASC build: %o', this.build);
 
 		if (cache) {
 			this.cache = cache;
@@ -203,28 +203,28 @@ export default class CASCRemote extends CASC {
 		const encKeys = this.buildConfig.encoding.split(' ');
 		const encKey = encKeys[1];
 
-		log.timeLog();
+		Log.timeLog();
 
 		await this.progress.step('Loading encoding table');
-		let encRaw = await this.cache.getFile(constants.CACHE.BUILD_ENCODING);
+		let encRaw = await this.cache.getFile(Constants.CACHE.BUILD_ENCODING);
 		if (encRaw === null) {
 			// Encoding file not cached, download it.
-			log.write('Encoding for build %s not cached, downloading.', this.cache.key);
+			Log.write('Encoding for build %s not cached, downloading.', this.cache.key);
 			encRaw = await this.getDataFile(this.formatCDNKey(encKey));
 
 			// Store back into cache (no need to block).
-			this.cache.storeFile(constants.CACHE.BUILD_ENCODING, encRaw);
+			this.cache.storeFile(Constants.CACHE.BUILD_ENCODING, encRaw);
 		} else {
-			log.write('Encoding for build %s cached locally.', this.cache.key);
+			Log.write('Encoding for build %s cached locally.', this.cache.key);
 		}
 
-		log.timeEnd('Loaded encoding table (%s)', generics.filesize(encRaw.length));
+		Log.timeEnd('Loaded encoding table (%s)', filesize(encRaw.length));
 
 		// Parse encoding file.
-		log.timeLog();
+		Log.timeLog();
 		await this.progress.step('Parsing encoding table');
 		await this.parseEncodingFile(encRaw, encKey);
-		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
+		Log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
 	}
 
 	/**
@@ -236,25 +236,25 @@ export default class CASCRemote extends CASC {
 		if (rootKey === undefined)
 			throw new Error('No encoding entry found for root key');
 
-		log.timeLog();
+		Log.timeLog();
 		await this.progress.step('Loading root table');
 
-		let root = await this.cache.getFile(constants.CACHE.BUILD_ROOT);
+		let root = await this.cache.getFile(Constants.CACHE.BUILD_ROOT);
 		if (root === null) {
 			// Root file not cached, download.
-			log.write('Root file for build %s not cached, downloading.', this.cache.key);
+			Log.write('Root file for build %s not cached, downloading.', this.cache.key);
 
 			root = await this.getDataFile(this.formatCDNKey(rootKey));
-			this.cache.storeFile(constants.CACHE.BUILD_ROOT, root);
+			this.cache.storeFile(Constants.CACHE.BUILD_ROOT, root);
 		}
 
-		log.timeEnd('Loaded root file (%s)', generics.filesize(root.length));
+		Log.timeEnd('Loaded root file (%s)', filesize(root.length));
 
 		// Parse root file.
-		log.timeLog();
+		Log.timeLog();
 		await this.progress.step('Parsing root file');
 		const rootEntryCount = await this.parseRootFile(root, rootKey);
-		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
+		Log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);
 	}
 
 	/**
@@ -265,16 +265,16 @@ export default class CASCRemote extends CASC {
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
 
-		log.timeLog();
+		Log.timeLog();
 
 		if (this.progress)
 			await this.progress.step('Loading archives');
 
-		await generics.queue(archiveKeys, key => this.parseArchiveIndex(key as string), 50);
+		await queue(archiveKeys, key => this.parseArchiveIndex(key as string), 50);
 
 		// Quick and dirty way to get the total archive size using config.
 		const archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
-		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
+		Log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, filesize(archiveTotalSize));
 	}
 
 	/**
@@ -286,8 +286,8 @@ export default class CASCRemote extends CASC {
 			await this.progress.step('Fetching CDN configuration');
 
 		// Download CDN server list.
-		const serverConfigs = await this.getConfig(this.build.Product, constants.PATCH.SERVER_CONFIG);
-		log.write('%o', serverConfigs);
+		const serverConfigs = await this.getConfig(this.build.Product, Constants.PATCH.SERVER_CONFIG);
+		Log.write('%o', serverConfigs);
 
 		// Locate the CDN entry for our selected region.
 		this.serverConfig = serverConfigs.find(e => e.Name === this.region);
@@ -303,11 +303,11 @@ export default class CASCRemote extends CASC {
 	async parseArchiveIndex(key: string) {
 		const fileName = key + '.index';
 
-		let data = await this.cache.getFile(fileName, constants.CACHE.DIR_INDEXES);
+		let data = await this.cache.getFile(fileName, Constants.CACHE.DIR_INDEXES);
 		if (data === null) {
 			const cdnKey = this.formatCDNKey(key) + '.index';
 			data = await this.getDataFile(cdnKey);
-			this.cache.storeFile(fileName, data, constants.CACHE.DIR_INDEXES);
+			this.cache.storeFile(fileName, data, Constants.CACHE.DIR_INDEXES);
 		}
 
 		// Skip to the end of the archive to find the count.
@@ -336,7 +336,7 @@ export default class CASCRemote extends CASC {
 	 * @returns {BufferWrapper}
 	 */
 	async getDataFile(file) {
-		return await generics.downloadFile(this.host + 'data/' + file);
+		return await downloadFile(this.host + 'data/' + file);
 	}
 
 	/**
@@ -347,7 +347,7 @@ export default class CASCRemote extends CASC {
 	 * @returns
 	 */
 	async getDataFilePartial(file: string, ofs: number, len: number): Promise<BufferWrapper> {
-		return await generics.downloadFile(this.host + 'data/' + file, undefined, ofs, len);
+		return await downloadFile(this.host + 'data/' + file, undefined, ofs, len);
 	}
 
 	/**
@@ -361,8 +361,8 @@ export default class CASCRemote extends CASC {
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
 		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
 
-		log.write('CDNConfig: %o', this.cdnConfig);
-		log.write('BuildConfig: %o', this.buildConfig);
+		Log.write('CDNConfig: %o', this.cdnConfig);
+		Log.write('BuildConfig: %o', this.buildConfig);
 	}
 
 	/**
@@ -373,19 +373,19 @@ export default class CASCRemote extends CASC {
 		if (this.progress)
 			await this.progress.step('Locating fastest CDN server');
 
-		log.write('Resolving best host: %s', this.serverConfig.Hosts);
+		Log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
 		let bestHost: any = null;
 		const hosts = this.serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
 		const hostPings: Array<Promise<void>> = [];
 
 		for (const host of hosts) {
-			hostPings.push(generics.ping(host).then(ping => {
-				log.write('Host %s resolved with %dms ping', host, ping);
+			hostPings.push(ping(host).then(ping => {
+				Log.write('Host %s resolved with %dms ping', host, ping);
 				if (bestHost === null || ping < bestHost.ping)
 					bestHost = { host, ping };
 			}).catch(e => {
-				log.write('Host %s failed to resolve a ping: %s', host, e);
+				Log.write('Host %s failed to resolve a ping: %s', host, e);
 			}));
 		}
 
@@ -396,7 +396,7 @@ export default class CASCRemote extends CASC {
 		if (bestHost === null)
 			throw new Error('Unable to resolve a CDN host.');
 
-		log.write('%s resolved as the fastest host with a ping of %dms', bestHost.host, bestHost.ping);
+		Log.write('%s resolved as the fastest host with a ping of %dms', bestHost.host, bestHost.ping);
 		this.host = bestHost.host + this.serverConfig.Path + '/';
 	}
 

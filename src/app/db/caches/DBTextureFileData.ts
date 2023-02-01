@@ -1,8 +1,10 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import * as log from '../../log';
+import Log from '../../log';
 import WDCReader from '../WDCReader';
+
+import TextureFileData from '../types/TextureFileData';
 
 const matResIDToFileDataID: Map<number, number> = new Map();
 const fileDataIDs: Set<number> = new Set();
@@ -11,12 +13,12 @@ const fileDataIDs: Set<number> = new Set();
  * Initialize texture file data ID from TextureFileData.db2
  */
 export async function initializeTextureFileData(): Promise<void> {
-	log.write('Loading texture mapping...');
+	Log.write('Loading texture mapping...');
 	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await textureFileData.parse();
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
-	for (const [textureFileDataID, textureFileDataRow] of textureFileData.getAllRows()) {
+	for (const [textureFileDataID, textureFileDataRow] of textureFileData.getAllRows() as Map<number, TextureFileData>) {
 		// Keep a list of all FIDs for listfile unknowns.
 		fileDataIDs.add(textureFileDataID);
 
@@ -26,7 +28,7 @@ export async function initializeTextureFileData(): Promise<void> {
 
 		matResIDToFileDataID.set(textureFileDataRow.MaterialResourcesID as number, textureFileDataID);
 	}
-	log.write('Loaded texture mapping for %d materials', matResIDToFileDataID.size);
+	Log.write('Loaded texture mapping for %d materials', matResIDToFileDataID.size);
 }
 
 /**

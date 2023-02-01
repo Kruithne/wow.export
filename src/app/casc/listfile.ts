@@ -3,6 +3,7 @@
 
 import util from 'node:util';
 import fs from 'node:fs';
+
 import Log from '../log';
 import State from '../state';
 import Events from '../events';
@@ -25,6 +26,13 @@ type ListfileEntry = {
 	fileDataID: number;
 	fileName: string;
 };
+
+export type ListfilePatternFilter = {
+	ext: string;
+	pattern: RegExp;
+}
+
+export type ListfileFilter = string | ListfilePatternFilter;
 
 /**
  * Load listfile for the given build configuration key.
@@ -181,28 +189,20 @@ export function loadIDTable(ids: Set<number>, ext: string): number {
 
 /**
  * Return an array of filenames ending with the given extension(s).
- * @param exts - Extension (or array of extensions) of files to return
+ * @param exts - Array of extensions to match.
  * @returns Array of filenames
  */
-export function getFilenamesByExtension(exts: string | Array<string>): Array<string> {
-	// Box into an array for reduced code.
-	if (!Array.isArray(exts))
-		exts = [exts];
-
+export function getFilenamesByExtension(...exts: Array<ListfileFilter>): Array<string> {
 	const entries = Array<number>();
 
 	for (const [fileDataID, filename] of idLookup.entries()) {
 		for (const ext of exts) {
-			if (Array.isArray(ext)) {
-				if (filename.endsWith(ext[0]) && !filename.match(ext[1])) {
+			if (typeof ext === 'string') {
+				if (filename.endsWith(ext))
 					entries.push(fileDataID);
-					continue;
-				}
 			} else {
-				if (filename.endsWith(ext)) {
+				if (filename.endsWith(ext.ext) && filename.match(ext.pattern))
 					entries.push(fileDataID);
-					continue;
-				}
 			}
 		}
 	}

@@ -259,8 +259,8 @@ const WMOChunkHandlers = {
 		this.setCount = data.readUInt32();
 		this.ambientColor = data.readUInt32();
 		this.areaTableID = data.readUInt32();
-		this.boundingBox1 = data.readFloat32Array(3);
-		this.boundingBox2 = data.readFloat32Array(3);
+		this.boundingBox1 = data.readFloatArray(3);
+		this.boundingBox2 = data.readFloatArray(3);
 		this.flags = data.readUInt16();
 		this.lodCount = data.readUInt16();
 
@@ -281,7 +281,7 @@ const WMOChunkHandlers = {
 		for (let i = 0; i < count; i++) {
 			fogs[i] = {
 				flags: data.readUInt32(),
-				position: data.readFloat32Array(3),
+				position: data.readFloatArray(3),
 				radiusSmall: data.readFloat(),
 				radiusLarge: data.readFloat(),
 				fog: {
@@ -327,7 +327,7 @@ const WMOChunkHandlers = {
 		const vertexCount = chunkSize / (3 * 4);
 		this.portalVertices = new Array<Array<number>>(vertexCount);
 		for (let i = 0; i < vertexCount; i++)
-			this.portalVertices[i] = data.readFloat32Array(3);
+			this.portalVertices[i] = data.readFloatArray(3);
 	},
 
 	// MOPT (Portal Triangles) [WMO Root]
@@ -337,7 +337,7 @@ const WMOChunkHandlers = {
 			this.portalInfo[i] = {
 				startVertex: data.readUInt16(),
 				count: data.readUInt16(),
-				plane: data.readFloat32Array(4)
+				plane: data.readFloatArray(4)
 			};
 		}
 	},
@@ -371,8 +371,8 @@ const WMOChunkHandlers = {
 		for (let i = 0; i < count; i++) {
 			groupInfo[i] = {
 				flags: data.readUInt32(),
-				boundingBox1: data.readFloat32Array(3),
-				boundingBox2: data.readFloat32Array(3),
+				boundingBox1: data.readFloatArray(3),
+				boundingBox2: data.readFloatArray(3),
 				nameIndex: data.readInt32()
 			};
 		}
@@ -416,8 +416,8 @@ const WMOChunkHandlers = {
 			doodads[i] = {
 				offset: data.readUInt24(),
 				flags: data.readUInt8(),
-				position: data.readFloat32Array(3),
-				rotation: data.readFloat32Array(4),
+				position: data.readFloatArray(3),
+				rotation: data.readFloatArray(4),
 				scale: data.readFloat(),
 				color: data.readUInt8Array(4)
 			};
@@ -438,7 +438,7 @@ const WMOChunkHandlers = {
 		const liquidTilesX = data.readUInt32();
 		const liquidTilesY = data.readUInt32();
 
-		const liquidCorner = data.readFloat32Array(3);
+		const liquidCorner = data.readFloatArray(3);
 		const liquidMaterialID = data.readUInt16();
 
 		const vertCount = liquidVertsX * liquidVertsY;
@@ -500,8 +500,8 @@ const WMOChunkHandlers = {
 		this.descOfs = data.readUInt32();
 
 		this.flags = data.readUInt32();
-		this.boundingBox1 = data.readFloat32Array(3);
-		this.boundingBox2 = data.readFloat32Array(3);
+		this.boundingBox1 = data.readFloatArray(3);
+		this.boundingBox2 = data.readFloatArray(3);
 
 		this.ofsPortals = data.readUInt16();
 		this.numPortals = data.readUInt16();

@@ -1,29 +1,50 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import BufferWrapper from '../../buffer';
-import WMOLoader from '../loaders/WMOLoader';
-import State from '../../state';
 import util from 'node:util';
-import Log from '../../log';
-import M2Renderer from './M2Renderer';
-import Texture from '../Texture';
-import Listfile from '../../casc/listfile';
-import BLPImage from '../../casc/blp';
-import textureRibbon from '../../ui/texture-ribbon';
 
 import * as THREE from 'three';
 
+import Listfile from '../../casc/listfile';
+import State from '../../state';
+import Log from '../../log';
+import BufferWrapper from '../../buffer';
+
+import WMOLoader from '../loaders/WMOLoader';
+import M2Renderer from './M2Renderer';
+import Texture from '../Texture';
+import BLPImage from '../../casc/blp';
+
+import textureRibbon from '../../ui/texture-ribbon';
+
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
+
+type WMORenderMaterial = THREE.Material | THREE.MeshStandardMaterial | THREE.MeshPhongMaterial;
+
+type WMOSet = {
+	label: string,
+	index: number,
+	checked: boolean
+};
 
 export default class WMORenderer {
 	wmo: WMOLoader;
-	data: BufferWrapper;
-	fileID: number;
-	meshGroup: THREE.Group;
+	data: BufferWrapper | undefined;
+	fileID: number | string;
+	meshGroup: THREE.Group | undefined;
 	renderGroup: THREE.Group;
 	syncID: number;
 	m2Renderers: Map<number, M2Renderer> = new Map();
+	textures = new Array<THREE.DataTexture>();
+	m2Clones = new Array<THREE.Group>();
+	groupArray: Array<WMOSet> | undefined;
+	materials = new Array<WMORenderMaterial>();
+	setArray: Array<WMOSet> | undefined;
+	doodadSets: Array<THREE.Group> | undefined;
+
+	groupWatcher: () => void | undefined;
+	setWatcher: () => void | undefined;
+	wireframeWatcher: () => void | undefined;
 
 	/**
 	 * Construct a new WMORenderer instance.
@@ -31,19 +52,20 @@ export default class WMORenderer {
 	 * @param fileID
 	 * @param renderGroup
 	 */
-	constructor(data: BufferWrapper, fileID: number, renderGroup: THREE.Group) {
+	constructor(data: BufferWrapper, fileID: number | string, renderGroup: THREE.Group) {
 		this.data = data;
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
-		this.textures = [];
 		this.m2Renderers = new Map();
-		this.m2Clones = [];
 	}
 
 	/**
 	 * Load the provided model for rendering.
 	 */
 	async load() {
+		if (this.data === undefined)
+			throw new Error('WMORenderer has already discarded its data');
+
 		// Parse the WMO data.
 		const wmo = this.wmo = new WMOLoader(this.data, this.fileID, true);
 		await wmo.load();
@@ -79,8 +101,9 @@ export default class WMORenderer {
 		}
 
 		const setCount = wmo.doodadSets.length;
-		this.setArray = new Array(setCount);
-		this.doodadSets = new Array(setCount);
+		this.setArray = new Array<WMOSet>(setCount);
+		this.doodadSets = new Array<THREE.Group>(setCount);
+
 		for (let i = 0; i < setCount; i++)
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
@@ -107,7 +130,7 @@ export default class WMORenderer {
 	loadTextures() {
 		const wmo = this.wmo;
 		const materialCount = wmo.materials.length;
-		const materials = this.materials = new Array(materialCount);
+		const materials = this.materials = new Array<WMORenderMaterial>(materialCount);
 
 		this.syncID = textureRibbon.reset();
 
@@ -136,7 +159,7 @@ export default class WMORenderer {
 
 					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
 
-					const tex = new THREE.DataTexture(new Uint8Array(blp.toBuffer().raw.buffer), blp.width, blp.height, THREE.RGBAFormat);
+					const tex = new THREE.DataTexture(blp.toUInt8Array(), blp.width, blp.height, THREE.RGBAFormat);
 					tex.needsUpdate = true;
 
 					if (!(texture.flags & 0x40))
@@ -174,9 +197,9 @@ export default class WMORenderer {
 	 * @param textureID
 	 * @param wmo
 	 */
-	async loadAuxiliaryTextureForRibbon(textureID: number | string, wmo: WMOLoader) {
+	async loadAuxiliaryTextureForRibbon(textureID: number, wmo: WMOLoader) {
 		if (wmo.textureNames)
-			textureID = Listfile.getByFilename(textureID) || 0;
+			textureID = Listfile.getByFilename(textureID.toString()) || 0;
 
 		if (textureID > 0) {
 			const ribbonSlot = textureRibbon.addSlot();
@@ -222,10 +245,14 @@ export default class WMORenderer {
 
 			if (fileDataID > 0) {
 				try {
-					let mesh;
-					if (this.m2Renderers.has(fileDataID)) {
-						// We already built this m2, re-use it.
-						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
+					let mesh: THREE.Group | undefined;
+					const m2Renderer = this.m2Renderers.get(fileDataID);
+					if (m2Renderer !== undefined) {
+						const meshGroup = m2Renderer.meshGroup;
+						if (meshGroup === undefined)
+							throw new Error('M2Renderer lacks meshGroup');
+
+						mesh = meshGroup.clone(true);
 						renderGroup.add(mesh);
 						this.m2Clones.push(mesh);
 					} else {
@@ -237,25 +264,30 @@ export default class WMORenderer {
 						await m2.loadSkin(0);
 
 						mesh = m2.meshGroup;
+
 						this.m2Renderers.set(fileDataID, m2);
 					}
 
-					// Apply relative position/rotation/scale.
-					const pos = doodad.position;
-					mesh.position.set(pos[0], pos[2], pos[1] * -1);
+					if (mesh !== undefined) {
+						// Apply relative position/rotation/scale.
+						const pos = doodad.position;
+						mesh.position.set(pos[0], pos[2], pos[1] * -1);
 
-					const rot = doodad.rotation;
-					mesh.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
+						const rot = doodad.rotation;
+						mesh.quaternion.set(rot[0], rot[2], rot[1] * -1, rot[3]);
 
-					mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);
+						mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);
+					}
 				} catch (e) {
-					log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					Log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
 				}
 			}
 		}
 
 		this.renderGroup.add(renderGroup);
-		this.doodadSets[index] = renderGroup;
+
+		if (this.doodadSets !== undefined)
+			this.doodadSets[index] = renderGroup;
 
 		State.hideToast();
 		State.isBusy--;
@@ -281,7 +313,9 @@ export default class WMORenderer {
 		const materials = this.getRenderMaterials(this.renderGroup, new Set());
 
 		for (const material of materials) {
-			material.wireframe = renderWireframe;
+			if (material instanceof THREE.MeshStandardMaterial)
+				material.wireframe = renderWireframe;
+
 			material.needsUpdate = true;
 		}
 	}
@@ -292,30 +326,31 @@ export default class WMORenderer {
 	 * @param out
 	 * @returns
 	 */
-	getRenderMaterials(root: object, out: Set<>) {
-		if (root.children) {
+	getRenderMaterials(root: THREE.Object3D, out: Set<WMORenderMaterial>) {
+		if (root instanceof THREE.Group) {
 			for (const child of root.children)
 				this.getRenderMaterials(child, out);
 		}
 
-		if (root.material) {
-			for (const material of root.material)
-				out.add(material);
+		if (root instanceof THREE.Mesh) {
+			if (Array.isArray(root.material)) {
+				for (const material of root.material)
+					out.add(material);
+			} else {
+				out.add(root.material);
+			}
 		}
 		return out;
 	}
 
-	/**
-	 * Update the visibility status of doodad sets.
-	 */
+	/** Update the visibility status of doodad sets. */
 	async updateSets() {
-		if (!this.wmo || !this.setArray)
+		if (!this.wmo || !this.setArray || !this.doodadSets)
 			return;
 
-		const sets = this.doodadSets;
-		for (let i = 0, n = sets.length; i < n; i++) {
+		for (let i = 0, n = this.doodadSets.length; i < n; i++) {
 			const state = this.setArray[i].checked;
-			const set = sets[i];
+			const set = this.doodadSets[i];
 
 			if (set)
 				set.visible = state;
@@ -324,23 +359,23 @@ export default class WMORenderer {
 		}
 	}
 
-	/**
-	 * Dispose of this instance and release all resources.
-	 */
+	/** Dispose of this instance and release all resources. */
 	dispose() {
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
 			this.renderGroup.remove(this.meshGroup);
 
 			// Dispose of all children.
-			for (const child of this.meshGroup.children)
-				child.geometry.dispose();
+			for (const child of this.meshGroup.children) {
+				if (child instanceof THREE.Mesh)
+					child.geometry.dispose();
+			}
 
 			// Remove all children from the group for good measure.
 			this.meshGroup.remove(...this.meshGroup.children);
 
 			// Drop the reference to the mesh group.
-			this.meshGroup = null;
+			this.meshGroup = undefined;
 		}
 
 		// Dispose of all M2 renderers for doodad sets.
@@ -359,8 +394,8 @@ export default class WMORenderer {
 		}
 
 		// Dereference M2 renderers for faster clean-up.
-		this.m2Renderers = undefined;
-		this.m2Clones = undefined;
+		this.m2Renderers.clear();
+		this.m2Clones.length = 0;
 
 		// Unregister reactive watchers.
 		this.groupWatcher?.();
@@ -368,8 +403,8 @@ export default class WMORenderer {
 		this.wireframeWatcher?.();
 
 		// Empty reactive arrays.
-		if (this.groupArray) this.groupArray.splice(0);
-		if (this.setArray) this.setArray.splice(0);
+		this.groupArray?.splice(0);
+		this.setArray?.splice(0);
 
 		// Release bound textures.
 		for (const tex of this.textures)

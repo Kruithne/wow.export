@@ -388,7 +388,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns Array of 32-bit floats (little-endian) at the current position. */
-	readFloat32Array(length: number): Array<number> {
+	readFloatArray(length: number): Array<number> {
 		const arr = new Array(length);
 		for (let i = 0; i < length; i++)
 			arr[i] = this.buffer.readFloatLE(this.offset + i * 4);

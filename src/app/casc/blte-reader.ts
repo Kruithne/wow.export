@@ -4,7 +4,7 @@ import util from 'node:util';
 import zlib from 'node:zlib';
 
 import BufferWrapper from '../buffer';
-import * as tactKeys from './tact-keys';
+import TactKeys from './tact-keys';
 import Salsa20 from './salsa20';
 
 const BLTE_MAGIC = 0x45544c42;
@@ -262,7 +262,7 @@ export default class BLTEReader extends BufferWrapper {
 		for (let shift = 0, i = 0; i < 4; shift += 8, i++)
 			ivShort[i] ^= (index >> shift) & 0xFF;
 
-		const key = tactKeys.getKey(keyName);
+		const key = TactKeys.getKey(keyName);
 		if (typeof key !== 'string')
 			throw new EncryptionError(keyName);
 

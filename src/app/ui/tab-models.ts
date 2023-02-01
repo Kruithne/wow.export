@@ -1,13 +1,15 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import util from 'node:util';
+import path from 'node:path';
+import fs from 'node:fs';
+
 import State from '../state';
 import Constants from '../constants';
 import Log from '../log';
-import util from 'node:util';
-import path from 'node:path';
 import BLPImage from '../casc/blp';
-import Listfile from '../casc/listfile';
-import BufferWrapper from '../buffer';
+import Listfile, { ListfileFilter } from '../casc/listfile';
+import BufferWrapper, { canvasToBuffer } from '../buffer';
 import ExportHelper from '../casc/export-helper';
 import { EncryptionError } from '../casc/blte-reader';
 import FileWriter from '../file-writer';
@@ -15,62 +17,73 @@ import FileWriter from '../file-writer';
 import * as DBCreatures from '../db/caches/DBCreatures';
 import * as DBItemDisplays from '../db/caches/DBItemDisplays';
 
-import M2Renderer from '../3D/renderers/M2Renderer';
+import M2Renderer, { DisplayInfo } from '../3D/renderers/M2Renderer';
 import M2Exporter from '../3D/exporters/M2Exporter';
 
 import WMORenderer from '../3D/renderers/WMORenderer';
 import WMOExporter from '../3D/exporters/WMOExporter';
 
+import { CreatureDisplayInfoEntry } from '../db/caches/DBCreatures';
+import { ItemDisplayInfoEntry } from '../db/caches/DBItemDisplays';
+
 import * as THREE from 'three';
 import textureRibbon from '../ui/texture-ribbon';
 
-const MODEL_TYPE_M2 = Symbol('modelM2');
-const MODEL_TYPE_WMO = Symbol('modelWMO');
+const MODEL_TYPE_M2 = Symbol('ModelType_M2');
+const MODEL_TYPE_WMO = Symbol('ModelType_WMO');
+
+type ModelType = typeof MODEL_TYPE_M2 | typeof MODEL_TYPE_WMO;
+
+type SkinInfo = {
+	id: string,
+	label: string
+};
 
 const exportExtensions = {
 	'OBJ': '.obj',
 	'GLTF': '.gltf'
 };
 
-const activeSkins = new Map();
-let selectedVariantTextureIDs = [];
+const activeSkins = new Map<string, DisplayInfo>();
+let selectedVariantTextureIDs = Array<number>();
 let selectedSkinName: string | null;
 
 let isFirstModel = true;
 
-let camera, scene, grid;
+let camera: THREE.PerspectiveCamera;
+let scene: THREE.Scene;
+let grid: THREE.GridHelper;
+
 const renderGroup = new THREE.Group();
 
-let activeRenderer;
-let activePath;
+let activeRenderer: M2Renderer | WMORenderer | undefined;
+let activePath: string | undefined;
 
 /**
  * Lookup model displays for items/creatures.
  * @param fileDataID
  * @returns
  */
-const getModelDisplays = (fileDataID: number) => {
-	let displays = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
+function getModelDisplays(fileDataID: number): Array<DisplayInfo> {
+	let displays: Array<DisplayInfo> | undefined = DBCreatures.getCreatureDisplaysByFileDataID(fileDataID);
 
 	if (displays === undefined)
 		displays = DBItemDisplays.getItemDisplaysByFileDataID(fileDataID);
 
 	return displays ?? [];
-};
+}
 
-/**
- * Clear the currently active texture preview.
- */
-const clearTexturePreview = () => {
+/** Clear the currently active texture preview. */
+function clearTexturePreview() {
 	State.modelTexturePreviewURL = '';
-};
+}
 
 /**
  * Preview a texture by the given fileDataID.
  * @param fileDataID
  * @param name
  */
-const previewTextureByID = async (fileDataID: number, name: string) => {
+async function previewTextureByID(fileDataID: number, name: string) {
 	const texture = Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
 	State.isBusy++;
@@ -102,9 +115,9 @@ const previewTextureByID = async (fileDataID: number, name: string) => {
 	}
 
 	State.isBusy--;
-};
+}
 
-const previewModel = async (fileName: string) => {
+async function previewModel(fileName: string) {
 	State.isBusy++;
 	State.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	Log.write('Previewing model %s', fileName);
@@ -123,8 +136,8 @@ const previewModel = async (fileName: string) => {
 		// Dispose the currently active renderer.
 		if (activeRenderer) {
 			activeRenderer.dispose();
-			activeRenderer = null;
-			activePath = null;
+			activeRenderer = undefined;
+			activePath = undefined;
 		}
 
 		// Clear the active skin map.
@@ -133,6 +146,9 @@ const previewModel = async (fileName: string) => {
 		selectedSkinName = null;
 
 		const fileDataID = Listfile.getByFilename(fileName);
+		if (fileDataID === undefined)
+			throw new Error(util.format('Unknown model file: %s', fileName));
+
 		const file = await State.casc.getFile(fileDataID);
 		let isM2 = false;
 
@@ -153,8 +169,8 @@ const previewModel = async (fileName: string) => {
 		if (isM2) {
 			const displays = getModelDisplays(fileDataID);
 
-			const skinList = [];
-			let modelName = Listfile.getByID(fileDataID);
+			const skinList = Array<SkinInfo>();
+			let modelName = Listfile.getByID(fileDataID) as string; // TODO: Handle undefined?
 			modelName = path.basename(modelName, 'm2');
 
 			for (const display of displays) {
@@ -177,8 +193,9 @@ const previewModel = async (fileName: string) => {
 				if (cleanSkinName.length === 0)
 					cleanSkinName = 'base';
 
-				if (display.extraGeosets?.length > 0)
-					skinName += display.extraGeosets.join(',');
+				const creatureDisplay = display as CreatureDisplayInfoEntry;
+				if (creatureDisplay.extraGeosets !== undefined && creatureDisplay.extraGeosets.length > 0)
+					skinName += creatureDisplay.extraGeosets.join(',');
 
 				cleanSkinName += ' (' + display.ID + ')';
 
@@ -199,11 +216,11 @@ const previewModel = async (fileName: string) => {
 		updateCameraBounding();
 
 		activePath = fileName;
-		console.log(activeRenderer);
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
 			State.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
+
 		else
 			State.hideToast();
 	} catch (e) {
@@ -219,12 +236,12 @@ const previewModel = async (fileName: string) => {
 	}
 
 	State.isBusy--;
-};
+}
 
 /**
  * Update the camera to match render group bounding.
  */
-const updateCameraBounding = () => {
+function updateCameraBounding() {
 	// Get the bounding box for the model.
 	const boundingBox = new THREE.Box3();
 	boundingBox.setFromObject(renderGroup);
@@ -252,37 +269,40 @@ const updateCameraBounding = () => {
 		controls.target = center;
 		controls.maxDistance = cameraToFarEdge * 2;
 	}
-};
+}
 
 /**
  * Resolves variant texture IDs based on user selection.
  * @param fileName
  * @returns
  */
-const getVariantTextureIDs = (fileName: string) => {
+function getVariantTextureIDs(fileName: string) {
 	if (fileName === activePath) {
 		// Selected model may have user-selected skins, use them.
 		return selectedVariantTextureIDs;
 	} else {
 		// Resolve default skins for auxiliary selections.
 		const fileDataID = Listfile.getByFilename(fileName);
-		const displays = getModelDisplays(fileDataID);
+		if (fileDataID === undefined)
+			return [];
 
+		const displays = getModelDisplays(fileDataID);
 		return displays.find(e => e.textures.length > 0)?.textures ?? [];
 	}
-};
+}
 
-const exportFiles = async (files, isLocal = false) => {
+async function exportFiles(files, isLocal = false) {
 	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
 	const format = State.config.exportModelFormat;
 
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
-		if (activePath) {
+		if (activePath !== undefined) {
 			State.setToast('progress', 'Saving preview, hold on...', null, -1, false);
 
-			const canvas = (document.getElementById('model-preview') as HTMLElement).querySelector('canvas');
-			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+			const modelPreview = document.getElementById('model-preview') as HTMLElement;
+			const canvas = modelPreview.querySelector('canvas') as HTMLCanvasElement;
+			const buf = new BufferWrapper(await canvasToBuffer(canvas, 'image/png'));
 
 			if (format === 'PNG') {
 				const exportPath = ExportHelper.getExportPath(activePath);
@@ -296,7 +316,7 @@ const exportFiles = async (files, isLocal = false) => {
 				State.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toString('base64'), 'png', true);
+				clipboard.set(buf.readString(undefined, 'base64'), 'png', true);
 
 				Log.write('Copied 3D preview to clipboard (%s)', activePath);
 				State.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
@@ -326,8 +346,13 @@ const exportFiles = async (files, isLocal = false) => {
 			}
 
 			try {
-				let fileType;
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID)); // TODO: Replace with fs.promises.readFile() call.
+				let fileType: ModelType | undefined;
+				let data: BufferWrapper;
+
+				if (isLocal)
+					data = new BufferWrapper(await fs.promises.readFile(fileName));
+				else
+					data = await casc.getFile(fileDataID);
 
 				if (fileName === undefined) {
 					// In the event that we're exporting a file by ID that does not exist in the listfile
@@ -352,7 +377,7 @@ const exportFiles = async (files, isLocal = false) => {
 						fileType = MODEL_TYPE_WMO;
 				}
 
-				if (!fileType)
+				if (fileType === undefined)
 					throw new Error(util.format('Unknown model file type for %d', fileDataID));
 
 				let exportPath: string;
@@ -364,6 +389,7 @@ const exportFiles = async (files, isLocal = false) => {
 
 					if (selectedSkinName.startsWith(baseFileName))
 						skinnedName = ExportHelper.replaceBaseName(fileName, selectedSkinName);
+
 					else
 						skinnedName = ExportHelper.replaceBaseName(fileName, baseFileName + '_' + selectedSkinName);
 
@@ -376,13 +402,13 @@ const exportFiles = async (files, isLocal = false) => {
 					case 'RAW': {
 						exportPaths.writeLine(exportPath);
 
-						let exporter;
-						if (fileType === MODEL_TYPE_M2)
-							exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
-						else if (fileType === MODEL_TYPE_WMO)
-							exporter = new WMOExporter(data, fileDataID);
-
-						await exporter.exportRaw(exportPath, helper);
+						if (fileType === MODEL_TYPE_M2) {
+							const exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+							await exporter.exportRaw(exportPath, helper);
+						} else if (fileType === MODEL_TYPE_WMO) {
+							const exporter = new WMOExporter(data, fileDataID);
+							await exporter.exportRaw(exportPath, helper);
+						}
 						break;
 					}
 					case 'OBJ':
@@ -455,30 +481,30 @@ const exportFiles = async (files, isLocal = false) => {
 
 	// Write export information.
 	await exportPaths.close();
-};
+}
 
 /**
  * Update the 3D model listfile.
  * Invoke when users change the visibility settings for model types.
  */
-const updateListfile = () => {
+function updateListfile() {
 	// Filters for the model viewer depending on user settings.
-	const modelExt = [];
+	const modelExt = Array<ListfileFilter>();
 	if (State.config.modelsShowM2)
 		modelExt.push('.m2');
 
 	if (State.config.modelsShowWMO)
-		modelExt.push(['.wmo', Constants.LISTFILE_MODEL_FILTER]);
+		modelExt.push({ ext: '.wmo', pattern: Constants.LISTFILE_MODEL_FILTER });
 
 	// Create a new listfile using the given configuration.
-	State.listfileModels = Listfile.getFilenamesByExtension(modelExt, State.config.listfileShowFileDataIDs);
-};
+	State.listfileModels = Listfile.getFilenamesByExtension(...modelExt);
+}
 
 // Register a drop handler for M2 files.
 State.registerDropHandler({
 	ext: ['.m2'],
 	prompt: (count: number) => util.format('Export %d models as %s', count, State.config.exportModelFormat),
-	process: files => exportFiles(files, true)
+	process: (files: FileList) => exportFiles(files, true)
 });
 
 // The first time the user opens up the model tab, initialize 3D preview.
@@ -507,9 +533,9 @@ State.registerLoadFunc(async () => {
 	State.$watch('config.modelsShowWMO', updateListfile);
 
 	// When the selected model skin is changed, update our model.
-	State.$watch('modelViewerSkinsSelection', async selection => {
+	State.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
 		// Don't do anything if we're lacking skins.
-		if (!activeRenderer || activeSkins.size === 0)
+		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
 			return;
 
 		// Skin selector is single-select, should only be one item.
@@ -519,13 +545,14 @@ State.registerLoadFunc(async () => {
 
 		const currGeosets = State.modelViewerGeosets;
 
-		if (display.extraGeosets !== undefined) {
+		const creatureDisplay = display as CreatureDisplayInfoEntry;
+		if (creatureDisplay.extraGeosets !== undefined) {
 			for (const geoset of currGeosets) {
 				if (geoset.id > 0 && geoset.id < 900)
 					geoset.checked = false;
 			}
 
-			for (const extraGeoset of display.extraGeosets) {
+			for (const extraGeoset of creatureDisplay.extraGeosets) {
 				for (const geoset of currGeosets) {
 					if (geoset.id === extraGeoset)
 						geoset.checked = true;
@@ -538,10 +565,11 @@ State.registerLoadFunc(async () => {
 			}
 		}
 
-		if (display.textures.length > 0)
-			selectedVariantTextureIDs = [...display.textures];
+		const itemDisplay = display as ItemDisplayInfoEntry;
+		if (itemDisplay.textures !== undefined && itemDisplay.textures.length > 0)
+			selectedVariantTextureIDs = [...itemDisplay.textures];
 
-		activeRenderer.applyReplaceableTextures(display);
+		activeRenderer?.applyReplaceableTextures(display);
 	});
 
 	State.$watch('config.modelViewerShowGrid', () => {
@@ -552,7 +580,7 @@ State.registerLoadFunc(async () => {
 	});
 
 	// Track selection changes on the model listbox and preview first model.
-	State.$watch('selectionModels', async selection => {
+	State.$watch('selectionModels', async (selection: Array<string>) => {
 		// Don't do anything if we're not loading models.
 		if (!State.config.modelsAutoPreview)
 			return;
@@ -564,7 +592,7 @@ State.registerLoadFunc(async () => {
 	});
 
 	// Track when the user clicks to preview a model texture.
-	State.events.on('click-preview-texture', async (fileDataID, displayName) => {
+	State.events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
 		await previewTextureByID(fileDataID, displayName);
 	});
 

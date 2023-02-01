@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import * as generics from '../../generics';
+import { fileExists, createDirectory } from '../../generics';
 import FileWriter from '../../file-writer';
 
 export default class CSVWriter {
@@ -43,10 +43,10 @@ export default class CSVWriter {
 			return;
 
 		// If overwriting is disabled, check file existence.
-		if (!overwrite && await generics.fileExists(this.out))
+		if (!overwrite && await fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await createDirectory(path.dirname(this.out));
 		const writer = new FileWriter(this.out);
 
 		// Write header.

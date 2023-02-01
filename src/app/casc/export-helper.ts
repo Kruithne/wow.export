@@ -2,11 +2,12 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 import util from 'node:util';
-import * as log from '../log';
+
+import Log from '../log';
 import State from '../state';
 import Events from '../events';
 
-const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
+const TOAST_OPT_LOG = { 'View Log': () => Log.openRuntimeLog() };
 //const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
 
 export type ExportTexture = {
@@ -127,7 +128,7 @@ export default class ExportHelper {
 		State.isBusy++;
 		State.exportCancelled = false;
 
-		log.write('Starting export of %d %s items', this.count, this.unit);
+		Log.write('Starting export of %d %s items', this.count, this.unit);
 		this.updateCurrentTask();
 
 		Events.once('toast-cancelled', () => {
@@ -161,7 +162,7 @@ export default class ExportHelper {
 		if (this.isFinished)
 			return;
 
-		log.write('Finished export (%d succeeded, %d failed)', this.succeeded, this.failed);
+		Log.write('Finished export (%d succeeded, %d failed)', this.succeeded, this.failed);
 
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
@@ -250,11 +251,11 @@ export default class ExportHelper {
 	 */
 	mark(item: string, state: boolean, error: string | null = null): void {
 		if (state) {
-			log.write('Successfully exported %s', item);
+			Log.write('Successfully exported %s', item);
 			this.lastItem = item;
 			this.succeeded++;
 		} else {
-			log.write('Failed to export %s (%s)', item, error);
+			Log.write('Failed to export %s (%s)', item, error);
 		}
 
 		this.updateCurrentTask();

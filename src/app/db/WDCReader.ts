@@ -4,9 +4,9 @@ import util from 'node:util';
 import path from 'node:path';
 import assert from 'node:assert';
 
-import * as log from '../log';
+import Log from '../log';
 import State from '../state';
-import constants from '../constants';
+import Constants from '../constants';
 import { downloadFile } from '../generics';
 
 import ExportHelper from '../casc/export-helper';
@@ -180,10 +180,10 @@ export default class WDCReader {
 		const dbdName = tableName + '.dbd';
 
 		let structure: DBDEntry | null = null;
-		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
+		Log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
 
 		// First check if a valid DBD exists in cache and contains a definition for this build.
-		let rawDbd = await casc.cache.getFile(dbdName, constants.CACHE.DIR_DBD);
+		let rawDbd = await casc.cache.getFile(dbdName, Constants.CACHE.DIR_DBD);
 		if (rawDbd !== null)
 			structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 
@@ -191,17 +191,17 @@ export default class WDCReader {
 		if (structure === null) {
 			try {
 				const dbdUrl = util.format(State.config.dbdURL, tableName);
-				log.write('No cached DBD, downloading new from %s', dbdUrl);
+				Log.write('No cached DBD, downloading new from %s', dbdUrl);
 
 				rawDbd = await downloadFile(dbdUrl);
 
 				// Persist the newly download DBD to disk for future loads.
-				await casc.cache.storeFile(dbdName, rawDbd, constants.CACHE.DIR_DBD);
+				await casc.cache.storeFile(dbdName, rawDbd, Constants.CACHE.DIR_DBD);
 
 				// Parse the updated DBD and check for definition.
 				structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 			} catch (e) {
-				log.write(e);
+				Log.write(e);
 				throw new Error('Unable to download DBD for ' + tableName);
 			}
 		}
@@ -240,7 +240,7 @@ export default class WDCReader {
 	 * Parse the data table.
 	 */
 	async parse(): Promise<void> {
-		log.write('Loading DB file %s from CASC', this.fileName);
+		Log.write('Loading DB file %s from CASC', this.fileName);
 
 		const data: BufferWrapper = await State.casc.getFileByName(this.fileName, true, false, true);
 
@@ -252,7 +252,7 @@ export default class WDCReader {
 			throw new Error('Unsupported DB2 type: ' + magic);
 
 		const wdcVersion = format.wdcVersion;
-		log.write('Processing DB file %s as %s', this.fileName, format.name);
+		Log.write('Processing DB file %s as %s', this.fileName, format.name);
 
 		// wdc_db2_header
 		const recordCount = data.readUInt32();
@@ -479,7 +479,7 @@ export default class WDCReader {
 					isZeroed = offsetMap[0].size === 0;
 
 				if (isZeroed) {
-					log.write('Skipping all-zero encrypted section ' + sectionIndex + ' in file ' + this.fileName);
+					Log.write('Skipping all-zero encrypted section ' + sectionIndex + ' in file ' + this.fileName);
 					continue;
 				}
 			}
@@ -595,7 +595,7 @@ export default class WDCReader {
 								case FieldType.UInt32: out[prop] = data.readUInt32Array(count); break;
 								case FieldType.Int64: out[prop] = data.readInt64Array(count); break;
 								case FieldType.UInt64: out[prop] = data.readUInt64Array(count); break;
-								case FieldType.Float: out[prop] = data.readFloat32Array(count); break;
+								case FieldType.Float: out[prop] = data.readFloatArray(count); break;
 							}
 							break;
 
@@ -726,7 +726,7 @@ export default class WDCReader {
 			}
 		}
 
-		log.write('Parsed %s with %d rows', this.fileName, this.size);
+		Log.write('Parsed %s with %d rows', this.fileName, this.size);
 		this.isLoaded = true;
 	}
 }

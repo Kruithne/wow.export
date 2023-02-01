@@ -2,10 +2,20 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import State from '../../state';
 import Events from '../../events';
-import * as log from '../../log';
+import Log from '../../log';
 import WDCReader from '../WDCReader';
 
-const creatureDisplays = new Map();
+import CreatureModelData from '../types/CreatureModelData';
+import CreatureDisplayInfo from '../types/CreatureDisplayInfo';
+
+export type CreatureDisplayInfoEntry = {
+	ID: number,
+	modelID: number,
+	textures: Array<number>,
+	extraGeosets?: Array<number>
+};
+
+const creatureDisplays = new Map<number, Array<CreatureDisplayInfoEntry>>();
 
 /**
  * Initialize creature data.
@@ -13,7 +23,7 @@ const creatureDisplays = new Map();
  * @param creatureModelData - CreatureModelData reader
  */
 export async function initializeCreatureData(creatureDisplayInfo: WDCReader, creatureModelData: WDCReader): Promise<void> {
-	log.write('Loading creature textures...');
+	Log.write('Loading creature textures...');
 
 	const creatureGeosetMap = new Map();
 
@@ -21,7 +31,7 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 	await creatureDisplayInfoGeosetData.parse();
 
 	if (!creatureDisplayInfoGeosetData.schema.has('CreatureDisplayInfoID') || !creatureDisplayInfoGeosetData.schema.has('GeosetValue')) {
-		log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
+		Log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
 		State.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 			'Clear Cache': () => Events.emit('click-cache-clear'),
 			'Not Now': () => false
@@ -37,12 +47,16 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push(((geosetRow.GeosetIndex as number) + 1) * 100 + (geosetRow.GeosetValue as number));
 	}
 
-	const creatureDisplayInfoMap = new Map();
+	const creatureDisplayInfoMap = new Map<number, CreatureDisplayInfoEntry>();
 	const modelIDToDisplayInfoMap = new Map();
 
 	// Map all available texture fileDataIDs to model IDs.
-	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
-		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: (displayRow.TextureVariationFileDataID as Array<number>).filter(e => e > 0)});
+	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows() as Map<number, CreatureDisplayInfo>) {
+		creatureDisplayInfoMap.set(displayID, {
+			ID: displayID,
+			modelID: displayRow.ModelID,
+			textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)
+		});
 
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
 			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
@@ -51,7 +65,7 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 	}
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
-	for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
+	for (const [modelID, modelRow] of creatureModelData.getAllRows() as Map<number, CreatureModelData>) {
 		if (modelIDToDisplayInfoMap.has(modelID)) {
 			const fileDataID = modelRow.FileDataID;
 			const displayIDs = modelIDToDisplayInfoMap.get(modelID);
@@ -61,7 +75,7 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 				const display = creatureDisplayInfoMap.get(displayID);
 
 				if (modelIDHasExtraGeosets) {
-					display.extraGeosets = [];
+					display.extraGeosets = Array<number>();
 					if (creatureGeosetMap.has(displayID))
 						display.extraGeosets = creatureGeosetMap.get(displayID);
 				}
@@ -74,14 +88,14 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 		}
 	}
 
-	log.write('Loaded textures for %d creatures', creatureDisplays.size);
+	Log.write('Loaded textures for %d creatures', creatureDisplays.size);
 }
 
 /**
  * Gets creature skins from a given file data ID.
- * @param fileDataID
- * @returns String when found or undefined if not
+ * @param fileDataID - File data ID
+ * @returns Array of creature skins or undefined if no skins were found.
  */
-export function getCreatureDisplaysByFileDataID(fileDataID: number): string | undefined {
+export function getCreatureDisplaysByFileDataID(fileDataID: number): Array<CreatureDisplayInfoEntry> | undefined {
 	return creatureDisplays.get(fileDataID);
 }

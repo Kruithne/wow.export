@@ -9,35 +9,52 @@ import RenderCache from './RenderCache';
 import TextureRibbon from '../../ui/texture-ribbon';
 import Log from '../../log';
 import State from '../../state';
+import BufferWrapper from '../../buffer';
 
 import getGeosetName from '../GeosetMapper';
 import GeosetEntry from '../GeosetEntry';
 
+import { CreatureDisplayInfoEntry } from '../../db/caches/DBCreatures';
+import { ItemDisplayInfoEntry } from '../../db/caches/DBItemDisplays';
+
+export type DisplayInfo = CreatureDisplayInfoEntry | ItemDisplayInfoEntry;
+
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
 export default class M2Renderer {
+	data: BufferWrapper | undefined;
+	m2: M2Loader;
+	renderGroup: THREE.Group;
+	reactive: boolean;
+	useRibbon: boolean;
+	syncID: number = -1;
+	materials = Array<THREE.MeshStandardMaterial | THREE.MeshPhongMaterial>();
+	renderCache = new RenderCache();
+	defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
+	geosetWatcher?: () => void;
+	wireframeWatcher?: () => void;
+	meshGroup: THREE.Group | undefined;
+	geosetArray: Array<GeosetEntry> | undefined;
+
 	/**
 	 * Construct a new M2Renderer instance.
-	 * @param {BufferWrapper} data
-	 * @param {THREE.Group} renderGroup
-	 * @param {boolean} [reactive=false]
-	 * @param {boolean} [useRibbon=true]
+	 * @param data - The M2 data to render.
+	 * @param renderGroup - The THREE.Group to render the model into.
+	 * @param reactive - Whether to react to changes in the model viewer state.
+	 * @param useRibbon - Whether to use a texture ribbon for the model.
 	 */
-	constructor(data, renderGroup, reactive = false, useRibbon = true) {
+	constructor(data: BufferWrapper, renderGroup: THREE.Group, reactive: boolean = false, useRibbon: boolean = true) {
 		this.data = data;
 		this.renderGroup = renderGroup;
 		this.reactive = reactive;
-		this.materials = [];
-		this.renderCache = new RenderCache();
-		this.syncID = -1;
 		this.useRibbon = useRibbon;
-		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
-	/**
-	 * Load the provided model for rendering.
-	 */
+	/** Load the provided model for rendering. */
 	async load() {
+		if (this.data === undefined)
+			throw new Error('M2Renderer has already discarded its data.');
+
 		// Parse the M2 data.
 		this.m2 = new M2Loader(this.data);
 		await this.m2.load();
@@ -56,9 +73,7 @@ export default class M2Renderer {
 		this.data = undefined;
 	}
 
-	/**
-	 * Update the wireframe state for all materials.
-	 */
+	/** Update the wireframe state for all materials. */
 	updateWireframe() {
 		const renderWireframe = State.config.modelViewerWireframe;
 		for (const material of this.materials) {
@@ -67,9 +82,7 @@ export default class M2Renderer {
 		}
 	}
 
-	/**
-	 * Update the current state of geosets.
-	 */
+	/** Update the current state of geosets. */
 	updateGeosets() {
 		if (!this.reactive || !this.meshGroup || !this.geosetArray)
 			return;
@@ -81,8 +94,9 @@ export default class M2Renderer {
 
 	/**
 	 * Load a skin with a given index.
+	 * @param index - The index of the skin to load.
 	 */
-	async loadSkin(index) {
+	async loadSkin(index: number) {
 		this.disposeMeshGroup();
 		this.meshGroup = new THREE.Group();
 
@@ -111,19 +125,20 @@ export default class M2Renderer {
 
 			const skinMesh = skin.subMeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
-			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
+			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : undefined);
 
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
 			if (this.reactive) {
 				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01'));
-				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+				const geosets = this.geosetArray as Array<GeosetEntry>;
+				geosets[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
 			}
 		}
 
 		if (this.reactive) {
-			State.modelViewerGeosets = this.geosetArray;
-			this.geosetArray.map((geoset: GeosetEntry, i: number) => {
+			const geosets = State.modelViewerGeosets = this.geosetArray as Array<GeosetEntry>;
+			geosets.map((geoset: GeosetEntry, i: number) => {
 				geoset.label = getGeosetName(i, geoset.id);
 			});
 		}
@@ -137,17 +152,17 @@ export default class M2Renderer {
 
 	/**
 	 * Apply replaceable textures to this model.
-	 * @param {Array} displays
+	 * @param {Array} display
 	 */
-	async applyReplaceableTextures(displays) {
+	async applyReplaceableTextures(display: DisplayInfo) {
 		for (let i = 0, n = this.m2.textureTypes.length; i < n; i++) {
 			const textureType = this.m2.textureTypes[i];
 			if (textureType >= 11 && textureType < 14) {
 				// Creature textures.
-				this.overrideTextureType(textureType, displays.textures[textureType - 11]);
+				this.overrideTextureType(textureType, display.textures[textureType - 11]);
 			} else if (textureType > 1 && textureType < 5) {
 				// Item textures.
-				this.overrideTextureType(textureType, displays.textures[textureType - 2]);
+				this.overrideTextureType(textureType, display.textures[textureType - 2]);
 			}
 		}
 	}
@@ -157,7 +172,7 @@ export default class M2Renderer {
 	 * @param {number} type
 	 * @param {number} fileDataID
 	 */
-	async overrideTextureType(type, fileDataID) {
+	async overrideTextureType(type: number, fileDataID: number) {
 		const textureTypes = this.m2.textureTypes;
 		const renderWireframe = State.config.modelViewerWireframe;
 
@@ -186,7 +201,13 @@ export default class M2Renderer {
 
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe });
+			const material = new THREE.MeshPhongMaterial({
+				name: fileDataID.toString(),
+				map: tex,
+				side: THREE.DoubleSide,
+				wireframe: renderWireframe
+			});
+
 			this.renderCache.register(material, tex);
 
 			this.materials[i] = material;
@@ -240,7 +261,12 @@ export default class M2Renderer {
 				if (texture.flags & 0x2)
 					tex.wrapT = THREE.RepeatWrapping;
 
-				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+				const material = new THREE.MeshPhongMaterial({
+					name: texture.fileDataID.toString(),
+					map: tex,
+					side: THREE.DoubleSide
+				});
+
 				this.renderCache.register(material, tex);
 
 				this.materials[i] = material;
@@ -266,7 +292,7 @@ export default class M2Renderer {
 			this.renderGroup.remove(this.meshGroup);
 
 			// Dispose of all children.
-			for (const child of this.meshGroup.children)
+			for (const child of this.meshGroup.children as Array<THREE.Mesh>)
 				child.geometry.dispose();
 
 			// Remove all children from the group for good measure.
