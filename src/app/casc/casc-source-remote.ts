@@ -277,8 +277,7 @@ export default class CASCRemote extends CASC {
 		await queue(archiveKeys, key => this.parseArchiveIndex(key as string), 50);
 
 		// Quick and dirty way to get the total archive size using config.
-		const archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
-		Log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, filesize(archiveTotalSize));
+		Log.timeEnd('Loaded %d archives (%d entries)', archiveCount, this.archives.size);
 	}
 
 	/**

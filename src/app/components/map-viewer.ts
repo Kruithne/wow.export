@@ -17,9 +17,9 @@ const state = {
 	offsetY: 0,
 	zoomFactor: 2,
 	tileQueue: [],
-	selectCache: new Set()
+	selectCache: new Set(),
+	cache: Array<ImageData>(MAP_SIZE_SQ)
 };
-
 export default {
 	/**
 	 * loader: Tile loader function.
@@ -30,7 +30,6 @@ export default {
 	 * selection: Array defining selected tiles.
 	 */
 	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
-
 	data: function() {
 		return {
 			hoverInfo: '',
@@ -45,7 +44,7 @@ export default {
 	/**
 	 * Invoked when this component is mounted in the DOM.
 	 */
-	mounted: function() {
+	mounted: function(): void {
 		// Store a local reference to the canvas context for faster rendering.
 		this.context = this.$refs.canvas.getContext('2d');
 
@@ -81,7 +80,7 @@ export default {
 	/**
 	 * Invoked when this component is about to be destroyed.
 	 */
-	beforeDestory: function() {
+	beforeDestory: function(): void {
 		// Unregister window resize listener.
 		window.removeEventListener('resize', this.onResize);
 
@@ -101,7 +100,7 @@ export default {
 		 * Invoked when the map property changes for this component.
 		 * This indicates that a new map has been selected for rendering.
 		 */
-		map: function() {
+		map: function(): void {
 			// Reset the cache.
 			this.initializeCache();
 
@@ -113,7 +112,7 @@ export default {
 		/**
 		 * Invoked when the tile being hovered over changes.
 		 */
-		hoverTile: function() {
+		hoverTile: function(): void {
 			this.render();
 		}
 	},
@@ -122,15 +121,15 @@ export default {
 		/**
 		 * Initialize a fresh cache array.
 		 */
-		initializeCache: function() {
+		initializeCache: function(): void {
 			state.tileQueue = [];
-			state.cache = new Array(MAP_SIZE_SQ);
+			state.cache = new Array<ImageData>(MAP_SIZE_SQ);
 		},
 
 		/**
 		 * Process the next tile in the loading queue.
 		 */
-		checkTileQueue: function() {
+		checkTileQueue: function(): void {
 			const tile = state.tileQueue.shift();
 			if (tile)
 				this.loadTile(tile);
@@ -140,12 +139,12 @@ export default {
 
 		/**
 		 * Add a tile to the queue to be loaded.
-		 * @param {number} x
-		 * @param {number} y
-		 * @param {number} index
-		 * @param {number} tileSize
+		 * @param x
+		 * @param y
+		 * @param index
+		 * @param tileSize
 		 */
-		queueTile: function(x, y, index, tileSize) {
+		queueTile: function(x: number, y: number, index: number, tileSize: number): void {
 			const node = [x, y, index, tileSize];
 
 			if (this.awaitingTile)
@@ -157,9 +156,9 @@ export default {
 		/**
 		 * Load a given tile into the cache.
 		 * Triggers a re-render and queue-check once loaded.
-		 * @param {Array} tile
+		 * @param tile
 		 */
-		loadTile: function(tile) {
+		loadTile: function(tile): void {
 			this.awaitingTile = true;
 
 			const [x, y, index, tileSize] = tile;
@@ -214,7 +213,7 @@ export default {
 		/**
 		 * Update the position of the internal container.
 		 */
-		render: function() {
+		render: function(): void {
 			// If no map has been selected, do not render.
 			if (this.map === null)
 				return;
@@ -272,8 +271,10 @@ export default {
 
 					// No cache, request it (async) then skip.
 					if (cached === undefined) {
-						// Set the tile cache to 'true' so it is skipped while loading.
-						cache[index] = true;
+						// NIT: This might break something/cause weird behavior
+						// Before refactor: Set the tile cache to 'true' so it is skipped while loading.
+						// After refactor: Set the tile cache to an empty imagedata so it is skipped while loading.
+						cache[index] = new ImageData(1,1);
 
 						// Add this tile to the loading queue.
 						this.queueTile(x, y, index, tileSize);
@@ -299,9 +300,9 @@ export default {
 
 		/**
 		 * Invoked when a key press event is fired on the document.
-		 * @param {KeyboardEvent} event
+		 * @param event
 		 */
-		handleKeyPress: function(event) {
+		handleKeyPress: function(event: KeyboardEvent): void {
 			// Check if the user cursor is over the map viewer.
 			if (this.isHovering === false)
 				return;
@@ -331,10 +332,10 @@ export default {
 		},
 
 		/**
-		 * @param {MouseEvent} event
+		 * @param event
 		 * @returns
 		 */
-		handleTileInteraction: function(event, isFirst = false) {
+		handleTileInteraction: function(event: MouseEvent, isFirst: boolean = false): void {
 			// Calculate which chunk we shift-clicked on.
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
 			const index = (point.tileX * MAP_SIZE) + point.tileY;
@@ -370,9 +371,9 @@ export default {
 
 		/**
 		 * Invoked on mousemove events captured on the document.
-		 * @param {MouseEvent} event
+		 * @param event
 		 */
-		handleMouseMove: function(event) {
+		handleMouseMove: function(event: MouseEvent): void {
 			if (this.isSelecting) {
 				this.handleTileInteraction(event, false);
 			} else if (this.isPanning) {
@@ -392,7 +393,7 @@ export default {
 		/**
 		 * Invoked on mouseup events captured on the document.
 		 */
-		handleMouseUp: function() {
+		handleMouseUp: function(): void {
 			if (this.isPanning)
 				this.isPanning = false;
 
@@ -404,9 +405,9 @@ export default {
 
 		/**
 		 * Invoked on mousedown events captured on the container element.
-		 * @param {MouseEvent} event
+		 * @param event
 		 */
-		handleMouseDown: function(event) {
+		handleMouseDown: function(event: MouseEvent): void {
 			if (event.shiftKey) {
 				this.handleTileInteraction(event, true);
 				this.isSelecting = true;
@@ -427,10 +428,10 @@ export default {
 		/**
 		 * Convert an absolute client point (such as cursor position) to a relative
 		 * position on the map. Returns { tileX, tileY posX, posY }
-		 * @param {number} x
-		 * @param {number} y
+		 * @param x
+		 * @param y
 		 */
-		mapPositionFromClientPoint: function(x, y) {
+		mapPositionFromClientPoint: function(x: number, y: number): object {
 			const viewport = this.$el.getBoundingClientRect();
 
 			const viewOfsX = (x - viewport.x) - state.offsetX;
@@ -449,10 +450,10 @@ export default {
 
 		/**
 		 * Centers the map on a given X, Y in-game position.
-		 * @param {number} x
-		 * @param {number} y
+		 * @param x
+		 * @param y
 		 */
-		setMapPosition: function(x, y) {
+		setMapPosition: function(x: number, y: number): void {
 			// Translate to WoW co-ordinates.
 			const posX = y;
 			const posY = x;
@@ -472,9 +473,9 @@ export default {
 		/**
 		 * Set the zoom factor. This will invalidate the cache.
 		 * This function will not re-render the preview.
-		 * @param {number} factor
+		 * @param factor
 		 */
-		setZoomFactor: function(factor) {
+		setZoomFactor: function(factor: number): void {
 			state.zoomFactor = factor;
 
 			// Invalidate the cache so that tiles are re-rendered.
@@ -483,9 +484,9 @@ export default {
 
 		/**
 		 * Invoked when the mouse is moved over the component.
-		 * @param {MouseEvent} event
+		 * @param event
 		 */
-		handleMouseOver: function(event) {
+		handleMouseOver: function(event: MouseEvent): void {
 			this.isHovering = true;
 
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
@@ -499,7 +500,7 @@ export default {
 		/**
 		 * Invoked when the mouse leaves the component.
 		 */
-		handleMouseOut: function() {
+		handleMouseOut: function(): void {
 			this.isHovering = false;
 
 			// Remove the current hover overlay.
@@ -508,9 +509,9 @@ export default {
 
 		/**
 		 * Invoked on mousewheel events captured on the container element.
-		 * @param {WheelEvent} event
+		 * @param event
 		 */
-		handleMouseWheel: function(event) {
+		handleMouseWheel: function(event: WheelEvent): void {
 			const delta = event.deltaY > 0 ? 1 : -1;
 			const newZoom = Math.max(1, Math.min(this.zoom, state.zoomFactor + delta));
 

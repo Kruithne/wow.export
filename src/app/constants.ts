@@ -59,7 +59,6 @@ export default {
 	},
 
 	CONFIG:  {
-		DEFAULT_PATH: path.join(INSTALL_PATH, 'src', 'default_config.jsonc'), // Path of default configuration file.
 		USER_PATH: path.join(DATA_PATH, 'config.json') // Path of user-defined configuration file.
 	},
 

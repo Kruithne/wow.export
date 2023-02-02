@@ -16,7 +16,6 @@ const INCLUDE = {
 	'CHANGELOG.md': 'src/CHANGELOG.md',
 	'resources/icon.png': 'res/icon.png',
 	'addons/blender/io_scene_wowobj': 'addon/io_scene_wowobj',
-	'src/config/default_config.jsonc': 'src/default_config.jsonc',
 	'src/app/index.html': 'src/index.html',
 	'src/assets/fa-icons': 'src/fa-icons',
 	'src/shaders': 'src/shaders',
