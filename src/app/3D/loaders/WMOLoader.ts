@@ -169,7 +169,7 @@ export class WMOLoader {
 	/**
 	 * Load the WMO object.
 	 */
-	async load() {
+	async load(): Promise<void> {
 		// Prevent duplicate loading.
 		if (this.loaded)
 			return;
@@ -195,7 +195,7 @@ export class WMOLoader {
 	 * Get a group from this WMO.
 	 * @param index
 	 */
-	async getGroup(index: number) {
+	async getGroup(index: number): Promise<WMOGroupLoader> {
 		if (!this.groups)
 			throw new Error('Attempted to obtain group from a root WMO.');
 
@@ -220,7 +220,7 @@ export class WMOLoader {
 	/**
 	 * Read a position, corrected from WoW's co-ordinate system.
 	 */
-	readPosition() {
+	readPosition(): Array<number> {
 		const x = this.data.readFloat();
 		const z = this.data.readFloat();
 		const y = this.data.readFloat() * -1;
@@ -242,14 +242,14 @@ const WMOOptionalChunks: Array<number> = [
 
 const WMOChunkHandlers = {
 	// MVER (Version) [WMO Root, WMO Group]
-	0x4D564552: function(this: WMOLoader, data: BufferWrapper) {
+	0x4D564552: function(this: WMOLoader, data: BufferWrapper): void {
 		this.version = data.readUInt32();
 		if (this.version !== 17)
 			throw new Error(util.format('Unsupported WMO version: %d', this.version));
 	},
 
 	// MOHD (Header) [WMO Root]
-	0x4D4F4844: function(this: WMOLoader, data: BufferWrapper) {
+	0x4D4F4844: function(this: WMOLoader, data: BufferWrapper): void {
 		this.materialCount = data.readUInt32();
 		this.groupCount = data.readUInt32();
 		this.portalCount = data.readUInt32();
@@ -269,12 +269,12 @@ const WMOChunkHandlers = {
 
 
 	// MOTX (Textures) [Classic, WMO Root]
-	0x4D4F5458: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5458: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		this.textureNames = data.readStringBlock(chunkSize);
 	},
 
 	// MFOG (Fog) [WMO Root]
-	0x4D464F47: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D464F47: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 48;
 		const fogs = this.fogs = new Array<WMOFog>(count);
 
@@ -299,7 +299,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOMT (Materials) [WMO Root]
-	0x4D4F4D54: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4D54: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 64;
 		const materials = this.materials = new Array<WMOMaterial>(count);
 
@@ -323,7 +323,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOPV (Portal Vertices) [WMO Root]
-	0x4D4F5056: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5056: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const vertexCount = chunkSize / (3 * 4);
 		this.portalVertices = new Array<Array<number>>(vertexCount);
 		for (let i = 0; i < vertexCount; i++)
@@ -331,7 +331,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOPT (Portal Triangles) [WMO Root]
-	0x4D4F5054: function(this: WMOLoader, data: BufferWrapper) {
+	0x4D4F5054: function(this: WMOLoader, data: BufferWrapper): void {
 		this.portalInfo = new Array<WMOPortalInfo>(this.portalCount);
 		for (let i = 0; i < this.portalCount; i++) {
 			this.portalInfo[i] = {
@@ -343,7 +343,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOPR (Map Object Portal References) [WMO Root]
-	0x4D4F5052: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5052: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const entryCount = chunkSize / 8;
 		this.mopr = new Array<WMOMapObjectPortalRef>(entryCount);
 
@@ -359,12 +359,12 @@ const WMOChunkHandlers = {
 	},
 
 	// MOGN (Group Names) [WMO Root]
-	0x4D4F474E: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F474E: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		this.groupNames = data.readStringBlock(chunkSize);
 	},
 
 	// MOGI (Group Info) [WMO Root]
-	0x4D4F4749: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4749: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 32;
 		const groupInfo = this.groupInfo = new Array<WMOGroupInfo>(count);
 
@@ -379,7 +379,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MODS (Doodad Sets) [WMO Root]
-	0x4D4F4453: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4453: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 32;
 		const doodadSets = this.doodadSets = new Array<WMODoodadSet>(count);
 
@@ -394,12 +394,12 @@ const WMOChunkHandlers = {
 	},
 
 	// MODI (Doodad IDs) [WMO Root]
-	0x4D4F4449: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4449: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		this.fileDataIDs = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MODN (Doodad Names) [WMO Root]
-	0x4D4F444E: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F444E: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		this.doodadNames = data.readStringBlock(chunkSize);
 
 		// Doodads are still reference as MDX in Classic doodad names, replace them with m2.
@@ -408,7 +408,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MODD (Doodad Definitions) [WMO Root]
-	0x4D4F4444: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4444: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 40;
 		const doodads = this.doodads = new Array<WMODoodad>(count);
 
@@ -425,12 +425,12 @@ const WMOChunkHandlers = {
 	},
 
 	// GFID (Group file Data IDs) [WMO Root]
-	0x47464944: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x47464944: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		this.groupIDs = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MLIQ (Liquid Data) [WMO Group]
-	0x4D4C4951: function(this: WMOLoader, data: BufferWrapper) {
+	0x4D4C4951: function(this: WMOLoader, data: BufferWrapper): void {
 		// See https://wowdev.wiki/WMO#MLIQ_chunk for using this raw data.
 		const liquidVertsX = data.readUInt32();
 		const liquidVertsY = data.readUInt32();
@@ -480,7 +480,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOCV (Vertex Colouring) [WMO Group]
-	0x4D4F4356: function(this: WMOLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4356: function(this: WMOLoader, data: BufferWrapper, chunkSize: number): void {
 		if (!this.vertexColours)
 			this.vertexColours = [];
 
@@ -488,12 +488,12 @@ const WMOChunkHandlers = {
 	},
 
 	// MDAL (Ambient Color) [WMO Group]
-	0x4D44414C: function(this: WMOLoader, data: BufferWrapper) {
+	0x4D44414C: function(this: WMOLoader, data: BufferWrapper): void {
 		this.ambientColor = data.readUInt32();
 	},
 
 	// MOGP (Group Header) [WMO Group]
-	0x4D4F4750: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4750: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		const endOfs = data.offset + chunkSize;
 
 		this.nameOfs = data.readUInt32();
@@ -533,12 +533,12 @@ const WMOChunkHandlers = {
 	},
 
 	// MOVI (indices) [WMO Group]
-	0x4D4F5649: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5649: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		this.indices = data.readUInt16Array(chunkSize / 2);
 	},
 
 	// MOVT (vertices) [WMO Group]
-	0x4D4F5654: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5654: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 4;
 		const vertices = this.vertices = new Array(count);
 
@@ -550,7 +550,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOTV (UVs) [WMO Group]
-	0x4D4F5456: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5456: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		if (!this.uvs)
 			this.uvs = [];
 
@@ -565,7 +565,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MONR (Normals) [WMO Group]
-	0x4D4F4E52: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4E52: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 4;
 		const normals = this.normals = new Array(count);
 
@@ -577,7 +577,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOBA (Render Batches) [WMO Group]
-	0x4D4F4241: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4241: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 24;
 		const batches = this.renderBatches = new Array<WMORenderBatch>(count);
 
@@ -596,7 +596,7 @@ const WMOChunkHandlers = {
 	},
 
 	// MOPY (Material Info) [WMO Group]
-	0x4D4F5059: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F5059: function(this: WMOGroupLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 2;
 		const materialInfo = this.materialInfo = new Array<WMOMaterialInfo>(count);
 
@@ -605,7 +605,7 @@ const WMOChunkHandlers = {
 	},
 };
 
-class WMOGroupLoader extends WMOLoader {
+export class WMOGroupLoader extends WMOLoader {
 	nameOfs: number;
 	descOfs: number;
 	flags: number;

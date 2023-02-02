@@ -16,12 +16,21 @@ import BLTEReader from './blte-reader';
 
 import CASC from './casc-source';
 
+type ArchiveEntry = {
+	key: string,
+	size: number,
+	offset: number
+}
+
+type Host = {
+	host: string,
+	ping: number
+}
+
 const EMPTY_HASH = '00000000000000000000000000000000';
 
 export default class CASCRemote extends CASC {
-	builds: Array<any>; // NIT: Make type for builds
-	build: any;
-	archives: Map<string, any>;
+	archives = new Map<string, ArchiveEntry>();
 	host: string;
 	region: string;
 
@@ -32,14 +41,11 @@ export default class CASCRemote extends CASC {
 	constructor(region: string) {
 		super(true);
 
-		this.archives = new Map();
 		this.region = region;
 	}
 
-	/**
-	 * Initialize remote CASC source.
-	 */
-	async init() {
+	/** Initialize remote CASC source. */
+	async init(): Promise<void> {
 		Log.write('Initializing remote CASC source (%s)', this.region);
 		this.host = util.format(Constants.PATCH.HOST, this.region);
 		this.builds = [];
@@ -106,13 +112,11 @@ export default class CASCRemote extends CASC {
 	 * @param forceFallback
 	 * @param contentKey
 	 */
-	// TODO: This could do with being an interface.
-	// eslint-disable-next-line no-unused-vars
-	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
+	async getFile(fileDataID: number, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null): Promise<BLTEReader> {
 		if (!suppressLog)
 			Log.write('Loading remote CASC file %d (%s)', fileDataID, Listfile.getByID(fileDataID) as string);
 
-		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getEncodingKey(fileDataID);
 		let data = await this.cache.getFile(encodingKey, Constants.CACHE.DIR_DATA);
 
 		if (data === null) {
@@ -144,7 +148,7 @@ export default class CASCRemote extends CASC {
 	 * Returns a list of available products on the remote CDN.
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
-	getProductList() {
+	getProductList(): Array<string> {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
@@ -160,7 +164,7 @@ export default class CASCRemote extends CASC {
 	 * @param buildIndex
 	 * @param cache
 	 */
-	async preload(buildIndex: number, cache?: BuildCache) {
+	async preload(buildIndex: number, cache?: BuildCache): Promise<void> {
 		this.build = this.builds[buildIndex];
 		Log.write('Preloading remote CASC build: %o', this.build);
 
@@ -179,9 +183,9 @@ export default class CASCRemote extends CASC {
 
 	/**
 	 * Load the CASC interface with the given build.
-	 * @param {number} buildIndex
+	 * @param buildIndex
 	 */
-	async load(buildIndex) {
+	async load(buildIndex: number): Promise<void> {
 		this.progress = State.createProgress(16);
 		await this.preload(buildIndex);
 
@@ -199,7 +203,7 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Download and parse the encoding file.
 	 */
-	async loadEncoding() {
+	async loadEncoding(): Promise<void> {
 		const encKeys = this.buildConfig.encoding.split(' ');
 		const encKey = encKeys[1];
 
@@ -230,7 +234,7 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Download and parse the root file.
 	 */
-	async loadRoot() {
+	async loadRoot(): Promise<void> {
 		// Get root key from encoding table.
 		const rootKey = this.encodingKeys.get(this.buildConfig.root);
 		if (rootKey === undefined)
@@ -260,7 +264,7 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Download and parse archive files.
 	 */
-	async loadArchives() {
+	async loadArchives(): Promise<void> {
 		// Download archive indexes.
 		const archiveKeys = this.cdnConfig.archives.split(' ');
 		const archiveCount = archiveKeys.length;
@@ -281,7 +285,7 @@ export default class CASCRemote extends CASC {
 	 * Download the CDN configuration and store the entry for our
 	 * selected region.
 	 */
-	async loadServerConfig() {
+	async loadServerConfig(): Promise<void> {
 		if (this.progress)
 			await this.progress.step('Fetching CDN configuration');
 
@@ -300,7 +304,7 @@ export default class CASCRemote extends CASC {
 	 * Will use global cache and download if missing.
 	 * @param key
 	 */
-	async parseArchiveIndex(key: string) {
+	async parseArchiveIndex(key: string): Promise<void> {
 		const fileName = key + '.index';
 
 		let data = await this.cache.getFile(fileName, Constants.CACHE.DIR_INDEXES);
@@ -335,7 +339,7 @@ export default class CASCRemote extends CASC {
 	 * @param {string} file
 	 * @returns {BufferWrapper}
 	 */
-	async getDataFile(file) {
+	async getDataFile(file: string): Promise<BufferWrapper> {
 		return await downloadFile(this.host + 'data/' + file);
 	}
 
@@ -353,7 +357,7 @@ export default class CASCRemote extends CASC {
 	/**
 	 * Download the CDNConfig and BuildConfig.
 	 */
-	async loadConfigs() {
+	async loadConfigs(): Promise<void> {
 		// Download CDNConfig and BuildConfig.
 		if (this.progress)
 			await this.progress.step('Fetching build configurations');
@@ -369,13 +373,13 @@ export default class CASCRemote extends CASC {
 	 * Run a ping for all hosts in the server config and resolve fastest.
 	 * Returns NULL if all the hosts failed to ping.
 	 */
-	async resolveCDNHost() {
+	async resolveCDNHost(): Promise<void> {
 		if (this.progress)
 			await this.progress.step('Locating fastest CDN server');
 
 		Log.write('Resolving best host: %s', this.serverConfig.Hosts);
 
-		let bestHost: any = null;
+		let bestHost: Host = null;
 		const hosts = this.serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
 		const hostPings: Array<Promise<void>> = [];
 

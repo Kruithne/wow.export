@@ -16,7 +16,7 @@ export type CDNRegion = { tag: string, url: string, delay: number | null };
 
 let cascSource: CASC;
 
-const loadInstall = (index) => {
+function loadInstall(index: number): void {
 	State.block(async () => {
 		State.showLoadScreen();
 
@@ -56,7 +56,7 @@ const loadInstall = (index) => {
 			State.setScreen('source-select');
 		}
 	});
-};
+}
 
 Events.once('screen-source-select', async () => {
 	const pings = Array<Promise<number | void>>();
@@ -87,7 +87,7 @@ Events.once('screen-source-select', async () => {
 	// Set-up hooks for local installation dialog.
 	const selector = document.createElement('input');
 	selector.setAttribute('type', 'file');
-	selector.setAttribute('nwdirectory', true);
+	selector.setAttribute('nwdirectory', 'true');
 	selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
 	// Grab recent local installations from config.
@@ -95,7 +95,7 @@ Events.once('screen-source-select', async () => {
 	if (!Array.isArray(recentLocal))
 		recentLocal = State.config.recentLocal = [];
 
-	const openInstall = async (installPath: string, product: string | undefined = undefined) => {
+	async function openInstall(installPath: string, product: string | undefined = undefined): Promise<void> {
 		State.hideToast();
 
 		try {
@@ -119,7 +119,7 @@ Events.once('screen-source-select', async () => {
 					recentLocal.splice(i, 1);
 			}
 		}
-	};
+	}
 
 	// Register for the 'click-source-local' event fired when the user clicks 'Open Local Installation'.
 	// Prompt the user with a directory selection dialog to locate their local installation.
@@ -130,7 +130,7 @@ Events.once('screen-source-select', async () => {
 
 	// Both selecting a file using the directory selector, and clicking on a recent local
 	// installation (click-source-local-recent) should then attempt to open an install.
-	selector.onchange = () => openInstall(selector.value);
+	selector.onchange = (): Promise<void> => openInstall(selector.value);
 	Events.on('click-source-local-recent', entry => openInstall(entry.path, entry.product));
 
 	// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.

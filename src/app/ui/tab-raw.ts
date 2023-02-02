@@ -1,36 +1,37 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
+
 import State from '../state';
 import Events from '../events';
-import * as log from '../log';
+import Log from '../log';
 import ExportHelper from '../casc/export-helper';
-import constants from '../constants';
-import * as generics from '../generics';
-import * as listfile from '../casc/listfile';
+import Constants from '../constants';
+import { redraw, fileExists } from '../generics';
+import Listfile from '../casc/listfile';
 
 let isDirty = true;
 
-const computeRawFiles = async () => {
+async function computeRawFiles(): Promise<void> {
 	if (isDirty) {
 		isDirty = false;
 
 		if (State.config.enableUnknownFiles) {
 			State.setToast('progress', 'Scanning game client for all files...');
-			await generics.redraw();
+			await redraw();
 
 			const rootEntries = State.casc.getValidRootEntries();
-			State.listfileRaw = listfile.formatEntries(rootEntries);
+			State.listfileRaw = Listfile.formatEntries(rootEntries);
 			State.setToast('success', util.format('Found %d files in the game client', State.listfileRaw.length));
 		} else {
 			State.setToast('progress', 'Scanning game client for all known files...');
-			await generics.redraw();
+			await redraw();
 
-			State.listfileRaw = listfile.getFullListfile();
+			State.listfileRaw = Listfile.getFullListfile();
 			State.setToast('success', util.format('Found %d known files in the game client', State.listfileRaw.length));
 		}
 	}
-};
+}
 
 State.registerLoadFunc(async () => {
 	Events.on('screen-tab-raw', () => computeRawFiles());
@@ -52,7 +53,7 @@ Events.on('click-detect-raw', async () => {
 
 	const filteredSelection: Array<number> = [];
 	for (let fileName of userSelection) {
-		fileName = listfile.stripFileEntry(fileName);
+		fileName = Listfile.stripFileEntry(fileName);
 		const match = fileName.match(/^unknown\/(\d+)(\.[a-zA-Z_]+)$/);
 
 		if (match)
@@ -75,20 +76,20 @@ Events.on('click-detect-raw', async () => {
 
 		try {
 			const data = await State.casc.getFile(fileDataID);
-			for (const check of constants.FILE_IDENTIFIERS) {
+			for (const check of Constants.FILE_IDENTIFIERS) {
 				if (data.startsWith(check.match)) {
 					extensionMap.set(fileDataID, check.ext);
-					log.write('Successfully identified file %d as %s', fileDataID, check.ext);
+					Log.write('Successfully identified file %d as %s', fileDataID, check.ext);
 					break;
 				}
 			}
 		} catch (e) {
-			log.write('Failed to identify file %d due to CASC error', fileDataID);
+			Log.write('Failed to identify file %d due to CASC error', fileDataID);
 		}
 	}
 
 	if (extensionMap.size > 0) {
-		listfile.ingestIdentifiedFiles(extensionMap);
+		Listfile.ingestIdentifiedFiles(extensionMap);
 		await computeRawFiles();
 
 		if (extensionMap.size === 1) {
@@ -123,10 +124,10 @@ Events.on('click-export-raw', async () => {
 		if (helper.isCancelled())
 			return;
 
-		fileName = listfile.stripFileEntry(fileName);
+		fileName = Listfile.stripFileEntry(fileName);
 		const exportPath = ExportHelper.getExportPath(fileName);
 
-		if (overwriteFiles || !await generics.fileExists(exportPath)) {
+		if (overwriteFiles || !await fileExists(exportPath)) {
 			try {
 				const data = await State.casc.getFileByName(fileName, true);
 				await data.writeToFile(exportPath);
@@ -137,7 +138,7 @@ Events.on('click-export-raw', async () => {
 			}
 		} else {
 			helper.mark(fileName, true);
-			log.write('Skipping file export %s (file exists, overwrite disabled)', exportPath);
+			Log.write('Skipping file export %s (file exists, overwrite disabled)', exportPath);
 		}
 	}
 

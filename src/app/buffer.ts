@@ -82,7 +82,7 @@ export default class BufferWrapper {
 	 * @param ofs - New position to set.
 	 * @throws {@link Error} If the given position is out of bounds of the buffer.
 	 */
-	seek(ofs: number) {
+	seek(ofs: number): void {
 		const pos = ofs < 0 ? this.length + ofs : ofs;
 		if (pos < 0 || pos > this.length)
 			throw new Error(util.format('seek() offset out of bounds %d -> %d ! %d', ofs, pos, this.length));
@@ -99,7 +99,7 @@ export default class BufferWrapper {
 	 * @param ofs - Offset to move the position by.
 	 * @throws {@link Error} If the new position is out of bounds of the buffer.
 	 */
-	move(ofs: number) {
+	move(ofs: number): void {
 		const pos = this.offset + ofs;
 		if (pos < 0 || pos > this.length)
 			throw new Error(util.format('move() offset out of bounds %d -> %d ! %d', ofs, pos, this.length));
@@ -601,109 +601,109 @@ export default class BufferWrapper {
 	}
 
 	/** Write a 8-bit integer to the buffer. */
-	writeInt8(value: number) {
+	writeInt8(value: number): void {
 		this.buffer.writeInt8(value, this.offset);
 		this.offset += 1;
 	}
 
 	/** Write a 8-bit unsigned integer to the buffer. */
-	writeUInt8(value: number) {
+	writeUInt8(value: number): void {
 		this.buffer.writeUInt8(value, this.offset);
 		this.offset += 1;
 	}
 
 	/** Write a 16-bit (little-endian) signed integer to the buffer. */
-	writeInt16(value: number) {
+	writeInt16(value: number): void {
 		this.buffer.writeInt16LE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 16-bit (little-endian) unsigned integer to the buffer. */
-	writeUInt16(value: number) {
+	writeUInt16(value: number): void {
 		this.buffer.writeUInt16LE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 32-bit (little-endian) signed integer to the buffer. */
-	writeInt32(value: number) {
+	writeInt32(value: number): void {
 		this.buffer.writeInt32LE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 32-bit (little-endian) unsigned integer to the buffer. */
-	writeUInt32(value: number) {
+	writeUInt32(value: number): void {
 		this.buffer.writeUInt32LE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 64-bit (little-endian) signed integer to the buffer. */
-	writeInt64(value: bigint) {
+	writeInt64(value: bigint): void {
 		this.buffer.writeBigInt64LE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 64-bit (little-endian) unsigned integer to the buffer. */
-	writeUInt64(value: bigint) {
+	writeUInt64(value: bigint): void {
 		this.buffer.writeBigUInt64LE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a float (little-endian) to the buffer. */
-	writeFloat(value: number) {
+	writeFloat(value: number): void {
 		this.buffer.writeFloatLE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a double (little-endian) to the buffer. */
-	writeDouble(value: number) {
+	writeDouble(value: number): void {
 		this.buffer.writeDoubleLE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 16-bit (big-endian) signed integer to the buffer. */
-	writeInt16BE(value: number) {
+	writeInt16BE(value: number): void {
 		this.buffer.writeInt16BE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 16-bit (big-endian) unsigned integer to the buffer. */
-	writeUInt16BE(value: number) {
+	writeUInt16BE(value: number): void {
 		this.buffer.writeUInt16BE(value, this.offset);
 		this.offset += 2;
 	}
 
 	/** Write a 32-bit (big-endian) signed integer to the buffer. */
-	writeInt32BE(value: number) {
+	writeInt32BE(value: number): void {
 		this.buffer.writeInt32BE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 32-bit (big-endian) unsigned integer to the buffer. */
-	writeUInt32BE(value: number) {
+	writeUInt32BE(value: number): void {
 		this.buffer.writeUInt32BE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a 64-bit (big-endian) signed integer to the buffer. */
-	writeInt64BE(value: bigint) {
+	writeInt64BE(value: bigint): void {
 		this.buffer.writeBigInt64BE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a 64-bit (big-endian) unsigned integer to the buffer. */
-	writeUInt64BE(value: bigint) {
+	writeUInt64BE(value: bigint): void {
 		this.buffer.writeBigUInt64BE(value, this.offset);
 		this.offset += 8;
 	}
 
 	/** Write a float (big-endian) to the buffer. */
-	writeFloatBE(value: number) {
+	writeFloatBE(value: number): void {
 		this.buffer.writeFloatBE(value, this.offset);
 		this.offset += 4;
 	}
 
 	/** Write a double (big-endian) to the buffer. */
-	writeDoubleBE(value: number) {
+	writeDoubleBE(value: number): void {
 		this.buffer.writeDoubleBE(value, this.offset);
 		this.offset += 8;
 	}
@@ -714,7 +714,7 @@ export default class BufferWrapper {
 	 * @param copyOfs - The offset to start copying from. Defaults to 0.
 	 * @param copyLength - The number of bytes to copy. Defaults to the entire buffer.
 	 */
-	writeBuffer(source: Buffer, copyOfs = 0, copyLength = 0) {
+	writeBuffer(source: Buffer, copyOfs = 0, copyLength = 0): void {
 		if (copyLength === 0)
 			copyLength = source.byteLength;
 
@@ -729,7 +729,7 @@ export default class BufferWrapper {
 	 * Write the contents of this buffer to a file.
 	 * @param file - The file to write to.
 	 */
-	async writeToFile(file: string) {
+	async writeToFile(file: string): Promise<void> {
 		await fs.mkdir(path.dirname(file), { recursive: true });
 		await fs.writeFile(file, this.buffer);
 	}
@@ -781,7 +781,7 @@ export default class BufferWrapper {
 	/**
 	 * Revoke the data URL assigned to this buffer.
 	 */
-	revokeDataURL() {
+	revokeDataURL(): void {
 		if (this.dataURL !== undefined) {
 			URL.revokeObjectURL(this.dataURL);
 			this.dataURL = undefined;

@@ -7,8 +7,8 @@ import Log from '../log';
 import State from '../state';
 import Events from '../events';
 
-const TOAST_OPT_LOG = { 'View Log': () => Log.openRuntimeLog() };
-//const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
+const TOAST_OPT_LOG = { 'View Log': (): void => Log.openRuntimeLog() };
+//const TOAST_OPT_DIR = { 'Open Export Directory': () => State.openExportDirectory() };
 
 export type ExportTexture = {
 	matPathRelative: string;
@@ -35,7 +35,7 @@ export default class ExportHelper {
 	 * Return an export path for the given file.
 	 * @param file
 	 */
-	static getExportPath(file: string) {
+	static getExportPath(file: string): string {
 		// Remove whitespace due to MTL incompatibility for textures.
 		if (State.config.removePathSpaces)
 			file = file.replace(/\s/g, '');
@@ -114,14 +114,14 @@ export default class ExportHelper {
 	/**
 	 * Get the unit name formatted depending on plurality.
 	 */
-	get unitFormatted() {
+	get unitFormatted(): string {
 		return this.count > 1 ? this.unit + 's' : this.unit;
 	}
 
 	/**
 	 * Start the export.
 	 */
-	start() {
+	start(): void {
 		this.succeeded = 0;
 		this.isFinished = false;
 

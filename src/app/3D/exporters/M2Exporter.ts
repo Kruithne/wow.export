@@ -7,22 +7,37 @@ import { fileExists } from '../../generics';
 import Log from '../../log';
 import Listfile from '../../casc/listfile';
 import BufferWrapper from '../../buffer';
+import State from '../../state';
 
 import BLPFile from '../../casc/blp';
 import M2Loader from '../loaders/M2Loader';
 import OBJWriter from '../writers/OBJWriter';
 import MTLWriter from '../writers/MTLWriter';
 import JSONWriter from '../writers/JSONWriter';
-import GLTFWriter from '../writers/GLTFWriter';
 import ExportHelper from '../../casc/export-helper';
 
 import getGeosetName from '../GeosetMapper';
+import GeosetEntry from '../GeosetEntry';
+
+import Texture from '../Texture';
+import Skin from '../Skin';
+
+type TextureManifestEntry = {
+	fileDataID: number,
+	file: string
+};
+
+type ExportedTexture = {
+	matName: string,
+	matPathRelative: string,
+	matPath: string;
+};
 
 export default class M2Exporter {
 	m2: M2Loader;
 	fileDataID: number;
-	variantTextures: Array<number>;
-	geosetMask: Array<number>;
+	variantTextures?: Array<number>;
+	geosetMask: Array<GeosetEntry>;
 
 	/**
 	 * Construct a new M2Exporter instance.
@@ -30,7 +45,7 @@ export default class M2Exporter {
 	 * @param variantTextures
 	 * @param fileDataID
 	 */
-	constructor(data: BufferWrapper, variantTextures: Array<number>, fileDataID: number) {
+	constructor(data: BufferWrapper, variantTextures: Array<number> | undefined, fileDataID: number) {
 		this.m2 = new M2Loader(data);
 		this.fileDataID = fileDataID;
 		this.variantTextures = variantTextures;
@@ -40,27 +55,27 @@ export default class M2Exporter {
 	 * Set the mask array used for geoset control.
 	 * @param mask
 	 */
-	setGeosetMask(mask: Array<any>) {
+	setGeosetMask(mask: Array<GeosetEntry>): void {
 		this.geosetMask = mask;
 	}
 
 	/**
 	 * Export the textures for this M2 model.
-	 * @param out
-	 * @param raw
-	 * @param mtl
-	 * @param helper
-	 * @param [fullTexPaths=false]
-	 * @returns {Map<number, string>}
+	 * @param out - The output directory.
+	 * @param raw - Whether to export the raw texture files.
+	 * @param mtl - The MTL writer.
+	 * @param helper - The export helper.
+	 * @param fullTexPaths - Whether to use full texture paths in the MTL file.
+	 * @returns A map of texture indices to texture file names.
 	 */
-	async exportTextures(out: string, raw: boolean = false, mtl: MTLWriter = null, helper: ExportHelper, fullTexPaths: boolean = false): Map<number, string> {
-		const config = core.view.config;
-		const validTextures = new Map();
+	async exportTextures(out: string, raw: boolean = false, mtl: MTLWriter | null, helper: ExportHelper, fullTexPaths: boolean = false): Promise<Map<number, ExportedTexture>> {
+		const config = State.config;
+		const validTextures = new Map<number, ExportedTexture>();
 
 		if (!config.modelsExportTextures)
 			return validTextures;
 
-		await this.m2.load();
+		this.m2.load();
 
 		const useAlpha = config.modelsExportAlpha;
 		const usePosix = config.pathFormat === 'posix';
@@ -69,7 +84,7 @@ export default class M2Exporter {
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
-				return;
+				return validTextures;
 
 			const textureType = this.m2.textureTypes[textureIndex];
 			let texFileDataID = texture.fileDataID;
@@ -104,7 +119,7 @@ export default class M2Exporter {
 						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
 
 						// Remove spaces from material name for MTL compatibility.
-						if (core.view.config.removePathSpaces)
+						if (State.config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
 
@@ -116,7 +131,7 @@ export default class M2Exporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = Listfile.formatUnknownFile(texFile);
+							fileName = Listfile.formatUnknownFile(texFileDataID);
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -124,7 +139,7 @@ export default class M2Exporter {
 					}
 
 					if (config.overwriteFiles || !await fileExists(texPath)) {
-						const data = await core.view.casc.getFile(texFileDataID);
+						const data = await State.casc.getFile(texFileDataID);
 						Log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
 
 						if (raw === true) {
@@ -159,72 +174,19 @@ export default class M2Exporter {
 		return validTextures;
 	}
 
-	async exportAsGLTF(out, helper) {
-		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-		const outDir = path.dirname(out);
-
-		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && fileExists(outGLTF))
-			return Log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
-
-		await this.m2.load();
-		const skin = await this.m2.getSkin(0);
-
-		const gltf = new GLTFWriter(out, this.m2.name);
-		Log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
-
-		gltf.setVerticesArray(this.m2.vertices);
-		gltf.setNormalArray(this.m2.normals);
-		gltf.setUVArray(this.m2.uv);
-		gltf.setBoneWeightArray(this.m2.boneWeights);
-		gltf.setBoneIndiceArray(this.m2.boneIndices);
-		gltf.setBonesArray(this.m2.bones);
-
-		// TODO: Handle UV2 for GLTF.
-
-		// TODO: full texture paths.
-		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
-		gltf.setTextureMap(textureMap);
-
-		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
-			// Skip geosets that are not enabled.
-			if (!this.geosetMask[mI]?.checked)
-				continue;
-
-			const mesh = skin.subMeshes[mI];
-			const indices = new Array(mesh.triangleCount);
-			for (let vI = 0; vI < mesh.triangleCount; vI++)
-				indices[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
-
-			let texture = null;
-			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
-			if (texUnit)
-				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
-
-			// TODO: Better material naming.
-			let matName;
-			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
-				matName = texture.fileDataID;
-
-			gltf.addMesh(getGeosetName(mI, mesh.submeshID), indices, matName);
-		}
-
-		await gltf.write(core.view.config.overwriteFiles);
-	}
-
 	/**
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param out
 	 * @param exportCollision
 	 * @param helper
 	 */
-	async exportAsOBJ(out: string, exportCollision: boolean = false, helper: ExportHelper) {
-		await this.m2.load();
+	async exportAsOBJ(out: string, exportCollision: boolean = false, helper: ExportHelper): Promise<void> {
+		this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const config = core.view.config;
-		const exportMeta = core.view.config.exportM2Meta;
-		const exportBones = core.view.config.exportM2Bones;
+		const config = State.config;
+		const exportMeta = State.config.exportM2Meta;
+		const exportBones = State.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -241,7 +203,7 @@ export default class M2Exporter {
 		obj.setNormalArray(this.m2.normals);
 		obj.addUVArray(this.m2.uv);
 
-		if (core.view.config.modelsExportUV2)
+		if (State.config.modelsExportUV2)
 			obj.addUVArray(this.m2.uv2);
 
 		// Textures
@@ -328,12 +290,12 @@ export default class M2Exporter {
 			for (let vI = 0; vI < mesh.triangleCount; vI++)
 				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
 
-			let texture = null;
+			let texture: Texture;
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
 			if (texUnit)
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
-			let matName;
+			let matName: string;
 			if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID))
 				matName = validTextures.get(texture.fileDataID).matName;
 
@@ -350,7 +312,7 @@ export default class M2Exporter {
 			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
-			phys.addMesh('Collision', this.m2.collisionIndices);
+			phys.addMesh('Collision', this.m2.collisionIndices, undefined);
 
 			await phys.write(config.overwriteFiles);
 		}
@@ -362,9 +324,9 @@ export default class M2Exporter {
 	 * @param out
 	 * @param helper
 	 */
-	async exportRaw(out: string, helper: ExportHelper) {
-		const casc = core.view.casc;
-		const config = core.view.config;
+	async exportRaw(out: string, helper: ExportHelper): Promise<void> {
+		const casc = State.casc;
+		const config = State.config;
 
 		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
@@ -376,7 +338,7 @@ export default class M2Exporter {
 
 		// Only load M2 data if we need to export related files.
 		if (config.modelsExportSkin || config.modelsExportSkel || config.modelsExportBone || config.modelsExportAnim)
-			await this.m2.load();
+			this.m2.load();
 
 		// Directory that relative files should be exported to.
 		const outDir = path.dirname(out);
@@ -384,14 +346,14 @@ export default class M2Exporter {
 		// Write relative skin files.
 		if (config.modelsExportSkin) {
 			const textures = await this.exportTextures(outDir, true, null, helper);
-			const texturesManifest = [];
+			const texturesManifest = Array<TextureManifestEntry>();
 			for (const [texFileDataID, texInfo] of textures)
 				texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(outDir, texInfo.matPath) });
 
 			manifest.addProperty('textures', texturesManifest);
 
-			const exportSkins = async (skins, typeName, manifestName) => {
-				const skinsManifest = [];
+			const exportSkins = async (skins: Array<Skin>, typeName: string, manifestName: string): Promise<void> => {
+				const skinsManifest = Array<TextureManifestEntry>();
 				for (const skin of skins) {
 					// Abort if the export has been cancelled.
 					if (helper.isCancelled())
@@ -421,7 +383,7 @@ export default class M2Exporter {
 			const skelData = await casc.getFile(this.m2.skeletonFileID);
 			const skelFileName = Listfile.getByID(this.m2.skeletonFileID);
 
-			let skelFile;
+			let skelFile: string;
 			if (config.enableSharedChildren)
 				skelFile = ExportHelper.getExportPath(skelFileName);
 			else

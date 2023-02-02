@@ -1,44 +1,58 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
-	License: MIT
- */
+/* Copyright (c) wow.export contributors. All rights reserved. */
+/* Licensed under the MIT license. See LICENSE in project root for license information. */
 import BLTEReader from './blte-reader';
 
 import Listfile, { ListfileFilter } from './listfile';
 import Log from '../log';
-import State from '../state';
+import State, { ProgressObject } from '../state';
 import Events from '../events';
 import Constants from '../constants';
+import BufferWrapper from '../buffer';
+
 import { LocaleFlags } from './locale-flags';
 import { ContentFlags } from './content-flags';
 import InstallManifest from  './install-manifest';
 import WDCReader from '../db/WDCReader';
-import * as DBTextureFileData from '../db/caches/DBTextureFileData';
-import * as DBModelFileData from '../db/caches/DBModelFileData';
-import * as DBItemDisplays from '../db/caches/DBItemDisplays';
-import * as DBCreatures from '../db/caches/DBCreatures';
 import CASCRemote from './casc-source-remote';
 import CASCLocal from './casc-source-local';
 import BuildCache from './build-cache';
 
+import * as DBTextureFileData from '../db/caches/DBTextureFileData';
+import * as DBModelFileData from '../db/caches/DBModelFileData';
+import * as DBItemDisplays from '../db/caches/DBItemDisplays';
+import * as DBCreatures from '../db/caches/DBCreatures';
+
+import * as VersionConfig from './version-config';
+
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
-export default class CASC {
+type RootType = {
+	localeFlags: number;
+	contentFlags: number;
+}
+
+export default abstract class CASC {
 	locale: LocaleFlags;
 	isRemote: boolean;
 	unhookConfig: () => void;
 	encodingSizes: Map<string, number> = new Map();
 	encodingKeys: Map<string, string> = new Map();
-	progress: any; // NIT: No idea what type this is
-	rootEntries: Map<number, any> = new Map();
-	rootTypes: Array<any>;
+	progress: ProgressObject;
+	rootEntries: Map<number, Map<number, string>> = new Map();
+	rootTypes: Array<RootType>;
 	cache: BuildCache;
-	buildConfig: any;
-	cdnConfig: any;
-	serverConfig: any;
+	buildConfig: Record<string, string>;
+	cdnConfig: Record<string, string>;
+	serverConfig: Record<string, string>;
 
+	builds: Array<VersionConfig.BuildInfo>;
+	build: VersionConfig.BuildInfo;
+
+	/**
+	 * Construct a new CASC instance.
+	 * @param isRemote - Whether this CASC instance is remote or not.
+	 */
 	constructor(isRemote = false) {
 		this.rootTypes = [];
 		this.isRemote = isRemote;
@@ -58,7 +72,7 @@ export default class CASC {
 
 	/**
 	 * Provides an array of fileDataIDs that match the current locale.
-	 * @returns
+	 * @returns An array of fileDataIDs.
 	 */
 	getValidRootEntries(): Array<number> {
 		const entries: Array<number> = [];
@@ -81,6 +95,10 @@ export default class CASC {
 		return entries;
 	}
 
+	abstract load(buildIndex: number): Promise<void>;
+	abstract init(): Promise<void>;
+	abstract getProductList(): Array<string>;
+
 	/**
 	 * Retrieves the install manifest for this CASC instance.
 	 * @returns
@@ -96,15 +114,27 @@ export default class CASC {
 	}
 
 	/**
-	 * Obtain a file by it's fileDataID.
-	 * @param fileDataID
+	 * Retrieves a file from the CASC instance.
+	 * @param fileDataID - The fileDataID of the file to retrieve.
+	 * @param partialDecryption - Whether to use partial decryption or not.
+	 * @param suppressLog - Whether to suppress logging or not.
+	 * @param supportFallback - Whether to support fallback or not.
+	 * @param forceFallback - Whether to force fallback or not.
+	 * @param contentKey - The content key to use for the file.
 	 */
-	async getFile(fileDataID: number, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
+	abstract getFile(fileDataID: number, partialDecryption?: boolean, suppressLog?: boolean, supportFallback?: boolean, forceFallback?: boolean, contentKey?: string | null): Promise<BLTEReader>;
+
+	/**
+	 * Obtain the encoding key for a file.
+	 * @param fileDataID
+	 * @returns The encoding key.
+	 */
+	async getEncodingKey(fileDataID: number): Promise<string> {
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
 
-		let contentKey = null;
+		let contentKey: string | null = null;
 		for (const [rootTypeIdx, key] of root.entries()) {
 			const rootType = this.rootTypes[rootTypeIdx];
 
@@ -150,7 +180,7 @@ export default class CASC {
 	 * @param {boolean} [supportFallback=true]
 	 * @param {boolean} [forceFallback=false]
 	 */
-	async getFileByName(fileName: string, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
+	async getFileByName(fileName: string, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false): Promise<BLTEReader> {
 		const fileDataID = Listfile.getByFilename(fileName);
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
@@ -162,7 +192,7 @@ export default class CASC {
 	 * Load the listfile for selected build.
 	 * @param buildKey
 	 */
-	async loadListfile(buildKey: string) {
+	async loadListfile(buildKey: string): Promise<void> {
 		await this.progress.step('Loading listfile');
 		const entries = await Listfile.loadListfile(buildKey, this.cache, this.rootEntries);
 		if (entries === 0)
@@ -185,7 +215,7 @@ export default class CASC {
 		return modelExt;
 	}
 
-	updateListfileFilters() {
+	updateListfileFilters(): void {
 		State.listfileTextures = Listfile.getFilenamesByExtension('.blp');
 		State.listfileSounds = Listfile.getFilenamesByExtension('.ogg', '.mp3', '.unk_sound');
 		State.listfileVideos = Listfile.getFilenamesByExtension('.avi');
@@ -277,7 +307,7 @@ export default class CASC {
 	 * @param {string} hash
 	 * @returns {number}
 	 */
-	async parseRootFile(data, hash) {
+	async parseRootFile(data: BufferWrapper, hash: string): Promise<number> {
 		const root = new BLTEReader(data, hash);
 
 		const magic = root.readUInt32();
@@ -310,7 +340,7 @@ export default class CASC {
 					let entry = rootEntries.get(fileDataID);
 
 					if (!entry) {
-						entry = new Map();
+						entry = new Map<number, string>();
 						rootEntries.set(fileDataID, entry);
 					}
 
@@ -369,11 +399,10 @@ export default class CASC {
 
 	/**
 	 * Parse entries from an encoding file.
-	 * @param {BufferWrapper} data
-	 * @param {string} hash
-	 * @returns {object}
+	 * @param data - The data to parse.
+	 * @param hash - The hash of the data.
 	 */
-	async parseEncodingFile(data, hash) {
+	async parseEncodingFile(data: BufferWrapper, hash: string): Promise<void> {
 		const encodingSizes = this.encodingSizes;
 		const encodingKeys = this.encodingKeys;
 
@@ -419,7 +448,7 @@ export default class CASC {
 	 * Run any necessary clean-up once a CASC instance is no longer
 	 * needed. At this point, the instance must be made eligible for GC.
 	 */
-	cleanup() {
+	cleanup(): void {
 		this.unhookConfig();
 	}
 }

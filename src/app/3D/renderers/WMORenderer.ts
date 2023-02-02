@@ -62,7 +62,7 @@ export default class WMORenderer {
 	/**
 	 * Load the provided model for rendering.
 	 */
-	async load() {
+	async load(): Promise<void> {
 		if (this.data === undefined)
 			throw new Error('WMORenderer has already discarded its data');
 
@@ -127,7 +127,7 @@ export default class WMORenderer {
 	/**
 	 * Load all textures needed for the WMO model.
 	 */
-	loadTextures() {
+	loadTextures(): void {
 		const wmo = this.wmo;
 		const materialCount = wmo.materials.length;
 		const materials = this.materials = new Array<WMORenderMaterial>(materialCount);
@@ -197,7 +197,7 @@ export default class WMORenderer {
 	 * @param textureID
 	 * @param wmo
 	 */
-	async loadAuxiliaryTextureForRibbon(textureID: number, wmo: WMOLoader) {
+	async loadAuxiliaryTextureForRibbon(textureID: number, wmo: WMOLoader): Promise<void> {
 		if (wmo.textureNames)
 			textureID = Listfile.getByFilename(textureID.toString()) || 0;
 
@@ -216,7 +216,7 @@ export default class WMORenderer {
 	 * Load a doodad set for this WMO.
 	 * @param index
 	 */
-	async loadDoodadSet(index: number) {
+	async loadDoodadSet(index: number): Promise<void> {
 		const wmo = this.wmo;
 		const set = wmo.doodadSets[index];
 		const casc = State.casc;
@@ -296,7 +296,7 @@ export default class WMORenderer {
 	/**
 	 * Update the visibility status of WMO groups.
 	 */
-	updateGroups() {
+	updateGroups(): void {
 		if (!this.meshGroup || !this.groupArray)
 			return;
 
@@ -308,7 +308,7 @@ export default class WMORenderer {
 	/**
 	 * Update the wireframe state for all active materials.
 	 */
-	updateWireframe() {
+	updateWireframe(): void {
 		const renderWireframe = State.config.modelViewerWireframe;
 		const materials = this.getRenderMaterials(this.renderGroup, new Set());
 
@@ -326,7 +326,7 @@ export default class WMORenderer {
 	 * @param out
 	 * @returns
 	 */
-	getRenderMaterials(root: THREE.Object3D, out: Set<WMORenderMaterial>) {
+	getRenderMaterials(root: THREE.Object3D, out: Set<WMORenderMaterial>): Set<WMORenderMaterial> {
 		if (root instanceof THREE.Group) {
 			for (const child of root.children)
 				this.getRenderMaterials(child, out);
@@ -344,7 +344,7 @@ export default class WMORenderer {
 	}
 
 	/** Update the visibility status of doodad sets. */
-	async updateSets() {
+	async updateSets(): Promise<void> {
 		if (!this.wmo || !this.setArray || !this.doodadSets)
 			return;
 
@@ -360,7 +360,7 @@ export default class WMORenderer {
 	}
 
 	/** Dispose of this instance and release all resources. */
-	dispose() {
+	dispose(): void {
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
 			this.renderGroup.remove(this.meshGroup);

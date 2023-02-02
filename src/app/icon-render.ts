@@ -45,7 +45,7 @@ function iconRuleExists(selector: string): boolean {
 	return false;
 }
 
-function processQueue() {
+function processQueue(): void {
 	isLoading = true;
 
 	const entry = queue.pop();
@@ -63,7 +63,7 @@ function processQueue() {
 	}
 }
 
-const removeRule = (rule: CSSStyleRule) => {
+function removeRule(rule: CSSStyleRule): void {
 	const sheet = getStylesheet();
 	for (let i = 0; i < sheet.cssRules.length; i++) {
 		if (sheet.cssRules[i] === rule) {
@@ -71,7 +71,7 @@ const removeRule = (rule: CSSStyleRule) => {
 			break;
 		}
 	}
-};
+}
 
 function queueItem(fileDataID: number, rule: CSSStyleRule): void {
 	queue.push({ fileDataID, rule });

@@ -39,7 +39,7 @@ export async function queue(items: Array<Primitive>, handler: (key: Primitive) =
 		let complete = -1;
 		let index = 0;
 
-		const check = () => {
+		const check = (): void => {
 			complete++;
 			free++;
 
@@ -87,7 +87,7 @@ export function parseJSON(data: string): object | undefined {
  * @param ignoreComments - If true, will remove lines starting with //.
  * @returns The parsed JSON object or NULL on error.
  */
-export async function readJSON(file: string, ignoreComments = false) {
+export async function readJSON(file: string, ignoreComments = false): Promise<object | null> {
 	try {
 		const raw = await fs.promises.readFile(file, 'utf8');
 		if (ignoreComments)
@@ -140,7 +140,7 @@ export async function downloadFile(url: string, out?: string, partialOfs = -1, p
  * Create all directories in a given path if they do not exist.
  * @param dir - Directory path.
  */
-export async function createDirectory(dir: string) {
+export async function createDirectory(dir: string): Promise<void> {
 	await fs.promises.mkdir(dir, { recursive: true });
 }
 
@@ -148,11 +148,11 @@ export async function createDirectory(dir: string) {
  * Returns a promise which resolves after a redraw.
  * This is used to ensure that components have redrawn.
  */
-export async function redraw() {
+export async function redraw(): Promise<void> {
 	return new Promise(resolve => {
 		// This is a hack to ensure components redraw.
 		// https://bugs.chromium.org/p/chromium/issues/detail?id=675795
-		requestAnimationFrame(() => requestAnimationFrame(resolve));
+		requestAnimationFrame(() => requestAnimationFrame(resolve as unknown as FrameRequestCallback));
 	});
 }
 

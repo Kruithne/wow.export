@@ -175,7 +175,7 @@ export default class ADTLoader {
 	/**
 	 * Parse this ADT as a root file.
 	 */
-	loadRoot() {
+	loadRoot(): void {
 		this.chunks = new Array<ADTRootChunk>(16 * 16);
 		this.chunkIndex = 0;
 
@@ -186,7 +186,7 @@ export default class ADTLoader {
 	/**
 	 * Parse this ADT as an object file.
 	 */
-	loadObj() {
+	loadObj(): void {
 		this.handlers = ADTObjChunkHandlers;
 		this._load();
 	}
@@ -195,7 +195,7 @@ export default class ADTLoader {
 	 * Parse this ADT as a texture file.
 	 * @param wdt
 	 */
-	loadTex(wdt: WDTLoader) {
+	loadTex(wdt: WDTLoader): void {
 		this.texChunks = new Array<ADTTextureChunk>(16 * 16);
 		this.chunkIndex = 0;
 		this.wdt = wdt;
@@ -207,7 +207,7 @@ export default class ADTLoader {
 	/**
 	 * Load the ADT file, parsing it.
 	 */
-	_load() {
+	_load(): void {
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32();
 			const chunkSize = this.data.readUInt32();
@@ -225,14 +225,14 @@ export default class ADTLoader {
 
 const ADTChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper): void {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MCNK
-	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		const endOfs = data.offset + chunkSize;
 		const chunk = this.chunks[this.chunkIndex++] = {
 			flags: data.readUInt32(),
@@ -279,7 +279,7 @@ const ADTChunkHandlers = {
 	},
 
 	// MH2O (Liquids)
-	0x4D48324F: function(this: ADTLoader, data: BufferWrapper) {
+	0x4D48324F: function(this: ADTLoader, data: BufferWrapper): void {
 		const base = data.offset;
 		const dataOffsetSet: Set<number> = new Set();
 
@@ -391,7 +391,7 @@ const ADTChunkHandlers = {
 	},
 
 	// MHDR (Header)
-	0x4D484452: function(this: ADTLoader, data: BufferWrapper) {
+	0x4D484452: function(this: ADTLoader, data: BufferWrapper): void {
 		this.header = {
 			flags: data.readUInt32(),
 			ofsMCIN: data.readUInt32(),
@@ -412,12 +412,12 @@ const ADTChunkHandlers = {
 
 const RootMCNKChunkHandlers = {
 	// MCVT (vertices)
-	0x4D435654: function(this: ADTRootChunk, data: BufferWrapper) {
+	0x4D435654: function(this: ADTRootChunk, data: BufferWrapper): void {
 		this.vertices = data.readFloatArray(145);
 	},
 
 	// MCCV (Vertex Shading)
-	0x4D434356: function(this: ADTRootChunk, data: BufferWrapper) {
+	0x4D434356: function(this: ADTRootChunk, data: BufferWrapper): void {
 		const shading = this.vertexShading = new Array<RGBA>(145);
 		for (let i = 0; i < 145; i++) {
 			shading[i] = {
@@ -430,7 +430,7 @@ const RootMCNKChunkHandlers = {
 	},
 
 	// MCNR (Normals)
-	0x4D434E52: function(this: ADTRootChunk, data: BufferWrapper) {
+	0x4D434E52: function(this: ADTRootChunk, data: BufferWrapper): void {
 		const normals = this.normals = new Array<[number, number, number]>(145);
 		for (let i = 0; i < 145; i++) {
 			const x = data.readInt8();
@@ -442,7 +442,7 @@ const RootMCNKChunkHandlers = {
 	},
 
 	// MCBB (Blend Batches)
-	0x4D434242: function(this: ADTRootChunk, data: BufferWrapper, chunkSize: number) {
+	0x4D434242: function(this: ADTRootChunk, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 20;
 		const blend = this.blendBatches = new Array<ADTBlendBatch>(count);
 
@@ -460,19 +460,19 @@ const RootMCNKChunkHandlers = {
 
 const ADTTexChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper): void {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MTEX (Textures)
-	0x4D544558: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D544558: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.textures = data.readStringBlock(chunkSize);
 	},
 
 	// MCNK (Texture Chunks)
-	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D434E4B: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		const endOfs = data.offset + chunkSize;
 		const chunk = this.texChunks[this.chunkIndex++] = {
 			layers: [],
@@ -495,7 +495,7 @@ const ADTTexChunkHandlers = {
 	},
 
 	// MTXP
-	0x4D545850: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D545850: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 16;
 		const params = this.texParams = new Array<ADTTextureParams>(count);
 
@@ -510,19 +510,19 @@ const ADTTexChunkHandlers = {
 	},
 
 	// MHID
-	0x4D484944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D484944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.heightTextureFileDataIDs = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MDID
-	0x4D444944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D444944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.diffuseTextureFileDataIDs = data.readUInt32Array(chunkSize / 4);
 	}
 };
 
 const TexMCNKChunkHandlers = {
 	// MCLY
-	0x4D434C59: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number) {
+	0x4D434C59: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 16;
 		const layers = this.layers = new Array<ADTTextureChunkLayer>(count);
 
@@ -537,7 +537,7 @@ const TexMCNKChunkHandlers = {
 	},
 
 	// MCAL
-	0x4D43414C: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number, root) {
+	0x4D43414C: function(this: ADTTextureChunk, data: BufferWrapper, chunkSize: number, root): void {
 		const layerCount = this.layers.length;
 		const alphaLayers = this.alphaLayers = new Array<Array<number>>(layerCount);
 		alphaLayers[0] = new Array<number>(64 * 64).fill(255);
@@ -606,34 +606,34 @@ const TexMCNKChunkHandlers = {
 
 const ADTObjChunkHandlers = {
 	// MVER (Version)
-	0x4D564552: function(this: ADTLoader, data: BufferWrapper) {
+	0x4D564552: function(this: ADTLoader, data: BufferWrapper): void {
 		this.version = data.readUInt32();
 		if (this.version !== 18)
 			throw new Error('Unexpected ADT version: ' + this.version);
 	},
 
 	// MMDX (Doodad Filenames)
-	0x4D4D4458: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4D4458: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.m2Names = data.readStringBlock(chunkSize);
 	},
 
 	// MMID (M2 Offsets)
-	0x4D4D4944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4D4944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.m2Offsets = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MWMO (WMO Filenames)
-	0x4D574D4F: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D574D4F: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.wmoNames = data.readStringBlock(chunkSize);
 	},
 
 	// MWID (WMO Offsets)
-	0x4D574944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D574944: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.wmoOffsets = data.readUInt32Array(chunkSize / 4);
 	},
 
 	// MDDF
-	0x4D444446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D444446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 36;
 		const entries = this.models = new Array<ADTModel>(count);
 
@@ -650,7 +650,7 @@ const ADTObjChunkHandlers = {
 	},
 
 	// MODF
-	0x4D4F4446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D4F4446: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		const count = chunkSize / 64;
 		const entries = this.worldModels = new Array<ADTWorldModel>(count);
 
@@ -671,7 +671,7 @@ const ADTObjChunkHandlers = {
 	},
 
 	// MWDS
-	0x4D574453: function(this: ADTLoader, data: BufferWrapper, chunkSize: number) {
+	0x4D574453: function(this: ADTLoader, data: BufferWrapper, chunkSize: number): void {
 		this.doodadSets = data.readUInt16Array(chunkSize / 2);
 	}
 };

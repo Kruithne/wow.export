@@ -88,7 +88,7 @@ const defaultConfig = {
  * @param src - Source object.
  * @param target - Target object.
  */
-const copyConfig = (src: object, target: object) => {
+function copyConfig(src: object, target: object): void {
 	for (const [key, value] of Object.entries(src)) {
 		if (Array.isArray(value)) {
 			// Clone array rather than passing reference.
@@ -98,12 +98,12 @@ const copyConfig = (src: object, target: object) => {
 			target[key] = value;
 		}
 	}
-};
+}
 
 /**
  * Load configuration from disk.
  */
-export async function load() {
+export async function load(): Promise<void> {
 	const userConfig = await readJSON(Constants.CONFIG.USER_PATH) || {};
 
 	Log.write('Loaded config defaults: %o', defaultConfig);
@@ -121,7 +121,7 @@ export async function load() {
  * Reset a configuration key to default.
  * @param {string} key
  */
-export function resetToDefault(key: string) {
+export function resetToDefault(key: string): void {
 	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
 		State.config[key] = defaultConfig[key];
 }
@@ -129,14 +129,14 @@ export function resetToDefault(key: string) {
 /**
  * Reset all configuration to default.
  */
-export function resetAllToDefault() {
+export function resetAllToDefault(): void {
 	State.config = structuredClone(defaultConfig);
 }
 
 /**
  * Mark configuration for saving.
  */
-const save = () => {
+function save(): void {
 	if (!isSaving) {
 		isSaving = true;
 		setImmediate(doSave);
@@ -144,12 +144,12 @@ const save = () => {
 		// Queue another save.
 		isQueued = true;
 	}
-};
+}
 
 /**
  * Persist configuration data to disk.
  */
-const doSave = async () => {
+async function doSave(): Promise<void> {
 	const configSave = {};
 	for (const [key, value] of Object.entries(State.config)) {
 		// Only persist configuration values that do not match defaults.
@@ -169,7 +169,7 @@ const doSave = async () => {
 	} else {
 		isSaving = false;
 	}
-};
+}
 
 // Track when the configuration screen is displayed and clone a copy of
 // the current configuration into State.configEdit for reactive UI usage.

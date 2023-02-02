@@ -30,13 +30,13 @@ interface NWFile {
 	path: string;
 }
 
-(async () => {
+(async (): Promise<void> => {
 	// Prevent files from being dropped onto the window. These are over-written
 	// later but we disable here to prevent them working if init fails.
-	window.ondragover = (e: DragEvent) => {
+	window.ondragover = (e: DragEvent): boolean => {
 		e.preventDefault(); return false;
 	};
-	window.ondrop = (e: DragEvent) => {
+	window.ondrop = (e: DragEvent): boolean => {
 		e.preventDefault(); return false;
 	};
 
@@ -92,7 +92,7 @@ interface NWFile {
 
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;
-	window.ondragenter = (e: DragEvent) => {
+	window.ondragenter = (e: DragEvent): boolean => {
 		e.preventDefault();
 
 		// Converting local files while busy shouldn't end badly, but it seems
@@ -130,7 +130,7 @@ interface NWFile {
 		return false;
 	};
 
-	window.ondrop = (e: DragEvent) => {
+	window.ondrop = (e: DragEvent): boolean => {
 		e.preventDefault();
 		State.fileDropPrompt = null;
 
@@ -158,7 +158,7 @@ interface NWFile {
 		return false;
 	};
 
-	window.ondragleave = (e: DragEvent) => {
+	window.ondragleave = (e: DragEvent): void => {
 		e.preventDefault();
 
 		// Window drag events trigger for all elements. Ensure that there is currently

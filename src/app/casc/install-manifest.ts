@@ -2,7 +2,7 @@ const INSTALL_SIG = 0x4E49; // IN
 import BLTEReader from './blte-reader';
 
 type InstallTag = { name: string, type: number, mask: Array<number> };
-type InstallFile = { name: string, hash: string, size: number, tags: Array<string>};
+export type InstallFile = { name: string, hash: string, size: number, tags: Array<string>};
 
 export default class InstallManifest {
 	version = 0;

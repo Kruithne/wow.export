@@ -7,9 +7,9 @@ type GameObjects = {
 	PhaseGroupID: number,
 	PhaseID: number,
 	PhaseUseFlags: number,
-	Pos: number,
-	PropValue: number,
-	Rot: number,
+	Pos: Array<number>,
+	PropValue: Array<number>,
+	Rot: Array<number>,
 	Scale: number,
 	TypeID: number
 }

@@ -2,14 +2,16 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import State from '../state';
 import Events from '../events';
-import * as listfile from '../casc/listfile';
-import * as log from '../log';
+import Listfile from '../casc/listfile';
+import Log from '../log';
 import ExportHelper from '../casc/export-helper';
-import * as generics from '../generics';
+import { fileExists } from '../generics';
 
-let manifest: any = null;
+import InstallManifest, { InstallFile } from '../casc/install-manifest';
 
-const updateInstallListfile = () => {
+let manifest: InstallManifest;
+
+function updateInstallListfile(): void {
 	State.listfileInstall = manifest.files.filter((file) => {
 		for (const tag of State.installTags) {
 			if (tag.enabled && file.tags.includes(tag.label))
@@ -18,7 +20,7 @@ const updateInstallListfile = () => {
 
 		return false;
 	}).map(e => e.name + ' [' + e.tags.join(', ') + ']');
-};
+}
 
 Events.once('screen-tab-install', async () => {
 	State.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
@@ -50,11 +52,11 @@ Events.on('click-export-install', async () => {
 			return;
 
 
-		fileName = listfile.stripFileEntry(fileName);
-		const file = manifest.files.find(e => e.name === fileName);
+		fileName = Listfile.stripFileEntry(fileName);
+		const file = manifest.files.find(e => e.name === fileName) as InstallFile;
 		const exportPath = ExportHelper.getExportPath(fileName);
 
-		if (overwriteFiles || !await generics.fileExists(exportPath)) {
+		if (overwriteFiles || !await fileExists(exportPath)) {
 			try {
 				const data = await State.casc.getFile(0, false, false, true, false, file.hash);
 				await data.writeToFile(exportPath);
@@ -65,7 +67,7 @@ Events.on('click-export-install', async () => {
 			}
 		} else {
 			helper.mark(fileName, true);
-			log.write('Skipping file export %s (file exists, overwrite disabled)', exportPath);
+			Log.write('Skipping file export %s (file exists, overwrite disabled)', exportPath);
 		}
 	}
 

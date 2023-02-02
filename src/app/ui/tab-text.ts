@@ -2,12 +2,12 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import State from '../state';
 import Events from '../events';
-import * as log from '../log';
+import Log from '../log';
 import ExportHelper from '../casc/export-helper';
 import { EncryptionError } from '../casc/blte-reader';
 import util from 'node:util';
-import * as generics from '../generics';
-import * as listfile from '../casc/listfile';
+import { fileExists } from '../generics';
+import Listfile from '../casc/listfile';
 
 let selectedFile: string;
 
@@ -15,7 +15,7 @@ State.registerLoadFunc(async () => {
 	// Track selection changes on the text listbox and set first as active entry.
 	State.$watch('selectionText', async selection => {
 		// Check if the first file in the selection is "new".
-		const first = listfile.stripFileEntry(selection[0]);
+		const first = Listfile.stripFileEntry(selection[0]);
 		if (!State.isBusy && first && selectedFile !== first) {
 			try {
 				const file = await State.casc.getFileByName(first);
@@ -26,11 +26,11 @@ State.registerLoadFunc(async () => {
 				if (e instanceof EncryptionError) {
 					// Missing decryption key.
 					State.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
-					log.write('Failed to decrypt texture %s (%s)', first, e.key);
+					Log.write('Failed to decrypt texture %s (%s)', first, e.key);
 				} else {
 					// Error reading/parsing text file.
-					State.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
-					log.write('Failed to open CASC file: %s', e.message);
+					State.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
+					Log.write('Failed to open CASC file: %s', e.message);
 				}
 			}
 		}
@@ -60,15 +60,15 @@ State.registerLoadFunc(async () => {
 			if (helper.isCancelled())
 				return;
 
-			fileName = listfile.stripFileEntry(fileName);
+			fileName = Listfile.stripFileEntry(fileName);
 
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
-				if (overwriteFiles || !await generics.fileExists(exportPath)) {
+				if (overwriteFiles || !await fileExists(exportPath)) {
 					const data = await State.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
 				} else {
-					log.write('Skipping text export %s (file exists, overwrite disabled)', exportPath);
+					Log.write('Skipping text export %s (file exists, overwrite disabled)', exportPath);
 				}
 
 				helper.mark(fileName, true);

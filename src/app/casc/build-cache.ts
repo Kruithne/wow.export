@@ -2,15 +2,18 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 import fs from 'node:fs';
+
 import Log from '../log';
 import Constants from '../constants';
-import { createDirectory, deleteDirectory, readJSON } from '../generics';
 import State from '../state';
 import Events from '../events';
 import BufferWrapper from '../buffer';
 
+import { createDirectory, deleteDirectory, readJSON } from '../generics';
+
 type BuildMeta = {
 	lastAccess?: number;
+	lastListfileUpdate?: number;
 }
 
 let cacheIntegrity: { [x: string]: string; };
@@ -18,7 +21,7 @@ let cacheIntegrity: { [x: string]: string; };
 /**
  * Returns a promise that resolves once cache integrity is available.
  */
-async function cacheIntegrityReady() {
+async function cacheIntegrityReady(): Promise<void> {
 	return new Promise(res => {
 		// Cache integrity already available.
 		if (cacheIntegrity)
@@ -50,7 +53,7 @@ export default class BuildCache {
 	/**
 	 * Initialize the build cache instance.
 	 */
-	async init() {
+	async init(): Promise<void> {
 		// Create cache directory if needed.
 		await fs.promises.mkdir(this.cacheDir, { recursive: true });
 
@@ -157,7 +160,7 @@ export default class BuildCache {
 }
 
 // Initialize cache integrity system.
-(async () => {
+(async function (): Promise<void> {
 	try {
 		const integrity = await readJSON(Constants.CACHE.INTEGRITY_FILE, false);
 		if (integrity === null)

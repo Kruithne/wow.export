@@ -65,7 +65,7 @@ export function addKey(keyName: string, key: string): boolean {
 /**
  * Load tact keys from disk cache and request updated keys from remote server.
  */
-export async function load() {
+export async function load(): Promise<void> {
 	// Load from local cache.
 	try {
 		const tactKeys = JSON.parse(await fs.readFile(Constants.CACHE.TACT_KEYS, 'utf8'));
@@ -120,7 +120,7 @@ export async function load() {
 /**
  * Asyncronously save tact keys to disk.
  */
-export async function save() {
+export async function save(): Promise<void> {
 	if (!isSaving) {
 		isSaving = true;
 

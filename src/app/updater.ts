@@ -62,10 +62,8 @@ export async function checkForUpdates(): Promise<boolean> {
 	}
 }
 
-/**
- * Apply an outstanding update.
- */
-export async function applyUpdate() {
+/** Apply an outstanding update. */
+export async function applyUpdate(): Promise<void> {
 	State.isBusy++;
 	State.showLoadScreen('Updating, please wait...');
 

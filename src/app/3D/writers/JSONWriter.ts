@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileExists, createDirectory } from '../../generics';
 import FileWriter from '../../file-writer';
 
-type JSONPropertyType = string | number | boolean | null | JSONPropertyType[] | { [key: string]: JSONPropertyType };
+type JSONPropertyType = string | number | boolean | null | object | undefined | JSONPropertyType[] | { [key: string]: JSONPropertyType };
 
 export default class JSONWriter {
 	out: string;
@@ -24,7 +24,7 @@ export default class JSONWriter {
 	 * @param name
 	 * @param data
 	 */
-	addProperty(name: string, data: JSONPropertyType) {
+	addProperty(name: string, data: JSONPropertyType): void {
 		this.data[name] = data;
 	}
 
@@ -32,7 +32,7 @@ export default class JSONWriter {
 	 * Write the JSON to disk.
 	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite = true): Promise<void> {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await fileExists(this.out))
 			return;

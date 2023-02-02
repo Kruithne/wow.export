@@ -18,8 +18,8 @@ import ExportHelper from './casc/export-helper';
 import Constants from './constants';
 import Events from './events';
 
+export type ProgressObject = { segWeight: number; value: number; step: (text?: string) => Promise<void>; };
 type ToastType = 'info' | 'success' | 'warning' | 'error';
-type ProgressObject = { segWeight: number; value: number; step: (text: string) => Promise<void>; };
 type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };
 
 const app = createApp({
@@ -261,7 +261,7 @@ const app = createApp({
 			return {
 				segWeight: 1 / segments,
 				value: 0,
-				step: async function(text: string) {
+				step: async function(text?: string): Promise<void> {
 					this.value++;
 					this.loadPct = Math.min(this.value * this.segWeight, 1);
 

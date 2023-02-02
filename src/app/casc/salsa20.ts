@@ -47,7 +47,7 @@ export default class Salsa20 {
 	 * Set the key used by this instance.
 	 * @param key
 	 */
-	setKey(key: Array<number>) {
+	setKey(key: Array<number>): void {
 		// Expand 16-byte (4-word) key into a 32-byte (8-word) key.
 		if (key.length === 16) {
 			for (let i = 0; i < 16; i++)
@@ -64,7 +64,7 @@ export default class Salsa20 {
 	 * Set the nonce used by this instance.
 	 * @param nonce
 	 */
-	setNonce(nonce: Array<number>) {
+	setNonce(nonce: Array<number>): void {
 		this.nonceWords[0] = (nonce[0] & 0xFF) | ((nonce[1] & 0xFF) << 8) | ((nonce[2] & 0xFF) << 16) | ((nonce[3] & 0xFF) << 24);
 		this.nonceWords[1] = (nonce[4] & 0xFF) | ((nonce[5] & 0xFF) << 8) | ((nonce[6] & 0xFF) << 16) | ((nonce[7] & 0xFF) << 24);
 

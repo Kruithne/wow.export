@@ -1,7 +1,12 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export function parse(data: string): Array<Record<string, string>> {
-	const entries: Array<Record<string, string>> = [];
+
+export type BuildInfo = {
+	[key: string]: string;
+}
+
+export function parse(data: string): Array<BuildInfo> {
+	const entries: Array<BuildInfo> = [];
 	const lines = data.split(/\r?\n/);
 
 	// First line contains field definitions.
@@ -23,7 +28,8 @@ export function parse(data: string): Array<Record<string, string>> {
 		if (entry.trim().length === 0 || entry.startsWith('#'))
 			continue;
 
-		const node: Record<string, string> = {};
+		const node: BuildInfo = {};
+
 		const entryFields = entry.split('|');
 		for (let i = 0, n = entryFields.length; i < n; i++)
 			node[fields[i]] = entryFields[i];

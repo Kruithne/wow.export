@@ -108,7 +108,7 @@ export default class BLPImage {
 	 * Return a canvas with this BLP painted onto it.
 	 * @param mask
 	 */
-	toCanvas(mask = 0b1111) {
+	toCanvas(mask = 0b1111): HTMLCanvasElement {
 		const canvas = document.createElement('canvas');
 		canvas.width = this.width;
 		canvas.height = this.height;
@@ -144,7 +144,7 @@ export default class BLPImage {
 	 * @param mask
 	 * @param mipmap - Mipmap level
 	 */
-	async saveToPNG(file: string, mask = 0b1111, mipmap = 0) {
+	async saveToPNG(file: string, mask = 0b1111, mipmap = 0): Promise<void> {
 		return await this.toPNG(mask, mipmap).writeToFile(file);
 	}
 
@@ -152,7 +152,7 @@ export default class BLPImage {
 	 * Prepare BLP for processing.
 	 * @param mipmap - Mipmap level
 	 */
-	_prepare(mipmap = 0) {
+	_prepare(mipmap = 0): void {
 		// Constrict the requested mipmap to a valid range..
 		mipmap = Math.max(0, Math.min(mipmap || 0, this.mapCount - 1));
 
@@ -173,7 +173,7 @@ export default class BLPImage {
 	 * @param mipmap
 	 * @param mask
 	 */
-	drawToCanvas(canvas: HTMLCanvasElement, mipmap = 0, mask = 0b1111) {
+	drawToCanvas(canvas: HTMLCanvasElement, mipmap = 0, mask = 0b1111): void {
 		this._prepare(mipmap);
 
 		const ctx = canvas.getContext('2d');
@@ -232,8 +232,8 @@ export default class BLPImage {
 	 * @param index - Alpha index.
 	 * @private
 	 */
-	_getAlpha(index: number) {
-		let byte;
+	_getAlpha(index: number): number {
+		let byte: number;
 		switch (this.alphaDepth) {
 			case 1:
 				byte = this.rawData[this.scaledLength + (index / 8)];
@@ -257,7 +257,7 @@ export default class BLPImage {
 	 * @param mask
 	 * @private
 	 */
-	_getCompressed(canvasData: ImageData | Buffer | Uint8Array | Uint8ClampedArray | null, mask = 0b1111) {
+	_getCompressed(canvasData: ImageData | Buffer | Uint8Array | Uint8ClampedArray | null, mask = 0b1111): BufferWrapper {
 		const flags = this.alphaDepth > 1 ? (this.alphaEncoding === 7 ? DXT5 : DXT3) : DXT1;
 		const data = canvasData ? canvasData : Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
 
@@ -443,19 +443,14 @@ export default class BLPImage {
 			const buf = new BufferWrapper(Buffer.allocUnsafe(data.length));
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				const ofs = i * 4;
-				// NIT: Original code below, used to feed a Array<number> to writeUInt8 which I'm not sure was supported. Made it 4x separate calls for now.
-				/*
-				buf.writeUInt8([
-					(mask & 0b1) ? data[ofs + 2] : 0,
-					(mask & 0b10) ? data[ofs + 1] : 0,
-					(mask & 0b100) ? data[ofs] : 0,
-					(mask & 0b1000) ? data[ofs + 3] : 255
-				]);
-				*/
-				buf.writeUInt8((mask & 0b1) ? data[ofs + 2] : 0);
-				buf.writeUInt8((mask & 0b10) ? data[ofs + 1] : 0);
-				buf.writeUInt8((mask & 0b100) ? data[ofs] : 0);
-				buf.writeUInt8((mask & 0b1000) ? data[ofs + 3] : 255);
+
+				buf.writeUInt32(
+					((mask & 0b1 ? data[ofs + 2] : 0) << 24) |
+					((mask & 0b10 ? data[ofs + 1] : 0) << 16) |
+					((mask & 0b100 ? data[ofs] : 0) << 8) |
+					(mask & 0b1000 ? data[ofs + 3] : 255)
+				);
+
 			}
 			buf.seek(0);
 			return buf;

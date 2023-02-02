@@ -7,6 +7,12 @@ import BufferWrapper from '../buffer';
 import TactKeys from './tact-keys';
 import Salsa20 from './salsa20';
 
+type BLTEBlock = {
+	CompSize: number,
+	DecompSize: number,
+	Hash: string,
+}
+
 const BLTE_MAGIC = 0x45544c42;
 const ENC_TYPE_SALSA20 = 0x53;
 const EMPTY_HASH = '00000000000000000000000000000000';
@@ -32,11 +38,11 @@ export class BLTEIntegrityError extends Error {
 }
 
 export default class BLTEReader extends BufferWrapper {
-	_blte: BufferWrapper;
+	blte: BufferWrapper;
 	blockIndex: number;
 	blockWriteIndex: number;
 	partialDecrypt: boolean;
-	blocks: Array<any>; // NIT: Probably make into own type
+	blocks: Array<BLTEBlock>;
 
 	/**
 	 * Check if the given data is a BLTE file.
@@ -60,7 +66,7 @@ export default class BLTEReader extends BufferWrapper {
 	constructor(buf: BufferWrapper, hash: string, partialDecrypt = false) {
 		super(Buffer.alloc(0)); // NIT: This was null, just setting it to new empty buffer now. Is this OK?
 
-		this._blte = buf;
+		this.blte = buf;
 		this.blockIndex = 0;
 		this.blockWriteIndex = 0;
 		this.partialDecrypt = partialDecrypt;
@@ -78,7 +84,7 @@ export default class BLTEReader extends BufferWrapper {
 
 		buf.seek(0);
 
-		const hashCheck = headerSize > 0 ? (buf.readBuffer(headerSize) as BufferWrapper).toHash() : buf.toHash();
+		const hashCheck = headerSize > 0 ? buf.readBufferWrapper(headerSize).toHash() : buf.toHash('md5');
 		if (hashCheck !== hash)
 			throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
 
@@ -89,7 +95,7 @@ export default class BLTEReader extends BufferWrapper {
 			if (size < 12)
 				throw new Error('[BLTE] Not enough data (< 12)');
 
-			const fc = buf.readUInt8(4);
+			const fc = buf.readUInt8Array(4);
 			numBlocks = fc[1] << 16 | fc[2] << 8 | fc[3] << 0;
 
 			if (fc[0] !== 0x0F || numBlocks === 0)
@@ -107,7 +113,12 @@ export default class BLTEReader extends BufferWrapper {
 		let allocSize = 0;
 
 		for (let i = 0; i < numBlocks; i++) {
-			const block: any = {}; // Nit: Make own type
+			const block = {
+				CompSize: 0,
+				DecompSize: 0,
+				Hash: EMPTY_HASH,
+			};
+
 			if (headerSize !== 0) {
 				block.CompSize = buf.readInt32BE();
 				block.DecompSize = buf.readInt32BE();
@@ -115,14 +126,13 @@ export default class BLTEReader extends BufferWrapper {
 			} else {
 				block.CompSize = size - 8;
 				block.DecompSize = size - 9;
-				block.Hash = EMPTY_HASH;
 			}
 
 			allocSize += block.DecompSize;
 			this.blocks[i] = block;
 		}
 
-		this._buf = Buffer.alloc(allocSize);
+		this.buffer = Buffer.alloc(allocSize);
 	}
 
 	/**
@@ -145,21 +155,21 @@ export default class BLTEReader extends BufferWrapper {
 		this.seek(this.blockWriteIndex);
 
 		const block = this.blocks[this.blockIndex];
-		const bltePos = this._blte.offset;
+		const bltePos = this.blte.offset;
 
 		if (block.Hash !== EMPTY_HASH) {
-			const blockData = this._blte.readBuffer(block.CompSize);
-			const blockHash = (blockData as BufferWrapper).toHash();
+			const blockData = this.blte.readBufferWrapper(block.CompSize);
+			const blockHash = blockData.toHash('md5');
 
 			// Reset after reading the hash.
-			this._blte.seek(bltePos);
+			this.blte.seek(bltePos);
 
 			if (blockHash !== block.Hash)
 				throw new BLTEIntegrityError(block.Hash, blockHash);
 		}
 
-		this._handleBlock(this._blte, bltePos + block.CompSize, this.blockIndex);
-		this._blte.seek(bltePos + block.CompSize);
+		this._handleBlock(this.blte, bltePos + block.CompSize, this.blockIndex);
+		this.blte.seek(bltePos + block.CompSize);
 
 		this.blockIndex++;
 		this.blockWriteIndex = this.offset;
@@ -184,7 +194,7 @@ export default class BLTEReader extends BufferWrapper {
 					if (e instanceof EncryptionError) {
 						// Partial decryption allows us to leave zeroed data.
 						if (this.partialDecrypt)
-							this._ofs += this.blocks[index].DecompSize;
+							this.offset += this.blocks[index].DecompSize;
 						else
 							throw e;
 					}
@@ -271,7 +281,7 @@ export default class BLTEReader extends BufferWrapper {
 			nonce[i] = (i < ivShort.length ? ivShort[i] : 0x0);
 
 		const instance = new Salsa20(nonce, key);
-		return instance.process(data.readBuffer(blockEnd - data.offset) as BufferWrapper);
+		return instance.process(data.readBufferWrapper(blockEnd - data.offset));
 	}
 
 	/**
@@ -281,8 +291,8 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param blockEnd
 	 */
 	_writeBufferBLTE(buf: BufferWrapper, blockEnd: number): void {
-		buf.raw.copy(this._buf, this._ofs, buf.offset, blockEnd);
-		this._ofs += blockEnd - buf.offset;
+		buf.toBuffer().copy(this.buffer, this.offset, buf.offset, blockEnd);
+		this.offset += blockEnd - buf.offset;
 	}
 
 	/**
@@ -290,9 +300,6 @@ export default class BLTEReader extends BufferWrapper {
 	 * @param length
 	 */
 	_checkBounds(length: number): void {
-		// Check that this read won't go out-of-bounds anyway.
-		super._checkBounds(length);
-
 		// Ensure all blocks required for this read are available.
 		const pos = this.offset + length;
 		while (pos > this.blockWriteIndex) {

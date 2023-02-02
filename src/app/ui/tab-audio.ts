@@ -15,16 +15,16 @@ const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
 const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
 const AUDIO_TYPE_MP3 = Symbol('AudioTypeMP3');
 
+type AudioType = typeof AUDIO_TYPE_UNKNOWN | typeof AUDIO_TYPE_OGG | typeof AUDIO_TYPE_MP3;
+
 let selectedFile: string;
 let isTrackLoaded = false;
 
-let audioNode: any;
-let data;
+let audioNode: HTMLAudioElement;
+let data: BufferWrapper;
 
-/**
- * Update the current status of the sound player seek bar.
- */
-const updateSeek = () => {
+/** Update the current status of the sound player seek bar. */
+function updateSeek(): void {
 	if (!State.soundPlayerState || !audioNode)
 		return;
 
@@ -33,19 +33,20 @@ const updateSeek = () => {
 	if (State.soundPlayerSeek === 1) {
 		if (State.config.soundPlayerLoop)
 			audioNode.play();
+
 		else
 			State.soundPlayerState = false;
 	}
 
 	requestAnimationFrame(updateSeek);
-};
+}
 
 /**
  * Detect the file type of a given audio container.
  * @param data
  * @returns
  */
-const detectFileType = (data: BufferWrapper) => {
+function detectFileType(data: BufferWrapper): AudioType {
 	if (data.startsWith('OggS')) {
 		// File magic matches Ogg container format.
 		//selectedFile = ExportHelper.replaceExtension(selectedFile, '.ogg');
@@ -56,13 +57,13 @@ const detectFileType = (data: BufferWrapper) => {
 	}
 
 	return AUDIO_TYPE_UNKNOWN;
-};
+}
 
 /**
  * Play the currently loaded track.
  * Selected track will be loaded if it's not already.
  */
-const playSelectedTrack = async () => {
+async function playSelectedTrack(): Promise<void> {
 	if (!isTrackLoaded)
 		await loadSelectedTrack();
 
@@ -72,21 +73,21 @@ const playSelectedTrack = async () => {
 		audioNode.play();
 		updateSeek();
 	}
-};
+}
 
 /**
  * Pause the currently playing track.
  */
-const pauseSelectedTrack = () => {
+function pauseSelectedTrack(): void {
 	State.soundPlayerState = false;
 	audioNode.pause();
-};
+}
 
 /**
  * Unload the currently selected track.
  * Playback will be halted.
  */
-const unloadSelectedTrack = () => {
+function unloadSelectedTrack(): void {
 	isTrackLoaded = false;
 	State.soundPlayerState = false;
 	State.soundPlayerDuration = 0;
@@ -94,14 +95,14 @@ const unloadSelectedTrack = () => {
 	audioNode.src = '';
 
 	data?.revokeDataURL();
-};
+}
 
 /**
  * Load the currently selected track.
  * Does not automatically begin playback.
  * Ensure unloadSelectedTrack() is called first.
  */
-const loadSelectedTrack = async () => {
+async function loadSelectedTrack(): Promise<void> {
 	if (selectedFile === null)
 		return State.setToast('info', 'You need to select an audio track first!', null, -1, true);
 
@@ -146,13 +147,13 @@ const loadSelectedTrack = async () => {
 	}
 
 	State.isBusy--;
-};
+}
 
 State.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
 	audioNode.volume = State.config.soundPlayerVolume;
-	audioNode.ondurationchange = () => State.soundPlayerDuration = audioNode.duration;
+	audioNode.ondurationchange = (): number => State.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
 	State.$watch('config.soundPlayerVolume', value => {

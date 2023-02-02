@@ -74,7 +74,7 @@ function getModelDisplays(fileDataID: number): Array<DisplayInfo> {
 }
 
 /** Clear the currently active texture preview. */
-function clearTexturePreview() {
+function clearTexturePreview(): void {
 	State.modelTexturePreviewURL = '';
 }
 
@@ -83,7 +83,7 @@ function clearTexturePreview() {
  * @param fileDataID
  * @param name
  */
-async function previewTextureByID(fileDataID: number, name: string) {
+async function previewTextureByID(fileDataID: number, name: string): Promise<void> {
 	const texture = Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
 	State.isBusy++;
@@ -117,7 +117,7 @@ async function previewTextureByID(fileDataID: number, name: string) {
 	State.isBusy--;
 }
 
-async function previewModel(fileName: string) {
+async function previewModel(fileName: string): Promise<void> {
 	State.isBusy++;
 	State.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	Log.write('Previewing model %s', fileName);
@@ -238,10 +238,8 @@ async function previewModel(fileName: string) {
 	State.isBusy--;
 }
 
-/**
- * Update the camera to match render group bounding.
- */
-function updateCameraBounding() {
+/** Update the camera to match render group bounding. */
+function updateCameraBounding(): void {
 	// Get the bounding box for the model.
 	const boundingBox = new THREE.Box3();
 	boundingBox.setFromObject(renderGroup);
@@ -276,7 +274,7 @@ function updateCameraBounding() {
  * @param fileName
  * @returns
  */
-function getVariantTextureIDs(fileName: string) {
+function getVariantTextureIDs(fileName: string): Array<number> {
 	if (fileName === activePath) {
 		// Selected model may have user-selected skins, use them.
 		return selectedVariantTextureIDs;
@@ -291,7 +289,7 @@ function getVariantTextureIDs(fileName: string) {
 	}
 }
 
-async function exportFiles(files, isLocal = false) {
+async function exportFiles(files, isLocal = false): Promise<void> {
 	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
 	const format = State.config.exportModelFormat;
 
@@ -425,9 +423,6 @@ async function exportFiles(files, isLocal = false) {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, State.config.modelsExportCollision, helper);
 								exportPaths.writeLine('M2_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper);
-								exportPaths.writeLine('M2_GLTF:' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -450,9 +445,6 @@ async function exportFiles(files, isLocal = false) {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, helper);
 								exportPaths.writeLine('WMO_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper);
-								exportPaths.writeLine('WMO_GLTF:' + exportPath);
 							}
 
 							WMOExporter.clearCache();
@@ -487,7 +479,7 @@ async function exportFiles(files, isLocal = false) {
  * Update the 3D model listfile.
  * Invoke when users change the visibility settings for model types.
  */
-function updateListfile() {
+function updateListfile(): void {
 	// Filters for the model viewer depending on user settings.
 	const modelExt = Array<ListfileFilter>();
 	if (State.config.modelsShowM2)

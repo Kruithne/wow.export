@@ -76,7 +76,7 @@ export function openRuntimeLog(): void {
 /**
  * Write a message to the log.
  */
-export function write(...parameters: (string | number | object)[]): void {
+export function write(...parameters: (string | number | object | undefined)[]): void {
 	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
 
 	if (!isClogged) {

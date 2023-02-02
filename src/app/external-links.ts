@@ -18,7 +18,7 @@ const WOWHEAD_ITEM = 'https://www.wowhead.com/item=%d';
  * Open an external link on the system.
  * @param link - The link to open. If the link starts with '::' it will be resolved to a static link.
  */
-export function openExternalLink(link: string) {
+export function openExternalLink(link: string): void {
 	if (link.startsWith('::'))
 		link = STATIC_LINKS[link];
 
@@ -29,7 +29,7 @@ export function openExternalLink(link: string) {
  * Open a specific item on Wowhead.
  * @param itemID - The item ID to open on Wowhead.
  */
-export function openItemOnWowhead(itemID: number) {
+export function openItemOnWowhead(itemID: number): void {
 	open(util.format(WOWHEAD_ITEM, itemID));
 }
 

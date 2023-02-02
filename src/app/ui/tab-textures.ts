@@ -29,7 +29,7 @@ let selectedFileDataID = 0;
  * @param fileDataID
  * @param texture
  */
-export async function previewTextureByID(fileDataID: number, texture: string | null = null) {
+export async function previewTextureByID(fileDataID: number, texture: string | null = null): Promise<void> {
 	texture = texture ?? Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
 	State.isBusy++;
@@ -106,7 +106,7 @@ const getFileInfoPair = (input: number | string): FileInfoPair => {
  * @param files - The files to export.
  * @param isLocal - Whether the files are local or from CASC.
  */
-const exportFiles = async (files: Array<string | number>, isLocal = false) => {
+async function exportFiles(files: Array<string | number>, isLocal = false): Promise<void> {
 	const format = State.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
@@ -115,6 +115,7 @@ const exportFiles = async (files: Array<string | number>, isLocal = false) => {
 		let data: BufferWrapper;
 		if (isLocal)
 			data = new BufferWrapper(await fs.promises.readFile(fileName));
+
 		else
 			data = await State.casc.getFile(fileDataID);
 
@@ -192,7 +193,7 @@ const exportFiles = async (files: Array<string | number>, isLocal = false) => {
 
 	await exportPaths.close();
 	helper.finish();
-};
+}
 
 // Register a drop handler for BLP files.
 State.registerDropHandler({

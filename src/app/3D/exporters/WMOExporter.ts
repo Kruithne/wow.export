@@ -14,17 +14,35 @@ import WMOLoader from '../loaders/WMOLoader';
 import OBJWriter from '../writers/OBJWriter';
 import MTLWriter from '../writers/MTLWriter';
 import CSVWriter from '../writers/CSVWriter';
-import GLTFWriter from '../writers/GLTFWriter';
 import JSONWriter from '../writers/JSONWriter';
 import ExportHelper from '../../casc/export-helper';
 import M2Exporter from './M2Exporter';
 
 import WMOEntry from '../renderers/WMOEntry';
+import { WMOGroupLoader } from '../loaders/WMOLoader';
+
+type WMOTextureManifestEntry = {
+	fileDataID: number,
+	file: string
+}
 
 type WMOTextures = {
-	textureMap: Map;
-	materialMap: Map;
+	textureMap: Map<number, WMOTextureEntry>;
+	materialMap: Map<number, string>;
 }
+
+type WMOTextureEntry = {
+	matPathRelative: string;
+	matPath: string;
+	matName: string;
+}
+
+type WMOTextureMap = {
+	fileDataID: number,
+	fileNameInternal?: string,
+	fileNameExternal?: string
+	mtlName?: string
+};
 
 const doodadCache = new Set();
 
@@ -46,7 +64,7 @@ export default class WMOExporter {
 	 * Set the mask used for group control.
 	 * @param mask - Array of WMOEntry objects.
 	 */
-	setGroupMask(mask: Array<WMOEntry>) {
+	setGroupMask(mask: Array<WMOEntry>): void {
 		this.groupMask = mask;
 	}
 
@@ -54,7 +72,7 @@ export default class WMOExporter {
 	 * Set the mask used for doodad set control.
 	 * @param mask - Array of WMOEntry objects.
 	 */
-	setDoodadSetMask(mask: Array<WMOEntry>) {
+	setDoodadSetMask(mask: Array<WMOEntry>): void {
 		this.doodadSetMask = mask;
 	}
 
@@ -68,8 +86,8 @@ export default class WMOExporter {
 		const config = State.config;
 		const casc = State.casc;
 
-		const textureMap = new Map();
-		const materialMap = new Map();
+		const textureMap = new Map<number, WMOTextureEntry>();
+		const materialMap = new Map<number, string>();
 
 		if (!config.modelsExportTextures)
 			return { textureMap, materialMap };
@@ -86,7 +104,7 @@ export default class WMOExporter {
 
 		for (let i = 0; i < materialCount; i++) {
 			if (helper.isCancelled())
-				return;
+				return { textureMap, materialMap };
 
 			const material = this.wmo.materials[i];
 			helper.setCurrentTaskValue(i);
@@ -160,7 +178,7 @@ export default class WMOExporter {
 								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
-							fileName = Listfile.formatUnknownFile(texFile);
+							fileName = Listfile.formatUnknownFile(fileDataID);
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
@@ -203,135 +221,11 @@ export default class WMOExporter {
 	}
 
 	/**
-	 * Export the WMO model as a GLTF file.
-	 * @param out
-	 * @param helper
-	 */
-	async exportAsGLTF(out: string, helper: ExportHelper) {
-		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-
-		// TODO: Skip overwrite if file exists?
-
-		const wmoName = Path.basename(out, '.wmo');
-		const gltf = new GLTFWriter(outGLTF, wmoName);
-
-		const groupMask = this.groupMask;
-
-		Log.write('Exporting WMO model %s as GLTF: %s', wmoName, outGLTF);
-
-		await this.wmo.load();
-
-		helper.setCurrentTaskName(wmoName + ' textures');
-		const texMaps = await this.exportTextures(out, null, helper);
-
-		if (helper.isCancelled())
-			return;
-
-		const textureMap = texMaps.textureMap;
-		const materialMap = texMaps.materialMap;
-
-		gltf.setTextureMap(textureMap);
-
-		const groups = [];
-		let nInd = 0;
-
-		let mask;
-
-		// Map our user-facing group mask to a WMO mask.
-		if (groupMask) {
-			mask = new Set();
-			for (const group of groupMask) {
-				if (group.checked) {
-					// Add the group index to the mask.
-					mask.add(group.index);
-				}
-			}
-		}
-
-		// Iterate over the groups once to calculate the total size of our
-		// vertex/normal/uv arrays allowing for pre-allocation.
-		for (let i = 0, n = this.wmo.groupCount; i < n; i++) {
-			const group = await this.wmo.getGroup(i);
-
-			// Skip empty groups.
-			if (!group.renderBatches?.length)
-				continue;
-
-			// Skip masked groups.
-			if (!mask?.has(i))
-				continue;
-
-			// 3 vertices per indices.
-			nInd += group.vertices.length / 3;
-
-			// Store the valid groups for quicker iteration later.
-			groups.push(group);
-		}
-
-		const vertices = new Array(nInd * 3);
-		const normals = new Array(nInd * 3);
-		const uvs = new Array(nInd * 2);
-
-		// Iterate over groups again and fill the allocated arrays.
-		let indOfs = 0;
-		for (const group of groups) {
-			const indCount = group.vertices.length / 3;
-
-			const vertOfs = indOfs * 3;
-			const groupVertices = group.vertices;
-			for (let i = 0, n = groupVertices.length; i < n; i++)
-				vertices[vertOfs + i] = groupVertices[i];
-
-			// Normal and vertices should match, so reuse vertOfs here.
-			const groupNormals = group.normals;
-			for (let i = 0, n = groupNormals.length; i < n; i++)
-				normals[vertOfs + i] = groupNormals[i];
-
-			const uvOfs = indOfs * 2;
-			if (group.uvs) {
-				// UVs exist, use the first array available.
-				const groupUvs = group.uvs[0];
-				for (let i = 0, n = groupUvs.length; i < n; i++)
-					uvs[uvOfs + i] = groupUvs[i];
-			} else {
-				// No UVs available for the mesh, zero fill.
-				const uvCount = indCount * 2;
-				for (let i = 0; i < uvCount; i++)
-					uvs[uvOfs + i] = 0;
-			}
-
-			const groupName = this.wmo.groupNames[group.nameOfs];
-
-			// Load all render batches into the mesh.
-			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
-				const batch = group.renderBatches[bI];
-				const indices = new Array(batch.numFaces);
-
-				for (let i = 0; i < batch.numFaces; i++)
-					indices[i] = group.indices[batch.firstFace + i] + indOfs;
-
-				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
-				gltf.addMesh(groupName + bI, indices, materialMap.get(matID));
-			}
-
-			indOfs += indCount;
-		}
-
-		gltf.setVerticesArray(vertices);
-		gltf.setNormalArray(normals);
-		gltf.setUVArray(uvs);
-
-		// TODO: Add support for exporting doodads inside a GLTF WMO.
-
-		await gltf.write(State.config.overwriteFiles);
-	}
-
-	/**
 	 * Export the WMO model as a WaveFront OBJ.
 	 * @param out
 	 * @param helper
 	 */
-	async exportAsOBJ(out: string, helper: ExportHelper) {
+	async exportAsOBJ(out: string, helper: ExportHelper): Promise<void> {
 		const casc = State.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -359,7 +253,7 @@ export default class WMOExporter {
 		const materialMap = texMaps.materialMap;
 		const textureMap = texMaps.textureMap;
 
-		const groups = [];
+		const groups = Array<WMOGroupLoader>();
 		let nInd = 0;
 		let maxLayerCount = 0;
 
@@ -636,7 +530,7 @@ export default class WMOExporter {
 
 			// Create a textures array and push every unique fileDataID from the
 			// material stack, expanded with file name/path data for external QoL.
-			const textures = [];
+			const textures = Array<WMOTextureMap>();
 			const textureCache = new Set();
 			for (const material of wmo.materials) {
 				const materialTextures = [material.texture1, material.texture2, material.texture3];
@@ -685,7 +579,7 @@ export default class WMOExporter {
 	 * @param out
 	 * @param helper
 	 */
-	async exportRaw(out: string, helper: ExportHelper) {
+	async exportRaw(out: string, helper: ExportHelper): Promise<void> {
 		const casc = State.casc;
 		const config = State.config;
 
@@ -701,15 +595,15 @@ export default class WMOExporter {
 
 		// Export raw textures.
 		const textures = await this.exportTextures(out, null, helper, true);
-		const texturesManifest = [];
+		const texturesManifest = Array<WMOTextureManifestEntry>();
 		for (const [texFileDataID, texInfo] of textures.textureMap)
 			texturesManifest.push({ fileDataID: texFileDataID, file: Path.relative(out, texInfo.matPath) });
 
 		manifest.addProperty('textures', texturesManifest);
 
 		if (config.modelsExportWMOGroups) {
-			const groupManifest = [];
-			const wmoFileName = this.wmo.fileName;
+			const groupManifest = Array<WMOTextureManifestEntry>();
+			const wmoFileName = this.wmo.fileName as string;
 			for (let i = 0, n = this.wmo.groupCount; i < n; i++) {
 				// Abort if the export has been cancelled.
 				if (helper.isCancelled())
@@ -738,7 +632,7 @@ export default class WMOExporter {
 	/**
 	 * Clear the WMO exporting cache.
 	 */
-	static clearCache() {
+	static clearCache(): void {
 		doodadCache.clear();
 	}
 }

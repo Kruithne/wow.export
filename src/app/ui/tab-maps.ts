@@ -6,6 +6,7 @@ import path from 'node:path';
 import Log from '../log';
 import Listfile from '../casc/listfile';
 import Constants from '../constants';
+import State from '../state';
 
 import WDCReader from '../db/WDCReader';
 import BLPFile from '../casc/blp';
@@ -20,7 +21,7 @@ import GameObjects from '../db/types/GameObjects';
 
 let selectedMapID: number;
 let selectedMapDir: string;
-let selectedWDT;
+let selectedWDT: WDTLoader | undefined;
 
 const TILE_SIZE = Constants.GAME.TILE_SIZE;
 const MAP_OFFSET = Constants.GAME.MAP_OFFSET;
@@ -33,57 +34,57 @@ interface GameObjectEntry extends GameObjects {
 
 /**
  * Load a map into the map viewer.
- * @param {number} mapID
- * @param {string} mapDir
+ * @param mapID
+ * @param mapDir
  */
-const loadMap = async (mapID, mapDir) => {
+async function loadMap(mapID: number, mapDir: string): Promise<void> {
 	const mapDirLower = mapDir.toLowerCase();
 
 	selectedMapID = mapID;
 	selectedMapDir = mapDirLower;
 
-	selectedWDT = null;
-	core.view.mapViewerHasWorldModel = false;
+	selectedWDT = undefined;
+	State.mapViewerHasWorldModel = false;
 
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDirLower, mapDirLower);
 	Log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
 
 	try {
-		const data = await core.view.casc.getFileByName(wdtPath);
+		const data = await State.casc.getFileByName(wdtPath);
 		const wdt = selectedWDT = new WDTLoader(data);
 		wdt.load();
 
 		// Enable the 'Export Global WMO' button if available.
 		if (wdt.worldModelPlacement)
-			core.view.mapViewerHasWorldModel = true;
+			State.mapViewerHasWorldModel = true;
 
-		core.view.mapViewerChunkMask = wdt.tiles;
+		State.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
 		Log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
-		core.view.mapViewerChunkMask = null;
+		State.mapViewerChunkMask = null;
 	}
 
 	// Reset the tile selection.
-	core.view.mapViewerSelection.splice(0);
+	State.mapViewerSelection.splice(0);
 
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
-	core.view.mapViewerSelectedMap = mapID;
+	State.mapViewerSelectedMap = mapID;
 
 	// Purposely provide the raw mapDir here as it's used by the external link module
 	// and wow.tools requires a properly cased map name.
-	core.view.mapViewerSelectedDir = mapDir;
-};
+	State.mapViewerSelectedDir = mapDir;
+}
 
 /**
  * Load a map tile.
- * @param {number} x
- * @param {number} y
- * @param {number} size
+ * @param x
+ * @param y
+ * @param size
  */
-const loadMapTile = async (x, y, size) => {
+async function loadMapTile(x: number, y: number, size: number): Promise<ImageData | false> {
 	// If no map has been selected, abort.
 	if (!selectedMapDir)
 		return false;
@@ -93,7 +94,7 @@ const loadMapTile = async (x, y, size) => {
 		const paddedX = x.toString().padStart(2, '0');
 		const paddedY = y.toString().padStart(2, '0');
 		const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', selectedMapDir, paddedX, paddedY);
-		const data = await core.view.casc.getFileByName(tilePath, false, true);
+		const data = await State.casc.getFileByName(tilePath, false, true);
 		const blp = new BLPFile(data);
 
 		// Draw the BLP onto a raw-sized canvas.
@@ -107,6 +108,9 @@ const loadMapTile = async (x, y, size) => {
 		scaled.height = size;
 
 		const ctx = scaled.getContext('2d');
+		if (ctx === null)
+			throw new Error('Unable to get 2D context for canvas');
+
 		ctx.scale(scale, scale);
 		ctx.drawImage(canvas, 0, 0);
 
@@ -115,7 +119,7 @@ const loadMapTile = async (x, y, size) => {
 		// Map tile does not exist or cannot be read.
 		return false;
 	}
-};
+}
 
 /**
  * Collect game objects from GameObjects.db2 for export.
@@ -167,7 +171,7 @@ async function collectGameObjects(mapID: number, filter: (row: GameObjects) => b
 	return result;
 }
 
-async function exportSelectedMapWMO() {
+async function exportSelectedMapWMO(): Promise<void> {
 	const helper = new ExportHelper(1, 'WMO');
 	helper.start();
 
@@ -195,7 +199,7 @@ async function exportSelectedMapWMO() {
 
 		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), '.obj');
 
-		const data = await core.view.casc.getFile(fileDataID);
+		const data = await State.casc.getFile(fileDataID);
 		const wmo = new WMOExporter(data, fileDataID);
 
 		wmo.setDoodadSetMask({ [placement.doodadSetIndex]: { checked: true } });
@@ -213,20 +217,20 @@ async function exportSelectedMapWMO() {
 	helper.finish();
 }
 
-async function exportSelectedMap() {
-	const exportTiles = core.view.mapViewerSelection;
-	const exportQuality = core.view.config.exportMapQuality;
+async function exportSelectedMap(): Promise<void> {
+	const exportTiles = State.mapViewerSelection;
+	const exportQuality = State.config.exportMapQuality;
 
 	// User has not selected any tiles.
 	if (exportTiles.length === 0)
-		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+		return State.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
 
-	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
 
 	// The export helper provides the user with a link to the directory of the last exported
 	// item. Since we're using directory paths, we just append another segment here so that
@@ -241,8 +245,8 @@ async function exportSelectedMap() {
 		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
 
 		// Locate game objects within the tile for exporting.
-		let gameObjects: Set<GameObject> = new Set();
-		if (core.view.config.mapsIncludeGameObjects === true) {
+		let gameObjects = new Set<GameObjects>();
+		if (State.config.mapsIncludeGameObjects === true) {
 			const startX = MAP_OFFSET - (adt.tileX * TILE_SIZE) - TILE_SIZE;
 			const startY = MAP_OFFSET - (adt.tileY * TILE_SIZE) - TILE_SIZE;
 			const endX = startX + TILE_SIZE;
@@ -275,18 +279,18 @@ async function exportSelectedMap() {
  * Parse a map entry from the listbox.
  * @param {string} entry
  */
-const parseMapEntry = (entry) => {
+function parseMapEntry(entry: string): { id: number, name: string, dir: string } {
 	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^)]+)\)/);
 	if (!match)
 		throw new Error('Unexpected map entry');
 
 	return { id: parseInt(match[1]), name: match[2], dir: match[3] };
-};
+}
 
 // The first time the user opens up the map tab, initialize map names.
-core.events.once('screen-tab-maps', async () => {
-	core.view.isBusy++;
-	core.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
+State.events.once('screen-tab-maps', async () => {
+	State.isBusy++;
+	State.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
 	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();
@@ -298,22 +302,22 @@ core.events.once('screen-tab-maps', async () => {
 			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 
-	core.view.mapViewerMaps = maps;
+	State.mapViewerMaps = maps;
 
-	core.hideToast();
-	core.view.isBusy--;
+	State.hideToast();
+	State.isBusy--;
 });
 
-core.registerLoadFunc(async () => {
+State.registerLoadFunc(async () => {
 	// Store a reference to loadMapTile for the map viewer component.
-	core.view.mapViewerTileLoader = loadMapTile;
+	State.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
-	core.view.$watch('selectionMaps', async selection => {
+	State.$watch('selectionMaps', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 
-		if (!core.view.isBusy && first) {
+		if (!State.isBusy && first) {
 			const map = parseMapEntry(first);
 			if (selectedMapID !== map.id)
 				loadMap(map.id, map.dir);
@@ -321,6 +325,6 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Track when user clicks to export a map or world model.
-	core.events.on('click-export-map', () => exportSelectedMap());
-	core.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
+	State.events.on('click-export-map', () => exportSelectedMap());
+	State.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
 });

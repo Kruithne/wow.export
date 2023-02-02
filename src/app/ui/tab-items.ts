@@ -2,14 +2,17 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import State from '../state';
 import Events from '../events';
-import * as listfile from '../casc/listfile';
+import Listfile from '../casc/listfile';
 import MultiMap from '../MultiMap';
 
 import * as DBTextureFileData from '../db/caches/DBTextureFileData';
 import * as DBModelFileData from '../db/caches/DBModelFileData';
 
+import ItemSparse from '../db/types/ItemSparse';
+import ItemAppearance from '../db/types/ItemAppearance';
+
 import WDCReader from '../db/WDCReader';
-import * as ItemSlot from '../wow/ItemSlot';
+import { getSlotName } from '../wow/ItemSlot';
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -52,7 +55,7 @@ export default class Item {
 	 * @param textures
 	 * @param models
 	 */
-	constructor(id: number, itemSparseRow: any, itemAppearanceRow: any | null, textures: Array<string> | null, models: Array<string> | null) {
+	constructor(id: number, itemSparseRow: ItemSparse, itemAppearanceRow: ItemAppearance | null, textures: Array<string> | null, models: Array<string> | null) {
 		this.id = id;
 		this.name = itemSparseRow.Display_lang;
 		this.inventoryType = itemSparseRow.InventoryType;
@@ -71,7 +74,7 @@ export default class Item {
 	 * Returns item slot name for this items inventory type.
 	 */
 	get itemSlotName(): string {
-		return ItemSlot.getSlotName(this.inventoryType);
+		return getSlotName(this.inventoryType);
 	}
 
 	/**
@@ -86,7 +89,7 @@ export default class Item {
  * Switches to the model viewer, selecting the models for the given item.
  * @param item
  */
-export function viewItemModels(item) {
+export function viewItemModels(item): void {
 	State.setScreen('tab-models');
 
 	const list = new Set();
@@ -94,7 +97,7 @@ export function viewItemModels(item) {
 	for (const modelID of item.models) {
 		const fileDataIDs = DBModelFileData.getModelFileDataID(modelID);
 		for (const fileDataID of fileDataIDs) {
-			let entry = listfile.getByID(fileDataID);
+			let entry = Listfile.getByID(fileDataID);
 
 			if (entry !== undefined) {
 				if (State.config.listfileShowFileDataIDs)
@@ -117,14 +120,14 @@ export function viewItemModels(item) {
  * Switches to the texture viewer, selecting the models for the given item.
  * @param item
  */
-export function viewItemTextures(item) {
+export function viewItemTextures(item): void {
 	State.setScreen('tab-textures');
 
 	const list = new Set();
 
 	for (const textureID of item.textures) {
 		const fileDataID = DBTextureFileData.getTextureFileDataID(textureID);
-		let entry = listfile.getByID(fileDataID);
+		let entry = Listfile.getByID(fileDataID);
 
 		if (entry !== undefined) {
 			if (State.config.listfileShowFileDataIDs)
@@ -180,12 +183,12 @@ Events.once('screen-tab-items', async () => {
 	for (const row of itemDisplayInfoMaterialRes.getAllRows().values())
 		materialMap.set(row.ItemDisplayInfoID as number, row.MaterialResourcesID as number);
 
-	for (const [itemID, itemRow] of rows) {
-		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType as number))
+	for (const [itemID, itemRow] of rows as Map<number, ItemSparse>) {
+		if (ITEM_SLOTS_IGNORED.includes(itemRow.InventoryType as number))
 			continue;
 
 		const itemAppearanceID = appearanceMap.get(itemID);
-		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
+		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID) as ItemAppearance;
 
 		let materials = null;
 		let models = null;

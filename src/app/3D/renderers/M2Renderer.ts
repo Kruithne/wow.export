@@ -51,13 +51,13 @@ export default class M2Renderer {
 	}
 
 	/** Load the provided model for rendering. */
-	async load() {
+	async load(): Promise<void> {
 		if (this.data === undefined)
 			throw new Error('M2Renderer has already discarded its data.');
 
 		// Parse the M2 data.
 		this.m2 = new M2Loader(this.data);
-		await this.m2.load();
+		this.m2.load();
 
 		this.loadTextures();
 		if (this.m2.vertices.length > 0) {
@@ -74,7 +74,7 @@ export default class M2Renderer {
 	}
 
 	/** Update the wireframe state for all materials. */
-	updateWireframe() {
+	updateWireframe(): void {
 		const renderWireframe = State.config.modelViewerWireframe;
 		for (const material of this.materials) {
 			material.wireframe = renderWireframe;
@@ -83,7 +83,7 @@ export default class M2Renderer {
 	}
 
 	/** Update the current state of geosets. */
-	updateGeosets() {
+	updateGeosets(): void {
 		if (!this.reactive || !this.meshGroup || !this.geosetArray)
 			return;
 
@@ -96,7 +96,7 @@ export default class M2Renderer {
 	 * Load a skin with a given index.
 	 * @param index - The index of the skin to load.
 	 */
-	async loadSkin(index: number) {
+	async loadSkin(index: number): Promise<void> {
 		this.disposeMeshGroup();
 		this.meshGroup = new THREE.Group();
 
@@ -154,7 +154,7 @@ export default class M2Renderer {
 	 * Apply replaceable textures to this model.
 	 * @param {Array} display
 	 */
-	async applyReplaceableTextures(display: DisplayInfo) {
+	async applyReplaceableTextures(display: DisplayInfo): Promise<void> {
 		for (let i = 0, n = this.m2.textureTypes.length; i < n; i++) {
 			const textureType = this.m2.textureTypes[i];
 			if (textureType >= 11 && textureType < 14) {
@@ -172,7 +172,7 @@ export default class M2Renderer {
 	 * @param {number} type
 	 * @param {number} fileDataID
 	 */
-	async overrideTextureType(type: number, fileDataID: number) {
+	async overrideTextureType(type: number, fileDataID: number): Promise<void> {
 		const textureTypes = this.m2.textureTypes;
 		const renderWireframe = State.config.modelViewerWireframe;
 
@@ -218,7 +218,7 @@ export default class M2Renderer {
 	/**
 	 * Load all textures needed for the M2 model.
 	 */
-	loadTextures() {
+	loadTextures(): void {
 		const textures = this.m2.textures;
 
 		this.renderCache.retire(...this.materials);
@@ -282,7 +282,7 @@ export default class M2Renderer {
 	/**
 	 * Dispose of all meshes controlled by this renderer.
 	 */
-	disposeMeshGroup() {
+	disposeMeshGroup(): void {
 		// Clear out geoset controller.
 		if (this.geosetArray)
 			this.geosetArray.splice(0);
@@ -306,7 +306,7 @@ export default class M2Renderer {
 	/**
 	 * Dispose of this instance and release all resources.
 	 */
-	dispose() {
+	dispose(): void {
 		// Unregister reactive watchers.
 		this.geosetWatcher?.();
 		this.wireframeWatcher?.();

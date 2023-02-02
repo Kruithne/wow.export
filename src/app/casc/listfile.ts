@@ -140,7 +140,7 @@ export async function loadListfile(buildConfig: string, cache: BuildCache, rootE
  * Load unknown files from TextureFileData/ModelFileData.
  * Must be called after DBTextureFileData/DBModelFileData have loaded.
  */
-export async function loadUnknowns() {
+export async function loadUnknowns(): Promise<void> {
 	const unkBlp = loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
 	const unkM2 = loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
 
@@ -233,7 +233,7 @@ export function formatEntries(entries: Array<number>): Array<string> {
 	return namedEntries;
 }
 
-export function ingestIdentifiedFiles(entries: Map<number, string>) {
+export function ingestIdentifiedFiles(entries: Map<number, string>): void {
 	for (const [fileDataID, ext] of entries) {
 		const fileName = 'unknown/' + fileDataID + ext;
 		idLookup.set(fileDataID, fileName);
@@ -247,7 +247,7 @@ export function ingestIdentifiedFiles(entries: Map<number, string>) {
  * Returns a full listfile, sorted and formatted.
  * @returns Full listfile
  */
-export function getFullListfile() {
+export function getFullListfile(): Array<string> {
 	return formatEntries([...idLookup.keys()]);
 }
 
@@ -342,5 +342,8 @@ export default {
 	stripFileEntry,
 	formatUnknownFile,
 	isLoaded,
-	ingestIdentifiedFiles
+	ingestIdentifiedFiles,
+	loadUnknowns,
+	loadListfile,
+	formatEntries
 };

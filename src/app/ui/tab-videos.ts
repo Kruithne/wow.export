@@ -2,11 +2,11 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import State from '../state';
 import Events from '../events';
-import * as log from '../log';
+import Log from '../log';
 import ExportHelper from '../casc/export-helper';
 import { BLTEIntegrityError } from '../casc/blte-reader';
-import * as generics from '../generics';
-import * as listfile from '../casc/listfile';
+import { fileExists } from '../generics';
+import Listfile from '../casc/listfile';
 
 State.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.
@@ -26,11 +26,11 @@ State.registerLoadFunc(async () => {
 			if (helper.isCancelled())
 				return;
 
-			fileName = listfile.stripFileEntry(fileName);
+			fileName = Listfile.stripFileEntry(fileName);
 			const exportPath = ExportHelper.getExportPath(fileName);
 			let isCorrupted = false;
 
-			if (overwriteFiles || !await generics.fileExists(exportPath)) {
+			if (overwriteFiles || !await fileExists(exportPath)) {
 				try {
 					const data = await State.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
@@ -46,7 +46,7 @@ State.registerLoadFunc(async () => {
 
 				if (isCorrupted) {
 					try {
-						log.write('Local cinematic file is corrupted, forcing fallback.');
+						Log.write('Local cinematic file is corrupted, forcing fallback.');
 
 						// In the event of a corrupted cinematic, try again with forced fallback.
 						const data = await State.casc.getFileByName(fileName, false, false, true, true);
@@ -59,7 +59,7 @@ State.registerLoadFunc(async () => {
 				}
 			} else {
 				helper.mark(fileName, true);
-				log.write('Skipping video export %s (file exists, overwrite disabled)', exportPath);
+				Log.write('Skipping video export %s (file exists, overwrite disabled)', exportPath);
 			}
 		}
 

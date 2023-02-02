@@ -38,9 +38,9 @@ State.registerLoadFunc(async () => {
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0)
-					core.setToast('info', 'Selected DB2 has no rows.', null);
+					State.setToast('info', 'Selected DB2 has no rows.', null);
 				else
-					core.hideToast(false);
+					State.hideToast(false);
 
 				const parsed = Array(rows.size);
 
@@ -53,7 +53,7 @@ State.registerLoadFunc(async () => {
 				selectedFile = first;
 			} catch (e) {
 				// Error reading/parsing DB2 file.
-				core.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
+				State.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
 				log.write('Failed to open CASC file: %s', e.message);
 			}
 		}

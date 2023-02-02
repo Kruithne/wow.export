@@ -8,7 +8,7 @@ import FileWriter from '../../file-writer';
 type OBJMesh = {
 	name: string;
 	triangles: Array<number>;
-	matName: string;
+	matName?: string;
 }
 
 export default class OBJWriter {
@@ -34,7 +34,7 @@ export default class OBJWriter {
 	 * Set the name of the material library.
 	 * @param name
 	 */
-	setMaterialLibrary(name: string) {
+	setMaterialLibrary(name: string): void {
 		this.mtl = name;
 	}
 
@@ -42,7 +42,7 @@ export default class OBJWriter {
 	 * Set the name of this model.
 	 * @param name
 	 */
-	setName(name: string) {
+	setName(name: string): void {
 		this.name = name;
 	}
 
@@ -50,7 +50,7 @@ export default class OBJWriter {
 	 * Set the vertex array for this writer.
 	 * @param verts
 	 */
-	setVertArray(verts: Array<number>) {
+	setVertArray(verts: Array<number>): void {
 		this.verts = verts;
 	}
 
@@ -58,7 +58,7 @@ export default class OBJWriter {
 	 * Set the normals array for this writer.
 	 * @param normals
 	 */
-	setNormalArray(normals: Array<number>) {
+	setNormalArray(normals: Array<number>): void {
 		this.normals = normals;
 	}
 
@@ -66,7 +66,7 @@ export default class OBJWriter {
 	 * Add a UV array for this writer.
 	 * @param uv
 	 */
-	addUVArray(uv: Array<number>) {
+	addUVArray(uv: Array<number>): void {
 		this.uvs.push(uv);
 	}
 
@@ -76,7 +76,7 @@ export default class OBJWriter {
 	 * @param triangles
 	 * @param matName
 	 */
-	addMesh(name: string, triangles: Array<number>, matName: string) {
+	addMesh(name: string, triangles: Array<number>, matName: string | undefined): void {
 		this.meshes.push({ name: name, triangles: triangles, matName: matName });
 	}
 
@@ -84,7 +84,7 @@ export default class OBJWriter {
 	 * Write the OBJ file (and associated MTLs).
 	 * @param overwrite
 	 */
-	async write(overwrite = true) {
+	async write(overwrite = true): Promise<void> {
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await fileExists(this.out))
 			return;

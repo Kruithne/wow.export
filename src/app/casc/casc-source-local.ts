@@ -5,11 +5,11 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 
 import State from '../state';
-import { readFile } from '../generics';
 import Log from '../log';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
 import Listfile from './listfile';
+import { readFile } from '../generics';
 
 import * as VersionConfig from './version-config';
 import * as ConfigReader from './config-reader';
@@ -26,10 +26,6 @@ export default class CASCLocal extends CASC {
 	dataDir: string;
 	storageDir: string;
 	localIndexes: Map<string, IndexEntry> = new Map();
-
-	builds: Array<any>; // NIT: Make type for builds
-	build: any;
-
 	remote: CASCRemote;
 
 	/**
@@ -49,14 +45,14 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Initialize local CASC source.
 	 */
-	async init() {
+	async init(): Promise<void> {
 		Log.write('Initializing local CASC installation: %s', this.dir);
 
 		const buildInfo = path.join(this.dir, Constants.BUILD.MANIFEST);
 		const config = VersionConfig.parse(await fs.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
-		this.builds = config.filter((entry: { Product: string; }) => Constants.PRODUCTS.some(e => e.product === entry.Product));
+		this.builds = config.filter((entry: VersionConfig.BuildInfo) => Constants.PRODUCTS.some(e => e.product === entry.Product));
 
 		Log.write('%o', this.builds);
 	}
@@ -70,11 +66,11 @@ export default class CASCLocal extends CASC {
 	 * @param forceFallback
 	 * @param contentKey
 	 */
-	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
+	async getFile(fileDataID: number, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null): Promise<BLTEReader> {
 		if (!suppressLog)
 			Log.write('Loading local CASC file %d (%s)', fileDataID, Listfile.getByID(fileDataID) as string);
 
-		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getEncodingKey(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
 		return new BLTEReader(data, encodingKey, partialDecryption);
 	}
@@ -83,7 +79,7 @@ export default class CASCLocal extends CASC {
 	 * Returns a list of available products in the installation.
 	 * Format example: "PTR: World of Warcraft 8.3.0.32272"
 	 */
-	getProductList() {
+	getProductList(): Array<string> {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
@@ -97,7 +93,7 @@ export default class CASCLocal extends CASC {
 	 * Load the CASC interface with the given build.
 	 * @param buildIndex
 	 */
-	async load(buildIndex: number) {
+	async load(buildIndex: number): Promise<void> {
 		this.build = this.builds[buildIndex];
 		Log.write('Loading local CASC build: %o', this.build);
 
@@ -121,7 +117,7 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Load the BuildConfig from the installation directory.
 	 */
-	async loadConfigs() {
+	async loadConfigs(): Promise<void> {
 		// Load and parse BuildConfig from disk.
 		await this.progress.step('Fetching build configurations');
 		this.buildConfig = ConfigReader.parse(await fs.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
@@ -134,7 +130,7 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Load and parse storage indexes from the local installation.
 	 */
-	async loadIndexes() {
+	async loadIndexes(): Promise<void> {
 		Log.timeLog();
 		await this.progress.step('Loading indexes');
 
@@ -155,7 +151,7 @@ export default class CASCLocal extends CASC {
 	 * Parse a local installation journal index for entries.
 	 * @param {string} file Path to the index.
 	 */
-	async parseIndex(file) {
+	async parseIndex(file): Promise<void> {
 		const entries = this.localIndexes;
 		const index = new BufferWrapper(await fs.readFile(file));
 
@@ -190,7 +186,7 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Load and parse encoding from the local installation.
 	 */
-	async loadEncoding() {
+	async loadEncoding(): Promise<void> {
 		// Parse encoding file.
 		Log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' ');
@@ -204,7 +200,7 @@ export default class CASCLocal extends CASC {
 	/**
 	 * Load and parse root table from local installation.
 	 */
-	async loadRoot() {
+	async loadRoot(): Promise<void> {
 		// Get root key from encoding table.
 		const rootKey = this.encodingKeys.get(this.buildConfig.root);
 		if (rootKey === undefined)
@@ -222,7 +218,7 @@ export default class CASCLocal extends CASC {
 	 * Initialize a remote CASC instance to download missing
 	 * files needed during local initialization.
 	 */
-	async initializeRemoteCASC() {
+	async initializeRemoteCASC(): Promise<void> {
 		const remote = new CASCRemote(State.selectedCDNRegion.tag);
 		await remote.init();
 

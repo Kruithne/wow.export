@@ -5,11 +5,11 @@ import util from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import Generics from '../../generics';
+import { fileExists } from '../../generics';
 import Constants from '../../constants';
 import Listfile from '../../casc/listfile';
 import Log from '../../log';
-import BufferWrapper from '../../buffer';
+import BufferWrapper, { canvasToBuffer } from '../../buffer';
 import BLPFile from '../../casc/blp';
 import State from '../../state';
 import RGBA from '../RGBA';
@@ -72,7 +72,7 @@ async function loadTexture(fileDataID: number): Promise<WebGLTexture | null> {
 }
 
 /** Load and cache GroundEffectDoodad and GroundEffectTexture data tables. */
-async function loadFoliageTables() {
+async function loadFoliageTables(): Promise<void> {
 	if (!hasLoadedFoliage) {
 		try {
 			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2');
@@ -112,7 +112,7 @@ function bindAlphaLayer(layer: Array<number>): WebGLTexture {
 }
 
 /** Unbind all textures from the GL context. */
-function unbindAllTextures() {
+function unbindAllTextures(): void {
 	// Unbind textures.
 	for (let i = 0, n = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS); i < n; i++) {
 		gl.activeTexture(gl.TEXTURE0 + i);
@@ -121,29 +121,29 @@ function unbindAllTextures() {
 }
 
 /** Clear the canvas, resetting it to black. */
-const clearCanvas = () => {
+function clearCanvas(): void {
 	gl.viewport(0, 0, glCanvas.width, glCanvas.height);
 	gl.clearColor(0, 0, 0, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-};
+}
 
 /**
  * Convert an RGBA object into an integer.
  * @param rgba - The RGBA object to convert.
  * @returns The integer representation of the RGBA object.
  */
-const rgbaToInt = (rgba: RGBA): number => {
+function rgbaToInt(rgba: RGBA): number {
 	let intval = rgba.r;
 	intval = (intval << 8) + rgba.g;
 	intval = (intval << 8) + rgba.b;
 	return (intval << 8) + rgba.a;
-};
+}
 
 /**
  * Compile the vertex and fragment shaders used for baking.
  * @param useOld - Whether to use the old shader.
  */
-async function compileShaders(useOld = false) {
+async function compileShaders(useOld = false): Promise<void> {
 	glShaderProg = gl.createProgram() as WebGLProgram;
 
 	// Compile fragment shader.
@@ -211,7 +211,7 @@ export default class ADTExporter {
 	 * @param helper
 	 * @returns The path to the exported tile.
 	 */
-	async export(dir: string, quality: number, gameObjects: Set<GameObjects>, helper: ExportHelper): Promise<string> {
+	async export(dir: string, quality: number, gameObjects: Set<GameObjects>, helper: ExportHelper): Promise<{ type: string; path: string }> {
 		const casc = State.casc;
 		const config = State.config;
 
@@ -406,7 +406,7 @@ export default class ADTExporter {
 						mtl.addMaterial(matName, matName + '.png');
 						obj.addMesh(objName, indices, matName);
 					} else {
-						obj.addMesh(chunkID, indices, 'tex_' + this.tileID);
+						obj.addMesh(chunkID.toString(), indices, 'tex_' + this.tileID);
 					}
 					chunkMeshes[chunkIndex] = indices;
 
@@ -434,12 +434,14 @@ export default class ADTExporter {
 					// Create a 2D canvas for drawing the alpha maps.
 					const canvas = document.createElement('canvas');
 					const ctx = canvas.getContext('2d');
+					if (ctx === null)
+						throw new Error('Failed to create canvas context.');
 
 					const materialIDs = texAdt.diffuseTextureFileDataIDs;
 					const heightIDs = texAdt.heightTextureFileDataIDs;
 					const texParams = texAdt.texParams;
 
-					const saveLayerTexture = async (fileDataID) => {
+					const saveLayerTexture = async (fileDataID: number): Promise<string> => {
 						const blp = new BLPFile(await State.casc.getFile(fileDataID));
 						let fileName = Listfile.getByID(fileDataID);
 						if (fileName !== undefined)
@@ -447,8 +449,8 @@ export default class ADTExporter {
 						else
 							fileName = Listfile.formatUnknownFile(fileDataID, '.png');
 
-						let texFile;
-						let texPath;
+						let texFile: string;
+						let texPath: string;
 
 						if (config.enableSharedTextures) {
 							texPath = ExportHelper.getExportPath(fileName);
@@ -468,7 +470,7 @@ export default class ADTExporter {
 					for (let i = 0, n = materials.length; i < n; i++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
-							return;
+							return '';
 
 						const diffuseFileDataID = materialIDs[i];
 						const heightFileDataID = heightIDs[i] ?? 0;
@@ -518,7 +520,7 @@ export default class ADTExporter {
 					for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
-							return;
+							return '';
 
 						helper.setCurrentTaskValue(chunkIndex);
 
@@ -547,7 +549,7 @@ export default class ADTExporter {
 							const prefix = this.tileID + '_' + chunkIndex;
 							const tilePath = path.join(dir, 'tex_' + prefix + '.png');
 
-							const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+							const buf = new BufferWrapper(await canvasToBuffer(canvas, 'image/png'));
 							await buf.writeToFile(tilePath);
 
 							const texLayers = texChunk.layers;
@@ -590,7 +592,7 @@ export default class ADTExporter {
 					// For combined alpha maps, export everything together once done.
 					if (!isSplittingAlphaMaps) {
 						const mergedPath = path.join(dir, 'tex_' + this.tileID + '.png');
-						const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+						const buf = new BufferWrapper(await canvasToBuffer(canvas, 'image/png'));
 						await buf.writeToFile(mergedPath);
 
 						const json = new JSONWriter(path.join(dir, 'tex_' + this.tileID + '.json'));
@@ -608,7 +610,7 @@ export default class ADTExporter {
 					const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', this.mapDir, paddedX, paddedY);
 					const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
 
-					if (config.overwriteFiles || !await Generics.fileExists(tileOutPath)) {
+					if (config.overwriteFiles || !await fileExists(tileOutPath)) {
 						const data = await casc.getFileByName(tilePath, false, true);
 						const blp = new BLPFile(data);
 
@@ -623,6 +625,9 @@ export default class ADTExporter {
 						scaled.height = quality;
 
 						const ctx = scaled.getContext('2d');
+						if (ctx === null)
+							throw new Error('Failed to get canvas context');
+
 						ctx.scale(scale, scale);
 						ctx.drawImage(canvas, 0, 0);
 
@@ -641,7 +646,7 @@ export default class ADTExporter {
 						compositeCtx = composite.getContext('2d');
 					}
 
-					if (isSplittingTextures || config.overwriteFiles || !await Generics.fileExists(tileOutPath)) {
+					if (isSplittingTextures || config.overwriteFiles || !await fileExists(tileOutPath)) {
 						// Create new GL context and compile shaders.
 						if (!gl) {
 							glCanvas = document.createElement('canvas');
@@ -726,6 +731,9 @@ export default class ADTExporter {
 						const rotateCanvas = new OffscreenCanvas(glCanvas.width, glCanvas.height);
 						const rotateCtx = rotateCanvas.getContext('2d');
 
+						if (rotateCtx === null)
+							throw new Error('Failed to create rotation canvas.');
+
 						rotateCtx.translate(rotateCanvas.width / 2, rotateCanvas.height / 2);
 						rotateCtx.rotate(Math.PI / 180 * 180);
 
@@ -767,7 +775,7 @@ export default class ADTExporter {
 							for (let y = 0; y < 16; y++) {
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
-									return;
+									return { path: '', type: '' };
 
 								helper.setCurrentTaskValue(chunkID);
 
@@ -843,7 +851,7 @@ export default class ADTExporter {
 									// Save this individual chunk.
 									const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
 
-									if (config.overwriteFiles || !await Generics.fileExists(tilePath)) {
+									if (config.overwriteFiles || !await fileExists(tilePath)) {
 										rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
 
 										const buf = await BufferWrapper.fromCanvas(rotateCanvas, 'image/png');
@@ -862,7 +870,7 @@ export default class ADTExporter {
 
 						// Save the completed composite tile.
 						if (!isSplittingTextures) {
-							const buf = await BufferWrapper.fromCanvas(composite, 'image/png');
+							const buf = new BufferWrapper(await canvasToBuffer(composite, 'image/png'));
 							await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
 						}
 
@@ -884,11 +892,11 @@ export default class ADTExporter {
 			const objectCache = new Set();
 
 			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
-			if (config.overwriteFiles || !await Generics.fileExists(csvPath)) {
+			if (config.overwriteFiles || !await fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
 				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID', 'DoodadSetIndexes', 'DoodadSetNames');
 
-				const exportObjects = async (exportType, objects, csvName) => {
+				const exportObjects = async (exportType: string, objects, csvName: string): Promise<void> => {
 					const nObjects = objects?.length ?? objects.size;
 					Log.write('Exporting %d %s for ADT...', nObjects, exportType);
 
@@ -968,7 +976,7 @@ export default class ADTExporter {
 				if (config.mapsIncludeM2)
 					await exportObjects('doodads', objAdt.models, 'm2');
 
-				if (config.mapsIncludeWMO) {
+				if (config.mapsIncludeWMO && objAdt.worldModels !== undefined) {
 					Log.write('Exporting %d WMOs for ADT...', objAdt.worldModels.length);
 
 					helper.setCurrentTaskName('Tile ' + this.tileID + ', WMO objects');
@@ -979,11 +987,11 @@ export default class ADTExporter {
 					let worldModelIndex = 0;
 					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
-						const useADTSets = model & 0x80;
+						const useADTSets = model.flags & 0x80;
 						helper.setCurrentTaskValue(worldModelIndex++);
 
-						let fileDataID;
-						let fileName;
+						let fileDataID: number | undefined;
+						let fileName: string | undefined;
 
 						try {
 							if (usingNames) {
@@ -993,6 +1001,9 @@ export default class ADTExporter {
 								fileDataID = model.mwidEntry;
 								fileName = Listfile.getByID(fileDataID);
 							}
+
+							if (fileDataID === undefined)
+								throw new Error('Missing FileDataID for WMO export');
 
 							if (!config.mapsExportRaw) {
 								if (fileName !== undefined) {
@@ -1004,7 +1015,7 @@ export default class ADTExporter {
 								}
 							}
 
-							let modelPath;
+							let modelPath: string;
 							if (config.enableSharedChildren)
 								modelPath = ExportHelper.getExportPath(fileName);
 							else
@@ -1040,7 +1051,7 @@ export default class ADTExporter {
 
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
-									return;
+									return { path: '', type: '' };
 
 								objectCache.add(cacheID);
 							}
@@ -1191,7 +1202,7 @@ export default class ADTExporter {
 	/**
 	 * Clear internal tile-loading cache.
 	 */
-	static clearCache() {
+	static clearCache(): void {
 		wdtCache.clear();
 	}
 }
