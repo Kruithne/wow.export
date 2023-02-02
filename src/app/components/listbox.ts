@@ -1,8 +1,18 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const IconRender = require('../icon-render');
+import path from 'node:path';
 
-Vue.component('itemlistbox', {
+function fid_filter(e: string): string {
+	const start = e.indexOf(' [');
+	const end = e.lastIndexOf(']');
+
+	if (start > -1 && end > -1)
+		return e.substring(start + 2, end);
+
+	return e;
+}
+
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
@@ -10,10 +20,14 @@ Vue.component('itemlistbox', {
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
 	 * regex: If true, filter will be treated as a regular expression.
+	 * copymode: Defines the behavior of CTRL + C.
+	 * pasteselection: If true, CTRL + V will load a selection.
+	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
+	 * override: If provided, used as an override listfile.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'includefilecount', 'unittype'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
 
 	/**
 	 * Reactive instance data.
@@ -35,9 +49,12 @@ Vue.component('itemlistbox', {
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
+		this.onPaste = e => this.handlePaste(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
+
+		document.addEventListener('paste', this.onPaste);
 
 		if (this.keyinput) {
 			this.onKeyDown = e => this.handleKey(e);
@@ -86,27 +103,35 @@ Vue.component('itemlistbox', {
 		},
 
 		/**
+		 * Returns the active item list to
+		 * @returns
+		 */
+		itemList: function() {
+			return this.override?.length > 0 ? this.override : this.items;
+		},
+
+		/**
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
 			if (!this.filter)
-				return this.items;
+				return this.itemList;
 
-			let res = this.items;
+			let res = this.itemList;
 
 			if (this.regex) {
 				try {
 					const filter = new RegExp(this.filter.trim(), 'i');
-					res = res.filter(e => e.displayName.match(filter));
+					res = res.filter(e => e.match(filter));
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.
 				}
 			} else {
 				const filter = this.filter.trim().toLowerCase();
 				if (filter.length > 0)
-					res = res.filter(e => e.displayName.toLowerCase().includes(filter));
+					res = res.filter(e => e.toLowerCase().includes(filter));
 			}
 
 			// Remove anything from the user selection that has now been filtered out.
@@ -184,6 +209,21 @@ Vue.component('itemlistbox', {
 		},
 
 		/**
+		 * Invoked when a user attempts to paste a selection.
+		 * @param {ClipboardEvent} e
+		 */
+		handlePaste: function(e) {
+			// Paste selection must be enabled for this feature.
+			if (!this.pasteselection)
+				return;
+
+			// Replace the current selection with one from the clipboard.
+			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.itemList.includes(i));
+			this.selection.splice(0);
+			this.selection.push(...entries);
+		},
+
+		/**
 		 * Invoked when a mouse-wheel event is captured on the component node.
 		 * @param {WheelEvent} e
 		 */
@@ -215,7 +255,17 @@ Vue.component('itemlistbox', {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.map(e => e.displayName).join('\n'), 'text');
+				let entries = this.selection;
+				if (this.copymode == 'DIR')
+					entries = entries.map(e => path.dirname(e));
+				else if (this.copymode == 'FID')
+					entries = entries.map(fid_filter);
+
+				// Remove whitespace from paths to keep consistency with exports.
+				if (this.copytrimwhitespace)
+					entries = entries.map(e => e.replace(/\s/g, ''));
+
+				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
@@ -298,28 +348,14 @@ Vue.component('itemlistbox', {
 		}
 	},
 
-	watch: {
-		/**
-		 * Invoked when the displayItems variable changes.
-		 */
-		displayItems: function() {
-			for (const item of this.displayItems)
-				IconRender.loadIcon(item.icon);
-		}
-	},
-
 	/**
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div><div ref="root" class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
-			<div :class="['item-icon', 'icon-' + item.icon ]"></div>
-			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }} <span class="item-id">({{ item.id }})</span></div>
-			<ul class="item-buttons">
-				<li @click.self="$emit('options', item)">Options</li>
-			</ul>
+			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
-});
+};

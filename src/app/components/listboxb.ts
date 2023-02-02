@@ -1,10 +1,13 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-Vue.component('checkboxlist', {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
+	 * selection: Reactive selection controller.
+	 * single: If set, only one entry can be selected.
+	 * keyinput: If true, listbox registers for keyboard input.
 	 */
-	props: ['items'],
+	props: ['items', 'selection', 'single', 'keyinput'],
 
 	/**
 	 * Reactive instance data.
@@ -14,7 +17,8 @@ Vue.component('checkboxlist', {
 			scroll: 0,
 			scrollRel: 0,
 			isScrolling: false,
-			slotCount: 1
+			slotCount: 1,
+			lastSelectItem: null
 		};
 	},
 
@@ -29,6 +33,11 @@ Vue.component('checkboxlist', {
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 
+		if (this.keyinput) {
+			this.onKeyDown = e => this.handleKey(e);
+			document.addEventListener('keydown', this.onKeyDown);
+		}
+
 		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
 		this.observer.observe(this.$el);
@@ -42,6 +51,9 @@ Vue.component('checkboxlist', {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+
+		if (this.keyinput)
+			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
 		this.observer.disconnect();
@@ -58,7 +70,7 @@ Vue.component('checkboxlist', {
 
 		/**
 		 * Index which array reading should start at, based on the current
-		 * relative scroll and the overall item count. Value is dynamically
+		 * relative scroll and the overal item count. Value is dynamically
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
@@ -89,7 +101,6 @@ Vue.component('checkboxlist', {
 		resize: function() {
 			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor(this.$el.clientHeight / 26);
-
 		},
 
 		/**
@@ -147,16 +158,100 @@ Vue.component('checkboxlist', {
 		},
 
 		/**
-		 * Propagate entry clicks to the child checkbox.
-		 * @param {MouseEvent} event
+		 * Invoked when a keydown event is fired.
+		 * @param {KeyboardEvent} e
 		 */
-		propagateClick: function(event) {
-			let target = event.target;
-			if (!target.matches('input')) {
-				if (target.matches('span'))
-					target = target.parentNode;
+		handleKey: function(e) {
+			// If document.activeElement is the document body, then we can safely assume
+			// the user is not focusing anything, and can intercept keyboard input.
+			if (document.activeElement !== document.body)
+				return;
 
-				target.querySelector('input').click();
+			// User hasn't selected anything in the listbox yet.
+			if (!this.lastSelectItem)
+				return;
+
+			if (e.key === 'c' && e.ctrlKey) {
+				// Copy selection to clipboard.
+				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
+			} else {
+				// Arrow keys.
+				const isArrowUp = e.key === 'ArrowUp';
+				const isArrowDown = e.key === 'ArrowDown';
+				if (isArrowUp || isArrowDown) {
+					const delta = isArrowUp ? -1 : 1;
+
+					// Move/expand selection one.
+					const lastSelectIndex = this.items.indexOf(this.lastSelectItem);
+					const nextIndex = lastSelectIndex + delta;
+					const next = this.items[nextIndex];
+					if (next) {
+						const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
+						let diff = Math.abs(nextIndex - lastViewIndex);
+						if (isArrowDown)
+							diff += 1;
+
+						if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+							const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+							this.scroll += ((diff * this.itemWeight) * weight) * delta;
+							this.recalculateBounds();
+						}
+
+						if (!e.shiftKey || this.single)
+							this.selection.splice(0);
+
+						this.selection.push(next);
+						this.lastSelectItem = next;
+					}
+				}
+			}
+		},
+
+		/**
+		 * Invoked when a user selects an item in the list.
+		 * @param {string} item
+		 * @param {MouseEvent} e
+		 */
+		selectItem: function(item, event) {
+			const checkIndex = this.selection.indexOf(item);
+
+			if (this.single) {
+				// Listbox is in single-entry mode, replace selection.
+				if (checkIndex === -1) {
+					this.selection.splice(0);
+					this.selection.push(item);
+				}
+
+				this.lastSelectItem = item;
+			} else {
+				if (event.ctrlKey) {
+					// Ctrl-key held, so allow multiple selections.
+					if (checkIndex > -1)
+						this.selection.splice(checkIndex, 1);
+					else
+						this.selection.push(item);
+				} else if (event.shiftKey) {
+					// Shift-key held, select a range.
+					if (this.lastSelectItem && this.lastSelectItem !== item) {
+						const lastSelectIndex = this.items.indexOf(this.lastSelectItem);
+						const thisSelectIndex = this.items.indexOf(item);
+
+						const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+						const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+						const range = this.items.slice(lowest, lowest + delta + 1);
+
+						for (const select of range) {
+							if (this.selection.indexOf(select) === -1)
+								this.selection.push(select);
+						}
+					}
+				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
+					// Normal click, replace entire selection.
+					this.selection.splice(0);
+					this.selection.push(item);
+				}
+
+				this.lastSelectItem = item;
 			}
 		}
 	},
@@ -164,11 +259,10 @@ Vue.component('checkboxlist', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-checkboxlist" @wheel="wheelMouse">
+	template: `<div class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="(item, i) in displayItems" class="item" @click="propagateClick($event)" :class="{ selected: item.checked }">
-			<input type="checkbox" v-model="item.checked"/>
-			<span>{{ item.label }}</span>
+		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
+			<span class="sub sub-0">{{ item.label }}</span>
 		</div>
 	</div>`
-});
+};

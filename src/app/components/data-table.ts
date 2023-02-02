@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-Vue.component('data-table', {
+export default {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
@@ -20,9 +20,9 @@ Vue.component('data-table', {
 	 * Invoked when the component is mounted.
 	 * Used to register global listeners and resize observer.
 	 */
-	mounted: function() {
-		this.onMouseMove = e => this.moveMouse(e);
-		this.onMouseUp = e => this.stopMouse(e);
+	mounted: function(): void {
+		this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
+		this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
 		// this.onPaste = e => this.handlePaste(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
@@ -45,7 +45,7 @@ Vue.component('data-table', {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeDestroy: function(): void {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -64,7 +64,7 @@ Vue.component('data-table', {
 		 * Offset of the scroll widget in pixels.
 		 * Between 0 and the height of the component.
 		 */
-		scrollOffset: function() {
+		scrollOffset: function(): string {
 			return (this.scroll) + 'px';
 		},
 
@@ -73,7 +73,7 @@ Vue.component('data-table', {
 		 * relative scroll and the overall item count. Value is dynamically
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
-		scrollIndex: function() {
+		scrollIndex: function(): number {
 			return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
 		},
 
@@ -81,7 +81,7 @@ Vue.component('data-table', {
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
 		 */
-		filteredItems: function() {
+		filteredItems: function(): Array<string> {
 			// Skip filtering if no filter is set.
 			if (!this.filter)
 				return this.rows;
@@ -115,14 +115,14 @@ Vue.component('data-table', {
 		 * Dynamic array of items which should be displayed from the underlying
 		 * data array. Reactively updates based on scroll and data.
 		 */
-		displayItems: function() {
+		displayItems: function(): Array<string> {
 			return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
-		itemWeight: function() {
+		itemWeight: function(): number {
 			return 1 / this.filteredItems.length;
 		}
 	},
@@ -132,7 +132,7 @@ Vue.component('data-table', {
 		 * Invoked by a ResizeObserver when the main component node
 		 * is resized due to layout changes.
 		 */
-		resize: function() {
+		resize: function(): void {
 			this.scroll = (this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor((this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight) / 32);
 		},
@@ -141,7 +141,7 @@ Vue.component('data-table', {
 		 * Restricts the scroll offset to prevent overflowing and
 		 * calculates the relative (0-1) offset based on the scroll.
 		 */
-		recalculateBounds: function() {
+		recalculateBounds: function(): void {
 			const max = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
@@ -149,9 +149,9 @@ Vue.component('data-table', {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e
+		 * @param e
 		 */
-		startMouse: function(e) {
+		startMouse: function(e: MouseEvent): void {
 			this.scrollStartY = e.clientY;
 			this.scrollStart = this.scroll;
 			this.isScrolling = true;
@@ -159,9 +159,9 @@ Vue.component('data-table', {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e
+		 * @param e
 		 */
-		moveMouse: function(e) {
+		moveMouse: function(e: MouseEvent): void {
 			if (this.isScrolling) {
 				this.scroll = this.scrollStart + (e.clientY - this.scrollStartY);
 				this.recalculateBounds();
@@ -171,15 +171,15 @@ Vue.component('data-table', {
 		/**
 		 * Invoked when a mouse-up event is captured globally.
 		 */
-		stopMouse: function() {
+		stopMouse: function(): void {
 			this.isScrolling = false;
 		},
 
 		/**
 		 * Invoked when a mouse-wheel event is captured on the component node.
-		 * @param {WheelEvent} e
+		 * @param e
 		 */
-		wheelMouse: function(e) {
+		wheelMouse: function(e: WheelEvent): void {
 			const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
 			const child = this.$refs.root.querySelector('tr');
 
@@ -215,4 +215,4 @@ Vue.component('data-table', {
 			</table>
 		</div>
 	`
-});
+};

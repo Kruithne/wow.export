@@ -1,13 +1,13 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-const util = require('util');
-const core = require('../core');
-const constants = require('../constants');
+import util from 'node:util';
+import Constants from '../constants';
+import State from '../state';
 
-const MAP_SIZE = constants.GAME.MAP_SIZE;
-const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
-const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
-const TILE_SIZE = constants.GAME.TILE_SIZE;
+const MAP_SIZE = Constants.GAME.MAP_SIZE;
+const MAP_SIZE_SQ = Constants.GAME.MAP_SIZE_SQ;
+const MAP_COORD_BASE = Constants.GAME.MAP_COORD_BASE;
+const TILE_SIZE = Constants.GAME.TILE_SIZE;
 
 // Persisted state for the map-viewer component. This generally goes against the
 // principals of reactive instanced components, but unfortunately nothing else worked
@@ -20,7 +20,7 @@ const state = {
 	selectCache: new Set()
 };
 
-Vue.component('map-viewer', {
+export default {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).
@@ -543,4 +543,4 @@ Vue.component('map-viewer', {
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
-});
+};

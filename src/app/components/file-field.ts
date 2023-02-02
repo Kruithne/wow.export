@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-Vue.component('file-field', {
+export default {
 	props: ['value'],
 
 	/**
@@ -10,7 +10,7 @@ Vue.component('file-field', {
 	mounted: function() {
 		const node = document.createElement('input');
 		node.setAttribute('type', 'file');
-		node.setAttribute('nwdirectory', true);
+		node.setAttribute('nwdirectory', 'true');
 		node.addEventListener('change', () => {
 			this.$el.value = node.value;
 			this.$emit('input', node.value);
@@ -41,4 +41,4 @@ Vue.component('file-field', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: '<input type="text" :value="value" @focus="openDialog" @input="$emit(\'input\', $event.target.value)"/>'
-});
+};

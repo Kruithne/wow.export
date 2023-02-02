@@ -10,7 +10,7 @@ window.addEventListener('mousemove', event => {
 	clientMouseY = event.clientY;
 });
 
-Vue.component('context-menu', {
+export default {
 	/**
 	 * node: Object which this context menu represents.
 	 */
@@ -29,7 +29,7 @@ Vue.component('context-menu', {
 	 * Invoked when this component is about to update.
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 */
-	beforeUpdate: function() {
+	beforeUpdate: function(): void {
 		this.positionX = clientMouseX;
 		this.positionY = clientMouseY;
 		this.isLow = this.positionY > window.innerHeight / 2;
@@ -41,4 +41,4 @@ Vue.component('context-menu', {
 		<slot v-bind:node="node"></slot>
 	</div>
 	`
-});
+};

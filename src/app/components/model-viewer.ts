@@ -1,10 +1,9 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-
-import OrbitControls from './3D/lib/OrbitControls';
+import { OrbitControls } from '../3D/lib/OrbitControls';
 import * as THREE from 'three';
 
-Vue.component('model-viewer', {
+export default {
 	props: ['context'],
 
 	methods: {
@@ -28,7 +27,7 @@ Vue.component('model-viewer', {
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
 
-		this.controls = new THREE.OrbitControls(this.context.camera, canvas);
+		this.controls = new OrbitControls(this.context.camera, canvas);
 		//this.controls.enableKeys = false;
 		this.context.controls = this.controls;
 
@@ -66,4 +65,4 @@ Vue.component('model-viewer', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: '<div class="image ui-model-viewer"></div>'
-});
+};

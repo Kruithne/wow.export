@@ -8,9 +8,22 @@ import { filesize, formatPlaybackSeconds, redraw } from './generics';
 
 import * as TabTextures from './ui/tab-textures';
 import * as TabItems from './ui/tab-items';
-import * as ExternalLinks from './external-links';
-import * as Listfile from './casc/listfile';
 import * as TextureRibbon from './ui/texture-ribbon';
+import ExternalLinks from './external-links';
+import Listfile from './casc/listfile';
+
+import ComponentCheckboxList from './components/checkboxlist';
+import ComponentContextMenu from './components/context-menu';
+import ComponentDataTable from './components/data-table';
+import ComponentFileField from './components/file-field';
+import ComponentItemListBox from './components/itemlistbox';
+import ComponentListBox from './components/listbox';
+import ComponentListBoxB from './components/listboxb';
+import ComponentMapViewer from './components/map-viewer';
+import ComponentModelViewer from './components/model-viewer';
+import ComponentMenuButton from './components/menu-button';
+import ComponentResizeLayer from './components/resize-layer';
+import ComponentSlider from './components/slider';
 
 import Blender from './blender';
 import Log from './log';
@@ -668,5 +681,19 @@ app.config.errorHandler = () => {
 	// What type is `err`?
 	// TODO: Implement crash handler.
 };
+
+// Register components.
+app.component('checkboxlist', ComponentCheckboxList);
+app.component('context-menu', ComponentContextMenu);
+app.component('data-table', ComponentDataTable);
+app.component('file-field', ComponentFileField);
+app.component('itemlistbox', ComponentItemListBox);
+app.component('listbox', ComponentListBox);
+app.component('listboxb', ComponentListBoxB);
+app.component('map-viewer', ComponentMapViewer);
+app.component('menu-button', ComponentMenuButton);
+app.component('model-viewer', ComponentModelViewer);
+app.component('resize-layer', ComponentResizeLayer);
+app.component('slider', ComponentSlider);
 
 export default defineComponent(app.mount('#container'));

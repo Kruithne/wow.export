@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-Vue.component('resize-layer', {
+export default {
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html
@@ -20,4 +20,4 @@ Vue.component('resize-layer', {
 	},
 
 	template: '<div><slot></slot></div>'
-});
+};
