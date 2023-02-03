@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 import path from 'node:path';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 
 import Log from '../log';
 import State from '../state';
