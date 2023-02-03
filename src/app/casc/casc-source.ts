@@ -4,10 +4,11 @@ import BLTEReader from './blte-reader';
 
 import Listfile, { ListfileFilter } from './listfile';
 import Log from '../log';
-import State, { ProgressObject } from '../state';
+import State from '../state';
 import Events from '../events';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
+import ProgressObject from '../progress-object';
 
 import { LocaleFlags } from './locale-flags';
 import { ContentFlags } from './content-flags';
