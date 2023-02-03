@@ -16,11 +16,14 @@ const INCLUDE = {
 	'CHANGELOG.md': 'src/CHANGELOG.md',
 	'resources/icon.png': 'res/icon.png',
 	'addons/blender/io_scene_wowobj': 'addon/io_scene_wowobj',
-	'src/app/index.html': 'src/index.html',
 	'src/assets/fa-icons': 'src/fa-icons',
-	'src/shaders': 'src/shaders',
 	'src/assets/images': 'src/images',
 	'src/assets/fonts': 'src/fonts'
+};
+
+const INCLUDE_CODE = {
+	'src/shaders': 'src/shaders',
+	'src/app/index.html': 'src/index.html',
 };
 
 const REMAP = {
@@ -60,12 +63,22 @@ try {
 		run('sass src/css/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
 	}
 
+	let includes = [];
+
+	// If --code is set, update the build directory with additional code files.
+	if (argv.options.asBoolean('code'))
+		includes = includes.concat(Object.entries(INCLUDE_CODE));
+
 	// If --assets is set, update the build directory with asset files.
-	if (argv.options.asBoolean('assets')) {
+	if (argv.options.asBoolean('assets'))
+		includes = includes.concat(Object.entries(INCLUDE));
+
+	if (includes.length > 0) {
 		// Step 3: Copy additional source files.
 		log.info('Copying files...');
 		log.indent();
-		for (let [src, dest] of Object.entries(INCLUDE)) {
+
+		for (let [src, dest] of includes) {
 			dest = path.join(buildDir, dest);
 			fs.mkdirSync(path.dirname(dest), { recursive: true });
 
