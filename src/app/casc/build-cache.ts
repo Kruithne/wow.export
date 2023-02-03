@@ -16,7 +16,11 @@ type BuildMeta = {
 	lastListfileUpdate?: number;
 }
 
-let cacheIntegrity: { [x: string]: string; };
+type CacheIntegrity = {
+	[x: string]: string;
+};
+
+let cacheIntegrity: CacheIntegrity;
 
 /**
  * Returns a promise that resolves once cache integrity is available.
@@ -162,7 +166,7 @@ export default class BuildCache {
 // Initialize cache integrity system.
 (async function (): Promise<void> {
 	try {
-		const integrity: any = await readJSON(Constants.CACHE.INTEGRITY_FILE, false);
+		const integrity = await readJSON(Constants.CACHE.INTEGRITY_FILE, false) as CacheIntegrity;
 		if (integrity === null)
 			throw new Error('File cannot be accessed or contains malformed JSON: ' + Constants.CACHE.INTEGRITY_FILE);
 

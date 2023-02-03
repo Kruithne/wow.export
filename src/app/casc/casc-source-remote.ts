@@ -108,11 +108,12 @@ export default class CASCRemote extends CASC {
 	 * @param fileDataID
 	 * @param partialDecryption
 	 * @param suppressLog
-	 * @param supportFallback
-	 * @param forceFallback
+	 * @param _supportFallback
+	 * @param _forceFallback
 	 * @param contentKey
 	 */
-	async getFile(fileDataID: number, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null): Promise<BLTEReader> {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	async getFile(fileDataID: number, partialDecrypt = false, suppressLog = false, _supportFallback = true, _forceFallback = false, contentKey = null): Promise<BLTEReader> {
 		if (!suppressLog)
 			Log.write('Loading remote CASC file %d (%s)', fileDataID, Listfile.getByID(fileDataID) as string);
 
@@ -408,7 +409,7 @@ export default class CASCRemote extends CASC {
 	 * 49299eae4e3a195953764bb4adb3c91f -> 49/29/49299eae4e3a195953764bb4adb3c91f
 	 * @param key
 	 */
-	formatCDNKey(key: string) {
+	formatCDNKey(key: string): string {
 		return key.substring(0, 2) + '/' + key.substring(2, 4) + '/' + key;
 	}
 

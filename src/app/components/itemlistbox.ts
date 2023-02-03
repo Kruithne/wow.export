@@ -170,7 +170,7 @@ export default {
 		 * Invoked when a mouse-move event is captured globally.
 		 * @param event
 		 */
-		moveMouse: function(event: MouseEvent) {
+		moveMouse: function(event: MouseEvent): void {
 			if (this.isScrolling) {
 				this.scroll = this.scrollStart + (event.clientY - this.scrollStartY);
 				this.recalculateBounds();
