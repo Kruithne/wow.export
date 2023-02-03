@@ -561,7 +561,8 @@ State.registerLoadFunc(async () => {
 		if (itemDisplay.textures !== undefined && itemDisplay.textures.length > 0)
 			selectedVariantTextureIDs = [...itemDisplay.textures];
 
-		activeRenderer?.applyReplaceableTextures(display);
+		if (display !== undefined)
+			activeRenderer?.applyReplaceableTextures(display);
 	});
 
 	State.$watch('config.modelViewerShowGrid', () => {
