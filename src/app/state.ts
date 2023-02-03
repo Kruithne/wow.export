@@ -30,6 +30,11 @@ import Log from './log';
 import ExportHelper from './casc/export-helper';
 import Constants from './constants';
 import Events from './events';
+import CrashHandler from './crash-handler';
+
+// Register Node.js error handlers.
+process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
+process.on('uncaughtException', CrashHandler.handleUncaughtException);
 
 export type ProgressObject = { segWeight: number; value: number; step: (text?: string) => Promise<void>; };
 type ToastType = 'info' | 'success' | 'warning' | 'error';
@@ -677,10 +682,8 @@ const app = createApp({
 	}
 });
 
-app.config.errorHandler = () => {
-	// What type is `err`?
-	// TODO: Implement crash handler.
-};
+// Register error handler for Vue errors.
+app.config.errorHandler = CrashHandler.handleVueError;
 
 // Register components.
 app.component('checkboxlist', ComponentCheckboxList);

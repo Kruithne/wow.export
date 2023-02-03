@@ -241,7 +241,7 @@ State.registerLoadFunc(async () => {
 	});
 
 	// If the application crashes, we need to make sure to stop playing sound.
-	Events.on('crash', () => {
+	Events.on('application-crash', () => {
 		if (audioNode)
 			audioNode.remove();
 

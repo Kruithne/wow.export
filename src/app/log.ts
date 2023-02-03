@@ -95,23 +95,9 @@ export function write(...parameters: (string | number | object | undefined)[]): 
 		console.log(line);
 }
 
-/**
- * Attempts to return the contents of the runtime log.
- * This is defined as a global as it is requested during
- * an application crash where modules may not be loaded.
- */
-export async function getErrorDump(): Promise<string> {
-	try {
-		return await fs.promises.readFile(Constants.RUNTIME_LOG, 'utf8');
-	} catch (e) {
-		return 'Unable to obtain runtime log: ' + e.message;
-	}
-}
-
 export default {
 	timeLog,
 	timeEnd,
 	openRuntimeLog,
-	write,
-	getErrorDump
+	write
 };
