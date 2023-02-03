@@ -32,10 +32,6 @@ import Constants from './constants';
 import Events from './events';
 import CrashHandler from './crash-handler';
 
-// Register Node.js error handlers.
-process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
-process.on('uncaughtException', CrashHandler.handleUncaughtException);
-
 export type ProgressObject = { segWeight: number; value: number; step: (text?: string) => Promise<void>; };
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };

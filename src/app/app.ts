@@ -21,6 +21,11 @@ import Config from './config';
 import TactKeys from './casc/tact-keys';
 import State from './state';
 import Events from './events';
+import CrashHandler from './crash-handler';
+
+// Register Node.js error handlers.
+process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
+process.on('uncaughtException', CrashHandler.handleUncaughtException);
 
 // The `File` class does not implement the `path` property in the official File API.
 // However, nw.js adds this property to get the native path of a file.
