@@ -1,7 +1,7 @@
 {
 	"name": "wow.export",
 	"main": "./src/index.html",
-	"chromium-args": "--disable-devtools --disable-raf-throttling --mixed-context --enable-node-worker --disable-logging",
+	"chromium-args": "--disable-raf-throttling --mixed-context --enable-node-worker --disable-logging",
 	"product_string": "wow.export",
 	"user-agent": "wow.export (%ver); %osinfo",
 	"window": {
