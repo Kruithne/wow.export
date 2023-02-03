@@ -7,7 +7,7 @@ export default {
 	props: ['context'],
 
 	methods: {
-		render: function() {
+		render: function(): void {
 			if (!this.isRendering)
 				return;
 
@@ -17,10 +17,8 @@ export default {
 		}
 	},
 
-	/**
-	 * Invoked when the component is mounted.
-	 */
-	mounted: function() {
+	/** Invoked when the component is mounted. */
+	mounted: function(): void {
 		const container = this.$el;
 		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 
@@ -31,7 +29,7 @@ export default {
 		//this.controls.enableKeys = false;
 		this.context.controls = this.controls;
 
-		this.onResize = () => {
+		this.onResize = (): void => {
 			// We need to remove the canvas from the container so that the layout updates
 			// correctly and then we can update the AR/canvas size based on that layout.
 			container.removeChild(this.renderer.domElement);
@@ -54,7 +52,7 @@ export default {
 	/**
 	 * Invoked when the component is destroyed.
 	 */
-	beforeDestroy: function() {
+	beforeDestroy: function(): void {
 		this.isRendering = false;
 		this.controls.dispose();
 		this.renderer.dispose();

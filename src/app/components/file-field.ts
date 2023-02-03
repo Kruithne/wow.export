@@ -1,5 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { ComponentData } from './component-base';
+
 export default {
 	props: ['value'],
 
@@ -7,7 +9,7 @@ export default {
 	 * Invoked when the component is mounted.
 	 * Used to create an internal file node.
 	 */
-	mounted: function() {
+	mounted: function(): void {
 		const node = document.createElement('input');
 		node.setAttribute('type', 'file');
 		node.setAttribute('nwdirectory', 'true');
@@ -23,12 +25,12 @@ export default {
 	 * Invoked when this component is destroyed.
 	 * Used to remove internal references to file node.
 	 */
-	destroyed: function() {
+	destroyed: function(): void {
 		this.fileSelector.remove();
 	},
 
 	methods: {
-		openDialog: function() {
+		openDialog: function(): void {
 			// Wipe the value here so that it fires after user interaction
 			// even if they pick the "same" directory.
 			this.fileSelector.value = '';

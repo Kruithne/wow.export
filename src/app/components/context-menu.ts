@@ -1,11 +1,13 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-let clientMouseX = 0;
-let clientMouseY = 0;
+import { ComponentData } from './component-base';
+
+let clientMouseX: number = 0;
+let clientMouseY: number = 0;
 
 // Keep a global track of the client mouse position.
-window.addEventListener('mousemove', event => {
+window.addEventListener('mousemove', (event: MouseEvent) => {
 	clientMouseX = event.clientX;
 	clientMouseY = event.clientY;
 });
@@ -16,7 +18,7 @@ export default {
 	 */
 	props: ['node'],
 
-	data: function() {
+	data: function(): ComponentData {
 		return {
 			positionX: 0,
 			positionY: 0,

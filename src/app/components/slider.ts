@@ -1,12 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { ComponentData } from './component-base';
+
 export default {
 	/**
 	 * value: Slider value between 0 and 1.
 	 */
 	props: ['value'],
 
-	data: function() {
+	data: function(): ComponentData {
 		return {
 			isScrolling: false, // True if the slider is being dragged.
 		};
@@ -16,9 +18,9 @@ export default {
 	 * Invoked when the component is mounted.
 	 * Used to register global mouse listeners.
 	 */
-	mounted: function() {
-		this.onMouseMove = e => this.moveMouse(e);
-		this.onMouseUp = e => this.stopMouse(e);
+	mounted: function(): void {
+		this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
+		this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
@@ -28,7 +30,7 @@ export default {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners.
 	 */
-	beforeDestroy: function() {
+	beforeDestroy: function(): void {
 		// Unregister global mouse listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -37,30 +39,30 @@ export default {
 	methods: {
 		/**
 		 * Set the current value of this slider.
-		 * @param {number} value
+		 * @param value
 		 */
-		setValue: function(value) {
+		setValue: function(value: number): void {
 			this.$emit('input', Math.min(1, Math.max(0, value)));
 		},
 
 		/**
 		 * Invoked when a mouse-down event is captured on the slider handle.
-		 * @param {MouseEvent} e
+		 * @param event
 		 */
-		startMouse: function(e) {
-			this.scrollStartX = e.clientX;
+		startMouse: function(event: MouseEvent): void {
+			this.scrollStartX = event.clientX;
 			this.scrollStart = this.value;
 			this.isScrolling = true;
 		},
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e
+		 * @param event
 		 */
-		moveMouse: function(e) {
+		moveMouse: function(event: MouseEvent): void {
 			if (this.isScrolling) {
 				const max = this.$el.clientWidth;
-				const delta = e.clientX - this.scrollStartX;
+				const delta = event.clientX - this.scrollStartX;
 				this.setValue(this.scrollStart + (delta / max));
 			}
 		},
@@ -68,20 +70,20 @@ export default {
 		/**
 		 * Invoked when a mouse-up event is captured globally.
 		 */
-		stopMouse: function() {
+		stopMouse: function(): void {
 			this.isScrolling = false;
 		},
 
 		/**
 		 * Invoked when the user clicks somewhere on the slider.
-		 * @param {MouseEvent} e
+		 * @param event
 		 */
-		handleClick: function(e) {
+		handleClick: function(event: MouseEvent): void {
 			// Don't handle click events on the draggable handle.
-			if (e.target === this.$refs.handle)
+			if (event.target === this.$refs.handle)
 				return;
 
-			this.setValue(e.offsetX / this.$el.clientWidth);
+			this.setValue(event.offsetX / this.$el.clientWidth);
 		}
 	},
 

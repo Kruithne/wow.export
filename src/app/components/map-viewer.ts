@@ -3,11 +3,21 @@
 import util from 'node:util';
 import Constants from '../constants';
 import State from '../state';
+import { ComponentData } from './component-base';
 
-const MAP_SIZE = Constants.GAME.MAP_SIZE;
-const MAP_SIZE_SQ = Constants.GAME.MAP_SIZE_SQ;
-const MAP_COORD_BASE = Constants.GAME.MAP_COORD_BASE;
-const TILE_SIZE = Constants.GAME.TILE_SIZE;
+type MapTile = {
+	x: number;
+	y: number;
+	index: number;
+	tileSize: number;
+};
+
+type MapPosition = {
+	tileX: number;
+	tileY: number;
+	posX: number;
+	posY: number;
+};
 
 // Persisted state for the map-viewer component. This generally goes against the
 // principals of reactive instanced components, but unfortunately nothing else worked
@@ -18,8 +28,9 @@ const state = {
 	zoomFactor: 2,
 	tileQueue: [],
 	selectCache: new Set(),
-	cache: Array<ImageData>(MAP_SIZE_SQ)
+	cache: [],
 };
+
 export default {
 	/**
 	 * loader: Tile loader function.
@@ -30,7 +41,8 @@ export default {
 	 * selection: Array defining selected tiles.
 	 */
 	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
-	data: function() {
+
+	data: function(): ComponentData {
 		return {
 			hoverInfo: '',
 			hoverTile: null,
@@ -50,8 +62,8 @@ export default {
 
 		// Create anonymous pass-through functions for our event handlers
 		// to maintain context. We store them so we can unregister them later.
-		this.onMouseMove = event => this.handleMouseMove(event);
-		this.onMouseUp = event => this.handleMouseUp(event);
+		this.onMouseMove = (event: MouseEvent): void => this.handleMouseMove(event);
+		this.onMouseUp = (event: MouseEvent): void => this.handleMouseUp(event);
 
 		// Mouse move/up events are registered onto the document so we can
 		// still handle them if the user moves off the component while dragging.
@@ -59,13 +71,13 @@ export default {
 		document.addEventListener('mouseup', this.onMouseUp);
 
 		// Listen for key press evetns to handle Select All function.
-		this.onKeyPress = event => this.handleKeyPress(event);
+		this.onKeyPress = (event: KeyboardEvent): void => this.handleKeyPress(event);
 		document.addEventListener('keydown', this.onKeyPress);
 
 		// Register a resize listener onto the window so we can adjust.
 		// We use an anonymous function to maintain context, and store it
 		// on the instance so we can unregister later.
-		this.onResize = () => this.render();
+		this.onResize = (): void => this.render();
 		window.addEventListener('resize', this.onResize);
 
 		// We need to also monitor for size changes to the canvas itself so we
@@ -123,7 +135,7 @@ export default {
 		 */
 		initializeCache: function(): void {
 			state.tileQueue = [];
-			state.cache = new Array<ImageData>(MAP_SIZE_SQ);
+			state.cache = new Array(Constants.GAME.MAP_SIZE_SQ);
 		},
 
 		/**
@@ -145,7 +157,7 @@ export default {
 		 * @param tileSize
 		 */
 		queueTile: function(x: number, y: number, index: number, tileSize: number): void {
-			const node = [x, y, index, tileSize];
+			const node = { x, y, index, tileSize };
 
 			if (this.awaitingTile)
 				state.tileQueue.push(node);
@@ -158,18 +170,16 @@ export default {
 		 * Triggers a re-render and queue-check once loaded.
 		 * @param tile
 		 */
-		loadTile: function(tile): void {
+		loadTile: function(tile: MapTile): void {
 			this.awaitingTile = true;
-
-			const [x, y, index, tileSize] = tile;
 
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected.
 			const cache = state.cache;
 
-			this.loader(x, y, tileSize).then(data => {
-				cache[index] = data;
+			this.loader(tile.x, tile.y, tile.tileSize).then(data => {
+				cache[tile.index] = data;
 
 				if (data !== false)
 					this.render();
@@ -183,26 +193,26 @@ export default {
 		 * on 0, 0. For maps without a chunk at 0, 0 it will center on the first chunk that
 		 * is activated in the mask (providing one is set).
 		 */
-		setToDefaultPosition: function() {
+		setToDefaultPosition: function(): void {
 			let posX = 0, posY = 0;
 
 			// We can only search for a chunk if we have a mask set.
 			if (this.mask) {
 				// Check if we have a center chunk, if so we can leave the default as 0,0.
-				const center = Math.floor(MAP_COORD_BASE / TILE_SIZE);
-				const centerIndex = this.mask[(center * MAP_SIZE) + center];
+				const center = Math.floor(Constants.GAME.MAP_COORD_BASE / Constants.GAME.TILE_SIZE);
+				const centerIndex = this.mask[(center * Constants.GAME.MAP_SIZE) + center];
 
 				// No center chunk, find first chunk available.
 				if (centerIndex !== 1) {
-					const index = this.mask.findIndex(e => e === 1);
+					const index = this.mask.findIndex((e: number) => e === 1);
 
 					if (index > -1) {
 						// Translate the index into chunk co-ordinates, expand those to in-game co-ordinates
 						// and then offset by half a chunk so that we are centered on the chunk.
-						const chunkX = index % MAP_SIZE;
-						const chunkY = Math.floor(index / MAP_SIZE);
-						posX = ((chunkX - 32) * TILE_SIZE) * -1;
-						posY = ((chunkY - 32) * TILE_SIZE) * -1;
+						const chunkX = index % Constants.GAME.MAP_SIZE;
+						const chunkY = Math.floor(index / Constants.GAME.MAP_SIZE);
+						posX = ((chunkX - 32) * Constants.GAME.TILE_SIZE) * -1;
+						posY = ((chunkY - 32) * Constants.GAME.TILE_SIZE) * -1;
 					}
 				}
 			}
@@ -244,14 +254,14 @@ export default {
 			const cache = state.cache;
 
 			// Iterate over all possible tiles in a map and render as needed.
-			for (let x = 0; x < MAP_SIZE; x++) {
-				for (let y = 0; y < MAP_SIZE; y++) {
+			for (let x = 0; x < Constants.GAME.MAP_SIZE; x++) {
+				for (let y = 0; y < Constants.GAME.MAP_SIZE; y++) {
 					// drawX/drawY is the absolute position to draw this tile.
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
 
 					// Cache is a one-dimensional array, calculate the index as such.
-					const index = (x * MAP_SIZE) + y;
+					const index = (x * Constants.GAME.MAP_SIZE) + y;
 					const cached = cache[index];
 
 					// This chunk is masked out, so skip rendering it.
@@ -271,10 +281,8 @@ export default {
 
 					// No cache, request it (async) then skip.
 					if (cached === undefined) {
-						// NIT: This might break something/cause weird behavior
-						// Before refactor: Set the tile cache to 'true' so it is skipped while loading.
-						// After refactor: Set the tile cache to an empty imagedata so it is skipped while loading.
-						cache[index] = new ImageData(1,1);
+						// Set the tile cache to 'true' so it is skipped while loading.
+						cache[index] = true;
 
 						// Add this tile to the loading queue.
 						this.queueTile(x, y, index, tileSize);
@@ -332,13 +340,13 @@ export default {
 		},
 
 		/**
-		 * @param event
-		 * @returns
+		 * @param event - The mouse event that triggered this interaction.
+		 * @param isFirst - Whether this is the first tile in a selection.
 		 */
 		handleTileInteraction: function(event: MouseEvent, isFirst: boolean = false): void {
 			// Calculate which chunk we shift-clicked on.
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
-			const index = (point.tileX * MAP_SIZE) + point.tileY;
+			const index = (point.tileX * Constants.GAME.MAP_SIZE) + point.tileY;
 
 			// Prevent toggling a tile that we've already touched during this selection.
 			if (state.selectCache.has(index))
@@ -371,7 +379,7 @@ export default {
 
 		/**
 		 * Invoked on mousemove events captured on the document.
-		 * @param event
+		 * @param event - The mouse event that triggered this interaction.
 		 */
 		handleMouseMove: function(event: MouseEvent): void {
 			if (this.isSelecting) {
@@ -390,9 +398,7 @@ export default {
 			}
 		},
 
-		/**
-		 * Invoked on mouseup events captured on the document.
-		 */
+		/**Invoked on mouseup events captured on the document. */
 		handleMouseUp: function(): void {
 			if (this.isPanning)
 				this.isPanning = false;
@@ -405,7 +411,7 @@ export default {
 
 		/**
 		 * Invoked on mousedown events captured on the container element.
-		 * @param event
+		 * @param event - The mouse event that triggered this interaction.
 		 */
 		handleMouseDown: function(event: MouseEvent): void {
 			if (event.shiftKey) {
@@ -431,7 +437,7 @@ export default {
 		 * @param x
 		 * @param y
 		 */
-		mapPositionFromClientPoint: function(x: number, y: number): object {
+		mapPositionFromClientPoint: function(x: number, y: number): MapPosition {
 			const viewport = this.$el.getBoundingClientRect();
 
 			const viewOfsX = (x - viewport.x) - state.offsetX;
@@ -442,8 +448,8 @@ export default {
 			const tileX = viewOfsX / tileSize;
 			const tileY = viewOfsY / tileSize;
 
-			const posX = MAP_COORD_BASE - (TILE_SIZE * tileX);
-			const posY = MAP_COORD_BASE - (TILE_SIZE * tileY);
+			const posX = Constants.GAME.MAP_COORD_BASE - (Constants.GAME.TILE_SIZE * tileX);
+			const posY = Constants.GAME.MAP_COORD_BASE - (Constants.GAME.TILE_SIZE * tileY);
 
 			return { tileX: Math.floor(tileX), tileY: Math.floor(tileY), posX: posY, posY: posX };
 		},
@@ -460,8 +466,8 @@ export default {
 
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
-			const ofsX = (((posX - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
-			const ofsY = (((posY - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
+			const ofsX = (((posX - Constants.GAME.MAP_COORD_BASE) / Constants.GAME.TILE_SIZE) * tileSize);
+			const ofsY = (((posY - Constants.GAME.MAP_COORD_BASE) / Constants.GAME.TILE_SIZE) * tileSize);
 
 			const viewport = this.$el;
 			state.offsetX = ofsX + (viewport.clientWidth / 2);
@@ -484,7 +490,7 @@ export default {
 
 		/**
 		 * Invoked when the mouse is moved over the component.
-		 * @param event
+		 * @param event - The mouse event that triggered this interaction.
 		 */
 		handleMouseOver: function(event: MouseEvent): void {
 			this.isHovering = true;
@@ -494,7 +500,7 @@ export default {
 
 			// If we're not panning, highlight the current tile.
 			if (!this.isPanning)
-				this.hoverTile = (point.tileX * MAP_SIZE) + point.tileY;
+				this.hoverTile = (point.tileX * Constants.GAME.MAP_SIZE) + point.tileY;
 		},
 
 		/**

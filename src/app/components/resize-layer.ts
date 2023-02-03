@@ -6,7 +6,7 @@ export default {
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 *
 	 */
-	mounted: function() {
+	mounted: function(): void {
 		this.observer = new ResizeObserver(() => this.$emit('resize', this.$el.clientWidth));
 		this.observer.observe(this.$el);
 	},
@@ -15,7 +15,7 @@ export default {
 	 * Invoked before this component is destroyed.
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 */
-	beforeDestroy: function() {
+	beforeDestroy: function(): void {
 		this.observer.disconnect();
 	},
 

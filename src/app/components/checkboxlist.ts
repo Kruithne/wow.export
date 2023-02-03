@@ -1,5 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { ComponentData } from './component-base';
+
 export default {
 	/**
 	 * items: Item entries displayed in the list.
@@ -9,7 +11,7 @@ export default {
 	/**
 	 * Reactive instance data.
 	 */
-	data: function() {
+	data: function(): ComponentData {
 		return {
 			scroll: 0,
 			scrollRel: 0,

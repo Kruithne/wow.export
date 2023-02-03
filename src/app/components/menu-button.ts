@@ -1,5 +1,12 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { ComponentData } from './component-base';
+
+type Option = {
+	label: string;
+	value: string;
+};
+
 export default {
 	/**
 	 * options: An array of objects with label/value properties.
@@ -9,7 +16,7 @@ export default {
 	 */
 	props: ['options', 'default', 'disabled', 'dropdown'],
 
-	data: function() {
+	data: function(): ComponentData {
 		return {
 			selectedObj: null, // Currently selected option.
 			open: false // If the menu is open or not.
@@ -19,9 +26,9 @@ export default {
 	methods: {
 		/**
 		 * Set the selected option for this menu button.
-		 * @param {object} option
+		 * @param option
 		 */
-		select: function(option) {
+		select: function(option: Option): void {
 			this.open = false;
 			this.selectedObj = option;
 			this.$emit('change', option.value);
@@ -31,18 +38,19 @@ export default {
 		 * Attempt to open the menu.
 		 * Respects component disabled state.
 		 */
-		openMenu: function() {
+		openMenu: function(): void {
 			this.open = !this.open && !this.disabled;
 		},
 
 		/**
 		 * Handle clicks onto the button node.
+		 * @param event
 		 */
-		handleClick: function(e) {
+		handleClick: function(event: MouseEvent): void {
 			if (this.dropdown)
 				this.openMenu();
 			else
-				this.$emit('click', e);
+				this.$emit('click', event);
 		}
 	},
 
@@ -51,7 +59,7 @@ export default {
 		 * Returns the currently selected option or falls back to the default.
 		 * @returns {object}
 		 */
-		selected: function() {
+		selected: function(): Option {
 			return this.selectedObj ?? this.defaultObj;
 		},
 
@@ -60,8 +68,8 @@ export default {
 		 * falls back to returning the first available option.
 		 * @returns {object}
 		 */
-		defaultObj: function() {
-			return this.options.find(e => e.value === this.default) ?? this.options[0];
+		defaultObj: function(): Option {
+			return this.options.find((e: Option) => e.value === this.default) ?? this.options[0];
 		}
 	},
 

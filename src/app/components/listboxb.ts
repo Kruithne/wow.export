@@ -1,5 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { ComponentData } from './component-base';
+
 export default {
 	/**
 	 * items: Item entries displayed in the list.
@@ -12,7 +14,7 @@ export default {
 	/**
 	 * Reactive instance data.
 	 */
-	data: function() {
+	data: function(): ComponentData {
 		return {
 			scroll: 0,
 			scrollRel: 0,
@@ -26,15 +28,15 @@ export default {
 	 * Invoked when the component is mounted.
 	 * Used to register global listeners and resize observer.
 	 */
-	mounted: function() {
-		this.onMouseMove = e => this.moveMouse(e);
-		this.onMouseUp = e => this.stopMouse(e);
+	mounted: function(): void {
+		this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
+		this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 
 		if (this.keyinput) {
-			this.onKeyDown = e => this.handleKey(e);
+			this.onKeyDown = (e: KeyboardEvent): void => this.handleKey(e);
 			document.addEventListener('keydown', this.onKeyDown);
 		}
 
@@ -47,7 +49,7 @@ export default {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeDestroy: function(): void {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -64,7 +66,7 @@ export default {
 		 * Offset of the scroll widget in pixels.
 		 * Between 0 and the height of the component.
 		 */
-		scrollOffset: function() {
+		scrollOffset: function(): string {
 			return (this.scroll) + 'px';
 		},
 
@@ -73,7 +75,7 @@ export default {
 		 * relative scroll and the overal item count. Value is dynamically
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
-		scrollIndex: function() {
+		scrollIndex: function(): number {
 			return Math.round((this.items.length - this.slotCount) * this.scrollRel);
 		},
 
@@ -81,14 +83,14 @@ export default {
 		 * Dynamic array of items which should be displayed from the underlying
 		 * data array. Reactively updates based on scroll and data.
 		 */
-		displayItems: function() {
+		displayItems: function(): Array<string> {
 			return this.items.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
-		itemWeight: function() {
+		itemWeight: function(): number {
 			return 1 / this.items.length;
 		}
 	},
@@ -98,7 +100,7 @@ export default {
 		 * Invoked by a ResizeObserver when the main component node
 		 * is resized due to layout changes.
 		 */
-		resize: function() {
+		resize: function(): void {
 			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor(this.$el.clientHeight / 26);
 		},
@@ -107,7 +109,7 @@ export default {
 		 * Restricts the scroll offset to prevent overflowing and
 		 * calculates the relative (0-1) offset based on the scroll.
 		 */
-		recalculateBounds: function() {
+		recalculateBounds: function(): void {
 			const max = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
@@ -115,43 +117,41 @@ export default {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e
+		 * @param event
 		 */
-		startMouse: function(e) {
-			this.scrollStartY = e.clientY;
+		startMouse: function(event: MouseEvent): void {
+			this.scrollStartY = event.clientY;
 			this.scrollStart = this.scroll;
 			this.isScrolling = true;
 		},
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e
+		 * @param event
 		 */
-		moveMouse: function(e) {
+		moveMouse: function(event: MouseEvent): void {
 			if (this.isScrolling) {
-				this.scroll = this.scrollStart + (e.clientY - this.scrollStartY);
+				this.scroll = this.scrollStart + (event.clientY - this.scrollStartY);
 				this.recalculateBounds();
 			}
 		},
 
-		/**
-		 * Invoked when a mouse-up event is captured globally.
-		 */
-		stopMouse: function() {
+		/**Invoked when a mouse-up event is captured globally. */
+		stopMouse: function(): void {
 			this.isScrolling = false;
 		},
 
 		/**
 		 * Invoked when a mouse-wheel event is captured on the component node.
-		 * @param {WheelEvent} e
+		 * @param event
 		 */
-		wheelMouse: function(e) {
+		wheelMouse: function(event: WheelEvent): void {
 			const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
 			const child = this.$el.querySelector('.item');
 
 			if (child !== null) {
 				const scrollCount = Math.floor(this.$el.clientHeight / child.clientHeight);
-				const direction = e.deltaY > 0 ? 1 : -1;
+				const direction = event.deltaY > 0 ? 1 : -1;
 				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
 				this.recalculateBounds();
 			}
@@ -159,9 +159,9 @@ export default {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e
+		 * @param event
 		 */
-		handleKey: function(e) {
+		handleKey: function(event: KeyboardEvent): void {
 			// If document.activeElement is the document body, then we can safely assume
 			// the user is not focusing anything, and can intercept keyboard input.
 			if (document.activeElement !== document.body)
@@ -171,13 +171,13 @@ export default {
 			if (!this.lastSelectItem)
 				return;
 
-			if (e.key === 'c' && e.ctrlKey) {
+			if (event.key === 'c' && event.ctrlKey) {
 				// Copy selection to clipboard.
 				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
 			} else {
 				// Arrow keys.
-				const isArrowUp = e.key === 'ArrowUp';
-				const isArrowDown = e.key === 'ArrowDown';
+				const isArrowUp = event.key === 'ArrowUp';
+				const isArrowDown = event.key === 'ArrowDown';
 				if (isArrowUp || isArrowDown) {
 					const delta = isArrowUp ? -1 : 1;
 
@@ -197,7 +197,7 @@ export default {
 							this.recalculateBounds();
 						}
 
-						if (!e.shiftKey || this.single)
+						if (!event.shiftKey || this.single)
 							this.selection.splice(0);
 
 						this.selection.push(next);
@@ -209,10 +209,10 @@ export default {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item
-		 * @param {MouseEvent} e
+		 * @param item
+		 * @param event
 		 */
-		selectItem: function(item, event) {
+		selectItem: function(item: string, event: MouseEvent): void {
 			const checkIndex = this.selection.indexOf(item);
 
 			if (this.single) {
