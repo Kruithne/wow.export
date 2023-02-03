@@ -9,7 +9,7 @@ const config = {
 	input: './src/app/app.ts',
 	output: {
 		file: path.join(process.env.BUILD_DIR, 'src', 'app.js'),
-		format: 'esm'
+		format: 'cjs'
 	},
 	plugins: [
 		alias({
