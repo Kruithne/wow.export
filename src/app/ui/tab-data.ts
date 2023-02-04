@@ -7,7 +7,6 @@ import * as listfile from '../casc/listfile';
 import * as log from '../log';
 import * as generics from '../generics';
 import WDCReader from '../db/WDCReader';
-import HTFXReader from '../db/HTFXReader';
 
 let selectedFile: string;
 
@@ -16,11 +15,6 @@ State.state.registerLoadFunc(async () => {
 	const manifestURL = util.format(State.state.config.dbdURL, 'manifest');
 	log.write('Downloading DB2 filename mapping from %s', manifestURL);
 	const db2NameMap = await generics.get(manifestURL).then(res => res.json());
-
-	if (State.state.config.hotfixesEnabled) {
-		const htfxReader = new HTFXReader(db2NameMap);
-		htfxReader.parse();
-	}
 
 	// Track selection changes on the text listbox and set first as active entry.
 	State.state.$watch('selectionDB2s', async selection => {
