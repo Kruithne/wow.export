@@ -13,7 +13,7 @@ let manifest: InstallManifest;
 
 function updateInstallListfile(): void {
 	State.state.listfileInstall = manifest.files.filter((file) => {
-		for (const tag of State.installTags) {
+		for (const tag of State.state.installTags) {
 			if (tag.enabled && file.tags.includes(tag.label))
 				return true;
 		}
@@ -26,7 +26,7 @@ Events.once('screen-tab-install', async () => {
 	State.state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await State.state.casc.getInstallManifest();
 
-	State.installTags = manifest.tags.map(e => {
+	State.state.installTags = manifest.tags.map(e => {
 		return { label: e.name, enabled: true, mask: e.mask };
 	});
 	State.state.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
