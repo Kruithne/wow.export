@@ -36,7 +36,7 @@ const ITEM_SLOTS_MERGED = {
 	'Tabard': [19]
 };
 
-export default class Item {
+export class Item {
 	id: number;
 	name: string;
 	inventoryType: number;

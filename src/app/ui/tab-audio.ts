@@ -149,102 +149,104 @@ async function loadSelectedTrack(): Promise<void> {
 	State.state.isBusy--;
 }
 
-State.state.registerLoadFunc(async () => {
-	// Create internal audio node.
-	audioNode = document.createElement('audio');
-	audioNode.volume = State.state.config.soundPlayerVolume;
-	audioNode.ondurationchange = (): number => State.state.soundPlayerDuration = audioNode.duration;
+export default {
+	onCASCReady: function(): void {
+		// Create internal audio node.
+		audioNode = document.createElement('audio');
+		audioNode.volume = State.state.config.soundPlayerVolume;
+		audioNode.ondurationchange = (): number => State.state.soundPlayerDuration = audioNode.duration;
 
-	// Track changes to config.soundPlayerVolume and adjust our gain node.
-	State.state.$watch('config.soundPlayerVolume', value => {
-		audioNode.volume = value;
-	});
+		// Track changes to config.soundPlayerVolume and adjust our gain node.
+		State.state.$watch('config.soundPlayerVolume', value => {
+			audioNode.volume = value;
+		});
 
-	// Track requests to seek the current sound file and directly edit the
-	// time of the audio node. State.state.soundPlayerSeek will automatically update.
-	Events.on('click-sound-seek', seek => {
-		if (audioNode && isTrackLoaded)
-			audioNode.currentTime = audioNode.duration * seek;
-	});
+		// Track requests to seek the current sound file and directly edit the
+		// time of the audio node. State.state.soundPlayerSeek will automatically update.
+		Events.on('click-sound-seek', seek => {
+			if (audioNode && isTrackLoaded)
+				audioNode.currentTime = audioNode.duration * seek;
+		});
 
-	// Track sound-player-toggle events.
-	Events.on('click-sound-toggle', () => {
-		if (State.state.soundPlayerState)
-			pauseSelectedTrack();
-		else
-			playSelectedTrack();
-	});
-
-	// Track selection changes on the sound listbox and set first as active entry.
-	State.state.$watch('selectionSounds', async selection => {
-		// Check if the first file in the selection is "new".
-		const first = listfile.stripFileEntry(selection[0]);
-		if (!State.state.isBusy && first && selectedFile !== first) {
-			State.state.soundPlayerTitle = path.basename(first);
-
-			selectedFile = first;
-			unloadSelectedTrack();
-
-			if (State.state.config.soundPlayerAutoPlay)
+		// Track sound-player-toggle events.
+		Events.on('click-sound-toggle', () => {
+			if (State.state.soundPlayerState)
+				pauseSelectedTrack();
+			else
 				playSelectedTrack();
-		}
-	});
+		});
 
-	// Track when the user clicks to export selected sound files.
-	Events.on('click-export-sound', async () => {
-		const userSelection = State.state.selectionSounds;
-		if (userSelection.length === 0) {
-			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
-			return;
-		}
+		// Track selection changes on the sound listbox and set first as active entry.
+		State.state.$watch('selectionSounds', async selection => {
+			// Check if the first file in the selection is "new".
+			const first = listfile.stripFileEntry(selection[0]);
+			if (!State.state.isBusy && first && selectedFile !== first) {
+				State.state.soundPlayerTitle = path.basename(first);
 
-		const helper = new ExportHelper(userSelection.length, 'sound files');
-		helper.start();
+				selectedFile = first;
+				unloadSelectedTrack();
 
-		const overwriteFiles = State.state.config.overwriteFiles;
-		for (let fileName of userSelection) {
-			// Abort if the export has been cancelled.
-			if (helper.isCancelled())
+				if (State.state.config.soundPlayerAutoPlay)
+					playSelectedTrack();
+			}
+		});
+
+		// Track when the user clicks to export selected sound files.
+		Events.on('click-export-sound', async () => {
+			const userSelection = State.state.selectionSounds;
+			if (userSelection.length === 0) {
+				State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 				return;
-
-			let data;
-			fileName = listfile.stripFileEntry(fileName);
-
-			if (fileName.endsWith('.unk_sound')) {
-				data = await State.state.casc.getFileByName(fileName);
-				const fileType = detectFileType(data);
-
-				if (fileType === AUDIO_TYPE_OGG)
-					fileName = ExportHelper.replaceExtension(fileName, '.ogg');
-				else if (fileType === AUDIO_TYPE_MP3)
-					fileName = ExportHelper.replaceExtension(fileName, '.mp3');
 			}
 
-			try {
-				const exportPath = ExportHelper.getExportPath(fileName);
-				if (overwriteFiles || !await generics.fileExists(exportPath)) {
-					if (!data)
-						data = await State.state.casc.getFileByName(fileName);
+			const helper = new ExportHelper(userSelection.length, 'sound files');
+			helper.start();
 
-					await data.writeToFile(exportPath);
-				} else {
-					log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);
+			const overwriteFiles = State.state.config.overwriteFiles;
+			for (let fileName of userSelection) {
+				// Abort if the export has been cancelled.
+				if (helper.isCancelled())
+					return;
+
+				let data;
+				fileName = listfile.stripFileEntry(fileName);
+
+				if (fileName.endsWith('.unk_sound')) {
+					data = await State.state.casc.getFileByName(fileName);
+					const fileType = detectFileType(data);
+
+					if (fileType === AUDIO_TYPE_OGG)
+						fileName = ExportHelper.replaceExtension(fileName, '.ogg');
+					else if (fileType === AUDIO_TYPE_MP3)
+						fileName = ExportHelper.replaceExtension(fileName, '.mp3');
 				}
 
-				helper.mark(fileName, true);
-			} catch (e) {
-				helper.mark(fileName, false, e.message);
+				try {
+					const exportPath = ExportHelper.getExportPath(fileName);
+					if (overwriteFiles || !await generics.fileExists(exportPath)) {
+						if (!data)
+							data = await State.state.casc.getFileByName(fileName);
+
+						await data.writeToFile(exportPath);
+					} else {
+						log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);
+					}
+
+					helper.mark(fileName, true);
+				} catch (e) {
+					helper.mark(fileName, false, e.message);
+				}
 			}
-		}
 
-		helper.finish();
-	});
+			helper.finish();
+		});
 
-	// If the application crashes, we need to make sure to stop playing sound.
-	Events.on('application-crash', () => {
-		if (audioNode)
-			audioNode.remove();
+		// If the application crashes, we need to make sure to stop playing sound.
+		Events.on('application-crash', () => {
+			if (audioNode)
+				audioNode.remove();
 
-		unloadSelectedTrack();
-	});
-});
+			unloadSelectedTrack();
+		});
+	}
+};
