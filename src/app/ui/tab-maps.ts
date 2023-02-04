@@ -44,7 +44,7 @@ async function loadMap(mapID: number, mapDir: string): Promise<void> {
 	selectedMapDir = mapDirLower;
 
 	selectedWDT = undefined;
-	State.mapViewerHasWorldModel = false;
+	State.state.mapViewerHasWorldModel = false;
 
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDirLower, mapDirLower);
@@ -57,25 +57,25 @@ async function loadMap(mapID: number, mapDir: string): Promise<void> {
 
 		// Enable the 'Export Global WMO' button if available.
 		if (wdt.worldModelPlacement)
-			State.mapViewerHasWorldModel = true;
+			State.state.mapViewerHasWorldModel = true;
 
-		State.mapViewerChunkMask = wdt.tiles;
+		State.state.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
 		Log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
-		State.mapViewerChunkMask = null;
+		State.state.mapViewerChunkMask = null;
 	}
 
 	// Reset the tile selection.
-	State.mapViewerSelection.splice(0);
+	State.state.mapViewerSelection.splice(0);
 
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
-	State.mapViewerSelectedMap = mapID;
+	State.state.mapViewerSelectedMap = mapID;
 
 	// Purposely provide the raw mapDir here as it's used by the external link module
 	// and wow.tools requires a properly cased map name.
-	State.mapViewerSelectedDir = mapDir;
+	State.state.mapViewerSelectedDir = mapDir;
 }
 
 /**
@@ -218,7 +218,7 @@ async function exportSelectedMapWMO(): Promise<void> {
 }
 
 async function exportSelectedMap(): Promise<void> {
-	const exportTiles = State.mapViewerSelection;
+	const exportTiles = State.state.mapViewerSelection;
 	const exportQuality = State.state.config.exportMapQuality;
 
 	// User has not selected any tiles.
@@ -288,7 +288,7 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 }
 
 // The first time the user opens up the map tab, initialize map names.
-State.events.once('screen-tab-maps', async () => {
+State.state.events.once('screen-tab-maps', async () => {
 	State.state.isBusy++;
 	State.state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
@@ -302,7 +302,7 @@ State.events.once('screen-tab-maps', async () => {
 			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 
-	State.mapViewerMaps = maps;
+	State.state.mapViewerMaps = maps;
 
 	State.state.hideToast();
 	State.state.isBusy--;
@@ -310,7 +310,7 @@ State.events.once('screen-tab-maps', async () => {
 
 State.state.registerLoadFunc(async () => {
 	// Store a reference to loadMapTile for the map viewer component.
-	State.mapViewerTileLoader = loadMapTile;
+	State.state.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
 	State.state.$watch('selectionMaps', async selection => {
@@ -325,6 +325,6 @@ State.state.registerLoadFunc(async () => {
 	});
 
 	// Track when user clicks to export a map or world model.
-	State.events.on('click-export-map', () => exportSelectedMap());
-	State.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
+	State.state.events.on('click-export-map', () => exportSelectedMap());
+	State.state.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
 });

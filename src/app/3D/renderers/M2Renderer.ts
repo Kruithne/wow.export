@@ -137,7 +137,7 @@ export default class M2Renderer {
 		}
 
 		if (this.reactive) {
-			const geosets = State.modelViewerGeosets = this.geosetArray as Array<GeosetEntry>;
+			const geosets = State.state.modelViewerGeosets = this.geosetArray as Array<GeosetEntry>;
 			geosets.map((geoset: GeosetEntry, i: number) => {
 				geoset.label = getGeosetName(i, geoset.id);
 			});

@@ -108,8 +108,8 @@ export default class WMORenderer {
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
 		// Set-up reactive controls.
-		State.modelViewerWMOGroups = this.groupArray;
-		State.modelViewerWMOSets = this.setArray;
+		State.state.modelViewerWMOGroups = this.groupArray;
+		State.state.modelViewerWMOSets = this.setArray;
 		this.groupWatcher = State.state.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
 		this.setWatcher = State.state.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
 		this.wireframeWatcher = State.state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });

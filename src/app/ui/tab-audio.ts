@@ -25,17 +25,17 @@ let data: BufferWrapper;
 
 /** Update the current status of the sound player seek bar. */
 function updateSeek(): void {
-	if (!State.soundPlayerState || !audioNode)
+	if (!State.state.soundPlayerState || !audioNode)
 		return;
 
-	State.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
+	State.state.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
 
-	if (State.soundPlayerSeek === 1) {
+	if (State.state.soundPlayerSeek === 1) {
 		if (State.state.config.soundPlayerLoop)
 			audioNode.play();
 
 		else
-			State.soundPlayerState = false;
+			State.state.soundPlayerState = false;
 	}
 
 	requestAnimationFrame(updateSeek);
@@ -69,7 +69,7 @@ async function playSelectedTrack(): Promise<void> {
 
 	// Ensure the track actually loaded.
 	if (isTrackLoaded) {
-		State.soundPlayerState = true;
+		State.state.soundPlayerState = true;
 		audioNode.play();
 		updateSeek();
 	}
@@ -79,7 +79,7 @@ async function playSelectedTrack(): Promise<void> {
  * Pause the currently playing track.
  */
 function pauseSelectedTrack(): void {
-	State.soundPlayerState = false;
+	State.state.soundPlayerState = false;
 	audioNode.pause();
 }
 
@@ -89,9 +89,9 @@ function pauseSelectedTrack(): void {
  */
 function unloadSelectedTrack(): void {
 	isTrackLoaded = false;
-	State.soundPlayerState = false;
-	State.soundPlayerDuration = 0;
-	State.soundPlayerSeek = 0;
+	State.state.soundPlayerState = false;
+	State.state.soundPlayerDuration = 0;
+	State.state.soundPlayerSeek = 0;
 	audioNode.src = '';
 
 	data?.revokeDataURL();
@@ -117,9 +117,9 @@ async function loadSelectedTrack(): Promise<void> {
 		if (selectedFile.endsWith('.unk_sound')) {
 			const fileType = detectFileType(data);
 			if (fileType === AUDIO_TYPE_OGG)
-				State.soundPlayerTitle += ' (OGG Auto Detected)';
+				State.state.soundPlayerTitle += ' (OGG Auto Detected)';
 			else if (fileType === AUDIO_TYPE_MP3)
-				State.soundPlayerTitle += ' (MP3 Auto Detected)';
+				State.state.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
 		audioNode.src = data.getDataURL();
@@ -153,7 +153,7 @@ State.state.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
 	audioNode.volume = State.state.config.soundPlayerVolume;
-	audioNode.ondurationchange = (): number => State.soundPlayerDuration = audioNode.duration;
+	audioNode.ondurationchange = (): number => State.state.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
 	State.state.$watch('config.soundPlayerVolume', value => {
@@ -161,7 +161,7 @@ State.state.registerLoadFunc(async () => {
 	});
 
 	// Track requests to seek the current sound file and directly edit the
-	// time of the audio node. State.soundPlayerSeek will automatically update.
+	// time of the audio node. State.state.soundPlayerSeek will automatically update.
 	Events.on('click-sound-seek', seek => {
 		if (audioNode && isTrackLoaded)
 			audioNode.currentTime = audioNode.duration * seek;
@@ -169,7 +169,7 @@ State.state.registerLoadFunc(async () => {
 
 	// Track sound-player-toggle events.
 	Events.on('click-sound-toggle', () => {
-		if (State.soundPlayerState)
+		if (State.state.soundPlayerState)
 			pauseSelectedTrack();
 		else
 			playSelectedTrack();
@@ -180,7 +180,7 @@ State.state.registerLoadFunc(async () => {
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
 		if (!State.state.isBusy && first && selectedFile !== first) {
-			State.soundPlayerTitle = path.basename(first);
+			State.state.soundPlayerTitle = path.basename(first);
 
 			selectedFile = first;
 			unloadSelectedTrack();

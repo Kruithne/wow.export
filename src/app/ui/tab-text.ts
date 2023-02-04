@@ -19,7 +19,7 @@ State.state.registerLoadFunc(async () => {
 		if (!State.state.isBusy && first && selectedFile !== first) {
 			try {
 				const file = await State.state.casc.getFileByName(first);
-				State.textViewerSelectedText = file.readString(undefined, 'utf8');
+				State.state.textViewerSelectedText = file.readString(undefined, 'utf8');
 
 				selectedFile = first;
 			} catch (e) {
@@ -39,7 +39,7 @@ State.state.registerLoadFunc(async () => {
 	// Track when the user clicks to copy the open text file to clipboard.
 	Events.on('click-copy-text', async () => {
 		const clipboard = nw.Clipboard.get();
-		clipboard.set(State.textViewerSelectedText, 'text');
+		clipboard.set(State.state.textViewerSelectedText, 'text');
 		State.state.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
 	});
 

@@ -28,7 +28,7 @@ State.state.registerLoadFunc(async () => {
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
 
-				State.tableBrowserHeaders = [...db2Reader.schema.keys()];
+				State.state.tableBrowserHeaders = [...db2Reader.schema.keys()];
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0)
@@ -42,7 +42,7 @@ State.state.registerLoadFunc(async () => {
 				for (const row of rows.values())
 					parsed[index++] = Object.values(row);
 
-				State.tableBrowserRows = parsed;
+				State.state.tableBrowserRows = parsed;
 
 				selectedFile = first;
 			} catch (e) {

@@ -75,7 +75,7 @@ function getModelDisplays(fileDataID: number): Array<DisplayInfo> {
 
 /** Clear the currently active texture preview. */
 function clearTexturePreview(): void {
-	State.modelTexturePreviewURL = '';
+	State.state.modelTexturePreviewURL = '';
 }
 
 /**
@@ -91,7 +91,7 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 	Log.write('Previewing texture file %s', texture);
 
 	try {
-		const view = State;
+		const view = State.state;
 		const file = await State.state.casc.getFile(fileDataID);
 
 		const blp = new BLPImage(file);
@@ -129,8 +129,8 @@ async function previewModel(fileName: string): Promise<void> {
 	clearTexturePreview();
 
 	// Reset skin selection.
-	State.modelViewerSkins = [];
-	State.modelViewerSkinsSelection = [];
+	State.state.state.modelViewerSkins = [];
+	State.state.state.modelViewerSkinsSelection = [];
 
 	try {
 		// Dispose the currently active renderer.
@@ -154,11 +154,11 @@ async function previewModel(fileName: string): Promise<void> {
 
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
-			State.modelViewerActiveType = 'm2';
+			State.state.modelViewerActiveType = 'm2';
 			activeRenderer = new M2Renderer(file, renderGroup, true);
 			isM2 = true;
 		} else if (fileNameLower.endsWith('.wmo')) {
-			State.modelViewerActiveType = 'wmo';
+			State.state.modelViewerActiveType = 'wmo';
 			activeRenderer = new WMORenderer(file, fileName, renderGroup);
 		} else {
 			throw new Error(util.format('Unknown model extension: %s', fileName));
@@ -209,8 +209,8 @@ async function previewModel(fileName: string): Promise<void> {
 				activeSkins.set(skinName, display);
 			}
 
-			State.modelViewerSkins = skinList;
-			State.modelViewerSkinsSelection = skinList.slice(0, 1);
+			State.state.modelViewerSkins = skinList;
+			State.state.modelViewerSkinsSelection = skinList.slice(0, 1);
 		}
 
 		updateCameraBounding();
@@ -252,7 +252,7 @@ function updateCameraBounding(): void {
 	const fov = camera.fov * (Math.PI / 180);
 	const cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
 
-	if (isFirstModel || State.modelViewerAutoAdjust) {
+	if (isFirstModel || State.state.modelViewerAutoAdjust) {
 		camera.position.set(center.x, center.y, cameraZ);
 		isFirstModel = false;
 	}
@@ -262,7 +262,7 @@ function updateCameraBounding(): void {
 
 	camera.updateProjectionMatrix();
 
-	const controls = State.modelViewerContext.controls;
+	const controls = State.state.modelViewerContext.controls;
 	if (controls) {
 		controls.target = center;
 		controls.maxDistance = cameraToFarEdge * 2;
@@ -418,7 +418,7 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
-								exporter.setGeosetMask(State.modelViewerGeosets);
+								exporter.setGeosetMask(State.state.modelViewerGeosets);
 
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, State.state.config.modelsExportCollision, helper);
@@ -438,8 +438,8 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 
 							// Respect group/set masking for selected WMO.
 							if (fileName === activePath) {
-								exporter.setGroupMask(State.modelViewerWMOGroups);
-								exporter.setDoodadSetMask(State.modelViewerWMOSets);
+								exporter.setGroupMask(State.state.modelViewerWMOGroups);
+								exporter.setDoodadSetMask(State.state.modelViewerWMOSets);
 							}
 
 							if (format === 'OBJ') {
@@ -493,14 +493,14 @@ function updateListfile(): void {
 }
 
 // Register a drop handler for M2 files.
-State.registerDropHandler({
+State.state.registerDropHandler({
 	ext: ['.m2'],
 	prompt: (count: number) => util.format('Export %d models as %s', count, State.state.config.exportModelFormat),
 	process: (files: FileList) => exportFiles(files, true)
 });
 
 // The first time the user opens up the model tab, initialize 3D preview.
-State.events.once('screen-tab-models', () => {
+State.state.events.once('screen-tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 	scene = new THREE.Scene();
@@ -516,7 +516,7 @@ State.events.once('screen-tab-models', () => {
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
-	State.modelViewerContext = Object.seal({ camera, scene, controls: null });
+	State.state.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
 State.state.registerLoadFunc(async () => {
@@ -535,7 +535,7 @@ State.state.registerLoadFunc(async () => {
 		const display = activeSkins.get(selected.id);
 		selectedSkinName = selected.id;
 
-		const currGeosets = State.modelViewerGeosets;
+		const currGeosets = State.state.modelViewerGeosets;
 
 		const creatureDisplay = display as CreatureDisplayInfoEntry;
 		if (creatureDisplay.extraGeosets !== undefined) {
@@ -585,12 +585,12 @@ State.state.registerLoadFunc(async () => {
 	});
 
 	// Track when the user clicks to preview a model texture.
-	State.events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
+	State.state.events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
 		await previewTextureByID(fileDataID, displayName);
 	});
 
 	// Track when the user clicks to export selected textures.
-	State.events.on('click-export-model', async () => {
+	State.state.events.on('click-export-model', async () => {
 		const userSelection = State.state.selectionModels;
 		if (userSelection.length === 0) {
 			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
