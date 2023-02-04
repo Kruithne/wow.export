@@ -90,7 +90,7 @@ export default class Item {
  * @param item
  */
 export function viewItemModels(item): void {
-	State.setScreen('tab-models');
+	State.state.setScreen('tab-models');
 
 	const list = new Set();
 
@@ -100,7 +100,7 @@ export function viewItemModels(item): void {
 			let entry = Listfile.getByID(fileDataID);
 
 			if (entry !== undefined) {
-				if (State.config.listfileShowFileDataIDs)
+				if (State.state.config.listfileShowFileDataIDs)
 					entry += ' [' + fileDataID + ']';
 
 				list.add(entry);
@@ -109,11 +109,11 @@ export function viewItemModels(item): void {
 	}
 
 	// Reset the user filter for models.
-	State.userInputFilterModels = '';
+	State.state.userInputFilterModels = '';
 
-	State.overrideModelList = [...list];
-	State.selectionModels = [...list];
-	State.overrideModelName = item.name;
+	State.state.overrideModelList = [...list];
+	State.state.selectionModels = [...list];
+	State.state.overrideModelName = item.name;
 }
 
 /**
@@ -121,7 +121,7 @@ export function viewItemModels(item): void {
  * @param item
  */
 export function viewItemTextures(item): void {
-	State.setScreen('tab-textures');
+	State.state.setScreen('tab-textures');
 
 	const list = new Set();
 
@@ -130,7 +130,7 @@ export function viewItemTextures(item): void {
 		let entry = Listfile.getByID(fileDataID);
 
 		if (entry !== undefined) {
-			if (State.config.listfileShowFileDataIDs)
+			if (State.state.config.listfileShowFileDataIDs)
 				entry += ' [' + fileDataID + ']';
 
 			list.add(entry);
@@ -138,18 +138,18 @@ export function viewItemTextures(item): void {
 	}
 
 	// Reset the user filter for textures.
-	State.userInputFilterTextures = '';
+	State.state.userInputFilterTextures = '';
 
-	State.overrideTextureList = [...list];
-	State.selectionTextures = [...list];
-	State.overrideTextureName = item.name;
+	State.state.overrideTextureList = [...list];
+	State.state.selectionTextures = [...list];
+	State.state.overrideTextureName = item.name;
 }
 
 Events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = State.createProgress(5);
-	State.setScreen('loading');
-	State.isBusy++;
+	const progress = State.state.createProgress(5);
+	State.state.setScreen('loading');
+	State.state.isBusy++;
 
 	await progress.step('Loading item data...');
 	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');
@@ -214,30 +214,30 @@ Events.once('screen-tab-items', async () => {
 	}
 
 	// Show the item viewer screen.
-	State.loadPct = -1;
-	State.isBusy--;
-	State.setScreen('tab-items');
+	State.state.loadPct = -1;
+	State.state.isBusy--;
+	State.state.setScreen('tab-items');
 
 	// Load initial configuration for the type control from config.
-	const enabledTypes = State.config.itemViewerEnabledTypes;
+	const enabledTypes = State.state.config.itemViewerEnabledTypes;
 	const mask = [];
 
 	for (const label of Object.keys(ITEM_SLOTS_MERGED))
 		mask.push({ label, checked: enabledTypes.includes(label) });
 
 	// Register a watcher for the item type control.
-	State.$watch('itemViewerTypeMask', () => {
+	State.state.$watch('itemViewerTypeMask', () => {
 		// Refilter the listfile based on what the new selection.
-		const filter = State.itemViewerTypeMask.filter(e => e.checked);
+		const filter = State.state.itemViewerTypeMask.filter(e => e.checked);
 		const mask = [];
 
 		filter.forEach(e => mask.push(...ITEM_SLOTS_MERGED[e.label]));
 		const test = items.filter(item => mask.includes(item.inventoryType));
-		State.listfileItems = test;
+		State.state.listfileItems = test;
 
 		// Save just the names of user enabled types, preventing incompatibilities if we change things.
-		State.config.itemViewerEnabledTypes = State.itemViewerTypeMask.map(e => e.label);
+		State.state.config.itemViewerEnabledTypes = State.state.itemViewerTypeMask.map(e => e.label);
 	}, { deep: true });
 
-	State.itemViewerTypeMask = mask;
+	State.state.itemViewerTypeMask = mask;
 });

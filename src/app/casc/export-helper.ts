@@ -37,10 +37,10 @@ export default class ExportHelper {
 	 */
 	static getExportPath(file: string): string {
 		// Remove whitespace due to MTL incompatibility for textures.
-		if (State.config.removePathSpaces)
+		if (State.state.config.removePathSpaces)
 			file = file.replace(/\s/g, '');
 
-		return path.normalize(path.join(State.config.exportDirectory, file));
+		return path.normalize(path.join(State.state.config.exportDirectory, file));
 	}
 
 	/**
@@ -49,7 +49,7 @@ export default class ExportHelper {
 	 * @returns Relative path of given file
 	 */
 	static getRelativeExport(file: string): string {
-		return path.relative(State.config.exportDirectory, file);
+		return path.relative(State.state.config.exportDirectory, file);
 	}
 
 	/**
@@ -125,16 +125,16 @@ export default class ExportHelper {
 		this.succeeded = 0;
 		this.isFinished = false;
 
-		State.isBusy++;
-		State.exportCancelled = false;
+		State.state.isBusy++;
+		State.state.exportCancelled = false;
 
 		Log.write('Starting export of %d %s items', this.count, this.unit);
 		this.updateCurrentTask();
 
 		Events.once('toast-cancelled', () => {
 			if (!this.isFinished) {
-				State.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
-				State.exportCancelled = true;
+				State.state.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
+				State.state.exportCancelled = true;
 			}
 		});
 	}
@@ -145,7 +145,7 @@ export default class ExportHelper {
 	 * @returns If exported is cancelled
 	 */
 	isCancelled(): boolean {
-		if (State.exportCancelled) {
+		if (State.state.exportCancelled) {
 			this.finish();
 			return true;
 		}
@@ -170,23 +170,23 @@ export default class ExportHelper {
 			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
 
 			if (this.count > 1)
-				State.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
+				State.state.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
 			else
-				State.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
+				State.state.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
-			const cancelled = State.exportCancelled;
-			State.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
+			const cancelled = State.state.exportCancelled;
+			State.state.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
-			if (State.exportCancelled)
-				State.setToast('info', 'Export was cancelled by the user.', null);
+			if (State.state.exportCancelled)
+				State.state.setToast('info', 'Export was cancelled by the user.', null);
 			else
-				State.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
+				State.state.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
 		}
 
 		this.isFinished = true;
-		State.isBusy--;
+		State.state.isBusy--;
 	}
 
 	/**
@@ -240,7 +240,7 @@ export default class ExportHelper {
 			exportProgress += ')';
 		}
 
-		State.setToast('progress', exportProgress, null, -1, true);
+		State.state.setToast('progress', exportProgress, null, -1, true);
 	}
 
 	/**

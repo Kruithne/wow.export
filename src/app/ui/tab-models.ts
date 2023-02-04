@@ -86,13 +86,13 @@ function clearTexturePreview(): void {
 async function previewTextureByID(fileDataID: number, name: string): Promise<void> {
 	const texture = Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
-	State.isBusy++;
-	State.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	State.state.isBusy++;
+	State.state.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	Log.write('Previewing texture file %s', texture);
 
 	try {
 		const view = State;
-		const file = await State.casc.getFile(fileDataID);
+		const file = await State.state.casc.getFile(fileDataID);
 
 		const blp = new BLPImage(file);
 
@@ -101,25 +101,25 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 		view.modelTexturePreviewHeight = blp.height;
 		view.modelTexturePreviewName = name;
 
-		State.hideToast();
+		State.state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			State.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			State.state.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			Log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			State.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			State.state.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	State.isBusy--;
+	State.state.isBusy--;
 }
 
 async function previewModel(fileName: string): Promise<void> {
-	State.isBusy++;
-	State.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
+	State.state.isBusy++;
+	State.state.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	Log.write('Previewing model %s', fileName);
 
 	// Reset texture ribbon.
@@ -149,7 +149,7 @@ async function previewModel(fileName: string): Promise<void> {
 		if (fileDataID === undefined)
 			throw new Error(util.format('Unknown model file: %s', fileName));
 
-		const file = await State.casc.getFile(fileDataID);
+		const file = await State.state.casc.getFile(fileDataID);
 		let isM2 = false;
 
 		const fileNameLower = fileName.toLowerCase();
@@ -219,23 +219,23 @@ async function previewModel(fileName: string): Promise<void> {
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
-			State.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
+			State.state.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		else
-			State.hideToast();
+			State.state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			State.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
+			State.state.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
 			Log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
-			State.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			State.state.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	State.isBusy--;
+	State.state.isBusy--;
 }
 
 /** Update the camera to match render group bounding. */
@@ -290,13 +290,13 @@ function getVariantTextureIDs(fileName: string): Array<number> {
 }
 
 async function exportFiles(files, isLocal = false): Promise<void> {
-	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
-	const format = State.config.exportModelFormat;
+	const exportPaths = new FileWriter(State.state.lastExportPath, 'utf8');
+	const format = State.state.config.exportModelFormat;
 
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath !== undefined) {
-			State.setToast('progress', 'Saving preview, hold on...', null, -1, false);
+			State.state.setToast('progress', 'Saving preview, hold on...', null, -1, false);
 
 			const modelPreview = document.getElementById('model-preview') as HTMLElement;
 			const canvas = modelPreview.querySelector('canvas') as HTMLCanvasElement;
@@ -311,19 +311,19 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 				exportPaths.writeLine('PNG:' + outFile);
 
 				Log.write('Saved 3D preview screenshot to %s', outFile);
-				State.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
+				State.state.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
 				clipboard.set(buf.readString(undefined, 'base64'), 'png', true);
 
 				Log.write('Copied 3D preview to clipboard (%s)', activePath);
-				State.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
+				State.state.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
 			}
 		} else {
-			State.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
+			State.state.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
-		const casc = State.casc;
+		const casc = State.state.casc;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
@@ -421,7 +421,7 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 								exporter.setGeosetMask(State.modelViewerGeosets);
 
 							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, State.config.modelsExportCollision, helper);
+								await exporter.exportAsOBJ(exportPath, State.state.config.modelsExportCollision, helper);
 								exportPaths.writeLine('M2_OBJ:' + exportPath);
 							}
 
@@ -482,20 +482,20 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 function updateListfile(): void {
 	// Filters for the model viewer depending on user settings.
 	const modelExt = Array<ListfileFilter>();
-	if (State.config.modelsShowM2)
+	if (State.state.config.modelsShowM2)
 		modelExt.push('.m2');
 
-	if (State.config.modelsShowWMO)
+	if (State.state.config.modelsShowWMO)
 		modelExt.push({ ext: '.wmo', pattern: Constants.LISTFILE_MODEL_FILTER });
 
 	// Create a new listfile using the given configuration.
-	State.listfileModels = Listfile.getFilenamesByExtension(...modelExt);
+	State.state.listfileModels = Listfile.getFilenamesByExtension(...modelExt);
 }
 
 // Register a drop handler for M2 files.
 State.registerDropHandler({
 	ext: ['.m2'],
-	prompt: (count: number) => util.format('Export %d models as %s', count, State.config.exportModelFormat),
+	prompt: (count: number) => util.format('Export %d models as %s', count, State.state.config.exportModelFormat),
 	process: (files: FileList) => exportFiles(files, true)
 });
 
@@ -510,7 +510,7 @@ State.events.once('screen-tab-models', () => {
 
 	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
 
-	if (State.config.modelViewerShowGrid)
+	if (State.state.config.modelViewerShowGrid)
 		scene.add(grid);
 
 	// WoW models are by default facing the wrong way; rotate everything.
@@ -519,13 +519,13 @@ State.events.once('screen-tab-models', () => {
 	State.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// Track changes to the visible model listfile types.
-	State.$watch('config.modelsShowM2', updateListfile);
-	State.$watch('config.modelsShowWMO', updateListfile);
+	State.state.$watch('config.modelsShowM2', updateListfile);
+	State.state.$watch('config.modelsShowWMO', updateListfile);
 
 	// When the selected model skin is changed, update our model.
-	State.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
+	State.state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
 		// Don't do anything if we're lacking skins.
 		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
 			return;
@@ -565,22 +565,22 @@ State.registerLoadFunc(async () => {
 			activeRenderer?.applyReplaceableTextures(display);
 	});
 
-	State.$watch('config.modelViewerShowGrid', () => {
-		if (State.config.modelViewerShowGrid)
+	State.state.$watch('config.modelViewerShowGrid', () => {
+		if (State.state.config.modelViewerShowGrid)
 			scene.add(grid);
 		else
 			scene.remove(grid);
 	});
 
 	// Track selection changes on the model listbox and preview first model.
-	State.$watch('selectionModels', async (selection: Array<string>) => {
+	State.state.$watch('selectionModels', async (selection: Array<string>) => {
 		// Don't do anything if we're not loading models.
-		if (!State.config.modelsAutoPreview)
+		if (!State.state.config.modelsAutoPreview)
 			return;
 
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
-		if (!State.isBusy && first && activePath !== first)
+		if (!State.state.isBusy && first && activePath !== first)
 			previewModel(first);
 	});
 
@@ -591,9 +591,9 @@ State.registerLoadFunc(async () => {
 
 	// Track when the user clicks to export selected textures.
 	State.events.on('click-export-model', async () => {
-		const userSelection = State.selectionModels;
+		const userSelection = State.state.selectionModels;
 		if (userSelection.length === 0) {
-			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 

@@ -779,9 +779,9 @@ interface NWFile {
 	const state = defineComponent(app.mount('#container'));
 
 	// Set-up default export directory if none configured.
-	if (state.config.exportDirectory === '') {
-		state.config.exportDirectory = path.join(os.homedir(), 'wow.export');
-		Log.write('No export directory set, setting to %s', state.config.exportDirectory);
+	if (State.state.config.exportDirectory === '') {
+		State.state.config.exportDirectory = path.join(os.homedir(), 'wow.export');
+		Log.write('No export directory set, setting to %s', State.state.config.exportDirectory);
 	}
 
 	// Set-up proper drag/drop handlers.
@@ -791,7 +791,7 @@ interface NWFile {
 
 		// Converting local files while busy shouldn't end badly, but it seems
 		// weird to let people do this on loading screens.
-		if (state.isBusy)
+		if (State.state.isBusy)
 			return false;
 
 		dropStack++;
@@ -895,7 +895,7 @@ interface NWFile {
 			if (updateAvailable) {
 				// Update is available, prompt to update. If user declines,
 				// begin checking the local Blender add-on version.
-				state.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+				State.state.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
 					'Update Now': () => Updater.applyUpdate(),
 					'Maybe Later': () => Blender.checkLocalVersion()
 				}, -1, false);

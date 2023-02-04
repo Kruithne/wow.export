@@ -32,7 +32,7 @@ export async function initializeCreatureData(creatureDisplayInfo: WDCReader, cre
 
 	if (!creatureDisplayInfoGeosetData.schema.has('CreatureDisplayInfoID') || !creatureDisplayInfoGeosetData.schema.has('GeosetValue')) {
 		Log.write('Unable to load creature textures, CreatureDisplayInfoGeosetData is missing required fields.');
-		State.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+		State.state.setToast('error', 'Creature textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 			'Clear Cache': () => Events.emit('click-cache-clear'),
 			'Not Now': () => false
 		}, -1, false);

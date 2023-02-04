@@ -54,7 +54,7 @@ export default class MTLWriter {
 		const mtlDir = path.dirname(this.out);
 		await createDirectory(mtlDir);
 
-		const useAbsolute = State.config.enableAbsoluteMTLPaths;
+		const useAbsolute = State.state.config.enableAbsoluteMTLPaths;
 		const writer = new FileWriter(this.out);
 
 		for (const material of this.materials) {

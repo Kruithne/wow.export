@@ -110,9 +110,9 @@ export default class WMORenderer {
 		// Set-up reactive controls.
 		State.modelViewerWMOGroups = this.groupArray;
 		State.modelViewerWMOSets = this.setArray;
-		this.groupWatcher = State.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
-		this.setWatcher = State.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
-		this.wireframeWatcher = State.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+		this.groupWatcher = State.state.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
+		this.setWatcher = State.state.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = State.state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
@@ -205,7 +205,7 @@ export default class WMORenderer {
 			const ribbonSlot = textureRibbon.addSlot();
 			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
 
-			const data = await State.casc.getFile(textureID);
+			const data = await State.state.casc.getFile(textureID);
 			const blp = new BLPImage(data);
 
 			textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
@@ -219,7 +219,7 @@ export default class WMORenderer {
 	async loadDoodadSet(index: number): Promise<void> {
 		const wmo = this.wmo;
 		const set = wmo.doodadSets[index];
-		const casc = State.casc;
+		const casc = State.state.casc;
 
 		if (!set)
 			throw new Error(util.format('Invalid doodad set requested: %s', index));
@@ -231,8 +231,8 @@ export default class WMORenderer {
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
 
-		State.isBusy++;
-		State.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
+		State.state.isBusy++;
+		State.state.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
 		for (let i = 0; i < count; i++) {
 			const doodad = wmo.doodads[firstIndex + i];
@@ -289,8 +289,8 @@ export default class WMORenderer {
 		if (this.doodadSets !== undefined)
 			this.doodadSets[index] = renderGroup;
 
-		State.hideToast();
-		State.isBusy--;
+		State.state.hideToast();
+		State.state.isBusy--;
 	}
 
 	/**
@@ -309,7 +309,7 @@ export default class WMORenderer {
 	 * Update the wireframe state for all active materials.
 	 */
 	updateWireframe(): void {
-		const renderWireframe = State.config.modelViewerWireframe;
+		const renderWireframe = State.state.config.modelViewerWireframe;
 		const materials = this.getRenderMaterials(this.renderGroup, new Set());
 
 		for (const material of materials) {

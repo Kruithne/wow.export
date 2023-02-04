@@ -64,8 +64,8 @@ export default class M2Renderer {
 			await this.loadSkin(0);
 
 			if (this.reactive) {
-				this.geosetWatcher = State.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
-				this.wireframeWatcher = State.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+				this.geosetWatcher = State.state.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.wireframeWatcher = State.state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 			}
 		}
 
@@ -75,7 +75,7 @@ export default class M2Renderer {
 
 	/** Update the wireframe state for all materials. */
 	updateWireframe(): void {
-		const renderWireframe = State.config.modelViewerWireframe;
+		const renderWireframe = State.state.config.modelViewerWireframe;
 		for (const material of this.materials) {
 			material.wireframe = renderWireframe;
 			material.needsUpdate = true;
@@ -174,7 +174,7 @@ export default class M2Renderer {
 	 */
 	async overrideTextureType(type: number, fileDataID: number): Promise<void> {
 		const textureTypes = this.m2.textureTypes;
-		const renderWireframe = State.config.modelViewerWireframe;
+		const renderWireframe = State.state.config.modelViewerWireframe;
 
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
@@ -184,7 +184,7 @@ export default class M2Renderer {
 			const tex = new THREE.Texture();
 			const loader = new THREE.ImageLoader();
 
-			const data = await State.casc.getFile(fileDataID);
+			const data = await State.state.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
 			const blpURI = blp.getDataURL(0b0111);
 

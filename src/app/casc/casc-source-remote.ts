@@ -187,13 +187,13 @@ export default class CASCRemote extends CASC {
 	 * @param buildIndex
 	 */
 	async load(buildIndex: number): Promise<void> {
-		this.progress = State.createProgress(16);
+		this.progress = State.state.createProgress(16);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
 		await this.loadRoot();
 
-		State.casc = this;
+		State.state.casc = this;
 
 		await this.loadListfile(this.build.BuildConfig);
 		await this.loadTables();

@@ -11,22 +11,22 @@ import HTFXReader from '../db/HTFXReader';
 
 let selectedFile: string;
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// TODO: Cache manifest with sane expiry (e.g. same as DBD) instead of requesting each time
-	const manifestURL = util.format(State.config.dbdURL, 'manifest');
+	const manifestURL = util.format(State.state.config.dbdURL, 'manifest');
 	log.write('Downloading DB2 filename mapping from %s', manifestURL);
 	const db2NameMap = await generics.get(manifestURL).then(res => res.json());
 
-	if (State.config.hotfixesEnabled) {
+	if (State.state.config.hotfixesEnabled) {
 		const htfxReader = new HTFXReader(db2NameMap);
 		htfxReader.parse();
 	}
 
 	// Track selection changes on the text listbox and set first as active entry.
-	State.$watch('selectionDB2s', async selection => {
+	State.state.$watch('selectionDB2s', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
-		if (!State.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {
+		if (!State.state.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {
 			try {
 				const lowercaseTableName = path.basename(first, '.db2');
 				const tableName = db2NameMap.find(e => e.tableName.toLowerCase() == lowercaseTableName)?.tableName;
@@ -38,9 +38,9 @@ State.registerLoadFunc(async () => {
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0)
-					State.setToast('info', 'Selected DB2 has no rows.', null);
+					State.state.setToast('info', 'Selected DB2 has no rows.', null);
 				else
-					State.hideToast(false);
+					State.state.hideToast(false);
 
 				const parsed = Array(rows.size);
 
@@ -53,7 +53,7 @@ State.registerLoadFunc(async () => {
 				selectedFile = first;
 			} catch (e) {
 				// Error reading/parsing DB2 file.
-				State.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
+				State.state.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
 				log.write('Failed to open CASC file: %s', e.message);
 			}
 		}

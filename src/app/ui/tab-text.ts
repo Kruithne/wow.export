@@ -11,25 +11,25 @@ import Listfile from '../casc/listfile';
 
 let selectedFile: string;
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// Track selection changes on the text listbox and set first as active entry.
-	State.$watch('selectionText', async selection => {
+	State.state.$watch('selectionText', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
-		if (!State.isBusy && first && selectedFile !== first) {
+		if (!State.state.isBusy && first && selectedFile !== first) {
 			try {
-				const file = await State.casc.getFileByName(first);
+				const file = await State.state.casc.getFileByName(first);
 				State.textViewerSelectedText = file.readString(undefined, 'utf8');
 
 				selectedFile = first;
 			} catch (e) {
 				if (e instanceof EncryptionError) {
 					// Missing decryption key.
-					State.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
+					State.state.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
 					Log.write('Failed to decrypt texture %s (%s)', first, e.key);
 				} else {
 					// Error reading/parsing text file.
-					State.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
+					State.state.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
 					Log.write('Failed to open CASC file: %s', e.message);
 				}
 			}
@@ -40,21 +40,21 @@ State.registerLoadFunc(async () => {
 	Events.on('click-copy-text', async () => {
 		const clipboard = nw.Clipboard.get();
 		clipboard.set(State.textViewerSelectedText, 'text');
-		State.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
+		State.state.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
 	});
 
 	// Track when the user clicks to export selected text files.
 	Events.on('click-export-text', async () => {
-		const userSelection = State.selectionText;
+		const userSelection = State.state.selectionText;
 		if (userSelection.length === 0) {
-			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'file');
 		helper.start();
 
-		const overwriteFiles = State.config.overwriteFiles;
+		const overwriteFiles = State.state.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -65,7 +65,7 @@ State.registerLoadFunc(async () => {
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await fileExists(exportPath)) {
-					const data = await State.casc.getFileByName(fileName);
+					const data = await State.state.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
 				} else {
 					Log.write('Skipping text export %s (file exists, overwrite disabled)', exportPath);

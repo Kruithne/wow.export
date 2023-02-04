@@ -318,7 +318,7 @@ export default {
 			if (event.ctrlKey === true && event.key === 'a') {
 				// Without a WDT mask, we can't reliably select everything.
 				if (!this.mask) {
-					State.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)', null, -1);
+					State.state.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)', null, -1);
 					return;
 				}
 

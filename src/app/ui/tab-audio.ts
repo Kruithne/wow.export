@@ -31,7 +31,7 @@ function updateSeek(): void {
 	State.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
 
 	if (State.soundPlayerSeek === 1) {
-		if (State.config.soundPlayerLoop)
+		if (State.state.config.soundPlayerLoop)
 			audioNode.play();
 
 		else
@@ -104,15 +104,15 @@ function unloadSelectedTrack(): void {
  */
 async function loadSelectedTrack(): Promise<void> {
 	if (selectedFile === null)
-		return State.setToast('info', 'You need to select an audio track first!', null, -1, true);
+		return State.state.setToast('info', 'You need to select an audio track first!', null, -1, true);
 
-	State.isBusy++;
-	State.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
+	State.state.isBusy++;
+	State.state.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	log.write('Previewing sound file %s', selectedFile);
 
 	try {
 		const fileDataID = listfile.getByFilename(selectedFile);
-		data = await State.casc.getFile(fileDataID);
+		data = await State.state.casc.getFile(fileDataID);
 
 		if (selectedFile.endsWith('.unk_sound')) {
 			const fileType = detectFileType(data);
@@ -133,30 +133,30 @@ async function loadSelectedTrack(): Promise<void> {
 			throw new Error('Invalid audio duration.');
 
 		isTrackLoaded = true;
-		State.hideToast();
+		State.state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			State.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
+			State.state.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
 			log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
 		} else {
 			// Error reading/parsing audio.
-			State.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
+			State.state.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	State.isBusy--;
+	State.state.isBusy--;
 }
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
-	audioNode.volume = State.config.soundPlayerVolume;
+	audioNode.volume = State.state.config.soundPlayerVolume;
 	audioNode.ondurationchange = (): number => State.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
-	State.$watch('config.soundPlayerVolume', value => {
+	State.state.$watch('config.soundPlayerVolume', value => {
 		audioNode.volume = value;
 	});
 
@@ -176,32 +176,32 @@ State.registerLoadFunc(async () => {
 	});
 
 	// Track selection changes on the sound listbox and set first as active entry.
-	State.$watch('selectionSounds', async selection => {
+	State.state.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
-		if (!State.isBusy && first && selectedFile !== first) {
+		if (!State.state.isBusy && first && selectedFile !== first) {
 			State.soundPlayerTitle = path.basename(first);
 
 			selectedFile = first;
 			unloadSelectedTrack();
 
-			if (State.config.soundPlayerAutoPlay)
+			if (State.state.config.soundPlayerAutoPlay)
 				playSelectedTrack();
 		}
 	});
 
 	// Track when the user clicks to export selected sound files.
 	Events.on('click-export-sound', async () => {
-		const userSelection = State.selectionSounds;
+		const userSelection = State.state.selectionSounds;
 		if (userSelection.length === 0) {
-			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'sound files');
 		helper.start();
 
-		const overwriteFiles = State.config.overwriteFiles;
+		const overwriteFiles = State.state.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -211,7 +211,7 @@ State.registerLoadFunc(async () => {
 			fileName = listfile.stripFileEntry(fileName);
 
 			if (fileName.endsWith('.unk_sound')) {
-				data = await State.casc.getFileByName(fileName);
+				data = await State.state.casc.getFileByName(fileName);
 				const fileType = detectFileType(data);
 
 				if (fileType === AUDIO_TYPE_OGG)
@@ -224,7 +224,7 @@ State.registerLoadFunc(async () => {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
 					if (!data)
-						data = await State.casc.getFileByName(fileName);
+						data = await State.state.casc.getFileByName(fileName);
 
 					await data.writeToFile(exportPath);
 				} else {

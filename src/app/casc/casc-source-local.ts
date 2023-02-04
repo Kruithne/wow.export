@@ -100,13 +100,13 @@ export default class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = State.createProgress(13);
+		this.progress = State.state.createProgress(13);
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
 		await this.loadRoot();
 
-		State.casc = this;
+		State.state.casc = this;
 
 		await this.loadListfile(this.build.BuildKey);
 		await this.loadTables();
@@ -219,7 +219,7 @@ export default class CASCLocal extends CASC {
 	 * files needed during local initialization.
 	 */
 	async initializeRemoteCASC(): Promise<void> {
-		const remote = new CASCRemote(State.selectedCDNRegion.tag);
+		const remote = new CASCRemote(State.state.selectedCDNRegion.tag);
 		await remote.init();
 
 		const buildIndex = remote.builds.findIndex(build => build.Product === this.build.Product);

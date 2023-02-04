@@ -8,19 +8,19 @@ import { BLTEIntegrityError } from '../casc/blte-reader';
 import { fileExists } from '../generics';
 import Listfile from '../casc/listfile';
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// Track when the user clicks to export selected sound files.
 	Events.on('click-export-video', async () => {
-		const userSelection = State.selectionVideos;
+		const userSelection = State.state.selectionVideos;
 		if (userSelection.length === 0) {
-			State.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'video');
 		helper.start();
 
-		const overwriteFiles = State.config.overwriteFiles;
+		const overwriteFiles = State.state.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -32,7 +32,7 @@ State.registerLoadFunc(async () => {
 
 			if (overwriteFiles || !await fileExists(exportPath)) {
 				try {
-					const data = await State.casc.getFileByName(fileName);
+					const data = await State.state.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
 
 					helper.mark(fileName, true);
@@ -49,7 +49,7 @@ State.registerLoadFunc(async () => {
 						Log.write('Local cinematic file is corrupted, forcing fallback.');
 
 						// In the event of a corrupted cinematic, try again with forced fallback.
-						const data = await State.casc.getFileByName(fileName, false, false, true, true);
+						const data = await State.state.casc.getFileByName(fileName, false, false, true, true);
 						await data.writeToFile(exportPath);
 
 						helper.mark(fileName, true);

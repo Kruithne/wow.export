@@ -58,7 +58,7 @@ let gl: WebGLRenderingContext;
  */
 async function loadTexture(fileDataID: number): Promise<WebGLTexture | null> {
 	const texture = gl.createTexture();
-	const blp = new BLPFile(await State.casc.getFile(fileDataID));
+	const blp = new BLPFile(await State.state.casc.getFile(fileDataID));
 
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -212,8 +212,8 @@ export default class ADTExporter {
 	 * @returns The path to the exported tile.
 	 */
 	async export(dir: string, quality: number, gameObjects: Set<GameObjects>, helper: ExportHelper): Promise<{ type: string; path: string }> {
-		const casc = State.casc;
-		const config = State.config;
+		const casc = State.state.casc;
+		const config = State.state.config;
 
 		const out = { type: config.mapsExportRaw ? 'ADT_RAW' : 'ADT_OBJ', path: '' };
 
@@ -287,9 +287,9 @@ export default class ADTExporter {
 
 			const isAlphaMaps = quality === -1;
 			const isLargeBake = quality >= 8192;
-			const isSplittingAlphaMaps = isAlphaMaps && State.config.splitAlphaMaps;
-			const isSplittingTextures = isLargeBake && State.config.splitLargeTerrainBakes;
-			const includeHoles = State.config.mapsIncludeHoles;
+			const isSplittingAlphaMaps = isAlphaMaps && State.state.config.splitAlphaMaps;
+			const isSplittingTextures = isLargeBake && State.state.config.splitLargeTerrainBakes;
+			const includeHoles = State.state.config.mapsIncludeHoles;
 
 			let ofs = 0;
 			let chunkID = 0;
@@ -442,7 +442,7 @@ export default class ADTExporter {
 					const texParams = texAdt.texParams;
 
 					const saveLayerTexture = async (fileDataID: number): Promise<string> => {
-						const blp = new BLPFile(await State.casc.getFile(fileDataID));
+						const blp = new BLPFile(await State.state.casc.getFile(fileDataID));
 						let fileName = Listfile.getByID(fileDataID);
 						if (fileName !== undefined)
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
@@ -1129,7 +1129,7 @@ export default class ADTExporter {
 
 					// Create a foliage metadata JSON packed with the table data.
 					let foliageJSON;
-					if (State.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
+					if (State.state.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
 						foliageJSON = new JSONWriter(path.join(foliageDir, layer.effectID + '.json'));
 						foliageJSON.data = groundEffectTexture;
 

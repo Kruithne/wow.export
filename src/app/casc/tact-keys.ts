@@ -88,7 +88,7 @@ export async function load(): Promise<void> {
 	}
 
 	// Update from remote server.
-	const res = await get(State.config.tactKeysURL);
+	const res = await get(State.state.config.tactKeysURL);
 	if (res.ok) {
 		const data = await res.text();
 		const lines = data.split(/\r\n|\n|\r/);
@@ -111,7 +111,7 @@ export async function load(): Promise<void> {
 		}
 
 		if (remoteAdded > 0)
-			Log.write('Added %d new tact keys from %s', remoteAdded, State.config.tactKeysURL);
+			Log.write('Added %d new tact keys from %s', remoteAdded, State.state.config.tactKeysURL);
 	} else {
 		Log.write('Unable to update tactKeys, HTTP %d %s', res.status, res.statusText);
 	}

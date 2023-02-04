@@ -22,14 +22,14 @@ export function onResize(width: number): void {
 
 	// Divide the available space by the true size of the slot elements.
 	// Slot = 64 width, 1 + 1 border, 5 + 5 margin.
-	State.textureRibbonSlotCount = Math.floor(width / 76);
+	State.state.textureRibbonSlotCount = Math.floor(width / 76);
 }
 
 /** Reset the texture ribbon. */
 export function reset(): number {
-	State.textureRibbonStack = [];
-	State.textureRibbonPage = 0;
-	State.contextMenus.nodeTextureRibbon = null;
+	State.state.textureRibbonStack = [];
+	State.state.textureRibbonPage = 0;
+	State.state.contextMenus.nodeTextureRibbon = null;
 
 	return ++_syncID;
 }
@@ -45,7 +45,7 @@ export function setSlotFile(slotIndex: number, fileDataID: number, syncID: numbe
 	if (syncID !== _syncID)
 		return;
 
-	const slot = State.textureRibbonStack[slotIndex];
+	const slot = State.state.textureRibbonStack[slotIndex];
 	if (slot) {
 		slot.fileDataID = fileDataID;
 
@@ -66,7 +66,7 @@ export function setSlotSrc(slotIndex: number, src: string, syncID: number): void
 	if (syncID !== _syncID)
 		return;
 
-	const slot = State.textureRibbonStack[slotIndex];
+	const slot = State.state.textureRibbonStack[slotIndex];
 	if (slot)
 		slot.src = src;
 }
@@ -76,7 +76,7 @@ export function setSlotSrc(slotIndex: number, src: string, syncID: number): void
  * @returns
  */
 export function addSlot(): number {
-	const stack = State.textureRibbonStack;
+	const stack = State.state.textureRibbonStack;
 	const slotIndex = stack.length;
 
 	stack.push({ fileDataID: 0, displayName: 'Empty', fileName: '', src: '' });

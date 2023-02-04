@@ -51,7 +51,7 @@ async function loadMap(mapID: number, mapDir: string): Promise<void> {
 	Log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
 
 	try {
-		const data = await State.casc.getFileByName(wdtPath);
+		const data = await State.state.casc.getFileByName(wdtPath);
 		const wdt = selectedWDT = new WDTLoader(data);
 		wdt.load();
 
@@ -94,7 +94,7 @@ async function loadMapTile(x: number, y: number, size: number): Promise<ImageDat
 		const paddedX = x.toString().padStart(2, '0');
 		const paddedY = y.toString().padStart(2, '0');
 		const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', selectedMapDir, paddedX, paddedY);
-		const data = await State.casc.getFileByName(tilePath, false, true);
+		const data = await State.state.casc.getFileByName(tilePath, false, true);
 		const blp = new BLPFile(data);
 
 		// Draw the BLP onto a raw-sized canvas.
@@ -199,7 +199,7 @@ async function exportSelectedMapWMO(): Promise<void> {
 
 		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), '.obj');
 
-		const data = await State.casc.getFile(fileDataID);
+		const data = await State.state.casc.getFile(fileDataID);
 		const wmo = new WMOExporter(data, fileDataID);
 
 		wmo.setDoodadSetMask({ [placement.doodadSetIndex]: { checked: true } });
@@ -219,18 +219,18 @@ async function exportSelectedMapWMO(): Promise<void> {
 
 async function exportSelectedMap(): Promise<void> {
 	const exportTiles = State.mapViewerSelection;
-	const exportQuality = State.config.exportMapQuality;
+	const exportQuality = State.state.config.exportMapQuality;
 
 	// User has not selected any tiles.
 	if (exportTiles.length === 0)
-		return State.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+		return State.state.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
 
-	const exportPaths = new FileWriter(State.lastExportPath, 'utf8');
+	const exportPaths = new FileWriter(State.state.lastExportPath, 'utf8');
 
 	// The export helper provides the user with a link to the directory of the last exported
 	// item. Since we're using directory paths, we just append another segment here so that
@@ -246,7 +246,7 @@ async function exportSelectedMap(): Promise<void> {
 
 		// Locate game objects within the tile for exporting.
 		let gameObjects = new Set<GameObjects>();
-		if (State.config.mapsIncludeGameObjects === true) {
+		if (State.state.config.mapsIncludeGameObjects === true) {
 			const startX = MAP_OFFSET - (adt.tileX * TILE_SIZE) - TILE_SIZE;
 			const startY = MAP_OFFSET - (adt.tileY * TILE_SIZE) - TILE_SIZE;
 			const endX = startX + TILE_SIZE;
@@ -289,8 +289,8 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 
 // The first time the user opens up the map tab, initialize map names.
 State.events.once('screen-tab-maps', async () => {
-	State.isBusy++;
-	State.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
+	State.state.isBusy++;
+	State.state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
 	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();
@@ -304,20 +304,20 @@ State.events.once('screen-tab-maps', async () => {
 
 	State.mapViewerMaps = maps;
 
-	State.hideToast();
-	State.isBusy--;
+	State.state.hideToast();
+	State.state.isBusy--;
 });
 
-State.registerLoadFunc(async () => {
+State.state.registerLoadFunc(async () => {
 	// Store a reference to loadMapTile for the map viewer component.
 	State.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
-	State.$watch('selectionMaps', async selection => {
+	State.state.$watch('selectionMaps', async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 
-		if (!State.isBusy && first) {
+		if (!State.state.isBusy && first) {
 			const map = parseMapEntry(first);
 			if (selectedMapID !== map.id)
 				loadMap(map.id, map.dir);

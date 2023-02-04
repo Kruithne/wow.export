@@ -50,7 +50,7 @@ function processQueue(): void {
 
 	const entry = queue.pop();
 	if (entry !== undefined) {
-		State.casc.getFile(entry.fileDataID).then((data: BLTEReader) => {
+		State.state.casc.getFile(entry.fileDataID).then((data: BLTEReader) => {
 			const blp = new BLPImage(data);
 			entry.rule.style.backgroundImage = 'url(' + blp.getDataURL(0b0111) + ')';
 		}).catch(() => {

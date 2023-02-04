@@ -113,8 +113,8 @@ export async function checkLocalVersion(): Promise<void> {
 
 	if (latestAddonVersion > blenderAddonVersion) {
 		Log.write('Prompting user for Blender add-on update...');
-		State.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-			'Install': () => State.setScreen('blender', true),
+		State.state.setToast('info', 'A newer version of the Blender add-on is available for you.', {
+			'Install': () => State.state.setScreen('blender', true),
 			'Maybe Later': () => false
 		}, -1, false);
 	}
@@ -125,8 +125,8 @@ export async function checkLocalVersion(): Promise<void> {
  * install the Blender add-on shipped with this application.
  */
 export async function startAutomaticInstall(): Promise<void> {
-	State.isBusy++;
-	State.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
+	State.state.isBusy++;
+	State.state.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
 	Log.write('Starting automatic installation of Blender add-on...');
 
 	try {
@@ -162,17 +162,17 @@ export async function startAutomaticInstall(): Promise<void> {
 		}
 
 		if (installed) {
-			State.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
+			State.state.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
 		} else {
 			Log.write('No valid Blender installation found, add-on install failed.');
-			State.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
+			State.state.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
 		}
 	} catch (e) {
 		Log.write('Installation failed due to exception: %s', e.message);
-		State.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
+		State.state.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 	}
 
-	State.view.isBusy--;
+	State.state.isBusy--;
 }
 
 export default {

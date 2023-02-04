@@ -58,7 +58,7 @@ export default class Skin {
 
 	async load(): Promise<void> {
 		try {
-			const data: BufferWrapper = await State.casc.getFile(this.fileDataID);
+			const data: BufferWrapper = await State.state.casc.getFile(this.fileDataID);
 
 			const magic = data.readUInt32();
 			if (magic !== MAGIC_SKIN)

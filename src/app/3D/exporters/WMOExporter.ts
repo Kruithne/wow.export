@@ -83,8 +83,8 @@ export default class WMOExporter {
 	 * @param helper - ExportHelper instance.
 	 */
 	async exportTextures(out: string, mtl: MTLWriter | null = null, helper: ExportHelper, raw: boolean = false): Promise<WMOTextures> {
-		const config = State.config;
-		const casc = State.casc;
+		const config = State.state.config;
+		const casc = State.state.casc;
 
 		const textureMap = new Map<number, WMOTextureEntry>();
 		const materialMap = new Map<number, string>();
@@ -166,7 +166,7 @@ export default class WMOExporter {
 						matName = 'mat_' + Path.basename(fileName.toLowerCase(), '.blp');
 
 						// Remove spaces from material name for MTL compatibility.
-						if (State.config.removePathSpaces)
+						if (State.state.config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
 
@@ -226,11 +226,11 @@ export default class WMOExporter {
 	 * @param helper
 	 */
 	async exportAsOBJ(out: string, helper: ExportHelper): Promise<void> {
-		const casc = State.casc;
+		const casc = State.state.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
-		const config = State.config;
+		const config = State.state.config;
 
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
@@ -303,7 +303,7 @@ export default class WMOExporter {
 		}
 
 		// Restrict to first UV layer if additional UV layers are not enabled.
-		if (!State.config.modelsExportUV2)
+		if (!State.state.config.modelsExportUV2)
 			maxLayerCount = Math.min(maxLayerCount, 1);
 
 		const vertsArray = new Array(nInd * 3);
@@ -365,8 +365,8 @@ export default class WMOExporter {
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await fileExists(csvPath)) {
-			const useAbsolute = State.config.enableAbsoluteCSVPaths;
-			const usePosix = State.config.pathFormat === 'posix';
+			const useAbsolute = State.state.config.enableAbsoluteCSVPaths;
+			const usePosix = State.state.config.pathFormat === 'posix';
 			const outDir = Path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
@@ -417,7 +417,7 @@ export default class WMOExporter {
 							}
 
 							let m2Path;
-							if (State.config.enableSharedChildren)
+							if (State.state.config.enableSharedChildren)
 								m2Path = ExportHelper.getExportPath(fileName);
 							else
 								m2Path = ExportHelper.replaceFile(out, fileName);
@@ -474,7 +474,7 @@ export default class WMOExporter {
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
 
-		if (State.config.exportWMOMeta) {
+		if (State.state.config.exportWMOMeta) {
 			helper.clearCurrentTask();
 			helper.setCurrentTaskName(wmoName + ', writing meta data');
 
@@ -580,8 +580,8 @@ export default class WMOExporter {
 	 * @param helper
 	 */
 	async exportRaw(out: string, helper: ExportHelper): Promise<void> {
-		const casc = State.casc;
-		const config = State.config;
+		const casc = State.state.casc;
+		const config = State.state.config;
 
 		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);

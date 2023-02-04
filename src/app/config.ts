@@ -113,8 +113,8 @@ export async function load(): Promise<void> {
 	copyConfig(defaultConfig, config);
 	copyConfig(userConfig, config);
 
-	State.config = config;
-	State.$watch('config', () => save(), { deep: true });
+	State.state.config = config;
+	State.state.$watch('config', () => save(), { deep: true });
 }
 
 /**
@@ -123,14 +123,14 @@ export async function load(): Promise<void> {
  */
 export function resetToDefault(key: string): void {
 	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
-		State.config[key] = defaultConfig[key];
+		State.state.config[key] = defaultConfig[key];
 }
 
 /**
  * Reset all configuration to default.
  */
 export function resetAllToDefault(): void {
-	State.config = structuredClone(defaultConfig);
+	State.state.config = structuredClone(defaultConfig);
 }
 
 /**
@@ -151,7 +151,7 @@ function save(): void {
  */
 async function doSave(): Promise<void> {
 	const configSave = {};
-	for (const [key, value] of Object.entries(State.config)) {
+	for (const [key, value] of Object.entries(State.state.config)) {
 		// Only persist configuration values that do not match defaults.
 		if (Object.prototype.hasOwnProperty.call(defaultConfig, key) && defaultConfig[key] === value)
 			continue;
@@ -172,51 +172,51 @@ async function doSave(): Promise<void> {
 }
 
 // Track when the configuration screen is displayed and clone a copy of
-// the current configuration into State.configEdit for reactive UI usage.
+// the current configuration into State.state.configEdit for reactive UI usage.
 Events.on('screen-config', () => {
-	State.configEdit = Object.assign({}, State.config);
+	State.state.configEdit = Object.assign({}, State.state.config);
 });
 
 // When the user attempts to apply a new configuration, verify all of the
 // new values as needed before applying them.
 Events.on('click-config-apply', () => {
-	const cfg = State.configEdit;
+	const cfg = State.state.configEdit;
 
 	if (cfg.exportDirectory.length === 0)
-		return State.setToast('error', 'A valid export directory must be provided', null, -1);
+		return State.state.setToast('error', 'A valid export directory must be provided', null, -1);
 
 	if (cfg.listfileURL.length === 0)
-		return State.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
+		return State.state.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
-		return State.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
+		return State.state.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
 
 	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
-		return State.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
+		return State.state.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
 
 	// Everything checks out, apply.
-	State.config = cfg;
-	State.showPreviousScreen();
-	State.setToast('success', 'Changes to your configuration have been saved!');
+	State.state.config = cfg;
+	State.state.showPreviousScreen();
+	State.state.setToast('success', 'Changes to your configuration have been saved!');
 });
 
 // User has attempted to manually add an encryption key.
 // Verify the input, register it to BLTEReader and store with keys.
 Events.on('click-tact-key', () => {
-	if (TactKeys.addKey(State.userInputTactKeyName, State.userInputTactKey))
-		State.setToast('success', 'Successfully added decryption key.');
+	if (TactKeys.addKey(State.state.userInputTactKeyName, State.state.userInputTactKey))
+		State.state.setToast('success', 'Successfully added decryption key.');
 	else
-		State.setToast('error', 'Invalid encryption key.', null, -1);
+		State.state.setToast('error', 'Invalid encryption key.', null, -1);
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply
 // move back to the previous screen on the stack.
-Events.on('click-config-discard', () => State.showPreviousScreen());
+Events.on('click-config-discard', () => State.state.showPreviousScreen());
 
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
 Events.on('click-config-reset', () => {
-	State.configEdit = structuredClone(defaultConfig);
+	State.state.configEdit = structuredClone(defaultConfig);
 });
 
 export default {

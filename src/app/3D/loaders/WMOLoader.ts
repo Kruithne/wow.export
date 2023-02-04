@@ -199,7 +199,7 @@ export class WMOLoader {
 		if (!this.groups)
 			throw new Error('Attempted to obtain group from a root WMO.');
 
-		const casc = State.casc;
+		const casc = State.state.casc;
 
 		let group = this.groups[index];
 		if (group)
