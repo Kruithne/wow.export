@@ -196,6 +196,8 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 }
 
 export default {
+	previewTextureByID,
+
 	onStateReady: function(state: typeof State.state): void {
 		// Register a drop handler for BLP files.
 		state.registerDropHandler({

@@ -28,10 +28,19 @@ import { LocaleFlags } from './casc/locale-flags';
 import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
 import { filesize, formatPlaybackSeconds, redraw } from './generics';
 
-import * as TabTextures from './ui/tab-textures';
-import * as TabItems from './ui/tab-items';
 import * as TextureRibbon from './ui/texture-ribbon';
 import Listfile from './casc/listfile';
+
+import TabTextures from './ui/tab-textures';
+import TabItems from './ui/tab-items';
+import TabAudio from './ui/tab-audio';
+import TabModels from './ui/tab-models';
+import TabMaps from './ui/tab-maps';
+import TabInstall from './ui/tab-install';
+import TabData from './ui/tab-data';
+import TabRaw from './ui/tab-raw';
+import TabText from './ui/tab-text';
+import TabVideos from './ui/tab-videos';
 
 import ComponentCheckboxList from './components/checkboxlist';
 import ComponentContextMenu from './components/context-menu';
@@ -50,6 +59,11 @@ import ExportHelper from './casc/export-helper';
 
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };
+
+type Module = {
+	onStateReady?: (state: typeof State.state) => void;
+	onCASCReady?: () => void;
+}
 
 // Register Node.js error handlers.
 process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
@@ -777,6 +791,23 @@ interface NWFile {
 
 	const state = defineComponent(app.mount('#container'));
 	State.state = state;
+
+	const registerModule = (module: Module): void => {
+		if (module.onStateReady !== undefined)
+			module.onStateReady(state);
+	};
+
+	registerModule(TabAudio);
+	registerModule(TabTextures);
+	registerModule(TabItems);
+	registerModule(TabAudio);
+	registerModule(TabModels);
+	registerModule(TabMaps);
+	registerModule(TabInstall);
+	registerModule(TabData);
+	registerModule(TabRaw);
+	registerModule(TabText);
+	registerModule(TabVideos);
 
 	// Set-up default export directory if none configured.
 	if (State.state.config.exportDirectory === '') {
