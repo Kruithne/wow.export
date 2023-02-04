@@ -776,6 +776,7 @@ interface NWFile {
 	app.component('slider', ComponentSlider);
 
 	const state = defineComponent(app.mount('#container'));
+	State.state = state;
 
 	// Set-up default export directory if none configured.
 	if (State.state.config.exportDirectory === '') {
