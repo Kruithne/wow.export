@@ -5,6 +5,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 import State from '../state';
+import Events from '../events';
+
 import Constants from '../constants';
 import Log from '../log';
 import BLPImage from '../casc/blp';
@@ -500,7 +502,7 @@ State.state.registerDropHandler({
 });
 
 // The first time the user opens up the model tab, initialize 3D preview.
-State.state.events.once('screen-tab-models', () => {
+Events.once('screen-tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 	scene = new THREE.Scene();
@@ -585,12 +587,12 @@ State.state.registerLoadFunc(async () => {
 	});
 
 	// Track when the user clicks to preview a model texture.
-	State.state.events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
+	Events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
 		await previewTextureByID(fileDataID, displayName);
 	});
 
 	// Track when the user clicks to export selected textures.
-	State.state.events.on('click-export-model', async () => {
+	Events.on('click-export-model', async () => {
 		const userSelection = State.state.selectionModels;
 		if (userSelection.length === 0) {
 			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');

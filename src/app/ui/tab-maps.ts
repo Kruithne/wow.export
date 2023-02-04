@@ -7,6 +7,7 @@ import Log from '../log';
 import Listfile from '../casc/listfile';
 import Constants from '../constants';
 import State from '../state';
+import Events from '../events';
 
 import WDCReader from '../db/WDCReader';
 import BLPFile from '../casc/blp';
@@ -288,7 +289,7 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 }
 
 // The first time the user opens up the map tab, initialize map names.
-State.state.events.once('screen-tab-maps', async () => {
+Events.once('screen-tab-maps', async () => {
 	State.state.isBusy++;
 	State.state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
@@ -325,6 +326,6 @@ State.state.registerLoadFunc(async () => {
 	});
 
 	// Track when user clicks to export a map or world model.
-	State.state.events.on('click-export-map', () => exportSelectedMap());
-	State.state.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
+	Events.on('click-export-map', () => exportSelectedMap());
+	Events.on('click-export-map-wmo', () => exportSelectedMapWMO());
 });
