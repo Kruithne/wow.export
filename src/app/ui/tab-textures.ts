@@ -195,50 +195,54 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 	helper.finish();
 }
 
-// Register a drop handler for BLP files.
-State.state.registerDropHandler({
-	ext: ['.blp'],
-	prompt: (count: number) => util.format('Export %d textures as %s', count, State.state.config.exportTextureFormat),
-	process: (files: Array<string>) => exportFiles(files, true)
-});
+export default {
+	onStateReady: function(state: typeof State.state): void {
+		// Register a drop handler for BLP files.
+		state.registerDropHandler({
+			ext: ['.blp'],
+			prompt: (count: number) => util.format('Export %d textures as %s', count, State.state.config.exportTextureFormat),
+			process: (files: Array<string>) => exportFiles(files, true)
+		});
+	},
 
-State.state.registerLoadFunc(async () => {
-	// Track changes to exportTextureAlpha. If it changes, re-render the
-	// currently displayed texture to ensure we match desired alpha.
-	State.state.$watch('config.exportTextureAlpha', () => {
-		if (!State.state.isBusy && selectedFileDataID > 0)
-			previewTextureByID(selectedFileDataID);
-	});
+	onCASCReady: function(): void {
+		// Track changes to exportTextureAlpha. If it changes, re-render the
+		// currently displayed texture to ensure we match desired alpha.
+		State.state.$watch('config.exportTextureAlpha', () => {
+			if (!State.state.isBusy && selectedFileDataID > 0)
+				previewTextureByID(selectedFileDataID);
+		});
 
-	// Track selection changes on the texture listbox and preview first texture.
-	State.state.$watch('selectionTextures', async (selection: Array<string>) => {
-		// Check if the first file in the selection is "new".
-		const first = Listfile.stripFileEntry(selection[0]);
-		if (first && !State.state.isBusy) {
-			const fileDataID = Listfile.getByFilename(first);
-			if (selectedFileDataID !== fileDataID)
-				previewTextureByID(fileDataID as number);
-		}
-	});
+		// Track selection changes on the texture listbox and preview first texture.
+		State.state.$watch('selectionTextures', async (selection: Array<string>) => {
+			// Check if the first file in the selection is "new".
+			const first = Listfile.stripFileEntry(selection[0]);
+			if (first && !State.state.isBusy) {
+				const fileDataID = Listfile.getByFilename(first);
+				if (selectedFileDataID !== fileDataID)
+					previewTextureByID(fileDataID as number);
+			}
+		});
 
-	// Track when the user clicks to export selected textures.
-	Events.on('click-export-texture', async () => {
-		const userSelection = State.state.selectionTextures;
-		if (userSelection.length > 0) {
-			// In most scenarios, we have a user selection to export.
-			await exportFiles(userSelection);
-		} else if (selectedFileDataID > 0) {
-			// Less common, but we might have a direct preview that isn't selected.
-			await exportFiles([selectedFileDataID]);
-		} else {
-			// Nothing to be exported, show the user an error.
-			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
-		}
-	});
+		// Track when the user clicks to export selected textures.
+		Events.on('click-export-texture', async () => {
+			const userSelection = State.state.selectionTextures;
+			if (userSelection.length > 0) {
+				// In most scenarios, we have a user selection to export.
+				await exportFiles(userSelection);
+			} else if (selectedFileDataID > 0) {
+				// Less common, but we might have a direct preview that isn't selected.
+				await exportFiles([selectedFileDataID]);
+			} else {
+				// Nothing to be exported, show the user an error.
+				State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			}
+		});
 
-	// Track when the user changes the colour channel mask.
-	State.state.$watch('config.exportChannelMask', () => {
-		if (!State.state.isBusy && selectedFileDataID > 0)
-			previewTextureByID(selectedFileDataID);
-	});
-});
+		// Track when the user changes the colour channel mask.
+		State.state.$watch('config.exportChannelMask', () => {
+			if (!State.state.isBusy && selectedFileDataID > 0)
+				previewTextureByID(selectedFileDataID);
+		});
+	}
+};
