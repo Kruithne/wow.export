@@ -221,7 +221,7 @@ interface NWFile {
 				mapViewerSelection: [], // Map viewer tile selection
 				exportCancelled: false, // Export cancellation state.
 				toastTimer: -1, // Timer ID for toast expiration.
-				dropHandlers: Array<DropHandler>, // Handlers for file drag/drops.
+				dropHandlers: Array<DropHandler>(), // Handlers for file drag/drops.
 				loaders: Array<Promise<void>>, // Loading step promises.
 				isXmas: (new Date().getMonth() === 11),
 				regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
