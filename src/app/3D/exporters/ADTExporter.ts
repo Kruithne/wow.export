@@ -30,6 +30,26 @@ import JSONWriter from '../../3D/writers/JSONWriter';
 
 import GameObjects from '../../db/types/GameObjects';
 
+import GroundEffectTexture from '../../db/types/GroundEffectTexture';
+import GroundEffectDoodad from '../../db/types/GroundEffectDoodad';
+
+type ADTMaterial = {
+	scale: number,
+	fileDataID: number,
+	file?: string,
+	heightFile?: string,
+	heightFileDataID?: number,
+	heightScale?: number,
+	heightOffset?: number,
+	heightTex?: WebGLTexture,
+	diffuseTex?: WebGLTexture,
+}
+
+type DoodadEntry = {
+	fileDataID: number,
+	fileName?: string
+}
+
 const MAP_SIZE = Constants.GAME.MAP_SIZE;
 const TILE_SIZE = Constants.GAME.TILE_SIZE;
 const CHUNK_SIZE = TILE_SIZE / 16;
@@ -470,14 +490,18 @@ export default class ADTExporter {
 					for (let i = 0, n = materials.length; i < n; i++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
-							return '';
+							return { type: '', path: '' };
 
 						const diffuseFileDataID = materialIDs[i];
 						const heightFileDataID = heightIDs[i] ?? 0;
 						if (diffuseFileDataID === 0)
 							continue;
 
-						const mat = materials[i] = { scale: 1, fileDataID: diffuseFileDataID };
+						const mat = materials[i] = {
+							scale: 1,
+							fileDataID: diffuseFileDataID
+						} as ADTMaterial;
+
 						mat.file = await saveLayerTexture(diffuseFileDataID);
 
 						// Include a reference to the height map texture if it exists.
@@ -520,7 +544,7 @@ export default class ADTExporter {
 					for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
 						// Abort if the export has been cancelled.
 						if (helper.isCancelled())
-							return '';
+							return { type: '', path: '' };
 
 						helper.setCurrentTaskValue(chunkIndex);
 
@@ -631,7 +655,7 @@ export default class ADTExporter {
 						ctx.scale(scale, scale);
 						ctx.drawImage(canvas, 0, 0);
 
-						const buf = await BufferWrapper.fromCanvas(scaled, 'image/png');
+						const buf = new BufferWrapper(await canvasToBuffer(scaled, 'image/png'));
 						await buf.writeToFile(tileOutPath);
 					} else {
 						Log.write('Skipping ADT bake of %s (file exists, overwrite disabled)', tileOutPath);
@@ -677,7 +701,7 @@ export default class ADTExporter {
 							if (diffuseFileDataID === 0)
 								continue;
 
-							const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 };
+							const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 } as ADTMaterial;
 							mat.diffuseTex = await loadTexture(diffuseFileDataID);
 
 							if (texParams && texParams[i]) {
@@ -807,8 +831,8 @@ export default class ADTExporter {
 								}
 
 								const texLayers = texChunk.layers;
-								const heightScales = new Array(4).fill(1);
-								const heightOffsets = new Array(4).fill(1);
+								const heightScales = new Array<number>(4).fill(1);
+								const heightOffsets = new Array<number>(4).fill(1);
 
 								for (let i = 0, n = texLayers.length; i < n; i++) {
 									const mat = materials[texLayers[i].textureId];
@@ -832,8 +856,8 @@ export default class ADTExporter {
 								}
 
 								if (hasHeightTexturing) {
-									gl.uniform4f(uHeightScale, ...heightScales);
-									gl.uniform4f(uHeightOffset, ...heightOffsets);
+									gl.uniform4f(uHeightScale, ...heightScales as [number, number, number, number]);
+									gl.uniform4f(uHeightOffset, ...heightOffsets as [number, number, number, number]);
 								}
 
 								const indexBuffer = gl.createBuffer();
@@ -854,7 +878,7 @@ export default class ADTExporter {
 									if (config.overwriteFiles || !await fileExists(tilePath)) {
 										rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
 
-										const buf = await BufferWrapper.fromCanvas(rotateCanvas, 'image/png');
+										const buf = new BufferWrapper(await canvasToBuffer(rotateCanvas, 'image/png'));
 										await buf.writeToFile(tilePath);
 									}
 								} else {
@@ -1033,12 +1057,13 @@ export default class ADTExporter {
 								setNameCache.set(fileDataID, wmoLoader.wmo.doodadSets.map(e => e.name));
 
 								if (config.mapsIncludeWMOSets) {
-									const mask = { 0: { checked: true } };
+									const mask = [];
+									mask[0] = { checked: true, label: '', index: 0 };
 									if (useADTSets) {
 										for (const setIndex of objAdt.doodadSets)
-											mask[setIndex] = { checked: true };
+											mask[setIndex] = { checked: true, label: '', index: 0 };
 									} else {
-										mask[model.doodadSet] = { checked: true };
+										mask[model.doodadSet] = { checked: true, label: '', index: 0 };
 									}
 
 									wmoLoader.setDoodadSetMask(mask);
@@ -1107,8 +1132,8 @@ export default class ADTExporter {
 
 		// Export foliage.
 		if (config.mapsIncludeFoliage && isFoliageAvailable) {
-			const foliageExportCache = new Set();
-			const foliageEffectCache = new Set();
+			const foliageExportCache = new Set<number>();
+			const foliageEffectCache = new Set<number>();
 			const foliageDir = path.join(dir, 'foliage');
 
 			Log.write('Exporting foliage to %s', foliageDir);
@@ -1123,7 +1148,7 @@ export default class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures.getRow(layer.effectID);
+					const groundEffectTexture = dbTextures.getRow(layer.effectID) as GroundEffectTexture;
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
@@ -1136,13 +1161,13 @@ export default class ADTExporter {
 						foliageEffectCache.add(layer.effectID);
 					}
 
-					const doodadModelIDs = {};
+					const doodadModelIDs = {} as { [key: number]: DoodadEntry };
 					for (const doodadEntryID of groundEffectTexture.DoodadID) {
 						// Skip empty fields.
 						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID);
+						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID) as GroundEffectDoodad;
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							doodadModelIDs[doodadEntryID] = { fileDataID: modelID };
