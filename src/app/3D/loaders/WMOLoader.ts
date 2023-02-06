@@ -608,9 +608,9 @@ const WMOChunkHandlers = {
 export class WMOGroupLoader extends WMOLoader {
 	nameOfs: number;
 	descOfs: number;
-	flags: number;
-	boundingBox1: Array<number>;
-	boundingBox2: Array<number>;
+	declare flags: number;
+	declare boundingBox1: Array<number>;
+	declare boundingBox2: Array<number>;
 	ofsPortals: number;
 	numPortals: number;
 	numBatchesA: number;
