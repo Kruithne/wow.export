@@ -241,3 +241,9 @@ Events.once('screen-tab-items', async () => {
 
 	State.state.itemViewerTypeMask = mask;
 });
+
+export default {
+	onStateReady: (): void => {
+		// No-op.
+	}
+};

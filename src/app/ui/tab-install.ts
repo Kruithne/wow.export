@@ -73,3 +73,9 @@ Events.on('click-export-install', async () => {
 
 	helper.finish();
 });
+
+export default {
+	onStateReady: (): void => {
+		// No-op.
+	}
+};

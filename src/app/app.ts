@@ -32,7 +32,7 @@ import * as TextureRibbon from './ui/texture-ribbon';
 import Listfile from './casc/listfile';
 
 import TabTextures from './ui/tab-textures';
-import TabItems from './ui/tab-items';
+import TabItems, { viewItemModels, viewItemTextures } from './ui/tab-items';
 import TabAudio from './ui/tab-audio';
 import TabModels from './ui/tab-models';
 import TabMaps from './ui/tab-maps';
@@ -631,7 +631,7 @@ interface NWFile {
 			 * @param item
 			 */
 			viewModels: function(item: object) {
-				TabItems.viewItemModels(item);
+				viewItemModels(item);
 			},
 
 			/**
@@ -639,7 +639,7 @@ interface NWFile {
 			 * @param item
 			 */
 			viewTextures: function(item: object) {
-				TabItems.viewItemTextures(item);
+				viewItemTextures(item);
 			}
 		},
 
