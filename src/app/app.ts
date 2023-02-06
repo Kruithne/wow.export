@@ -471,7 +471,7 @@ interface NWFile {
 					if (this.screenStack[0] !== screenID)
 						this.screenStack.unshift(screenID);
 				} else {
-					this.$set(this.screenStack, 0, screenID);
+					this.screenStack.splice(0, this.screenStack.length, screenID);
 				}
 			},
 
