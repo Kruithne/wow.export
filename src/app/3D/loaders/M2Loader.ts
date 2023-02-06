@@ -37,6 +37,12 @@ type M2Color = {
 	alpha: M2Track
 }
 
+type M2Anim = {
+	animID: number,
+	subAnimID: number,
+	fileDataID: number,
+}
+
 class M2Track {
 	globalSeq: number;
 	interpolation: number;
@@ -70,7 +76,7 @@ export default class M2Loader {
 	viewCount: number;
 	textures: Array<Texture>;
 	skeletonFileID: number;
-	animFileIDs: Array<number>;
+	animFileIDs: Array<M2Anim>;
 	boneFileIDs: Array<number>;
 	boundingBox: CAaBox;
 	boundingSphereRadius: number;
