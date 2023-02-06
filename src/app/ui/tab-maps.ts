@@ -203,7 +203,10 @@ async function exportSelectedMapWMO(): Promise<void> {
 		const data = await State.state.casc.getFile(fileDataID);
 		const wmo = new WMOExporter(data, fileDataID);
 
-		wmo.setDoodadSetMask({ [placement.doodadSetIndex]: { checked: true } });
+		const wmoMask = [];
+		wmoMask[placement.doodadSetIndex] = { checked: true, label: '', index: 0 };
+
+		wmo.setDoodadSetMask(wmoMask);
 		await wmo.exportAsOBJ(exportPath, helper);
 
 		// Abort if the export has been cancelled.
