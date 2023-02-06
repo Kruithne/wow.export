@@ -97,7 +97,7 @@ try {
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
-		const manifest = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+		const manifest = JSON.parse(fs.readFileSync('./src/config/package.json', 'utf8'));
 		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
 			manifest[key] = meta[key];
 
