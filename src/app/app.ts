@@ -128,9 +128,6 @@ interface NWFile {
 	Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
 	Log.write('INSTALL_PATH %s DATA_PATH %s', Constants.INSTALL_PATH, Constants.DATA_PATH);
 
-	// Load configuration.
-	await Config.load();
-
 	const app = createApp({
 		el: '#container',
 		data: () => {
@@ -791,6 +788,9 @@ interface NWFile {
 
 	const state = defineComponent(app.mount('#container'));
 	State.state = state;
+
+	// Load configuration.
+	await Config.load();
 
 	const registerModule = (module: Module): void => {
 		if (module.onStateReady !== undefined)
