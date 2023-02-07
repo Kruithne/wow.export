@@ -170,7 +170,7 @@
 						<h1>CASC Locale</h1>
 						<p>Which locale to use for file reading. This only affects game files.</p>
 						<p>This should match the locale of your client when using local installations.</p>
-						<menu-button class="spaced" :dropdown="true" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
+						<menu-button class="spaced" :dropdown="true" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = $event"></menu-button>
 					</div>
 					<div>
 						<h1>Export Model Collision</h1>

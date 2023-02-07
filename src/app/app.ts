@@ -694,8 +694,16 @@ interface NWFile {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(LocaleFlags).map(e => {
-					return { value: e };
+				const flags = new Map<string, number>;
+				for (const [key, value] of Object.entries(LocaleFlags)) {
+					if (Number(key) >= 0)
+						continue;
+
+					flags.set(key, Number(value));
+				}
+
+				return Array.from(flags.keys()).map(e => {
+					return { label: e, value: flags.get(e) };
 				});
 			},
 
@@ -703,12 +711,7 @@ interface NWFile {
 			 * Return the locale key for the configured CASC locale.
 			 */
 			selectedLocaleKey: function() {
-				for (const [key, flag] of Object.entries(this.availableLocale.flags)) {
-					if (flag === this.config.cascLocale)
-						return key;
-				}
-
-				return 'unUN';
+				return this.config.cascLocale;
 			},
 
 			/**
