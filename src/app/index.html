@@ -30,7 +30,6 @@
 						<span v-if="casc !== null" @click.self="setScreen('tab-install')" id="menu-extra-install">Browse Install Manifest</span>
 						<span @click.self="setScreen('config', true)" id="menu-extra-settings">Manage Settings</span>
 						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
-						<span v-if="isDebugBuild" @click.self="runIntegrationTests" id="menu-extra-tests">Run Integration Tests</span>
 						<span v-if="isDebugBuild" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
 					</context-menu>
 				</div>
