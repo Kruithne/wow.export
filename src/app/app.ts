@@ -196,7 +196,7 @@ interface NWFile {
 				modelViewerWMOGroups: [], // Active WMO model group control.
 				modelViewerWMOSets: [], // Active WMO doodad set control.
 				modelViewerAutoAdjust: true, // Automatic camera adjustment.
-				textureRibbonStack: Array<TextureRibbon.TextureRibbonSlot>, // Texture preview stack for model viewer.
+				textureRibbonStack: new Array<TextureRibbon.TextureRibbonSlot>, // Texture preview stack for model viewer.
 				textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 				textureRibbonPage: 0, // Active page of texture slots to render.
 				itemViewerTypeMask: [], // Active item type control.
