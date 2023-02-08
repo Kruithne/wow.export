@@ -25,7 +25,7 @@ import ProgressObject from './progress-object';
 
 import { createApp, defineComponent } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
-import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
+import SourceSelect, { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
 import { filesize, formatPlaybackSeconds, redraw } from './generics';
 
 import * as TextureRibbon from './ui/texture-ribbon';
@@ -800,6 +800,7 @@ interface NWFile {
 			module.onStateReady(state);
 	};
 
+	registerModule(SourceSelect);
 	registerModule(TabAudio);
 	registerModule(TabTextures);
 	registerModule(TabItems);
