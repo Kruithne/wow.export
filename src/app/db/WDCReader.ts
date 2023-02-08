@@ -617,9 +617,9 @@ export default class WDCReader {
 							if (data.remainingBytes >= 8) {
 								rawValue = data.readUInt64();
 							} else {
+								castBuffer.buffer = Buffer.alloc(data.length);
 								castBuffer.seek(0);
 								castBuffer.writeBuffer(data.buffer, data.offset);
-
 								castBuffer.seek(0);
 								rawValue = castBuffer.readUInt64();
 							}
