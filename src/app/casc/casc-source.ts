@@ -299,7 +299,8 @@ export default abstract class CASC {
 	async initializeComponents(): Promise<void> {
 		await this.progress.step('Initializing components');
 
-		await State.state.resolveLoadFuncs();
+		// NIT: I think this needs to be replaced with the new onCASCReady stuff
+		//await State.state.resolveLoadFuncs();
 	}
 
 	/**
