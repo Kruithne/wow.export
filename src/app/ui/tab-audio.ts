@@ -1,15 +1,17 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import State from '../state';
-import Events from '../events';
-import * as log from '../log';
 import path from 'node:path';
 import util from 'node:util';
-import * as generics from '../generics';
-import * as listfile from '../casc/listfile';
+
+import State from '../state';
+import Events from '../events';
+import Log from '../log';
+import Listfile from '../casc/listfile';
 import ExportHelper from '../casc/export-helper';
-import { EncryptionError } from '../casc/blte-reader';
 import BufferWrapper from '../buffer';
+
+import { fileExists } from '../generics';
+import { EncryptionError } from '../casc/blte-reader';
 
 const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
 const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
@@ -108,10 +110,10 @@ async function loadSelectedTrack(): Promise<void> {
 
 	State.state.isBusy++;
 	State.state.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
-	log.write('Previewing sound file %s', selectedFile);
+	Log.write('Previewing sound file %s', selectedFile);
 
 	try {
-		const fileDataID = listfile.getByFilename(selectedFile);
+		const fileDataID = Listfile.getByFilename(selectedFile);
 		data = await State.state.casc.getFile(fileDataID);
 
 		if (selectedFile.endsWith('.unk_sound')) {
@@ -138,11 +140,11 @@ async function loadSelectedTrack(): Promise<void> {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
 			State.state.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
-			log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
+			Log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
 		} else {
 			// Error reading/parsing audio.
-			State.state.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => log.openRuntimeLog() }, -1);
-			log.write('Failed to open CASC file: %s', e.message);
+			State.state.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
@@ -178,7 +180,7 @@ Events.once('casc-ready', (): void => {
 	// Track selection changes on the sound listbox and set first as active entry.
 	State.state.$watch('selectionSounds', async selection => {
 		// Check if the first file in the selection is "new".
-		const first = listfile.stripFileEntry(selection[0]);
+		const first = Listfile.stripFileEntry(selection[0]);
 		if (!State.state.isBusy && first && selectedFile !== first) {
 			State.state.soundPlayerTitle = path.basename(first);
 
@@ -208,7 +210,7 @@ Events.once('casc-ready', (): void => {
 				return;
 
 			let data;
-			fileName = listfile.stripFileEntry(fileName);
+			fileName = Listfile.stripFileEntry(fileName);
 
 			if (fileName.endsWith('.unk_sound')) {
 				data = await State.state.casc.getFileByName(fileName);
@@ -222,13 +224,13 @@ Events.once('casc-ready', (): void => {
 
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
-				if (overwriteFiles || !await generics.fileExists(exportPath)) {
+				if (overwriteFiles || !await fileExists(exportPath)) {
 					if (!data)
 						data = await State.state.casc.getFileByName(fileName);
 
 					await data.writeToFile(exportPath);
 				} else {
-					log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);
+					Log.write('Skipping audio export %s (file exists, overwrite disabled)', exportPath);
 				}
 
 				helper.mark(fileName, true);
