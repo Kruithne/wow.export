@@ -3,6 +3,7 @@
 import fs from 'node:fs/promises';
 
 import { readJSON } from './generics';
+import { toRaw } from 'vue';
 
 import TactKeys from './casc/tact-keys';
 import Log from './log';
@@ -174,7 +175,7 @@ async function doSave(): Promise<void> {
 // Track when the configuration screen is displayed and clone a copy of
 // the current configuration into State.state.configEdit for reactive UI usage.
 Events.on('screen-config', () => {
-	State.state.configEdit = structuredClone(State.state.config);
+	State.state.configEdit = structuredClone(toRaw(State.state.config));
 });
 
 // When the user attempts to apply a new configuration, verify all of the
