@@ -17,6 +17,7 @@ module.exports = {
 		'@typescript-eslint/type-annotation-spacing': 'warn',
 		'@typescript-eslint/space-infix-ops': 'warn',
 		'@typescript-eslint/explicit-function-return-type': 'warn',
+		'no-debugger': 'warn',
 		'indent': ['error', 'tab', { 'SwitchCase': 1 }],
 		'linebreak-style': ['error', process.platform === 'win32' ? 'windows' : 'unix'],
 		'quotes': ['error', 'single'],
