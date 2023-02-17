@@ -371,7 +371,7 @@ interface NWFile {
 						this.loadPct = Math.min(this.value * this.segWeight, 1);
 
 						if (text)
-							this.loadingProgress = text;
+							State.state.loadingProgress = text;
 
 						await redraw();
 					}
