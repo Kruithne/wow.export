@@ -156,8 +156,10 @@ export default defineComponent({
 		 * is resized due to layout changes.
 		 */
 		resize: function(): void {
-			this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
-			this.slotCount = Math.floor(this.$refs.root.clientHeight / 26);
+			if (this.$refs.root && this.$refs.scroller) {
+				this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
+				this.slotCount = Math.floor(this.$refs.root.clientHeight / 26);
+			}
 		},
 
 		/**
