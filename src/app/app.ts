@@ -547,7 +547,7 @@ interface NWFile {
 			 * @param tag
 			 * @param params
 			 */
-			emit: function(tag: string | symbol, ...params) {
+			emit: function(tag: string, ...params) {
 				Events.emit(tag, ...params);
 			},
 
