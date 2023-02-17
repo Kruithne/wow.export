@@ -1,6 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export default {
+import { defineComponent } from 'vue';
+
+export default defineComponent({
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html
@@ -20,4 +22,4 @@ export default {
 	},
 
 	template: '<div><slot></slot></div>'
-};
+});

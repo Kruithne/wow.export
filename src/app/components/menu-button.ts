@@ -1,13 +1,13 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
 type Option = {
 	label: string;
 	value: string;
 };
 
-export default {
+export default defineComponent({
 	props: {
 		/** Array of options to display in the menu. */
 		'options': Array,
@@ -22,7 +22,7 @@ export default {
 		'dropdown': Boolean
 	},
 
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			selectedObj: null, // Currently selected option.
 			open: false // If the menu is open or not.
@@ -89,4 +89,4 @@ export default {
 			<span v-for="option in options" @click="select(option)">{{ option.label ?? option.value }}</span>
 		</context-menu>
 	</div>`
-};
+});

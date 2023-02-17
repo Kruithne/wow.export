@@ -3,7 +3,7 @@
 import util from 'node:util';
 import Constants from '../constants';
 import State from '../state';
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
 type MapTile = {
 	x: number;
@@ -31,7 +31,7 @@ const state = {
 	cache: [],
 };
 
-export default {
+export default defineComponent({
 	props: {
 		/** Tile loader function. */
 		'loader': Function,
@@ -52,7 +52,7 @@ export default {
 		'selection': Array
 	},
 
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			hoverInfo: '',
 			hoverTile: null,
@@ -560,4 +560,4 @@ export default {
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
-};
+});

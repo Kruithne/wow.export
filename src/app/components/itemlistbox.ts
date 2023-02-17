@@ -1,9 +1,9 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import * as IconRender from '../icon-render';
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
 		'items': Array,
@@ -33,7 +33,7 @@ export default {
 	/**
 	 * Reactive instance data.
 	 */
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			scroll: 0,
 			scrollRel: 0,
@@ -335,4 +335,4 @@ export default {
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
-};
+});

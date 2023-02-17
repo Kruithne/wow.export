@@ -1,6 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-export default {
+import { defineComponent } from 'vue';
+
+export default defineComponent({
 	props: {
 		value: String
 	},
@@ -43,4 +45,4 @@ export default {
 	 * HTML mark-up to render for this component.
 	 */
 	template: '<input type="text" :value="value" @focus="openDialog" @input="$emit(\'input\', $event.target.value)"/>'
-};
+});

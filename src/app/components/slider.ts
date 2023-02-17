@@ -1,14 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
 	props: {
 		/** Slider value between 0 and 1. */
 		'value': Number
 	},
 
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			isScrolling: false, // True if the slider is being dragged.
 		};
@@ -94,4 +94,4 @@ export default {
 		<div class="fill" :style="{ width: (value * 100) + '%' }"></div>
 		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (value * 100) + '%' }"></div>
 	</div>`
-};
+});

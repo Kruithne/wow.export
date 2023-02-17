@@ -1,8 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
 		'items': Array,
@@ -11,7 +11,7 @@ export default {
 	/**
 	 * Reactive instance data.
 	 */
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			scroll: 0,
 			scrollRel: 0,
@@ -171,4 +171,4 @@ export default {
 			<span>{{ item.label }}</span>
 		</div>
 	</div>`
-};
+});

@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
 function fid_filter(e: string): string {
 	const start = e.indexOf(' [');
@@ -13,7 +13,7 @@ function fid_filter(e: string): string {
 	return e;
 }
 
-export default {
+export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
 		'items': Array,
@@ -55,7 +55,7 @@ export default {
 	/**
 	 * Reactive instance data.
 	 */
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			scroll: 0,
 			scrollRel: 0,
@@ -381,4 +381,4 @@ export default {
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
-};
+});

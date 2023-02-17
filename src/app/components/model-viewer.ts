@@ -2,8 +2,9 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { OrbitControls } from '../3D/lib/OrbitControls';
 import * as THREE from 'three';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
 	props: {
 		/** The context to render. */
 		'context': Object
@@ -66,4 +67,4 @@ export default {
 	 * HTML mark-up to render for this component.
 	 */
 	template: '<div class="image ui-model-viewer"></div>'
-};
+});

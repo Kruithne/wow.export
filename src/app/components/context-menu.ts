@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import { ComponentData } from './component-base';
+import { defineComponent } from 'vue';
 
 let clientMouseX: number = 0;
 let clientMouseY: number = 0;
@@ -12,13 +12,13 @@ window.addEventListener('mousemove', (event: MouseEvent) => {
 	clientMouseY = event.clientY;
 });
 
-export default {
+export default defineComponent({
 	props: {
 		/** Object which this contect menu represents */
 		'node': Object,
 	},
 
-	data: function(): ComponentData {
+	data: function() {
 		return {
 			positionX: 0,
 			positionY: 0,
@@ -43,4 +43,4 @@ export default {
 		<slot v-bind:node="node"></slot>
 	</div>
 	`
-};
+});
