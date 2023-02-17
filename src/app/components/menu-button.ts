@@ -13,7 +13,7 @@ export default defineComponent({
 		'options': Array,
 
 		/** Default option to select. */
-		'default': Number,
+		'default': String,
 
 		/** If true, the component is disabled. */
 		'disabled': [Boolean, Number],
