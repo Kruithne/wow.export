@@ -132,8 +132,8 @@ async function previewModel(fileName: string): Promise<void> {
 	clearTexturePreview();
 
 	// Reset skin selection.
-	State.state.state.modelViewerSkins = [];
-	State.state.state.modelViewerSkinsSelection = [];
+	State.state.modelViewerSkins = [];
+	State.state.modelViewerSkinsSelection = [];
 
 	try {
 		// Dispose the currently active renderer.
