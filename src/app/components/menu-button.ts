@@ -16,7 +16,7 @@ export default defineComponent({
 		'default': Number,
 
 		/** If true, the component is disabled. */
-		'disabled': Boolean,
+		'disabled': [Boolean, Number],
 
 		/** If true, the full button prompts the context menu, not just the arrow. */
 		'dropdown': Boolean
