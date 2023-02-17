@@ -1,12 +1,14 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
-import constants from '../constants';
-import * as generics from '../generics';
-import * as log from '../log';
-import * as ExternalLinks from '../external-links';
+
+import Constants from '../constants';
+import Log from '../log';
+import ExternalLinks from '../external-links';
 import State from '../state';
 import Events from '../events';
+
+import { ping } from '../generics';
 
 import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
@@ -40,17 +42,17 @@ function loadInstall(index: number): void {
 			}
 
 			// Limit amount of entries allowed in the recent list.
-			if (recentLocal.length > constants.MAX_RECENT_LOCAL)
-				recentLocal.splice(constants.MAX_RECENT_LOCAL, recentLocal.length - constants.MAX_RECENT_LOCAL);
+			if (recentLocal.length > Constants.MAX_RECENT_LOCAL)
+				recentLocal.splice(Constants.MAX_RECENT_LOCAL, recentLocal.length - Constants.MAX_RECENT_LOCAL);
 		}
 
 		try {
 			await cascSource.load(index);
 			State.state.setScreen('tab-models');
 		} catch (e) {
-			log.write('Failed to load CASC: %o', e);
+			Log.write('Failed to load CASC: %o', e);
 			State.state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
-				'View Log': () => log.openRuntimeLog(),
+				'View Log': () => Log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
 			State.state.setScreen('source-select');
@@ -69,19 +71,19 @@ export default {
 				State.state.lockCDNRegion = true;
 
 			// Iterate CDN regions and create data nodes.
-			for (const region of constants.PATCH.REGIONS) {
-				const cdnURL: string = util.format(constants.PATCH.HOST, region);
+			for (const region of Constants.PATCH.REGIONS) {
+				const cdnURL: string = util.format(Constants.PATCH.HOST, region);
 				const node: CDNRegion = { tag: region, url: cdnURL, delay: null };
 				regions.push(node);
 
 				// Mark this region as the selected one.
-				if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION))
+				if (region === userRegion || (typeof userRegion !== 'string' && region === Constants.PATCH.DEFAULT_REGION))
 					State.state.selectedCDNRegion = node;
 
 				// Run a rudimentary ping check for each CDN.
-				pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
+				pings.push(ping(cdnURL).then(ms => node.delay = ms).catch(e => {
 					node.delay = -1;
-					log.write('Failed ping to %s: %s', cdnURL, e.message);
+					Log.write('Failed ping to %s: %s', cdnURL, e.message);
 				}));
 			}
 
@@ -109,7 +111,7 @@ export default {
 						State.state.availableLocalBuilds = cascSource.getProductList();
 				} catch (e) {
 					State.state.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
-					log.write('Failed to initialize local CASC source: %s', e.message);
+					Log.write('Failed to initialize local CASC source: %s', e.message);
 
 					// In the event the given installation directory is now invalid, remove all
 					// recent local entries using that directory. If product was provided, we can
@@ -151,7 +153,7 @@ export default {
 						State.state.availableRemoteBuilds = cascSource.getProductList();
 					} catch (e) {
 						State.state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
-						log.write('Failed to initialize remote CASC source: %s', e.message);
+						Log.write('Failed to initialize remote CASC source: %s', e.message);
 					}
 				});
 			});
