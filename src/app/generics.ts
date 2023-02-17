@@ -58,7 +58,7 @@ export async function queue(items: Array<Primitive>, handler: (key: Primitive) =
 
 /**
  * Ping a URL and measure the response time.
- * @throws {@link error} On error or HTTP code other than 200.
+ * @throws {@link Error} On error or HTTP code other than 200.
  * @param url - The URL to ping.
  */
 export async function ping (url: string): Promise<number> {
