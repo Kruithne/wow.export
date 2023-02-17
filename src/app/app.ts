@@ -792,6 +792,8 @@ interface NWFile {
 	const state = defineComponent(app.mount('#container'));
 	State.state = state;
 
+	window['state'] = state;
+
 	// Load configuration.
 	await Config.load();
 

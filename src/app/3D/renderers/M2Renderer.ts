@@ -11,7 +11,7 @@ import Log from '../../log';
 import State from '../../state';
 import BufferWrapper from '../../buffer';
 
-import { watch } from 'vue';
+import { watch, ref } from 'vue';
 
 import getGeosetName from '../GeosetMapper';
 import GeosetEntry from '../GeosetEntry';
@@ -67,7 +67,7 @@ export default class M2Renderer {
 
 			if (this.reactive) {
 				this.geosetWatcher = watch(State.state.modelViewerGeosets, () => this.updateGeosets(), { deep: true });
-				this.wireframeWatcher = watch(State.state.modelViewerWireframe, () => this.updateWireframe(), { deep: true });
+				this.wireframeWatcher = watch(ref(State.state.modelViewerWireframe), () => this.updateWireframe(), { deep: true });
 			}
 		}
 
