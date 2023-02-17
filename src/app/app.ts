@@ -368,7 +368,7 @@ interface NWFile {
 					value: 0,
 					step: async function(text?: string): Promise<void> {
 						this.value++;
-						this.loadPct = Math.min(this.value * this.segWeight, 1);
+						State.state.loadPct = Math.min(this.value * this.segWeight, 1);
 
 						if (text)
 							State.state.loadingProgress = text;
