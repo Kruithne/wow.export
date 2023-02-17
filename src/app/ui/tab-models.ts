@@ -131,9 +131,9 @@ async function previewModel(fileName: string): Promise<void> {
 	// Hide current texture preview.
 	clearTexturePreview();
 
-	// Reset skin selection.
-	State.state.modelViewerSkins = [];
-	State.state.modelViewerSkinsSelection = [];
+	// Empty the arrays.
+	State.state.modelViewerSkins.splice(0, State.state.modelViewerSkins.length);
+	State.state.modelViewerSkinsSelection.splice(0, State.state.modelViewerSkinsSelection.length);
 
 	try {
 		// Dispose the currently active renderer.
@@ -212,8 +212,13 @@ async function previewModel(fileName: string): Promise<void> {
 				activeSkins.set(skinName, display);
 			}
 
-			State.state.modelViewerSkins = skinList;
-			State.state.modelViewerSkinsSelection = skinList.slice(0, 1);
+			// Empty the arrays.
+			State.state.modelViewerSkins.splice(0, State.state.modelViewerSkins.length);
+			State.state.modelViewerSkinsSelection.splice(0, State.state.modelViewerSkinsSelection.length);
+
+			// Add the new skins.
+			State.state.modelViewerSkins.push(...skinList);
+			State.state.modelViewerSkinsSelection.push(...skinList.slice(0, 1));
 		}
 
 		updateCameraBounding();

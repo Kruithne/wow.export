@@ -92,7 +92,8 @@ export class Item {
  * @param item
  */
 export function viewItemModels(item): void {
-	State.state.setScreen('tab-models');
+	const state = State.state;
+	state.setScreen('tab-models');
 
 	const list = new Set();
 
@@ -102,7 +103,7 @@ export function viewItemModels(item): void {
 			let entry = Listfile.getByID(fileDataID);
 
 			if (entry !== undefined) {
-				if (State.state.config.listfileShowFileDataIDs)
+				if (state.config.listfileShowFileDataIDs)
 					entry += ' [' + fileDataID + ']';
 
 				list.add(entry);
@@ -111,11 +112,15 @@ export function viewItemModels(item): void {
 	}
 
 	// Reset the user filter for models.
-	State.state.userInputFilterModels = '';
+	state.userInputFilterModels = '';
 
-	State.state.overrideModelList = [...list];
-	State.state.selectionModels = [...list];
-	State.state.overrideModelName = item.name;
+	state.overrideModelList = [...list];
+
+	// Modify selection array, do not reassign it, it is reactively observed.
+	state.selectionModels.splice(0, state.selectionModels.length);
+	state.selectionModels.push(...list);
+
+	state.overrideModelName = item.name;
 }
 
 /**
@@ -123,7 +128,8 @@ export function viewItemModels(item): void {
  * @param item
  */
 export function viewItemTextures(item): void {
-	State.state.setScreen('tab-textures');
+	const state = State.state;
+	state.setScreen('tab-textures');
 
 	const list = new Set();
 
@@ -132,7 +138,7 @@ export function viewItemTextures(item): void {
 		let entry = Listfile.getByID(fileDataID);
 
 		if (entry !== undefined) {
-			if (State.state.config.listfileShowFileDataIDs)
+			if (state.config.listfileShowFileDataIDs)
 				entry += ' [' + fileDataID + ']';
 
 			list.add(entry);
@@ -140,11 +146,15 @@ export function viewItemTextures(item): void {
 	}
 
 	// Reset the user filter for textures.
-	State.state.userInputFilterTextures = '';
+	state.userInputFilterTextures = '';
 
-	State.state.overrideTextureList = [...list];
-	State.state.selectionTextures = [...list];
-	State.state.overrideTextureName = item.name;
+	state.overrideTextureList = [...list];
+
+	// Modify selection array, do not reassign it, it is reactively observed.
+	state.selectionTextures.splice(0, state.selectionTextures.length);
+	state.selectionTextures.push(...list);
+
+	state.overrideTextureName = item.name;
 }
 
 Events.once('screen-tab-items', async (state: typeof State.state) => {
