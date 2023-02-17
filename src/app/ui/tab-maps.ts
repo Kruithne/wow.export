@@ -20,6 +20,8 @@ import FileWriter from '../file-writer';
 import GameObjectDisplayInfo from '../db/types/GameObjectDisplayInfo';
 import GameObjects from '../db/types/GameObjects';
 
+import { watch } from 'vue';
+
 let selectedMapID: number;
 let selectedMapDir: string;
 let selectedWDT: WDTLoader | undefined;
@@ -317,7 +319,7 @@ Events.once('casc-ready', (): void => {
 	State.state.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
-	State.state.$watch('selectionMaps', async selection => {
+	watch(State.state.selectionMaps, async selection => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 

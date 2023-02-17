@@ -8,12 +8,13 @@ import { EncryptionError } from '../casc/blte-reader';
 import util from 'node:util';
 import { fileExists } from '../generics';
 import Listfile from '../casc/listfile';
+import { watch, ref } from 'vue';
 
 let selectedFile: string;
 
 Events.once('casc-ready', async () => {
 	// Track selection changes on the text listbox and set first as active entry.
-	State.state.$watch('selectionText', async selection => {
+	watch(ref(State.state.selectionText), async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!State.state.isBusy && first && selectedFile !== first) {

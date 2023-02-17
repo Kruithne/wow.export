@@ -23,7 +23,7 @@ import Events from './events';
 import CrashHandler from './crash-handler';
 import ProgressObject from './progress-object';
 
-import { createApp, defineComponent } from 'vue';
+import { createApp, defineComponent, watch, ref } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
 import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
 import { filesize, formatPlaybackSeconds, redraw } from './generics';
@@ -893,7 +893,7 @@ interface NWFile {
 
 		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
-		state.$watch('cacheSize', function(nv: number) {
+		watch(ref(state.cacheSize), function(nv: number) {
 			// Clear any existing timer running.
 			clearTimeout(updateTimer);
 

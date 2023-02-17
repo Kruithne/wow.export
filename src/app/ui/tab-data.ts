@@ -10,6 +10,7 @@ import Listfile from '../casc/listfile';
 import WDCReader from '../db/WDCReader';
 
 import { get } from '../generics';
+import { watch } from 'vue';
 
 let selectedFile: string;
 
@@ -20,7 +21,7 @@ Events.once('casc-ready', async () => {
 	const db2NameMap = await get(manifestURL).then(res => res.json());
 
 	// Track selection changes on the text listbox and set first as active entry.
-	State.state.$watch('selectionDB2s', async selection => {
+	watch(State.state.selectionDB2s, async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!State.state.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {

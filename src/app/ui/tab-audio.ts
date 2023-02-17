@@ -12,6 +12,7 @@ import BufferWrapper from '../buffer';
 
 import { fileExists } from '../generics';
 import { EncryptionError } from '../casc/blte-reader';
+import { watch, ref } from 'vue';
 
 const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
 const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
@@ -158,7 +159,7 @@ Events.once('casc-ready', (): void => {
 	audioNode.ondurationchange = (): number => State.state.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
-	State.state.$watch('config.soundPlayerVolume', value => {
+	watch(ref(State.state.config.soundPlayerVolume), (value: number) => {
 		audioNode.volume = value;
 	});
 
@@ -178,7 +179,7 @@ Events.once('casc-ready', (): void => {
 	});
 
 	// Track selection changes on the sound listbox and set first as active entry.
-	State.state.$watch('selectionSounds', async selection => {
+	watch(ref(State.state.selectionSounds), async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!State.state.isBusy && first && selectedFile !== first) {

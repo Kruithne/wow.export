@@ -6,6 +6,7 @@ import Listfile from '../casc/listfile';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
 import { fileExists } from '../generics';
+import { watch } from 'vue';
 
 import InstallManifest, { InstallFile } from '../casc/install-manifest';
 
@@ -23,13 +24,15 @@ function updateInstallListfile(): void {
 }
 
 Events.once('screen-tab-install', async () => {
-	State.state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
-	manifest = await State.state.casc.getInstallManifest();
+	const state = State.state;
+	state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
+	manifest = await state.casc.getInstallManifest();
 
-	State.state.installTags = manifest.tags.map(e => {
+	state.installTags = manifest.tags.map(e => {
 		return { label: e.name, enabled: true, mask: e.mask };
 	});
-	State.state.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
+
+	watch(state.installTags, () => updateInstallListfile(), { deep: true, immediate: true });
 
 	State.state.hideToast();
 });

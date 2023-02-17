@@ -28,6 +28,7 @@ import WMOExporter from '../3D/exporters/WMOExporter';
 import { CreatureDisplayInfoEntry } from '../db/caches/DBCreatures';
 import { ItemDisplayInfoEntry } from '../db/caches/DBItemDisplays';
 
+import { watch, ref } from 'vue';
 import * as THREE from 'three';
 import textureRibbon from '../ui/texture-ribbon';
 
@@ -515,12 +516,14 @@ Events.once('screen-tab-models', () => {
 });
 
 Events.once('casc-ready', async () => {
+	const state = State.state;
+
 	// Track changes to the visible model listfile types.
-	State.state.$watch('config.modelsShowM2', updateListfile);
-	State.state.$watch('config.modelsShowWMO', updateListfile);
+	watch(ref(state.config.modelsShowM2), updateListfile);
+	watch(ref(state.config.modelsShowWMO), updateListfile);
 
 	// When the selected model skin is changed, update our model.
-	State.state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
+	watch(state.modelViewerSkinsSelection, async (selection: Array<SkinInfo>) => {
 		// Don't do anything if we're lacking skins.
 		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
 			return;
@@ -530,7 +533,7 @@ Events.once('casc-ready', async () => {
 		const display = activeSkins.get(selected.id);
 		selectedSkinName = selected.id;
 
-		const currGeosets = State.state.modelViewerGeosets;
+		const currGeosets = state.modelViewerGeosets;
 
 		const creatureDisplay = display as CreatureDisplayInfoEntry;
 		if (creatureDisplay.extraGeosets !== undefined) {
@@ -560,22 +563,22 @@ Events.once('casc-ready', async () => {
 			activeRenderer?.applyReplaceableTextures(display);
 	});
 
-	State.state.$watch('config.modelViewerShowGrid', () => {
-		if (State.state.config.modelViewerShowGrid)
+	watch(ref(state.config.modelViewerShowGrid), () => {
+		if (state.config.modelViewerShowGrid)
 			scene.add(grid);
 		else
 			scene.remove(grid);
 	});
 
 	// Track selection changes on the model listbox and preview first model.
-	State.state.$watch('selectionModels', async (selection: Array<string>) => {
+	watch(state.selectionModels, async (selection: Array<string>) => {
 		// Don't do anything if we're not loading models.
-		if (!State.state.config.modelsAutoPreview)
+		if (!state.config.modelsAutoPreview)
 			return;
 
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
-		if (!State.state.isBusy && first && activePath !== first)
+		if (!state.isBusy && first && activePath !== first)
 			previewModel(first);
 	});
 
@@ -586,9 +589,9 @@ Events.once('casc-ready', async () => {
 
 	// Track when the user clicks to export selected textures.
 	Events.on('click-export-model', async () => {
-		const userSelection = State.state.selectionModels;
+		const userSelection = state.selectionModels;
 		if (userSelection.length === 0) {
-			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
@@ -600,7 +603,7 @@ Events.once('state-ready', (state: typeof State.state): void => {
 	// Register a drop handler for M2 files.
 	state.registerDropHandler({
 		ext: ['.m2'],
-		prompt: (count: number) => util.format('Export %d models as %s', count, State.state.config.exportModelFormat),
+		prompt: (count: number) => util.format('Export %d models as %s', count, state.config.exportModelFormat),
 		process: (files: FileList) => exportFiles(files, true)
 	});
 });

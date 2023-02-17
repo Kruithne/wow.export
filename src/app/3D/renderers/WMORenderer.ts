@@ -15,6 +15,8 @@ import M2Renderer from './M2Renderer';
 import Texture from '../Texture';
 import BLPImage from '../../casc/blp';
 
+import { watch, ref } from 'vue';
+
 import textureRibbon from '../../ui/texture-ribbon';
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
@@ -108,11 +110,12 @@ export default class WMORenderer {
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
 		// Set-up reactive controls.
-		State.state.modelViewerWMOGroups = this.groupArray;
-		State.state.modelViewerWMOSets = this.setArray;
-		this.groupWatcher = State.state.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
-		this.setWatcher = State.state.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
-		this.wireframeWatcher = State.state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+		const state = State.state;
+		state.modelViewerWMOGroups = this.groupArray;
+		state.modelViewerWMOSets = this.setArray;
+		this.groupWatcher = watch(state.modelViewerWMOGroups, () => this.updateGroups(), { deep: true });
+		this.setWatcher = watch(state.modelViewerWMOSets, () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = watch(ref(state.config.modelViewerWireframe), () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);

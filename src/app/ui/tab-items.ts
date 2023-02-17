@@ -14,6 +14,8 @@ import ItemAppearance from '../db/types/ItemAppearance';
 import WDCReader from '../db/WDCReader';
 import { getSlotName } from '../wow/ItemSlot';
 
+import { watch } from 'vue';
+
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
 const ITEM_SLOTS_MERGED = {
@@ -226,7 +228,7 @@ Events.once('screen-tab-items', async (state: typeof State.state) => {
 		mask.push({ label, checked: enabledTypes.includes(label) });
 
 	// Register a watcher for the item type control.
-	state.$watch('itemViewerTypeMask', () => {
+	watch(state.itemViewerTypeMask, () => {
 		// Refilter the listfile based on what the new selection.
 		const filter = state.itemViewerTypeMask.filter(e => e.checked);
 		const mask = [];
