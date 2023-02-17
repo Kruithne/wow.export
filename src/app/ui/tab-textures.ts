@@ -17,8 +17,6 @@ import ExportHelper from '../casc/export-helper';
 import JSONWriter from '../3D/writers/JSONWriter';
 import FileWriter from '../file-writer';
 
-import { watch, ref } from 'vue';
-
 type FileInfoPair = {
 	fileDataID: number;
 	fileName: string;
@@ -198,17 +196,15 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 }
 
 Events.once('casc-ready', (): void => {
-	const state = State.state;
-
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
-	watch(ref(state.config.exportTextureAlpha), () => {
+	State.state.$watch('config.exportTextureAlpha', () => {
 		if (!State.state.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});
 
 	// Track selection changes on the texture listbox and preview first texture.
-	watch(State.state.selectionTextures, async (selection: Array<string>) => {
+	State.state.$watch('selectionTextures', async (selection: Array<string>) => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (first && !State.state.isBusy) {
@@ -216,7 +212,7 @@ Events.once('casc-ready', (): void => {
 			if (selectedFileDataID !== fileDataID)
 				previewTextureByID(fileDataID as number);
 		}
-	});
+	}, { deep: true });
 
 	// Track when the user clicks to export selected textures.
 	Events.on('click-export-texture', async () => {
@@ -234,7 +230,7 @@ Events.once('casc-ready', (): void => {
 	});
 
 	// Track when the user changes the colour channel mask.
-	watch(ref(State.state.config.exportChannelMask), () => {
+	State.state.$watch('config.exportChannelMask', () => {
 		if (!State.state.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});

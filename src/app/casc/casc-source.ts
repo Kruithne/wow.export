@@ -18,8 +18,6 @@ import CASCRemote from './casc-source-remote';
 import CASCLocal from './casc-source-local';
 import BuildCache from './build-cache';
 
-import { watch, ref } from 'vue';
-
 import * as DBTextureFileData from '../db/caches/DBTextureFileData';
 import * as DBModelFileData from '../db/caches/DBModelFileData';
 import * as DBItemDisplays from '../db/caches/DBItemDisplays';
@@ -63,7 +61,7 @@ export default abstract class CASC {
 		this.progress = State.state.createProgress(10);
 
 		// Listen for configuration changes to cascLocale.
-		this.unhookConfig = watch(ref(State.state.config.cascLocale), (locale: number) => {
+		this.unhookConfig = State.state.$watch('config.cascLocale', (locale: number) => {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
@@ -236,8 +234,8 @@ export default abstract class CASC {
 
 		Events.on('listfile-needs-updating', () => this.updateListfileFilters());
 
-		watch(ref(State.state.config.listfileSortByID), () => Events.emit('listfile-needs-updating'));
-		watch(ref(State.state.config.listfileShowFileDataIDs), () => Events.emit('listfile-needs-updating'), { immediate: true });
+		State.state.$watch('config.listfileSortByID', () => Events.emit('listfile-needs-updating'));
+		State.state.$watch('config.listfileShowFileDataIDs', () => Events.emit('listfile-needs-updating'), { immediate: true });
 	}
 
 	/**

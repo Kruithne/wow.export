@@ -11,8 +11,6 @@ import Constants from './constants';
 import State from './state';
 import Events from './events';
 
-import { watch } from 'vue';
-
 let isSaving = false;
 let isQueued = false;
 
@@ -117,7 +115,7 @@ export async function load(): Promise<void> {
 	copyConfig(userConfig, config);
 
 	State.state.config = config;
-	watch(State.state.config, () => save(), { deep: true });
+	State.state.$watch('config', () => save(), { deep: true });
 }
 
 /**

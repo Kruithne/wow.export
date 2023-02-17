@@ -28,7 +28,6 @@ import WMOExporter from '../3D/exporters/WMOExporter';
 import { CreatureDisplayInfoEntry } from '../db/caches/DBCreatures';
 import { ItemDisplayInfoEntry } from '../db/caches/DBItemDisplays';
 
-import { watch, ref } from 'vue';
 import * as THREE from 'three';
 import textureRibbon from '../ui/texture-ribbon';
 
@@ -524,11 +523,11 @@ Events.once('casc-ready', async () => {
 	const state = State.state;
 
 	// Track changes to the visible model listfile types.
-	watch(ref(state.config.modelsShowM2), updateListfile);
-	watch(ref(state.config.modelsShowWMO), updateListfile);
+	state.$watch('config.modelsShowM2', updateListfile);
+	state.$watch('config.modelsShowWMO', updateListfile);
 
 	// When the selected model skin is changed, update our model.
-	watch(state.modelViewerSkinsSelection, async (selection: Array<SkinInfo>) => {
+	state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
 		// Don't do anything if we're lacking skins.
 		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
 			return;
@@ -566,9 +565,9 @@ Events.once('casc-ready', async () => {
 
 		if (display !== undefined)
 			activeRenderer?.applyReplaceableTextures(display);
-	});
+	}, { deep: true });
 
-	watch(ref(state.config.modelViewerShowGrid), () => {
+	state.$watch('config.modelViewerShowGrid', () => {
 		if (state.config.modelViewerShowGrid)
 			scene.add(grid);
 		else
@@ -576,7 +575,7 @@ Events.once('casc-ready', async () => {
 	});
 
 	// Track selection changes on the model listbox and preview first model.
-	watch(state.selectionModels, async (selection: Array<string>) => {
+	state.$watch('selectionModels', async (selection: Array<string>) => {
 		// Don't do anything if we're not loading models.
 		if (!state.config.modelsAutoPreview)
 			return;
@@ -585,7 +584,7 @@ Events.once('casc-ready', async () => {
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!state.isBusy && first && activePath !== first)
 			previewModel(first);
-	});
+	}, { deep: true });
 
 	// Track when the user clicks to preview a model texture.
 	Events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {

@@ -9,7 +9,6 @@ import ExportHelper from '../casc/export-helper';
 import Constants from '../constants';
 import { redraw, fileExists } from '../generics';
 import Listfile from '../casc/listfile';
-import { watch, ref } from 'vue';
 
 let isDirty = true;
 
@@ -40,7 +39,7 @@ Events.on('listfile-needs-updating', () => {
 });
 
 Events.once('casc-ready', () => {
-	watch(ref(State.state.config.cascLocale), () => {
+	State.state.$watch('config.cascLocale', () => {
 		isDirty = true;
 	});
 });
