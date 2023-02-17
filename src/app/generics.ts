@@ -18,6 +18,7 @@ type Primitive = string | number | boolean;
  */
 export async function get(url: string): Promise<Response> {
 	return fetch(url, {
+		cache: 'no-cache',
 		headers: {
 			'User-Agent': Constants.USER_AGENT
 		},
