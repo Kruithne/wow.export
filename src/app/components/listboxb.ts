@@ -3,13 +3,19 @@
 import { ComponentData } from './component-base';
 
 export default {
-	/**
-	 * items: Item entries displayed in the list.
-	 * selection: Reactive selection controller.
-	 * single: If set, only one entry can be selected.
-	 * keyinput: If true, listbox registers for keyboard input.
-	 */
-	props: ['items', 'selection', 'single', 'keyinput'],
+	props: {
+		/** Item entries displayed in the list. */
+		'items': Array,
+
+		/** Reactive selection controller. */
+		'selection': Object,
+
+		/** If set, only one entry can be selected. */
+		'single': Boolean,
+
+		/** If true, listbox registers for keyboard input. */
+		'keyinput': Boolean
+	},
 
 	/**
 	 * Reactive instance data.

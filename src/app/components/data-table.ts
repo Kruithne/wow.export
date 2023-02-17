@@ -3,10 +3,13 @@
 import { ComponentData } from './component-base';
 
 export default {
-	/**
-	 * selectedOption: An array of strings denoting options shown in the menu.
-	 */
-	props: ['headers', 'rows'],
+	props: {
+		/** Headers for the data table. */
+		'headers': Array,
+
+		/** Rows for the data table. */
+		'rows': Array,
+	},
 
 	data: function(): ComponentData {
 		return {

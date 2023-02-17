@@ -3,10 +3,10 @@
 import { ComponentData } from './component-base';
 
 export default {
-	/**
-	 * value: Slider value between 0 and 1.
-	 */
-	props: ['value'],
+	props: {
+		/** Slider value between 0 and 1. */
+		'value': Number
+	},
 
 	data: function(): ComponentData {
 		return {

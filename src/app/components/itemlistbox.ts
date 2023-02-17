@@ -4,17 +4,31 @@ import * as IconRender from '../icon-render';
 import { ComponentData } from './component-base';
 
 export default {
-	/**
-	 * items: Item entries displayed in the list.
-	 * filter: Optional reactive filter for items.
-	 * selection: Reactive selection controller.
-	 * single: If set, only one entry can be selected.
-	 * keyinput: If true, listbox registers for keyboard input.
-	 * regex: If true, filter will be treated as a regular expression.
-	 * includefilecount: If true, includes a file counter on the component.
-	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
-	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'includefilecount', 'unittype'],
+	props: {
+		/** Item entries displayed in the list. */
+		'items': Array,
+
+		/** Optional reactive filter for items. */
+		'filter': String,
+
+		/** Reactive selection controller. */
+		'selection': Object,
+
+		/** If set, only one entry can be selected. */
+		'single': Boolean,
+
+		/** If true, listbox registers for keyboard input. */
+		'keyinput': Boolean,
+
+		/** If true, filter will be treated as a regular expression. */
+		'regex': Boolean,
+
+		/** If true, includes a file counter on the component. */
+		'includefilecount': Boolean,
+
+		/** Unit name for what the listbox contains. Used with includefilecount. */
+		'unittype': String
+	},
 
 	/**
 	 * Reactive instance data.

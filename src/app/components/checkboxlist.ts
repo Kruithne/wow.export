@@ -3,10 +3,10 @@
 import { ComponentData } from './component-base';
 
 export default {
-	/**
-	 * items: Item entries displayed in the list.
-	 */
-	props: ['items'],
+	props: {
+		/** Item entries displayed in the list. */
+		'items': Array,
+	},
 
 	/**
 	 * Reactive instance data.

@@ -8,13 +8,19 @@ type Option = {
 };
 
 export default {
-	/**
-	 * options: An array of objects with label/value properties.
-	 * default: The default value from the options array.
-	 * disabled: Controls disabled state of the component.
-	 * dropdown: If true, the full button prompts the context menu, not just the arrow.
-	 */
-	props: ['options', 'default', 'disabled', 'dropdown'],
+	props: {
+		/** Array of options to display in the menu. */
+		'options': Array,
+
+		/** Default option to select. */
+		'default': String,
+
+		/** If true, the component is disabled. */
+		'disabled': Boolean,
+
+		/** If true, the full button prompts the context menu, not just the arrow. */
+		'dropdown': Boolean
+	},
 
 	data: function(): ComponentData {
 		return {

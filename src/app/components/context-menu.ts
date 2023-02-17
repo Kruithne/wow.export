@@ -13,10 +13,10 @@ window.addEventListener('mousemove', (event: MouseEvent) => {
 });
 
 export default {
-	/**
-	 * node: Object which this context menu represents.
-	 */
-	props: ['node'],
+	props: {
+		/** Object which this contect menu represents */
+		'node': Object,
+	},
 
 	data: function(): ComponentData {
 		return {

@@ -14,21 +14,43 @@ function fid_filter(e: string): string {
 }
 
 export default {
-	/**
-	 * items: Item entries displayed in the list.
-	 * filter: Optional reactive filter for items.
-	 * selection: Reactive selection controller.
-	 * single: If set, only one entry can be selected.
-	 * keyinput: If true, listbox registers for keyboard input.
-	 * regex: If true, filter will be treated as a regular expression.
-	 * copymode: Defines the behavior of CTRL + C.
-	 * pasteselection: If true, CTRL + V will load a selection.
-	 * copytrimwhitespace: If true, whitespace is trimmed from copied paths.
-	 * includefilecount: If true, includes a file counter on the component.
-	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
-	 * override: If provided, used as an override listfile.
-	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
+	props: {
+		/** Item entries displayed in the list. */
+		'items': Array,
+
+		/** Optional reactive filter for items. */
+		'filter': String,
+
+		/** Reactive selection controller. */
+		'selection': Object,
+
+		/** If set, only one entry can be selected. */
+		'single': Boolean,
+
+		/** If true, listbox registers for keyboard input. */
+		'keyinput': Boolean,
+
+		/** If true, filter will be treated as a regular expression. */
+		'regex': Boolean,
+
+		/** Defines the behavior of CTRL + C. */
+		'copymode': String,
+
+		/** If true, CTRL + V will load a selection. */
+		'pasteselection': Boolean,
+
+		/** If true, whitespace is trimmed from copied paths. */
+		'copytrimwhitespace': Boolean,
+
+		/** If true, includes a file counter on the component. */
+		'includefilecount': Boolean,
+
+		/** Unit name for what the listbox contains. Used with includefilecount. */
+		'unittype': String,
+
+		/** If provided, used as an override listfile. */
+		'override': String
+	},
 
 	/**
 	 * Reactive instance data.

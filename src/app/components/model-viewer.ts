@@ -4,7 +4,10 @@ import { OrbitControls } from '../3D/lib/OrbitControls';
 import * as THREE from 'three';
 
 export default {
-	props: ['context'],
+	props: {
+		/** The context to render. */
+		'context': Object
+	},
 
 	methods: {
 		render: function(): void {

@@ -32,15 +32,25 @@ const state = {
 };
 
 export default {
-	/**
-	 * loader: Tile loader function.
-	 * tileSize: Base size of tiles (before zoom).
-	 * map: ID of the current map. We use this to listen for map changes.
-	 * zoom: Maxium zoom-out factor allowed.
-	 * mask: Chunk mask. Expected MAP_SIZE ^ 2 array.
-	 * selection: Array defining selected tiles.
-	 */
-	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
+	props: {
+		/** Tile loader function. */
+		'loader': Function,
+
+		/** Base size of tiles (before zoom). */
+		'tileSize': Number,
+
+		/** ID of the current map. We use this to listen for map changes. */
+		'map': String,
+
+		/** Maximum zoom-out factor allowed. */
+		'zoom': Number,
+
+		/** Chunk mask. Expected MAP_SIZE ^ 2 array. */
+		'mask': Array,
+
+		/** Array defining selected tiles. */
+		'selection': Array
+	},
 
 	data: function(): ComponentData {
 		return {
