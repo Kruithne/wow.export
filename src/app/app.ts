@@ -33,6 +33,11 @@ import Listfile from './casc/listfile';
 
 import { previewTextureByID } from './ui/tab-textures';
 import { viewItemModels, viewItemTextures } from './ui/tab-items';
+
+// Import UI modules as side-effects.
+import './ui/source-select';
+import './ui/tab-textures';
+import './ui/tab-items';
 import './ui/tab-audio';
 import './ui/tab-models';
 import './ui/tab-maps';
