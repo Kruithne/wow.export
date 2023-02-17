@@ -59,7 +59,6 @@ function loadInstall(index: number): void {
 }
 export default {
 	onStateReady: (): void => {
-		console.log("State ready");
 		Events.once('screen-source-select', async () => {
 			const pings = Array<Promise<number | void>>();
 			const regions = State.state.cdnRegions;
