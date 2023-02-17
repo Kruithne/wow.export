@@ -9,6 +9,7 @@ import State from '../state';
 import Events from '../events';
 
 import { ping } from '../generics';
+import { reactive } from 'vue';
 
 import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
@@ -73,7 +74,7 @@ export default {
 			// Iterate CDN regions and create data nodes.
 			for (const region of Constants.PATCH.REGIONS) {
 				const cdnURL: string = util.format(Constants.PATCH.HOST, region);
-				const node: CDNRegion = { tag: region, url: cdnURL, delay: null };
+				const node: CDNRegion = reactive({ tag: region, url: cdnURL, delay: null });
 				regions.push(node);
 
 				// Mark this region as the selected one.
