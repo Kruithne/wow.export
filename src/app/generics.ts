@@ -218,8 +218,8 @@ export async function getFileHash(file: string, method: string, encoding: crypto
 		const fd = fs.createReadStream(file);
 		const hash = crypto.createHash(method);
 
-		fd.on('data', chunk => hash.update(chunk));
-		fd.on('end', () => resolve(hash.digest(encoding)));
+		fd.pipe(hash);
+		hash.on('finish', () => resolve(hash.digest(encoding)));
 	});
 }
 
