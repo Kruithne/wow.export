@@ -49,7 +49,7 @@ export default defineComponent({
 		'unittype': String,
 
 		/** If provided, used as an override listfile. */
-		'override': String
+		'override': Array
 	},
 
 	/**
