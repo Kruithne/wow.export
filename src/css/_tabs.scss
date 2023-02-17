@@ -385,7 +385,7 @@
 				align-items: center;
 				cursor: pointer;
 
-				&:hover, &.selected {
+				&.selected {
 					background: var(--font-alt);
 				}
 			}
