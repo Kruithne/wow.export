@@ -33,17 +33,16 @@ async function computeRawFiles(): Promise<void> {
 	}
 }
 
-export default {
-	onCASCReady:  function(): void {
-		Events.on('screen-tab-raw', () => computeRawFiles());
-		Events.on('listfile-needs-updating', () => {
-			isDirty = true;
-		});
-		State.state.$watch('config.cascLocale', () => {
-			isDirty = true;
-		});
-	}
-};
+Events.on('screen-tab-raw', () => computeRawFiles());
+Events.on('listfile-needs-updating', () => {
+	isDirty = true;
+});
+
+Events.once('casc-ready', () => {
+	State.state.$watch('config.cascLocale', () => {
+		isDirty = true;
+	});
+});
 
 // Track when the user clicks to auto-detect raw files.
 Events.on('click-detect-raw', async () => {

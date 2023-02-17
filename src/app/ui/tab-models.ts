@@ -514,95 +514,93 @@ Events.once('screen-tab-models', () => {
 	State.state.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
-export default {
-	onStateReady: function(state: typeof State.state): void {
-		// Register a drop handler for M2 files.
-		state.registerDropHandler({
-			ext: ['.m2'],
-			prompt: (count: number) => util.format('Export %d models as %s', count, State.state.config.exportModelFormat),
-			process: (files: FileList) => exportFiles(files, true)
-		});
-	},
+Events.once('casc-ready', async () => {
+	// Track changes to the visible model listfile types.
+	State.state.$watch('config.modelsShowM2', updateListfile);
+	State.state.$watch('config.modelsShowWMO', updateListfile);
 
-	onCASCReady: async function(): Promise<void> {
-		// Track changes to the visible model listfile types.
-		State.state.$watch('config.modelsShowM2', updateListfile);
-		State.state.$watch('config.modelsShowWMO', updateListfile);
+	// When the selected model skin is changed, update our model.
+	State.state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
+		// Don't do anything if we're lacking skins.
+		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
+			return;
 
-		// When the selected model skin is changed, update our model.
-		State.state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
-			// Don't do anything if we're lacking skins.
-			if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
-				return;
+		// Skin selector is single-select, should only be one item.
+		const selected = selection[0];
+		const display = activeSkins.get(selected.id);
+		selectedSkinName = selected.id;
 
-			// Skin selector is single-select, should only be one item.
-			const selected = selection[0];
-			const display = activeSkins.get(selected.id);
-			selectedSkinName = selected.id;
+		const currGeosets = State.state.modelViewerGeosets;
 
-			const currGeosets = State.state.modelViewerGeosets;
-
-			const creatureDisplay = display as CreatureDisplayInfoEntry;
-			if (creatureDisplay.extraGeosets !== undefined) {
-				for (const geoset of currGeosets) {
-					if (geoset.id > 0 && geoset.id < 900)
-						geoset.checked = false;
-				}
-
-				for (const extraGeoset of creatureDisplay.extraGeosets) {
-					for (const geoset of currGeosets) {
-						if (geoset.id === extraGeoset)
-							geoset.checked = true;
-					}
-				}
-			} else {
-				for (const geoset of currGeosets) {
-					const id = geoset.id.toString();
-					geoset.checked = (id.endsWith('0') || id.endsWith('01'));
-				}
+		const creatureDisplay = display as CreatureDisplayInfoEntry;
+		if (creatureDisplay.extraGeosets !== undefined) {
+			for (const geoset of currGeosets) {
+				if (geoset.id > 0 && geoset.id < 900)
+					geoset.checked = false;
 			}
 
-			const itemDisplay = display as ItemDisplayInfoEntry;
-			if (itemDisplay.textures !== undefined && itemDisplay.textures.length > 0)
-				selectedVariantTextureIDs = [...itemDisplay.textures];
-
-			if (display !== undefined)
-				activeRenderer?.applyReplaceableTextures(display);
-		});
-
-		State.state.$watch('config.modelViewerShowGrid', () => {
-			if (State.state.config.modelViewerShowGrid)
-				scene.add(grid);
-			else
-				scene.remove(grid);
-		});
-
-		// Track selection changes on the model listbox and preview first model.
-		State.state.$watch('selectionModels', async (selection: Array<string>) => {
-			// Don't do anything if we're not loading models.
-			if (!State.state.config.modelsAutoPreview)
-				return;
-
-			// Check if the first file in the selection is "new".
-			const first = Listfile.stripFileEntry(selection[0]);
-			if (!State.state.isBusy && first && activePath !== first)
-				previewModel(first);
-		});
-
-		// Track when the user clicks to preview a model texture.
-		Events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
-			await previewTextureByID(fileDataID, displayName);
-		});
-
-		// Track when the user clicks to export selected textures.
-		Events.on('click-export-model', async () => {
-			const userSelection = State.state.selectionModels;
-			if (userSelection.length === 0) {
-				State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
-				return;
+			for (const extraGeoset of creatureDisplay.extraGeosets) {
+				for (const geoset of currGeosets) {
+					if (geoset.id === extraGeoset)
+						geoset.checked = true;
+				}
 			}
+		} else {
+			for (const geoset of currGeosets) {
+				const id = geoset.id.toString();
+				geoset.checked = (id.endsWith('0') || id.endsWith('01'));
+			}
+		}
 
-			await exportFiles(userSelection, false);
-		});
-	}
-};
+		const itemDisplay = display as ItemDisplayInfoEntry;
+		if (itemDisplay.textures !== undefined && itemDisplay.textures.length > 0)
+			selectedVariantTextureIDs = [...itemDisplay.textures];
+
+		if (display !== undefined)
+			activeRenderer?.applyReplaceableTextures(display);
+	});
+
+	State.state.$watch('config.modelViewerShowGrid', () => {
+		if (State.state.config.modelViewerShowGrid)
+			scene.add(grid);
+		else
+			scene.remove(grid);
+	});
+
+	// Track selection changes on the model listbox and preview first model.
+	State.state.$watch('selectionModels', async (selection: Array<string>) => {
+		// Don't do anything if we're not loading models.
+		if (!State.state.config.modelsAutoPreview)
+			return;
+
+		// Check if the first file in the selection is "new".
+		const first = Listfile.stripFileEntry(selection[0]);
+		if (!State.state.isBusy && first && activePath !== first)
+			previewModel(first);
+	});
+
+	// Track when the user clicks to preview a model texture.
+	Events.on('click-preview-texture', async (fileDataID: number, displayName: string) => {
+		await previewTextureByID(fileDataID, displayName);
+	});
+
+	// Track when the user clicks to export selected textures.
+	Events.on('click-export-model', async () => {
+		const userSelection = State.state.selectionModels;
+		if (userSelection.length === 0) {
+			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			return;
+		}
+
+		await exportFiles(userSelection, false);
+	});
+});
+
+Events.once('state-ready', (state: typeof State.state): void => {
+	// Register a drop handler for M2 files.
+	state.registerDropHandler({
+		ext: ['.m2'],
+		prompt: (count: number) => util.format('Export %d models as %s', count, State.state.config.exportModelFormat),
+		process: (files: FileList) => exportFiles(files, true)
+	});
+});

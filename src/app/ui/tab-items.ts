@@ -145,11 +145,11 @@ export function viewItemTextures(item): void {
 	State.state.overrideTextureName = item.name;
 }
 
-Events.once('screen-tab-items', async () => {
+Events.once('screen-tab-items', async (state: typeof State.state) => {
 	// Initialize a loading screen.
-	const progress = State.state.createProgress(5);
-	State.state.setScreen('loading');
-	State.state.isBusy++;
+	const progress = state.createProgress(5);
+	state.setScreen('loading');
+	state.isBusy++;
 
 	await progress.step('Loading item data...');
 	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');
@@ -214,36 +214,30 @@ Events.once('screen-tab-items', async () => {
 	}
 
 	// Show the item viewer screen.
-	State.state.loadPct = -1;
-	State.state.isBusy--;
-	State.state.setScreen('tab-items');
+	state.loadPct = -1;
+	state.isBusy--;
+	state.setScreen('tab-items');
 
 	// Load initial configuration for the type control from config.
-	const enabledTypes = State.state.config.itemViewerEnabledTypes;
+	const enabledTypes = state.config.itemViewerEnabledTypes;
 	const mask = [];
 
 	for (const label of Object.keys(ITEM_SLOTS_MERGED))
 		mask.push({ label, checked: enabledTypes.includes(label) });
 
 	// Register a watcher for the item type control.
-	State.state.$watch('itemViewerTypeMask', () => {
+	state.$watch('itemViewerTypeMask', () => {
 		// Refilter the listfile based on what the new selection.
-		const filter = State.state.itemViewerTypeMask.filter(e => e.checked);
+		const filter = state.itemViewerTypeMask.filter(e => e.checked);
 		const mask = [];
 
 		filter.forEach(e => mask.push(...ITEM_SLOTS_MERGED[e.label]));
 		const test = items.filter(item => mask.includes(item.inventoryType));
-		State.state.listfileItems = test;
+		state.listfileItems = test;
 
 		// Save just the names of user enabled types, preventing incompatibilities if we change things.
-		State.state.config.itemViewerEnabledTypes = State.state.itemViewerTypeMask.map(e => e.label);
+		state.config.itemViewerEnabledTypes = state.itemViewerTypeMask.map(e => e.label);
 	}, { deep: true });
 
-	State.state.itemViewerTypeMask = mask;
+	state.itemViewerTypeMask = mask;
 });
-
-export default {
-	onStateReady: (): void => {
-		// No-op.
-	}
-};

@@ -25,22 +25,22 @@ import ProgressObject from './progress-object';
 
 import { createApp, defineComponent } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
-import SourceSelect, { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
+import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
 import { filesize, formatPlaybackSeconds, redraw } from './generics';
 
 import * as TextureRibbon from './ui/texture-ribbon';
 import Listfile from './casc/listfile';
 
-import TabTextures from './ui/tab-textures';
-import TabItems, { viewItemModels, viewItemTextures } from './ui/tab-items';
-import TabAudio from './ui/tab-audio';
-import TabModels from './ui/tab-models';
-import TabMaps from './ui/tab-maps';
-import TabInstall from './ui/tab-install';
-import TabData from './ui/tab-data';
-import TabRaw from './ui/tab-raw';
-import TabText from './ui/tab-text';
-import TabVideos from './ui/tab-videos';
+import { previewTextureByID } from './ui/tab-textures';
+import { viewItemModels, viewItemTextures } from './ui/tab-items';
+import './ui/tab-audio';
+import './ui/tab-models';
+import './ui/tab-maps';
+import './ui/tab-install';
+import './ui/tab-data';
+import './ui/tab-raw';
+import './ui/tab-text';
+import './ui/tab-videos';
 
 import ComponentCheckboxList from './components/checkboxlist';
 import ComponentContextMenu from './components/context-menu';
@@ -59,11 +59,6 @@ import ExportHelper from './casc/export-helper';
 
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };
-
-type Module = {
-	onStateReady?: (state: typeof State.state) => void;
-	onCASCReady?: () => void;
-}
 
 // Register Node.js error handlers.
 process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
@@ -575,7 +570,7 @@ interface NWFile {
 				this.setScreen('tab-textures');
 
 				// Directly preview the requested file, even if it's not in the listfile.
-				TabTextures.previewTextureByID(fileDataID);
+				previewTextureByID(fileDataID);
 
 				// Since we're doing a direct preview, we need to reset the users current
 				// selection, so if they hit export, they get the expected result.
@@ -795,23 +790,8 @@ interface NWFile {
 	// Load configuration.
 	await Config.load();
 
-	const registerModule = (module: Module): void => {
-		if (module.onStateReady !== undefined)
-			module.onStateReady(state);
-	};
-
-	registerModule(SourceSelect);
-	registerModule(TabAudio);
-	registerModule(TabTextures);
-	registerModule(TabItems);
-	registerModule(TabAudio);
-	registerModule(TabModels);
-	registerModule(TabMaps);
-	registerModule(TabInstall);
-	registerModule(TabData);
-	registerModule(TabRaw);
-	registerModule(TabText);
-	registerModule(TabVideos);
+	// Emit state-ready event and await all listeners.
+	await Events.emitAndAwait('state-ready', state);
 
 	// Set-up default export directory if none configured.
 	if (State.state.config.exportDirectory === '') {

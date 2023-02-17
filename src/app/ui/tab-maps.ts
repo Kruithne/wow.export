@@ -312,25 +312,23 @@ Events.once('screen-tab-maps', async () => {
 	State.state.isBusy--;
 });
 
-export default {
-	onCASCReady: function(): void {
-		// Store a reference to loadMapTile for the map viewer component.
-		State.state.mapViewerTileLoader = loadMapTile;
+Events.once('casc-ready', (): void => {
+	// Store a reference to loadMapTile for the map viewer component.
+	State.state.mapViewerTileLoader = loadMapTile;
 
-		// Track selection changes on the map listbox and select that map.
-		State.state.$watch('selectionMaps', async selection => {
-			// Check if the first file in the selection is "new".
-			const first = selection[0];
+	// Track selection changes on the map listbox and select that map.
+	State.state.$watch('selectionMaps', async selection => {
+		// Check if the first file in the selection is "new".
+		const first = selection[0];
 
-			if (!State.state.isBusy && first) {
-				const map = parseMapEntry(first);
-				if (selectedMapID !== map.id)
-					loadMap(map.id, map.dir);
-			}
-		});
+		if (!State.state.isBusy && first) {
+			const map = parseMapEntry(first);
+			if (selectedMapID !== map.id)
+				loadMap(map.id, map.dir);
+		}
+	});
 
-		// Track when user clicks to export a map or world model.
-		Events.on('click-export-map', () => exportSelectedMap());
-		Events.on('click-export-map-wmo', () => exportSelectedMapWMO());
-	}
-};
+	// Track when user clicks to export a map or world model.
+	Events.on('click-export-map', () => exportSelectedMap());
+	Events.on('click-export-map-wmo', () => exportSelectedMapWMO());
+});
