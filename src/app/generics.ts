@@ -229,12 +229,7 @@ export async function getFileHash(file: string, method: string, encoding: crypto
  * @returns True if the file exists.
  */
 export async function fileExists(file: string): Promise<boolean> {
-	try {
-		await fs.promises.access(file);
-		return true;
-	} catch (e) {
-		return false;
-	}
+	return fs.promises.access(file).then(() => true).catch(() => false);
 }
 
 /**
