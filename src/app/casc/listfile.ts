@@ -201,7 +201,7 @@ export function getFilenamesByExtension(...exts: Array<ListfileFilter>): Array<s
 				if (filename.endsWith(ext))
 					entries.push(fileDataID);
 			} else {
-				if (filename.endsWith(ext.ext) && filename.match(ext.pattern))
+				if (filename.endsWith(ext.ext) && !filename.match(ext.pattern))
 					entries.push(fileDataID);
 			}
 		}
