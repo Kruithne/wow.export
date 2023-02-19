@@ -23,7 +23,7 @@ import Events from './events';
 import CrashHandler from './crash-handler';
 import ProgressObject from './progress-object';
 
-import { createApp, defineComponent, watch, ref } from 'vue';
+import { createApp, defineComponent } from 'vue';
 import { LocaleFlags } from './casc/locale-flags';
 import { CDNRegion } from './ui/source-select'; // NIT: Better place for this.
 import { filesize, formatPlaybackSeconds, redraw } from './generics';
