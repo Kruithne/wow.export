@@ -200,7 +200,7 @@ const FILTER_SUMS: Record<number, FilterSum> = {
  * @returns The Paeth predictor.
  */
 const paeth = (left: number, up: number, upLeft: number): number => {
-	const paeth = left + up + upLeft;
+	const paeth = left + up - upLeft;
 	const paethLeft = Math.abs(paeth - left);
 	const paethUp = Math.abs(paeth - up);
 	const paethUpLeft = Math.abs(paeth - upLeft);
@@ -248,6 +248,7 @@ const filter = (data: Buffer, width: number, height: number): Buffer => {
 		rawOfs += byteWidth;
 		dataOfs += byteWidth;
 	}
+
 	return raw;
 };
 
