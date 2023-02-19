@@ -84,7 +84,7 @@ export default defineComponent({
 	 */
 	template: `<div class="ui-menu-button" :class="{ disabled, dropdown, open }">
 		<input type="button" :value="this.selected.label ?? this.selected.value" :class="{ disabled }" @click="handleClick"/>
-		<div class="arrow" @click="openMenu"></div>
+		<div class="arrow" @click.stop="openMenu"></div>
 		<context-menu :node="open" @close="open = false">
 			<span v-for="option in options" @click="select(option)">{{ option.label ?? option.value }}</span>
 		</context-menu>
