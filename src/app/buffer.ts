@@ -716,7 +716,7 @@ export default class BufferWrapper {
 	 */
 	writeBuffer(source: Buffer, copyOfs = 0, copyLength = 0): void {
 		if (copyLength === 0)
-			copyLength = source.byteLength;
+			copyLength = source.length;
 
 		if (this.remainingBytes < copyLength)
 			throw new Error(util.format('BufferWrapper.writeBuffer(%d) out-of-bounds [> %d]', copyLength, this.remainingBytes));
