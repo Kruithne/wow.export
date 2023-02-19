@@ -297,20 +297,17 @@ export default class PNGWriter {
 		ihdr.writeUInt8(0); // Compression (0)
 		ihdr.writeUInt8(0); // Filter (0)
 		ihdr.writeUInt8(0); // Interlace (0)
-		ihdr.seek(0); // NIT: Remove?
 
 		buf.writeUInt32BE(13);
-		buf.writeBuffer(ihdr.buffer);
+		buf.writeBuffer(ihdr.toBuffer());
 		buf.writeInt32BE(ihdr.toCRC32());
 
 		const idat = new BufferWrapper(Buffer.allocUnsafe(4 + deflated.length));
 		idat.writeUInt32(0x54414449); // IDAT
-		idat.writeBuffer(deflated.buffer);
-
-		idat.seek(0); // NIT: Remove?
+		idat.writeBuffer(deflated.toBuffer());
 
 		buf.writeUInt32BE(deflated.length);
-		buf.writeBuffer(idat.buffer);
+		buf.writeBuffer(idat.toBuffer());
 		buf.writeInt32BE(idat.toCRC32());
 
 		buf.writeUInt32BE(0);
