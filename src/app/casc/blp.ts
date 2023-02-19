@@ -139,16 +139,6 @@ export default class BLPImage {
 	}
 
 	/**
-	 * Save this BLP as PNG file.
-	 * @param file
-	 * @param mask
-	 * @param mipmap - Mipmap level
-	 */
-	async saveToPNG(file: string, mask = 0b1111, mipmap = 0): Promise<void> {
-		return await this.toPNG(mask, mipmap).writeToFile(file);
-	}
-
-	/**
 	 * Prepare BLP for processing.
 	 * @param mipmap - Mipmap level
 	 */

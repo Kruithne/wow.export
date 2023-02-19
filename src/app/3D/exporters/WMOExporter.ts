@@ -193,7 +193,7 @@ export default class WMOExporter {
 							await data.writeToFile(texPath);
 						} else {
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+							await blp.toPNG(useAlpha ? 0b1111 : 0b0111).writeToFile(texPath); // material.blendMode !== 0
 						}
 					} else {
 						Log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);

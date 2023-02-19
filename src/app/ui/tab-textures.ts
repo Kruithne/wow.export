@@ -163,7 +163,7 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 				} else {
 					// Export as PNG.
 					const blp = new BLPImage(data);
-					await blp.saveToPNG(exportPath, State.state.config.exportChannelMask);
+					await blp.toPNG(State.state.config.exportChannelMask).writeToFile(exportPath);
 					exportPaths.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {

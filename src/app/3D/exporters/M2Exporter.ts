@@ -148,7 +148,7 @@ export default class M2Exporter {
 						} else {
 							// Convert BLP to PNG.
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
+							await blp.toPNG(useAlpha ? 0b1111 : 0b0111).writeToFile(texPath);
 						}
 					} else {
 						Log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);

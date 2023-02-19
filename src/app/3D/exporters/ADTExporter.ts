@@ -480,7 +480,7 @@ export default class ADTExporter {
 							texFile = path.basename(texPath);
 						}
 
-						await blp.saveToPNG(texPath);
+						await blp.toPNG().writeToFile(texPath);
 
 						return usePosix ? ExportHelper.win32ToPosix(texFile) : texFile;
 					};
