@@ -280,7 +280,7 @@ export default class PNGWriter {
 	 */
 	getBuffer(): BufferWrapper {
 		const filtered = filter(this.data, this.width, this.height);
-		const deflated = new BufferWrapper(zlib.deflateSync(filtered));
+		const deflated = zlib.deflateSync(filtered);
 
 		const buf = new BufferWrapper(Buffer.allocUnsafe(8 + 25 + deflated.length + 12 + 12));
 
@@ -304,7 +304,7 @@ export default class PNGWriter {
 
 		const idat = new BufferWrapper(Buffer.allocUnsafe(4 + deflated.length));
 		idat.writeUInt32(0x54414449); // IDAT
-		idat.writeBuffer(deflated.toBuffer());
+		idat.writeBuffer(deflated);
 
 		buf.writeUInt32BE(deflated.length);
 		buf.writeBuffer(idat.toBuffer());
