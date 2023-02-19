@@ -4,6 +4,7 @@
 - Improved WMO preview loading speed.
 - Improved error handling in case of outdated/incorrect database definitions during startup.
 - The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
+- Fixed a bug preventing compression filters to be applied to PNG exports.
 
 0.1.47 (23-01-2023)
 - Fixes an issue with DB2 reading for certain DB2 tables.
