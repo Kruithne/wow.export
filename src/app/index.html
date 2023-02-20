@@ -651,7 +651,7 @@
 								<slider id="slider-seek" v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
 								<div class="buttons">
 									<input type="button" :class="{ isPlaying: !soundPlayerState }" @click="click('sound-toggle', $event)"/>
-									<slider id="slider-volume" v-model="config.soundPlayerVolume"></slider>
+									<slider id="slider-volume" v-model="config.soundPlayerVolume" @input="config.soundPlayerVolume = $event"></slider>
 								</div>
 							</div>
 						</div>
