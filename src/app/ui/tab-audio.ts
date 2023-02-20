@@ -105,7 +105,7 @@ function unloadSelectedTrack(): void {
  * Ensure unloadSelectedTrack() is called first.
  */
 async function loadSelectedTrack(): Promise<void> {
-	if (selectedFile === null)
+	if (selectedFile === undefined)
 		return State.state.setToast('info', 'You need to select an audio track first!', null, -1, true);
 
 	State.state.isBusy++;
