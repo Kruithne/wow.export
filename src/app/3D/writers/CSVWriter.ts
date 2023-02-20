@@ -6,8 +6,8 @@ import FileWriter from '../../file-writer';
 
 export default class CSVWriter {
 	out: string;
-	fields: Array<string>;
-	rows: Array<object>;
+	fields = new Array<string>();
+	rows = new Array<object>();
 
 	/**
 	 * Construct a new CSVWriter instance.
