@@ -772,7 +772,7 @@ export default class BufferWrapper {
 	 * @returns {string}
 	 */
 	getDataURL(): string {
-		if (this.dataURL !== undefined)
+		if (this.dataURL === undefined)
 			this.dataURL = URL.createObjectURL(this.toBlob());
 
 		return this.dataURL;
