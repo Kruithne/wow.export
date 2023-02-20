@@ -65,7 +65,7 @@ export default class M2Renderer {
 
 			if (this.reactive) {
 				this.geosetWatcher = State.state.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
-				this.wireframeWatcher = State.state.$watch('modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+				this.wireframeWatcher = State.state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 			}
 		}
 
