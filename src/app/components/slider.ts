@@ -5,7 +5,7 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Slider value between 0 and 1. */
-		'value': Number
+		'modelValue': Number
 	},
 
 	data: function() {
@@ -51,7 +51,7 @@ export default defineComponent({
 		 */
 		startMouse: function(event: MouseEvent): void {
 			this.scrollStartX = event.clientX;
-			this.scrollStart = this.value;
+			this.scrollStart = this.modelValue;
 			this.isScrolling = true;
 		},
 
@@ -91,7 +91,7 @@ export default defineComponent({
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div class="ui-slider" @click="handleClick">
-		<div class="fill" :style="{ width: (value * 100) + '%' }"></div>
-		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (value * 100) + '%' }"></div>
+		<div class="fill" :style="{ width: (modelValue * 100) + '%' }"></div>
+		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (modelValue * 100) + '%' }"></div>
 	</div>`
 });
