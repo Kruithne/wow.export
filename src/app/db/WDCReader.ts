@@ -587,15 +587,15 @@ export default class WDCReader {
 									}
 									break;
 
-								case FieldType.Int8: out[prop] = data.readInt8Array(count); break;
-								case FieldType.UInt8: out[prop] = data.readUInt8Array(count); break;
-								case FieldType.Int16: out[prop] = data.readInt16Array(count); break;
-								case FieldType.UInt16: out[prop] = data.readUInt16Array(count); break;
-								case FieldType.Int32: out[prop] = data.readInt32Array(count); break;
-								case FieldType.UInt32: out[prop] = data.readUInt32Array(count); break;
-								case FieldType.Int64: out[prop] = data.readInt64Array(count); break;
-								case FieldType.UInt64: out[prop] = data.readUInt64Array(count); break;
-								case FieldType.Float: out[prop] = data.readFloatArray(count); break;
+								case FieldType.Int8: out[prop] = count > 0 ? data.readInt8Array(count) : data.readInt8(); break;
+								case FieldType.UInt8: out[prop] = count > 0 ? data.readUInt8Array(count) : data.readUInt8(); break;
+								case FieldType.Int16: out[prop] = count > 0 ? data.readInt16Array(count) : data.readInt16(); break;
+								case FieldType.UInt16: out[prop] = count > 0 ? data.readUInt16Array(count) : data.readUInt16(); break;
+								case FieldType.Int32: out[prop] = count > 0 ? data.readInt32Array(count) : data.readInt32(); break;
+								case FieldType.UInt32: out[prop] = count > 0 ? data.readUInt32Array(count) : data.readUInt32(); break;
+								case FieldType.Int64: out[prop] = count > 0 ? data.readInt64Array(count) : data.readInt64(); break;
+								case FieldType.UInt64: out[prop] = count > 0 ? data.readUInt64Array(count) : data.readUInt64(); break;
+								case FieldType.Float: out[prop] = count > 0 ? data.readFloatArray(count) : data.readFloat(); break;
 							}
 							break;
 
