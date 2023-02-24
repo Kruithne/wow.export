@@ -177,7 +177,7 @@ export default class CASCLocal extends CASC {
 
 			entries.set(key, {
 				index: (idxHigh as number << 2 | ((idxLow as number & 0xC0000000) >>> 30)),
-				offset: idxLow as number & 0x3FFFFFFF,
+				offset: (idxLow as number) & 0x3FFFFFFF,
 				size: index.readInt32() as number
 			});
 		}
