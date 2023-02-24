@@ -340,7 +340,7 @@ export default class WMOExporter {
 					uvArrays[i][uvsOfs + j] = uv?.[j] ?? 0;
 			}
 
-			const groupName = wmo.groupNames[group.nameOfs];
+			const groupName = wmo.groupNames.get(group.nameOfs);
 
 			// Load all render batches into the mesh.
 			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
@@ -507,8 +507,8 @@ export default class WMOExporter {
 			for (let i = 0, n = wmo.groups.length; i < n; i++) {
 				const group = wmo.groups[i];
 				groups[i] = {
-					groupName: wmo.groupNames[group.nameOfs],
-					groupDescription: wmo.groupNames[group.descOfs],
+					groupName: wmo.groupNames.get(group.nameOfs),
+					groupDescription: wmo.groupNames.get(group.descOfs),
 					enabled: !mask || mask.has(i),
 					version: group.version,
 					flags: group.flags,
