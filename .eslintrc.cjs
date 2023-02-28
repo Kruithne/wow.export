@@ -29,7 +29,8 @@ module.exports = {
 		'brace-style': ['error', '1tbs'],
 		'curly': [2, 'multi-or-nest', 'consistent'],
 		'no-trailing-spaces': 'error',
-		'keyword-spacing': 'error'
+		'keyword-spacing': 'error',
+		'vue/no-mutating-props': 'off'
 	},
 
 	overrides: [
