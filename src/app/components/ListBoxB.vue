@@ -15,6 +15,7 @@
 <script lang="ts">
 	import { defineComponent } from 'vue';
 	import type { SkinInfo } from '../ui/tab-models';
+	import Events from '../events';
 
 	export default defineComponent({
 		props: {
@@ -201,7 +202,7 @@
 
 				if (event.key === 'c' && event.ctrlKey) {
 					// Copy selection to clipboard.
-					nw.Clipboard.get().set(this.selection.join('\n'), 'text');
+					Events.emit('copy-to-clipboard', this.selection.join('\n'));
 				} else {
 					// Arrow keys.
 					const isArrowUp = event.key === 'ArrowUp';

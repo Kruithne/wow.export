@@ -21,6 +21,7 @@
 	import * as IconRender from '../icon-render';
 	import { defineComponent } from 'vue';
 	import { ItemType } from '../ui/tab-items';
+	import Events from '../events';
 
 	export default defineComponent({
 		props: {
@@ -279,7 +280,7 @@
 
 				if (event.key === 'c' && event.ctrlKey) {
 					// Copy selection to clipboard.
-					nw.Clipboard.get().set(this.selection.map(e => e.displayName).join('\n'), 'text');
+					Events.emit('copy-to-clipboard', this.selection.map((e: ItemType) => e.displayName).join('\n'));
 				} else {
 					// Arrow keys.
 					const isArrowUp = event.key === 'ArrowUp';

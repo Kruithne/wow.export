@@ -121,6 +121,11 @@ interface NWFile {
 	// Append the application version to the title bar.
 	document.title += ' v' + nw.App.manifest.version;
 
+	// Add a global event handler for the 'copy-to-clipboard' event.
+	Events.on('copy-to-clipboard', (text: string) => {
+		nw.Clipboard.get().set(text, 'text');
+	});
+
 	const manifest = nw.App.manifest;
 	const cpus = os.cpus();
 

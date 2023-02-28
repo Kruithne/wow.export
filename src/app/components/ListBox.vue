@@ -16,6 +16,7 @@
 <script lang="ts">
 	import path from 'node:path';
 	import { defineComponent } from 'vue';
+	import Events from '../events';
 
 	function fid_filter(e: string): string {
 		const start = e.indexOf(' [');
@@ -330,7 +331,7 @@
 					if (this.copytrimwhitespace)
 						entries = entries.map(e => e.replace(/\s/g, ''));
 
-					nw.Clipboard.get().set(entries.join('\n'), 'text');
+					Events.emit('copy-to-clipboard', entries.join('\n'));
 				} else {
 					// Arrow keys.
 					const isArrowUp = event.key === 'ArrowUp';
