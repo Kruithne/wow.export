@@ -37,18 +37,16 @@ export default (env) => {
 
 		// See: https://webpack.js.org/configuration/externals/
 		externalsType: 'commonjs',
-		externals: {
-			'node:os': 'os',
-			'node:fs': 'fs',
-			'node:fs/promises': 'fs/promises',
-			'node:crypto': 'crypto',
-			'node:util': 'util',
-			'node:path': 'path',
-			'node:events': 'events',
-			'node:zlib': 'zlib',
-			'node:assert/strict': 'assert/strict',
-			'node:child_process': 'child_process',
-		},
+
+		// Define all node.js modules as externals, so that they are not bundled.
+		externals: [
+			'os', 'fs', 'fs/promises', 'crypto', 'util', 'path', 'events', 'zlib', 'assert/strict', 'child_process',
+			'http', 'https', 'tls', 'tty', 'net', 'stream', 'url'
+		].reduce((acc, curr) => {
+			acc[curr] = curr;
+			acc[`node:${curr}`] = curr; // Alias the node: namespace.
+			return acc;
+		}, {}),
 
 		module: {
 			rules: [
