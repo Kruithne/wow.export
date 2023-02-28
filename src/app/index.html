@@ -685,7 +685,6 @@
 					</div>
 				</keep-alive>
 				<div id="source-select" v-if="screen === 'source-select'">
-					<test-component></test-component>
 					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
 						<template v-if="availableLocalBuilds">
 							<div class="source-builds">
