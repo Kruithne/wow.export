@@ -22,6 +22,37 @@ Before you start developing wow.export, you will need to set-up your environment
   - `git clone`
   - `npm install --dev`
 
+## Using VSCode
+
+When using VSCode to develop wow.export, the following extensions are recommended:
+
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+- [Vue Language Features (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) [*]
+- [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) [**]
+
+*\* You will need to disable the `@builtin typescript` extension for this workspace, as it will conflict with the Volar extension.*
+
+*\*\* Use takeover mode with `TypeScript Vue Plugin`, see: https://vuejs.org/guide/typescript/overview.html#volar-takeover-mode*
+
+## Vue DevTools
+wow.export uses [Vue.js](https://vuejs.org/) for its UI. To make development easier we also support [Vue DevTools](https://devtools.vuejs.org/).
+
+The application is already included as part of the wow.export development environment. To use it, first run the following in a separate terminal:
+
+```bash
+npm run vue-devtools
+```
+
+wow.export does not connect automatically (see below), so from the internal DevTools console, run the following to connect:
+
+```js
+connectVueDevTools();
+```
+
+The reason for this manual step, rather than automatically connecting, is because our reactive state contains large amounts of data that can cause the DevTools to crash. Additionally, wow.export can become unresponsive during the loading process, which disconnects the tool.
+
+By manually connecting, you can choose to connect only when you need it. We intend to improve this experience in the future.
+
 ## Linting
 wow.export uses [ESLint](https://eslint.org/) to enforce code style and best practices. While not required, it is highly recommended that you install an [ESLint plugin](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) for your editor of choice.
 
