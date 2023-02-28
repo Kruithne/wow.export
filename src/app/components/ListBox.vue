@@ -6,7 +6,7 @@
 		<div ref="root" class="ui-listbox" @wheel="wheelMouse">
 			<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 			<div v-for="item in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
-				<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
+				<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si.toString()" :data-item="sub">{{ sub }}</span>
 			</div>
 		</div>
 		<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div>
@@ -330,6 +330,7 @@
 					// Remove whitespace from paths to keep consistency with exports.
 					if (this.copytrimwhitespace)
 						entries = entries.map(e => e.replace(/\s/g, ''));
+
 
 					Events.emit('copy-to-clipboard', entries.join('\n'));
 				} else {
