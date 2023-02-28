@@ -7,11 +7,13 @@ module.exports = {
 		'ecmaVersion': 'latest',
 		'sourceType': 'module'
 	},
+
 	'env': {
 		'node': true,
 		'es2020': true,
 		'browser': true
 	},
+
 	'rules': {
 		'@typescript-eslint/no-explicit-any': ['warn', { 'ignoreRestArgs': true }],
 		'@typescript-eslint/no-inferrable-types': 'off',
@@ -46,6 +48,7 @@ module.exports = {
 		'jest',
 		'@typescript-eslint'
 	],
+
 	'extends': [
 		'eslint:recommended',
 		'plugin:@typescript-eslint/recommended',
