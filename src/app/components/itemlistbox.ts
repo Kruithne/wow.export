@@ -97,13 +97,6 @@ export default defineComponent({
 					res = res.filter(e => e.displayName.toLowerCase().includes(filter));
 			}
 
-			// Remove anything from the user selection that has now been filtered out.
-			// Iterate backwards here due to re-indexing as elements are spliced.
-			for (let i = this.selection.length - 1; i >= 0; i--) {
-				if (!res.includes(this.selection[i]))
-					this.selection.splice(i, 1);
-			}
-
 			return res;
 		},
 
@@ -124,6 +117,19 @@ export default defineComponent({
 	},
 
 	watch: {
+		/**
+		 * Invoked when the filteredItems computed property changes.
+		 * @param filteredItems - New state of the filteredItems computed property.
+		 */
+		filteredItems: function(filteredItems): void {
+			// Remove anything from the user selection that has now been filtered out.
+			// Iterate backwards here due to re-indexing as elements are spliced.
+			for (let i = this.selection.length - 1; i >= 0; i--) {
+				if (!filteredItems.includes(this.selection[i]))
+					this.selection.splice(i, 1);
+			}
+		},
+
 		/**
 		 * Invoked when the displayItems variable changes.
 		 */

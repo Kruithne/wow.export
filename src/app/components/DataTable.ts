@@ -59,21 +59,14 @@ export default defineComponent({
 			if (this.regex) {
 				try {
 					const filter = new RegExp(this.filter.trim());
-					res = res.filter(e => e.match(filter));
+					res = res.filter((e: string) => e.match(filter));
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.
 				}
 			} else {
 				const filter = this.filter.trim().toLowerCase();
 				if (filter.length > 0)
-					res = res.filter(e => e.toLowerCase().includes(filter));
-			}
-
-			// Remove anything from the user selection that has now been filtered out.
-			// Iterate backwards here due to re-indexing as elements are spliced.
-			for (let i = this.selection.length - 1; i >= 0; i--) {
-				if (!res.includes(this.selection[i]))
-					this.selection.splice(i, 1);
+					res = res.filter((e: string) => e.toLowerCase().includes(filter));
 			}
 
 			return res;
