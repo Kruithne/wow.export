@@ -11,6 +11,8 @@ export default defineComponent({
 		}
 	},
 
+	emits: ['input'],
+
 	data: function() {
 		return {
 			isScrolling: false, // True if the slider is being dragged.

@@ -3,6 +3,8 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
+	emits: ['resize'],
+
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html

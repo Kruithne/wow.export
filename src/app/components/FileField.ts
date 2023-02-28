@@ -10,6 +10,8 @@ export default defineComponent({
 		}
 	},
 
+	emits: ['input'],
+
 	/**
 	 * Invoked when the component is mounted.
 	 * Used to create an internal file node.

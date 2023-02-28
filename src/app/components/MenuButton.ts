@@ -31,6 +31,8 @@ export default defineComponent({
 		'dropdown': Boolean
 	},
 
+	emits: ['click', 'change'],
+
 	data: function() {
 		return {
 			selectedObj: null, // Currently selected option.
