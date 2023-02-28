@@ -17,7 +17,7 @@ jobs:
           node-version: 18
           cache: npm
       - name: Install global dependencies
-        run: npm install -g typescript rollup sass @kogs/nwjs resedit-cli
+        run: npm install -g typescript rollup sass nwjs-installer resedit-cli
       - name: npm install
         run: npm ci --dev
       - name: Compile wow.export win-x64
