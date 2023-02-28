@@ -29,6 +29,25 @@ export default defineComponent({
 		};
 	},
 
+	computed: {
+		/**
+		 * Returns the currently selected option or falls back to the default.
+		 * @returns {object}
+		 */
+		selected: function(): Option {
+			return this.selectedObj ?? this.defaultObj;
+		},
+
+		/**
+		 * Returns the option with the same value as the provided default or
+		 * falls back to returning the first available option.
+		 * @returns {object}
+		 */
+		defaultObj: function(): Option {
+			return this.options.find((e: Option) => e.value === this.default) ?? this.options[0];
+		}
+	},
+
 	methods: {
 		/**
 		 * Set the selected option for this menu button.
@@ -57,25 +76,6 @@ export default defineComponent({
 				this.openMenu();
 			else
 				this.$emit('click', event);
-		}
-	},
-
-	computed: {
-		/**
-		 * Returns the currently selected option or falls back to the default.
-		 * @returns {object}
-		 */
-		selected: function(): Option {
-			return this.selectedObj ?? this.defaultObj;
-		},
-
-		/**
-		 * Returns the option with the same value as the provided default or
-		 * falls back to returning the first available option.
-		 * @returns {object}
-		 */
-		defaultObj: function(): Option {
-			return this.options.find((e: Option) => e.value === this.default) ?? this.options[0];
 		}
 	},
 

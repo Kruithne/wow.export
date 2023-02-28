@@ -10,17 +10,6 @@ export default defineComponent({
 		'context': Object
 	},
 
-	methods: {
-		render: function(): void {
-			if (!this.isRendering)
-				return;
-
-			this.controls.update();
-			this.renderer.render(this.context.scene, this.context.camera);
-			requestAnimationFrame(() => this.render());
-		}
-	},
-
 	/** Invoked when the component is mounted. */
 	mounted: function(): void {
 		const container = this.$el;
@@ -56,11 +45,22 @@ export default defineComponent({
 	/**
 	 * Invoked when the component is destroyed.
 	 */
-	beforeDestroy: function(): void {
+	beforeUnmount: function(): void {
 		this.isRendering = false;
 		this.controls.dispose();
 		this.renderer.dispose();
 		window.removeEventListener('resize', this.onResize);
+	},
+
+	methods: {
+		render: function(): void {
+			if (!this.isRendering)
+				return;
+
+			this.controls.update();
+			this.renderer.render(this.context.scene, this.context.camera);
+			requestAnimationFrame(() => this.render());
+		}
 	},
 
 	/**

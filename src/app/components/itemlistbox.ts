@@ -43,45 +43,6 @@ export default defineComponent({
 		};
 	},
 
-	/**
-	 * Invoked when the component is mounted.
-	 * Used to register global listeners and resize observer.
-	 */
-	mounted: function(): void {
-		this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
-		this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
-
-		document.addEventListener('mousemove', this.onMouseMove);
-		document.addEventListener('mouseup', this.onMouseUp);
-
-		if (this.keyinput) {
-			this.onKeyDown = (e: KeyboardEvent): void => this.handleKey(e);
-			document.addEventListener('keydown', this.onKeyDown);
-		}
-
-		// Register observer for layout changes.
-		this.observer = new ResizeObserver(() => this.resize());
-		this.observer.observe(this.$refs.root);
-	},
-
-	/**
-	 * Invoked when the component is destroyed.
-	 * Used to unregister global mouse listeners and resize observer.
-	 */
-	beforeDestroy: function(): void {
-		// Unregister global mouse/keyboard listeners.
-		document.removeEventListener('mousemove', this.onMouseMove);
-		document.removeEventListener('mouseup', this.onMouseUp);
-
-		document.removeEventListener('paste', this.onPaste);
-
-		if (this.keyinput)
-			document.removeEventListener('keydown', this.onKeyDown);
-
-		// Disconnect resize observer.
-		this.observer.disconnect();
-	},
-
 	computed: {
 		/**
 		 * Offset of the scroll widget in pixels.
@@ -148,6 +109,55 @@ export default defineComponent({
 		itemWeight: function(): number {
 			return 1 / this.filteredItems.length;
 		}
+	},
+
+	watch: {
+		/**
+		 * Invoked when the displayItems variable changes.
+		 */
+		displayItems: function(): void {
+			for (const item of this.displayItems)
+				IconRender.loadIcon(item.icon);
+		}
+	},
+
+	/**
+	 * Invoked when the component is mounted.
+	 * Used to register global listeners and resize observer.
+	 */
+	mounted: function(): void {
+		this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
+		this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
+
+		document.addEventListener('mousemove', this.onMouseMove);
+		document.addEventListener('mouseup', this.onMouseUp);
+
+		if (this.keyinput) {
+			this.onKeyDown = (e: KeyboardEvent): void => this.handleKey(e);
+			document.addEventListener('keydown', this.onKeyDown);
+		}
+
+		// Register observer for layout changes.
+		this.observer = new ResizeObserver(() => this.resize());
+		this.observer.observe(this.$refs.root);
+	},
+
+	/**
+	 * Invoked when the component is destroyed.
+	 * Used to unregister global mouse listeners and resize observer.
+	 */
+	beforeUnmount: function(): void {
+		// Unregister global mouse/keyboard listeners.
+		document.removeEventListener('mousemove', this.onMouseMove);
+		document.removeEventListener('mouseup', this.onMouseUp);
+
+		document.removeEventListener('paste', this.onPaste);
+
+		if (this.keyinput)
+			document.removeEventListener('keydown', this.onKeyDown);
+
+		// Disconnect resize observer.
+		this.observer.disconnect();
 	},
 
 	methods: {
@@ -310,16 +320,6 @@ export default defineComponent({
 
 				this.lastSelectItem = item;
 			}
-		}
-	},
-
-	watch: {
-		/**
-		 * Invoked when the displayItems variable changes.
-		 */
-		displayItems: function(): void {
-			for (const item of this.displayItems)
-				IconRender.loadIcon(item.icon);
 		}
 	},
 

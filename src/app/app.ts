@@ -256,6 +256,137 @@ interface NWFile {
 			};
 		},
 
+		computed: {
+			/**
+			 * Returns true if the export directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isExportPathConcerning: function(): boolean {
+				return !!this.config?.exportDirectory?.match(/\s/g);
+			},
+
+			/**
+			 * Returns true if the editing config directory contains spaces.
+			 * @returns {boolean}
+			 */
+			isEditExportPathConcerning: function(): boolean {
+				return !!this.configEdit?.exportDirectory?.match(/\s/g);
+			},
+
+			/**
+			 * Returns the location of the last export manifest.
+			 * @returns {string}
+			 */
+			lastExportPath: function(): string {
+				if (this.config.lastExportFile.length > 0)
+					return this.config.lastExportFile;
+
+				return Constants.LAST_EXPORT;
+			},
+
+			/**
+			 * Returns the default location of the last export manifest.
+			 * @returns Default location of the last export manifest
+			 */
+			lastExportPathDefault: function(): string {
+				return Constants.LAST_EXPORT;
+			},
+
+			/**
+			 * Returns the currently 'active' screen, which is first on the stack.
+			 */
+			screen: function() {
+				return this.screenStack[0];
+			},
+
+			/**
+			 * Returns the cache size formatted as a file size.
+			 */
+			cacheSizeFormatted: function() {
+				return filesize(this.cacheSize);
+			},
+
+			/**
+			 * Returns an Array of available locale keys.
+			 */
+			availableLocaleKeys: function() {
+				const flags = new Map<string, number>;
+				for (const [key, value] of Object.entries(LocaleFlags)) {
+					if (Number(key) >= 0)
+						continue;
+
+					flags.set(key, Number(value));
+				}
+
+				return Array.from(flags.keys()).map(e => {
+					return { label: e, value: flags.get(e) };
+				});
+			},
+
+			/**
+			 * Return the locale key for the configured CASC locale.
+			 */
+			selectedLocaleKey: function() {
+				return this.config.cascLocale;
+			},
+
+			/**
+			 * Return the formatted duration of the selected track on the sound player.
+			 */
+			soundPlayerDurationFormatted: function() {
+				return formatPlaybackSeconds(this.soundPlayerDuration);
+			},
+
+			/**
+			 * Return the formatted current seek of the selected track on the sound player.
+			 */
+			soundPlayerSeekFormatted: function() {
+				return formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
+			},
+
+			/**
+			 * Returns the maximum amount of pages needed for the texture ribbon.
+			 * @returns {number}
+			 */
+			textureRibbonMaxPages: function(): number {
+				return Math.ceil(this.textureRibbonStack.length / this.textureRibbonSlotCount);
+			},
+
+			/**
+			 * Returns the texture ribbon stack array subject to paging.
+			 * @returns {Array}
+			 */
+			textureRibbonDisplay: function(): Array<TextureRibbon.TextureRibbonSlot> {
+				const startIndex = this.textureRibbonPage * this.textureRibbonSlotCount;
+				return this.textureRibbonStack.slice(startIndex, startIndex + this.textureRibbonSlotCount);
+			}
+		},
+
+		watch: {
+			/**
+			 * Invoked when the active 'screen' is changed.
+			 * @param {string} val
+			 */
+			screen: function(val: string) {
+				Events.emit('screen-' + val);
+			},
+
+			/**
+			 * Invoked when the active loading percentage is changed.
+			 * @param val
+			 */
+			loadPct: function(val: number) {
+				nw.Window.get().setProgressBar(val);
+			},
+
+			/**
+			 * Invoked when the core CASC instance is changed.
+			 */
+			casc: function() {
+				Events.emit('casc-source-changed');
+			}
+		},
+
 		methods: {
 			/**
 			 * Hide the currently active toast prompt.
@@ -639,137 +770,6 @@ interface NWFile {
 				viewItemTextures(item);
 			}
 		},
-
-		computed: {
-			/**
-			 * Returns true if the export directory contains spaces.
-			 * @returns {boolean}
-			 */
-			isExportPathConcerning: function(): boolean {
-				return !!this.config?.exportDirectory?.match(/\s/g);
-			},
-
-			/**
-			 * Returns true if the editing config directory contains spaces.
-			 * @returns {boolean}
-			 */
-			isEditExportPathConcerning: function(): boolean {
-				return !!this.configEdit?.exportDirectory?.match(/\s/g);
-			},
-
-			/**
-			 * Returns the location of the last export manifest.
-			 * @returns {string}
-			 */
-			lastExportPath: function(): string {
-				if (this.config.lastExportFile.length > 0)
-					return this.config.lastExportFile;
-
-				return Constants.LAST_EXPORT;
-			},
-
-			/**
-			 * Returns the default location of the last export manifest.
-			 * @returns Default location of the last export manifest
-			 */
-			lastExportPathDefault: function(): string {
-				return Constants.LAST_EXPORT;
-			},
-
-			/**
-			 * Returns the currently 'active' screen, which is first on the stack.
-			 */
-			screen: function() {
-				return this.screenStack[0];
-			},
-
-			/**
-			 * Returns the cache size formatted as a file size.
-			 */
-			cacheSizeFormatted: function() {
-				return filesize(this.cacheSize);
-			},
-
-			/**
-			 * Returns an Array of available locale keys.
-			 */
-			availableLocaleKeys: function() {
-				const flags = new Map<string, number>;
-				for (const [key, value] of Object.entries(LocaleFlags)) {
-					if (Number(key) >= 0)
-						continue;
-
-					flags.set(key, Number(value));
-				}
-
-				return Array.from(flags.keys()).map(e => {
-					return { label: e, value: flags.get(e) };
-				});
-			},
-
-			/**
-			 * Return the locale key for the configured CASC locale.
-			 */
-			selectedLocaleKey: function() {
-				return this.config.cascLocale;
-			},
-
-			/**
-			 * Return the formatted duration of the selected track on the sound player.
-			 */
-			soundPlayerDurationFormatted: function() {
-				return formatPlaybackSeconds(this.soundPlayerDuration);
-			},
-
-			/**
-			 * Return the formatted current seek of the selected track on the sound player.
-			 */
-			soundPlayerSeekFormatted: function() {
-				return formatPlaybackSeconds(this.soundPlayerSeek * this.soundPlayerDuration);
-			},
-
-			/**
-			 * Returns the maximum amount of pages needed for the texture ribbon.
-			 * @returns {number}
-			 */
-			textureRibbonMaxPages: function(): number {
-				return Math.ceil(this.textureRibbonStack.length / this.textureRibbonSlotCount);
-			},
-
-			/**
-			 * Returns the texture ribbon stack array subject to paging.
-			 * @returns {Array}
-			 */
-			textureRibbonDisplay: function(): Array<TextureRibbon.TextureRibbonSlot> {
-				const startIndex = this.textureRibbonPage * this.textureRibbonSlotCount;
-				return this.textureRibbonStack.slice(startIndex, startIndex + this.textureRibbonSlotCount);
-			}
-		},
-
-		watch: {
-			/**
-			 * Invoked when the active 'screen' is changed.
-			 * @param {string} val
-			 */
-			screen: function(val: string) {
-				Events.emit('screen-' + val);
-			},
-
-			/**
-			 * Invoked when the active loading percentage is changed.
-			 * @param val
-			 */
-			loadPct: function(val: number) {
-				nw.Window.get().setProgressBar(val);
-			},
-
-			/**
-			 * Invoked when the core CASC instance is changed.
-			 */
-			casc: function() {
-				Events.emit('casc-source-changed');
-			}
-		}
 	});
 
 	// Register error handler for Vue errors.

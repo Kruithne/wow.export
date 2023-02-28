@@ -63,6 +63,28 @@ export default defineComponent({
 		};
 	},
 
+	watch: {
+		/**
+		 * Invoked when the map property changes for this component.
+		 * This indicates that a new map has been selected for rendering.
+		 */
+		map: function(): void {
+			// Reset the cache.
+			this.initializeCache();
+
+			// Set the map position to a default position.
+			// This will trigger a re-render for us too.
+			this.setToDefaultPosition();
+		},
+
+		/**
+		 * Invoked when the tile being hovered over changes.
+		 */
+		hoverTile: function(): void {
+			this.render();
+		}
+	},
+
 	/**
 	 * Invoked when this component is mounted in the DOM.
 	 */
@@ -115,28 +137,6 @@ export default defineComponent({
 
 		// Disconnect the resize observer for the canvas.
 		this.observer.disconnect();
-	},
-
-	watch: {
-		/**
-		 * Invoked when the map property changes for this component.
-		 * This indicates that a new map has been selected for rendering.
-		 */
-		map: function(): void {
-			// Reset the cache.
-			this.initializeCache();
-
-			// Set the map position to a default position.
-			// This will trigger a re-render for us too.
-			this.setToDefaultPosition();
-		},
-
-		/**
-		 * Invoked when the tile being hovered over changes.
-		 */
-		hoverTile: function(): void {
-			this.render();
-		}
 	},
 
 	methods: {
