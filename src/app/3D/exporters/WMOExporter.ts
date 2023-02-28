@@ -4,7 +4,7 @@ import { fileExists } from '../../generics';
 
 import Log from '../../log';
 import Listfile from '../../casc/listfile';
-import Path from 'path';
+import path from 'node:path';
 import State from '../../state';
 
 import BufferWrapper from '../../buffer';
@@ -152,7 +152,7 @@ export default class WMOExporter {
 
 				try {
 					let texFile = fileDataID + (raw ? '.blp' : '.png');
-					let texPath = Path.join(Path.dirname(out), texFile);
+					let texPath = path.join(path.dirname(out), texFile);
 
 					// Default MTl name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + fileDataID;
@@ -163,7 +163,7 @@ export default class WMOExporter {
 
 					// If we have a valid file name, use it for the material name.
 					if (fileName !== undefined) {
-						matName = 'mat_' + Path.basename(fileName.toLowerCase(), '.blp');
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
 
 						// Remove spaces from material name for MTL compatibility.
 						if (State.state.config.removePathSpaces)
@@ -182,7 +182,7 @@ export default class WMOExporter {
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
-						texFile = Path.relative(Path.dirname(out), texPath);
+						texFile = path.relative(path.dirname(out), texPath);
 					}
 
 					if (config.overwriteFiles || !await fileExists(texPath)) {
@@ -235,7 +235,7 @@ export default class WMOExporter {
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
 
-		const wmoName = Path.basename(out, '.obj');
+		const wmoName = path.basename(out, '.obj');
 		obj.setName(wmoName);
 
 		Log.write('Exporting WMO model %s as OBJ: %s', wmoName, out);
@@ -367,7 +367,7 @@ export default class WMOExporter {
 		if (config.overwriteFiles || !await fileExists(csvPath)) {
 			const useAbsolute = State.state.config.enableAbsoluteCSVPaths;
 			const usePosix = State.state.config.pathFormat === 'posix';
-			const outDir = Path.dirname(out);
+			const outDir = path.dirname(out);
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
 
@@ -435,10 +435,10 @@ export default class WMOExporter {
 								doodadCache.add(fileDataID);
 							}
 
-							let modelPath = Path.relative(outDir, m2Path);
+							let modelPath = path.relative(outDir, m2Path);
 
 							if (useAbsolute === true)
-								modelPath = Path.resolve(outDir, modelPath);
+								modelPath = path.resolve(outDir, modelPath);
 
 							if (usePosix)
 								modelPath = ExportHelper.win32ToPosix(modelPath);
@@ -469,7 +469,7 @@ export default class WMOExporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(Path.basename(mtl.out));
+			obj.setMaterialLibrary(path.basename(mtl.out));
 
 		await obj.write(config.overwriteFiles);
 		await mtl.write(config.overwriteFiles);
@@ -597,7 +597,7 @@ export default class WMOExporter {
 		const textures = await this.exportTextures(out, null, helper, true);
 		const texturesManifest = Array<WMOTextureManifestEntry>();
 		for (const [texFileDataID, texInfo] of textures.textureMap)
-			texturesManifest.push({ fileDataID: texFileDataID, file: Path.relative(out, texInfo.matPath) });
+			texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(out, texInfo.matPath) });
 
 		manifest.addProperty('textures', texturesManifest);
 
@@ -617,10 +617,10 @@ export default class WMOExporter {
 				if (config.enableSharedChildren)
 					groupFile = ExportHelper.getExportPath(groupName);
 				else
-					groupFile = Path.join(out, Path.basename(groupName));
+					groupFile = path.join(out, path.basename(groupName));
 
 				await groupData.writeToFile(groupFile);
-				groupManifest.push({ fileDataID: groupFileDataID, file: Path.relative(out, groupFile) });
+				groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
 			}
 
 			manifest.addProperty('groups', groupManifest);
