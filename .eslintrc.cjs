@@ -40,6 +40,11 @@ module.exports = {
 				'indent': 'off',
 				'vue/html-indent': ['error', 'tab'],
 				'vue/script-indent': ['error', 'tab', { 'baseIndent': 1 }],
+				'vue/max-attributes-per-line': 'off',
+				'vue/html-self-closing': 'off',
+				'vue/attributes-order': 'off',
+				'vue/singleline-html-element-content-newline': 'off',
+				'vue/require-v-for-key': 'off',
 			}
 		}
 	],
