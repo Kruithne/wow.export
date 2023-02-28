@@ -5,10 +5,16 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Headers for the data table. */
-		'headers': Array,
+		'headers': {
+			type: Array,
+			required: true
+		},
 
 		/** Rows for the data table. */
-		'rows': Array,
+		'rows': {
+			type: Array,
+			required: true
+		},
 	},
 
 	data: function() {

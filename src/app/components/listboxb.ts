@@ -5,10 +5,16 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
-		'items': Array,
+		'items': {
+			type: Array,
+			required: true
+		},
 
 		/** Reactive selection controller. */
-		'selection': Object,
+		'selection': {
+			type: Array,
+			required: true
+		},
 
 		/** If set, only one entry can be selected. */
 		'single': Boolean,

@@ -4,7 +4,10 @@ import { defineComponent } from 'vue';
 
 export default defineComponent({
 	props: {
-		value: String
+		value: {
+			type: String,
+			default: ''
+		}
 	},
 
 	/**

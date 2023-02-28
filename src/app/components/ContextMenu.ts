@@ -15,7 +15,10 @@ window.addEventListener('mousemove', (event: MouseEvent) => {
 export default defineComponent({
 	props: {
 		/** Object which this contect menu represents */
-		'node': [Object, Boolean],
+		'node': {
+			type: [Object, Boolean],
+			required: true
+		},
 	},
 
 	data: function() {

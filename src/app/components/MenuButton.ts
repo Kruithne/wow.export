@@ -10,13 +10,22 @@ type Option = {
 export default defineComponent({
 	props: {
 		/** Array of options to display in the menu. */
-		'options': Array,
+		'options': {
+			type: Array,
+			required: true
+		},
 
 		/** Default option to select. */
-		'default': String,
+		'default': {
+			type: String,
+			required: true
+		},
 
 		/** If true, the component is disabled. */
-		'disabled': [Boolean, Number],
+		'disabled': {
+			type: [Boolean, Number],
+			default: false
+		},
 
 		/** If true, the full button prompts the context menu, not just the arrow. */
 		'dropdown': Boolean

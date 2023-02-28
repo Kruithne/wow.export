@@ -5,7 +5,10 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Slider value between 0 and 1. */
-		'modelValue': Number
+		'modelValue': {
+			type: Number,
+			default: 0
+		}
 	},
 
 	data: function() {

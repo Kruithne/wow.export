@@ -34,22 +34,40 @@ const state = {
 export default defineComponent({
 	props: {
 		/** Tile loader function. */
-		'loader': Function,
+		'loader': {
+			type: Function,
+			required: true
+		},
 
 		/** Base size of tiles (before zoom). */
-		'tileSize': Number,
+		'tileSize': {
+			type: Number,
+			required: true
+		},
 
 		/** ID of the current map. We use this to listen for map changes. */
-		'map': String,
+		'map': {
+			type: Number,
+			required: true
+		},
 
 		/** Maximum zoom-out factor allowed. */
-		'zoom': Number,
+		'zoom': {
+			type: Number,
+			required: true,
+		},
 
 		/** Chunk mask. Expected MAP_SIZE ^ 2 array. */
-		'mask': Array,
+		'mask': {
+			type: Array,
+			required: true
+		},
 
 		/** Array defining selected tiles. */
-		'selection': Array
+		'selection': {
+			type: Array,
+			required: true
+		}
 	},
 
 	data: function() {

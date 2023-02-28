@@ -6,13 +6,22 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
-		'items': Array,
+		'items': {
+			type: Array,
+			required: true
+		},
 
 		/** Optional reactive filter for items. */
-		'filter': String,
+		'filter': {
+			type: [String, undefined],
+			default: undefined
+		},
 
 		/** Reactive selection controller. */
-		'selection': Object,
+		'selection': {
+			type: Array,
+			required: true
+		},
 
 		/** If set, only one entry can be selected. */
 		'single': Boolean,
@@ -27,7 +36,10 @@ export default defineComponent({
 		'includefilecount': Boolean,
 
 		/** Unit name for what the listbox contains. Used with includefilecount. */
-		'unittype': String
+		'unittype': {
+			type: [String, undefined],
+			default: undefined
+		}
 	},
 
 	/**

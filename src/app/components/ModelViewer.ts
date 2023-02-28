@@ -7,7 +7,10 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** The context to render. */
-		'context': Object
+		'context': {
+			type: Object,
+			required: true
+		}
 	},
 
 	/** Invoked when the component is mounted. */

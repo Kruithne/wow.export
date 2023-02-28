@@ -5,7 +5,10 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	props: {
 		/** Item entries displayed in the list. */
-		'items': Array,
+		'items': {
+			type: Array,
+			required: true
+		}
 	},
 
 	/**
