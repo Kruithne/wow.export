@@ -22,7 +22,8 @@
 		"build-debug": "node --no-warnings ./build.js --debug --code --assets --framework",
 		"update": "node --no-warnings ./build.js --code",
 		"update-debug": "node --no-warnings ./build.js --debug --code",
-		"build-release": "node --no-warnings ./build.js --code --assets --framework --update --package"
+		"build-release": "node --no-warnings ./build.js --code --assets --framework --update --package",
+		"vue-devtools": "npx vue-devtools"
 	},
 	"devDependencies": {
 		"@kogs/argv": "^1.1.0",
@@ -35,6 +36,7 @@
 		"@types/three": "^0.148.1",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
+		"@vue/devtools": "^6.5.0",
 		"eslint": "^8.32.0",
 		"eslint-plugin-jest": "^27.2.1",
 		"eslint-plugin-vue": "^9.9.0",

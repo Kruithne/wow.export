@@ -97,6 +97,13 @@ interface NWFile {
 		// Open DevTools if we're in debug mode.
 		win.showDevTools();
 
+		let fuzz = 1;
+		window['connectVueDevTools'] = (): void => {
+			const script = document.createElement('script');
+			script.src = 'http://localhost:8098?fuzz=' + fuzz++;
+			document.head.appendChild(script);
+		};
+
 		// Add a quick-reload keybinding.
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'F5')
