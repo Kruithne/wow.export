@@ -17,7 +17,7 @@ export default defineComponent({
 	 * Invoked before this component is destroyed.
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 */
-	beforeDestroy: function(): void {
+	beforeUnmount: function(): void {
 		this.observer.disconnect();
 	},
 

@@ -30,7 +30,7 @@ export default defineComponent({
 	 * Invoked when this component is destroyed.
 	 * Used to remove internal references to file node.
 	 */
-	destroyed: function(): void {
+	unmounted: function(): void {
 		this.fileSelector.remove();
 	},
 

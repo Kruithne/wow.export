@@ -33,7 +33,7 @@ export default defineComponent({
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners.
 	 */
-	beforeDestroy: function(): void {
+	beforeUnmount: function(): void {
 		// Unregister global mouse listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
