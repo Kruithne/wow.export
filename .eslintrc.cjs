@@ -1,8 +1,9 @@
 module.exports = {
 	'root': true,
 	'ignorePatterns': ['src/app/3D/lib', 'bin/', '*.js'],
-	'parser': '@typescript-eslint/parser',
+	'parser': 'vue-eslint-parser',
 	'parserOptions': {
+		'parser': '@typescript-eslint/parser',
 		'ecmaVersion': 'latest',
 		'sourceType': 'module'
 	},
@@ -28,6 +29,18 @@ module.exports = {
 		'no-trailing-spaces': 'error',
 		'keyword-spacing': 'error'
 	},
+
+	overrides: [
+		{
+			files: ['*.vue'],
+			rules: {
+				'indent': 'off',
+				'vue/html-indent': ['error', 'tab'],
+				'vue/script-indent': ['error', 'tab', { 'baseIndent': 1 }],
+			}
+		}
+	],
+
 	'plugins': [
 		'vue',
 		'jest',
