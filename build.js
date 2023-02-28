@@ -90,9 +90,9 @@ try {
 
 	// If --framework is set, update the build directory with distribution files.
 	if (argv.options.asBoolean('framework')) {
-		// Step 4: Build nw.js distribution using `@kogs/nwjs'.
-		// See https://github.com/Kruithne/kogs-nwjs for usage information.
-		log.info('Running {@kogs/nwjs}...');
+		// Step 4: Build nw.js distribution using `nwjs-installer'.
+		// See https://github.com/Kruithne/nwjs-installer for usage information.
+		log.info('Running {nwjs-installer}...');
 		run('nwjs --target-dir "%s" --version 0.69.1 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
