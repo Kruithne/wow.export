@@ -1,6 +1,7 @@
 import webpack from 'webpack';
 import path from 'path';
 import TerserPlugin from 'terser-webpack-plugin';
+import { VueLoaderPlugin } from 'vue-loader';
 
 export default (env) => {
 	const config = {
@@ -54,7 +55,14 @@ export default (env) => {
 				{
 					test: /\.ts(x)?$/,
 					exclude: /node_modules/,
-					loader: 'ts-loader'
+					loader: 'ts-loader',
+					options: {
+						appendTsSuffixTo: [/\.vue$/]
+					}
+				},
+				{
+					test: /\.vue$/,
+					loader: 'vue-loader'
 				}
 			]
 		},
@@ -86,7 +94,9 @@ export default (env) => {
 				'__VUE_OPTIONS_API__': true, // See https://link.vuejs.org/feature-flags
 				'__VUE_PROD_DEVTOOLS__': false, // See https://link.vuejs.org/feature-flags
 				'process.env.NODE_ENV': env.BUILD_TYPE === 'release' ? '"production"' : '"development"'
-			})
+			}),
+
+			new VueLoaderPlugin()
 		]
 	};
 
