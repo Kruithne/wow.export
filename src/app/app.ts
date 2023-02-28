@@ -47,18 +47,18 @@ import './ui/tab-raw';
 import './ui/tab-text';
 import './ui/tab-videos';
 
-import ComponentCheckboxList from './components/checkboxlist';
-import ComponentContextMenu from './components/context-menu';
-import ComponentDataTable from './components/data-table';
-import ComponentFileField from './components/file-field';
-import ComponentItemListBox from './components/itemlistbox';
-import ComponentListBox from './components/listbox';
-import ComponentListBoxB from './components/listboxb';
-import ComponentMapViewer from './components/map-viewer';
-import ComponentModelViewer from './components/model-viewer';
-import ComponentMenuButton from './components/menu-button';
-import ComponentResizeLayer from './components/resize-layer';
-import ComponentSlider from './components/slider';
+import ComponentCheckboxList from './components/CheckBoxList';
+import ComponentContextMenu from './components/ContextMenu';
+import ComponentDataTable from './components/DataTable';
+import ComponentFileField from './components/FileField';
+import ComponentItemListBox from './components/ItemListBox';
+import ComponentListBox from './components/ListBox';
+import ComponentListBoxB from './components/ListBoxB';
+import ComponentMapViewer from './components/MapViewer';
+import ComponentModelViewer from './components/ModelViewer';
+import ComponentMenuButton from './components/MenuButton';
+import ComponentResizeLayer from './components/ResizeLayer';
+import ComponentSlider from './components/SliderComponent';
 
 import ExportHelper from './casc/export-helper';
 
@@ -776,18 +776,18 @@ interface NWFile {
 	app.config.errorHandler = CrashHandler.handleVueError;
 
 	// Register components.
-	app.component('checkboxlist', ComponentCheckboxList);
-	app.component('context-menu', ComponentContextMenu);
-	app.component('data-table', ComponentDataTable);
-	app.component('file-field', ComponentFileField);
-	app.component('itemlistbox', ComponentItemListBox);
-	app.component('listbox', ComponentListBox);
-	app.component('listboxb', ComponentListBoxB);
-	app.component('map-viewer', ComponentMapViewer);
-	app.component('menu-button', ComponentMenuButton);
-	app.component('model-viewer', ComponentModelViewer);
-	app.component('resize-layer', ComponentResizeLayer);
-	app.component('slider', ComponentSlider);
+	app.component('CheckboxList', ComponentCheckboxList);
+	app.component('ContextMenu', ComponentContextMenu);
+	app.component('DataTable', ComponentDataTable);
+	app.component('FileField', ComponentFileField);
+	app.component('ItemListBox', ComponentItemListBox);
+	app.component('ListBox', ComponentListBox);
+	app.component('ListBoxB', ComponentListBoxB);
+	app.component('MapViewer', ComponentMapViewer);
+	app.component('MenuButton', ComponentMenuButton);
+	app.component('ModelViewer', ComponentModelViewer);
+	app.component('ResizeLayer', ComponentResizeLayer);
+	app.component('SliderComponent', ComponentSlider);
 
 	const state = defineComponent(app.mount('#container'));
 	State.state = state;
