@@ -316,5 +316,3 @@ export default class M2Renderer {
 		this.disposeMeshGroup();
 	}
 }
-
-module.exports = M2Renderer;
