@@ -49,13 +49,13 @@ try {
 	// If --code is set, update the code files in the build directory.
 	// Having this separate is useful for development, as we don't need to rebuild everything.
 	if (argv.options.asBoolean('code')) {
-		// Step 1: Run `rollup` to bundle our app to a single `app.js` file.
-		// This will run `tsc` (via `rollup-plugin-typescript2`) to compile TypeScript source code.
-		// This will also run `terser` (via `@rollup/plugin-terser`) to minify/optimize the output.
-		// See `rollup.config.js` for how these are configured.
-		// See https://rollupjs.org/command-line-interface/ for usage information.
-		log.info('Running {tsc}, {terser}, {rollup}...');
-		run('rollup --config rollup.config.js --environment "BUILD_TYPE:%s,BUILD_DIR:%s"', buildType, buildDir);
+		// Step 1: Run `webpack` to bundle our app to a single `app.js` file.
+		// This will run `tsc` (via `ts-loader`) to compile TypeScript source code.
+		// This will also run `terser` (via `TerserWebpackPlugin`) to minify/optimize the output.
+		// See `webpack.config.js` for how these are configured.
+		// See https://webpack.js.org/configuration/ for usage information.
+		log.info('Running {webpack}...');
+		run('webpack --config webpack.config.js --env BUILD_TYPE="%s" --env BUILD_DIR="%s"', buildType, buildDir);
 
 		// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
 		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
