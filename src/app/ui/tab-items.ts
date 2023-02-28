@@ -85,6 +85,8 @@ export class Item {
 	}
 }
 
+export type ItemType = InstanceType<typeof Item>;
+
 /**
  * Switches to the model viewer, selecting the models for the given item.
  * @param item

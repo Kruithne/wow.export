@@ -36,7 +36,7 @@ const MODEL_TYPE_WMO = Symbol('ModelType_WMO');
 
 type ModelType = typeof MODEL_TYPE_M2 | typeof MODEL_TYPE_WMO;
 
-type SkinInfo = {
+export type SkinInfo = {
 	id: string,
 	label: string
 };
