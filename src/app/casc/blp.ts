@@ -387,22 +387,22 @@ export default class BLPImage {
 		if (canvasData) {
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const ofs = i * 4;
-				const colour = this.palette[this.rawData[i]];
+				const palOfs = this.rawData[i] * 4;
 
-				canvasData[ofs] = (mask & 0b1) ? colour[2] : 0;
-				canvasData[ofs + 1] = (mask & 0b10) ? colour[1] : 0;
-				canvasData[ofs + 2] = (mask & 0b100) ? colour[0] : 0;
+				canvasData[ofs] = (mask & 0b1) ? this.palette[palOfs + 2] : 0;
+				canvasData[ofs + 1] = (mask & 0b10) ? this.palette[palOfs + 1] : 0;
+				canvasData[ofs + 2] = (mask & 0b100) ? this.palette[palOfs] : 0;
 				canvasData[ofs + 3] = (mask & 0b1000) ? this._getAlpha(i) : 255;
 			}
 		} else {
 			const buf = new BufferWrapper(Buffer.allocUnsafe(this.scaledLength * 4));
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
-				const colour = this.palette[this.rawData[i]];
+				const palOfs = this.rawData[i] * 4;
 
 				buf.writeUInt32(
-					(mask & 0b1 ? colour[2] : 0) << 24 |
-					(mask & 0b10 ? colour[1] : 0) << 16 |
-					(mask & 0b100 ? colour[0] : 0) << 8 |
+					(mask & 0b1 ? this.palette[palOfs + 2] : 0) << 24 |
+					(mask & 0b10 ? this.palette[palOfs + 1] : 0) << 16 |
+					(mask & 0b100 ? this.palette[palOfs] : 0) << 8 |
 					(mask & 0b1000 ? this._getAlpha(i) : 255)
 				);
 			}
