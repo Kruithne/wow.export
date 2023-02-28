@@ -47,18 +47,18 @@ import './ui/tab-raw';
 import './ui/tab-text';
 import './ui/tab-videos';
 
-import ComponentCheckboxList from './components/CheckBoxList';
-import ComponentContextMenu from './components/ContextMenu';
-import ComponentDataTable from './components/DataTable';
-import ComponentFileField from './components/FileField';
-import ComponentItemListBox from './components/ItemListBox';
-import ComponentListBox from './components/ListBox';
-import ComponentListBoxB from './components/ListBoxB';
-import ComponentMapViewer from './components/MapViewer';
-import ComponentModelViewer from './components/ModelViewer';
-import ComponentMenuButton from './components/MenuButton';
-import ComponentResizeLayer from './components/ResizeLayer';
-import ComponentSlider from './components/SliderComponent';
+import ComponentCheckboxList from './components/CheckBoxList.vue';
+import ComponentContextMenu from './components/ContextMenu.vue';
+import ComponentDataTable from './components/DataTable.vue';
+import ComponentFileField from './components/FileField.vue';
+import ComponentItemListBox from './components/ItemListBox.vue';
+import ComponentListBox from './components/ListBox.vue';
+import ComponentListBoxB from './components/ListBoxB.vue';
+import ComponentMapViewer from './components/MapViewer.vue';
+import ComponentModelViewer from './components/ModelViewer.vue';
+import ComponentMenuButton from './components/MenuButton.vue';
+import ComponentResizeLayer from './components/ResizeLayer.vue';
+import ComponentSlider from './components/SliderComponent.vue';
 
 import ExportHelper from './casc/export-helper';
 
