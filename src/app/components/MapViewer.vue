@@ -75,7 +75,7 @@
 		'zoom': { type: Number, required: true },
 
 		/** Chunk mask. Expected MAP_SIZE ^ 2 array */
-		'mask': { type: Array<number>, required: true },
+		'mask': { type: [Array<number>, null], required: true },
 
 		/** Array defining selected tiles */
 		'selection': { type: Array<number>, required: true }
