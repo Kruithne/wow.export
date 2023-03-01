@@ -66,6 +66,7 @@ try {
 		run('sass src/css/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
 
 		// Step 2.1: Run `tailwindcss` to compile our Tailwind CSS to a single css file.
+		// See https://tailwindcss.com/docs/installation for usage information.
 		log.info('Running {tailwindcss}...');
 		run('npx tailwindcss -i ./src/css/style.css -o %s', path.join(buildDir, 'src', 'style.css'));
 	}
