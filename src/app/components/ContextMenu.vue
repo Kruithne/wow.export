@@ -24,7 +24,7 @@
 	defineEmits(['close']);
 	defineProps({
 		/** Object which this contect menu represents */
-		'node': { type: [Object, Boolean], required: true }
+		'node': { type: [Object, Boolean, null], required: true }
 	});
 
 	const positionX = ref(0);
