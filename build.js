@@ -61,6 +61,10 @@ try {
 		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
 		log.info('Running {sass}...');
 		run('sass src/css/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
+
+		// Step 2.1: Run `tailwindcss` to compile our Tailwind CSS to a single css file.
+		log.info('Running {tailwindcss}...');
+		run('npx tailwindcss -i ./src/css/style.css -o %s', path.join(buildDir, 'src', 'style.css'));
 	}
 
 	let includes = [];

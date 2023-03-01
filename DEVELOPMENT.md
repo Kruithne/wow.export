@@ -27,6 +27,7 @@ Before you start developing wow.export, you will need to set-up your environment
 When using VSCode to develop wow.export, the following extensions are recommended:
 
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
 - [Vue Language Features (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) [*]
 - [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) [**]
 
