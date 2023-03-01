@@ -52,8 +52,9 @@ The above command is going to do nothing unless it is provided with options, whi
 ```
 --debug 	 Build the debug version of wow.export.
 --framework  Builds the framework into the build directory.
---code       Compiles TypeScript/SCSS into the build directory.
+--code       Compiles TypeScript into the build directory.
 --assets     Copies static assets into the build directory.
+--style      Compiles styling (SCSS/Tailwind) into the build directory.
 --shaders    Copies shader files into the build directory.
 --package    Produces a release package (ZIP).
 --update     Generates files for the update server.
@@ -74,12 +75,13 @@ node build --code
 For quicker access, the following scripts are provided in the `package.json` file:
 
 ```bash
-npm run build # --code --assets --framework --shaders
+npm run build # --code --assets --framework --shaders --style
 npm run build-debug # --debug --code --assets --framework --shaders
 npm run update # --code
 npm run update-debug # --debug --code
+run npm update-style # --debug --style
 npm run update-shaders # --debug --shaders
-npm run build-release # --code --assets --shaders --framework --package --update
+npm run build-release # --code --assets --shaders --framework --package --update --style
 ```
 
 ### Assets
