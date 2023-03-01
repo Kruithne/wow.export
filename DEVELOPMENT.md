@@ -73,6 +73,7 @@ The above command is going to do nothing unless it is provided with options, whi
 --framework  Builds the framework into the build directory.
 --code       Compiles TypeScript/SCSS into the build directory.
 --assets     Copies static assets into the build directory.
+--shaders    Copies shader files into the build directory.
 --package    Produces a release package (ZIP).
 --update     Generates files for the update server.
 ```

@@ -22,8 +22,11 @@ const INCLUDE = {
 };
 
 const INCLUDE_CODE = {
-	'src/shaders': 'src/shaders',
 	'src/app/index.html': 'src/index.html',
+};
+
+const INCLUDE_SHADERS = {
+	'src/shaders': 'src/shaders',
 };
 
 const REMAP = {
@@ -72,6 +75,10 @@ try {
 	// If --code is set, update the build directory with additional code files.
 	if (argv.options.asBoolean('code'))
 		includes = includes.concat(Object.entries(INCLUDE_CODE));
+
+	// If --shaders is set, update the build directory with shader files.
+	if (argv.options.asBoolean('shaders'))
+		includes = includes.concat(Object.entries(INCLUDE_SHADERS));
 
 	// If --assets is set, update the build directory with asset files.
 	if (argv.options.asBoolean('assets'))
