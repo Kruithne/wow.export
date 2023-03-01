@@ -26,7 +26,7 @@
 		'options': { type: Array<Option>, required: true },
 
 		/** Default option to select. */
-		'default': { type: String, required: true },
+		'default': { type: [String, Number], required: true },
 
 		/** If true, the component is disabled. */
 		'disabled': { type: [Boolean, Number], default: false },
