@@ -93,12 +93,12 @@ node build --code
 For quicker access, the following scripts are provided in the `package.json` file:
 
 ```bash
-npm run build # --code --assets --framework
-npm run build-debug # --debug --code --assets --framework
+npm run build # --code --assets --framework --shaders
+npm run build-debug # --debug --code --assets --framework --shaders
 npm run update # --code
-npm run update-debug # --code
+npm run update-debug # --debug --code
 npm run update-shaders # --debug --shaders
-npm run build-release # --code --assets --framework --package --update
+npm run build-release # --code --assets --shaders --framework --package --update
 ```
 
 ### Assets
