@@ -97,6 +97,7 @@ npm run build # --code --assets --framework
 npm run build-debug # --debug --code --assets --framework
 npm run update # --code
 npm run update-debug # --code
+npm run update-shaders # --debug --shaders
 npm run build-release # --code --assets --framework --package --update
 ```
 
