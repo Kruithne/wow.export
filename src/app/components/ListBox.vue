@@ -13,10 +13,92 @@
 	</div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
+	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 	import path from 'node:path';
-	import { defineComponent } from 'vue';
 	import Events from '../events';
+
+	defineEmits(['options']);
+	const props = defineProps({
+		/** Item entries displayed in the list. */
+		'items': { type: Array<string>, required: true },
+
+		/** Optional override item entry list. */
+		'override': { type: [Array<string>, undefined], default: undefined },
+
+		/** Optional reactive filter for items. */
+		'filter': { type: [String, undefined], default: undefined },
+
+		/** If set, listbox allows selection pasting. */
+		'pasteselection': { type: [Boolean] },
+
+		/** If set, specifies the copy mode for this listbox. */
+		'copymode': { type: [String, undefined], default: undefined },
+
+		/** If set, whitespace will be trimmed from copied entries. */
+		'copytrimwhitespace': { type: [Boolean] },
+
+		/** Reactive selection controller. */
+		'selection': { type: Array<string>, required: true },
+
+		/** If set, only one entry can be selected. */
+		'single': Boolean,
+
+		/** If true, listbox registers for keyboard input. */
+		'keyinput': Boolean,
+
+		/** If true, filter will be treated as a regular expression. */
+		'regex': Boolean,
+
+		/** If true, includes a file counter on the component. */
+		'includefilecount': Boolean,
+
+		/** Unit name for what the listbox contains. Used with includefilecount. */
+		'unittype': { type: [String, undefined], default: undefined }
+	});
+
+	const scroll = ref(0);
+	const scrollRel = ref(0);
+	const isScrolling = ref(false);
+	const slotCount = ref(1);
+
+	let lastSelectItem: string | null = null;
+	let scrollStartY: number;
+	let scrollStart: number;
+
+	const root = ref<HTMLDivElement>();
+	const scroller = ref<HTMLDivElement>();
+
+	const observer = new ResizeObserver(resize);
+
+	const scrollOffset = computed(() => (scroll.value) + 'px');
+	const scrollIndex = computed(() => Math.round((filteredItems.value.length - slotCount.value) * scrollRel.value));
+	const itemList = computed(() => props.override?.length > 0 ? props.override : props.items);
+	const displayItems = computed(() => filteredItems.value.slice(scrollIndex.value, scrollIndex.value + slotCount.value));
+	const itemWeight = computed(() => 1 / filteredItems.value.length);
+
+	const filteredItems = computed(() => {
+		// Skip filtering if no filter is set.
+		if (!props.filter)
+			return itemList.value;
+
+		let res = itemList.value;
+
+		if (props.regex) {
+			try {
+				const filter = new RegExp(props.filter.trim(), 'i');
+				res = res.filter(e => e.match(filter));
+			} catch (e) {
+				// Regular expression did not compile, skip filtering.
+			}
+		} else {
+			const filter = props.filter.trim().toLowerCase();
+			if (filter.length > 0)
+				res = res.filter(e => e.toLowerCase().includes(filter));
+		}
+
+		return res;
+	});
 
 	function fid_filter(e: string): string {
 		const start = e.indexOf(' [');
@@ -28,391 +110,200 @@
 		return e;
 	}
 
-	export default defineComponent({
-		props: {
-			/** Item entries displayed in the list. */
-			'items': {
-				type: Array,
-				required: true
-			},
+	watch(filteredItems, (filteredItems) => {
+		// Remove anything from the user selection that has now been filtered out.
+		// Iterate backwards here due to re-indexing as elements are spliced.
+		for (let i = props.selection.length - 1; i >= 0; i--) {
+			if (!filteredItems.includes(props.selection[i]))
+				props.selection.splice(i, 1);
+		}
+	});
 
-			/** Optional reactive filter for items. */
-			'filter': {
-				type: [String, undefined],
-				default: undefined
-			},
+	/** Invoked by a ResizeObserver when the main component node is resized due to layout changes. */
+	function resize(): void {
+		if (root.value && scroller.value) {
+			scroll.value = (root.value.clientHeight - (scroller.value.clientHeight)) * scrollRel.value;
+			slotCount.value = Math.floor(root.value.clientHeight / 26);
+		}
+	}
 
-			/** Reactive selection controller. */
-			'selection': {
-				type: Array,
-				required: true
-			},
+	/** Restricts the scroll offset to prevent overflowing and calculates the relative (0-1) offset based on the scroll. */
+	function recalculateBounds(): void {
+		const max = root.value.clientHeight - (scroller.value.clientHeight);
+		scroll.value = Math.min(max, Math.max(0, scroll.value));
+		scrollRel.value = scroll.value / max;
+	}
 
-			/** If set, only one entry can be selected. */
-			'single': Boolean,
+	/** Invoked when a mouse-down event is captured on the scroll widget. */
+	function startMouse(event: MouseEvent): void {
+		scrollStartY = event.clientY;
+		scrollStart = scroll.value;
+		isScrolling.value = true;
+	}
 
-			/** If true, listbox registers for keyboard input. */
-			'keyinput': Boolean,
+	/** Invoked when a mouse-move event is captured globally. */
+	function moveMouse(event: MouseEvent): void {
+		if (isScrolling.value) {
+			scroll.value = scrollStart + (event.clientY - scrollStartY);
+			recalculateBounds();
+		}
+	}
 
-			/** If true, filter will be treated as a regular expression. */
-			'regex': Boolean,
+	/** Invoked when a mouse-up event is captured globally. */
+	function stopMouse(): void {
+		isScrolling.value = false;
+	}
 
-			/** Defines the behavior of CTRL + C. */
-			'copymode': {
-				type: String,
-				required: true
-			},
+	/** Invoked when a user attempts to paste a selection. */
+	function handlePaste(event: ClipboardEvent): void {
+		// Paste selection must be enabled for this feature.
+		if (!props.pasteselection)
+			return;
 
-			/** If true, CTRL + V will load a selection. */
-			'pasteselection': Boolean,
+		// Replace the current selection with one from the clipboard.
+		const entries = event.clipboardData.getData('text').split(/\r?\n/).filter(i => itemList.value.includes(i));
+		props.selection.splice(0);
+		props.selection.push(...entries);
+	}
 
-			/** If true, whitespace is trimmed from copied paths. */
-			'copytrimwhitespace': Boolean,
+	/** Invoked when a mouse-wheel event is captured on the component node. */
+	function wheelMouse(event: WheelEvent): void {
+		const weight = root.value.clientHeight - (scroller.value.clientHeight);
+		const child = root.value.querySelector('.item');
 
-			/** If true, includes a file counter on the component. */
-			'includefilecount': Boolean,
+		if (child !== null) {
+			const scrollCount = Math.floor(root.value.clientHeight / child.clientHeight);
+			const direction = event.deltaY > 0 ? 1 : -1;
+			scroll.value += ((scrollCount * itemWeight.value) * weight) * direction;
+			recalculateBounds();
+		}
+	}
 
-			/** Unit name for what the listbox contains. Used with includefilecount. */
-			'unittype': {
-				type: [String, undefined],
-				default: undefined
-			},
+	/** Invoked when a keydown event is fired. */
+	function handleKey(event: KeyboardEvent): void {
+		// If document.activeElement is the document body, then we can safely assume
+		// the user is not focusing anything, and can intercept keyboard input.
+		if (document.activeElement !== document.body)
+			return;
 
-			/** If provided, used as an override listfile. */
-			'override': {
-				type: [Array, undefined],
-				default: undefined
-			}
-		},
+		// User hasn't selected anything in the listbox yet.
+		if (!lastSelectItem)
+			return;
 
-		/**
-		 * Reactive instance data.
-		 */
-		data: function() {
-			return {
-				scroll: 0,
-				scrollRel: 0,
-				isScrolling: false,
-				slotCount: 1,
-				lastSelectItem: null
-			};
-		},
+		if (event.key === 'c' && event.ctrlKey) {
+			// Copy selection to clipboard.
+			let entries = props.selection;
+			if (props.copymode == 'DIR')
+				entries = entries.map(e => path.dirname(e));
+			else if (props.copymode == 'FID')
+				entries = entries.map(fid_filter);
 
-		computed: {
-			/**
-			 * Offset of the scroll widget in pixels.
-			 * Between 0 and the height of the component.
-			 */
-			scrollOffset: function(): string {
-				return (this.scroll) + 'px';
-			},
-
-			/**
-			 * Index which array reading should start at, based on the current
-			 * relative scroll and the overal item count. Value is dynamically
-			 * capped based on slot count to prevent empty slots appearing.
-			 */
-			scrollIndex: function(): number {
-				return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
-			},
-
-			/**
-			 * Returns the active item list to
-			 * @returns
-			 */
-			itemList: function(): Array<string> {
-				return this.override?.length > 0 ? this.override : this.items;
-			},
-
-			/**
-			 * Reactively filtered version of the underlying data array.
-			 * Automatically refilters when the filter input is changed.
-			 */
-			filteredItems: function(): Array<string> {
-				// Skip filtering if no filter is set.
-				if (!this.filter)
-					return this.itemList;
-
-				let res = this.itemList;
-
-				if (this.regex) {
-					try {
-						const filter = new RegExp(this.filter.trim(), 'i');
-						res = res.filter(e => e.match(filter));
-					} catch (e) {
-						// Regular expression did not compile, skip filtering.
-					}
-				} else {
-					const filter = this.filter.trim().toLowerCase();
-					if (filter.length > 0)
-						res = res.filter(e => e.toLowerCase().includes(filter));
-				}
-
-				return res;
-			},
-
-			/**
-			 * Dynamic array of items which should be displayed from the underlying
-			 * data array. Reactively updates based on scroll and data.
-			 */
-			displayItems: function(): Array<string> {
-				return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
-			},
-
-			/**
-			 * Weight (0-1) of a single item.
-			 */
-			itemWeight: function(): number {
-				return 1 / this.filteredItems.length;
-			}
-		},
-
-		watch: {
-			/**
-			 * Invoked when the filteredItems computed property changes.
-			 * @param filteredItems - New state of the filteredItems computed property.
-			 */
-			filteredItems: function(filteredItems): void {
-				// Remove anything from the user selection that has now been filtered out.
-				// Iterate backwards here due to re-indexing as elements are spliced.
-				for (let i = this.selection.length - 1; i >= 0; i--) {
-					if (!filteredItems.includes(this.selection[i]))
-						this.selection.splice(i, 1);
-				}
-			}
-		},
-
-		/**
-		 * Invoked when the component is mounted.
-		 * Used to register global listeners and resize observer.
-		 */
-		mounted: function(): void {
-			this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
-			this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
-			this.onPaste = (e: ClipboardEvent): void => this.handlePaste(e);
-
-			document.addEventListener('mousemove', this.onMouseMove);
-			document.addEventListener('mouseup', this.onMouseUp);
-
-			document.addEventListener('paste', this.onPaste);
-
-			if (this.keyinput) {
-				this.onKeyDown = (e: KeyboardEvent): void => this.handleKey(e);
-				document.addEventListener('keydown', this.onKeyDown);
-			}
-
-			// Register observer for layout changes.
-			this.observer = new ResizeObserver(() => this.resize());
-			this.observer.observe(this.$refs.root);
-		},
-
-		/**
-		 * Invoked when the component is destroyed.
-		 * Used to unregister global mouse listeners and resize observer.
-		 */
-		beforeUnmount: function(): void {
-			// Unregister global mouse/keyboard listeners.
-			document.removeEventListener('mousemove', this.onMouseMove);
-			document.removeEventListener('mouseup', this.onMouseUp);
-
-			document.removeEventListener('paste', this.onPaste);
-
-			if (this.keyinput)
-				document.removeEventListener('keydown', this.onKeyDown);
-
-			// Disconnect resize observer.
-			this.observer.disconnect();
-		},
-
-		methods: {
-			/**
-			 * Invoked by a ResizeObserver when the main component node
-			 * is resized due to layout changes.
-			 */
-			resize: function(): void {
-				if (this.$refs.root && this.$refs.scroller) {
-					this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
-					this.slotCount = Math.floor(this.$refs.root.clientHeight / 26);
-				}
-			},
-
-			/**
-			 * Restricts the scroll offset to prevent overflowing and
-			 * calculates the relative (0-1) offset based on the scroll.
-			 */
-			recalculateBounds: function(): void {
-				const max = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-				this.scroll = Math.min(max, Math.max(0, this.scroll));
-				this.scrollRel = this.scroll / max;
-			},
-
-			/**
-			 * Invoked when a mouse-down event is captured on the scroll widget.
-			 * @param event
-			 */
-			startMouse: function(event: MouseEvent): void {
-				this.scrollStartY = event.clientY;
-				this.scrollStart = this.scroll;
-				this.isScrolling = true;
-			},
-
-			/**
-			 * Invoked when a mouse-move event is captured globally.
-			 * @param event
-			 */
-			moveMouse: function(event: MouseEvent): void {
-				if (this.isScrolling) {
-					this.scroll = this.scrollStart + (event.clientY - this.scrollStartY);
-					this.recalculateBounds();
-				}
-			},
-
-			/**
-			 * Invoked when a mouse-up event is captured globally.
-			 */
-			stopMouse: function(): void {
-				this.isScrolling = false;
-			},
-
-			/**
-			 * Invoked when a user attempts to paste a selection.
-			 * @param event
-			 */
-			handlePaste: function(event: ClipboardEvent): void {
-				// Paste selection must be enabled for this feature.
-				if (!this.pasteselection)
-					return;
-
-				// Replace the current selection with one from the clipboard.
-				const entries = event.clipboardData.getData('text').split(/\r?\n/).filter(i => this.itemList.includes(i));
-				this.selection.splice(0);
-				this.selection.push(...entries);
-			},
-
-			/**
-			 * Invoked when a mouse-wheel event is captured on the component node.
-			 * @param event
-			 */
-			wheelMouse: function(event: WheelEvent): void {
-				const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-				const child = this.$refs.root.querySelector('.item');
-
-				if (child !== null) {
-					const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
-					const direction = event.deltaY > 0 ? 1 : -1;
-					this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
-					this.recalculateBounds();
-				}
-			},
-
-			/**
-			 * Invoked when a keydown event is fired.
-			 * @param event
-			 */
-			handleKey: function(event: KeyboardEvent): void {
-				// If document.activeElement is the document body, then we can safely assume
-				// the user is not focusing anything, and can intercept keyboard input.
-				if (document.activeElement !== document.body)
-					return;
-
-				// User hasn't selected anything in the listbox yet.
-				if (!this.lastSelectItem)
-					return;
-
-				if (event.key === 'c' && event.ctrlKey) {
-					// Copy selection to clipboard.
-					let entries = this.selection;
-					if (this.copymode == 'DIR')
-						entries = entries.map(e => path.dirname(e));
-					else if (this.copymode == 'FID')
-						entries = entries.map(fid_filter);
-
-					// Remove whitespace from paths to keep consistency with exports.
-					if (this.copytrimwhitespace)
-						entries = entries.map(e => e.replace(/\s/g, ''));
+			// Remove whitespace from paths to keep consistency with exports.
+			if (props.copytrimwhitespace)
+				entries = entries.map(e => e.replace(/\s/g, ''));
 
 
-					Events.emit('copy-to-clipboard', entries.join('\n'));
-				} else {
-					// Arrow keys.
-					const isArrowUp = event.key === 'ArrowUp';
-					const isArrowDown = event.key === 'ArrowDown';
-					if (isArrowUp || isArrowDown) {
-						const delta = isArrowUp ? -1 : 1;
+			Events.emit('copy-to-clipboard', entries.join('\n'));
+		} else {
+			// Arrow keys.
+			const isArrowUp = event.key === 'ArrowUp';
+			const isArrowDown = event.key === 'ArrowDown';
+			if (isArrowUp || isArrowDown) {
+				const delta = isArrowUp ? -1 : 1;
 
-						// Move/expand selection one.
-						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-						const nextIndex = lastSelectIndex + delta;
-						const next = this.filteredItems[nextIndex];
-						if (next) {
-							const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
-							let diff = Math.abs(nextIndex - lastViewIndex);
-							if (isArrowDown)
-								diff += 1;
+				// Move/expand selection one.
+				const lastSelectIndex = filteredItems.value.indexOf(lastSelectItem);
+				const nextIndex = lastSelectIndex + delta;
+				const next = filteredItems.value[nextIndex];
+				if (next) {
+					const lastViewIndex = isArrowUp ? scrollIndex.value : scrollIndex.value + slotCount.value;
+					let diff = Math.abs(nextIndex - lastViewIndex);
+					if (isArrowDown)
+						diff += 1;
 
-							if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
-								const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-								this.scroll += ((diff * this.itemWeight) * weight) * delta;
-								this.recalculateBounds();
-							}
-
-							if (!event.shiftKey || this.single)
-								this.selection.splice(0);
-
-							this.selection.push(next);
-							this.lastSelectItem = next;
-						}
-					}
-				}
-			},
-
-			/**
-			 * Invoked when a user selects an item in the list.
-			 * @param item
-			 * @param event
-			 */
-			selectItem: function(item: string, event: MouseEvent): void {
-				const checkIndex = this.selection.indexOf(item);
-
-				if (this.single) {
-					// Listbox is in single-entry mode, replace selection.
-					if (checkIndex === -1) {
-						this.selection.splice(0);
-						this.selection.push(item);
+					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+						const weight = root.value.clientHeight - (scroller.value.clientHeight);
+						scroll.value += ((diff * itemWeight.value) * weight) * delta;
+						recalculateBounds();
 					}
 
-					this.lastSelectItem = item;
-				} else {
-					if (event.ctrlKey) {
-						// Ctrl-key held, so allow multiple selections.
-						if (checkIndex > -1)
-							this.selection.splice(checkIndex, 1);
-						else
-							this.selection.push(item);
-					} else if (event.shiftKey) {
-						// Shift-key held, select a range.
-						if (this.lastSelectItem && this.lastSelectItem !== item) {
-							const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-							const thisSelectIndex = this.filteredItems.indexOf(item);
+					if (!event.shiftKey || props.single)
+						props.selection.splice(0);
 
-							const delta = Math.abs(lastSelectIndex - thisSelectIndex);
-							const lowest = Math.min(lastSelectIndex, thisSelectIndex);
-							const range = this.filteredItems.slice(lowest, lowest + delta + 1);
-
-							for (const select of range) {
-								if (this.selection.indexOf(select) === -1)
-									this.selection.push(select);
-							}
-						}
-					} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
-						// Normal click, replace entire selection.
-						this.selection.splice(0);
-						this.selection.push(item);
-					}
-
-					this.lastSelectItem = item;
+					props.selection.push(next);
+					lastSelectItem = next;
 				}
 			}
 		}
+	}
+
+	/** Invoked when a user selects an item in the list. */
+	function selectItem(item: string, event: MouseEvent): void {
+		const checkIndex = props.selection.indexOf(item);
+
+		if (props.single) {
+			// Listbox is in single-entry mode, replace selection.
+			if (checkIndex === -1) {
+				props.selection.splice(0);
+				props.selection.push(item);
+			}
+
+			lastSelectItem = item;
+		} else {
+			if (event.ctrlKey) {
+				// Ctrl-key held, so allow multiple selections.
+				if (checkIndex > -1)
+					props.selection.splice(checkIndex, 1);
+				else
+					props.selection.push(item);
+			} else if (event.shiftKey) {
+				// Shift-key held, select a range.
+				if (lastSelectItem && lastSelectItem !== item) {
+					const lastSelectIndex = filteredItems.value.indexOf(lastSelectItem);
+					const thisSelectIndex = filteredItems.value.indexOf(item);
+
+					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+					const range = filteredItems.value.slice(lowest, lowest + delta + 1);
+
+					for (const select of range) {
+						if (props.selection.indexOf(select) === -1)
+							props.selection.push(select);
+					}
+				}
+			} else if (checkIndex === -1 || (checkIndex > -1 && props.selection.length > 1)) {
+				// Normal click, replace entire selection.
+				props.selection.splice(0);
+				props.selection.push(item);
+			}
+
+			lastSelectItem = item;
+		}
+	}
+
+	onMounted(() => {
+		document.addEventListener('mousemove', moveMouse);
+		document.addEventListener('mouseup', stopMouse);
+		document.addEventListener('paste', handlePaste);
+
+		if (props.keyinput)
+			document.addEventListener('keydown', handleKey);
+
+		// Register observer for layout changes.
+		observer.observe(root.value);
+	});
+
+	onBeforeUnmount(() => {
+		// Unregister global mouse/keyboard listeners.
+		document.removeEventListener('mousemove', moveMouse);
+		document.removeEventListener('mouseup', stopMouse);
+
+		document.removeEventListener('paste', handlePaste);
+
+		if (props.keyinput)
+			document.removeEventListener('keydown', handleKey);
+
+		// Disconnect resize observer.
+		observer.disconnect();
 	});
 </script>

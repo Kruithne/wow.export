@@ -2,74 +2,66 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <template>
-	<div class="image ui-model-viewer"></div>
+	<div class="image ui-model-viewer" ref="root"></div>
 </template>
 
-	<script lang="ts">
+<script lang="ts" setup>
 	import { OrbitControls } from '../3D/lib/OrbitControls';
 	import * as THREE from 'three';
-	import { defineComponent } from 'vue';
+	import { ref, onMounted, onBeforeUnmount } from 'vue';
 
-	export default defineComponent({
-		props: {
-			/** The context to render. */
-			'context': {
-				type: Object,
-				required: true
-			}
-		},
+	const props = defineProps({
+		/** The context to render. */
+		'context': { type: Object, required: true }
+	});
 
-		/** Invoked when the component is mounted. */
-		mounted: function(): void {
-			const container = this.$el;
-			this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+	const root = ref<HTMLDivElement>();
 
-			const canvas = this.renderer.domElement;
-			container.appendChild(canvas);
+	const renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+	const controls = new OrbitControls(props.context.camera, renderer.domElement);
 
-			this.controls = new OrbitControls(this.context.camera, canvas);
-			//this.controls.enableKeys = false;
-			this.context.controls = this.controls;
+	const isRendering = ref(false);
 
-			this.onResize = (): void => {
-				// We need to remove the canvas from the container so that the layout updates
-				// correctly and then we can update the AR/canvas size based on that layout.
-				container.removeChild(this.renderer.domElement);
+	function render(): void {
+		if (!isRendering.value)
+			return;
 
-				this.context.camera.aspect = container.clientWidth / container.clientHeight;
-				this.context.camera.updateProjectionMatrix();
-				this.renderer.setSize(container.clientWidth, container.clientHeight, false);
+		requestAnimationFrame(render);
 
-				// Add the canvas back now that we have the proper measurements applied.
-				container.appendChild(this.renderer.domElement);
-			};
+		controls.update();
+		renderer.render(props.context.scene, props.context.camera);
+	}
 
-			this.onResize();
-			window.addEventListener('resize', this.onResize);
+	function onResize(): void {
+		// We need to remove the canvas from the container so that the layout updates
+		// correctly and then we can update the AR/canvas size based on that layout.
+		root.value.removeChild(renderer.domElement);
 
-			this.isRendering = true;
-			this.render();
-		},
+		props.context.camera.aspect = root.value.clientWidth / root.value.clientHeight;
+		props.context.camera.updateProjectionMatrix();
+		renderer.setSize(root.value.clientWidth, root.value.clientHeight, false);
 
-		/**
-		 * Invoked when the component is destroyed.
-		 */
-		beforeUnmount: function(): void {
-			this.isRendering = false;
-			this.controls.dispose();
-			this.renderer.dispose();
-			window.removeEventListener('resize', this.onResize);
-		},
+		// Add the canvas back now that we have the proper measurements applied.
+		root.value.appendChild(renderer.domElement);
+	}
 
-		methods: {
-			render: function(): void {
-				if (!this.isRendering)
-					return;
+	onMounted(() => {
+		root.value.appendChild(renderer.domElement);
 
-				this.controls.update();
-				this.renderer.render(this.context.scene, this.context.camera);
-				requestAnimationFrame(() => this.render());
-			}
-		}
+		//this.controls.enableKeys = false;
+		props.context.controls = controls;
+
+		onResize();
+		window.addEventListener('resize', onResize);
+
+		isRendering.value = true;
+		render();
+	});
+
+	onBeforeUnmount(() => {
+		isRendering.value = false;
+		controls.dispose();
+		renderer.dispose();
+		window.removeEventListener('resize', onResize);
 	});
 </script>

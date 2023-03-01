@@ -2,33 +2,19 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <template>
-	<div>
+	<div ref="root">
 		<slot></slot>
 	</div>
 </template>
 
-<script lang="ts">
-	import { defineComponent } from 'vue';
+<script lang="ts" setup>
+	import { ref, onMounted, onBeforeUnmount } from 'vue';
 
-	export default defineComponent({
-		emits: ['resize'],
+	const emit = defineEmits(['resize']);
 
-		/**
-		 * Invoked when this component is mounted.
-		 * @see https://vuejs.org/v2/guide/instance.html
-		 *
-		 */
-		mounted: function(): void {
-			this.observer = new ResizeObserver(() => this.$emit('resize', this.$el.clientWidth));
-			this.observer.observe(this.$el);
-		},
+	const root = ref<HTMLDivElement>();
+	const observer = new ResizeObserver(() => emit('resize', root.value.clientWidth));
 
-		/**
-		 * Invoked before this component is destroyed.
-		 * @see https://vuejs.org/v2/guide/instance.html
-		 */
-		beforeUnmount: function(): void {
-			this.observer.disconnect();
-		}
-	});
+	onMounted(() => observer.observe(root.value));
+	onBeforeUnmount(() => observer.disconnect());
 </script>

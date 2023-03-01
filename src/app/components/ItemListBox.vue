@@ -17,350 +17,253 @@
 	</div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
+	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 	import * as IconRender from '../icon-render';
-	import { defineComponent } from 'vue';
 	import { ItemType } from '../ui/tab-items';
 	import Events from '../events';
 
-	export default defineComponent({
-		props: {
-			/** Item entries displayed in the list. */
-			'items': {
-				type: Array<ItemType>,
-				required: true
-			},
+	defineEmits(['options']);
+	const props = defineProps({
+		/** Item entries displayed in the list. */
+		'items': { type: Array<ItemType>, required: true },
 
-			/** Optional reactive filter for items. */
-			'filter': {
-				type: [String, undefined],
-				default: undefined
-			},
+		/** Optional reactive filter for items. */
+		'filter': { type: [String, undefined], default: undefined },
 
-			/** Reactive selection controller. */
-			'selection': {
-				type: Array,
-				required: true
-			},
+		/** Reactive selection controller. */
+		'selection': { type: Array<ItemType>, required: true },
 
-			/** If set, only one entry can be selected. */
-			'single': Boolean,
+		/** If set, only one entry can be selected. */
+		'single': Boolean,
 
-			/** If true, listbox registers for keyboard input. */
-			'keyinput': Boolean,
+		/** If true, listbox registers for keyboard input. */
+		'keyinput': Boolean,
 
-			/** If true, filter will be treated as a regular expression. */
-			'regex': Boolean,
+		/** If true, filter will be treated as a regular expression. */
+		'regex': Boolean,
 
-			/** If true, includes a file counter on the component. */
-			'includefilecount': Boolean,
+		/** If true, includes a file counter on the component. */
+		'includefilecount': Boolean,
 
-			/** Unit name for what the listbox contains. Used with includefilecount. */
-			'unittype': {
-				type: [String, undefined],
-				default: undefined
+		/** Unit name for what the listbox contains. Used with includefilecount. */
+		'unittype': { type: [String, undefined], default: undefined }
+	});
+
+	const root = ref<HTMLDivElement>();
+	const scroller = ref<HTMLDivElement>();
+
+	const scroll = ref(0);
+	const scrollRel = ref(0);
+	const isScrolling = ref(false);
+	const slotCount = ref(1);
+
+	let scrollStartY: number;
+	let scrollStart: number;
+
+	let lastSelectItem: ItemType | null = null;
+
+	const observer = new ResizeObserver(resize);
+
+	const scrollOffset = computed(() => (scroll.value) + 'px');
+	const scrollIndex = computed(() => Math.round((filteredItems.value.length - slotCount.value) * scrollRel.value));
+	const displayItems = computed(() => filteredItems.value.slice(scrollIndex.value, scrollIndex.value + slotCount.value));
+	const itemWeight = computed(() => 1 / filteredItems.value.length);
+	const filteredItems = computed(() => {
+		// Skip filtering if no filter is set.
+		if (!props.filter)
+			return props.items;
+
+		let res = props.items;
+		if (props.regex) {
+			try {
+				const filter = new RegExp(props.filter.trim(), 'i');
+				res = res.filter(e => e.displayName.match(filter));
+			} catch (e) {
+				// Regular expression did not compile, skip filtering.
 			}
-		},
+		} else {
+			const filter = props.filter.trim().toLowerCase();
+			if (filter.length > 0)
+				res = res.filter(e => e.displayName.toLowerCase().includes(filter));
+		}
 
-		emits: ['options'],
+		return res;
+	});
 
-		/**
-		 * Reactive instance data.
-		 */
-		data: function() {
-			return {
-				scroll: 0,
-				scrollRel: 0,
-				isScrolling: false,
-				slotCount: 1,
-				lastSelectItem: null
-			};
-		},
+	watch(filteredItems, (filteredItems) => {
+		// Remove anything from the user selection that has now been filtered out.
+		// Iterate backwards here due to re-indexing as elements are spliced.
+		for (let i = props.selection.length - 1; i >= 0; i--) {
+			if (!filteredItems.includes(props.selection[i]))
+				props.selection.splice(i, 1);
+		}
+	});
 
-		computed: {
-			/**
-			 * Offset of the scroll widget in pixels.
-			 * Between 0 and the height of the component.
-			 */
-			scrollOffset: function(): string {
-				return (this.scroll) + 'px';
-			},
+	watch(displayItems, () => {
+		for (const item of displayItems.value)
+			IconRender.loadIcon(item.icon);
+	});
 
-			/**
-			 * Index which array reading should start at, based on the current
-			 * relative scroll and the overal item count. Value is dynamically
-			 * capped based on slot count to prevent empty slots appearing.
-			 */
-			scrollIndex: function(): number {
-				return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
-			},
+	/** Invoked by a ResizeObserver when the main component node is resized due to layout changes. */
+	function resize(): void {
+		if (root.value && scroller.value) {
+			scroll.value = (root.value.clientHeight - (scroller.value.clientHeight)) * scrollRel.value;
+			slotCount.value = Math.floor(root.value.clientHeight / 26);
+		}
+	}
 
-			/**
-			 * Reactively filtered version of the underlying data array.
-			 * Automatically refilters when the filter input is changed.
-			 */
-			filteredItems: function(): Array<ItemType> {
-				// Skip filtering if no filter is set.
-				if (!this.filter)
-					return this.items;
+	/** Restricts the scroll offset to prevent overflowing and calculates the relative (0-1) offset based on the scroll. */
+	function recalculateBounds(): void {
+		const max = root.value.clientHeight - (scroller.value.clientHeight);
+		scroll.value = Math.min(max, Math.max(0, scroll.value));
+		scrollRel.value = scroll.value / max;
+	}
 
-				let res = this.items;
+	/** Invoked when a mouse-down event is captured on the scroll widget. */
+	function startMouse(event: MouseEvent): void {
+		scrollStartY = event.clientY;
+		scrollStart = scroll.value;
+		isScrolling.value = true;
+	}
 
-				if (this.regex) {
-					try {
-						const filter = new RegExp(this.filter.trim(), 'i');
-						res = res.filter(e => e.displayName.match(filter));
-					} catch (e) {
-						// Regular expression did not compile, skip filtering.
-					}
-				} else {
-					const filter = this.filter.trim().toLowerCase();
-					if (filter.length > 0)
-						res = res.filter(e => e.displayName.toLowerCase().includes(filter));
-				}
+	/** Invoked when a mouse-move event is captured globally. */
+	function moveMouse(event: MouseEvent): void {
+		if (isScrolling.value) {
+			scroll.value = scrollStart + (event.clientY - scrollStartY);
+			recalculateBounds();
+		}
+	}
 
-				return res;
-			},
+	/** Invoked when a mouse-up event is captured globally. */
+	function stopMouse(): void {
+		isScrolling.value = false;
+	}
 
-			/**
-			 * Dynamic array of items which should be displayed from the underlying
-			 * data array. Reactively updates based on scroll and data.
-			 */
-			displayItems: function(): Array<ItemType> {
-				return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
-			},
+	/** Invoked when a mouse-wheel event is captured on the component node. */
+	function wheelMouse(event: WheelEvent): void {
+		const weight = root.value.clientHeight - (scroller.value.clientHeight);
+		const child = root.value.querySelector('.item');
 
-			/**
-			 * Weight (0-1) of a single item.
-			 */
-			itemWeight: function(): number {
-				return 1 / this.filteredItems.length;
-			}
-		},
+		if (child !== null) {
+			const scrollCount = Math.floor(root.value.clientHeight / child.clientHeight);
+			const direction = event.deltaY > 0 ? 1 : -1;
+			scroll.value += ((scrollCount * itemWeight.value) * weight) * direction;
+			recalculateBounds();
+		}
+	}
 
-		watch: {
-			/**
-			 * Invoked when the filteredItems computed property changes.
-			 * @param filteredItems - New state of the filteredItems computed property.
-			 */
-			filteredItems: function(filteredItems): void {
-				// Remove anything from the user selection that has now been filtered out.
-				// Iterate backwards here due to re-indexing as elements are spliced.
-				for (let i = this.selection.length - 1; i >= 0; i--) {
-					if (!filteredItems.includes(this.selection[i]))
-						this.selection.splice(i, 1);
-				}
-			},
+	/** Invoked when a keydown event is fired. */
+	function handleKey(event: KeyboardEvent): void {
+		// If document.activeElement is the document body, then we can safely assume
+		// the user is not focusing anything, and can intercept keyboard input.
+		if (document.activeElement !== document.body)
+			return;
 
-			/**
-			 * Invoked when the displayItems variable changes.
-			 */
-			displayItems: function(): void {
-				for (const item of this.displayItems)
-					IconRender.loadIcon(item.icon);
-			}
-		},
+		// User hasn't selected anything in the listbox yet.
+		if (!lastSelectItem)
+			return;
 
-		/**
-		 * Invoked when the component is mounted.
-		 * Used to register global listeners and resize observer.
-		 */
-		mounted: function(): void {
-			this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
-			this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
+		if (event.key === 'c' && event.ctrlKey) {
+			// Copy selection to clipboard.
+			Events.emit('copy-to-clipboard', props.selection.map((e: ItemType) => e.displayName).join('\n'));
+		} else {
+			// Arrow keys.
+			const isArrowUp = event.key === 'ArrowUp';
+			const isArrowDown = event.key === 'ArrowDown';
+			if (isArrowUp || isArrowDown) {
+				const delta = isArrowUp ? -1 : 1;
 
-			document.addEventListener('mousemove', this.onMouseMove);
-			document.addEventListener('mouseup', this.onMouseUp);
+				// Move/expand selection one.
+				const lastSelectIndex = filteredItems.value.indexOf(lastSelectItem);
+				const nextIndex = lastSelectIndex + delta;
+				const next = filteredItems.value[nextIndex];
+				if (next) {
+					const lastViewIndex = isArrowUp ? scrollIndex.value : scrollIndex.value + slotCount.value;
+					let diff = Math.abs(nextIndex - lastViewIndex);
+					if (isArrowDown)
+						diff += 1;
 
-			if (this.keyinput) {
-				this.onKeyDown = (e: KeyboardEvent): void => this.handleKey(e);
-				document.addEventListener('keydown', this.onKeyDown);
-			}
-
-			// Register observer for layout changes.
-			this.observer = new ResizeObserver(() => this.resize());
-			this.observer.observe(this.$refs.root);
-		},
-
-		/**
-		 * Invoked when the component is destroyed.
-		 * Used to unregister global mouse listeners and resize observer.
-		 */
-		beforeUnmount: function(): void {
-			// Unregister global mouse/keyboard listeners.
-			document.removeEventListener('mousemove', this.onMouseMove);
-			document.removeEventListener('mouseup', this.onMouseUp);
-
-			document.removeEventListener('paste', this.onPaste);
-
-			if (this.keyinput)
-				document.removeEventListener('keydown', this.onKeyDown);
-
-			// Disconnect resize observer.
-			this.observer.disconnect();
-		},
-
-		methods: {
-			/**
-			 * Invoked by a ResizeObserver when the main component node
-			 * is resized due to layout changes.
-			 */
-			resize: function(): void {
-				if (this.$refs.root && this.$refs.scroller) {
-					this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
-					this.slotCount = Math.floor(this.$refs.root.clientHeight / 26);
-				}
-			},
-
-			/**
-			 * Restricts the scroll offset to prevent overflowing and
-			 * calculates the relative (0-1) offset based on the scroll.
-			 */
-			recalculateBounds: function(): void {
-				const max = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-				this.scroll = Math.min(max, Math.max(0, this.scroll));
-				this.scrollRel = this.scroll / max;
-			},
-
-			/**
-			 * Invoked when a mouse-down event is captured on the scroll widget.
-			 * @param event - Mouse event.
-			 */
-			startMouse: function(event: MouseEvent): void {
-				this.scrollStartY = event.clientY;
-				this.scrollStart = this.scroll;
-				this.isScrolling = true;
-			},
-
-			/**
-			 * Invoked when a mouse-move event is captured globally.
-			 * @param event
-			 */
-			moveMouse: function(event: MouseEvent): void {
-				if (this.isScrolling) {
-					this.scroll = this.scrollStart + (event.clientY - this.scrollStartY);
-					this.recalculateBounds();
-				}
-			},
-
-			/** Invoked when a mouse-up event is captured globally. */
-			stopMouse: function(): void {
-				this.isScrolling = false;
-			},
-
-			/**
-			 * Invoked when a mouse-wheel event is captured on the component node.
-			 * @param event
-			 */
-			wheelMouse: function(event: WheelEvent): void {
-				const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-				const child = this.$refs.root.querySelector('.item');
-
-				if (child !== null) {
-					const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
-					const direction = event.deltaY > 0 ? 1 : -1;
-					this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
-					this.recalculateBounds();
-				}
-			},
-
-			/**
-			 * Invoked when a keydown event is fired.
-			 * @param event
-			 */
-			handleKey: function(event: KeyboardEvent): void {
-				// If document.activeElement is the document body, then we can safely assume
-				// the user is not focusing anything, and can intercept keyboard input.
-				if (document.activeElement !== document.body)
-					return;
-
-				// User hasn't selected anything in the listbox yet.
-				if (!this.lastSelectItem)
-					return;
-
-				if (event.key === 'c' && event.ctrlKey) {
-					// Copy selection to clipboard.
-					Events.emit('copy-to-clipboard', this.selection.map((e: ItemType) => e.displayName).join('\n'));
-				} else {
-					// Arrow keys.
-					const isArrowUp = event.key === 'ArrowUp';
-					const isArrowDown = event.key === 'ArrowDown';
-					if (isArrowUp || isArrowDown) {
-						const delta = isArrowUp ? -1 : 1;
-
-						// Move/expand selection one.
-						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-						const nextIndex = lastSelectIndex + delta;
-						const next = this.filteredItems[nextIndex];
-						if (next) {
-							const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
-							let diff = Math.abs(nextIndex - lastViewIndex);
-							if (isArrowDown)
-								diff += 1;
-
-							if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
-								const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
-								this.scroll += ((diff * this.itemWeight) * weight) * delta;
-								this.recalculateBounds();
-							}
-
-							if (!event.shiftKey || this.single)
-								this.selection.splice(0);
-
-							this.selection.push(next);
-							this.lastSelectItem = next;
-						}
-					}
-				}
-			},
-
-			/**
-			 * Invoked when a user selects an item in the list.
-			 * @param item
-			 * @param event
-			 */
-			selectItem: function(item: ItemType, event: MouseEvent): void {
-				const checkIndex = this.selection.indexOf(item);
-
-				if (this.single) {
-					// Listbox is in single-entry mode, replace selection.
-					if (checkIndex === -1) {
-						this.selection.splice(0);
-						this.selection.push(item);
+					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+						const weight = root.value.clientHeight - (scroller.value.clientHeight);
+						scroll.value += ((diff * itemWeight.value) * weight) * delta;
+						recalculateBounds();
 					}
 
-					this.lastSelectItem = item;
-				} else {
-					if (event.ctrlKey) {
-						// Ctrl-key held, so allow multiple selections.
-						if (checkIndex > -1)
-							this.selection.splice(checkIndex, 1);
-						else
-							this.selection.push(item);
-					} else if (event.shiftKey) {
-						// Shift-key held, select a range.
-						if (this.lastSelectItem && this.lastSelectItem !== item) {
-							const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-							const thisSelectIndex = this.filteredItems.indexOf(item);
+					if (!event.shiftKey || props.single)
+						props.selection.splice(0);
 
-							const delta = Math.abs(lastSelectIndex - thisSelectIndex);
-							const lowest = Math.min(lastSelectIndex, thisSelectIndex);
-							const range = this.filteredItems.slice(lowest, lowest + delta + 1);
-
-							for (const select of range) {
-								if (this.selection.indexOf(select) === -1)
-									this.selection.push(select);
-							}
-						}
-					} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
-						// Normal click, replace entire selection.
-						this.selection.splice(0);
-						this.selection.push(item);
-					}
-
-					this.lastSelectItem = item;
+					props.selection.push(next);
+					lastSelectItem = next;
 				}
 			}
 		}
+	}
+
+	/** Invoked when a user selects an item in the list. */
+	function selectItem(item: ItemType, event: MouseEvent): void {
+		const checkIndex = props.selection.indexOf(item);
+
+		if (props.single) {
+			// Listbox is in single-entry mode, replace selection.
+			if (checkIndex === -1) {
+				props.selection.splice(0);
+				props.selection.push(item);
+			}
+
+			lastSelectItem = item;
+		} else {
+			if (event.ctrlKey) {
+				// Ctrl-key held, so allow multiple selections.
+				if (checkIndex > -1)
+					props.selection.splice(checkIndex, 1);
+				else
+					props.selection.push(item);
+			} else if (event.shiftKey) {
+				// Shift-key held, select a range.
+				if (lastSelectItem && lastSelectItem !== item) {
+					const lastSelectIndex = filteredItems.value.indexOf(lastSelectItem);
+					const thisSelectIndex = filteredItems.value.indexOf(item);
+
+					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+					const range = filteredItems.value.slice(lowest, lowest + delta + 1);
+
+					for (const select of range) {
+						if (props.selection.indexOf(select) === -1)
+							props.selection.push(select);
+					}
+				}
+			} else if (checkIndex === -1 || (checkIndex > -1 && props.selection.length > 1)) {
+				// Normal click, replace entire selection.
+				props.selection.splice(0);
+				props.selection.push(item);
+			}
+
+			lastSelectItem = item;
+		}
+	}
+
+	onMounted(() => {
+		document.addEventListener('mousemove', moveMouse);
+		document.addEventListener('mouseup', stopMouse);
+
+		if (props.keyinput)
+			document.addEventListener('keydown', handleKey);
+
+		// Register observer for layout changes.
+		observer.observe(root.value);
+	});
+
+	onBeforeUnmount(() => {
+		// Unregister global mouse/keyboard listeners.
+		document.removeEventListener('mousemove', moveMouse);
+		document.removeEventListener('mouseup', stopMouse);
+
+		if (props.keyinput)
+			document.removeEventListener('keydown', handleKey);
+
+		// Disconnect resize observer.
+		observer.disconnect();
 	});
 </script>

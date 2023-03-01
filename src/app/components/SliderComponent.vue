@@ -2,103 +2,66 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <template>
-	<div class="ui-slider" @click="handleClick">
+	<div class="ui-slider" @click="handleClick" ref="root">
 		<div class="fill" :style="{ width: (modelValue * 100) + '%' }"></div>
 		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (modelValue * 100) + '%' }"></div>
 	</div>
 </template>
 
-<script lang="ts">
-	import { defineComponent } from 'vue';
+<script lang="ts" setup>
+	import { ref, onMounted, onBeforeUnmount } from 'vue';
 
-	export default defineComponent({
-		props: {
-			/** Slider value between 0 and 1. */
-			'modelValue': {
-				type: Number,
-				default: 0
-			}
-		},
+	const props = defineProps({
+		/** Slider value between 0 and 1. */
+		'modelValue': { type: Number, default: 0 }
+	});
 
-		emits: ['input'],
+	const emit = defineEmits(['input']);
 
-		data: function() {
-			return {
-				isScrolling: false, // True if the slider is being dragged.
-			};
-		},
+	const root = ref<HTMLDivElement>();
+	const handle = ref<HTMLDivElement>();
 
-		/**
-		 * Invoked when the component is mounted.
-		 * Used to register global mouse listeners.
-		 */
-		mounted: function(): void {
-			this.onMouseMove = (e: MouseEvent): void => this.moveMouse(e);
-			this.onMouseUp = (e: MouseEvent): void => this.stopMouse(e);
+	const isScrolling = ref(false);
+	const scrollStart = ref(0);
+	const scrollStartX = ref(0);
 
-			document.addEventListener('mousemove', this.onMouseMove);
-			document.addEventListener('mouseup', this.onMouseUp);
-		},
+	function setValue(value: number): void {
+		emit('input', Math.min(1, Math.max(0, value)));
+	}
 
-		/**
-		 * Invoked when the component is destroyed.
-		 * Used to unregister global mouse listeners.
-		 */
-		beforeUnmount: function(): void {
-			// Unregister global mouse listeners.
-			document.removeEventListener('mousemove', this.onMouseMove);
-			document.removeEventListener('mouseup', this.onMouseUp);
-		},
+	function startMouse(event: MouseEvent): void {
+		scrollStartX.value = event.clientX;
+		scrollStart.value = props.modelValue;
+		isScrolling.value = true;
+	}
 
-		methods: {
-			/**
-			 * Set the current value of this slider.
-			 * @param value
-			 */
-			setValue: function(value: number): void {
-				this.$emit('input', Math.min(1, Math.max(0, value)));
-			},
-
-			/**
-			 * Invoked when a mouse-down event is captured on the slider handle.
-			 * @param event
-			 */
-			startMouse: function(event: MouseEvent): void {
-				this.scrollStartX = event.clientX;
-				this.scrollStart = this.modelValue;
-				this.isScrolling = true;
-			},
-
-			/**
-			 * Invoked when a mouse-move event is captured globally.
-			 * @param event
-			 */
-			moveMouse: function(event: MouseEvent): void {
-				if (this.isScrolling) {
-					const max = this.$el.clientWidth;
-					const delta = event.clientX - this.scrollStartX;
-					this.setValue(this.scrollStart + (delta / max));
-				}
-			},
-
-			/**
-			 * Invoked when a mouse-up event is captured globally.
-			 */
-			stopMouse: function(): void {
-				this.isScrolling = false;
-			},
-
-			/**
-			 * Invoked when the user clicks somewhere on the slider.
-			 * @param event
-			 */
-			handleClick: function(event: MouseEvent): void {
-				// Don't handle click events on the draggable handle.
-				if (event.target === this.$refs.handle)
-					return;
-
-				this.setValue(event.offsetX / this.$el.clientWidth);
-			}
+	function moveMouse(event: MouseEvent): void {
+		if (isScrolling.value) {
+			const max = root.value.clientWidth;
+			const delta = event.clientX - scrollStartX.value;
+			setValue(scrollStart.value + delta / max);
 		}
+	}
+
+	function stopMouse(): void {
+		isScrolling.value = false;
+	}
+
+	function handleClick(event: MouseEvent): void {
+		// Don't handle click events on the draggable handle.
+		if (event.target === handle.value)
+			return;
+
+		setValue(event.offsetX / root.value.clientWidth);
+	}
+
+	onMounted(() => {
+		document.addEventListener('mousemove', moveMouse);
+		document.addEventListener('mouseup', stopMouse);
+
+		onBeforeUnmount(() => {
+			document.removeEventListener('mousemove', moveMouse);
+			document.removeEventListener('mouseup', stopMouse);
+		});
 	});
 </script>

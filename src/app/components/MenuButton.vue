@@ -13,95 +13,47 @@
 	</div>
 </template>
 
-<script lang="ts">
-	import { defineComponent } from 'vue';
+<script lang="ts" setup>
+	import { ref, computed } from 'vue';
 
 	type Option = {
 		label: string;
 		value: string;
 	};
 
-	export default defineComponent({
-		props: {
-			/** Array of options to display in the menu. */
-			'options': {
-				type: Array<Option>,
-				required: true
-			},
+	const props = defineProps({
+		/** Array of options to display in the menu. */
+		'options': { type: Array<Option>, required: true },
 
-			/** Default option to select. */
-			'default': {
-				type: String,
-				required: true
-			},
+		/** Default option to select. */
+		'default': { type: String, required: true },
 
-			/** If true, the component is disabled. */
-			'disabled': {
-				type: [Boolean, Number],
-				default: false
-			},
+		/** If true, the component is disabled. */
+		'disabled': { type: [Boolean, Number], default: false },
 
-			/** If true, the full button prompts the context menu, not just the arrow. */
-			'dropdown': Boolean
-		},
-
-		emits: ['click', 'change'],
-
-		data: function() {
-			return {
-				selectedObj: null, // Currently selected option.
-				open: false // If the menu is open or not.
-			};
-		},
-
-		computed: {
-			/**
-			 * Returns the currently selected option or falls back to the default.
-			 * @returns {object}
-			 */
-			selected: function(): Option {
-				return this.selectedObj ?? this.defaultObj;
-			},
-
-			/**
-			 * Returns the option with the same value as the provided default or
-			 * falls back to returning the first available option.
-			 * @returns {object}
-			 */
-			defaultObj: function(): Option {
-				return this.options.find((e: Option) => e.value === this.default) ?? this.options[0];
-			}
-		},
-
-		methods: {
-			/**
-			 * Set the selected option for this menu button.
-			 * @param option
-			 */
-			select: function(option: Option): void {
-				this.open = false;
-				this.selectedObj = option;
-				this.$emit('change', option.value);
-			},
-
-			/**
-			 * Attempt to open the menu.
-			 * Respects component disabled state.
-			 */
-			openMenu: function(): void {
-				this.open = !this.open && !this.disabled;
-			},
-
-			/**
-			 * Handle clicks onto the button node.
-			 * @param event
-			 */
-			handleClick: function(event: MouseEvent): void {
-				if (this.dropdown)
-					this.openMenu();
-				else
-					this.$emit('click', event);
-			}
-		}
+		/** If true, the full button prompts the context menu, not just the arrow. */
+		'dropdown': Boolean
 	});
+
+	const emit = defineEmits(['click', 'change']);
+
+	const selectedObj = ref<Option | null>(null);
+	const open = ref(false);
+
+	const defaultObj = computed(() => props.options.find((e: Option) => e.value === props.default) ?? props.options[0]);
+	const selected = computed(() => selectedObj.value ?? defaultObj.value);
+
+	function select(option: Option): void {
+		open.value = false;
+		selectedObj.value = option;
+		emit('change', option.value);
+	}
+
+	function openMenu(): void {
+		open.value = !open.value && !props.disabled;
+	}
+
+	function handleClick(event: MouseEvent): void {
+		props.dropdown ? openMenu() : emit('click', event);
+	}
 </script>

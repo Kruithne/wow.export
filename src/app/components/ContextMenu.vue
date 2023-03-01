@@ -8,47 +8,34 @@
 	</div>
 </template>
 
-<script lang="ts">
-	import { defineComponent } from 'vue';
+<script lang="ts" setup>
+	import { ref, onBeforeUpdate } from 'vue';
 
 	let clientMouseX: number = 0;
 	let clientMouseY: number = 0;
 
 	// Keep a global track of the client mouse position.
+	// NIT: This needs to move out of this component.
 	window.addEventListener('mousemove', (event: MouseEvent) => {
 		clientMouseX = event.clientX;
 		clientMouseY = event.clientY;
 	});
 
-	export default defineComponent({
-		props: {
-			/** Object which this contect menu represents */
-			'node': {
-				type: [Object, Boolean],
-				required: true
-			},
-		},
+	defineEmits(['close']);
+	defineProps({
+		/** Object which this contect menu represents */
+		'node': { type: [Object, Boolean], required: true }
+	});
 
-		emits: ['close'],
+	const positionX = ref(0);
+	const positionY = ref(0);
+	const isLow = ref(false);
+	const isLeft = ref(false);
 
-		data: function() {
-			return {
-				positionX: 0,
-				positionY: 0,
-				isLow: false,
-				isLeft: false,
-			};
-		},
-
-		/**
-		 * Invoked when this component is about to update.
-		 * @see https://vuejs.org/v2/guide/instance.html
-		 */
-		beforeUpdate: function(): void {
-			this.positionX = clientMouseX;
-			this.positionY = clientMouseY;
-			this.isLow = this.positionY > window.innerHeight / 2;
-			this.isLeft = this.positionX > window.innerWidth / 2;
-		}
+	onBeforeUpdate(() => {
+		positionX.value = clientMouseX;
+		positionY.value = clientMouseY;
+		isLow.value = positionY.value > window.innerHeight / 2;
+		isLeft.value = positionX.value > window.innerWidth / 2;
 	});
 </script>

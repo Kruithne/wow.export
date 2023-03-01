@@ -2,54 +2,49 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <template>
-	<input type="text" :value="value" @focus="openDialog" @input="$emit('input', ($event.target as HTMLInputElement).value)" />
+	<input
+		ref="root"
+		type="text"
+		:value="value"
+		@focus="openDialog"
+		@input="$emit('input', ($event.target as HTMLInputElement).value)"
+	/>
 </template>
 
-<script lang="ts">
-	import { defineComponent } from 'vue';
+<script lang="ts" setup>
+	import { ref, onMounted, onUnmounted } from 'vue';
 
-	export default defineComponent({
-		props: {
-			value: {
-				type: String,
-				default: ''
-			}
-		},
+	const emit = defineEmits(['input']);
+	defineProps({
+		/** The current value of the field. */
+		'value': { type: String, default: '' }
+	});
 
-		emits: ['input'],
+	const root = ref<HTMLInputElement>();
 
-		/**
-		 * Invoked when the component is mounted.
-		 * Used to create an internal file node.
-		 */
-		mounted: function(): void {
-			const node = document.createElement('input');
-			node.setAttribute('type', 'file');
-			node.setAttribute('nwdirectory', 'true');
-			node.addEventListener('change', () => {
-				this.$el.value = node.value;
-				this.$emit('input', node.value);
-			});
+	let fileSelector: HTMLInputElement;
 
-			this.fileSelector = node;
-		},
+	function openDialog(): void {
+		// Wipe the value here so that it fires after user interaction
+		// even if they pick the "same" directory.
+		fileSelector.value = '';
+		fileSelector.click();
+		root.value.blur();
+	}
 
-		/**
-		 * Invoked when this component is destroyed.
-		 * Used to remove internal references to file node.
-		 */
-		unmounted: function(): void {
-			this.fileSelector.remove();
-		},
+	onMounted(() => {
+		const node = document.createElement('input');
+		node.setAttribute('type', 'file');
+		node.setAttribute('nwdirectory', 'true');
+		node.addEventListener('change', () => {
+			root.value.value = node.value;
+			emit('input', node.value);
+		});
 
-		methods: {
-			openDialog: function(): void {
-				// Wipe the value here so that it fires after user interaction
-				// even if they pick the "same" directory.
-				this.fileSelector.value = '';
-				this.fileSelector.click();
-				this.$el.blur();
-			}
-		}
+		fileSelector = node;
+	});
+
+	onUnmounted(() => {
+		fileSelector.remove();
 	});
 </script>
