@@ -59,7 +59,10 @@ try {
 		// See https://webpack.js.org/configuration/ for usage information.
 		log.info('Running {webpack}...');
 		run('webpack --config webpack.config.js --env BUILD_TYPE="%s" --env BUILD_DIR="%s"', buildType, buildDir);
+	}
 
+	// If --style is set, update the style files in the build directory.
+	if (argv.options.asBoolean('style')) {
 		// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
 		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
 		log.info('Running {sass}...');

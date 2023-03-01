@@ -18,12 +18,13 @@
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"scripts": {
 		"test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
-		"build": "node --no-warnings ./build.js --code --assets --framework --shaders",
-		"build-debug": "node --no-warnings ./build.js --debug --code --assets --framework --shaders",
+		"build": "node --no-warnings ./build.js --code --style --assets --framework --shaders",
+		"build-debug": "node --no-warnings ./build.js --debug --code --style --assets --framework --shaders",
 		"update": "node --no-warnings ./build.js --code",
-		"update-debug": "node --no-warnings ./build.js --debug --code",
+		"update-debug": "node --no-warnings ./build.js --debug --code --style",
 		"update-shaders": "node --no-warnings ./build.js --debug --shaders",
-		"build-release": "node --no-warnings ./build.js --code --assets --shaders --framework --update --package",
+		"update-style": "node --no-warnings ./build.js --debug --style",
+		"build-release": "node --no-warnings ./build.js --code --style --assets --shaders --framework --update --package",
 		"vue-devtools": "npx vue-devtools"
 	},
 	"devDependencies": {
