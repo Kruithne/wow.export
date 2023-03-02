@@ -1,9 +1,11 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
+
 import Events from './events';
 import ExportHelper from './casc/export-helper';
 import Listfile from './casc/listfile';
+
 import { redraw } from './generics';
 
 import ProgressObject from './progress-object';
@@ -137,11 +139,27 @@ export const state = reactive({
 	]
 });
 
+watch(() => state.loadPct, (val) => {
+	nw.Window.get().setProgressBar(val);
+});
+
+watch(() => state.casc, () => {
+	Events.emit('casc-source-changed');
+});
+
+/**
+ * Invoked when the active 'screen' is changed.
+ * @param {string} val
+ */
+/*screen: function(val: string) {
+	Events.emit('screen-' + val);
+},*/
+
 /**
  * Hide the currently active toast prompt.
  * @param userCancel - If true, toast was cancelled by the user.
  */
-export function hideToast(userCancel = false) {
+export function hideToast(userCancel = false): void {
 	// Cancel outstanding toast expiry timer.
 	if (this.toastTimer > -1) {
 		clearTimeout(this.toastTimer);
@@ -502,27 +520,3 @@ export function viewModels(item: object) {
 export function viewTextures(item: object) {
 	viewItemTextures(item);
 }
-
-export const fn = {
-	hideToast,
-	showToast,
-	setProductState,
-	getProductTag,
-	setScreen,
-	showLoadScreen,
-	showPreviousScreen,
-	handleToastOptionClick,
-	removeOverrideModels,
-	removeOverrideTextures,
-	setSelectedCDN,
-	click,
-	emit,
-	restartApplication,
-	onTextureRibbonResize,
-	goToTexture,
-	copyToClipboard,
-	getExportPath,
-	getExternalLink,
-	viewModels,
-	viewTextures
-};
