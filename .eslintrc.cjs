@@ -45,6 +45,7 @@ module.exports = {
 				'vue/attributes-order': 'off',
 				'vue/singleline-html-element-content-newline': 'off',
 				'vue/require-v-for-key': 'off',
+				'vue/html-closing-bracket-spacing': 'off',
 			}
 		}
 	],
