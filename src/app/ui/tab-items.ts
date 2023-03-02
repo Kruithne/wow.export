@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import MultiMap from '../MultiMap';
@@ -92,7 +92,7 @@ export type ItemType = InstanceType<typeof Item>;
  * @param item
  */
 export function viewItemModels(item): void {
-	const state = State.state;
+	const state = state;
 	state.setScreen('tab-models');
 
 	const list = new Set();
@@ -128,7 +128,7 @@ export function viewItemModels(item): void {
  * @param item
  */
 export function viewItemTextures(item): void {
-	const state = State.state;
+	const state = state;
 	state.setScreen('tab-textures');
 
 	const list = new Set();
@@ -158,7 +158,7 @@ export function viewItemTextures(item): void {
 }
 
 Events.once('screen-tab-items', async () => {
-	const state = State.state;
+	const state = state;
 
 	// Initialize a loading screen.
 	const progress = state.createProgress(5);

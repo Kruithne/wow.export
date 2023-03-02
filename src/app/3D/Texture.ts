@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import BufferWrapper from '../buffer';
 import Listfile from '../casc/listfile';
-import State from '../state';
+import { state } from '../core';
 
 export default class Texture {
 	flags: number;
@@ -35,7 +35,7 @@ export default class Texture {
 	async getTextureFile(): Promise<BufferWrapper> {
 		if (this.fileDataID > 0) {
 			if (!this.data)
-				this.data = await State.state.casc.getFile(this.fileDataID);
+				this.data = await state.casc.getFile(this.fileDataID);
 
 			return this.data;
 		}

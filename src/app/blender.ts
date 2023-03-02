@@ -11,7 +11,7 @@ import { createDirectory, deleteDirectory } from './generics';
 
 import Log from './log';
 import Constants from './constants';
-import State from './state';
+import { state } from './core';
 
 const PATTERN_ADDON_VER = /"version": \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
@@ -113,8 +113,8 @@ export async function checkLocalVersion(): Promise<void> {
 
 	if (latestAddonVersion > blenderAddonVersion) {
 		Log.write('Prompting user for Blender add-on update...');
-		State.state.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-			'Install': () => State.state.setScreen('blender', true),
+		state.setToast('info', 'A newer version of the Blender add-on is available for you.', {
+			'Install': () => state.setScreen('blender', true),
 			'Maybe Later': () => false
 		}, -1, false);
 	}
@@ -125,8 +125,8 @@ export async function checkLocalVersion(): Promise<void> {
  * install the Blender add-on shipped with this application.
  */
 export async function startAutomaticInstall(): Promise<void> {
-	State.state.isBusy++;
-	State.state.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
+	state.isBusy++;
+	state.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
 	Log.write('Starting automatic installation of Blender add-on...');
 
 	try {
@@ -162,17 +162,17 @@ export async function startAutomaticInstall(): Promise<void> {
 		}
 
 		if (installed) {
-			State.state.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
+			state.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
 		} else {
 			Log.write('No valid Blender installation found, add-on install failed.');
-			State.state.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
+			state.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
 		}
 	} catch (e) {
 		Log.write('Installation failed due to exception: %s', e.message);
-		State.state.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
+		state.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 	}
 
-	State.state.isBusy--;
+	state.isBusy--;
 }
 
 export default {

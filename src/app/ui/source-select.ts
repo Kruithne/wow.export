@@ -5,7 +5,7 @@ import util from 'node:util';
 import Constants from '../constants';
 import Log from '../log';
 import ExternalLinks from '../external-links';
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 
 import { ping } from '../generics';
@@ -15,21 +15,19 @@ import CASC from '../casc/casc-source';
 import CASCLocal from '../casc/casc-source-local';
 import CASCRemote from '../casc/casc-source-remote';
 
-export type CDNRegion = { tag: string, url: string, delay: number | null };
-
 let cascSource: CASC;
 
 function loadInstall(index: number): void {
-	State.state.block(async () => {
-		State.state.showLoadScreen();
+	state.block(async () => {
+		state.showLoadScreen();
 
 		// Wipe the available build lists.
-		State.state.availableLocalBuilds = null;
-		State.state.availableRemoteBuilds = null;
+		state.availableLocalBuilds = null;
+		state.availableRemoteBuilds = null;
 
 		if (cascSource instanceof CASCLocal) {
 			// Update the recent local installation list..
-			const recentLocal = State.state.config.recentLocal;
+			const recentLocal = state.config.recentLocal;
 			const installPath = cascSource.dir;
 			const build = cascSource.builds[index];
 			const preIndex = recentLocal.findIndex(e => e.path === installPath && e.product === build.Product);
@@ -49,14 +47,14 @@ function loadInstall(index: number): void {
 
 		try {
 			await cascSource.load(index);
-			State.state.setScreen('tab-models');
+			state.setScreen('tab-models');
 		} catch (e) {
 			Log.write('Failed to load CASC: %o', e);
-			State.state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
+			state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => Log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
-			State.state.setScreen('source-select');
+			state.setScreen('source-select');
 		}
 	});
 }
@@ -64,12 +62,12 @@ function loadInstall(index: number): void {
 Events.once('state-ready', (): void => {
 	Events.once('screen-source-select', async () => {
 		const pings = Array<Promise<number | void>>();
-		const regions = State.state.cdnRegions;
-		const userRegion = State.state.config.sourceSelectUserRegion;
+		const regions = state.cdnRegions;
+		const userRegion = state.config.sourceSelectUserRegion;
 
 		// User has pre-selected a CDN, lock choice from changing.
 		if (typeof userRegion === 'string')
-			State.state.lockCDNRegion = true;
+			state.lockCDNRegion = true;
 
 		// Iterate CDN regions and create data nodes.
 		for (const region of Constants.PATCH.REGIONS) {
@@ -79,7 +77,7 @@ Events.once('state-ready', (): void => {
 
 			// Mark this region as the selected one.
 			if (region === userRegion || (typeof userRegion !== 'string' && region === Constants.PATCH.DEFAULT_REGION))
-				State.state.selectedCDNRegion = node;
+				state.selectedCDNRegion = node;
 
 			// Run a rudimentary ping check for each CDN.
 			pings.push(ping(cdnURL).then(ms => node.delay = ms).catch(e => {
@@ -95,12 +93,12 @@ Events.once('state-ready', (): void => {
 		selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
 
 		// Grab recent local installations from config.
-		let recentLocal = State.state.config.recentLocal;
+		let recentLocal = state.config.recentLocal;
 		if (!Array.isArray(recentLocal))
-			recentLocal = State.state.config.recentLocal = [];
+			recentLocal = state.config.recentLocal = [];
 
 		async function openInstall(installPath: string, product: string | undefined = undefined): Promise<void> {
-			State.state.hideToast();
+			state.hideToast();
 
 			try {
 				cascSource = new CASCLocal(installPath);
@@ -109,9 +107,9 @@ Events.once('state-ready', (): void => {
 				if (product)
 					loadInstall(cascSource.builds.findIndex(build => build.Product === product));
 				else
-					State.state.availableLocalBuilds = cascSource.getProductList();
+					state.availableLocalBuilds = cascSource.getProductList();
 			} catch (e) {
-				State.state.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
+				state.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
 				Log.write('Failed to initialize local CASC source: %s', e.message);
 
 				// In the event the given installation directory is now invalid, remove all
@@ -140,8 +138,8 @@ Events.once('state-ready', (): void => {
 		// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 		// Attempt to initialize a remote CASC source using the selected region.
 		Events.on('click-source-remote', () => {
-			State.state.block(async () => {
-				const tag = State.state.selectedCDNRegion.tag;
+			state.block(async () => {
+				const tag = state.selectedCDNRegion.tag;
 
 				try {
 					cascSource = new CASCRemote(tag);
@@ -151,9 +149,9 @@ Events.once('state-ready', (): void => {
 					if (cascSource.builds.length === 0)
 						throw new Error('No builds available.');
 
-					State.state.availableRemoteBuilds = cascSource.getProductList();
+					state.availableRemoteBuilds = cascSource.getProductList();
 				} catch (e) {
-					State.state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
+					state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
 					Log.write('Failed to initialize remote CASC source: %s', e.message);
 				}
 			});
@@ -166,10 +164,10 @@ Events.once('state-ready', (): void => {
 		// Once all pings are resolved, pick the fastest.
 		Promise.all(pings).then(() => {
 			// CDN region choice is locked, do nothing.
-			if (State.state.lockCDNRegion)
+			if (state.lockCDNRegion)
 				return;
 
-			const selectedRegion = State.state.selectedCDNRegion;
+			const selectedRegion = state.selectedCDNRegion;
 			for (const region of regions) {
 				// Skip regions that don't have a valid ping.
 				if (region.delay === null || region.delay < 0)
@@ -177,7 +175,7 @@ Events.once('state-ready', (): void => {
 
 				// Switch the selected region for the fastest one.
 				if (region.delay < selectedRegion.delay)
-					State.state.selectedCDNRegion = region;
+					state.selectedCDNRegion = region;
 			}
 		});
 	});

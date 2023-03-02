@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import Log from '../log';
@@ -12,8 +12,8 @@ import InstallManifest, { InstallFile } from '../casc/install-manifest';
 let manifest: InstallManifest;
 
 function updateInstallListfile(): void {
-	State.state.listfileInstall = manifest.files.filter((file) => {
-		for (const tag of State.state.installTags) {
+	state.listfileInstall = manifest.files.filter((file) => {
+		for (const tag of state.installTags) {
 			if (tag.enabled && file.tags.includes(tag.label))
 				return true;
 		}
@@ -23,7 +23,7 @@ function updateInstallListfile(): void {
 }
 
 Events.once('screen-tab-install', async () => {
-	const state = State.state;
+	const state = state;
 	state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await state.casc.getInstallManifest();
 
@@ -33,21 +33,21 @@ Events.once('screen-tab-install', async () => {
 
 	state.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
 
-	State.state.hideToast();
+	state.hideToast();
 });
 
 // Track when the user clicks to export selected install files.
 Events.on('click-export-install', async () => {
-	const userSelection = State.state.selectionInstall;
+	const userSelection = state.selectionInstall;
 	if (userSelection.length === 0) {
-		State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
 
-	const overwriteFiles = State.state.config.overwriteFiles;
+	const overwriteFiles = state.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -60,7 +60,7 @@ Events.on('click-export-install', async () => {
 
 		if (overwriteFiles || !await fileExists(exportPath)) {
 			try {
-				const data = await State.state.casc.getFile(0, false, false, true, false, file.hash);
+				const data = await state.casc.getFile(0, false, false, true, false, file.hash);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);

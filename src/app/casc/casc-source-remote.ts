@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
-import State from '../state';
+import { state } from '../core';
 import { get, filesize, downloadFile, queue, ping } from '../generics';
 import Log from '../log';
 import Constants from '../constants';
@@ -187,13 +187,13 @@ export default class CASCRemote extends CASC {
 	 * @param buildIndex
 	 */
 	async load(buildIndex: number): Promise<void> {
-		this.progress = State.state.createProgress(16);
+		this.progress = state.createProgress(16);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
 		await this.loadRoot();
 
-		State.state.casc = this;
+		state.casc = this;
 
 		await this.loadListfile(this.build.BuildConfig);
 		await this.loadTables();

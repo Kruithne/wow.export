@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 
-import State from '../../state';
+import { state } from '../../core';
 import Listfile from '../../casc/listfile';
 import BufferWrapper from '../../buffer';
 
@@ -199,7 +199,7 @@ export class WMOLoader {
 		if (!this.groups)
 			throw new Error('Attempted to obtain group from a root WMO.');
 
-		const casc = State.state.casc;
+		const casc = state.casc;
 
 		let group = this.groups[index];
 		if (group)

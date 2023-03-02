@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -11,16 +11,16 @@ import Listfile from '../casc/listfile';
 Events.once('casc-ready', async () => {
 	// Track when the user clicks to export selected sound files.
 	Events.on('click-export-video', async () => {
-		const userSelection = State.state.selectionVideos;
+		const userSelection = state.selectionVideos;
 		if (userSelection.length === 0) {
-			State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
 		const helper = new ExportHelper(userSelection.length, 'video');
 		helper.start();
 
-		const overwriteFiles = State.state.config.overwriteFiles;
+		const overwriteFiles = state.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -32,7 +32,7 @@ Events.once('casc-ready', async () => {
 
 			if (overwriteFiles || !await fileExists(exportPath)) {
 				try {
-					const data = await State.state.casc.getFileByName(fileName);
+					const data = await state.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);
 
 					helper.mark(fileName, true);
@@ -49,7 +49,7 @@ Events.once('casc-ready', async () => {
 						Log.write('Local cinematic file is corrupted, forcing fallback.');
 
 						// In the event of a corrupted cinematic, try again with forced fallback.
-						const data = await State.state.casc.getFileByName(fileName, false, false, true, true);
+						const data = await state.casc.getFileByName(fileName, false, false, true, true);
 						await data.writeToFile(exportPath);
 
 						helper.mark(fileName, true);

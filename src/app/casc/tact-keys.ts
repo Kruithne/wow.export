@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import { get } from '../generics';
 
 import Constants from '../constants';
-import State from '../state';
+import { state } from '../core';
 import Log from '../log';
 
 type KeyRing = Record<string, string>;
@@ -88,7 +88,7 @@ export async function load(): Promise<void> {
 	}
 
 	// Update from remote server.
-	const res = await get(State.state.config.tactKeysURL);
+	const res = await get(state.config.tactKeysURL);
 	if (res.ok) {
 		const data = await res.text();
 		const lines = data.split(/\r\n|\n|\r/);
@@ -111,7 +111,7 @@ export async function load(): Promise<void> {
 		}
 
 		if (remoteAdded > 0)
-			Log.write('Added %d new tact keys from %s', remoteAdded, State.state.config.tactKeysURL);
+			Log.write('Added %d new tact keys from %s', remoteAdded, state.config.tactKeysURL);
 	} else {
 		Log.write('Unable to update tactKeys, HTTP %d %s', res.status, res.statusText);
 	}

@@ -4,7 +4,7 @@ import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
 
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 
 import Constants from '../constants';
@@ -77,7 +77,7 @@ function getModelDisplays(fileDataID: number): Array<DisplayInfo> {
 
 /** Clear the currently active texture preview. */
 function clearTexturePreview(): void {
-	State.state.modelTexturePreviewURL = '';
+	state.modelTexturePreviewURL = '';
 }
 
 /**
@@ -88,13 +88,13 @@ function clearTexturePreview(): void {
 async function previewTextureByID(fileDataID: number, name: string): Promise<void> {
 	const texture = Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
-	State.state.isBusy++;
-	State.state.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	state.isBusy++;
+	state.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	Log.write('Previewing texture file %s', texture);
 
 	try {
-		const view = State.state;
-		const file = await State.state.casc.getFile(fileDataID);
+		const view = state;
+		const file = await state.casc.getFile(fileDataID);
 
 		const blp = new BLPImage(file);
 
@@ -103,25 +103,25 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 		view.modelTexturePreviewHeight = blp.height;
 		view.modelTexturePreviewName = name;
 
-		State.state.hideToast();
+		state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			State.state.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			state.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			Log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			State.state.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			state.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	State.state.isBusy--;
+	state.isBusy--;
 }
 
 async function previewModel(fileName: string): Promise<void> {
-	State.state.isBusy++;
-	State.state.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
+	state.isBusy++;
+	state.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	Log.write('Previewing model %s', fileName);
 
 	// Reset texture ribbon.
@@ -131,8 +131,8 @@ async function previewModel(fileName: string): Promise<void> {
 	clearTexturePreview();
 
 	// Empty the arrays.
-	State.state.modelViewerSkins.splice(0, State.state.modelViewerSkins.length);
-	State.state.modelViewerSkinsSelection.splice(0, State.state.modelViewerSkinsSelection.length);
+	state.modelViewerSkins.splice(0, state.modelViewerSkins.length);
+	state.modelViewerSkinsSelection.splice(0, state.modelViewerSkinsSelection.length);
 
 	try {
 		// Dispose the currently active renderer.
@@ -151,16 +151,16 @@ async function previewModel(fileName: string): Promise<void> {
 		if (fileDataID === undefined)
 			throw new Error(util.format('Unknown model file: %s', fileName));
 
-		const file = await State.state.casc.getFile(fileDataID);
+		const file = await state.casc.getFile(fileDataID);
 		let isM2 = false;
 
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
-			State.state.modelViewerActiveType = 'm2';
+			state.modelViewerActiveType = 'm2';
 			activeRenderer = new M2Renderer(file, renderGroup, true);
 			isM2 = true;
 		} else if (fileNameLower.endsWith('.wmo')) {
-			State.state.modelViewerActiveType = 'wmo';
+			state.modelViewerActiveType = 'wmo';
 			activeRenderer = new WMORenderer(file, fileName, renderGroup);
 		} else {
 			throw new Error(util.format('Unknown model extension: %s', fileName));
@@ -212,12 +212,12 @@ async function previewModel(fileName: string): Promise<void> {
 			}
 
 			// Empty the arrays.
-			State.state.modelViewerSkins.splice(0, State.state.modelViewerSkins.length);
-			State.state.modelViewerSkinsSelection.splice(0, State.state.modelViewerSkinsSelection.length);
+			state.modelViewerSkins.splice(0, state.modelViewerSkins.length);
+			state.modelViewerSkinsSelection.splice(0, state.modelViewerSkinsSelection.length);
 
 			// Add the new skins.
-			State.state.modelViewerSkins.push(...skinList);
-			State.state.modelViewerSkinsSelection.push(...skinList.slice(0, 1));
+			state.modelViewerSkins.push(...skinList);
+			state.modelViewerSkinsSelection.push(...skinList.slice(0, 1));
 		}
 
 		updateCameraBounding();
@@ -226,23 +226,23 @@ async function previewModel(fileName: string): Promise<void> {
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
-			State.state.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
+			state.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		else
-			State.state.hideToast();
+			state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			State.state.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
+			state.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
 			Log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
-			State.state.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			state.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
 
-	State.state.isBusy--;
+	state.isBusy--;
 }
 
 /** Update the camera to match render group bounding. */
@@ -259,7 +259,7 @@ function updateCameraBounding(): void {
 	const fov = camera.fov * (Math.PI / 180);
 	const cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
 
-	if (isFirstModel || State.state.modelViewerAutoAdjust) {
+	if (isFirstModel || state.modelViewerAutoAdjust) {
 		camera.position.set(center.x, center.y, cameraZ);
 		isFirstModel = false;
 	}
@@ -269,7 +269,7 @@ function updateCameraBounding(): void {
 
 	camera.updateProjectionMatrix();
 
-	const controls = State.state.modelViewerContext.controls;
+	const controls = state.modelViewerContext.controls;
 	if (controls) {
 		controls.target = center;
 		controls.maxDistance = cameraToFarEdge * 2;
@@ -297,13 +297,13 @@ function getVariantTextureIDs(fileName: string): Array<number> {
 }
 
 async function exportFiles(files, isLocal = false): Promise<void> {
-	const exportPaths = new FileWriter(State.state.lastExportPath, 'utf8');
-	const format = State.state.config.exportModelFormat;
+	const exportPaths = new FileWriter(state.lastExportPath, 'utf8');
+	const format = state.config.exportModelFormat;
 
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath !== undefined) {
-			State.state.setToast('progress', 'Saving preview, hold on...', null, -1, false);
+			state.setToast('progress', 'Saving preview, hold on...', null, -1, false);
 
 			const modelPreview = document.getElementById('model-preview') as HTMLElement;
 			const canvas = modelPreview.querySelector('canvas') as HTMLCanvasElement;
@@ -318,19 +318,19 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 				exportPaths.writeLine('PNG:' + outFile);
 
 				Log.write('Saved 3D preview screenshot to %s', outFile);
-				State.state.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
+				state.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
 				clipboard.set(buf.readString(undefined, 'base64'), 'png', true);
 
 				Log.write('Copied 3D preview to clipboard (%s)', activePath);
-				State.state.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
+				state.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
 			}
 		} else {
-			State.state.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
+			state.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
-		const casc = State.state.casc;
+		const casc = state.casc;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
@@ -425,10 +425,10 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 
 							// Respect geoset masking for selected model.
 							if (fileName == activePath)
-								exporter.setGeosetMask(State.state.modelViewerGeosets);
+								exporter.setGeosetMask(state.modelViewerGeosets);
 
 							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(exportPath, State.state.config.modelsExportCollision, helper);
+								await exporter.exportAsOBJ(exportPath, state.config.modelsExportCollision, helper);
 								exportPaths.writeLine('M2_OBJ:' + exportPath);
 							}
 
@@ -445,8 +445,8 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 
 							// Respect group/set masking for selected WMO.
 							if (fileName === activePath) {
-								exporter.setGroupMask(State.state.modelViewerWMOGroups);
-								exporter.setDoodadSetMask(State.state.modelViewerWMOSets);
+								exporter.setGroupMask(state.modelViewerWMOGroups);
+								exporter.setDoodadSetMask(state.modelViewerWMOSets);
 							}
 
 							if (format === 'OBJ') {
@@ -489,14 +489,14 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 function updateListfile(): void {
 	// Filters for the model viewer depending on user settings.
 	const modelExt = Array<ListfileFilter>();
-	if (State.state.config.modelsShowM2)
+	if (state.config.modelsShowM2)
 		modelExt.push('.m2');
 
-	if (State.state.config.modelsShowWMO)
+	if (state.config.modelsShowWMO)
 		modelExt.push({ ext: '.wmo', pattern: Constants.LISTFILE_MODEL_FILTER });
 
 	// Create a new listfile using the given configuration.
-	State.state.listfileModels = Listfile.getFilenamesByExtension(...modelExt);
+	state.listfileModels = Listfile.getFilenamesByExtension(...modelExt);
 }
 
 // The first time the user opens up the model tab, initialize 3D preview.
@@ -510,17 +510,17 @@ Events.once('screen-tab-models', () => {
 
 	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
 
-	if (State.state.config.modelViewerShowGrid)
+	if (state.config.modelViewerShowGrid)
 		scene.add(grid);
 
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
-	State.state.modelViewerContext = Object.seal({ camera, scene, controls: null });
+	state.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
 Events.once('casc-ready', async () => {
-	const state = State.state;
+	const state = state;
 
 	// Track changes to the visible model listfile types.
 	state.$watch('config.modelsShowM2', updateListfile);
@@ -603,7 +603,7 @@ Events.once('casc-ready', async () => {
 	});
 });
 
-Events.once('state-ready', (state: typeof State.state): void => {
+Events.once('state-ready', (state: typeof state): void => {
 	// Register a drop handler for M2 files.
 	state.registerDropHandler({
 		ext: ['.m2'],

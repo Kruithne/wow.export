@@ -6,7 +6,7 @@ import util from 'node:util';
 import * as THREE from 'three';
 
 import Listfile from '../../casc/listfile';
-import State from '../../state';
+import { state } from '../../core';
 import Log from '../../log';
 import BufferWrapper from '../../buffer';
 
@@ -108,7 +108,7 @@ export default class WMORenderer {
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
 		// Set-up reactive controls.
-		const state = State.state;
+		const state = state;
 		state.modelViewerWMOGroups = this.groupArray;
 		state.modelViewerWMOSets = this.setArray;
 
@@ -207,7 +207,7 @@ export default class WMORenderer {
 			const ribbonSlot = textureRibbon.addSlot();
 			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
 
-			const data = await State.state.casc.getFile(textureID);
+			const data = await state.casc.getFile(textureID);
 			const blp = new BLPImage(data);
 
 			textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
@@ -221,7 +221,7 @@ export default class WMORenderer {
 	async loadDoodadSet(index: number): Promise<void> {
 		const wmo = this.wmo;
 		const set = wmo.doodadSets[index];
-		const casc = State.state.casc;
+		const casc = state.casc;
 
 		if (!set)
 			throw new Error(util.format('Invalid doodad set requested: %s', index));
@@ -233,8 +233,8 @@ export default class WMORenderer {
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
 
-		State.state.isBusy++;
-		State.state.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
+		state.isBusy++;
+		state.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
 		for (let i = 0; i < count; i++) {
 			const doodad = wmo.doodads[firstIndex + i];
@@ -291,8 +291,8 @@ export default class WMORenderer {
 		if (this.doodadSets !== undefined)
 			this.doodadSets[index] = renderGroup;
 
-		State.state.hideToast();
-		State.state.isBusy--;
+		state.hideToast();
+		state.isBusy--;
 	}
 
 	/**
@@ -311,7 +311,7 @@ export default class WMORenderer {
 	 * Update the wireframe state for all active materials.
 	 */
 	updateWireframe(): void {
-		const renderWireframe = State.state.config.modelViewerWireframe;
+		const renderWireframe = state.config.modelViewerWireframe;
 		const materials = this.getRenderMaterials(this.renderGroup, new Set());
 
 		for (const material of materials) {

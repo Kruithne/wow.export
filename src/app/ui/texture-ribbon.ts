@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 
-import State from '../state';
+import { state } from '../core';
 import Listfile from '../casc/listfile';
 
 let _syncID = 0;
@@ -22,14 +22,14 @@ export function onResize(width: number): void {
 
 	// Divide the available space by the true size of the slot elements.
 	// Slot = 64 width, 1 + 1 border, 5 + 5 margin.
-	State.state.textureRibbonSlotCount = Math.floor(width / 76);
+	state.textureRibbonSlotCount = Math.floor(width / 76);
 }
 
 /** Reset the texture ribbon. */
 export function reset(): number {
-	State.state.textureRibbonStack = [];
-	State.state.textureRibbonPage = 0;
-	State.state.contextMenus.nodeTextureRibbon = null;
+	state.textureRibbonStack = [];
+	state.textureRibbonPage = 0;
+	state.contextMenus.nodeTextureRibbon = null;
 
 	return ++_syncID;
 }
@@ -45,7 +45,7 @@ export function setSlotFile(slotIndex: number, fileDataID: number, syncID: numbe
 	if (syncID !== _syncID)
 		return;
 
-	const slot = State.state.textureRibbonStack[slotIndex];
+	const slot = state.textureRibbonStack[slotIndex];
 	if (slot) {
 		slot.fileDataID = fileDataID;
 
@@ -66,7 +66,7 @@ export function setSlotSrc(slotIndex: number, src: string, syncID: number): void
 	if (syncID !== _syncID)
 		return;
 
-	const slot = State.state.textureRibbonStack[slotIndex];
+	const slot = state.textureRibbonStack[slotIndex];
 	if (slot)
 		slot.src = src;
 }
@@ -76,7 +76,7 @@ export function setSlotSrc(slotIndex: number, src: string, syncID: number): void
  * @returns
  */
 export function addSlot(): number {
-	const stack = State.state.textureRibbonStack;
+	const stack = state.textureRibbonStack;
 	const slotIndex = stack.length;
 
 	stack.push({ fileDataID: 0, displayName: 'Empty', fileName: '', src: '' });

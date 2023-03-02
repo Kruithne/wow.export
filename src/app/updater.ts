@@ -10,7 +10,7 @@ import { get, downloadFile, filesize, getFileHash, fileExists } from './generics
 
 import Log from './log';
 import Constants from './constants';
-import State from './state';
+import { state } from './core';
 
 interface UpdateFileContents {
 	hash: string,
@@ -40,7 +40,7 @@ let updateManifest: UpdateManifest;
 export async function checkForUpdates(): Promise<boolean> {
 	try {
 		const localManifest = nw.App.manifest;
-		const manifestURL = util.format(State.state.config.updateURL, localManifest.flavour) + 'update.json';
+		const manifestURL = util.format(state.config.updateURL, localManifest.flavour) + 'update.json';
 		Log.write('Checking for updates (%s)...', manifestURL);
 
 		const manifest: UpdateManifest = await get(manifestURL).then(res => res.json());
@@ -64,16 +64,16 @@ export async function checkForUpdates(): Promise<boolean> {
 
 /** Apply an outstanding update. */
 export async function applyUpdate(): Promise<void> {
-	State.state.isBusy++;
-	State.state.showLoadScreen('Updating, please wait...');
+	state.isBusy++;
+	state.showLoadScreen('Updating, please wait...');
 
 	Log.write('Starting update to %s...', updateManifest.guid);
 
 	const requiredFiles: Array<UpdateRequiredFile> = [];
 	const entries = Object.entries(updateManifest.contents);
 
-	let progress = State.state.createProgress(entries.length);
-	State.state.loadingTitle = 'Verifying local files...';
+	let progress = state.createProgress(entries.length);
+	state.loadingTitle = 'Verifying local files...';
 
 	for (let i = 0, n = entries.length; i < n; i++) {
 		const [file, meta] = entries[i];
@@ -110,10 +110,10 @@ export async function applyUpdate(): Promise<void> {
 	const downloadSize = filesize(requiredFiles.map(e => e.meta.size).reduce((total, val) => total + val));
 	Log.write('%d files (%s) marked for download.', requiredFiles.length, downloadSize);
 
-	progress = State.state.createProgress(requiredFiles.length);
-	State.state.loadingTitle = 'Downloading updates...';
+	progress = state.createProgress(requiredFiles.length);
+	state.loadingTitle = 'Downloading updates...';
 
-	const remoteEndpoint = util.format(State.state.config.updateURL, nw.App.manifest.flavour) + 'update';
+	const remoteEndpoint = util.format(state.config.updateURL, nw.App.manifest.flavour) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
 		const node = requiredFiles[i];
 		const localFile = path.join(Constants.UPDATE.DIRECTORY, node.file);
@@ -123,7 +123,7 @@ export async function applyUpdate(): Promise<void> {
 		await downloadFile(remoteEndpoint, localFile, node.meta.ofs, node.meta.compSize, true);
 	}
 
-	State.state.loadingTitle = 'Restarting application...';
+	state.loadingTitle = 'Restarting application...';
 
 	// On the rare occurrence that we've updated the updater, the updater
 	// cannot update the updater, so instead we update the updater here.

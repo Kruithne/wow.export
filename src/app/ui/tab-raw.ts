@@ -2,7 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -16,19 +16,19 @@ async function computeRawFiles(): Promise<void> {
 	if (isDirty) {
 		isDirty = false;
 
-		if (State.state.config.enableUnknownFiles) {
-			State.state.setToast('progress', 'Scanning game client for all files...');
+		if (state.config.enableUnknownFiles) {
+			state.setToast('progress', 'Scanning game client for all files...');
 			await redraw();
 
-			const rootEntries = State.state.casc.getValidRootEntries();
-			State.state.listfileRaw = Listfile.formatEntries(rootEntries);
-			State.state.setToast('success', util.format('Found %d files in the game client', State.state.listfileRaw.length));
+			const rootEntries = state.casc.getValidRootEntries();
+			state.listfileRaw = Listfile.formatEntries(rootEntries);
+			state.setToast('success', util.format('Found %d files in the game client', state.listfileRaw.length));
 		} else {
-			State.state.setToast('progress', 'Scanning game client for all known files...');
+			state.setToast('progress', 'Scanning game client for all known files...');
 			await redraw();
 
-			State.state.listfileRaw = Listfile.getFullListfile();
-			State.state.setToast('success', util.format('Found %d known files in the game client', State.state.listfileRaw.length));
+			state.listfileRaw = Listfile.getFullListfile();
+			state.setToast('success', util.format('Found %d known files in the game client', state.listfileRaw.length));
 		}
 	}
 }
@@ -39,16 +39,16 @@ Events.on('listfile-needs-updating', () => {
 });
 
 Events.once('casc-ready', () => {
-	State.state.$watch('config.cascLocale', () => {
+	state.$watch('config.cascLocale', () => {
 		isDirty = true;
 	});
 });
 
 // Track when the user clicks to auto-detect raw files.
 Events.on('click-detect-raw', async () => {
-	const userSelection = State.state.selectionRaw;
+	const userSelection = state.selectionRaw;
 	if (userSelection.length === 0) {
-		State.state.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
+		state.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
 		return;
 	}
 
@@ -63,20 +63,20 @@ Events.on('click-detect-raw', async () => {
 
 
 	if (filteredSelection.length === 0) {
-		State.state.setToast('info', 'You haven\'t selected any unknown files to identify.');
+		state.setToast('info', 'You haven\'t selected any unknown files to identify.');
 		return;
 	}
 
-	State.state.isBusy++;
+	state.isBusy++;
 
 	const extensionMap = new Map();
 	let currentIndex = 1;
 
 	for (const fileDataID of filteredSelection) {
-		State.state.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
+		state.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
 
 		try {
-			const data = await State.state.casc.getFile(fileDataID);
+			const data = await state.casc.getFile(fileDataID);
 			for (const check of Constants.FILE_IDENTIFIERS) {
 				if (data.startsWith(check.match)) {
 					extensionMap.set(fileDataID, check.ext);
@@ -95,31 +95,31 @@ Events.on('click-detect-raw', async () => {
 
 		if (extensionMap.size === 1) {
 			const [fileDataID, ext] = extensionMap.entries().next().value;
-			State.state.setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
+			state.setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
 		} else {
-			State.state.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
+			state.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
 		}
 
-		State.state.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
+		state.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
 	} else {
-		State.state.setToast('info', 'Unable to identify any of the selected files.');
+		state.setToast('info', 'Unable to identify any of the selected files.');
 	}
 
-	State.state.isBusy--;
+	state.isBusy--;
 });
 
 // Track when the user clicks to export selected raw files.
 Events.on('click-export-raw', async () => {
-	const userSelection = State.state.selectionRaw;
+	const userSelection = state.selectionRaw;
 	if (userSelection.length === 0) {
-		State.state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 
 	const helper = new ExportHelper(userSelection.length, 'file');
 	helper.start();
 
-	const overwriteFiles = State.state.config.overwriteFiles;
+	const overwriteFiles = state.config.overwriteFiles;
 	for (let fileName of userSelection) {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -130,7 +130,7 @@ Events.on('click-export-raw', async () => {
 
 		if (overwriteFiles || !await fileExists(exportPath)) {
 			try {
-				const data = await State.state.casc.getFileByName(fileName, true);
+				const data = await state.casc.getFileByName(fileName, true);
 				await data.writeToFile(exportPath);
 
 				helper.mark(fileName, true);

@@ -7,7 +7,7 @@ import { fileExists } from '../../generics';
 import Log from '../../log';
 import Listfile from '../../casc/listfile';
 import BufferWrapper from '../../buffer';
-import State from '../../state';
+import { state } from '../../core';
 
 import BLPFile from '../../casc/blp';
 import M2Loader from '../loaders/M2Loader';
@@ -69,7 +69,7 @@ export default class M2Exporter {
 	 * @returns A map of texture indices to texture file names.
 	 */
 	async exportTextures(out: string, raw: boolean = false, mtl: MTLWriter | null, helper: ExportHelper, fullTexPaths: boolean = false): Promise<Map<number, ExportedTexture>> {
-		const config = State.state.config;
+		const config = state.config;
 		const validTextures = new Map<number, ExportedTexture>();
 
 		if (!config.modelsExportTextures)
@@ -119,7 +119,7 @@ export default class M2Exporter {
 						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
 
 						// Remove spaces from material name for MTL compatibility.
-						if (State.state.config.removePathSpaces)
+						if (state.config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
 
@@ -139,7 +139,7 @@ export default class M2Exporter {
 					}
 
 					if (config.overwriteFiles || !await fileExists(texPath)) {
-						const data = await State.state.casc.getFile(texFileDataID);
+						const data = await state.casc.getFile(texFileDataID);
 						Log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
 
 						if (raw === true) {
@@ -184,9 +184,9 @@ export default class M2Exporter {
 		this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const config = State.state.config;
-		const exportMeta = State.state.config.exportM2Meta;
-		const exportBones = State.state.config.exportM2Bones;
+		const config = state.config;
+		const exportMeta = state.config.exportM2Meta;
+		const exportBones = state.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
@@ -203,7 +203,7 @@ export default class M2Exporter {
 		obj.setNormalArray(this.m2.normals);
 		obj.addUVArray(this.m2.uv);
 
-		if (State.state.config.modelsExportUV2)
+		if (state.config.modelsExportUV2)
 			obj.addUVArray(this.m2.uv2);
 
 		// Textures
@@ -325,8 +325,8 @@ export default class M2Exporter {
 	 * @param helper
 	 */
 	async exportRaw(out: string, helper: ExportHelper): Promise<void> {
-		const casc = State.state.casc;
-		const config = State.state.config;
+		const casc = state.casc;
+		const config = state.config;
 
 		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);

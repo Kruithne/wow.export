@@ -8,7 +8,7 @@ import { toRaw } from 'vue';
 import TactKeys from './casc/tact-keys';
 import Log from './log';
 import Constants from './constants';
-import State from './state';
+import { state } from './core';
 import Events from './events';
 
 let isSaving = false;
@@ -83,6 +83,8 @@ const defaultConfig = {
 	lastExportFile: ''
 };
 
+export type Config = typeof defaultConfig;
+
 /**
  * Clone one config object into another.
  * Arrays are cloned rather than passed by reference.
@@ -114,8 +116,8 @@ export async function load(): Promise<void> {
 	copyConfig(defaultConfig, config);
 	copyConfig(userConfig, config);
 
-	State.state.config = config;
-	State.state.$watch('config', () => save(), { deep: true });
+	state.config = config;
+	state.$watch('config', () => save(), { deep: true });
 }
 
 /**
@@ -124,14 +126,14 @@ export async function load(): Promise<void> {
  */
 export function resetToDefault(key: string): void {
 	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
-		State.state.config[key] = defaultConfig[key];
+		state.config[key] = defaultConfig[key];
 }
 
 /**
  * Reset all configuration to default.
  */
 export function resetAllToDefault(): void {
-	State.state.config = structuredClone(defaultConfig);
+	state.config = structuredClone(defaultConfig);
 }
 
 /**
@@ -152,7 +154,7 @@ function save(): void {
  */
 async function doSave(): Promise<void> {
 	const configSave = {};
-	for (const [key, value] of Object.entries(State.state.config)) {
+	for (const [key, value] of Object.entries(state.config)) {
 		// Only persist configuration values that do not match defaults.
 		if (Object.prototype.hasOwnProperty.call(defaultConfig, key) && defaultConfig[key] === value)
 			continue;
@@ -173,51 +175,51 @@ async function doSave(): Promise<void> {
 }
 
 // Track when the configuration screen is displayed and clone a copy of
-// the current configuration into State.state.configEdit for reactive UI usage.
+// the current configuration into state.configEdit for reactive UI usage.
 Events.on('screen-config', () => {
-	State.state.configEdit = structuredClone(toRaw(State.state.config));
+	state.configEdit = structuredClone(toRaw(state.config));
 });
 
 // When the user attempts to apply a new configuration, verify all of the
 // new values as needed before applying them.
 Events.on('click-config-apply', () => {
-	const cfg = State.state.configEdit;
+	const cfg = state.configEdit;
 
 	if (cfg.exportDirectory.length === 0)
-		return State.state.setToast('error', 'A valid export directory must be provided', null, -1);
+		return state.setToast('error', 'A valid export directory must be provided', null, -1);
 
 	if (cfg.listfileURL.length === 0)
-		return State.state.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
+		return state.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
-		return State.state.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
+		return state.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
 
 	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
-		return State.state.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
+		return state.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
 
 	// Everything checks out, apply.
-	State.state.config = cfg;
-	State.state.showPreviousScreen();
-	State.state.setToast('success', 'Changes to your configuration have been saved!');
+	state.config = cfg;
+	state.showPreviousScreen();
+	state.setToast('success', 'Changes to your configuration have been saved!');
 });
 
 // User has attempted to manually add an encryption key.
 // Verify the input, register it to BLTEReader and store with keys.
 Events.on('click-tact-key', () => {
-	if (TactKeys.addKey(State.state.userInputTactKeyName, State.state.userInputTactKey))
-		State.state.setToast('success', 'Successfully added decryption key.');
+	if (TactKeys.addKey(state.userInputTactKeyName, state.userInputTactKey))
+		state.setToast('success', 'Successfully added decryption key.');
 	else
-		State.state.setToast('error', 'Invalid encryption key.', null, -1);
+		state.setToast('error', 'Invalid encryption key.', null, -1);
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply
 // move back to the previous screen on the stack.
-Events.on('click-config-discard', () => State.state.showPreviousScreen());
+Events.on('click-config-discard', () => state.showPreviousScreen());
 
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
 Events.on('click-config-reset', () => {
-	State.state.configEdit = structuredClone(defaultConfig);
+	state.configEdit = structuredClone(defaultConfig);
 });
 
 export default {

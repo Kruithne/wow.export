@@ -6,7 +6,7 @@ import path from 'node:path';
 import Log from '../log';
 import Listfile from '../casc/listfile';
 import Constants from '../constants';
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 
 import WDCReader from '../db/WDCReader';
@@ -45,38 +45,38 @@ async function loadMap(mapID: number, mapDir: string): Promise<void> {
 	selectedMapDir = mapDirLower;
 
 	selectedWDT = undefined;
-	State.state.mapViewerHasWorldModel = false;
+	state.mapViewerHasWorldModel = false;
 
 	// Attempt to load the WDT for this map for chunk masking.
 	const wdtPath = util.format('world/maps/%s/%s.wdt', mapDirLower, mapDirLower);
 	Log.write('Loading map preview for %s (%d)', mapDirLower, mapID);
 
 	try {
-		const data = await State.state.casc.getFileByName(wdtPath);
+		const data = await state.casc.getFileByName(wdtPath);
 		const wdt = selectedWDT = new WDTLoader(data);
 		wdt.load();
 
 		// Enable the 'Export Global WMO' button if available.
 		if (wdt.worldModelPlacement)
-			State.state.mapViewerHasWorldModel = true;
+			state.mapViewerHasWorldModel = true;
 
-		State.state.mapViewerChunkMask = wdt.tiles;
+		state.mapViewerChunkMask = wdt.tiles;
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
 		Log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
-		State.state.mapViewerChunkMask = null;
+		state.mapViewerChunkMask = null;
 	}
 
 	// Reset the tile selection.
-	State.state.mapViewerSelection.splice(0);
+	state.mapViewerSelection.splice(0);
 
 	// While not used directly by the components, we update this reactive value
 	// so that the components know a new map has been selected, and to request tiles.
-	State.state.mapViewerSelectedMap = mapID;
+	state.mapViewerSelectedMap = mapID;
 
 	// Purposely provide the raw mapDir here as it's used by the external link module
 	// and wow.tools requires a properly cased map name.
-	State.state.mapViewerSelectedDir = mapDir;
+	state.mapViewerSelectedDir = mapDir;
 }
 
 /**
@@ -95,7 +95,7 @@ async function loadMapTile(x: number, y: number, size: number): Promise<ImageDat
 		const paddedX = x.toString().padStart(2, '0');
 		const paddedY = y.toString().padStart(2, '0');
 		const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', selectedMapDir, paddedX, paddedY);
-		const data = await State.state.casc.getFileByName(tilePath, false, true);
+		const data = await state.casc.getFileByName(tilePath, false, true);
 		const blp = new BLPFile(data);
 
 		// Draw the BLP onto a raw-sized canvas.
@@ -200,7 +200,7 @@ async function exportSelectedMapWMO(): Promise<void> {
 
 		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), '.obj');
 
-		const data = await State.state.casc.getFile(fileDataID);
+		const data = await state.casc.getFile(fileDataID);
 		const wmo = new WMOExporter(data, fileDataID);
 
 		const wmoMask = [];
@@ -222,19 +222,19 @@ async function exportSelectedMapWMO(): Promise<void> {
 }
 
 async function exportSelectedMap(): Promise<void> {
-	const exportTiles = State.state.mapViewerSelection;
-	const exportQuality = State.state.config.exportMapQuality;
+	const exportTiles = state.mapViewerSelection;
+	const exportQuality = state.config.exportMapQuality;
 
 	// User has not selected any tiles.
 	if (exportTiles.length === 0)
-		return State.state.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+		return state.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
 
-	const exportPaths = new FileWriter(State.state.lastExportPath, 'utf8');
+	const exportPaths = new FileWriter(state.lastExportPath, 'utf8');
 
 	// The export helper provides the user with a link to the directory of the last exported
 	// item. Since we're using directory paths, we just append another segment here so that
@@ -250,7 +250,7 @@ async function exportSelectedMap(): Promise<void> {
 
 		// Locate game objects within the tile for exporting.
 		let gameObjects = new Set<GameObjects>();
-		if (State.state.config.mapsIncludeGameObjects === true) {
+		if (state.config.mapsIncludeGameObjects === true) {
 			const startX = MAP_OFFSET - (adt.tileX * TILE_SIZE) - TILE_SIZE;
 			const startY = MAP_OFFSET - (adt.tileY * TILE_SIZE) - TILE_SIZE;
 			const endX = startX + TILE_SIZE;
@@ -293,8 +293,8 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 
 // The first time the user opens up the map tab, initialize map names.
 Events.once('screen-tab-maps', async () => {
-	State.state.isBusy++;
-	State.state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
+	state.isBusy++;
+	state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
 	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();
@@ -306,22 +306,22 @@ Events.once('screen-tab-maps', async () => {
 			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
 
-	State.state.mapViewerMaps = maps;
+	state.mapViewerMaps = maps;
 
-	State.state.hideToast();
-	State.state.isBusy--;
+	state.hideToast();
+	state.isBusy--;
 });
 
 Events.once('casc-ready', (): void => {
 	// Store a reference to loadMapTile for the map viewer component.
-	State.state.mapViewerTileLoader = loadMapTile;
+	state.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
-	State.state.$watch('selectionMaps', async (selection: string[]) => {
+	state.$watch('selectionMaps', async (selection: string[]) => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 
-		if (!State.state.isBusy && first) {
+		if (!state.isBusy && first) {
 			const map = parseMapEntry(first);
 			if (selectedMapID !== map.id)
 				loadMap(map.id, map.dir);

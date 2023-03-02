@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 import Log from '../log';
 import Constants from '../constants';
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import BufferWrapper from '../buffer';
 
@@ -143,7 +143,7 @@ export default class BuildCache {
 		cacheIntegrity[filePath] = hash;
 
 		await fs.promises.writeFile(filePath, data.buffer);
-		State.state.cacheSize += data.length;
+		state.cacheSize += data.length;
 
 		await this.saveCacheIntegrity();
 	}
@@ -183,17 +183,17 @@ export default class BuildCache {
 
 // Invoked when the user requests a cache purge.
 Events.on('click-cache-clear', async () => {
-	State.state.setScreen('config', true);
-	State.state.isBusy++;
-	State.state.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
-	Log.write('Manual cache purge requested by user! (Cache size: %s)', State.state.cacheSizeFormatted);
+	state.setScreen('config', true);
+	state.isBusy++;
+	state.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
+	Log.write('Manual cache purge requested by user! (Cache size: %s)', state.cacheSizeFormatted);
 
 	await fs.promises.rm(Constants.CACHE.DIR, { recursive: true, force: true });
 	await fs.promises.mkdir(Constants.CACHE.DIR);
 
-	State.state.cacheSize = 0;
+	state.cacheSize = 0;
 	Log.write('Purge complete, awaiting mandatory restart.');
-	State.state.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => State.state.restartApplication() }, -1, false);
+	state.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => state.restartApplication() }, -1, false);
 
 	Events.emit('cache-cleared');
 });
@@ -202,7 +202,7 @@ Events.on('click-cache-clear', async () => {
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
 Events.once('casc-source-changed', async () => {
-	let cacheExpire = Number(State.state.config.cacheExpiry) || 0;
+	let cacheExpire = Number(state.config.cacheExpiry) || 0;
 	cacheExpire *= 24 * 60 * 60 * 1000;
 
 	// If user sets cacheExpiry to 0 in the configuration, we completely
@@ -256,7 +256,7 @@ Events.once('casc-source-changed', async () => {
 			// sure we don't subtract the size of it from our total to maintain accuracy.
 			deleteSize -= manifestSize;
 
-			State.state.cacheSize -= deleteSize;
+			state.cacheSize -= deleteSize;
 		}
 	}
 });

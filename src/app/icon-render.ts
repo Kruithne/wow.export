@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import State from './state';
+import { state } from './core';
 import BLTEReader from './casc/blte-reader';
 import BLPImage from './casc/blp';
 
@@ -50,7 +50,7 @@ function processQueue(): void {
 
 	const entry = queue.pop();
 	if (entry !== undefined) {
-		State.state.casc.getFile(entry.fileDataID).then((data: BLTEReader) => {
+		state.casc.getFile(entry.fileDataID).then((data: BLTEReader) => {
 			const blp = new BLPImage(data);
 			entry.rule.style.backgroundImage = 'url(' + blp.getDataURL(0b0111) + ')';
 		}).catch(() => {

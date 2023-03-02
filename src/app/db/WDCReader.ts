@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 
 import Log from '../log';
-import State from '../state';
+import { state } from '../core';
 import Constants from '../constants';
 import { downloadFile } from '../generics';
 
@@ -173,7 +173,7 @@ export default class WDCReader {
 	 * @param layoutHash - The layout hash of the table.
 	 */
 	async loadSchema(layoutHash: string): Promise<void> {
-		const casc = State.state.casc;
+		const casc = state.casc;
 		const buildID = casc.getBuildName();
 
 		const tableName = ExportHelper.replaceExtension(path.basename(this.fileName));
@@ -190,7 +190,7 @@ export default class WDCReader {
 		// No cached definition, download updated DBD and check again.
 		if (structure === null) {
 			try {
-				const dbdUrl = util.format(State.state.config.dbdURL, tableName);
+				const dbdUrl = util.format(state.config.dbdURL, tableName);
 				Log.write('No cached DBD, downloading new from %s', dbdUrl);
 
 				rawDbd = await downloadFile(dbdUrl);
@@ -242,7 +242,7 @@ export default class WDCReader {
 	async parse(): Promise<void> {
 		Log.write('Loading DB file %s from CASC', this.fileName);
 
-		const data: BufferWrapper = await State.state.casc.getFileByName(this.fileName, true, false, true);
+		const data: BufferWrapper = await state.casc.getFileByName(this.fileName, true, false, true);
 
 		// wdc_magic
 		const magic = data.readUInt32();

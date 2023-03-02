@@ -5,7 +5,7 @@ import util from 'node:util';
 import fs from 'node:fs';
 
 import Log from '../log';
-import State from '../state';
+import { state } from '../core';
 import Events from '../events';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
@@ -44,7 +44,7 @@ export type ListfileFilter = string | ListfilePatternFilter;
 export async function loadListfile(buildConfig: string, cache: BuildCache, rootEntries: Map<number, Map<number, string>>): Promise<number> {
 	Log.write('Loading listfile for build %s', buildConfig);
 
-	let url = String(State.state.config.listfileURL);
+	let url = String(state.config.listfileURL);
 	if (typeof url !== 'string')
 		throw new Error('Missing/malformed listfileURL in configuration!');
 
@@ -62,7 +62,7 @@ export async function loadListfile(buildConfig: string, cache: BuildCache, rootE
 		const cached = await cache.getFile(Constants.CACHE.BUILD_LISTFILE, null);
 
 		if (cache.meta.lastListfileUpdate) {
-			let ttl = Number(State.state.config.listfileCacheRefresh) || 0;
+			let ttl = Number(state.config.listfileCacheRefresh) || 0;
 			ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
 
 			if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
@@ -217,17 +217,17 @@ export function getFilenamesByExtension(...exts: Array<ListfileFilter>): Array<s
  */
 export function formatEntries(entries: Array<number>): Array<string> {
 	// If sorting by ID, perform the sort while the array is only IDs.
-	if (State.state.config.listfileSortByID)
+	if (state.config.listfileSortByID)
 		entries.sort((a, b) => a - b);
 
 	let namedEntries: Array<string>;
-	if (State.state.config.listfileShowFileDataIDs)
+	if (state.config.listfileShowFileDataIDs)
 		namedEntries = entries.map(e => getByIDOrUnknown(e) + ' [' + e + ']');
 	else
 		namedEntries = entries.map(e => getByIDOrUnknown(e));
 
 	// If sorting by name, sort now that the filenames have been added.
-	if (!State.state.config.listfileSortByID)
+	if (!state.config.listfileSortByID)
 		namedEntries.sort();
 
 	return namedEntries;
