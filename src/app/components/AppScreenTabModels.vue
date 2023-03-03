@@ -3,7 +3,7 @@
 
 <script lang="ts" setup>
 	import { state, onTextureRibbonResize, click, goToTexture, getExportPath, setAllGeosets, setAllWMOGroups } from '../core';
-	import { copyToClipboard } from '../system';
+	import { setClipboard } from '../system';
 </script>
 
 <template>
@@ -35,10 +35,10 @@
 				<context-menu :node="state.contextMenus.nodeTextureRibbon" v-slot="context" @close="state.contextMenus.nodeTextureRibbon = null">
 					<span @click.self="click('preview-texture', $event, context.node.fileDataID, context.node.displayName)">Preview {{ context.node.displayName }}</span>
 					<span @click.self="goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
-					<span @click.self="copyToClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
-					<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
-					<span @click.self="copyToClipboard(context.node.fileName)">Copy file path to clipboard</span>
-					<span @click.self="copyToClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
+					<span @click.self="setClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
+					<span @click.self="setClipboard(context.node.displayName)">Copy texture name to clipboard</span>
+					<span @click.self="setClipboard(context.node.fileName)">Copy file path to clipboard</span>
+					<span @click.self="setClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
 				</context-menu>
 			</resize-layer>
 			<div id="model-texture-preview" v-if="state.modelTexturePreviewURL.length > 0" class="preview-background">

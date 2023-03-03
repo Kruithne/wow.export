@@ -3,7 +3,7 @@
 
 <script lang="ts" setup>
 	import { state, viewModels, viewTextures, setAllItemTypes } from '../core';
-	import { copyToClipboard } from '../system';
+	import { setClipboard } from '../system';
 	import ExternalLinks from '../external-links';
 </script>
 
@@ -14,8 +14,8 @@
 			<context-menu :node="state.contextMenus.nodeItem" v-slot="context" @close="state.contextMenus.nodeItem = null">
 				<span v-if="context.node.modelCount > 0" @click.self="viewModels(context.node)">View related models ({{ context.node.modelCount }})</span>
 				<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
-				<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
-				<span @click.self="copyToClipboard(context.node.id)">Copy item ID to clipboard</span>
+				<span @click.self="setClipboard(context.node.name)">Copy item name to clipboard</span>
+				<span @click.self="setClipboard(context.node.id)">Copy item ID to clipboard</span>
 				<span @click.self="ExternalLinks.openItemOnWowhead(context.node.id)">View item on Wowhead (web)</span>
 			</context-menu>
 		</div>

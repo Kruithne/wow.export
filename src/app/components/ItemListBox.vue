@@ -19,7 +19,7 @@
 
 <script lang="ts" setup>
 	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-	import { copyToClipboard } from '../system';
+	import { setClipboard } from '../system';
 
 	import * as IconRender from '../icon-render';
 	import { ItemType } from '../ui/tab-items';
@@ -168,7 +168,7 @@
 
 		if (event.key === 'c' && event.ctrlKey) {
 			// Copy selection to clipboard.
-			copyToClipboard(props.selection.map((e: ItemType) => e.displayName).join('\n'));
+			setClipboard(props.selection.map((e: ItemType) => e.displayName).join('\n'));
 		} else {
 			// Arrow keys.
 			const isArrowUp = event.key === 'ArrowUp';

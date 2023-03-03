@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { state } from '../core';
+import { setClipboard } from '../system';
 import Events from '../events';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -38,8 +39,7 @@ Events.once('casc:initialized', async () => {
 
 	// Track when the user clicks to copy the open text file to clipboard.
 	Events.on('click-copy-text', async () => {
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(state.textViewerSelectedText, 'text');
+		setClipboard(state.textViewerSelectedText);
 		state.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
 	});
 

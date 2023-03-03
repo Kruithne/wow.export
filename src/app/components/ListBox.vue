@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-	import { copyToClipboard } from '../system';
+	import { setClipboard } from '../system';
 	import path from 'node:path';
 	import Events from '../events';
 
@@ -204,7 +204,7 @@
 				entries = entries.map(e => e.replace(/\s/g, ''));
 
 
-			copyToClipboard(entries.join('\n'));
+			setClipboard(entries.join('\n'));
 		} else {
 			// Arrow keys.
 			const isArrowUp = event.key === 'ArrowUp';

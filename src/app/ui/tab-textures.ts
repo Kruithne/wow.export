@@ -8,6 +8,7 @@ import { fileExists } from '../generics';
 import { EncryptionError } from '../casc/blte-reader';
 
 import { state } from '../core';
+import { setClipboard } from '../system';
 import Events from '../events';
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -122,8 +123,7 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 		const blp = new BLPImage(data);
 		const png = blp.toPNG(state.config.exportChannelMask);
 
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(png.readString(undefined, 'base64'), 'png', true);
+		setClipboard(png.readString(undefined, 'base64'), 'png', true);
 
 		Log.write('Copied texture to clipboard (%s)', fileName);
 		state.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);

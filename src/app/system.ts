@@ -2,12 +2,16 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 export const win = nw.Window.get();
 
+type ClipboardType = 'text' | 'png' | 'jpeg' | 'html' | 'rtf';
+
 /**
  * Copies the given text to the system clipboard.
  * @param text - The text to copy to the clipboard
+ * @param type - The type of data to copy to the clipboard
+ * @param raw - Whether to copy the data as raw data or not
  */
-export function copyToClipboard(text: string): void {
-	nw.Clipboard.get().set(text, 'text');
+export function setClipboard(text: string, type: ClipboardType = 'text', raw: boolean = false): void {
+	nw.Clipboard.get().set(text, type, raw);
 }
 
 /**

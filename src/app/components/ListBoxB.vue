@@ -14,7 +14,7 @@
 
 <script lang="ts" setup>
 	import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-	import { copyToClipboard } from '../system';
+	import { setClipboard } from '../system';
 	import type { SkinInfo } from '../ui/tab-models';
 	import Events from '../events';
 
@@ -113,7 +113,7 @@
 
 		if (event.key === 'c' && event.ctrlKey) {
 			// Copy selection to clipboard.
-			copyToClipboard(props.selection.join('\n'));
+			setClipboard(props.selection.join('\n'));
 		} else {
 			// Arrow keys.
 			const isArrowUp = event.key === 'ArrowUp';

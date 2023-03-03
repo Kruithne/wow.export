@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 import { state } from '../core';
-import { openShell } from '../system';
+import { openShell, setClipboard } from '../system';
 import Events from '../events';
 
 import Constants from '../constants';
@@ -321,8 +321,7 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 				Log.write('Saved 3D preview screenshot to %s', outFile);
 				state.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => openShell(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
-				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.readString(undefined, 'base64'), 'png', true);
+				setClipboard(buf.readString(undefined, 'base64'), 'png', true);
 
 				Log.write('Copied 3D preview to clipboard (%s)', activePath);
 				state.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
