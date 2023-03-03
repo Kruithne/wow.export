@@ -96,11 +96,11 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	if (document.readyState === 'loading')
 		await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
 
-	// Append the application version to the title bar.
-	document.title += ' v' + nw.App.manifest.version;
-
 	const manifest = nw.App.manifest;
 	const cpus = os.cpus();
+
+	// Append the application version to the title bar.
+	document.title += ' v' + manifest.version;
 
 	Log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
 	Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
