@@ -195,7 +195,7 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 	helper.finish();
 }
 
-Events.once('casc-ready', (): void => {
+Events.once('casc:initialized', (): void => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
 	state.$watch('config.exportTextureAlpha', () => {

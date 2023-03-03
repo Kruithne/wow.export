@@ -11,7 +11,7 @@ import Listfile from '../casc/listfile';
 
 let selectedFile: string;
 
-Events.once('casc-ready', async () => {
+Events.once('casc:initialized', async () => {
 	// Track selection changes on the text listbox and set first as active entry.
 	state.$watch('selectionText', async selection => {
 		// Check if the first file in the selection is "new".

@@ -312,7 +312,7 @@ Events.once('screen-tab-maps', async () => {
 	state.isBusy--;
 });
 
-Events.once('casc-ready', (): void => {
+Events.once('casc:initialized', (): void => {
 	// Store a reference to loadMapTile for the map viewer component.
 	state.mapViewerTileLoader = loadMapTile;
 

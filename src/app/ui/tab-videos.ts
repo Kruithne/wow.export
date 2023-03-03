@@ -8,7 +8,7 @@ import { BLTEIntegrityError } from '../casc/blte-reader';
 import { fileExists } from '../generics';
 import Listfile from '../casc/listfile';
 
-Events.once('casc-ready', async () => {
+Events.once('casc:initialized', async () => {
 	// Track when the user clicks to export selected sound files.
 	Events.on('click-export-video', async () => {
 		const userSelection = state.selectionVideos;

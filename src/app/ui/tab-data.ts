@@ -13,7 +13,7 @@ import { get } from '../generics';
 
 let selectedFile: string;
 
-Events.once('casc-ready', async () => {
+Events.once('casc:initialized', async () => {
 	// TODO: Cache manifest with sane expiry (e.g. same as DBD) instead of requesting each time
 	const manifestURL = util.format(state.config.dbdURL, 'manifest');
 	Log.write('Downloading DB2 filename mapping from %s', manifestURL);

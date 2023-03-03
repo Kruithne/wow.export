@@ -151,7 +151,7 @@ async function loadSelectedTrack(): Promise<void> {
 	state.isBusy--;
 }
 
-Events.once('casc-ready', (): void => {
+Events.once('casc:initialized', (): void => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
 	audioNode.volume = state.config.soundPlayerVolume;

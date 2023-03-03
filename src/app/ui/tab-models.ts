@@ -520,7 +520,7 @@ Events.once('screen-tab-models', () => {
 	state.modelViewerContext = Object.seal({ camera, scene, controls: null });
 });
 
-Events.once('casc-ready', async () => {
+Events.once('casc:initialized', async () => {
 	// Track changes to the visible model listfile types.
 	state.$watch('config.modelsShowM2', updateListfile);
 	state.$watch('config.modelsShowWMO', updateListfile);

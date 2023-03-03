@@ -298,7 +298,7 @@ export default abstract class CASC {
 	 */
 	async initializeComponents(): Promise<void> {
 		await this.progress.step('Initializing components');
-		return Events.emitAndAwait('casc-ready');
+		return Events.emitAndAwait('casc:initialized');
 	}
 
 	/**

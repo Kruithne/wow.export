@@ -38,7 +38,7 @@ Events.on('listfile-needs-updating', () => {
 	isDirty = true;
 });
 
-Events.once('casc-ready', () => {
+Events.once('casc:initialized', () => {
 	state.$watch('config.cascLocale', () => {
 		isDirty = true;
 	});
