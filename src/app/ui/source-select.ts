@@ -140,7 +140,7 @@ Events.once('config:loaded', (): void => {
 
 		// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 		// Attempt to initialize a remote CASC source using the selected region.
-		Events.on('click-source-remote', () => {
+		Events.on('click-source-remote', async () => {
 			state.isBusy++;
 			const tag = state.selectedCDNRegion.tag;
 
