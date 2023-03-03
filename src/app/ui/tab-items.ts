@@ -92,7 +92,6 @@ export type ItemType = InstanceType<typeof Item>;
  * @param item
  */
 export function viewItemModels(item): void {
-	const state = state;
 	state.setScreen('tab-models');
 
 	const list = new Set();
@@ -128,7 +127,6 @@ export function viewItemModels(item): void {
  * @param item
  */
 export function viewItemTextures(item): void {
-	const state = state;
 	state.setScreen('tab-textures');
 
 	const list = new Set();
@@ -158,8 +156,6 @@ export function viewItemTextures(item): void {
 }
 
 Events.once('screen:tab-items', async () => {
-	const state = state;
-
 	// Initialize a loading screen.
 	const progress = state.createProgress(5);
 	state.setScreen('loading');

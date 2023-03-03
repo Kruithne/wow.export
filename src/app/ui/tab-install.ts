@@ -23,7 +23,6 @@ function updateInstallListfile(): void {
 }
 
 Events.once('screen:tab-install', async () => {
-	const state = state;
 	state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await state.casc.getInstallManifest();
 
