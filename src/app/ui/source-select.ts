@@ -59,7 +59,7 @@ function loadInstall(index: number): void {
 	});
 }
 
-Events.once('state-ready', (): void => {
+Events.once('config:loaded', (): void => {
 	Events.once('screen-source-select', async () => {
 		const pings = Array<Promise<number | void>>();
 		const regions = state.cdnRegions;

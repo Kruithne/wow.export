@@ -132,9 +132,6 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	// Load configuration.
 	await Config.load();
 
-	// Emit state-ready event and await all listeners.
-	await Events.emitAndAwait('state-ready', state);
-
 	// Set-up default export directory if none configured.
 	if (state.config.exportDirectory === '') {
 		state.config.exportDirectory = path.join(os.homedir(), 'wow.export');

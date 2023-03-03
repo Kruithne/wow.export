@@ -236,7 +236,7 @@ Events.once('casc-ready', (): void => {
 	});
 });
 
-Events.once('state-ready', (state: typeof state): void => {
+Events.once('config:loaded', (): void => {
 	// Register a drop handler for BLP files.
 	state.registerDropHandler({
 		ext: ['.blp'],

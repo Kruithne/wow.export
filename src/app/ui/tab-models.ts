@@ -603,7 +603,7 @@ Events.once('casc-ready', async () => {
 	});
 });
 
-Events.once('state-ready', (state: typeof state): void => {
+Events.once('config:loaded', (): void => {
 	// Register a drop handler for M2 files.
 	state.registerDropHandler({
 		ext: ['.m2'],

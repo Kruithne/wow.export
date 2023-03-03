@@ -118,6 +118,8 @@ export async function load(): Promise<void> {
 
 	state.config = config;
 	state.$watch('config', () => save(), { deep: true });
+
+	await Events.emitAndAwait('config:loaded');
 }
 
 /**
