@@ -38,6 +38,7 @@ import './ui/tab-raw';
 import './ui/tab-text';
 import './ui/tab-videos';
 
+import App from './components/App.vue';
 import ComponentCheckboxList from './components/CheckBoxList.vue';
 import ComponentContextMenu from './components/ContextMenu.vue';
 import ComponentDataTable from './components/DataTable.vue';
@@ -106,9 +107,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	Log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform(), os.arch(), cpus[0].model, cpus.length, filesize(os.freemem()), filesize(os.totalmem()));
 	Log.write('INSTALL_PATH %s DATA_PATH %s', Constants.INSTALL_PATH, Constants.DATA_PATH);
 
-	const app = createApp({
-		el: '#container',
-	});
+	const app = createApp(App);
 
 	// Register error handler for Vue errors.
 	app.config.errorHandler = CrashHandler.handleVueError;
@@ -127,11 +126,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	app.component('ResizeLayer', ComponentResizeLayer);
 	app.component('SliderComponent', ComponentSlider);
 
-	//const state = defineComponent(app.mount('#container'));
-	//state = state;
-
 	app.mount('#container');
-
 	window['state'] = state;
 
 	// Load configuration.
