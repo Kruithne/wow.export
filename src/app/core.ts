@@ -7,7 +7,7 @@ import ExportHelper from './casc/export-helper';
 import Listfile from './casc/listfile';
 
 import { redraw } from './generics';
-import { openShell } from './system';
+import { setTrayProgress } from './system';
 
 import ProgressObject from './progress-object';
 
@@ -151,10 +151,8 @@ export const state = reactive({
 	]
 });
 
-watch(() => state.loadPct, (val) => {
-	// TODO: Hoist to system interface.
-	nw.Window.get().setProgressBar(val);
-});
+// Update application tray progress when our internal loading progress changes.
+watch(() => state.loadPct, setTrayProgress);
 
 watch(() => state.casc, () => {
 	// TODO: This smells bad. Emit events from CASC.
