@@ -240,7 +240,7 @@ export function ingestIdentifiedFiles(entries: Map<number, string>): void {
 		nameLookup.set(fileName, fileDataID);
 	}
 
-	Events.emit('listfile-needs-updating');
+	Events.emit('listfile:needs-updating');
 }
 
 /**

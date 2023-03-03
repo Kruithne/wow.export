@@ -232,10 +232,10 @@ export default abstract class CASC {
 		// Pre-filter extensions for tabs.
 		await this.progress.step('Filtering listfiles');
 
-		Events.on('listfile-needs-updating', () => this.updateListfileFilters());
+		Events.on('listfile:needs-updating', () => this.updateListfileFilters());
 
-		state.$watch('config.listfileSortByID', () => Events.emit('listfile-needs-updating'));
-		state.$watch('config.listfileShowFileDataIDs', () => Events.emit('listfile-needs-updating'), { immediate: true });
+		state.$watch('config.listfileSortByID', () => Events.emit('listfile:needs-updating'));
+		state.$watch('config.listfileShowFileDataIDs', () => Events.emit('listfile:needs-updating'), { immediate: true });
 	}
 
 	/**
