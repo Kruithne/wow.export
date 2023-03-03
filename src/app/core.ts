@@ -207,11 +207,6 @@ export function setToast(toastType: ToastType, message: string, options: object 
 		this.toastTimer = setTimeout(() => this.hideToast(), ttl);
 }
 
-/** Open user-configured export directory with OS default. */
-export function openExportDirectory() {
-	openShell(this.config.exportDirectory);
-}
-
 /**
  * Register a function to be invoked when the user drops a file onto the application.
  * @param handler - Handler to register.

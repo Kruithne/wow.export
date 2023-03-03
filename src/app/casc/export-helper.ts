@@ -9,7 +9,6 @@ import { openShell } from '../system';
 import Events from '../events';
 
 const TOAST_OPT_LOG = { 'View Log': (): void => Log.openRuntimeLog() };
-//const TOAST_OPT_DIR = { 'Open Export Directory': () => State.openExportDirectory() };
 
 export type ExportTexture = {
 	matPathRelative: string;
