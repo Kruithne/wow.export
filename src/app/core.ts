@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { reactive, watch } from 'vue';
+import { reactive, watch, computed } from 'vue';
 
 import Events from './events';
 import ExportHelper from './casc/export-helper';
@@ -15,10 +15,16 @@ import { viewItemModels, viewItemTextures } from './ui/tab-items';
 
 import type { Config } from './config';
 
+import { LocaleFlags } from './casc/locale-flags';
+import { formatPlaybackSeconds } from './generics';
+
+import * as TextureRibbon from './ui/texture-ribbon';
+
 export const state = reactive({
 	screenStack: [], // Controls the currently active interface screen.
+	screen: computed(() => state.screenStack[0]), // Active screen.
+
 	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-	isDebugBuild: process.env.NODE_ENV === 'development', // True if in development environment.
 	loadingProgress: '', // Sets the progress text for the loading screen.
 	loadingTitle: '', // Sets the title text for the loading screen.
 	loadPct: -1, // Controls active loading bar percentage.
@@ -105,21 +111,27 @@ export const state = reactive({
 	mapViewerSelection: [], // Map viewer tile selection
 	exportCancelled: false, // Export cancellation state.
 	toastTimer: -1, // Timer ID for toast expiration.
+
+	// TODO: All propeties below likely do not need to be in the reactive state.
 	dropHandlers: [], // Handlers for file drag/drops.
 	loaders: Array<Promise<void>>, // Loading step promises.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
+	isDebugBuild: process.env.NODE_ENV === 'development', // True if in development environment.
+
 	contextMenus: {
 		nodeTextureRibbon: null, // Context menu node for the texture ribbon.
 		nodeItem: null, // Context menu node for the items listfile.
 		stateNavExtra: false, // State controller for the extra nav menu.
 		stateModelExport: false, // State controller for the model export menu.
 	},
+
 	menuButtonTextures: [
 		{ label: 'Export as PNG', value: 'PNG' },
 		{ label: 'Export as BLP (Raw)', value: 'BLP' },
 		{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
 	],
+
 	menuButtonTextureQuality: [
 		{ label: 'Alpha Maps', value: -1 },
 		{ label: 'None', value: 0 },
@@ -129,6 +141,7 @@ export const state = reactive({
 		{ label: 'High (8k)', value: 8192 },
 		{ label: 'Ultra (16k)', value: 16384 }
 	],
+
 	menuButtonModels: [
 		{ label: 'Export OBJ', value: 'OBJ' },
 		//{ label: 'Export glTF', value: 'GLTF' },
@@ -140,10 +153,12 @@ export const state = reactive({
 });
 
 watch(() => state.loadPct, (val) => {
+	// TODO: Hoist to system interface.
 	nw.Window.get().setProgressBar(val);
 });
 
 watch(() => state.casc, () => {
+	// TODO: This smells bad. Emit events from CASC.
 	Events.emit('casc-source-changed');
 });
 
@@ -421,6 +436,7 @@ export function setSelectedCDN(region: CDNRegion) {
  * @param event
  */
 export function click(tag: string, event: MouseEvent, ...params) {
+	// TODO: This smells bad.
 	const target = event.target as HTMLElement;
 	if (!target.classList.contains('disabled'))
 		Events.emit('click-' + tag, ...params);

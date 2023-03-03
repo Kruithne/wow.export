@@ -23,10 +23,7 @@ import Events from './events';
 import CrashHandler from './crash-handler';
 
 import { createApp } from 'vue';
-import { LocaleFlags } from './casc/locale-flags';
-import { filesize, formatPlaybackSeconds } from './generics';
-
-import * as TextureRibbon from './ui/texture-ribbon';
+import { filesize, } from './generics';
 
 // Import UI modules as side-effects.
 import './ui/source-select';
