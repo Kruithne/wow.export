@@ -17,48 +17,49 @@ import CASCRemote from '../casc/casc-source-remote';
 
 let cascSource: CASC;
 
-function loadInstall(index: number): void {
-	state.block(async () => {
-		state.showLoadScreen();
+async function loadInstall(index: number): Promise<void> {
+	state.isBusy++;
+	state.showLoadScreen();
 
-		// Wipe the available build lists.
-		state.availableLocalBuilds = null;
-		state.availableRemoteBuilds = null;
+	// Wipe the available build lists.
+	state.availableLocalBuilds = null;
+	state.availableRemoteBuilds = null;
 
-		if (cascSource instanceof CASCLocal) {
-			// Update the recent local installation list..
-			const recentLocal = state.config.recentLocal;
-			const installPath = cascSource.dir;
-			const build = cascSource.builds[index];
-			const preIndex = recentLocal.findIndex(e => e.path === installPath && e.product === build.Product);
-			if (preIndex > -1) {
-				// Already in the list, bring it to the top (if not already).
-				if (preIndex > 0)
-					recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
-			} else {
-				// Not in the list, add it to the top.
-				recentLocal.unshift({ path: installPath, product: build.Product });
-			}
-
-			// Limit amount of entries allowed in the recent list.
-			if (recentLocal.length > Constants.MAX_RECENT_LOCAL)
-				recentLocal.splice(Constants.MAX_RECENT_LOCAL, recentLocal.length - Constants.MAX_RECENT_LOCAL);
+	if (cascSource instanceof CASCLocal) {
+		// Update the recent local installation list..
+		const recentLocal = state.config.recentLocal;
+		const installPath = cascSource.dir;
+		const build = cascSource.builds[index];
+		const preIndex = recentLocal.findIndex(e => e.path === installPath && e.product === build.Product);
+		if (preIndex > -1) {
+			// Already in the list, bring it to the top (if not already).
+			if (preIndex > 0)
+				recentLocal.unshift(recentLocal.splice(preIndex, 1)[0]);
+		} else {
+			// Not in the list, add it to the top.
+			recentLocal.unshift({ path: installPath, product: build.Product });
 		}
 
-		try {
-			await cascSource.load(index);
-			Events.emit('casc:loaded'); // TODO: Should this go inside CASC.load()?
+		// Limit amount of entries allowed in the recent list.
+		if (recentLocal.length > Constants.MAX_RECENT_LOCAL)
+			recentLocal.splice(Constants.MAX_RECENT_LOCAL, recentLocal.length - Constants.MAX_RECENT_LOCAL);
+	}
 
-			state.setScreen('tab-models');
-		} catch (e) {
-			Log.write('Failed to load CASC: %o', e);
-			state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
-				'View Log': () => Log.openRuntimeLog(),
-				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
-			}, -1);
-			state.setScreen('source-select');
-		}
-	});
+	try {
+		await cascSource.load(index);
+		Events.emit('casc:loaded'); // TODO: Should this go inside CASC.load()?
+
+		state.setScreen('tab-models');
+	} catch (e) {
+		Log.write('Failed to load CASC: %o', e);
+		state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
+			'View Log': () => Log.openRuntimeLog(),
+			'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
+		}, -1);
+		state.setScreen('source-select');
+	} finally {
+		state.isBusy--;
+	}
 }
 
 Events.once('config:loaded', (): void => {
@@ -140,23 +141,24 @@ Events.once('config:loaded', (): void => {
 		// Register for the 'click-source-remote' event fired when the user clicks 'Use Blizzard CDN'.
 		// Attempt to initialize a remote CASC source using the selected region.
 		Events.on('click-source-remote', () => {
-			state.block(async () => {
-				const tag = state.selectedCDNRegion.tag;
+			state.isBusy++;
+			const tag = state.selectedCDNRegion.tag;
 
-				try {
-					cascSource = new CASCRemote(tag);
-					await cascSource.init();
+			try {
+				cascSource = new CASCRemote(tag);
+				await cascSource.init();
 
-					// No builds available, likely CDN is not available.
-					if (cascSource.builds.length === 0)
-						throw new Error('No builds available.');
+				// No builds available, likely CDN is not available.
+				if (cascSource.builds.length === 0)
+					throw new Error('No builds available.');
 
-					state.availableRemoteBuilds = cascSource.getProductList();
-				} catch (e) {
-					state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
-					Log.write('Failed to initialize remote CASC source: %s', e.message);
-				}
-			});
+				state.availableRemoteBuilds = cascSource.getProductList();
+			} catch (e) {
+				state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
+				Log.write('Failed to initialize remote CASC source: %s', e.message);
+			} finally {
+				state.isBusy--;
+			}
 		});
 
 		// Register for 'click-source-build' events which are fired when the user selects

@@ -211,16 +211,6 @@ export async function resolveLoadFuncs() {
 }
 
 /**
- * Resolves an async function and blocks the UI until it's done.
- * @param func - Function to execute.
- */
-export async function block(func: () => Promise<void>) {
-	this.isBusy++;
-	await func();
-	this.isBusy--;
-}
-
-/**
  * Creates a progress object for the given number of segments.
  * @param segments - Number of segments to split the progress into.
  * @returns Progress object.
