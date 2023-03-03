@@ -292,7 +292,7 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 }
 
 // The first time the user opens up the map tab, initialize map names.
-Events.once('screen-tab-maps', async () => {
+Events.once('screen:tab-maps', async () => {
 	state.isBusy++;
 	state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 

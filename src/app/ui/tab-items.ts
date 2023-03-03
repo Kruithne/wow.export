@@ -157,7 +157,7 @@ export function viewItemTextures(item): void {
 	state.overrideTextureName = item.name;
 }
 
-Events.once('screen-tab-items', async () => {
+Events.once('screen:tab-items', async () => {
 	const state = state;
 
 	// Initialize a loading screen.

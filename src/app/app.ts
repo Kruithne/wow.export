@@ -184,7 +184,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	}
 
 	// Load the changelog when the user opens the screen.
-	Events.on('screen-changelog', () => {
+	Events.on('screen:changelog', () => {
 		setImmediate(async () => {
 			const element = document.getElementById('changelog-text');
 

@@ -33,7 +33,7 @@ async function computeRawFiles(): Promise<void> {
 	}
 }
 
-Events.on('screen-tab-raw', () => computeRawFiles());
+Events.on('screen:tab-raw', () => computeRawFiles());
 Events.on('listfile-needs-updating', () => {
 	isDirty = true;
 });

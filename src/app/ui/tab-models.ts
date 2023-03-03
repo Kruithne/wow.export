@@ -500,7 +500,7 @@ function updateListfile(): void {
 }
 
 // The first time the user opens up the model tab, initialize 3D preview.
-Events.once('screen-tab-models', () => {
+Events.once('screen:tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 	scene = new THREE.Scene();

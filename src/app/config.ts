@@ -178,7 +178,7 @@ async function doSave(): Promise<void> {
 
 // Track when the configuration screen is displayed and clone a copy of
 // the current configuration into state.configEdit for reactive UI usage.
-Events.on('screen-config', () => {
+Events.on('screen:config', () => {
 	state.configEdit = structuredClone(toRaw(state.config));
 });
 

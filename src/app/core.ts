@@ -155,20 +155,12 @@ export const state = reactive({
 watch(() => state.loadPct, setTrayProgress);
 
 // Emit an event when the active screen changes.
-watch(() => state.screen, (screen: string) => Events.emit('screen-' + screen));
+watch(() => state.screen, (screen: string) => Events.emit('screen:' + screen));
 
 watch(() => state.casc, () => {
 	// TODO: This smells bad. Emit events from CASC.
 	Events.emit('casc-source-changed');
 });
-
-/**
- * Invoked when the active 'screen' is changed.
- * @param {string} val
- */
-/*screen: function(val: string) {
-	Events.emit('screen-' + val);
-},*/
 
 /**
  * Hide the currently active toast prompt.
