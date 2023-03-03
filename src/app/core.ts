@@ -157,11 +157,6 @@ watch(() => state.loadPct, setTrayProgress);
 // Emit an event when the active screen changes.
 watch(() => state.screen, (screen: string) => Events.emit('screen:' + screen));
 
-watch(() => state.casc, () => {
-	// TODO: This smells bad. Emit events from CASC.
-	Events.emit('casc-source-changed');
-});
-
 /**
  * Hide the currently active toast prompt.
  * @param userCancel - If true, toast was cancelled by the user.

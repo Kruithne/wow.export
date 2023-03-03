@@ -47,6 +47,8 @@ function loadInstall(index: number): void {
 
 		try {
 			await cascSource.load(index);
+			Events.emit('casc:loaded'); // TODO: Should this go inside CASC.load()?
+
 			state.setScreen('tab-models');
 		} catch (e) {
 			Log.write('Failed to load CASC: %o', e);

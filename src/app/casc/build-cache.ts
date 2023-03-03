@@ -198,10 +198,10 @@ Events.on('click-cache-clear', async () => {
 	Events.emit('cache-cleared');
 });
 
-// Run cache clean-up once a CASC source has been selected.
+// Run cache clean-up once a CASC source has been loaded.
 // We delay this until here so that we don't potentially mark
 // a build as stale and delete it right before the user requests it.
-Events.once('casc-source-changed', async () => {
+Events.once('casc:loaded', async () => {
 	let cacheExpire = Number(state.config.cacheExpiry) || 0;
 	cacheExpire *= 24 * 60 * 60 * 1000;
 
