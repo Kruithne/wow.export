@@ -25,7 +25,6 @@ import { filesize, } from './generics';
 import { setTrayProgress, win } from './system';
 
 // Import UI modules as side-effects.
-import './ui/source-select';
 import './ui/tab-textures';
 import './ui/tab-items';
 import './ui/tab-audio';

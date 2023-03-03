@@ -32,7 +32,6 @@ export const state = reactive({
 	toast: null, // Controls the currently active toast bar.
 	cdnRegions: [], // CDN region data.
 	selectedCDNRegion: null, // Active CDN region.
-	lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
 	config: {} as Config, // Will contain default/user-set configuration. Use config module to operate.
 	configEdit: {} as Config, // Temporary configuration clone used during user configuration editing.
 	availableLocalBuilds: null, // Array containing local builds to display during source select.
@@ -287,15 +286,6 @@ export function setAllItemTypes(state: boolean) {
 }
 
 /**
- * Return a tag for a given product.
- * @param product
- */
-export function getProductTag(product: string) {
-	const entry = Constants.PRODUCTS.find(e => e.product === product);
-	return entry ? entry.tag : 'Unknown';
-}
-
-/**
  * Set the currently active screen.
  * If `preserve` is true, the current screen ID will be pushed further onto the stack.
  * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
@@ -363,17 +353,6 @@ export function removeOverrideTextures() {
 	this.overrideTextureList = [];
 	this.overrideTextureName = '';
 }
-
-/**
- * Invoked when the user manually selects a CDN region.
- * @param region
- */
-export function setSelectedCDN(region: CDNRegion) {
-	this.selectedCDNRegion = region;
-	this.lockCDNRegion = true;
-	this.config.sourceSelectUserRegion = region.tag;
-}
-
 /**
  * Emit an event using the global event emitter.
  * @param tag
