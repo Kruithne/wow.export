@@ -521,8 +521,6 @@ Events.once('screen-tab-models', () => {
 });
 
 Events.once('casc-ready', async () => {
-	const state = state;
-
 	// Track changes to the visible model listfile types.
 	state.$watch('config.modelsShowM2', updateListfile);
 	state.$watch('config.modelsShowWMO', updateListfile);
