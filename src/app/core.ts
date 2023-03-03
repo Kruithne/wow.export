@@ -154,6 +154,9 @@ export const state = reactive({
 // Update application tray progress when our internal loading progress changes.
 watch(() => state.loadPct, setTrayProgress);
 
+// Emit an event when the active screen changes.
+watch(() => state.screen, (screen: string) => Events.emit('screen-' + screen));
+
 watch(() => state.casc, () => {
 	// TODO: This smells bad. Emit events from CASC.
 	Events.emit('casc-source-changed');
