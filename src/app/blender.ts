@@ -8,6 +8,7 @@ import util from 'node:util';
 import fs from 'node:fs/promises';
 
 import { createDirectory, deleteDirectory } from './generics';
+import { openShell } from './system';
 
 import Log from './log';
 import Constants from './constants';
@@ -70,7 +71,7 @@ async function getBlenderInstallations(): Promise<Array<string>> {
  * using the default explorer application for this OS.
  */
 export async function openAddonDirectory(): Promise<void> {
-	nw.Shell.openItem(Constants.BLENDER.LOCAL_DIR);
+	openShell(Constants.BLENDER.LOCAL_DIR);
 }
 
 /**

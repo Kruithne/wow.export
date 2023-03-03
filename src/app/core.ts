@@ -7,6 +7,7 @@ import ExportHelper from './casc/export-helper';
 import Listfile from './casc/listfile';
 
 import { redraw } from './generics';
+import { openShell } from './system';
 
 import ProgressObject from './progress-object';
 
@@ -208,7 +209,7 @@ export function setToast(toastType: ToastType, message: string, options: object 
 
 /** Open user-configured export directory with OS default. */
 export function openExportDirectory() {
-	nw.Shell.openItem(this.config.exportDirectory);
+	openShell(this.config.exportDirectory);
 }
 
 /**

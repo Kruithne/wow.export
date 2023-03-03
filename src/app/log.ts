@@ -4,6 +4,7 @@ import util from 'node:util';
 import fs from 'node:fs';
 
 import Constants from './constants';
+import { openShell } from './system';
 
 const MAX_LOG_POOL = 1000;
 const MAX_DRAIN_PER_TICK = 10;
@@ -70,7 +71,7 @@ export function timeEnd(label: string, ...params: (string | number)[]): void {
  * Open the runtime log in the users external editor.
  */
 export function openRuntimeLog(): void {
-	nw.Shell.openItem(Constants.RUNTIME_LOG);
+	openShell(Constants.RUNTIME_LOG);
 }
 
 /**

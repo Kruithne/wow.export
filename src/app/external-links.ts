@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
+import { openShell } from './system';
 
 /** Defines static links which can be referenced via the data-external HTML attribute. */
 const STATIC_LINKS: Record<string, string> = {
@@ -22,7 +23,7 @@ export function openExternalLink(link: string): void {
 	if (link.startsWith('::'))
 		link = STATIC_LINKS[link];
 
-	nw.Shell.openExternal(link);
+	openShell(link);
 }
 
 /**

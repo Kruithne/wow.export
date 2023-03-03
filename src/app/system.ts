@@ -17,3 +17,11 @@ export function copyToClipboard(text: string): void {
 export function setTrayProgress(progress: number): void {
 	win.setProgressBar(progress);
 }
+
+/**
+ * Opens the given path in the system file browser.
+ * @param path - The path to open in the system file browser.
+ */
+export function openShell(path: string): void {
+	nw.Shell.openItem(path);
+}

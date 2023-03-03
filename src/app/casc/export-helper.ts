@@ -5,6 +5,7 @@ import util from 'node:util';
 
 import Log from '../log';
 import { state } from '../core';
+import { openShell } from '../system';
 import Events from '../events';
 
 const TOAST_OPT_LOG = { 'View Log': (): void => Log.openRuntimeLog() };
@@ -167,7 +168,7 @@ export default class ExportHelper {
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
 			const lastExportPath = ExportHelper.getExportPath(path.dirname(this.lastItem));
-			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
+			const toastOpt = { 'View in Explorer': () => openShell(lastExportPath) };
 
 			if (this.count > 1)
 				state.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
