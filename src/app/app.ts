@@ -56,8 +56,7 @@ process.on('unhandledRejection', CrashHandler.handleUnhandledRejection);
 process.on('uncaughtException', CrashHandler.handleUncaughtException);
 
 (async (): Promise<void> => {
-	// Prevent files from being dropped onto the window. These are over-written
-	// later but we disable here to prevent them working if init fails.
+	// Prevent files from being dropped onto the window.
 	window.ondragover = (e: DragEvent): boolean => {
 		e.preventDefault(); return false;
 	};
@@ -136,84 +135,6 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 		state.config.exportDirectory = path.join(os.homedir(), 'wow.export');
 		Log.write('No export directory set, setting to %s', state.config.exportDirectory);
 	}
-
-	// Set-up proper drag/drop handlers.
-	let dropStack = 0;
-	window.ondragenter = (e: DragEvent): boolean => {
-		e.preventDefault();
-
-		// Converting local files while busy shouldn't end badly, but it seems
-		// weird to let people do this on loading screens.
-		if (state.isBusy)
-			return false;
-
-		dropStack++;
-
-		// We're already showing a prompt, don't re-process it.
-		if (state.fileDropPrompt !== null)
-			return false;
-
-		const files = e.dataTransfer.files;
-		if (files.length > 0) {
-			// See comments on NWFile interface above.
-			const firstFilePath: string = (files[0] as unknown as NWFile).path;
-			const handler = state.getDropHandler(firstFilePath);
-
-			if (handler) {
-				let count = 0;
-				for (const file of files) {
-					const check = file.name.toLowerCase();
-					if (handler.ext.some((ext: string) => check.endsWith(ext)))
-						count++;
-				}
-
-				if (count > 0)
-					state.fileDropPrompt = handler.prompt(count);
-			} else {
-				state.fileDropPrompt = 'That file cannot be converted.';
-			}
-		}
-
-		return false;
-	};
-
-	window.ondrop = (e: DragEvent): boolean => {
-		e.preventDefault();
-		state.fileDropPrompt = null;
-
-		const files = e.dataTransfer.files;
-		if (files.length > 0) {
-			// See comments on NWFile interface above.
-			const firstFilePath = (files[0] as unknown as NWFile).path;
-			const handler = state.getDropHandler(firstFilePath);
-
-			if (handler) {
-				// Since dataTransfer.files is a FileList, we need to iterate it the old fashioned way.
-				const include = Array<string>();
-				for (const file of files) {
-					const check = file.name.toLowerCase();
-					if (handler.ext.some((ext: string) => check.endsWith(ext))) {
-						const filePath = (file as unknown as NWFile).path;
-						include.push(filePath);
-					}
-				}
-
-				if (include.length > 0)
-					handler.process(include);
-			}
-		}
-		return false;
-	};
-
-	window.ondragleave = (e: DragEvent): void => {
-		e.preventDefault();
-
-		// Window drag events trigger for all elements. Ensure that there is currently
-		// nothing being dragged once the dropStack is empty.
-		dropStack--;
-		if (dropStack === 0)
-			state.fileDropPrompt = null;
-	};
 
 	// Load cachesize, a file used to track the overall size of the cache directory
 	// without having to calculate the real size before showing to users. Fast and reliable.

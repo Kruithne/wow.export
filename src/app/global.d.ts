@@ -6,7 +6,6 @@ interface NWFile {
 	path: string;
 }
 
-type DropHandler = { ext: Array<string>; prompt: () => string; process: (file: File) => Promise<void>; };
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 
 type CDNRegion = { tag: string, url: string, delay: number | null };

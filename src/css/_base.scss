@@ -18,30 +18,6 @@ body {
 	opacity: 0.05;
 }
 
-#drop-overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 500;
-	font-size: 25px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	background-color: var(--background-trans);
-
-	&-icon {
-		width: 100px;
-		height: 100px;
-		margin-bottom: 20px;
-		background-image: url(./fa-icons/copy.svg);
-		background-position: center top;
-		background-repeat: no-repeat;
-	}
-}
-
 #container {
 	position: absolute;
 	top: 0;

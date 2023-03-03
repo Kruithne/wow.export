@@ -73,7 +73,6 @@ export const state = reactive({
 	installTags: [], // Install manifest tags.
 	tableBrowserHeaders: [], // DB2 headers
 	tableBrowserRows: [], // DB2 rows
-	fileDropPrompt: null, // Prompt to display for file drag/drops.
 	textViewerSelectedText: '', // Active text for the text viewer.
 	soundPlayerSeek: 0, // Current seek of the sound player.
 	soundPlayerState: false, // Playing state of the sound player.
@@ -114,7 +113,6 @@ export const state = reactive({
 	toastTimer: -1, // Timer ID for toast expiration.
 
 	// TODO: All propeties below likely do not need to be in the reactive state.
-	dropHandlers: [], // Handlers for file drag/drops.
 	loaders: Array<Promise<void>>, // Loading step promises.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
@@ -205,34 +203,6 @@ export function setToast(toastType: ToastType, message: string, options: object 
 	// Create a timer to remove this toast.
 	if (ttl > -1)
 		this.toastTimer = setTimeout(() => this.hideToast(), ttl);
-}
-
-/**
- * Register a function to be invoked when the user drops a file onto the application.
- * @param handler - Handler to register.
- */
-export function registerDropHandler(handler: DropHandler) {
-	// Ensure the extensions are all lower-case.
-	handler.ext = handler.ext.map(e => e.toLowerCase());
-	this.dropHandlers.push(handler);
-}
-
-/**
- * Get a drop handler for the given file path.
- * @param file - File path to get handler for.
- * @returns Drop handler, or null if none found.
- */
-export function getDropHandler(file: string): DropHandler | null {
-	file = file.toLowerCase();
-
-	for (const handler of this.dropHandlers) {
-		for (const ext of handler.ext) {
-			if (file.endsWith(ext))
-				return handler;
-		}
-	}
-
-	return null;
 }
 
 /**

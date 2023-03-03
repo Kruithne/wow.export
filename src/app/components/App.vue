@@ -5,7 +5,6 @@
 	import { state, click } from '../core';
 	import AppToast from './AppToast.vue';
 	import AppNavigation from './AppNavigation.vue';
-	import AppDropOverlay from './AppDropOverlay.vue';
 
 	import AppScreenLoading from './AppScreenLoading.vue';
 	import AppScreenChangeLog from './AppScreenChangeLog.vue';
@@ -30,7 +29,6 @@
 		<div id="logo">wow.export</div>
 		<AppNavigation/>
 	</div>
-	<AppDropOverlay/>
 	<div id="content">
 		<AppScreenLoading v-if="state.screen === 'loading'"/>
 		<AppScreenChangeLog v-else-if="state.screen === 'changelog'"/>

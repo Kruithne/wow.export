@@ -601,12 +601,3 @@ Events.once('casc:initialized', async () => {
 		await exportFiles(userSelection, false);
 	});
 });
-
-Events.once('config:loaded', (): void => {
-	// Register a drop handler for M2 files.
-	state.registerDropHandler({
-		ext: ['.m2'],
-		prompt: (count: number) => util.format('Export %d models as %s', count, state.config.exportModelFormat),
-		process: (files: FileList) => exportFiles(files, true)
-	});
-});

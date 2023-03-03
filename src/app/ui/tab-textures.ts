@@ -236,15 +236,6 @@ Events.once('casc:initialized', (): void => {
 	});
 });
 
-Events.once('config:loaded', (): void => {
-	// Register a drop handler for BLP files.
-	state.registerDropHandler({
-		ext: ['.blp'],
-		prompt: (count: number) => util.format('Export %d textures as %s', count, state.config.exportTextureFormat),
-		process: (files: Array<string>) => exportFiles(files, true)
-	});
-});
-
 export default {
 	previewTextureByID
 };
