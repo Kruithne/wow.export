@@ -497,14 +497,6 @@ export function goToTexture(fileDataID: number) {
 }
 
 /**
- * Copy given data as text to the system clipboard.
- * @param data
- */
-export function copyToClipboard(data: string) {
-	nw.Clipboard.get().set(data.toString(), 'text');
-}
-
-/**
  * Get the external export path for a given file.
  * @param file
  * @returns

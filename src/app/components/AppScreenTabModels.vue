@@ -2,7 +2,8 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, onTextureRibbonResize, click, goToTexture, copyToClipboard, getExportPath, setAllGeosets, setAllWMOGroups } from '../core';
+	import { state, onTextureRibbonResize, click, goToTexture, getExportPath, setAllGeosets, setAllWMOGroups } from '../core';
+	import { copyToClipboard } from '../system';
 </script>
 
 <template>

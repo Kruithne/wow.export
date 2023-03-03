@@ -2,7 +2,8 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, viewModels, viewTextures, copyToClipboard, setAllItemTypes } from '../core';
+	import { state, viewModels, viewTextures, setAllItemTypes } from '../core';
+	import { copyToClipboard } from '../system';
 	import ExternalLinks from '../external-links';
 </script>
 
