@@ -9,8 +9,6 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
-import { win } from './nwjs';
-
 import Updater from './updater';
 import Blender from './blender';
 import ExternalLinks from './external-links';
@@ -24,6 +22,7 @@ import CrashHandler from './crash-handler';
 
 import { createApp } from 'vue';
 import { filesize, } from './generics';
+import { setTrayProgress, win } from './system';
 
 // Import UI modules as side-effects.
 import './ui/source-select';
@@ -67,7 +66,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	};
 
 	// Reset taskbar progress in-case it's stuck.
-	win.setProgressBar(-1);
+	setTrayProgress(-1);
 
 	// Ensure we exit when the window is closed.
 	win.on('close', () => process.exit(0));
