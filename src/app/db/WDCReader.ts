@@ -337,6 +337,13 @@ export default class WDCReader {
 		// Ensure we've read the expected amount of pallet data.
 		assert.strictEqual(data.offset, prevPos + palletDataSize, 'Read incorrect amount of pallet data');
 
+		if (wdcVersion === 4) {
+			for (let sectionIndex = 0; sectionIndex < sectionCount - 1; sectionIndex++) {
+				const entryCount = data.readUInt32();
+				data.move(entryCount * 4);
+			}
+		}
+
 		prevPos = data.offset;
 
 		// char common_data[header.common_data_size];
