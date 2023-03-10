@@ -16,7 +16,8 @@ import BufferWrapper from '../buffer';
 const TABLE_FORMATS = {
 	0x32434457: { name: 'WDC2', wdcVersion: 2 },
 	0x434C5331: { name: 'CLS1', wdcVersion: 2 },
-	0x33434457: { name: 'WDC3', wdcVersion: 3 }
+	0x33434457: { name: 'WDC3', wdcVersion: 3 },
+	0x34434457: { name: 'WDC4', wdcVersion: 4 }
 };
 
 enum CompressionType {
@@ -377,7 +378,7 @@ export default class WDCReader {
 					offsetMap[minID + i] = { offset: data.readUInt32(), size: data.readUInt16() };
 			}
 
-			if (wdcVersion === 3 && isNormal) {
+			if ((wdcVersion === 3 || wdcVersion === 4) && isNormal) {
 				data.seek(stringBlockOfs);
 				for (let i = 0; i < header.stringTableSize;) {
 					const oldPos = data.offset;
@@ -409,7 +410,7 @@ export default class WDCReader {
 					copyTable.set(destinationRowID, sourceRowID);
 			}
 
-			if (wdcVersion === 3) {
+			if (wdcVersion === 3 || wdcVersion === 4) {
 				// offset_map_entry offset_map[section_headers.offset_map_id_count];
 				offsetMap = new Array(header.offsetMapIDCount);
 				for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
@@ -440,7 +441,7 @@ export default class WDCReader {
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
 			// TODO: Read
-			if (wdcVersion === 3)
+			if (wdcVersion === 3 || wdcVersion === 4)
 				data.move(header.offsetMapIDCount * 4);
 
 			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, relationshipMap };
@@ -469,13 +470,13 @@ export default class WDCReader {
 				}
 
 				// Check if first integer after string block (from id list or copy table) is non-0
-				if (isZeroed && wdcVersion === 3 && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
+				if (isZeroed && (wdcVersion === 3 || wdcVersion === 4) && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
 					data.seek(section.stringBlockOfs + header.stringTableSize);
 					isZeroed = data.readUInt32() === 0;
 				}
 
 				// Check if first entry in offsetMap has size 0
-				if (isZeroed && wdcVersion === 3 && header.offsetMapIDCount > 0)
+				if (isZeroed && (wdcVersion === 3 || wdcVersion === 4) && header.offsetMapIDCount > 0)
 					isZeroed = offsetMap[0].size === 0;
 
 				if (isZeroed) {
