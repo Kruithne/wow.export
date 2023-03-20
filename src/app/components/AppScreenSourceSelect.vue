@@ -76,7 +76,6 @@
 
 		try {
 			await cascSource.load(index);
-			Events.emit('casc:loaded'); // TODO: Should this go inside CASC.load()?
 
 			setScreen('tab-models');
 		} catch (e) {

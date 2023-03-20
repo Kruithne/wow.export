@@ -9,6 +9,7 @@ import Log from '../log';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
 import Listfile from './listfile';
+import Events from '../events';
 import { readFile } from '../generics';
 
 import * as VersionConfig from './version-config';
@@ -112,6 +113,8 @@ export default class CASCLocal extends CASC {
 		await this.loadTables();
 		await this.filterListfile();
 		await this.initializeComponents();
+
+		Events.emit('casc:loaded');
 	}
 
 	/**

@@ -6,6 +6,7 @@ import { get, filesize, downloadFile, queue, ping } from '../generics';
 import Log from '../log';
 import Constants from '../constants';
 import Listfile from './listfile';
+import Events from '../events';
 
 import * as ConfigReader from './config-reader';
 import * as VersionConfig from './version-config';
@@ -199,6 +200,8 @@ export default class CASCRemote extends CASC {
 		await this.loadTables();
 		await this.filterListfile();
 		await this.initializeComponents();
+
+		Events.emit('casc:loaded');
 	}
 
 	/**
