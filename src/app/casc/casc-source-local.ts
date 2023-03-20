@@ -83,7 +83,7 @@ export default class CASCLocal extends CASC {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
-			products.push(util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version));
+			products.push(util.format('%s (%s) %s', product?.title ?? 'Unknown', entry.Branch.toUpperCase(), entry.Version));
 		}
 
 		return products;
