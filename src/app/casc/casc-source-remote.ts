@@ -297,9 +297,11 @@ export default class CASCRemote extends CASC {
 		Log.write('%o', serverConfigs);
 
 		// Locate the CDN entry for our selected region.
-		this.serverConfig = serverConfigs.find(e => e.Name === this.region);
-		if (!this.serverConfig)
+		const serverConfig = serverConfigs.find(e => e.Name === this.region);
+		if (serverConfig === undefined)
 			throw new Error('CDN config does not contain entry for region ' + this.region);
+
+		this.serverConfig = serverConfig;
 	}
 
 	/**
