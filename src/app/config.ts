@@ -9,7 +9,7 @@ import { toRaw } from 'vue';
 import TactKeys from './casc/tact-keys';
 import Log from './log';
 import Constants from './constants';
-import { state } from './core';
+import { state, showPreviousScreen } from './core';
 import Events from './events';
 
 let isSaving = false;
@@ -202,7 +202,7 @@ Events.on('click-config-apply', () => {
 
 	// Everything checks out, apply.
 	state.config = cfg;
-	state.showPreviousScreen();
+	showPreviousScreen();
 	state.setToast('success', 'Changes to your configuration have been saved!');
 });
 
@@ -217,7 +217,7 @@ Events.on('click-tact-key', () => {
 
 // When the user clicks 'Discard' on the configuration screen, simply
 // move back to the previous screen on the stack.
-Events.on('click-config-discard', () => state.showPreviousScreen());
+Events.on('click-config-discard', () => showPreviousScreen());
 
 // When the user clicks 'Reset to Default', apply the default configuration to our
 // reactive edit object instead of our normal config allowing them to still discard.
