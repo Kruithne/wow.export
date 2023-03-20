@@ -109,6 +109,9 @@ export default abstract class CASC {
 		const installKeys = this.buildConfig.install.split(' ');
 		const installKey = installKeys.length === 1 ? this.encodingKeys.get(installKeys[0]) : installKeys[1];
 
+		if (installKey === undefined)
+			throw new Error('Install manifest not found');
+
 		const raw = this.isRemote ? await (this as unknown as CASCRemote).getDataFile((this as unknown as CASCRemote).formatCDNKey(installKey)) : await (this as unknown as CASCLocal).getDataFileWithRemoteFallback(installKey);
 		const manifest = new BLTEReader(raw, installKey);
 
