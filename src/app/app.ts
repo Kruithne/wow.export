@@ -17,7 +17,7 @@ import Constants from './constants';
 import Log from './log';
 import Config from './config';
 import TactKeys from './casc/tact-keys';
-import { state } from './core';
+import { state, setScreen } from './core';
 import Events from './events';
 import CrashHandler from './crash-handler';
 
@@ -202,5 +202,5 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	});
 
 	// Set source select as the currently active interface screen.
-	state.setScreen('source-select');
+	setScreen('source-select');
 })();

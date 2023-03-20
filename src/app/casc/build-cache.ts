@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 import Log from '../log';
 import Constants from '../constants';
-import { state } from '../core';
+import { state, setScreen } from '../core';
 import Events from '../events';
 import BufferWrapper from '../buffer';
 
@@ -184,7 +184,7 @@ export default class BuildCache {
 
 // Invoked when the user requests a cache purge.
 Events.on('click-cache-clear', async () => {
-	state.setScreen('config', true);
+	setScreen('config', true);
 	state.isBusy++;
 	state.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	Log.write('Manual cache purge requested by user! (Cache size: %s)', state.cacheSizeFormatted);

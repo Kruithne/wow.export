@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { watch } from 'vue';
-import { state } from '../core';
+import { state, setScreen } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import MultiMap from '../MultiMap';
@@ -93,7 +93,7 @@ export type ItemType = InstanceType<typeof Item>;
  * @param item
  */
 export function viewItemModels(item): void {
-	state.setScreen('tab-models');
+	setScreen('tab-models');
 
 	const list = new Set();
 
@@ -128,7 +128,7 @@ export function viewItemModels(item): void {
  * @param item
  */
 export function viewItemTextures(item): void {
-	state.setScreen('tab-textures');
+	setScreen('tab-textures');
 
 	const list = new Set();
 
@@ -159,7 +159,7 @@ export function viewItemTextures(item): void {
 Events.once('screen:tab-items', async () => {
 	// Initialize a loading screen.
 	const progress = state.createProgress(5);
-	state.setScreen('loading');
+	setScreen('loading');
 	state.isBusy++;
 
 	await progress.step('Loading item data...');
@@ -227,7 +227,7 @@ Events.once('screen:tab-items', async () => {
 	// Show the item viewer screen.
 	state.loadPct = -1;
 	state.isBusy--;
-	state.setScreen('tab-items');
+	setScreen('tab-items');
 
 	// Load initial configuration for the type control from config.
 	const enabledTypes = state.config.itemViewerEnabledTypes;

@@ -2,7 +2,7 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, click } from '../core';
+	import { state, click, setScreen } from '../core';
 	import { previewTextureByID } from '../ui/tab-textures';
 	import * as TextureRibbon from '../ui/texture-ribbon';
 	import { setClipboard } from '../system';
@@ -24,7 +24,7 @@
 	}
 
 	function goToTexture(fileDataID: number): void {
-		state.setScreen('tab-textures');
+		setScreen('tab-textures');
 
 		// Directly preview the requested file, even if it's not in the listfile.
 		previewTextureByID(fileDataID);

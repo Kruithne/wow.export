@@ -2,7 +2,7 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state } from '../core';
+	import { state, setScreen } from '../core';
 	import { ping } from '../generics';
 	import { reactive } from 'vue';
 
@@ -78,14 +78,14 @@
 			await cascSource.load(index);
 			Events.emit('casc:loaded'); // TODO: Should this go inside CASC.load()?
 
-			state.setScreen('tab-models');
+			setScreen('tab-models');
 		} catch (e) {
 			Log.write('Failed to load CASC: %o', e);
 			state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => Log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
-			state.setScreen('source-select');
+			setScreen('source-select');
 		} finally {
 			state.isBusy--;
 		}

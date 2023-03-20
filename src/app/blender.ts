@@ -12,7 +12,7 @@ import { openShell } from './system';
 
 import Log from './log';
 import Constants from './constants';
-import { state } from './core';
+import { state, setScreen } from './core';
 
 const PATTERN_ADDON_VER = /"version": \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
@@ -115,7 +115,7 @@ export async function checkLocalVersion(): Promise<void> {
 	if (latestAddonVersion > blenderAddonVersion) {
 		Log.write('Prompting user for Blender add-on update...');
 		state.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-			'Install': () => state.setScreen('blender', true),
+			'Install': () => setScreen('blender', true),
 			'Maybe Later': () => false
 		}, -1, false);
 	}
