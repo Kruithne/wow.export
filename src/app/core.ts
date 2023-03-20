@@ -262,12 +262,3 @@ export function click(tag: string, event: MouseEvent, ...params): void {
 	if (!target.classList.contains('disabled'))
 		Events.emit('click-' + tag, ...params);
 }
-
-/**
- * Get the external export path for a given file.
- * @param file
- * @returns
- */
-export function getExportPath(file: string): string {
-	return ExportHelper.getExportPath(file);
-}
