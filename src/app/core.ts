@@ -3,7 +3,6 @@
 import { reactive, watch, computed } from 'vue';
 
 import Events from './events';
-import ExportHelper from './casc/export-helper';
 
 import { redraw } from './generics';
 import { setTrayProgress } from './system';
