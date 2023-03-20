@@ -22,7 +22,7 @@ import CrashHandler from './crash-handler';
 
 import { createApp } from 'vue';
 import { filesize, } from './generics';
-import { setTrayProgress, win } from './system';
+import { setTrayProgress, win, restartApplication } from './system';
 
 // Import UI modules as side-effects.
 import './ui/tab-textures';
@@ -76,7 +76,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 		// Add a quick-reload keybinding.
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'F5')
-				chrome.runtime.reload();
+				restartApplication();
 		});
 	}
 

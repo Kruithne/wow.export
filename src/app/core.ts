@@ -4,22 +4,13 @@ import { reactive, watch, computed } from 'vue';
 
 import Events from './events';
 import ExportHelper from './casc/export-helper';
-import Listfile from './casc/listfile';
 
 import { redraw } from './generics';
 import { setTrayProgress } from './system';
 
 import ProgressObject from './progress-object';
 
-import { previewTextureByID } from './ui/tab-textures';
-import { viewItemModels, viewItemTextures } from './ui/tab-items';
-
 import type { Config } from './config';
-
-import { LocaleFlags } from './casc/locale-flags';
-import { formatPlaybackSeconds } from './generics';
-
-import * as TextureRibbon from './ui/texture-ribbon';
 
 export const state = reactive({
 	screenStack: [], // Controls the currently active interface screen.
@@ -181,32 +172,15 @@ export function hideToast(userCancel = false): void {
  * @param ttl - Time in milliseconds before removing the toast.
  * @param closable - If true, toast can manually be closed.
  */
-export function setToast(toastType: ToastType, message: string, options: object | null = null, ttl = 10000, closable = true) {
-	this.toast = { type: toastType, message, options, closable };
+export function setToast(toastType: ToastType, message: string, options: object | null = null, ttl = 10000, closable = true): void {
+	state.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.
-	clearTimeout(this.toastTimer);
+	clearTimeout(state.toastTimer);
 
 	// Create a timer to remove this toast.
 	if (ttl > -1)
-		this.toastTimer = setTimeout(() => this.hideToast(), ttl);
-}
-
-/**
- * Register a promise to be resolved during the last loading step.
- * @param func - Promise to resolve.
- */
-export function registerLoadFunc(func: Promise<void>) {
-	this.loaders.push(func);
-}
-
-/**
- * Resolves all registered load functions.
- * @returns Promise that resolves when all load functions have been resolved.
- */
-export async function resolveLoadFuncs() {
-	await Promise.all(this.loaders);
-	this.loaders.length = 0;
+		state.toastTimer = setTimeout(() => state.hideToast(), ttl);
 }
 
 /**
@@ -215,7 +189,7 @@ export async function resolveLoadFuncs() {
  * @returns Progress object.
  */
 export function createProgress(segments = 1): ProgressObject {
-	this.loadPct = 0;
+	state.loadPct = 0;
 
 	return {
 		segWeight: 1 / segments,
@@ -232,59 +206,6 @@ export function createProgress(segments = 1): ProgressObject {
 	};
 }
 
-/** Invoked when the user chooses to manually install the Blender add-on. */
-export function openBlenderAddonFolder() {
-	Blender.openAddonDirectory();
-}
-
-/** Invoked when the user chooses to automatically install the Blender add-on. */
-export function installBlenderAddon() {
-	Blender.startAutomaticInstall();
-}
-
-/** Opens the runtime application log from the application data directory. */
-export function openRuntimeLog() {
-	Log.openRuntimeLog();
-}
-
-/** Reloads all stylesheets in the document. */
-export function reloadStylesheet() {
-	const sheets = document.querySelectorAll('link[rel="stylesheet"]');
-	for (const sheet of sheets as NodeListOf<HTMLLinkElement>)
-		sheet.href = sheet.getAttribute('data-href') + '?v=' + Date.now();
-}
-
-/**
- * Mark all WMO groups to the given state.
- * @param state
- */
-export function setAllWMOGroups(state: boolean) {
-	if (this.modelViewerWMOGroups) {
-		for (const node of this.modelViewerWMOGroups)
-			node.checked = state;
-	}
-}
-
-/**
- * Mark all geosets to the given state.
- * @param state
- */
-export function setAllGeosets(state: boolean) {
-	if (this.modelViewerGeosets) {
-		for (const node of this.modelViewerGeosets)
-			node.checked = state;
-	}
-}
-
-/**
- * Mark all item types to the given state.
- * @param state
- */
-export function setAllItemTypes(state: boolean) {
-	for (const entry of this.itemViewerTypeMask)
-		entry.checked = state;
-}
-
 /**
  * Set the currently active screen.
  * If `preserve` is true, the current screen ID will be pushed further onto the stack.
@@ -292,11 +213,11 @@ export function setAllItemTypes(state: boolean) {
  * @param screenID
  * @param preserve
  */
-export function setScreen(screenID: string, preserve = false) {
-	this.loadPct = -1; // Ensure we reset if coming from a loading screen.
+export function setScreen(screenID: string, preserve = false): void {
+	state.loadPct = -1; // Ensure we reset if coming from a loading screen.
 
 	// Ensure that all context menus are absorbed by screen changes.
-	const contextMenus = this.contextMenus;
+	const contextMenus = state.contextMenus;
 	for (const [key, value] of Object.entries(contextMenus)) {
 		if (value === true)
 			contextMenus[key] = false;
@@ -305,10 +226,10 @@ export function setScreen(screenID: string, preserve = false) {
 	}
 
 	if (preserve) {
-		if (this.screenStack[0] !== screenID)
-			this.screenStack.unshift(screenID);
+		if (state.screenStack[0] !== screenID)
+			state.screenStack.unshift(screenID);
 	} else {
-		this.screenStack.splice(0, this.screenStack.length, screenID);
+		state.screenStack.splice(0, state.screenStack.length, screenID);
 	}
 }
 
@@ -316,107 +237,30 @@ export function setScreen(screenID: string, preserve = false) {
  * Show the loading screen with a given message.
  * @param text Defaults to 'Loading, please wait'
  */
-export function showLoadScreen(text: string) {
-	this.setScreen('loading');
-	this.loadingTitle = text || 'Loading, please wait...';
+export function showLoadScreen(text: string): void {
+	state.setScreen('loading');
+	state.loadingTitle = text || 'Loading, please wait...';
 }
 
 /**
  * Remove the active screen from the screen stack, effectively returning to the
  * 'previous' screen. Has no effect if there are no more screens in the stack.
  */
-export function showPreviousScreen() {
-	if (this.screenStack.length > 1)
-		this.screenStack.shift();
+export function showPreviousScreen(): void {
+	if (state.screenStack.length > 1)
+		state.screenStack.shift();
 }
 
-/**
- * Invoked when a toast option is clicked.
- * The tag is passed to our global event emitter.
- * @param tag
- */
-export function handleToastOptionClick(func: () => void) {
-	this.toast = null;
-
-	if (typeof func === 'function')
-		func();
-}
-
-/** Invoked when a user cancels a model override filter. */
-export function removeOverrideModels() {
-	this.overrideModelList = [];
-	this.overrideModelName = '';
-}
-
-/** Invoked when a user cancels a texture override filter. */
-export function removeOverrideTextures() {
-	this.overrideTextureList = [];
-	this.overrideTextureName = '';
-}
 /**
  * Emit an event using the global event emitter.
  * @param tag
  * @param event
  */
-export function click(tag: string, event: MouseEvent, ...params) {
+export function click(tag: string, event: MouseEvent, ...params): void {
 	// TODO: This smells bad.
 	const target = event.target as HTMLElement;
 	if (!target.classList.contains('disabled'))
 		Events.emit('click-' + tag, ...params);
-}
-
-/**
- * Pass-through function to emit events from reactive markup.
- * @param tag
- * @param params
- */
-export function emit(tag: string, ...params) {
-	Events.emit(tag, ...params);
-}
-
-/** Restart the application. */
-export function restartApplication() {
-	chrome.runtime.reload();
-}
-
-/**
- * Invoked when the texture ribbon element on the model viewer
- * fires a resize event.
- * @param width - The new width of the ribbon.
- */
-export function onTextureRibbonResize(width: number) {
-	TextureRibbon.onResize(width);
-}
-
-/**
- * Switches to the textures tab and filters for the given file.
- * @param fileDataID
- */
-export function goToTexture(fileDataID: number) {
-	this.setScreen('tab-textures');
-
-	// Directly preview the requested file, even if it's not in the listfile.
-	previewTextureByID(fileDataID);
-
-	// Since we're doing a direct preview, we need to reset the users current
-	// selection, so if they hit export, they get the expected result.
-	this.selectionTextures.splice(0);
-
-	// Despite direct preview, *attempt* to filter for the file as well.
-	if (this.config.listfileShowFileDataIDs) {
-		// If the user has fileDataIDs shown, filter by that.
-		if (this.config.regexFilters)
-			this.userInputFilterTextures = '\\[' + fileDataID + '\\]';
-		else
-			this.userInputFilterTextures = '[' + fileDataID + ']';
-	} else {
-		// Without fileDataIDs, lookup the texture name and filter by that.
-		const fileName = Listfile.getByID(fileDataID);
-		if (fileName !== undefined)
-			this.userInputFilterTextures = fileName;
-		else if (this.config.enableUnknownFiles)
-			this.userInputFilterTextures = Listfile.formatUnknownFile(fileDataID, '.blp');
-	}
 }
 
 /**
@@ -426,28 +270,4 @@ export function goToTexture(fileDataID: number) {
  */
 export function getExportPath(file: string): string {
 	return ExportHelper.getExportPath(file);
-}
-
-/**
- * Returns a reference to the external links module.
- * @returns
- */
-export function getExternalLink() {
-	return ExternalLinks;
-}
-
-/**
- * Invoked when the user selects the models button on an item.
- * @param item
- */
-export function viewModels(item: object) {
-	viewItemModels(item);
-}
-
-/**
- * Invoked when the user selects the textures button on an item.
- * @param item
- */
-export function viewTextures(item: object) {
-	viewItemTextures(item);
 }

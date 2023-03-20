@@ -10,6 +10,7 @@ import Events from '../events';
 import BufferWrapper from '../buffer';
 
 import { createDirectory, deleteDirectory, readJSON } from '../generics';
+import { restartApplication } from '../system';
 
 type BuildMeta = {
 	lastAccess?: number;
@@ -193,7 +194,7 @@ Events.on('click-cache-clear', async () => {
 
 	state.cacheSize = 0;
 	Log.write('Purge complete, awaiting mandatory restart.');
-	state.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => state.restartApplication() }, -1, false);
+	state.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => restartApplication() }, -1, false);
 
 	Events.emit('cache-cleared');
 });

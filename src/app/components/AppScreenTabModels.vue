@@ -2,8 +2,52 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, onTextureRibbonResize, click, goToTexture, getExportPath, setAllGeosets, setAllWMOGroups } from '../core';
+	import { state, click, getExportPath } from '../core';
+	import { previewTextureByID } from '../ui/tab-textures';
+	import * as TextureRibbon from '../ui/texture-ribbon';
 	import { setClipboard } from '../system';
+	import Listfile from '../casc/listfile';
+
+	function setAllWMOGroups(setState: boolean): void {
+		if (state.modelViewerWMOGroups) {
+			for (const node of state.modelViewerWMOGroups)
+				node.checked = setState;
+		}
+	}
+
+	function setAllGeosets(setState: boolean): void {
+		if (state.modelViewerGeosets) {
+			for (const node of state.modelViewerGeosets)
+				node.checked = setState;
+		}
+	}
+
+	function goToTexture(fileDataID: number): void {
+		state.setScreen('tab-textures');
+
+		// Directly preview the requested file, even if it's not in the listfile.
+		previewTextureByID(fileDataID);
+
+		// Since we're doing a direct preview, we need to reset the users current
+		// selection, so if they hit export, they get the expected result.
+		state.selectionTextures.splice(0);
+
+		// Despite direct preview, *attempt* to filter for the file as well.
+		if (state.config.listfileShowFileDataIDs) {
+			// If the user has fileDataIDs shown, filter by that.
+			if (state.config.regexFilters)
+				state.userInputFilterTextures = '\\[' + fileDataID + '\\]';
+			else
+				state.userInputFilterTextures = '[' + fileDataID + ']';
+		} else {
+			// Without fileDataIDs, lookup the texture name and filter by that.
+			const fileName = Listfile.getByID(fileDataID);
+			if (fileName !== undefined)
+				state.userInputFilterTextures = fileName;
+			else if (state.config.enableUnknownFiles)
+				state.userInputFilterTextures = Listfile.formatUnknownFile(fileDataID, '.blp');
+		}
+	}
 </script>
 
 <template>
@@ -28,7 +72,7 @@
 			<input type="text" v-model="state.userInputFilterModels" placeholder="Filter models..."/>
 		</div>
 		<div class="preview-container">
-			<resize-layer @resize="onTextureRibbonResize" id="texture-ribbon" v-if="state.config.modelViewerShowTextures && state.textureRibbonStack.length > 0">
+			<resize-layer @resize="TextureRibbon.onResize" id="texture-ribbon" v-if="state.config.modelViewerShowTextures && state.textureRibbonStack.length > 0">
 				<div id="texture-ribbon-prev" v-if="state.textureRibbonPage > 0" @click.self="state.textureRibbonPage--"></div>
 				<div v-for="slot in state.textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="state.contextMenus.nodeTextureRibbon = slot"></div>
 				<div id="texture-ribbon-next" v-if="state.textureRibbonPage < state.textureRibbonMaxPages - 1" @click.self="state.textureRibbonPage++"></div>

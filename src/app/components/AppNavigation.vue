@@ -2,7 +2,15 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, setScreen, openRuntimeLog, reloadStylesheet, restartApplication } from '../core';
+	import { state, setScreen } from '../core';
+	import { openRuntimeLog } from '../log';
+	import { restartApplication } from '../system';
+
+	function reloadStylesheets(): void {
+		const sheets = document.querySelectorAll('link[rel="stylesheet"]');
+		for (const sheet of sheets)
+			(sheet as HTMLLinkElement).href = sheet.getAttribute('data-href') + '?v=' + Date.now();
+	}
 </script>
 
 <template>
@@ -26,7 +34,7 @@
 			<span v-if="state.casc !== null" @click.self="setScreen('tab-install')" id="menu-extra-install">Browse Install Manifest</span>
 			<span @click.self="setScreen('config', true)" id="menu-extra-settings">Manage Settings</span>
 			<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
-			<span v-if="state.isDebugBuild" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
+			<span v-if="state.isDebugBuild" @click.self="reloadStylesheets" id="menu-extra-style">Reload Styling</span>
 		</context-menu>
 	</div>
 </template>

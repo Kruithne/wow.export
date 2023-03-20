@@ -5,6 +5,13 @@ export const win = nw.Window.get();
 type ClipboardType = 'text' | 'png' | 'jpeg' | 'html' | 'rtf';
 
 /**
+ * Restarts the Chromium runtime.
+ */
+export function restartApplication(): void {
+	chrome.runtime.reload();
+}
+
+/**
  * Copies the given text to the system clipboard.
  * @param text - The text to copy to the clipboard
  * @param type - The type of data to copy to the clipboard

@@ -2,7 +2,24 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, handleToastOptionClick, hideToast, removeOverrideModels, removeOverrideTextures } from '../core';
+	import { state, hideToast } from '../core';
+
+	function handleToastOptionClick(func: () => void): void {
+		state.toast = null;
+
+		if (typeof func === 'function')
+			func();
+	}
+
+	function removeOverrideModels(): void {
+		state.overrideModelList = [];
+		state.overrideModelName = '';
+	}
+
+	function removeOverrideTextures(): void {
+		state.overrideTextureList = [];
+		state.overrideTextureName = '';
+	}
 </script>
 
 <template>
