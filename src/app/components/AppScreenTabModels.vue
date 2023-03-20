@@ -2,11 +2,12 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, click, getExportPath } from '../core';
+	import { state, click } from '../core';
 	import { previewTextureByID } from '../ui/tab-textures';
 	import * as TextureRibbon from '../ui/texture-ribbon';
 	import { setClipboard } from '../system';
 	import Listfile from '../casc/listfile';
+	import ExportHelper from '../casc/export-helper';
 
 	function setAllWMOGroups(setState: boolean): void {
 		if (state.modelViewerWMOGroups) {
@@ -82,7 +83,7 @@
 					<span @click.self="setClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
 					<span @click.self="setClipboard(context.node.displayName)">Copy texture name to clipboard</span>
 					<span @click.self="setClipboard(context.node.fileName)">Copy file path to clipboard</span>
-					<span @click.self="setClipboard(getExportPath(context.node.fileName))">Copy export path to clipboard</span>
+					<span @click.self="setClipboard(ExportHelper.getExportPath(context.node.fileName))">Copy export path to clipboard</span>
 				</context-menu>
 			</resize-layer>
 			<div id="model-texture-preview" v-if="state.modelTexturePreviewURL.length > 0" class="preview-background">
