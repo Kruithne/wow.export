@@ -38,18 +38,16 @@
 
 		<AppToast /> <!-- TODO: Replace with a better system. -->
 
-		<keep-alive>
-			<AppScreenTabTextures v-if="state.screen === 'tab-textures'"/>
-			<AppScreenTabData v-if="state.screen === 'tab-data'"/>
-			<AppScreenTabInstall v-if="state.screen === 'tab-install'"/>
-			<AppScreenTabModels v-if="state.screen === 'tab-models'"/>
-			<AppScreenTabItems v-if="state.screen === 'tab-items'"/>
-			<AppScreenTabMaps v-if="state.screen === 'tab-maps'"/>
-			<AppScreenTabRaw v-if="state.screen === 'tab-raw'"/>
-			<AppScreenTabSounds v-if="state.screen === 'tab-sounds'"/>
-			<AppScreenTabVideo v-if="state.screen === 'tab-video'"/>
-			<AppScreenTabText v-if="state.screen === 'tab-text'"/>
-		</keep-alive>
+		<keep-alive><AppScreenTabTextures v-if="state.screen === 'tab-textures'"/></keep-alive>
+		<keep-alive><AppScreenTabData v-if="state.screen === 'tab-data'"/></keep-alive>
+		<keep-alive><AppScreenTabInstall v-if="state.screen === 'tab-install'"/></keep-alive>
+		<keep-alive><AppScreenTabModels v-if="state.screen === 'tab-models'"/></keep-alive>
+		<keep-alive><AppScreenTabItems v-if="state.screen === 'tab-items'"/></keep-alive>
+		<keep-alive><AppScreenTabMaps v-if="state.screen === 'tab-maps'"/></keep-alive>
+		<keep-alive><AppScreenTabRaw v-if="state.screen === 'tab-raw'"/></keep-alive>
+		<keep-alive><AppScreenTabSounds v-if="state.screen === 'tab-sounds'"/></keep-alive>
+		<keep-alive><AppScreenTabVideo v-if="state.screen === 'tab-video'"/></keep-alive>
+		<keep-alive><AppScreenTabText v-if="state.screen === 'tab-text'"/></keep-alive>
 	</div>
 	<div id="footer">
 		<template v-if="state.screen === 'config'">
