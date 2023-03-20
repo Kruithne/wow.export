@@ -2,7 +2,8 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, emit, click } from '../core';
+	import { state, click } from '../core';
+	import Events from '../events';
 </script>
 
 <template>
@@ -31,7 +32,7 @@
 					<span class="title">{{ state.soundPlayerTitle }}</span>
 					<span>{{ state.soundPlayerDurationFormatted }}</span>
 				</div>
-				<slider-component id="slider-seek" v-model="state.soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider-component>
+				<slider-component id="slider-seek" v-model="state.soundPlayerSeek" @input="Events.emit('click-sound-seek', $event)"></slider-component>
 				<div class="buttons">
 					<input type="button" :class="{ isPlaying: !state.soundPlayerState }" @click="click('sound-toggle', $event)"/>
 					<slider-component id="slider-volume" v-model="state.config.soundPlayerVolume" @input="state.config.soundPlayerVolume = $event"></slider-component>
