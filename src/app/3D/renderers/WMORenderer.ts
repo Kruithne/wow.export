@@ -108,7 +108,6 @@ export default class WMORenderer {
 			this.setArray[i] = { label: wmo.doodadSets[i].name, index: i, checked: false };
 
 		// Set-up reactive controls.
-		const state = state;
 		state.modelViewerWMOGroups = this.groupArray;
 		state.modelViewerWMOSets = this.setArray;
 
