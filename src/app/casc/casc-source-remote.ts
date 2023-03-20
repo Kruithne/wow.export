@@ -154,7 +154,7 @@ export default class CASCRemote extends CASC {
 		const products: Array<string> = [];
 		for (const entry of this.builds) {
 			const product = Constants.PRODUCTS.find(e => e.product === entry.Product);
-			products.push(util.format('%s %s', product.title, entry.VersionsName));
+			products.push(util.format('%s %s', product?.title ?? 'Unknown', entry.VersionsName));
 		}
 
 		return products;
