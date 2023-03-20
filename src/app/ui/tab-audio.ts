@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import path from 'node:path';
 import util from 'node:util';
+import { watch } from 'vue';
 
 import { state } from '../core';
 import Events from '../events';
@@ -158,7 +159,7 @@ Events.once('casc:initialized', (): void => {
 	audioNode.ondurationchange = (): number => state.soundPlayerDuration = audioNode.duration;
 
 	// Track changes to config.soundPlayerVolume and adjust our gain node.
-	state.$watch('config.soundPlayerVolume', (value: number) => {
+	watch(() => state.config.soundPlayerVolume, (value: number) => {
 		audioNode.volume = value;
 	});
 
@@ -177,8 +178,8 @@ Events.once('casc:initialized', (): void => {
 			playSelectedTrack();
 	});
 
-	// Track selection changes on the sound listbox and set first as active entry.
-	state.$watch('selectionSounds', (selection: string[]) => {
+	// Track selection changes on the sound listbox and set first as active entry.#
+	watch(() => state.selectionSounds, (selection: string[]) => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!state.isBusy && first && selectedFile !== first) {

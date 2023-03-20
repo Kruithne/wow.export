@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import fs from 'node:fs/promises';
+import { watch } from 'vue';
 
 import { readJSON } from './generics';
 import { toRaw } from 'vue';
@@ -117,7 +118,7 @@ export async function load(): Promise<void> {
 	copyConfig(userConfig, config);
 
 	state.config = config;
-	state.$watch('config', () => save(), { deep: true });
+	watch(() => state.config, () => save(), { deep: true });
 
 	await Events.emitAndAwait('config:loaded');
 }

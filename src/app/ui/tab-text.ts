@@ -1,5 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { watch } from 'vue';
 import { state } from '../core';
 import { setClipboard } from '../system';
 import Events from '../events';
@@ -14,7 +15,7 @@ let selectedFile: string;
 
 Events.once('casc:initialized', async () => {
 	// Track selection changes on the text listbox and set first as active entry.
-	state.$watch('selectionText', async selection => {
+	watch(() => state.selectionText, async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!state.isBusy && first && selectedFile !== first) {

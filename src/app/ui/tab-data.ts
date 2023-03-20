@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 import path from 'node:path';
+import { watch } from 'vue';
 
 import { state } from '../core';
 import Events from '../events';
@@ -20,7 +21,7 @@ Events.once('casc:initialized', async () => {
 	const db2NameMap = await get(manifestURL).then(res => res.json());
 
 	// Track selection changes on the text listbox and set first as active entry.
-	state.$watch('selectionDB2s', async selection => {
+	watch(() => state.selectionDB2s, async selection => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (!state.isBusy && first && selectedFile !== first && db2NameMap !== undefined) {

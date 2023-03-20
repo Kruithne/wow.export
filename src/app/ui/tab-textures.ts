@@ -3,6 +3,7 @@
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
+import { watch } from 'vue';
 
 import { fileExists } from '../generics';
 import { EncryptionError } from '../casc/blte-reader';
@@ -198,13 +199,13 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 Events.once('casc:initialized', (): void => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
-	state.$watch('config.exportTextureAlpha', () => {
+	watch(() => state.config.exportTextureAlpha, () => {
 		if (!state.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});
 
 	// Track selection changes on the texture listbox and preview first texture.
-	state.$watch('selectionTextures', async (selection: Array<string>) => {
+	watch(() => state.selectionTextures, async (selection: Array<string>) => {
 		// Check if the first file in the selection is "new".
 		const first = Listfile.stripFileEntry(selection[0]);
 		if (first && !state.isBusy) {
@@ -230,7 +231,7 @@ Events.once('casc:initialized', (): void => {
 	});
 
 	// Track when the user changes the colour channel mask.
-	state.$watch('config.exportChannelMask', () => {
+	watch(() => state.config.exportChannelMask, () => {
 		if (!state.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});

@@ -3,6 +3,7 @@
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
+import { watch } from 'vue';
 
 import { state } from '../core';
 import { openShell, setClipboard } from '../system';
@@ -521,11 +522,11 @@ Events.once('screen:tab-models', () => {
 
 Events.once('casc:initialized', async () => {
 	// Track changes to the visible model listfile types.
-	state.$watch('config.modelsShowM2', updateListfile);
-	state.$watch('config.modelsShowWMO', updateListfile);
+	watch(() => state.config.modelsShowM2, updateListfile);
+	watch(() => state.config.modelsShowWMO, updateListfile);
 
 	// When the selected model skin is changed, update our model.
-	state.$watch('modelViewerSkinsSelection', async (selection: Array<SkinInfo>) => {
+	watch(() => state.modelViewerSkinsSelection, async (selection: Array<SkinInfo>) => {
 		// Don't do anything if we're lacking skins.
 		if (!(activeRenderer instanceof M2Renderer) || activeSkins.size === 0)
 			return;
@@ -565,7 +566,7 @@ Events.once('casc:initialized', async () => {
 			activeRenderer?.applyReplaceableTextures(display);
 	}, { deep: true });
 
-	state.$watch('config.modelViewerShowGrid', () => {
+	watch(() => state.config.modelViewerShowGrid, () => {
 		if (state.config.modelViewerShowGrid)
 			scene.add(grid);
 		else
@@ -573,7 +574,7 @@ Events.once('casc:initialized', async () => {
 	});
 
 	// Track selection changes on the model listbox and preview first model.
-	state.$watch('selectionModels', async (selection: Array<string>) => {
+	watch(() => state.selectionModels, async (selection: Array<string>) => {
 		// Don't do anything if we're not loading models.
 		if (!state.config.modelsAutoPreview)
 			return;

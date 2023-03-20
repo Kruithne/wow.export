@@ -1,7 +1,8 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import BLTEReader from './blte-reader';
+import { watch } from 'vue';
 
+import BLTEReader from './blte-reader';
 import Listfile, { ListfileFilter } from './listfile';
 import Log from '../log';
 import { state } from '../core';
@@ -61,7 +62,7 @@ export default abstract class CASC {
 		this.progress = state.createProgress(10);
 
 		// Listen for configuration changes to cascLocale.
-		this.unhookConfig = state.$watch('config.cascLocale', (locale: number) => {
+		this.unhookConfig = watch(state.config.cascLocale, (locale: number) => {
 			if (!isNaN(locale)) {
 				this.locale = locale;
 			} else {
@@ -234,8 +235,8 @@ export default abstract class CASC {
 
 		Events.on('listfile:needs-updating', () => this.updateListfileFilters());
 
-		state.$watch('config.listfileSortByID', () => Events.emit('listfile:needs-updating'));
-		state.$watch('config.listfileShowFileDataIDs', () => Events.emit('listfile:needs-updating'), { immediate: true });
+		watch(() => state.config.listfileSortByID, () => Events.emit('listfile:needs-updating'));
+		watch(() => state.config.listfileShowFileDataIDs, () => Events.emit('listfile:needs-updating'), { immediate: true });
 	}
 
 	/**

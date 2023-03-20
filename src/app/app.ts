@@ -8,6 +8,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { watch } from 'vue';
 
 import Updater from './updater';
 import Blender from './blender';
@@ -146,7 +147,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 
 		// Create a watcher programmatically *after* assigning the initial value
 		// to prevent a needless file write by triggering itself during init.
-		state.$watch('cacheSize', function(nv: number) {
+		watch(() => state.cacheSize, (newValue) => {
 			// Clear any existing timer running.
 			clearTimeout(updateTimer);
 
@@ -154,7 +155,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 			// to the file constantly during heavy cache usage. Postponing until
 			// next tick would not help due to async and potential IO/net delay.
 			updateTimer = setTimeout(() => {
-				fs.writeFile(Constants.CACHE.SIZE, nv.toString(), 'utf8');
+				fs.writeFile(Constants.CACHE.SIZE, newValue.toString(), 'utf8');
 			}, Constants.CACHE.SIZE_UPDATE_DELAY);
 		});
 	});

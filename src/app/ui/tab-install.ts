@@ -1,5 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { watch } from 'vue';
 import { state } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
@@ -30,7 +31,7 @@ Events.once('screen:tab-install', async () => {
 		return { label: e.name, enabled: true, mask: e.mask };
 	});
 
-	state.$watch('installTags', () => updateInstallListfile(), { deep: true, immediate: true });
+	watch(() => state.installTags, () => updateInstallListfile(), { deep: true, immediate: true });
 
 	state.hideToast();
 });

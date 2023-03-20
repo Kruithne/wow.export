@@ -1,5 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
+import { watch } from 'vue';
 import { state } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
@@ -236,7 +237,7 @@ Events.once('screen:tab-items', async () => {
 		mask.push({ label, checked: enabledTypes.includes(label) });
 
 	// Register a watcher for the item type control.
-	state.$watch('itemViewerTypeMask', () => {
+	watch(() => state.itemViewerTypeMask, () => {
 		// Refilter the listfile based on what the new selection.
 		const filter = state.itemViewerTypeMask.filter(e => e.checked);
 		const mask = [];

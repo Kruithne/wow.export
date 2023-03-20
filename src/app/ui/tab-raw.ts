@@ -1,6 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
+import { watch } from 'vue';
 
 import { state } from '../core';
 import Events from '../events';
@@ -39,7 +40,7 @@ Events.on('listfile:needs-updating', () => {
 });
 
 Events.once('casc:initialized', () => {
-	state.$watch('config.cascLocale', () => {
+	watch(() => state.config.cascLocale, () => {
 		isDirty = true;
 	});
 });

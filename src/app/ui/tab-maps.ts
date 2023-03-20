@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import util from 'node:util';
 import path from 'node:path';
+import { watch } from 'vue';
 
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -317,7 +318,7 @@ Events.once('casc:initialized', (): void => {
 	state.mapViewerTileLoader = loadMapTile;
 
 	// Track selection changes on the map listbox and select that map.
-	state.$watch('selectionMaps', async (selection: string[]) => {
+	watch(() => state.selectionMaps, (selection: string[]) => {
 		// Check if the first file in the selection is "new".
 		const first = selection[0];
 

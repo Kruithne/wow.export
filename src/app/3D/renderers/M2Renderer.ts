@@ -2,6 +2,7 @@
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
 import * as THREE from 'three';
+import { watch } from 'vue';
 
 import BLPFile from '../../casc/blp';
 import M2Loader from '../loaders/M2Loader';
@@ -64,8 +65,8 @@ export default class M2Renderer {
 			await this.loadSkin(0);
 
 			if (this.reactive) {
-				this.geosetWatcher = state.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
-				this.wireframeWatcher = state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+				this.geosetWatcher = watch(() => state.modelViewerGeosets, () => this.updateGeosets(), { deep: true });
+				this.wireframeWatcher = watch(() => state.config.modelViewerWireframe, () => this.updateWireframe(), { deep: true });
 			}
 		}
 

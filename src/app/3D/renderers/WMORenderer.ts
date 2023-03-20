@@ -4,6 +4,7 @@
 import util from 'node:util';
 
 import * as THREE from 'three';
+import { watch } from 'vue';
 
 import Listfile from '../../casc/listfile';
 import { state } from '../../core';
@@ -111,9 +112,9 @@ export default class WMORenderer {
 		state.modelViewerWMOGroups = this.groupArray;
 		state.modelViewerWMOSets = this.setArray;
 
-		this.groupWatcher = state.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
-		this.setWatcher = state.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
-		this.wireframeWatcher = state.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+		this.groupWatcher = watch(() => state.modelViewerWMOGroups, () => this.updateGroups(), { deep: true });
+		this.setWatcher = watch(() => state.modelViewerWMOSets, () => this.updateSets(), { deep: true });
+		this.wireframeWatcher = watch(() => state.config.modelViewerWireframe, () => this.updateWireframe(), { deep: true });
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
