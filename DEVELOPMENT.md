@@ -79,7 +79,7 @@ npm run build # --code --assets --framework --shaders --style
 npm run build-debug # --debug --code --assets --framework --shaders
 npm run update # --code
 npm run update-debug # --debug --code
-run npm update-style # --debug --style
+npm run update-style # --debug --style
 npm run update-shaders # --debug --shaders
 npm run build-release # --code --assets --shaders --framework --package --update --style
 ```
