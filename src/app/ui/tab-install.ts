@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { watch } from 'vue';
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import Log from '../log';
@@ -33,7 +33,7 @@ Events.once('screen:tab-install', async () => {
 
 	watch(() => state.installTags, () => updateInstallListfile(), { deep: true, immediate: true });
 
-	state.hideToast();
+	hideToast();
 });
 
 // Track when the user clicks to export selected install files.

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { watch } from 'vue';
 
 import Listfile from '../../casc/listfile';
-import { state, setToast } from '../../core';
+import { state, setToast, hideToast } from '../../core';
 import Log from '../../log';
 import BufferWrapper from '../../buffer';
 
@@ -291,7 +291,7 @@ export default class WMORenderer {
 		if (this.doodadSets !== undefined)
 			this.doodadSets[index] = renderGroup;
 
-		state.hideToast();
+		hideToast();
 		state.isBusy--;
 	}
 

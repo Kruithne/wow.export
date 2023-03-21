@@ -4,7 +4,7 @@ import path from 'node:path';
 import util from 'node:util';
 import { watch } from 'vue';
 
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -136,7 +136,7 @@ async function loadSelectedTrack(): Promise<void> {
 			throw new Error('Invalid audio duration.');
 
 		isTrackLoaded = true;
-		state.hideToast();
+		hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.

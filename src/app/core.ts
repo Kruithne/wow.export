@@ -180,7 +180,7 @@ export function setToast(toastType: ToastType, message: string, options: object 
 
 	// Create a timer to remove this toast.
 	if (ttl > -1)
-		state.toastTimer = setTimeout(() => state.hideToast(), ttl);
+		state.toastTimer = setTimeout(() => hideToast(), ttl);
 }
 
 /**

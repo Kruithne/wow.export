@@ -2,7 +2,7 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, setScreen, setToast } from '../core';
+	import { state, setScreen, setToast, hideToast } from '../core';
 
 	import util from 'node:util';
 
@@ -87,7 +87,7 @@
 	}
 
 	async function initLocalInstall(installPath: string, product: string | undefined = undefined): Promise<void> {
-		state.hideToast();
+		hideToast();
 
 		try {
 			cascSource = new CASCLocal(installPath);

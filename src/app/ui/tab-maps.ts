@@ -7,7 +7,7 @@ import { watch } from 'vue';
 import Log from '../log';
 import Listfile from '../casc/listfile';
 import Constants from '../constants';
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import Events from '../events';
 
 import WDCReader from '../db/WDCReader';
@@ -309,7 +309,7 @@ Events.once('screen:tab-maps', async () => {
 
 	state.mapViewerMaps = maps;
 
-	state.hideToast();
+	hideToast();
 	state.isBusy--;
 });
 

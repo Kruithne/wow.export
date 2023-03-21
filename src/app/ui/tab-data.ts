@@ -4,7 +4,7 @@ import util from 'node:util';
 import path from 'node:path';
 import { watch } from 'vue';
 
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -38,7 +38,7 @@ Events.once('casc:initialized', async () => {
 				if (rows.size == 0)
 					setToast('info', 'Selected DB2 has no rows.', null);
 				else
-					state.hideToast(false);
+					hideToast(false);
 
 				const parsed = Array(rows.size);
 

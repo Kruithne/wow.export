@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { watch } from 'vue';
 
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import { openShell, setClipboard } from '../system';
 import Events from '../events';
 
@@ -105,7 +105,7 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 		view.modelTexturePreviewHeight = blp.height;
 		view.modelTexturePreviewName = name;
 
-		state.hideToast();
+		hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
@@ -231,7 +231,7 @@ async function previewModel(fileName: string): Promise<void> {
 			setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		else
-			state.hideToast();
+			hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.

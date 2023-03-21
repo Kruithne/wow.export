@@ -8,7 +8,7 @@ import { watch } from 'vue';
 import { fileExists } from '../generics';
 import { EncryptionError } from '../casc/blte-reader';
 
-import { state, setToast } from '../core';
+import { state, setToast, hideToast } from '../core';
 import { setClipboard } from '../system';
 import Events from '../events';
 import Log from '../log';
@@ -67,7 +67,7 @@ export async function previewTextureByID(fileDataID: number, texture: string | n
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
 
 		selectedFileDataID = fileDataID;
-		state.hideToast();
+		hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
