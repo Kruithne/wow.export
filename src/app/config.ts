@@ -119,8 +119,6 @@ export async function load(): Promise<void> {
 
 	state.config = config;
 	watch(() => state.config, () => save(), { deep: true });
-
-	await Events.emitAndAwait('config:loaded');
 }
 
 /**
