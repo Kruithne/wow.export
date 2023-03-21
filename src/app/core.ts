@@ -237,9 +237,9 @@ export function setScreen(screenID: string, preserve = false): void {
  * Show the loading screen with a given message.
  * @param text Defaults to 'Loading, please wait'
  */
-export function showLoadScreen(text: string): void {
+export function showLoadScreen(text?: string): void {
 	setScreen('loading');
-	state.loadingTitle = text || 'Loading, please wait...';
+	state.loadingTitle = text ?? 'Loading, please wait...';
 }
 
 /**
