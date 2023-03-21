@@ -10,7 +10,7 @@ import { get, downloadFile, filesize, getFileHash, fileExists } from './generics
 
 import Log from './log';
 import Constants from './constants';
-import { state, createProgress } from './core';
+import { state, createProgress, showLoadScreen } from './core';
 
 interface UpdateFileContents {
 	hash: string,
@@ -65,7 +65,7 @@ export async function checkForUpdates(): Promise<boolean> {
 /** Apply an outstanding update. */
 export async function applyUpdate(): Promise<void> {
 	state.isBusy++;
-	state.showLoadScreen('Updating, please wait...');
+	showLoadScreen('Updating, please wait...');
 
 	Log.write('Starting update to %s...', updateManifest.guid);
 

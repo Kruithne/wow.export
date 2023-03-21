@@ -2,7 +2,7 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, setScreen, setToast, hideToast } from '../core';
+	import { state, setScreen, setToast, hideToast, showLoadScreen } from '../core';
 
 	import util from 'node:util';
 
@@ -44,7 +44,7 @@
 
 	async function loadInstall(index: number): Promise<void> {
 		state.isBusy++;
-		state.showLoadScreen();
+		showLoadScreen();
 
 		// Wipe the available build lists.
 		state.availableLocalBuilds = null;
