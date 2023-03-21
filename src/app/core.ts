@@ -153,12 +153,12 @@ watch(() => state.screen, (screen: string) => Events.emit('screen:' + screen));
  */
 export function hideToast(userCancel = false): void {
 	// Cancel outstanding toast expiry timer.
-	if (this.toastTimer > -1) {
-		clearTimeout(this.toastTimer);
-		this.toastTimer = -1;
+	if (state.toastTimer > -1) {
+		clearTimeout(state.toastTimer);
+		state.toastTimer = -1;
 	}
 
-	this.toast = null;
+	state.toast = null;
 
 	if (userCancel)
 		Events.emit('toast-cancelled');
