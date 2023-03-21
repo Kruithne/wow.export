@@ -17,7 +17,6 @@
 	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 	import { setClipboard } from '../system';
 	import path from 'node:path';
-	import Events from '../events';
 
 	defineEmits(['options']);
 	const props = defineProps({
