@@ -6,6 +6,6 @@ interface NWFile {
 	path: string;
 }
 
-type ToastType = 'info' | 'success' | 'warning' | 'error';
+type ToastType = 'info' | 'success' | 'warning' | 'error' | 'progress';
 
 type CDNRegion = { tag: string, url: string, delay: number | null };
