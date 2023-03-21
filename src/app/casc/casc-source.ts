@@ -5,7 +5,7 @@ import { watch } from 'vue';
 import BLTEReader from './blte-reader';
 import Listfile, { ListfileFilter } from './listfile';
 import Log from '../log';
-import { state, setToast } from '../core';
+import { state, setToast, createProgress } from '../core';
 import Events from '../events';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
@@ -59,7 +59,7 @@ export default abstract class CASC {
 		this.rootTypes = [];
 		this.isRemote = isRemote;
 
-		this.progress = state.createProgress(10);
+		this.progress = createProgress(10);
 
 		// Listen for configuration changes to cascLocale.
 		this.unhookConfig = watch(state.config.cascLocale, (locale: number) => {

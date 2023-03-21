@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { watch } from 'vue';
-import { state, setScreen } from '../core';
+import { state, setScreen, createProgress } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import MultiMap from '../MultiMap';
@@ -158,7 +158,7 @@ export function viewItemTextures(item): void {
 
 Events.once('screen:tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = state.createProgress(5);
+	const progress = createProgress(5);
 	setScreen('loading');
 	state.isBusy++;
 

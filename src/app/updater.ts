@@ -10,7 +10,7 @@ import { get, downloadFile, filesize, getFileHash, fileExists } from './generics
 
 import Log from './log';
 import Constants from './constants';
-import { state } from './core';
+import { state, createProgress } from './core';
 
 interface UpdateFileContents {
 	hash: string,
@@ -72,7 +72,7 @@ export async function applyUpdate(): Promise<void> {
 	const requiredFiles: Array<UpdateRequiredFile> = [];
 	const entries = Object.entries(updateManifest.contents);
 
-	let progress = state.createProgress(entries.length);
+	let progress = createProgress(entries.length);
 	state.loadingTitle = 'Verifying local files...';
 
 	for (let i = 0, n = entries.length; i < n; i++) {
@@ -110,7 +110,7 @@ export async function applyUpdate(): Promise<void> {
 	const downloadSize = filesize(requiredFiles.map(e => e.meta.size).reduce((total, val) => total + val));
 	Log.write('%d files (%s) marked for download.', requiredFiles.length, downloadSize);
 
-	progress = state.createProgress(requiredFiles.length);
+	progress = createProgress(requiredFiles.length);
 	state.loadingTitle = 'Downloading updates...';
 
 	const remoteEndpoint = util.format(state.config.updateURL, nw.App.manifest.flavour) + 'update';

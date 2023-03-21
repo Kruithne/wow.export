@@ -4,7 +4,7 @@ import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
-import { state } from '../core';
+import { state, createProgress } from '../core';
 import Log from '../log';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
@@ -101,7 +101,7 @@ export default class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = state.createProgress(13);
+		this.progress = createProgress(13);
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
