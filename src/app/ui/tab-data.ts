@@ -4,7 +4,7 @@ import util from 'node:util';
 import path from 'node:path';
 import { watch } from 'vue';
 
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -36,7 +36,7 @@ Events.once('casc:initialized', async () => {
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0)
-					state.setToast('info', 'Selected DB2 has no rows.', null);
+					setToast('info', 'Selected DB2 has no rows.', null);
 				else
 					state.hideToast(false);
 
@@ -51,7 +51,7 @@ Events.once('casc:initialized', async () => {
 				selectedFile = first;
 			} catch (e) {
 				// Error reading/parsing DB2 file.
-				state.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
+				setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
 				Log.write('Failed to open CASC file: %s', e.message);
 			}
 		}

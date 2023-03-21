@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 	import util from 'node:util';
 	import Constants from '../constants';
-	import { state } from '../core';
+	import { setToast } from '../core';
 	import { ref, reactive, watch, onMounted, onBeforeUnmount } from 'vue';
 
 	type MapTile = {
@@ -234,7 +234,7 @@
 		if (event.ctrlKey === true && event.key === 'a') {
 			// Without a WDT mask, we can't reliably select everything.
 			if (!props.mask) {
-				state.setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)', null, -1);
+				setToast('error', 'Unable to perform Select All operation on this map (Missing WDT)', null, -1);
 				return;
 			}
 

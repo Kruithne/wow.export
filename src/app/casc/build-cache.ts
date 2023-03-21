@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 import Log from '../log';
 import Constants from '../constants';
-import { state, setScreen } from '../core';
+import { state, setScreen, setToast } from '../core';
 import Events from '../events';
 import BufferWrapper from '../buffer';
 
@@ -186,7 +186,7 @@ export default class BuildCache {
 Events.on('click-cache-clear', async () => {
 	setScreen('config', true);
 	state.isBusy++;
-	state.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
+	setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	Log.write('Manual cache purge requested by user! (Cache size: %s)', state.cacheSizeFormatted);
 
 	await fs.promises.rm(Constants.CACHE.DIR, { recursive: true, force: true });
@@ -194,7 +194,7 @@ Events.on('click-cache-clear', async () => {
 
 	state.cacheSize = 0;
 	Log.write('Purge complete, awaiting mandatory restart.');
-	state.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => restartApplication() }, -1, false);
+	setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => restartApplication() }, -1, false);
 
 	Events.emit('cache-cleared');
 });

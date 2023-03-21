@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { watch } from 'vue';
-import { state } from '../core';
+import { state, setToast } from '../core';
 import { setClipboard } from '../system';
 import Events from '../events';
 import Log from '../log';
@@ -27,11 +27,11 @@ Events.once('casc:initialized', async () => {
 			} catch (e) {
 				if (e instanceof EncryptionError) {
 					// Missing decryption key.
-					state.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
+					setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
 					Log.write('Failed to decrypt texture %s (%s)', first, e.key);
 				} else {
 					// Error reading/parsing text file.
-					state.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
+					setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => Log.openRuntimeLog() }, -1);
 					Log.write('Failed to open CASC file: %s', e.message);
 				}
 			}
@@ -41,14 +41,14 @@ Events.once('casc:initialized', async () => {
 	// Track when the user clicks to copy the open text file to clipboard.
 	Events.on('click-copy-text', async () => {
 		setClipboard(state.textViewerSelectedText);
-		state.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
+		setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
 	});
 
 	// Track when the user clicks to export selected text files.
 	Events.on('click-export-text', async () => {
 		const userSelection = state.selectionText;
 		if (userSelection.length === 0) {
-			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 

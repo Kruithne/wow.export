@@ -1,6 +1,6 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -13,7 +13,7 @@ Events.once('casc:initialized', async () => {
 	Events.on('click-export-video', async () => {
 		const userSelection = state.selectionVideos;
 		if (userSelection.length === 0) {
-			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 

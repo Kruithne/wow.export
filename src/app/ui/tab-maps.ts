@@ -7,7 +7,7 @@ import { watch } from 'vue';
 import Log from '../log';
 import Listfile from '../casc/listfile';
 import Constants from '../constants';
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 
 import WDCReader from '../db/WDCReader';
@@ -228,7 +228,7 @@ async function exportSelectedMap(): Promise<void> {
 
 	// User has not selected any tiles.
 	if (exportTiles.length === 0)
-		return state.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+		return setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
 	const helper = new ExportHelper(exportTiles.length, 'tile');
 	helper.start();
@@ -295,7 +295,7 @@ function parseMapEntry(entry: string): { id: number, name: string, dir: string }
 // The first time the user opens up the map tab, initialize map names.
 Events.once('screen:tab-maps', async () => {
 	state.isBusy++;
-	state.setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
+	setToast('progress', 'Checking for available maps, hold on...', null, -1, false);
 
 	const table = new WDCReader('DBFilesClient/Map.db2');
 	await table.parse();

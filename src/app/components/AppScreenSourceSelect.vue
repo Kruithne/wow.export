@@ -2,7 +2,7 @@
 <!-- Licensed under the MIT license. See LICENSE in project root for license information. -->
 
 <script lang="ts" setup>
-	import { state, setScreen } from '../core';
+	import { state, setScreen, setToast } from '../core';
 
 	import util from 'node:util';
 
@@ -76,7 +76,7 @@
 			setScreen('tab-models');
 		} catch (e) {
 			Log.write('Failed to load CASC: %o', e);
-			state.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
+			setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 				'View Log': () => Log.openRuntimeLog(),
 				'Visit Support Discord': () => ExternalLinks.openExternalLink('::DISCORD')
 			}, -1);
@@ -98,7 +98,7 @@
 			else
 				state.availableLocalBuilds = cascSource.getProductList();
 		} catch (e) {
-			state.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
+			setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
 			Log.write('Failed to initialize local CASC source: %s', e.message);
 
 			// In the event the given installation directory is now invalid, remove all
@@ -125,7 +125,7 @@
 
 			state.availableRemoteBuilds = cascSource.getProductList();
 		} catch (e) {
-			state.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', state.selectedCDNRegion.tag.toUpperCase()), null, -1);
+			setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', state.selectedCDNRegion.tag.toUpperCase()), null, -1);
 			Log.write('Failed to initialize remote CASC source: %s', e.message);
 		} finally {
 			state.isBusy--;

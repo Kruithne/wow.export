@@ -4,7 +4,7 @@ import path from 'node:path';
 import util from 'node:util';
 import { watch } from 'vue';
 
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import Listfile from '../casc/listfile';
@@ -107,10 +107,10 @@ function unloadSelectedTrack(): void {
  */
 async function loadSelectedTrack(): Promise<void> {
 	if (selectedFile === undefined)
-		return state.setToast('info', 'You need to select an audio track first!', null, -1, true);
+		return setToast('info', 'You need to select an audio track first!', null, -1, true);
 
 	state.isBusy++;
-	state.setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
+	setToast('progress', util.format('Loading %s, please wait...', selectedFile), null, -1, false);
 	Log.write('Previewing sound file %s', selectedFile);
 
 	try {
@@ -140,11 +140,11 @@ async function loadSelectedTrack(): Promise<void> {
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			state.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
+			setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selectedFile, e.key), null, -1);
 			Log.write('Failed to decrypt audio file %s (%s)', selectedFile, e.key);
 		} else {
 			// Error reading/parsing audio.
-			state.setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			setToast('error', 'Unable to preview audio ' + selectedFile, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
@@ -197,7 +197,7 @@ Events.once('casc:initialized', (): void => {
 	Events.on('click-export-sound', async () => {
 		const userSelection = state.selectionSounds;
 		if (userSelection.length === 0) {
-			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 

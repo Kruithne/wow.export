@@ -9,7 +9,7 @@ import { toRaw } from 'vue';
 import TactKeys from './casc/tact-keys';
 import Log from './log';
 import Constants from './constants';
-import { state, showPreviousScreen } from './core';
+import { state, showPreviousScreen, setToast } from './core';
 import Events from './events';
 
 let isSaving = false;
@@ -187,30 +187,30 @@ Events.on('click-config-apply', () => {
 	const cfg = state.configEdit;
 
 	if (cfg.exportDirectory.length === 0)
-		return state.setToast('error', 'A valid export directory must be provided', null, -1);
+		return setToast('error', 'A valid export directory must be provided', null, -1);
 
 	if (cfg.listfileURL.length === 0)
-		return state.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
+		return setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
-		return state.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
+		return setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);
 
 	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
-		return state.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
+		return setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
 
 	// Everything checks out, apply.
 	state.config = cfg;
 	showPreviousScreen();
-	state.setToast('success', 'Changes to your configuration have been saved!');
+	setToast('success', 'Changes to your configuration have been saved!');
 });
 
 // User has attempted to manually add an encryption key.
 // Verify the input, register it to BLTEReader and store with keys.
 Events.on('click-tact-key', () => {
 	if (TactKeys.addKey(state.userInputTactKeyName, state.userInputTactKey))
-		state.setToast('success', 'Successfully added decryption key.');
+		setToast('success', 'Successfully added decryption key.');
 	else
-		state.setToast('error', 'Invalid encryption key.', null, -1);
+		setToast('error', 'Invalid encryption key.', null, -1);
 });
 
 // When the user clicks 'Discard' on the configuration screen, simply

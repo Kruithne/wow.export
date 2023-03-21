@@ -4,7 +4,7 @@ import path from 'node:path';
 import util from 'node:util';
 
 import Log from '../log';
-import { state } from '../core';
+import { state, setToast } from '../core';
 import { openShell } from '../system';
 import Events from '../events';
 
@@ -133,7 +133,7 @@ export default class ExportHelper {
 
 		Events.once('toast-cancelled', () => {
 			if (!this.isFinished) {
-				state.setToast('progress', 'Cancelling export, hold on...', null, -1, false);
+				setToast('progress', 'Cancelling export, hold on...', null, -1, false);
 				state.exportCancelled = true;
 			}
 		});
@@ -170,19 +170,19 @@ export default class ExportHelper {
 			const toastOpt = { 'View in Explorer': () => openShell(lastExportPath) };
 
 			if (this.count > 1)
-				state.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
+				setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
 			else
-				state.setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
+				setToast('success', util.format('Successfully exported %s.', this.lastItem), includeDirLink ? toastOpt : null, -1);
 		} else if (this.succeeded > 0) {
 			// Partial success, not everything exported.
 			const cancelled = state.exportCancelled;
-			state.setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
+			setToast('info', util.format('Export %s %d %s %s export.', cancelled ? 'cancelled, ' : 'complete, but', this.failed, this.unitFormatted, cancelled ? 'didn\'t' : 'failed to'), cancelled ? null : TOAST_OPT_LOG);
 		} else {
 			// Everything failed.
 			if (state.exportCancelled)
-				state.setToast('info', 'Export was cancelled by the user.', null);
+				setToast('info', 'Export was cancelled by the user.', null);
 			else
-				state.setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
+				setToast('error', util.format('Unable to export %s.', this.unitFormatted), TOAST_OPT_LOG, -1);
 		}
 
 		this.isFinished = true;
@@ -240,7 +240,7 @@ export default class ExportHelper {
 			exportProgress += ')';
 		}
 
-		state.setToast('progress', exportProgress, null, -1, true);
+		setToast('progress', exportProgress, null, -1, true);
 	}
 
 	/**

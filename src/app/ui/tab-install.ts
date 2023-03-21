@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import { watch } from 'vue';
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Listfile from '../casc/listfile';
 import Log from '../log';
@@ -24,7 +24,7 @@ function updateInstallListfile(): void {
 }
 
 Events.once('screen:tab-install', async () => {
-	state.setToast('progress', 'Retrieving installation manifest...', null, -1, false);
+	setToast('progress', 'Retrieving installation manifest...', null, -1, false);
 	manifest = await state.casc.getInstallManifest();
 
 	state.installTags = manifest.tags.map(e => {
@@ -40,7 +40,7 @@ Events.once('screen:tab-install', async () => {
 Events.on('click-export-install', async () => {
 	const userSelection = state.selectionInstall;
 	if (userSelection.length === 0) {
-		state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { watch } from 'vue';
 
 import Listfile from '../../casc/listfile';
-import { state } from '../../core';
+import { state, setToast } from '../../core';
 import Log from '../../log';
 import BufferWrapper from '../../buffer';
 
@@ -234,7 +234,7 @@ export default class WMORenderer {
 		const count = set.doodadCount;
 
 		state.isBusy++;
-		state.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
+		setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
 		for (let i = 0; i < count; i++) {
 			const doodad = wmo.doodads[firstIndex + i];

@@ -5,7 +5,7 @@ import { watch } from 'vue';
 import BLTEReader from './blte-reader';
 import Listfile, { ListfileFilter } from './listfile';
 import Log from '../log';
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Constants from '../constants';
 import BufferWrapper from '../buffer';
@@ -271,7 +271,7 @@ export default abstract class CASC {
 
 			if (!creatureDisplayInfo.schema.has('ModelID') || !creatureDisplayInfo.schema.has('TextureVariationFileDataID')) {
 				Log.write('Unable to load creature textures, CreatureDisplayInfo is missing required fields.');
-				state.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+				setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false
 				}, -1, false);
@@ -283,7 +283,7 @@ export default abstract class CASC {
 
 			if (!creatureModelData.schema.has('FileDataID') || !creatureModelData.schema.has('CreatureGeosetDataID')) {
 				Log.write('Unable to load creature textures, CreatureModelData is missing required fields.');
-				state.setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+				setToast('error', 'Creature data failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 					'Clear Cache': () => Events.emit('click-cache-clear'),
 					'Not Now': () => false
 				}, -1, false);

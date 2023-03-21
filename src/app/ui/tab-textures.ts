@@ -8,7 +8,7 @@ import { watch } from 'vue';
 import { fileExists } from '../generics';
 import { EncryptionError } from '../casc/blte-reader';
 
-import { state } from '../core';
+import { state, setToast } from '../core';
 import { setClipboard } from '../system';
 import Events from '../events';
 import Log from '../log';
@@ -35,7 +35,7 @@ export async function previewTextureByID(fileDataID: number, texture: string | n
 	texture = texture ?? Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
 	state.isBusy++;
-	state.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	Log.write('Previewing texture file %s', texture);
 
 	try {
@@ -71,11 +71,11 @@ export async function previewTextureByID(fileDataID: number, texture: string | n
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			state.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			Log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			state.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
@@ -127,7 +127,7 @@ async function exportFiles(files: Array<string | number>, isLocal = false): Prom
 		setClipboard(png.readString(undefined, 'base64'), 'png', true);
 
 		Log.write('Copied texture to clipboard (%s)', fileName);
-		state.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
+		setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
 
 		return;
 	}
@@ -226,7 +226,7 @@ Events.once('casc:initialized', (): void => {
 			await exportFiles([selectedFileDataID]);
 		} else {
 			// Nothing to be exported, show the user an error.
-			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		}
 	});
 

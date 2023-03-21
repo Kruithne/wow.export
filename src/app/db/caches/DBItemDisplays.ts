@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 
-import { state } from '../../core';
+import { state, setToast } from '../../core';
 import Events from '../../events';
 import Log from '../../log';
 import WDCReader from '../WDCReader';
@@ -28,7 +28,7 @@ export async function initializeItemDisplays(): Promise<void> {
 
 	if (!itemDisplayInfo.schema.has('ModelResourcesID') || !itemDisplayInfo.schema.has('ModelMaterialResourcesID')) {
 		Log.write('Unable to load item textures, ItemDisplayInfo is missing required fields.');
-		state.setToast('error', 'Item textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
+		setToast('error', 'Item textures failed to load due to outdated/incorrect database definitions. Clearing your cache might fix this.', {
 			'Clear Cache': () => Events.emit('click-cache-clear'),
 			'Not Now': () => false
 		}, -1, false);

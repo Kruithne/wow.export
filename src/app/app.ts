@@ -19,7 +19,7 @@ import Constants from './constants';
 import Log from './log';
 import Config from './config';
 import TactKeys from './casc/tact-keys';
-import { state, setScreen } from './core';
+import { state, setScreen, setToast } from './core';
 import Events from './events';
 import CrashHandler from './crash-handler';
 
@@ -171,7 +171,7 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 			if (updateAvailable) {
 				// Update is available, prompt to update. If user declines,
 				// begin checking the local Blender add-on version.
-				state.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
+				setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
 					'Update Now': () => Updater.applyUpdate(),
 					'Maybe Later': () => Blender.checkLocalVersion()
 				}, -1, false);

@@ -3,7 +3,7 @@
 import util from 'node:util';
 import { watch } from 'vue';
 
-import { state } from '../core';
+import { state, setToast } from '../core';
 import Events from '../events';
 import Log from '../log';
 import ExportHelper from '../casc/export-helper';
@@ -18,18 +18,18 @@ async function computeRawFiles(): Promise<void> {
 		isDirty = false;
 
 		if (state.config.enableUnknownFiles) {
-			state.setToast('progress', 'Scanning game client for all files...');
+			setToast('progress', 'Scanning game client for all files...');
 			await redraw();
 
 			const rootEntries = state.casc.getValidRootEntries();
 			state.listfileRaw = Listfile.formatEntries(rootEntries);
-			state.setToast('success', util.format('Found %d files in the game client', state.listfileRaw.length));
+			setToast('success', util.format('Found %d files in the game client', state.listfileRaw.length));
 		} else {
-			state.setToast('progress', 'Scanning game client for all known files...');
+			setToast('progress', 'Scanning game client for all known files...');
 			await redraw();
 
 			state.listfileRaw = Listfile.getFullListfile();
-			state.setToast('success', util.format('Found %d known files in the game client', state.listfileRaw.length));
+			setToast('success', util.format('Found %d known files in the game client', state.listfileRaw.length));
 		}
 	}
 }
@@ -49,7 +49,7 @@ Events.once('casc:initialized', () => {
 Events.on('click-detect-raw', async () => {
 	const userSelection = state.selectionRaw;
 	if (userSelection.length === 0) {
-		state.setToast('info', 'You didn\'t select any files to detect; you should do that first.');
+		setToast('info', 'You didn\'t select any files to detect; you should do that first.');
 		return;
 	}
 
@@ -64,7 +64,7 @@ Events.on('click-detect-raw', async () => {
 
 
 	if (filteredSelection.length === 0) {
-		state.setToast('info', 'You haven\'t selected any unknown files to identify.');
+		setToast('info', 'You haven\'t selected any unknown files to identify.');
 		return;
 	}
 
@@ -74,7 +74,7 @@ Events.on('click-detect-raw', async () => {
 	let currentIndex = 1;
 
 	for (const fileDataID of filteredSelection) {
-		state.setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
+		setToast('progress', util.format('Identifying file %d (%d / %d)', fileDataID, currentIndex++, filteredSelection.length));
 
 		try {
 			const data = await state.casc.getFile(fileDataID);
@@ -96,14 +96,14 @@ Events.on('click-detect-raw', async () => {
 
 		if (extensionMap.size === 1) {
 			const [fileDataID, ext] = extensionMap.entries().next().value;
-			state.setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
+			setToast('success', util.format('%d has been identified as a %s file', fileDataID, ext));
 		} else {
-			state.setToast('success', util.format('Successfully identified %d files', extensionMap.size));
+			setToast('success', util.format('Successfully identified %d files', extensionMap.size));
 		}
 
-		state.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
+		setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extensionMap.size, filteredSelection.length));
 	} else {
-		state.setToast('info', 'Unable to identify any of the selected files.');
+		setToast('info', 'Unable to identify any of the selected files.');
 	}
 
 	state.isBusy--;
@@ -113,7 +113,7 @@ Events.on('click-detect-raw', async () => {
 Events.on('click-export-raw', async () => {
 	const userSelection = state.selectionRaw;
 	if (userSelection.length === 0) {
-		state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+		setToast('info', 'You didn\'t select any files to export; you should do that first.');
 		return;
 	}
 

@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { watch } from 'vue';
 
-import { state } from '../core';
+import { state, setToast } from '../core';
 import { openShell, setClipboard } from '../system';
 import Events from '../events';
 
@@ -91,7 +91,7 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 	const texture = Listfile.getByID(fileDataID) ?? Listfile.formatUnknownFile(fileDataID);
 
 	state.isBusy++;
-	state.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	Log.write('Previewing texture file %s', texture);
 
 	try {
@@ -109,11 +109,11 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			state.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+			setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
 			Log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			// Error reading/parsing texture.
-			state.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
@@ -123,7 +123,7 @@ async function previewTextureByID(fileDataID: number, name: string): Promise<voi
 
 async function previewModel(fileName: string): Promise<void> {
 	state.isBusy++;
-	state.setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
+	setToast('progress', util.format('Loading %s, please wait...', fileName), null, -1, false);
 	Log.write('Previewing model %s', fileName);
 
 	// Reset texture ribbon.
@@ -228,18 +228,18 @@ async function previewModel(fileName: string): Promise<void> {
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
-			state.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
+			setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileName), null, 4000);
 
 		else
 			state.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			// Missing decryption key.
-			state.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
+			setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', fileName, e.key), null, -1);
 			Log.write('Failed to decrypt model %s (%s)', fileName, e.key);
 		} else {
 			// Error reading/parsing model.
-			state.setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
+			setToast('error', 'Unable to preview model ' + fileName, { 'View Log': () => Log.openRuntimeLog() }, -1);
 			Log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
@@ -305,7 +305,7 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath !== undefined) {
-			state.setToast('progress', 'Saving preview, hold on...', null, -1, false);
+			setToast('progress', 'Saving preview, hold on...', null, -1, false);
 
 			const modelPreview = document.getElementById('model-preview') as HTMLElement;
 			const canvas = modelPreview.querySelector('canvas') as HTMLCanvasElement;
@@ -320,15 +320,15 @@ async function exportFiles(files, isLocal = false): Promise<void> {
 				exportPaths.writeLine('PNG:' + outFile);
 
 				Log.write('Saved 3D preview screenshot to %s', outFile);
-				state.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => openShell(outDir) }, -1);
+				setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => openShell(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				setClipboard(buf.readString(undefined, 'base64'), 'png', true);
 
 				Log.write('Copied 3D preview to clipboard (%s)', activePath);
-				state.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
+				setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
 			}
 		} else {
-			state.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
+			setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
 	} else {
 		const casc = state.casc;
@@ -594,7 +594,7 @@ Events.once('casc:initialized', async () => {
 	Events.on('click-export-model', async () => {
 		const userSelection = state.selectionModels;
 		if (userSelection.length === 0) {
-			state.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+			setToast('info', 'You didn\'t select any files to export; you should do that first.');
 			return;
 		}
 
