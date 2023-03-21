@@ -22,6 +22,7 @@ export const state = reactive({
 	toast: null, // Controls the currently active toast bar.
 	cdnRegions: [], // CDN region data.
 	selectedCDNRegion: null, // Active CDN region.
+	lockCDNRegion: false, // Prevents pings from changing the CDN region.
 	config: {} as Config, // Will contain default/user-set configuration. Use config module to operate.
 	configEdit: {} as Config, // Temporary configuration clone used during user configuration editing.
 	availableLocalBuilds: null, // Array containing local builds to display during source select.

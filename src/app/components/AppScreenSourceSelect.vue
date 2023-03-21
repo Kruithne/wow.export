@@ -3,22 +3,18 @@
 
 <script lang="ts" setup>
 	import { state, setScreen } from '../core';
-	import { ping } from '../generics';
-	import { reactive } from 'vue';
 
 	import util from 'node:util';
 
 	import Constants from '../constants';
 	import Log from '../log';
 	import ExternalLinks from '../external-links';
-	import Events from '../events';
 
 	import CASC from '../casc/casc-source';
 	import CASCLocal from '../casc/casc-source-local';
 	import CASCRemote from '../casc/casc-source-remote';
 
 	let cascSource: CASC;
-	let lockCDNRegion = false;
 
 	// TODO: This is a duplicate from global.d.ts - need to find a way to share this type.
 	type CDNRegion = { tag: string, url: string, delay: number | null };
@@ -43,7 +39,7 @@
 	function setSelectedCDN(region: CDNRegion): void {
 		state.selectedCDNRegion = region;
 		state.config.sourceSelectUserRegion = region.tag;
-		lockCDNRegion = true;
+		state.lockCDNRegion = true;
 	}
 
 	async function loadInstall(index: number): Promise<void> {
@@ -135,55 +131,6 @@
 			state.isBusy--;
 		}
 	}
-
-	Events.once('config:loaded', (): void => {
-		const pings = Array<Promise<number | void>>();
-		const regions = state.cdnRegions;
-		const userRegion = state.config.sourceSelectUserRegion;
-
-		// User has pre-selected a CDN, lock choice from changing.
-		if (typeof userRegion === 'string')
-			lockCDNRegion = true;
-
-		// Iterate CDN regions and create data nodes.
-		for (const region of Constants.PATCH.REGIONS) {
-			const cdnURL: string = util.format(Constants.PATCH.HOST, region);
-			const node: CDNRegion = reactive({ tag: region, url: cdnURL, delay: null });
-			regions.push(node);
-
-			// Mark this region as the selected one.
-			if (region === userRegion || (typeof userRegion !== 'string' && region === Constants.PATCH.DEFAULT_REGION))
-				state.selectedCDNRegion = node;
-
-			// Run a rudimentary ping check for each CDN.
-			pings.push(ping(cdnURL).then(ms => node.delay = ms).catch(e => {
-				node.delay = -1;
-				Log.write('Failed ping to %s: %s', cdnURL, e.message);
-			}));
-		}
-
-		// Grab recent local installations from config.
-		if (!Array.isArray(state.config.recentLocal))
-			state.config.recentLocal = [];
-
-		// Once all pings are resolved, pick the fastest.
-		Promise.all(pings).then(() => {
-			// CDN region choice is locked, do nothing.
-			if (lockCDNRegion)
-				return;
-
-			const selectedRegion = state.selectedCDNRegion;
-			for (const region of regions) {
-				// Skip regions that don't have a valid ping.
-				if (region.delay === null || region.delay < 0)
-					continue;
-
-				// Switch the selected region for the fastest one.
-				if (region.delay < selectedRegion.delay)
-					state.selectedCDNRegion = region;
-			}
-		});
-	});
 </script>
 
 <template>

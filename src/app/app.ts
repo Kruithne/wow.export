@@ -8,7 +8,9 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { watch } from 'vue';
+import util from 'node:util';
+
+import { reactive, watch } from 'vue';
 
 import Updater from './updater';
 import Blender from './blender';
@@ -22,7 +24,7 @@ import Events from './events';
 import CrashHandler from './crash-handler';
 
 import { createApp } from 'vue';
-import { filesize, } from './generics';
+import { filesize, ping } from './generics';
 import { setTrayProgress, win, restartApplication } from './system';
 
 // Import UI modules as side-effects.
@@ -182,6 +184,53 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 		// Debug mode, go straight to Blender add-on check.
 		Blender.checkLocalVersion();
 	}
+
+	const pings = Array<Promise<number | void>>();
+	const regions = state.cdnRegions;
+	const userRegion = state.config.sourceSelectUserRegion;
+
+	// User has pre-selected a CDN, lock choice from changing.
+	if (typeof userRegion === 'string')
+		state.lockCDNRegion = true;
+
+	// Iterate CDN regions and create data nodes.
+	for (const region of Constants.PATCH.REGIONS) {
+		const cdnURL: string = util.format(Constants.PATCH.HOST, region);
+		const node: CDNRegion = reactive({ tag: region, url: cdnURL, delay: null });
+		regions.push(node);
+
+		// Mark this region as the selected one.
+		if (region === userRegion || (typeof userRegion !== 'string' && region === Constants.PATCH.DEFAULT_REGION))
+			state.selectedCDNRegion = node;
+
+		// Run a rudimentary ping check for each CDN.
+		pings.push(ping(cdnURL).then(ms => node.delay = ms).catch(e => {
+			node.delay = -1;
+			Log.write('Failed ping to %s: %s', cdnURL, e.message);
+		}));
+	}
+
+	// Grab recent local installations from config.
+	if (!Array.isArray(state.config.recentLocal))
+		state.config.recentLocal = [];
+
+	// Once all pings are resolved, pick the fastest.
+	Promise.all(pings).then(() => {
+		// CDN region choice is locked, do nothing.
+		if (state.lockCDNRegion)
+			return;
+
+		const selectedRegion = state.selectedCDNRegion;
+		for (const region of regions) {
+			// Skip regions that don't have a valid ping.
+			if (region.delay === null || region.delay < 0)
+				continue;
+
+			// Switch the selected region for the fastest one.
+			if (region.delay < selectedRegion.delay)
+				state.selectedCDNRegion = region;
+		}
+	});
 
 	// Load the changelog when the user opens the screen.
 	Events.on('screen:changelog', () => {
