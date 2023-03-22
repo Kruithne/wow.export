@@ -688,10 +688,12 @@ export default class WDCReader {
 						} else {
 							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
 								castBuffer.seek(0);
-								if (out[prop] < 0)
-									castBuffer.writeInt64(BigInt(out[prop][i]));
+
+								const value = out[prop][i];
+								if (value < 0)
+									castBuffer.writeInt64(BigInt(value));
 								else
-									castBuffer.writeUInt64(BigInt(out[prop][i]));
+									castBuffer.writeUInt64(BigInt(value));
 
 								castBuffer.seek(0);
 								switch (fieldType) {
