@@ -21,10 +21,6 @@ const INCLUDE = {
 	'src/assets/fonts': 'src/fonts'
 };
 
-const INCLUDE_CODE = {
-	'src/app/index.html': 'src/index.html',
-};
-
 const INCLUDE_SHADERS = {
 	'src/shaders': 'src/shaders',
 };
@@ -76,10 +72,6 @@ try {
 
 	let includes = [];
 
-	// If --code is set, update the build directory with additional code files.
-	if (argv.options.asBoolean('code'))
-		includes = includes.concat(Object.entries(INCLUDE_CODE));
-
 	// If --shaders is set, update the build directory with shader files.
 	if (argv.options.asBoolean('shaders'))
 		includes = includes.concat(Object.entries(INCLUDE_SHADERS));
@@ -87,6 +79,19 @@ try {
 	// If --assets is set, update the build directory with asset files.
 	if (argv.options.asBoolean('assets'))
 		includes = includes.concat(Object.entries(INCLUDE));
+
+	// If --code or --style is set, regenerate the HTML bootstrap.
+	if (argv.options.asBoolean('code') || argv.options.asBoolean('style')) {
+		log.info('Generating HTML bootstrap...');
+		let html = fs.readFileSync('./src/app/index.html', 'utf8');
+
+		if (isDebugBuild) {
+			const theme = fs.readFileSync('./tailwind.theme.json', 'utf8');
+			html = html.replace('<!-- injected:tailwind_config -->', `<script>window._tailwindConfig = { theme: ${theme} }</script>`);
+		}
+
+		fs.writeFileSync(path.join(buildDir, 'src', 'index.html'), html);
+	}
 
 	if (includes.length > 0) {
 		// Step 3: Copy additional source files.

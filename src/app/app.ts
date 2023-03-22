@@ -132,6 +132,18 @@ process.on('uncaughtException', CrashHandler.handleUncaughtException);
 	// Load configuration.
 	await Config.load();
 
+	// If in debugging mode, load the Tailwind CDN for quick styling.
+	if (process.env.NODE_ENV === 'development') {
+		const script = document.createElement('script');
+		script.src = 'https://cdn.tailwindcss.com';
+		document.head.appendChild(script);
+
+		// Inject configuration once loaded.
+		script.addEventListener('load', () => {
+			window['tailwind'].config = window['_tailwindConfig'];
+		});
+	}
+
 	// Set-up default export directory if none configured.
 	if (state.config.exportDirectory === '') {
 		state.config.exportDirectory = path.join(os.homedir(), 'wow.export');
