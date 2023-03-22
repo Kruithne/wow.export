@@ -665,7 +665,7 @@ export default class WDCReader {
 					if (recordFieldInfo.fieldCompression !== CompressionType.None) {
 						if (!Array.isArray(type)) {
 							castBuffer.seek(0);
-							if (out[prop] < 0)
+							if (out[prop] as number < 0)
 								castBuffer.writeInt64(BigInt(out[prop] as number));
 							else
 								castBuffer.writeUInt64(BigInt(out[prop] as number));
