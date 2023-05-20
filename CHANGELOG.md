@@ -1,3 +1,6 @@
+0.1.49 (??-03-2023)
+- Added mainline PTR 2 to the product list.
+
 0.1.48 (10-03-2023)
 - Adds preliminary support for reading DB2 tables in 10.1+.
 

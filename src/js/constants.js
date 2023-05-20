@@ -84,6 +84,7 @@ module.exports = {
 	PRODUCTS: [
 		{ product: 'wow', title: 'World of Warcraft', tag: 'Retail' },
 		{ product: 'wowt', title: 'PTR: World of Warcraft', tag: 'PTR' },
+		{ product: 'wowxptr', title: 'PTR 2: World of Warcraft', tag: 'PTR 2'},
 		{ product: 'wow_beta', title: 'Beta: World of Warcraft', tag: 'Beta' },
 		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' },
 		{ product: 'wow_classic_beta', title: 'Beta: World of Warcraft Classic', tag: 'Classic Beta' },
