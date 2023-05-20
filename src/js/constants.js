@@ -119,11 +119,18 @@ module.exports = {
 		{ match: 'OggS', ext: '.ogg' },
 		{ match: ['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'], ext: '.mp3' },
 		{ match: 'AFM2', ext: '.anim' },
+		{ match: 'AFSA', ext: '.anim' },
+		{ match: 'AFSB', ext: '.anim' },
 		{ match: 'BLP2', ext: '.blp' },
 		{ match: 'MD20', ext: '.m2' },
 		{ match: 'MD21', ext: '.m2' },
 		{ match: 'SKIN', ext: '.skin' },
 		{ match: '\x01\x00\x00\x00BIDA', ext: '.bone' },
-		{ match: 'SYHP\x02\x00\x00\x00', ext: '.phys' }
+		{ match: 'SYHP\x02\x00\x00\x00', ext: '.phys' },
+		{ match: 'HSXG', ext: '.bls' },
+		{ match: 'RVXT', ext: '.tex' },
+		{ match: 'RIFF', ext: '.avi' },
+		{ match: 'WDC3', ext: '.db2' },
+		{ match: 'WDC4', ext: '.db2' }
 	]
 };
