@@ -135,7 +135,14 @@ class CASC {
 	 * @param {boolean} [forceFallback=false]
 	 */
 	async getFileByName(fileName, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false) {
-		const fileDataID = listfile.getByFilename(fileName);
+		let fileDataID;
+
+		// If filename is "unknown/<fdid>", skip listfile lookup
+		if (fileName.startsWith("unknown/") && !fileName.includes('.'))
+			fileDataID = parseInt(fileName.split('/')[1]);
+		else 
+			fileDataID = listfile.getByFilename(fileName);
+
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
 
