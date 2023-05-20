@@ -1,6 +1,7 @@
 0.1.49 (??-05-2023)
 - Added mainline PTR 2 to the product list.
 - Added file type detection for .anim (2x), .bls, .tex, .avi and .db2.
+- Added exporting of OBJ1/LOD ADT files for raw map exports.
 - Fixed an issue that broke unknown file type detection in the raw files tab.
 - Fixed an issue where unknown files would fail to export.
 
