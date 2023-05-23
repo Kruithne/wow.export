@@ -340,7 +340,7 @@ export default class WDCReader {
 		// New WDC4 chunk: TODO read
 		if (wdcVersion === 4) {
 			for (let sectionIndex = 0; sectionIndex < sectionCount - 1; sectionIndex++) {
-				let entryCount = data.readUInt32();
+				const entryCount = data.readUInt32();
 				data.move(entryCount * 4);
 			}
 		}
