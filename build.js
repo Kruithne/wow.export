@@ -1,4 +1,4 @@
-import meta from './package.json' assert { type: 'json' };
+import meta from './package.json';
 import log from '@kogs/logger';
 import { execSync } from 'child_process';
 import { copySync, collectFiles } from '@kogs/utils';
