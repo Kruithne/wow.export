@@ -182,6 +182,9 @@ try {
 		const updateFiles = await collectFiles(buildDir);
 		const updateDir = path.join('bin', 'update');
 
+		if (!fs.existsSync(updateDir))
+			fs.mkdirSync(updateDir, { recursive: true });
+
 		let entryCount = 0;
 		let totalSize = 0;
 		let compSize = 0;
@@ -214,7 +217,11 @@ try {
 	// Packages are generated to /bin/packages/*
 	if (argv.options.asBoolean('package')) {
 		// Step 9: Pacakge build into a ZIP file.
-		const zipArchive = path.join('bin', 'packages', 'wow.export-' + meta.version + '.zip');
+		const packageDir = path.join('bin', 'packages');
+		if (!fs.existsSync(packageDir))
+			fs.mkdirSync(packageDir, { recursive: true });
+
+		const zipArchive = path.join(packageDir, 'wow.export-' + meta.version + '.zip');
 		log.info('Packaging build into {%s}...', zipArchive);
 
 		const zip = new JSZip();
