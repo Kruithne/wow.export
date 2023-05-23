@@ -24,6 +24,7 @@ const INCLUDE = {
 const INCLUDE_CODE = {
 	'src/shaders': 'src/shaders',
 	'src/app/index.html': 'src/index.html',
+	'src/css/app.css': 'src/app.css',
 };
 
 const REMAP = {
@@ -74,11 +75,6 @@ try {
 
 			Bun.write(path.join(buildDir, 'src', 'app.js'), text);
 		}
-
-		// Step 2: Run `sass` to compile our SCSS to CSS to a single `app.css` file.
-		// See https://sass-lang.com/documentation/cli/dart-sass for usage information.
-		//log.info('Running {sass}...');
-		//run('sass src/css/app.scss %s --no-source-map --style %s', path.join(buildDir, 'src', 'app.css'), isDebugBuild ? 'expanded' : 'compressed');
 	}
 
 	let includes = Array<[string, string]>();

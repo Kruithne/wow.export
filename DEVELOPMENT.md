@@ -17,7 +17,7 @@ Before you start developing wow.export, you will need to set-up your environment
 
 - Step 1: Install [Node.js](https://nodejs.org/en/) (v18+)
 - Step 2: Install the following packages globally:
-  - `npm install -g typescript rollup sass nwjs-installer resedit-cli`
+  - `npm install -g typescript rollup nwjs-installer resedit-cli`
 - Step 3: Clone the repository and install dependencies:
   - `git clone`
   - `npm install --dev`
