@@ -23,9 +23,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install TypeScript (for ESLint)
-        run: bun add --global typescript
-
       - name: ESlint check
         run: bun x eslint .
 

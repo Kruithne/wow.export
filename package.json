@@ -34,6 +34,7 @@
 		"@types/three": "^0.148.1",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
+		"typescript": "^5.0.4",
 		"bun-types": "^0.6.3",
 		"eslint": "^8.32.0",
 		"eslint-plugin-vue": "^9.9.0",
