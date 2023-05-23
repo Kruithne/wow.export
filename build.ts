@@ -111,8 +111,9 @@ try {
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
 		const manifest = JSON.parse(fs.readFileSync('./src/config/package.json', 'utf8'));
+
 		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
-			manifest[key] = meta[key];
+			manifest[key] = (meta as any)[key];
 
 		manifest.guid = crypto.randomUUID(); // Unique build ID for updater.
 		manifest.flavour = 'win-x64' + (isDebugBuild ? '-debug' : '');
@@ -178,7 +179,7 @@ try {
 		// Step 8: Compile update file/manifest.
 		log.info('Writing update package...');
 
-		const updateManifest = {};
+		const updateManifest: Record<string, unknown> = {};
 		const updateFiles = await collectFiles(buildDir);
 		const updateDir = path.join('bin', 'update');
 
@@ -242,6 +243,7 @@ try {
 	}
 
 	log.outdent();
-} catch (err) {
-	log.error('{Failed} %s: ' + err.message, err.name);
+} catch (e) {
+	const error = e as Error;
+	log.error('{Failed} %s: ' + error.message, error.name);
 }
