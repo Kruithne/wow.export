@@ -7,21 +7,25 @@ on:
 jobs: 
   build:
     name: Build and publish
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up node
-        uses: actions/setup-node@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 18
-          cache: npm
+          bun-version: latest
+
       - name: Install global dependencies
-        run: npm install -g nwjs-installer resedit-cli
-      - name: npm install
-        run: npm ci --dev
+        run: bun add --global nwjs-installer resedit-cli
+
+      - name: bun install
+        run: bun install
+
       - name: Compile wow.export win-x64
-        run: npm run build-release
+        run: bun run ./build.ts --code --assets --framework --update --package
+
       - name: Publish
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
@@ -30,7 +34,7 @@ jobs:
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
           SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
-        run: node publish.js win-x64
+        run: bun publish.js win-x64
       - name: Upload release
         uses: softprops/action-gh-release@v0.1.13
         with:
