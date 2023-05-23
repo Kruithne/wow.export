@@ -84,10 +84,10 @@ When providing the `--debug` option, the following differences will be made to t
 - The `updater.exe` will not be included in the build.
 
 ## Testing
-Testing is done using [Jest](https://jestjs.io/). To run the tests, you will need to run the `test` script from the command line.
+Testing is done using [Bun](https://bun.sh/docs/cli/test). To run the tests, you will need to run the following command.
 
 ```bash
-npm test
+bun test
 ```
 
 All tests must pass before a pull request can be merged.
