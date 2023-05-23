@@ -6,6 +6,9 @@
 - The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
 - Fixed a bug preventing compression filters to be applied to PNG exports.
 
+0.1.48 (10-03-2023)
+- Adds preliminary support for reading DB2 tables in 10.1+
+
 0.1.47 (23-01-2023)
 - Fixes an issue with DB2 reading for certain DB2 tables.
 
