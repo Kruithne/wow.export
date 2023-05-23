@@ -3,7 +3,6 @@ import log from '@kogs/logger';
 import { execSync } from 'child_process';
 import { copySync, collectFiles } from '@kogs/utils';
 import { parse } from '@kogs/argv';
-import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
@@ -115,7 +114,7 @@ try {
 		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
 			manifest[key] = meta[key];
 
-		manifest.guid = uuidv4(); // Unique build ID for updater.
+		manifest.guid = crypto.randomUUID(); // Unique build ID for updater.
 		manifest.flavour = 'win-x64' + (isDebugBuild ? '-debug' : '');
 
 		fs.writeFileSync(path.join(buildDir, 'package.json'), JSON.stringify(manifest, null, '\t'), 'utf8');
