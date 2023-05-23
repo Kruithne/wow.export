@@ -206,6 +206,7 @@ try {
 			entryCount++;
 		}
 
+		const manifest = JSON.parse(fs.readFileSync('./src/config/package.json', 'utf8'));
 		const manifestData = { contents: updateManifest, guid: manifest.guid };
 		fs.writeFileSync(path.join(updateDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
 
