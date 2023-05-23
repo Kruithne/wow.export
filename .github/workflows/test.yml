@@ -24,7 +24,7 @@ jobs:
         run: bun install
 
       - name: ESlint check
-        run: bunx eslint .
+        run: bun x eslint .
 
       - name: Run tests
         run: bun test
