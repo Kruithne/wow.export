@@ -24,7 +24,7 @@ jobs:
         run: bun install
 
       - name: Compile wow.export win-x64
-        run: bun run ./build.ts --code --assets --framework --update --package
+        run: bun run build-release
 
       - name: Publish
         env:
