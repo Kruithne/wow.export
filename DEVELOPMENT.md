@@ -80,7 +80,7 @@ When providing the `--debug` option, the following differences will be made to t
 - Framework (if included with --framework) will use the SDK version of nw.js rather than the release version.
 - DevTools will be enabled and automatically start when the application is launched.
 - The source files (if included with --code) will not be minified or have dead code removed.
-- The environment variable `process.env.BUILD_TYPE` will be undefined, instead of `release`.
+- The environment variable `process.env.BUILD_TYPE` will be `development`, instead of `release`.
 - The `updater.exe` will not be included in the build.
 
 ## Testing
