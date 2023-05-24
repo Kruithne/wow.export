@@ -24,7 +24,6 @@
 		"build-release": "bun ./build.ts --code --assets --framework --update --package"
 	},
 	"devDependencies": {
-		"@kogs/argv": "^1.1.0",
 		"@kogs/logger": "^3.3.7",
 		"@types/chrome": "^0.0.210",
 		"@types/node": "^18.11.18",

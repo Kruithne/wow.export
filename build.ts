@@ -1,7 +1,6 @@
 import meta from './package.json';
 import log from '@kogs/logger';
 import { execSync } from 'child_process';
-import { parse } from '@kogs/argv';
 import JSZip from 'jszip';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
@@ -64,9 +63,9 @@ const execute_command = (cmd: string, ...params: string[]): void => {
 };
 
 try {
-	const argv = parse();
+	const argv = process.argv.slice(2).map(e => e.toLowerCase());
 
-	const isDebugBuild = argv.options.asBoolean('debug');
+	const isDebugBuild = argv.includes('--debug');
 	const buildType = isDebugBuild ? 'development' : 'production';
 
 	const buildDir = path.join('bin', isDebugBuild ? 'win-x64-debug' : 'win-x64');
@@ -74,7 +73,7 @@ try {
 
 	// If --code is set, update the code files in the build directory.
 	// Having this separate is useful for development, as we don't need to rebuild everything.
-	if (argv.options.asBoolean('code')) {
+	if (argv.includes('--code')) {
 		const results = await Bun.build({
 			entrypoints: ['./src/app/app.ts'],
 			target: 'node',
@@ -105,11 +104,11 @@ try {
 	let includes = Array<[string, string]>();
 
 	// If --code is set, update the build directory with additional code files.
-	if (argv.options.asBoolean('code'))
+	if (argv.includes('--code'))
 		includes = [...includes, ...Object.entries(INCLUDE_CODE)];
 
 	// If --assets is set, update the build directory with asset files.
-	if (argv.options.asBoolean('assets'))
+	if (argv.includes('--assets'))
 		includes = [...includes, ...Object.entries(INCLUDE)];
 
 	if (includes.length > 0) {
@@ -124,7 +123,7 @@ try {
 	}
 
 	// If --framework is set, update the build directory with distribution files.
-	if (argv.options.asBoolean('framework')) {
+	if (argv.includes('--framework')) {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
@@ -197,7 +196,7 @@ try {
 
 	// If --update is set, generate the files used by the update server.
 	// These files will generate to /bin/update/* and are not included in the final package.
-	if (argv.options.asBoolean('update')) {
+	if (argv.includes('--update')) {
 		// Step 8: Compile update file/manifest.
 		log.info('Writing update package...');
 
@@ -238,7 +237,7 @@ try {
 
 	// If --package is set, package the build into a ZIP file.
 	// Packages are generated to /bin/packages/*
-	if (argv.options.asBoolean('package')) {
+	if (argv.includes('--package')) {
 		// Step 9: Pacakge build into a ZIP file.
 		const packageDir = path.join('bin', 'packages');
 		if (!fs.existsSync(packageDir))
