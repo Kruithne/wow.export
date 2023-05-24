@@ -236,7 +236,7 @@ try {
 			zip.file(file, fileData);
 		}
 
-		const zipData = await zip.async({ type: 'nodebuffer' });
+		const zipData = await zip.generateAsync({ type: 'nodebuffer' });
 		fs.writeFileSync(zipArchive, zipData);
 		log.success('Packaged {%s} files ({%smb})', files.length, (totalSize / 1024 / 1024).toFixed(2));
 	}
