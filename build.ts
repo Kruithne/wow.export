@@ -231,9 +231,10 @@ try {
 
 		for (const file of files) {
 			const fileData = fs.readFileSync(file);
+			const relative = path.posix.relative(buildDir, file);
 
 			totalSize += fileData.length;
-			zip.file(file, fileData);
+			zip.file(relative, fileData);
 		}
 
 		const zipData = await zip.generateAsync({ type: 'nodebuffer' });
