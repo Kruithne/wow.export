@@ -1,7 +1,8 @@
 {
 	"compilerOptions": {
 		"lib": [
-			"ESNext"
+			"ESNext",
+			"DOM",
 		],
 		"module": "esnext",
 		"target": "esnext",
@@ -14,10 +15,6 @@
 		"forceConsistentCasingInFileNames": true,
 		"emitDeclarationOnly": true,
 		"declaration": true,
-		"allowJs": true,
-		"types": [
-			"node",
-			"bun-types" // add Bun global
-		]
+		"allowJs": true
 	}
 }
