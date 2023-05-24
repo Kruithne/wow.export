@@ -287,8 +287,18 @@ export default defineComponent({
 					entries = entries.map(fid_filter);
 
 				// Remove whitespace from paths to keep consistency with exports.
-				if (this.copytrimwhitespace)
-					entries = entries.map(e => e.replace(/\s/g, ''));
+				if (this.copytrimwhitespace) {
+					entries = entries.map(e => {
+						if (e.endsWith(']')) {
+							const parts = e.split(' ');
+							const fid = parts.pop();
+
+							return parts.join('') + ' ' + fid;
+						} else {
+							return e.replace(/\s/g, '');
+						}
+					});
+				}
 
 				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {
