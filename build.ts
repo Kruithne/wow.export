@@ -201,7 +201,7 @@ try {
 		log.info('Writing update package...');
 
 		const updateManifest: Record<string, unknown> = {};
-		const updateFiles = await collect_files(buildDir);
+		const updateFiles = collect_files(buildDir);
 		const updateDir = path.join('bin', 'update');
 
 		if (!fs.existsSync(updateDir))
@@ -247,7 +247,7 @@ try {
 		log.info('Packaging build into {%s}...', zipArchive);
 
 		const zip = new JSZip();
-		const files = await collect_files(buildDir);
+		const files = collect_files(buildDir);
 		let totalSize = 0;
 
 		for (const file of files) {
