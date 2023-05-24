@@ -3,6 +3,3 @@
 
 # Build directory.
 /bin
-
-# Compiled stylesheets (use .scss for source).
-*.css
