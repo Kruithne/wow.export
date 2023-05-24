@@ -113,7 +113,7 @@ try {
 		const manifest = JSON.parse(fs.readFileSync('./src/config/package.json', 'utf8'));
 
 		for (const key of ['name', 'description', 'license', 'version', 'contributors', 'bugs', 'homepage'])
-			manifest[key] = (meta as any)[key];
+			manifest[key] = (meta as Record<string, unknown>)[key];
 
 		manifest.guid = crypto.randomUUID(); // Unique build ID for updater.
 		manifest.flavour = 'win-x64' + (isDebugBuild ? '-debug' : '');
