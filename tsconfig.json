@@ -15,6 +15,15 @@
 		"forceConsistentCasingInFileNames": true,
 		"emitDeclarationOnly": true,
 		"declaration": true,
-		"allowJs": true
+		"allowJs": true,
+		"types": [
+			"bun-types",
+			"node",
+			"three",
+			"chrome",
+			"nw.js",
+			"offscreencanvas",
+			"web"
+		]
 	}
 }

@@ -32,6 +32,7 @@
 		"@types/nw.js": "^0.13.16",
 		"@types/offscreencanvas": "^2019.7.0",
 		"@types/three": "^0.148.1",
+		"@types/web": "^0.0.99",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
 		"bun-types": "^0.6.3",
