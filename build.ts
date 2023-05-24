@@ -246,4 +246,7 @@ try {
 } catch (e) {
 	const error = e as Error;
 	log.error('{Failed} %s: ' + error.message, error.name);
+
+	if (error.stack)
+		log.error('{Stack} %s', error.stack);
 }
