@@ -230,8 +230,7 @@ try {
 		let totalSize = 0;
 
 		for (const file of files) {
-			const filePath = path.join(buildDir, file);
-			const fileData = fs.readFileSync(filePath);
+			const fileData = fs.readFileSync(file);
 
 			totalSize += fileData.length;
 			zip.file(file, fileData);
