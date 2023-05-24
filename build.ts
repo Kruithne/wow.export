@@ -31,6 +31,21 @@ const REMAP = {
 	'nw.exe': 'wow.export.exe'
 };
 
+function copy_sync(src: string, target: string) {
+	const stat = fs.statSync(src);
+
+	if (stat.isDirectory()) {
+		for (const file of fs.readdirSync(src))
+			copy_sync(path.join(src, file), path.join(target, file));
+	} else {
+		if (!fs.existsSync(target) || fs.statSync(target).mtimeMs < stat.mtimeMs) {
+			fs.mkdirSync(path.dirname(target), { recursive: true });
+			fs.copyFileSync(src, target);
+			log.success('{%s} -> {%s}', src, target);
+		}
+	}
+}
+
 try {
 	const run = (cmd: string, ...params: string[]): void => {
 		cmd = util.format(cmd, ...params);
@@ -88,16 +103,12 @@ try {
 
 	if (includes.length > 0) {
 		// Step 3: Copy additional source files.
-		log.info('Copying files...');
+		log.info('Updating files...');
 		log.indent();
 
-		for (const [src, dest] of includes) {
-			const includeDest = path.join(buildDir, dest);
-			fs.mkdirSync(path.dirname(includeDest), { recursive: true });
+		for (const [src, dest] of includes)
+			copy_sync(src, path.join(buildDir, dest));
 
-			copySync(src, includeDest, { overwrite: 'newer' });
-			log.success('{%s} -> {%s}', src, includeDest);
-		}
 		log.outdent();
 	}
 
