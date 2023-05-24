@@ -26,7 +26,6 @@
 	"devDependencies": {
 		"@kogs/argv": "^1.1.0",
 		"@kogs/logger": "^3.3.7",
-		"@kogs/utils": "^1.4.9",
 		"@types/chrome": "^0.0.210",
 		"@types/node": "^18.11.18",
 		"@types/nw.js": "^0.13.16",

@@ -1,7 +1,6 @@
 import meta from './package.json';
 import log from '@kogs/logger';
 import { execSync } from 'child_process';
-import { copySync, collectFiles } from '@kogs/utils';
 import { parse } from '@kogs/argv';
 import JSZip from 'jszip';
 import crypto from 'node:crypto';
@@ -44,6 +43,18 @@ function copy_sync(src: string, target: string) {
 			log.success('{%s} -> {%s}', src, target);
 		}
 	}
+}
+
+function collect_files(dir: string, entries: string[] = []) {
+	for (const entry of fs.readdirSync(dir)) {
+		const entryPath = path.join(dir, entry);
+		if (fs.statSync(entryPath).isDirectory())
+			collect_files(entryPath, entries);
+		else
+			entries.push(entryPath);
+	}
+
+	return entries;
 }
 
 try {
@@ -191,7 +202,7 @@ try {
 		log.info('Writing update package...');
 
 		const updateManifest: Record<string, unknown> = {};
-		const updateFiles = await collectFiles(buildDir);
+		const updateFiles = await collect_files(buildDir);
 		const updateDir = path.join('bin', 'update');
 
 		if (!fs.existsSync(updateDir))
@@ -237,7 +248,7 @@ try {
 		log.info('Packaging build into {%s}...', zipArchive);
 
 		const zip = new JSZip();
-		const files = await collectFiles(buildDir);
+		const files = await collect_files(buildDir);
 		let totalSize = 0;
 
 		for (const file of files) {
