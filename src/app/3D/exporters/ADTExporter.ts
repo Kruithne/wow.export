@@ -258,11 +258,12 @@ export default class ADTExporter {
 
 		const maid = wdt.entries[this.tileIndex];
 		const rootFileDataID = maid.rootADT > 0 ? maid.rootADT : Listfile.getByFilename(tilePrefix + '.adt');
-		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : Listfile.getByFilename(tilePrefix + '_obj0.adt');
-		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : Listfile.getByFilename(tilePrefix + '_tex0.adt');
+		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : Listfile.getByFilename(tilePrefix + '_tex0.adt');
+		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : Listfile.getByFilename(tilePrefix + '_obj0.adt');
+		const obj1FileDataID = maid.obj1ADT > 0 ? maid.obj1ADT : Listfile.getByFilename(tilePrefix + '_obj1.adt');
 
-		// Ensure we actually have the fileDataIDs for the files we need.
-		if (rootFileDataID === 0 || tex0FileDataID === 0 || obj0FileDataID === 0)
+		// Ensure we actually have the fileDataIDs for the files we need. LOD is not available on Classic.
+		if (rootFileDataID === 0 || tex0FileDataID === 0 || obj0FileDataID === 0 || obj1FileDataID === 0)
 			throw new Error('Missing fileDataID for ADT files: ' + [rootFileDataID, tex0FileDataID, obj0FileDataID].join(', '));
 
 		const rootFile = await casc.getFile(rootFileDataID);
@@ -273,6 +274,16 @@ export default class ADTExporter {
 			await rootFile.writeToFile(path.join(dir, this.tileID + '.adt'));
 			await texFile.writeToFile(path.join(dir, this.tileID + '_tex0.adt'));
 			await objFile.writeToFile(path.join(dir, this.tileID + '_obj0.adt'));
+
+			// We only care about these when exporting raw files.
+			const obj1File = await casc.getFile(obj1FileDataID);
+			await obj1File.writeToFile(path.join(dir, this.tileID + '_obj1.adt'));
+
+			// LOD is not available on Classic.
+			if (maid.lodADT > 0) {
+				const lodFile = await casc.getFile(maid.lodADT);
+				await lodFile.writeToFile(path.join(dir, this.tileID + '_lod.adt'));
+			}
 		}
 
 		const rootAdt = new ADTLoader(rootFile);

@@ -182,7 +182,14 @@ export default abstract class CASC {
 	 * @param {boolean} [forceFallback=false]
 	 */
 	async getFileByName(fileName: string, partialDecrypt: boolean = false, suppressLog: boolean = false, supportFallback: boolean = true, forceFallback: boolean = false): Promise<BLTEReader> {
-		const fileDataID = Listfile.getByFilename(fileName);
+		let fileDataID;
+
+		// If filename is "unknown/<fdid>", skip listfile lookup
+		if (fileName.startsWith('unknown/') && !fileName.includes('.'))
+			fileDataID = parseInt(fileName.split('/')[1]);
+		else 
+			fileDataID = Listfile.getByFilename(fileName);
+
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
 

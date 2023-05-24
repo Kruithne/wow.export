@@ -55,7 +55,7 @@ Events.on('click-detect-raw', async () => {
 	const filteredSelection: Array<number> = [];
 	for (let fileName of userSelection) {
 		fileName = Listfile.stripFileEntry(fileName);
-		const match = fileName.match(/^unknown\/(\d+)(\.[a-zA-Z_]+)$/);
+		const match = fileName.match(/^unknown\/(\d+)(\.[a-zA-Z_]+)?$/);
 
 		if (match)
 			filteredSelection.push(parseInt(match[1]));
