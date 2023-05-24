@@ -106,7 +106,7 @@ try {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
-		run('nwjs --target-dir "%s" --version 0.76.1 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+		run('nwjs --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
