@@ -57,13 +57,13 @@ function collect_files(dir: string, entries: string[] = []) {
 	return entries;
 }
 
-try {
-	const run = (cmd: string, ...params: string[]): void => {
-		cmd = util.format(cmd, ...params);
-		log.info('> %s', cmd);
-		execSync(cmd, { stdio: 'inherit' });
-	};
+const execute_command = (cmd: string, ...params: string[]): void => {
+	cmd = util.format(cmd, ...params);
+	log.info('> %s', cmd);
+	execSync(cmd, { stdio: 'inherit' });
+};
 
+try {
 	const argv = parse();
 
 	const isDebugBuild = argv.options.asBoolean('debug');
@@ -128,7 +128,7 @@ try {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
-		run('nwjs --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+		execute_command('nwjs --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
@@ -157,7 +157,7 @@ try {
 		// Step 6: Run `resedit` to edit the executable metadata.
 		// See https://github.com/jet2jet/resedit-js for usage information.
 		log.info('Modifying PE resources for {wow.export.exe}...');
-		run('resedit ' + Object.entries({
+		execute_command('resedit ' + Object.entries({
 			'in': path.join(buildDir, 'wow.export.exe'),
 			'out': path.join(buildDir, 'wow.export.exe'),
 			'icon': 'IDR_MAINFRAME,resources/icon.ico',
@@ -175,12 +175,12 @@ try {
 			// Step 7.1: Compile updater executable using `pkg`.
 			// See https://github.com/vercel/pkg for usage information.
 			log.info('Compiling {updater.exe}...');
-			run('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater', 'updater.js'));
+			execute_command('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater', 'updater.js'));
 
 			// Step 7.1.1: Reuse the PE modification code from above to edit the updater executable.
 			// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
 			log.info('Modifying PE resources for {updater.exe}...');
-			run('resedit --no-grow ' + Object.entries({
+			execute_command('resedit --no-grow ' + Object.entries({
 				'in': path.join(buildDir, 'updater.exe'),
 				'out': path.join(buildDir, 'updater.exe'),
 				'icon': '1,resources/icon.ico',
