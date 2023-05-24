@@ -187,7 +187,7 @@ export default abstract class CASC {
 		// If filename is "unknown/<fdid>", skip listfile lookup
 		if (fileName.startsWith('unknown/') && !fileName.includes('.'))
 			fileDataID = parseInt(fileName.split('/')[1]);
-		else 
+		else
 			fileDataID = Listfile.getByFilename(fileName);
 
 		if (fileDataID === undefined)
