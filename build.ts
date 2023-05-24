@@ -37,9 +37,9 @@ function copy_sync(src: string, target: string) {
 			copy_sync(path.join(src, file), path.join(target, file));
 	} else {
 		if (!fs.existsSync(target) || fs.statSync(target).mtimeMs < stat.mtimeMs) {
+			log.info('{%s} -> {%s}', src, target);
 			fs.mkdirSync(path.dirname(target), { recursive: true });
 			fs.copyFileSync(src, target);
-			log.success('{%s} -> {%s}', src, target);
 		}
 	}
 }
