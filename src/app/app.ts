@@ -111,7 +111,7 @@ interface NWFile {
 			return;
 
 		e.preventDefault();
-		ExternalLinks.openExternalLink(target.getAttribute('data-external'));
+		ExternalLinks.openExternalLink(target.getAttribute('data-external') as string);
 	});
 
 	// Wait for the DOM to be loaded.
