@@ -29,7 +29,7 @@ const REMAP = {
 	'nw.exe': 'wow.export.exe'
 };
 
-function copy_sync(src: string, target: string) {
+function copy_sync(src: string, target: string): void {
 	log.info('copy_sync {%s} -> {%s}', src, target);
 	const stat = fs.statSync(src);
 
@@ -44,7 +44,7 @@ function copy_sync(src: string, target: string) {
 	}
 }
 
-function collect_files(dir: string, entries: string[] = []) {
+function collect_files(dir: string, entries: string[] = []): string[] {
 	for (const entry of fs.readdirSync(dir)) {
 		const entryPath = path.join(dir, entry);
 		if (fs.statSync(entryPath).isDirectory())
