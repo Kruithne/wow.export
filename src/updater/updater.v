@@ -12,7 +12,9 @@ fn is_process_running(pid string) bool {
 		return out.exit_code == 0
 	} else if user_os == 'windows' {
 		out := os.execute('tasklist /FI "PID eq ' + pid + '"')
-		return out.exit_code == 0
+
+		// tasklist always returns 0, so check output for pid.
+		return out.output.contains(pid)
 	} else if user_os == 'mac' {
 		out := os.execute('ps -p ' + pid)
 		return out.exit_code == 0
