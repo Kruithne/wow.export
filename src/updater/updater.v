@@ -36,9 +36,7 @@ fn apply_update()! {
 	}
 
 	os.cp_all(update_dir, install_dir, true)!
-
-	// TODO: Fix race condition here.
-	//os.rmdir_all(update_dir)!
+	os.rmdir_all(update_dir)!
 }
 
 fn launch_application() {
