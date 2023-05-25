@@ -171,26 +171,8 @@ try {
 
 		// Step 7: Build updater executable, bundle and manifest (release builds only).
 		if (!isDebugBuild) {
-			// Step 7.1: Compile updater executable using `pkg`.
-			// See https://github.com/vercel/pkg for usage information.
 			log.info('Compiling {updater.exe}...');
-			execute_command('pkg --target node12-win-x64 --output "%s" "%s"', path.join(buildDir, 'updater.exe'), path.join('src', 'updater', 'updater.js'));
-
-			// Step 7.1.1: Reuse the PE modification code from above to edit the updater executable.
-			// Import that we use the --no-grow option here as `pkg` relies on the executable being a fixed size.
-			log.info('Modifying PE resources for {updater.exe}...');
-			execute_command('resedit --no-grow ' + Object.entries({
-				'in': path.join(buildDir, 'updater.exe'),
-				'out': path.join(buildDir, 'updater.exe'),
-				'icon': '1,resources/icon.ico',
-				'product-name': 'wow.export',
-				'product-version': meta.version + '.0',
-				'file-description': 'wow.export',
-				'file-version': '2.0.0.0',
-				'original-filename': 'wow.export.exe',
-				'company-name': 'Kruithne, Marlamin, and contributors',
-				'internal-name': 'wow.export'
-			}).map(([key, value]) => `--${key} "${value}"`).join(' '));
+			execute_command(`v -os windows ./src/updater -o ${path.join(buildDir, 'updater.exe')}`);
 		}
 	}
 

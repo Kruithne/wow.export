@@ -39,7 +39,6 @@
 		"eslint": "^8.32.0",
 		"eslint-plugin-vue": "^9.9.0",
 		"jszip": "^3.10.1",
-		"pkg": "^5.8.0",
 		"ssh2-sftp-client": "^9.1.0",
 		"three": "^0.149.0",
 		"typescript": "^5.0.4",

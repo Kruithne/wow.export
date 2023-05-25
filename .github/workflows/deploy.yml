@@ -12,6 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup vlang
+        uses: vlang/setup-v@v1.3
+        with:
+            version: '0.3.4'
+
+      - name: Install GNU C compiler for MinGW-w64
+        run: sudo apt-get install gcc-mingw-w64-x86-64
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -35,6 +43,7 @@ jobs:
           SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
           SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
         run: bun run publish
+
       - name: Upload release
         uses: softprops/action-gh-release@v0.1.13
         with:
