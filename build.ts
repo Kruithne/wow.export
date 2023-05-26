@@ -68,8 +68,8 @@ try {
 
 	const isDebugBuild = argv.includes('--debug');
 	const buildType = isDebugBuild ? 'development' : 'production';
-	let platform: string = 'null' ;
-	let extension: string = 'null' ;
+	let platform: string = '';
+	let extension: string = '';
 	switch(process.platform) {
 		case 'darwin': {
 			platform = 'macos';
