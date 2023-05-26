@@ -97,7 +97,9 @@ try {
 			// This is a workaround for a bug in Vue.
 			text = text.replace(/exports\.hasOwnProperty\(k\)/g, 'false');
 
-			Bun.write(path.join(buildDir, 'src', 'app.js'), text);
+			const srcPath = path.join(buildDir, 'src', 'app.js');
+			fs.mkdirSync(path.dirname(srcPath), { recursive: true });
+			Bun.write(srcPath, text);
 		}
 	}
 
