@@ -7,7 +7,7 @@ import zlib from 'node:zlib';
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
-import process from 'node:process' ;
+import fs from 'node:fs';
 
 const INCLUDE = {
 	'LICENSE': 'license/LICENSE',
@@ -68,23 +68,14 @@ try {
 
 	const isDebugBuild = argv.includes('--debug');
 	const buildType = isDebugBuild ? 'development' : 'production';
-	let platform: string = '';
 	let extension: string = '';
-	switch(process.platform) {
-		case 'darwin': {
-			platform = 'macos-x64';
-			extension = '.app';
-		}
+	
+	switch () {
+		case 'macos': extension = '.app';
 		break;
-		case 'linux': {
-			platform = 'linux-x64';
-			extension = '';
-		}
+		case 'linux': 
 		break;
-		case 'win32': {
-			platform = 'win-x64';
-			extension = '.exe' ;
-		}
+		case 'win': extension = '.exe';
 		break;
 		default: console.log("Unsupported platform");
 		break;
