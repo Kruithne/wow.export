@@ -89,7 +89,7 @@ try {
 		default: console.log("Unsupported platform");
 		break;
 	}
-	const buildDir = path.join('bin', isDebugBuild ? platform + '-debug' : platform);
+	const buildDir = path.join('bin', is Debug Build ? 'win-x64-debug' : 'win-x64' );
 	log.info('Building {%s} in {%s}...', buildType, path.resolve(buildDir));
 
 	// If --code is set, update the code files in the build directory.
