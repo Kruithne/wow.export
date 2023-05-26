@@ -72,12 +72,12 @@ try {
 	let extension: string = '';
 	switch(process.platform) {
 		case 'darwin': {
-			platform = 'macos';
+			platform = 'macos-x64';
 			extension = '.app';
 		}
 		break;
 		case 'linux': {
-			platform = 'linux';
+			platform = 'linux-x64';
 			extension = '';
 		}
 		break;
@@ -148,7 +148,7 @@ try {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
-		execute_command('nwjs-installer --target-dir "%s" --version 0.75.0 --platform ' + platform + ' --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+		execute_command('nwjs-installer --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
