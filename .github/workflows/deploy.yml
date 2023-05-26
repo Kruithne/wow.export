@@ -2,6 +2,8 @@ name: Deploy wow.export
 
 on:  
   push:
+    branches:
+      - main
     tags:
       - '*'
 jobs: 
