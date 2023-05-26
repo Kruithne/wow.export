@@ -7,6 +7,7 @@ import zlib from 'node:zlib';
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
+import process from 'node:process' ;
 
 const INCLUDE = {
 	'LICENSE': 'license/LICENSE',
@@ -67,8 +68,27 @@ try {
 
 	const isDebugBuild = argv.includes('--debug');
 	const buildType = isDebugBuild ? 'development' : 'production';
+	let platform: string = 'null' ;
+	let extension: string = 'null' ;
+	switch(process.platform) {
+		case 'darwin': {
+			platform = 'macos';
+			extension = '.app';
+		}
+		break;
+		case 'linux': {
+			platform = 'linux';
+			extension = '';
+		}
+		break;
+		case 'win32': {
+			platform = 'windows';
+			extension = '.exe' ;
+		}
+		break;
+	}
 
-	const buildDir = path.join('bin', isDebugBuild ? 'win-x64-debug' : 'win-x64');
+	const buildDir = path.join('bin', isDebugBuild ? platform + '-debug' : platform);
 	log.info('Building {%s} in {%s}...', buildType, path.resolve(buildDir));
 
 	// If --code is set, update the code files in the build directory.
@@ -127,7 +147,7 @@ try {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
-		execute_command('nwjs-installer --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+		execute_command('nwjs-installer --target-dir "%s" --version 0.75.0 --platform ' + platform + ' --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
@@ -172,7 +192,7 @@ try {
 		// Step 7: Build updater executable, bundle and manifest (release builds only).
 		if (!isDebugBuild) {
 			log.info('Compiling {updater.exe}...');
-			execute_command(`v -os windows ./src/updater -o ${path.join(buildDir, 'updater.exe')}`);
+			execute_command(`v -os ` + platform + ` ./src/updater -o ${path.join(buildDir, 'updater' + extension)}`);
 		}
 	}
 
