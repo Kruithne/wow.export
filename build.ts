@@ -82,12 +82,13 @@ try {
 		}
 		break;
 		case 'win32': {
-			platform = 'windows';
+			platform = 'win-x64';
 			extension = '.exe' ;
 		}
 		break;
+		default: console.log("Unsupported platform");
+		break;
 	}
-
 	const buildDir = path.join('bin', isDebugBuild ? platform + '-debug' : platform);
 	log.info('Building {%s} in {%s}...', buildType, path.resolve(buildDir));
 
