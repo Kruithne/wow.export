@@ -12,6 +12,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Clean-up previous pre-releases
+        uses: dev-drprasad/delete-older-releases@v0.2.1
+        with:
+          keep_latest: 0
+          delete_tag_pattern: 'pre-'
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Setup vlang
         uses: vlang/setup-v@v1.3
         with:
@@ -44,12 +54,3 @@ jobs:
         with:
           prerelease: true
           files: bin/packages/wow.export-*.zip
-
-      - name: Clean-up previous pre-releases
-        uses: dev-drprasad/delete-older-releases@v0.2.1
-        with:
-          keep_latest: 1
-          delete_tag_pattern: 'pre-'
-          delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
