@@ -254,4 +254,6 @@ try {
 
 	if (error.stack)
 		log.error('{Stack} %s', error.stack);
+
+	process.exit(1);
 }
