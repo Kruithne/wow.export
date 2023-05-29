@@ -188,8 +188,17 @@ export default class WDCReader {
 		if (rawDbd !== null)
 			structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 
-		// No cached definition, download updated DBD and check again.
-		if (structure === null) {
+		let forceDownload = structure === null;
+		if (structure !== null) {
+			// If definition has placeholder fields, force redownload
+			for (const field of structure.fields) {
+				if (field.name.startsWith('Field_'))
+					forceDownload = true;
+			}
+		}
+
+		// Download updated DBD and check again.
+		if (forceDownload) {
 			try {
 				const dbdUrl = util.format(State.state.config.dbdURL, tableName);
 				Log.write('No cached DBD, downloading new from %s', dbdUrl);
