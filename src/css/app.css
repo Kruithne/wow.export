@@ -107,7 +107,7 @@ body {
 	justify-content: center;
 	background-color: var(--background-trans);
 
-	&-icon {
+	#drop-overlay-icon {
 		width: 100px;
 		height: 100px;
 		margin-bottom: 20px;
@@ -1352,7 +1352,7 @@ input[type="number"]::-webkit-outer-spin-button {
 #tab-install {
 	grid-template-columns: 1fr auto;
 
-	&-tray {
+	#tab-install-tray {
 		grid-row: 2;
 		display: flex;
 		margin: 10px;
@@ -1367,10 +1367,27 @@ input[type="number"]::-webkit-outer-spin-button {
 	}
 }
 
-#tab-video, #tab-raw {
+#tab-video {
 	grid-template-columns: unset;
 
-	&-tray {
+	#tab-video-tray {
+		display: flex;
+		margin: 10px;
+
+		.filter {
+			flex-grow: 1;
+		}
+
+		& input[type="button"] {
+			margin-right: 5px;
+		}
+	}
+}
+
+#tab-raw {
+	grid-template-columns: unset;
+
+	#tab-raw-tray {
 		display: flex;
 		margin: 10px;
 
