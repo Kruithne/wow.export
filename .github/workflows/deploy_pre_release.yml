@@ -3,10 +3,9 @@ name: Deploy wow.export pre-release
 on:  
   push:
     tags:
-      - '*'
+      - 'pre-*'
 jobs: 
   build:
-    if: startsWith(github.event.ref, 'refs/tags/pre-')
     name: Build and publish
     runs-on: ubuntu-latest
     steps:
