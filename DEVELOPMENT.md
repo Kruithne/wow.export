@@ -21,6 +21,8 @@ Before you start developing wow.export, you will need to set-up your environment
   - Following instructions and building must be done inside a WSL 2 environment, as the build scripts are not compatible with native Windows (yet).
 - Step 2: Install [Bun](https://bun.sh/) (0.6.3+)
   - `curl -fsSL https://bun.sh/install | bash`
+- Step 3: Install the following packages globally:
+  - `npm install --global nwjs-installer resedit-cli`
 - Step 4: Clone the repository:
   - `git clone`
 - Step 5: Install dependencies:

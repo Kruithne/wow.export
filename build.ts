@@ -129,7 +129,7 @@ try {
 		// Step 4: Build nw.js distribution using `nwjs-installer'.
 		// See https://github.com/Kruithne/nwjs-installer for usage information.
 		log.info('Running {nwjs-installer}...');
-		execute_command('bun run ./node_modules/nwjs-installer/index.js --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
+		execute_command('nwjs-installer --target-dir "%s" --version 0.75.0 --platform win --arch x64 --remove-pak-info --locale en-US --exclude "^notification_helper.exe$"' + (isDebugBuild ? ' --sdk' : ''), buildDir);
 
 		// Step 4: Copy and adjust the package manifest.
 		log.info('Generating {package.json} for distribution...');
@@ -158,7 +158,7 @@ try {
 		// Step 6: Run `resedit` to edit the executable metadata.
 		// See https://github.com/jet2jet/resedit-js for usage information.
 		log.info('Modifying PE resources for {wow.export.exe}...');
-		execute_command('bun run ./node_modules/resedit/dist/index.js ' + Object.entries({
+		execute_command('resedit ' + Object.entries({
 			'in': path.join(buildDir, 'wow.export.exe'),
 			'out': path.join(buildDir, 'wow.export.exe'),
 			'icon': 'IDR_MAINFRAME,resources/icon.ico',
