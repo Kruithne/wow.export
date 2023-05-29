@@ -32,7 +32,7 @@ jobs:
           bun-version: latest
 
       - name: Install global dependencies
-        run: bun add --global nwjs-installer resedit-cli
+        run: npm install --global nwjs-installer resedit-cli
 
       - name: bun install
         run: bun install
