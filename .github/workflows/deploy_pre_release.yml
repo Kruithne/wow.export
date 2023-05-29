@@ -41,7 +41,7 @@ jobs:
         run: bun run build-release
 
       - name: Upload release
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v0.1.13
         with:
           prerelease: true
           files: bin\packages\wow.export-*.zip
