@@ -1,12 +1,29 @@
 {
 	"compilerOptions": {
-		"declaration": false,
+		"lib": [
+			"ESNext",
+			"DOM",
+		],
 		"module": "esnext",
 		"target": "esnext",
-		"moduleResolution": "node",
-		"allowSyntheticDefaultImports": true
-	},
-	"include": [
-		"src/app/app.ts"
-	]
+		"moduleResolution": "bundler",
+		"strict": true,
+		"downlevelIteration": true,
+		"skipLibCheck": true,
+		"jsx": "react-jsx",
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"emitDeclarationOnly": true,
+		"declaration": true,
+		"allowJs": true,
+		"types": [
+			"bun-types",
+			"node",
+			"three",
+			"chrome",
+			"nw.js",
+			"offscreencanvas",
+			"web"
+		]
+	}
 }

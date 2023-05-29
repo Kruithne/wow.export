@@ -35,7 +35,7 @@ export default class BufferWrapper {
 	}
 
 	/** @returns The internal ArrayBuffer of the buffer. */
-	toArrayBuffer(): ArrayBuffer {
+	toArrayBuffer(): ArrayBufferLike {
 		return this.buffer.buffer;
 	}
 

@@ -15,12 +15,18 @@ If you run into issues, please join the [Discord server](https://discord.gg/kC3E
 ## Preparing Development Environment
 Before you start developing wow.export, you will need to set-up your environment.
 
-- Step 1: Install [Node.js](https://nodejs.org/en/) (v18+)
-- Step 2: Install the following packages globally:
-  - `npm install -g typescript rollup sass nwjs-installer resedit-cli`
-- Step 3: Clone the repository and install dependencies:
+- Step 1: (Windows Only) Install WSL 2 and Ubuntu 20.04 LTS
+  - [Install WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+  - [Install Ubuntu 20.04 LTS](https://docs.microsoft.com/en-us/windows/wsl/install-manual)
+  - Following instructions and building must be done inside a WSL 2 environment, as the build scripts are not compatible with native Windows (yet).
+- Step 2: Install [Bun](https://bun.sh/) (0.6.3+)
+  - `curl -fsSL https://bun.sh/install | bash`
+- Step 3: Install the following packages globally:
+  - `npm install --global nwjs-installer resedit-cli`
+- Step 4: Clone the repository:
   - `git clone`
-  - `npm install --dev`
+- Step 5: Install dependencies:
+  - `bun install`
 
 ## Linting
 wow.export uses [ESLint](https://eslint.org/) to enforce code style and best practices. While not required, it is highly recommended that you install an [ESLint plugin](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) for your editor of choice.
@@ -31,7 +37,7 @@ Pull requests that do not pass the linter will automatically fail the CI checks 
 To build wow.export, you will need to run the `build` script from the command line.
 
 ```bash
-node build
+bun run ./build.ts
 ```
 
 The above command is going to do nothing unless it is provided with options, which are listed below.
@@ -48,23 +54,23 @@ The above command is going to do nothing unless it is provided with options, whi
 For most development, you will want to build a debug version of wow.export and run it locally.
 
 ```bash
-node build --debug --framework --code --assets
+bun run ./build.ts --debug --framework --code --assets
 ```
 
 When you make changes to the source, you will only need to recompile the source code rather than re-building the entire application.
 
 ```bash
-node build --code
+bun run ./build.ts --code
 ```
 
 For quicker access, the following scripts are provided in the `package.json` file:
 
 ```bash
-npm run build # --code --assets --framework
-npm run build-debug # --debug --code --assets --framework
-npm run update # --code
-npm run update-debug # --code
-npm run build-release # --code --assets --framework --package --update
+bun run build # --code --assets --framework
+bun run build-debug # --debug --code --assets --framework
+bun run update # --code
+bun run update-debug # --code
+bun run build-release # --code --assets --framework --package --update
 ```
 
 ### Assets
@@ -72,22 +78,21 @@ The assets copied over by `--assets` are defined at the top of the [`build`](bui
 
 ### Code
 When the `--code` flag is included, the following steps will be taken:
-- `app.ts` is bundled with everything it imports and then compiled as TypeScript. The code is then minified and dead code is removed using `terser` (not in --debug).
-- `app.scss` is compiled with everything it imports as SCSS and then minified (not in --debug).
+- `app.ts` is bundled with everything it imports and then compiled as TypeScript. The code is then minified and dead code is removed (not in --debug).
 
 ### Debug
 When providing the `--debug` option, the following differences will be made to the build:
 - Framework (if included with --framework) will use the SDK version of nw.js rather than the release version.
 - DevTools will be enabled and automatically start when the application is launched.
 - The source files (if included with --code) will not be minified or have dead code removed.
-- The environment variable `process.env.BUILD_TYPE` will be undefined, instead of `release`.
+- The environment variable `process.env.BUILD_TYPE` will be `development`, instead of `release`.
 - The `updater.exe` will not be included in the build.
 
 ## Testing
-Testing is done using [Jest](https://jestjs.io/). To run the tests, you will need to run the `test` script from the command line.
+Testing is done using [Bun](https://bun.sh/docs/cli/test). To run the tests, you will need to run the following command.
 
 ```bash
-npm test
+bun test
 ```
 
 All tests must pass before a pull request can be merged.

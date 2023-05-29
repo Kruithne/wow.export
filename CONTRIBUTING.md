@@ -5,13 +5,13 @@ All contributions are welcome, whether it be a bug report, feature request or a 
 ## Code Style
 - All code written in this repository must be written in ES6+ syntax in TypeScript.
 - All functions must be fully documented with [TSDoc](https://tsdoc.org/).
-- New features or functionality must be accompanied by unit tests.
-- All code must pass the linter and unit tests.
+- All code must follow the linting rules defined in the [`.eslintrc.json`](.eslintrc.json) file.
 
 ## Pull Requests
-- All pull requests must be made against the `master` branch.
+- All pull requests must be made against the `main` branch.
 - All pull requests must be accompanied by a description of the changes made.
 - All pull requests must pass the linter and unit tests.
+- Provide additional or updated unit tests as necessary.
 
 ## Issues
 

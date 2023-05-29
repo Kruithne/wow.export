@@ -1,17 +1,26 @@
-name: Deploy wow.export
+name: Deploy wow.export pre-release
 
 on:  
   push:
     tags:
-      - '*'
+      - 'pre-*'
 jobs: 
   build:
-    if: ${{ !startsWith(github.event.ref, 'refs/tags/pre-') }}
     name: Build and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Clean-up previous pre-releases
+        uses: dev-drprasad/delete-older-releases@v0.2.1
+        with:
+          keep_latest: 0
+          delete_tag_pattern: 'pre-'
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Setup vlang
         uses: vlang/setup-v@v1.3
@@ -40,17 +49,8 @@ jobs:
       - name: Compile wow.export win-x64
         run: bun run build-release
 
-      - name: Publish
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          SFTP_PASS: ${{ secrets.SFTP_PASS }}
-          SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
-          SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
-        run: bun run publish
-
       - name: Upload release
         uses: softprops/action-gh-release@v0.1.13
         with:
+          prerelease: true
           files: bin/packages/wow.export-*.zip

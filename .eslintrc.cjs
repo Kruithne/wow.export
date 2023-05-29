@@ -30,7 +30,6 @@ module.exports = {
 	},
 	'plugins': [
 		'vue',
-		'jest',
 		'@typescript-eslint'
 	],
 	'extends': [

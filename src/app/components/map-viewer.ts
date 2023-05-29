@@ -40,7 +40,7 @@ export default defineComponent({
 		'tileSize': Number,
 
 		/** ID of the current map. We use this to listen for map changes. */
-		'map': String,
+		'map': [String, Number],
 
 		/** Maximum zoom-out factor allowed. */
 		'zoom': Number,

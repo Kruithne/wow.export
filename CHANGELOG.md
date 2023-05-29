@@ -6,6 +6,13 @@
 - The RCP (Remote Control Protocol) has been removed and will be replaced with a new system in a future update.
 - Fixed a bug preventing compression filters to be applied to PNG exports.
 
+0.1.49 (23-05-2023)
+- Added mainline PTR 2 to the product list.
+- Added file type detection for .anim (2x), .bls, .tex, .avi and .db2.
+- Added exporting of OBJ1/LOD ADT files for raw map exports.
+- Fixed an issue that broke unknown file type detection in the raw files tab.
+- Fixed an issue where unknown files would fail to export.
+
 0.1.48 (10-03-2023)
 - Adds preliminary support for reading DB2 tables in 10.1+
 
