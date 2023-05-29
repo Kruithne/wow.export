@@ -78,7 +78,7 @@ try {
 			entrypoints: ['./src/app/app.ts'],
 			target: 'node',
 			format: 'esm',
-			minify: !isDebugBuild,
+			minify: false, // Disable until better CJS/ESM support in Bun.
 			define: {
 				'__VUE_OPTIONS_API__': 'true', // See https://link.vuejs.org/feature-flags
 				'__VUE_PROD_DEVTOOLS__': 'false', // See https://link.vuejs.org/feature-flags
