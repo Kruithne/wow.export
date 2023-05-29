@@ -188,11 +188,8 @@ export default class WDCReader {
 		if (rawDbd !== null)
 			structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 
-		let forceDownload = false;
-		if (structure === null) {
-			// No definition, force redownload
-			forceDownload = true;
-		} else {
+		let forceDownload = structure === null;
+		if (structure !== null) {
 			// If definition has placeholder fields, force redownload
 			for (const field of structure.fields) {
 				if (field.name.startsWith('Field_'))
