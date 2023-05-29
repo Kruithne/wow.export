@@ -158,7 +158,7 @@ try {
 		// Step 6: Run `resedit` to edit the executable metadata.
 		// See https://github.com/jet2jet/resedit-js for usage information.
 		log.info('Modifying PE resources for {wow.export.exe}...');
-		execute_command('resedit ' + Object.entries({
+		execute_command('bun run ./node_modules/resedit/dist/index.js ' + Object.entries({
 			'in': path.join(buildDir, 'wow.export.exe'),
 			'out': path.join(buildDir, 'wow.export.exe'),
 			'icon': 'IDR_MAINFRAME,resources/icon.ico',
