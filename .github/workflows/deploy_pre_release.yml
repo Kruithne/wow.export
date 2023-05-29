@@ -2,8 +2,6 @@ name: Deploy wow.export pre-release
 
 on:  
   push:
-    branches:
-      - main
     tags:
       - '*'
 jobs: 
