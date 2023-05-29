@@ -91,7 +91,7 @@ try {
 
 			// nw.js does not support namespaced ESM imports, so this is a fix.
 			// In the future Bun will support CJS as a format, which will make this redundant.
-			text = text.replaceAll(/import\s*(\w+)\s*from\s*"node:([a-z/_]+)";/g, 'const $1 = require("node:$2");');
+			text = text.replaceAll(/import\s*([^\s]+)\s*from\s*"node:([a-z/_]+)";/g, 'const $1 = require("node:$2");');
 
 			// Replace exports.hasOwnProperty(k) with false
 			// This is a workaround for a bug in Vue.
