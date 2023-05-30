@@ -1,0 +1,21 @@
+# This file defines which paths are evaluated during the client build jobs.
+# Each path is evaluated for changes, and if none are found, the job is skipped.
+
+include = [
+	# src, resources, and addons are all included in client builds.
+	'src',
+	'resources',
+	'addons',
+
+	# Changes to package.json/bun.lockb indicate a dependency change.
+	'package.json',
+	'bun.lockb',
+
+	# Changes to the build.publish pipeline should trigger a client build.
+	'build.ts',
+	'publish.ts',
+
+	# Both LICENSE and CHANGELOG.md are included in client builds.
+	'LICENSE',
+	'CHANGELOG.md'
+]
