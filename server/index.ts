@@ -11,8 +11,20 @@ const server = Bun.serve({
 	development: false,
 
 	fetch(req) {
-		console.log(req);
-		return new Response('You\'ve reached wow.export.net, please leave a message after the beep.');
+		const url = new URL(req.url);
+
+		// /services/hooks/server is called from the automatic deployment workflow on GitHub
+		// to indicate that the server sources have been updated and the server should initiate
+		// a self-update.
+		if (url.pathname === '/services/hooks/server') {
+			// This endpoint must be called with the correct key to prevent abuse.
+			if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
+				return make_generic_response(401); // Unauthorized
+
+			return make_generic_response(200); // OK
+		}
+
+		return make_generic_response(404); // Not found
 	},
 
 	error(error: Error) {
