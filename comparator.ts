@@ -22,11 +22,10 @@ function walk_directory(dir_path: string, out_entries: string[] = []): string[] 
 	for (const dir_entry of dir_entries) {
 		const dir_entry_path = path.join(dir_path, dir_entry.name);
 
-		if (dir_entry.isDirectory()) {
+		if (dir_entry.isDirectory())
 			walk_directory(dir_entry_path, out_entries);
-		} else if (dir_entry.isFile()) {
+		else if (dir_entry.isFile())
 			out_entries.push(dir_entry_path);
-		}
 	}
 
 	return out_entries;
@@ -101,7 +100,7 @@ function compile_manifest(manifest: Manifest): ArrayBufferLike {
 	let manifest_size = 4;
 	for (const [path, hash] of manifest)
 		manifest_size += 4 + path.length + hash.length;
-	
+
 	const buf = Buffer.alloc(manifest_size);
 
 	let offset = 0;
@@ -122,7 +121,7 @@ function compile_manifest(manifest: Manifest): ArrayBufferLike {
 	return buf.buffer;
 }
 
-async function import_triggers(trigger_path: string) {
+async function import_triggers(trigger_path: string): Promise<string[]> {
 	try {
 		return (await import(trigger_path)).default.include;
 	} catch (e) {
@@ -142,7 +141,7 @@ function compare_typed_arrays(a: Uint8Array, b: Uint8Array): boolean {
 	return true;
 }
 
-(async function main() {
+(async function main(): Promise<void> {
 	const argv = process.argv.slice(2);
 	invariant(argv.length === 2, 'Expected two arguments: <manifest_path> <trigger_path>');
 
@@ -157,12 +156,14 @@ function compare_typed_arrays(a: Uint8Array, b: Uint8Array): boolean {
 
 	const changes = new Set();
 	for (const [path, hash] of manifest) {
-		if (!generated_manifest.has(path) || !compare_typed_arrays(generated_manifest.get(path)!, hash))
+		const compare = generated_manifest.get(path);
+		if (compare === undefined || !compare_typed_arrays(compare, hash))
 			changes.add(path);
 	}
 
 	for (const [path, hash] of generated_manifest) {
-		if (!manifest.has(path) || !compare_typed_arrays(manifest.get(path)!, hash))
+		const compare = manifest.get(path);
+		if (compare === undefined || !compare_typed_arrays(compare, hash))
 			changes.add(path);
 	}
 
