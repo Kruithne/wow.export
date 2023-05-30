@@ -17,7 +17,7 @@ const server = Bun.serve({
 
 	error(error: Error) {
 		console.error(error);
-		return make_generic_response(500);
+		return make_generic_response(500); // Internal Server Error
 	}
 });
 
