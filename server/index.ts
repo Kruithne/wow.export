@@ -3,6 +3,7 @@
 
 const server = Bun.serve({
 	port: 3001, // Do not change without consulting @Kruithne
+	development: false,
 
 	fetch(req) {
 		console.log(req);
