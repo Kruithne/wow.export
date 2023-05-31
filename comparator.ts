@@ -167,12 +167,9 @@ function compare_typed_arrays(a: Uint8Array, b: Uint8Array): boolean {
 			changes.add(path);
 	}
 
-	if (changes.size > 0) {
-		for (const path of changes)
-			console.log(path);
-	} else {
-		console.log('No changes detected.');
-	}
+	// process.stdout.write is used instead of console.log to avoid a trailing newline.
+	// The output of this script is used by the deployment workflows, so edit with caution.
+	process.stdout.write(changes.size > 0 ? 'source-changed' : 'no-changes');
 
 	fs.mkdirSync(path.dirname(manifest_path), { recursive: true });
 	await Bun.write(manifest_path, compile_manifest(generated_manifest));
