@@ -37,6 +37,7 @@ import { viewItemModels, viewItemTextures } from './ui/tab-items';
 // Import UI modules as side-effects.
 import './ui/source-select';
 import './ui/tab-textures';
+import './ui/tab-characters';
 import './ui/tab-items';
 import './ui/tab-audio';
 import './ui/tab-models';
@@ -219,6 +220,15 @@ interface NWFile {
 				mapViewerSelectedDir: null,
 				mapViewerChunkMask: null, // Map viewer chunk mask.
 				mapViewerSelection: [], // Map viewer tile selection
+				chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+				chrCustModels: [], // Available character customization models.
+				chrCustModelSelection: [], // Selected character customization model.
+				chrCustOptions: [], // Available character customization options.
+				chrCustOptionSelection: [], // Selected character customization option.
+				chrCustChoices: [], // Available character customization choices.
+				chrCustChoiceSelection: [], // Selected character customization choice.
+				chrCustActiveChoices: [], // Active character customization choices.
+				chrCustImportString: '', // Character customization import string.
 				exportCancelled: false, // Export cancellation state.
 				toastTimer: -1, // Timer ID for toast expiration.
 				dropHandlers: Array<DropHandler>(), // Handlers for file drag/drops.

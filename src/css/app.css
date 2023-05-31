@@ -263,6 +263,10 @@ body {
 		background-image: url(./fa-icons/cube.svg);
 	}
 
+	#nav-characters::before {
+		background-image: url(./fa-icons/bug.svg);
+	}
+
 	#nav-items::before {
 		background-image: url(./fa-icons/cubes.svg);
 	}
@@ -1168,6 +1172,31 @@ input[type="number"]::-webkit-outer-spin-button {
 
 #sidebar-button {
 	margin-left: 5px;
+}
+
+#tab-characters {
+	display: grid;
+	grid-template-rows: 1fr 237px;
+	grid-template-columns: 1fr;
+
+	.char-preview {
+		grid-row: 1;
+		display: grid;
+		grid-template-rows: 1fr;
+		grid-template-columns: 1fr 200px;
+	}
+
+	.options {
+		grid-row: 2;
+		display: grid;
+		grid-template-rows: 1fr;
+		grid-template-columns: 1fr 1fr 1fr;
+	}
+
+	.ui-checkboxlist
+	{
+		height: 456px;
+	}
 }
 
 #tab-items {

@@ -79,6 +79,7 @@ const defaultConfig = {
 	splitLargeTerrainBakes: true,
 	splitAlphaMaps: true,
 	itemViewerEnabledTypes: ['Head', 'Neck', 'Shoulder', 'Shirt', 'Chest', 'Waist', 'Legs', 'Feet', 'Wrist', 'Hands', 'One-hand', 'Off-hand', 'Two-hand', 'Main-hand', 'Ranged', 'Back', 'Tabard'],
+	chrCustShowNPCRaces: false,
 	pathFormat: 'win32',
 	lastExportFile: ''
 };
