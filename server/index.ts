@@ -13,10 +13,10 @@ const server = Bun.serve({
 	fetch(req) {
 		const url = new URL(req.url);
 
-		// /services/hooks/server is called from the automatic deployment workflow on GitHub
+		// /services/internal/update is called from the automatic deployment workflow on GitHub
 		// to indicate that the server sources have been updated and the server should initiate
 		// a self-update.
-		if (url.pathname === '/services/hooks/server') {
+		if (url.pathname === '/services/internal/update') {
 			// This endpoint must be called with the correct key to prevent abuse.
 			if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
 				return make_generic_response(401); // Unauthorized
