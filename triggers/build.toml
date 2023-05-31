@@ -3,9 +3,9 @@
 
 include = [
 	# src, resources, and addons are all included in client builds.
-	'src',
-	'resources',
-	'addons',
+	'src/',
+	'resources/',
+	'addons/',
 
 	# Changes to package.json/bun.lockb indicate a dependency change.
 	'package.json',
