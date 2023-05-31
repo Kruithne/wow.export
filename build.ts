@@ -86,6 +86,9 @@ try {
 			}
 		});
 
+		if (results.success === false)
+			throw new AggregateError(results.logs, 'Code compilation failed, see details.');
+
 		for (const result of results.outputs) {
 			let text = await result.text();
 
