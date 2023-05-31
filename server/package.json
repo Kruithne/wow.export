@@ -1,13 +1,22 @@
 {
 	"name": "wowexport.net",
-	"module": "index.ts",
 	"type": "module",
+	"module": "index.ts",
+
+	"spooder": {
+		"autoRestart": 500,
+		"run": "bun run index.ts",
+		"update": [
+			"git pull",
+			"bun install"
+		]
+	},
 
 	"devDependencies": {
 		"bun-types": "^0.5.0"
 	},
-	
-	"peerDependencies": {
-		"typescript": "^5.0.0"
+
+	"dependencies": {
+		"spooder": "^3.0.8"
 	}
 }

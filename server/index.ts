@@ -21,6 +21,7 @@ const server = Bun.serve({
 			if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
 				return make_generic_response(401); // Unauthorized
 
+			server.stop(true); // TODO: Implement convinient-termination for this.
 			return make_generic_response(200); // OK
 		}
 
