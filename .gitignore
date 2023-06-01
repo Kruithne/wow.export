@@ -3,3 +3,6 @@ node_modules
 
 # Build directory.
 bin
+
+# ignore bun lock files
+bun.lockb

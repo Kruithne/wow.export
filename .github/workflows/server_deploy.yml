@@ -7,34 +7,19 @@ on:
 
 jobs:
   deploy:
-    outputs:
-      status: ${{ steps.check.outputs.status }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+      - name: Check for relevant source changes
+        run: | 
+          local_head=$(git rev-parse HEAD)
+          remote_head=$(curl -s https://wowexport.net/services/internal/head?key=${{ secrets.SERVER_DEPLOY_KEY }})
 
-      - name: Download source manifest
-        uses: actions/download-artifact@v3
-        with:
-          name: server-manifest
-          path: bin/src_manifests/server_deploy.bin
-
-      - id: check
-        name: Check if source has changed
-        run: echo "status=$(bun run source-compare bin/src_manifests/server_deploy.bin ./triggers/server_deploy.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload source manifest
-        uses: actions/upload-artifact@v3
-        with:
-          name: server-manifest
-          path: bin/src_manifests/server_deploy.bin
-
-      - name: Trigger server deployment
-        if: steps.check.outputs.status == 'source-changed'
-        run: curl -X POST https://wowexport.net/services/hooks/server?key=${{ secrets.SERVER_DEPLOY_KEY }}
+          if git diff --name-only $local_head $remote_head | grep -q -F -f ./workflow_triggers/server_deploy.txt; then
+            echo "changes detected, triggering remote update"
+            curl -X POST https://wowexport.net/services/internal/update?key=${{ secrets.SERVER_DEPLOY_KEY }}
+          else
+            echo "no changes detected"
+          fi

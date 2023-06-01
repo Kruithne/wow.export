@@ -7,8 +7,10 @@
 		"autoRestart": 500,
 		"run": "bun run index.ts",
 		"update": [
-			"git pull",
-			"bun install"
+			"git reset --hard",
+			"git clean -fd",
+			"git pull origin main",
+			"bun install --production"
 		]
 	},
 

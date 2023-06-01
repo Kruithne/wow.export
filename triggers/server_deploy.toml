@@ -1,7 +1,0 @@
-# This file defines which paths are evaluated during the client build jobs.
-# Each path is evaluated for changes, and if none are found, the job is skipped.
-
-include = [
-	# All server-related code is stored under /server
-	'server'
-]

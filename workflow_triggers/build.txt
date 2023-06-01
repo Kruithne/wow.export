@@ -1,0 +1,9 @@
+src/
+resources/
+addons/
+package.json
+bun.lockb
+build.ts
+publish.ts
+LICENSE
+CHANGELOG.md
