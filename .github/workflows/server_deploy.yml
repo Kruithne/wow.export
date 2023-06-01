@@ -14,8 +14,8 @@ jobs:
 
       - name: Check for relevant source changes
         run: | 
-          local_head = $(git rev-parse HEAD)
-          remote_head = $(curl -s https://wowexport.net/services/internal/head?key=${{ secrets.SERVER_DEPLOY_KEY }})
+          local_head=$(git rev-parse HEAD)
+          remote_head=$(curl -s https://wowexport.net/services/internal/head?key=${{ secrets.SERVER_DEPLOY_KEY }})
 
           if git diff --name-only $local_head $remote_head | grep -q -F -f ./workflow_triggers/server_deploy.txt; then
             echo "changes detected, triggering remote update"
