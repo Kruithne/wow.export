@@ -1,0 +1,9 @@
+# This .gitignore file is specific to the server deployment. The server only fetches
+# a sparse checkout of this repository (server/) so it needs to retain the following
+# ruleset to enable it to manage the remote checkout properly.
+
+# third party dependencies
+node_modules
+
+# bun lock file
+bun.lockb
