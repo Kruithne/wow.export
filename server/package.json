@@ -8,7 +8,7 @@
 		"run": "bun run index.ts",
 		"update": [
 			"git reset --hard",
-			"git clean -fxd",
+			"git clean -fd",
 			"git pull origin main",
 			"bun install --production"
 		]
