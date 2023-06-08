@@ -4,7 +4,7 @@
 	"module": "index.ts",
 
 	"spooder": {
-		"autoRestart": 1e4,
+		"autoRestart": 10000,
 		"run": "bun run index.ts",
 		"update": [
 			"git reset --hard",
