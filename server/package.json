@@ -4,14 +4,20 @@
 	"module": "index.ts",
 
 	"spooder": {
-		"autoRestart": 500,
+		"autoRestart": 1e4,
 		"run": "bun run index.ts",
 		"update": [
 			"git reset --hard",
 			"git clean -fd",
 			"git pull origin main",
 			"bun install --production"
-		]
+		],
+		"canary": {
+			"account": "kruithne",
+			"repository": "kruithne/wow.export",
+			"labels": ["⚠️ canary-report"],
+			"throttle": 86400
+		}
 	},
 
 	"devDependencies": {
@@ -19,6 +25,6 @@
 	},
 
 	"dependencies": {
-		"spooder": "^3.0.8"
+		"spooder": "^3.1.0"
 	}
 }
