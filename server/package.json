@@ -10,7 +10,7 @@
 			"git reset --hard",
 			"git clean -fd",
 			"git pull origin main",
-			"bun install --production"
+			"bun install"
 		],
 		"canary": {
 			"account": "kruithne",
