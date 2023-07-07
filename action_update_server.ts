@@ -22,7 +22,7 @@ async function git_diff(local_head: string, remote_head: string): Promise<string
 	if (git.exitCode !== 0)
 		throw new Error('git diff exited with code ' + git.exitCode);
 
-	return text.split('\n');
+	return text.split('\n').filter(line => line.length > 0);
 }
 
 async function load_workflow_triggers(): Promise<string[]> {
