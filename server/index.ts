@@ -5,7 +5,7 @@ import { get_git_head } from './util';
 
 const server = serve(3001);
 
-server.dir('/', './front');
+server.dir('/', './front', { index: 'index.html' });
 
 server.route('/services/internal/update', (req: Request, url: URL) => {
 	if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
