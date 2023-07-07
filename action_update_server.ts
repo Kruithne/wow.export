@@ -3,8 +3,8 @@
 import util from 'node:util';
 import { get_git_head, merge_typed_array, stream_to_array } from './server/util';
 
-async function get_remote_head(): Promise<string> {
-	const res = await fetch('https://wowexport.net/services/internal/head?key=' + process.env.WOW_EXPORT_SERVER_DEPLOY_KEY);
+async function get_remote_head(deploy_key: string): Promise<string> {
+	const res = await fetch('https://wowexport.net/services/internal/head?key=' + deploy_key);
 	if (!res.ok)
 		throw new Error(util.format('Failed to fetch remote HEAD, status code: [%d] %s', res.status, res.statusText));
 
@@ -35,8 +35,12 @@ async function load_workflow_triggers(): Promise<string[]> {
 }
 
 try {
+	const deploy_key = process.argv[2];
+	if (deploy_key === undefined || deploy_key.length === 0)
+		throw new Error('missing deploy key, usage: node action_update_server.js <deploy_key>');
+
 	const local_head = await get_git_head();
-	const remote_head = await get_remote_head();
+	const remote_head = await get_remote_head(deploy_key);
 
 	console.log('local_head: %s', local_head);
 	console.log('remote_head: %s', remote_head);
@@ -55,7 +59,7 @@ try {
 	if (diff.some(file => triggers.some(trigger => file.startsWith(trigger)))) {
 		console.log('changes detected, triggering server update');
 
-		const res = await fetch('https://wowexport.net/services/internal/update?key=' + process.env.WOW_EXPORT_SERVER_DEPLOY_KEY, { method: 'POST' });
+		const res = await fetch('https://wowexport.net/services/internal/update?key=' + deploy_key, { method: 'POST' });
 		if (!res.ok)
 			throw new Error(util.format('Failed to trigger remote update, status code: [%d] %s', res.status, res.statusText));
 	} else {
