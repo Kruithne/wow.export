@@ -26,3 +26,20 @@ export async function stream_to_array<T>(stream: ReadableStream<T>): Promise<T[]
 
 	return chunks;
 }
+
+/** Returns the current git HEAD as a 160-bit hex string (sha1). */
+export async function get_git_head(): Promise<string> {
+	const git = Bun.spawn(['git', 'rev-parse', 'HEAD']);
+
+	if (!git.stdout)
+		throw new Error('failed to spawn git process');
+
+	const merged = merge_typed_array(await stream_to_array(git.stdout));
+	const decoded = new TextDecoder().decode(merged);
+
+	// Expecting 40 hex characters followed by a newline.
+	if (!/^[a-f0-9]{40}\n$/.test(decoded))
+		throw new Error('git rev-parse HEAD returned unexpected output: ' + decoded);
+
+	return decoded.trim();
+}
