@@ -1,7 +1,7 @@
 // This script is run automatically by .github/workflows/update_server.yml
 
 import util from 'node:util';
-import { get_git_head, merge_typed_array, stream_to_array } from './server/util';
+import { get_git_head } from './server/util';
 
 async function get_remote_head(deploy_key: string): Promise<string> {
 	const res = await fetch('https://wowexport.net/services/internal/head?key=' + deploy_key);
@@ -17,17 +17,12 @@ async function get_remote_head(deploy_key: string): Promise<string> {
 
 async function git_diff(local_head: string, remote_head: string): Promise<string[]> {
 	const git = Bun.spawn(['git', 'diff', '--name-only', local_head, remote_head]);
+	const text = await new Response(git.stdout).text();
 
 	if (git.exitCode !== 0)
-		throw new Error('git diff failed with exit code: ' + git.exitCode);
+		throw new Error('git diff exited with code ' + git.exitCode);
 
-	if (!git.stdout)
-		throw new Error('failed to spawn git process');
-
-	const merged = merge_typed_array(await stream_to_array(git.stdout));
-	const decoded = new TextDecoder().decode(merged);
-
-	return decoded.split('\n');
+	return text.split('\n');
 }
 
 async function load_workflow_triggers(): Promise<string[]> {
