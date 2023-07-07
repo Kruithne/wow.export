@@ -5,7 +5,7 @@
     "bun-types": "^0.5.0"
   },
   "spooder": {
-    "autoRestart": 1e4,
+    "autoRestart": 0,
     "run": "bun run index.ts",
     "update": [
       "git reset --hard",
