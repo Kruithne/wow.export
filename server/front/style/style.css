@@ -50,6 +50,7 @@ body {
 	font-size: 25px;
 	font-weight: 700;
 	background: url(../images/logo.svg) no-repeat left;
+	background-size: 25px;
 	padding-left: 32px;
 	height: 50px;
 	position: relative;
