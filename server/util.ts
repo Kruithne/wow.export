@@ -31,6 +31,9 @@ export async function stream_to_array<T>(stream: ReadableStream<T>): Promise<T[]
 export async function get_git_head(): Promise<string> {
 	const git = Bun.spawn(['git', 'rev-parse', 'HEAD']);
 
+	if (git.exitCode !== 0)
+		throw new Error('git rev-parse HEAD failed with exit code: ' + git.exitCode);
+
 	if (!git.stdout)
 		throw new Error('failed to spawn git process');
 

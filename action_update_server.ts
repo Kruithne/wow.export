@@ -18,6 +18,9 @@ async function get_remote_head(deploy_key: string): Promise<string> {
 async function git_diff(local_head: string, remote_head: string): Promise<string[]> {
 	const git = Bun.spawn(['git', 'diff', '--name-only', local_head, remote_head]);
 
+	if (git.exitCode !== 0)
+		throw new Error('git diff failed with exit code: ' + git.exitCode);
+
 	if (!git.stdout)
 		throw new Error('failed to spawn git process');
 
