@@ -19,6 +19,8 @@ async function git_diff(local_head: string, remote_head: string): Promise<string
 	const git = Bun.spawn(['git', 'diff', '--name-only', local_head, remote_head]);
 	const text = await new Response(git.stdout).text();
 
+	await git.exited;
+
 	if (git.exitCode !== 0)
 		throw new Error('git diff exited with code ' + git.exitCode);
 

@@ -3,6 +3,8 @@ export async function get_git_head(): Promise<string> {
 	const git = Bun.spawn(['git', 'rev-parse', 'HEAD']);
 	const text = await new Response(git.stdout).text();
 
+	await git.exited;
+
 	if (git.exitCode !== 0)
 		throw new Error('git rev-parse HEAD failed with exit code: ' + git.exitCode);
 
