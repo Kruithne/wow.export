@@ -5,8 +5,6 @@ import { get_git_head } from './util';
 
 const server = serve(3001);
 
-server.dir('/', './front', { index: 'index.html' });
-
 server.route('/services/internal/update', (req: Request, url: URL) => {
 	if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
 		return 401;
@@ -21,3 +19,5 @@ server.route('/services/internal/head', async (req: Request, url: URL) => {
 
 	return get_git_head();
 });
+
+server.dir('/', './front', { index: 'index.html' });
