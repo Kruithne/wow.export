@@ -63,6 +63,7 @@ try {
 	}
 } catch (e) {
 	console.error(e);
+	process.exit(1);
 }
 
 export {}; // Enables top-level await by making this file a module.
