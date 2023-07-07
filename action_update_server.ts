@@ -55,10 +55,19 @@ try {
 	for (const diff_entry of diff)
 		console.log(diff_entry);
 
+	let sources_changed = false;
 	const triggers = await load_workflow_triggers();
-	if (diff.some(file => triggers.some(trigger => file.startsWith(trigger)))) {
-		console.log('changes detected, triggering server update');
+	for (const diff_entry of diff) {
+		if (triggers.some(trigger => diff_entry.startsWith(trigger))) {
+			sources_changed = true;
+			console.log('\t%s (triggered)', diff_entry);
+		} else {
+			console.log('\t%s (ignored)', diff_entry);
+		}
+	}
 
+	if (sources_changed) {
+		console.log('changes detected, triggering server update');
 		const res = await fetch('https://wowexport.net/services/internal/update?key=' + deploy_key, { method: 'POST' });
 		if (!res.ok)
 			throw new Error(util.format('Failed to trigger remote update, status code: [%d] %s', res.status, res.statusText));
