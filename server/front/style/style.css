@@ -105,7 +105,7 @@ body {
 }
 
 #logo-compart-outer {
-	background-image: url(../images/logo_compart_outer.svg);
+	background-image: url(../images/logo_compart_outer.svg?v=1);
 }
 
 #logo-compart-middle {
