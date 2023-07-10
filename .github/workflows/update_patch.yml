@@ -6,7 +6,7 @@ on:
 jobs:
   deploy:
     outputs:
-        status: ${{ steps.check.outputs.go_for_launch }}
+        go_for_launch: ${{ steps.check.outputs.exit_code }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +20,8 @@ jobs:
           bun-version: latest
 
       - name: Check for source changes
-        run: bun ./ci/action_check_patch.ts ${{ secrets.SERVER_DEPLOY_KEY }} || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
+        id: check
+        run: bun ./ci/action_check_patch.ts ${{ secrets.SERVER_DEPLOY_KEY }} || echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Setup vlang
         if: steps.check.outputs.go_for_launch == '200'
