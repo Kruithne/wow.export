@@ -22,8 +22,7 @@
 		"update": "bun ./build.ts --code",
 		"update-debug": "bun ./build.ts --debug --code",
 		"build-release": "bun ./build.ts --code --assets --framework --update --package",
-		"publish": "bun ./publish.ts",
-		"source-compare": "bun run ./comparator.ts"
+		"publish": "bun ./publish.ts"
 	},
 	"devDependencies": {
 		"@kogs/logger": "^3.3.7",
