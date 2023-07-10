@@ -5,8 +5,12 @@ import { get_git_head } from './util';
 
 const server = serve(3001);
 
+function verify_build_key(url: URL): boolean {
+	return url.searchParams.get('key') === process.env.WOW_EXPORT_SERVER_DEPLOY_KEY;
+}
+
 server.route('/services/internal/update', (req: Request, url: URL) => {
-	if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
+	if (!verify_build_key(url))
 		return 401;
 
 	server.stop(ServerStop.GRACEFUL);
@@ -14,7 +18,7 @@ server.route('/services/internal/update', (req: Request, url: URL) => {
 });
 
 server.route('/services/internal/head', async (req: Request, url: URL) => {
-	if (url.searchParams.get('key') !== process.env.WOW_EXPORT_SERVER_DEPLOY_KEY)
+	if (!verify_build_key(url))
 		return 401;
 
 	return get_git_head();
