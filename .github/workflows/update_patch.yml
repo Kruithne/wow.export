@@ -21,21 +21,11 @@ jobs:
         id: check
         run: bun ./ci/action_check_patch.ts ${{ secrets.SERVER_DEPLOY_KEY }} || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
 
-      - name: Setup vlang
-        if: steps.check.outputs.go_for_launch == '200'
-        uses: vlang/setup-v@v1.3
-        with:
-            version: '0.4.0'
-
       - name: Setup node.js
         if: steps.check.outputs.go_for_launch == '200'
         uses: actions/setup-node@v3
         with:
             node-version: 20
-
-      - name: Install GNU C compiler for MinGW-w64
-        if: steps.check.outputs.go_for_launch == '200'
-        run: sudo apt-get install gcc-mingw-w64-x86-64
 
       - name: Install global dependencies
         if: steps.check.outputs.go_for_launch == '200'

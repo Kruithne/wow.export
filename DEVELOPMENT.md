@@ -28,19 +28,6 @@ Before you start developing wow.export, you will need to set-up your environment
 - Step 5: Install dependencies:
   - `bun install`
  
-### Additional dependencies for release builds 
-For building a release build, additional dependency is required.
-
-- Step 1: Install [V Programming Language Compiler](https://github.com/vlang/v/blob/master/doc/docs.md#installing-v-from-source)
-  - ```bash
-       git clone https://github.com/vlang/v
-       cd v
-       make```
-- Step 2: Add V into your PATH per [V documentation](https://github.com/vlang/v/blob/master/README.md#symlinking)
-  - `sudo ./v symlink`
-
-
-
 ## Linting
 wow.export uses [ESLint](https://eslint.org/) to enforce code style and best practices. While not required, it is highly recommended that you install an [ESLint plugin](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) for your editor of choice.
 

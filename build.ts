@@ -172,12 +172,6 @@ if (argv.includes('--framework')) {
 		'company-name': 'Kruithne, Marlamin, and contributors',
 		'internal-name': 'wow.export'
 	}).map(([key, value]) => `--${key} "${value}"`).join(' '));
-
-	// Step 7: Build updater executable, bundle and manifest (release builds only).
-	if (!isDebugBuild) {
-		log.info('Compiling {updater.exe}...');
-		execute_command(`v -os windows ./src/updater -o ${path.join(buildDir, 'updater.exe')}`);
-	}
 }
 
 // If --update is set, generate the files used by the update server.
