@@ -20,4 +20,4 @@ jobs:
           bun-version: latest
 
       - name: Check for source changes
-        run: bun action_update_server.ts ${{ secrets.SERVER_DEPLOY_KEY }}
+        run: bun ./ci/action_update_server.ts ${{ secrets.SERVER_DEPLOY_KEY }}

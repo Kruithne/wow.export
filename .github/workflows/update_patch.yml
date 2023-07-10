@@ -20,7 +20,7 @@ jobs:
           bun-version: latest
 
       - name: Check for source changes
-        run: bun action_check_patch.ts || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
+        run: bun ./ci/action_check_patch.ts || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
 
       - name: Setup vlang
         if: steps.check.outputs.go_for_launch == '200'
