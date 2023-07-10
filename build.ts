@@ -3,7 +3,6 @@ import log from '@kogs/logger';
 import { execSync } from 'child_process';
 import JSZip from 'jszip';
 import crypto from 'node:crypto';
-import zlib from 'node:zlib';
 import util from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -172,47 +171,6 @@ if (argv.includes('--framework')) {
 		'company-name': 'Kruithne, Marlamin, and contributors',
 		'internal-name': 'wow.export'
 	}).map(([key, value]) => `--${key} "${value}"`).join(' '));
-}
-
-// If --update is set, generate the files used by the update server.
-// These files will generate to /bin/update/* and are not included in the final package.
-if (argv.includes('--update')) {
-	// Step 8: Compile update file/manifest.
-	log.info('Writing update package...');
-
-	const updateManifest: Record<string, unknown> = {};
-	const updateFiles = collect_files(buildDir);
-	const updateDir = path.join('bin', 'update');
-
-	if (!fs.existsSync(updateDir))
-		fs.mkdirSync(updateDir, { recursive: true });
-
-	let entryCount = 0;
-	let totalSize = 0;
-	let compSize = 0;
-
-	for (const file of updateFiles) {
-		const relative = path.posix.relative(buildDir, file);
-		const data = fs.readFileSync(file);
-		const hash = crypto.createHash('sha256').update(data).digest('hex');
-
-		const dataCompressed = zlib.deflateSync(data);
-		fs.writeFileSync(path.join(updateDir, 'update'), dataCompressed, { flag: 'a' });
-
-		updateManifest[relative] = { hash, size: data.length, compSize: dataCompressed.length, ofs: compSize };
-		totalSize += data.length;
-		compSize += dataCompressed.length;
-
-		entryCount++;
-	}
-
-	const manifest = JSON.parse(fs.readFileSync('./src/config/package.json', 'utf8'));
-	const manifestData = { contents: updateManifest, guid: manifest.guid };
-	fs.writeFileSync(path.join(updateDir, 'update.json'), JSON.stringify(manifestData, null, '\t'), 'utf8');
-
-	const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
-	const compSizeMB = (compSize / 1024 / 1024).toFixed(2);
-	log.success('Compressed update package with {%s} entries ({%smb} => {%smb})', entryCount, totalSizeMB, compSizeMB);
 }
 
 // If --package is set, package the build into a ZIP file.

@@ -21,7 +21,7 @@
 		"build-debug": "bun ./build.ts --debug --code --assets --framework",
 		"update": "bun ./build.ts --code",
 		"update-debug": "bun ./build.ts --debug --code",
-		"build-release": "bun ./build.ts --code --assets --framework --update --package",
+		"build-release": "bun ./build.ts --code --assets --framework --package",
 		"publish": "bun ./publish.ts"
 	},
 	"devDependencies": {

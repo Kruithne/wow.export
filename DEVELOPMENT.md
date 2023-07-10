@@ -48,7 +48,6 @@ The above command is going to do nothing unless it is provided with options, whi
 --code       Compiles TypeScript/SCSS into the build directory.
 --assets     Copies static assets into the build directory.
 --package    Produces a release package (ZIP).
---update     Generates files for the update server.
 ```
 
 For most development, you will want to build a debug version of wow.export and run it locally.
@@ -70,7 +69,7 @@ bun run build # --code --assets --framework
 bun run build-debug # --debug --code --assets --framework
 bun run update # --code
 bun run update-debug # --code
-bun run build-release # --code --assets --framework --package --update
+bun run build-release # --code --assets --framework --package
 ```
 
 ### Assets
