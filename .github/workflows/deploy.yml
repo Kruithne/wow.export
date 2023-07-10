@@ -16,7 +16,7 @@ jobs:
       - name: Setup vlang
         uses: vlang/setup-v@v1.3
         with:
-            version: '0.3.4'
+            version: '0.4.0'
 
       - name: Setup node.js
         uses: actions/setup-node@v3
