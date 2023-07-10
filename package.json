@@ -27,7 +27,7 @@
 	"devDependencies": {
 		"@kogs/logger": "^3.3.7",
 		"@types/chrome": "^0.0.210",
-		"@types/node": "^18.11.18",
+		"@types/node": "^20.4.1",
 		"@types/nw.js": "^0.13.16",
 		"@types/offscreencanvas": "^2019.7.0",
 		"@types/ssh2-sftp-client": "^9.0.0",
