@@ -21,8 +21,6 @@ try {
 	}
 
 	console.log('diff:');
-	for (const diff_entry of diff)
-		console.log(diff_entry);
 
 	let sources_changed = false;
 	const triggers = await load_workflow_triggers('./ci/triggers/patch_triggers.txt');
