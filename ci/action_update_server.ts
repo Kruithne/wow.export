@@ -1,38 +1,8 @@
 // This script is run automatically by .github/workflows/update_server.yml
 
 import util from 'node:util';
-import { get_git_head } from './server/util';
-
-async function get_remote_head(deploy_key: string): Promise<string> {
-	const res = await fetch('https://wowexport.net/services/internal/head?key=' + deploy_key);
-	if (!res.ok)
-		throw new Error(util.format('Failed to fetch remote HEAD, status code: [%d] %s', res.status, res.statusText));
-
-	const remote_head = await res.text();
-	if (!/^[a-f0-9]{40}$/.test(remote_head))
-		throw new Error(util.format('Unexpected remote HEAD: %s', remote_head));
-
-	return remote_head;
-}
-
-async function git_diff(local_head: string, remote_head: string): Promise<string[]> {
-	const git = Bun.spawn(['git', 'diff', '--name-only', local_head, remote_head]);
-	const text = await new Response(git.stdout).text();
-
-	await git.exited;
-
-	if (git.exitCode !== 0)
-		throw new Error('git diff exited with code ' + git.exitCode);
-
-	return text.split('\n').filter(line => line.length > 0);
-}
-
-async function load_workflow_triggers(): Promise<string[]> {
-	const trigger_file = Bun.file('./workflow_triggers/server_deploy.txt');
-	const trigger_contents = await trigger_file.text();
-
-	return trigger_contents.split('\n');
-}
+import { get_git_head } from '../server/util';
+import { get_remote_head, load_workflow_triggers, git_diff } from './ci_util';
 
 try {
 	const deploy_key = process.argv[2];
@@ -56,7 +26,7 @@ try {
 		console.log(diff_entry);
 
 	let sources_changed = false;
-	const triggers = await load_workflow_triggers();
+	const triggers = await load_workflow_triggers('./triggers/server_triggers.txt');
 	for (const diff_entry of diff) {
 		if (triggers.some(trigger => diff_entry.startsWith(trigger))) {
 			sources_changed = true;

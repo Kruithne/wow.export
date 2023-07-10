@@ -1,0 +1,57 @@
+name: Deploy wow.export client updates
+
+on:  
+  workflow_dispatch # TODO: Automate this
+
+jobs:
+  deploy:
+    outputs:
+        status: ${{ steps.check.outputs.go_for_launch }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Check for source changes
+        run: bun action_check_patch.ts || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Setup vlang
+        if: steps.check.outputs.go_for_launch == '200'
+        uses: vlang/setup-v@v1.3
+        with:
+            version: '0.3.4'
+
+      - name: Setup node.js
+        if: steps.check.outputs.go_for_launch == '200'
+        uses: actions/setup-node@v3
+        with:
+            node-version: 20
+
+      - name: Install GNU C compiler for MinGW-w64
+        if: steps.check.outputs.go_for_launch == '200'
+        run: sudo apt-get install gcc-mingw-w64-x86-64
+
+      - name: Install global dependencies
+        if: steps.check.outputs.go_for_launch == '200'
+        run: npm install --global nwjs-installer resedit-cli
+
+      - name: bun install
+        if: steps.check.outputs.go_for_launch == '200'
+        run: bun install
+
+      - name: Compile wow.export win-x64
+        if: steps.check.outputs.go_for_launch == '200'
+        run: bun run build-release
+
+      - name: Upload wow.export win-x64
+        if: steps.check.outputs.go_for_launch == '200'
+        run: curl -X POST -F "file=@./wow.export.zip" https://wowexport.net/services/internal/release/win-x64?key=${{ secrets.SERVER_DEPLOY_KEY }}
+
+        # TODO: Re-add GitHub release creation

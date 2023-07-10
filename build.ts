@@ -229,7 +229,8 @@ if (argv.includes('--package')) {
 	if (!fs.existsSync(packageDir))
 		fs.mkdirSync(packageDir, { recursive: true });
 
-	const zipArchive = path.join(packageDir, 'wow.export-' + meta.version + '.zip');
+	// TODO: Name this file based on the build platform.
+	const zipArchive = path.join(packageDir, 'wow.export.zip');
 	log.info('Packaging build into {%s}...', zipArchive);
 
 	const zip = new JSZip();
