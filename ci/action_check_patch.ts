@@ -25,7 +25,7 @@ try {
 		console.log(diff_entry);
 
 	let sources_changed = false;
-	const triggers = await load_workflow_triggers('./triggers/patch_triggers.txt');
+	const triggers = await load_workflow_triggers('./ci/triggers/patch_triggers.txt');
 	for (const diff_entry of diff) {
 		if (triggers.some(trigger => diff_entry.startsWith(trigger))) {
 			sources_changed = true;
