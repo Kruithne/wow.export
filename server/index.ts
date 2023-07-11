@@ -1,7 +1,7 @@
 /* Copyright (c) wow.export contributors. All rights reserved. */
 /* Licensed under the MIT license. See LICENSE in project root for license information. */
 import os from 'node:os';
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
 import path from 'node:path';
 
 import { serve, ServerStop } from 'spooder';
@@ -21,6 +21,22 @@ async function spawn_safe(command: string): Promise<void> {
 		throw new Error(`Command "${command}" exited with code ${proc.exitCode}`);
 }
 
+function write_file_offset(file_name: string, data: Buffer, offset: number): Promise<number> {
+	return new Promise((resolve, reject) => {
+		fs.open(file_name, 'w', (err, fd) => {
+			if (err)
+				return reject(err);
+
+			fs.write(fd, data, 0, data.length, offset, (err, written) => {
+				if (err)
+					return reject(err);
+
+				resolve(written);
+			});
+		});
+	});
+}
+
 const server = serve(3001);
 
 server.route('/services/internal/update', (req: Request, url: URL) => {
@@ -38,7 +54,7 @@ server.route('/services/internal/head', async (req: Request, url: URL) => {
 	return get_git_head();
 });
 
-server.route('/services/internal/release/:build', async (req: Request, url: URL) => {
+server.route('/services/internal/upload_release_chunk/:build', async (req: Request, url: URL) => {
 	if (!verify_build_key(url))
 		return 401; // unauthorized
 
@@ -48,23 +64,33 @@ server.route('/services/internal/release/:build', async (req: Request, url: URL)
 		return 400; // bad request
 
 	const build_zip = `build-${build_id}.zip`;
-
-	// reset temporary release directory
-	await fs.rm(TMP_RELEASE_DIR, { recursive: true, force: true });
-	await fs.mkdir(TMP_RELEASE_DIR);
-
-	// stream zip from request to temporary release directory
 	const zip_file_path = path.join(TMP_RELEASE_DIR, build_zip);
-	await Bun.write(zip_file_path, new Response(req.body));
 
-	// extract zip contents to /var/wowexport/release/<git_head>
-	await spawn_safe(`unzip -o ${zip_file_path} -d /var/wowexport/release/${git_head}`);
+	const form_data = await req.formData();
+	const offset = parseInt(form_data.get('offset') as string);
 
-	// move zip to /var/wowexport/release/release.tar.gz
-	await fs.rename(zip_file_path, path.join('/var/wowexport/release', build_zip));
+	const chunk = form_data.get('chunk') as Blob;
+	const chunk_data = Buffer.from(await chunk.arrayBuffer());
 
-	// remove temporary release directory
-	await fs.rm(TMP_RELEASE_DIR, { recursive: true, force: true });
+	let write_buffer = chunk_data;
+
+	if (form_data.has('size')) {
+		const build_size = parseInt(form_data.get('size') as string);
+
+		await fs.promises.rm(TMP_RELEASE_DIR, { recursive: true, force: true });
+		await fs.promises.mkdir(TMP_RELEASE_DIR);
+
+		write_buffer = Buffer.alloc(build_size);
+		chunk_data.copy(write_buffer);
+	}
+
+	await write_file_offset(zip_file_path, chunk_data, offset);
+
+	if (url.searchParams.has('final')) {
+		await spawn_safe(`unzip -o ${zip_file_path} -d /var/wowexport/release/${git_head}`);
+		await fs.promises.rename(zip_file_path, path.join('/var/wowexport/release', build_zip));
+		await fs.promises.rm(TMP_RELEASE_DIR, { recursive: true, force: true });
+	}
 });
 
 server.dir('/', './front', { index: 'index.html' });
