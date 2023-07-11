@@ -2,30 +2,50 @@
 
 const UPLOAD_CHUNK_SIZE = 1024 * 1024 * 50; // 50MB
 
+import fs from 'node:fs';
+import path from 'node:path';
+
+async function read_chunk(fd: number, offset: number, length: number): Promise<Blob> {
+	return new Promise((resolve, reject) => {
+		const buffer = Buffer.alloc(length);
+		fs.read(fd, buffer, 0, length, offset, (err) => {
+			if (err)
+				return reject(err);
+
+			resolve(new Blob([buffer]));
+		});
+	});
+}
+
 try {
 	const deploy_key = process.argv[2];
 	if (deploy_key === undefined || deploy_key.length === 0)
 		throw new Error('missing deploy key, usage: node action_update_server.js <deploy_key>');
 
-	const archive_file = Bun.file('./bin/packages/wow.export.zip');
-	const num_upload_chunks = Math.ceil(archive_file.size / UPLOAD_CHUNK_SIZE);
+	const archive_file_name = './bin/packages/wow.export.zip';
+	const archive_file_stat = await fs.promises.stat(archive_file_name);
+	const archive_file_descriptor = await fs.promises.open(archive_file_name, 'r');
 
+	const num_upload_chunks = Math.ceil(archive_file_stat.size / UPLOAD_CHUNK_SIZE);
 	console.log(`uploading archive in ${num_upload_chunks} chunks...`);
 
+
 	for (let i = 0; i < num_upload_chunks; i++) {
-		const formData = new FormData();
-		formData.append('chunk', archive_file.slice(i * UPLOAD_CHUNK_SIZE, (i + 1) * UPLOAD_CHUNK_SIZE), 'wow.export.zip');
-		formData.append('offset', (i * UPLOAD_CHUNK_SIZE).toString());
+		const form_data = new FormData();
+		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, (i + 1) * UPLOAD_CHUNK_SIZE);
+
+		form_data.append('chunk', chunk_data, path.basename(archive_file_name));
+		form_data.append('offset', (i * UPLOAD_CHUNK_SIZE).toString());
 
 		if (i === 0)
-			formData.append('size', archive_file.size.toString());
+			form_data.append('size', archive_file_stat.size.toString());
 		else if (i === num_upload_chunks - 1)
-			formData.append('final', '1');
+			form_data.append('final', '1');
 
 		const url = 'https://wowexport.net/services/internal/upload_release_chunk/win-x64?key=' + deploy_key;
 		const res = await fetch(url, {
 			method: 'POST',
-			body: formData
+			body: form_data
 		});
 
 		if (!res.ok)
