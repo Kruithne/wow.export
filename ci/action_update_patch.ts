@@ -29,10 +29,9 @@ try {
 	const num_upload_chunks = Math.ceil(archive_file_stat.size / UPLOAD_CHUNK_SIZE);
 	console.log(`uploading archive in ${num_upload_chunks} chunks...`);
 
-
 	for (let i = 0; i < num_upload_chunks; i++) {
 		const form_data = new FormData();
-		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, (i + 1) * UPLOAD_CHUNK_SIZE);
+		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, UPLOAD_CHUNK_SIZE);
 
 		form_data.append('chunk', chunk_data, path.basename(archive_file_name));
 		form_data.append('offset', (i * UPLOAD_CHUNK_SIZE).toString());
