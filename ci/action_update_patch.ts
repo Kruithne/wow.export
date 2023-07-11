@@ -1,6 +1,6 @@
 // This script is run automatically by .github/workflows/update_patch.yml
 
-const UPLOAD_CHUNK_SIZE = 1024 * 1024 * 50; // 50MB
+const UPLOAD_CHUNK_SIZE = 1024 * 1024 * 5; // 5MB
 
 import fs from 'node:fs';
 import path from 'node:path';
