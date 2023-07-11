@@ -31,7 +31,12 @@ try {
 
 	for (let i = 0; i < num_upload_chunks; i++) {
 		const form_data = new FormData();
-		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, UPLOAD_CHUNK_SIZE);
+
+		const chunk_size = Math.min(UPLOAD_CHUNK_SIZE, archive_file_stat.size - (i * UPLOAD_CHUNK_SIZE));
+		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, chunk_size);
+
+		console.log(`expected chunk size: ${chunk_size}`);
+		console.log(`chunk ${i + 1}/${num_upload_chunks} (${Math.round(chunk_data.size / 1024 / 1024)}MB)`);
 
 		form_data.append('chunk', chunk_data, path.basename(archive_file_name));
 		form_data.append('offset', (i * UPLOAD_CHUNK_SIZE).toString());
