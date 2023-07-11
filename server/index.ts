@@ -86,7 +86,7 @@ server.route('/services/internal/upload_release_chunk/:build', async (req: Reque
 
 	await write_file_offset(zip_file_path, chunk_data, offset);
 
-	if (url.searchParams.has('final')) {
+	if (form_data.has('final')) {
 		await spawn_safe(`unzip -o ${zip_file_path} -d /var/wowexport/release/${git_head}`);
 		await fs.promises.rename(zip_file_path, path.join('/var/wowexport/release', build_zip));
 		await fs.promises.rm(TMP_RELEASE_DIR, { recursive: true, force: true });
