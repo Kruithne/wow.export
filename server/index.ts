@@ -4,7 +4,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { serve, ServerStop } from 'spooder';
+import { serve, ServerStop, caution } from 'spooder';
 import { get_git_head } from './util';
 
 const TMP_RELEASE_DIR = path.join(os.tmpdir(), 'wow_export_srv_release_tmp');
@@ -38,6 +38,11 @@ function write_file_offset(file_name: string, data: Buffer, offset: number): Pro
 }
 
 const server = serve(3001);
+
+server.error((err: Error) => {
+	caution(err);
+	return new Response('The kākāpō has exploded (internal server error)', { status: 500 });
+});
 
 server.route('/services/internal/update', (req: Request, url: URL) => {
 	if (!verify_build_key(url))
