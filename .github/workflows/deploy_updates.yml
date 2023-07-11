@@ -1,8 +1,9 @@
-name: Deploy wow.export client updates
+name: Deploy updates
 
 on:  
-  workflow_dispatch # TODO: Automate this
-
+  push:
+    branches:
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,28 +20,32 @@ jobs:
 
       - name: Check for source changes
         id: check
-        run: bun ./ci/action_check_patch.ts ${{ secrets.SERVER_DEPLOY_KEY }} || echo "go_for_launch=$?" >> "$GITHUB_OUTPUT"
+        run: echo "deploy=$(bun run ./ci/action_check_update.ts ${{ secrets.SERVER_DEPLOY_KEY }})" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger server update
+        if: contains(steps.check.outputs.deploy, 'server')
+        run: curl -X GET https://wowexport.net/services/internal/update?key=${{ secrets.SERVER_DEPLOY_KEY }}
 
       - name: Setup node.js
-        if: steps.check.outputs.go_for_launch == '200'
+        if: contains(steps.check.outputs.deploy, 'patch')
         uses: actions/setup-node@v3
         with:
             node-version: 20
 
       - name: Install global dependencies
-        if: steps.check.outputs.go_for_launch == '200'
+        if: contains(steps.check.outputs.deploy, 'patch')
         run: npm install --global nwjs-installer resedit-cli
 
       - name: bun install
-        if: steps.check.outputs.go_for_launch == '200'
+        if: contains(steps.check.outputs.deploy, 'patch')
         run: bun install
 
       - name: Compile wow.export win-x64
-        if: steps.check.outputs.go_for_launch == '200'
+        if: contains(steps.check.outputs.deploy, 'patch')
         run: bun run build-release
 
       - name: Upload build to patch server
-        if: steps.check.outputs.go_for_launch == '200'
+        if: contains(steps.check.outputs.deploy, 'patch')
         run: bun ./ci/action_update_patch.ts ${{ secrets.SERVER_DEPLOY_KEY }}
 
         # TODO: Re-add GitHub release creation
