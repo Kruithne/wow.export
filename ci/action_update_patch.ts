@@ -1,6 +1,6 @@
 // This script is run automatically by .github/workflows/update_patch.yml
 
-const UPLOAD_CHUNK_SIZE = 1024 * 1024 * 5; // 5MB
+const UPLOAD_CHUNK_SIZE = 1024 * 1024 * 80; // 80MB
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,7 +35,6 @@ try {
 		const chunk_size = Math.min(UPLOAD_CHUNK_SIZE, archive_file_stat.size - (i * UPLOAD_CHUNK_SIZE));
 		const chunk_data = await read_chunk(archive_file_descriptor, i * UPLOAD_CHUNK_SIZE, chunk_size);
 
-		console.log(`expected chunk size: ${chunk_size}`);
 		console.log(`chunk ${i + 1}/${num_upload_chunks} (${Math.round(chunk_data.size / 1024 / 1024)}MB)`);
 
 		form_data.append('chunk', chunk_data, path.basename(archive_file_name));
