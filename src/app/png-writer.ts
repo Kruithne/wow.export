@@ -215,7 +215,7 @@ const paeth = (left: number, up: number, upLeft: number): number => {
 };
 
 /**
- * Apply adapative filtering to RGBA data.
+ * Apply adaptive filtering to RGBA data.
  * @param data - The data to filter.
  * @param width - The width of the image.
  * @param height - The height of the image.

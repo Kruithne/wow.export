@@ -218,7 +218,7 @@ export class WMOLoader {
 	}
 
 	/**
-	 * Read a position, corrected from WoW's co-ordinate system.
+	 * Read a position, corrected from WoW's coordinate system.
 	 */
 	readPosition(): Array<number> {
 		const x = this.data.readFloat();

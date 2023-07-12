@@ -176,7 +176,7 @@ if (argv.includes('--framework')) {
 // If --package is set, package the build into a ZIP file.
 // Packages are generated to /bin/packages/*
 if (argv.includes('--package')) {
-	// Step 9: Pacakge build into a ZIP file.
+	// Step 9: Package build into a ZIP file.
 	const packageDir = path.join('bin', 'packages');
 	if (!fs.existsSync(packageDir))
 		fs.mkdirSync(packageDir, { recursive: true });
