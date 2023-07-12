@@ -4,7 +4,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { serve, ServerStop, caution, panic } from 'spooder';
+import { serve, ServerStop, caution, ErrorWithMetadata } from 'spooder';
 import { get_git_head } from './util';
 
 const TMP_RELEASE_DIR = path.join(os.tmpdir(), 'wow_export_srv_release_tmp');
@@ -19,12 +19,12 @@ async function spawn_safe(command: string): Promise<void> {
 	await proc.exited;
 
 	if (proc.exitCode !== 0) {
-		await panic(`Command "${command_parts[0]}" exited with code ${proc.exitCode}`, {
+		throw new ErrorWithMetadata(`Command "${command_parts[0]}" exited with code ${proc.exitCode}`, {
 			exit_code: proc.exitCode,
 			signal_code: proc.signalCode,
 			pid: proc.pid,
-			stderr: (await new Response(proc.stderr).text()).split('\n'),
-			stdout: (await new Response(proc.stdout).text()).split('\n')
+			stderr: proc.stderr,
+			stdout: proc.stdout
 		});
 	}
 }
