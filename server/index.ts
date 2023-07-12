@@ -24,8 +24,8 @@ async function spawn_safe(command: string): Promise<void> {
 			exit_code: proc.exitCode,
 			signal_code: proc.signalCode,
 			pid: proc.pid,
-			stderr: proc.stderr,
-			stdout: proc.stdout
+			//stderr: proc.stderr,
+			//stdout: proc.stdout
 		});
 	}
 }
