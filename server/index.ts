@@ -109,6 +109,8 @@ server.route('/services/internal/upload_release_chunk/:build', async (req: Reque
 
 		// TODO: cleanup other builds
 	}
+
+	return 200; // ok
 });
 
 server.dir('/', './front', { index: 'index.html' });
