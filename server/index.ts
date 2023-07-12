@@ -4,7 +4,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { serve, ServerStop, caution } from 'spooder';
+import { serve, ServerStop, caution, panic } from 'spooder';
 import { get_git_head } from './util';
 
 const TMP_RELEASE_DIR = path.join(os.tmpdir(), 'wow_export_srv_release_tmp');
@@ -14,11 +14,19 @@ function verify_build_key(url: URL): boolean {
 }
 
 async function spawn_safe(command: string): Promise<void> {
-	const proc = Bun.spawn(command.split(' '));
+	const command_parts = command.split(' ');
+	const proc = Bun.spawn(command_parts);
 	await proc.exited;
 
-	if (proc.exitCode !== 0)
-		throw new Error(`Command "${command}" exited with code ${proc.exitCode}`);
+	if (proc.exitCode !== 0) {
+		await panic(`Command "${command_parts[0]}" exited with code ${proc.exitCode}`, {
+			exit_code: proc.exitCode,
+			signal_code: proc.signalCode,
+			pid: proc.pid,
+			stderr: (await new Response(proc.stderr).text()).split('\n'),
+			stdout: (await new Response(proc.stdout).text()).split('\n')
+		});
+	}
 }
 
 function write_file_offset(file_name: string, data: Buffer, offset: number): Promise<number> {
