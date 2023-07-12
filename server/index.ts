@@ -19,6 +19,7 @@ async function spawn_safe(command: string): Promise<void> {
 	await proc.exited;
 
 	if (proc.exitCode !== 0) {
+		console.log(`exit code is ${proc.exitCode}`);
 		throw new ErrorWithMetadata(`Command "${command_parts[0]}" exited with code ${proc.exitCode}`, {
 			exit_code: proc.exitCode,
 			signal_code: proc.signalCode,
@@ -48,6 +49,7 @@ function write_file_offset(file_name: string, data: Buffer, offset: number): Pro
 const server = serve(3001);
 
 server.error((err: Error) => {
+	console.log('triggered internal server error');
 	caution(err);
 	return new Response('The kākāpō has exploded (internal server error)', { status: 500 });
 });
@@ -100,6 +102,7 @@ server.route('/services/internal/upload_release_chunk/:build', async (req: Reque
 	await write_file_offset(zip_file_path, chunk_data, offset);
 
 	if (form_data.has('final')) {
+		console.log('processing final chunk');
 		const release_dir = path.join(os.homedir(), 'wowexport', 'release', git_head);
 		await fs.promises.mkdir(release_dir, { recursive: true });
 
