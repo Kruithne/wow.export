@@ -50,6 +50,7 @@ const server = serve(3001);
 
 server.error((err: Error) => {
 	console.log('triggered internal server error');
+	console.log(err);
 	caution(err);
 	return new Response('The kākāpō has exploded (internal server error)', { status: 500 });
 });
