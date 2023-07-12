@@ -22,6 +22,6 @@
   },
   "type": "module",
   "dependencies": {
-    "spooder": "^3.2.2"
+    "spooder": "^3.2.3"
   }
 }
