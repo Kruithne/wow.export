@@ -217,7 +217,7 @@ export default defineComponent({
 					const index = this.mask.findIndex((e: number) => e === 1);
 
 					if (index > -1) {
-						// Translate the index into chunk co-ordinates, expand those to in-game co-ordinates
+						// Translate the index into chunk coordinates, expand those to in-game coordinates
 						// and then offset by half a chunk so that we are centered on the chunk.
 						const chunkX = index % Constants.GAME.MAP_SIZE;
 						const chunkY = Math.floor(index / Constants.GAME.MAP_SIZE);
@@ -470,7 +470,7 @@ export default defineComponent({
 		 * @param y
 		 */
 		setMapPosition: function(x: number, y: number): void {
-			// Translate to WoW co-ordinates.
+			// Translate to WoW coordinates.
 			const posX = y;
 			const posY = x;
 

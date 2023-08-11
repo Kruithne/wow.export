@@ -118,7 +118,7 @@ export async function load(): Promise<void> {
 }
 
 /**
- * Asyncronously save tact keys to disk.
+ * Asynchronously save tact keys to disk.
  */
 export async function save(): Promise<void> {
 	if (!isSaving) {

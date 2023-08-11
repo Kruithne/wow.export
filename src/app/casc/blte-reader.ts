@@ -133,7 +133,7 @@ export default class BLTEReader extends BufferWrapper {
 		}
 
 		this.buffer = Buffer.alloc(allocSize);
-		this.processAllBlocks(); // NIT: We no longer have bounds checking, so we just read all blocks for now. This means things like encoding decoding will take longer than neccesary, but shouldn't affect a lot outside of that.
+		this.processAllBlocks(); // NIT: We no longer have bounds checking, so we just read all blocks for now. This means things like encoding decoding will take longer than necessary, but shouldn't affect a lot outside of that.
 	}
 
 	/**
