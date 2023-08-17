@@ -1,3 +1,6 @@
+0.1.50 (17-08-2023)
+- Fixed loading of 10.1.7 installations after Blizzard changed something.
+
 0.1.49 (23-05-2023)
 - Added mainline PTR 2 to the product list.
 - Added file type detection for .anim (2x), .bls, .tex, .avi and .db2.
