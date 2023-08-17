@@ -266,8 +266,18 @@ class CASC {
 		const rootEntries = this.rootEntries;
 
 		if (magic == ROOT_MAGIC) { // 8.2
-			const totalFileCount = root.readUInt32LE();
-			const namedFileCount = root.readUInt32LE();
+			let totalFileCount = root.readUInt32LE();
+			let namedFileCount = root.readUInt32LE();
+
+			// TEMP FIX: If total file count is very low, we're dealing with a post-10.1.7 root format.
+			if (totalFileCount < 100) {
+				// The already read values totalFileCount and namedFileCount are now headerSize and version respectively.
+				// However, since we already read those we just reread the proper file counts for now.
+				totalFileCount = root.readUInt32LE();
+				namedFileCount = root.readUInt32LE();
+				root.readUInt32LE(); // Padding?
+			}
+
 			const allowNamelessFiles = totalFileCount !== namedFileCount;
 		
 			while (root.remainingBytes > 0) {
