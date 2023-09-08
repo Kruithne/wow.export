@@ -31,8 +31,8 @@ const get = async (url, options = {}) => {
 	headers['User-Agent'] = constants.USER_AGENT;
 
 	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
-	while (!res || (res.statusCode === 301 && redirects < MAX_HTTP_REDIRECT)) {
-		if (res && res.statusCode === 301)
+	while (!res || ((res.statusCode === 301 || res.statusCode === 302) && redirects < MAX_HTTP_REDIRECT)) {
+		if (res && (res.statusCode === 301 || res.statusCode === 302))
 			url = res.headers.location;
 
 		res = await new Promise((resolve, reject) => http.get(url, options, resolve).on('error', reject));
