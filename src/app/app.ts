@@ -915,12 +915,7 @@ interface NWFile {
 	if (process.env.NODE_ENV !== 'development') {
 		Updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
-				// Update is available, prompt to update. If user declines,
-				// begin checking the local Blender add-on version.
-				State.state.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-					'Update Now': () => Updater.applyUpdate(),
-					'Maybe Later': () => Blender.checkLocalVersion()
-				}, -1, false);
+				Updater.applyUpdate()
 			} else {
 				// No update available, start checking Blender add-on.
 				Blender.checkLocalVersion();
