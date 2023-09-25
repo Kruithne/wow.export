@@ -1,3 +1,8 @@
+0.1.51 (25-09-2023)
+- Added fallback URLs for listfile, encryption key and data definition downloads.
+- Added support for HTTP 302 redirects when downloading files.
+- Added logging of listfile download failure reason.
+
 0.1.50 (17-08-2023)
 - Fixed loading of 10.1.7 installations after Blizzard changed something.
 
