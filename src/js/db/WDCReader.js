@@ -169,8 +169,9 @@ class WDCReader {
 
 		// No cached definition, download updated DBD and check again.
 		if (structure === null) {
+			let dbdUrl = util.format(core.view.config.dbdURL, tableName);
+
 			try {
-				const dbdUrl = util.format(core.view.config.dbdURL, tableName);
 				log.write('No cached DBD, downloading new from %s', dbdUrl);
 
 				rawDbd = await generics.downloadFile(dbdUrl);
@@ -182,7 +183,23 @@ class WDCReader {
 				structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 			} catch (e) {
 				log.write(e);
-				throw new Error('Unable to download DBD for ' + tableName);
+				log.write('Unable to download DBD for ' + tableName + ', trying fallback URL');
+
+				try {
+					dbdUrl = util.format(core.view.config.dbdFallbackURL, tableName);
+					log.write('No cached DBD, downloading new from fallback %s', dbdUrl);
+
+					rawDbd = await generics.downloadFile(dbdUrl);
+
+					// Persist the newly download DBD to disk for future loads.
+					await casc.cache.storeFile(dbdName, rawDbd, constants.CACHE.DIR_DBD);
+
+					// Parse the updated DBD and check for definition.
+					structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
+				} catch (e2) {
+					log.write(e2);
+					throw new Error('Unable to download DBD for ' + tableName);
+				}
 			}
 		}
 

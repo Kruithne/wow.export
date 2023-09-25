@@ -6,15 +6,18 @@
 //      Linux: ~/.config/<name>/wow.export
 {
 	"listfileURL": "https://www.kruithne.net/wow.export/data/listfile/master?v=%s",
+	"listfileFallbackURL": "https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv",
 	"listfileCacheRefresh": 3,
 	"listfileSortByID": false,
 	"dbdURL": "https://www.kruithne.net/wow.export/data/dbd/?def=%s",
+	"dbdFallbackURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/master/definitions/%s.dbd",
 	"updateURL": "https://www.kruithne.net/wow.export/update/%s/",
 	"cacheExpiry": 7,
 	"cascLocale": 2,
 	"recentLocal": [],
 	"sourceSelectUserRegion": null,
 	"tactKeysURL": "https://www.kruithne.net/wow.export/data/tact/wow",
+	"tactKeysFallbackURL": "https://raw.githubusercontent.com/wowdev/TACTKeys/master/WoW.txt",
 	"exportDirectory": "",
 	"copyMode": "FULL",
 	"pasteSelection": false,

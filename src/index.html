@@ -275,7 +275,8 @@
 					<div>
 						<h1>Encryption Keys</h1>
 						<p>Remote URL used to update keys for encrypted files.</p>
-						<input type="text" v-model.trim="configEdit.tactKeysURL"/>
+						<p>Primary <input type="text" class="long" v-model.trim="configEdit.tactKeysURL"/></p>
+						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.tactKeysFallbackURL"/></p>
 					</div>
 					<div>
 						<h1>Add Encryption Key</h1>
@@ -287,7 +288,8 @@
 					<div>
 						<h1>Listfile Source</h1>
 						<p>Remote URL or local path used for updating the CASC listfile. (Must use same format)</p>
-						<input type="text" v-model.trim="configEdit.listfileURL"/>
+						<p>Primary <input type="text" class="long" v-model.trim="configEdit.listfileURL"/></p>
+						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.listfileFallbackURL" /></p>
 					</div>
 					<div>
 						<h1>Listfile Update Frequency</h1>
@@ -297,7 +299,8 @@
 					<div>
 						<h1>Data Table Definition Repository</h1>
 						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
-						<input type="text" v-model.trim="configEdit.dbdURL"/>
+						<p>Primary <input type="text" class="long" v-model.trim="configEdit.dbdURL"/></p>
+						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.dbdFallbackURL" /></p>
 					</div>
 					<div>
 						<h1>Enable Remote Control Protocol (Advanced)</h1>
