@@ -77,7 +77,9 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
 
 				cache.meta.lastListfileUpdate = Date.now();
 				cache.saveManifest();
-			} catch {
+			} catch (e) {
+				log.write(e);
+
 				if (cached === null)
 					throw new Error('Failed to download listfile, no cached version for fallback');
 
