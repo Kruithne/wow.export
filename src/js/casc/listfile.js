@@ -72,31 +72,18 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
 
 		if (requireDownload) {
 			try {
-				data = await generics.downloadFile(url);
+				const fallback_url = String(core.view.config.listfileFallbackURL);
+				data = await generics.downloadFile([url, fallback_url]);
+
 				cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
 
 				cache.meta.lastListfileUpdate = Date.now();
 				cache.saveManifest();
 			} catch (e) {
-				log.write(e);
-				log.write('Failed to download listfile, trying fallback URL.');
-				
-				try {
-					url = String(core.view.config.listfileFallbackURL);
-					data = await generics.downloadFile(url);
-					cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
+				if (cached === null)
+					throw new Error('Failed to download listfile, no cached version for fallback');
 
-					cache.meta.lastListfileUpdate = Date.now();
-					cache.saveManifest();
-				} catch (e2) {
-					log.write(e2);
-					log.write('Failed to download listfile, using cached as redundancy.');
-					
-					if (cached === null)
-						throw new Error('Failed to download listfile, no cached version for fallback');
-
-					data = cached;
-				}
+				data = cached;
 			}
 		} else {
 			data = cached;
