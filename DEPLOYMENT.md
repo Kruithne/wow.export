@@ -4,7 +4,7 @@ This guide explains how to build and deploy an update for wow.export.
 1) Compile a new build, for example `node ./build.js win-x64`
 2) Publish the new build, `node ./publish.js win-x64`
 
-> SFTP settings will need to be configured in `sftp.conf`, ensure this file is not included in source control. See available SFTP configuration at https://www.npmjs.com/package/ssh2-sftp-client. For the `privateKey` field, provide a local path.
+> SFTP settings will need to be configured in the environment. See available SFTP configuration at https://www.npmjs.com/package/ssh2-sftp-client. For the `privateKey` field, provide a local path.
 
 ## Manual (Legacy)
 
