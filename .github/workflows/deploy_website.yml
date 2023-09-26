@@ -1,4 +1,4 @@
-name: Deploy wow.export
+name: Deploy website
 
 on: workflow_dispatch
 jobs: 
