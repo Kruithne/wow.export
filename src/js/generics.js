@@ -10,6 +10,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
+const log = require('../log');
 
 /**
  * Async wrapper for http.get()/https.get().
@@ -117,19 +118,30 @@ const readJSON = async (file, ignoreComments = false) => {
  * Download a file (optionally to a local file).
  * GZIP deflation will be used if headers are set.
  * Data is always returned even if `out` is provided.
- * @param {string} url Remote URL of the file to download.
+ * @param {string|string[]} url Remote URL of the file to download.
  * @param {string} out Optional file to write file to.
  * @param {number} partialOfs Partial content start offset.
  * @param {number} partialLen Partial content size.
  * @param {boolean} deflate If true, will deflate data regardless of header.
  */
 const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false) => {
-	const res = await fetch(url, {
+	const fetch_options = {
 		headers: {
 			'User-Agent': constants.USER_AGENT,
 			'Range': partialOfs > -1 && partialLen > -1 ? `bytes=${partialOfs}-${partialOfs + partialLen - 1}` : undefined
 		}
-	});
+	};
+
+	let res = null;
+	let index = 1;
+	const url_stack = Array.isArray(url) ? url : [url];
+
+	while ((res === null || !res.ok) && url_stack.length > 0) {
+		const url = url_stack.shift();
+		res = await fetch(url, fetch_options);
+
+		log.write(`downloadFile -> [${index++}][${res.status}] ${url}`);
+	}
 
 	if (!res.ok)
 		throw new Error(`Unable to download file ${url}: HTTP ${res.status} ${res.statusText}`);
