@@ -112,7 +112,7 @@ const load = async () => {
 	}
 
 	if (remoteAdded > 0)
-		log.write('Added %d tact keys from %s', remoteAdded, url);
+		log.write('Added %d tact keys from %s', remoteAdded, tact_url);
 };
 
 /**
