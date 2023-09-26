@@ -10,6 +10,7 @@
 
 @font-face {
 	font-family: 'Selawik';
+	font-display: swap;
 	src: local('Segoe UI Regular'), url('../fonts/selawk.woff2') format('woff2');
 }
 
@@ -17,6 +18,7 @@
 @font-face {
 	font-family: 'Selawik';
 	font-weight: bold;
+	font-display: swap;
 	src: local('Segoe UI Bold'), url('../fonts/selawkb.woff2') format('woff2');
 }
 
