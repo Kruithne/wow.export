@@ -70,19 +70,6 @@ const ping = async (url) => {
 };
 
 /**
- * Consume the entire contents of a stream as a UTF8 string.
- * @param {object} stream 
- */
-const consumeUTF8Stream = async (stream) => {
-	return new Promise(resolve => {
-		let data = '';
-		stream.setEncoding('utf8');
-		stream.on('data', chunk => data += chunk);
-		stream.on('end', () => resolve(data));
-	});
-};
-
-/**
  * Attempt to parse JSON, returning undefined on failure.
  * Inline function to keep code paths clean of unnecessary try/catch blocks.
  * @param {string} data 
@@ -333,7 +320,6 @@ module.exports = {
 	downloadFile,
 	ping,
 	get,
-	consumeUTF8Stream,
 	queue,
 	redraw,
 	fileExists,
