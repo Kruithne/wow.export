@@ -16,9 +16,7 @@ const SFTPClient = require('ssh2-sftp-client');
 			port: process.env.SFTP_PORT ?? 22,
 			username: process.env.SFTP_USER,
 			password: process.env.SFTP_PASS,
-			privateKey: process.env.SFTP_PRIVATE_KEY,
-			remoteUpdateDir: process.env.SFTP_REMOTE_UPDATE_DIR,
-			remotePackageDir: process.env.SFTP_REMOTE_PACKAGE_DIR
+			privateKey: process.env.SFTP_PRIVATE_KEY
 		};
 
 		// Load private key from disk if defined.
@@ -32,8 +30,8 @@ const SFTPClient = require('ssh2-sftp-client');
 		sftp = new SFTPClient();
 		await sftp.connect();
 
-		await sftp.mkdir(sftp_config.remoteUpdateDir, true);
-		await sftp.uploadDir('./website', sftp_config.remoteUpdateDir);
+		await sftp.mkdir(process.env.SFTP_REMOTE_UPDATE_DIR, true);
+		await sftp.uploadDir('./website', process.env.SFTP_REMOTE_UPDATE_DIR);
 	} catch (e) {
 		console.error('Publish failed due to error: %s', e.message);
 		console.error(e.stack);
