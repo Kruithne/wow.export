@@ -84,22 +84,12 @@ const load = async () => {
 		// No tactKeys cached locally, doesn't matter.
 	}
 
-	// Update from remote server.
-	let res;
-	let url = core.view.config.tactKeysURL;
-	try {
-		res = await generics.get(url);
-		if (!res.ok) {
-			log.write('Unable to update tactKeys, HTTP %d', res.status);
-			throw new Error('Unable to update tactKeys');
-		}
-	} catch (e) {
-		log.write(e);
-		url = core.view.config.tactKeysFallbackURL;
-		res = await generics.get(url);
-		if (!res.ok)
-			log.write('Unable to update tactKeys from fallback, HTTP %d', res.status);
-	}
+	const tact_url = core.view.config.tactKeysURL;
+	const tact_url_fallback = core.view.config.tactKeysFallbackURL;
+	const res = await generics.get([tact_url, tact_url_fallback]);
+
+	if (!res.ok)
+		throw new Error(`Unable to update tactKeys, HTTP ${res.status}`);
 
 	const data = await res.text();
 	const lines = data.split(/\r\n|\n|\r/);

@@ -15,17 +15,31 @@ const log = require('../log');
 /**
  * Async wrapper for http.get()/https.get().
  * The module used is determined by the prefix of the URL.
- * @param {string} url 
+ * @param {string|string[]} url 
  */
 const get = async (url) => {
-	return fetch(url, {
+	const fetch_options = {
 		cache: 'no-cache',
 		headerS: {
 			'User-Agent': constants.USER_AGENT,
 		},
 
 		redirect: 'follow'
-	});
+	};
+
+	let index = 1;
+	let res = null;
+
+	const url_stack = Array.isArray(url) ? url : [url];
+
+	while ((res === null || !res.ok) && url_stack.length > 0) {
+		const url = url_stack.shift();
+		res = await fetch(url, fetch_options);
+
+		log.write(`get -> [${index++}][${res.status}] ${url}`);
+	}
+
+	return res;
 };
 
 /**
