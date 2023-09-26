@@ -30,8 +30,8 @@ const SFTPClient = require('ssh2-sftp-client');
 		sftp = new SFTPClient();
 		await sftp.connect(sftp_config);
 
-		await sftp.mkdir(process.env.SFTP_REMOTE_UPDATE_DIR, true);
-		await sftp.uploadDir('./website', process.env.SFTP_REMOTE_UPDATE_DIR);
+		await sftp.mkdir(process.env.SFTP_REMOTE_WEBSITE_DIR, true);
+		await sftp.uploadDir('./website', process.env.SFTP_REMOTE_WEBSITE_DIR);
 	} catch (e) {
 		console.error('Publish failed due to error: %s', e.message);
 		console.error(e.stack);
