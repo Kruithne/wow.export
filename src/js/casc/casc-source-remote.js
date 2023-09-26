@@ -69,10 +69,10 @@ class CASCRemote extends CASC {
 		const url = this.host + product + file;
 		const res = await generics.get(url);
 
-		if (res.statusCode !== 200)
-			throw new Error(util.format('HTTP %d from remote CASC endpoint: %s', res.statusCode, url));
+		if (!res.ok)
+			throw new Error(util.format('HTTP %d from remote CASC endpoint: %s', res.status, url));
 
-		return VersionConfig(await generics.consumeUTF8Stream(res));
+		return VersionConfig(await res.text());
 	}
 
 	/**
@@ -83,10 +83,10 @@ class CASCRemote extends CASC {
 		const url = this.host + 'config/' + this.formatCDNKey(key);
 		const res = await generics.get(url);
 
-		if (res.statusCode !== 200)
-			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d)', key, res.statusCode));
+		if (!res.ok)
+			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d)', key, res.status));
 
-		return CDNConfig(await generics.consumeUTF8Stream(res));
+		return CDNConfig(await res.text());
 	}
 
 	/**

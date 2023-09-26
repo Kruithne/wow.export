@@ -89,19 +89,19 @@ const load = async () => {
 	let url = core.view.config.tactKeysURL;
 	try {
 		res = await generics.get(url);
-		if (res.statusCode !== 200) {
-			log.write('Unable to update tactKeys, HTTP %d', res.statusCode);
+		if (!res.ok) {
+			log.write('Unable to update tactKeys, HTTP %d', res.status);
 			throw new Error('Unable to update tactKeys');
 		}
 	} catch (e) {
 		log.write(e);
 		url = core.view.config.tactKeysFallbackURL;
 		res = await generics.get(url);
-		if (res.statusCode !== 200)
-			log.write('Unable to update tactKeys from fallback, HTTP %d', res.statusCode);
+		if (!res.ok)
+			log.write('Unable to update tactKeys from fallback, HTTP %d', res.status);
 	}
 
-	const data = await generics.consumeUTF8Stream(res);
+	const data = await res.text();
 	const lines = data.split(/\r\n|\n|\r/);
 	let remoteAdded = 0;
 	

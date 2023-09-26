@@ -4,7 +4,6 @@
 	License: MIT
  */
 const path = require('path');
-const util = require('util');
 const fs = require('fs');
 const fsp = fs.promises;
 const zlib = require('zlib');
@@ -12,34 +11,20 @@ const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
 
-const MAX_HTTP_REDIRECT = 4;
-
-const inflate = util.promisify(zlib.inflate);
-
 /**
  * Async wrapper for http.get()/https.get().
  * The module used is determined by the prefix of the URL.
  * @param {string} url 
- * @param {object} options
  */
-const get = async (url, options = {}) => {
-	const http = require(url.startsWith('https') ? 'https' : 'http');
-	let redirects = 0;
-	let res = null;
+const get = async (url) => {
+	return fetch(url, {
+		cache: 'no-cache',
+		headerS: {
+			'User-Agent': constants.USER_AGENT,
+		},
 
-	const headers = options.headers = options.headers || {};
-	headers['User-Agent'] = constants.USER_AGENT;
-
-	// Follow 301 redirects up to a count of MAX_HTTP_REDIRECT.
-	while (!res || ((res.statusCode === 301 || res.statusCode === 302) && redirects < MAX_HTTP_REDIRECT)) {
-		if (res && (res.statusCode === 301 || res.statusCode === 302))
-			url = res.headers.location;
-
-		res = await new Promise((resolve, reject) => http.get(url, options, resolve).on('error', reject));
-		redirects++;
-	}
-
-	return res;
+		redirect: 'follow'
+	});
 };
 
 /**
@@ -116,13 +101,11 @@ const parseJSON = (data) => {
  * @param {string} url 
  */
 const getJSON = async (url) => {
-	let res = await get(url);
+	const res = await get(url);
+	if (!res.ok)
+		throw new Error(`Unable to request JSON from end-point. HTTP ${res.status} ${res.statusText}`);
 	
-	// Abort with anything other than HTTP 200 OK at this point.
-	if (res.statusCode !== 200)
-		throw new Error('Unable to request JSON from end-point. HTTP ' + res.statusCode);
-
-	return JSON.parse(await consumeUTF8Stream(res));
+	return res.json();
 };
 
 /**
@@ -154,45 +137,31 @@ const readJSON = async (file, ignoreComments = false) => {
  * @param {boolean} deflate If true, will deflate data regardless of header.
  */
 const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false) => {
-	const headers = {'Accept-Encoding': 'gzip'};
-	if (partialOfs > -1 && partialLen > -1)
-		headers.Range = util.format('bytes=%d-%d', partialOfs, partialOfs + partialLen - 1);
-
-	const res = await get(url, { headers });
-
-	if (res.statusCode !== 200 && res.statusCode !== 206)
-		throw new Error(util.format('Unable to download file %s: HTTP %d', url, res.statusCode));
-
-	let totalBytes = 0;
-	let buffers = [];
-
-	let source = res;
-	if (res.headers['content-encoding'] === 'gzip') {
-		source = zlib.createGunzip();
-		res.pipe(source);
-	}
-
-	await new Promise(resolve => {
-		source.on('data', chunk => {
-			totalBytes += chunk.byteLength;
-			buffers.push(chunk);
-		});
-
-		source.on('end', resolve);
+	const res = await fetch(url, {
+		headers: {
+			'User-Agent': constants.USER_AGENT,
+			'Range': partialOfs > -1 && partialLen > -1 ? `bytes=${partialOfs}-${partialOfs + partialLen - 1}` : undefined
+		}
 	});
 
-	let merged = Buffer.concat(buffers, totalBytes);
+	if (!res.ok)
+		throw new Error(`Unable to download file ${url}: HTTP ${res.status} ${res.statusText}`);
 
+	let data = await res.arrayBuffer();
+	
+	// Delate the file regardless of the headers.
 	if (deflate)
-		merged = await inflate(merged);
+		data = await new Promise(resolve => zlib.inflate(data, (err, result) => resolve(result)));
+
+	const wrapped = new BufferWrapper(data);
 
 	// Write the file to disk if requested.
 	if (out) {
 		await createDirectory(path.dirname(out));
-		await fsp.writeFile(out, merged);
+		await wrapped.writeToFile(out);
 	}
 
-	return new BufferWrapper(merged);
+	return wrapped;
 };
 
 /**
