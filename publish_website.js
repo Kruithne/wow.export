@@ -28,7 +28,7 @@ const SFTPClient = require('ssh2-sftp-client');
 		console.log('Establishing SFTP connection...');
 
 		sftp = new SFTPClient();
-		await sftp.connect();
+		await sftp.connect(sftp_config);
 
 		await sftp.mkdir(process.env.SFTP_REMOTE_UPDATE_DIR, true);
 		await sftp.uploadDir('./website', process.env.SFTP_REMOTE_UPDATE_DIR);
