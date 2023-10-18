@@ -286,6 +286,7 @@ class M2Exporter {
 				}, texture);
 			}
 
+			json.addProperty('fileType', 'm2');
 			json.addProperty('fileDataID', this.fileDataID);
 			json.addProperty('fileName', listfile.getByID(this.fileDataID));
 			json.addProperty('internalName', this.m2.name);

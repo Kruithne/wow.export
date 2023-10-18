@@ -583,6 +583,7 @@ class WMOExporter {
 			helper.setCurrentTaskName(wmoName + ', writing meta data');
 
 			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+			json.addProperty('fileType', 'wmo');
 			json.addProperty('fileDataID', wmo.fileDataID);
 			json.addProperty('fileName', wmo.fileName);
 			json.addProperty('version', wmo.version);
