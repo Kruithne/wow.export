@@ -10,7 +10,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
-const log = require('../log');
+const log = require('./log');
 
 /**
  * Async wrapper for http.get()/https.get().
