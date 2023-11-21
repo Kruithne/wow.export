@@ -168,8 +168,14 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 if settings.useAlpha:
                     node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
+                specularInputName = 'Specular'
+
+                # New Blender 4.0+ Principle BSDF change specular input name
+                if bpy.app.version >= (4, 0, 0):
+                    specularInputName = 'Specular IOR Level'
+
                 # Set the specular value to 0 by default.
-                principled.inputs['Specular'].default_value = 0
+                principled.inputs[specularInputName].default_value = 0
 
             obj.data.materials.append(bpy.data.materials[materialName])
 
