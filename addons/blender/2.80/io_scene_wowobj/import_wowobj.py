@@ -77,22 +77,28 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     collection = bpy.context.view_layer.active_layer_collection.collection.objects
 
     ## Materials file (.mtl)
-    materials = dict()
+    materials = {}
     matname = ''
     matfile = ''
     if mtlfile != '':
         with open(os.path.join(baseDir, mtlfile.decode('utf-8') ), 'r') as f:
-            for line in f:
-                line_split = line.split()
-                if not line_split:
-                    continue
-                line_start = line_split[0]
+            with open(os.path.join(baseDir,'temp_materials.csv'), 'w', newline='') as csvfile:
+                fieldnames = ['material_name', 'texture_location']
+                matcsvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                matcsvwriter.writeheader()
+                for line in f:
+                    line_split = line.split()
+                    if not line_split:
+                        continue
+                    line_start = line_split[0]
 
-                if line_start == 'newmtl':
-                    matname = line_split[1]
-                elif line_start == 'map_Kd':
-                    matfile = line_split[1]
-                    materials[matname] = os.path.join(baseDir, matfile)
+                    if line_start == 'newmtl':
+                        matname = line_split[1]
+                    elif line_start == 'map_Kd':
+                        matfile = line_split[1]
+                        matcsvwriter.writerow({'material_name': matname, 'texture_location': os.path.join(baseDir, matfile)})
+                        print("Writing material_name: " + matname + " with texture_location: " + os.path.join(baseDir, matfile) + " to " + os.path.join(baseDir,'temp_materials.csv'))
+                        # materials[matname] = os.path.join(baseDir, matfile)
 
     if bpy.ops.object.select_all.poll():
         bpy.ops.object.select_all(action='DESELECT')
@@ -113,71 +119,75 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     # Create a new material instance for each material entry.
     if settings.importTextures:
-        for materialName, textureLocation in materials.items():
-            material = None
-            if materialName in bpy.data.materials:
-                material = bpy.data.materials[materialName]
-            else:
-                material = bpy.data.materials.new(name=materialName)
-                material.use_nodes = True
-                material.blend_method = 'CLIP'
+        with open(os.path.join(baseDir,'temp_materials.csv'), newline='') as csvfile:
+            matcsvreader = csv.DictReader(csvfile, delimiter=' ', quotechar='|')
+            for row in matcsvreader:
+                materialName = row['material_name']
+                textureLocation = row['texture_location']
 
-                node_tree = material.node_tree
-                nodes = node_tree.nodes
+                if materialName in bpy.data.materials:
+                    material = bpy.data.materials[truncate_name(materialName)]
+                else:
+                    material = bpy.data.materials.new(name=truncate_name(materialName))
+                    material.use_nodes = True
+                    material.blend_method = 'CLIP'
 
-                # Note on socket reference localization:
-                # Unlike nodes, sockets can be referenced in English regardless of localization.
-                # This will break if the user sets the socket names to any non-default value.
+                    node_tree = material.node_tree
+                    nodes = node_tree.nodes
 
-                # Create new Principled BSDF and Image Texture nodes.
-                principled = None
-                outNode = None
+                    # Note on socket reference localization:
+                    # Unlike nodes, sockets can be referenced in English regardless of localization.
+                    # This will break if the user sets the socket names to any non-default value.
 
-                for node in nodes:
-                    if not principled and node.type == 'BSDF_PRINCIPLED':
-                        principled = node
+                    # Create new Principled BSDF and Image Texture nodes.
+                    principled = None
+                    outNode = None
 
-                    if not outNode and node.type == 'OUTPUT_MATERIAL':
-                        outNode = node
+                    for node in nodes:
+                        if not principled and node.type == 'BSDF_PRINCIPLED':
+                            principled = node
 
-                    if principled and outNode:
-                        break
+                        if not outNode and node.type == 'OUTPUT_MATERIAL':
+                            outNode = node
 
-                # If there is no Material Output node, create one.
-                if not outNode:
-                    outNode = nodes.new('ShaderNodeOutputMaterial')
+                        if principled and outNode:
+                            break
 
-                # If there is no default Principled BSDF node, create one and link it to material output.
-                if not principled:
-                    principled = nodes.new('ShaderNodeBsdfPrincipled')
-                    node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+                    # If there is no Material Output node, create one.
+                    if not outNode:
+                        outNode = nodes.new('ShaderNodeOutputMaterial')
 
-                # Create a new Image Texture node.
-                image = nodes.new('ShaderNodeTexImage')
+                    # If there is no default Principled BSDF node, create one and link it to material output.
+                    if not principled:
+                        principled = nodes.new('ShaderNodeBsdfPrincipled')
+                        node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
 
-                # Load the image file itself if necessary.
-                imageName = os.path.basename(textureLocation)
-                if not imageName in bpy.data.images:
-                    bpy.data.images.load(textureLocation)
+                    # Create a new Image Texture node.
+                    image = nodes.new('ShaderNodeTexImage')
 
-                image.image = bpy.data.images[imageName]
+                    # Load the image file itself if necessary.
+                    imageName = os.path.basename(textureLocation)
+                    if not imageName in bpy.data.images:
+                        bpy.data.images.load(textureLocation)
 
-                node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+                    image.image = bpy.data.images[truncate_name(imageName)]
 
-                image.image.alpha_mode = 'CHANNEL_PACKED'
-                if settings.useAlpha:
-                    node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+                    node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
 
-                specularInputName = 'Specular'
+                    image.image.alpha_mode = 'CHANNEL_PACKED'
+                    if settings.useAlpha:
+                        node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
-                # New Blender 4.0+ Principle BSDF change specular input name
-                if bpy.app.version >= (4, 0, 0):
-                    specularInputName = 'Specular IOR Level'
+                    specularInputName = 'Specular'
 
-                # Set the specular value to 0 by default.
-                principled.inputs[specularInputName].default_value = 0
+                    # New Blender 4.0+ Principle BSDF change specular input name
+                    if bpy.app.version >= (4, 0, 0):
+                        specularInputName = 'Specular IOR Level'
 
-            obj.data.materials.append(bpy.data.materials[materialName])
+                    # Set the specular value to 0 by default.
+                    principled.inputs[specularInputName].default_value = 0
+
+                obj.data.materials.append(bpy.data.materials[truncate_name(materialName)])
 
     ## Meshes
     bm = bmesh.new()
@@ -391,7 +401,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     else:
                         originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                         importedFile = originalObject.copy()
-                        collection.link(importedFile)
+                        if not settings.createDoodadSetCollections:
+                            collection.link(importedFile)
 
                     importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
 
@@ -403,5 +414,14 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     importedFile.parent = givenParent or obj
                     if row['ScaleFactor']:
                         importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
-
     return obj
+
+def truncate_name(name):
+    # Maximum length for a Blender name
+    max_length = 63
+
+    # Truncate the name if it's longer than max_length
+    if len(name) > max_length:
+        return name[:max_length]
+    else:
+        return name
