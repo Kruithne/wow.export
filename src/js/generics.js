@@ -160,7 +160,7 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate 
 	if (!res.ok)
 		throw new Error(`Unable to download file ${url}: HTTP ${res.status} ${res.statusText}`);
 
-	let data = await res.arrayBuffer();
+	let data = Buffer.from(await res.arrayBuffer());
 	
 	// Delate the file regardless of the headers.
 	if (deflate)
