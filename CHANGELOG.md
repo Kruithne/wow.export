@@ -1,3 +1,6 @@
+0.1.52 (05-12-2023)
+- Updated add-on to support Blender 4.0.
+
 0.1.51 (25-09-2023)
 - Added fallback URLs for listfile, encryption key and data definition downloads.
 - Added support for HTTP 302 redirects when downloading files.
