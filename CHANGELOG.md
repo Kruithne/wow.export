@@ -1,3 +1,6 @@
+0.1.53 (05-12-2023)
+- Fixed an issue that caused wow.export to crash on startup.
+
 0.1.52 (05-12-2023)
 - Updated add-on to support Blender 4.0.
 
