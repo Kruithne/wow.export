@@ -11,6 +11,8 @@ const crypto = require('crypto');
 const BufferWrapper = require('./buffer');
 const constants = require('./constants');
 const log = require('./log');
+const https = require('https');
+const http = require('http');
 
 /**
  * Async wrapper for http.get()/https.get().
@@ -128,53 +130,71 @@ const readJSON = async (file, ignoreComments = false) => {
 	}
 };
 
+function requestData(url, partialOfs, partialLen) {
+	return new Promise((resolve, reject) => {
+		const options = {
+			headers: {
+				'User-Agent': constants.USER_AGENT
+			}
+		};
+		
+		if (partialOfs > -1 && partialLen > -1)
+			options.headers.Range = `bytes=${partialOfs}-${partialOfs + partialLen - 1}`;
+		
+		const protocol = url.startsWith('https') ? https : http;
+		const req = protocol.get(url, options, res => {
+			if (res.statusCode < 200 || res.statusCode >= 300)
+				return reject(new Error(`Status Code: ${res.statusCode}`));
+			
+			const chunks = [];
+			res.on('data', chunk => chunks.push(chunk));
+			res.on('end', () => resolve(Buffer.concat(chunks)));
+		});
+		
+		req.on('error', reject);
+		req.end();
+	});
+}
+
 /**
- * Download a file (optionally to a local file).
- * GZIP deflation will be used if headers are set.
- * Data is always returned even if `out` is provided.
- * @param {string|string[]} url Remote URL of the file to download.
- * @param {string} out Optional file to write file to.
- * @param {number} partialOfs Partial content start offset.
- * @param {number} partialLen Partial content size.
- * @param {boolean} deflate If true, will deflate data regardless of header.
- */
+* Download a file (optionally to a local file).
+* GZIP deflation will be used if headers are set.
+* Data is always returned even if `out` is provided.
+* @param {string|string[]} url Remote URL of the file to download.
+* @param {string} out Optional file to write file to.
+* @param {number} partialOfs Partial content start offset.
+* @param {number} partialLen Partial content size.
+* @param {boolean} deflate If true, will deflate data regardless of header.
+*/
 const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false) => {
-	const fetch_options = {
-		headers: {
-			'User-Agent': constants.USER_AGENT,
-			'Range': partialOfs > -1 && partialLen > -1 ? `bytes=${partialOfs}-${partialOfs + partialLen - 1}` : undefined
-		}
-	};
-
-	let res = null;
-	let index = 1;
 	const url_stack = Array.isArray(url) ? url : [url];
-
-	while ((res === null || !res.ok) && url_stack.length > 0) {
-		const url = url_stack.shift();
-		res = await fetch(url, fetch_options);
-
-		log.write(`downloadFile -> [${index++}][${res.status}] ${url}`);
-	}
-
-	if (!res.ok)
-		throw new Error(`Unable to download file ${url}: HTTP ${res.status} ${res.statusText}`);
-
-	let data = Buffer.from(await res.arrayBuffer());
 	
-	// Delate the file regardless of the headers.
-	if (deflate)
-		data = await new Promise(resolve => zlib.inflate(data, (err, result) => resolve(result)));
+	for (const currentUrl of url_stack) {
+		try {
+			let data = await requestData(currentUrl, partialOfs, partialLen);
 
-	const wrapped = new BufferWrapper(data);
+			if (deflate) {
+				data = await new Promise((resolve, reject) => {
+					zlib.inflate(data, (err, result) => {
+						err ? reject(err) : resolve(result);
+					});
+				});
+			}
 
-	// Write the file to disk if requested.
-	if (out) {
-		await createDirectory(path.dirname(out));
-		await wrapped.writeToFile(out);
+			const wrapped = new BufferWrapper(data);
+
+			if (out) {
+				await createDirectory(path.dirname(out));
+				await wrapped.writeToFile(out);
+			}
+
+			return wrapped;
+		} catch (error) {
+			console.error(`Failed to download from ${currentUrl}: ${error.message}`);
+		}
 	}
-
-	return wrapped;
+	
+	throw new Error('All download attempts failed.');
 };
 
 /**
