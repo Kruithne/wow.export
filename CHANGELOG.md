@@ -1,3 +1,6 @@
+0.1.54 (09-12-2023)
+- Fixed loading of 10.2.5 installations by adding WDC5 support for DB2 files.
+
 0.1.53 (05-12-2023)
 - Fixed an issue that caused wow.export to crash on startup.
 
