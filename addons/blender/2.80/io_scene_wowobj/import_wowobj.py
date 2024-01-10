@@ -157,7 +157,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
                 # Load the image file itself if necessary.
                 imageName, imageExt = os.path.splitext(textureLocation)
-                imageName = imageName[:20]
+                imageName = imageName[:20] + imageExt
                 if not imageName in bpy.data.images:
                     loadedImage = bpy.data.images.load(textureLocation)
                     loadedImage.name = imageName
