@@ -156,9 +156,11 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 image = nodes.new('ShaderNodeTexImage')
 
                 # Load the image file itself if necessary.
-                imageName = os.path.basename(textureLocation)
+                imageName, imageExt = os.path.splitext(textureLocation)
+                imageName = imageName[:20]
                 if not imageName in bpy.data.images:
-                    bpy.data.images.load(textureLocation)
+                    loadedImage = bpy.data.images.load(textureLocation)
+                    loadedImage.name = imageName
 
                 image.image = bpy.data.images[imageName]
 
