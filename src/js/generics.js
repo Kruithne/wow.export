@@ -143,7 +143,12 @@ function requestData(url, partialOfs, partialLen) {
 		
 		const protocol = url.startsWith('https') ? https : http;
 		const req = protocol.get(url, options, res => {
-			if (res.statusCode < 200 || res.statusCode >= 300)
+			if (res.statusCode == 301 || res.statusCode == 302) {
+				log.write("Got redirect to " + res.headers.location);
+				return resolve(requestData(res.headers.location, partialOfs, partialLen));
+			}
+
+			if (res.statusCode < 200 || res.statusCode > 302)
 				return reject(new Error(`Status Code: ${res.statusCode}`));
 			
 			const chunks = [];
