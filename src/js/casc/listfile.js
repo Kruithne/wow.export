@@ -98,6 +98,9 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
 	// Example: 53187;sound/music/citymusic/darnassus/druid grove.mp3
 	const lines = data.readLines();
 	for (const line of lines) {
+		if (line.length === 0)
+			continue;
+
 		const tokens = line.split(';');
 
 		if (tokens.length !== 2) {
@@ -117,6 +120,11 @@ const loadListfile = async (buildConfig, cache, rootEntries) => {
 			idLookup.set(fileDataID, fileName);
 			nameLookup.set(fileName, fileDataID);
 		}
+	}
+
+	if (idLookup.size === 0) {
+		log.write('Invalid listfile count (no entries)');
+		return;
 	}
 
 	loaded = true;
