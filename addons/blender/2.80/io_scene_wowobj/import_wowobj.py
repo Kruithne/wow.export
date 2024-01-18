@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import os
 import csv
+import hashlib
 
 from math import radians
 from mathutils import Quaternion
@@ -156,8 +157,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 image = nodes.new('ShaderNodeTexImage')
 
                 # Load the image file itself if necessary.
-                imageName, imageExt = os.path.splitext(textureLocation)
-                imageName = imageName[:20] + imageExt
+                imageName, imageExt = os.path.splitext(os.path.basename(textureLocation))
+
+                # Blender doesn't support material names longer than 63.
+                # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
+                if len(imageName) > 63:
+                    imageName = hashlib.md5(imageName.encode()).hexdigest()[:7]
+
                 if not imageName in bpy.data.images:
                     loadedImage = bpy.data.images.load(textureLocation)
                     loadedImage.name = imageName
