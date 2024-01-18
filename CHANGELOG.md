@@ -1,3 +1,8 @@
+0.1.55 (18-01-2024)
+- Fixed fallbacks for listfile, encryption key and data definition downloads.
+- Fixed long material names crashing Blender imports (make sure to update the addon).
+- Fixed unnecessary log message always being logged during listfile parsing.
+
 0.1.54 (09-12-2023)
 - Fixed loading of 10.2.5 installations by adding WDC5 support for DB2 files.
 
