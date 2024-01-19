@@ -1,4 +1,4 @@
-0.1.55 (18-01-2024)
+0.1.55 (19-01-2024)
 - Updated default listfile, encryption key and data definition downloads to come from GitHub.
 - Fixed fallbacks for listfile, encryption key and data definition downloads.
 - Fixed long material names crashing Blender imports (make sure to update the addon).
