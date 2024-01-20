@@ -117,8 +117,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
         for materialName, textureLocation in materials.items():
             material = None
 
-            if len(imageName) > 63:
-                materialName = hashlib.md5(imageName.encode()).hexdigest()[:7]
+            if len(materialName) > 63:
+                materialName = hashlib.md5(materialName.encode()).hexdigest()[:7]
 
             if materialName in bpy.data.materials:
                 material = bpy.data.materials[materialName]
