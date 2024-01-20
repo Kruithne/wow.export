@@ -1,3 +1,6 @@
+0.1.56 (20-01-2024)
+- Blender add-on fix (make sure to update the addon).
+
 0.1.55 (19-01-2024)
 - Updated default listfile, encryption key and data definition downloads to come from GitHub.
 - Fixed fallbacks for listfile, encryption key and data definition downloads.
