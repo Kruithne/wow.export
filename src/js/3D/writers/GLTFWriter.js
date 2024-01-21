@@ -9,6 +9,7 @@ const path = require('path');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
+const { Euler, Quaternion } = require("../../../lib/three");
 
 class GLTFWriter {
 	/**
@@ -83,14 +84,14 @@ class GLTFWriter {
 	 * Set the bone indicies array for this writer.
 	 * @param {Array} boneIndices
 	 */
-	setBoneIndiceArray(boneIndices) {
+	setBoneIndexArray(boneIndices) {
 		this.boneIndices = boneIndices;
 	}
 
 	/**
 	 * Add a mesh to this writer.
 	 * @param {string} name 
-	 * @param {Array} triangles 
+	 * @param {Array} triangles
 	 * @param {string} matName 
 	 */
 	addMesh(name, triangles, matName) {
@@ -137,6 +138,15 @@ class GLTFWriter {
 				generator: util.format('wow.export v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid)
 			},
 			nodes: [
+				{
+					name: this.name,
+					rotation: (() => {
+						let q = new Quaternion();
+						q.setFromEuler(new Euler(-Math.PI / 2, 0, 0));
+						return [q.x, q.y, q.z, q.w];
+					})(),
+					children: [],
+				}
 			],
 			scenes: [
 				{
@@ -245,41 +255,43 @@ class GLTFWriter {
 
 		const nodes = root.nodes;
 		const skin = root.skins[0];
-		//const rootChildren = nodes[0].children;
 
-		//const boneOffset = nodes.length;
 		const bones = this.bones;
-		
+		const armature = root.nodes[0];
+
 		// Bone child lookup.
-		for (let i = 0, n = bones.length; i < n; i++) {
+		for (let i = 0; i < bones.length; i++) {
+			const nodeIndex = i + nodes.length;
 			const bone = bones[i];
+
 			if (bone.parentBone > -1) {
 				const parent = bones[bone.parentBone];
-				parent.children ? parent.children.push(i) : parent.children = [i];
+				parent.children ? parent.children.push(nodeIndex) : parent.children = [nodeIndex];
 			} else {
 				// Parent stray bones to the skeleton root.
-				//rootChildren.push(i + boneOffset);
+				armature.children.push(nodeIndex);
 			}
 		}
 
 		// Add bone nodes.
-		for (let i = 0, n = bones.length; i < n; i++) {
+		for (let i = 0; i < bones.length; i++) {
+			const nodeIndex = nodes.length;
 			const bone = bones[i];
-			skin.joints.push(i);
+
+			let parentPos = [0, 0, 0];
+			if (bone.parentBone > -1)
+				parentPos = bones[bone.parentBone].pivot;
 
 			const node = {
 				name: this.name + '_bone_' + i,
-				children: bone.children
+				translation: bone.pivot.map((v, i) => v - parentPos[i]),
+				children: bone.children,
 			};
 
-			let parentPos = [0, 0, 0];
-			if (node.parentNode > -1)
-				parentPos = bones[bone.parentBone].pivot;
-				
-			node.translation = bone.pivot.map((v, i) => v -= parentPos[i]);
 			nodes.push(node);
+			skin.joints.push(nodeIndex);
 		}
-
+		
 		const materialMap = new Map();
 		for (const [fileDataID, texFile] of this.textures) {
 			const imageIndex = root.images.length;
@@ -320,18 +332,18 @@ class GLTFWriter {
 
 			view.byteOffset = bin.offset;
 
-			if (componentType == 0x1406) 
+			if (componentType === 0x1406)
 				view.byteLength = arr.length * 4;
-			else if (componentType == 0x1401)
+			else if (componentType === 0x1401)
 				view.byteLength = arr.length;
 
 			accessor.count = arr.length / stride;
 
 			this.calculateMinMax(arr, stride, accessor);
 			for (const node of arr) {
-				if (componentType == 0x1406) 
+				if (componentType === 0x1406)
 					bin.writeFloatLE(node);
-				else if (componentType == 0x1401)
+				else if (componentType === 0x1401)
 					bin.writeUInt8(node);
 			}
 		};
