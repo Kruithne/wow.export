@@ -27,7 +27,7 @@ jobs:
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
-          SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
+          SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_PACKAGE_DIR }}
         run: node publish.js win-x64
       - name: Upload release
         uses: softprops/action-gh-release@v0.1.13
