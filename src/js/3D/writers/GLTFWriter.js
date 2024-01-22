@@ -10,6 +10,24 @@ const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
 
+const GLTF_ARRAY_BUFFER = 0x8892;
+const GLTF_ELEMENT_ARRAY_BUFFER = 0x8893;
+
+//const GLTF_BYTE = 0x1400;
+const GLTF_UNSIGNED_BYTE = 0x1401;
+//const GLTF_SHORT = 0x1402;
+const GLTF_UNSIGNED_SHORT = 0x1403;
+//const GLTF_UNSIGNED_INT = 0x1405;
+const GLTF_FLOAT = 0x1406;
+
+//const GLTF_POINTS = 0x0000;
+//const GLTF_LINES = 0x0001;
+//const GLTF_LINE_LOOP = 0x0002;
+//const GLTF_LINE_STRIP = 0x0003;
+const GLTF_TRIANGLES = 0x0004;
+//const GLTF_TRIANGLE_STRIP = 0x0005;
+//const GLTF_TRIANGLE_FAN = 0x0006;
+
 class GLTFWriter {
 	/**
 	 * Construct a new GLTF writer instance.
@@ -160,35 +178,35 @@ class GLTFWriter {
 					buffer: 0,
 					byteLength: 0,
 					byteOffset: 0,
-					target: 0x8892
+					target: GLTF_ARRAY_BUFFER
 				},
 				{
 					// Normals ARRAY_BUFFER
 					buffer: 0,
 					byteLength: 0,
 					byteOffset: 0,
-					target: 0x8892
+					target: GLTF_ARRAY_BUFFER
 				},
 				{
 					// UVs ARRAY_BUFFER
 					buffer: 0,
 					byteLength: 0,
 					byteOffset: 0,
-					target: 0x8892
+					target: GLTF_ARRAY_BUFFER
 				},
 				{
 					// Bone joints/indices ARRAY_BUFFER
 					buffer: 0,
 					byteLength: 0,
 					byteOffset: 0,
-					target: 0x8892
+					target: GLTF_ARRAY_BUFFER
 				},
 				{
 					// Bone weights ARRAY_BUFFER
 					buffer: 0,
 					byteLength: 0,
 					byteOffset: 0,
-					target: 0x8892
+					target: GLTF_ARRAY_BUFFER
 				}
 			],
 			accessors: [
@@ -196,7 +214,7 @@ class GLTFWriter {
 					// Vertices (Float)
 					bufferView: 0,
 					byteOffset: 0,
-					componentType: 0x1406,
+					componentType: GLTF_FLOAT,
 					count: 0,
 					type: 'VEC3'
 				},
@@ -204,7 +222,7 @@ class GLTFWriter {
 					// Normals (Float)
 					bufferView: 1,
 					byteOffset: 0,
-					componentType: 0x1406,
+					componentType: GLTF_FLOAT,
 					count: 0,
 					type: 'VEC3'
 				},
@@ -212,7 +230,7 @@ class GLTFWriter {
 					// UVs (Float)
 					bufferView: 2,
 					byteOffset: 0,
-					componentType: 0x1406,
+					componentType: GLTF_FLOAT,
 					count: 0,
 					type: 'VEC2'
 				},
@@ -220,7 +238,7 @@ class GLTFWriter {
 					// Bone joints/indices (Byte)
 					bufferView: 3,
 					byteOffset: 0,
-					componentType: 0x1401,
+					componentType: GLTF_UNSIGNED_BYTE,
 					count: 0,
 					type: 'VEC4'
 				},
@@ -228,7 +246,7 @@ class GLTFWriter {
 					// Bone weights (Byte)
 					bufferView: 4,
 					byteOffset: 0,
-					componentType: 0x1401,
+					componentType: GLTF_UNSIGNED_BYTE,
 					count: 0,
 					type: 'VEC4'
 				}
@@ -326,27 +344,27 @@ class GLTFWriter {
 
 			view.byteOffset = bin.offset;
 
-			if (componentType === 0x1406)
+			if (componentType === GLTF_FLOAT)
 				view.byteLength = arr.length * 4;
-			else if (componentType === 0x1401)
+			else if (componentType === GLTF_UNSIGNED_BYTE)
 				view.byteLength = arr.length;
 
 			accessor.count = arr.length / stride;
 
 			this.calculateMinMax(arr, stride, accessor);
 			for (const node of arr) {
-				if (componentType === 0x1406)
+				if (componentType === GLTF_FLOAT)
 					bin.writeFloatLE(node);
-				else if (componentType === 0x1401)
+				else if (componentType === GLTF_UNSIGNED_BYTE)
 					bin.writeUInt8(node);
 			}
 		};
 
-		writeData(0, this.vertices, 3, 0x1406);
-		writeData(1, this.normals, 3, 0x1406);
-		writeData(2, this.uvs, 2, 0x1406);
-		writeData(3, this.boneIndices, 4, 0x1401);
-		writeData(4, this.boneWeights, 4, 0x1401);
+		writeData(0, this.vertices, 3, GLTF_FLOAT);
+		writeData(1, this.normals, 3, GLTF_FLOAT);
+		writeData(2, this.uvs, 2, GLTF_FLOAT);
+		writeData(3, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
+		writeData(4, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
 
 		for (const mesh of this.meshes) {
 			const bufferViewIndex = root.bufferViews.length;
@@ -357,14 +375,14 @@ class GLTFWriter {
 				buffer: 0,
 				byteLength: mesh.triangles.length * 2,
 				byteOffset: bin.offset,
-				target: 0x8893
+				target: GLTF_ELEMENT_ARRAY_BUFFER
 			});
 
 			// Create accessor for the mesh indices.
 			root.accessors.push({
 				bufferView: bufferViewIndex,
 				byteOffset: 0,
-				componentType: 0x1403,
+				componentType: GLTF_UNSIGNED_SHORT,
 				count: mesh.triangles.length,
 				type: 'SCALAR'
 			});
@@ -385,7 +403,7 @@ class GLTFWriter {
 							WEIGHTS_0: 4,
 						},
 						indices: accessorIndex,
-						mode: 4,
+						mode: GLTF_TRIANGLES,
 						material: materialMap.get(mesh.matName)
 					}
 				]
