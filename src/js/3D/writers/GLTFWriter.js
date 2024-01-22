@@ -235,7 +235,7 @@ class GLTFWriter {
 			],
 			skins: [
 				{
-					name: this.name,
+					name: this.name + "_Armature",
 					joints: [],
 					skeleton: 0
 				}
@@ -251,7 +251,7 @@ class GLTFWriter {
 		const skin = root.skins[0];
 
 		const bones = this.bones;
-		const armature = root.nodes[0];
+		const skeleton = nodes[0];
 
 		// Bone child lookup.
 		for (let i = 0; i < bones.length; i++) {
@@ -263,7 +263,7 @@ class GLTFWriter {
 				parent.children ? parent.children.push(nodeIndex) : parent.children = [nodeIndex];
 			} else {
 				// Parent stray bones to the skeleton root.
-				armature.children.push(nodeIndex);
+				skeleton.children.push(nodeIndex);
 			}
 		}
 
@@ -393,7 +393,7 @@ class GLTFWriter {
 
 			//const nodeIndex = nodes.length;
 			//rootChildren.push(nodeIndex);
-			nodes.push({ name: mesh.name, mesh: meshIndex, skin: 0 });
+			nodes.push({ name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 });
 		}
 
 		await generics.createDirectory(path.dirname(this.out));
