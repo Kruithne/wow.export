@@ -9,7 +9,6 @@ const path = require('path');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
-const { Euler, Quaternion } = require("../../../lib/three");
 
 class GLTFWriter {
 	/**
@@ -140,11 +139,6 @@ class GLTFWriter {
 			nodes: [
 				{
 					name: this.name,
-					rotation: (() => {
-						let q = new Quaternion();
-						q.setFromEuler(new Euler(-Math.PI / 2, 0, 0));
-						return [q.x, q.y, q.z, q.w];
-					})(),
 					children: [],
 				}
 			],
