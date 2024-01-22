@@ -320,7 +320,7 @@ class GLTFWriter {
 
 		// Flip UV on Y axis.
 		for (let i = 0, n = this.uvs.length; i < n; i += 2)
-			this.uvs[i + 1] *= -1;
+			this.uvs[i + 1] = (this.uvs[i + 1] - 1) * -1;
 
 		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize;
 		const bin = BufferWrapper.alloc(binSize, false);
