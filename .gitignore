@@ -6,6 +6,7 @@
 
 # IDE configuration.
 /.vscode
+/.idea
 
 # Compiled stylesheets (use .scss for source).
 *.css

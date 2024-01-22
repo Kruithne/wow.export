@@ -245,7 +245,7 @@ class M2Loader {
 
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
-			bones[i] = {
+			const bone = {
 				boneID: data.readInt32LE(),
 				flags: data.readUInt32LE(),
 				parentBone: data.readInt16LE(),
@@ -256,6 +256,53 @@ class M2Loader {
 				scale: this.readM2Track(() => data.readFloatLE(3)),
 				pivot: data.readFloatLE(3)
 			};
+
+			// Convert bone transformations coordinate system.
+			const translations = bone.translation.values;
+			const rotations = bone.rotation.values;
+			const scale = bone.scale.values;
+			const pivot = bone.pivot;
+
+			for (let i = 0; i < translations.length; i += 3) {
+				const dx = translations[i];
+				const dy = translations[i + 1];
+				const dz = translations[i + 2];
+				translations[i] = dx;
+				translations[i + 2] = dy * -1;
+				translations[i + 1] = dz;
+			}
+
+			for (let i = 0; i < rotations.length; i += 4) {
+				const dx = rotations[i];
+				const dy = rotations[i + 1];
+				const dz = rotations[i + 2];
+				const dw = rotations[i + 3];
+
+				rotations[i] = dx;
+				rotations[i + 2] = dy * -1;
+				rotations[i + 1] = dz;
+				rotations[i + 3] = dw;
+			}
+
+			for (let i = 0; i < scale.length; i += 3) {
+				const dx = scale[i];
+				const dy = scale[i + 1];
+				const dz = scale[i + 2];
+				scale[i] = dx;
+				scale[i + 2] = dy * -1;
+				scale[i + 1] = dz;
+			}
+
+			{
+				const pivotX = pivot[0];
+				const pivotY = pivot[1];
+				const pivotZ = pivot[2];
+				pivot[0] = pivotX;
+				pivot[2] = pivotY * -1;
+				pivot[1] = pivotZ;
+			}
+
+			bones[i] = bone;
 		}
 
 		data.seek(base);
@@ -384,27 +431,25 @@ class M2Loader {
 		const boneIndices = this.boneIndices = Array(verticesCount * 4);
 	
 		for (let i = 0; i < verticesCount; i++) {
-			const index = i * 3;
-			vertices[index] = this.data.readFloatLE();
-			vertices[index + 2] = this.data.readFloatLE() * -1;
-			vertices[index + 1] = this.data.readFloatLE();
+			vertices[i * 3] = this.data.readFloatLE();
+			vertices[i * 3 + 2] = this.data.readFloatLE() * -1;
+			vertices[i * 3 + 1] = this.data.readFloatLE();
 	
 			for (let x = 0; x < 4; x++)
-				boneWeights[index + x] = this.data.readUInt8();
+				boneWeights[i * 4 + x] = this.data.readUInt8();
 
 			for (let x = 0; x < 4; x++)
-				boneIndices[index + x] = this.data.readUInt8();
+				boneIndices[i * 4 + x] = this.data.readUInt8();
 	
-			normals[index] = this.data.readFloatLE();
-			normals[index + 2] = this.data.readFloatLE() * -1;
-			normals[index + 1] = this.data.readFloatLE();
+			normals[i * 3] = this.data.readFloatLE();
+			normals[i * 3 + 2] = this.data.readFloatLE() * -1;
+			normals[i * 3 + 1] = this.data.readFloatLE();
 	
-			const uvIndex = i * 2;
-			uv[uvIndex] = this.data.readFloatLE();
-			uv[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
+			uv[i * 2] = this.data.readFloatLE();
+			uv[i * 2 + 1] = (this.data.readFloatLE() - 1) * -1;
 
-			uv2[uvIndex] = this.data.readFloatLE();
-			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
+			uv2[i * 2] = this.data.readFloatLE();
+			uv2[i * 2 + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
 
 		this.data.seek(base);
