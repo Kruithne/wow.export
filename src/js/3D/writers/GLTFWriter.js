@@ -271,37 +271,41 @@ class GLTFWriter {
 		const bones = this.bones;
 		const skeleton = nodes[0];
 
-		// Bone child lookup.
-		for (let i = 0; i < bones.length; i++) {
-			const nodeIndex = i + nodes.length;
-			const bone = bones[i];
-
-			if (bone.parentBone > -1) {
-				const parent = bones[bone.parentBone];
-				parent.children ? parent.children.push(nodeIndex) : parent.children = [nodeIndex];
-			} else {
-				// Parent stray bones to the skeleton root.
-				skeleton.children.push(nodeIndex);
-			}
-		}
+		const bone_lookup_map = new Map();
 
 		// Add bone nodes.
 		for (let i = 0; i < bones.length; i++) {
 			const nodeIndex = nodes.length;
 			const bone = bones[i];
 
-			let parentPos = [0, 0, 0];
-			if (bone.parentBone > -1)
-				parentPos = bones[bone.parentBone].pivot;
+			let parent_pos = [0, 0, 0];
+			if (bone.parentBone > -1) {
+				const parent_bone = bones[bone.parentBone];
+				parent_pos = parent_bone.pivot;
 
-			const node = {
-				name: this.name + '_bone_' + i,
-				translation: bone.pivot.map((v, i) => v - parentPos[i]),
-				children: bone.children,
+				const parent_node = bone_lookup_map.get(bone.parentBone);
+				parent_node.children ? parent_node.children.push(nodeIndex) : parent_node.children = [nodeIndex];
+			} else {
+				// Parent stray bones to the skeleton root.
+				skeleton.children.push(nodeIndex);
+			}
+
+			const prefix_node = {
+				name: 'bone_' + i + '_p',
+				translation: bone.pivot.map((v, i) => v - parent_pos[i]),
+				children: [nodeIndex + 1]
 			};
 
+			const node = {
+				name: this.name + '_bone_' + i
+			};
+
+			bone_lookup_map.set(i, node);
+
+			nodes.push(prefix_node);
 			nodes.push(node);
-			skin.joints.push(nodeIndex);
+
+			skin.joints.push(nodeIndex + 1);
 		}
 		
 		const materialMap = new Map();
