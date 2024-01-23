@@ -422,6 +422,7 @@ class GLTFWriter {
 			//const nodeIndex = nodes.length;
 			//rootChildren.push(nodeIndex);
 			nodes.push({ name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 });
+			root.scenes[0].nodes.push(nodes.length - 1);
 		}
 
 		await generics.createDirectory(path.dirname(this.out));
