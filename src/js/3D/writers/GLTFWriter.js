@@ -212,6 +212,7 @@ class GLTFWriter {
 			accessors: [
 				{
 					// Vertices (Float)
+					name: 'POSITION',
 					bufferView: 0,
 					byteOffset: 0,
 					componentType: GLTF_FLOAT,
@@ -220,6 +221,7 @@ class GLTFWriter {
 				},
 				{
 					// Normals (Float)
+					name: 'NORMAL',
 					bufferView: 1,
 					byteOffset: 0,
 					componentType: GLTF_FLOAT,
@@ -228,6 +230,7 @@ class GLTFWriter {
 				},
 				{
 					// UVs (Float)
+					name: 'TEXCOORD_0',
 					bufferView: 2,
 					byteOffset: 0,
 					componentType: GLTF_FLOAT,
@@ -236,6 +239,7 @@ class GLTFWriter {
 				},
 				{
 					// Bone joints/indices (Byte)
+					name: 'JOINTS_0',
 					bufferView: 3,
 					byteOffset: 0,
 					componentType: GLTF_UNSIGNED_BYTE,
@@ -244,10 +248,12 @@ class GLTFWriter {
 				},
 				{
 					// Bone weights (Byte)
+					name: 'WEIGHTS_0',
 					bufferView: 4,
 					byteOffset: 0,
 					componentType: GLTF_UNSIGNED_BYTE,
 					count: 0,
+					normalized: true,
 					type: 'VEC4'
 				}
 			],
