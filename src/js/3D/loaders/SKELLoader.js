@@ -6,7 +6,7 @@
 
 const CHUNK_SKB1 = 0x31424B53;
 
-import { M2Track, read_m2_track, read_m2_array } from './M2Loader';
+import { read_m2_track } from './M2Loader';
 
 class SKELLoader {
 	/**
