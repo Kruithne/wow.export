@@ -10,23 +10,15 @@ const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
 
+// See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
 const GLTF_ELEMENT_ARRAY_BUFFER = 0x8893;
 
-//const GLTF_BYTE = 0x1400;
 const GLTF_UNSIGNED_BYTE = 0x1401;
-//const GLTF_SHORT = 0x1402;
 const GLTF_UNSIGNED_SHORT = 0x1403;
-//const GLTF_UNSIGNED_INT = 0x1405;
 const GLTF_FLOAT = 0x1406;
 
-//const GLTF_POINTS = 0x0000;
-//const GLTF_LINES = 0x0001;
-//const GLTF_LINE_LOOP = 0x0002;
-//const GLTF_LINE_STRIP = 0x0003;
 const GLTF_TRIANGLES = 0x0004;
-//const GLTF_TRIANGLE_STRIP = 0x0005;
-//const GLTF_TRIANGLE_FAN = 0x0006;
 
 class GLTFWriter {
 	/**
@@ -468,8 +460,6 @@ class GLTFWriter {
 				]
 			});
 
-			//const nodeIndex = nodes.length;
-			//rootChildren.push(nodeIndex);
 			nodes.push({ name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 });
 			root.scenes[0].nodes.push(nodes.length - 1);
 		}
