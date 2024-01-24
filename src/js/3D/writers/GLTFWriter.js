@@ -221,9 +221,6 @@ class GLTFWriter {
 					type: 'VEC3'
 				},
 			],
-			textures: [],
-			images: [],
-			materials: [],
 			meshes: [],
 			scene: 0
 		};
@@ -345,6 +342,12 @@ class GLTFWriter {
 			}
 
 			combined_bone_length = (this.inverseBindMatrices.length * 4) + this.boneIndices.length + this.boneWeights.length;
+		}
+
+		if (this.textures.size > 0) {
+			root.images = [];
+			root.textures = [];
+			root.materials = [];
 		}
 		
 		const materialMap = new Map();
