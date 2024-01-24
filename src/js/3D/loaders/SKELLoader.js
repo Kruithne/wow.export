@@ -5,9 +5,11 @@
  */
 
 const CHUNK_SKB1 = 0x31424B53;
+const CHUNK_SKPD = 0x44504B53;
 
 import { read_m2_track } from './M2Loader';
 
+// See: https://wowdev.wiki/M2/.skel
 class SKELLoader {
 	/**
 	 * Construct a new SKELLoader instance.
@@ -32,7 +34,8 @@ class SKELLoader {
 			const nextChunkPos = this.data.offset + chunkSize;
 	
 			switch (chunkID) {
-				case CHUNK_SKB1: this.parseChunk_SKB1(chunkSize); break;
+				case CHUNK_SKB1: this.parse_chunk_skb1(); break;
+				case CHUNK_SKPD: this.parse_chunk_skpd(); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -42,10 +45,13 @@ class SKELLoader {
 		this.isLoaded = true;
 	}
 
-	/**
-	 * Parse SKB1 chunk for skin file data IDs.
-	 */
-	parseChunk_SKB1() {
+	parse_chunk_skpd() {
+		this.data.move(8) // _0x00[8]
+		this.parent_skel_file_id = this.data.readUInt32LE();
+		this.data.move(4) // _0x0c[4]
+	}
+
+	parse_chunk_skb1() {
 		const data = this.data;
 		const chunk_ofs = data.offset;
 
