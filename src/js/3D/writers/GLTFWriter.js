@@ -255,7 +255,6 @@ class GLTFWriter {
 		const nodes = root.nodes;
 		const bones = this.bones;
 
-		let combined_bone_length = 0;
 		let idx_inv_bind = -1;
 		let idx_bone_joints = -1
 		let idx_bone_weights = -1;
@@ -340,8 +339,6 @@ class GLTFWriter {
 	
 				skin.joints.push(nodeIndex + 1);
 			}
-
-			combined_bone_length = (this.inverseBindMatrices.length * 4) + this.boneIndices.length + this.boneWeights.length;
 		}
 
 		if (this.textures.size > 0) {
@@ -376,7 +373,6 @@ class GLTFWriter {
 			materialMap.set(fileDataID, materialIndex);
 		}
 
-		let triangle_bin_size = 0;
 		const mesh_component_meta = Array(this.meshes.length);
 		for (let i = 0, n = this.meshes.length; i < n; i++) {
 			const mesh = this.meshes[i];
@@ -395,7 +391,6 @@ class GLTFWriter {
 			}
 
 			const byte_length = mesh.triangles.length * component_sizeof;
-			triangle_bin_size += byte_length;
 
 			mesh_component_meta[i] = {
 				byte_length,
@@ -403,39 +398,54 @@ class GLTFWriter {
 			};
 		}
 
-		let combined_uv_length = 0;
 		for (const uv of this.uvs) {
-			combined_uv_length += uv.length * 4;
-
 			// Flip UVs on Y axis.
 			for (let i = 0; i < uv.length; i += 2)
 				uv[i + 1] = (uv[i + 1] - 1) * -1;
 		}
 
-		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (combined_uv_length) + triangle_bin_size + combined_bone_length;
-		const bin = BufferWrapper.alloc(binSize, false);
-		root.buffers[0].byteLength = binSize;
+		const bins = [];
 
+		const component_sizes = {
+			[GLTF_UNSIGNED_BYTE]: 1,
+			[GLTF_UNSIGNED_SHORT]: 2,
+			[GLTF_UNSIGNED_INT]: 4,
+			[GLTF_FLOAT]: 4
+		};
+
+		let bin_ofs = 0;
 		const writeData = (index, arr, stride, componentType) => {
 			const view = root.bufferViews[index];
 			const accessor = root.accessors[index];
 
-			view.byteOffset = bin.offset;
+			const component_size = component_sizes[componentType];
+			const misalignment = bin_ofs % component_size;
+			const padding = misalignment > 0 ? component_size - misalignment : 0;
 
-			if (componentType === GLTF_FLOAT)
-				view.byteLength = arr.length * 4;
-			else if (componentType === GLTF_UNSIGNED_BYTE)
-				view.byteLength = arr.length;
+			bin_ofs += padding;
+			view.byteOffset = bin_ofs;
+
+			const buffer_length = arr.length * component_size;
+			view.byteLength = buffer_length;
+
+			bin_ofs += buffer_length;
+
+			const buffer = BufferWrapper.alloc(buffer_length + padding, true);
+
+			if (padding > 0)
+				buffer.fill(0, padding);
 
 			accessor.count = arr.length / stride;
 
 			calculate_min_max(arr, stride, accessor);
 			for (const node of arr) {
 				if (componentType === GLTF_FLOAT)
-					bin.writeFloatLE(node);
+					buffer.writeFloatLE(node);
 				else if (componentType === GLTF_UNSIGNED_BYTE)
-					bin.writeUInt8(node);
+					buffer.writeUInt8(node);
 			}
+
+			bins.push(buffer);
 		};
 
 		writeData(0, this.vertices, 3, GLTF_FLOAT);
@@ -482,13 +492,26 @@ class GLTFWriter {
 			const bufferViewIndex = root.bufferViews.length;
 			const accessorIndex = root.accessors.length;
 
+			const component_size = component_sizes[component_type];
+			const misalignment = bin_ofs % component_size;
+			const padding = misalignment > 0 ? component_size - misalignment : 0;
+
+			bin_ofs += padding;
+
 			// Create ELEMENT_ARRAY_BUFFER for mesh indices.
 			root.bufferViews.push({
 				buffer: 0,
 				byteLength: mesh_meta.byte_length,
-				byteOffset: bin.offset,
+				byteOffset: bin_ofs,
 				target: GLTF_ELEMENT_ARRAY_BUFFER
 			});
+
+			bin_ofs += mesh_meta.byte_length;
+
+			const buffer = BufferWrapper.alloc(mesh_meta.byte_length + padding, true);
+
+			if (padding > 0)
+				buffer.fill(0, padding);
 
 			// Create accessor for the mesh indices.
 			root.accessors.push({
@@ -502,13 +525,13 @@ class GLTFWriter {
 			// Write indices into the binary.
 			if (component_type === GLTF_UNSIGNED_BYTE) {
 				for (const idx of mesh.triangles)
-					bin.writeUInt8(idx);
+					buffer.writeUInt8(idx);
 			} else if (component_type === GLTF_UNSIGNED_SHORT) {
 				for (const idx of mesh.triangles)
-					bin.writeUInt16LE(idx);
+					buffer.writeUInt16LE(idx);
 			} else if (component_type === GLTF_UNSIGNED_INT) {
 				for (const idx of mesh.triangles)
-					bin.writeUInt32LE(idx);
+					buffer.writeUInt32LE(idx);
 			}
 
 			const meshIndex = root.meshes.length;
@@ -528,11 +551,15 @@ class GLTFWriter {
 				node.skin = 0;
 
 			add_scene_node(node);
+			bins.push(buffer);
 		}
+
+		const bin_combined = BufferWrapper.concat(bins);
+		root.buffers[0].byteLength = bin_combined.byteLength;
 
 		await generics.createDirectory(path.dirname(this.out));
 		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
-		await bin.writeToFile(outBIN);
+		await bin_combined.writeToFile(outBIN);
 	}
 }
 

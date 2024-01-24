@@ -63,6 +63,15 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Concatenate an array of buffers into a single buffer.
+	 * @param {BufferWrapper[]} buffers 
+	 * @returns {BufferWrapper}
+	 */
+	static concat(buffers) {
+		return new BufferWrapper(Buffer.concat(buffers.map(buf => buf.raw)));
+	}
+
+	/**
 	 * Create a BufferWrapper from a canvas element.
 	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas 
 	 * @param {string} mimeType 
@@ -585,6 +594,17 @@ class BufferWrapper {
 		this.seek(ofs);
 
 		return str.split(/\r\n|\n|\r/);
+	}
+
+	/**
+	 * Fill a buffer with the given value.
+	 * @param {number} value 
+	 * @param {number} length 
+	 */
+	fill(value, length = this.remainingBytes) {
+		this._checkBounds(length);
+		this._buf.fill(value, this._ofs, this._ofs + length);
+		this._ofs += length;
 	}
 
 	/**
