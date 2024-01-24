@@ -201,34 +201,12 @@ class GLTFWriter {
 					target: GLTF_ARRAY_BUFFER
 				}
 			],
-			accessors: [
-				{
-					// Vertices (Float)
-					name: 'POSITION',
-					bufferView: 0,
-					byteOffset: 0,
-					componentType: GLTF_FLOAT,
-					count: 0,
-					type: 'VEC3'
-				},
-				{
-					// Normals (Float)
-					name: 'NORMAL',
-					bufferView: 1,
-					byteOffset: 0,
-					componentType: GLTF_FLOAT,
-					count: 0,
-					type: 'VEC3'
-				},
-			],
+			accessors: [],
 			meshes: [],
 			scene: 0
 		};
 
-		const primitive_attributes = {
-			POSITION: 0,
-			NORMAL: 1
-		};
+		const primitive_attributes = {};
 
 		const add_scene_node = (node) => {
 			root.nodes.push(node);
@@ -448,8 +426,28 @@ class GLTFWriter {
 			bins.push(buffer);
 		};
 
-		writeData(0, this.vertices, 3, GLTF_FLOAT);
-		writeData(1, this.normals, 3, GLTF_FLOAT);
+		if (this.vertices.length > 0) {
+			const idx_vertices = add_buffered_accessor({
+				// Vertices (Float)
+				name: 'POSITION',
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: 0,
+				type: 'VEC3'
+			}, GLTF_ARRAY_BUFFER, true);
+
+			const idx_normals = add_buffered_accessor({
+				// Normals (Float)
+				name: 'NORMAL',
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: 0,
+				type: 'VEC3'
+			}, GLTF_ARRAY_BUFFER, true);
+
+			writeData(idx_vertices, this.vertices, 3, GLTF_FLOAT);
+			writeData(idx_normals, this.normals, 3, GLTF_FLOAT);
+		}
 
 		if (bones.length > 0) {
 			writeData(idx_bone_joints, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
@@ -553,6 +551,9 @@ class GLTFWriter {
 			add_scene_node(node);
 			bins.push(buffer);
 		}
+
+		if (root.accessors.length === 0)
+			delete root.accessors;
 
 		const bin_combined = BufferWrapper.concat(bins);
 		root.buffers[0].byteLength = bin_combined.byteLength;
