@@ -161,11 +161,16 @@ class GLTFWriter {
 				version: '2.0',
 				generator: util.format('wow.export v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid)
 			},
-			nodes: [],
+			nodes: [
+				{
+					name: this.name,
+					children: []
+				}
+			],
 			scenes: [
 				{
 					name: this.name + '_Scene',
-					nodes: []
+					nodes: [0]
 				}
 			],
 			buffers: [
@@ -224,7 +229,7 @@ class GLTFWriter {
 
 		const add_scene_node = (node) => {
 			root.nodes.push(node);
-			root.scenes[0].nodes.push(root.nodes.length - 1);
+			root.nodes[0].children.push(root.nodes.length - 1);
 			return node;
 		};
 
