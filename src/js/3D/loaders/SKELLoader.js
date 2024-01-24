@@ -16,7 +16,6 @@ class SKELLoader {
 	constructor(data) {
 		this.data = data;
 		this.isLoaded = false;
-		this.chunk_ofs = 0;
 	}
 
 	/**
@@ -49,14 +48,12 @@ class SKELLoader {
 	parseChunk_SKB1() {
 		const data = this.data;
 		const chunk_ofs = data.offset;
-		this.chunk_ofs = data.offset;
 
 		const bone_count = data.readUInt32LE();
 		const bone_ofs = data.readUInt32LE();
 
 		const base_ofs = data.offset;
-
-		data.seek(this.chunk_ofs + bone_ofs);
+		data.seek(chunk_ofs + bone_ofs);
 
 		const bones = this.bones = Array(bone_count);
 		for (let i = 0; i < bone_count; i++) {
