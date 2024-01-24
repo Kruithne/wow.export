@@ -210,7 +210,6 @@ class GLTFWriter {
 					type: 'VEC3'
 				},
 			],
-			skins: [],
 			textures: [],
 			images: [],
 			materials: [],
@@ -283,12 +282,13 @@ class GLTFWriter {
 				skeleton: 0
 			};
 			
+			root.skins = [skin];
+			
 			const skeleton = {
 				name: this.name,
 				children: [],
 			};
 			
-			root.skins.push(skin);
 			nodes.push(skeleton);
 
 			const bone_lookup_map = new Map();
