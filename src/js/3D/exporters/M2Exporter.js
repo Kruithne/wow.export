@@ -160,7 +160,7 @@ class M2Exporter {
 		const outDir = path.dirname(out);
 
 		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
+		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
 			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
 
 		await this.m2.load();
