@@ -309,9 +309,7 @@ class GLTFWriter {
 				children: [nodeIndex + 1]
 			};
 
-			const node = {
-				name: this.name + '_bone_' + i
-			};
+			const node = { name: 'bone_' + i };
 
 			bone_lookup_map.set(i, node);
 
