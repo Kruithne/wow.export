@@ -349,7 +349,7 @@ class GLTFWriter {
 			root.images.push({ uri: texFile.matPathRelative });
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
-				name: fileDataID.toString(),
+				name: texFile.matName,
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
 					baseColorTexture: {
