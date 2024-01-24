@@ -57,26 +57,16 @@ class SKELLoader {
 
 		const bones = this.bones = Array(bone_count);
 		for (let i = 0; i < bone_count; i++) {
-			const b_boneID = data.readInt32LE();
-			const b_flags = data.readUInt32LE();
-			const b_parentBone = data.readInt16LE();
-			const b_subMeshID = data.readUInt16LE();
-			const b_boneNameCRC = data.readUInt32LE();
-			const b_translation = read_m2_track(data, chunk_ofs, () => data.readFloatLE(3));
-			const b_rotation = read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1));
-			const b_scale = read_m2_track(data, chunk_ofs, () => data.readFloatLE(3));
-			const b_pivot = data.readFloatLE(3);
-
 			const bone = {
-				boneID: b_boneID,
-				flags: b_flags,
-				parentBone: b_parentBone,
-				subMeshID: b_subMeshID,
-				boneNameCRC: b_boneNameCRC,
-				translation: b_translation,
-				rotation: b_rotation,
-				scale: b_scale,
-				pivot: b_pivot
+				boneID: data.readInt32LE(),
+				flags: data.readUInt32LE(),
+				parentBone: data.readInt16LE(),
+				subMeshID: data.readUInt16LE(),
+				boneNameCRC: data.readUInt32LE(),
+				translation: read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
+				rotation: read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
+				scale: read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
+				pivot: data.readFloatLE(3)
 			};
 
 			// Convert bone transformations coordinate system.
