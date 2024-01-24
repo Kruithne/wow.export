@@ -44,43 +44,6 @@ class SKELLoader {
 	}
 
 	/**
-	 * Read an M2 track.
-	 * @param {function} read 
-	 * @returns {M2Track}
-	 */
-	readM2Track(read) {
-		const data = this.data;
-		const interpolation = data.readUInt16LE();
-		const globalSeq = data.readUInt16LE();
-
-		const timestamps = this.readM2Array(() => this.readM2Array(() => data.readUInt32LE()));
-		const values = this.readM2Array(() => this.readM2Array(read));
-
-		return new M2Track(globalSeq, interpolation, timestamps, values);
-	}
-
-	/**
-	 * Read an M2Array.
-	 * @param {function} read 
-	 * @returns {Array}
-	*/
-	readM2Array(read) {
-		const data = this.data;
-		const arrCount = data.readUInt32LE();
-		const arrOfs = data.readUInt32LE();
-
-		const base = data.offset;
-		data.seek(this.chunk_ofs + arrOfs);
-
-		const arr = Array(arrCount);
-		for (let i = 0; i < arrCount; i++)
-			arr[i] = read();
-
-		data.seek(base);
-		return arr;
-	}
-
-	/**
 	 * Parse SKB1 chunk for skin file data IDs.
 	 */
 	parseChunk_SKB1() {
