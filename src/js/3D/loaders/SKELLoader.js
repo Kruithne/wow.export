@@ -6,21 +6,7 @@
 
 const CHUNK_SKB1 = 0x31424B53;
 
-class M2Track {
-	/**
-	 * Construct a new M2Track instance.
-	 * @param {number} globalSeq 
-	 * @param {number} interpolation 
-	 * @param {Array} timestamps 
-	 * @param {Array} values 
-	 */
-	constructor(globalSeq, interpolation, timestamps, values) {
-		this.globalSeq = globalSeq;
-		this.interpolation = interpolation;
-		this.timestamps = timestamps;
-		this.values = values;
-	}
-}
+import { M2Track } from './M2Loader';
 
 class SKELLoader {
 	/**

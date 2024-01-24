@@ -19,7 +19,7 @@ const CHUNK_AFID = 0x44494641;
  * @typedef {{ min: number, max: number }} CAaBox
  */
 
-class M2Track {
+export class M2Track {
 	/**
 	 * Construct a new M2Track instance.
 	 * @param {number} globalSeq 
