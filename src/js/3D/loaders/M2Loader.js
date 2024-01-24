@@ -19,7 +19,7 @@ const CHUNK_AFID = 0x44494641;
  * @typedef {{ min: number, max: number }} CAaBox
  */
 
-export class M2Track {
+class M2Track {
 	/**
 	 * Construct a new M2Track instance.
 	 * @param {number} globalSeq 
@@ -36,7 +36,7 @@ export class M2Track {
 }
 
 // See https://wowdev.wiki/M2#Standard_animation_block
-export function read_m2_array(data, ofs, read) {
+function read_m2_array(data, ofs, read) {
 	const arrCount = data.readUInt32LE();
 	const arrOfs = data.readUInt32LE();
 
@@ -52,7 +52,7 @@ export function read_m2_array(data, ofs, read) {
 }
 
 // See https://wowdev.wiki/M2#Standard_animation_block
-export function read_m2_track(data, ofs, read) {
+function read_m2_track(data, ofs, read) {
 	const interpolation = data.readUInt16LE();
 	const globalSeq = data.readUInt16LE();
 
@@ -63,7 +63,7 @@ export function read_m2_track(data, ofs, read) {
 }
 
 // See https://wowdev.wiki/Common_Types#CAaBox
-export function read_caa_bb(data) {
+function read_caa_bb(data) {
 	return { min: data.readFloatLE(3), max: data.readFloatLE(3) };
 }
 
@@ -598,4 +598,10 @@ class M2Loader {
 	}
 }
 
-module.exports = M2Loader;
+module.exports = {
+	M2Loader,
+	M2Track,
+	read_m2_array,
+	read_m2_track,
+	read_caa_bb
+};
