@@ -197,7 +197,6 @@ class M2Exporter {
 			if (texUnit)
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
-			// TODO: Better material naming.
 			let matName;
 			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
 				matName = texture.fileDataID;
