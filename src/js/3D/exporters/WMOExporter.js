@@ -199,7 +199,7 @@ class WMOExporter {
 	 */
 	async exportAsGLTF(out, helper) {
 		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && generics.fileExists(out))
+		if (!core.view.config.overwriteFiles && await generics.fileExists(out))
 			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', out);
 
 		const wmo_name = path.basename(out, '.gltf');
