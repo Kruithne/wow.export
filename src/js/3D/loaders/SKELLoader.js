@@ -75,7 +75,7 @@ class SKELLoader {
 			const scale = bone.scale.values;
 			const pivot = bone.pivot;
 
-			for (let i = 0; i < translations.length; i += 3) {
+			for (let i = 0, n = translations.length; i < n; i += 3) {
 				const dx = translations[i];
 				const dy = translations[i + 1];
 				const dz = translations[i + 2];
@@ -84,7 +84,7 @@ class SKELLoader {
 				translations[i + 1] = dz;
 			}
 
-			for (let i = 0; i < rotations.length; i += 4) {
+			for (let i = 0, n = rotations.length; i < n; i += 4) {
 				const dx = rotations[i];
 				const dy = rotations[i + 1];
 				const dz = rotations[i + 2];
@@ -96,7 +96,7 @@ class SKELLoader {
 				rotations[i + 3] = dw;
 			}
 
-			for (let i = 0; i < scale.length; i += 3) {
+			for (let i = 0, n = scale.length; i < n; i += 3) {
 				const dx = scale[i];
 				const dy = scale[i + 1];
 				const dz = scale[i + 2];
