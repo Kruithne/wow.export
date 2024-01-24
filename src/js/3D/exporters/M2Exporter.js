@@ -165,9 +165,9 @@ class M2Exporter {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const model_name = this.m2.name.length > 0 ? this.m2.name : path.basename(outGLTF, '.gltf');
+		const model_name = path.basename(outGLTF, '.gltf');
 		const gltf = new GLTFWriter(out, model_name);
-		log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
+		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
@@ -227,11 +227,11 @@ class M2Exporter {
 
 		const outDir = path.dirname(out);
 
-		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
-
 		// Use internal M2 name or fallback to the OBJ file name.
-		const model_name = this.m2.name.length > 0 ? this.m2.name : path.basename(out, '.obj');
+		const model_name = path.basename(out, '.obj');
 		obj.setName(model_name);
+
+		log.write('Exporting M2 model %s as OBJ: %s', model_name, out);
 
 		// Verts, normals, UVs
 		obj.setVertArray(this.m2.vertices);
