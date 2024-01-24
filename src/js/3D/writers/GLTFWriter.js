@@ -165,7 +165,7 @@ class GLTFWriter {
 			scenes: [
 				{
 					name: this.name + '_Scene',
-					nodes: [0]
+					nodes: []
 				}
 			],
 			buffers: [
@@ -289,6 +289,7 @@ class GLTFWriter {
 				children: [],
 			};
 			
+			root.scenes[0].nodes.push(0);
 			nodes.push(skeleton);
 
 			const bone_lookup_map = new Map();
@@ -469,6 +470,8 @@ class GLTFWriter {
 				node.skin = 0;
 
 			nodes.push(node);
+
+			console.log(nodes.length);
 			root.scenes[0].nodes.push(nodes.length - 1);
 		}
 
