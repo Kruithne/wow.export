@@ -6,11 +6,6 @@
 
 const CHUNK_SKB1 = 0x31424B53;
 
-/**
- * An axis-aligned box.
- * @typedef {{ min: number, max: number }} CAaBox
- */
-
 class M2Track {
 	/**
 	 * Construct a new M2Track instance.
