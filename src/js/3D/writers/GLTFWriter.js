@@ -169,7 +169,7 @@ class GLTFWriter {
 			],
 			scenes: [
 				{
-					name: this.name + 'Scene',
+					name: this.name + '_Scene',
 					nodes: [0]
 				}
 			],
