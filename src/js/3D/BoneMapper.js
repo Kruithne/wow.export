@@ -203,14 +203,15 @@ const BONE_NAMES = {
 
 /**
  * Get the label for a bone.
- * @param {number} index  - The bone index.
+ * @param {number} bone_id  - The bone ID.
+ * @param {number} index - The bone index.
  * @returns {string} The bone label.
  */
-const getBoneName = (index) => {
-	if (index in BONE_NAMES)
-		return BONE_NAMES[index];
-	else
-		return 'Bone' + index;
+const get_bone_name = (bone_id, index) => {
+	if (bone_id in BONE_NAMES)
+		return 'bone_' + BONE_NAMES[bone_id];
+	
+	return 'bone_' + index;
 }
 
-module.exports = { getBoneName };
+module.exports = { get_bone_name };
