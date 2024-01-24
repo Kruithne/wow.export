@@ -199,8 +199,10 @@ class WMOExporter {
 	 */
 	async exportAsGLTF(out, helper) {
 		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-		
-		// TODO: Skip overwrite if file exists?
+
+		// Skip export if file exists and overwriting is disabled.
+		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
+			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
 
 		const wmoName = path.basename(out, '.wmo');
 		const gltf = new GLTFWriter(outGLTF, wmoName);
@@ -309,7 +311,7 @@ class WMOExporter {
 
 		gltf.setVerticesArray(vertices);
 		gltf.setNormalArray(normals);
-		gltf.setUVArray(uvs);
+		gltf.addUVArray(uvs);
 
 		// TODO: Add support for exporting doodads inside a GLTF WMO.
 
