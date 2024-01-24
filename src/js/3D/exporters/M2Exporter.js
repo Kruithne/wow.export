@@ -10,7 +10,7 @@ const generics = require('../../generics');
 const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
+const { M2Loader } = require('../loaders/M2Loader');
 const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
