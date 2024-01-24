@@ -20,6 +20,31 @@ const GLTF_FLOAT = 0x1406;
 
 const GLTF_TRIANGLES = 0x0004;
 
+/**
+ * Calculate the minimum/maximum values of an array buffer.
+ * @param {Array} values 
+ * @param {number} stride 
+ * @param {object} target 
+ */
+function calculate_min_max(values, stride, target) {
+	const min = target.min = Array(stride);
+	const max = target.max = Array(stride);
+
+	for (let i = 0; i < values.length; i += stride) {
+		for (let ofs = 0; ofs < stride; ofs++) {
+			const currentMin = min[ofs];
+			const currentMax = max[ofs];
+			const value = values[i + ofs];
+
+			if (currentMin === undefined || value < currentMin)
+				min[ofs] = value;
+			
+			if (currentMax === undefined || value > currentMax)
+				max[ofs] = value;
+		}
+	}
+}
+
 class GLTFWriter {
 	/**
 	 * Construct a new GLTF writer instance.
@@ -120,31 +145,6 @@ class GLTFWriter {
 			0, 0, 1, 0,
 			v[0] * -1, v[1] * -1, v[2] * -1, 1
 		];
-	}
-
-	/**
-	 * Calculate the minimum/maximum values of an array buffer.
-	 * @param {Array} values 
-	 * @param {number} stride 
-	 * @param {object} target 
-	 */
-	calculateMinMax(values, stride, target) {
-		const min = target.min = Array(stride);
-		const max = target.max = Array(stride);
-
-		for (let i = 0; i < values.length; i += stride) {
-			for (let ofs = 0; ofs < stride; ofs++) {
-				const currentMin = min[ofs];
-				const currentMax = max[ofs];
-				const value = values[i + ofs];
-
-				if (currentMin === undefined || value < currentMin)
-					min[ofs] = value;
-				
-				if (currentMax === undefined || value > currentMax)
-					max[ofs] = value;
-			}
-		}
 	}
 
 	async write(overwrite = true) {
@@ -387,7 +387,7 @@ class GLTFWriter {
 
 			accessor.count = arr.length / stride;
 
-			this.calculateMinMax(arr, stride, accessor);
+			calculate_min_max(arr, stride, accessor);
 			for (const node of arr) {
 				if (componentType === GLTF_FLOAT)
 					bin.writeFloatLE(node);
