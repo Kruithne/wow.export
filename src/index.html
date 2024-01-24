@@ -15,6 +15,7 @@
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
 						<div class="option" id="nav-models" @click="setScreen('tab-models')" :class="{ active: screen === 'tab-models' }">Models</div>
+						<div class="option" id="nav-characters" @click="setScreen('tab-characters')" :class="{ active: screen === 'tab-characters' }">Characters</div>
 						<div class="option" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
 						<div class="option" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
@@ -578,6 +579,31 @@
 								<span class="header">Doodad Sets</span>
 								<checkboxlist :items="modelViewerWMOSets"></checkboxlist>
 							</template>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
+						<div class='char-preview'>
+							<model-viewer :context="chrModelViewerContext"></model-viewer>
+							<div class='preview-options'>
+								<label class="ui-checkbox">
+									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+									<span>Show NPC races</span>
+								</label>
+								<span class="header">Geosets</span>
+								<checkboxlist :items="modelViewerGeosets"></checkboxlist>
+								<div class="list-toggles">
+									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+								</div>
+								<span class="header">Dev import</span>
+								<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
+							</div>
+						</div>
+						<div class='options'>
+							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
 						</div>
 					</div>
 				</keep-alive>

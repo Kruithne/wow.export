@@ -112,6 +112,7 @@ require('./js/ui/tab-items');
 require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
+require('./js/ui/tab-characters');
 
 const RCPServer = require('./js/rcp/rcp-server');
 

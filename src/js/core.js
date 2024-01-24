@@ -113,6 +113,15 @@ const view = {
 	mapViewerSelectedDir: null,
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
+	chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+	chrCustModels: [], // Available character customization models.
+	chrCustModelSelection: [], // Selected character customization model.
+	chrCustOptions: [], // Available character customization options.
+	chrCustOptionSelection: [], // Selected character customization option.
+	chrCustChoices: [], // Available character customization choices.
+	chrCustChoiceSelection: [], // Selected character customization choice.
+	chrCustActiveChoices: [], // Active character customization choices.
+	chrCustImportString: '', // Character customization import string.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
