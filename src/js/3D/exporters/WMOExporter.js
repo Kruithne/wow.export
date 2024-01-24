@@ -262,7 +262,8 @@ class WMOExporter {
 
 		const vertices = new Array(nInd * 3);
 		const normals = new Array(nInd * 3);
-		const uvs = new Array(nInd * 2);
+
+		const uv_maps = [];
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -279,17 +280,23 @@ class WMOExporter {
 			for (let i = 0, n = groupNormals.length; i < n; i++)
 				normals[vertOfs + i] = groupNormals[i];
 
-			const uvOfs = indOfs * 2;
+			const uv_ofs = indOfs * 2;
+
 			if (group.uvs) {
-				// UVs exist, use the first array available.
-				const groupUvs = group.uvs[0];
-				for (let i = 0, n = groupUvs.length; i < n; i++)
-					uvs[uvOfs + i] = groupUvs[i];
+				for (let i = 0, n = group.uvs.length; i < n; i++) {
+					if (!uv_maps[i])
+						uv_maps[i] = new Array(indCount * 2).fill(0);
+
+					const uv = group.uvs[i];
+					const uv_map = uv_maps[i];
+					for (let i = 0, n = uv.length; i < n; i++)
+						uv_map[uv_ofs + i] = uv[i];
+				}
 			} else {
 				// No UVs available for the mesh, zero fill.
-				const uvCount = indCount * 2;
-				for (let i = 0; i < uvCount; i++)
-					uvs[uvOfs + i] = 0;
+				const uv_count = indCount * 2;
+				for (let i = 0; i < uv_count; i++)
+					uv_maps[0][uv_ofs + i] = 0;
 			}
 
 			const groupName = this.wmo.groupNames[group.nameOfs];
@@ -311,7 +318,9 @@ class WMOExporter {
 
 		gltf.setVerticesArray(vertices);
 		gltf.setNormalArray(normals);
-		gltf.addUVArray(uvs);
+		
+		for (const uv_map of uv_maps)
+			gltf.addUVArray(uv_map);
 
 		// TODO: Add support for exporting doodads inside a GLTF WMO.
 
