@@ -6,7 +6,7 @@
 
 const CHUNK_SKB1 = 0x31424B53;
 
-import { M2Track } from './M2Loader';
+import { M2Track, read_m2_track, read_m2_array } from './M2Loader';
 
 class SKELLoader {
 	/**
@@ -94,6 +94,7 @@ class SKELLoader {
 		*/
 
 		const data = this.data;
+		const chunk_ofs = data.offset;
 		this.chunk_ofs = data.offset;
 
 		const bone_count = data.readUInt32LE();
@@ -110,9 +111,9 @@ class SKELLoader {
 			const b_parentBone = data.readInt16LE();
 			const b_subMeshID = data.readUInt16LE();
 			const b_boneNameCRC = data.readUInt32LE();
-			const b_translation = this.readM2Track(() => data.readFloatLE(3));
-			const b_rotation = this.readM2Track(() => data.readUInt16LE(4).map(e => (e / 65565) - 1));
-			const b_scale = this.readM2Track(() => data.readFloatLE(3));
+			const b_translation = read_m2_track(data, chunk_ofs, () => data.readFloatLE(3));
+			const b_rotation = read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1));
+			const b_scale = read_m2_track(data, chunk_ofs, () => data.readFloatLE(3));
 			const b_pivot = data.readFloatLE(3);
 
 			const bone = {
