@@ -202,16 +202,16 @@ class WMOExporter {
 		if (!core.view.config.overwriteFiles && generics.fileExists(out))
 			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', out);
 
-		const wmoName = path.basename(out, '.wmo');
-		const gltf = new GLTFWriter(out, wmoName);
+		const wmo_name = path.basename(out, '.gltf');
+		const gltf = new GLTFWriter(out, wmo_name);
 
 		const groupMask = this.groupMask;
 
-		log.write('Exporting WMO model %s as GLTF: %s', wmoName, out);
+		log.write('Exporting WMO model %s as GLTF: %s', wmo_name, out);
 
 		await this.wmo.load();
 
-		helper.setCurrentTaskName(wmoName + ' textures');
+		helper.setCurrentTaskName(wmo_name + ' textures');
 		const texMaps = await this.exportTextures(out, null, helper);
 
 		if (helper.isCancelled())
