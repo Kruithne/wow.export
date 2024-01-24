@@ -217,10 +217,12 @@ class WMOExporter {
 		if (helper.isCancelled())
 			return;
 
-		const textureMap = texMaps.textureMap;
-		const materialMap = texMaps.materialMap;
+		const gltf_texture_lookup = new Map();
+		const texture_map_fids = [...texMaps.textureMap.keys()];
+		for (let i = 0; i < texture_map_fids.length; i++)
+			gltf_texture_lookup.set(i, texture_map_fids[i]);
 
-		gltf.setTextureMap(textureMap);
+		gltf.setTextureMap(texMaps.textureMap);
 
 		const groups = [];
 		let nInd = 0;
@@ -301,7 +303,7 @@ class WMOExporter {
 					indices[i] = group.indices[batch.firstFace + i] + indOfs;
 
 				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
-				gltf.addMesh(groupName + bI, indices, materialMap.get(matID));
+				gltf.addMesh(groupName + bI, indices, gltf_texture_lookup.get(matID));
 			}
 
 			indOfs += indCount;
