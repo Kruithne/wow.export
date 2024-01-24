@@ -7,7 +7,7 @@
 const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
 
-import { read_m2_track } from './M2Loader';
+const { read_m2_track } = require('./M2Loader');
 
 // See: https://wowdev.wiki/M2/.skel
 class SKELLoader {
