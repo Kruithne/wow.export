@@ -6,6 +6,7 @@
 const util = require('util');
 const fsp = require('fs').promises;
 const path = require('path');
+const core = require('../../core');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
@@ -150,6 +151,9 @@ class GLTFWriter {
 	async write(overwrite = true) {
 		const outGLTF = ExportHelper.replaceExtension(this.out, '.gltf');
 		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
+
+		const out_dir = path.dirname(outGLTF);
+		const use_absolute = core.view.config.enableAbsoluteGLTFPaths;
 
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(outGLTF) && await generics.fileExists(outBIN))
@@ -346,7 +350,11 @@ class GLTFWriter {
 			const textureIndex = root.textures.length;
 			const materialIndex = root.materials.length;
 
-			root.images.push({ uri: texFile.matPathRelative });
+			let mat_path = texFile.matPathRelative;
+			if (use_absolute)
+				mat_path = path.resolve(out_dir, mat_path);
+
+			root.images.push({ uri: mat_path });
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
 				name: path.basename(texFile.matName, path.extname(texFile.matName)),
