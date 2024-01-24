@@ -222,6 +222,12 @@ class GLTFWriter {
 			NORMAL: 1
 		};
 
+		const add_scene_node = (node) => {
+			root.nodes.push(node);
+			root.scenes[0].nodes.push(root.nodes.length - 1);
+			return node;
+		};
+
 		const add_buffered_accessor = (accessor, buffer_target, add_primitive = false) => {
 			const buffer_idx = root.bufferViews.push({
 				buffer: 0,
@@ -283,14 +289,11 @@ class GLTFWriter {
 			};
 
 			root.skins = [skin];
-			
-			const skeleton = {
+
+			const skeleton = add_scene_node({
 				name: this.name,
-				children: [],
-			};
-			
-			root.scenes[0].nodes.push(0);
-			nodes.push(skeleton);
+				children: []
+			});
 
 			const bone_lookup_map = new Map();
 	
@@ -469,10 +472,7 @@ class GLTFWriter {
 			if (bones.length > 0)
 				node.skin = 0;
 
-			nodes.push(node);
-
-			console.log(nodes.length);
-			root.scenes[0].nodes.push(nodes.length - 1);
+			add_scene_node(node);
 		}
 
 		await generics.createDirectory(path.dirname(this.out));
