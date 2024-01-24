@@ -198,18 +198,16 @@ class WMOExporter {
 	 * @param {ExportHelper} helper 
 	 */
 	async exportAsGLTF(out, helper) {
-		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-
 		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
-			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
+		if (!core.view.config.overwriteFiles && generics.fileExists(out))
+			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', out);
 
 		const wmoName = path.basename(out, '.wmo');
-		const gltf = new GLTFWriter(outGLTF, wmoName);
+		const gltf = new GLTFWriter(out, wmoName);
 
 		const groupMask = this.groupMask;
 
-		log.write('Exporting WMO model %s as GLTF: %s', wmoName, outGLTF);
+		log.write('Exporting WMO model %s as GLTF: %s', wmoName, out);
 
 		await this.wmo.load();
 
