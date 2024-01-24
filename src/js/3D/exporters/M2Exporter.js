@@ -230,8 +230,9 @@ class M2Exporter {
 
 		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
 
-		// Use internal M2 name for object.
-		obj.setName(this.m2.name);
+		// Use internal M2 name or fallback to the OBJ file name.
+		const model_name = this.m2.name.length > 0 ? this.m2.name : path.basename(out, '.obj');
+		obj.setName(model_name);
 
 		// Verts, normals, UVs
 		obj.setVertArray(this.m2.vertices);
