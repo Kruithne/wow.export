@@ -44,6 +44,7 @@ class GLTFWriter {
 		this.boneWeights = [];
 		this.boneIndices = [];
 		this.bones = [];
+		this.inverseBindMatrices = [];
 		
 		this.textures = new Map();
 		this.meshes = [];
@@ -113,6 +114,20 @@ class GLTFWriter {
 	 */
 	addMesh(name, triangles, matName) {
 		this.meshes.push({ name, triangles, matName });
+	}
+
+	/**
+	 * Transform Vec3 to Mat4x4
+	 * @param {Array} Vector3
+	 * @returns {Array} Mat4x4
+	 */
+	vec3ToMat4x4(v) {
+		return [
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			v[0] * -1, v[1] * -1, v[2] * -1, 1
+		];
 	}
 
 	/**
@@ -207,7 +222,13 @@ class GLTFWriter {
 					byteLength: 0,
 					byteOffset: 0,
 					target: GLTF_ARRAY_BUFFER
-				}
+				},
+				{
+					// Inverse matrices (no buffer type)
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+				},
 			],
 			accessors: [
 				{
@@ -255,12 +276,22 @@ class GLTFWriter {
 					count: 0,
 					normalized: true,
 					type: 'VEC4'
-				}
+				},
+				{
+					// Inverse matrix buffer (Float)
+					name: 'inverseMatBuffer',
+					bufferView: 5,
+					byteOffset: 0,
+					componentType: GLTF_FLOAT,
+					count: 0,
+					type: 'MAT4'
+				},
 			],
 			skins: [
 				{
 					name: this.name + "_Armature",
 					joints: [],
+					inverseBindMatrices: 5,
 					skeleton: 0
 				}
 			],
@@ -311,6 +342,8 @@ class GLTFWriter {
 			nodes.push(prefix_node);
 			nodes.push(node);
 
+			this.inverseBindMatrices.push(...this.vec3ToMat4x4(bone.pivot));
+
 			skin.joints.push(nodeIndex + 1);
 		}
 		
@@ -344,7 +377,7 @@ class GLTFWriter {
 		for (let i = 0, n = this.uvs.length; i < n; i += 2)
 			this.uvs[i + 1] = (this.uvs[i + 1] - 1) * -1;
 
-		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize;
+		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize + (this.inverseBindMatrices.length * 4);
 		const bin = BufferWrapper.alloc(binSize, false);
 		root.buffers[0].byteLength = binSize;
 
@@ -375,6 +408,7 @@ class GLTFWriter {
 		writeData(2, this.uvs, 2, GLTF_FLOAT);
 		writeData(3, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
 		writeData(4, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
+		writeData(5, this.inverseBindMatrices, 16, GLTF_FLOAT);
 
 		for (const mesh of this.meshes) {
 			const bufferViewIndex = root.bufferViews.length;
