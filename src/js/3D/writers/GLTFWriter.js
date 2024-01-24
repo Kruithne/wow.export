@@ -468,7 +468,7 @@ class GLTFWriter {
 				]
 			});
 
-			const node = { name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 };
+			const node = { name: `${this.name}_${mesh.name}`, mesh: meshIndex };
 			if (bones.length > 0)
 				node.skin = 0;
 
