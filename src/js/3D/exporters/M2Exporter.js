@@ -165,7 +165,8 @@ class M2Exporter {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const gltf = new GLTFWriter(out, this.m2.name);
+		const model_name = this.m2.name.length > 0 ? this.m2.name : path.basename(outGLTF, '.gltf');
+		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
 
 		gltf.setVerticesArray(this.m2.vertices);
