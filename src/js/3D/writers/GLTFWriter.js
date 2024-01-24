@@ -281,7 +281,7 @@ class GLTFWriter {
 				inverseBindMatrices: idx_inv_bind,
 				skeleton: 0
 			};
-			
+
 			root.skins = [skin];
 			
 			const skeleton = {
@@ -464,7 +464,11 @@ class GLTFWriter {
 				]
 			});
 
-			nodes.push({ name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 });
+			const node = { name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 };
+			if (bones.length > 0)
+				node.skin = 0;
+
+			nodes.push(node);
 			root.scenes[0].nodes.push(nodes.length - 1);
 		}
 
