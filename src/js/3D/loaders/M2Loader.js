@@ -35,6 +35,38 @@ export class M2Track {
 	}
 }
 
+// See https://wowdev.wiki/M2#Standard_animation_block
+export function read_m2_array(data, ofs, read) {
+	const arrCount = data.readUInt32LE();
+	const arrOfs = data.readUInt32LE();
+
+	const base = data.offset;
+	data.seek(ofs + arrOfs);
+
+	const arr = Array(arrCount);
+	for (let i = 0; i < arrCount; i++)
+		arr[i] = read();
+
+	data.seek(base);
+	return arr;
+}
+
+// See https://wowdev.wiki/M2#Standard_animation_block
+export function read_m2_track(data, ofs, read) {
+	const interpolation = data.readUInt16LE();
+	const globalSeq = data.readUInt16LE();
+
+	const timestamps = read_m2_array(data, ofs, () => read_m2_array(data, ofs, () => data.readUInt32LE()));
+	const values = read_m2_array(data, ofs, () => read_m2_array(data, ofs, read));
+
+	return new M2Track(globalSeq, interpolation, timestamps, values);
+}
+
+// See https://wowdev.wiki/Common_Types#CAaBox
+export function read_caa_bb(data) {
+	return { min: data.readFloatLE(3), max: data.readFloatLE(3) };
+}
+
 class M2Loader {
 	/**
 	 * Construct a new M2Loader instance.
@@ -188,51 +220,6 @@ class M2Loader {
 		this.parseChunk_MD21_collision(ofs);
 	}
 
-	/**
-	 * Read an M2Array.
-	 * @param {function} read 
-	 * @returns {Array}
-	 */
-	readM2Array(read) {
-		const data = this.data;
-		const arrCount = data.readUInt32LE();
-		const arrOfs = data.readUInt32LE();
-
-		const base = data.offset;
-		data.seek(this.md21Ofs + arrOfs);
-
-		const arr = Array(arrCount);
-		for (let i = 0; i < arrCount; i++)
-			arr[i] = read();
-
-		data.seek(base);
-		return arr;
-	}
-
-	/**
-	 * Read an axis-aligned box with a given min/max.
-	 * @returns {CAaBox}
-	 */
-	readCAaBox() {
-		return { min: this.data.readFloatLE(3), max: this.data.readFloatLE(3) };
-	}
-
-	/**
-	 * Read an M2 track.
-	 * @param {function} read 
-	 * @returns {M2Track}
-	 */
-	readM2Track(read) {
-		const data = this.data;
-		const interpolation = data.readUInt16LE();
-		const globalSeq = data.readUInt16LE();
-
-		const timestamps = this.readM2Array(() => this.readM2Array(() => data.readUInt32LE()));
-		const values = this.readM2Array(() => this.readM2Array(read));
-
-		return new M2Track(globalSeq, interpolation, timestamps, values);
-	}
-
 	parseChunk_MD21_bones(ofs) {
 		const data = this.data;
 		const boneCount = data.readUInt32LE();
@@ -251,9 +238,9 @@ class M2Loader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: this.readM2Track(() => data.readFloatLE(3)),
-				rotation: this.readM2Track(() => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
-				scale: this.readM2Track(() => data.readFloatLE(3)),
+				translation: read_m2_track(data, ofs, () => data.readFloatLE(3)),
+				rotation: read_m2_track(data, ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
+				scale: read_m2_track(data, ofs, () => data.readFloatLE(3)),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -314,9 +301,9 @@ class M2Loader {
 	 */
 	parseChunk_MD21_collision(ofs) {
 		// Parse collision boxes before the full collision chunk.
-		this.boundingBox = this.readCAaBox();
+		this.boundingBox = read_caa_bb(this.data);
 		this.boundingSphereRadius = this.data.readFloatLE();
-		this.collisionBox = this.readCAaBox();
+		this.collisionBox = read_caa_bb(this.data);
 		this.collisionSphereRadius = this.data.readFloatLE();
 
 		const indicesCount = this.data.readUInt32LE();
@@ -469,9 +456,9 @@ class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: this.readM2Track(() => this.data.readFloatLE(3)),
-				rotation: this.readM2Track(() => this.data.readFloatLE(4)),
-				scaling: this.readM2Track(() => this.data.readFloatLE(3))
+				translation: read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3)),
+				rotation: read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(4)),
+				scaling: read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3))
 			};
 		}
 
@@ -527,7 +514,7 @@ class M2Loader {
 
 		const weights = this.textureWeights = new Array(weightCount);
 		for (let i = 0; i < weightCount; i++)
-			weights[i] = this.readM2Track(() => this.data.readInt16LE());
+			weights[i] = read_m2_track(this.data, this.md21Ofs, () => this.data.readInt16LE());
 
 		this.data.seek(base);
 	}
@@ -546,8 +533,8 @@ class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: this.readM2Track(() => this.data.readFloatLE(3)),
-				alpha: this.readM2Track(() => this.data.readInt16LE())
+				color: read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3)),
+				alpha: read_m2_track(this.data, this.md21Ofs, () => this.data.readInt16LE())
 			}
 		}
 
