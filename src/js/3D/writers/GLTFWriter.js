@@ -45,6 +45,20 @@ function calculate_min_max(values, stride, target) {
 	}
 }
 
+/**
+ * Transform Vec3 to Mat4x4
+ * @param {Array} Vector3
+ * @returns {Array} Mat4x4
+ */
+function vec3_to_mat4x4(v) {
+	return [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v[0] * -1, v[1] * -1, v[2] * -1, 1
+	];
+}
+
 class GLTFWriter {
 	/**
 	 * Construct a new GLTF writer instance.
@@ -131,20 +145,6 @@ class GLTFWriter {
 	 */
 	addMesh(name, triangles, matName) {
 		this.meshes.push({ name, triangles, matName });
-	}
-
-	/**
-	 * Transform Vec3 to Mat4x4
-	 * @param {Array} Vector3
-	 * @returns {Array} Mat4x4
-	 */
-	vec3ToMat4x4(v) {
-		return [
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			v[0] * -1, v[1] * -1, v[2] * -1, 1
-		];
 	}
 
 	async write(overwrite = true) {
@@ -327,7 +327,7 @@ class GLTFWriter {
 				nodes.push(prefix_node);
 				nodes.push(node);
 	
-				this.inverseBindMatrices.push(...this.vec3ToMat4x4(bone.pivot));
+				this.inverseBindMatrices.push(...vec3_to_mat4x4(bone.pivot));
 	
 				skin.joints.push(nodeIndex + 1);
 			}
