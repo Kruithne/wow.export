@@ -178,7 +178,6 @@ class M2Exporter {
 		gltf.addUVArray(this.m2.uv);
 		gltf.addUVArray(this.m2.uv2);
 
-		// TODO: full texture paths.
 		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
 		gltf.setTextureMap(textureMap);
 
