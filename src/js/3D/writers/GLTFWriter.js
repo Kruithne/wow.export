@@ -83,11 +83,11 @@ class GLTFWriter {
 	}
 
 	/**
-	 * Set the UV array for this writer.
-	 * @param {Array} uvs 
+	 * Add a UV array for this writer.
+	 * @param {Array} uvs
 	 */
-	setUVArray(uvs) {
-		this.uvs = uvs;
+	addUVArray(uvs) {
+		this.uvs.push(uvs);
 	}
 
 	/**
@@ -203,13 +203,6 @@ class GLTFWriter {
 					target: GLTF_ARRAY_BUFFER
 				},
 				{
-					// UVs ARRAY_BUFFER
-					buffer: 0,
-					byteLength: 0,
-					byteOffset: 0,
-					target: GLTF_ARRAY_BUFFER
-				},
-				{
 					// Bone joints/indices ARRAY_BUFFER
 					buffer: 0,
 					byteLength: 0,
@@ -250,18 +243,9 @@ class GLTFWriter {
 					type: 'VEC3'
 				},
 				{
-					// UVs (Float)
-					name: 'TEXCOORD_0',
-					bufferView: 2,
-					byteOffset: 0,
-					componentType: GLTF_FLOAT,
-					count: 0,
-					type: 'VEC2'
-				},
-				{
 					// Bone joints/indices (Byte)
 					name: 'JOINTS_0',
-					bufferView: 3,
+					bufferView: 2,
 					byteOffset: 0,
 					componentType: GLTF_UNSIGNED_BYTE,
 					count: 0,
@@ -270,7 +254,7 @@ class GLTFWriter {
 				{
 					// Bone weights (Byte)
 					name: 'WEIGHTS_0',
-					bufferView: 4,
+					bufferView: 3,
 					byteOffset: 0,
 					componentType: GLTF_UNSIGNED_BYTE,
 					count: 0,
@@ -280,7 +264,7 @@ class GLTFWriter {
 				{
 					// Inverse matrix buffer (Float)
 					name: 'inverseMatBuffer',
-					bufferView: 5,
+					bufferView: 4,
 					byteOffset: 0,
 					componentType: GLTF_FLOAT,
 					count: 0,
@@ -291,7 +275,7 @@ class GLTFWriter {
 				{
 					name: this.name + "_Armature",
 					joints: [],
-					inverseBindMatrices: 5,
+					inverseBindMatrices: 4,
 					skeleton: 0
 				}
 			],
@@ -373,11 +357,16 @@ class GLTFWriter {
 		for (const mesh of this.meshes)
 			triangleSize += mesh.triangles.length * 2;
 
-		// Flip UV on Y axis.
-		for (let i = 0, n = this.uvs.length; i < n; i += 2)
-			this.uvs[i + 1] = (this.uvs[i + 1] - 1) * -1;
+		let combined_uv_length = 0;
+		for (const uv of this.uvs) {
+			combined_uv_length += uv.length * 4;
 
-		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize + (this.inverseBindMatrices.length * 4);
+			// Flip UVs on Y axis.
+			for (let i = 0; i < uv.length; i += 2)
+				uv[i + 1] = (uv[i + 1] - 1) * -1;
+		}
+
+		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (combined_uv_length) + this.boneIndices.length + this.boneWeights.length + triangleSize + (this.inverseBindMatrices.length * 4);
 		const bin = BufferWrapper.alloc(binSize, false);
 		root.buffers[0].byteLength = binSize;
 
@@ -405,10 +394,42 @@ class GLTFWriter {
 
 		writeData(0, this.vertices, 3, GLTF_FLOAT);
 		writeData(1, this.normals, 3, GLTF_FLOAT);
-		writeData(2, this.uvs, 2, GLTF_FLOAT);
-		writeData(3, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
-		writeData(4, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
-		writeData(5, this.inverseBindMatrices, 16, GLTF_FLOAT);
+		writeData(2, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
+		writeData(3, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
+		writeData(4, this.inverseBindMatrices, 16, GLTF_FLOAT);
+
+		const primitive_attributes = {
+			POSITION: 0,
+			NORMAL: 1,
+			JOINTS_0: 2,
+			WEIGHTS_0: 3,
+		};
+
+		for (let i = 0, n = this.uvs.length; i < n; i++)  {
+			const uv = this.uvs[i];
+			const index = root.bufferViews.length;
+
+			const accessor_name = 'TEXCOORD_' + i;
+			primitive_attributes[accessor_name] = index;
+
+			root.accessors.push({
+				name: accessor_name,
+				bufferView: root.bufferViews.length,
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: uv.length / 2,
+				type: 'VEC2'
+			});
+
+			root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: GLTF_ARRAY_BUFFER
+			});
+
+			writeData(index, uv, 2, GLTF_FLOAT);
+		}
 
 		for (const mesh of this.meshes) {
 			const bufferViewIndex = root.bufferViews.length;
@@ -439,13 +460,7 @@ class GLTFWriter {
 			root.meshes.push({
 				primitives: [
 					{
-						attributes: {
-							POSITION: 0,
-							NORMAL: 1,
-							TEXCOORD_0: 2,
-							JOINTS_0: 3,
-							WEIGHTS_0: 4,
-						},
+						attributes: primitive_attributes,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
 						material: materialMap.get(mesh.matName)

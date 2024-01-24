@@ -170,12 +170,12 @@ class M2Exporter {
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
-		gltf.setUVArray(this.m2.uv);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
 		gltf.setBoneIndexArray(this.m2.boneIndices)
 		gltf.setBonesArray(this.m2.bones);
 
-		// TODO: Handle UV2 for GLTF.
+		gltf.addUVArray(this.m2.uv);
+		gltf.addUVArray(this.m2.uv2);
 
 		// TODO: full texture paths.
 		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
