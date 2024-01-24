@@ -250,7 +250,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (!mask || !mask?.has(i))
+			if (mask && !mask?.has(i))
 				continue;
 
 			// 3 vertices per indices.
