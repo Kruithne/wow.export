@@ -184,7 +184,7 @@ class M2Exporter {
 
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
 			// Skip geosets that are not enabled.
-			if (!this.geosetMask[mI]?.checked)
+			if (!this.geosetMask?.[mI]?.checked)
 				continue;
 
 			const mesh = skin.subMeshes[mI];
