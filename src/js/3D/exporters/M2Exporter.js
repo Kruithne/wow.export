@@ -11,6 +11,7 @@ const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
+const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const JSONWriter = require('../writers/JSONWriter');
@@ -169,11 +170,21 @@ class M2Exporter {
 		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
 
+		if (this.m2.skeletonFileID) {
+			const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
+			const skel = new SKELLoader(skel_file);
+
+			await skel.load();
+
+			gltf.setBonesArray(skel.bones);
+		} else {
+			gltf.setBonesArray(this.m2.bones);
+		}
+
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
 		gltf.setBoneIndexArray(this.m2.boneIndices)
-		gltf.setBonesArray(this.m2.bones);
 
 		gltf.addUVArray(this.m2.uv);
 		gltf.addUVArray(this.m2.uv2);
