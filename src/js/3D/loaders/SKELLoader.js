@@ -47,15 +47,6 @@ class SKELLoader {
 	 * Parse SKB1 chunk for skin file data IDs.
 	 */
 	parseChunk_SKB1() {
-		/*
-			struct {
-		  		M2Array<M2CompBone> bones;
-				M2Array<uint16_t> key_bone_lookup;
-			} skeleton_bone_header;
-
-			uint8_t skeleton_bone_raw_data[];
-		*/
-
 		const data = this.data;
 		const chunk_ofs = data.offset;
 		this.chunk_ofs = data.offset;
