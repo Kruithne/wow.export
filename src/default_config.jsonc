@@ -26,6 +26,7 @@
 	"enableSharedTextures": true,
 	"enableSharedChildren": true,
 	"enableAbsoluteMTLPaths": false,
+	"enableAbsoluteGLTFPaths": false,
 	"enableAbsoluteCSVPaths": false,
 	"removePathSpaces": true,
 	"removePathSpacesCopy": true,

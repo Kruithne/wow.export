@@ -152,12 +152,22 @@
 						</ul>
 					</div>
 					<div>
-						<h1>Use Absolute MTL Paths</h1>
+						<h1>Use Absolute MTL Texture Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>
-						<p>Enable this option if you are having issues importing models in Cinema 4D with Shared Textures enabled.</p>
+						<p>Enable this option if you are having issues importing OBJ models with Shared Textures enabled.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Use Absolute glTF Texture Paths</h1>
+						<p>If enabled, glTF files will contain absolute textures paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<p>Enable this option if you are having issues importing glTF models with Shared Textures enabled.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteGLTFPaths"/>
 							<span>Enable</span>
 						</label>
 					</div>

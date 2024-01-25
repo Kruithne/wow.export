@@ -6,27 +6,61 @@
 const util = require('util');
 const fsp = require('fs').promises;
 const path = require('path');
+const core = require('../../core');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
+const { get_bone_name } = require('../BoneMapper');
 
+// See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
 const GLTF_ELEMENT_ARRAY_BUFFER = 0x8893;
 
-//const GLTF_BYTE = 0x1400;
 const GLTF_UNSIGNED_BYTE = 0x1401;
-//const GLTF_SHORT = 0x1402;
 const GLTF_UNSIGNED_SHORT = 0x1403;
-//const GLTF_UNSIGNED_INT = 0x1405;
+const GLTF_UNSIGNED_INT = 0x1405;
 const GLTF_FLOAT = 0x1406;
 
-//const GLTF_POINTS = 0x0000;
-//const GLTF_LINES = 0x0001;
-//const GLTF_LINE_LOOP = 0x0002;
-//const GLTF_LINE_STRIP = 0x0003;
 const GLTF_TRIANGLES = 0x0004;
-//const GLTF_TRIANGLE_STRIP = 0x0005;
-//const GLTF_TRIANGLE_FAN = 0x0006;
+
+/**
+ * Calculate the minimum/maximum values of an array buffer.
+ * @param {Array} values 
+ * @param {number} stride 
+ * @param {object} target 
+ */
+function calculate_min_max(values, stride, target) {
+	const min = target.min = Array(stride);
+	const max = target.max = Array(stride);
+
+	for (let i = 0; i < values.length; i += stride) {
+		for (let ofs = 0; ofs < stride; ofs++) {
+			const currentMin = min[ofs];
+			const currentMax = max[ofs];
+			const value = values[i + ofs];
+
+			if (currentMin === undefined || value < currentMin)
+				min[ofs] = value;
+			
+			if (currentMax === undefined || value > currentMax)
+				max[ofs] = value;
+		}
+	}
+}
+
+/**
+ * Transform Vec3 to Mat4x4
+ * @param {Array} Vector3
+ * @returns {Array} Mat4x4
+ */
+function vec3_to_mat4x4(v) {
+	return [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v[0] * -1, v[1] * -1, v[2] * -1, 1
+	];
+}
 
 class GLTFWriter {
 	/**
@@ -83,11 +117,11 @@ class GLTFWriter {
 	}
 
 	/**
-	 * Set the UV array for this writer.
-	 * @param {Array} uvs 
+	 * Add a UV array for this writer.
+	 * @param {Array} uvs
 	 */
-	setUVArray(uvs) {
-		this.uvs = uvs;
+	addUVArray(uvs) {
+		this.uvs.push(uvs);
 	}
 
 	/**
@@ -116,48 +150,12 @@ class GLTFWriter {
 		this.meshes.push({ name, triangles, matName });
 	}
 
-	/**
-	 * Transform Vec3 to Mat4x4
-	 * @param {Array} Vector3
-	 * @returns {Array} Mat4x4
-	 */
-	vec3ToMat4x4(v) {
-		return [
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			v[0] * -1, v[1] * -1, v[2] * -1, 1
-		];
-	}
-
-	/**
-	 * Calculate the minimum/maximum values of an array buffer.
-	 * @param {Array} values 
-	 * @param {number} stride 
-	 * @param {object} target 
-	 */
-	calculateMinMax(values, stride, target) {
-		const min = target.min = Array(stride);
-		const max = target.max = Array(stride);
-
-		for (let i = 0; i < values.length; i += stride) {
-			for (let ofs = 0; ofs < stride; ofs++) {
-				const currentMin = min[ofs];
-				const currentMax = max[ofs];
-				const value = values[i + ofs];
-
-				if (currentMin === undefined || value < currentMin)
-					min[ofs] = value;
-				
-				if (currentMax === undefined || value > currentMax)
-					max[ofs] = value;
-			}
-		}
-	}
-
 	async write(overwrite = true) {
 		const outGLTF = ExportHelper.replaceExtension(this.out, '.gltf');
 		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
+
+		const out_dir = path.dirname(outGLTF);
+		const use_absolute = core.view.config.enableAbsoluteGLTFPaths;
 
 		// If overwriting is disabled, check file existence.
 		if (!overwrite && await generics.fileExists(outGLTF) && await generics.fileExists(outBIN))
@@ -172,12 +170,12 @@ class GLTFWriter {
 			nodes: [
 				{
 					name: this.name,
-					children: [],
+					children: []
 				}
 			],
 			scenes: [
 				{
-					name: this.name + 'Scene',
+					name: this.name + '_Scene',
 					nodes: [0]
 				}
 			],
@@ -201,34 +199,7 @@ class GLTFWriter {
 					byteLength: 0,
 					byteOffset: 0,
 					target: GLTF_ARRAY_BUFFER
-				},
-				{
-					// UVs ARRAY_BUFFER
-					buffer: 0,
-					byteLength: 0,
-					byteOffset: 0,
-					target: GLTF_ARRAY_BUFFER
-				},
-				{
-					// Bone joints/indices ARRAY_BUFFER
-					buffer: 0,
-					byteLength: 0,
-					byteOffset: 0,
-					target: GLTF_ARRAY_BUFFER
-				},
-				{
-					// Bone weights ARRAY_BUFFER
-					buffer: 0,
-					byteLength: 0,
-					byteOffset: 0,
-					target: GLTF_ARRAY_BUFFER
-				},
-				{
-					// Inverse matrices (no buffer type)
-					buffer: 0,
-					byteLength: 0,
-					byteOffset: 0,
-				},
+				}
 			],
 			accessors: [
 				{
@@ -249,102 +220,131 @@ class GLTFWriter {
 					count: 0,
 					type: 'VEC3'
 				},
-				{
-					// UVs (Float)
-					name: 'TEXCOORD_0',
-					bufferView: 2,
-					byteOffset: 0,
-					componentType: GLTF_FLOAT,
-					count: 0,
-					type: 'VEC2'
-				},
-				{
-					// Bone joints/indices (Byte)
-					name: 'JOINTS_0',
-					bufferView: 3,
-					byteOffset: 0,
-					componentType: GLTF_UNSIGNED_BYTE,
-					count: 0,
-					type: 'VEC4'
-				},
-				{
-					// Bone weights (Byte)
-					name: 'WEIGHTS_0',
-					bufferView: 4,
-					byteOffset: 0,
-					componentType: GLTF_UNSIGNED_BYTE,
-					count: 0,
-					normalized: true,
-					type: 'VEC4'
-				},
-				{
-					// Inverse matrix buffer (Float)
-					name: 'inverseMatBuffer',
-					bufferView: 5,
-					byteOffset: 0,
-					componentType: GLTF_FLOAT,
-					count: 0,
-					type: 'MAT4'
-				},
 			],
-			skins: [
-				{
-					name: this.name + "_Armature",
-					joints: [],
-					inverseBindMatrices: 5,
-					skeleton: 0
-				}
-			],
-			textures: [],
-			images: [],
-			materials: [],
 			meshes: [],
 			scene: 0
 		};
 
+		const primitive_attributes = {
+			POSITION: 0,
+			NORMAL: 1
+		};
+
+		const add_scene_node = (node) => {
+			root.nodes.push(node);
+			root.nodes[0].children.push(root.nodes.length - 1);
+			return node;
+		};
+
+		const add_buffered_accessor = (accessor, buffer_target, add_primitive = false) => {
+			const buffer_idx = root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: buffer_target
+			}) - 1;
+
+			if (add_primitive)
+				primitive_attributes[accessor.name] = buffer_idx;
+
+			return root.accessors.push(Object.assign(accessor, {
+				bufferView: buffer_idx
+			})) - 1;
+		};
+
 		const nodes = root.nodes;
-		const skin = root.skins[0];
-
 		const bones = this.bones;
-		const skeleton = nodes[0];
 
-		const bone_lookup_map = new Map();
+		let idx_inv_bind = -1;
+		let idx_bone_joints = -1
+		let idx_bone_weights = -1;
 
-		// Add bone nodes.
-		for (let i = 0; i < bones.length; i++) {
-			const nodeIndex = nodes.length;
-			const bone = bones[i];
+		if (bones.length > 0) {
+			idx_bone_joints = add_buffered_accessor({
+				// Bone joints/indices (Byte)
+				name: 'JOINTS_0',
+				byteOffset: 0,
+				componentType: GLTF_UNSIGNED_BYTE,
+				count: 0,
+				type: 'VEC4'
+			}, GLTF_ARRAY_BUFFER, true);
 
-			let parent_pos = [0, 0, 0];
-			if (bone.parentBone > -1) {
-				const parent_bone = bones[bone.parentBone];
-				parent_pos = parent_bone.pivot;
+			idx_bone_weights = add_buffered_accessor({
+				// Bone weights (Byte)
+				name: 'WEIGHTS_0',
+				byteOffset: 0,
+				componentType: GLTF_UNSIGNED_BYTE,
+				count: 0,
+				normalized: true,
+				type: 'VEC4'
+			}, GLTF_ARRAY_BUFFER, true);
 
-				const parent_node = bone_lookup_map.get(bone.parentBone);
-				parent_node.children ? parent_node.children.push(nodeIndex) : parent_node.children = [nodeIndex];
-			} else {
-				// Parent stray bones to the skeleton root.
-				skeleton.children.push(nodeIndex);
+			idx_inv_bind = add_buffered_accessor({
+				// Inverse matrices (Float)
+				name: 'INV_BIND_MATRICES',
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: 0,
+				type: 'MAT4'
+			}, undefined);
+
+			const skin = {
+				name: this.name + "_Armature",
+				joints: [],
+				inverseBindMatrices: idx_inv_bind,
+				skeleton: 0
+			};
+
+			root.skins = [skin];
+
+			const skeleton = add_scene_node({
+				name: this.name,
+				children: []
+			});
+
+			const bone_lookup_map = new Map();
+	
+			// Add bone nodes.
+			for (let i = 0; i < bones.length; i++) {
+				const nodeIndex = nodes.length;
+				const bone = bones[i];
+	
+				let parent_pos = [0, 0, 0];
+				if (bone.parentBone > -1) {
+					const parent_bone = bones[bone.parentBone];
+					parent_pos = parent_bone.pivot;
+	
+					const parent_node = bone_lookup_map.get(bone.parentBone);
+					parent_node.children ? parent_node.children.push(nodeIndex) : parent_node.children = [nodeIndex];
+				} else {
+					// Parent stray bones to the skeleton root.
+					skeleton.children.push(nodeIndex);
+				}
+
+				const bone_name = get_bone_name(bone.boneID, i);
+				const prefix_node = {
+					name: bone_name + '_p',
+					translation: bone.pivot.map((v, i) => v - parent_pos[i]),
+					children: [nodeIndex + 1]
+				};
+	
+				const node = { name: bone_name };
+	
+				bone_lookup_map.set(i, node);
+	
+				nodes.push(prefix_node);
+				nodes.push(node);
+	
+				this.inverseBindMatrices.push(...vec3_to_mat4x4(bone.pivot));
+	
+				skin.joints.push(nodeIndex + 1);
 			}
+		}
 
-			const prefix_node = {
-				name: 'bone_' + i + '_p',
-				translation: bone.pivot.map((v, i) => v - parent_pos[i]),
-				children: [nodeIndex + 1]
-			};
-
-			const node = {
-				name: this.name + '_bone_' + i
-			};
-
-			bone_lookup_map.set(i, node);
-
-			nodes.push(prefix_node);
-			nodes.push(node);
-
-			this.inverseBindMatrices.push(...this.vec3ToMat4x4(bone.pivot));
-
-			skin.joints.push(nodeIndex + 1);
+		if (this.textures.size > 0) {
+			root.images = [];
+			root.textures = [];
+			root.materials = [];
 		}
 		
 		const materialMap = new Map();
@@ -353,10 +353,14 @@ class GLTFWriter {
 			const textureIndex = root.textures.length;
 			const materialIndex = root.materials.length;
 
-			root.images.push({ uri: texFile.matPathRelative });
+			let mat_path = texFile.matPathRelative;
+			if (use_absolute)
+				mat_path = path.resolve(out_dir, mat_path);
+
+			root.images.push({ uri: mat_path });
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
-				name: fileDataID.toString(),
+				name: path.basename(texFile.matName, path.extname(texFile.matName)),
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
 					baseColorTexture: {
@@ -369,83 +373,172 @@ class GLTFWriter {
 			materialMap.set(fileDataID, materialIndex);
 		}
 
-		let triangleSize = 0;
-		for (const mesh of this.meshes)
-			triangleSize += mesh.triangles.length * 2;
+		const mesh_component_meta = Array(this.meshes.length);
+		for (let i = 0, n = this.meshes.length; i < n; i++) {
+			const mesh = this.meshes[i];
 
-		// Flip UV on Y axis.
-		for (let i = 0, n = this.uvs.length; i < n; i += 2)
-			this.uvs[i + 1] = (this.uvs[i + 1] - 1) * -1;
+			let component_type = GLTF_UNSIGNED_BYTE;
+			let component_sizeof = 1;
+			for (const idx of mesh.triangles) {
+				if (idx > 255 && component_type === GLTF_UNSIGNED_BYTE) {
+					component_type = GLTF_UNSIGNED_SHORT;
+					component_sizeof = 2;
+				} else if (idx > 65535 && component_type === GLTF_UNSIGNED_SHORT) {
+					component_type = GLTF_UNSIGNED_INT;
+					component_sizeof = 4;
+					break;
+				}
+			}
 
-		const binSize = (this.vertices.length * 4) + (this.normals.length * 4) + (this.uvs.length * 4) + this.boneIndices.length + this.boneWeights.length + triangleSize + (this.inverseBindMatrices.length * 4);
-		const bin = BufferWrapper.alloc(binSize, false);
-		root.buffers[0].byteLength = binSize;
+			const byte_length = mesh.triangles.length * component_sizeof;
 
+			mesh_component_meta[i] = {
+				byte_length,
+				component_type
+			};
+		}
+
+		for (const uv of this.uvs) {
+			// Flip UVs on Y axis.
+			for (let i = 0; i < uv.length; i += 2)
+				uv[i + 1] = (uv[i + 1] - 1) * -1;
+		}
+
+		const bins = [];
+
+		const component_sizes = {
+			[GLTF_UNSIGNED_BYTE]: 1,
+			[GLTF_UNSIGNED_SHORT]: 2,
+			[GLTF_UNSIGNED_INT]: 4,
+			[GLTF_FLOAT]: 4
+		};
+
+		let bin_ofs = 0;
 		const writeData = (index, arr, stride, componentType) => {
 			const view = root.bufferViews[index];
 			const accessor = root.accessors[index];
 
-			view.byteOffset = bin.offset;
+			const component_size = component_sizes[componentType];
+			const misalignment = bin_ofs % component_size;
+			const padding = misalignment > 0 ? component_size - misalignment : 0;
 
-			if (componentType === GLTF_FLOAT)
-				view.byteLength = arr.length * 4;
-			else if (componentType === GLTF_UNSIGNED_BYTE)
-				view.byteLength = arr.length;
+			bin_ofs += padding;
+			view.byteOffset = bin_ofs;
+
+			const buffer_length = arr.length * component_size;
+			view.byteLength = buffer_length;
+
+			bin_ofs += buffer_length;
+
+			const buffer = BufferWrapper.alloc(buffer_length + padding, true);
+
+			if (padding > 0)
+				buffer.fill(0, padding);
 
 			accessor.count = arr.length / stride;
 
-			this.calculateMinMax(arr, stride, accessor);
+			calculate_min_max(arr, stride, accessor);
 			for (const node of arr) {
 				if (componentType === GLTF_FLOAT)
-					bin.writeFloatLE(node);
+					buffer.writeFloatLE(node);
 				else if (componentType === GLTF_UNSIGNED_BYTE)
-					bin.writeUInt8(node);
+					buffer.writeUInt8(node);
 			}
+
+			bins.push(buffer);
 		};
 
 		writeData(0, this.vertices, 3, GLTF_FLOAT);
 		writeData(1, this.normals, 3, GLTF_FLOAT);
-		writeData(2, this.uvs, 2, GLTF_FLOAT);
-		writeData(3, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
-		writeData(4, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
-		writeData(5, this.inverseBindMatrices, 16, GLTF_FLOAT);
 
-		for (const mesh of this.meshes) {
+		if (bones.length > 0) {
+			writeData(idx_bone_joints, this.boneIndices, 4, GLTF_UNSIGNED_BYTE);
+			writeData(idx_bone_weights, this.boneWeights, 4, GLTF_UNSIGNED_BYTE);
+			writeData(idx_inv_bind, this.inverseBindMatrices, 16, GLTF_FLOAT);
+		}
+
+		for (let i = 0, n = this.uvs.length; i < n; i++)  {
+			const uv = this.uvs[i];
+			const index = root.bufferViews.length;
+
+			const accessor_name = 'TEXCOORD_' + i;
+			primitive_attributes[accessor_name] = index;
+
+			root.accessors.push({
+				name: accessor_name,
+				bufferView: root.bufferViews.length,
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: uv.length / 2,
+				type: 'VEC2'
+			});
+
+			root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: GLTF_ARRAY_BUFFER
+			});
+
+			writeData(index, uv, 2, GLTF_FLOAT);
+		}
+
+		for (let i = 0, n = this.meshes.length; i < n; i++) {
+			const mesh = this.meshes[i];
+			const mesh_meta = mesh_component_meta[i];
+
+			const component_type = mesh_meta.component_type;
+
 			const bufferViewIndex = root.bufferViews.length;
 			const accessorIndex = root.accessors.length;
+
+			const component_size = component_sizes[component_type];
+			const misalignment = bin_ofs % component_size;
+			const padding = misalignment > 0 ? component_size - misalignment : 0;
+
+			bin_ofs += padding;
 
 			// Create ELEMENT_ARRAY_BUFFER for mesh indices.
 			root.bufferViews.push({
 				buffer: 0,
-				byteLength: mesh.triangles.length * 2,
-				byteOffset: bin.offset,
+				byteLength: mesh_meta.byte_length,
+				byteOffset: bin_ofs,
 				target: GLTF_ELEMENT_ARRAY_BUFFER
 			});
+
+			bin_ofs += mesh_meta.byte_length;
+
+			const buffer = BufferWrapper.alloc(mesh_meta.byte_length + padding, true);
+
+			if (padding > 0)
+				buffer.fill(0, padding);
 
 			// Create accessor for the mesh indices.
 			root.accessors.push({
 				bufferView: bufferViewIndex,
 				byteOffset: 0,
-				componentType: GLTF_UNSIGNED_SHORT,
+				componentType: component_type,
 				count: mesh.triangles.length,
 				type: 'SCALAR'
 			});
 
 			// Write indices into the binary.
-			for (const idx of mesh.triangles)
-				bin.writeUInt16LE(idx);
+			if (component_type === GLTF_UNSIGNED_BYTE) {
+				for (const idx of mesh.triangles)
+					buffer.writeUInt8(idx);
+			} else if (component_type === GLTF_UNSIGNED_SHORT) {
+				for (const idx of mesh.triangles)
+					buffer.writeUInt16LE(idx);
+			} else if (component_type === GLTF_UNSIGNED_INT) {
+				for (const idx of mesh.triangles)
+					buffer.writeUInt32LE(idx);
+			}
 
 			const meshIndex = root.meshes.length;
 			root.meshes.push({
 				primitives: [
 					{
-						attributes: {
-							POSITION: 0,
-							NORMAL: 1,
-							TEXCOORD_0: 2,
-							JOINTS_0: 3,
-							WEIGHTS_0: 4,
-						},
+						attributes: primitive_attributes,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
 						material: materialMap.get(mesh.matName)
@@ -453,15 +546,20 @@ class GLTFWriter {
 				]
 			});
 
-			//const nodeIndex = nodes.length;
-			//rootChildren.push(nodeIndex);
-			nodes.push({ name: `${this.name}_${mesh.name}`, mesh: meshIndex, skin: 0 });
-			root.scenes[0].nodes.push(nodes.length - 1);
+			const node = { name: `${this.name}_${mesh.name}`, mesh: meshIndex };
+			if (bones.length > 0)
+				node.skin = 0;
+
+			add_scene_node(node);
+			bins.push(buffer);
 		}
+
+		const bin_combined = BufferWrapper.concat(bins);
+		root.buffers[0].byteLength = bin_combined.byteLength;
 
 		await generics.createDirectory(path.dirname(this.out));
 		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
-		await bin.writeToFile(outBIN);
+		await bin_combined.writeToFile(outBIN);
 	}
 }
 

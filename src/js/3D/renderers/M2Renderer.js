@@ -7,7 +7,7 @@ const core = require('../../core');
 const log = require('../../log');
 
 const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
+const { M2Loader } = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
 const RenderCache = require('./RenderCache');
 

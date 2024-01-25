@@ -10,7 +10,8 @@ const generics = require('../../generics');
 const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
+const { M2Loader } = require('../loaders/M2Loader');
+const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const JSONWriter = require('../writers/JSONWriter');
@@ -159,31 +160,41 @@ class M2Exporter {
 		const outDir = path.dirname(out);
 
 		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
+		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
 			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
 
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const gltf = new GLTFWriter(out, this.m2.name);
-		log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
+		const model_name = path.basename(outGLTF, '.gltf');
+		const gltf = new GLTFWriter(out, model_name);
+		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
+
+		if (this.m2.skeletonFileID) {
+			const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
+			const skel = new SKELLoader(skel_file);
+
+			await skel.load();
+
+			gltf.setBonesArray(skel.bones);
+		} else {
+			gltf.setBonesArray(this.m2.bones);
+		}
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
-		gltf.setUVArray(this.m2.uv);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
 		gltf.setBoneIndexArray(this.m2.boneIndices)
-		gltf.setBonesArray(this.m2.bones);
 
-		// TODO: Handle UV2 for GLTF.
+		gltf.addUVArray(this.m2.uv);
+		gltf.addUVArray(this.m2.uv2);
 
-		// TODO: full texture paths.
 		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
 		gltf.setTextureMap(textureMap);
 
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
 			// Skip geosets that are not enabled.
-			if (!this.geosetMask[mI]?.checked)
+			if (this.geosetMask && !this.geosetMask[mI]?.checked)
 				continue;
 
 			const mesh = skin.subMeshes[mI];
@@ -196,7 +207,6 @@ class M2Exporter {
 			if (texUnit)
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
-			// TODO: Better material naming.
 			let matName;
 			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
 				matName = texture.fileDataID;
@@ -227,10 +237,11 @@ class M2Exporter {
 
 		const outDir = path.dirname(out);
 
-		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
+		// Use internal M2 name or fallback to the OBJ file name.
+		const model_name = path.basename(out, '.obj');
+		obj.setName(model_name);
 
-		// Use internal M2 name for object.
-		obj.setName(this.m2.name);
+		log.write('Exporting M2 model %s as OBJ: %s', model_name, out);
 
 		// Verts, normals, UVs
 		obj.setVertArray(this.m2.vertices);

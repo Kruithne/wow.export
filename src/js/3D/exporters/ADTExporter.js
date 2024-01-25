@@ -271,9 +271,7 @@ class ADTExporter {
 		const objAdt = new ADTLoader(objFile);
 		objAdt.loadObj();
 
-		if (config.mapsExportRaw) {
-			// 
-		} else {
+		if (!config.mapsExportRaw) {
 			const vertices = new Array(16 * 16 * 145 * 3);
 			const normals = new Array(16 * 16 * 145 * 3);
 			const uvs = new Array(16 * 16 * 145 * 2);
