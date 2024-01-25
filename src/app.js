@@ -693,11 +693,11 @@ document.addEventListener('click', function(e) {
 			if (updateAvailable) {
 				updater.applyUpdate();
 			} else {
-				// No update available, start checking Blender add-on.
-				blender.checkLocalVersion();
-
 				core.view.isBusy--;
 				core.view.setScreen('source-select');
+				
+				// No update available, start checking Blender add-on.
+				blender.checkLocalVersion();
 			}
 		});
 	} else {
