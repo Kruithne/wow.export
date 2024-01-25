@@ -30,6 +30,12 @@ const chrRaceXChrModelMap = new Map();
 const choiceToGeoset = new Map();
 const geosetMap = new Map();
 
+// Can we just keep DB2s opened? 
+let chrCustChoiceDB;
+let chrCustOptDB;
+let chrCustElementDB;
+let chrCustGeosetDB;
+
 core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
@@ -43,11 +49,11 @@ core.events.once('screen-tab-characters', async () => {
 	await chrModelDB.parse();
 
 	await progress.step('Loading character customization choices...');
-	const chrCustChoiceDB = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
+	chrCustChoiceDB = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
 	await chrCustChoiceDB.parse();
 
 	await progress.step('Loading character customization options...');
-	const chrCustOptDB = new WDCReader('DBFilesClient/ChrCustomizationOption.db2');
+	chrCustOptDB = new WDCReader('DBFilesClient/ChrCustomizationOption.db2');
 	await chrCustOptDB.parse();
 
 	// TODO: We already have these loaded through DBCreatures cache. Get from there instead.
@@ -135,7 +141,7 @@ core.events.once('screen-tab-characters', async () => {
 	// await chrCustDB.parse();
 
 	await progress.step('Loading character customization elements...');
-	const chrCustElementDB = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
+	chrCustElementDB = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
 	await chrCustElementDB.parse();
 
 	for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustElementDB.getAllRows()) {
@@ -154,7 +160,7 @@ core.events.once('screen-tab-characters', async () => {
 	}
 
 	await progress.step('Loading character customization materials...');
-	const chrCustGeosetDB = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2');
+	chrCustGeosetDB = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2');
 	await chrCustGeosetDB.parse();
 
 	for (const [chrCustomizationGeosetID, chrCustomizationGeosetRow] of chrCustGeosetDB.getAllRows()) {
@@ -204,6 +210,9 @@ core.registerLoadFunc(async () => {
 
 	// When the selected model skin is changed, update our model.
 	core.view.$watch('chrCustModelSelection', async (selection) => {
+		if (core.view.isBusy)
+			return;
+
 		const selected = selection[0];
 		console.log('Selection changed to ID ' + selected.id + ', label ' + selected.label);
 
@@ -224,6 +233,12 @@ core.registerLoadFunc(async () => {
 		state.chrCustOptions.push(...availableOptions);
 		state.chrCustOptionSelection.push(...availableOptions.slice(0, 1));
 
+		// Set active choices to first entry of each
+		for (const availableOption of availableOptions) {
+			for (const possibleChoice of optionToChoices.get(availableOption.id)) 
+				state.chrCustActiveChoices.push({ optionID: availableOption.id, choiceID: possibleChoice.id });
+		}
+
 		const fileDataID = chrModelIDToFileDataID.get(selected.id);
 
 		// Check if the first file in the selection is "new".
@@ -232,6 +247,9 @@ core.registerLoadFunc(async () => {
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
+		if (core.view.isBusy)
+			return;
+
 		const selected = selection[0];
 		console.log('Option selection changed to ID ' + selected.id + ', label ' + selected.label);
 
@@ -258,6 +276,9 @@ core.registerLoadFunc(async () => {
 	}, { deep: true });
 
 	core.view.$watch('chrCustChoiceSelection', async (selection) => {
+		if (core.view.isBusy)
+			return;
+
 		const selected = selection[0];
 		console.log('Choice selection for option ID ' + state.chrCustOptionSelection[0].id + ', label ' + state.chrCustOptionSelection[0].label + ' changed to choice ID ' + selected.id + ', label ' + selected.label);
 		if (state.chrCustActiveChoices.find((choice) => choice.optionID === state.chrCustOptionSelection[0].id) === undefined) {
@@ -269,24 +290,44 @@ core.registerLoadFunc(async () => {
 	}, { deep: true });
 
 	core.view.$watch('chrCustActiveChoices', async (selection) => {
+		if (core.view.isBusy)
+			return;
 		console.log('Active choices changed');
 		for (const activeChoice of selection) {
+			// Update material (if applicable)
+			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
+
 			// Update all geosets for this option.
 			const availableChoices = optionToChoices.get(activeChoice.optionID);
 
+			var geosetsStatusForOption = new Map();
+
+
 			for (const availableChoice of availableChoices) {
-				const geosetID = choiceToGeoset.get(availableChoice.id);
-				const geoset = geosetMap.get(geosetID);
+				// for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustElementDB.getAllRows()) {
+				// 	if (chrCustomizationElementRow.ChrCustomizationChoiceID !== availableChoice.id)
+				// 		continue;
+
+				// 	if (chrCustomizationElementRow.ChrCustomizationGeosetID == 0)
+				// 		continue;
+			
+				// 	console.log(chrCustomizationElementRow);
+				// }
+
+				const chrCustGeoID = choiceToGeoset.get(availableChoice.id);
+				const geoset = geosetMap.get(chrCustGeoID);
 
 				if (geoset !== undefined) {
 					for (const availableGeoset of state.modelViewerGeosets) {
-						if (availableGeoset.id === geoset) {
-							const shouldBeEnabled = availableChoice.id === activeChoice.choiceID;
-							console.log('Setting geoset ' + geoset + ' to ' + shouldBeEnabled);
-							availableGeoset.checked = shouldBeEnabled;
-						}
+						if (availableGeoset.id === geoset)
+							geosetsStatusForOption.set(geoset, availableChoice.id === activeChoice.choiceID);
 					}
 				}
+			}
+
+			for (const availableGeoset of state.modelViewerGeosets) {
+				if (geosetsStatusForOption.has(availableGeoset.id))
+					availableGeoset.checked = geosetsStatusForOption.get(availableGeoset.id);
 			}
 		}
 	}, { deep: true });

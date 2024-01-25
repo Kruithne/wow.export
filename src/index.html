@@ -614,6 +614,7 @@
 							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+							<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
 				</keep-alive>
