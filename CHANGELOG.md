@@ -1,7 +1,9 @@
-0.1.57 (TBD)
+0.1.57 (25-01-2024)
 - M2 models can now be exported in the glTF format (complete with armature)! 🎉
 - WMO models can now be exported in glTF format (does not support doodads).
 - Fixed issue with models added since 9.2+ not containing names.
+
+⭐ [Special thank you to Kathen for contributions in 0.1.57]
 
 0.1.56 (20-01-2024)
 - Blender add-on fix (make sure to update the addon).

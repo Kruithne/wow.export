@@ -685,17 +685,18 @@ document.addEventListener('click', function(e) {
 	// Load/update BLTE decryption keys.
 	tactKeys.load();
 
-	// Check for updates (without blocking).
+	// Check for updates.
 	if (BUILD_RELEASE) {
+		core.view.isBusy++;
+		core.view.showLoadScreen('Checking for updates...');
+
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
-				// Update is available, prompt to update. If user declines,
-				// begin checking the local Blender add-on version.
-				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-					'Update Now': () => updater.applyUpdate(),
-					'Maybe Later': () => blender.checkLocalVersion()
-				}, -1, false);
+				updater.applyUpdate();
 			} else {
+				core.view.isBusy--;
+				core.view.setScreen('source-select');
+				
 				// No update available, start checking Blender add-on.
 				blender.checkLocalVersion();
 			}

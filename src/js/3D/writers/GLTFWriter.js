@@ -10,7 +10,7 @@ const core = require('../../core');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
-const { get_bone_name } = require('../BoneMapper');
+const BoneMapper = require('../BoneMapper');
 
 // See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
@@ -321,7 +321,7 @@ class GLTFWriter {
 					skeleton.children.push(nodeIndex);
 				}
 
-				const bone_name = get_bone_name(bone.boneID, i);
+				const bone_name = BoneMapper.get_bone_name(bone.boneID, i);
 				const prefix_node = {
 					name: bone_name + '_p',
 					translation: bone.pivot.map((v, i) => v - parent_pos[i]),
