@@ -7,7 +7,7 @@
 const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
 
-const { read_m2_track } = require('./M2Loader');
+const M2Generics = require('./M2Generics');
 
 // See: https://wowdev.wiki/M2/.skel
 class SKELLoader {
@@ -69,9 +69,9 @@ class SKELLoader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
-				rotation: read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
-				scale: read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
+				translation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
+				scale: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
 				pivot: data.readFloatLE(3)
 			};
 
