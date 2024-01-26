@@ -203,7 +203,7 @@ const previewModel = async (fileName) => {
 			if (fileNameLower.endsWith('.m2')) {
 				const animList = [];
 
-				for (const animationID of  Array.from(new Set(activeRenderer.m2.animations.map((animation) => animation.id))))
+				for (const animationID of Array.from(new Set(activeRenderer.m2.animations.map((animation) => animation.id))).sort())
 					animList.push({ id: animationID, label: AnimMapper.get_anim_name(animationID) });
 				
 				core.view.modelViewerAnims = animList;
