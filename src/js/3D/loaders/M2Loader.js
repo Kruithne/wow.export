@@ -149,7 +149,10 @@ class M2Loader {
 	
 		this.version = this.data.readUInt32LE();
 		this.parseChunk_MD21_modelName(ofs);
-		this.data.move(4 + 8 + 8 + 8); // flags, loops, seq
+		this.flags = this.data.readUInt32LE();
+		this.parseChunk_MD21_globalLoops(ofs);
+		this.parseChunk_MD21_animations(ofs);
+		this.parseChunk_MD21_animationLookup(ofs);
 		this.parseChunk_MD21_bones(ofs);
 		this.data.move(8);
 		this.parseChunk_MD21_vertices(ofs);
@@ -542,6 +545,74 @@ class M2Loader {
 		const base = this.data.offset;
 		this.data.seek(textureComboOfs + ofs);
 		this.textureCombos = this.data.readUInt16LE(textureComboCount);
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse animations.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_animations(ofs) {
+		const animationCount = this.data.readUInt32LE();
+		const animationOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(animationOfs + ofs);
+
+		const animations = this.animations = new Array(animationCount);
+		for (let i = 0; i < animationCount; i++) {
+			animations[i] = {
+				id: this.data.readUInt16LE(),
+				variationIndex: this.data.readUInt16LE(),
+				duration: this.data.readUInt32LE(),
+				movespeed: this.data.readFloatLE(),
+				flags: this.data.readUInt32LE(),
+				frequency: this.data.readInt16LE(),
+				padding: this.data.readUInt16LE(),
+				replayMin: this.data.readUInt32LE(),
+				replayMax: this.data.readUInt32LE(),
+				blendTimeIn: this.data.readUInt16LE(),
+				blendTimeOut: this.data.readUInt16LE(),
+				boxPosMin: this.data.readFloatLE(3),
+				boxPosMax: this.data.readFloatLE(3),
+				boxRadius: this.data.readFloatLE(),
+				variationNext: this.data.readInt16LE(),
+				aliasNext: this.data.readUInt16LE()
+			};
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse animation lookup.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_animationLookup(ofs) {
+		const animationLookupCount = this.data.readUInt32LE();
+		const animationLookupOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(animationLookupOfs + ofs);
+
+		this.animationLookup = this.data.readInt16LE(animationLookupCount);
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse global loops.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_globalLoops(ofs) {
+		const globalLoopCount = this.data.readUInt32LE();
+		const globalLoopOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(globalLoopOfs + ofs);
+
+		this.globalLoops = this.data.readInt16LE(globalLoopCount);
+
 		this.data.seek(base);
 	}
 }
