@@ -25,6 +25,7 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('./texture-ribbon');
+const AnimMapper = require('../3D/AnimMapper');
 
 const MODEL_TYPE_M2 = Symbol('modelM2');
 const MODEL_TYPE_WMO = Symbol('modelWMO');
@@ -121,6 +122,8 @@ const previewModel = async (fileName) => {
 	core.view.modelViewerSkins = [];
 	core.view.modelViewerSkinsSelection = [];
 
+	core.view.modelViewerAnims = [];
+
 	try {
 		// Dispose the currently active renderer.
 		if (activeRenderer) {
@@ -196,6 +199,16 @@ const previewModel = async (fileName) => {
 
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
+
+			if (fileNameLower.endsWith('.m2')) {
+				const animList = [];
+
+				for (const animationID of  Array.from(new Set(activeRenderer.m2.animations.map((animation) => animation.id))))
+					animList.push({ id: animationID, label: AnimMapper.get_anim_name(animationID) });
+				
+				core.view.modelViewerAnims = animList;
+				core.view.modelViewerAnimSelection = animList.slice(0, 1);
+			}
 		}
 
 		updateCameraBounding();

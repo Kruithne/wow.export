@@ -578,6 +578,10 @@
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
+								<template v-if="config.modelsExportTextures && config.exportModelFormat === 'GLTF'">
+									<span class="header">Animations</span>
+									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
+								</template>
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>
