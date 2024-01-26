@@ -321,7 +321,7 @@ class GLTFWriter {
 					skeleton.children.push(nodeIndex);
 				}
 
-				const bone_name = BoneMapper.get_bone_name(bone.boneID, i);
+				const bone_name = BoneMapper.get_bone_name(bone.boneID, i, bone.boneNameCRC);
 				const prefix_node = {
 					name: bone_name + '_p',
 					translation: bone.pivot.map((v, i) => v - parent_pos[i]),
