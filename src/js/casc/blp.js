@@ -194,6 +194,17 @@ class BLPImage {
 	}
 
 	/**
+	 * Get the contents of this raw BLP mipmap as a Buffer instance.
+	 * @param {number} mipmap 
+	 * @param {number} mask 
+	 * @returns {Buffer}
+	 */
+	getRawMipmap(mipmap = 0) {
+		this._prepare(mipmap);
+		return Buffer.from(this.rawData);
+	}
+
+	/**
 	 * Get the contents of this BLP as an RGBA UInt8 array.
 	 * @param {number} mipmap 
 	 * @param {number} mask
