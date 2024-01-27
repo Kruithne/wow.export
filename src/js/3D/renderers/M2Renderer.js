@@ -187,7 +187,7 @@ class M2Renderer {
 
 			// 	for (let i = 0; i < blp.mapCount; i++) {
 			// 		const scale = Math.pow(2, i);
-			// 		compressedTexture.mipmaps.push({ data: Buffer.from(blp.getRawMimap(i)), width: blp.width / scale, height: blp.height / scale});
+			// 		compressedTexture.mipmaps.push({ data: blp.getRawMimap(i), width: blp.width / scale, height: blp.height / scale});
 			// 	}
 
 			// 	switch (blp.alphaEncoding) {
