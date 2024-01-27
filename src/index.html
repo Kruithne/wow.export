@@ -596,6 +596,9 @@
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
 						<div class='char-preview'>
 							<model-viewer :context="chrModelViewerContext"></model-viewer>
+							<div class='texture-preview'>
+								<canvas id='texturePreview'></canvas>
+							</div>
 							<div class='preview-options'>
 								<label class="ui-checkbox">
 									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
@@ -609,6 +612,9 @@
 								<span class="header">Dev import</span>
 								<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
 							</div>
+						</div>
+						<div class='texture-preview'>
+
 						</div>
 						<div class='options'>
 							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
