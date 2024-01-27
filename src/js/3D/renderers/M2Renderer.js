@@ -164,17 +164,12 @@ class M2Renderer {
 			if (textureTypes[i] !== type)
 				continue;
 
-			let tex = new THREE.Texture();
-
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
 
-			// Always generate this, but pending DXT support only do this for ribbons.
-			const blpURI = blp.getDataURL(0b0111);
-			
 			if (this.useRibbon) {
 				textureRibbon.setSlotFile(i, fileDataID, this.syncID);
-				textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+				textureRibbon.setSlotSrc(i, blp.getDataURL(0b0111), this.syncID);
 			}
 
 			// Load DXT textures directly for performance boost for previews, disabled pending workaround for https://github.com/mrdoob/three.js/issues/4316 on our end or theirs
@@ -205,22 +200,14 @@ class M2Renderer {
 			// 	compressedTexture.needsUpdate = true;
 
 			// 	tex = compressedTexture;
-			// } else {
-
-			// Generate BLP URI if not already done for ribbons and DXT support is enabled
-			// if (blpURI === null)
-			// blpURI = blp.getDataURL(0b0111);
-
-			// Load texture as image
-			const loader = new THREE.ImageLoader();
-			loader.load(blpURI, image => {
-				tex.image = image;
-				tex.format = THREE.RGBAFormat;
-				tex.needsUpdate = true;
-			});
-
 			// }
-		
+
+			const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+			tex.needsUpdate = true;
+
 			this.renderCache.retire(this.materials[i]);
 
 			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe });
@@ -247,43 +234,37 @@ class M2Renderer {
 			const texture = textures[i];
 
 			const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
+			this.materials[i] = this.defaultMaterial;
 
 			if (texture.fileDataID > 0) {
-				const tex = new THREE.Texture();
-				const loader = new THREE.ImageLoader();
-
 				if (ribbonSlot !== null)
 					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const blpURI = blp.getDataURL(0b0111);
-
+					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+					tex.magFilter = THREE.LinearFilter;
+					tex.minFilter = THREE.LinearFilter;
+					tex.flipY = true;
+					tex.needsUpdate = true;
+					
 					if (ribbonSlot !== null)
-						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+						textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(0b0111), this.syncID);
 
-					loader.load(blpURI, image => {
-						tex.image = image;
-						tex.format = THREE.RGBAFormat;
-						tex.needsUpdate = true;
-					});
+					if (texture.flags & 0x1)
+						tex.wrapS = THREE.RepeatWrapping;
+	
+					if (texture.flags & 0x2)
+						tex.wrapT = THREE.RepeatWrapping;
+	
+					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+					this.renderCache.register(material, tex);
+	
+					this.materials[i] = material;
+					this.renderCache.addUser(material);
 				}).catch(e => {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
-
-				if (texture.flags & 0x1)
-					tex.wrapS = THREE.RepeatWrapping;
-
-				if (texture.flags & 0x2)
-					tex.wrapT = THREE.RepeatWrapping;
-
-				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
-				this.renderCache.register(material, tex);
-
-				this.materials[i] = material;
-				this.renderCache.addUser(material);
-			} else {
-				this.materials[i] = this.defaultMaterial;
 			}
 		}
 
