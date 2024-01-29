@@ -355,7 +355,7 @@ core.registerLoadFunc(async () => {
 
 			// Update material (if applicable)
 			const chrCustMatIDs = choiceToChrCustMaterialID.get(activeChoice.choiceID);
-			console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
+			// console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
 
 			if (chrCustMatIDs != undefined) {
 				for (const chrCustMatID of chrCustMatIDs) {
@@ -395,8 +395,7 @@ core.registerLoadFunc(async () => {
 					let chrMaterial;
 					
 					if (!chrMaterials.has(chrModelMaterial.TextureType)) {
-						console.log("Creating new material " + chrModelMaterial.TextureType + " of " + chrModelMaterial.Width + "x" + chrModelMaterial.Height);
-						chrMaterial = new CharMaterialRenderer(chrModelMaterial.Width, chrModelMaterial.Height);
+						chrMaterial = new CharMaterialRenderer(chrModelMaterial.TextureType, chrModelMaterial.Width, chrModelMaterial.Height);
 						chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
 					} else {
 						chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);

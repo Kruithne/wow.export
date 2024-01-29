@@ -11,12 +11,18 @@ class CharMaterialRenderer {
 	/**
 	 * Construct a new CharMaterialRenderer instance.
 	 */
-	constructor(width, height) {
+	constructor(textureLayer, width, height) {
 		this.textureTargets = new Map();
 
-		this.glCanvas = document.createElement('canvas');
+		this.glCanvas = document.getElementById('charMaterialCanvas-' + textureLayer);
+		if (this.glCanvas == null) {
+			this.glCanvas = document.createElement('canvas');
+			this.glCanvas.id = 'charMaterialCanvas-' + textureLayer;
+		}
+
 		this.glCanvas.width = width;
 		this.glCanvas.height = height;
+
 		this.gl = this.glCanvas.getContext('webgl', {preserveDrawingBuffer: true});
 
 		this.compileShaders();
@@ -59,8 +65,6 @@ class CharMaterialRenderer {
 		textureTarget.material = chrModelMaterial;
 		textureTarget.textureLayer = chrModelTextureLayer;
 		textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
-
-		console.log(textureTarget);
 
 		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
 		await this.Update();
