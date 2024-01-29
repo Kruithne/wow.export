@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const CharTextureRenderer = require('../3D/renderers/CharTextureRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const WDCReader = require('../db/WDCReader');
 
@@ -28,7 +29,16 @@ const optionToChoices = new Map();
 const chrRaceMap = new Map();
 const chrRaceXChrModelMap = new Map();
 const choiceToGeoset = new Map();
+const choiceToChrCustMaterialID = new Map();
 const geosetMap = new Map();
+const chrCustMatMap = new Map();
+const chrModelTextureLayerMap = new Map();
+const charComponentTextureSectionMap = new Map();
+const chrModelMaterialMap = new Map();
+
+const chrTexRender = new CharTextureRenderer()
+
+let currentCharComponentTextureLayoutID = 0;
 
 // Can we just keep DB2s opened? 
 let chrCustChoiceDB;
@@ -64,6 +74,8 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading creature model data...');
 	const creatureModelDataDB = new WDCReader('DBFilesClient/CreatureModelData.db2');
 	await creatureModelDataDB.parse();
+
+	// TODO: There is so many DB2 loading below relying on fields existing, we should probably check for them first and handle missing ones gracefully.
 
 	for (const [chrModelID, chrModelRow] of chrModelDB.getAllRows()) {
 		const displayRow = creatureDisplayInfoDB.getRow(chrModelRow.DisplayID);
@@ -130,15 +142,44 @@ core.events.once('screen-tab-characters', async () => {
 		chrRaceXChrModelMap.get(chrRaceXChrModelRow.ChrRacesID).set(chrRaceXChrModelRow.Sex, chrRaceXChrModelRow.ChrModelID);
 	}
 
-	updateChrModelList();
+	await progress.step('Loading character model materials..');
+	const chrModelMatDB = new WDCReader('DBFilesClient/ChrModelMaterial.db2');
+	await chrModelMatDB.parse();
 
-	// await progress.step('Loading character model materials..');
-	// const chrModelMatDB = new WDCReader('DBFilesClient/ChrModelMaterial.db2');
-	// await chrModelMatDB.parse();
+	for (const [chrModelMaterialID, chrModelMaterialRow] of chrModelMatDB.getAllRows())
+		chrModelMaterialMap.set(chrModelMaterialRow.CharComponentTextureLayoutsID + "-" + chrModelMaterialRow.TextureType, chrModelMaterialRow);
 
 	// await progress.step('Loading character customization table...');
 	// const chrCustDB = new WDCReader('DBFilesClient/ChrCustomization.db2');
 	// await chrCustDB.parse();
+
+	// load charComponentTextureSection
+	await progress.step('Loading character component texture sections...');
+	const charComponentTextureSectionDB = new WDCReader('DBFilesClient/CharComponentTextureSections.db2');
+	await charComponentTextureSectionDB.parse();
+	for (const [charComponentTextureSectionID, charComponentTextureSectionRow] of charComponentTextureSectionDB.getAllRows()) {
+		if (!charComponentTextureSectionMap.has(charComponentTextureSectionRow.CharComponentTextureLayoutID))
+			charComponentTextureSectionMap.set(charComponentTextureSectionRow.CharComponentTextureLayoutID, []);
+
+		charComponentTextureSectionMap.get(charComponentTextureSectionRow.CharComponentTextureLayoutID).push(charComponentTextureSectionRow);
+	}
+
+	await progress.step('Loading character model texture layers...');
+	const chrModelTextureLayerDB = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2');
+	await chrModelTextureLayerDB.parse();
+	for (const [chrModelTextureLayerID, chrModelTextureLayerRow] of chrModelTextureLayerDB.getAllRows())
+		chrModelTextureLayerMap.set(chrModelTextureLayerRow.CharComponentTextureLayoutsID + "-" + chrModelTextureLayerRow.ChrModelTextureTargetID[0], chrModelTextureLayerRow);
+
+	await progress.step('Loading texture mapping...');
+	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
+	await tfdDB.parse();
+	const tfdMap = new Map();
+	for (const [tfdID, tfdRow] of tfdDB.getAllRows())
+		tfdMap.set(tfdRow.MaterialResourcesID, tfdRow.FileDataID);
+
+	await progress.step('Loading character customization materials...');
+	const chrCustMatDB = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2');
+	await chrCustMatDB.parse();
 
 	await progress.step('Loading character customization elements...');
 	chrCustElementDB = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
@@ -148,18 +189,18 @@ core.events.once('screen-tab-characters', async () => {
 		if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 			choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID);
 
-		// if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0) {
-		// 	if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID))
-		// 		choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push(chrCustomizationElementRow);
-		// 	else
-		// 		choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [chrCustomizationElementRow]);
+		if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0) {
+			if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID))
+				choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push({ ChrCustomizationMaterialID: chrCustomizationElementRow.ChrCustomizationMaterialID, RelatedChrCustomizationChoiceID: chrCustomizationElementRow.RelatedChrCustomizationChoiceID });
+			else
+				choiceToChrCustMaterialID.set(chrCustomizationElementRow.ChrCustomizationChoiceID, [{ ChrCustomizationMaterialID: chrCustomizationElementRow.ChrCustomizationMaterialID, RelatedChrCustomizationChoiceID: chrCustomizationElementRow.RelatedChrCustomizationChoiceID }]);
 
-		// 	const matRow = chrCustomizationMaterial.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
-		// 	chrCustMatMap.set(matRow.ID, {ChrModelTextureTargetID: matRow.ChrModelTextureTargetID, MaterialResourcesID: matRow.MaterialResourcesID});
-		// }
+			const matRow = chrCustMatDB.getRow(chrCustomizationElementRow.ChrCustomizationMaterialID);
+			chrCustMatMap.set(matRow.ID, {ChrModelTextureTargetID: matRow.ChrModelTextureTargetID, FileDataID: tfdMap.get(matRow.MaterialResourcesID)});
+		}
 	}
 
-	await progress.step('Loading character customization materials...');
+	await progress.step('Loading character customization geosets...');
 	chrCustGeosetDB = new WDCReader('DBFilesClient/ChrCustomizationGeoset.db2');
 	await chrCustGeosetDB.parse();
 
@@ -167,10 +208,6 @@ core.events.once('screen-tab-characters', async () => {
 		const geoset = chrCustomizationGeosetRow.GeosetType.toString().padStart(2, '0') + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
 		geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 	}
-
-	// await progress.step('Loading character customization materials...');
-	// const chrCustMatDB = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2');
-	// await chrCustMatDB.parse();
 
 	// Initialize model viewer.
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
@@ -187,6 +224,8 @@ core.events.once('screen-tab-characters', async () => {
 
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+
+	updateChrModelList();
 
 	core.view.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
 
@@ -230,11 +269,17 @@ core.registerLoadFunc(async () => {
 		state.chrCustOptions.push(...availableOptions);
 		state.chrCustOptionSelection.push(...availableOptions.slice(0, 1));
 
+		console.log("Set currentCharComponentTextureLayoutID to " + currentCharComponentTextureLayoutID);
+		currentCharComponentTextureLayoutID = chrModelIDToTextureLayoutID.get(selected.id);
+
 		const fileDataID = chrModelIDToFileDataID.get(selected.id);
 
 		// Check if the first file in the selection is "new".
 		if (!core.view.isBusy && fileDataID && activeModel !== fileDataID)
 			previewModel(fileDataID);
+
+		// Reset/init texture preview (DEV, should be off-screen canvas probs similar to ADT texture baking).
+		chrTexRender.Reset();
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
@@ -279,13 +324,7 @@ core.registerLoadFunc(async () => {
 			return;
 		console.log('Active choices changed');
 
-		console.log(selection);
-
-
 		for (const activeChoice of selection) {
-			// Update material (if applicable)
-			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
-
 			// Update all geosets for this option.
 			const availableChoices = optionToChoices.get(activeChoice.optionID);
 
@@ -309,7 +348,54 @@ core.registerLoadFunc(async () => {
 					}
 				}
 			}
+
+			// Update material (if applicable)
+			const chrCustMatIDs = choiceToChrCustMaterialID.get(activeChoice.choiceID);
+			console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
+
+			if (chrCustMatIDs != undefined) {
+				for (const chrCustMatID of chrCustMatIDs) {
+					if (chrCustMatID.RelatedChrCustomizationChoiceID != 0) {
+						const hasRelatedChoice = selection.find((selectedChoice) => selectedChoice.choiceID === chrCustMatID.RelatedChrCustomizationChoiceID);
+						if (!hasRelatedChoice)
+							continue;
+					}
+
+					const chrCustMat = chrCustMatMap.get(chrCustMatID.ChrCustomizationMaterialID);
+					const chrModelTextureTarget = chrCustMat.ChrModelTextureTargetID;
+
+					// Find row in ChrModelTextureLayer that matches ChrModelTextureTargetID and current CharComponentTextureLayoutID
+					const chrModelTextureLayer = chrModelTextureLayerMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureTarget);
+					if (chrModelTextureLayer === undefined)
+						console.log("Unable to find ChrModelTextureLayer for ChrModelTextureTargetID " + chrModelTextureTarget + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+					
+					// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
+					const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
+					let charComponentTextureSection;
+					for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
+						// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
+						if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
+							charComponentTextureSection = charComponentTextureSectionRow;
+							break;
+						}
+					}
+
+					if (charComponentTextureSection === undefined)
+						console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+					
+					// Find row in ChrModelMaterial based on chrModelTextureLayer.TextureType and current CharComponentTextureLayoutID
+					const chrModelMaterial = chrModelMaterialMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureLayer.TextureType);
+					if (chrModelMaterial === undefined)
+						console.log("Unable to find ChrModelMaterial for TextureType " + chrModelTextureLayer.TextureType + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+
+					chrTexRender.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
+				}
+			}
+
+			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
 		}
+
+		activeRenderer.overrideTextureTypeWithURI(1, chrTexRender.GetURI());
 	}, { deep: true });
 });
 

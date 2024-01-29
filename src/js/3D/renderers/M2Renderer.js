@@ -155,6 +155,39 @@ class M2Renderer {
 	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
+	async overrideTextureTypeWithURI(type, uri) {
+		console.log(uri);
+		const textureTypes = this.m2.textureTypes;
+		console.log(this.m2.textureTypes);
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] !== type)
+				continue;
+
+			const image = new Image();
+			image.src = uri;
+
+			const tex = new THREE.Texture(image);
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+			tex.needsUpdate = true;
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {number} type 
+	 * @param {number} fileDataID 
+	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
 		const renderWireframe = core.view.config.modelViewerWireframe;

@@ -586,7 +586,13 @@
 		grid-row: 1;
 		display: grid;
 		grid-template-rows: 1fr;
-		grid-template-columns: 0.6fr 0.4fr 200px;
+		// 1024px is half the size of character textures (2048px x 1024px)
+		grid-template-columns: 1fr 1024px 200px;
+
+		#texturePreview{
+			width: 1024px;
+			height: 512px;
+		}
 	}
 
 	.options {
