@@ -116,7 +116,12 @@ class M2Renderer {
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 
 			if (this.reactive) {
-				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
+				let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
+
+				// Don't enable eyeglow by default
+				if (skinMesh.submeshID.toString().startsWith('17')) 
+					isDefault = false;
+
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
 			}
 		}
