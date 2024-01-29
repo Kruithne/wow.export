@@ -6,7 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
-const CharTextureRenderer = require('../3D/renderers/CharTextureRenderer');
+const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const WDCReader = require('../db/WDCReader');
 
@@ -36,7 +36,7 @@ const chrModelTextureLayerMap = new Map();
 const charComponentTextureSectionMap = new Map();
 const chrModelMaterialMap = new Map();
 
-const chrTexRender = new CharTextureRenderer()
+const chrMaterials = new Map();
 
 let currentCharComponentTextureLayoutID = 0;
 
@@ -279,7 +279,11 @@ core.registerLoadFunc(async () => {
 			previewModel(fileDataID);
 
 		// Reset/init texture preview (DEV, should be off-screen canvas probs similar to ADT texture baking).
-		chrTexRender.Reset();
+		for (const chrMaterial of chrMaterials.values())
+			chrMaterial.dispose();
+
+		chrMaterials.clear();
+
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
@@ -388,14 +392,26 @@ core.registerLoadFunc(async () => {
 					if (chrModelMaterial === undefined)
 						console.log("Unable to find ChrModelMaterial for TextureType " + chrModelTextureLayer.TextureType + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
 
-					chrTexRender.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
+					let chrMaterial;
+					
+					if (!chrMaterials.has(chrModelMaterial.TextureType)) {
+						console.log("Creating new material " + chrModelMaterial.TextureType + " of " + chrModelMaterial.Width + "x" + chrModelMaterial.Height);
+						chrMaterial = new CharMaterialRenderer(chrModelMaterial.Width, chrModelMaterial.Height);
+						chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
+					} else {
+						chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
+					}
+
+					chrMaterial.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
 				}
 			}
 
 			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
 		}
 
-		activeRenderer.overrideTextureTypeWithURI(1, chrTexRender.GetURI());
+		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
+			activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
+
 	}, { deep: true });
 });
 

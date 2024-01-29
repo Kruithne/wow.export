@@ -156,9 +156,7 @@ class M2Renderer {
 	 * @param {number} fileDataID 
 	 */
 	async overrideTextureTypeWithURI(type, uri) {
-		console.log(uri);
 		const textureTypes = this.m2.textureTypes;
-		console.log(this.m2.textureTypes);
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
 			if (textureTypes[i] !== type)
