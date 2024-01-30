@@ -79,6 +79,7 @@ class GLTFWriter {
 		this.boneIndices = [];
 		this.bones = [];
 		this.inverseBindMatrices = [];
+		this.animations = [];
 		
 		this.textures = new Map();
 		this.meshes = [];
@@ -138,6 +139,14 @@ class GLTFWriter {
 	 */
 	setBoneIndexArray(boneIndices) {
 		this.boneIndices = boneIndices;
+	}
+
+	/**
+	 * Set the animations array for this writer.
+	 * @param {Array} animations
+	 */
+	setAnimations(animations) {
+		this.animations = animations;
 	}
 
 	/**
@@ -338,6 +347,105 @@ class GLTFWriter {
 				this.inverseBindMatrices.push(...vec3_to_mat4x4(bone.pivot));
 	
 				skin.joints.push(nodeIndex + 1);
+
+				// Animations
+				// TODO/RESEARCH: How does this interact with prefix bones? We only animate 1 node per bone, but we have 2 nodes per bone.
+				// TODO/RESEARCH: How do we calculate animation length? Different animations have different lengths. Do we just support exporting 1 animation (like wow.tools) or do we somehow get the max length for all animations and base everything on that one? Hmm!
+
+				// Check interpolation, right now we only support LINEAR (1). The rest (0 - no interpolation, 2 - bezier spline, 3 - hermite spline) will require... well, math.
+				if (bone.translation.interpolation == 1) { 
+					// Sanity check -- check if the timestamps/values array are the same length as the amount of animations.
+					if (bone.translation.timestamps.length != this.animations.length) {
+						console.log("timestamps array length does not match the amount of animations, skipping bone " + i);
+						continue;
+					}
+
+					if (bone.translation.values.length != this.animations.length) {
+						console.log("values array length does not match the amount of animations, skipping bone " + i);
+						continue;
+					}
+
+					// TODO: Add new buffer for this bone if it doesn't already exist.
+					// TODO: Add new bufferView for this bone.
+
+					// TODO: Add new animation to this glTF file with empty "samplers" and "channels" arrays and applicable name if it doesn't already exist.
+
+					/*
+					  "animations": [
+						{
+						"samplers" : [],
+						"channels" : [],
+						"name" : "name"
+						}
+					],
+					*/
+
+					// TODO: Add new SCALAR accessor for this bone's translation timestamps as floats.
+					// TODO: Add new accessor for this bone's translation values.
+					// TODO: Add animation sampler for this bone's translation with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
+					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "translation" 
+
+					// TODO: Add new SCALAR accessor for this bone's rotation timestamps as floats.
+					// TODO: Add new accessor for this bone's rotation values.
+					// TODO: Add animation sampler for this bone's rotation with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
+					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "rotation" 
+
+					// TODO: Add new SCALAR accessor for this bone's scale timestamps as floats.
+					// TODO: Add new accessor for this bone's scale values.
+					// TODO: Add animation sampler for this bone's scale with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
+					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "scale" 
+
+					// Example animations JSON 
+					/*
+					  "animations": [
+						{
+						"samplers" : [
+							{
+								"input" : <index of translation timestamps accessor for this bone>,
+								"interpolation" : "LINEAR",
+								"output" : <index of translation values accessor for this bone>
+							},
+							{
+								"input" : <index of rotation timestamps accessor for this bone>,
+								"interpolation" : "LINEAR",
+								"output" : <index of rotation values accessor for this bone>
+							},
+							{
+								"input" : <index of scaling timestamps accessor for this bone>,
+								"interpolation" : "LINEAR",
+								"output" : <index of scaling values accessor for this bone>
+							},			
+							[... other bone samplers for the same animation ...]				
+						],
+						"channels" : [ 
+							{
+								"sampler" : <translation sampler>,
+								"target" : {
+									"node" : <bone node index>,
+									"path" : "translation"
+								}
+							},
+							{
+								"sampler" : <rotation sampler>,
+								"target" : {
+									"node" : <bone node index>,
+									"path" : "rotation"
+								}
+							},
+							{
+								"sampler" : <scale sampler>,
+								"target" : {
+									"node" : <bone node index>,
+									"path" : "scale"
+								}
+							},
+							[... other bone channels for the same animation ...]	
+							]
+						}
+					],
+					*/
+
+				}
 			}
 		}
 

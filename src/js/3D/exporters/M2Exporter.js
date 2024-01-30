@@ -185,6 +185,7 @@ class M2Exporter {
 		gltf.setNormalArray(this.m2.normals);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
 		gltf.setBoneIndexArray(this.m2.boneIndices)
+		gltf.setAnimationsArray(this.m2.animations);
 
 		gltf.addUVArray(this.m2.uv);
 		gltf.addUVArray(this.m2.uv2);
