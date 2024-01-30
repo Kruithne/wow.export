@@ -22,14 +22,16 @@ class WMORenderer {
 	 * @param {BufferWrapper} data 
 	 * @param {string|number} fileID
 	 * @param {THREE.Group} renderGroup
+	 * @param {boolean} [useRibbon=true]
 	 */
-	constructor(data, fileID, renderGroup) {
+	constructor(data, fileID, renderGroup, useRibbon = true) {
 		this.data = data;
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
 		this.textures = [];
 		this.m2Renderers = new Map();
 		this.m2Clones = [];
+		this.useRibbon = useRibbon;
 	}
 
 	/**
@@ -120,36 +122,37 @@ class WMORenderer {
 					texture.fileDataID = material.texture1;
 			}
 
-			if (texture.fileDataID > 0) {
-				const tex = new THREE.Texture();
-				const loader = new THREE.ImageLoader();
+			materials[i] = DEFAULT_MATERIAL;
 
+			if (texture.fileDataID > 0) {
 				const ribbonSlot = textureRibbon.addSlot();
 				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const blpURI = blp.getDataURL(0b0111);
+					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+					tex.flipY = true;
+					tex.magFilter = THREE.LinearFilter;
+					tex.minFilter = THREE.LinearFilter;
 
-					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+					if (!(texture.flags & 0x40))
+						tex.wrapS = THREE.RepeatWrapping;
 
-					loader.load(blpURI, image => {
-						tex.image = image;
-						tex.format = THREE.RGBAFormat;
-						tex.needsUpdate = true;
-					});
+					if (!(texture.flags & 0x80))
+						tex.wrapT = THREE.RepeatWrapping;
+
+					tex.needsUpdate = true;
+
+					this.textures.push(tex);
+					materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
+
+					if (this.useRibbon) {
+						const blpURI = blp.getDataURL(0b0111);
+						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+					}
 				}).catch(e => {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
-
-				if (!(texture.flags & 0x40))
-					tex.wrapS = THREE.RepeatWrapping;
-
-				if (!(texture.flags & 0x80))
-					tex.wrapT = THREE.RepeatWrapping;
-
-				this.textures.push(tex);
-				materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}
@@ -165,7 +168,6 @@ class WMORenderer {
 				this.loadAuxiliaryTextureForRibbon(material.runtimeData[2], wmo);
 				this.loadAuxiliaryTextureForRibbon(material.runtimeData[3], wmo);
 			}
-
 		}
 	}
 
@@ -175,6 +177,9 @@ class WMORenderer {
 	 * @param {WMOLoader} wmo
 	 */
 	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
+		if (!this.useRibbon)
+			return;
+
 		if (wmo.textureNames)
 			textureID = listfile.getByFilename(textureID) || 0;
 

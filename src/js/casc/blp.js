@@ -87,22 +87,31 @@ class BLPImage {
 	/**
 	 * Encode this image as a data URL and return it.
 	 * @param {number} mask
+	 * @param {number} mipmap
 	 * @returns {string}
 	 */
-	getDataURL(mask = 0b1111) {
-		return this.toCanvas(mask).toDataURL();
+	getDataURL(mask = 0b1111, mipmap = 0) {
+		return this.toCanvas(mask, mipmap).toDataURL();
 	}
 
 	/**
 	 * Return a canvas with this BLP painted onto it.
 	 * @param {number} mask
+	 * @param {number} mipmap
 	 */
-	toCanvas(mask = 0b1111) {
+	toCanvas(mask = 0b1111, mipmap = 0) {
 		const canvas = document.createElement('canvas');
-		canvas.width = this.width;
-		canvas.height = this.height;
 
-		this.drawToCanvas(canvas, 0, mask);
+		if (mipmap == 0) {
+			canvas.width = this.width;
+			canvas.height = this.height;
+		} else {
+			const scale = Math.pow(2, mipmap);
+			canvas.width = this.width / scale;
+			canvas.height = this.height / scale;
+		}
+
+		this.drawToCanvas(canvas, mipmap, mask);
 		return canvas;
 	}
 
@@ -191,6 +200,17 @@ class BLPImage {
 			case 2: return this._getCompressed(null, mask);
 			case 3: return this._marshalBGRA(null, mask);
 		}
+	}
+
+	/**
+	 * Get the contents of this raw BLP mipmap as a Buffer instance.
+	 * @param {number} mipmap 
+	 * @param {number} mask 
+	 * @returns {Buffer}
+	 */
+	getRawMipmap(mipmap = 0) {
+		this._prepare(mipmap);
+		return Buffer.from(this.rawData);
 	}
 
 	/**

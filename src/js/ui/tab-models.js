@@ -144,11 +144,11 @@ const previewModel = async (fileName) => {
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
-			activeRenderer = new M2Renderer(file, renderGroup, true);
+			activeRenderer = new M2Renderer(file, renderGroup, true, core.view.config.modelViewerShowTextures);
 			isM2 = true;
 		} else if (fileNameLower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
-			activeRenderer = new WMORenderer(file, fileName, renderGroup);
+			activeRenderer = new WMORenderer(file, fileName, renderGroup, core.view.config.modelViewerShowTextures);
 		} else {
 			throw new Error('Unknown model extension: %s', fileName);
 		}
