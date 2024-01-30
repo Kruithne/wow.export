@@ -70,7 +70,7 @@ class SKELLoader {
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
 				translation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
-				rotation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e < 0? e + 32768 : e - 32767) / 32767)),
 				scale: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
 				pivot: data.readFloatLE(3)
 			};
@@ -81,34 +81,42 @@ class SKELLoader {
 			const scale = bone.scale.values;
 			const pivot = bone.pivot;
 
-			for (let i = 0, n = translations.length; i < n; i += 3) {
-				const dx = translations[i];
-				const dy = translations[i + 1];
-				const dz = translations[i + 2];
-				translations[i] = dx;
-				translations[i + 2] = dy * -1;
-				translations[i + 1] = dz;
+			for (let i = 0; i < translations.length; i++) {
+				for (let j = 0; j < translations[i].length; j++) {
+					const dx = translations[i][j][0];
+					const dy = translations[i][j][1];
+					const dz = translations[i][j][2];
+
+					translations[i][j][0] = dx;
+					translations[i][j][2] = dy * -1;
+					translations[i][j][1] = dz;
+				}
 			}
 
-			for (let i = 0, n = rotations.length; i < n; i += 4) {
-				const dx = rotations[i];
-				const dy = rotations[i + 1];
-				const dz = rotations[i + 2];
-				const dw = rotations[i + 3];
+			for (let i = 0; i < rotations.length; i++) {
+				for (let j = 0; j < rotations[i].length; j++) {
+					const dx = rotations[i][j][0];
+					const dy = rotations[i][j][1];
+					const dz = rotations[i][j][2];
+					const dw = rotations[i][j][3];
 
-				rotations[i] = dx;
-				rotations[i + 2] = dy * -1;
-				rotations[i + 1] = dz;
-				rotations[i + 3] = dw;
+					rotations[i][j][0] = dx;
+					rotations[i][j][2] = dy * -1;
+					rotations[i][j][1] = dz;
+					rotations[i][j][3] = dw;
+				}
 			}
 
-			for (let i = 0, n = scale.length; i < n; i += 3) {
-				const dx = scale[i];
-				const dy = scale[i + 1];
-				const dz = scale[i + 2];
-				scale[i] = dx;
-				scale[i + 2] = dy * -1;
-				scale[i + 1] = dz;
+			for (let i = 0; i < scale.length; i++) {
+				for (let j = 0; j < scale[i].length; j++) {
+					const dx = scale[i][j][0];
+					const dy = scale[i][j][1];
+					const dz = scale[i][j][2];
+
+					scale[i][j][0] = dx;
+					scale[i][j][2] = dy * -1;
+					scale[i][j][1] = dz;
+				}
 			}
 
 			{
