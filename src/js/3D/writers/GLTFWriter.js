@@ -351,6 +351,7 @@ class GLTFWriter {
 				// Animations
 				// TODO/RESEARCH: How does this interact with prefix bones? We only animate 1 node per bone, but we have 2 nodes per bone.
 				// TODO/RESEARCH: How do we calculate animation length? Different animations have different lengths. Do we just support exporting 1 animation (like wow.tools) or do we somehow get the max length for all animations and base everything on that one? Hmm!
+				// 		Addendum: briochie suggested separate glTF files for each animation, which might be a good idea.
 
 				// Check interpolation, right now we only support LINEAR (1). The rest (0 - no interpolation, 2 - bezier spline, 3 - hermite spline) will require... well, math.
 				if (bone.translation.interpolation == 1) { 
@@ -365,7 +366,7 @@ class GLTFWriter {
 						continue;
 					}
 
-					// TODO: Add new buffer for this bone if it doesn't already exist.
+					// TODO: Add new buffer for this bone if it doesn't already exist. Probably a separate buffer from the mesh one, but we might be able to combine it per animation?
 					// TODO: Add new bufferView for this bone.
 
 					// TODO: Add new animation to this glTF file with empty "samplers" and "channels" arrays and applicable name if it doesn't already exist.
@@ -440,8 +441,10 @@ class GLTFWriter {
 								}
 							},
 							[... other bone channels for the same animation ...]	
-							]
-						}
+						],
+						"name" : "name"
+					},
+					[... other animations ...]
 					],
 					*/
 
