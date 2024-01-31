@@ -240,7 +240,7 @@ class BLPImage {
 		let byte;
 		switch (this.alphaDepth) {
 			case 1:
-				byte = this.rawData[this.scaledLength + (index / 8)];
+				byte = this.rawData[this.scaledLength + Math.floor(index / 8)];
 				return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
 
 			case 4:
