@@ -273,6 +273,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Show unknown items</h1>
+						<p>When enabled, wow.export will list all items in the items tab, even those without a name.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.itemViewerShowAll"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>

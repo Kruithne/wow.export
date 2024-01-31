@@ -47,10 +47,17 @@ class Item {
 	constructor(id, itemSparseRow, itemAppearanceRow, textures, models) {
 		this.id = id;
 		this.name = itemSparseRow.Display_lang;
+
+		if (this.name === undefined)
+			this.name = "Unknown item #" + id;
+
 		this.inventoryType = itemSparseRow.InventoryType;
-		this.quality = itemSparseRow.OverallQualityID;
+		this.quality = itemSparseRow.OverallQualityID ?? 0;
 
 		this.icon = itemAppearanceRow?.DefaultIconFileDataID ?? 0;
+
+		if (this.icon == 0)
+			this.icon = itemSparseRow.IconFileDataID;
 
 		this.models = models;
 		this.textures = textures;
@@ -162,7 +169,7 @@ core.events.once('screen-tab-items', async () => {
 
 	await progress.step('Building item relationships...');
 
-	const rows = itemSparse.getAllRows();
+	const itemSparseRows = itemSparse.getAllRows();
 	const items = [];
 
 	const appearanceMap = new Map();
@@ -173,7 +180,7 @@ core.events.once('screen-tab-items', async () => {
 	for (const row of itemDisplayInfoMaterialRes.getAllRows().values())
 		materialMap.set(row.ItemDisplayInfoID, row.MaterialResourcesID);
 
-	for (const [itemID, itemRow] of rows) {
+	for (const [itemID, itemRow] of itemSparseRows) {
 		if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
 			continue;
 
@@ -201,6 +208,44 @@ core.events.once('screen-tab-items', async () => {
 		}
 
 		items.push(Object.freeze(new Item(itemID, itemRow, itemAppearanceRow, materials, models)));
+	}
+
+	if (core.view.config.itemViewerShowAll) {
+		const itemDB = new WDCReader('DBFilesClient/Item.db2');
+		await itemDB.parse();
+
+		for (const [itemID, itemRow] of itemDB.getAllRows()) {
+			if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
+				continue;
+
+			if (itemSparseRows.has(itemID))
+				continue;
+
+			const itemAppearanceID = appearanceMap.get(itemID);
+			const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
+	
+			let materials = null;
+			let models = null;
+			if (itemAppearanceRow !== null) {
+				materials = [];
+				models = [];
+	
+				const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+				if (itemDisplayInfoRow !== null) {
+					materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
+					models.push(...itemDisplayInfoRow.ModelResourcesID);
+				}
+	
+				const materialRes = materialMap.get(itemAppearanceRow.ItemDisplayInfoID);
+				if (materialRes !== undefined)
+					Array.isArray(materialRes) ? materials.push(...materialRes) : materials.push(materialRes);
+	
+				materials = materials.filter(e => e !== 0);
+				models = models.filter(e => e !== 0);
+			}
+
+			items.push(Object.freeze(new Item(itemID, itemRow, null, null, null)));
+		}
 	}
 
 	// Show the item viewer screen.
