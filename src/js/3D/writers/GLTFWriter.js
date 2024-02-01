@@ -683,62 +683,122 @@ class GLTFWriter {
 							}
 						);
 					}
-					// TODO: Add new SCALAR accessor for this bone's scale timestamps as floats.
-					// TODO: Add new VEC3 accessor for this bone's scale values.
-					// TODO: Add animation sampler for this bone's scale with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
-					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "scale" 
+					
+					// SCALING
+					for (let i = 0; i < bone.scale.timestamps.length; i++) {
+						if (bone.scale.timestamps[i].length == 0)
+							continue;
+					
+						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
+						const animationBuffer = animationBufferMap.get(animName);
 
-					// Example animations JSON 
-					/*
-					  "animations": [
-						{
-						"samplers" : [
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.scale.timestamps[i].length * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'SCALE_TIMESTAMPS_' + bi + '_' + i,
+						});
+
+						root.animations[i].samplers.push(
 							{
-								"input" : <index of translation timestamps accessor for this bone>,
-								"interpolation" : "<STEP or LINEAR>",
-								"output" : <index of translation values accessor for this bone>
-							},
-							{
-								"input" : <index of rotation timestamps accessor for this bone>,
-								"interpolation" : "<STEP or LINEAR>",
-								"output" : <index of rotation values accessor for this bone>
-							},
-							{
-								"input" : <index of scaling timestamps accessor for this bone>,
-								"interpolation" : "<STEP or LINEAR>",
-								"output" : <index of scaling values accessor for this bone>
-							},			
-							[... other bone samplers for the same animation ...]				
-						],
-						"channels" : [ 
-							{
-								"sampler" : <translation sampler>,
-								"target" : {
-									"node" : <bone node index>,
-									"path" : "translation"
+								"input": 0, // Timestamps accessor index is set later
+								"interpolation": bone.scale.interpolation == 0 ? "STEP" : "LINEAR",
+								"output": 0, // Values accessor index is set later
+							}
+						);
+
+						// Write out bone timestamps to buffer.
+						let timeMin = 9999999;
+						let timeMax = 0;
+						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
+							// TODO: We need to recalculate these properly.
+							const time = bone.scale.timestamps[i][j] / 1000;
+							animationBuffer.writeFloatLE(time);
+
+							if (time < timeMin)
+								timeMin = time;
+
+							if (time > timeMax)
+								timeMax = time;
+						}
+
+						// Add new SCALAR accessor for this bone's scale timestamps as floats.
+						root.accessors.push({
+							name: 'SCALE_TIMESTAMPS_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "SCALAR",
+							componentType: 5126, // Float
+							min: [timeMin],
+							max: [timeMax]
+						});
+
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
+
+						root.accessors[root.accessors.length - 1].count = bone.scale.timestamps[i].length;
+
+						// VALUES
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.scale.values[i].length * 3 * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'SCALE_VALUES_' + bi + '_' + i,
+						});
+
+						// Write out bone values to buffer.
+						let min = [9999999, 9999999, 9999999];
+						let max = [-9999999, -9999999, -9999999];
+						for (let j = 0; j < bone.scale.values[i].length; j++) {
+							animationBuffer.writeFloatLE(bone.scale.values[i][j][0]);
+							animationBuffer.writeFloatLE(bone.scale.values[i][j][1]);
+							animationBuffer.writeFloatLE(bone.scale.values[i][j][2]);
+
+							if (bone.scale.values[i][j][0] < min[0])
+								min[0] = bone.scale.values[i][j][0];
+
+							if (bone.scale.values[i][j][1] < min[1])
+								min[1] = bone.scale.values[i][j][1];
+
+							if (bone.scale.values[i][j][2] < min[2])
+								min[2] = bone.scale.values[i][j][2];
+
+							if (bone.scale.values[i][j][0] > max[0])
+								max[0] = bone.scale.values[i][j][0];
+
+							if (bone.scale.values[i][j][1] > max[1])
+								max[1] = bone.scale.values[i][j][1];
+
+							if (bone.scale.values[i][j][2] > max[2])
+								max[2] = bone.scale.values[i][j][2];
+						}
+
+						// Add new VEC3 accessor for this bone's scale values.
+						root.accessors.push({
+							name: 'SCALE_VALUES_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "VEC3",
+							componentType: 5126, // Float
+							min: min,
+							max: max
+						});
+
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].output = root.accessors.length - 1;
+
+						root.accessors[root.accessors.length - 1].count = bone.scale.values[i].length;
+
+						root.animations[i].channels.push(
+							{	
+								"sampler": root.animations[i].samplers.length - 1, 
+								"target": {
+									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"path": "scale"
 								}
-							},
-							{
-								"sampler" : <rotation sampler>,
-								"target" : {
-									"node" : <bone node index>,
-									"path" : "rotation"
-								}
-							},
-							{
-								"sampler" : <scale sampler>,
-								"target" : {
-									"node" : <bone node index>,
-									"path" : "scale"
-								}
-							},
-							[... other bone channels for the same animation ...]	
-						],
-						"name" : "name"
-					},
-					[... other animations ...]
-					],
-					*/
+							}
+						);
+					}
 
 				} else {
 					console.log("Skipping bone " + bi + " because it has interpolation " + bone.translation.interpolation);
