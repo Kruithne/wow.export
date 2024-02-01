@@ -15,6 +15,20 @@ const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
+/**
+ * Transform Vec3 to Mat4x4
+ * @param {Array} Vector3
+ * @returns {Array} Mat4x4
+ */
+function vec3_to_mat4x4(v) {
+	return [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v[0] * -1, v[1] * -1, v[2] * -1, 1
+	];
+}
+
 class M2Renderer {
 	/**
 	 * Construct a new M2Renderer instance.
@@ -92,6 +106,8 @@ class M2Renderer {
 		const dataVerts = new THREE.BufferAttribute(new Float32Array(m2.vertices), 3);
 		const dataNorms = new THREE.BufferAttribute(new Float32Array(m2.normals), 3);
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
+		const dataBoneIndices = new THREE.BufferAttribute(new Uint8Array(m2.boneIndices), 4);
+		const dataBoneWeights = new THREE.BufferAttribute(new Uint8Array(m2.boneWeights), 4);
 
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
@@ -101,6 +117,8 @@ class M2Renderer {
 			geometry.setAttribute('position', dataVerts);
 			geometry.setAttribute('normal', dataNorms);
 			geometry.setAttribute('uv', dataUVs);
+			geometry.setAttribute('skinIndex', dataBoneIndices);
+			geometry.setAttribute('skinWeight', dataBoneWeights);
 
 			// Map triangle array to indices.
 			const index = new Array(skin.triangles.length);
@@ -113,7 +131,64 @@ class M2Renderer {
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
-			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+			if (m2.bones.length > 0) {
+				const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
+				this.meshGroup.add(skinnedMesh);
+
+				const bone_lookup_map = new Map();
+				const bones = [];
+
+				// Add bone nodes.
+				const rootNode = new THREE.Bone();
+				bones.push(rootNode);
+
+				const inverseBindMatrices = [];
+				//inverseBindMatrices.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+				for (let i = 0; i < m2.bones.length; i++) {
+					//const nodeIndex = bones.length;
+					const bone = m2.bones[i];
+					
+					const node = new THREE.Bone();
+
+					let parent_pos = [0, 0, 0];
+					if (bone.parentBone > -1) {
+						const parent_bone = m2.bones[bone.parentBone];
+						parent_pos = parent_bone.pivot;
+					}
+
+					var parentPos = bone.pivot.map((v, i) => v - parent_pos[i]);
+					node.position.x = parentPos[0];
+					node.position.y = parentPos[1];
+					node.position.z = parentPos[2];
+		
+					bone_lookup_map.set(i, node);
+		
+					if (bone.parentBone > -1) {
+						const parent_node = bone_lookup_map.get(bone.parentBone);
+						parent_node.add(node);
+					} else {
+						// Parent stray bones to the skeleton root.
+						rootNode.add(node);
+					}
+
+					bones.push(node);
+
+					inverseBindMatrices.push([vec3_to_mat4x4(bone.pivot)]);
+		
+					//skin.joints.push(nodeIndex + 1);
+				}
+				console.log(bones);
+				console.log(inverseBindMatrices);
+				const skeleton = new THREE.Skeleton( bones );
+
+				skinnedMesh.bind( skeleton );
+				console.log(bones);
+
+				core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
+
+			} else {
+				this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+			}
 
 			if (this.reactive) {
 				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01'));
@@ -131,6 +206,7 @@ class M2Renderer {
 
 		// Update geosets once (so defaults are applied correctly).
 		this.updateGeosets();
+
 	}
 
 	/**

@@ -11,6 +11,7 @@ const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
 const BoneMapper = require('../BoneMapper');
+const AnimMapper = require('../AnimMapper');
 
 // See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
@@ -267,6 +268,7 @@ class GLTFWriter {
 		let idx_inv_bind = -1;
 		let idx_bone_joints = -1
 		let idx_bone_weights = -1;
+		const animationBufferMap = new Map();
 
 		if (bones.length > 0) {
 			idx_bone_joints = add_buffered_accessor({
@@ -312,11 +314,88 @@ class GLTFWriter {
 			});
 
 			const bone_lookup_map = new Map();
-	
+
+			const animation_buffer_lookup_map = new Map();
+
+			// TODO: Probably add an animation filter here as I can imagine this gets pretty insane both in RAM usage and processing speed.
+			for (var animationIndex = 0; animationIndex < this.animations.length; animationIndex++) {
+				var requiredBufferSize = 0;
+				for (const bone of this.bones) {
+					// Timestamps are all floats (uints originally), so 4 bytes each.
+					for (let i = 0; i < bone.translation.timestamps.length; i++) {
+						if (i == animationIndex && bone.translation.interpolation < 2)
+							requiredBufferSize += bone.translation.timestamps[i].length * 4;
+					}
+
+					for (let i = 0; i < bone.rotation.timestamps.length; i++) {
+						if (i == animationIndex && bone.rotation.interpolation < 2)
+							requiredBufferSize += bone.rotation.timestamps[i].length * 4;
+					}
+
+					for (let i = 0; i < bone.scale.timestamps.length; i++) {
+						if (i == animationIndex && bone.scale.interpolation < 2)
+							requiredBufferSize += bone.scale.timestamps[i].length * 4;
+					}
+
+					// Vector3 values
+					for (let i = 0; i < bone.translation.values.length; i++) {
+						if (i == animationIndex && bone.translation.interpolation < 2)
+							requiredBufferSize += bone.translation.values[i].length * 3 * 4;
+					}
+
+					for (let i = 0; i < bone.scale.values.length; i++) {
+						if (i == animationIndex && bone.scale.interpolation < 2)
+							requiredBufferSize += bone.scale.values[i].length * 3 * 4;
+					}
+
+					// Quaternion values
+					for (let i = 0; i < bone.rotation.values.length; i++) {
+						if (i == animationIndex && bone.rotation.interpolation < 2)
+							requiredBufferSize += bone.rotation.values[i].length * 4 * 4;
+					}
+				}
+
+				if (requiredBufferSize > 0) {
+					animationBufferMap.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, BufferWrapper.alloc(requiredBufferSize, true));
+					
+					root.buffers.push({
+						uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
+						byteLength: requiredBufferSize
+					});
+
+					animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
+				}
+				
+				console.log("Allocated " + requiredBufferSize + " bytes for animation " + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex);
+			}
+
+			// Animations
+			root.animations = [];
+
+			for (const animation of this.animations) {
+				root.animations.push(
+					{
+						"samplers" : [],
+						"channels" : [],
+						"name" : AnimMapper.get_anim_name(animation.id) + " (ID " + animation.id + " variation " + animation.variationIndex + ")"
+					}
+				);
+			}
+			
+			/*
+				"animations": [
+				{
+				"samplers" : [],
+				"channels" : [],
+				"name" : "name"
+				}
+			],
+			*/
+
 			// Add bone nodes.
-			for (let i = 0; i < bones.length; i++) {
+			for (let bi = 0; bi < bones.length; bi++) {
 				const nodeIndex = nodes.length;
-				const bone = bones[i];
+				const bone = bones[bi];
 	
 				let parent_pos = [0, 0, 0];
 				if (bone.parentBone > -1) {
@@ -330,7 +409,7 @@ class GLTFWriter {
 					skeleton.children.push(nodeIndex);
 				}
 
-				const bone_name = BoneMapper.get_bone_name(bone.boneID, i, bone.boneNameCRC);
+				const bone_name = BoneMapper.get_bone_name(bone.boneID, bi, bone.boneNameCRC);
 				const prefix_node = {
 					name: bone_name + '_p',
 					translation: bone.pivot.map((v, i) => v - parent_pos[i]),
@@ -339,7 +418,7 @@ class GLTFWriter {
 	
 				const node = { name: bone_name };
 	
-				bone_lookup_map.set(i, node);
+				bone_lookup_map.set(bi, node);
 	
 				nodes.push(prefix_node);
 				nodes.push(node);
@@ -347,52 +426,265 @@ class GLTFWriter {
 				this.inverseBindMatrices.push(...vec3_to_mat4x4(bone.pivot));
 	
 				skin.joints.push(nodeIndex + 1);
-
-				// Animations
+				
 				// TODO/RESEARCH: How does this interact with prefix bones? We only animate 1 node per bone, but we have 2 nodes per bone.
 				// TODO/RESEARCH: How do we calculate animation length? Different animations have different lengths. Do we just support exporting 1 animation (like wow.tools) or do we somehow get the max length for all animations and base everything on that one? Hmm!
 				// 		Addendum: briochie suggested separate glTF files for each animation, which might be a good idea.
 
-				// Check interpolation, right now we only support LINEAR (1). The rest (0 - no interpolation, 2 - bezier spline, 3 - hermite spline) will require... well, math.
-				if (bone.translation.interpolation == 1) { 
+				// Check interpolation, right now we only support NONE (0, hopefully matches glTF STEP), LINEAR (1). The rest (2 - bezier spline, 3 - hermite spline) will require... well, math.
+				if (bone.translation.interpolation < 2) { 
 					// Sanity check -- check if the timestamps/values array are the same length as the amount of animations.
-					if (bone.translation.timestamps.length != this.animations.length) {
-						console.log("timestamps array length does not match the amount of animations, skipping bone " + i);
+					if (bone.translation.timestamps.length != 0 && bone.translation.timestamps.length != this.animations.length) {
+						console.log("timestamps array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
 						continue;
 					}
 
-					if (bone.translation.values.length != this.animations.length) {
-						console.log("values array length does not match the amount of animations, skipping bone " + i);
+					if (bone.translation.values.length != 0 && bone.translation.values.length != this.animations.length) {
+						console.log("values array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
 						continue;
 					}
 
-					// TODO: Add new buffer for this bone if it doesn't already exist. Probably a separate buffer from the mesh one, but we might be able to combine it per animation?
-					// TODO: Add new bufferView for this bone.
+					// TIMESTAMPS
+					for (let i = 0; i < bone.translation.timestamps.length; i++) {
+						if (bone.translation.timestamps[i].length == 0)
+							continue;
+					
+						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
+						const animationBuffer = animationBufferMap.get(animName);
 
-					// TODO: Add new animation to this glTF file with empty "samplers" and "channels" arrays and applicable name if it doesn't already exist.
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.translation.timestamps[i].length * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'TRANS_TIMESTAMPS_' + bi + '_' + i,
+						});
 
-					/*
-					  "animations": [
-						{
-						"samplers" : [],
-						"channels" : [],
-						"name" : "name"
+						root.animations[i].samplers.push(
+							{
+								"input": 0, // Timestamps accessor index is set later
+								"interpolation": bone.translation.interpolation == 0 ? "STEP" : "LINEAR",
+								"output": 0, // Values accessor index is set later
+							}
+						);
+
+						// Write out bone timestamps to buffer.
+						let timeMin = 9999999;
+						let timeMax = 0;
+						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
+							// TODO: We need to recalculate these properly.
+							const time = bone.translation.timestamps[i][j] / 1000;
+							animationBuffer.writeFloatLE(time);
+
+							if (time < timeMin)
+								timeMin = time;
+
+							if (time > timeMax)
+								timeMax = time;
 						}
-					],
-					*/
 
-					// TODO: Add new SCALAR accessor for this bone's translation timestamps as floats.
-					// TODO: Add new accessor for this bone's translation values.
-					// TODO: Add animation sampler for this bone's translation with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
-					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "translation" 
+						// Add new SCALAR accessor for this bone's translation timestamps as floats.
+						root.accessors.push({
+							name: 'TRANS_TIMESTAMPS_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "SCALAR",
+							componentType: 5126, // Float
+							min: [timeMin],
+							max: [timeMax]
+						});
 
-					// TODO: Add new SCALAR accessor for this bone's rotation timestamps as floats.
-					// TODO: Add new accessor for this bone's rotation values.
-					// TODO: Add animation sampler for this bone's rotation with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
-					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "rotation" 
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
 
+						root.accessors[root.accessors.length - 1].count = bone.translation.timestamps[i].length;
+
+						// VALUES
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.translation.values[i].length * 3 * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'TRANS_VALUES_' + bi + '_' + i,
+						});
+
+						// Write out bone values to buffer.
+						let min = [9999999, 9999999, 9999999];
+						let max = [-9999999, -9999999, -9999999];
+						for (let j = 0; j < bone.translation.values[i].length; j++) {
+							animationBuffer.writeFloatLE(bone.translation.values[i][j][0]);
+							animationBuffer.writeFloatLE(bone.translation.values[i][j][1]);
+							animationBuffer.writeFloatLE(bone.translation.values[i][j][2]);
+
+							if (bone.translation.values[i][j][0] < min[0])
+								min[0] = bone.translation.values[i][j][0];
+
+							if (bone.translation.values[i][j][1] < min[1])
+								min[1] = bone.translation.values[i][j][1];
+
+							if (bone.translation.values[i][j][2] < min[2])
+								min[2] = bone.translation.values[i][j][2];
+
+							if (bone.translation.values[i][j][0] > max[0])
+								max[0] = bone.translation.values[i][j][0];
+
+							if (bone.translation.values[i][j][1] > max[1])
+								max[1] = bone.translation.values[i][j][1];
+
+							if (bone.translation.values[i][j][2] > max[2])
+								max[2] = bone.translation.values[i][j][2];
+						}
+
+						// Add new VEC3 accessor for this bone's translation values.
+						root.accessors.push({
+							name: 'TRANS_VALUES_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "VEC3",
+							componentType: 5126, // Float
+							min: min,
+							max: max
+						});
+
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].output = root.accessors.length - 1;
+
+						root.accessors[root.accessors.length - 1].count = bone.translation.values[i].length;
+
+						root.animations[i].channels.push(
+							{	
+								"sampler": root.animations[i].samplers.length - 1, 
+								"target": {
+									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"path": "translation"
+								}
+							}
+						);
+					}
+
+					// TODO: We might be able to make this generic?
+					// ROTATION
+					for (let i = 0; i < bone.rotation.timestamps.length; i++) {
+						if (bone.rotation.timestamps[i].length == 0)
+							continue;
+					
+						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
+						const animationBuffer = animationBufferMap.get(animName);
+
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.rotation.timestamps[i].length * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'ROT_TIMESTAMPS_' + bi + '_' + i,
+						});
+
+						root.animations[i].samplers.push(
+							{
+								"input": 0, // Timestamps accessor index is set later
+								"interpolation": bone.rotation.interpolation == 0 ? "STEP" : "LINEAR",
+								"output": 0, // Values accessor index is set later
+							}
+						);
+
+						// Write out bone timestamps to buffer.
+						let timeMin = 9999999;
+						let timeMax = 0;
+						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
+							// TODO: We need to recalculate these properly.
+							const time = bone.rotation.timestamps[i][j] / 1000;
+							animationBuffer.writeFloatLE(time);
+
+							if (time < timeMin)
+								timeMin = time;
+
+							if (time > timeMax)
+								timeMax = time;
+						}
+
+						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
+						root.accessors.push({
+							name: 'ROT_TIMESTAMPS_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "SCALAR",
+							componentType: 5126, // Float
+							min: [timeMin],
+							max: [timeMax]
+						});
+
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
+
+						root.accessors[root.accessors.length - 1].count = bone.rotation.timestamps[i].length;
+
+						// VALUES
+						// Add new bufferView for bone timestamps.
+						root.bufferViews.push({
+							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
+							byteLength: bone.rotation.values[i].length * 4 * 4,
+							byteOffset: animationBuffer.offset,
+							name: 'ROT_VALUES_' + bi + '_' + i,
+						});
+
+						// Write out bone values to buffer.
+						let min = [9999999, 9999999, 9999999, 9999999];
+						let max = [-9999999, -9999999, -9999999, -9999999];
+						for (let j = 0; j < bone.rotation.values[i].length; j++) {
+							animationBuffer.writeFloatLE(bone.rotation.values[i][j][0]);
+							animationBuffer.writeFloatLE(bone.rotation.values[i][j][1]);
+							animationBuffer.writeFloatLE(bone.rotation.values[i][j][2]);
+							animationBuffer.writeFloatLE(bone.rotation.values[i][j][3]);
+
+							if (bone.rotation.values[i][j][0] < min[0])
+								min[0] = bone.rotation.values[i][j][0];
+
+							if (bone.rotation.values[i][j][1] < min[1])
+								min[1] = bone.rotation.values[i][j][1];
+
+							if (bone.rotation.values[i][j][2] < min[2])
+								min[2] = bone.rotation.values[i][j][2];
+
+							if (bone.rotation.values[i][j][3] < min[3])
+								min[3] = bone.rotation.values[i][j][3];
+
+							if (bone.rotation.values[i][j][0] > max[0])
+								max[0] = bone.rotation.values[i][j][0];
+
+							if (bone.rotation.values[i][j][1] > max[1])
+								max[1] = bone.rotation.values[i][j][1];
+
+							if (bone.rotation.values[i][j][2] > max[2])
+								max[2] = bone.rotation.values[i][j][2];
+
+							if (bone.rotation.values[i][j][3] > max[3])
+								max[3] = bone.rotation.values[i][j][3];
+						}
+
+						// Add new VEC3 accessor for this bone's rotation values.
+						root.accessors.push({
+							name: 'ROT_VALUES_' + bi + '_' + i,
+							bufferView: root.bufferViews.length - 1,
+							byteOffset: 0,
+							type: "VEC4",
+							componentType: 5126, // Float
+							min: min,
+							max: max
+						});
+
+						root.animations[i].samplers[root.animations[i].samplers.length - 1].output = root.accessors.length - 1;
+
+						root.accessors[root.accessors.length - 1].count = bone.rotation.values[i].length;
+
+						root.animations[i].channels.push(
+							{	
+								"sampler": root.animations[i].samplers.length - 1, 
+								"target": {
+									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"path": "rotation"
+								}
+							}
+						);
+					}
 					// TODO: Add new SCALAR accessor for this bone's scale timestamps as floats.
-					// TODO: Add new accessor for this bone's scale values.
+					// TODO: Add new VEC3 accessor for this bone's scale values.
 					// TODO: Add animation sampler for this bone's scale with input = timestamps accessor, interpolation = "LINEAR", output = values accessor.
 					// TODO: Add animation channel for the above sampler with the target node of this bone and target path of "scale" 
 
@@ -403,17 +695,17 @@ class GLTFWriter {
 						"samplers" : [
 							{
 								"input" : <index of translation timestamps accessor for this bone>,
-								"interpolation" : "LINEAR",
+								"interpolation" : "<STEP or LINEAR>",
 								"output" : <index of translation values accessor for this bone>
 							},
 							{
 								"input" : <index of rotation timestamps accessor for this bone>,
-								"interpolation" : "LINEAR",
+								"interpolation" : "<STEP or LINEAR>",
 								"output" : <index of rotation values accessor for this bone>
 							},
 							{
 								"input" : <index of scaling timestamps accessor for this bone>,
-								"interpolation" : "LINEAR",
+								"interpolation" : "<STEP or LINEAR>",
 								"output" : <index of scaling values accessor for this bone>
 							},			
 							[... other bone samplers for the same animation ...]				
@@ -448,6 +740,8 @@ class GLTFWriter {
 					],
 					*/
 
+				} else {
+					console.log("Skipping bone " + bi + " because it has interpolation " + bone.translation.interpolation);
 				}
 			}
 		}
@@ -671,6 +965,13 @@ class GLTFWriter {
 		await generics.createDirectory(path.dirname(this.out));
 		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
 		await bin_combined.writeToFile(outBIN);
+
+		// Write out animation buffers
+		for (const [animationName, animationBuffer] of animationBufferMap) {
+			const animationPath = path.join(out_dir, path.basename(outBIN, ".bin") + "_anim" + animationName + ".bin");
+			await animationBuffer.writeToFile(animationPath);
+			console.log("Wrote animation buffer for " + animationName + " to " + animationPath);
+		}
 	}
 }
 
