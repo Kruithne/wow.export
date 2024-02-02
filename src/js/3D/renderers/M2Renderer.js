@@ -177,14 +177,12 @@ class M2Renderer {
 		
 					//skin.joints.push(nodeIndex + 1);
 				}
-				console.log(bones);
-				console.log(inverseBindMatrices);
+
 				const skeleton = new THREE.Skeleton( bones );
 
 				skinnedMesh.bind( skeleton );
-				console.log(bones);
 
-				core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
+				// core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
 
 			} else {
 				this.meshGroup.add(new THREE.Mesh(geometry, this.materials));

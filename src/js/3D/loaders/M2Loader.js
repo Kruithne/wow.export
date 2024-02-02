@@ -8,6 +8,8 @@ const Texture = require('../Texture');
 const Skin = require('../Skin');
 const constants = require('../../constants');
 const M2Generics = require('./M2Generics');
+const ANIMLoader = require('./ANIMLoader');
+const core = require('../../core');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -23,6 +25,7 @@ class M2Loader {
 	constructor(data) {
 		this.data = data;
 		this.isLoaded = false;
+		this.animFiles = new Map();
 	}
 
 	/**
@@ -73,6 +76,28 @@ class M2Loader {
 	 */
 	getSkinList() {
 		return this.skins;
+	}
+
+	/**
+	 * Load and apply .anim files to loaded M2 model.
+	 */
+	async loadAnims() {
+		for (const animation of this.animations) {
+			for (const entry of this.animFileIDs) {
+				if (entry.animID !== animation.id && entry.subAnimID !== animation.variationIndex)
+					continue;
+
+				const fileDataID = entry.fileDataID;
+				if (!this.animFiles.has(fileDataID)) {
+					console.log('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+					this.animFiles.set(fileDataID, new ANIMLoader(await core.view.casc.getFile(fileDataID)).load());
+				}
+			}
+		}
+
+		this.data.seek(this.md21Ofs + 44);
+
+		this.parseChunk_MD21_bones(this.md21Ofs, true);
 	}
 
 	/**
@@ -171,7 +196,7 @@ class M2Loader {
 		this.parseChunk_MD21_collision(ofs);
 	}
 
-	parseChunk_MD21_bones(ofs) {
+	parseChunk_MD21_bones(ofs, useAnims = false) {
 		const data = this.data;
 		const boneCount = data.readUInt32LE();
 		const boneOfs = data.readUInt32LE();
@@ -180,6 +205,8 @@ class M2Loader {
 		data.seek(boneOfs + ofs);
 
 		this.md21Ofs = ofs;
+
+		// TODO: We have to use data from .anim instead if useAnims is true. We can only do this after M2 is fully loaded because of the way we parse chunks.
 
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
