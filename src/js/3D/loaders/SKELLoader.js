@@ -69,9 +69,9 @@ class SKELLoader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
-				rotation: M2Generics.read_m2_track(data, chunk_ofs, () => data.readUInt16LE(4).map(e => (e < 0? e + 32768 : e - 32767) / 32767)),
-				scale: M2Generics.read_m2_track(data, chunk_ofs, () => data.readFloatLE(3)),
+				translation: M2Generics.read_m2_track(data, chunk_ofs, "float3"),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, "compquat"),
+				scale: M2Generics.read_m2_track(data, chunk_ofs, "float3"),
 				pivot: data.readFloatLE(3)
 			};
 

@@ -10,6 +10,7 @@ const constants = require('../../constants');
 const M2Generics = require('./M2Generics');
 const ANIMLoader = require('./ANIMLoader');
 const core = require('../../core');
+const BufferWrapper = require('../../buffer');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -82,15 +83,21 @@ class M2Loader {
 	 * Load and apply .anim files to loaded M2 model.
 	 */
 	async loadAnims() {
-		for (const animation of this.animations) {
+		for (let i = 0; i < this.animations.length; i++) {
+			const animation = this.animations[i];
+
+			// TODO: Flag check?
+
 			for (const entry of this.animFileIDs) {
 				if (entry.animID !== animation.id && entry.subAnimID !== animation.variationIndex)
 					continue;
 
 				const fileDataID = entry.fileDataID;
-				if (!this.animFiles.has(fileDataID)) {
+				if (!this.animFiles.has(i)) {
 					console.log('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
-					this.animFiles.set(fileDataID, new ANIMLoader(await core.view.casc.getFile(fileDataID)).load());
+					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
+					await loader.load();
+					this.animFiles.set(i, BufferWrapper.from(loader.animData));
 				}
 			}
 		}
@@ -210,15 +217,16 @@ class M2Loader {
 
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
+			console.log("bone: " + i);
 			const bone = {
 				boneID: data.readInt32LE(),
 				flags: data.readUInt32LE(),
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, ofs, () => data.readFloatLE(3)),
-				rotation: M2Generics.read_m2_track(data, ofs, () => data.readUInt16LE(4).map(e => (e < 0? e + 32768 : e - 32767) / 32767)),
-				scale: M2Generics.read_m2_track(data, ofs, () => data.readFloatLE(3)),
+				translation: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
+				rotation: M2Generics.read_m2_track(data, ofs, "compquat", useAnims, this.animFiles),
+				scale: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -442,9 +450,9 @@ class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3)),
-				rotation: M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(4)),
-				scaling: M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3))
+				translation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
+				rotation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float4"),
+				scaling: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3")
 			};
 		}
 
@@ -500,7 +508,7 @@ class M2Loader {
 
 		const weights = this.textureWeights = new Array(weightCount);
 		for (let i = 0; i < weightCount; i++)
-			weights[i] = M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readInt16LE());
+			weights[i] = M2Generics.read_m2_track(this.data, this.md21Ofs, "int16");
 
 		this.data.seek(base);
 	}
@@ -519,8 +527,8 @@ class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readFloatLE(3)),
-				alpha: M2Generics.read_m2_track(this.data, this.md21Ofs, () => this.data.readInt16LE())
+				color: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
+				alpha: M2Generics.read_m2_track(this.data, this.md21Ofs, "int16")
 			}
 		}
 
