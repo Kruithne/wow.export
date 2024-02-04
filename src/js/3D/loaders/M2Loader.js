@@ -99,6 +99,11 @@ class M2Loader {
 
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
+					if (fileDataID === 0) {
+						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it has no fileDataID");
+						continue;
+					}
+					
 					log.write('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
 
 					let animIsChunked = false;
