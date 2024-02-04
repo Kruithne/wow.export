@@ -22,10 +22,16 @@ class ANIMLoader {
 	/**
 	 * Load the animation file.
 	 */
-	async load() {
+	async load(isChunked = true) {
 		// Prevent multiple loading of the same file.
 		if (this.isLoaded === true)
 			return;
+
+		if (!isChunked) {
+			this.animData = this.data.readUInt8(this.data.remainingBytes);
+			this.isLoaded === true
+			return;
+		}
 
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();

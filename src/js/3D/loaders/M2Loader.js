@@ -99,8 +99,13 @@ class M2Loader {
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
 					console.log('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+					let animIsChunked = false;
+					
+					if ((this.flags & 0x200000) === 0x200000 || this.skeletonFileID > 0)
+						animIsChunked = true;
+
 					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
-					await loader.load();
+					await loader.load(animIsChunked);
 					this.animFiles.set(i, BufferWrapper.from(loader.animData));
 				}
 			}
