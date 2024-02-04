@@ -471,6 +471,8 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
+
+						let lastTime = 0;
 						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.translation.timestamps[i][j] / 1000;
@@ -481,6 +483,13 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
+
+							if (time < lastTime) {
+								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+								break;
+							}
+
+							lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's translation timestamps as floats.
@@ -588,6 +597,8 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
+						let lastTime = 0;
+
 						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.rotation.timestamps[i][j] / 1000;
@@ -598,6 +609,13 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
+
+							if (time < lastTime) {
+								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+								break;
+							}
+
+							lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
@@ -711,6 +729,7 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
+						let lastTime = 0;
 						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.scale.timestamps[i][j] / 1000;
@@ -721,6 +740,13 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
+
+							if (time < lastTime) {
+								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+								break;
+							}
+
+							lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's scale timestamps as floats.
@@ -801,7 +827,7 @@ class GLTFWriter {
 					}
 
 				} else {
-					console.log("Skipping bone " + bi + " because it has interpolation " + bone.translation.interpolation);
+					console.log("Skipping Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") because it has interpolation " + bone.translation.interpolation);
 				}
 			}
 		}

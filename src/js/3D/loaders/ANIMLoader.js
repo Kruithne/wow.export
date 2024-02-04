@@ -33,9 +33,9 @@ class ANIMLoader {
 			const nextChunkPos = this.data.offset + chunkSize;
 	
 			switch (chunkID) {
-				case CHUNK_AFM2: this.parse_chunk_afm2(); break; // AFM2 old animation data or ??? if AFSA/AFSB are present
-				case CHUNK_AFSA: this.parse_chunk_afsa(); break; // Skeleton Attachment animation data
-				case CHUNK_AFSB: this.parse_chunk_afsb(); break; // Skeleton Bone animation data
+				case CHUNK_AFM2: this.parse_chunk_afm2(chunkSize); break; // AFM2 old animation data or ??? if AFSA/AFSB are present
+				case CHUNK_AFSA: this.parse_chunk_afsa(chunkSize); break; // Skeleton Attachment animation data
+				case CHUNK_AFSB: this.parse_chunk_afsb(chunkSize); break; // Skeleton Bone animation data
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -45,18 +45,15 @@ class ANIMLoader {
 		this.isLoaded = true;
 	}
 
-	parse_chunk_afm2() {
-		const chunkSize = this.data.readUInt32LE();
+	parse_chunk_afm2(chunkSize) {
 		this.animData = this.data.readUInt8(chunkSize);
 	}
 
-	parse_chunk_afsa() {
-		const chunkSize = this.data.readUInt32LE();
+	parse_chunk_afsa(chunkSize) {
 		this.skeletonAnimData = this.data.readUInt8(chunkSize);
 	}
 
-	parse_chunk_afsb() {
-		const chunkSize = this.data.readUInt32LE();
+	parse_chunk_afsb(chunkSize) {
 		this.skeletonBoneData = this.data.readUInt8(chunkSize);
 	}
 }

@@ -11,7 +11,6 @@ const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader= require('../loaders/M2Loader');
-const ANIMLoader= require('../loaders/ANIMLoader');
 const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
@@ -171,7 +170,7 @@ class M2Exporter {
 		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
 
-		this.m2.loadAnims();
+		await this.m2.loadAnims();
 
 		if (this.m2.skeletonFileID) {
 			const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);

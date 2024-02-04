@@ -11,6 +11,7 @@ const M2Generics = require('./M2Generics');
 const ANIMLoader = require('./ANIMLoader');
 const core = require('../../core');
 const BufferWrapper = require('../../buffer');
+const AnimMapper = require('../AnimMapper');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -86,10 +87,13 @@ class M2Loader {
 		for (let i = 0; i < this.animations.length; i++) {
 			const animation = this.animations[i];
 
-			// TODO: Flag check?
+			if ((animation.flags & 0x20) === 0x20) {
+				console.log("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
+				continue;
+			}
 
 			for (const entry of this.animFileIDs) {
-				if (entry.animID !== animation.id && entry.subAnimID !== animation.variationIndex)
+				if (entry.animID !== animation.id || entry.subAnimID !== animation.variationIndex)
 					continue;
 
 				const fileDataID = entry.fileDataID;
@@ -217,7 +221,6 @@ class M2Loader {
 
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
-			console.log("bone: " + i);
 			const bone = {
 				boneID: data.readInt32LE(),
 				flags: data.readUInt32LE(),
