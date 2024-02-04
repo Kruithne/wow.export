@@ -170,8 +170,6 @@ class M2Exporter {
 		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
 
-		await this.m2.loadAnims();
-
 		if (this.m2.skeletonFileID) {
 			const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
 			const skel = new SKELLoader(skel_file);
@@ -179,15 +177,19 @@ class M2Exporter {
 			await skel.load();
 
 			gltf.setBonesArray(skel.bones);
+			gltf.setAnimations(skel.animations);
+			await skel.loadAnims();
 		} else {
 			gltf.setBonesArray(this.m2.bones);
+			gltf.setAnimations(this.m2.animations);
+			await this.m2.loadAnims();
 		}
+
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
 		gltf.setBoneIndexArray(this.m2.boneIndices)
-		gltf.setAnimations(this.m2.animations);
 
 		gltf.addUVArray(this.m2.uv);
 		gltf.addUVArray(this.m2.uv2);

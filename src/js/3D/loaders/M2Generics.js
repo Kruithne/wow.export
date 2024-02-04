@@ -26,7 +26,6 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 	for (let i = 0; i < arrCount; i++) {
 		const subArrCount = data.readUInt32LE();
 		const subArrOfs = data.readUInt32LE();
-
 		const subBase = data.offset;
 		data.seek(ofs + subArrOfs);
 
@@ -111,4 +110,4 @@ function read_caa_bb(data) {
 	return { min: data.readFloatLE(3), max: data.readFloatLE(3) };
 }
 
-module.exports = { M2Track, read_m2_array, read_m2_track, read_caa_bb }
+module.exports = { M2Track, read_m2_array_array, read_m2_track, read_caa_bb }

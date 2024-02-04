@@ -12,6 +12,7 @@ const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
 const BoneMapper = require('../BoneMapper');
 const AnimMapper = require('../AnimMapper');
+const log = require('../../log');
 
 // See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
@@ -365,8 +366,6 @@ class GLTFWriter {
 
 					animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
 				}
-				
-				console.log("Allocated " + requiredBufferSize + " bytes for animation " + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex);
 			}
 
 			// Animations
@@ -427,20 +426,16 @@ class GLTFWriter {
 	
 				skin.joints.push(nodeIndex + 1);
 				
-				// TODO/RESEARCH: How does this interact with prefix bones? We only animate 1 node per bone, but we have 2 nodes per bone.
-				// TODO/RESEARCH: How do we calculate animation length? Different animations have different lengths. Do we just support exporting 1 animation (like wow.tools) or do we somehow get the max length for all animations and base everything on that one? Hmm!
-				// 		Addendum: briochie suggested separate glTF files for each animation, which might be a good idea.
-
 				// Check interpolation, right now we only support NONE (0, hopefully matches glTF STEP), LINEAR (1). The rest (2 - bezier spline, 3 - hermite spline) will require... well, math.
-				if (bone.translation.interpolation < 2) { 
+				if (bone.translation.interpolation < 2) {
 					// Sanity check -- check if the timestamps/values array are the same length as the amount of animations.
 					if (bone.translation.timestamps.length != 0 && bone.translation.timestamps.length != this.animations.length) {
-						console.log("timestamps array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
+						log.write("timestamps array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
 						continue;
 					}
 
 					if (bone.translation.values.length != 0 && bone.translation.values.length != this.animations.length) {
-						console.log("values array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
+						log.write("values array length (" + bone.translation.timestamps.length + ") does not match the amount of animations (" + this.animations.length + "), skipping bone " + bi);
 						continue;
 					}
 
@@ -472,7 +467,7 @@ class GLTFWriter {
 						let timeMin = 9999999;
 						let timeMax = 0;
 
-						let lastTime = 0;
+						// let lastTime = 0;
 						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.translation.timestamps[i][j] / 1000;
@@ -484,12 +479,12 @@ class GLTFWriter {
 							if (time > timeMax)
 								timeMax = time;
 
-							if (time < lastTime) {
-								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-								break;
-							}
+							// if (time < lastTime) {
+							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+							// 	break;
+							// }
 
-							lastTime = time;
+							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's translation timestamps as floats.
@@ -562,13 +557,17 @@ class GLTFWriter {
 							{	
 								"sampler": root.animations[i].samplers.length - 1, 
 								"target": {
-									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"node": nodeIndex + 1,
 									"path": "translation"
 								}
 							}
 						);
 					}
-
+				} else { 
+					log.write("Bone " + bi + " has unsupported interpolation type for translation, skipping.");
+				}
+				
+				if (bone.rotation.interpolation < 2) {
 					// TODO: We might be able to make this generic?
 					// ROTATION
 					for (let i = 0; i < bone.rotation.timestamps.length; i++) {
@@ -597,7 +596,7 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
-						let lastTime = 0;
+						// let lastTime = 0;
 
 						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
@@ -610,12 +609,12 @@ class GLTFWriter {
 							if (time > timeMax)
 								timeMax = time;
 
-							if (time < lastTime) {
-								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-								break;
-							}
+							// if (time < lastTime) {
+							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+							// 	break;
+							// }
 
-							lastTime = time;
+							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
@@ -695,13 +694,17 @@ class GLTFWriter {
 							{	
 								"sampler": root.animations[i].samplers.length - 1, 
 								"target": {
-									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"node": nodeIndex + 1,
 									"path": "rotation"
 								}
 							}
 						);
 					}
-					
+				} else { 
+					log.write("Bone " + bi + " has unsupported interpolation type for rotation, skipping.");
+				}
+
+				if (bone.scale.interpolation < 2) {
 					// SCALING
 					for (let i = 0; i < bone.scale.timestamps.length; i++) {
 						if (bone.scale.timestamps[i].length == 0)
@@ -729,7 +732,7 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
-						let lastTime = 0;
+						// let lastTime = 0;
 						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.scale.timestamps[i][j] / 1000;
@@ -741,12 +744,12 @@ class GLTFWriter {
 							if (time > timeMax)
 								timeMax = time;
 
-							if (time < lastTime) {
-								console.log("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-								break;
-							}
+							// if (time < lastTime) {
+							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
+							// 	break;
+							// }
 
-							lastTime = time;
+							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's scale timestamps as floats.
@@ -819,15 +822,14 @@ class GLTFWriter {
 							{	
 								"sampler": root.animations[i].samplers.length - 1, 
 								"target": {
-									"node": nodeIndex + 1, // TODO: Check if bone node index is correct.
+									"node": nodeIndex + 1,
 									"path": "scale"
 								}
 							}
 						);
 					}
-
-				} else {
-					console.log("Skipping Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") because it has interpolation " + bone.translation.interpolation);
+				} else { 
+					log.write("Bone " + bi + " has unsupported interpolation type for scale, skipping.");
 				}
 			}
 		}
@@ -1056,7 +1058,6 @@ class GLTFWriter {
 		for (const [animationName, animationBuffer] of animationBufferMap) {
 			const animationPath = path.join(out_dir, path.basename(outBIN, ".bin") + "_anim" + animationName + ".bin");
 			await animationBuffer.writeToFile(animationPath);
-			console.log("Wrote animation buffer for " + animationName + " to " + animationPath);
 		}
 	}
 }

@@ -12,6 +12,7 @@ const ANIMLoader = require('./ANIMLoader');
 const core = require('../../core');
 const BufferWrapper = require('../../buffer');
 const AnimMapper = require('../AnimMapper');
+const log = require('../../log');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -88,7 +89,7 @@ class M2Loader {
 			const animation = this.animations[i];
 
 			if ((animation.flags & 0x20) === 0x20) {
-				console.log("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
+				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
 				continue;
 			}
 
@@ -98,7 +99,8 @@ class M2Loader {
 
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
-					console.log('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+					log.write('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+
 					let animIsChunked = false;
 					
 					if ((this.flags & 0x200000) === 0x200000 || this.skeletonFileID > 0)

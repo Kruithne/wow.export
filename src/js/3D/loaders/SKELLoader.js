@@ -6,8 +6,15 @@
 
 const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
+const CHUNK_SKS1 = 0x31534B53;
+const CHUNK_AFID = 0x44494641;
 
 const M2Generics = require('./M2Generics');
+const BufferWrapper = require('../../buffer');
+const AnimMapper = require('../AnimMapper');
+const log = require('../../log');
+const ANIMLoader = require('./ANIMLoader');
+const core = require('../../core');
 
 // See: https://wowdev.wiki/M2/.skel
 class SKELLoader {
@@ -18,6 +25,7 @@ class SKELLoader {
 	constructor(data) {
 		this.data = data;
 		this.isLoaded = false;
+		this.animFiles = new Map();
 	}
 
 	/**
@@ -36,6 +44,8 @@ class SKELLoader {
 			switch (chunkID) {
 				case CHUNK_SKB1: this.parse_chunk_skb1(); break;
 				case CHUNK_SKPD: this.parse_chunk_skpd(); break;
+				case CHUNK_SKS1: this.parse_chunk_sks1(); break;
+				case CHUNK_AFID: this.parse_chunk_afid(chunkSize); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -51,9 +61,10 @@ class SKELLoader {
 		this.data.move(4) // _0x0c[4]
 	}
 
-	parse_chunk_skb1() {
+	parse_chunk_skb1(useAnims = false) {
 		const data = this.data;
 		const chunk_ofs = data.offset;
+		this.boneOffset = data.offset;
 
 		const bone_count = data.readUInt32LE();
 		const bone_ofs = data.readUInt32LE();
@@ -69,9 +80,9 @@ class SKELLoader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, chunk_ofs, "float3"),
-				rotation: M2Generics.read_m2_track(data, chunk_ofs, "compquat"),
-				scale: M2Generics.read_m2_track(data, chunk_ofs, "float3"),
+				translation: M2Generics.read_m2_track(data, chunk_ofs, "float3", useAnims, this.animFiles),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, "compquat", useAnims, this.animFiles),
+				scale: M2Generics.read_m2_track(data, chunk_ofs, "float3", useAnims, this.animFiles),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -132,6 +143,109 @@ class SKELLoader {
 		}
 
 		data.seek(base_ofs);
+	}
+
+	parse_chunk_sks1() {
+		// Global loops
+		const chunk_ofs = this.data.offset;
+
+		const globalLoopCount = this.data.readUInt32LE();
+		const globalLoopOfs = this.data.readUInt32LE();
+		
+		let prevPos = this.data.offset;
+		this.data.seek(globalLoopOfs + chunk_ofs);
+
+		this.globalLoops = this.data.readInt16LE(globalLoopCount);
+
+		this.data.seek(prevPos);
+
+		// Sequences
+		const animationCount = this.data.readUInt32LE();
+		const animationOfs = this.data.readUInt32LE();
+
+		prevPos = this.data.offset;
+		this.data.seek(animationOfs + chunk_ofs);
+
+		const animations = this.animations = new Array(animationCount);
+		for (let i = 0; i < animationCount; i++) {
+			animations[i] = {
+				id: this.data.readUInt16LE(),
+				variationIndex: this.data.readUInt16LE(),
+				duration: this.data.readUInt32LE(),
+				movespeed: this.data.readFloatLE(),
+				flags: this.data.readUInt32LE(),
+				frequency: this.data.readInt16LE(),
+				padding: this.data.readUInt16LE(),
+				replayMin: this.data.readUInt32LE(),
+				replayMax: this.data.readUInt32LE(),
+				blendTimeIn: this.data.readUInt16LE(),
+				blendTimeOut: this.data.readUInt16LE(),
+				boxPosMin: this.data.readFloatLE(3),
+				boxPosMax: this.data.readFloatLE(3),
+				boxRadius: this.data.readFloatLE(),
+				variationNext: this.data.readInt16LE(),
+				aliasNext: this.data.readUInt16LE()
+			};
+		}
+
+		this.data.seek(prevPos);
+
+		// Sequence lookups
+		const animationLookupCount = this.data.readUInt32LE();
+		const animationLookupOfs = this.data.readUInt32LE();
+
+		prevPos = this.data.offset;
+		this.data.seek(animationLookupOfs + chunk_ofs);
+
+		this.animationLookup = this.data.readInt16LE(animationLookupCount);
+
+		this.data.seek(prevPos);
+
+		// Unused spot (for now)
+		this.data.move(8);
+	}
+
+	parse_chunk_afid(chunkSize) {
+		const entryCount = chunkSize / 8;
+		const entries = this.animFileIDs = new Array(entryCount);
+
+		for (let i = 0; i < entryCount; i++) {
+			entries[i] = {
+				animID: this.data.readUInt16LE(),
+				subAnimID: this.data.readUInt16LE(),
+				fileDataID: this.data.readUInt32LE()
+			};
+		}
+	}
+
+	async loadAnims() {
+		for (let i = 0; i < this.animations.length; i++) {
+			const animation = this.animations[i];
+
+			if ((animation.flags & 0x20) === 0x20) {
+				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
+				continue;
+			}
+
+			for (const entry of this.animFileIDs) {
+				if (entry.animID !== animation.id || entry.subAnimID !== animation.variationIndex)
+					continue;
+
+				const fileDataID = entry.fileDataID;
+				if (!this.animFiles.has(i)) {
+					log.write('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
+
+					// Anims from .skel are always chunked.
+					await loader.load(true);
+					this.animFiles.set(i, BufferWrapper.from(loader.animData));
+				}
+			}
+		}
+
+		this.data.seek(this.boneOffset);
+
+		this.parse_chunk_skb1(true);
 	}
 }
 
