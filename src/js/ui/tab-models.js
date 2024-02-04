@@ -206,8 +206,8 @@ const previewModel = async (fileName) => {
 				for (const animationID of Array.from(new Set(activeRenderer.m2.animations.map((animation) => animation.id))).sort())
 					animList.push({ id: animationID, label: AnimMapper.get_anim_name(animationID) });
 				
-				core.view.modelViewerAnims = animList;
-				core.view.modelViewerAnimSelection = animList.slice(0, 1);
+				// core.view.modelViewerAnims = animList;
+				// core.view.modelViewerAnimSelection = animList.slice(0, 1);
 			}
 		}
 

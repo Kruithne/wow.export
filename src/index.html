@@ -554,6 +554,10 @@
 								<input type="checkbox" v-model="config.modelsExportAlpha"/>
 								<span>Texture Alpha</span>
 							</label>
+							<label v-if="config.exportModelFormat === 'GLTF' && modelViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Animations (WIP)</span>
+							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
@@ -586,10 +590,10 @@
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
-								<template v-if="config.exportModelFormat === 'GLTF'">
+								<!--<template v-if="config.exportModelFormat === 'GLTF'">
 									<span class="header">Animations</span>
 									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
-								</template>
+								</template>-->
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>

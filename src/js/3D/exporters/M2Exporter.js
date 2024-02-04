@@ -177,14 +177,17 @@ class M2Exporter {
 			await skel.load();
 
 			gltf.setBonesArray(skel.bones);
-			gltf.setAnimations(skel.animations);
-			await skel.loadAnims();
+			if (core.view.config.modelsExportAnimations) {
+				gltf.setAnimations(skel.animations);
+				await skel.loadAnims();
+			}
 		} else {
 			gltf.setBonesArray(this.m2.bones);
-			gltf.setAnimations(this.m2.animations);
-			await this.m2.loadAnims();
+			if (core.view.config.modelsExportAnimations) {
+				gltf.setAnimations(this.m2.animations);
+				await this.m2.loadAnims();
+			}
 		}
-
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);

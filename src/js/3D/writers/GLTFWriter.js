@@ -319,68 +319,69 @@ class GLTFWriter {
 			const animation_buffer_lookup_map = new Map();
 
 			// TODO: Probably add an animation filter here as I can imagine this gets pretty insane both in RAM usage and processing speed.
-			for (var animationIndex = 0; animationIndex < this.animations.length; animationIndex++) {
-				var requiredBufferSize = 0;
-				for (const bone of this.bones) {
-					// Timestamps are all floats (uints originally), so 4 bytes each.
-					for (let i = 0; i < bone.translation.timestamps.length; i++) {
-						if (i == animationIndex && bone.translation.interpolation < 2)
-							requiredBufferSize += bone.translation.timestamps[i].length * 4;
+			if (core.view.config.modelsExportAnimations) {
+				for (var animationIndex = 0; animationIndex < this.animations.length; animationIndex++) {
+					var requiredBufferSize = 0;
+					for (const bone of this.bones) {
+						// Timestamps are all floats (uints originally), so 4 bytes each.
+						for (let i = 0; i < bone.translation.timestamps.length; i++) {
+							if (i == animationIndex && bone.translation.interpolation < 2)
+								requiredBufferSize += bone.translation.timestamps[i].length * 4;
+						}
+	
+						for (let i = 0; i < bone.rotation.timestamps.length; i++) {
+							if (i == animationIndex && bone.rotation.interpolation < 2)
+								requiredBufferSize += bone.rotation.timestamps[i].length * 4;
+						}
+	
+						for (let i = 0; i < bone.scale.timestamps.length; i++) {
+							if (i == animationIndex && bone.scale.interpolation < 2)
+								requiredBufferSize += bone.scale.timestamps[i].length * 4;
+						}
+	
+						// Vector3 values
+						for (let i = 0; i < bone.translation.values.length; i++) {
+							if (i == animationIndex && bone.translation.interpolation < 2)
+								requiredBufferSize += bone.translation.values[i].length * 3 * 4;
+						}
+	
+						for (let i = 0; i < bone.scale.values.length; i++) {
+							if (i == animationIndex && bone.scale.interpolation < 2)
+								requiredBufferSize += bone.scale.values[i].length * 3 * 4;
+						}
+	
+						// Quaternion values
+						for (let i = 0; i < bone.rotation.values.length; i++) {
+							if (i == animationIndex && bone.rotation.interpolation < 2)
+								requiredBufferSize += bone.rotation.values[i].length * 4 * 4;
+						}
 					}
-
-					for (let i = 0; i < bone.rotation.timestamps.length; i++) {
-						if (i == animationIndex && bone.rotation.interpolation < 2)
-							requiredBufferSize += bone.rotation.timestamps[i].length * 4;
-					}
-
-					for (let i = 0; i < bone.scale.timestamps.length; i++) {
-						if (i == animationIndex && bone.scale.interpolation < 2)
-							requiredBufferSize += bone.scale.timestamps[i].length * 4;
-					}
-
-					// Vector3 values
-					for (let i = 0; i < bone.translation.values.length; i++) {
-						if (i == animationIndex && bone.translation.interpolation < 2)
-							requiredBufferSize += bone.translation.values[i].length * 3 * 4;
-					}
-
-					for (let i = 0; i < bone.scale.values.length; i++) {
-						if (i == animationIndex && bone.scale.interpolation < 2)
-							requiredBufferSize += bone.scale.values[i].length * 3 * 4;
-					}
-
-					// Quaternion values
-					for (let i = 0; i < bone.rotation.values.length; i++) {
-						if (i == animationIndex && bone.rotation.interpolation < 2)
-							requiredBufferSize += bone.rotation.values[i].length * 4 * 4;
+	
+					if (requiredBufferSize > 0) {
+						animationBufferMap.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, BufferWrapper.alloc(requiredBufferSize, true));
+						
+						root.buffers.push({
+							uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
+							byteLength: requiredBufferSize
+						});
+	
+						animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
 					}
 				}
 
-				if (requiredBufferSize > 0) {
-					animationBufferMap.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, BufferWrapper.alloc(requiredBufferSize, true));
-					
-					root.buffers.push({
-						uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
-						byteLength: requiredBufferSize
-					});
+				// Animations
+				root.animations = [];
 
-					animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
+				for (const animation of this.animations) {
+					root.animations.push(
+						{
+							"samplers" : [],
+							"channels" : [],
+							"name" : AnimMapper.get_anim_name(animation.id) + " (ID " + animation.id + " variation " + animation.variationIndex + ")"
+						}
+					);
 				}
-			}
-
-			// Animations
-			root.animations = [];
-
-			for (const animation of this.animations) {
-				root.animations.push(
-					{
-						"samplers" : [],
-						"channels" : [],
-						"name" : AnimMapper.get_anim_name(animation.id) + " (ID " + animation.id + " variation " + animation.variationIndex + ")"
-					}
-				);
-			}
-			
+				
 			/*
 				"animations": [
 				{
@@ -390,7 +391,8 @@ class GLTFWriter {
 				}
 			],
 			*/
-
+			}
+			
 			// Add bone nodes.
 			for (let bi = 0; bi < bones.length; bi++) {
 				const nodeIndex = nodes.length;
@@ -426,6 +428,10 @@ class GLTFWriter {
 	
 				skin.joints.push(nodeIndex + 1);
 				
+				// Skip rest of the bone logic if we're not exporting animations.
+				if (!core.view.config.modelsExportAnimations)
+					continue;
+
 				// Check interpolation, right now we only support NONE (0, hopefully matches glTF STEP), LINEAR (1). The rest (2 - bezier spline, 3 - hermite spline) will require... well, math.
 				if (bone.translation.interpolation < 2) {
 					// Sanity check -- check if the timestamps/values array are the same length as the amount of animations.
