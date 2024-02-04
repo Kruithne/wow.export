@@ -200,7 +200,7 @@ const exportSelectedMapWMO = async () => {
 
 		helper.mark(fileName, true);
 	} catch (e) {
-		helper.mark('world model', false, e.message);
+		helper.mark('world model', false, e.message, e.stack);
 	}
 
 	helper.finish();
@@ -252,7 +252,7 @@ const exportSelectedMap = async () => {
 			exportPaths.writeLine(out.type + ':' + out.path);
 			helper.mark(markPath, true);
 		} catch (e) {
-			helper.mark(markPath, false, e.message);
+			helper.mark(markPath, false, e.message, e.stack);
 		}
 	}
 

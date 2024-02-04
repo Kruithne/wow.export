@@ -214,7 +214,6 @@ const previewModel = async (fileName) => {
 		updateCameraBounding();
 
 		activePath = fileName;
-		console.log(activeRenderer);
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
@@ -466,7 +465,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				helper.mark(fileName, true);
 				manifest.succeeded.push({ fileDataID, files: fileManifest });
 			} catch (e) {
-				helper.mark(fileName, false, e.message);
+				helper.mark(fileName, false, e.message, e.stack);
 				manifest.failed.push({ fileDataID });
 			}
 		}
