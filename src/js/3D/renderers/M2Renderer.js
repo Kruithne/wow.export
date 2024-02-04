@@ -131,62 +131,62 @@ class M2Renderer {
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
-			if (m2.bones.length > 0) {
-				const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
-				this.meshGroup.add(skinnedMesh);
+			// if (m2.bones.length > 0) {
+			// 	const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
+			// 	this.meshGroup.add(skinnedMesh);
 
-				const bone_lookup_map = new Map();
-				const bones = [];
+			// 	const bone_lookup_map = new Map();
+			// 	const bones = [];
 
-				// Add bone nodes.
-				const rootNode = new THREE.Bone();
-				bones.push(rootNode);
+			// 	// Add bone nodes.
+			// 	const rootNode = new THREE.Bone();
+			// 	bones.push(rootNode);
 
-				const inverseBindMatrices = [];
-				//inverseBindMatrices.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
-				for (let i = 0; i < m2.bones.length; i++) {
-					//const nodeIndex = bones.length;
-					const bone = m2.bones[i];
+			// 	const inverseBindMatrices = [];
+			// 	//inverseBindMatrices.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+			// 	for (let i = 0; i < m2.bones.length; i++) {
+			// 		//const nodeIndex = bones.length;
+			// 		const bone = m2.bones[i];
 					
-					const node = new THREE.Bone();
+			// 		const node = new THREE.Bone();
 
-					let parent_pos = [0, 0, 0];
-					if (bone.parentBone > -1) {
-						const parent_bone = m2.bones[bone.parentBone];
-						parent_pos = parent_bone.pivot;
-					}
+			// 		let parent_pos = [0, 0, 0];
+			// 		if (bone.parentBone > -1) {
+			// 			const parent_bone = m2.bones[bone.parentBone];
+			// 			parent_pos = parent_bone.pivot;
+			// 		}
 
-					var parentPos = bone.pivot.map((v, i) => v - parent_pos[i]);
-					node.position.x = parentPos[0];
-					node.position.y = parentPos[1];
-					node.position.z = parentPos[2];
+			// 		var parentPos = bone.pivot.map((v, i) => v - parent_pos[i]);
+			// 		node.position.x = parentPos[0];
+			// 		node.position.y = parentPos[1];
+			// 		node.position.z = parentPos[2];
 		
-					bone_lookup_map.set(i, node);
+			// 		bone_lookup_map.set(i, node);
 		
-					if (bone.parentBone > -1) {
-						const parent_node = bone_lookup_map.get(bone.parentBone);
-						parent_node.add(node);
-					} else {
-						// Parent stray bones to the skeleton root.
-						rootNode.add(node);
-					}
+			// 		if (bone.parentBone > -1) {
+			// 			const parent_node = bone_lookup_map.get(bone.parentBone);
+			// 			parent_node.add(node);
+			// 		} else {
+			// 			// Parent stray bones to the skeleton root.
+			// 			rootNode.add(node);
+			// 		}
 
-					bones.push(node);
+			// 		bones.push(node);
 
-					inverseBindMatrices.push([vec3_to_mat4x4(bone.pivot)]);
+			// 		inverseBindMatrices.push([vec3_to_mat4x4(bone.pivot)]);
 		
-					//skin.joints.push(nodeIndex + 1);
-				}
+			// 		//skin.joints.push(nodeIndex + 1);
+			// 	}
 
-				const skeleton = new THREE.Skeleton( bones );
+			// 	const skeleton = new THREE.Skeleton( bones );
 
-				skinnedMesh.bind( skeleton );
+			// 	skinnedMesh.bind( skeleton );
 
-				// core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
+			// 	// core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
 
-			} else {
-				this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
-			}
+			// } else {
+			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+			// }
 
 			if (this.reactive) {
 				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01'));
