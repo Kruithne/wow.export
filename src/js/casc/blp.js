@@ -87,22 +87,31 @@ class BLPImage {
 	/**
 	 * Encode this image as a data URL and return it.
 	 * @param {number} mask
+	 * @param {number} mipmap
 	 * @returns {string}
 	 */
-	getDataURL(mask = 0b1111) {
-		return this.toCanvas(mask).toDataURL();
+	getDataURL(mask = 0b1111, mipmap = 0) {
+		return this.toCanvas(mask, mipmap).toDataURL();
 	}
 
 	/**
 	 * Return a canvas with this BLP painted onto it.
 	 * @param {number} mask
+	 * @param {number} mipmap
 	 */
-	toCanvas(mask = 0b1111) {
+	toCanvas(mask = 0b1111, mipmap = 0) {
 		const canvas = document.createElement('canvas');
-		canvas.width = this.width;
-		canvas.height = this.height;
 
-		this.drawToCanvas(canvas, 0, mask);
+		if (mipmap == 0) {
+			canvas.width = this.width;
+			canvas.height = this.height;
+		} else {
+			const scale = Math.pow(2, mipmap);
+			canvas.width = this.width / scale;
+			canvas.height = this.height / scale;
+		}
+
+		this.drawToCanvas(canvas, mipmap, mask);
 		return canvas;
 	}
 
@@ -231,7 +240,7 @@ class BLPImage {
 		let byte;
 		switch (this.alphaDepth) {
 			case 1:
-				byte = this.rawData[this.scaledLength + (index / 8)];
+				byte = this.rawData[this.scaledLength + Math.floor(index / 8)];
 				return (byte & (0x01 << (index % 8))) === 0 ? 0x00 : 0xFF;
 
 			case 4:

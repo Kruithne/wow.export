@@ -749,6 +749,69 @@ class WMOExporter {
 			manifest.addProperty('groups', groupManifest);
 		}
 
+		// Doodad sets.
+		const doodadSets = this.wmo.doodadSets;
+		for (let i = 0, n = doodadSets.length; i < n; i++) {
+			const set = doodadSets[i];
+			const count = set.doodadCount;
+			log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
+
+			helper.setCurrentTaskName('Doodad set ' + set.name);
+			helper.setCurrentTaskMax(count);
+
+			for (let i = 0; i < count; i++) {
+				// Abort if the export has been cancelled.
+				if (helper.isCancelled())
+					return;
+
+				helper.setCurrentTaskValue(i);
+
+				const doodad = this.wmo.doodads[set.firstInstanceIndex + i];
+				let fileDataID = 0;
+				let fileName;
+	
+				if (this.wmo.fileDataIDs) {
+					// Retail, use fileDataID and lookup the filename.
+					fileDataID = this.wmo.fileDataIDs[doodad.offset];
+					fileName = listfile.getByID(fileDataID);
+				} else {
+					// Classic, use fileName and lookup the fileDataID.
+					fileName = this.wmo.doodadNames[doodad.offset];
+					fileDataID = listfile.getByFilename(fileName) || 0;
+				}
+	
+				if (fileDataID > 0) {
+					try {
+						if (fileName === undefined) {
+							// Handle unknown files.
+							fileName = listfile.formatUnknownFile(fileDataID, '.m2');
+						}
+
+						let m2Path;
+						if (core.view.config.enableSharedChildren)
+							m2Path = ExportHelper.getExportPath(fileName);
+						else
+							m2Path = ExportHelper.replaceFile(out, fileName);
+
+						// Only export doodads that are not already exported.
+						if (!doodadCache.has(fileDataID)) {
+							const data = await casc.getFile(fileDataID);
+							const m2Export = new M2Exporter(data, undefined, fileDataID);
+							await m2Export.exportRaw(m2Path, helper);
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
+
+							doodadCache.add(fileDataID);
+						}
+					} catch (e) {
+						log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					}
+				}
+			}
+		}
+
 		await manifest.write();
 	}
 

@@ -1,3 +1,13 @@
+0.1.58 (11-02-2024)
+- M2 models can now be exported with all their animations when using glTF. (Beta feature)
+- Added additional bone names for non-keybone bones.
+- Added optional setting (disabled by default) to also display unnamed/unknown items in the "Items" tab.
+- Added exporting of all doodads when exporting raw WMOs.
+- Fixed alpha channels not decoding correctly on some BLPs.
+- Fixed skin names appearing in raw export filenames for M2s.
+- Improved performance when loading models for previewing while "Show Textures" is disabled.
+  Note: When enabling the "Show Textures" checkbox a reload of the model is needed for textures to appear.
+
 0.1.57 (25-01-2024)
 - M2 models can now be exported in the glTF format (complete with armature)! 🎉
 - WMO models can now be exported in glTF format (does not support doodads).

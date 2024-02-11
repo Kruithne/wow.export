@@ -239,14 +239,18 @@ class ExportHelper {
 	 * @param {string} item
 	 * @param {boolean} state
 	 * @param {string} error
+	 * @param {string} stackTrace
 	 */
-	mark(item, state, error) {
+	mark(item, state, error, stackTrace = null) {
 		if (state) {
 			log.write('Successfully exported %s', item);
 			this.lastItem = item;
 			this.succeeded++;
 		} else {
 			log.write('Failed to export %s (%s)', item, error);
+			
+			if (stackTrace != null)
+				console.log(stackTrace);
 		}
 
 		this.updateCurrentTask();

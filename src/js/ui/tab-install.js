@@ -61,7 +61,7 @@ core.events.on('click-export-install', async () => {
 
 				helper.mark(fileName, true);
 			} catch (e) {
-				helper.mark(fileName, false, e.message);
+				helper.mark(fileName, false, e.message, e.stack);
 			}
 		} else {
 			helper.mark(fileName, true);

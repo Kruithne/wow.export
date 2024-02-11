@@ -274,6 +274,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Show unknown items</h1>
+						<p>When enabled, wow.export will list all items in the items tab, even those without a name.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.itemViewerShowAll"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>
@@ -547,6 +555,10 @@
 								<input type="checkbox" v-model="config.modelsExportAlpha"/>
 								<span>Texture Alpha</span>
 							</label>
+							<label v-if="config.exportModelFormat === 'GLTF' && modelViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Animations (Beta)</span>
+							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
@@ -579,6 +591,10 @@
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
+								<!--<template v-if="config.exportModelFormat === 'GLTF'">
+									<span class="header">Animations</span>
+									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
+								</template>-->
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>
