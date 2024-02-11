@@ -298,7 +298,7 @@ class M2Loader {
 					const dz = scale[i][j][2];
 
 					scale[i][j][0] = dx;
-					scale[i][j][2] = dy * -1;
+					scale[i][j][2] = dy;
 					scale[i][j][1] = dz;
 				}
 			}
