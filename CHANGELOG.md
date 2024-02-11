@@ -1,4 +1,4 @@
-0.1.58 (xx-02-2024)
+0.1.58 (11-02-2024)
 - M2 models can now be exported with all their animations when using glTF. (Beta feature)
 - Added additional bone names for non-keybone bones.
 - Added optional setting (disabled by default) to also display unnamed/unknown items in the "Items" tab.
