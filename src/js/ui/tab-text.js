@@ -75,7 +75,7 @@ core.registerLoadFunc(async () => {
 
 				helper.mark(fileName, true);
 			} catch (e) {
-				helper.mark(fileName, false, e.message);
+				helper.mark(fileName, false, e.message, e.stack);
 			}
 		}
 

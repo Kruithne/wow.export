@@ -87,6 +87,8 @@ const view = {
 	modelViewerGeosets: [], // Active M2 model geoset control.
 	modelViewerSkins: [], // Active M2 model skins.
 	modelViewerSkinsSelection: [], // Selected M2 model skins.
+	modelViewerAnims: [], // Available animations.
+	modelViewerAnimSelection: [], // Selected M2 model animation (single).
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	modelViewerAutoAdjust: true, // Automatic camera adjustment.

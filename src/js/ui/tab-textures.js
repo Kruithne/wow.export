@@ -172,7 +172,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			helper.mark(fileName, true);
 			manifest.succeeded.push({ type: format, fileDataID, file: exportPath });
 		} catch (e) {
-			helper.mark(fileName, false, e.message);
+			helper.mark(fileName, false, e.message, e.stack);
 			manifest.failed.push({ type: format, fileDataID });
 		}
 	}
