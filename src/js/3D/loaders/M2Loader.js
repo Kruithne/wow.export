@@ -86,7 +86,13 @@ class M2Loader {
 	 */
 	async loadAnims() {
 		for (let i = 0; i < this.animations.length; i++) {
-			const animation = this.animations[i];
+			let animation = this.animations[i];
+
+			// If animation is an alias, resolve it.
+			if ((animation.flags & 0x40) === 0x40) {
+				while ((animation.flags & 0x40) === 0x40)
+					animation = this.animations[animation.aliasNext];
+			}
 
 			if ((animation.flags & 0x20) === 0x20) {
 				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
@@ -100,11 +106,11 @@ class M2Loader {
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
 					if (fileDataID === 0) {
-						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it has no fileDataID");
+						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
 						continue;
 					}
 					
-					log.write('Loading .anim file for animation: ' + entry.animID + ' - ' + entry.subAnimID);
+					log.write('Loading .anim file for animation: ' + entry.animID + ' (' + AnimMapper.get_anim_name(entry.animID) + ') - ' + entry.subAnimID);
 
 					let animIsChunked = false;
 					
@@ -113,9 +119,17 @@ class M2Loader {
 
 					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
 					await loader.load(animIsChunked);
-					this.animFiles.set(i, BufferWrapper.from(loader.animData));
+
+					// If the .anim file is chunked, we need to load the skeletonBoneData.
+					if (loader.skeletonBoneData !== undefined)
+						this.animFiles.set(i, BufferWrapper.from(loader.skeletonBoneData));
+					else
+						this.animFiles.set(i, BufferWrapper.from(loader.animData));
 				}
 			}
+
+			if (!this.animFiles.has(i))
+				log.write("Failed to load .anim file for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
 		}
 
 		this.data.seek(this.md21Ofs + 44);

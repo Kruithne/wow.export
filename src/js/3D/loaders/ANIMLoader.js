@@ -56,7 +56,7 @@ class ANIMLoader {
 	}
 
 	parse_chunk_afsa(chunkSize) {
-		this.skeletonAnimData = this.data.readUInt8(chunkSize);
+		this.skeletonAttachmentData = this.data.readUInt8(chunkSize);
 	}
 
 	parse_chunk_afsb(chunkSize) {
