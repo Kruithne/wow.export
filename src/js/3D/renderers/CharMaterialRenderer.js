@@ -6,6 +6,7 @@ License: MIT
 const BLPFile = require('../../casc/blp');
 const core = require('../../core');
 const log = require('../../log');
+const listfile = require('../../casc/listfile');
 
 class CharMaterialRenderer {
 	/**
@@ -19,6 +20,8 @@ class CharMaterialRenderer {
 			this.glCanvas = document.createElement('canvas');
 			this.glCanvas.id = 'charMaterialCanvas-' + textureLayer;
 		}
+
+		document.getElementById('texturePreview').appendChild(this.glCanvas);
 
 		this.glCanvas.width = width;
 		this.glCanvas.height = height;
@@ -64,6 +67,7 @@ class CharMaterialRenderer {
 		textureTarget.section = charComponentTextureSection;
 		textureTarget.material = chrModelMaterial;
 		textureTarget.textureLayer = chrModelTextureLayer;
+		textureTarget.custMaterial = chrCustomizationMaterial;
 		textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
 
 		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
@@ -233,7 +237,7 @@ class CharMaterialRenderer {
 			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
 			const sectionBottomRightY = (sectionOffsetY + sectionHeight - materialMiddleY) / materialMiddleY;
 
-			// console.log("Placing texture for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
 			const vBufferData = new Float32Array([
 				sectionTopLeftX, sectionTopLeftY, 0.0,
