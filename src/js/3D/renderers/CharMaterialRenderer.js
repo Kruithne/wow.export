@@ -232,10 +232,10 @@ class CharMaterialRenderer {
 			const materialMiddleY = layer.material.Height / 2;
 
 			const sectionTopLeftX = (sectionOffsetX - materialMiddleX) / materialMiddleX;
-			const sectionTopLeftY = (sectionOffsetY - materialMiddleY) / materialMiddleY;
+			const sectionTopLeftY = (sectionOffsetY + sectionHeight - materialMiddleY) / materialMiddleY * -1;
 			
 			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
-			const sectionBottomRightY = (sectionOffsetY + sectionHeight - materialMiddleY) / materialMiddleY;
+			const sectionBottomRightY = (sectionOffsetY - materialMiddleY) / materialMiddleY * -1;
 
 			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
