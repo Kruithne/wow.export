@@ -610,28 +610,34 @@
 				</keep-alive>
 				<keep-alive>
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
-						<div class='char-preview'>
-							<model-viewer :context="chrModelViewerContext"></model-viewer>
-							<div id='texturePreview' style="overflow: scroll; max-width: 100%; max-height: 100%"></div>
-							<div class='preview-options'>
-								<label class="ui-checkbox">
-									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
-									<span>Show NPC races</span>
-								</label>
-								<span class="header">Geosets</span>
-								<checkboxlist :items="modelViewerGeosets"></checkboxlist>
-								<div class="list-toggles">
-									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
-								</div>
-								<span class="header">Dev import</span>
-								<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
-							</div>
-						</div>
-						<div class='options'>
+						<div class='character-options'>
 							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
-							<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
+						</div>
+						<div class='char-preview preview-container'>
+							<div class='preview-background'>
+								<model-viewer :context="chrModelViewerContext"></model-viewer>
+							</div>
+							<div class='texture-preview-panel'>
+								<div id='texturePreview'></div>
+							</div>
+						</div>
+						<div class='preview-options'>
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+								<span>Show NPC races</span>
+							</label>
+							<span class="header">Geosets</span>
+							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
+							<div class="list-toggles">
+								<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+							</div>
+							<span class="header">Dev import</span>
+							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
+							<div class='export-controls'>
+								<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
+							</div>
 						</div>
 					</div>
 				</keep-alive>

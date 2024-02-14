@@ -579,27 +579,44 @@
 
 #tab-characters {
 	display: grid;
-	grid-template-rows: 1fr 237px;
-	grid-template-columns: 1fr;
+	grid-template-rows: 1fr;
+	grid-template-columns: 1fr 3fr 1fr;
+	padding-bottom: 20px;
 
 	.char-preview {
-		grid-row: 1;
-		display: grid;
-		grid-template-rows: 1fr;
-		// 1024px is half the size of character textures (2048px x 1024px)
-		grid-template-columns: 1fr 1024px 200px;
+		grid-column: 2;
 
-		#texturePreview{
-			width: 1024px;
-			height: 512px;
+		.texture-preview-panel{
+			grid-row: 2;
+			overflow: scroll;
+			position: absolute;
+			right: 1em;
+			bottom: 1em;
+			
+			transform: scale(0.25);
+			transform-origin: bottom right;
 		}
 	}
 
-	.options {
-		grid-row: 2;
+	.character-options {
+		grid-column: 1;
 		display: grid;
-		grid-template-rows: 1fr;
-		grid-template-columns: 1fr 1fr 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+
+		.ui-listbox {
+			margin: 20px 10px 0 20px;
+		}
+	}
+
+	.preview-options {
+		grid-column: 3;
+		margin: 20px 10px 0 20px;
+	}
+
+	.export-controls {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
 	}
 
 	.ui-checkboxlist
