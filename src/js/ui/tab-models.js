@@ -25,7 +25,7 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('./texture-ribbon');
-const AnimMapper = require('../3D/AnimMapper');
+// const AnimMapper = require('../3D/AnimMapper');
 
 const MODEL_TYPE_M2 = Symbol('modelM2');
 const MODEL_TYPE_WMO = Symbol('modelWMO');

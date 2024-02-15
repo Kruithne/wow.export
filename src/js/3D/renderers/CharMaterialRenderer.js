@@ -216,8 +216,8 @@ class CharMaterialRenderer {
 			layer.material.Width; // This is the max width of the entire material. Usually 2048.
 			layer.material.Height; // This is the max height of the entire material. Usually 1024.
 
-			const sectionOffsetX = layer.section.X;
-			const sectionOffsetY = layer.section.Y;
+			let sectionOffsetX = layer.section.X;
+			let sectionOffsetY = layer.section.Y;
 			let sectionWidth = layer.section.Width;
 			let sectionHeight = layer.section.Height;
 
@@ -225,6 +225,8 @@ class CharMaterialRenderer {
 			if (textureTarget == 1) {
 				sectionWidth = layer.material.Width;
 				sectionHeight = layer.material.Height;
+				sectionOffsetX = 0;
+				sectionOffsetY = 0;
 			}
 
 			// TODO: Hardcoded to 2048/1024, feels like it should be layer.material.Width/Height but that doesn't work

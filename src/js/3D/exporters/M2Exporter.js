@@ -18,6 +18,7 @@ const JSONWriter = require('../writers/JSONWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
 const GeosetMapper = require('../GeosetMapper');
 const ExportHelper = require('../../casc/export-helper');
+const BufferWrapper = require('../../buffer');
 
 class M2Exporter {
 	/**
@@ -30,6 +31,7 @@ class M2Exporter {
 		this.m2 = new M2Loader(data);
 		this.fileDataID = fileDataID;
 		this.variantTextures = variantTextures;
+		this.dataTextures = new Map();
 	}
 
 	/**
@@ -38,6 +40,13 @@ class M2Exporter {
 	 */
 	setGeosetMask(mask) {
 		this.geosetMask = mask;
+	}
+
+	/**
+	 * Export additional texture from canvas
+	 */
+	async addURITexture(out, dataURI) {
+		this.dataTextures.set(out, dataURI);
 	}
 
 	/**
@@ -62,6 +71,39 @@ class M2Exporter {
 		const usePosix = config.pathFormat === 'posix';
 
 		let textureIndex = 0;
+
+		// Export data textures first.
+		for (const [textureName, dataTexture] of this.dataTextures) {
+			try {
+				let texFile = 'data-' + textureName + '.png';
+				let texPath = path.join(out, texFile);
+
+				const matName = 'mat_' + textureName;
+
+				if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const data = BufferWrapper.fromBase64(dataTexture.replace(/^data[^,]+,/,''));
+					log.write('Exporting data texture %d -> %s', textureName, texPath);
+					await data.writeToFile(texPath);
+				} else {
+					log.write('Skipping data texture export %s (file exists, overwrite disabled)', texPath);
+				}
+
+				if (usePosix)
+					texFile = ExportHelper.win32ToPosix(texFile);
+
+				mtl?.addMaterial(matName, texFile);
+				validTextures.set('data-' + textureName, {
+					matName: fullTexPaths ? texFile : matName,
+					matPathRelative: texFile,
+					matPath: texPath
+				});
+			} catch (e) {
+				log.write('Failed to export data texture %d for M2: %s', textureName, e.message);
+			}
+
+			textureIndex++;
+		}
+
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -73,7 +115,10 @@ class M2Exporter {
 			if (textureType > 0) {
 				let targetFileDataID = 0;
 
-				if (textureType >= 11 && textureType < 14) {
+				if (this.dataTextures.has(textureType)) {
+					// Not a fileDataID, but a data texture.
+					targetFileDataID = 'data-' + textureType;
+				} else if (textureType >= 11 && textureType < 14) {
 					// Creature textures.
 					targetFileDataID = this.variantTextures[textureType - 11];
 				} else if (textureType > 1 && textureType < 5) {
@@ -87,7 +132,7 @@ class M2Exporter {
 				texture.fileDataID = targetFileDataID;
 			}
 
-			if (texFileDataID > 0) {
+			if (!Number.isNaN(texFileDataID) && texFileDataID > 0) {
 				try {
 					let texFile = texFileDataID + (raw ? '.blp' : '.png');
 					let texPath = path.join(out, texFile);
@@ -220,6 +265,11 @@ class M2Exporter {
 			let matName;
 			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
 				matName = texture.fileDataID;
+
+			if (this.dataTextures.has(this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]])) {
+				matName = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
+				console.log("Setting meshIndex " + mI + " to " + matName);
+			}
 
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
 		}

@@ -63,6 +63,14 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Create a buffer from a source using Buffer.from().
+	 * @param {Array} source 
+	 */
+	static fromBase64(source) {
+		return new BufferWrapper(Buffer.from(source, 'base64'));
+	}
+
+	/**
 	 * Concatenate an array of buffers into a single buffer.
 	 * @param {BufferWrapper[]} buffers 
 	 * @returns {BufferWrapper}

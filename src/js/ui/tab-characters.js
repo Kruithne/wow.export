@@ -5,10 +5,16 @@
  */
 const core = require('../core');
 const log = require('../log');
+const path = require('path');
 const util = require('util');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
+const M2Exporter = require('../3D/exporters/M2Exporter');
 const WDCReader = require('../db/WDCReader');
+const BufferWrapper = require('../buffer');
+const ExportHelper = require('../casc/export-helper');
+const FileWriter = require('../file-writer');
+const listfile = require('../casc/listfile');
 
 let camera;
 let scene;
@@ -245,6 +251,10 @@ core.registerLoadFunc(async () => {
 
 	core.view.$watch('chrCustImportString', () => {
 		loadImportString(state.chrCustImportString);
+	});
+
+	core.events.on('click-export-character', async () => {
+		await exportCharModel();
 	});
 
 	// When the selected model skin is changed, update our model.
@@ -555,3 +565,49 @@ async function loadImportString(importString) {
 	core.view.hideToast();
 	core.view.isBusy--;
 }
+
+const exportCharModel = async () => {
+	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+
+	const casc = core.view.casc;
+	const helper = new ExportHelper(1, 'model');
+	helper.start();
+
+	// Abort if the export has been cancelled.
+	if (helper.isCancelled())
+		return;
+	
+	const fileDataID = activeModel;
+	const fileName = listfile.getByID(fileDataID);
+
+	const fileManifest = [];
+	
+	try {
+		const data = await casc.getFile(fileDataID);
+		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), ".gltf");
+		const exporter = new M2Exporter(data, [], fileDataID);
+
+		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
+			exporter.addURITexture(chrModelTextureTarget, chrMaterial.GetURI());
+
+		// Respect geoset masking for selected model.
+		exporter.setGeosetMask(core.view.modelViewerGeosets);
+
+		await exporter.exportAsGLTF(exportPath, helper, fileManifest);
+		exportPaths.writeLine('M2_GLTF:' + exportPath);
+
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			return;
+
+		helper.mark(fileName, true);
+	} catch (e) {
+		helper.mark(fileName, false, e.message, e.stack);
+	}
+
+
+	helper.finish();
+
+	// Write export information.
+	await exportPaths.close();
+};
