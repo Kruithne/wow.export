@@ -226,13 +226,9 @@ class CharMaterialRenderer {
 			let sectionWidth = layer.section.Width;
 			let sectionHeight = layer.section.Height;
 
-			// TODO: Investigate why hack is needed for base texture and dracthyr textures. Must be controlled through data somewhere
+			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). Must be controlled through data somewhere.
 			if (
-				textureTarget == 1 || 
-				(textureTarget == 2 && layer.textureLayer.CharComponentTextureLayoutsID == 155) || 
-				(textureTarget == 3 && layer.textureLayer.CharComponentTextureLayoutsID == 155) || 
-				(textureTarget == 17 && layer.textureLayer.CharComponentTextureLayoutsID == 155) ||
-				(textureTarget == 18 && layer.textureLayer.CharComponentTextureLayoutsID == 155) 
+				textureTarget == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height
 			) {
 				sectionWidth = layer.material.Width;
 				sectionHeight = layer.material.Height;
