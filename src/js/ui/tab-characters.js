@@ -419,7 +419,7 @@ core.registerLoadFunc(async () => {
 						chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
 					}
 
-					chrMaterial.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
+					await chrMaterial.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
 				}
 			}
 
@@ -427,7 +427,7 @@ core.registerLoadFunc(async () => {
 		}
 
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
-			activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
+			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
 
 	}, { deep: true });
 });
