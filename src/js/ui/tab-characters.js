@@ -180,8 +180,12 @@ core.events.once('screen-tab-characters', async () => {
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await tfdDB.parse();
 	const tfdMap = new Map();
-	for (const [tfdID, tfdRow] of tfdDB.getAllRows())
+	for (const [tfdID, tfdRow] of tfdDB.getAllRows()) {
+		// Skip specular (1) and emissive (2)
+		if (tfdRow.UsageType != 0)
+			continue;
 		tfdMap.set(tfdRow.MaterialResourcesID, tfdRow.FileDataID);
+	}
 
 	await progress.step('Loading character customization materials...');
 	const chrCustMatDB = new WDCReader('DBFilesClient/ChrCustomizationMaterial.db2');
@@ -380,14 +384,18 @@ core.registerLoadFunc(async () => {
 
 					// Find row in ChrModelTextureLayer that matches ChrModelTextureTargetID and current CharComponentTextureLayoutID
 					const chrModelTextureLayer = chrModelTextureLayerMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureTarget);
-					if (chrModelTextureLayer === undefined)
+					if (chrModelTextureLayer === undefined) {
 						console.log("Unable to find ChrModelTextureLayer for ChrModelTextureTargetID " + chrModelTextureTarget + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+						// TODO: Investigate but continue for now, this breaks e.g. dwarven beards
+						continue;
+					}
 					
 					// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
 					const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
 					let charComponentTextureSection;
 					for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
 						// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
+						// -1 for non-sectiontype 
 						if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
 							charComponentTextureSection = charComponentTextureSectionRow;
 							break;
