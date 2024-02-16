@@ -164,9 +164,14 @@ class CharMaterialRenderer {
 		const fragShaderSource = `precision mediump float;
 	varying vec2 v_texCoord;
 	uniform sampler2D u_texture;
+	uniform float u_blendMode;
 
 	void main() {
-		gl_FragColor = texture2D(u_texture, v_texCoord);
+		if(u_blendMode == 0.0 || u_blendMode == 1.0 || u_blendMode == 9.0 || u_blendMode == 15.0) {
+			gl_FragColor = texture2D(u_texture, v_texCoord);
+		}else{
+			gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+		}
 	}`;
 
 		const fragShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
@@ -229,7 +234,6 @@ class CharMaterialRenderer {
 				sectionOffsetY = 0;
 			}
 
-			// TODO: Hardcoded to 2048/1024, feels like it should be layer.material.Width/Height but that doesn't work
 			const materialMiddleX = layer.material.Width / 2;
 			const materialMiddleY = layer.material.Height / 2;
 
@@ -239,7 +243,7 @@ class CharMaterialRenderer {
 			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
 			const sectionBottomRightY = (sectionOffsetY - materialMiddleY) / materialMiddleY * -1;
 
-			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
 			const vBufferData = new Float32Array([
 				sectionTopLeftX, sectionTopLeftY, 0.0,
@@ -277,6 +281,10 @@ class CharMaterialRenderer {
 			var textureLocation = this.gl.getUniformLocation(this.glShaderProg, "u_texture");
 			this.gl.uniform1i(textureLocation, 0);
 
+			// Bind blend mode
+			var blendModeLocation = this.gl.getUniformLocation(this.glShaderProg, "u_blendMode");
+			this.gl.uniform1f(blendModeLocation, layer.textureLayer.BlendMode);
+
 			this.gl.activeTexture(this.gl.TEXTURE0);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, layer.textureID);
 
@@ -286,10 +294,35 @@ class CharMaterialRenderer {
 					this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
 					break;
 				case 1: // Blit
+				case 9: // Alpha Straight
+				case 15: // Infer alpha blend
+					this.gl.enable(this.gl.BLEND);
+					this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+					break;
+				// The following blend modes are not used in character customization
+				case 2: // Blit Alphamask 
+				case 3: // Add 
+				case 5: // Mod2x 
+				case 8: // Hardlight
+				case 10: // Blend black
+				case 11: // Mask greyscale
+				case 12: // Mask greyscale using color as alpha
+				case 13: // Generate greyscale
+				case 14: // Colorize
+					console.log("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + ", poke a dev");
+					break;
+				// These are used but we don't know if they need blending enabled -- so just turn it on anyways
+				case 4: // Multiply
+				case 6: // Overlay
+				case 7: // Screen
+				case 16: // Unknown
+				default:
+					console.log("Warning: unimplemented blend mode " + layer.textureLayer.BlendMode + ", enabling alpha blending anyway");
 					this.gl.enable(this.gl.BLEND);
 					this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 					break;
 			}
+
 			// Draw
 			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 		}
