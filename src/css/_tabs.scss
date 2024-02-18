@@ -583,12 +583,21 @@
 	grid-template-columns: 1fr 4fr 1fr;
 	padding-bottom: 20px;
 
+	.ui-listbox {
+		margin: 10px 0 0 0;
+	}
+
 	.model-select {
 		display: grid;
 		grid-template-rows: 22px 3fr 40px 22px 1fr;
+	}
 
-		.ui-listbox {
-			margin: 10px 0 0 0;
+	.model-options {
+		display: grid;
+		grid-template-rows: 32px 2fr 32px 3fr;
+
+		.header {
+			margin-top: 10px;
 		}
 	}
 
@@ -610,7 +619,7 @@
 	.left-panel {
 		grid-column: 1;
 		display: grid;
-		grid-template-rows: 2fr 1fr 1fr;
+		grid-template-rows: 2fr 2fr;
 
 		& > * {
 			margin: 20px 10px 0 20px;
@@ -619,11 +628,6 @@
 		.section-end {
 			margin-bottom: 10px;
 		}
-	}
-
-	.preview-options {
-		grid-column: 3;
-		margin: 20px 10px 0 20px;
 	}
 
 	.export-controls {

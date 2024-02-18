@@ -621,8 +621,12 @@
 								<span class="header">Body Type</span>
 								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
-							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
-							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+							<div class="model-options">
+								<span class="header">Customizations</span>
+								<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+								<span class="header">Customization Options</span>
+								<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+							</div>
 						</div>
 						<div class='char-preview preview-container'>
 							<div class='preview-background'>
