@@ -449,8 +449,8 @@ async function updateChrRaceList() {
 	// Keep a list of listed models.
 	// Some races are duplicated because of multi-factions,
 	// so we will store races based on unique model IDs.
-	const listedModels = [];
-	const listedRaces = [];
+	const listedModelIDs = [];
+	const listedRaceIDs = [];
 	
 	// Empty the arrays.
 	core.view.chrCustRaces = [];
@@ -463,28 +463,57 @@ async function updateChrRaceList() {
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
 		for (const [chrSex, chrModelID] of chrModels) {
-			if ((!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace) || listedModels.includes(chrModelID) || listedRaces.includes(chrRaceID))
+			// If we're filtering NPC races, bail out.
+			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace)
 				continue;
 
-			listedModels.push(chrModelID);
-			listedRaces.push(chrRaceID);
+			// If we've seen this character model before, we don't need to record it again.
+			if (listedModelIDs.includes(chrModelID))
+				continue;
+
+			listedModelIDs.push(chrModelID);
+
+			// Need to do a check here to ensure we didn't already add this race
+			// in the case of them having more than one model type
+			if (listedRaceIDs.includes(chrRaceID))
+				continue;
+
+			listedRaceIDs.push(chrRaceID);
+
+			// By the time we get here, we know we have a genuinly new race to add to the list!
+			// Let's polish it up.
 
 			// Build the label for the race data
 			raceLabel = chrRaceInfo.name;
 
 			// To easily distinguish some weird names, we'll label NPC races.
 			// ie: thin humans are just called "human" and aren't given a unique body type.
+			// In the future, we could show the ClientFileString column if the label is already taken.
 			if (chrRaceInfo.isNPCRace) {
-				raceLabel = '[NPC] ' + raceLabel;
+				raceLabel = raceLabel + ' [NPC]';
 			}
 
-			core.view.chrCustRaces.push({id: chrRaceInfo.id, label: raceLabel });
+			// It's ready to go:
+			const newRace = {id: chrRaceInfo.id, label: raceLabel }
+			core.view.chrCustRaces.push(newRace);
+
+			// Do a quick check on our selection, if it exists.
+			// Since we just instantiated a new object, we need to ensure the selection is updated.
+			if (core.view.chrCustRaceSelection.length > 0 && newRace.id == core.view.chrCustRaceSelection[0].id) {
+				core.view.chrCustRaceSelection = [newRace];
+			}
 		}
 	}
 
-	// If we haven't selected a race, we'll just select the first one in the list:
-	if (core.view.chrCustRaceSelection.length == 0) {
-		core.view.chrCustRaceSelection.push(core.view.chrCustRaces[0]);
+	// Sort alphabetically
+	core.view.chrCustRaces.sort((a, b) => {
+		return a.label.localeCompare(b.label);
+	});
+
+	// If we haven't selected a race, OR we selected a race that's not in the current filter,
+	// we'll just select the first one in the list:
+	if (core.view.chrCustRaceSelection.length == 0 || !listedRaceIDs.includes(core.view.chrCustRaceSelection[0].id)) {
+		core.view.chrCustRaceSelection = [core.view.chrCustRaces[0]];
 	}
 }
 
@@ -498,14 +527,20 @@ async function updateChrModelList() {
 	const listedModelIDs = [];
 	
 	for (const [chrSex, chrModelID] of modelsForRace) {
-		core.view.chrCustModels.push({ id: chrModelID, label: 'Type ' + (chrSex + 1) });
+		// Track the sex so we can reference it later, should the model/race have changed.
+		const newModel = { id: chrModelID, label: 'Type ' + (chrSex + 1), sex: chrSex };
+		core.view.chrCustModels.push(newModel);
 		listedModelIDs.push(chrModelID);
+
+		// Do a quick check on our selection, if it exists.
+		// Since we just instantiated a new object, we need to ensure the selection is updated.
+		if (core.view.chrCustModelSelection.length > 0 && newModel.id == core.view.chrCustModelSelection[0].id) {
+			core.view.chrCustModelSelection = [newModel];
+		}
 	}
 
 	// If we haven't selected a model, we'll just select the first one in the list.
 	// Likewise, if the old selection is no longer valid, just set it to the first one.
-
-	// TODO: store sex selection, so we can attempt to default to the same sex, if possible.
 	if (core.view.chrCustModelSelection.length == 0 || !listedModelIDs.includes(core.view.chrCustModelSelection[0].id)) {
 		core.view.chrCustModelSelection = [core.view.chrCustModels[0]];
 	}
