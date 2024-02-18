@@ -610,8 +610,17 @@
 				</keep-alive>
 				<keep-alive>
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
-						<div class='character-options'>
-							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+						<div class='left-panel'>
+							<div class="model-select">
+								<span class="header">Character Race</span>
+								<listboxb :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true"></listboxb>
+								<label class="ui-checkbox section-end">
+									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+									<span>Show NPC races</span>
+								</label>
+								<span class="header">Body Type</span>
+								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+							</div>
 							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
 						</div>
@@ -624,10 +633,6 @@
 							</div>
 						</div>
 						<div class='preview-options'>
-							<label class="ui-checkbox">
-								<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
-								<span>Show NPC races</span>
-							</label>
 							<span class="header">Geosets</span>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>

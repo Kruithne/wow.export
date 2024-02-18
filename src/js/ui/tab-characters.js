@@ -235,7 +235,7 @@ core.events.once('screen-tab-characters', async () => {
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
-	updateChrModelList();
+	updateChrRaceList();
 
 	core.view.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
 
@@ -250,6 +250,10 @@ core.registerLoadFunc(async () => {
 
 	// If NPC race toggle changes, refresh model list.
 	core.view.$watch('config.chrCustShowNPCRaces', () => {
+		updateChrRaceList();
+	});
+
+	core.view.$watch('chrCustRaceSelection', () => {
 		updateChrModelList();
 	});
 
@@ -439,11 +443,18 @@ core.registerLoadFunc(async () => {
 	}, { deep: true });
 });
 
-async function updateChrModelList() {
+async function updateChrRaceList() {
 	const characterModelList = [];
 
-	// Keep a list of listed models, some races are duplicated because of multi-factions.
+	// Keep a list of listed models.
+	// Some races are duplicated because of multi-factions,
+	// so we will store races based on unique model IDs.
 	const listedModels = [];
+	const listedRaces = [];
+	
+	// Empty the arrays.
+	core.view.chrCustRaces = [];
+	core.view.chrCustModels = [];
 
 	// Build character model list.
 	for (const [chrRaceID, chrRaceInfo] of chrRaceMap) {
@@ -452,21 +463,52 @@ async function updateChrModelList() {
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
 		for (const [chrSex, chrModelID] of chrModels) {
-			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace || listedModels.includes(chrModelID))
+			if ((!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace) || listedModels.includes(chrModelID) || listedRaces.includes(chrRaceID))
 				continue;
 
 			listedModels.push(chrModelID);
-			characterModelList.push({id: chrModelID, label: chrRaceInfo.name + ' body type ' + chrSex});
+			listedRaces.push(chrRaceID);
+
+			// Build the label for the race data
+			raceLabel = chrRaceInfo.name;
+
+			// To easily distinguish some weird names, we'll label NPC races.
+			// ie: thin humans are just called "human" and aren't given a unique body type.
+			if (chrRaceInfo.isNPCRace) {
+				raceLabel = '[NPC] ' + raceLabel;
+			}
+
+			core.view.chrCustRaces.push({id: chrRaceInfo.id, label: raceLabel });
 		}
 	}
 
-	// Empty the arrays.
-	core.view.chrCustModels.splice(0, core.view.chrCustModels.length);
-	core.view.chrCustModelSelection.splice(0, core.view.chrCustModelSelection.length);
+	// If we haven't selected a race, we'll just select the first one in the list:
+	if (core.view.chrCustRaceSelection.length == 0) {
+		core.view.chrCustRaceSelection.push(core.view.chrCustRaces[0]);
+	}
+}
 
-	// Add the new skins.
-	core.view.chrCustModels.push(...characterModelList);
-	core.view.chrCustModelSelection.push(...characterModelList.slice(0, 1));
+async function updateChrModelList() {
+	modelsForRace = chrRaceXChrModelMap.get(core.view.chrCustRaceSelection[0].id);
+
+	// Clear the old list
+	core.view.chrCustModels = [];
+
+	// Track model IDs to validate our previously selected model type
+	const listedModelIDs = [];
+	
+	for (const [chrSex, chrModelID] of modelsForRace) {
+		core.view.chrCustModels.push({ id: chrModelID, label: 'Type ' + (chrSex + 1) });
+		listedModelIDs.push(chrModelID);
+	}
+
+	// If we haven't selected a model, we'll just select the first one in the list.
+	// Likewise, if the old selection is no longer valid, just set it to the first one.
+
+	// TODO: store sex selection, so we can attempt to default to the same sex, if possible.
+	if (core.view.chrCustModelSelection.length == 0 || !listedModelIDs.includes(core.view.chrCustModelSelection[0].id)) {
+		core.view.chrCustModelSelection = [core.view.chrCustModels[0]];
+	}
 }
 
 async function previewModel(fileDataID) {
@@ -565,7 +607,7 @@ async function loadImportString(importString) {
 		return;
 	}
 
-	const selectedChrModelID = core.view.chrCustModelSelection[0].id;
+	const selectedChrModelID = core.view.chrCustModelSelection.id;
 
 	// Get available option IDs
 	const availableOptions = optionsByChrModel.get(selectedChrModelID);

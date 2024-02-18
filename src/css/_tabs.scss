@@ -580,8 +580,17 @@
 #tab-characters {
 	display: grid;
 	grid-template-rows: 1fr;
-	grid-template-columns: 1fr 3fr 1fr;
+	grid-template-columns: 1fr 4fr 1fr;
 	padding-bottom: 20px;
+
+	.model-select {
+		display: grid;
+		grid-template-rows: 22px 3fr 40px 22px 1fr;
+
+		.ui-listbox {
+			margin: 10px 0 0 0;
+		}
+	}
 
 	.char-preview {
 		grid-column: 2;
@@ -598,13 +607,17 @@
 		}
 	}
 
-	.character-options {
+	.left-panel {
 		grid-column: 1;
 		display: grid;
-		grid-template-rows: 1fr 1fr 1fr;
+		grid-template-rows: 2fr 1fr 1fr;
 
-		.ui-listbox {
+		& > * {
 			margin: 20px 10px 0 20px;
+		}
+
+		.section-end {
+			margin-bottom: 10px;
 		}
 	}
 
