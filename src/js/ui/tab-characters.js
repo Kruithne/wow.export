@@ -454,7 +454,6 @@ async function updateChrRaceList() {
 	
 	// Empty the arrays.
 	core.view.chrCustRaces = [];
-	core.view.chrCustModels = [];
 
 	// Build character model list.
 	for (const [chrRaceID, chrRaceInfo] of chrRaceMap) {
@@ -520,7 +519,19 @@ async function updateChrRaceList() {
 async function updateChrModelList() {
 	modelsForRace = chrRaceXChrModelMap.get(core.view.chrCustRaceSelection[0].id);
 
-	// Clear the old list
+	// We'll do a quick check for the index of the last selected model.
+	// If it's valid, we'll try to select the same index for loading the next race models.
+	let selectionIndex = 0; //default is the first model
+
+	// This is better than trying to search based on sex... for now. In the future if we
+	// can update the model list without having to instantiate new objects, it will be more efficient
+	// to try something else.
+	if (core.view.chrCustModelSelection.length > 0) {
+		const modelIDMap = core.view.chrCustModels.map((model) => { return model.id });
+		selectionIndex = modelIDMap.indexOf(core.view.chrCustModelSelection[0].id);
+	}
+
+	// Done with the old list, so clear it
 	core.view.chrCustModels = [];
 
 	// Track model IDs to validate our previously selected model type
@@ -528,22 +539,19 @@ async function updateChrModelList() {
 	
 	for (const [chrSex, chrModelID] of modelsForRace) {
 		// Track the sex so we can reference it later, should the model/race have changed.
-		const newModel = { id: chrModelID, label: 'Type ' + (chrSex + 1), sex: chrSex };
+		const newModel = { id: chrModelID, label: 'Type ' + (chrSex + 1) };
 		core.view.chrCustModels.push(newModel);
 		listedModelIDs.push(chrModelID);
-
-		// Do a quick check on our selection, if it exists.
-		// Since we just instantiated a new object, we need to ensure the selection is updated.
-		if (core.view.chrCustModelSelection.length > 0 && newModel.id == core.view.chrCustModelSelection[0].id) {
-			core.view.chrCustModelSelection = [newModel];
-		}
 	}
 
-	// If we haven't selected a model, we'll just select the first one in the list.
-	// Likewise, if the old selection is no longer valid, just set it to the first one.
-	if (core.view.chrCustModelSelection.length == 0 || !listedModelIDs.includes(core.view.chrCustModelSelection[0].id)) {
-		core.view.chrCustModelSelection = [core.view.chrCustModels[0]];
+	// If we haven't selected a model, we'll try to select the body type at the same index.
+	// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
+	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0) {
+		selectionIndex = 0;
 	}
+
+	// We've found the model index we want to load, so let's select it:
+	core.view.chrCustModelSelection = [core.view.chrCustModels[selectionIndex]];
 }
 
 async function previewModel(fileDataID) {
