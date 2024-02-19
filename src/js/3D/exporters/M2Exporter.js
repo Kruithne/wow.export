@@ -176,12 +176,71 @@ class M2Exporter {
 
 			await skel.load();
 
-			if (core.view.config.modelsExportAnimations) {
+			if (core.view.config.modelsExportAnimations)
 				await skel.loadAnims();
-				gltf.setAnimations(skel.animations);
+
+			if (skel.parent_skel_file_id > 0) {
+				const parent_skel_file = await core.view.casc.getFile(skel.parent_skel_file_id);
+				const parent_skel = new SKELLoader(parent_skel_file);
+				await parent_skel.load();
+
+				if (core.view.config.modelsExportAnimations) {
+					await parent_skel.loadAnims();
+
+					// Map of animation indices from child to parent.
+					const animIndexMap = new Map();
+
+					for (let i = 0; i < skel.animations.length; i++) {
+						const anim = skel.animations[i];
+						for (let j = 0; j < parent_skel.animations.length; j++) {
+							const parent_anim = parent_skel.animations[j];
+							if (parent_anim.id === anim.id && parent_anim.variationIndex === anim.variationIndex) {
+								animIndexMap.set(i, j);
+								break;
+							}
+						}
+					}
+
+					// Override parent bone animation data with child skeleton animation data if animation is present on both.
+					for (let i = 0; i < skel.bones.length; i++) {
+						if (i >= parent_skel.bones.length) 
+							break;
+
+						const bone = skel.bones[i];
+						const parentBone = parent_skel.bones[i];
+
+						for (const anim of animIndexMap) {
+							if (bone.translation.timestamps.length > anim[0] && parentBone.translation.timestamps.length > anim[1])
+								parent_skel.bones[i].translation.timestamps[anim[1]] = bone.translation.timestamps[anim[0]];
+
+							if (bone.translation.values.length > anim[0] && parentBone.translation.values.length > anim[1])
+								parent_skel.bones[i].translation.values[anim[1]] = bone.translation.values[anim[0]];
+
+							if (bone.rotation.timestamps.length > anim[0] && parentBone.rotation.timestamps.length > anim[1])
+								parent_skel.bones[i].rotation.timestamps[anim[1]] = bone.rotation.timestamps[anim[0]];
+
+							if (bone.rotation.values.length > anim[0] && parentBone.rotation.values.length > anim[1])
+								parent_skel.bones[i].rotation.values[anim[1]] = bone.rotation.values[anim[0]];
+
+							if (bone.scale.timestamps.length > anim[0] && parentBone.scale.timestamps.length > anim[1])
+								parent_skel.bones[i].scale.timestamps[anim[1]] = bone.scale.timestamps[anim[0]];
+
+							if (bone.scale.values.length > anim[0] && parentBone.scale.values.length > anim[1])
+								parent_skel.bones[i].scale.values[anim[1]] = bone.scale.values[anim[0]];
+						}
+					}
+
+					gltf.setAnimations(parent_skel.animations);
+				}
+
+				gltf.setBonesArray(parent_skel.bones);
+			} else {
+				if (core.view.config.modelsExportAnimations)
+					gltf.setAnimations(skel.animations);
+
+				gltf.setBonesArray(skel.bones);
 			}
 
-			gltf.setBonesArray(skel.bones);
 		} else {
 			if (core.view.config.modelsExportAnimations) {
 				await this.m2.loadAnims();
