@@ -318,42 +318,53 @@ class GLTFWriter {
 
 			const animation_buffer_lookup_map = new Map();
 
-			// TODO: Probably add an animation filter here as I can imagine this gets pretty insane both in RAM usage and processing speed.
 			if (core.view.config.modelsExportAnimations) {
 				for (var animationIndex = 0; animationIndex < this.animations.length; animationIndex++) {
 					var requiredBufferSize = 0;
 					for (const bone of this.bones) {
 						// Timestamps are all floats (uints originally), so 4 bytes each.
 						for (let i = 0; i < bone.translation.timestamps.length; i++) {
-							if (i == animationIndex && bone.translation.interpolation < 2)
+							if (i == animationIndex && bone.translation.interpolation < 2) {
 								requiredBufferSize += bone.translation.timestamps[i].length * 4;
+								break;
+							}
 						}
 	
 						for (let i = 0; i < bone.rotation.timestamps.length; i++) {
-							if (i == animationIndex && bone.rotation.interpolation < 2)
+							if (i == animationIndex && bone.rotation.interpolation < 2) {
 								requiredBufferSize += bone.rotation.timestamps[i].length * 4;
+								break;
+							}
 						}
 	
 						for (let i = 0; i < bone.scale.timestamps.length; i++) {
-							if (i == animationIndex && bone.scale.interpolation < 2)
+							if (i == animationIndex && bone.scale.interpolation < 2) {
 								requiredBufferSize += bone.scale.timestamps[i].length * 4;
+								break;
+							}
 						}
 	
 						// Vector3 values
 						for (let i = 0; i < bone.translation.values.length; i++) {
-							if (i == animationIndex && bone.translation.interpolation < 2)
+							if (i == animationIndex && bone.translation.interpolation < 2) {
 								requiredBufferSize += bone.translation.values[i].length * 3 * 4;
+								break;
+							}
 						}
 	
 						for (let i = 0; i < bone.scale.values.length; i++) {
-							if (i == animationIndex && bone.scale.interpolation < 2)
+							if (i == animationIndex && bone.scale.interpolation < 2) {
 								requiredBufferSize += bone.scale.values[i].length * 3 * 4;
+								break;
+							}
 						}
 	
 						// Quaternion values
 						for (let i = 0; i < bone.rotation.values.length; i++) {
-							if (i == animationIndex && bone.rotation.interpolation < 2)
+							if (i == animationIndex && bone.rotation.interpolation < 2) {
 								requiredBufferSize += bone.rotation.values[i].length * 4 * 4;
+								break;
+							}
 						}
 					}
 	
@@ -381,16 +392,6 @@ class GLTFWriter {
 						}
 					);
 				}
-				
-			/*
-				"animations": [
-				{
-				"samplers" : [],
-				"channels" : [],
-				"name" : "name"
-				}
-			],
-			*/
 			}
 			
 			// Add bone nodes.
@@ -473,7 +474,6 @@ class GLTFWriter {
 						let timeMin = 9999999;
 						let timeMax = 0;
 
-						// let lastTime = 0;
 						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.translation.timestamps[i][j] / 1000;
@@ -484,13 +484,6 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
-
-							// if (time < lastTime) {
-							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-							// 	break;
-							// }
-
-							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's translation timestamps as floats.
@@ -602,7 +595,6 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
-						// let lastTime = 0;
 
 						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
@@ -614,13 +606,6 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
-
-							// if (time < lastTime) {
-							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-							// 	break;
-							// }
-
-							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
@@ -738,7 +723,7 @@ class GLTFWriter {
 						// Write out bone timestamps to buffer.
 						let timeMin = 9999999;
 						let timeMax = 0;
-						// let lastTime = 0;
+						
 						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
 							// TODO: We need to recalculate these properly.
 							const time = bone.scale.timestamps[i][j] / 1000;
@@ -749,13 +734,6 @@ class GLTFWriter {
 
 							if (time > timeMax)
 								timeMax = time;
-
-							// if (time < lastTime) {
-							// 	log.write("WARNING: Animation " + i + " (" + AnimMapper.get_anim_name(this.animations[i].id) + ") has a non-increasing timestamp array, this is indicative of a problem reading animation data.");
-							// 	break;
-							// }
-
-							// lastTime = time;
 						}
 
 						// Add new SCALAR accessor for this bone's scale timestamps as floats.
