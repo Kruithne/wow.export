@@ -636,8 +636,8 @@
 								<div id='texturePreview'></div>
 							</div>
 						</div>
-						<div class='preview-options'>
-							<span class="header">Geosets</span>
+						<div class='right-panel'>
+							<div class="header">Geosets</div>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 							<div class="list-toggles">
@@ -651,7 +651,7 @@
 								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
 								<span>Include base clothing</span>
 							</label>
-							<span class="header">Dev import</span>
+							<div class="header">Dev import</div>
 							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
 							<div class='export-controls'>
 								<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
