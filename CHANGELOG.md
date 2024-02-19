@@ -1,3 +1,6 @@
+0.1.59 (xx-02-2024)
+- Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne)
+
 0.1.58 (11-02-2024)
 - M2 models can now be exported with all their animations when using glTF. (Beta feature)
 - Added additional bone names for non-keybone bones.
