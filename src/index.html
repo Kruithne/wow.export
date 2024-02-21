@@ -638,6 +638,10 @@
 								<input type="checkbox" v-model="config.modelsExportAnimations"/>
 								<span>Animations (Beta)</span>
 							</label>
+							<label class="ui-checkbox" title="Include base clothing in baked textures">
+								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
+								<span>Include base clothing</span>
+							</label>
 							<span class="header">Dev import</span>
 							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
 							<div class='export-controls'>

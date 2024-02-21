@@ -257,6 +257,13 @@ core.registerLoadFunc(async () => {
 		loadImportString(state.chrCustImportString);
 	});
 
+	core.view.$watch('config.chrIncludeBaseClothing', async () => {
+		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials) {
+			await chrMaterial.ForceUpdate();
+			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
+		}
+	});
+
 	core.events.on('click-export-character', async () => {
 		await exportCharModel();
 	});
@@ -427,7 +434,7 @@ core.registerLoadFunc(async () => {
 		}
 
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
-			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
+			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget, chrMaterial.GetURI());
 
 	}, { deep: true });
 });

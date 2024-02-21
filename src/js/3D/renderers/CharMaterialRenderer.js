@@ -43,6 +43,13 @@ class CharMaterialRenderer {
 	/**
 	 * Reset canvas.
 	 */
+	async ForceUpdate() {
+		await this.Update();
+	}
+
+	/**
+	 * Reset canvas.
+	 */
 	async Reset() {
 
 		this.unbindAllTextures();
@@ -200,7 +207,7 @@ class CharMaterialRenderer {
 	/**
 	 * Update 3D data.
 	 */
-	Update() {
+	async Update() {
 		this.clearCanvas();
 
 		this.gl.useProgram(this.glShaderProg);
@@ -214,6 +221,10 @@ class CharMaterialRenderer {
 		for (const textureTargetEntry of this.textureTargets) {
 			const textureTarget = textureTargetEntry[0];
 			const layer = textureTargetEntry[1];
+
+			// Hide underwear based on settings
+			if (!core.view.config.chrIncludeBaseClothing && (layer.textureLayer.ChrModelTextureTargetID[0] == 13 || layer.textureLayer.ChrModelTextureTargetID[0] == 14))
+				continue;
 
 			// Vertex buffer
 			const vBuffer = this.gl.createBuffer();
