@@ -549,7 +549,14 @@ async function loadImportString(importString) {
 		return;
 	}
 
-	const parsed = JSON.parse(importString);
+	let parsed;
+	try {
+		parsed = JSON.parse(importString);
+	} catch (e) {
+		core.setToast('error', 'Invalid import string.', null, 3000);
+		core.view.isBusy--;
+		return;
+	}
 
 	const selectedChrModelID = core.view.chrCustModelSelection[0].id;
 
