@@ -629,10 +629,15 @@
 								<span>Show NPC races</span>
 							</label>
 							<span class="header">Geosets</span>
+							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 							<div class="list-toggles">
 								<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
 							</div>
+							<label class="ui-checkbox" title="Include animations in export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Animations (Beta)</span>
+							</label>
 							<span class="header">Dev import</span>
 							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
 							<div class='export-controls'>
