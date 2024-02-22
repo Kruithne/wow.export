@@ -60,7 +60,7 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(5);
+	const progress = core.createProgress(15);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
