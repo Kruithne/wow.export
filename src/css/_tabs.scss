@@ -587,9 +587,14 @@
 		margin: 10px 0 0 0;
 	}
 
+	#inline-npc-races{
+		float: right;
+		font-size: 15px;
+	}
+
 	.model-select {
 		display: grid;
-		grid-template-rows: 22px 3fr 40px 22px 1fr;
+		grid-template-rows: 22px 3fr 22px 1fr;
 	}
 
 	.model-options {
@@ -619,6 +624,7 @@
 	.left-panel {
 		grid-column: 1;
 		display: grid;
+		min-width: 300px;
 		grid-template-rows: 2fr 2fr;
 
 		& > * {
@@ -633,6 +639,7 @@
 	.right-panel {
 		grid-column: 3;
 		display: grid;
+		min-width: 300px;
 		grid-template-rows: 32px 60px 2fr 62px 32px 32px 32px 1fr 38px;
 
 		& > * {

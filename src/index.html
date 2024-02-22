@@ -612,12 +612,13 @@
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
 						<div class='left-panel'>
 							<div class="model-select">
-								<span class="header">Character Race</span>
-								<listboxb :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true"></listboxb>
-								<label class="ui-checkbox section-end">
-									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
-									<span>Show NPC races</span>
-								</label>
+								<span class="header">Character Race 
+									<label class="ui-checkbox" id="inline-npc-races">
+										<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+										<span>Show NPC races</span>
+									</label>
+								</span>
+								<listboxb class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true"></listboxb>
 								<span class="header">Body Type</span>
 								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
