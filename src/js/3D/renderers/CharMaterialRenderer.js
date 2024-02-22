@@ -36,27 +36,27 @@ class CharMaterialRenderer {
 
 		this.compileShaders();
 
-		this.Reset();
+		this.reset();
 	}
 
 	/**
 	 * Get URI from canvas.
 	 */
-	GetURI() {
+	getURI() {
 		return this.glCanvas.toDataURL();
 	}
 
 	/**
 	 * Reset canvas.
 	 */
-	async ForceUpdate() {
+	async forceUpdate() {
 		await this.Update();
 	}
 
 	/**
 	 * Reset canvas.
 	 */
-	async Reset() {
+	async reset() {
 		this.unbindAllTextures();
 
 		this.textureTargets = new Map();
@@ -68,7 +68,7 @@ class CharMaterialRenderer {
 	/**
 	 * Loads a specific texture to a target.
 	 */
-	async SetTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer) {
+	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer) {
 
 		// CharComponentTextureSection: SectionType, X, Y, Width, Height, OverlapSectionMask
 		// ChrModelTextureLayer: TextureType, Layer, Flags, BlendMode, TextureSectionTypeBitMask, TextureSectionTypeBitMask2, ChrModelTextureTargetID[2]

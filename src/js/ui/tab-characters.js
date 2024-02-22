@@ -279,8 +279,8 @@ core.registerLoadFunc(async () => {
 
 	core.view.$watch('config.chrIncludeBaseClothing', async () => {
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials) {
-			await chrMaterial.ForceUpdate();
-			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.GetURI());
+			await chrMaterial.forceUpdate();
+			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.getURI());
 		}
 	});
 
@@ -370,7 +370,7 @@ core.registerLoadFunc(async () => {
 		console.log('Active choices changed');
 
 		for (const [, chrMaterial] of chrMaterials)
-			await chrMaterial.Reset();
+			await chrMaterial.reset();
 
 		const newSkinnedModels = new Map();
 
@@ -451,7 +451,7 @@ core.registerLoadFunc(async () => {
 						chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
 					}
 
-					await chrMaterial.SetTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
+					await chrMaterial.setTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
 				}
 			}
 
@@ -510,7 +510,7 @@ core.registerLoadFunc(async () => {
 		}
 
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
-			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget, chrMaterial.GetURI());
+			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget, chrMaterial.getURI());
 
 	}, { deep: true });
 });
@@ -767,7 +767,7 @@ const exportCharModel = async () => {
 		const exporter = new M2Exporter(data, [], fileDataID);
 
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
-			exporter.addURITexture(chrModelTextureTarget, chrMaterial.GetURI());
+			exporter.addURITexture(chrModelTextureTarget, chrMaterial.getURI());
 
 		// Respect geoset masking for selected model.
 		exporter.setGeosetMask(core.view.modelViewerGeosets);
