@@ -19,7 +19,7 @@ class CharMaterialRenderer {
 	 * Construct a new CharMaterialRenderer instance.
 	 */
 	constructor(textureLayer, width, height) {
-		this.textureTargets = new Map();
+		this.textureTargets = [];
 
 		this.glCanvas = document.getElementById('charMaterialCanvas-' + textureLayer);
 		if (this.glCanvas == null) {
@@ -59,7 +59,7 @@ class CharMaterialRenderer {
 	async reset() {
 		this.unbindAllTextures();
 
-		this.textureTargets = new Map();
+		this.textureTargets = [];
 		
 		this.clearCanvas();
 		await this.update();
@@ -75,19 +75,17 @@ class CharMaterialRenderer {
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
 
-		const textureTarget = [];
-		textureTarget.section = charComponentTextureSection;
-		textureTarget.material = chrModelMaterial;
-		textureTarget.textureLayer = chrModelTextureLayer;
-		textureTarget.custMaterial = chrCustomizationMaterial;
+		const use_alpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
 
-		// HACK: Don't load for armor (?) target
-		if (chrCustomizationMaterial.ChrModelTextureTargetID == 16)
-			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID, false);
-		else
-			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
+		this.textureTargets.push({
+			id: chrCustomizationMaterial.ChrModelTextureTargetID,
+			section: charComponentTextureSection,
+			material: chrModelMaterial,
+			textureLayer: chrModelTextureLayer,
+			custMaterial: chrCustomizationMaterial,
+			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, use_alpha)
+		});
 
-		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
 		await this.update();
 	}
 
@@ -204,12 +202,9 @@ class CharMaterialRenderer {
 		this.gl.disable(this.gl.DEPTH_TEST);
 
 		// order this.textureTargets by key
-		this.textureTargets = new Map([...this.textureTargets.entries()].sort((a, b) => a[0] - b[0]));
+		this.textureTargets.sort((a, b) => a.id - b.id);
 		
-		for (const textureTargetEntry of this.textureTargets) {
-			const textureTarget = textureTargetEntry[0];
-			const layer = textureTargetEntry[1];
-
+		for (const layer of this.textureTargets) {
 			// Hide underwear based on settings
 			if (!core.view.config.chrIncludeBaseClothing && (layer.textureLayer.ChrModelTextureTargetID[0] == 13 || layer.textureLayer.ChrModelTextureTargetID[0] == 14))
 				continue;
@@ -227,7 +222,7 @@ class CharMaterialRenderer {
 
 			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). 
 			// Must be controlled through data somewhere.
-			if (textureTarget == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height) {
+			if (layer.id == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height) {
 				sectionWidth = layer.material.Width;
 				sectionHeight = layer.material.Height;
 				sectionOffsetX = 0;
@@ -243,7 +238,7 @@ class CharMaterialRenderer {
 			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
 			const sectionBottomRightY = (sectionOffsetY - materialMiddleY) / materialMiddleY * -1;
 
-			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + textureTarget + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
 			const vBufferData = new Float32Array([
 				sectionTopLeftX, sectionTopLeftY, 0.0,
@@ -271,7 +266,7 @@ class CharMaterialRenderer {
 				1.0, 0, 
 				1.0,  -1.0
 			]);
-			
+
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, uvBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, uvBufferData, this.gl.STATIC_DRAW);
 
