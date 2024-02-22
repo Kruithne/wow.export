@@ -50,7 +50,7 @@ class CharMaterialRenderer {
 	 * Reset canvas.
 	 */
 	async forceUpdate() {
-		await this.Update();
+		await this.update();
 	}
 
 	/**
@@ -62,7 +62,7 @@ class CharMaterialRenderer {
 		this.textureTargets = new Map();
 		
 		this.clearCanvas();
-		await this.Update();
+		await this.update();
 	}
 
 	/**
@@ -88,7 +88,7 @@ class CharMaterialRenderer {
 			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
 
 		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
-		await this.Update();
+		await this.update();
 	}
 
 	/**
@@ -195,7 +195,7 @@ class CharMaterialRenderer {
 	/**
 	 * Update 3D data.
 	 */
-	async Update() {
+	async update() {
 		this.clearCanvas();
 
 		this.gl.useProgram(this.glShaderProg);
