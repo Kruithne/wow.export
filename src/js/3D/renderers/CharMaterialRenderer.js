@@ -74,8 +74,12 @@ class CharMaterialRenderer {
 		textureTarget.material = chrModelMaterial;
 		textureTarget.textureLayer = chrModelTextureLayer;
 		textureTarget.custMaterial = chrCustomizationMaterial;
-		textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
 
+		if (chrModelTextureLayer.BlendMode == 0)
+			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
+		else
+			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID, false);
+		
 		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
 		await this.Update();
 	}
@@ -100,8 +104,9 @@ class CharMaterialRenderer {
 	/**
 	 * Load a texture from CASC and bind it to the GL context.
 	 * @param {number} fileDataID 
+	 * @param {boolean} useAlpha
 	 */
-	async loadTexture(fileDataID) {
+	async loadTexture(fileDataID, useAlpha = true) {
 		const texture = this.gl.createTexture();
 		const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
 
@@ -109,7 +114,7 @@ class CharMaterialRenderer {
 
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
-		const blpData = blp.toUInt8Array(0);
+		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
 		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, blp.width, blp.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, blpData);
@@ -235,7 +240,8 @@ class CharMaterialRenderer {
 			let sectionWidth = layer.section.Width;
 			let sectionHeight = layer.section.Height;
 
-			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). Must be controlled through data somewhere.
+			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). 
+			// Must be controlled through data somewhere.
 			if (
 				textureTarget == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height
 			) {
