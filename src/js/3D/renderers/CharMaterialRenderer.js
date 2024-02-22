@@ -75,11 +75,12 @@ class CharMaterialRenderer {
 		textureTarget.textureLayer = chrModelTextureLayer;
 		textureTarget.custMaterial = chrCustomizationMaterial;
 
-		if (chrModelTextureLayer.BlendMode == 0)
-			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
-		else
+		// Don't load texture alpha for blend mode 0 or for armor (?) textures
+		if (chrModelTextureLayer.BlendMode == 0 || chrCustomizationMaterial.ChrModelTextureTargetID == 16)
 			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID, false);
-		
+		else
+			textureTarget.textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID);
+
 		this.textureTargets.set(chrCustomizationMaterial.ChrModelTextureTargetID, textureTarget);
 		await this.Update();
 	}
