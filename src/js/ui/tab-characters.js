@@ -5,13 +5,11 @@
  */
 const core = require('../core');
 const log = require('../log');
-const path = require('path');
 const util = require('util');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 const WDCReader = require('../db/WDCReader');
-const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const FileWriter = require('../file-writer');
 const listfile = require('../casc/listfile');
@@ -147,7 +145,7 @@ core.events.once('screen-tab-characters', async () => {
 	const chrRaceXChrModelDB = new WDCReader('DBFilesClient/ChrRaceXChrModel.db2');
 	await chrRaceXChrModelDB.parse();
 
-	for (const [chrRaceXChrModelID, chrRaceXChrModelRow] of chrRaceXChrModelDB.getAllRows()) {
+	for (const [, chrRaceXChrModelRow] of chrRaceXChrModelDB.getAllRows()) {
 		if (!chrRaceXChrModelMap.has(chrRaceXChrModelRow.ChrRacesID))
 			chrRaceXChrModelMap.set(chrRaceXChrModelRow.ChrRacesID, new Map());
 
@@ -158,7 +156,7 @@ core.events.once('screen-tab-characters', async () => {
 	const chrModelMatDB = new WDCReader('DBFilesClient/ChrModelMaterial.db2');
 	await chrModelMatDB.parse();
 
-	for (const [chrModelMaterialID, chrModelMaterialRow] of chrModelMatDB.getAllRows())
+	for (const [, chrModelMaterialRow] of chrModelMatDB.getAllRows())
 		chrModelMaterialMap.set(chrModelMaterialRow.CharComponentTextureLayoutsID + "-" + chrModelMaterialRow.TextureType, chrModelMaterialRow);
 
 	// await progress.step('Loading character customization table...');
@@ -169,7 +167,7 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character component texture sections...');
 	const charComponentTextureSectionDB = new WDCReader('DBFilesClient/CharComponentTextureSections.db2');
 	await charComponentTextureSectionDB.parse();
-	for (const [charComponentTextureSectionID, charComponentTextureSectionRow] of charComponentTextureSectionDB.getAllRows()) {
+	for (const [, charComponentTextureSectionRow] of charComponentTextureSectionDB.getAllRows()) {
 		if (!charComponentTextureSectionMap.has(charComponentTextureSectionRow.CharComponentTextureLayoutID))
 			charComponentTextureSectionMap.set(charComponentTextureSectionRow.CharComponentTextureLayoutID, []);
 
@@ -179,14 +177,14 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character model texture layers...');
 	const chrModelTextureLayerDB = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2');
 	await chrModelTextureLayerDB.parse();
-	for (const [chrModelTextureLayerID, chrModelTextureLayerRow] of chrModelTextureLayerDB.getAllRows())
+	for (const [, chrModelTextureLayerRow] of chrModelTextureLayerDB.getAllRows())
 		chrModelTextureLayerMap.set(chrModelTextureLayerRow.CharComponentTextureLayoutsID + "-" + chrModelTextureLayerRow.ChrModelTextureTargetID[0], chrModelTextureLayerRow);
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await tfdDB.parse();
 	const tfdMap = new Map();
-	for (const [tfdID, tfdRow] of tfdDB.getAllRows()) {
+	for (const [, tfdRow] of tfdDB.getAllRows()) {
 		// Skip specular (1) and emissive (2)
 		if (tfdRow.UsageType != 0)
 			continue;
@@ -201,7 +199,7 @@ core.events.once('screen-tab-characters', async () => {
 	chrCustElementDB = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
 	await chrCustElementDB.parse();
 
-	for (const [chrCustomizationElementID, chrCustomizationElementRow] of chrCustElementDB.getAllRows()) {
+	for (const [, chrCustomizationElementRow] of chrCustElementDB.getAllRows()) {
 		if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 			choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID);
 
@@ -462,7 +460,7 @@ core.registerLoadFunc(async () => {
 		}
 
 
-		for (const [fileDataID, renderer] of skinnedModelRenderers) {
+		for (const [fileDataID,] of skinnedModelRenderers) {
 			// Don't dispose of models we still want to keep.
 			// if (newSkinnedModels.has(fileDataID)) 
 			// 	continue;
@@ -513,8 +511,6 @@ core.registerLoadFunc(async () => {
 });
 
 async function updateChrRaceList() {
-	const characterModelList = [];
-
 	// Keep a list of listed models.
 	// Some races are duplicated because of multi-factions,
 	// so we will store races based on unique model IDs.
@@ -530,7 +526,7 @@ async function updateChrRaceList() {
 			continue;
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
-		for (const [chrSex, chrModelID] of chrModels) {
+		for (const [, chrModelID] of chrModels) {
 			// If we're filtering NPC races, bail out.
 			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace)
 				continue;
@@ -552,14 +548,13 @@ async function updateChrRaceList() {
 			// Let's polish it up.
 
 			// Build the label for the race data
-			raceLabel = chrRaceInfo.name;
+			let raceLabel = chrRaceInfo.name;
 
 			// To easily distinguish some weird names, we'll label NPC races.
 			// ie: thin humans are just called "human" and aren't given a unique body type.
 			// In the future, we could show the ClientFileString column if the label is already taken.
-			if (chrRaceInfo.isNPCRace) {
+			if (chrRaceInfo.isNPCRace)
 				raceLabel = raceLabel + ' [NPC]';
-			}
 
 			// It's ready to go:
 			const newRace = {id: chrRaceInfo.id, label: raceLabel }
@@ -567,9 +562,8 @@ async function updateChrRaceList() {
 
 			// Do a quick check on our selection, if it exists.
 			// Since we just instantiated a new object, we need to ensure the selection is updated.
-			if (core.view.chrCustRaceSelection.length > 0 && newRace.id == core.view.chrCustRaceSelection[0].id) {
+			if (core.view.chrCustRaceSelection.length > 0 && newRace.id == core.view.chrCustRaceSelection[0].id)
 				core.view.chrCustRaceSelection = [newRace];
-			}
 		}
 	}
 
@@ -580,13 +574,12 @@ async function updateChrRaceList() {
 
 	// If we haven't selected a race, OR we selected a race that's not in the current filter,
 	// we'll just select the first one in the list:
-	if (core.view.chrCustRaceSelection.length == 0 || !listedRaceIDs.includes(core.view.chrCustRaceSelection[0].id)) {
+	if (core.view.chrCustRaceSelection.length == 0 || !listedRaceIDs.includes(core.view.chrCustRaceSelection[0].id))
 		core.view.chrCustRaceSelection = [core.view.chrCustRaces[0]];
-	}
 }
 
 async function updateChrModelList() {
-	modelsForRace = chrRaceXChrModelMap.get(core.view.chrCustRaceSelection[0].id);
+	const modelsForRace = chrRaceXChrModelMap.get(core.view.chrCustRaceSelection[0].id);
 
 	// We'll do a quick check for the index of the last selected model.
 	// If it's valid, we'll try to select the same index for loading the next race models.
@@ -615,9 +608,8 @@ async function updateChrModelList() {
 
 	// If we haven't selected a model, we'll try to select the body type at the same index.
 	// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
-	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0) {
+	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0)
 		selectionIndex = 0;
-	}
 
 	// We've found the model index we want to load, so let's select it:
 	core.view.chrCustModelSelection = [core.view.chrCustModels[selectionIndex]];
@@ -731,7 +723,7 @@ async function loadImportString(importString) {
 	core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
 
 	const parsedChoices = [];
-	for (const [key, customizationEntry] of Object.entries(parsed.customizations)) {
+	for (const [, customizationEntry] of Object.entries(parsed.customizations)) {
 		if (!availableOptionsIDs.includes(customizationEntry.option.id))
 			continue;
 
