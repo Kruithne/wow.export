@@ -51,7 +51,6 @@ class CharMaterialRenderer {
 	 * Reset canvas.
 	 */
 	async Reset() {
-
 		this.unbindAllTextures();
 
 		this.textureTargets = new Map();
@@ -105,7 +104,6 @@ class CharMaterialRenderer {
 	async loadTexture(fileDataID) {
 		const texture = this.gl.createTexture();
 		const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
-
 
 		// TODO: DXT(1/3/5) support
 

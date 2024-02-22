@@ -365,7 +365,11 @@ core.registerLoadFunc(async () => {
 	core.view.$watch('chrCustActiveChoices', async (selection) => {
 		if (core.view.isBusy)
 			return;
+
 		console.log('Active choices changed');
+
+		for (const [, chrMaterial] of chrMaterials)
+			await chrMaterial.Reset();
 
 		const newSkinnedModels = new Map();
 
