@@ -126,6 +126,7 @@ const view = {
 	chrCustChoiceSelection: [], // Selected character customization choice.
 	chrCustActiveChoices: [], // Active character customization choices.
 	chrCustImportString: '', // Character customization import string.
+	chrCustTab: 'models', // Active tab for character customization.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',

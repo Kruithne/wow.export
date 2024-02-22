@@ -611,7 +611,11 @@
 				<keep-alive>
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
 						<div class='left-panel'>
-							<div class="model-select">
+							<div class='tab-control'>
+								<span @click="chrCustTab = 'models'" :class="{ selected: chrCustTab === 'models' }">Models</span>
+								<span @click="chrCustTab = 'options'" :class="{ selected: chrCustTab === 'options' }">Options</span>
+							</div>
+							<div class="model-tab" v-show="chrCustTab  === 'models'">
 								<span class="header">Character Race 
 									<label class="ui-checkbox" id="inline-npc-races">
 										<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
@@ -622,7 +626,7 @@
 								<span class="header">Body Type</span>
 								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
-							<div class="model-options">
+							<div class="option-tab" v-show="chrCustTab  === 'options'">
 								<span class="header">Customizations</span>
 								<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 								<span class="header">Customization Options</span>
