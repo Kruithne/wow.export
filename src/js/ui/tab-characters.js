@@ -112,7 +112,13 @@ core.events.once('screen-tab-characters', async () => {
 			if (!optionsByChrModel.has(chrCustomizationOptionRow.ChrModelID))
 				optionsByChrModel.set(chrCustomizationOptionRow.ChrModelID, []);
 
-			optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).push({ id: chrCustomizationOptionID, label: chrCustomizationOptionRow.Name_lang });
+			let optionName = '';
+			if (chrCustomizationOptionRow.Name_lang != '')
+				optionName = chrCustomizationOptionRow.Name_lang;
+			else
+				optionName = 'Option ' + chrCustomizationOptionRow.OrderIndex;
+
+			optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).push({ id: chrCustomizationOptionID, label: optionName });
 
 			for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustChoiceDB.getAllRows()) {
 				if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
@@ -158,10 +164,6 @@ core.events.once('screen-tab-characters', async () => {
 
 	for (const [, chrModelMaterialRow] of chrModelMatDB.getAllRows())
 		chrModelMaterialMap.set(chrModelMaterialRow.CharComponentTextureLayoutsID + "-" + chrModelMaterialRow.TextureType, chrModelMaterialRow);
-
-	// await progress.step('Loading character customization table...');
-	// const chrCustDB = new WDCReader('DBFilesClient/ChrCustomization.db2');
-	// await chrCustDB.parse();
 
 	// load charComponentTextureSection
 	await progress.step('Loading character component texture sections...');
