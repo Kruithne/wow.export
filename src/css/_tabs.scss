@@ -610,7 +610,7 @@
 	.left-panel {
 		grid-column: 1;
 		display: grid;
-		min-width: 300px;
+		min-width: 315px;
 		grid-template-rows: 45px 2fr;
 
 		& > * {

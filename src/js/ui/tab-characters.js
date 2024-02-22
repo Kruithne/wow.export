@@ -319,12 +319,11 @@ core.registerLoadFunc(async () => {
 		if (!core.view.isBusy && fileDataID && activeModel !== fileDataID)
 			previewModel(fileDataID);
 
-		// Reset/init texture preview (DEV, should be off-screen canvas probs similar to ADT texture baking).
+		// Reset textures
 		for (const chrMaterial of chrMaterials.values())
 			chrMaterial.dispose();
 
 		chrMaterials.clear();
-
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
@@ -640,6 +639,12 @@ async function previewModel(fileDataID) {
 
 		// Clear the active skin map.
 		activeSkins.clear();
+		
+		// Reset skinned models
+		for (const [fileDataID,] of skinnedModelRenderers) {
+			skinnedModelRenderers.get(fileDataID).dispose();
+			skinnedModelRenderers.delete(fileDataID);
+		}
 
 		const file = await core.view.casc.getFile(fileDataID);
 
