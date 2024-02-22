@@ -151,7 +151,7 @@ core.events.once('screen-tab-characters', async () => {
 	const chrRaceXChrModelDB = new WDCReader('DBFilesClient/ChrRaceXChrModel.db2');
 	await chrRaceXChrModelDB.parse();
 
-	for (const [, chrRaceXChrModelRow] of chrRaceXChrModelDB.getAllRows()) {
+	for (const chrRaceXChrModelRow of chrRaceXChrModelDB.getAllRows().values()) {
 		if (!chrRaceXChrModelMap.has(chrRaceXChrModelRow.ChrRacesID))
 			chrRaceXChrModelMap.set(chrRaceXChrModelRow.ChrRacesID, new Map());
 
@@ -162,14 +162,14 @@ core.events.once('screen-tab-characters', async () => {
 	const chrModelMatDB = new WDCReader('DBFilesClient/ChrModelMaterial.db2');
 	await chrModelMatDB.parse();
 
-	for (const [, chrModelMaterialRow] of chrModelMatDB.getAllRows())
+	for (const chrModelMaterialRow of chrModelMatDB.getAllRows().values())
 		chrModelMaterialMap.set(chrModelMaterialRow.CharComponentTextureLayoutsID + "-" + chrModelMaterialRow.TextureType, chrModelMaterialRow);
 
 	// load charComponentTextureSection
 	await progress.step('Loading character component texture sections...');
 	const charComponentTextureSectionDB = new WDCReader('DBFilesClient/CharComponentTextureSections.db2');
 	await charComponentTextureSectionDB.parse();
-	for (const [, charComponentTextureSectionRow] of charComponentTextureSectionDB.getAllRows()) {
+	for (const charComponentTextureSectionRow of charComponentTextureSectionDB.getAllRows().values()) {
 		if (!charComponentTextureSectionMap.has(charComponentTextureSectionRow.CharComponentTextureLayoutID))
 			charComponentTextureSectionMap.set(charComponentTextureSectionRow.CharComponentTextureLayoutID, []);
 
@@ -179,14 +179,14 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character model texture layers...');
 	const chrModelTextureLayerDB = new WDCReader('DBFilesClient/ChrModelTextureLayer.db2');
 	await chrModelTextureLayerDB.parse();
-	for (const [, chrModelTextureLayerRow] of chrModelTextureLayerDB.getAllRows())
+	for (const chrModelTextureLayerRow of chrModelTextureLayerDB.getAllRows().values())
 		chrModelTextureLayerMap.set(chrModelTextureLayerRow.CharComponentTextureLayoutsID + "-" + chrModelTextureLayerRow.ChrModelTextureTargetID[0], chrModelTextureLayerRow);
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
 	await tfdDB.parse();
 	const tfdMap = new Map();
-	for (const [, tfdRow] of tfdDB.getAllRows()) {
+	for (const tfdRow of tfdDB.getAllRows().values()) {
 		// Skip specular (1) and emissive (2)
 		if (tfdRow.UsageType != 0)
 			continue;
@@ -201,7 +201,7 @@ core.events.once('screen-tab-characters', async () => {
 	chrCustElementDB = new WDCReader('DBFilesClient/ChrCustomizationElement.db2');
 	await chrCustElementDB.parse();
 
-	for (const [, chrCustomizationElementRow] of chrCustElementDB.getAllRows()) {
+	for (const chrCustomizationElementRow of chrCustElementDB.getAllRows().values()) {
 		if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 			choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID);
 
@@ -369,7 +369,7 @@ core.registerLoadFunc(async () => {
 
 		console.log('Active choices changed');
 
-		for (const [, chrMaterial] of chrMaterials)
+		for (const chrMaterial of chrMaterials.values())
 			await chrMaterial.reset();
 
 		const newSkinnedModels = new Map();
@@ -465,7 +465,7 @@ core.registerLoadFunc(async () => {
 		}
 
 
-		for (const [fileDataID,] of skinnedModelRenderers) {
+		for (const fileDataID of skinnedModelRenderers.keys()) {
 			// Don't dispose of models we still want to keep.
 			// if (newSkinnedModels.has(fileDataID)) 
 			// 	continue;
@@ -531,7 +531,7 @@ async function updateChrRaceList() {
 			continue;
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
-		for (const [, chrModelID] of chrModels) {
+		for (const chrModelID of chrModels.values()) {
 			// If we're filtering NPC races, bail out.
 			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace)
 				continue;
@@ -641,7 +641,7 @@ async function previewModel(fileDataID) {
 		activeSkins.clear();
 		
 		// Reset skinned models
-		for (const [fileDataID,] of skinnedModelRenderers) {
+		for (const fileDataID of skinnedModelRenderers.keys()) {
 			skinnedModelRenderers.get(fileDataID).dispose();
 			skinnedModelRenderers.delete(fileDataID);
 		}
@@ -734,7 +734,7 @@ async function loadImportString(importString) {
 	core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
 
 	const parsedChoices = [];
-	for (const [, customizationEntry] of Object.entries(parsed.customizations)) {
+	for (const customizationEntry of Object.values(parsed.customizations)) {
 		if (!availableOptionsIDs.includes(customizationEntry.option.id))
 			continue;
 
