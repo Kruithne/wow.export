@@ -633,7 +633,7 @@
 							<div class='preview-background'>
 								<model-viewer :context="chrModelViewerContext"></model-viewer>
 							</div>
-							<div class='texture-preview-panel'>
+							<div class='texture-preview-panel' v-show="config.chrShowTextureOverlay">
 								<div id='texturePreview'></div>
 							</div>
 						</div>
@@ -651,6 +651,10 @@
 							<label class="ui-checkbox" title="Include base clothing in baked textures">
 								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
 								<span>Include base clothing</span>
+							</label>
+							<label class="ui-checkbox" title="Show texture overlay">
+								<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
+								<span>Show texture overlay</span>
 							</label>
 							<div class="header">Dev import</div>
 							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>

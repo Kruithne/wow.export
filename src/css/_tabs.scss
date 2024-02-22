@@ -640,7 +640,7 @@
 		grid-column: 3;
 		display: grid;
 		min-width: 300px;
-		grid-template-rows: 32px 60px 2fr 62px 32px 32px 32px 1fr 38px;
+		grid-template-rows: 32px 60px 2fr 32px 32px 32px 32px 32px 60px 38px;
 
 		& > * {
 			margin: 20px 10px 0 20px;
