@@ -610,10 +610,23 @@
 				</keep-alive>
 				<keep-alive>
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
-						<div class='character-options'>
-							<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
-							<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
-							<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+						<div class='left-panel'>
+							<div class="model-select">
+								<span class="header">Character Race</span>
+								<listboxb :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true"></listboxb>
+								<label class="ui-checkbox section-end">
+									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+									<span>Show NPC races</span>
+								</label>
+								<span class="header">Body Type</span>
+								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+							</div>
+							<div class="model-options">
+								<span class="header">Customizations</span>
+								<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+								<span class="header">Customization Options</span>
+								<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+							</div>
 						</div>
 						<div class='char-preview preview-container'>
 							<div class='preview-background'>
@@ -623,12 +636,8 @@
 								<div id='texturePreview'></div>
 							</div>
 						</div>
-						<div class='preview-options'>
-							<label class="ui-checkbox">
-								<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
-								<span>Show NPC races</span>
-							</label>
-							<span class="header">Geosets</span>
+						<div class='right-panel'>
+							<div class="header">Geosets</div>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 							<div class="list-toggles">
@@ -642,7 +651,7 @@
 								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
 								<span>Include base clothing</span>
 							</label>
-							<span class="header">Dev import</span>
+							<div class="header">Dev import</div>
 							<textarea v-model="chrCustImportString" placeholder="Paste JSON here"></textarea>
 							<div class='export-controls'>
 								<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>

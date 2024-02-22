@@ -116,6 +116,8 @@ const view = {
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
 	chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+	chrCustRaces: [], // Available character races to select from
+	chrCustRaceSelection: [], // Current race ID selected
 	chrCustModels: [], // Available character customization models.
 	chrCustModelSelection: [], // Selected character customization model.
 	chrCustOptions: [], // Available character customization options.

@@ -251,7 +251,7 @@ core.events.once('screen-tab-characters', async () => {
 	// WoW models are by default facing the wrong way; rotate everything.
 	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
-	updateChrModelList();
+	updateChrRaceList();
 
 	core.view.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
 
@@ -266,6 +266,10 @@ core.registerLoadFunc(async () => {
 
 	// If NPC race toggle changes, refresh model list.
 	core.view.$watch('config.chrCustShowNPCRaces', () => {
+		updateChrRaceList();
+	});
+
+	core.view.$watch('chrCustRaceSelection', () => {
 		updateChrModelList();
 	});
 
@@ -508,11 +512,17 @@ core.registerLoadFunc(async () => {
 	}, { deep: true });
 });
 
-async function updateChrModelList() {
+async function updateChrRaceList() {
 	const characterModelList = [];
 
-	// Keep a list of listed models, some races are duplicated because of multi-factions.
-	const listedModels = [];
+	// Keep a list of listed models.
+	// Some races are duplicated because of multi-factions,
+	// so we will store races based on unique model IDs.
+	const listedModelIDs = [];
+	const listedRaceIDs = [];
+	
+	// Empty the arrays.
+	core.view.chrCustRaces = [];
 
 	// Build character model list.
 	for (const [chrRaceID, chrRaceInfo] of chrRaceMap) {
@@ -521,21 +531,96 @@ async function updateChrModelList() {
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
 		for (const [chrSex, chrModelID] of chrModels) {
-			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace || listedModels.includes(chrModelID))
+			// If we're filtering NPC races, bail out.
+			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace)
 				continue;
 
-			listedModels.push(chrModelID);
-			characterModelList.push({id: chrModelID, label: chrRaceInfo.name + ' body type ' + chrSex});
+			// If we've seen this character model before, we don't need to record it again.
+			if (listedModelIDs.includes(chrModelID))
+				continue;
+
+			listedModelIDs.push(chrModelID);
+
+			// Need to do a check here to ensure we didn't already add this race
+			// in the case of them having more than one model type
+			if (listedRaceIDs.includes(chrRaceID))
+				continue;
+
+			listedRaceIDs.push(chrRaceID);
+
+			// By the time we get here, we know we have a genuinly new race to add to the list!
+			// Let's polish it up.
+
+			// Build the label for the race data
+			raceLabel = chrRaceInfo.name;
+
+			// To easily distinguish some weird names, we'll label NPC races.
+			// ie: thin humans are just called "human" and aren't given a unique body type.
+			// In the future, we could show the ClientFileString column if the label is already taken.
+			if (chrRaceInfo.isNPCRace) {
+				raceLabel = raceLabel + ' [NPC]';
+			}
+
+			// It's ready to go:
+			const newRace = {id: chrRaceInfo.id, label: raceLabel }
+			core.view.chrCustRaces.push(newRace);
+
+			// Do a quick check on our selection, if it exists.
+			// Since we just instantiated a new object, we need to ensure the selection is updated.
+			if (core.view.chrCustRaceSelection.length > 0 && newRace.id == core.view.chrCustRaceSelection[0].id) {
+				core.view.chrCustRaceSelection = [newRace];
+			}
 		}
 	}
 
-	// Empty the arrays.
-	core.view.chrCustModels.splice(0, core.view.chrCustModels.length);
-	core.view.chrCustModelSelection.splice(0, core.view.chrCustModelSelection.length);
+	// Sort alphabetically
+	core.view.chrCustRaces.sort((a, b) => {
+		return a.label.localeCompare(b.label);
+	});
 
-	// Add the new skins.
-	core.view.chrCustModels.push(...characterModelList);
-	core.view.chrCustModelSelection.push(...characterModelList.slice(0, 1));
+	// If we haven't selected a race, OR we selected a race that's not in the current filter,
+	// we'll just select the first one in the list:
+	if (core.view.chrCustRaceSelection.length == 0 || !listedRaceIDs.includes(core.view.chrCustRaceSelection[0].id)) {
+		core.view.chrCustRaceSelection = [core.view.chrCustRaces[0]];
+	}
+}
+
+async function updateChrModelList() {
+	modelsForRace = chrRaceXChrModelMap.get(core.view.chrCustRaceSelection[0].id);
+
+	// We'll do a quick check for the index of the last selected model.
+	// If it's valid, we'll try to select the same index for loading the next race models.
+	let selectionIndex = 0; //default is the first model
+
+	// This is better than trying to search based on sex... for now. In the future if we
+	// can update the model list without having to instantiate new objects, it will be more efficient
+	// to try something else.
+	if (core.view.chrCustModelSelection.length > 0) {
+		const modelIDMap = core.view.chrCustModels.map((model) => { return model.id });
+		selectionIndex = modelIDMap.indexOf(core.view.chrCustModelSelection[0].id);
+	}
+
+	// Done with the old list, so clear it
+	core.view.chrCustModels = [];
+
+	// Track model IDs to validate our previously selected model type
+	const listedModelIDs = [];
+	
+	for (const [chrSex, chrModelID] of modelsForRace) {
+		// Track the sex so we can reference it later, should the model/race have changed.
+		const newModel = { id: chrModelID, label: 'Type ' + (chrSex + 1) };
+		core.view.chrCustModels.push(newModel);
+		listedModelIDs.push(chrModelID);
+	}
+
+	// If we haven't selected a model, we'll try to select the body type at the same index.
+	// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
+	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0) {
+		selectionIndex = 0;
+	}
+
+	// We've found the model index we want to load, so let's select it:
+	core.view.chrCustModelSelection = [core.view.chrCustModels[selectionIndex]];
 }
 
 async function previewModel(fileDataID) {
@@ -634,7 +719,7 @@ async function loadImportString(importString) {
 		return;
 	}
 
-	const selectedChrModelID = core.view.chrCustModelSelection[0].id;
+	const selectedChrModelID = core.view.chrCustModelSelection.id;
 
 	// Get available option IDs
 	const availableOptions = optionsByChrModel.get(selectedChrModelID);
