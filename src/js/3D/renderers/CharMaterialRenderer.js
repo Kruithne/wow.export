@@ -3,6 +3,7 @@ wow.export (https://github.com/Kruithne/wow.export)
 Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 License: MIT
 */
+const path = require('path');
 const fsp = require('fs').promises;
 const BLPFile = require('../../casc/blp');
 const core = require('../../core');
