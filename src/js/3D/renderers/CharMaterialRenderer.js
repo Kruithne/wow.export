@@ -227,9 +227,7 @@ class CharMaterialRenderer {
 
 			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). 
 			// Must be controlled through data somewhere.
-			if (
-				textureTarget == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height
-			) {
+			if (textureTarget == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height) {
 				sectionWidth = layer.material.Width;
 				sectionHeight = layer.material.Height;
 				sectionOffsetX = 0;
@@ -265,13 +263,15 @@ class CharMaterialRenderer {
 
 			// TexCoord buffer
 			const uvBuffer = this.gl.createBuffer();
-			const uvBufferData = new Float32Array([ 
+			const uvBufferData = new Float32Array([
 				0, 0, 
 				1.0, 0, 
 				0,  -1.0, 
 				0,  -1.0, 
 				1.0, 0, 
-				1.0,  -1.0]);
+				1.0,  -1.0
+			]);
+			
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, uvBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, uvBufferData, this.gl.STATIC_DRAW);
 
