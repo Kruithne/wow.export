@@ -3,10 +3,15 @@ wow.export (https://github.com/Kruithne/wow.export)
 Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 License: MIT
 */
+const fsp = require('fs').promises;
 const BLPFile = require('../../casc/blp');
 const core = require('../../core');
 const log = require('../../log');
 const listfile = require('../../casc/listfile');
+const constants = require('../../constants');
+
+const FRAG_SHADER_SRC = path.join(constnats.SHADER_PATH, 'char.fragment.shader');
+const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
 
 class CharMaterialRenderer {
 	/**
@@ -153,17 +158,8 @@ class CharMaterialRenderer {
 		this.glShaderProg = this.gl.createProgram();
 
 		// Compile vertex shader.
-		const vertShaderSource = `attribute vec4 a_position;
-	attribute vec2 a_texCoord;
-
-	varying vec2 v_texCoord;
-
-	void main() {
-		gl_Position = a_position;
-		v_texCoord = a_texCoord;
-	}`;
 		const vertShader = this.gl.createShader(this.gl.VERTEX_SHADER);
-		this.gl.shaderSource(vertShader, vertShaderSource);
+		this.gl.shaderSource(vertShader, await fsp.readFile(VERT_SHADER_SRC, 'utf8'));
 		this.gl.compileShader(vertShader);
 
 		if (!this.gl.getShaderParameter(vertShader, this.gl.COMPILE_STATUS)) {
@@ -172,21 +168,8 @@ class CharMaterialRenderer {
 		}
 
 		// Compile fragment shader.
-		const fragShaderSource = `precision mediump float;
-	varying vec2 v_texCoord;
-	uniform sampler2D u_texture;
-	uniform float u_blendMode;
-
-	void main() {
-		if(u_blendMode == 0.0 || u_blendMode == 1.0 || u_blendMode == 9.0 || u_blendMode == 15.0) {
-			gl_FragColor = texture2D(u_texture, v_texCoord);
-		}else{
-			gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-		}
-	}`;
-
 		const fragShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		this.gl.shaderSource(fragShader, await fragShaderSource);
+		this.gl.shaderSource(fragShader, await fsp.readFile(FRAG_SHADER_SRC, 'utf8'));
 		this.gl.compileShader(fragShader);
 
 		if (!this.gl.getShaderParameter(fragShader, this.gl.COMPILE_STATUS)) {
