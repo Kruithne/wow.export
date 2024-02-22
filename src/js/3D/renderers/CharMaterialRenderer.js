@@ -10,7 +10,7 @@ const log = require('../../log');
 const listfile = require('../../casc/listfile');
 const constants = require('../../constants');
 
-const FRAG_SHADER_SRC = path.join(constnats.SHADER_PATH, 'char.fragment.shader');
+const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
 
 class CharMaterialRenderer {
