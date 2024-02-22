@@ -34,13 +34,19 @@ const optionsByChrModel = new Map();
 const optionToChoices = new Map();
 const chrRaceMap = new Map();
 const chrRaceXChrModelMap = new Map();
+
 const choiceToGeoset = new Map();
 const choiceToChrCustMaterialID = new Map();
+const choiceToSkinnedModel = new Map();
+
 const geosetMap = new Map();
 const chrCustMatMap = new Map();
 const chrModelTextureLayerMap = new Map();
 const charComponentTextureSectionMap = new Map();
 const chrModelMaterialMap = new Map();
+const chrCustSkinnedModelMap = new Map();
+
+const skinnedModelRenderers = new Map();
 
 const chrMaterials = new Map();
 
@@ -199,6 +205,9 @@ core.events.once('screen-tab-characters', async () => {
 		if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 			choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID);
 
+		if (chrCustomizationElementRow.ChrCustomizationSkinnedModelID != 0)
+			choiceToSkinnedModel.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationSkinnedModelID);
+
 		if (chrCustomizationElementRow.ChrCustomizationMaterialID != 0) {
 			if (choiceToChrCustMaterialID.has(chrCustomizationElementRow.ChrCustomizationChoiceID))
 				choiceToChrCustMaterialID.get(chrCustomizationElementRow.ChrCustomizationChoiceID).push({ ChrCustomizationMaterialID: chrCustomizationElementRow.ChrCustomizationMaterialID, RelatedChrCustomizationChoiceID: chrCustomizationElementRow.RelatedChrCustomizationChoiceID });
@@ -218,6 +227,13 @@ core.events.once('screen-tab-characters', async () => {
 		const geoset = chrCustomizationGeosetRow.GeosetType.toString().padStart(2, '0') + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
 		geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 	}
+
+	await progress.step('Loading character customization skinned models...');
+
+	const chrCustSkinnedModelDB = new WDCReader('DBFilesClient/ChrCustomizationSkinnedModel.db2');
+	await chrCustSkinnedModelDB.parse();
+	for (const [chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow] of chrCustSkinnedModelDB.getAllRows())
+		chrCustSkinnedModelMap.set(chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow);
 
 	// Initialize model viewer.
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
@@ -349,6 +365,8 @@ core.registerLoadFunc(async () => {
 			return;
 		console.log('Active choices changed');
 
+		const newSkinnedModels = new Map();
+
 		for (const activeChoice of selection) {
 			// Update all geosets for this option.
 			const availableChoices = optionToChoices.get(activeChoice.optionID);
@@ -431,6 +449,57 @@ core.registerLoadFunc(async () => {
 			}
 
 			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
+			const chrCustSkinnedModelID = choiceToSkinnedModel.get(activeChoice.choiceID);
+			if (chrCustSkinnedModelID != undefined) {
+				const skinnedModelRow = chrCustSkinnedModelMap.get(chrCustSkinnedModelID);
+				if (skinnedModelRow !== undefined)
+					newSkinnedModels.set(skinnedModelRow.CollectionsFileDataID, skinnedModelRow);
+			}
+		}
+
+
+		for (const [fileDataID, renderer] of skinnedModelRenderers) {
+			// Don't dispose of models we still want to keep.
+			// if (newSkinnedModels.has(fileDataID)) 
+			// 	continue;
+
+			console.log('Disposing of unused skinned model ' + fileDataID);
+			skinnedModelRenderers.get(fileDataID).dispose();
+			skinnedModelRenderers.delete(fileDataID);
+		}
+
+		for (const [fileDataID, skinnedModelRow] of newSkinnedModels) {
+			// if (skinnedModelRenderers.has(fileDataID))
+			// 	continue;
+
+			console.log('Loading skinned model ' + fileDataID);
+
+			// Load model
+			const skinnedModelRenderer = new M2Renderer(await core.view.casc.getFile(fileDataID), renderGroup, false);
+			await skinnedModelRenderer.load();
+
+			// Set geosets
+			const geosetToEnable = skinnedModelRow.GeosetType * 100 + skinnedModelRow.GeosetID;
+
+			for (let i = 0; i < skinnedModelRenderer.geosetArray.length; i++) {
+				const geoset = skinnedModelRenderer.geosetArray[i];
+				const geosetID = geoset.id;
+			
+				if (geosetID === geosetToEnable) {
+					geoset.enabled = true;
+					console.log('Enabling geoset ' + geosetID);
+				} else {
+					geoset.enabled = false;
+				}
+			}
+
+			// Manually call this because we don't load these as reactive.
+			skinnedModelRenderer.updateGeosets();
+
+			skinnedModelRenderers.set(fileDataID, skinnedModelRenderer);
+
+			const mesh = skinnedModelRenderers.get(fileDataID).meshGroup.clone(true);
+			renderGroup.add(mesh);
 		}
 
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
