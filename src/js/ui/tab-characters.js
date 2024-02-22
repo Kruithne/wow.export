@@ -56,6 +56,152 @@ let chrCustOptDB;
 let chrCustElementDB;
 let chrCustGeosetDB;
 
+async function update_materials() {
+	for (const chrMaterial of chrMaterials.values())
+		await chrMaterial.reset();
+
+	const newSkinnedModels = new Map();
+
+	const selection = core.view.chrCustActiveChoices;
+	for (const activeChoice of selection) {
+		// Update all geosets for this option.
+		const availableChoices = optionToChoices.get(activeChoice.optionID);
+
+		for (const availableChoice of availableChoices) {
+			const chrCustGeoID = choiceToGeoset.get(availableChoice.id);
+			const geoset = geosetMap.get(chrCustGeoID);
+
+			if (geoset !== undefined) {
+				for (const availableGeoset of core.view.modelViewerGeosets) {
+					// HACK: Never touch geoset 0 (base skin)
+					if (availableGeoset.id == 0)
+						continue;
+
+					if (availableGeoset.id === geoset) {
+						let shouldBeChecked = availableChoice.id == activeChoice.choiceID;
+						if (availableGeoset.checked != shouldBeChecked) {
+							// console.log('Updating geoset ' + availableGeoset.id + ' to ' + shouldBeChecked + ' because of choice ' + activeChoice.choiceID);
+							availableGeoset.checked = shouldBeChecked;
+						}
+					}
+				}
+			}
+		}
+
+		// Update material (if applicable)
+		const chrCustMatIDs = choiceToChrCustMaterialID.get(activeChoice.choiceID);
+		// console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
+
+		if (chrCustMatIDs != undefined) {
+			for (const chrCustMatID of chrCustMatIDs) {
+				if (chrCustMatID.RelatedChrCustomizationChoiceID != 0) {
+					const hasRelatedChoice = selection.find((selectedChoice) => selectedChoice.choiceID === chrCustMatID.RelatedChrCustomizationChoiceID);
+					if (!hasRelatedChoice)
+						continue;
+				}
+
+				const chrCustMat = chrCustMatMap.get(chrCustMatID.ChrCustomizationMaterialID);
+				const chrModelTextureTarget = chrCustMat.ChrModelTextureTargetID;
+
+				// Find row in ChrModelTextureLayer that matches ChrModelTextureTargetID and current CharComponentTextureLayoutID
+				const chrModelTextureLayer = chrModelTextureLayerMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureTarget);
+				if (chrModelTextureLayer === undefined) {
+					console.log("Unable to find ChrModelTextureLayer for ChrModelTextureTargetID " + chrModelTextureTarget + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+					// TODO: Investigate but continue for now, this breaks e.g. dwarven beards
+					continue;
+				}
+				
+				// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
+				const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
+				let charComponentTextureSection;
+				for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
+					// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
+					// -1 for non-sectiontype 
+					if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
+						charComponentTextureSection = charComponentTextureSectionRow;
+						break;
+					}
+				}
+
+				if (charComponentTextureSection === undefined)
+					console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+				
+				// Find row in ChrModelMaterial based on chrModelTextureLayer.TextureType and current CharComponentTextureLayoutID
+				const chrModelMaterial = chrModelMaterialMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureLayer.TextureType);
+				if (chrModelMaterial === undefined)
+					console.log("Unable to find ChrModelMaterial for TextureType " + chrModelTextureLayer.TextureType + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
+
+				let chrMaterial;
+				
+				if (!chrMaterials.has(chrModelMaterial.TextureType)) {
+					chrMaterial = new CharMaterialRenderer(chrModelMaterial.TextureType, chrModelMaterial.Width, chrModelMaterial.Height);
+					chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
+				} else {
+					chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
+				}
+
+				await chrMaterial.setTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
+			}
+		}
+
+		// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
+		const chrCustSkinnedModelID = choiceToSkinnedModel.get(activeChoice.choiceID);
+		if (chrCustSkinnedModelID != undefined) {
+			const skinnedModelRow = chrCustSkinnedModelMap.get(chrCustSkinnedModelID);
+			if (skinnedModelRow !== undefined)
+				newSkinnedModels.set(skinnedModelRow.CollectionsFileDataID, skinnedModelRow);
+		}
+	}
+
+
+	for (const fileDataID of skinnedModelRenderers.keys()) {
+		// Don't dispose of models we still want to keep.
+		// if (newSkinnedModels.has(fileDataID)) 
+		// 	continue;
+
+		console.log('Disposing of unused skinned model ' + fileDataID);
+		skinnedModelRenderers.get(fileDataID).dispose();
+		skinnedModelRenderers.delete(fileDataID);
+	}
+
+	for (const [fileDataID, skinnedModelRow] of newSkinnedModels) {
+		// if (skinnedModelRenderers.has(fileDataID))
+		// 	continue;
+
+		console.log('Loading skinned model ' + fileDataID);
+
+		// Load model
+		const skinnedModelRenderer = new M2Renderer(await core.view.casc.getFile(fileDataID), renderGroup, false);
+		await skinnedModelRenderer.load();
+
+		// Set geosets
+		const geosetToEnable = skinnedModelRow.GeosetType * 100 + skinnedModelRow.GeosetID;
+
+		for (let i = 0; i < skinnedModelRenderer.geosetArray.length; i++) {
+			const geoset = skinnedModelRenderer.geosetArray[i];
+			const geosetID = geoset.id;
+		
+			if (geosetID === geosetToEnable) {
+				geoset.enabled = true;
+				console.log('Enabling geoset ' + geosetID);
+			} else {
+				geoset.enabled = false;
+			}
+		}
+
+		// Manually call this because we don't load these as reactive.
+		skinnedModelRenderer.updateGeosets();
+
+		skinnedModelRenderers.set(fileDataID, skinnedModelRenderer);
+
+		const mesh = skinnedModelRenderers.get(fileDataID).meshGroup.clone(true);
+		renderGroup.add(mesh);
+	}
+
+	for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
+		await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget, chrMaterial.getURI());
+}
+
 core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
@@ -324,6 +470,7 @@ core.registerLoadFunc(async () => {
 			chrMaterial.dispose();
 
 		chrMaterials.clear();
+		await update_materials();
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
@@ -363,154 +510,11 @@ core.registerLoadFunc(async () => {
 		}
 	}, { deep: true });
 
-	core.view.$watch('chrCustActiveChoices', async (selection) => {
+	core.view.$watch('chrCustActiveChoices', async () => {``
 		if (core.view.isBusy)
 			return;
 
-		console.log('Active choices changed');
-
-		for (const chrMaterial of chrMaterials.values())
-			await chrMaterial.reset();
-
-		const newSkinnedModels = new Map();
-
-		for (const activeChoice of selection) {
-			// Update all geosets for this option.
-			const availableChoices = optionToChoices.get(activeChoice.optionID);
-
-			for (const availableChoice of availableChoices) {
-				const chrCustGeoID = choiceToGeoset.get(availableChoice.id);
-				const geoset = geosetMap.get(chrCustGeoID);
-
-				if (geoset !== undefined) {
-					for (const availableGeoset of state.modelViewerGeosets) {
-						// HACK: Never touch geoset 0 (base skin)
-						if (availableGeoset.id == 0)
-							continue;
-
-						if (availableGeoset.id === geoset) {
-							let shouldBeChecked = availableChoice.id == activeChoice.choiceID;
-							if (availableGeoset.checked != shouldBeChecked) {
-								// console.log('Updating geoset ' + availableGeoset.id + ' to ' + shouldBeChecked + ' because of choice ' + activeChoice.choiceID);
-								availableGeoset.checked = shouldBeChecked;
-							}
-						}
-					}
-				}
-			}
-
-			// Update material (if applicable)
-			const chrCustMatIDs = choiceToChrCustMaterialID.get(activeChoice.choiceID);
-			// console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
-
-			if (chrCustMatIDs != undefined) {
-				for (const chrCustMatID of chrCustMatIDs) {
-					if (chrCustMatID.RelatedChrCustomizationChoiceID != 0) {
-						const hasRelatedChoice = selection.find((selectedChoice) => selectedChoice.choiceID === chrCustMatID.RelatedChrCustomizationChoiceID);
-						if (!hasRelatedChoice)
-							continue;
-					}
-
-					const chrCustMat = chrCustMatMap.get(chrCustMatID.ChrCustomizationMaterialID);
-					const chrModelTextureTarget = chrCustMat.ChrModelTextureTargetID;
-
-					// Find row in ChrModelTextureLayer that matches ChrModelTextureTargetID and current CharComponentTextureLayoutID
-					const chrModelTextureLayer = chrModelTextureLayerMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureTarget);
-					if (chrModelTextureLayer === undefined) {
-						console.log("Unable to find ChrModelTextureLayer for ChrModelTextureTargetID " + chrModelTextureTarget + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
-						// TODO: Investigate but continue for now, this breaks e.g. dwarven beards
-						continue;
-					}
-					
-					// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
-					const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
-					let charComponentTextureSection;
-					for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
-						// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
-						// -1 for non-sectiontype 
-						if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
-							charComponentTextureSection = charComponentTextureSectionRow;
-							break;
-						}
-					}
-
-					if (charComponentTextureSection === undefined)
-						console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
-					
-					// Find row in ChrModelMaterial based on chrModelTextureLayer.TextureType and current CharComponentTextureLayoutID
-					const chrModelMaterial = chrModelMaterialMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureLayer.TextureType);
-					if (chrModelMaterial === undefined)
-						console.log("Unable to find ChrModelMaterial for TextureType " + chrModelTextureLayer.TextureType + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
-
-					let chrMaterial;
-					
-					if (!chrMaterials.has(chrModelMaterial.TextureType)) {
-						chrMaterial = new CharMaterialRenderer(chrModelMaterial.TextureType, chrModelMaterial.Width, chrModelMaterial.Height);
-						chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
-					} else {
-						chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
-					}
-
-					await chrMaterial.setTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
-				}
-			}
-
-			// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
-			const chrCustSkinnedModelID = choiceToSkinnedModel.get(activeChoice.choiceID);
-			if (chrCustSkinnedModelID != undefined) {
-				const skinnedModelRow = chrCustSkinnedModelMap.get(chrCustSkinnedModelID);
-				if (skinnedModelRow !== undefined)
-					newSkinnedModels.set(skinnedModelRow.CollectionsFileDataID, skinnedModelRow);
-			}
-		}
-
-
-		for (const fileDataID of skinnedModelRenderers.keys()) {
-			// Don't dispose of models we still want to keep.
-			// if (newSkinnedModels.has(fileDataID)) 
-			// 	continue;
-
-			console.log('Disposing of unused skinned model ' + fileDataID);
-			skinnedModelRenderers.get(fileDataID).dispose();
-			skinnedModelRenderers.delete(fileDataID);
-		}
-
-		for (const [fileDataID, skinnedModelRow] of newSkinnedModels) {
-			// if (skinnedModelRenderers.has(fileDataID))
-			// 	continue;
-
-			console.log('Loading skinned model ' + fileDataID);
-
-			// Load model
-			const skinnedModelRenderer = new M2Renderer(await core.view.casc.getFile(fileDataID), renderGroup, false);
-			await skinnedModelRenderer.load();
-
-			// Set geosets
-			const geosetToEnable = skinnedModelRow.GeosetType * 100 + skinnedModelRow.GeosetID;
-
-			for (let i = 0; i < skinnedModelRenderer.geosetArray.length; i++) {
-				const geoset = skinnedModelRenderer.geosetArray[i];
-				const geosetID = geoset.id;
-			
-				if (geosetID === geosetToEnable) {
-					geoset.enabled = true;
-					console.log('Enabling geoset ' + geosetID);
-				} else {
-					geoset.enabled = false;
-				}
-			}
-
-			// Manually call this because we don't load these as reactive.
-			skinnedModelRenderer.updateGeosets();
-
-			skinnedModelRenderers.set(fileDataID, skinnedModelRenderer);
-
-			const mesh = skinnedModelRenderers.get(fileDataID).meshGroup.clone(true);
-			renderGroup.add(mesh);
-		}
-
-		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
-			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget, chrMaterial.getURI());
+		await update_materials();
 
 	}, { deep: true });
 });
