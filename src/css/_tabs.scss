@@ -583,6 +583,10 @@
 	grid-template-columns: 1fr 4fr 1fr;
 	padding-bottom: 20px;
 
+	#export-char-btn {
+		height: 40px;
+	}
+
 	.ui-listbox {
 		margin: 10px 0 0 0;
 	}

@@ -660,9 +660,7 @@
 								<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
 								<span>Show texture overlay</span>
 							</label>
-							<div class='export-controls'>
-								<input type="button" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
-							</div>
+							<input type="button" id="export-char-btn" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
 				</keep-alive>
