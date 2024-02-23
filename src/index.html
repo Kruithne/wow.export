@@ -637,9 +637,7 @@
 							<div class='preview-background'>
 								<model-viewer :context="chrModelViewerContext"></model-viewer>
 							</div>
-							<div class='texture-preview-panel' v-show="config.chrShowTextureOverlay">
-								<div id='texturePreview'></div>
-							</div>
+							<div class='texture-preview-panel' id='chr-texture-preview' v-show="config.chrShowTextureOverlay"></div>
 						</div>
 						<div class='right-panel'>
 							<div class="header">Geosets</div>

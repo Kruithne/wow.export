@@ -27,7 +27,8 @@ class CharMaterialRenderer {
 			this.glCanvas.id = 'charMaterialCanvas-' + textureLayer;
 		}
 
-		document.getElementById('texturePreview').appendChild(this.glCanvas);
+		if (textureLayer === 1)
+			document.getElementById('chr-texture-preview').appendChild(this.glCanvas);
 
 		this.glCanvas.width = width;
 		this.glCanvas.height = height;
