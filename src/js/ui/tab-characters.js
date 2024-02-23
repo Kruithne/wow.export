@@ -803,13 +803,13 @@ core.registerLoadFunc(async () => {
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());
 
 	// User has changed the "Body Type" selection, ie "Type 1", "Type 2", etc.
-	core.view.$watch('chrCustModelSelection', updateModelSelection(), { deep: true });
+	core.view.$watch('chrCustModelSelection', () => updateModelSelection(), { deep: true });
 
 	// User has changed the "Customization" selection, ie "Hair Color", "Skin Color", etc.
-	core.view.$watch('chrCustOptionSelection', updateCustomizationType(), { deep: true });
+	core.view.$watch('chrCustOptionSelection', () => updateCustomizationType(), { deep: true });
 
 	// User has changed the "Customization Options" selection, ie "Choice 0", "Choice 1", etc.
-	core.view.$watch('chrCustChoiceSelection', updateCustomizationChoice(), { deep: true });
+	core.view.$watch('chrCustChoiceSelection', () => updateCustomizationChoice(), { deep: true });
 
 	core.view.$watch('chrCustActiveChoices', async () => {
 		if (core.view.isBusy)
