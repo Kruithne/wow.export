@@ -57,6 +57,7 @@ Vue.component('model-viewer', {
 	 */
 	beforeDestroy: function() {
 		this.isRendering = false;
+		this.controls.dispose();
 		this.renderer.dispose();
 		window.removeEventListener('resize', this.onResize);
 	},

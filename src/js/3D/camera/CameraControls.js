@@ -71,9 +71,13 @@ class CameraControls {
 		this.dom_element.addEventListener('contextmenu', e => e.preventDefault(), false);
 
 		this.dom_element.addEventListener('mousedown', e => this.on_mouse_down(e), false);
-		this.dom_element.addEventListener('mousemove', e => this.on_mouse_move(e), false);
-		this.dom_element.addEventListener('mouseup', e => this.on_mouse_up(e), false);
 		this.dom_element.addEventListener('wheel', e => this.on_mouse_wheel(e), false);
+
+		this.move_listener = e => this.on_mouse_move(e);
+		this.up_listener = e => this.on_mouse_up(e);
+
+		document.addEventListener('mousemove', this.move_listener, false);
+		document.addEventListener('mouseup', this.up_listener, false);
 
 		this.dom_element.addEventListener('keydown', e => this.on_key_down(e), false);
 
@@ -81,6 +85,11 @@ class CameraControls {
 			this.dom_element.tabIndex = 0;
 	
 		this.update();
+	}
+
+	dispose() {
+		document.removeEventListener('mousemove', this.move_listener, false);
+		document.removeEventListener('mouseup', this.up_listener, false);
 	}
 
 	on_mouse_down(event) {
