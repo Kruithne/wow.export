@@ -159,9 +159,9 @@ class CameraControls {
 	on_key_down(event) {
 		const key_code = event.keyCode;
 
-		if (key_code === KEY_W)
+		if (key_code === KEY_S)
 			this.pan(0, KEY_PAN_SPEED, 0);
-		else if (key_code === KEY_S)
+		else if (key_code === KEY_W)
 			this.pan(0, -KEY_PAN_SPEED, 0);
 		else if (key_code === KEY_A)
 			this.pan(KEY_PAN_SPEED, 0, 0);
