@@ -24,7 +24,7 @@ const EPS = 0.000001;
 const ZOOM_SCALE = 0.95;
 
 const ROTATE_SPEED = 1;
-const PAN_SPEED = 0.05;
+const PAN_SPEED = 0.025;
 const KEY_PAN_SPEED = 14;
 
 const MIN_POLAR_ANGLE = 0;
