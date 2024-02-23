@@ -621,7 +621,7 @@
 			flex-wrap: nowrap;
 
 			canvas {
-				max-width: 512px;
+				max-width: min(80%, 512px);
 			}
 		}
 	}
