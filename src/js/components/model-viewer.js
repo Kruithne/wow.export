@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-require('../3D/lib/OrbitControls');
+const CameraControls = require('../3D/camera/CameraControls');
 
 Vue.component('model-viewer', {
 	props: ['context'],
@@ -29,8 +29,7 @@ Vue.component('model-viewer', {
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
 
-		this.controls = new THREE.OrbitControls(this.context.camera, canvas);
-		//this.controls.enableKeys = false;
+		this.controls = new CameraControls(this.context.camera, canvas);
 		this.context.controls = this.controls;
 
 		this.onResize = () => {
@@ -58,7 +57,6 @@ Vue.component('model-viewer', {
 	 */
 	beforeDestroy: function() {
 		this.isRendering = false;
-		this.controls.dispose();
 		this.renderer.dispose();
 		window.removeEventListener('resize', this.onResize);
 	},
