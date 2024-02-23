@@ -65,11 +65,12 @@ async function resetMaterials() {
 }
 
 function disposeSkinnedModels() {
-	for (const fileDataID of skinnedModelRenderers.keys()) {
+	for (const [fileDataID, skinnedModelRenderer] of skinnedModelRenderers) {
 		console.log('Disposing of unused skinned model ' + fileDataID);
-		skinnedModelRenderers.get(fileDataID).dispose();
-		skinnedModelRenderers.delete(fileDataID);
+		skinnedModelRenderer.dispose();
 	}
+
+	skinnedModelRenderers.clear();
 }
 
 async function uploadRenderOverrideTextures() {
