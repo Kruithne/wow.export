@@ -382,8 +382,10 @@ function updateCameraBounding() {
 	const fov = camera.fov * (Math.PI / 180);
 	const cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
 
+	const heightOffset = maxDim * 0.7;
+
 	if (isFirstModel || core.view.modelViewerAutoAdjust) {
-		camera.position.set(center.x, center.y, cameraZ);
+		camera.position.set(center.x, heightOffset, cameraZ);
 		isFirstModel = false;
 	}
 
