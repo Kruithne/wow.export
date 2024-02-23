@@ -21,7 +21,6 @@ let grid;
 const activeSkins = new Map();
 const renderGroup = new THREE.Group();
 
-let isFirstModel = true;
 let activeRenderer;
 let activeModel;
 
@@ -383,11 +382,7 @@ function updateCameraBounding() {
 	const cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
 
 	const heightOffset = maxDim * 0.7;
-
-	if (isFirstModel || core.view.modelViewerAutoAdjust) {
-		camera.position.set(center.x, heightOffset, cameraZ);
-		isFirstModel = false;
-	}
+	camera.position.set(center.x, heightOffset, cameraZ);
 
 	const minZ = boundingBox.min.z;
 	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
