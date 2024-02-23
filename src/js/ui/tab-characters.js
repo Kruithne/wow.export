@@ -30,6 +30,8 @@ const chrModelIDToFileDataID = new Map();
 const chrModelIDToTextureLayoutID = new Map();
 const optionsByChrModel = new Map();
 const optionToChoices = new Map();
+const defaultOptions = new Array();
+
 const chrRaceMap = new Map();
 const chrRaceXChrModelMap = new Map();
 
@@ -56,7 +58,7 @@ let chrCustOptDB;
 let chrCustElementDB;
 let chrCustGeosetDB;
 
-async function update_materials() {
+async function updateActiveCustomization() {
 	for (const chrMaterial of chrMaterials.values())
 		await chrMaterial.reset();
 
@@ -135,6 +137,7 @@ async function update_materials() {
 				
 				if (!chrMaterials.has(chrModelMaterial.TextureType)) {
 					chrMaterial = new CharMaterialRenderer(chrModelMaterial.TextureType, chrModelMaterial.Width, chrModelMaterial.Height);
+					await chrMaterial.init();
 					chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
 				} else {
 					chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
@@ -281,6 +284,10 @@ core.events.once('screen-tab-characters', async () => {
 			}
 
 			optionToChoices.set(chrCustomizationOptionID, choiceList);
+
+			// If option flags does not have 0x20 ("EXCLUDE_FROM_INITIAL_RANDOMIZATION") we can assume it's a default option.
+			if (!(chrCustomizationOptionRow.Flags & 0x20))
+				defaultOptions.push(chrCustomizationOptionID);
 		}
 	}
 
@@ -425,7 +432,7 @@ core.registerLoadFunc(async () => {
 
 	core.view.$watch('config.chrIncludeBaseClothing', async () => {
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials) {
-			await chrMaterial.forceUpdate();
+			await chrMaterial.update();
 			await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.getURI());
 		}
 	});
@@ -470,10 +477,24 @@ core.registerLoadFunc(async () => {
 			chrMaterial.dispose();
 
 		chrMaterials.clear();
-		await update_materials();
+		
+		// For each available option we select the first choice ONLY if the option is a 'default' option.
+		// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
+		for (const option of availableOptions) {
+			const choices = optionToChoices.get(option.id);
+			if (defaultOptions.includes(option.id)) {
+				state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
+				console.log("selecting default choice " + choices[0].id + " for option " + option.id);
+			}
+		}
+
+		await updateActiveCustomization();
 	}, { deep: true });
 
 	core.view.$watch('chrCustOptionSelection', async (selection) => {
+		if (selection.length === 0)
+			return;
+
 		const selected = selection[0];
 		console.log('Option selection changed to ID ' + selected.id + ', label ' + selected.label);
 
@@ -489,17 +510,12 @@ core.registerLoadFunc(async () => {
 
 		// Add the new options.
 		state.chrCustChoices.push(...availableChoices);
-
-		const selectedChoice = state.chrCustActiveChoices.find((choice) => choice.optionID === selected.id);
-
-		if (selectedChoice !== undefined)
-			state.chrCustChoiceSelection.push(...availableChoices.filter((x => x.id === selectedChoice.choiceID)));
-		else
-			state.chrCustChoiceSelection.push(...availableChoices.slice(0, 1));
-
 	}, { deep: true });
 
 	core.view.$watch('chrCustChoiceSelection', async (selection) => {
+		if (selection.length === 0)
+			return;
+
 		const selected = selection[0];
 		console.log('Choice selection for option ID ' + state.chrCustOptionSelection[0].id + ', label ' + state.chrCustOptionSelection[0].label + ' changed to choice ID ' + selected.id + ', label ' + selected.label);
 		if (state.chrCustActiveChoices.find((choice) => choice.optionID === state.chrCustOptionSelection[0].id) === undefined) {
@@ -514,7 +530,7 @@ core.registerLoadFunc(async () => {
 		if (core.view.isBusy)
 			return;
 
-		await update_materials();
+		await updateActiveCustomization();
 
 	}, { deep: true });
 });

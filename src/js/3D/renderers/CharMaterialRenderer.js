@@ -33,10 +33,14 @@ class CharMaterialRenderer {
 		this.glCanvas.height = height;
 
 		this.gl = this.glCanvas.getContext('webgl', {preserveDrawingBuffer: true});
+	}
 
-		this.compileShaders();
-
-		this.reset();
+	/**
+	 * Initialize the CharMaterialRenderer.
+	 */
+	async init() {
+		await this.compileShaders();
+		await this.reset();
 	}
 
 	/**
@@ -44,13 +48,6 @@ class CharMaterialRenderer {
 	 */
 	getURI() {
 		return this.glCanvas.toDataURL();
-	}
-
-	/**
-	 * Reset canvas.
-	 */
-	async forceUpdate() {
-		await this.update();
 	}
 
 	/**
