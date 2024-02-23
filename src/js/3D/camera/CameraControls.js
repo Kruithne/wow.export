@@ -24,14 +24,15 @@ const EPS = 0.000001;
 const ZOOM_SCALE = 0.95;
 
 const ROTATE_SPEED = 1;
-const PAN_SPEED = 1;
+const PAN_SPEED = 0.05;
 const KEY_PAN_SPEED = 14;
 
 const MIN_POLAR_ANGLE = 0;
 const MAX_POLAR_ANGLE = Math.PI;
 
-const V3_CACHE_1 = new THREE.Vector3();
-const V3_Z1 = new THREE.Vector3(0, 0, 1);
+const CACHE_CAM_DIR = new THREE.Vector3();
+const CACHE_CAM_RIGHT = new THREE.Vector3();
+const CACHE_CAM_UP = new THREE.Vector3();
 
 class CameraControls {
 	constructor(camera, dom_element) {
@@ -194,39 +195,15 @@ class CameraControls {
 	}
 
 	pan(x, y, z) {
-		V3_CACHE_1.copy(this.camera.position).sub(this.target);
-		let target_distance = V3_CACHE_1.length();
-
-		// half of the fov is center to top of screen
-		target_distance *= Math.tan((this.camera.fov / 2) * Math.PI / 180.0);
-
-		// we use only clientHeight here so aspect ratio does not distort speed
-		this.pan_x(2 * x * target_distance / this.dom_element.clientHeight, this.camera.matrix);
-		this.pan_z(2 * y * target_distance / this.dom_element.clientHeight, this.camera.matrix);
-		this.pan_y(2 * z * target_distance / this.dom_element.clientHeight, this.camera.matrix);
-	}
-
-	pan_x(distance, matrix) {
-		V3_CACHE_1.setFromMatrixColumn(matrix, 0);
-		V3_CACHE_1.multiplyScalar(-distance);
-
-		this.pan_offset.add(V3_CACHE_1);
-	}
-
-	pan_y(distance, matrix) {
-		V3_CACHE_1.setFromMatrixColumn(matrix, 0);
-		V3_CACHE_1.crossVectors(V3_Z1, V3_CACHE_1);
-		V3_CACHE_1.multiplyScalar(distance);
-
-		this.pan_offset.add(V3_CACHE_1);
-	}
-
-	pan_z(distance, matrix) {
-		V3_CACHE_1.setFromMatrixColumn(matrix, 0);
-		V3_CACHE_1.crossVectors(this.camera.up, V3_CACHE_1);
-
-		V3_CACHE_1.multiplyScalar(distance);
-		this.pan_offset.add(V3_CACHE_1);
+		this.camera.getWorldDirection(CACHE_CAM_DIR);
+		CACHE_CAM_RIGHT.crossVectors(CACHE_CAM_DIR, this.camera.up).normalize();
+		CACHE_CAM_UP.crossVectors(CACHE_CAM_RIGHT, CACHE_CAM_DIR).normalize();
+	
+		const pan_right = CACHE_CAM_RIGHT.clone().multiplyScalar(-x);
+		const pan_up = CACHE_CAM_UP.clone().multiplyScalar(z);
+		const pan_forward = CACHE_CAM_DIR.clone().multiplyScalar(-y);
+	
+		this.pan_offset.add(pan_right).add(pan_up).add(pan_forward);
 	}
 
 	update() {
