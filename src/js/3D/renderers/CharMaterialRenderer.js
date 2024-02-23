@@ -183,12 +183,20 @@ class CharMaterialRenderer {
 		}
 
 		this.gl.useProgram(this.glShaderProg);
+
+		this.uvPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_texCoord");
+		this.textureLocation = this.gl.getUniformLocation(this.glShaderProg, "u_texture");
+		this.blendModeLocation = this.gl.getUniformLocation(this.glShaderProg, "u_blendMode");
+		this.vertexPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_position");
 	}
 
 	/**
 	 * Update 3D data.
 	 */
 	async update() {
+		if (!this.glShaderProg)
+			throw new Error('Shader program not compiled');
+		
 		this.clearCanvas();
 		
 		this.gl.clearColor(0.5, 0.5, 0.5, 1);
@@ -245,9 +253,8 @@ class CharMaterialRenderer {
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, vBufferData, this.gl.STATIC_DRAW);
 
-			var vertexPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_position");
-			this.gl.vertexAttribPointer(vertexPositionAttribute, 3, this.gl.FLOAT, false, 0, 0);
-			this.gl.enableVertexAttribArray(vertexPositionAttribute);
+			this.gl.vertexAttribPointer(this.vertexPositionAttribute, 3, this.gl.FLOAT, false, 0, 0);
+			this.gl.enableVertexAttribArray(this.vertexPositionAttribute);
 
 			// TexCoord buffer
 			const uvBuffer = this.gl.createBuffer();
@@ -263,17 +270,11 @@ class CharMaterialRenderer {
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, uvBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, uvBufferData, this.gl.STATIC_DRAW);
 
-			var uvPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_texCoord");
-			this.gl.vertexAttribPointer(uvPositionAttribute, 2, this.gl.FLOAT, false, 0, 0);
-			this.gl.enableVertexAttribArray(uvPositionAttribute);
+			this.gl.vertexAttribPointer(this.uvPositionAttribute, 2, this.gl.FLOAT, false, 0, 0);
+			this.gl.enableVertexAttribArray(this.uvPositionAttribute);
 
-			// Bind materials
-			var textureLocation = this.gl.getUniformLocation(this.glShaderProg, "u_texture");
-			this.gl.uniform1i(textureLocation, 0);
-
-			// Bind blend mode
-			var blendModeLocation = this.gl.getUniformLocation(this.glShaderProg, "u_blendMode");
-			this.gl.uniform1f(blendModeLocation, layer.textureLayer.BlendMode);
+			this.gl.uniform1i(this.textureLocation, 0); // Bind materials
+			this.gl.uniform1f(this.blendModeLocation, layer.textureLayer.BlendMode); // Bind blend mode
 
 			this.gl.activeTexture(this.gl.TEXTURE0);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, layer.textureID);
