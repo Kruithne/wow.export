@@ -46,6 +46,7 @@ const chrModelMaterialMap = new Map();
 const chrCustSkinnedModelMap = new Map();
 
 const skinnedModelRenderers = new Map();
+const skinnedModelMeshes = new Set();
 
 const chrMaterials = new Map();
 
@@ -71,6 +72,11 @@ function disposeSkinnedModels() {
 	}
 
 	skinnedModelRenderers.clear();
+
+	for (const mesh of skinnedModelMeshes)
+		renderGroup.remove(mesh);
+
+	skinnedModelMeshes.clear();
 }
 
 async function uploadRenderOverrideTextures() {
@@ -208,6 +214,8 @@ async function updateActiveCustomization() {
 
 		const mesh = skinnedModelRenderers.get(fileDataID).meshGroup.clone(true);
 		renderGroup.add(mesh);
+
+		skinnedModelMeshes.add(mesh);
 	}
 
 	await uploadRenderOverrideTextures();
