@@ -1,4 +1,6 @@
 0.1.59 (xx-02-2024)
+- New and improved 3D camera controls in the model viewer.
+- Holding SHIFT and ALT now allows for more precise camera movement.
 - Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne)
 
 0.1.58 (11-02-2024)
