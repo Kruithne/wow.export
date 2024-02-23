@@ -10,6 +10,7 @@ const core = require('../../core');
 const log = require('../../log');
 const listfile = require('../../casc/listfile');
 const constants = require('../../constants');
+const overlay = require('../../ui/char-texture-overlay');
 
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
@@ -21,19 +22,16 @@ class CharMaterialRenderer {
 	constructor(textureLayer, width, height) {
 		this.textureTargets = [];
 
-		this.glCanvas = document.getElementById('charMaterialCanvas-' + textureLayer);
-		if (this.glCanvas == null) {
-			this.glCanvas = document.createElement('canvas');
-			this.glCanvas.id = 'charMaterialCanvas-' + textureLayer;
-		}
+		const canvas = document.createElement('canvas');
+		canvas.id = 'charMaterialCanvas-' + textureLayer;
 
-		if (textureLayer === 1)
-			document.getElementById('chr-texture-preview').appendChild(this.glCanvas);
+		overlay.add(canvas);
 
-		this.glCanvas.width = width;
-		this.glCanvas.height = height;
+		canvas.width = width;
+		canvas.height = height;
 
-		this.gl = this.glCanvas.getContext('webgl', {preserveDrawingBuffer: true});
+		this.gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+		this.glCanvas = canvas;
 	}
 
 	/**
@@ -96,9 +94,10 @@ class CharMaterialRenderer {
 		}
 
 		this.clearCanvas();
+		overlay.remove(this.glCanvas);
 
-		this.glCanvas.remove();
-		this.gl = null;
+		this.glCanvas = null;
+		this.gl = null;		
 	}
 
 	/**

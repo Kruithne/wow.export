@@ -598,6 +598,16 @@
 		font-size: 15px;
 	}
 
+	#chr-overlay-btn {
+		display: flex;
+		flex-direction: row-reverse;
+		margin-bottom: 5px;
+
+		input {
+			transform: scale(0.8);
+		}
+	}
+
 	.char-preview {
 		margin: 20px 0 0 20px;
 
@@ -605,9 +615,14 @@
 			position: absolute;
 			right: 1em;
 			bottom: 1em;
-			
-			transform: scale(0.25);
-			transform-origin: bottom right;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			flex-wrap: nowrap;
+
+			canvas {
+				max-width: 512px;
+			}
 		}
 	}
 

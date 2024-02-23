@@ -637,7 +637,12 @@
 							<div class='preview-background'>
 								<model-viewer :context="chrModelViewerContext"></model-viewer>
 							</div>
-							<div class='texture-preview-panel' id='chr-texture-preview' v-show="config.chrShowTextureOverlay"></div>
+							<div class='texture-preview-panel' id='chr-texture-preview' v-show="config.chrShowTextureOverlay">
+								<div id="chr-overlay-btn">
+									<input type="button" value="&gt;" @click="click('chr-next-overlay', $event)"/>
+									<input type="button" value="&lt;" @click="click('chr-prev-overlay', $event)"/>
+								</div>
+							</div>
 						</div>
 						<div class='right-panel'>
 							<div class="header">Geosets</div>
