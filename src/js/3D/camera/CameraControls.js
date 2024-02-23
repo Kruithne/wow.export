@@ -25,7 +25,10 @@ const ZOOM_SCALE = 0.95;
 
 const ROTATE_SPEED = 1;
 const PAN_SPEED = 0.025;
+
 const KEY_PAN_SPEED = 3;
+const KEY_PAN_SPEED_SHIFT = 0.5;
+const KEY_PAN_SPEED_ALT = 0.05;
 
 const MIN_POLAR_ANGLE = 0;
 const MAX_POLAR_ANGLE = Math.PI;
@@ -168,18 +171,20 @@ class CameraControls {
 	on_key_down(event) {
 		const key_code = event.keyCode;
 
+		const key_speed = event.shiftKey ? KEY_PAN_SPEED_SHIFT : (event.altKey ? KEY_PAN_SPEED_ALT : KEY_PAN_SPEED);
+
 		if (key_code === KEY_S)
-			this.pan(0, KEY_PAN_SPEED, 0);
+			this.pan(0, key_speed, 0);
 		else if (key_code === KEY_W)
-			this.pan(0, -KEY_PAN_SPEED, 0);
+			this.pan(0, -key_speed, 0);
 		else if (key_code === KEY_A)
-			this.pan(KEY_PAN_SPEED, 0, 0);
+			this.pan(key_speed, 0, 0);
 		else if (key_code === KEY_D)
-			this.pan(-KEY_PAN_SPEED, 0, 0);
+			this.pan(-key_speed, 0, 0);
 		else if (key_code === KEY_Q)
-			this.pan(0, 0, KEY_PAN_SPEED);
+			this.pan(0, 0, key_speed);
 		else if (key_code === KEY_E)
-			this.pan(0, 0, -KEY_PAN_SPEED);
+			this.pan(0, 0, -key_speed);
 		else
 			return;
 
