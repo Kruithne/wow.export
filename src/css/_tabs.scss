@@ -498,7 +498,9 @@
 }
 
 @keyframes sound-audiobox-anim {
-	to { background-position-x: -4326px; }
+	to {
+		background-position-x: -4326px;
+	}
 }
 
 #sound-player {
@@ -591,7 +593,7 @@
 		margin: 10px 0 0 0;
 	}
 
-	#inline-npc-races{
+	#inline-npc-races {
 		float: right;
 		font-size: 15px;
 	}
@@ -600,7 +602,7 @@
 		grid-column: 2;
 		margin: 20px 0 0 20px;
 
-		.texture-preview-panel{
+		.texture-preview-panel {
 			grid-row: 2;
 			position: absolute;
 			right: 1em;
