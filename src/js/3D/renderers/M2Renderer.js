@@ -15,20 +15,6 @@ const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
-/**
- * Transform Vec3 to Mat4x4
- * @param {Array} Vector3
- * @returns {Array} Mat4x4
- */
-function vec3_to_mat4x4(v) {
-	return [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		v[0] * -1, v[1] * -1, v[2] * -1, 1
-	];
-}
-
 class M2Renderer {
 	/**
 	 * Construct a new M2Renderer instance.
