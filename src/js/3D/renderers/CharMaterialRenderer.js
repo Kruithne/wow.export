@@ -55,11 +55,8 @@ class CharMaterialRenderer {
 	 */
 	async reset() {
 		this.unbindAllTextures();
-
 		this.textureTargets = [];
-		
 		this.clearCanvas();
-		await this.update();
 	}
 
 	/**
