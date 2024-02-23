@@ -25,7 +25,7 @@ const ZOOM_SCALE = 0.95;
 
 const ROTATE_SPEED = 1;
 const PAN_SPEED = 0.025;
-const KEY_PAN_SPEED = 7;
+const KEY_PAN_SPEED = 3;
 
 const MIN_POLAR_ANGLE = 0;
 const MAX_POLAR_ANGLE = Math.PI;
