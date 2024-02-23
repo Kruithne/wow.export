@@ -190,8 +190,6 @@ class CharMaterialRenderer {
 	 */
 	async update() {
 		this.clearCanvas();
-
-		this.gl.useProgram(this.glShaderProg);
 		
 		this.gl.clearColor(0.5, 0.5, 0.5, 1);
 		this.gl.disable(this.gl.DEPTH_TEST);
