@@ -125,7 +125,6 @@ const view = {
 	chrCustChoices: [], // Available character customization choices.
 	chrCustChoiceSelection: [], // Selected character customization choice.
 	chrCustActiveChoices: [], // Active character customization choices.
-	chrCustImportString: '', // Character customization import string.
 	chrCustTab: 'models', // Active tab for character customization.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),

@@ -792,12 +792,9 @@ core.events.once('screen-tab-characters', async () => {
 });
 
 core.registerLoadFunc(async () => {
-	const state = core.view;
-
 	// If NPC race toggle changes, refresh model list.
 	core.view.$watch('config.chrCustShowNPCRaces', () => updateChrRaceList());
 
-	core.view.$watch('chrCustImportString', () => loadImportString(state.chrCustImportString));
 	core.view.$watch('config.chrIncludeBaseClothing', () => uploadRenderOverrideTextures());
 
 	core.events.on('click-export-character', () => exportCharModel());
@@ -820,4 +817,7 @@ core.registerLoadFunc(async () => {
 
 		await updateActiveCustomization();
 	}, { deep: true });
+
+	// Expose loadImportString for debugging purposes.
+	window.loadImportString = loadImportString;
 });
