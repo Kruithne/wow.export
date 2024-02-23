@@ -72,7 +72,7 @@ class CharMaterialRenderer {
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
 
-		const use_alpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
+		const useAlpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
 
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
@@ -80,7 +80,7 @@ class CharMaterialRenderer {
 			material: chrModelMaterial,
 			textureLayer: chrModelTextureLayer,
 			custMaterial: chrCustomizationMaterial,
-			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, use_alpha)
+			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha)
 		});
 
 		await this.update();
