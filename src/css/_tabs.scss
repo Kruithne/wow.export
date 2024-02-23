@@ -640,18 +640,30 @@
 		}
 	
 		.tab-control {
-			width: 300px;
-			span {
-				width: 150px;
-				text-align: center;
-				display: block;
-				float: left;
-				font-size: 20px;
-				cursor: pointer;
+			display: flex;
+			flex-direction: column;
+			flex-wrap: wrap;
+
+			& > span:first-child {
+				border-top-left-radius: 10px;
+				border-bottom-left-radius: 10px;
 			}
 
-			.selected {
-				font-weight: bold;
+			& > span:last-child {
+				border-top-right-radius: 10px;
+				border-bottom-right-radius: 10px;
+			}
+
+			span {
+				text-align: center;
+				font-size: 20px;
+				padding: 5px;
+				cursor: pointer;
+				background-color: var(--form-button-disabled);
+
+				&.selected {
+					background-color: var(--form-button-hover);
+				}
 			}
 		}
 	}
