@@ -71,7 +71,7 @@ class M2Renderer {
 	 * Update the current state of geosets.
 	 */
 	updateGeosets() {
-		if (!this.meshGroup || !this.geosetArray)
+		if (!this.reactive || !this.meshGroup || !this.geosetArray)
 			return;
 
 		const meshes = this.meshGroup.children;
@@ -95,7 +95,8 @@ class M2Renderer {
 		const dataBoneIndices = new THREE.BufferAttribute(new Uint8Array(m2.boneIndices), 4);
 		const dataBoneWeights = new THREE.BufferAttribute(new Uint8Array(m2.boneWeights), 4);
 
-		this.geosetArray = new Array(skin.subMeshes.length);
+		if (this.reactive)
+			this.geosetArray = new Array(skin.subMeshes.length);
 
 		for (let i = 0, n = skin.subMeshes.length; i < n; i++) {
 			const geometry = new THREE.BufferGeometry();
@@ -173,13 +174,15 @@ class M2Renderer {
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
 			// }
 
-			let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
+			if (this.reactive) {
+				let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
 
-			// Don't enable eyeglow by default
-			if (skinMesh.submeshID.toString().startsWith('17')) 
-				isDefault = false;
-
-			this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+				// Don't enable eyeglow by default
+				if (skinMesh.submeshID.toString().startsWith('17')) 
+					isDefault = false;
+	
+				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
+			}
 		}
 
 		if (this.reactive) {
