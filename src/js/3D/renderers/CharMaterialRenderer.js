@@ -68,7 +68,9 @@ class CharMaterialRenderer {
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
 
-		const useAlpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
+		// TODO: This requires some more effort to figure out how to properly apply. e.g. mount armor should NOT load alpha but tattoos should.
+		// const useAlpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
+		const useAlpha = true;
 
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
