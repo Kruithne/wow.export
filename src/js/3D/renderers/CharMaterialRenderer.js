@@ -269,6 +269,9 @@ class CharMaterialRenderer {
 					this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
 					break;
 				case 1: // Blit
+				case 4: // Multiply
+				case 6: // Overlay
+				case 7: // Screen
 				case 9: // Alpha Straight
 				case 15: // Infer alpha blend
 					this.gl.enable(this.gl.BLEND);
@@ -287,9 +290,6 @@ class CharMaterialRenderer {
 					console.log("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + ", poke a dev");
 					break;
 				// These are used but we don't know if they need blending enabled -- so just turn it on anyways
-				case 4: // Multiply
-				case 6: // Overlay
-				case 7: // Screen
 				case 16: // Unknown
 				default:
 					console.log("Warning: unimplemented blend mode " + layer.textureLayer.BlendMode + ", enabling alpha blending anyway");

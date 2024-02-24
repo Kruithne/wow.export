@@ -109,10 +109,8 @@ async function updateActiveCustomization() {
 
 					if (availableGeoset.id === geoset) {
 						let shouldBeChecked = availableChoice.id == activeChoice.choiceID;
-						if (availableGeoset.checked != shouldBeChecked) {
-							// console.log('Updating geoset ' + availableGeoset.id + ' to ' + shouldBeChecked + ' because of choice ' + activeChoice.choiceID);
+						if (availableGeoset.checked != shouldBeChecked)
 							availableGeoset.checked = shouldBeChecked;
-						}
 					}
 				}
 			}
@@ -120,7 +118,6 @@ async function updateActiveCustomization() {
 
 		// Update material (if applicable)
 		const chrCustMatIDs = choiceToChrCustMaterialID.get(activeChoice.choiceID);
-		// console.log(activeChoice.optionID, activeChoice.choiceID, chrCustMatIDs);
 
 		if (chrCustMatIDs != undefined) {
 			for (const chrCustMatID of chrCustMatIDs) {
