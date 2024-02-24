@@ -598,10 +598,15 @@
 		font-size: 15px;
 	}
 
+	#chr-texture-preview {
+		pointer-events: none;
+	}
+
 	#chr-overlay-btn {
 		display: flex;
 		flex-direction: row-reverse;
 		margin-bottom: 5px;
+		pointer-events: all;
 
 		input {
 			transform: scale(0.8);
