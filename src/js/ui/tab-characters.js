@@ -176,12 +176,12 @@ async function updateActiveCustomization() {
 		}
 
 		// Update skinned model (DH wings, Dracthyr armor, Mechagnome armor, etc) (if applicable)
-		const chrCustSkinnedModelID = choiceToSkinnedModel.get(activeChoice.choiceID);
-		if (chrCustSkinnedModelID != undefined) {
-			const skinnedModelRow = chrCustSkinnedModelMap.get(chrCustSkinnedModelID);
-			if (skinnedModelRow !== undefined)
-				newSkinnedModels.set(skinnedModelRow.CollectionsFileDataID, skinnedModelRow);
-		}
+		// const chrCustSkinnedModelID = choiceToSkinnedModel.get(activeChoice.choiceID);
+		// if (chrCustSkinnedModelID != undefined) {
+		// 	const skinnedModelRow = chrCustSkinnedModelMap.get(chrCustSkinnedModelID);
+		// 	if (skinnedModelRow !== undefined)
+		// 		newSkinnedModels.set(skinnedModelRow.CollectionsFileDataID, skinnedModelRow);
+		// }
 	}
 
 	disposeSkinnedModels();
