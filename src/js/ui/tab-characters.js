@@ -140,22 +140,7 @@ async function updateActiveCustomization() {
 					// TODO: Investigate but continue for now, this breaks e.g. dwarven beards
 					continue;
 				}
-				
-				// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
-				const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
-				let charComponentTextureSection;
-				for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
-					// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
-					// -1 for non-sectiontype 
-					if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
-						charComponentTextureSection = charComponentTextureSectionRow;
-						break;
-					}
-				}
 
-				if (charComponentTextureSection === undefined)
-					console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
-				
 				// Find row in ChrModelMaterial based on chrModelTextureLayer.TextureType and current CharComponentTextureLayoutID
 				const chrModelMaterial = chrModelMaterialMap.get(currentCharComponentTextureLayoutID + "-" + chrModelTextureLayer.TextureType);
 				if (chrModelMaterial === undefined)
@@ -171,6 +156,25 @@ async function updateActiveCustomization() {
 				} else {
 					chrMaterial = chrMaterials.get(chrModelMaterial.TextureType);
 				}
+
+				// Find row in CharComponentTextureSection based on chrModelTextureLayer.TextureSectionTypeBitMask and current CharComponentTextureLayoutID
+				let charComponentTextureSection;
+
+				if (chrModelTextureLayer.TextureSectionTypeBitMask == -1) {
+					charComponentTextureSection = { X: 0, Y: 0, Width: chrModelMaterial.Width, Height: chrModelMaterial.Height };
+				} else {
+					const charComponentTextureSectionResults = charComponentTextureSectionMap.get(currentCharComponentTextureLayoutID);
+					for (const charComponentTextureSectionRow of charComponentTextureSectionResults) {
+						// Check TextureSectionTypeBitMask to see if it contains SectionType (1-14) 
+						if ((1 << charComponentTextureSectionRow.SectionType) & chrModelTextureLayer.TextureSectionTypeBitMask) {
+							charComponentTextureSection = charComponentTextureSectionRow;
+							break;
+						}
+					}
+				}
+
+				if (charComponentTextureSection === undefined)
+					console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
 
 				await chrMaterial.setTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer);
 			}

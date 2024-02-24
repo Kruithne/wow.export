@@ -212,37 +212,19 @@ class CharMaterialRenderer {
 			if (!core.view.config.chrIncludeBaseClothing && (layer.textureLayer.ChrModelTextureTargetID[0] == 13 || layer.textureLayer.ChrModelTextureTargetID[0] == 14))
 				continue;
 
-			// Vertex buffer
-			const vBuffer = this.gl.createBuffer();
-
-			layer.material.Width; // This is the max width of the entire material. Usually 2048.
-			layer.material.Height; // This is the max height of the entire material. Usually 1024.
-
-			let sectionOffsetX = layer.section.X;
-			let sectionOffsetY = layer.section.Y;
-			let sectionWidth = layer.section.Width;
-			let sectionHeight = layer.section.Height;
-
-			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). 
-			// Textures when uploaded to shaders are always normalized (0-1) so we need to do that too somehow.
-			if (layer.id == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height) {
-				sectionWidth = layer.material.Width;
-				sectionHeight = layer.material.Height;
-				sectionOffsetX = 0;
-				sectionOffsetY = 0;
-			}
-
 			const materialMiddleX = layer.material.Width / 2;
 			const materialMiddleY = layer.material.Height / 2;
 
-			const sectionTopLeftX = (sectionOffsetX - materialMiddleX) / materialMiddleX;
-			const sectionTopLeftY = (sectionOffsetY + sectionHeight - materialMiddleY) / materialMiddleY * -1;
+			const sectionTopLeftX = (layer.section.X - materialMiddleX) / materialMiddleX;
+			const sectionTopLeftY = (layer.section.Y + layer.section.Height - materialMiddleY) / materialMiddleY * -1;
 			
-			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
-			const sectionBottomRightY = (sectionOffsetY - materialMiddleY) / materialMiddleY * -1;
+			const sectionBottomRightX = (layer.section.X + layer.section.Width - materialMiddleX) / materialMiddleX;
+			const sectionBottomRightY = (layer.section.Y - materialMiddleY) / materialMiddleY * -1;
 
-			console.log("[" + layer.material.TextureType + "] Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("[" + layer.material.TextureType + "] Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
+			// Vertex buffer
+			const vBuffer = this.gl.createBuffer();
 			const vBufferData = new Float32Array([
 				sectionTopLeftX, sectionTopLeftY, 0.0,
 				sectionBottomRightX, sectionTopLeftY, 0.0,
@@ -322,21 +304,21 @@ class CharMaterialRenderer {
 				this.gl.activeTexture(this.gl.TEXTURE1);
 				this.gl.bindTexture(this.gl.TEXTURE_2D, canvasTexture)
 
-				if (layer.material.Width == sectionWidth && layer.material.Height == sectionHeight) {
+				if (layer.material.Width == layer.section.Width && layer.material.Height == layer.section.Height) {
 					// Just copy the canvas
 					this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.glCanvas);
 				} else {
 					// Get pixels of relevant section
-					const pixelBuffer = new Uint8Array(sectionWidth * sectionHeight * 4);
-					console.log("Cutting out pixels from " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight);
-					this.gl.readPixels(sectionOffsetX, sectionOffsetY, sectionWidth, sectionHeight, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelBuffer);
+					const pixelBuffer = new Uint8Array(layer.section.Width * layer.section.Height * 4);
+					console.log("Cutting out pixels from " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height);
+					this.gl.readPixels(layer.section.X, layer.section.Y, layer.section.Width, layer.section.Height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelBuffer);
 
 					// Flip pixelbuffer on its y-axis
-					const flippedPixelBuffer = new Uint8Array(sectionWidth * sectionHeight * 4);
-					for (let y = 0; y < sectionHeight; y++) {
-						for (let x = 0; x < sectionWidth; x++) {
-							const index = (y * sectionWidth + x) * 4;
-							const flippedIndex = ((sectionHeight - y - 1) * sectionWidth + x) * 4;
+					const flippedPixelBuffer = new Uint8Array(layer.section.Width * layer.section.Height * 4);
+					for (let y = 0; y < layer.section.Height; y++) {
+						for (let x = 0; x < layer.section.Width; x++) {
+							const index = (y * layer.section.Width + x) * 4;
+							const flippedIndex = ((layer.section.Height - y - 1) * layer.section.Width + x) * 4;
 							flippedPixelBuffer[flippedIndex] = pixelBuffer[index];
 							flippedPixelBuffer[flippedIndex + 1] = pixelBuffer[index + 1];
 							flippedPixelBuffer[flippedIndex + 2] = pixelBuffer[index + 2];
@@ -344,7 +326,7 @@ class CharMaterialRenderer {
 						}
 					}
 
-					this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, sectionWidth, sectionHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, flippedPixelBuffer);
+					this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, layer.section.Width, layer.section.Height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, flippedPixelBuffer);
 				}
 				
 				this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
