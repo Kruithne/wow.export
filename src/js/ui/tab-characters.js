@@ -533,10 +533,8 @@ async function updateModelSelection() {
 	// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
 	for (const option of availableOptions) {
 		const choices = optionToChoices.get(option.id);
-		if (defaultOptions.includes(option.id)) {
+		if (defaultOptions.includes(option.id))
 			state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
-			console.log("selecting default choice " + choices[0].id + " for option " + option.id);
-		}
 	}
 
 	await updateActiveCustomization();
@@ -557,13 +555,10 @@ async function updateCustomizationType() {
 		return;
 
 	const selected = selection[0];
-	console.log('Option selection changed to ID ' + selected.id + ', label ' + selected.label);
 
 	const availableChoices = optionToChoices.get(selected.id);
-	if (availableChoices === undefined) {
-		console.log('No choices available for this option.');
+	if (availableChoices === undefined)
 		return;
-	}
 
 	// Empty the arrays.
 	state.chrCustChoices.splice(0, state.chrCustChoices.length);

@@ -233,6 +233,8 @@ class M2Renderer {
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
+			tex.wrapS = THREE.RepeatWrapping;
+			tex.wrapT = THREE.RepeatWrapping;
 			tex.needsUpdate = true;
 
 			this.renderCache.retire(this.materials[i]);
