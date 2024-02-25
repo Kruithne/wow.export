@@ -190,8 +190,8 @@ class M2Renderer {
 			if (this.reactive) {
 				let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
 
-				// Don't enable eyeglow by default
-				if (skinMesh.submeshID.toString().startsWith('17')) 
+				// Don't enable eyeglow/earrings by default
+				if (skinMesh.submeshID.toString().startsWith('17') || skinMesh.submeshID.toString().startsWith('35'))
 					isDefault = false;
 	
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
