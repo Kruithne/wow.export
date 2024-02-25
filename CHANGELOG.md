@@ -3,6 +3,7 @@
 - New and improved 3D camera controls in the model viewer.
 - Holding SHIFT and ALT now allows for more precise camera movement.
 - Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne).
+- Added expansion icon for The War Within.
 - Improved default geoset selection.
 
 0.1.58 (11-02-2024)
