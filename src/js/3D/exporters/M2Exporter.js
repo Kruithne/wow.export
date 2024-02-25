@@ -112,6 +112,8 @@ class M2Exporter {
 			const textureType = this.m2.textureTypes[textureIndex];
 			let texFileDataID = texture.fileDataID;
 
+			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+			
 			if (textureType > 0) {
 				let targetFileDataID = 0;
 

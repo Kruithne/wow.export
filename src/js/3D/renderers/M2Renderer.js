@@ -45,6 +45,7 @@ class M2Renderer {
 		await this.m2.load();
 
 		this.loadTextures();
+
 		if (this.m2.vertices.length > 0) {
 			await this.loadSkin(0);
 
@@ -128,6 +129,9 @@ class M2Renderer {
 						"HS": ShaderMapper.getHullShader(texUnit.textureCount, texUnit.shaderID)
 					}
 				);
+
+				console.log("TexUnit [" + i + "] Unit for geo " + skinMesh.submeshID + " material index " + texUnit.materialIndex + " has " + texUnit.textureCount + " textures", skinMesh, texUnit, m2.materials[texUnit.materialIndex]);
+				console.log("TexUnit Shaders [" + i + "]", this.shaderMap.get(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]]));
 			}
 	
 			// if (m2.bones.length > 0) {
@@ -239,6 +243,8 @@ class M2Renderer {
 			if (textureTypes[i] !== type)
 				continue;
 
+			// i is the same as m2.textures[i]
+			
 			const image = new Image();
 			image.src = uri;
 
@@ -246,8 +252,15 @@ class M2Renderer {
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
-			tex.wrapS = THREE.RepeatWrapping;
-			tex.wrapT = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+
 			tex.needsUpdate = true;
 
 			this.renderCache.retire(this.materials[i]);
@@ -316,7 +329,16 @@ class M2Renderer {
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
 			tex.needsUpdate = true;
+
+			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
 
 			this.renderCache.retire(this.materials[i]);
 
@@ -367,6 +389,8 @@ class M2Renderer {
 					if (texture.flags & 0x2)
 						tex.wrapT = THREE.RepeatWrapping;
 	
+					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+					
 					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
 					this.renderCache.register(material, tex);
 	
