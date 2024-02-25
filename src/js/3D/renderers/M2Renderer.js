@@ -9,6 +9,7 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const ShaderMapper = require('../ShaderMapper');
 const RenderCache = require('./RenderCache');
 
 const textureRibbon = require('../../ui/texture-ribbon');
@@ -31,6 +32,7 @@ class M2Renderer {
 		this.renderCache = new RenderCache();
 		this.syncID = -1;
 		this.useRibbon = useRibbon;
+		this.shaderMap = new Map();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
@@ -78,7 +80,7 @@ class M2Renderer {
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.geosetArray[i].checked;
 	}
-	
+
 	/**
 	 * Load a skin with a given index.
 	 */
@@ -117,6 +119,17 @@ class M2Renderer {
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
+			if (texUnit) {
+				this.shaderMap.set(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]], 
+					{
+						"VS": ShaderMapper.getVertexShader(texUnit.textureCount, texUnit.shaderID), 
+						"PS": ShaderMapper.getPixelShader(texUnit.textureCount, texUnit.shaderID),
+						"DS": ShaderMapper.getDomainShader(texUnit.textureCount, texUnit.shaderID),
+						"HS": ShaderMapper.getHullShader(texUnit.textureCount, texUnit.shaderID)
+					}
+				);
+			}
+	
 			// if (m2.bones.length > 0) {
 			// 	const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
 			// 	this.meshGroup.add(skinnedMesh);

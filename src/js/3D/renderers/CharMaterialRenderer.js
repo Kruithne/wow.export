@@ -61,16 +61,12 @@ class CharMaterialRenderer {
 	/**
 	 * Loads a specific texture to a target.
 	 */
-	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer) {
+	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer, useAlpha = true) {
 
 		// CharComponentTextureSection: SectionType, X, Y, Width, Height, OverlapSectionMask
 		// ChrModelTextureLayer: TextureType, Layer, Flags, BlendMode, TextureSectionTypeBitMask, TextureSectionTypeBitMask2, ChrModelTextureTargetID[2]
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
-
-		// TODO: This requires some more effort to figure out how to properly apply. e.g. mount armor should NOT load alpha but tattoos should.
-		// const useAlpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
-		const useAlpha = true;
 
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
@@ -115,6 +111,9 @@ class CharMaterialRenderer {
 
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
+
+		console.log("Loading texture " + listfile.getByID(fileDataID) + " of size " + blp.width + "x" + blp.height + " with alpha " + useAlpha);
+		
 		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 		this.gl.activeTexture(this.gl.TEXTURE0);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
