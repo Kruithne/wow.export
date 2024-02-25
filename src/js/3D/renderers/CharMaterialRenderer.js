@@ -68,13 +68,18 @@ class CharMaterialRenderer {
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
 
+		// For debug purposes
+		let filename = listfile.getByID(chrCustomizationMaterial.FileDataID);
+		console.log("Loading texture " + filename + " for target " + chrCustomizationMaterial.ChrModelTextureTargetID + " with alpha " + useAlpha);
+
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
 			section: charComponentTextureSection,
 			material: chrModelMaterial,
 			textureLayer: chrModelTextureLayer,
 			custMaterial: chrCustomizationMaterial,
-			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha)
+			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha),
+			filename: filename
 		});
 
 		await this.update();
@@ -112,7 +117,6 @@ class CharMaterialRenderer {
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
 
-		console.log("Loading texture " + listfile.getByID(fileDataID) + " of size " + blp.width + "x" + blp.height + " with alpha " + useAlpha);
 		
 		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 		this.gl.activeTexture(this.gl.TEXTURE0);
@@ -220,7 +224,7 @@ class CharMaterialRenderer {
 			const sectionBottomRightX = (layer.section.X + layer.section.Width - materialMiddleX) / materialMiddleX;
 			const sectionBottomRightY = (layer.section.Y - materialMiddleY) / materialMiddleY * -1;
 
-			console.log("[" + layer.material.TextureType + "] Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("[" + layer.material.TextureType + "] Placing texture " + layer.filename + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
 			// Vertex buffer
 			const vBuffer = this.gl.createBuffer();
@@ -286,12 +290,11 @@ class CharMaterialRenderer {
 				case 12: // Mask greyscale using color as alpha
 				case 13: // Generate greyscale
 				case 14: // Colorize
-					console.log("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + ", poke a dev");
+					log.write("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + " during character texture baking, poke a dev");
 					break;
 				// These are used but we don't know if they need blending enabled -- so just turn it on anyways
-				case 16: // Unknown
+				case 16: // Unknown, only used for TaunkaMale.m2, probably experimental/unused
 				default:
-					console.log("Warning: unimplemented blend mode " + layer.textureLayer.BlendMode + ", enabling alpha blending anyway");
 					this.gl.enable(this.gl.BLEND);
 					this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 					break;
@@ -309,7 +312,6 @@ class CharMaterialRenderer {
 				} else {
 					// Get pixels of relevant section
 					const pixelBuffer = new Uint8Array(layer.section.Width * layer.section.Height * 4);
-					console.log("Cutting out pixels from " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height);
 					this.gl.readPixels(layer.section.X, layer.section.Y, layer.section.Width, layer.section.Height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelBuffer);
 
 					// Flip pixelbuffer on its y-axis
