@@ -15,6 +15,9 @@ const overlay = require('../../ui/char-texture-overlay');
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
 
+let VERT_SHADER_TEXT = '';
+let FRAG_SHADER_TEXT = '';
+
 const UV_BUFFER_DATA = new Float32Array([
 	0, 0, 
 	1.0, 0, 
@@ -25,6 +28,11 @@ const UV_BUFFER_DATA = new Float32Array([
 ]);
 
 class CharMaterialRenderer {
+	static async init() {
+		VERT_SHADER_TEXT = await fsp.readFile(VERT_SHADER_SRC, 'utf8');
+		FRAG_SHADER_TEXT = await fsp.readFile(FRAG_SHADER_SRC, 'utf8');
+	}
+
 	/**
 	 * Construct a new CharMaterialRenderer instance.
 	 */
@@ -166,7 +174,7 @@ class CharMaterialRenderer {
 
 		// Compile vertex shader.
 		const vertShader = this.gl.createShader(this.gl.VERTEX_SHADER);
-		this.gl.shaderSource(vertShader, await fsp.readFile(VERT_SHADER_SRC, 'utf8'));
+		this.gl.shaderSource(vertShader, VERT_SHADER_TEXT);
 		this.gl.compileShader(vertShader);
 
 		if (!this.gl.getShaderParameter(vertShader, this.gl.COMPILE_STATUS)) {
@@ -176,7 +184,7 @@ class CharMaterialRenderer {
 
 		// Compile fragment shader.
 		const fragShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		this.gl.shaderSource(fragShader, await fsp.readFile(FRAG_SHADER_SRC, 'utf8'));
+		this.gl.shaderSource(fragShader, FRAG_SHADER_TEXT);
 		this.gl.compileShader(fragShader);
 
 		if (!this.gl.getShaderParameter(fragShader, this.gl.COMPILE_STATUS)) {

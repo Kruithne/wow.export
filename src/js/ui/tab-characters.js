@@ -603,7 +603,7 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(15);
+	const progress = core.createProgress(16);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
@@ -794,6 +794,9 @@ core.events.once('screen-tab-characters', async () => {
 	await chrCustSkinnedModelDB.parse();
 	for (const [chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow] of chrCustSkinnedModelDB.getAllRows())
 		chrCustSkinnedModelMap.set(chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow);
+
+	await progress.step('Loading character shaders...');
+	await CharMaterialRenderer.init();
 
 	// Initialize model viewer.
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
