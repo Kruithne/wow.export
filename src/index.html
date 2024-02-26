@@ -622,7 +622,7 @@
 										<span>Show NPC races</span>
 									</label>
 								</span>
-								<listboxb class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true"></listboxb>
+								<listboxb class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
 								<span class="header">Body Type</span>
 								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
