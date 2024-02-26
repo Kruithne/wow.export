@@ -221,7 +221,7 @@ class CharMaterialRenderer {
 	 */
 	async update() {
 		if (!this.glShaderProg)
-			throw new Error('Shader program not compiled');
+			return;
 		
 		this.clearCanvas();
 		
