@@ -249,6 +249,13 @@ class M2Renderer {
 			image.src = uri;
 
 			const tex = new THREE.Texture(image);
+
+			core.view.isBusy++;
+			image.onload = () => {
+				core.view.isBusy--;
+				tex.needsUpdate = true;
+			};
+
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
