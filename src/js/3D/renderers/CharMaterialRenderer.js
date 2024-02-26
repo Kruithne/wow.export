@@ -61,14 +61,16 @@ class CharMaterialRenderer {
 	/**
 	 * Loads a specific texture to a target.
 	 */
-	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer) {
+	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer, useAlpha = true) {
 
 		// CharComponentTextureSection: SectionType, X, Y, Width, Height, OverlapSectionMask
 		// ChrModelTextureLayer: TextureType, Layer, Flags, BlendMode, TextureSectionTypeBitMask, TextureSectionTypeBitMask2, ChrModelTextureTargetID[2]
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
 
-		const useAlpha = chrCustomizationMaterial.ChrModelTextureTargetID != 16;
+		// For debug purposes
+		let filename = listfile.getByID(chrCustomizationMaterial.FileDataID);
+		console.log("Loading texture " + filename + " for target " + chrCustomizationMaterial.ChrModelTextureTargetID + " with alpha " + useAlpha);
 
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
@@ -76,7 +78,8 @@ class CharMaterialRenderer {
 			material: chrModelMaterial,
 			textureLayer: chrModelTextureLayer,
 			custMaterial: chrCustomizationMaterial,
-			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha)
+			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha),
+			filename: filename
 		});
 
 		await this.update();
@@ -113,8 +116,10 @@ class CharMaterialRenderer {
 
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
-		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 
+		
+		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
+		this.gl.activeTexture(this.gl.TEXTURE0);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
 		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, blp.width, blp.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, blpData);
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
@@ -185,6 +190,7 @@ class CharMaterialRenderer {
 
 		this.uvPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_texCoord");
 		this.textureLocation = this.gl.getUniformLocation(this.glShaderProg, "u_texture");
+		this.baseTextureLocation = this.gl.getUniformLocation(this.glShaderProg, "u_baseTexture");
 		this.blendModeLocation = this.gl.getUniformLocation(this.glShaderProg, "u_blendMode");
 		this.vertexPositionAttribute = this.gl.getAttribLocation(this.glShaderProg, "a_position");
 	}
@@ -209,37 +215,19 @@ class CharMaterialRenderer {
 			if (!core.view.config.chrIncludeBaseClothing && (layer.textureLayer.ChrModelTextureTargetID[0] == 13 || layer.textureLayer.ChrModelTextureTargetID[0] == 14))
 				continue;
 
-			// Vertex buffer
-			const vBuffer = this.gl.createBuffer();
-
-			layer.material.Width; // This is the max width of the entire material. Usually 2048.
-			layer.material.Height; // This is the max height of the entire material. Usually 1024.
-
-			let sectionOffsetX = layer.section.X;
-			let sectionOffsetY = layer.section.Y;
-			let sectionWidth = layer.section.Width;
-			let sectionHeight = layer.section.Height;
-
-			// TODO: Investigate why hack is needed for base (smaller than section, needs stretching), armor and dracthyr textures (larger than section, needs fitting). 
-			// Must be controlled through data somewhere.
-			if (layer.id == 1 || layer.section.Width > layer.material.Width || layer.section.Height > layer.material.Height) {
-				sectionWidth = layer.material.Width;
-				sectionHeight = layer.material.Height;
-				sectionOffsetX = 0;
-				sectionOffsetY = 0;
-			}
-
 			const materialMiddleX = layer.material.Width / 2;
 			const materialMiddleY = layer.material.Height / 2;
 
-			const sectionTopLeftX = (sectionOffsetX - materialMiddleX) / materialMiddleX;
-			const sectionTopLeftY = (sectionOffsetY + sectionHeight - materialMiddleY) / materialMiddleY * -1;
+			const sectionTopLeftX = (layer.section.X - materialMiddleX) / materialMiddleX;
+			const sectionTopLeftY = (layer.section.Y + layer.section.Height - materialMiddleY) / materialMiddleY * -1;
 			
-			const sectionBottomRightX = (sectionOffsetX + sectionWidth - materialMiddleX) / materialMiddleX;
-			const sectionBottomRightY = (sectionOffsetY - materialMiddleY) / materialMiddleY * -1;
+			const sectionBottomRightX = (layer.section.X + layer.section.Width - materialMiddleX) / materialMiddleX;
+			const sectionBottomRightY = (layer.section.Y - materialMiddleY) / materialMiddleY * -1;
 
-			console.log("Placing texture " + listfile.getByID(layer.custMaterial.FileDataID) + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + sectionOffsetX + "x" + sectionOffsetY + " of size " + sectionWidth + "x" + sectionHeight + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
+			console.log("[" + layer.material.TextureType + "] Placing texture " + layer.filename + " of blend mode " + layer.textureLayer.BlendMode + " for target " + layer.id + " with offset " + layer.section.X + "x" + layer.section.Y + " of size " + layer.section.Width + "x" + layer.section.Height + " at " + sectionTopLeftX + ", " + sectionTopLeftY + " to " + sectionBottomRightX + ", " + sectionBottomRightY);
 
+			// Vertex buffer
+			const vBuffer = this.gl.createBuffer();
 			const vBufferData = new Float32Array([
 				sectionTopLeftX, sectionTopLeftY, 0.0,
 				sectionBottomRightX, sectionTopLeftY, 0.0,
@@ -284,6 +272,9 @@ class CharMaterialRenderer {
 					this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
 					break;
 				case 1: // Blit
+				case 4: // Multiply
+				case 6: // Overlay
+				case 7: // Screen
 				case 9: // Alpha Straight
 				case 15: // Infer alpha blend
 					this.gl.enable(this.gl.BLEND);
@@ -299,18 +290,48 @@ class CharMaterialRenderer {
 				case 12: // Mask greyscale using color as alpha
 				case 13: // Generate greyscale
 				case 14: // Colorize
-					console.log("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + ", poke a dev");
+					log.write("Warning: encountered previously unused blendmode " + layer.textureLayer.BlendMode + " during character texture baking, poke a dev");
 					break;
 				// These are used but we don't know if they need blending enabled -- so just turn it on anyways
-				case 4: // Multiply
-				case 6: // Overlay
-				case 7: // Screen
-				case 16: // Unknown
+				case 16: // Unknown, only used for TaunkaMale.m2, probably experimental/unused
 				default:
-					console.log("Warning: unimplemented blend mode " + layer.textureLayer.BlendMode + ", enabling alpha blending anyway");
 					this.gl.enable(this.gl.BLEND);
 					this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 					break;
+			}
+
+			if (layer.textureLayer.BlendMode == 4 || layer.textureLayer.BlendMode == 6 || layer.textureLayer.BlendMode == 7) {
+				// Create new texture of current canvas
+				const canvasTexture = this.gl.createTexture();
+				this.gl.activeTexture(this.gl.TEXTURE1);
+				this.gl.bindTexture(this.gl.TEXTURE_2D, canvasTexture)
+
+				if (layer.material.Width == layer.section.Width && layer.material.Height == layer.section.Height) {
+					// Just copy the canvas
+					this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.glCanvas);
+				} else {
+					// Get pixels of relevant section
+					const pixelBuffer = new Uint8Array(layer.section.Width * layer.section.Height * 4);
+					this.gl.readPixels(layer.section.X, layer.section.Y, layer.section.Width, layer.section.Height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelBuffer);
+
+					// Flip pixelbuffer on its y-axis
+					const flippedPixelBuffer = new Uint8Array(layer.section.Width * layer.section.Height * 4);
+					for (let y = 0; y < layer.section.Height; y++) {
+						for (let x = 0; x < layer.section.Width; x++) {
+							const index = (y * layer.section.Width + x) * 4;
+							const flippedIndex = ((layer.section.Height - y - 1) * layer.section.Width + x) * 4;
+							flippedPixelBuffer[flippedIndex] = pixelBuffer[index];
+							flippedPixelBuffer[flippedIndex + 1] = pixelBuffer[index + 1];
+							flippedPixelBuffer[flippedIndex + 2] = pixelBuffer[index + 2];
+							flippedPixelBuffer[flippedIndex + 3] = pixelBuffer[index + 3];
+						}
+					}
+
+					this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, layer.section.Width, layer.section.Height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, flippedPixelBuffer);
+				}
+				
+				this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+				this.gl.uniform1i(this.baseTextureLocation, 1);
 			}
 
 			// Draw
