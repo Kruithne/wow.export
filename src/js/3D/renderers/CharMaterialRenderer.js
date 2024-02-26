@@ -134,6 +134,10 @@ class CharMaterialRenderer {
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
 
+		// Renderer can be disposed during file load.
+		if (this.gl === null)
+			return;
+
 		
 		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 		this.gl.activeTexture(this.gl.TEXTURE0);
