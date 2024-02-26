@@ -15,6 +15,15 @@ const overlay = require('../../ui/char-texture-overlay');
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
 
+const UV_BUFFER_DATA = new Float32Array([
+	0, 0, 
+	1.0, 0, 
+	0,  -1.0, 
+	0,  -1.0, 
+	1.0, 0, 
+	1.0,  -1.0
+]);
+
 class CharMaterialRenderer {
 	/**
 	 * Construct a new CharMaterialRenderer instance.
@@ -245,17 +254,9 @@ class CharMaterialRenderer {
 
 			// TexCoord buffer
 			const uvBuffer = this.gl.createBuffer();
-			const uvBufferData = new Float32Array([
-				0, 0, 
-				1.0, 0, 
-				0,  -1.0, 
-				0,  -1.0, 
-				1.0, 0, 
-				1.0,  -1.0
-			]);
 
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, uvBuffer);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, uvBufferData, this.gl.STATIC_DRAW);
+			this.gl.bufferData(this.gl.ARRAY_BUFFER, UV_BUFFER_DATA, this.gl.STATIC_DRAW);
 
 			this.gl.vertexAttribPointer(this.uvPositionAttribute, 2, this.gl.FLOAT, false, 0, 0);
 			this.gl.enableVertexAttribArray(this.uvPositionAttribute);
