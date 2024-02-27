@@ -175,15 +175,15 @@ async function updateActiveCustomization() {
 					console.log("Unable to find CharComponentTextureSection for TextureSectionTypeBitMask " + chrModelTextureLayer.TextureSectionTypeBitMask + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
 
 				let useAlpha = true;
-				if (textureShaderMap.has(chrModelTextureLayer.TextureType)) {
-					const shadersForTexture = textureShaderMap.get(chrModelTextureLayer.TextureType);
-					const pixelShader = shadersForTexture.PS;
-					console.log("Texture type " + chrModelTextureLayer.TextureType + " " + listfile.getByID(chrCustMat.FileDataID) +" has pixel shader " + pixelShader);
+				// if (textureShaderMap.has(chrModelTextureLayer.TextureType)) {
+				// 	const shadersForTexture = textureShaderMap.get(chrModelTextureLayer.TextureType);
+				// 	const pixelShader = shadersForTexture.PS;
+				// 	console.log("Texture type " + chrModelTextureLayer.TextureType + " " + listfile.getByID(chrCustMat.FileDataID) +" has pixel shader " + pixelShader);
 
-					// Yeah no this doesn't work and is NOT how all this is supposed to work
-					// if (pixelShader.startsWith('Combiners_Opaque') && chrModelTextureLayer.TextureSectionTypeBitMask == -1)
-					// 	useAlpha = false;
-				}
+				// 	// Yeah no this doesn't work and is NOT how all this is supposed to work
+				// 	if (pixelShader.startsWith('Combiners_Opaque') && chrModelTextureLayer.TextureSectionTypeBitMask == -1)
+				// 		useAlpha = false;
+				// }
 
 				await chrMaterial.setTextureTarget(chrCustMat, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer, useAlpha);
 			}
