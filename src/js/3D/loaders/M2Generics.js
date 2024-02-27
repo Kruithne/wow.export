@@ -53,6 +53,10 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 						animFiles.get(i).seek(subArrOfs + (j * 8));
 						arr[i][j] = animFiles.get(i).readUInt16LE(4).map(e => (e < 0? e + 32768 : e - 32767) / 32767);
 						break;
+					case "uint8":
+						animFiles.get(i).seek(subArrOfs + j);
+						arr[i][j] = animFiles.get(i).readUInt8();
+						break;
 					default:
 						throw new Error(`Unhandled data type: ${dataType}`);
 				}
@@ -72,6 +76,9 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 						break;
 					case "compquat":
 						arr[i][j] = data.readUInt16LE(4).map(e => (e < 0? e + 32768 : e - 32767) / 32767);
+						break;
+					case "uint8":
+						arr[i][j] = data.readUInt8();
 						break;
 					default:
 						throw new Error(`Unknown data type: ${dataType}`);

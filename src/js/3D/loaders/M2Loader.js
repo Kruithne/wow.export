@@ -231,7 +231,7 @@ class M2Loader {
 		this.parseChunk_MD21_transparencyLookup(ofs);
 		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.parseChunk_MD21_collision(ofs);
-		// this.data.move(8); // attachments
+		this.parseChunk_MD21_attachments(ofs);
 		// this.data.move(8); // attachmentIndicesByID / attachment_lookup_table
 		// this.data.move(8); // events
 		// this.data.move(8); // lights
@@ -377,6 +377,31 @@ class M2Loader {
 			normals[index] = this.data.readFloatLE();
 			normals[index + 2] = this.data.readFloatLE() * -1;
 			normals[index + 1] = this.data.readFloatLE();
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse attachments data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_attachments(ofs) {
+		const attachmentCount = this.data.readUInt32LE();
+		const attachmentOffset = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(attachmentOffset + ofs);
+
+		const entries = this.attachments = new Array(attachmentCount);
+		for (let i = 0; i < attachmentCount; i++) {
+			entries[i] = {
+				id: this.data.readUInt32LE(),
+				bone: this.data.readUInt16LE(),
+				unknown: this.data.readUInt16LE(),
+				position: this.data.readFloatLE(3),
+				animateAttached: M2Generics.read_m2_track(this.data, this.md21Ofs, "uint8"),
+			};
 		}
 
 		this.data.seek(base);
