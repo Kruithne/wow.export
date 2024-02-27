@@ -615,8 +615,8 @@
 				</keep-alive>
 				<keep-alive>
 					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
-						<div class='left-panel'>
-							<div class='tab-control'>
+						<div class="left-panel">
+							<div class="tab-control">
 								<span @click="chrCustTab = 'models'" :class="{ selected: chrCustTab === 'models' }">Models</span>
 								<span @click="chrCustTab = 'options'" :class="{ selected: chrCustTab === 'options' }">Options</span>
 							</div>
@@ -639,18 +639,18 @@
 								<p>Options with * use unsupported features.</p>
 							</div>
 						</div>
-						<div class='char-preview preview-container'>
-							<div class='preview-background'>
+						<div class="char-preview preview-container">
+							<div class="preview-background">
 								<model-viewer :context="chrModelViewerContext"></model-viewer>
 							</div>
-							<div class='texture-preview-panel' id='chr-texture-preview' v-show="config.chrShowTextureOverlay">
+							<div class="texture-preview-panel" id="chr-texture-preview" v-show="config.chrShowTextureOverlay">
 								<div id="chr-overlay-btn">
 									<input type="button" value="&gt;" @click="click('chr-next-overlay', $event)"/>
 									<input type="button" value="&lt;" @click="click('chr-prev-overlay', $event)"/>
 								</div>
 							</div>
 						</div>
-						<div class='right-panel'>
+						<div class="right-panel">
 							<div class="header">Geosets</div>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
