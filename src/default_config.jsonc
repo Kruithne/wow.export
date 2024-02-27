@@ -18,6 +18,7 @@
 	"sourceSelectUserRegion": null,
 	"tactKeysURL": "https://raw.githubusercontent.com/wowdev/TACTKeys/master/WoW.txt",
 	"tactKeysFallbackURL": "https://www.kruithne.net/wow.export/data/tact/wow",
+	"realmListURL": "https://marlam.in/we/cached-realms.json",
 	"exportDirectory": "",
 	"copyMode": "FULL",
 	"pasteSelection": false,

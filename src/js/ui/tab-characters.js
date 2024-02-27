@@ -13,6 +13,7 @@ const WDCReader = require('../db/WDCReader');
 const ExportHelper = require('../casc/export-helper');
 const FileWriter = require('../file-writer');
 const listfile = require('../casc/listfile');
+const realmlist = require('../casc/realmlist');
 
 let camera;
 let scene;
@@ -608,6 +609,9 @@ core.events.once('screen-tab-characters', async () => {
 	const progress = core.createProgress(16);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
+
+	// Realmlist can be loaded asynchronously.
+	realmlist.load();
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');

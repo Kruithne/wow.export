@@ -119,6 +119,9 @@ core.events.on('click-config-apply', () => {
 	if (cfg.exportDirectory.length === 0)
 		return core.setToast('error', 'A valid export directory must be provided', null, -1);
 
+	if (cfg.realmListURL.length === 0)
+		return core.setToast('error', 'A valid realm list URL or path is required.', { 'Use Default': () => cfg.realmListURL = defaultConfig.realmListURL }, -1);
+
 	if (cfg.listfileURL.length === 0)
 		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
