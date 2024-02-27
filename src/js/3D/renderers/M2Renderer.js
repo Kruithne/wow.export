@@ -13,7 +13,6 @@ const ShaderMapper = require('../ShaderMapper');
 const RenderCache = require('./RenderCache');
 
 const textureRibbon = require('../../ui/texture-ribbon');
-const textureLoader = new THREE.TextureLoader();
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
 
