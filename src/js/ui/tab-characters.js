@@ -51,7 +51,7 @@ const skinnedModelMeshes = new Set();
 
 const chrMaterials = new Map();
 
-let textureShaderMap = new Map();
+//let textureShaderMap = new Map();
 let currentCharComponentTextureLayoutID = 0;
 
 // Can we just keep DB2s opened? 
@@ -371,7 +371,7 @@ async function previewModel(fileDataID) {
 		activeRenderer = new M2Renderer(file, renderGroup, true);
 
 		await activeRenderer.load();
-		textureShaderMap = activeRenderer.shaderMap;
+		//textureShaderMap = activeRenderer.shaderMap;
 		updateCameraBounding();
 
 		activeModel = fileDataID;
@@ -442,7 +442,7 @@ async function loadImportString(importString) {
 		return;
 	}
 
-	const selectedChrModelID = core.view.chrCustModelSelection.id;
+	const selectedChrModelID = core.view.chrCustModelSelection[0].id;
 
 	// Get available option IDs
 	const availableOptions = optionsByChrModel.get(selectedChrModelID);
