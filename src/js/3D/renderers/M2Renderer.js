@@ -237,8 +237,7 @@ class M2Renderer {
 	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
-	async overrideTextureTypeWithURI(type, uri) {
-		const promises = [];
+	async overrideTextureTypeWithCanvas(type, canvas) {
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {
 			// Don't mess with textures not for this type.
@@ -247,35 +246,30 @@ class M2Renderer {
 
 			// i is the same as m2.textures[i]
 
-			promises.push(new Promise(resolve => {
-				textureLoader.load(uri, tex => {
-					tex.flipY = true;
-					tex.magFilter = THREE.LinearFilter;
-					tex.minFilter = THREE.LinearFilter;
-	
-					if (this.m2.textures[i].flags & 0x1)
-						tex.wrapS = THREE.RepeatWrapping;
-	
-					if (this.m2.textures[i].flags & 0x2)
-						tex.wrapT = THREE.RepeatWrapping;
-	
-					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
-	
-					tex.needsUpdate = true;
-	
-					this.renderCache.retire(this.materials[i]);
-	
-					const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
-					this.renderCache.register(material, tex);
-	
-					this.materials[i] = material;
-					this.renderCache.addUser(material);
-					resolve();
-				});
-			}));
-		}
+			const tex = new THREE.CanvasTexture(canvas);
 
-		await Promise.all(promises);
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+
+			tex.needsUpdate = true;
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
+		}
 	}
 
 	/**

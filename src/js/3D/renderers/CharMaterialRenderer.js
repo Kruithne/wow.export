@@ -59,11 +59,8 @@ class CharMaterialRenderer {
 		await this.reset();
 	}
 
-	/**
-	 * Get URI from canvas.
-	 */
-	getURI() {
-		return this.glCanvas.toDataURL();
+	getCanvas() {
+		return this.glCanvas;
 	}
 
 	/**

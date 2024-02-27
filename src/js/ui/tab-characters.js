@@ -84,7 +84,7 @@ function disposeSkinnedModels() {
 async function uploadRenderOverrideTextures() {
 	for (const [chrModelTextureTarget, chrMaterial] of chrMaterials) {
 		await chrMaterial.update();
-		await activeRenderer.overrideTextureTypeWithURI(chrModelTextureTarget,  chrMaterial.getURI());
+		await activeRenderer.overrideTextureTypeWithCanvas(chrModelTextureTarget,  chrMaterial.getCanvas());
 	}
 }
 
