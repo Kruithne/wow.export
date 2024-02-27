@@ -697,7 +697,7 @@
 		grid-column: 3;
 		display: grid;
 		min-width: 300px;
-		grid-template-rows: 56px 23px 56px 470px 32px 32px 32px 32px 72px;
+		grid-template-rows: 231px 23px 60px 335px 32px 32px 32px 32px 72px;
 
 		& > * {
 			margin: 20px 10px 0 20px;
@@ -712,5 +712,16 @@
 		display: flex;
 		justify-content: flex-end;
 		align-items: center;
+	}
+}
+
+#character-import-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	
+	input {
+		width: 240px;
 	}
 }

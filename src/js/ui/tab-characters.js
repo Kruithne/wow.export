@@ -422,6 +422,18 @@ function updateCameraBounding() {
 	}
 }
 
+async function importCharacter() {
+	// TODO
+	// Remove pre-populated debug regions/realms from core.view.chrImportRegions and core.view.chrImportRealms
+	// realmlist.parseRealmList() needs to populate chrImportRegions and chrImportRealms with labelled objects.
+	// Add character API URL as a config option (https://marlam.in/we/api.php?region=%s&realm=%s&character=%s) by default
+	// Validate in config.js#125 that the URL is valid
+	// Add v-model input to settings window for customization.
+	// Fetch JSON result from API here with region, realm and char name (chrImportChrName)
+	// Pass JSON to loadImportString().
+	// Fix sizing or replace dropdown menus for region/realm
+}
+
 async function loadImportString(importString) {
 	core.view.isBusy++;
 	core.setToast('progress', 'Importing, please wait..', null, -1, false);
@@ -837,6 +849,7 @@ core.registerLoadFunc(async () => {
 	core.view.$watch('config.chrIncludeBaseClothing', () => uploadRenderOverrideTextures());
 
 	core.events.on('click-export-character', () => exportCharModel());
+	core.events.on('click-import-character', () => importCharacter());
 
 	// User has changed the "Race" selection, ie "Human", "Orc", etc.
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());

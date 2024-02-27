@@ -126,6 +126,18 @@ const view = {
 	chrCustChoiceSelection: [], // Selected character customization choice.
 	chrCustActiveChoices: [], // Active character customization choices.
 	chrCustTab: 'models', // Active tab for character customization.
+	chrImportChrName: '', // Character import, character name input.
+	chrImportRegions: [
+		{ label: 'EU', value: 'eu' },
+		{ label: 'US', value: 'us' },
+		{ label: 'KR', value: 'kr' }
+	], // Test regions for realmlist.
+	chrImportRealms: [
+		{ label: 'Argent Dawn', value: 'argent-dawn' },
+		{ label: 'Draenor', value: 'draenor' },
+		{ label: 'Frostmourne', value: 'frostmourne' },
+		{ label: 'Stormrage', value: 'stormrage' }
+	],
 	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),

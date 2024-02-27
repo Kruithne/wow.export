@@ -651,7 +651,14 @@
 							</div>
 						</div>
 						<div class="right-panel">
-							<div class="header">Geosets</div>
+							<div id="character-import-panel">
+								<div class="header"><b>Character Import</b></div>
+								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
+								<menu-button class="spaced" :dropdown="true" :options="chrImportRegions"></menu-button>
+								<menu-button class="spaced" :dropdown="true" :options="chrImportRealms"></menu-button>
+								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
+							</div>
+							<div class="header"><b>Geosets</b></div>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
 							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 							<div class="list-toggles">
