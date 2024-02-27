@@ -231,18 +231,18 @@ class M2Loader {
 		this.parseChunk_MD21_transparencyLookup(ofs);
 		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.parseChunk_MD21_collision(ofs);
-		this.data.move(8); // attachments
-		this.data.move(8); // attachmentIndicesByID / attachment_lookup_table
-		this.data.move(8); // events
-		this.data.move(8); // lights
-		this.data.move(8); // cameras
-		this.data.move(8); // camera_lookup_table
-		this.data.move(8); // ribbon_emitters
-		this.data.move(8); // particle_emitters
+		// this.data.move(8); // attachments
+		// this.data.move(8); // attachmentIndicesByID / attachment_lookup_table
+		// this.data.move(8); // events
+		// this.data.move(8); // lights
+		// this.data.move(8); // cameras
+		// this.data.move(8); // camera_lookup_table
+		// this.data.move(8); // ribbon_emitters
+		// this.data.move(8); // particle_emitters
 		
-		// if 0x8 is set, textureCombinerCombos
-		if (this.flags & 0x8)
-			this.data.move(8);
+		// // if 0x8 is set, textureCombinerCombos
+		// if (this.flags & 0x8)
+		// 	this.data.move(8);
 
 	}
 
