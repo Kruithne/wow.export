@@ -442,10 +442,12 @@ async function loadImportString(importString) {
 		return;
 	}
 
-	const selectedChrModelID = core.view.chrCustModelSelection[0].id;
+	//const selectedChrModelID = core.view.chrCustModelSelection[0].id;
+	const playerRaceID = parsed.playable_race.id;
+	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
 	// Get available option IDs
-	const availableOptions = optionsByChrModel.get(selectedChrModelID);
+	const availableOptions = optionsByChrModel.get(playerRaceID);
 	const availableOptionsIDs = [];
 	for (const option of availableOptions)
 		availableOptionsIDs.push(option.id);
