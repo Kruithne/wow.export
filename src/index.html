@@ -653,8 +653,10 @@
 						<div class="right-panel">
 							<div id="character-import-panel">
 								<div class="header"><b>Character Import</b></div>
+								<ul class="ui-multi-button">
+									<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
+								</ul>
 								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
-								<menu-button class="spaced" :dropdown="true" :options="chrImportRegions"></menu-button>
 								<menu-button class="spaced" :dropdown="true" :options="chrImportRealms"></menu-button>
 								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
 							</div>

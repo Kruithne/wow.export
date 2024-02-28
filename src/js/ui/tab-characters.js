@@ -618,12 +618,15 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(16);
+	const progress = core.createProgress(17);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
-	// Realmlist can be loaded asynchronously.
-	realmlist.load();
+	await progress.step('Retrieving realmlist...');
+	await realmlist.load();
+
+	core.view.chrImportRegions = Object.keys(core.view.realmList);
+	core.view.chrImportSelectedRegion = core.view.chrImportRegions[0];
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');

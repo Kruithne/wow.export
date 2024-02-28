@@ -127,11 +127,8 @@ const view = {
 	chrCustActiveChoices: [], // Active character customization choices.
 	chrCustTab: 'models', // Active tab for character customization.
 	chrImportChrName: '', // Character import, character name input.
-	chrImportRegions: [
-		{ label: 'EU', value: 'eu' },
-		{ label: 'US', value: 'us' },
-		{ label: 'KR', value: 'kr' }
-	], // Test regions for realmlist.
+	chrImportRegions: [],
+	chrImportSelectedRegion: '',
 	chrImportRealms: [
 		{ label: 'Argent Dawn', value: 'argent-dawn' },
 		{ label: 'Draenor', value: 'draenor' },
