@@ -6,6 +6,7 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
@@ -423,12 +424,31 @@ function updateCameraBounding() {
 }
 
 async function importCharacter() {
-	// TODO
-	// Validate in config.js#125 that the URL is valid
-	// Add v-model input to settings window for customization.
-	// Fetch JSON result from API here with region, realm and char name (chrImportChrName)
-	// Pass JSON to loadImportString().
-	// Fix sizing or replace dropdown menus for region/realm
+	const character_name = core.view.chrImportChrName; // string
+	const selected_realm = core.view.chrImportSelectedRealm; // { label, value }
+	const selected_region = core.view.chrImportSelectedRegion; // eu
+
+	if (selected_realm === null) {
+		core.setToast('error', 'Please enter a valid realm.', null, 3000);
+		return;
+	}
+
+	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm);
+	const url = util.format(core.view.config.armoryURL, selected_region, selected_realm.value, encodeURIComponent(character_name.toLowerCase()));
+	log.write('Retrieving character data for %s from %s', character_label, url);
+
+	const res = await generics.get(url);
+	if (res.ok) {
+		try {
+			loadImportString(await res.json());
+		} catch (e) {
+			log.write('Failed to parse character data: %s', e.message);
+			core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+		}
+	} else {
+		log.write('Failed to retrieve character data: %d %s', res.status, res.statusText);
+		core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+	}
 }
 
 async function loadImportString(importString) {
