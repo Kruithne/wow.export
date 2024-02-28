@@ -424,12 +424,16 @@ function updateCameraBounding() {
 }
 
 async function importCharacter() {
+	core.view.isBusy++;
+	core.setToast('progress', 'Importing, please wait..', null, -1, false);
+
 	const character_name = core.view.chrImportChrName; // string
 	const selected_realm = core.view.chrImportSelectedRealm; // { label, value }
 	const selected_region = core.view.chrImportSelectedRegion; // eu
 
 	if (selected_realm === null) {
 		core.setToast('error', 'Please enter a valid realm.', null, 3000);
+		core.view.isBusy--;
 		return;
 	}
 
@@ -449,31 +453,18 @@ async function importCharacter() {
 		log.write('Failed to retrieve character data: %d %s', res.status, res.statusText);
 		core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
 	}
+
+	core.view.hideToast();
+	core.view.isBusy--;
 }
 
 async function loadImportString(importString) {
-	core.view.isBusy++;
-	core.setToast('progress', 'Importing, please wait..', null, -1, false);
+	loadImportJSON(JSON.parse(importString));
+}
 
-	if (importString.length === 0) {
-		// Reset active choices.
-		core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
-		core.view.hideToast();
-		core.view.isBusy--;
-		return;
-	}
-
-	let parsed;
-	try {
-		parsed = JSON.parse(importString);
-	} catch (e) {
-		core.setToast('error', 'Invalid import string.', null, 3000);
-		core.view.isBusy--;
-		return;
-	}
-
+async function loadImportJSON(json) {
 	//const selectedChrModelID = core.view.chrCustModelSelection[0].id;
-	const playerRaceID = parsed.playable_race.id;
+	const playerRaceID = json.playable_race.id;
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
 	// Get available option IDs
@@ -486,15 +477,14 @@ async function loadImportString(importString) {
 	core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
 
 	const parsedChoices = [];
-	for (const customizationEntry of Object.values(parsed.customizations)) {
+	for (const customizationEntry of Object.values(json.customizations)) {
 		if (!availableOptionsIDs.includes(customizationEntry.option.id))
 			continue;
 
 		parsedChoices.push({optionID: customizationEntry.option.id, choiceID: customizationEntry.choice.id});
 	}
+
 	core.view.chrCustActiveChoices.push(...parsedChoices);
-	core.view.hideToast();
-	core.view.isBusy--;
 }
 
 const exportCharModel = async () => {
