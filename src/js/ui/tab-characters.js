@@ -628,8 +628,13 @@ core.events.once('screen-tab-characters', async () => {
 	state.chrImportRegions = Object.keys(state.realmList);
 	state.chrImportSelectedRegion = state.chrImportRegions[0];
 
-	for (const region of Object.values(state.realmList))
-		state.chrImportRealms.push(...region.map(realm => ({ label: realm.name, value: realm.slug })));
+	core.view.$watch('chrImportSelectedRegion', () => {
+		const realmList = state.realmList[state.chrImportSelectedRegion].map(realm => ({ label: realm.name, value: realm.slug }));
+		state.chrImportRealms = realmList;
+
+		if (state.chrImportSelectedRealm !== null && !realmList.find(realm => realm.value === state.chrImportSelectedRealm.value))
+			state.chrImportSelectedRealm = null;
+	});
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
