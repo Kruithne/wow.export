@@ -619,14 +619,14 @@ core.events.once('screen-tab-characters', async () => {
 
 	// Initialize a loading screen.
 	const progress = core.createProgress(17);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	state.setScreen('loading');
+	state.isBusy++;
 
 	await progress.step('Retrieving realmlist...');
 	await realmlist.load();
 
-	core.view.chrImportRegions = Object.keys(core.view.realmList);
-	core.view.chrImportSelectedRegion = core.view.chrImportRegions[0];
+	state.chrImportRegions = Object.keys(state.realmList);
+	state.chrImportSelectedRegion = state.chrImportRegions[0];
 
 	await progress.step('Loading texture mapping...');
 	const tfdDB = new WDCReader('DBFilesClient/TextureFileData.db2');
@@ -829,7 +829,7 @@ core.events.once('screen-tab-characters', async () => {
 
 	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
 
-	if (core.view.config.modelViewerShowGrid)
+	if (state.config.modelViewerShowGrid)
 		scene.add(grid);
 
 	// WoW models are by default facing the wrong way; rotate everything.
@@ -837,12 +837,12 @@ core.events.once('screen-tab-characters', async () => {
 
 	updateChrRaceList();
 
-	core.view.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
+	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
 
 	// Show the characters screen.
 	state.loadPct = -1;
-	core.view.isBusy--;
-	core.view.setScreen('tab-characters');
+	state.isBusy--;
+	state.setScreen('tab-characters');
 });
 
 core.registerLoadFunc(async () => {
