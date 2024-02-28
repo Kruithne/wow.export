@@ -14,6 +14,15 @@ Vue.component('combo-box', {
 		}
 	},
 
+	watch: {
+		value: function(newValue) {
+			if (newValue !== null)
+				this.selectOption(this.source.find(item => item.value === newValue.value));
+			else
+				this.currentText = '';
+		}
+	},
+
 	mounted: function() {
 		if (this.value !== null)
 			this.selectOption(this.source.find(item => item.value === this.value)); 
@@ -39,7 +48,7 @@ Vue.component('combo-box', {
 		selectOption: function(option) {
 			this.currentText = option.label;
 			this.isActive = false;
-			
+
 			if (this.value?.value !== option.value)
 				this.$emit('update:value', option);
 		},
