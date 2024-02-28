@@ -38,8 +38,10 @@ Vue.component('combo-box', {
 	methods: {
 		selectOption: function(option) {
 			this.currentText = option.label;
-			this.$emit('update:value', option.value);
 			this.isActive = false;
+			
+			if (this.value.value !== option.value)
+				this.$emit('update:value', option.value);
 		},
 
 		onFocus: function() {
