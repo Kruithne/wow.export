@@ -720,8 +720,13 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 5px;
-	
+
 	input {
 		width: 240px;
+		margin: 2px;
+	}
+
+	ul {
+		margin: 5px;
 	}
 }
