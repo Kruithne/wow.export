@@ -657,7 +657,7 @@
 									<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
 								</ul>
 								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
-								<menu-button class="spaced" :dropdown="true" :options="chrImportRealms"></menu-button>
+								<combo-box :value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" @update:value="chrImportSelectedRealm = $event" maxheight="10"></combo-box>
 								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
 							</div>
 							<div class="header"><b>Geosets</b></div>
