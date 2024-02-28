@@ -444,7 +444,7 @@ async function importCharacter() {
 	const res = await generics.get(url);
 	if (res.ok) {
 		try {
-			loadImportString(await res.json());
+			loadImportJSON(await res.json());
 		} catch (e) {
 			log.write('Failed to parse character data: %s', e.message);
 			core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
