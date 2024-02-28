@@ -424,9 +424,6 @@ function updateCameraBounding() {
 
 async function importCharacter() {
 	// TODO
-	// Remove pre-populated debug regions/realms from core.view.chrImportRegions and core.view.chrImportRealms
-	// realmlist.parseRealmList() needs to populate chrImportRegions and chrImportRealms with labelled objects.
-	// Add character API URL as a config option (https://marlam.in/we/api.php?region=%s&realm=%s&character=%s) by default
 	// Validate in config.js#125 that the URL is valid
 	// Add v-model input to settings window for customization.
 	// Fetch JSON result from API here with region, realm and char name (chrImportChrName)

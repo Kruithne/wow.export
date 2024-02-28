@@ -19,6 +19,7 @@
 	"tactKeysURL": "https://raw.githubusercontent.com/wowdev/TACTKeys/master/WoW.txt",
 	"tactKeysFallbackURL": "https://www.kruithne.net/wow.export/data/tact/wow",
 	"realmListURL": "https://marlam.in/we/cached-realms.json",
+	"armoryURL": "https://marlam.in/we/api.php?region=%s&realm=%s&character=%s",
 	"exportDirectory": "",
 	"copyMode": "FULL",
 	"pasteSelection": false,
