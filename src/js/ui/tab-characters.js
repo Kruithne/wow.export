@@ -469,7 +469,12 @@ async function loadImportString(importString) {
 
 async function loadImportJSON(json) {
 	//const selectedChrModelID = core.view.chrCustModelSelection[0].id;
-	const playerRaceID = json.playable_race.id;
+	let playerRaceID = json.playable_race.id;
+
+	// If the player is a Pandaren with a faction, we need to use the neutral Pandaren race.
+	if (playerRaceID == 25 || playerRaceID == 26)
+		playerRaceID = 24;
+
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
 	const playerGender = json.gender.type;
@@ -487,7 +492,7 @@ async function loadImportJSON(json) {
 
 	// Get correct ChrModel ID
 	const chrModelID = chrRaceXChrModelMap.get(playerRaceID).get(genderIndex);
-	
+
 	// Get available option IDs
 	const availableOptions = optionsByChrModel.get(chrModelID);
 	const availableOptionsIDs = [];
@@ -495,7 +500,6 @@ async function loadImportJSON(json) {
 		availableOptionsIDs.push(option.id);
 
 	// Reset last imported choices.
-	console.log("[loadImportJSON] Clearing imported choices");
 	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 
 	const parsedChoices = [];
@@ -506,7 +510,6 @@ async function loadImportJSON(json) {
 		parsedChoices.push({optionID: customizationEntry.option.id, choiceID: customizationEntry.choice.id});
 	}
 
-	console.log("[loadImportJSON] Setting imported choices", parsedChoices);
 	core.view.chrImportChoices.push(...parsedChoices);
 }
 
@@ -574,10 +577,8 @@ async function updateModelSelection() {
 	// Reset active choices
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
-	if (state.chrImportChoices.length > 0) {
-		console.log("[updateModelSelection] Setting imported choices");
+	if (state.chrImportChoices.length > 0)
 		state.chrCustActiveChoices.push(...state.chrImportChoices);
-	}
 
 	// Add the new options.
 	state.chrCustOptions.push(...availableOptions);
@@ -595,7 +596,6 @@ async function updateModelSelection() {
 	clearMaterials();
 	
 	if (state.chrImportChoices.length == 0) {
-		console.log("[updateModelSelection] Setting default active choices");
 		// For each available option we select the first choice ONLY if the option is a 'default' option.
 		// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
 		for (const option of availableOptions) {
@@ -604,7 +604,6 @@ async function updateModelSelection() {
 				state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
 		}
 	} else {
-		console.log("[updateModelSelection] Clearing imported choices");
 		state.chrImportChoices.splice(0, state.chrImportChoices.length);
 	}
 }
