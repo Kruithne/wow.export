@@ -25,7 +25,7 @@ Vue.component('combo-box', {
 
 	mounted: function() {
 		if (this.value !== null)
-			this.selectOption(this.source.find(item => item.value === this.value)); 
+			this.selectOption(this.source.find(item => item.value === this.value));
 		else
 			this.currentText = '';
 	},
@@ -46,6 +46,12 @@ Vue.component('combo-box', {
 
 	methods: {
 		selectOption: function(option) {
+			if (!option) {
+				this.currentText = '';
+				this.$emit('update:value', null);
+				return;
+			}
+			
 			this.currentText = option.label;
 			this.isActive = false;
 
