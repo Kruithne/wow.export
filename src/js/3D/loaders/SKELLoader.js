@@ -8,6 +8,7 @@ const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
 const CHUNK_SKS1 = 0x31534B53;
 const CHUNK_AFID = 0x44494641;
+const CHUNK_BFID = 0x44494642;
 
 const M2Generics = require('./M2Generics');
 const BufferWrapper = require('../../buffer');
@@ -46,6 +47,7 @@ class SKELLoader {
 				case CHUNK_SKPD: this.parse_chunk_skpd(); break;
 				case CHUNK_SKS1: this.parse_chunk_sks1(); break;
 				case CHUNK_AFID: this.parse_chunk_afid(chunkSize); break;
+				case CHUNK_BFID: this.parse_chunk_bfid(chunkSize); break;
 			}
 	
 			// Ensure that we start at the next chunk exactly.
@@ -205,6 +207,10 @@ class SKELLoader {
 		this.data.move(8);
 	}
 
+	/**
+	 * Parse AFID chunk for .anim file data IDs.
+	 * @param {number} chunkSize
+	 */
 	parse_chunk_afid(chunkSize) {
 		const entryCount = chunkSize / 8;
 		const entries = this.animFileIDs = new Array(entryCount);
@@ -216,6 +222,14 @@ class SKELLoader {
 				fileDataID: this.data.readUInt32LE()
 			};
 		}
+	}
+
+	/**
+	 * Parse BFID chunk for .bone file data IDs.
+	 * @param {number} chunkSize
+	 */
+	parse_chunk_bfid(chunkSize) {
+		this.boneFileIDs = this.data.readUInt32LE(chunkSize / 4);
 	}
 
 	async loadAnims() {
