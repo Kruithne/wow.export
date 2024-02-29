@@ -334,10 +334,17 @@ async function updateChrModelList() {
 		listedModelIDs.push(chrModelID);
 	}
 
-	// If we haven't selected a model, we'll try to select the body type at the same index.
-	// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
-	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0)
-		selectionIndex = 0;
+	if (core.view.chrImportChrModelID != 0) {
+		// If we have an imported character model, we'll try to select it.
+		selectionIndex = listedModelIDs.indexOf(core.view.chrImportChrModelID);
+		core.view.chrImportChrModelID = 0;
+	} else {
+		// If we haven't selected a model, we'll try to select the body type at the same index.
+		// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
+		if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0)
+			selectionIndex = 0;
+	}
+
 
 	// We've found the model index we want to load, so let's select it:
 	core.view.chrCustModelSelection = [core.view.chrCustModels[selectionIndex]];
@@ -475,6 +482,17 @@ async function loadImportJSON(json) {
 	if (playerRaceID == 25 || playerRaceID == 26)
 		playerRaceID = 24;
 
+	// If the player is a Dracthyr (Horde), use Dracthyr (Alliance)
+	if (playerRaceID == 70)
+		playerRaceID = 52;
+
+	// If the player is a Worgen or Dracthyr and the user wants to load the Visage model, remap.
+	if (playerRaceID == 22 && core.view.chrImportLoadVisage)
+		playerRaceID = 23;
+
+	if (playerRaceID == 52 && core.view.chrImportLoadVisage)
+		playerRaceID = 75;
+
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
 	const playerGender = json.gender.type;
@@ -492,6 +510,7 @@ async function loadImportJSON(json) {
 
 	// Get correct ChrModel ID
 	const chrModelID = chrRaceXChrModelMap.get(playerRaceID).get(genderIndex);
+	core.view.chrImportChrModelID = chrModelID;
 
 	// Get available option IDs
 	const availableOptions = optionsByChrModel.get(chrModelID);
@@ -562,6 +581,9 @@ const exportCharModel = async () => {
 async function updateModelSelection() {
 	const state = core.view;
 	const selected = state.chrCustModelSelection[0];
+	if (selected === undefined)
+		return;
+	
 	console.log('Selection changed to ID ' + selected.id + ', label ' + selected.label);
 
 	const availableOptions = optionsByChrModel.get(selected.id);

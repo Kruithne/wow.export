@@ -663,6 +663,10 @@
 								</ul>
 								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
 								<combo-box :value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" @update:value="chrImportSelectedRealm = $event" maxheight="10"></combo-box>
+								<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
+									<input type="checkbox" v-model="chrImportLoadVisage"/>
+									<span>Load visage model (Dracthyr/Worgen)</span>
+								</label>
 								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
 							</div>
 							<div class="header"><b>Geosets</b></div>
