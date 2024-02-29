@@ -473,17 +473,23 @@ async function loadImportJSON(json) {
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
 	const playerGender = json.gender.type;
+	let genderIndex = 0;
 	if (playerGender == "MALE") {
-		core.view.chrCustModelSelection = [core.view.chrCustModels[0]];
+		genderIndex = 0;
 	} else if (playerGender == "FEMALE") {
-		core.view.chrCustModelSelection = [core.view.chrCustModels[1]];
+		genderIndex = 1;
 	} else {
 		log.write('Failed to import character, encountered unknown player gender: %s', playerGender);
 		core.setToast('error', 'Failed to import character, encountered unknown player gender: ' + playerGender, null, -1);
 	}
 
+	core.view.chrCustModelSelection = [core.view.chrCustModels[genderIndex]];
+
+	// Get correct ChrModel ID
+	const chrModelID = chrRaceXChrModelMap.get(playerRaceID).get(genderIndex);
+	
 	// Get available option IDs
-	const availableOptions = optionsByChrModel.get(playerRaceID);
+	const availableOptions = optionsByChrModel.get(chrModelID);
 	const availableOptionsIDs = [];
 	for (const option of availableOptions)
 		availableOptionsIDs.push(option.id);
