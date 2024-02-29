@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
@@ -9,25 +9,12 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const ShaderMapper = require('../ShaderMapper');
 const RenderCache = require('./RenderCache');
 
 const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MODEL_COLOR = 0x57afe2;
-
-/**
- * Transform Vec3 to Mat4x4
- * @param {Array} Vector3
- * @returns {Array} Mat4x4
- */
-function vec3_to_mat4x4(v) {
-	return [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		v[0] * -1, v[1] * -1, v[2] * -1, 1
-	];
-}
 
 class M2Renderer {
 	/**
@@ -45,6 +32,7 @@ class M2Renderer {
 		this.renderCache = new RenderCache();
 		this.syncID = -1;
 		this.useRibbon = useRibbon;
+		this.shaderMap = new Map();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 	}
 
@@ -57,6 +45,7 @@ class M2Renderer {
 		await this.m2.load();
 
 		this.loadTextures();
+
 		if (this.m2.vertices.length > 0) {
 			await this.loadSkin(0);
 
@@ -92,7 +81,7 @@ class M2Renderer {
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.geosetArray[i].checked;
 	}
-	
+
 	/**
 	 * Load a skin with a given index.
 	 */
@@ -131,6 +120,20 @@ class M2Renderer {
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
+			if (texUnit) {
+				this.shaderMap.set(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]], 
+					{
+						"VS": ShaderMapper.getVertexShader(texUnit.textureCount, texUnit.shaderID), 
+						"PS": ShaderMapper.getPixelShader(texUnit.textureCount, texUnit.shaderID),
+						"DS": ShaderMapper.getDomainShader(texUnit.textureCount, texUnit.shaderID),
+						"HS": ShaderMapper.getHullShader(texUnit.textureCount, texUnit.shaderID)
+					}
+				);
+
+				// console.log("TexUnit [" + i + "] Unit for geo " + skinMesh.submeshID + " material index " + texUnit.materialIndex + " has " + texUnit.textureCount + " textures", skinMesh, texUnit, m2.materials[texUnit.materialIndex]);
+				// console.log("TexUnit Shaders [" + i + "]", this.shaderMap.get(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]]));
+			}
+	
 			// if (m2.bones.length > 0) {
 			// 	const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
 			// 	this.meshGroup.add(skinnedMesh);
@@ -189,7 +192,12 @@ class M2Renderer {
 			// }
 
 			if (this.reactive) {
-				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01'));
+				let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
+
+				// Don't enable eyeglow/earrings by default
+				if (skinMesh.submeshID.toString().startsWith('17') || skinMesh.submeshID.toString().startsWith('35'))
+					isDefault = false;
+	
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
 			}
 		}
@@ -204,7 +212,6 @@ class M2Renderer {
 
 		// Update geosets once (so defaults are applied correctly).
 		this.updateGeosets();
-
 	}
 
 	/**
@@ -221,6 +228,46 @@ class M2Renderer {
 				// Item textures.
 				this.overrideTextureType(textureType, displays.textures[textureType - 2]);
 			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param {number} type 
+	 * @param {number} fileDataID 
+	 */
+	async overrideTextureTypeWithCanvas(type, canvas) {
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] !== type)
+				continue;
+
+			// i is the same as m2.textures[i]
+
+			const tex = new THREE.CanvasTexture(canvas);
+
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+
+			tex.needsUpdate = true;
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
 		}
 	}
 
@@ -280,7 +327,16 @@ class M2Renderer {
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
 			tex.needsUpdate = true;
+
+			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
 
 			this.renderCache.retire(this.materials[i]);
 
@@ -331,6 +387,8 @@ class M2Renderer {
 					if (texture.flags & 0x2)
 						tex.wrapT = THREE.RepeatWrapping;
 	
+					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+					
 					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
 					this.renderCache.register(material, tex);
 	

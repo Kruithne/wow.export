@@ -1,5 +1,11 @@
-0.1.59 (xx-02-2024)
-- Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne)
+0.1.59 (29-02-2024)
+- Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.
+  Note: Please see the pinned issue on top of our GitHub issues page for known issues/requests before reporting an bug/making a suggestion.
+- New and improved 3D camera controls in the model viewer.
+- Holding SHIFT and ALT now allows for more precise camera movement.
+- Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne).
+- Added expansion icon for The War Within.
+- Improved default geoset selection.
 
 0.1.58 (11-02-2024)
 - M2 models can now be exported with all their animations when using glTF. (Beta feature)

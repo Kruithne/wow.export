@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -60,6 +60,14 @@ class BufferWrapper {
 	 */
 	static from(source) {
 		return new BufferWrapper(Buffer.from(source));
+	}
+
+	/**
+	 * Create a buffer from a source using Buffer.from().
+	 * @param {Array} source 
+	 */
+	static fromBase64(source) {
+		return new BufferWrapper(Buffer.from(source, 'base64'));
 	}
 
 	/**

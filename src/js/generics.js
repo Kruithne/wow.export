@@ -22,7 +22,7 @@ const http = require('http');
 const get = async (url) => {
 	const fetch_options = {
 		cache: 'no-cache',
-		headerS: {
+		headers: {
 			'User-Agent': constants.USER_AGENT,
 		},
 

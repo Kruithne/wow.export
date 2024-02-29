@@ -66,6 +66,7 @@ module.exports = {
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
+		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 	},
 
 	CONFIG:  {

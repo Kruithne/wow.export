@@ -1,12 +1,13 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const log = require('../../log');
 const WDCReader = require('../WDCReader');
 
 const creatureDisplays = new Map();
+const displayIDToFileDataID = new Map();
 
 /**
  * Initialize creature data.
@@ -49,6 +50,8 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 			const modelIDHasExtraGeosets = modelRow.CreatureGeosetDataID > 0;
 
 			for (const displayID of displayIDs) {
+				displayIDToFileDataID.set(displayID, fileDataID);
+
 				const display = creatureDisplayInfoMap.get(displayID);
 
 				if (modelIDHasExtraGeosets) {
@@ -77,7 +80,15 @@ const getCreatureDisplaysByFileDataID = (fileDataID) => {
 	return creatureDisplays.get(fileDataID);
 };
 
+/**
+ * Gets the file data ID for a given display ID.
+ */
+const getFileDataIDByDisplayID = (displayID) => {
+	return displayIDToFileDataID.get(displayID);
+}
+
 module.exports = {
 	initializeCreatureData,
-	getCreatureDisplaysByFileDataID
+	getCreatureDisplaysByFileDataID,
+	getFileDataIDByDisplayID
 };

@@ -81,7 +81,7 @@ class Skin {
 					priority: data.readUInt8(),
 					shaderID: data.readUInt16LE(),
 					skinSectionIndex: data.readUInt16LE(),
-					geosetIndex: data.readUInt16LE(),
+					flags2: data.readUInt16LE(),
 					colorIndex: data.readUInt16LE(),
 					materialIndex: data.readUInt16LE(),
 					materialLayer: data.readUInt16LE(),

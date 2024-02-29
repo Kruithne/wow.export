@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const EventEmitter = require('events');
@@ -115,6 +115,27 @@ const view = {
 	mapViewerSelectedDir: null,
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
+	chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+	chrCustRaces: [], // Available character races to select from
+	chrCustRaceSelection: [], // Current race ID selected
+	chrCustModels: [], // Available character customization models.
+	chrCustModelSelection: [], // Selected character customization model.
+	chrCustOptions: [], // Available character customization options.
+	chrCustOptionSelection: [], // Selected character customization option.
+	chrCustChoices: [], // Available character customization choices.
+	chrCustChoiceSelection: [], // Selected character customization choice.
+	chrCustActiveChoices: [], // Active character customization choices.
+	chrCustTab: 'models', // Active tab for character customization.
+	chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
+	chrImportChrName: '', // Character import, character name input.
+	chrImportRegions: [],
+	chrImportSelectedRegion: '',
+	chrImportRealms: [],
+	chrImportSelectedRealm: null,
+	chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
+	chrImportChrModelID: 0, // Temporary storage for target character model ID. 
+	chrImportChoices: [], // Temporary storage for character import choices.
+	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',

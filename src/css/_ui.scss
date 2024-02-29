@@ -450,3 +450,27 @@ input[type="number"]::-webkit-outer-spin-button {
 		}
 	}
 }
+
+.ui-combobox {
+	position: relative;
+
+	ul {
+		list-style: none;
+		position: absolute;
+		top: 100%;
+		border: 1px solid var(--border);
+		box-shadow: black 0 0 3px 0;
+		background: #232323;
+		z-index: 5;
+
+		li {
+			border-bottom: 1px solid var(--border);
+			padding: 10px 15px;
+
+			&:hover {
+				background: #353535;
+				cursor: pointer;
+			}
+		}
+	}
+}

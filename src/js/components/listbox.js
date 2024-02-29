@@ -30,8 +30,9 @@ Vue.component('listbox', {
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 * override: If provided, used as an override listfile.
+	 * disable: If provided, used as reactive disable flag.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable'],
 
 	/**
 	 * Reactive instance data.
@@ -217,6 +218,9 @@ Vue.component('listbox', {
 		 * @param {ClipboardEvent} e 
 		 */
 		handlePaste: function(e) {
+			if (this.disable)
+				return;
+
 			// Paste selection must be enabled for this feature.
 			if (!this.pasteselection)
 				return;
@@ -271,6 +275,9 @@ Vue.component('listbox', {
 
 				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {
+				if (this.disable)
+					return;
+
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
 				const isArrowDown = e.key === 'ArrowDown';
@@ -309,6 +316,9 @@ Vue.component('listbox', {
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
+			if (this.disable)
+				return;
+			
 			const checkIndex = this.selection.indexOf(item);
 
 			if (this.single) {
