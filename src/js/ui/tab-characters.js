@@ -494,8 +494,9 @@ async function loadImportJSON(json) {
 	for (const option of availableOptions)
 		availableOptionsIDs.push(option.id);
 
-	// Reset active choices.
-	core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
+	// Reset last imported choices.
+	console.log("[loadImportJSON] Clearing imported choices");
+	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 
 	const parsedChoices = [];
 	for (const customizationEntry of Object.values(json.customizations)) {
@@ -505,7 +506,8 @@ async function loadImportJSON(json) {
 		parsedChoices.push({optionID: customizationEntry.option.id, choiceID: customizationEntry.choice.id});
 	}
 
-	core.view.chrCustActiveChoices.push(...parsedChoices);
+	console.log("[loadImportJSON] Setting imported choices", parsedChoices);
+	core.view.chrImportChoices.push(...parsedChoices);
 }
 
 const exportCharModel = async () => {
@@ -572,6 +574,11 @@ async function updateModelSelection() {
 	// Reset active choices
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
+	if (state.chrImportChoices.length > 0) {
+		console.log("[updateModelSelection] Setting imported choices");
+		state.chrCustActiveChoices.push(...state.chrImportChoices);
+	}
+
 	// Add the new options.
 	state.chrCustOptions.push(...availableOptions);
 	state.chrCustOptionSelection.push(...availableOptions.slice(0, 1));
@@ -587,15 +594,19 @@ async function updateModelSelection() {
 
 	clearMaterials();
 	
-	// For each available option we select the first choice ONLY if the option is a 'default' option.
-	// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
-	for (const option of availableOptions) {
-		const choices = optionToChoices.get(option.id);
-		if (defaultOptions.includes(option.id))
-			state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
+	if (state.chrImportChoices.length == 0) {
+		console.log("[updateModelSelection] Setting default active choices");
+		// For each available option we select the first choice ONLY if the option is a 'default' option.
+		// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
+		for (const option of availableOptions) {
+			const choices = optionToChoices.get(option.id);
+			if (defaultOptions.includes(option.id))
+				state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
+		}
+	} else {
+		console.log("[updateModelSelection] Clearing imported choices");
+		state.chrImportChoices.splice(0, state.chrImportChoices.length);
 	}
-
-	
 }
 
 function clearMaterials() {

@@ -131,6 +131,7 @@ const view = {
 	chrImportSelectedRegion: '',
 	chrImportRealms: [],
 	chrImportSelectedRealm: null,
+	chrImportChoices: [], // Temporary storage for character import choices.
 	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
