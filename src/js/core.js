@@ -126,6 +126,7 @@ const view = {
 	chrCustChoiceSelection: [], // Selected character customization choice.
 	chrCustActiveChoices: [], // Active character customization choices.
 	chrCustTab: 'models', // Active tab for character customization.
+	chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
 	chrImportChrName: '', // Character import, character name input.
 	chrImportRegions: [],
 	chrImportSelectedRegion: '',

@@ -641,7 +641,7 @@
 								<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 								<span class="header">Customization Options</span>
 								<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
-								<p>Options with * use unsupported features.</p>
+								<p v-show="chrCustUnsupportedWarning">Options with * use unsupported features.</p>
 							</div>
 						</div>
 						<div class="char-preview preview-container">
