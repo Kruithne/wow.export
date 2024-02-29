@@ -721,9 +721,13 @@
 	align-items: center;
 	gap: 5px;
 
-	input {
+	input[type=text] {
 		width: 240px;
 		margin: 2px;
+	}
+
+	label {
+		font-size: 14px;
 	}
 
 	ul {

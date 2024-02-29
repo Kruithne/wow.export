@@ -15,6 +15,7 @@ const ExportHelper = require('../casc/export-helper');
 const FileWriter = require('../file-writer');
 const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
+const DBCreatures = require('../db/caches/DBCreatures');
 
 let camera;
 let scene;
@@ -333,10 +334,17 @@ async function updateChrModelList() {
 		listedModelIDs.push(chrModelID);
 	}
 
-	// If we haven't selected a model, we'll try to select the body type at the same index.
-	// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
-	if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0)
-		selectionIndex = 0;
+	if (core.view.chrImportChrModelID != 0) {
+		// If we have an imported character model, we'll try to select it.
+		selectionIndex = listedModelIDs.indexOf(core.view.chrImportChrModelID);
+		core.view.chrImportChrModelID = 0;
+	} else {
+		// If we haven't selected a model, we'll try to select the body type at the same index.
+		// If the old selection is no longer valid, or the index is out of range, just set it to the first one.
+		if (core.view.chrCustModels.length < selectionIndex || selectionIndex < 0)
+			selectionIndex = 0;
+	}
+
 
 	// We've found the model index we want to load, so let's select it:
 	core.view.chrCustModelSelection = [core.view.chrCustModels[selectionIndex]];
@@ -437,7 +445,7 @@ async function importCharacter() {
 		return;
 	}
 
-	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm);
+	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm.label);
 	const url = util.format(core.view.config.armoryURL, selected_region, selected_realm.value, encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
@@ -445,16 +453,20 @@ async function importCharacter() {
 	if (res.ok) {
 		try {
 			loadImportJSON(await res.json());
+			core.view.hideToast();
 		} catch (e) {
 			log.write('Failed to parse character data: %s', e.message);
-			core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
 		}
 	} else {
 		log.write('Failed to retrieve character data: %d %s', res.status, res.statusText);
-		core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+
+		if (res.status == 404)
+			core.setToast('error', 'Could not find character ' + character_label, null, -1);
+		else
+			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
 	}
 
-	core.view.hideToast();
 	core.view.isBusy--;
 }
 
@@ -464,17 +476,50 @@ async function loadImportString(importString) {
 
 async function loadImportJSON(json) {
 	//const selectedChrModelID = core.view.chrCustModelSelection[0].id;
-	const playerRaceID = json.playable_race.id;
+	let playerRaceID = json.playable_race.id;
+
+	// If the player is a Pandaren with a faction, we need to use the neutral Pandaren race.
+	if (playerRaceID == 25 || playerRaceID == 26)
+		playerRaceID = 24;
+
+	// If the player is a Dracthyr (Horde), use Dracthyr (Alliance)
+	if (playerRaceID == 70)
+		playerRaceID = 52;
+
+	// If the player is a Worgen or Dracthyr and the user wants to load the Visage model, remap.
+	if (playerRaceID == 22 && core.view.chrImportLoadVisage)
+		playerRaceID = 23;
+
+	if (playerRaceID == 52 && core.view.chrImportLoadVisage)
+		playerRaceID = 75;
+
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === playerRaceID)];
 
+	const playerGender = json.gender.type;
+	let genderIndex = 0;
+	if (playerGender == "MALE") {
+		genderIndex = 0;
+	} else if (playerGender == "FEMALE") {
+		genderIndex = 1;
+	} else {
+		log.write('Failed to import character, encountered unknown player gender: %s', playerGender);
+		core.setToast('error', 'Failed to import character, encountered unknown player gender: ' + playerGender, null, -1);
+	}
+
+	core.view.chrCustModelSelection = [core.view.chrCustModels[genderIndex]];
+
+	// Get correct ChrModel ID
+	const chrModelID = chrRaceXChrModelMap.get(playerRaceID).get(genderIndex);
+	core.view.chrImportChrModelID = chrModelID;
+
 	// Get available option IDs
-	const availableOptions = optionsByChrModel.get(playerRaceID);
+	const availableOptions = optionsByChrModel.get(chrModelID);
 	const availableOptionsIDs = [];
 	for (const option of availableOptions)
 		availableOptionsIDs.push(option.id);
 
-	// Reset active choices.
-	core.view.chrCustActiveChoices.splice(0, core.view.chrCustActiveChoices.length);
+	// Reset last imported choices.
+	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 
 	const parsedChoices = [];
 	for (const customizationEntry of Object.values(json.customizations)) {
@@ -484,7 +529,7 @@ async function loadImportJSON(json) {
 		parsedChoices.push({optionID: customizationEntry.option.id, choiceID: customizationEntry.choice.id});
 	}
 
-	core.view.chrCustActiveChoices.push(...parsedChoices);
+	core.view.chrImportChoices.push(...parsedChoices);
 }
 
 const exportCharModel = async () => {
@@ -536,6 +581,9 @@ const exportCharModel = async () => {
 async function updateModelSelection() {
 	const state = core.view;
 	const selected = state.chrCustModelSelection[0];
+	if (selected === undefined)
+		return;
+	
 	console.log('Selection changed to ID ' + selected.id + ', label ' + selected.label);
 
 	const availableOptions = optionsByChrModel.get(selected.id);
@@ -550,6 +598,9 @@ async function updateModelSelection() {
 
 	// Reset active choices
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
+
+	if (state.chrImportChoices.length > 0)
+		state.chrCustActiveChoices.push(...state.chrImportChoices);
 
 	// Add the new options.
 	state.chrCustOptions.push(...availableOptions);
@@ -566,15 +617,17 @@ async function updateModelSelection() {
 
 	clearMaterials();
 	
-	// For each available option we select the first choice ONLY if the option is a 'default' option.
-	// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
-	for (const option of availableOptions) {
-		const choices = optionToChoices.get(option.id);
-		if (defaultOptions.includes(option.id))
-			state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
+	if (state.chrImportChoices.length == 0) {
+		// For each available option we select the first choice ONLY if the option is a 'default' option.
+		// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
+		for (const option of availableOptions) {
+			const choices = optionToChoices.get(option.id);
+			if (defaultOptions.includes(option.id))
+				state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
+		}
+	} else {
+		state.chrImportChoices.splice(0, state.chrImportChoices.length);
 	}
-
-	
 }
 
 function clearMaterials() {
@@ -625,7 +678,7 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(17);
+	const progress = core.createProgress(15);
 	state.setScreen('loading');
 	state.isBusy++;
 
@@ -661,15 +714,6 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character customization choices...');
 	chrCustChoiceDB = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
 	await chrCustChoiceDB.parse();
-
-	// TODO: We already have these loaded through DBCreatures cache. Get from there instead.
-	await progress.step('Loading creature display info...');
-	const creatureDisplayInfoDB = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-	await creatureDisplayInfoDB.parse();
-
-	await progress.step('Loading creature model data...');
-	const creatureModelDataDB = new WDCReader('DBFilesClient/CreatureModelData.db2');
-	await creatureModelDataDB.parse();
 
 	// TODO: There is so many DB2 loading below relying on fields existing, we should probably check for them first and handle missing ones gracefully.
 	await progress.step('Loading character customization materials...');
@@ -714,19 +758,9 @@ core.events.once('screen-tab-characters', async () => {
 	await chrCustOptDB.parse();
 
 	for (const [chrModelID, chrModelRow] of chrModelDB.getAllRows()) {
-		const displayRow = creatureDisplayInfoDB.getRow(chrModelRow.DisplayID);
-		if (displayRow === null) {
-			log.write(`No display info for chrModelID ${chrModelID}, DisplayID ${chrModelRow.DisplayID} not found, skipping.`);
-			continue;
-		}
+		const fileDataID = DBCreatures.getFileDataIDByDisplayID(chrModelRow.DisplayID);
 
-		const modelRow = creatureModelDataDB.getRow(displayRow.ModelID);
-		if (modelRow === null) {
-			log.write(`No model data found for CreatureModelDataID ${displayRow.ModelID}, skipping.`);
-			continue;
-		}
-
-		chrModelIDToFileDataID.set(chrModelID, modelRow.FileDataID);
+		chrModelIDToFileDataID.set(chrModelID, fileDataID);
 		chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutID);
 
 		for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustOptDB.getAllRows()) {
