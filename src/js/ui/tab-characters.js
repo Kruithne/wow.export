@@ -15,6 +15,7 @@ const ExportHelper = require('../casc/export-helper');
 const FileWriter = require('../file-writer');
 const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
+const DBCreatures = require('../db/caches/DBCreatures');
 
 let camera;
 let scene;
@@ -625,7 +626,7 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(17);
+	const progress = core.createProgress(15);
 	state.setScreen('loading');
 	state.isBusy++;
 
@@ -661,15 +662,6 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character customization choices...');
 	chrCustChoiceDB = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
 	await chrCustChoiceDB.parse();
-
-	// TODO: We already have these loaded through DBCreatures cache. Get from there instead.
-	await progress.step('Loading creature display info...');
-	const creatureDisplayInfoDB = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-	await creatureDisplayInfoDB.parse();
-
-	await progress.step('Loading creature model data...');
-	const creatureModelDataDB = new WDCReader('DBFilesClient/CreatureModelData.db2');
-	await creatureModelDataDB.parse();
 
 	// TODO: There is so many DB2 loading below relying on fields existing, we should probably check for them first and handle missing ones gracefully.
 	await progress.step('Loading character customization materials...');
@@ -714,19 +706,9 @@ core.events.once('screen-tab-characters', async () => {
 	await chrCustOptDB.parse();
 
 	for (const [chrModelID, chrModelRow] of chrModelDB.getAllRows()) {
-		const displayRow = creatureDisplayInfoDB.getRow(chrModelRow.DisplayID);
-		if (displayRow === null) {
-			log.write(`No display info for chrModelID ${chrModelID}, DisplayID ${chrModelRow.DisplayID} not found, skipping.`);
-			continue;
-		}
+		const fileDataID = DBCreatures.getFileDataIDByDisplayID(chrModelRow.DisplayID);
 
-		const modelRow = creatureModelDataDB.getRow(displayRow.ModelID);
-		if (modelRow === null) {
-			log.write(`No model data found for CreatureModelDataID ${displayRow.ModelID}, skipping.`);
-			continue;
-		}
-
-		chrModelIDToFileDataID.set(chrModelID, modelRow.FileDataID);
+		chrModelIDToFileDataID.set(chrModelID, fileDataID);
 		chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutID);
 
 		for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustOptDB.getAllRows()) {
