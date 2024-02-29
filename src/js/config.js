@@ -126,7 +126,7 @@ core.events.on('click-config-apply', () => {
 		return core.setToast('error', 'A valid listfile URL or path is required.', { 'Use Default': () => cfg.listfileURL = defaultConfig.listfileURL }, -1);
 
 	if (cfg.armoryURL.length === 0 || !cfg.armoryURL.startsWith('http'))
-		return core.setToast('error', 'A valid URL is required for Armory updates.', { 'Use Default': () => cfg.armoryURL = defaultConfig.armoryURL }, -1);
+		return core.setToast('error', 'A valid URL is required for the Character Appearance API.', { 'Use Default': () => cfg.armoryURL = defaultConfig.armoryURL }, -1);
 
 	if (cfg.tactKeysURL.length === 0 || !cfg.tactKeysURL.startsWith('http'))
 		return core.setToast('error', 'A valid URL is required for encryption key updates.', { 'Use Default': () => cfg.tactKeysURL = defaultConfig.tactKeysURL }, -1);

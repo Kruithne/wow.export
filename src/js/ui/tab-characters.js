@@ -438,7 +438,7 @@ async function importCharacter() {
 		return;
 	}
 
-	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm);
+	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm.label);
 	const url = util.format(core.view.config.armoryURL, selected_region, selected_realm.value, encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
@@ -446,16 +446,20 @@ async function importCharacter() {
 	if (res.ok) {
 		try {
 			loadImportJSON(await res.json());
+			core.view.hideToast();
 		} catch (e) {
 			log.write('Failed to parse character data: %s', e.message);
-			core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
 		}
 	} else {
 		log.write('Failed to retrieve character data: %d %s', res.status, res.statusText);
-		core.setToast('error', 'Failed to import armory character ' + character_label, null, -1);
+
+		if (res.status == 404)
+			core.setToast('error', 'Could not find character ' + character_label, null, -1);
+		else
+			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
 	}
 
-	core.view.hideToast();
 	core.view.isBusy--;
 }
 
