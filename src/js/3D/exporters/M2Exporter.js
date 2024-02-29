@@ -385,7 +385,27 @@ class M2Exporter {
 		// A normal meta-data file is around 8kb without bones, 65mb with bones.
 		if (exportBones) {
 			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
-			json.addProperty('bones', this.m2.bones);
+
+			if (this.m2.skeletonFileID) {
+				const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
+				const skel = new SKELLoader(skel_file);
+	
+				await skel.load();
+	
+				if (skel.parent_skel_file_id > 0) {
+					const parent_skel_file = await core.view.casc.getFile(skel.parent_skel_file_id);
+					const parent_skel = new SKELLoader(parent_skel_file);
+					await parent_skel.load();
+	
+					json.addProperty('bones', parent_skel.bones);
+				} else {
+					json.addProperty('bones', skel.bones);
+				}
+	
+			} else {
+				json.addProperty('bones', this.m2.bones);
+			}
+
 			json.addProperty('boneWeights', this.m2.boneWeights);
 			json.addProperty('boneIndicies', this.m2.boneIndices);
 
