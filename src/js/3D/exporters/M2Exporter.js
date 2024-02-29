@@ -591,6 +591,124 @@ class M2Exporter {
 			await skelData.writeToFile(skelFile);
 			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: path.relative(outDir, skelFile) });
 			fileManifest?.push({ type: 'SKEL', fileDataID: this.m2.skeletonFileID, file: skelFile });
+
+			const skel = new SKELLoader(skelData);
+			await skel.load();
+
+			if (config.modelsExportAnim) {
+				await skel.loadAnims();
+				if (config.modelsExportAnim && skel.animFileIDs) {
+					const animManifest = [];
+					const animCache = new Set();
+					for (const anim of skel.animFileIDs) {
+						if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+							const animData = await casc.getFile(anim.fileDataID);
+							const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+							
+							let animFile;
+							if (config.enableSharedChildren)
+								animFile = ExportHelper.getExportPath(animFileName);
+							else
+								animFile = path.join(outDir, path.basename(animFileName));
+
+							await animData.writeToFile(animFile);
+							animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+							fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
+							animCache.add(anim.fileDataID);
+						}
+					}
+
+					manifest.addProperty('skelAnims', animManifest);
+				}
+
+				if (config.modelsExportBone && skel.boneFileIDs) {
+					const boneManifest = [];
+					for (let i = 0, n = skel.boneFileIDs.length; i < n; i++) {
+						const boneFileID = skel.boneFileIDs[i];
+						const boneData = await casc.getFile(boneFileID);
+						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+		
+						let boneFile;
+						if (config.enableSharedChildren)
+							boneFile = ExportHelper.getExportPath(boneFileName);
+						else
+							boneFile = path.join(outDir, path.basename(boneFileName));
+		
+						await boneData.writeToFile(boneFile);
+						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
+					}
+		
+					manifest.addProperty('skelBones', boneManifest);
+				}
+			}
+
+			if (skel.parent_skel_file_id > 0) {
+				const parentSkelData = await core.view.casc.getFile(skel.parent_skel_file_id);
+				const parentSkelFileName = listfile.getByID(skel.parent_skel_file_id);
+	
+				let parentSkelFile;
+				if (config.enableSharedChildren)
+					parentSkelFile = ExportHelper.getExportPath(parentSkelFileName);
+				else
+					parentSkelFile = path.join(outDir, path.basename(parentSkelFileName));
+	
+				await parentSkelData.writeToFile(parentSkelFile);
+	
+				manifest.addProperty('parentSkeleton', { fileDataID: skel.parent_skel_file_id, file: path.relative(outDir, parentSkelFile) });
+				fileManifest?.push({ type: 'PARENT_SKEL', fileDataID: skel.parent_skel_file_id, file: parentSkelFile });
+	
+				const parentSkel = new SKELLoader(parentSkelData);
+				await parentSkel.load();
+
+				if (config.modelsExportAnim) {
+					await parentSkel.loadAnims();
+					if (config.modelsExportAnim && parentSkel.animFileIDs) {
+						const animManifest = [];
+						const animCache = new Set();
+						for (const anim of parentSkel.animFileIDs) {
+							if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+								const animData = await casc.getFile(anim.fileDataID);
+								const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+								
+								let animFile;
+								if (config.enableSharedChildren)
+									animFile = ExportHelper.getExportPath(animFileName);
+								else
+									animFile = path.join(outDir, path.basename(animFileName));
+	
+								await animData.writeToFile(animFile);
+								animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+								fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
+								animCache.add(anim.fileDataID);
+							}
+						}
+	
+						manifest.addProperty('parentSkelAnims', animManifest);
+					}
+				}
+
+				if (config.modelsExportBone && parentSkel.boneFileIDs) {
+					const boneManifest = [];
+					for (let i = 0, n = parentSkel.boneFileIDs.length; i < n; i++) {
+						const boneFileID = parentSkel.boneFileIDs[i];
+						const boneData = await casc.getFile(boneFileID);
+						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+		
+						let boneFile;
+						if (config.enableSharedChildren)
+							boneFile = ExportHelper.getExportPath(boneFileName);
+						else
+							boneFile = path.join(outDir, path.basename(boneFileName));
+		
+						await boneData.writeToFile(boneFile);
+						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
+					}
+		
+					manifest.addProperty('parentSkelBones', boneManifest);
+				}
+			}
 		}
 
 		// Write relative bone files.
