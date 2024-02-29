@@ -725,25 +725,38 @@ class WMOExporter {
 		if (config.modelsExportWMOGroups) {
 			const groupManifest = [];
 			const wmoFileName = this.wmo.fileName;
-			for (let i = 0, n = this.wmo.groupCount; i < n; i++) {
-				// Abort if the export has been cancelled.
-				if (helper.isCancelled())
-					return;
 
-				const groupName = ExportHelper.replaceExtension(wmoFileName, '_' + i.toString().padStart(3, '0') + '.wmo');
-				const groupFileDataID = this.wmo.groupIDs?.[i] ?? listfile.getByFilename(groupName);
-				const groupData = await casc.getFile(groupFileDataID);
+			const lodCount = this.wmo.groupIDs.length / this.wmo.groupCount;
 
-				let groupFile;
-				if (config.enableSharedChildren)
-					groupFile = ExportHelper.getExportPath(groupName);
-				else
-					groupFile = path.join(out, path.basename(groupName));
+			let groupOffset = 0;
+			for (let lodIndex = 0; lodIndex < lodCount; lodIndex++) {
+				for (let groupIndex = 0; groupIndex < this.wmo.groupCount; groupIndex++) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
+	
+					let groupName;
+					if (lodIndex > 0)
+						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '_lod' + lodIndex + '.wmo');
+					else
+						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '.wmo');
+					
+					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? listfile.getByFilename(groupName);
+					const groupData = await casc.getFile(groupFileDataID);
+					
+					groupOffset++;
 
-				await groupData.writeToFile(groupFile);
-
-				fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
-				groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+					let groupFile;
+					if (config.enableSharedChildren)
+						groupFile = ExportHelper.getExportPath(groupName);
+					else
+						groupFile = path.join(out, path.basename(groupName));
+	
+					await groupData.writeToFile(groupFile);
+	
+					fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
+					groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+				}
 			}
 
 			manifest.addProperty('groups', groupManifest);
