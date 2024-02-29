@@ -811,7 +811,7 @@ core.events.once('screen-tab-characters', async () => {
 
 	for (const [chrRaceID, chrRaceRow] of chrRacesDB.getAllRows()) {
 		const flags = chrRaceRow.Flags;
-		chrRaceMap.set(chrRaceID, { id: chrRaceID, name: chrRaceRow.Name_lang, isNPCRace: ((flags & 1) == 1 && chrRaceID != 24 && chrRaceID != 75) });
+		chrRaceMap.set(chrRaceID, { id: chrRaceID, name: chrRaceRow.Name_lang, isNPCRace: ((flags & 1) == 1 && chrRaceID != 23 && chrRaceID != 75) });
 	}
 
 	await progress.step('Loading character race models..');
