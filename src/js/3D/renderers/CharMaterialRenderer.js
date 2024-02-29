@@ -113,6 +113,7 @@ class CharMaterialRenderer {
 		this.clearCanvas();
 		overlay.remove(this.glCanvas);
 
+		this.gl.getExtension('WEBGL_lose_context').loseContext();
 		this.glCanvas = null;
 		this.gl = null;		
 	}
