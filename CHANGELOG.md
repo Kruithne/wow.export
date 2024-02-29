@@ -1,3 +1,10 @@
+0.1.60 (xx-03-2024)
+- Added exporting of .skel files and files referenced by .skel files for raw M2 exports.
+- Added exporting of WMO LOD groups for raw WMO exports.
+- Added exporting of other WDT files for raw map exports.
+- Fixed missing map name from raw ADT export filenames.
+- Fixed missing bone data from OBJ exports with bone JSON exports enabled.
+
 0.1.59 (29-02-2024)
 - Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.
   Note: Please see the pinned issue on top of our GitHub issues page for known issues/requests before reporting a bug/making a suggestion.
