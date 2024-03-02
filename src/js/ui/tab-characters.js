@@ -931,4 +931,14 @@ core.registerLoadFunc(async () => {
 
 	// Expose loadImportString for debugging purposes.
 	window.loadImportString = loadImportString;
+
+	// Export shader reset for debugging purposes.
+	window.reloadShaders = async () => {
+		await CharMaterialRenderer.init();
+
+		for (const material of chrMaterials.values())
+			await material.compileShaders();
+
+		await uploadRenderOverrideTextures();
+	}
 });
