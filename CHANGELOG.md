@@ -4,6 +4,7 @@
 - Added exporting of other WDT files for raw map exports.
 - Fixed missing map name from raw ADT export filenames.
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
+- Improved blending on some character textures.
 
 0.1.59 (29-02-2024)
 - Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.
