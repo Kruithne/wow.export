@@ -288,10 +288,13 @@ class CharMaterialRenderer {
 				case 4: // Multiply
 				case 6: // Overlay
 				case 7: // Screen
-				case 9: // Alpha Straight
 				case 15: // Infer alpha blend
 					this.gl.enable(this.gl.BLEND);
 					this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+					break;
+				case 9: // Alpha Straight
+					this.gl.enable(this.gl.BLEND);
+					this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
 					break;
 				// The following blend modes are not used in character customization
 				case 2: // Blit Alphamask 
