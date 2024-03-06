@@ -84,6 +84,8 @@ def createStandardMaterial(materialName, textureLocation, settings):
     principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
 
+MIX_NODE_COLOR_SOCKETS = {}
+
 def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
@@ -141,26 +143,46 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
 
     for idx, layer in enumerate(layers[1:]):
         mix_node = nodes.new('ShaderNodeMix')
+        if not MIX_NODE_COLOR_SOCKETS:
+            MIX_NODE_COLOR_SOCKETS['in'] = {
+                i.name: idx
+                for idx, i in enumerate(mix_node.inputs)
+                if i.type == 'RGBA'
+            }
+            MIX_NODE_COLOR_SOCKETS['out'] = {
+                i.name: idx
+                for idx, i in enumerate(mix_node.outputs)
+                if i.type == 'RGBA'
+            }
+
         mix_node.data_type = 'RGBA'
         node_tree.links.new(alpha_map_channels.outputs[idx], mix_node.inputs['Factor'])
 
         if last_mix_node is None:
-            node_tree.links.new(base_layer.outputs['Color'], mix_node.inputs['A'])
+            node_tree.links.new(
+                base_layer.outputs['Color'],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
         else:
-            node_tree.links.new(last_mix_node.outputs['Result'], mix_node.inputs['A'])
+            node_tree.links.new(
+                last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
 
         layer_texture = nodes.new('ShaderNodeTexImage')
         layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
         layer_texture.image.alpha_mode = 'NONE'
         node_tree.links.new(texture_mapping.outputs['Vector'], layer_texture.inputs['Vector'])
-        node_tree.links.new(layer_texture.outputs['Color'], mix_node.inputs['B'])
+        node_tree.links.new(
+            layer_texture.outputs['Color'],
+            mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
 
         last_mix_node = mix_node
 
     if last_mix_node is None:
         node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
     else:
-        node_tree.links.new(last_mix_node.outputs['Result'], principled.inputs['Base Color'])
+        node_tree.links.new(
+            last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+            principled.inputs['Base Color'])
 
             
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
