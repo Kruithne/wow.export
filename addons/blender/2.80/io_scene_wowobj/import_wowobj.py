@@ -112,7 +112,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
     # If there is no default Principled BSDF node, create one and link it to material output.
     if not principled:
         principled = nodes.new('ShaderNodeBsdfPrincipled')
-        # node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+        node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
 
     # Set the specular value to 0 by default.
     principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
@@ -137,22 +137,30 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
     base_layer.image.alpha_mode = 'NONE'
     node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
 
-    last_mix_shader = base_layer
+    last_mix_node = None
 
     for idx, layer in enumerate(layers[1:]):
+        mix_node = nodes.new('ShaderNodeMix')
+        mix_node.data_type = 'RGBA'
+        node_tree.links.new(alpha_map_channels.outputs[idx], mix_node.inputs['Factor'])
+
+        if last_mix_node is None:
+            node_tree.links.new(base_layer.outputs['Color'], mix_node.inputs['A'])
+        else:
+            node_tree.links.new(last_mix_node.outputs['Result'], mix_node.inputs['A'])
+
         layer_texture = nodes.new('ShaderNodeTexImage')
         layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
         layer_texture.image.alpha_mode = 'NONE'
         node_tree.links.new(texture_mapping.outputs['Vector'], layer_texture.inputs['Vector'])
+        node_tree.links.new(layer_texture.outputs['Color'], mix_node.inputs['B'])
 
-        mix_shader = nodes.new('ShaderNodeMixShader')
-        node_tree.links.new(alpha_map_channels.outputs[idx], mix_shader.inputs['Fac'])
-        node_tree.links.new(last_mix_shader.outputs[0], mix_shader.inputs[1])
-        node_tree.links.new(layer_texture.outputs['Color'], mix_shader.inputs[2])
+        last_mix_node = mix_node
 
-        last_mix_shader = mix_shader
-
-    node_tree.links.new(last_mix_shader.outputs[0], outNode.inputs['Surface'])
+    if last_mix_node is None:
+        node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
+    else:
+        node_tree.links.new(last_mix_node.outputs['Result'], principled.inputs['Base Color'])
 
             
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
