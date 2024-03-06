@@ -3,7 +3,6 @@ import bmesh
 import os
 import csv
 import hashlib
-import re
 import json
 
 from math import radians
