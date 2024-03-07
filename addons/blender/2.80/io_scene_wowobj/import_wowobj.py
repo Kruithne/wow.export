@@ -380,7 +380,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
                 
                 if material is None and materialName in usedMaterials:
-                    material = createStandardMaterial(materialName, textureLocation, -1)
+                    material = createStandardMaterial(materialName, textureLocation, -1, False)
 
             if settings.useAlpha:
                 for bm, (materialBName, materialBMat) in materialB.items():
