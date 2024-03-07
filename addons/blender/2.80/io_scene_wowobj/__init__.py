@@ -52,8 +52,9 @@ class Settings:
     importGOBJ = True
     importTextures = True
     useTerrainBlending = True
+    createEmissiveMaterials = False
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True):
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = False):
         self.useAlpha = useAlpha
         self.createVertexGroups = createVertexGroups
         self.allowDuplicates = allowDuplicates
@@ -63,6 +64,7 @@ class Settings:
         self.importGOBJ = importGOBJ
         self.importTextures = importTextures
         self.useTerrainBlending = useTerrainBlending
+        self.createEmissiveMaterials = createEmissiveMaterials
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File with additional ADT metadata'''
@@ -84,6 +86,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     createVertexGroups: bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
     allowDuplicates: bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
     useTerrainBlending: bpy.props.BoolProperty(name = 'Use terrain blending', description = 'Blend terrain textures using exported alpha maps', default = 1)
+    createEmissiveMaterials: bpy.props.BoolProperty(name = 'Create emissive materials', description = 'When applicable based on the material\'s blending mode. Might be less compatible when exporting to use in other software', default = 0)
 
     def execute(self, context):
         settings = Settings(
@@ -96,6 +99,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             importGOBJ = self.importGOBJ,
             importTextures = self.importTextures,
             useTerrainBlending = self.useTerrainBlending,
+            createEmissiveMaterials = self.createEmissiveMaterials,
         )
 
         from . import import_wowobj
@@ -123,6 +127,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, 'createVertexGroups')
         box.prop(self, 'allowDuplicates')
         box.prop(self, 'useTerrainBlending')
+        box.prop(self, 'createEmissiveMaterials')
 
 def menu_func_import(self, context):
     self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')

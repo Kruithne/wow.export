@@ -43,7 +43,7 @@ def loadImage(textureLocation):
 
     return bpy.data.images[imageName]
 
-def createStandardMaterial(materialName, textureLocation, blendMode):
+def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
 
@@ -88,13 +88,26 @@ def createStandardMaterial(materialName, textureLocation, blendMode):
     image.image = loadImage(textureLocation)
     image.image.alpha_mode = 'CHANNEL_PACKED'
 
-    node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+    if blendMode == 4 and createEmissive:
+        nodes.remove(principled)
+        emission = nodes.new('ShaderNodeEmission')
+        node_tree.links.new(image.outputs['Color'], emission.inputs['Color'])
+        node_tree.links.new(image.outputs['Alpha'], emission.inputs['Strength'])
 
-    if blendMode != 0:
-        node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
 
-    # Set the specular value to 0 by default.
-    principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+        add_shader = nodes.new('ShaderNodeAddShader')
+        node_tree.links.new(transparent.outputs['BSDF'], add_shader.inputs[0])
+        node_tree.links.new(emission.outputs['Emission'], add_shader.inputs[1])
+        node_tree.links.new(add_shader.outputs['Shader'], outNode.inputs['Surface'])
+    else:
+        node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+
+        if blendMode != 0:
+            node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+
+        # Set the specular value to 0 by default.
+        principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
     return material
 
@@ -373,7 +386,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 for bm, (materialBName, materialBMat) in materialB.items():
                     # create materials with different blending modes
                     if materialBName in usedMaterials and materialBMat is None:
-                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm))
+                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials))
 
             if materialName in usedMaterials:
                 obj.data.materials.append(material)
