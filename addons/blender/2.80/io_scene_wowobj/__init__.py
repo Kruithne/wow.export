@@ -51,9 +51,9 @@ class Settings:
     importM2 = True
     importGOBJ = True
     importTextures = True
-    useTerrainBlending = False
+    useTerrainBlending = True
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = False):
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True):
         self.useAlpha = useAlpha
         self.createVertexGroups = createVertexGroups
         self.allowDuplicates = allowDuplicates
@@ -83,7 +83,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     useAlpha: bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
     createVertexGroups: bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
     allowDuplicates: bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
-    useTerrainBlending: bpy.props.BoolProperty(name = 'Use terrain blending', description = 'Blend terrain textures using exported alpha maps', default = 0)
+    useTerrainBlending: bpy.props.BoolProperty(name = 'Use terrain blending', description = 'Blend terrain textures using exported alpha maps', default = 1)
 
     def execute(self, context):
         settings = Settings(
