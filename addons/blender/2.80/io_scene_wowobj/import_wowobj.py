@@ -47,7 +47,7 @@ def createStandardMaterial(materialName, textureLocation, blendMode):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
 
-    if blendMode == 2:
+    if blendMode in {2, 4}:
         material.blend_method = 'BLEND'
     else:
         material.blend_method = 'CLIP'
@@ -245,7 +245,10 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             if json_info.get('fileType') == 'm2':
                 json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
             elif json_info.get('fileType') == 'wmo':
-                pass
+                json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
+                json_info['mtlIndexes'] = {
+                    json_info['mtlTextureIds'][data['texture1']]: idx
+                    for idx, data in enumerate(json_info['materials'])}
     except:
         pass
 
@@ -288,11 +291,17 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 materialName = normalizeName(line_split[1].decode('utf-8'))
 
                 if settings.useAlpha:
+                    blendingMode = None
+
                     if json_info.get('fileType') == 'm2':
-                        blending_mode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
-                        matBlendModes[materialName].append(blending_mode)
+                        blendingMode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
+                    elif json_info.get('fileType') == 'wmo':
+                        blendingMode = json_info['materials'][json_info['mtlIndexes'][materialName]]['blendMode']
+
+                    if blendingMode is not None:
+                        matBlendModes[materialName].append(blendingMode)
                         # use texture with specific blending mode
-                        materialName += '_B' + str(blending_mode)
+                        materialName += '_B' + str(blendingMode)
 
                 meshes[meshIndex].usemtl = materialName
 
