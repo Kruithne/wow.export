@@ -585,162 +585,106 @@
 }
 
 #tab-characters {
-	display: grid;
-	grid-template-rows: 1fr;
-	grid-template-columns: 1fr 4fr 1fr;
-	padding-bottom: 20px;
+	display: flex;
+	justify-content: space-between;
 
-	#export-char-btn {
-		height: 40px;
+	.texture-preview-panel {
+		position: absolute;
 	}
 
-	.ui-listbox {
-		margin: 10px 0 0 0;
+	.preview-container {
+		width: calc(100% - 40px);
+		height: calc(100% - 40px);
+		margin: 20px;
 	}
 
-	#inline-npc-races {
-		float: right;
-		font-size: 15px;
+	.header {
+		margin-top: 10px;
 	}
 
-	#chr-texture-preview {
-		pointer-events: none;
-	}
-
-	#chr-overlay-btn {
+	.tab-control {
 		display: flex;
-		flex-direction: row-reverse;
-		margin-bottom: 5px;
-		pointer-events: all;
+		flex-direction: row;
+		justify-content: center;
 
-		input {
-			transform: scale(0.8);
+		& > span:first-child {
+			border-top-left-radius: 10px;
+			border-bottom-left-radius: 10px;
 		}
-	}
 
-	.char-preview {
-		margin: 20px 0 0 20px;
+		& > span:last-child {
+			border-top-right-radius: 10px;
+			border-bottom-right-radius: 10px;
+		}
 
-		.texture-preview-panel {
-			position: absolute;
-			right: 1em;
-			bottom: 1em;
-			display: flex;
-			flex-direction: column;
-			align-items: flex-end;
-			flex-wrap: nowrap;
+		span {
+			width: 100%;
+			text-align: center;
+			font-size: 20px;
+			padding: 5px;
+			cursor: pointer;
+			background-color: var(--form-button-disabled);
 
-			canvas {
-				max-width: min(80%, 512px);
+			&.selected {
+				background-color: var(--form-button-hover);
 			}
 		}
 	}
 
 	.left-panel {
-		grid-column: 1;
-		display: grid;
-		min-width: 315px;
-		grid-template-rows: 75px 766px;
+		padding: 20px 0 20px 20px;
+		width: 315px;
 
-		& > * {
-			margin: 20px 10px 0 20px;
-		}
-
-		.section-end {
-			margin-bottom: 10px;
-		}
-
-		.model-tab {
-			display: grid;
-			grid-template-rows: 22px 3fr 22px 1fr;
-		}
-	
-		.option-tab {
-			display: grid;
-			grid-template-rows: 32px 2fr 32px 3fr 24px;
-	
-			.header {
-				margin-top: 10px;
-			}
-
-			#chrCustUnsupportedText {
-				font-size: 13px;
+		#model-tab {
+			#inline-npc-races {
+				margin: 10px 15px;
 			}
 		}
-	
-		.tab-control {
-			display: flex;
-			flex-direction: column;
-			flex-wrap: wrap;
 
-			& > span:first-child {
-				border-top-left-radius: 10px;
-				border-bottom-left-radius: 10px;
-			}
+		#listbox-chr-race {
+			height: 417px;
+		}
 
-			& > span:last-child {
-				border-top-right-radius: 10px;
-				border-bottom-right-radius: 10px;
-			}
-
-			span {
-				text-align: center;
-				font-size: 20px;
-				padding: 5px;
-				cursor: pointer;
-				background-color: var(--form-button-disabled);
-
-				&.selected {
-					background-color: var(--form-button-hover);
-				}
-			}
+		#listbox-chr-model {
+			height: 52px;
 		}
 	}
 
 	.right-panel {
-		grid-column: 3;
-		display: grid;
-		min-width: 300px;
-		grid-template-rows: 245px 23px 60px 335px 32px 32px 32px 32px 72px;
+		padding: 20px 20px 20px 0;
+		width: 300px;
 
-		& > * {
-			margin: 20px 10px 0 20px;
+		#character-import-panel {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 5px;
+		
+			input[type=text] {
+				width: 177px;
+				margin: 2px;
+			}
+		
+			label {
+				font-size: 12px;
+			}
+		
+			ul {
+				margin: 5px;
+			}
 		}
 
-		.section-end {
-			margin-bottom: 10px;
+		#checkbox-geosets {
+			height: 131px;
+			margin-top: 5px;
 		}
 
 		.list-toggles {
-			font-size: 14px;
-			text-align: center;
-			margin-top: 5px;
+			margin: 5px 0;
 		}
-	}
 
-	.export-controls {
-		display: flex;
-		justify-content: flex-end;
-		align-items: center;
-	}
-}
-
-#character-import-panel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 5px;
-
-	input[type=text] {
-		width: 240px;
-		margin: 2px;
-	}
-
-	label {
-		font-size: 12px;
-	}
-
-	ul {
-		margin: 5px;
+		#export-chr-btn {
+			margin-top: 10px;
+		}
 	}
 }

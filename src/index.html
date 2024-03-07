@@ -632,9 +632,9 @@
 										<span>Show NPC races</span>
 									</label>
 								</span>
-								<listboxb class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
+								<listboxb id="listbox-chr-race" class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
 								<span class="header">Body Type</span>
-								<listboxb :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-model" :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
 							<div class="option-tab" v-show="chrCustTab  === 'options'">
 								<span class="header">Customizations</span>
@@ -656,7 +656,11 @@
 							</div>
 						</div>
 						<div class="right-panel">
-							<div id="character-import-panel">
+							<div class="tab-control">
+								<span @click="chrCustRightTab = 'geosets'" :class="{ selected: chrCustRightTab === 'geosets' }">Geosets</span>
+								<span @click="chrCustRightTab = 'import'" :class="{ selected: chrCustRightTab === 'import' }">Import</span>
+							</div>
+							<div id="character-import-panel" v-if="chrCustRightTab == 'import'">
 								<div class="header"><b>Character Import</b></div>
 								<ul class="ui-multi-button">
 									<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
@@ -669,11 +673,13 @@
 								</label>
 								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
 							</div>
-							<div class="header"><b>Geosets</b></div>
-							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
-							<checkboxlist :items="modelViewerGeosets"></checkboxlist>
-							<div class="list-toggles">
-								<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+							<div v-if="chrCustRightTab == 'geosets'">
+								<div class="header"><b>Geosets</b></div>
+								<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
+								<checkboxlist id="checkbox-geosets" :items="modelViewerGeosets"></checkboxlist>
+								<div class="list-toggles">
+									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+								</div>
 							</div>
 							<label class="ui-checkbox" title="Include Animations in Export">
 								<input type="checkbox" v-model="config.modelsExportAnimations"/>
