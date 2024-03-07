@@ -83,6 +83,8 @@ def createStandardMaterial(materialName, textureLocation, settings):
     # Set the specular value to 0 by default.
     principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
+    return material
+
 
 MIX_NODE_COLOR_SOCKETS = {}
 
@@ -183,6 +185,8 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         node_tree.links.new(
             last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
             principled.inputs['Base Color'])
+
+    return material
 
             
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
