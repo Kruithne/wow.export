@@ -6,6 +6,7 @@
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
 - Improved blending on some character textures.
 - Fixed issue with alpha maps from early maps such as Emerald Dream being exported incorrectly.
+- Fixed issue causing seams to appear on baked character textures.
 
 0.1.59 (29-02-2024)
 - Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.

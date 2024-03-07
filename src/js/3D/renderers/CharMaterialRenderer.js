@@ -19,12 +19,12 @@ let VERT_SHADER_TEXT = '';
 let FRAG_SHADER_TEXT = '';
 
 const UV_BUFFER_DATA = new Float32Array([
-	0, 0, 
-	1.0, 0, 
-	0,  -1.0, 
-	0,  -1.0, 
-	1.0, 0, 
-	1.0,  -1.0
+	0, 1,
+	1, 1,
+	0, 0,
+	0, 0,
+	1, 1,
+	1, 0
 ]);
 
 class CharMaterialRenderer {
@@ -278,6 +278,9 @@ class CharMaterialRenderer {
 
 			this.gl.activeTexture(this.gl.TEXTURE0);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, layer.textureID);
+
+			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
 
 			switch (layer.textureLayer.BlendMode) {
 				case 0: // None
