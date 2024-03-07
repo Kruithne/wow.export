@@ -567,6 +567,8 @@ class ADTExporter {
 						const texChunk = texAdt.texChunks[chunkIndex];
 						const rootChunk = rootAdt.chunks[chunkIndex];
 
+						const fix_alpha_map = !(rootChunk.flags & (1 << 15));
+
 						const alphaLayers = texChunk.alphaLayers || [];
 						const imageData = ctx.createImageData(64, 64);
 
@@ -574,8 +576,24 @@ class ADTExporter {
 						for (let i = 1; i < alphaLayers.length; i++) {
 							const layer = alphaLayers[i];
 
-							for (let j = 0; j < layer.length; j++)
-								imageData.data[(j * 4) + (i - 1)] = layer[j];
+							for (let j = 0; j < layer.length; j++) {
+								const isLastColumn = (j % 64) === 63;
+								const isLastRow = j >= 63 * 64;
+							
+								// fix_alpha_map: layer is 63x63, fill last column/row.
+								if (fix_alpha_map) {
+									if (isLastColumn && !isLastRow) {
+										imageData.data[(j * 4) + (i - 1)] = layer[j - 1];
+									} else if (isLastRow) {
+										const prevRowIndex = j - 64;
+										imageData.data[(j * 4) + (i - 1)] = layer[prevRowIndex];
+									} else {
+										imageData.data[(j * 4) + (i - 1)] = layer[j];
+									}
+								} else {
+									imageData.data[(j * 4) + (i - 1)] = layer[j];
+								}
+							}
 						}
 
 						// Set all the alpha values to max.
