@@ -86,107 +86,121 @@ def createStandardMaterial(materialName, textureLocation, settings):
     return material
 
 
-MIX_NODE_COLOR_SOCKETS = {}
+MIX_NODE_COLOR_SOCKETS = {'in': {}, 'out': {}}
+
+def calculate_color_sockets(mix_node):
+    input_index = 0
+    for idx, i in enumerate(mix_node.inputs):
+        if 'Fac' in i.name and i.type == 'VALUE':
+            MIX_NODE_COLOR_SOCKETS['in']['Factor'] = idx
+        if i.type == 'RGBA':
+            MIX_NODE_COLOR_SOCKETS['in'][('A', 'B')[input_index]] = idx
+            input_index += 1
+
+    for idx, i in enumerate(mix_node.outputs):
+        if i.type == 'RGBA':
+            MIX_NODE_COLOR_SOCKETS['out']['Result'] = idx
 
 def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
     material = bpy.data.materials.new(name=materialName)
-    material.use_nodes = True
-    material.blend_method = 'CLIP'
+    try:
+        material.use_nodes = True
+        material.blend_method = 'CLIP'
 
-    node_tree = material.node_tree
-    nodes = node_tree.nodes
+        node_tree = material.node_tree
+        nodes = node_tree.nodes
 
-    principled = None
-    outNode = None
+        principled = None
+        outNode = None
 
-    for node in nodes:
-        if not principled and node.type == 'BSDF_PRINCIPLED':
-            principled = node
+        for node in nodes:
+            if not principled and node.type == 'BSDF_PRINCIPLED':
+                principled = node
 
-        if not outNode and node.type == 'OUTPUT_MATERIAL':
-            outNode = node
+            if not outNode and node.type == 'OUTPUT_MATERIAL':
+                outNode = node
 
-        if principled and outNode:
-            break
+            if principled and outNode:
+                break
 
-    # If there is no Material Output node, create one.
-    if not outNode:
-        outNode = nodes.new('ShaderNodeOutputMaterial')
+        # If there is no Material Output node, create one.
+        if not outNode:
+            outNode = nodes.new('ShaderNodeOutputMaterial')
 
-    # If there is no default Principled BSDF node, create one and link it to material output.
-    if not principled:
-        principled = nodes.new('ShaderNodeBsdfPrincipled')
-        node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+        # If there is no default Principled BSDF node, create one and link it to material output.
+        if not principled:
+            principled = nodes.new('ShaderNodeBsdfPrincipled')
+            node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
 
-    # Set the specular value to 0 by default.
-    principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+        # Set the specular value to 0 by default.
+        principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
-    texture_coords = nodes.new('ShaderNodeTexCoord')
+        texture_coords = nodes.new('ShaderNodeTexCoord')
 
-    texture_mapping = nodes.new('ShaderNodeMapping')
-    texture_mapping.inputs[3].default_value[0] = 6
-    texture_mapping.inputs[3].default_value[1] = 6
+        texture_mapping = nodes.new('ShaderNodeMapping')
+        texture_mapping.inputs[3].default_value[0] = 6
+        texture_mapping.inputs[3].default_value[1] = 6
 
-    node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
+        node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
 
-    alpha_map = nodes.new('ShaderNodeTexImage')
-    alpha_map.image = loadImage(textureLocation)
-    alpha_map.image.colorspace_settings.name = 'Non-Color'
+        alpha_map = nodes.new('ShaderNodeTexImage')
+        alpha_map.image = loadImage(textureLocation)
+        alpha_map.image.colorspace_settings.name = 'Non-Color'
 
-    alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
-    node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
+        alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
+        node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
 
-    base_layer = nodes.new('ShaderNodeTexImage')
-    base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
-    base_layer.image.alpha_mode = 'NONE'
-    node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
+        base_layer = nodes.new('ShaderNodeTexImage')
+        base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
+        base_layer.image.alpha_mode = 'NONE'
+        node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
 
-    last_mix_node = None
+        last_mix_node = None
 
-    for idx, layer in enumerate(layers[1:]):
-        mix_node = nodes.new('ShaderNodeMix')
-        if not MIX_NODE_COLOR_SOCKETS:
-            MIX_NODE_COLOR_SOCKETS['in'] = {
-                i.name: idx
-                for idx, i in enumerate(mix_node.inputs)
-                if i.type == 'RGBA'
-            }
-            MIX_NODE_COLOR_SOCKETS['out'] = {
-                i.name: idx
-                for idx, i in enumerate(mix_node.outputs)
-                if i.type == 'RGBA'
-            }
+        for idx, layer in enumerate(layers[1:]):
+            try:
+                mix_node = nodes.new('ShaderNodeMix')
+                mix_node.data_type = 'RGBA'
+            except:
+                mix_node = nodes.new('ShaderNodeMixRGB')
 
-        mix_node.data_type = 'RGBA'
-        node_tree.links.new(alpha_map_channels.outputs[idx], mix_node.inputs['Factor'])
+            if not MIX_NODE_COLOR_SOCKETS['in']:
+                calculate_color_sockets(mix_node)
+
+            node_tree.links.new(
+                alpha_map_channels.outputs[idx],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['Factor']])
+
+            if last_mix_node is None:
+                node_tree.links.new(
+                    base_layer.outputs['Color'],
+                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+            else:
+                node_tree.links.new(
+                    last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+
+            layer_texture = nodes.new('ShaderNodeTexImage')
+            layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
+            layer_texture.image.alpha_mode = 'NONE'
+            node_tree.links.new(texture_mapping.outputs['Vector'], layer_texture.inputs['Vector'])
+            node_tree.links.new(
+                layer_texture.outputs['Color'],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
+
+            last_mix_node = mix_node
 
         if last_mix_node is None:
-            node_tree.links.new(
-                base_layer.outputs['Color'],
-                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+            node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
         else:
             node_tree.links.new(
                 last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
-                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+                principled.inputs['Base Color'])
 
-        layer_texture = nodes.new('ShaderNodeTexImage')
-        layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
-        layer_texture.image.alpha_mode = 'NONE'
-        node_tree.links.new(texture_mapping.outputs['Vector'], layer_texture.inputs['Vector'])
-        node_tree.links.new(
-            layer_texture.outputs['Color'],
-            mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
-
-        last_mix_node = mix_node
-
-    if last_mix_node is None:
-        node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
-    else:
-        node_tree.links.new(
-            last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
-            principled.inputs['Base Color'])
-
-    return material
+        return material
+    except:
+        print('failed to create terrain material for %s' % materialName)
+        bpy.data.materials.remove(material)
 
             
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
@@ -296,13 +310,15 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 material = bpy.data.materials[materialName]
             else:
                 if settings.useTerrainBlending:
+                    json_data = {}
                     try:
                         with open(os.path.join(baseDir, materialName + '.json')) as fp:
                             json_data = json.load(fp)
-                            if 'layers' in json_data:
-                                material = createBlendedTerrain(materialName, textureLocation, json_data['layers'], baseDir)
                     except:
-                        print(f'Could not create terrain texture blend for texture {materialName}')
+                        pass
+
+                    if 'layers' in json_data:
+                        material = createBlendedTerrain(materialName, textureLocation, json_data['layers'], baseDir)
                 
                 if material is None:
                     material = createStandardMaterial(materialName, textureLocation, settings)
