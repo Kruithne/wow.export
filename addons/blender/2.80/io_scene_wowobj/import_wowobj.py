@@ -261,7 +261,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
                 json_info['mtlIndexes'] = {
                     json_info['mtlTextureIds'][data['texture1']]: idx
-                    for idx, data in enumerate(json_info['materials'])}
+                    for idx, data in enumerate(json_info['materials'])
+                    if data['texture1'] in json_info['mtlTextureIds']}
     except:
         pass
 
@@ -309,7 +310,10 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     if json_info.get('fileType') == 'm2':
                         blendingMode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
                     elif json_info.get('fileType') == 'wmo':
-                        blendingMode = json_info['materials'][json_info['mtlIndexes'][materialName]]['blendMode']
+                        try:
+                            blendingMode = json_info['materials'][json_info['mtlIndexes'][materialName]]['blendMode']
+                        except KeyError:
+                            print('error getting material blending mode for %s' % materialName)
 
                     if blendingMode is not None:
                         matBlendModes[materialName].append(blendingMode)
