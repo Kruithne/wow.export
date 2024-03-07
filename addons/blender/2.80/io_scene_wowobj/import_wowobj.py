@@ -138,14 +138,17 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         texture_coords = nodes.new('ShaderNodeTexCoord')
 
         texture_mapping = nodes.new('ShaderNodeMapping')
-        texture_mapping.inputs[3].default_value[0] = 6
-        texture_mapping.inputs[3].default_value[1] = 6
+        texture_mapping.inputs[3].default_value[0] = 8
+        texture_mapping.inputs[3].default_value[1] = 8
+        texture_mapping.inputs[3].default_value[2] = 8
 
         node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
 
         alpha_map = nodes.new('ShaderNodeTexImage')
         alpha_map.image = loadImage(textureLocation)
         alpha_map.image.colorspace_settings.name = 'Non-Color'
+        alpha_map.interpolation = 'Cubic'
+        alpha_map.extension = 'EXTEND'
 
         alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
         node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
