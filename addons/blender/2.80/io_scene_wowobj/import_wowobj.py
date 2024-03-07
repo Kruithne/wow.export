@@ -20,13 +20,19 @@ def getFirstNodeOfType(nodes, nodeType):
 
     return None
 
+
+def normalizeName(name):
+    # Blender doesn't support names longer than 63.
+    # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
+    if len(name) > 60:
+        return name[:49] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
+
+    return name
+
+
 def loadImage(textureLocation):
     imageName, imageExt = os.path.splitext(os.path.basename(textureLocation))
-
-    # Blender doesn't support material names longer than 63.
-    # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
-    if len(imageName) > 63:
-        imageName = hashlib.md5(imageName.encode()).hexdigest()[:7]
+    imageName = normalizeName(imageName)
 
     if not imageName in bpy.data.images:
         loadedImage = bpy.data.images.load(textureLocation)
@@ -34,7 +40,7 @@ def loadImage(textureLocation):
 
     return bpy.data.images[imageName]
 
-def createStandardMaterial(materialName, textureLocation, settings):
+def createStandardMaterial(materialName, textureLocation, useAlpha=True):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
     material.blend_method = 'CLIP'
@@ -77,7 +83,7 @@ def createStandardMaterial(materialName, textureLocation, settings):
     node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
 
     image.image.alpha_mode = 'CHANNEL_PACKED'
-    if settings.useAlpha:
+    if useAlpha:
         node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
     # Set the specular value to 0 by default.
@@ -205,7 +211,6 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         print('failed to create terrain material for %s' % materialName)
         bpy.data.materials.remove(material)
 
-            
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
     baseDir, fileName = os.path.split(objectFile)
 
@@ -225,6 +230,15 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             self.name = ''
             self.verts = set()
             self.faces = []
+
+    json_info = {}
+    try:
+        with open(os.path.join(baseDir, fileName[:fileName.rfind('.')] + '.json')) as fp:
+            json_info = json.load(fp)
+            if json_info.get('fileType') == 'm2':
+                json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
+    except:
+        pass
 
     curMesh = OBJMesh()
     meshIndex = -1
@@ -261,7 +275,15 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 meshes.append(OBJMesh())
                 meshes[meshIndex].name = line_split[1].decode('utf-8')
             elif line_start == b'usemtl':
-                meshes[meshIndex].usemtl = line_split[1].decode('utf-8')
+                materialName = normalizeName(line_split[1].decode('utf-8'))
+
+                if (settings.useAlpha and json_info.get('fileType') == 'm2' and
+                    json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode'] == 0
+                ):
+                    # use opaque texture
+                    materialName += '_O'
+
+                meshes[meshIndex].usemtl = materialName
 
     # Defaults to master collection if no collection exists.
     collection = bpy.context.view_layer.active_layer_collection.collection.objects
@@ -279,7 +301,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 line_start = line_split[0]
 
                 if line_start == 'newmtl':
-                    matname = line_split[1]
+                    matname = normalizeName(line_split[1])
                 elif line_start == 'map_Kd':
                     matfile = line_split[1]
                     materials[matname] = os.path.join(baseDir, matfile)
@@ -303,30 +325,38 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     # Create a new material instance for each material entry.
     if settings.importTextures:
+        usedMaterials = {mesh.usemtl for mesh in meshes}
+
         for materialName, textureLocation in materials.items():
-            material = None
+            materialNameO = materialName + '_O'
+            material = bpy.data.materials.get(materialName)
+            materialO = bpy.data.materials.get(materialNameO)
 
-            if len(materialName) > 63:
-                materialName = hashlib.md5(materialName.encode()).hexdigest()[:7]
-
-            if materialName in bpy.data.materials:
-                material = bpy.data.materials[materialName]
-            else:
+            if material is None:
                 if settings.useTerrainBlending:
-                    json_data = {}
+                    material_json = {}
                     try:
                         with open(os.path.join(baseDir, materialName + '.json')) as fp:
-                            json_data = json.load(fp)
+                            material_json = json.load(fp)
                     except:
                         pass
 
-                    if 'layers' in json_data:
-                        material = createBlendedTerrain(materialName, textureLocation, json_data['layers'], baseDir)
+                    if 'layers' in material_json:
+                        material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
                 
-                if material is None:
-                    material = createStandardMaterial(materialName, textureLocation, settings)
+                if material is None and materialName in usedMaterials:
+                    material = createStandardMaterial(materialName, textureLocation, useAlpha=settings.useAlpha)
 
-            obj.data.materials.append(bpy.data.materials[materialName])
+            if settings.useAlpha and materialNameO in usedMaterials and materialO is None:
+                # if material image has an alpha channel, create another material
+                # where the alpha is ignored. "_o" means "_opaque"
+                materialO = createStandardMaterial(materialNameO, textureLocation, useAlpha=False)
+
+            if materialName in usedMaterials:
+                obj.data.materials.append(material)
+
+            if materialNameO in usedMaterials:
+                obj.data.materials.append(materialO)
 
     ## Meshes
     bm = bmesh.new()
