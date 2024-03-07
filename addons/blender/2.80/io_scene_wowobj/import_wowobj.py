@@ -4,11 +4,14 @@ import os
 import csv
 import hashlib
 import json
+from collections import defaultdict
 
 from math import radians
 from mathutils import Quaternion
 
-SPECULAR_INPUT_NAME = 'Specular IOR Level' if bpy.app.version >= (4, 0, 0) else 'Specular'
+IS_B40 = bpy.app.version >= (4, 0, 0)
+
+SPECULAR_INPUT_NAME = 'Specular IOR Level' if IS_B40 else 'Specular'
 
 def importWoWOBJAddon(objectFile, settings):
     importWoWOBJ(objectFile, None, settings)
@@ -24,8 +27,8 @@ def getFirstNodeOfType(nodes, nodeType):
 def normalizeName(name):
     # Blender doesn't support names longer than 63.
     # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
-    if len(name) > 60:
-        return name[:49] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
+    if len(name) > 59:
+        return name[:48] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
 
     return name
 
@@ -40,10 +43,14 @@ def loadImage(textureLocation):
 
     return bpy.data.images[imageName]
 
-def createStandardMaterial(materialName, textureLocation, useAlpha=True):
+def createStandardMaterial(materialName, textureLocation, blendMode):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
-    material.blend_method = 'CLIP'
+
+    if blendMode == 2:
+        material.blend_method = 'BLEND'
+    else:
+        material.blend_method = 'CLIP'
 
     node_tree = material.node_tree
     nodes = node_tree.nodes
@@ -79,11 +86,11 @@ def createStandardMaterial(materialName, textureLocation, useAlpha=True):
     image = nodes.new('ShaderNodeTexImage')
 
     image.image = loadImage(textureLocation)
+    image.image.alpha_mode = 'CHANNEL_PACKED'
 
     node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
 
-    image.image.alpha_mode = 'CHANNEL_PACKED'
-    if useAlpha:
+    if blendMode != 0:
         node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
     # Set the specular value to 0 by default.
@@ -237,10 +244,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             json_info = json.load(fp)
             if json_info.get('fileType') == 'm2':
                 json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
+            elif json_info.get('fileType') == 'wmo':
+                pass
     except:
         pass
 
     curMesh = OBJMesh()
+    matBlendModes = defaultdict(list)
     meshIndex = -1
     with open(objectFile, 'rb') as f:
         for line in f:
@@ -277,11 +287,12 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             elif line_start == b'usemtl':
                 materialName = normalizeName(line_split[1].decode('utf-8'))
 
-                if (settings.useAlpha and json_info.get('fileType') == 'm2' and
-                    json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode'] == 0
-                ):
-                    # use opaque texture
-                    materialName += '_O'
+                if settings.useAlpha:
+                    if json_info.get('fileType') == 'm2':
+                        blending_mode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
+                        matBlendModes[materialName].append(blending_mode)
+                        # use texture with specific blending mode
+                        materialName += '_B' + str(blending_mode)
 
                 meshes[meshIndex].usemtl = materialName
 
@@ -328,9 +339,11 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
         usedMaterials = {mesh.usemtl for mesh in meshes}
 
         for materialName, textureLocation in materials.items():
-            materialNameO = materialName + '_O'
             material = bpy.data.materials.get(materialName)
-            materialO = bpy.data.materials.get(materialNameO)
+            materialB = {}
+            for bm in matBlendModes[materialName]:
+                materialBName = materialName + '_B' + str(bm)
+                materialB[bm] = (materialBName, bpy.data.materials.get(materialBName))
 
             if material is None:
                 if settings.useTerrainBlending:
@@ -345,18 +358,20 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
                 
                 if material is None and materialName in usedMaterials:
-                    material = createStandardMaterial(materialName, textureLocation, useAlpha=settings.useAlpha)
+                    material = createStandardMaterial(materialName, textureLocation, -1)
 
-            if settings.useAlpha and materialNameO in usedMaterials and materialO is None:
-                # if material image has an alpha channel, create another material
-                # where the alpha is ignored. "_o" means "_opaque"
-                materialO = createStandardMaterial(materialNameO, textureLocation, useAlpha=False)
+            if settings.useAlpha:
+                for bm, (materialBName, materialBMat) in materialB.items():
+                    # create materials with different blending modes
+                    if materialBName in usedMaterials and materialBMat is None:
+                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm))
 
             if materialName in usedMaterials:
                 obj.data.materials.append(material)
 
-            if materialNameO in usedMaterials:
-                obj.data.materials.append(materialO)
+            for (materialBName, materialBMat) in materialB.values():
+                if materialBName in usedMaterials:
+                    obj.data.materials.append(materialBMat)
 
     ## Meshes
     bm = bmesh.new()
