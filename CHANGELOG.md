@@ -5,6 +5,7 @@
 - Fixed missing map name from raw ADT export filenames.
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
 - Improved blending on some character textures.
+- Added option to blend the terrain textures from the exported alpha maps in the Blender add-on.
 - Fixed issue with alpha maps from early maps such as Emerald Dream being exported incorrectly.
 - Fixed issue causing seams to appear on baked character textures.
 
