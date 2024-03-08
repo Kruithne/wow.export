@@ -166,6 +166,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         base_layer.location = (-1000, 0)
         base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
         base_layer.image.alpha_mode = 'NONE'
+        base_layer.hide = True
         base_layer.parent = base_layer_frame
 
         texture_mapping = nodes.new('ShaderNodeMapping')
@@ -179,8 +180,18 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         
         node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
 
+        # if('heightFile' in layers[0]):
+        #     height_map = nodes.new('ShaderNodeTexImage')
+        #     height_map.location = (-1000, -50)
+        #     height_map.image = loadImage(os.path.join(baseDir, layers[0]['heightFile']))
+        #     height_map.image.alpha_mode = 'NONE'
+        #     height_map.parent = base_layer_frame
+
+        #     node_tree.links.new(texture_mapping.outputs['Vector'], height_map.inputs['Vector'])
+
         last_map_node_pos = 0
         last_tex_node_pos = 0
+        last_height_tex_node_pos = -50
         last_mix_node_pos = 0
         last_mix_node = None
 
@@ -214,21 +225,32 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
             layer_frame = nodes.new(type='NodeFrame')
             layer_frame.label = 'Layer #' + str(idx + 1)
             texture_mapping_layer = nodes.new('ShaderNodeMapping')
-            texture_mapping_layer.location = (-1300, last_map_node_pos + 400)
+            texture_mapping_layer.location = (-1300, last_map_node_pos + 420)
             texture_mapping_layer.inputs[3].default_value[0] = 8 / layer['scale']
             texture_mapping_layer.inputs[3].default_value[1] = 8 / layer['scale']
             texture_mapping_layer.inputs[3].default_value[2] = 8 / layer['scale']
             texture_mapping_layer.parent = layer_frame
-            last_map_node_pos += 400
+            last_map_node_pos += 420
 
             node_tree.links.new(texture_coords.outputs['UV'], texture_mapping_layer.inputs['Vector'])
 
             layer_texture = nodes.new('ShaderNodeTexImage')
-            layer_texture.location = (-1000, last_tex_node_pos + 400)
+            layer_texture.location = (-1000, last_tex_node_pos + 420)
             layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
             layer_texture.image.alpha_mode = 'NONE'
+            layer_texture.hide = True
             layer_texture.parent = layer_frame
-            last_tex_node_pos += 400
+            last_tex_node_pos += 420
+
+            # if('heightFile' in layer):
+            #     layer_height_map = nodes.new('ShaderNodeTexImage')
+            #     layer_height_map.location = (-1000, last_height_tex_node_pos + 420)
+            #     layer_height_map.image = loadImage(os.path.join(baseDir, layer['heightFile']))
+            #     layer_height_map.image.alpha_mode = 'NONE'
+            #     layer_height_map.parent = layer_frame
+            #     last_height_tex_node_pos += 420
+
+            #     node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_height_map.inputs['Vector'])
 
             node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
             node_tree.links.new(
