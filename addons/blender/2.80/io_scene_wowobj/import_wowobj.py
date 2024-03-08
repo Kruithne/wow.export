@@ -140,6 +140,9 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         texture_coords = nodes.new('ShaderNodeTexCoord')
         texture_coords.location = (-1700, 600)
 
+        alpha_map_frame = nodes.new(type='NodeFrame')
+        alpha_map_frame.label = 'Alpha map'
+
         alpha_map = nodes.new('ShaderNodeTexImage')
         alpha_map.location = (-700, -100)
         alpha_map.width = 140
@@ -147,23 +150,30 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         alpha_map.image.colorspace_settings.name = 'Non-Color'
         alpha_map.interpolation = 'Cubic'
         alpha_map.extension = 'EXTEND'
+        alpha_map.parent = alpha_map_frame
 
         alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
         alpha_map_channels.location = (-500, -100)
         alpha_map_channels.width = 140
+        alpha_map_channels.parent = alpha_map_frame
 
         node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
 
+        base_layer_frame = nodes.new(type='NodeFrame')
+        base_layer_frame.label = 'Layer #0'
+        
         base_layer = nodes.new('ShaderNodeTexImage')
         base_layer.location = (-1000, 0)
         base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
         base_layer.image.alpha_mode = 'NONE'
+        base_layer.parent = base_layer_frame
 
         texture_mapping = nodes.new('ShaderNodeMapping')
         texture_mapping.location = (-1300, 0)
         texture_mapping.inputs[3].default_value[0] = layers[0]['scale']
         texture_mapping.inputs[3].default_value[1] = layers[0]['scale']
         texture_mapping.inputs[3].default_value[2] = layers[0]['scale']
+        texture_mapping.parent = base_layer_frame
 
         node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
         
@@ -201,20 +211,24 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
                     last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
                     mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
 
+            layer_frame = nodes.new(type='NodeFrame')
+            layer_frame.label = 'Layer #' + str(idx + 1)
             texture_mapping_layer = nodes.new('ShaderNodeMapping')
             texture_mapping_layer.location = (-1300, last_map_node_pos + 400)
             texture_mapping_layer.inputs[3].default_value[0] = layer['scale']
             texture_mapping_layer.inputs[3].default_value[1] = layer['scale']
             texture_mapping_layer.inputs[3].default_value[2] = layer['scale']
+            texture_mapping_layer.parent = layer_frame
             last_map_node_pos += 400
 
             node_tree.links.new(texture_coords.outputs['UV'], texture_mapping_layer.inputs['Vector'])
 
             layer_texture = nodes.new('ShaderNodeTexImage')
-            layer_texture.location = (-1000, last_tex_node_pos + 300)
+            layer_texture.location = (-1000, last_tex_node_pos + 400)
             layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
             layer_texture.image.alpha_mode = 'NONE'
-            last_tex_node_pos += 300
+            layer_texture.parent = layer_frame
+            last_tex_node_pos += 400
 
             node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
             node_tree.links.new(
