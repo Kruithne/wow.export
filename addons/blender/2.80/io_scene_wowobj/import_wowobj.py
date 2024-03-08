@@ -63,10 +63,12 @@ def createStandardMaterial(materialName, textureLocation, settings):
     # If there is no Material Output node, create one.
     if not outNode:
         outNode = nodes.new('ShaderNodeOutputMaterial')
+        outNode.location = (300, 400)
 
     # If there is no default Principled BSDF node, create one and link it to material output.
     if not principled:
         principled = nodes.new('ShaderNodeBsdfPrincipled')
+        principled.location = (0, 400)
         node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
 
     # Create a new Image Texture node.
@@ -136,36 +138,52 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
         texture_coords = nodes.new('ShaderNodeTexCoord')
-
-        texture_mapping = nodes.new('ShaderNodeMapping')
-        texture_mapping.inputs[3].default_value[0] = 8
-        texture_mapping.inputs[3].default_value[1] = 8
-        texture_mapping.inputs[3].default_value[2] = 8
-
-        node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
+        texture_coords.location = (-1700, 600)
 
         alpha_map = nodes.new('ShaderNodeTexImage')
+        alpha_map.location = (-700, -100)
+        alpha_map.width = 140
         alpha_map.image = loadImage(textureLocation)
         alpha_map.image.colorspace_settings.name = 'Non-Color'
         alpha_map.interpolation = 'Cubic'
         alpha_map.extension = 'EXTEND'
 
         alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
+        alpha_map_channels.location = (-500, -100)
+        alpha_map_channels.width = 140
+
         node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
 
         base_layer = nodes.new('ShaderNodeTexImage')
+        base_layer.location = (-1000, 0)
         base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
         base_layer.image.alpha_mode = 'NONE'
+
+        texture_mapping = nodes.new('ShaderNodeMapping')
+        texture_mapping.location = (-1300, 0)
+        texture_mapping.inputs[3].default_value[0] = layers[0]['scale']
+        texture_mapping.inputs[3].default_value[1] = layers[0]['scale']
+        texture_mapping.inputs[3].default_value[2] = layers[0]['scale']
+
+        node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
+        
         node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
 
+        last_map_node_pos = 0
+        last_tex_node_pos = 0
+        last_mix_node_pos = 0
         last_mix_node = None
 
         for idx, layer in enumerate(layers[1:]):
             try:
                 mix_node = nodes.new('ShaderNodeMix')
+                mix_node.location = (-300, last_mix_node_pos + 200)
                 mix_node.data_type = 'RGBA'
+                last_mix_node_pos += 200
             except:
                 mix_node = nodes.new('ShaderNodeMixRGB')
+                mix_node.location = (-300, last_mix_node_pos + 200)
+                last_mix_node_pos += 200
 
             if not MIX_NODE_COLOR_SOCKETS['in']:
                 calculate_color_sockets(mix_node)
@@ -183,10 +201,22 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
                     last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
                     mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
 
+            texture_mapping_layer = nodes.new('ShaderNodeMapping')
+            texture_mapping_layer.location = (-1300, last_map_node_pos + 400)
+            texture_mapping_layer.inputs[3].default_value[0] = layer['scale']
+            texture_mapping_layer.inputs[3].default_value[1] = layer['scale']
+            texture_mapping_layer.inputs[3].default_value[2] = layer['scale']
+            last_map_node_pos += 400
+
+            node_tree.links.new(texture_coords.outputs['UV'], texture_mapping_layer.inputs['Vector'])
+
             layer_texture = nodes.new('ShaderNodeTexImage')
+            layer_texture.location = (-1000, last_tex_node_pos + 300)
             layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
             layer_texture.image.alpha_mode = 'NONE'
-            node_tree.links.new(texture_mapping.outputs['Vector'], layer_texture.inputs['Vector'])
+            last_tex_node_pos += 300
+
+            node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
             node_tree.links.new(
                 layer_texture.outputs['Color'],
                 mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
@@ -201,8 +231,9 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
                 principled.inputs['Base Color'])
 
         return material
-    except:
+    except Exception as e:
         print('failed to create terrain material for %s' % materialName)
+        print(e)
         bpy.data.materials.remove(material)
 
             
