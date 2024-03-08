@@ -652,15 +652,19 @@
 	.left-panel {
 		padding: 20px 0 20px 20px;
 		width: 315px;
+		min-width: 315px;
 
-		#model-tab {
+		.model-tab {
 			#inline-npc-races {
-				margin: 10px 15px;
+				margin: 3px 15px;
+				float: right;
+				font-size: 12px;
 			}
 		}
 
 		#listbox-chr-race {
 			height: 417px;
+			clear: both;
 		}
 
 		#listbox-chr-model {
@@ -678,7 +682,8 @@
 
 	.right-panel {
 		padding: 20px 20px 20px 0;
-		width: 352px;
+		width: 300px;
+		min-width: 300px;
 
 		#character-import-panel {
 			display: flex;
