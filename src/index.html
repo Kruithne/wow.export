@@ -638,9 +638,9 @@
 							</div>
 							<div class="option-tab" v-show="chrCustTab  === 'options'">
 								<span class="header">Customizations</span>
-								<listboxb :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-option" :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
 								<span class="header">Customization Options</span>
-								<listboxb :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-choice" :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
 								<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
 							</div>
 						</div>
