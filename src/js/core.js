@@ -125,6 +125,7 @@ const view = {
 	chrCustChoices: [], // Available character customization choices.
 	chrCustChoiceSelection: [], // Selected character customization choice.
 	chrCustActiveChoices: [], // Active character customization choices.
+	chrCustGeosets: [], // Character customization model geoset control.
 	chrCustTab: 'models', // Active tab for character customization.
 	chrCustRightTab: 'geosets', // Active right tab for character customization.
 	chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.

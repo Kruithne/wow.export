@@ -595,7 +595,7 @@
 								<span class="header">Geosets</span>
 								<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 								<div class="list-toggles">
-									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+									<a @click="setAllGeosets(true, modelViewerGeosets)">Enable All</a> / <a @click="setAllGeosets(false, modelViewerGeosets)">Disable All</a>
 								</div>
 								<template v-if="config.modelsExportTextures">
 									<span class="header">Skins</span>
@@ -676,9 +676,9 @@
 							<div v-if="chrCustRightTab == 'geosets'">
 								<div class="header"><b>Geosets</b></div>
 								<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
-								<checkboxlist id="checkbox-geosets" :items="modelViewerGeosets"></checkboxlist>
+								<checkboxlist id="checkbox-geosets" :items="chrCustGeosets"></checkboxlist>
 								<div class="list-toggles">
-									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+									<a @click="setAllGeosets(true, chrCustGeosets)">Enable All</a> / <a @click="setAllGeosets(false, chrCustGeosets)">Disable All</a>
 								</div>
 							</div>
 							<label class="ui-checkbox" title="Include Animations in Export">

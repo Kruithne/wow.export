@@ -219,10 +219,11 @@ document.addEventListener('click', function(e) {
 			/**
 			 * Mark all geosets to the given state.
 			 * @param {boolean} state 
+			 * @param {object} geosets
 			 */
-			setAllGeosets: function(state) {
-				if (this.modelViewerGeosets) {
-					for (const node of this.modelViewerGeosets)
+			setAllGeosets: function(state, geosets) {
+				if (geosets) {
+					for (const node of geosets)
 						node.checked = state;
 				}
 			},

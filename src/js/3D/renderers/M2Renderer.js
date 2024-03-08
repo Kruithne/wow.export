@@ -34,6 +34,7 @@ class M2Renderer {
 		this.useRibbon = useRibbon;
 		this.shaderMap = new Map();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
+		this.geosetKey = 'modelViewerGeosets';
 	}
 
 	/**
@@ -50,7 +51,7 @@ class M2Renderer {
 			await this.loadSkin(0);
 
 			if (this.reactive) {
-				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.geosetWatcher = core.view.$watch(this.geosetKey, () => this.updateGeosets(), { deep: true });
 				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 			}
 		}
@@ -203,7 +204,7 @@ class M2Renderer {
 		}
 
 		if (this.reactive) {
-			core.view.modelViewerGeosets = this.geosetArray;
+			core.view[this.geosetKey] = this.geosetArray;
 			GeosetMapper.map(this.geosetArray);
 		}
 

@@ -10,6 +10,7 @@
 - Fixed issue causing seams to appear on baked character textures.
 - Fixed issue with character tab layout being unusable on higher display sizes.
 - Fixed issue that caused character texture overlay to stop appearing after changing tabs.
+- Fixed issue that caused geoset control in the Models and Character tabs to be linked.
 
 0.1.59 (29-02-2024)
 - Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.

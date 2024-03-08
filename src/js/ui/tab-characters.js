@@ -106,7 +106,7 @@ async function updateActiveCustomization() {
 			const geoset = geosetMap.get(chrCustGeoID);
 
 			if (geoset !== undefined) {
-				for (const availableGeoset of core.view.modelViewerGeosets) {
+				for (const availableGeoset of core.view.chrCustGeosets) {
 					// HACK: Never touch geoset 0 (base skin)
 					if (availableGeoset.id == 0)
 						continue;
@@ -208,6 +208,7 @@ async function updateActiveCustomization() {
 
 		// Load model
 		const skinnedModelRenderer = new M2Renderer(await core.view.casc.getFile(fileDataID), renderGroup, false);
+		skinnedModelRenderer.geosetKey = 'chrCustGeosets';
 		await skinnedModelRenderer.load();
 
 		// Set geosets
@@ -379,6 +380,7 @@ async function previewModel(fileDataID) {
 		const file = await core.view.casc.getFile(fileDataID);
 
 		activeRenderer = new M2Renderer(file, renderGroup, true);
+		activeRenderer.geosetKey = 'chrCustGeosets';
 
 		await activeRenderer.load();
 		//textureShaderMap = activeRenderer.shaderMap;
@@ -557,7 +559,7 @@ const exportCharModel = async () => {
 			exporter.addURITexture(chrModelTextureTarget, chrMaterial.getURI());
 
 		// Respect geoset masking for selected model.
-		exporter.setGeosetMask(core.view.modelViewerGeosets);
+		exporter.setGeosetMask(core.view.chrCustGeosets);
 
 		await exporter.exportAsGLTF(exportPath, helper, fileManifest);
 		exportPaths.writeLine('M2_GLTF:' + exportPath);
