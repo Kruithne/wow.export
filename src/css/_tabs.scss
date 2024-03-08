@@ -590,6 +590,23 @@
 
 	.texture-preview-panel {
 		position: absolute;
+		width: 392px;
+		bottom: 5px;
+		right: 10px;
+
+		#chr-overlay-btn {
+			display: flex;
+			justify-content: space-between;
+			flex-direction: row-reverse;
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: -43px;
+		}
+
+		canvas {
+			width: 100%;
+		}
 	}
 
 	.preview-container {
