@@ -170,9 +170,9 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
 
         texture_mapping = nodes.new('ShaderNodeMapping')
         texture_mapping.location = (-1300, 0)
-        texture_mapping.inputs[3].default_value[0] = layers[0]['scale']
-        texture_mapping.inputs[3].default_value[1] = layers[0]['scale']
-        texture_mapping.inputs[3].default_value[2] = layers[0]['scale']
+        texture_mapping.inputs[3].default_value[0] = 8 / layers[0]['scale']
+        texture_mapping.inputs[3].default_value[1] = 8 / layers[0]['scale']
+        texture_mapping.inputs[3].default_value[2] = 8 / layers[0]['scale']
         texture_mapping.parent = base_layer_frame
 
         node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
@@ -215,9 +215,9 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
             layer_frame.label = 'Layer #' + str(idx + 1)
             texture_mapping_layer = nodes.new('ShaderNodeMapping')
             texture_mapping_layer.location = (-1300, last_map_node_pos + 400)
-            texture_mapping_layer.inputs[3].default_value[0] = layer['scale']
-            texture_mapping_layer.inputs[3].default_value[1] = layer['scale']
-            texture_mapping_layer.inputs[3].default_value[2] = layer['scale']
+            texture_mapping_layer.inputs[3].default_value[0] = 8 / layer['scale']
+            texture_mapping_layer.inputs[3].default_value[1] = 8 / layer['scale']
+            texture_mapping_layer.inputs[3].default_value[2] = 8 / layer['scale']
             texture_mapping_layer.parent = layer_frame
             last_map_node_pos += 400
 
