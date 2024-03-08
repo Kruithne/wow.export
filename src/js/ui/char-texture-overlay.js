@@ -12,7 +12,7 @@ const layers = [];
 let active_layer = null;
 
 function get_element() {
-	if (!$overlay) {
+	if (!$overlay || !$overlay.isConnected) {
 		$overlay = document.getElementById('chr-texture-preview');
 		$buttons = document.getElementById('chr-overlay-btn');
 	}
@@ -54,6 +54,16 @@ function remove(canvas) {
 
 	update_button_visibility();
 }
+
+core.events.on('screen-tab-characters', () => {
+	process.nextTick(() => {
+		if (active_layer !== null) {
+			const element = get_element();
+			if (active_layer.parentNode !== element)
+				element.appendChild(active_layer);
+		}
+	});
+});
 
 core.events.on('click-chr-next-overlay', () => {
 	// Move to the next (or first) layer.
