@@ -420,14 +420,6 @@
 								<input type="checkbox" v-model="config.mapsExportRaw"/>
 								<span>Export Raw</span>
 							</label>
-							<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
-								<input type="checkbox" v-model="config.mapsIncludeWMO"/>
-								<span>Export WMO</span>
-							</label>
-							<label class="ui-checkbox" v-if="config.mapsIncludeWMO" title="Include objects inside WMOs (interior decorations)">
-								<input type="checkbox" v-model="config.mapsIncludeWMOSets"/>
-								<span>Export WMO Sets</span>
-							</label>
 							<label class="ui-checkbox" title="Export M2 objects on this tile (smaller objects such as trees)">
 								<input type="checkbox" v-model="config.mapsIncludeM2"/>
 								<span>Export M2</span>
@@ -447,6 +439,19 @@
 							<label v-if="!config.mapsExportRaw" class="ui-checkbox" title="Include terrain holes for WMOs">
 								<input type="checkbox" v-model="config.mapsIncludeHoles"/>
 								<span>Include Holes</span>
+							</label>
+							<span class="header">WMOs</span>
+							<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
+								<input type="checkbox" v-model="config.mapsIncludeWMO"/>
+								<span>Included</span>
+							</label>
+							<label class="ui-checkbox" v-if="config.mapsIncludeWMO" title="Include objects inside WMOs (interior decorations)">
+								<input type="checkbox" v-model="config.mapsIncludeWMOSets"/>
+								<span>Objects</span>
+							</label>
+							<label class="ui-checkbox" v-if="config.mapsIncludeWMO && config.mapsIncludeWMOSets && config.enableSharedChildren" title="Always export all doodad sets. This prevents exporting a copy of the WMO for each used set.">
+								<input type="checkbox" v-model="config.mapsSingleWMO"/>
+								<span>All object sets</span>
 							</label>
 							<span class="header">Model Textures</span>
 							<label class="ui-checkbox" title="Include textures when exporting models">

@@ -273,7 +273,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         bpy.data.materials.remove(material)
 
             
-def importWoWOBJ(objectFile, givenParent = None, settings = None):
+def importWoWOBJ(objectFile, givenParent = None, settings = None, doodadSets = None):
     baseDir, fileName = os.path.split(objectFile)
 
     print('Parsing OBJ: ' + fileName)
@@ -544,12 +544,11 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
                         collection.link(parent)
 
-                        ## Only import OBJ if model is not yet in scene, otherwise copy existing
-                        if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, settings)
+                        if os.path.exists(os.path.join(baseDir, row['ModelFile'].replace('.obj', '_ModelPlacementInformation.csv'))):
+                            # always import when it has doodad sets
+                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, settings, doodadSets=set(row['DoodadSetNames'].split(',')))
                         else:
-                            ## Don't copy WMOs with doodads!
-                            if os.path.exists(os.path.join(baseDir, row['ModelFile'].replace('.obj', '_ModelPlacementInformation.csv'))):
+                            if os.path.basename(row['ModelFile']) not in bpy.data.objects:
                                 importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, settings)
                             else:
                                 originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
@@ -601,6 +600,9 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     bpy.context.scene['importedModelIDs'] = tempModelIDList
                 elif settings.importWMOSets:
                     # WMO CSV
+                    if doodadSets is not None and row['DoodadSet'] not in doodadSets:
+                        continue
+
                     print('WMO M2 import: ' + row['ModelFile'])
                     if os.path.basename(row['ModelFile']) not in bpy.data.objects:
                         importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, settings)
