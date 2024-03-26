@@ -54,6 +54,7 @@ class WMOLoader {
 
 		// Mark this instance as loaded.
 		this.loaded = true;
+		this.data = undefined;
 	}
 
 	/**
