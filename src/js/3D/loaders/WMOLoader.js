@@ -81,17 +81,6 @@ class WMOLoader {
 
 		return group;
 	}
-
-	/**
-	 * Read a position, corrected from WoW's co-ordinate system.
-	 */
-	readPosition() {
-		const x = this.data.readFloatLE();
-		const z = this.data.readFloatLE();
-		const y = this.data.readFloatLE() * -1;
-
-		return [x, y, z];
-	}
 }
 
 /**
