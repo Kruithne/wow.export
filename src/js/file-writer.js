@@ -43,7 +43,8 @@ class FileWriter {
 	_drain() {
 		this.blocked = false;
 
-		for (const line of this.queue) {
+		while (this.queue.length > 0) {
+			const line = this.queue.shift();
 			if (!this._push(line))
 				return;
 		}
