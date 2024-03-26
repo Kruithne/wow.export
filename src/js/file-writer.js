@@ -12,8 +12,7 @@ class FileWriter {
 	 * @param {string} encoding 
 	 */
 	constructor(file, encoding = 'utf8') {
-		fs.truncateSync(file, 0);
-		this.stream = fs.createWriteStream(file, { flags: 'a', encoding });
+		this.stream = fs.createWriteStream(file, { flags: 'w', encoding });
 		this.blocked = false;
 		
 		this.queue = [];
