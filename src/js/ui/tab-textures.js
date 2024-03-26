@@ -177,7 +177,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		}
 	}
 
-	await exportPaths.close();
+	exportPaths.close();
 
 	helper.finish();
 

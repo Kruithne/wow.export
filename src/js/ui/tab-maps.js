@@ -256,7 +256,7 @@ const exportSelectedMap = async () => {
 		}
 	}
 
-	await exportPaths.close();
+	exportPaths.close();
 
 	// Clear the internal ADTLoader cache.
 	ADTExporter.clearCache();

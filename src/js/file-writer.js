@@ -50,7 +50,7 @@ class FileWriter {
 		}
 	}
 
-	async close() {
+	close() {
 		this.stream.end();
 	}
 }

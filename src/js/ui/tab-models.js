@@ -474,7 +474,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	}
 
 	// Write export information.
-	await exportPaths.close();
+	exportPaths.close();
 
 	// Dispatch file manifest to RCP.
 	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);

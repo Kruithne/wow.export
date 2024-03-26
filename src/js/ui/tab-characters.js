@@ -577,7 +577,7 @@ const exportCharModel = async () => {
 	helper.finish();
 
 	// Write export information.
-	await exportPaths.close();
+	exportPaths.close();
 };
 
 async function updateModelSelection() {

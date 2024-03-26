@@ -164,7 +164,7 @@ class OBJWriter {
 			}
 		}
 
-		await writer.close();
+		writer.close();
 	}
 }
 

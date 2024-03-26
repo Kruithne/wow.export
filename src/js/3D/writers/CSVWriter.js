@@ -63,7 +63,7 @@ class CSVWriter {
 			writer.writeLine(rowOut.join(';'));
 		}
 
-		await writer.close();
+		writer.close();
 	}
 }
 
