@@ -54,14 +54,14 @@ class MTLWriter {
 		const writer = new FileWriter(this.out);
 
 		for (const material of this.materials) {
-			writer.writeLine('newmtl ' + material.name);
-			writer.writeLine('illum 1');
+			await writer.writeLine('newmtl ' + material.name);
+			await writer.writeLine('illum 1');
 
 			let materialFile = material.file;
 			if (useAbsolute)
 				materialFile = path.resolve(mtlDir, materialFile);
 
-			writer.writeLine('map_Kd ' + materialFile);
+			await writer.writeLine('map_Kd ' + materialFile);
 		}
 
 		writer.close();

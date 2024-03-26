@@ -51,7 +51,7 @@ class CSVWriter {
 		const writer = new FileWriter(this.out);
 
 		// Write header.
-		writer.writeLine(this.fields.join(';'));
+		await writer.writeLine(this.fields.join(';'));
 
 		// Write rows.
 		const nFields = this.fields.length;
@@ -60,7 +60,7 @@ class CSVWriter {
 			for (let i = 0; i < nFields; i++)
 				rowOut[i] = row[this.fields[i]];
 
-			writer.writeLine(rowOut.join(';'));
+			await writer.writeLine(rowOut.join(';'));
 		}
 
 		writer.close();

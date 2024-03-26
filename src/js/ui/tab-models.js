@@ -306,7 +306,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				const outDir = path.dirname(outFile);
 
 				await buf.writeToFile(outFile);
-				exportPaths.writeLine('PNG:' + outFile);
+				await exportPaths.writeLine('PNG:' + outFile);
 
 				log.write('Saved 3D preview screenshot to %s', outFile);
 				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
@@ -392,7 +392,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 				switch (format) {
 					case 'RAW': {
-						exportPaths.writeLine(exportPath);
+						await exportPaths.writeLine(exportPath);
 
 						let exporter;
 						if (fileType === MODEL_TYPE_M2)
@@ -416,10 +416,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
-								exportPaths.writeLine('M2_OBJ:' + exportPath);
+								await exportPaths.writeLine('M2_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-								exportPaths.writeLine('M2_GLTF:' + exportPath);
+								await exportPaths.writeLine('M2_GLTF:' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -441,10 +441,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, helper, fileManifest);
-								exportPaths.writeLine('WMO_OBJ:' + exportPath);
+								await exportPaths.writeLine('WMO_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper);
-								exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
+								await exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
 							}
 
 							WMOExporter.clearCache();
