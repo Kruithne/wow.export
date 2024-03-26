@@ -4,11 +4,14 @@ import os
 import csv
 import hashlib
 import json
+from collections import defaultdict
 
 from math import radians
 from mathutils import Quaternion
 
-SPECULAR_INPUT_NAME = 'Specular IOR Level' if bpy.app.version >= (4, 0, 0) else 'Specular'
+IS_B40 = bpy.app.version >= (4, 0, 0)
+
+SPECULAR_INPUT_NAME = 'Specular IOR Level' if IS_B40 else 'Specular'
 
 def importWoWOBJAddon(objectFile, settings):
     importWoWOBJ(objectFile, None, settings)
@@ -20,13 +23,19 @@ def getFirstNodeOfType(nodes, nodeType):
 
     return None
 
+
+def normalizeName(name):
+    # Blender doesn't support names longer than 63.
+    # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
+    if len(name) > 59:
+        return name[:48] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
+
+    return name
+
+
 def loadImage(textureLocation):
     imageName, imageExt = os.path.splitext(os.path.basename(textureLocation))
-
-    # Blender doesn't support material names longer than 63.
-    # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
-    if len(imageName) > 63:
-        imageName = hashlib.md5(imageName.encode()).hexdigest()[:7]
+    imageName = normalizeName(imageName)
 
     if not imageName in bpy.data.images:
         loadedImage = bpy.data.images.load(textureLocation)
@@ -34,10 +43,14 @@ def loadImage(textureLocation):
 
     return bpy.data.images[imageName]
 
-def createStandardMaterial(materialName, textureLocation, settings):
+def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
-    material.blend_method = 'CLIP'
+
+    if blendMode in {2, 4}:
+        material.blend_method = 'BLEND'
+    else:
+        material.blend_method = 'CLIP'
 
     node_tree = material.node_tree
     nodes = node_tree.nodes
@@ -75,15 +88,28 @@ def createStandardMaterial(materialName, textureLocation, settings):
     image = nodes.new('ShaderNodeTexImage')
 
     image.image = loadImage(textureLocation)
-
-    node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
-
     image.image.alpha_mode = 'CHANNEL_PACKED'
-    if settings.useAlpha:
-        node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
 
-    # Set the specular value to 0 by default.
-    principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+    if blendMode == 4 and createEmissive:
+        nodes.remove(principled)
+        emission = nodes.new('ShaderNodeEmission')
+        node_tree.links.new(image.outputs['Color'], emission.inputs['Color'])
+        node_tree.links.new(image.outputs['Alpha'], emission.inputs['Strength'])
+
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+
+        add_shader = nodes.new('ShaderNodeAddShader')
+        node_tree.links.new(transparent.outputs['BSDF'], add_shader.inputs[0])
+        node_tree.links.new(emission.outputs['Emission'], add_shader.inputs[1])
+        node_tree.links.new(add_shader.outputs['Shader'], outNode.inputs['Surface'])
+    else:
+        node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+
+        if blendMode != 0:
+            node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+
+        # Set the specular value to 0 by default.
+        principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
     return material
 
@@ -272,7 +298,6 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         print(e)
         bpy.data.materials.remove(material)
 
-            
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
     baseDir, fileName = os.path.split(objectFile)
 
@@ -293,7 +318,23 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             self.verts = set()
             self.faces = []
 
+    json_info = {}
+    try:
+        with open(os.path.join(baseDir, fileName[:fileName.rfind('.')] + '.json')) as fp:
+            json_info = json.load(fp)
+            if json_info.get('fileType') == 'm2':
+                json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
+            elif json_info.get('fileType') == 'wmo':
+                json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
+                json_info['mtlIndexes'] = {
+                    json_info['mtlTextureIds'][data['texture1']]: idx
+                    for idx, data in enumerate(json_info['materials'])
+                    if data['texture1'] in json_info['mtlTextureIds']}
+    except:
+        pass
+
     curMesh = OBJMesh()
+    matBlendModes = defaultdict(list)
     meshIndex = -1
     with open(objectFile, 'rb') as f:
         for line in f:
@@ -328,7 +369,25 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 meshes.append(OBJMesh())
                 meshes[meshIndex].name = line_split[1].decode('utf-8')
             elif line_start == b'usemtl':
-                meshes[meshIndex].usemtl = line_split[1].decode('utf-8')
+                materialName = normalizeName(line_split[1].decode('utf-8'))
+
+                if settings.useAlpha:
+                    blendingMode = None
+
+                    if json_info.get('fileType') == 'm2':
+                        blendingMode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
+                    elif json_info.get('fileType') == 'wmo':
+                        try:
+                            blendingMode = json_info['materials'][json_info['mtlIndexes'][materialName]]['blendMode']
+                        except KeyError:
+                            print('error getting material blending mode for %s' % materialName)
+
+                    if blendingMode is not None:
+                        matBlendModes[materialName].append(blendingMode)
+                        # use texture with specific blending mode
+                        materialName += '_B' + str(blendingMode)
+
+                meshes[meshIndex].usemtl = materialName
 
     # Defaults to master collection if no collection exists.
     collection = bpy.context.view_layer.active_layer_collection.collection.objects
@@ -346,7 +405,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 line_start = line_split[0]
 
                 if line_start == 'newmtl':
-                    matname = line_split[1]
+                    matname = normalizeName(line_split[1])
                 elif line_start == 'map_Kd':
                     matfile = line_split[1]
                     materials[matname] = os.path.join(baseDir, matfile)
@@ -370,30 +429,42 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     # Create a new material instance for each material entry.
     if settings.importTextures:
+        usedMaterials = {mesh.usemtl for mesh in meshes}
+
         for materialName, textureLocation in materials.items():
-            material = None
+            material = bpy.data.materials.get(materialName)
+            materialB = {}
+            for bm in matBlendModes[materialName]:
+                materialBName = materialName + '_B' + str(bm)
+                materialB[bm] = (materialBName, bpy.data.materials.get(materialBName))
 
-            if len(materialName) > 63:
-                materialName = hashlib.md5(materialName.encode()).hexdigest()[:7]
-
-            if materialName in bpy.data.materials:
-                material = bpy.data.materials[materialName]
-            else:
+            if material is None:
                 if settings.useTerrainBlending:
-                    json_data = {}
+                    material_json = {}
                     try:
                         with open(os.path.join(baseDir, materialName + '.json')) as fp:
-                            json_data = json.load(fp)
+                            material_json = json.load(fp)
                     except:
                         pass
 
-                    if 'layers' in json_data:
-                        material = createBlendedTerrain(materialName, textureLocation, json_data['layers'], baseDir)
+                    if 'layers' in material_json:
+                        material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
                 
-                if material is None:
-                    material = createStandardMaterial(materialName, textureLocation, settings)
+                if material is None and materialName in usedMaterials:
+                    material = createStandardMaterial(materialName, textureLocation, -1, False)
 
-            obj.data.materials.append(bpy.data.materials[materialName])
+            if settings.useAlpha:
+                for bm, (materialBName, materialBMat) in materialB.items():
+                    # create materials with different blending modes
+                    if materialBName in usedMaterials and materialBMat is None:
+                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials))
+
+            if materialName in usedMaterials:
+                obj.data.materials.append(material)
+
+            for (materialBName, materialBMat) in materialB.values():
+                if materialBName in usedMaterials:
+                    obj.data.materials.append(materialBMat)
 
     ## Meshes
     bm = bmesh.new()
