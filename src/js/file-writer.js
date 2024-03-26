@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const fsp = require('fs').promises;
+const fs = require('fs');
 
 class FileWriter {
 	/**
@@ -12,8 +12,10 @@ class FileWriter {
 	 * @param {string} encoding 
 	 */
 	constructor(file, encoding = 'utf8') {
-		this.file = file;
-		this.encoding = encoding;
+		fs.truncateSync(file, 0);
+		this.stream = fs.createWriteStream(file, { flags: 'a', encoding });
+		this.blocked = false;
+		
 		this.queue = [];
 	}
 
@@ -22,14 +24,34 @@ class FileWriter {
 	 * @param {string} line 
 	 */
 	writeLine(line) {	
-		this.queue.push(line);
+		if (this.blocked)
+			this.queue.push(line);
+		else
+			this._push(line);
 	}
 
-	/**
-	 * Close the stream.
-	 */
+	_push(line) {
+		const result = this.stream.write(line + '\n');
+		if (!result) {
+			this.blocked = true;
+			this.stream.once('drain', () => this._drain());
+			return false;
+		}
+
+		return true;
+	}
+
+	_drain() {
+		this.blocked = false;
+
+		for (const line of this.queue) {
+			if (!this._push(line))
+				return;
+		}
+	}
+
 	async close() {
-		await fsp.writeFile(this.file, this.queue.join('\n'), this.encoding);
+		this.stream.end();
 	}
 }
 
