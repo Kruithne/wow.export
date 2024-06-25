@@ -5,6 +5,7 @@
 - Added option to blend the terrain textures from the exported alpha maps in the Blender add-on.
 - Improved blending on some character textures.
 - Improved memory usage for WMO previewing and exporting.
+- Improved CASC loading to fall back to CDN for missing config files.
 - Fixed missing map name from raw ADT export filenames.
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
 - Fixed issue where filtering textures by items would only show textures for one gender.
