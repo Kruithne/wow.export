@@ -137,6 +137,7 @@ const view = {
 	chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
 	chrImportChrModelID: 0, // Temporary storage for target character model ID. 
 	chrImportChoices: [], // Temporary storage for character import choices.
+	chrItem: [], // Character item ID list.
 	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),

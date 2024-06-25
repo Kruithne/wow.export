@@ -532,6 +532,12 @@ async function loadImportJSON(json) {
 	}
 
 	core.view.chrImportChoices.push(...parsedChoices);
+
+	// Import items
+	for (const itemEntry of Object.values(json.items)) {
+		console.log("Setting slot " + itemEntry.internal_slot_id + " to item " + itemEntry.id);
+		core.view.chrItem[itemEntry.internal_slot_id] = itemEntry.id;
+	}
 }
 
 const exportCharModel = async () => {
@@ -681,6 +687,10 @@ async function updateCustomizationChoice() {
 		const index = state.chrCustActiveChoices.findIndex((choice) => choice.optionID === state.chrCustOptionSelection[0].id);
 		state.chrCustActiveChoices[index].choiceID = selected.id;
 	}
+}
+
+async function updateItems() {
+	console.log(core.view.chrItem);
 }
 
 core.events.once('screen-tab-characters', async () => {
@@ -923,6 +933,9 @@ core.registerLoadFunc(async () => {
 
 	// User has changed the "Customization Options" selection, ie "Choice 0", "Choice 1", etc.
 	core.view.$watch('chrCustChoiceSelection', () => updateCustomizationChoice(), { deep: true });
+
+	// User has changed the "Items"
+	core.view.$watch('chrItem', () => updateItems(), { deep: true });
 
 	core.view.$watch('chrCustActiveChoices', async () => {
 		if (core.view.isBusy)

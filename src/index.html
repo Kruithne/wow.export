@@ -658,6 +658,7 @@
 						<div class="right-panel">
 							<div class="tab-control">
 								<span @click="chrCustRightTab = 'geosets'" :class="{ selected: chrCustRightTab === 'geosets' }">Geosets</span>
+								<span @click="chrCustRightTab = 'items'" :class="{ selected: chrCustRightTab === 'items' }">Items</span>
 								<span @click="chrCustRightTab = 'import'" :class="{ selected: chrCustRightTab === 'import' }">Import</span>
 							</div>
 							<div id="character-import-panel" v-if="chrCustRightTab == 'import'">
@@ -672,6 +673,22 @@
 									<span>Load visage model (Dracthyr/Worgen)</span>
 								</label>
 								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
+							</div>
+							<div v-if="chrCustRightTab == 'items'">
+								<div class="header"><b>Items</b></div>
+								<input type="number" v-model="chrItem[0]" placeholder="Head Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[2]" placeholder="Shoulder Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[14]" placeholder="Back Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[4]" placeholder="Chest Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[3]" placeholder="Shirt Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[18]" placeholder="Tabard Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[8]" placeholder="Wrist Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[9]" placeholder="Hands Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[5]" placeholder="Waist Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[6]" placeholder="Legs Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[7]" placeholder="Feet Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[15]" placeholder="Main hand Item ID (DEBUG)"/>
+								<input type="number" v-model="chrItem[16]" placeholder="Off hand Item ID (DEBUG)"/>
 							</div>
 							<div v-if="chrCustRightTab == 'geosets'">
 								<div class="header"><b>Geosets</b></div>
