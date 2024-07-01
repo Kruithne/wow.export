@@ -401,6 +401,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							exporter = new WMOExporter(data, fileDataID);
 
 						await exporter.exportRaw(exportPath, helper, fileManifest);
+						if (fileType === MODEL_TYPE_WMO)
+							WMOExporter.clearCache();
 						break;
 					}
 					case 'OBJ':
