@@ -1168,6 +1168,8 @@ class ADTExporter {
 							log.write('Error: %s', e);
 						}
 					}
+
+					WMOExporter.clearCache();
 				}
 
 				await csv.write();
