@@ -537,7 +537,7 @@ class WMOExporter {
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
 								const m2Export = new M2Exporter(data, undefined, fileDataID);
-								await m2Export.exportAsOBJ(m2Path, false, helper);
+								await m2Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
 
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())

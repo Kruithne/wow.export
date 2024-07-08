@@ -1022,7 +1022,7 @@ class ADTExporter {
 								if (config.mapsExportRaw)
 									await m2.exportRaw(modelPath, helper);
 								else
-									await m2.exportAsOBJ(modelPath, false, helper);
+									await m2.exportAsOBJ(modelPath, config.modelsExportCollision, helper);
 								
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
@@ -1272,7 +1272,7 @@ class ADTExporter {
 					await m2.exportRaw(path.join(foliageDir, modelName), helper);
 				} else {
 					const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
-					await m2.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
+					await m2.exportAsOBJ(path.join(foliageDir, modelPath), config.modelsExportCollision, helper);
 				}
 
 				// Abort if the export has been cancelled.
