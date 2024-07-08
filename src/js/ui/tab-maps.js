@@ -203,6 +203,8 @@ const exportSelectedMapWMO = async () => {
 		helper.mark('world model', false, e.message, e.stack);
 	}
 
+	WMOExporter.clearCache();
+
 	helper.finish();
 };
 
