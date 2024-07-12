@@ -1093,9 +1093,9 @@ class ADTExporter {
 
 							if (!config.mapsExportRaw) {
 								let fileNameSuffix = '_set' + model.doodadSet + '.obj';
-								if (singleWMO) {
+								if (singleWMO)
 									fileNameSuffix = '.obj';
-								}
+
 								if (fileName !== undefined) {
 									// Replace WMO extension with OBJ.
 									fileName = ExportHelper.replaceExtension(fileName, fileNameSuffix);
@@ -1117,9 +1117,8 @@ class ADTExporter {
 								doodadSets.splice(0, 0, 0);
 							}
 							let cacheID = fileDataID + '-' + doodadSets.join(',');
-							if (singleWMO) {
+							if (singleWMO)
 								cacheID = fileDataID;
-							}
 
 							if (!objectCache.has(cacheID)) {
 								const data = await casc.getFile(fileDataID);
@@ -1136,9 +1135,8 @@ class ADTExporter {
 											mask[setIndex] = { checked: true };
 									} else {
 										if (singleWMO) {
-											for (let setIndex = 0; setIndex < wmoLoader.wmo.doodadSets.length; setIndex++) {
+											for (let setIndex = 0; setIndex < wmoLoader.wmo.doodadSets.length; setIndex++)
 												mask[setIndex] = { checked: true };
-											}
 										} else {
 											mask[model.doodadSet] = { checked: true };
 										}
