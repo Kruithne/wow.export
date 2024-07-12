@@ -142,12 +142,12 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				if (format === 'BLP') {
 					// Export as raw file with no conversion.
 					await data.writeToFile(exportPath);
-					exportPaths.writeLine('BLP:' + exportPath);
+					await exportPaths.writeLine('BLP:' + exportPath);
 				} else {
 					// Export as PNG.
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
-					exportPaths.writeLine('PNG:' + exportPath);
+					await exportPaths.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {
 						const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
@@ -177,7 +177,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		}
 	}
 
-	await exportPaths.close();
+	exportPaths.close();
 
 	helper.finish();
 

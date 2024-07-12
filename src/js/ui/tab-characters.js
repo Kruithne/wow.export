@@ -562,7 +562,7 @@ const exportCharModel = async () => {
 		exporter.setGeosetMask(core.view.chrCustGeosets);
 
 		await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-		exportPaths.writeLine('M2_GLTF:' + exportPath);
+		await exportPaths.writeLine('M2_GLTF:' + exportPath);
 
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -577,7 +577,7 @@ const exportCharModel = async () => {
 	helper.finish();
 
 	// Write export information.
-	await exportPaths.close();
+	exportPaths.close();
 };
 
 async function updateModelSelection() {

@@ -87,12 +87,12 @@ class OBJWriter {
 		const writer = new FileWriter(this.out);
 
 		// Write header.
-		writer.writeLine('# Exported using wow.export v' + constants.VERSION);
-		writer.writeLine('o ' + this.name);
+		await writer.writeLine('# Exported using wow.export v' + constants.VERSION);
+		await writer.writeLine('o ' + this.name);
 
 		// Link material library.
 		if (this.mtl)
-			writer.writeLine('mtllib ' + this.mtl);
+			await writer.writeLine('mtllib ' + this.mtl);
 
 		const usedIndices = new Set();
 		this.meshes.forEach(mesh => mesh.triangles.forEach(index => usedIndices.add(index)));
@@ -106,7 +106,7 @@ class OBJWriter {
 		for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j++, i+= 3) {
 			if (usedIndices.has(j)) {
 				vertMap.set(j, u++);
-				writer.writeLine('v ' + verts[i] + ' ' + verts[i + 1] + ' ' + verts[i + 2]);
+				await writer.writeLine('v ' + verts[i] + ' ' + verts[i + 1] + ' ' + verts[i + 2]);
 			}
 		}
 
@@ -115,7 +115,7 @@ class OBJWriter {
 		for (let i = 0, j = 0, u = 0, n = normals.length; i < n; j++, i += 3) {
 			if (usedIndices.has(j)) {
 				normalMap.set(j, u++);
-				writer.writeLine('vn ' + normals[i] + ' ' + normals[i + 1] + ' ' + normals[i + 2]);
+				await writer.writeLine('vn ' + normals[i] + ' ' + normals[i + 1] + ' ' + normals[i + 2]);
 			}
 		}
 
@@ -139,7 +139,7 @@ class OBJWriter {
 						if (uvIndex === 0)
 							uvMap.set(j, u++);
 
-						writer.writeLine(prefix + ' ' + uv[i] + ' ' + uv[i + 1]);
+						await writer.writeLine(prefix + ' ' + uv[i] + ' ' + uv[i + 1]);
 					}
 				}
 			}
@@ -147,11 +147,11 @@ class OBJWriter {
 
 		// Write meshes.
 		for (const mesh of this.meshes) {
-			writer.writeLine('g ' + mesh.name);
-			writer.writeLine('s 1');
+			await writer.writeLine('g ' + mesh.name);
+			await writer.writeLine('s 1');
 
 			if (mesh.matName)
-				writer.writeLine('usemtl ' + mesh.matName);
+				await writer.writeLine('usemtl ' + mesh.matName);
 
 			const triangles = mesh.triangles;
 
@@ -160,11 +160,11 @@ class OBJWriter {
 				const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 1]) + 1 : '') + '/' + (normalMap.get(triangles[i + 1]) + 1);
 				const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 2]) + 1 : '') + '/' + (normalMap.get(triangles[i + 2]) + 1);
 
-				writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
+				await writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
 			}
 		}
 
-		await writer.close();
+		writer.close();
 	}
 }
 

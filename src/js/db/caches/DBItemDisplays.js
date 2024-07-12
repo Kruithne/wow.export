@@ -30,11 +30,11 @@ const initializeItemDisplays = async () => {
 			continue;
 
 		const modelFileDataIDs = DBModelFileData.getModelFileDataID(modelResIDs[0]);
-		const textureFileDataID = DBTextureFileData.getTextureFileDataID(matResIDs[0]);
+		const textureFileDataIDs = DBTextureFileData.getTextureFDIDsByMatID(matResIDs[0]);
 
-		if (modelFileDataIDs !== undefined && textureFileDataID !== undefined) {
+		if (modelFileDataIDs !== undefined && textureFileDataIDs !== undefined) {
 			for (const modelFileDataID of modelFileDataIDs) {
-				const display = { ID: itemDisplayInfoID, textures: [textureFileDataID]};
+				const display = { ID: itemDisplayInfoID, textures: textureFileDataIDs};
 
 				if (itemDisplays.has(modelFileDataID))
 					itemDisplays.get(modelFileDataID).push(display);

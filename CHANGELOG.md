@@ -4,13 +4,17 @@
 - Added exporting of other WDT files for raw map exports.
 - Added option to blend the terrain textures from the exported alpha maps in the Blender add-on.
 - Improved blending on some character textures.
+- Improved memory usage for WMO previewing and exporting.
+- Improved CASC loading to fall back to CDN for missing config files.
 - Fixed missing map name from raw ADT export filenames.
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
+- Fixed issue where filtering textures by items would only show textures for one gender.
 - Fixed issue with alpha maps from early maps such as Emerald Dream being exported incorrectly.
 - Fixed issue causing seams to appear on baked character textures.
 - Fixed issue with character tab layout being unusable on higher display sizes.
 - Fixed issue that caused character texture overlay to stop appearing after changing tabs.
 - Fixed issue that caused geoset control in the Models and Character tabs to be linked.
+- Fixed issue that caused wow.export to run out of memory when exporting incredibly large WMOs.
 
 0.1.59 (29-02-2024)
 - Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.

@@ -203,6 +203,8 @@ const exportSelectedMapWMO = async () => {
 		helper.mark('world model', false, e.message, e.stack);
 	}
 
+	WMOExporter.clearCache();
+
 	helper.finish();
 };
 
@@ -249,14 +251,14 @@ const exportSelectedMap = async () => {
 
 		try {
 			const out = await adt.export(dir, exportQuality, gameObjects, helper);
-			exportPaths.writeLine(out.type + ':' + out.path);
+			await exportPaths.writeLine(out.type + ':' + out.path);
 			helper.mark(markPath, true);
 		} catch (e) {
 			helper.mark(markPath, false, e.message, e.stack);
 		}
 	}
 
-	await exportPaths.close();
+	exportPaths.close();
 
 	// Clear the internal ADTLoader cache.
 	ADTExporter.clearCache();

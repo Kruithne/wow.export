@@ -37,11 +37,11 @@ class JSONWriter {
 
 		await generics.createDirectory(path.dirname(this.out));
 		const writer = new FileWriter(this.out);
-		writer.writeLine(JSON.stringify(this.data, (key, value) => {
+		await writer.writeLine(JSON.stringify(this.data, (key, value) => {
 			// Handle serialization of BigInt, as JS will not handle it as per spec (TC39)
 			return typeof value === 'bigint' ? value.toString() : value
 		}, '\t'));
-		await writer.close();
+		writer.close();
 	}
 }
 
