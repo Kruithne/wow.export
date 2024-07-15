@@ -1,4 +1,4 @@
-0.1.60 (xx-03-2024)
+0.1.60 (15-07-2024)
 - Added exporting of .skel files and files referenced by .skel files for raw M2 exports.
 - Added exporting of WMO LOD groups for raw WMO exports.
 - Added exporting of other WDT files for raw map exports.
