@@ -742,10 +742,13 @@ class WMOExporter {
 						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '.wmo');
 					
 					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? listfile.getByFilename(groupName);
-					const groupData = await casc.getFile(groupFileDataID);
-					
 					groupOffset++;
 
+					if (groupFileDataID === 0)
+						continue;
+
+					const groupData = await casc.getFile(groupFileDataID);
+					
 					let groupFile;
 					if (config.enableSharedChildren)
 						groupFile = ExportHelper.getExportPath(groupName);
