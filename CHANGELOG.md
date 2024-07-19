@@ -1,4 +1,5 @@
-0.1.62 (xx-07-2024)
+0.1.62 (19-07-2024)
+- Added warning for users who set the last export file as a directory.
 - Fixed issue with raw map exports skipping certain WMOs.
 
 0.1.61 (16-07-2024)
