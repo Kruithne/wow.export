@@ -1,3 +1,6 @@
+0.1.63 (20-07-2024)
+- Added more verbose logging for required downloads during loading to hopefully figure out why some users are having issues.
+
 0.1.62 (19-07-2024)
 - Added warning for users who set the last export file as a directory.
 - Fixed issue with raw map exports skipping certain WMOs.
