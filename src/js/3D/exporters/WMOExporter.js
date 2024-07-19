@@ -707,7 +707,16 @@ class WMOExporter {
 		manifest.addProperty('fileDataID', this.wmo.fileDataID);
 
 		// Write the raw WMO file with no conversion.
-		await this.wmo.data.writeToFile(out);
+		if (this.wmo.data === undefined)
+		{
+			const wmoData = await casc.getFile(this.wmo.fileDataID)
+			await wmoData.writeToFile(out);
+		}
+		else
+		{
+			await this.wmo.data.writeToFile(out);
+		}
+		
 		fileManifest?.push({ type: 'WMO', fileDataID: this.wmo.fileDataID, file: out });
 
 		await this.wmo.load();

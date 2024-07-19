@@ -1,3 +1,9 @@
+0.1.62 (xx-07-2024)
+- Fixed issue with raw map exports skipping certain WMOs.
+
+0.1.61 (16-07-2024)
+- Fixed issue with raw WMO exports failing due to missing LOD groups.
+
 0.1.60 (15-07-2024)
 - Added exporting of .skel files and files referenced by .skel files for raw M2 exports.
 - Added exporting of WMO LOD groups for raw WMO exports.
