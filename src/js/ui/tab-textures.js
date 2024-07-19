@@ -14,7 +14,6 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
-const FileWriter = require('../file-writer');
 
 let selectedFileDataID = 0;
 
@@ -117,7 +116,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	const helper = new ExportHelper(files.length, 'texture');
 	helper.start();
 
-	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+	const exportPaths = core.openLastExportStream();
 
 	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
 	const exportMeta = core.view.config.exportBLPMeta;
@@ -142,12 +141,12 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				if (format === 'BLP') {
 					// Export as raw file with no conversion.
 					await data.writeToFile(exportPath);
-					await exportPaths.writeLine('BLP:' + exportPath);
+					await exportPaths?.writeLine('BLP:' + exportPath);
 				} else {
 					// Export as PNG.
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
-					await exportPaths.writeLine('PNG:' + exportPath);
+					await exportPaths?.writeLine('PNG:' + exportPath);
 
 					if (exportMeta) {
 						const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
@@ -177,7 +176,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		}
 	}
 
-	exportPaths.close();
+	exportPaths?.close();
 
 	helper.finish();
 

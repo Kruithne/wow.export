@@ -12,7 +12,6 @@ const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 const WDCReader = require('../db/WDCReader');
 const ExportHelper = require('../casc/export-helper');
-const FileWriter = require('../file-writer');
 const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
 const DBCreatures = require('../db/caches/DBCreatures');
@@ -535,7 +534,7 @@ async function loadImportJSON(json) {
 }
 
 const exportCharModel = async () => {
-	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+	const exportPaths = core.openLastExportStream();
 
 	const casc = core.view.casc;
 	const helper = new ExportHelper(1, 'model');
@@ -562,7 +561,7 @@ const exportCharModel = async () => {
 		exporter.setGeosetMask(core.view.chrCustGeosets);
 
 		await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-		await exportPaths.writeLine('M2_GLTF:' + exportPath);
+		await exportPaths?.writeLine('M2_GLTF:' + exportPath);
 
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
@@ -577,7 +576,7 @@ const exportCharModel = async () => {
 	helper.finish();
 
 	// Write export information.
-	exportPaths.close();
+	exportPaths?.close();
 };
 
 async function updateModelSelection() {

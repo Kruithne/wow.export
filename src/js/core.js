@@ -6,6 +6,9 @@
 const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
+const log = require('./log');
+const fs = require('fs');
+const FileWriter = require('./file-writer');
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -171,6 +174,22 @@ const view = {
 };
 
 /**
+ * Open a stream to the last export file.
+ * @returns FileWriter|null
+ */
+const openLastExportStream = () => {
+	const lastExportFilePath = core.view.lastExportPath;
+	const lastExportFileStat = fs.statSync(lastExportFilePath);
+
+	if (lastExportFileStat.isDirectory()) {
+		log.write('ERROR: Last export file has been configured as a directory instead of a file!');
+		return null;
+	}
+
+	return new FileWriter(lastExportFilePath, 'utf8');
+};
+
+/**
  * Run an async function while preventing the user from starting others.
  * This is heavily used in UI to disable components during big tasks.
  * @param {function} func 
@@ -302,7 +321,8 @@ const core = {
 	registerDropHandler,
 	getDropHandler,
 	registerLoadFunc,
-	runLoadFuncs
+	runLoadFuncs,
+	openLastExportStream
 };
 
 module.exports = core;
