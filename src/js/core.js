@@ -179,6 +179,9 @@ const view = {
  */
 const openLastExportStream = () => {
 	const lastExportFilePath = core.view.lastExportPath;
+	if (fs.existsSync(lastExportFilePath) === false)
+		return null;
+
 	const lastExportFileStat = fs.statSync(lastExportFilePath);
 
 	if (lastExportFileStat.isDirectory()) {
