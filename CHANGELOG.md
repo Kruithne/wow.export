@@ -1,3 +1,6 @@
+0.1.64 (21-07-2024)
+- Fix issue with exports not starting for some users due to an issue introduced in 0.1.62.
+
 0.1.63 (20-07-2024)
 - Added more verbose logging for required downloads during loading to hopefully figure out why some users are having issues.
 
