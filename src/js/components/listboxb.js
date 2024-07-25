@@ -12,6 +12,7 @@ module.exports = {
 	 * disable: If provided, used as reactive disable flag.
 	 */
 	props: ['items', 'selection', 'single', 'keyinput', 'disable'],
+	emits: ['update:selection'],
 
 	/**
 	 * Reactive instance data.
@@ -51,7 +52,7 @@ module.exports = {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -204,11 +205,13 @@ module.exports = {
 							this.recalculateBounds();
 						}
 
+						const newSelection = this.selection.slice();
 						if (!e.shiftKey || this.single)
-							this.selection.splice(0);
+							newSelection.splice(0);
 
-						this.selection.push(next);
+						newSelection.push(next);
 						this.lastSelectItem = next;
+						this.$emit('update:selection', newSelection);
 					}
 				}
 			}
@@ -224,12 +227,13 @@ module.exports = {
 				return;
 			
 			const checkIndex = this.selection.indexOf(item);
+			const newSelection = this.selection.slice();
 
 			if (this.single) {
 				// Listbox is in single-entry mode, replace selection.
 				if (checkIndex === -1) {
-					this.selection.splice(0);
-					this.selection.push(item);
+					newSelection.splice(0);
+					newSelection.push(item);
 				}
 
 				this.lastSelectItem = item;
@@ -237,9 +241,9 @@ module.exports = {
 				if (event.ctrlKey) {
 					// Ctrl-key held, so allow multiple selections.
 					if (checkIndex > -1)
-						this.selection.splice(checkIndex, 1);
+						newSelection.splice(checkIndex, 1);
 					else
-						this.selection.push(item);
+						newSelection.push(item);
 				} else if (event.shiftKey) {
 					// Shift-key held, select a range.
 					if (this.lastSelectItem && this.lastSelectItem !== item) {
@@ -251,18 +255,20 @@ module.exports = {
 						const range = this.items.slice(lowest, lowest + delta + 1);
 
 						for (const select of range) {
-							if (this.selection.indexOf(select) === -1)
-								this.selection.push(select);
+							if (newSelection.indexOf(select) === -1)
+								newSelection.push(select);
 						}
 					}
-				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
+				} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 					// Normal click, replace entire selection.
-					this.selection.splice(0);
-					this.selection.push(item);
+					newSelection.splice(0);
+					newSelection.push(item);
 				}
 
 				this.lastSelectItem = item;
 			}
+
+			this.$emit('update:selection', newSelection);
 		}
 	},
 

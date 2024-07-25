@@ -368,7 +368,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
+							<listbox v-model:selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -402,13 +402,13 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map"></listbox>
+							<listbox id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 							<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
 						</div>
-						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" :selection="mapViewerSelection"></map-viewer>
+						<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="10" :mask="mapViewerChunkMask" v-model:selection="mapViewerSelection"></map-viewer>
 						<div class="spaced-preview-controls">
 							<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
 							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export ' + mapViewerSelection.length + ' Tiles') : 'Export Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy}"/>
@@ -467,7 +467,7 @@
 				<keep-alive>
 					<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
 						<div class="list-container">
-							<itemlistbox id="listbox-items" :selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextMenus.nodeItem = $event"></itemlistbox>
+							<itemlistbox id="listbox-items" v-model:selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextMenus.nodeItem = $event"></itemlistbox>
 							<context-menu :node="contextMenus.nodeItem" v-slot:default="context" @close="contextMenus.nodeItem = null">
 								<span v-if="context.node.modelCount > 0" @click.self="viewModels(context.node)">View related models ({{ context.node.modelCount }})</span>
 								<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
@@ -492,7 +492,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
+							<listbox v-model:selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -599,11 +599,11 @@
 								</div>
 								<template v-if="config.modelsExportTextures">
 									<span class="header">Skins</span>
-									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
+									<listboxb :items="modelViewerSkins" v-model:selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
 								<!--<template v-if="config.exportModelFormat === 'GLTF'">
 									<span class="header">Animations</span>
-									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
+									<listboxb :items="modelViewerAnims" v-model:selection="modelViewerAnimSelection" :single="true"></listboxb>
 								</template>-->
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
@@ -632,15 +632,15 @@
 										<span>Show NPC races</span>
 									</label>
 								</span>
-								<listboxb id="listbox-chr-race" class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
+								<listboxb id="listbox-chr-race" class="section-end" :items="chrCustRaces" v-model:selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
 								<span class="header">Body Type</span>
-								<listboxb id="listbox-chr-model" :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-model" :items="chrCustModels" v-model:selection="chrCustModelSelection" :single="true"></listboxb>
 							</div>
 							<div class="option-tab" v-show="chrCustTab  === 'options'">
 								<span class="header">Customizations</span>
-								<listboxb id="listbox-chr-option" :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-option" :items="chrCustOptions" v-model:selection="chrCustOptionSelection" :single="true"></listboxb>
 								<span class="header">Customization Options</span>
-								<listboxb id="listbox-chr-choice" :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+								<listboxb id="listbox-chr-choice" :items="chrCustChoices" v-model:selection="chrCustChoiceSelection" :single="true"></listboxb>
 								<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
 							</div>
 						</div>
@@ -666,7 +666,7 @@
 									<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
 								</ul>
 								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
-								<combo-box :value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" @update:value="chrImportSelectedRealm = $event" maxheight="10"></combo-box>
+								<combo-box v-model:value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" maxheight="10"></combo-box>
 								<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
 									<input type="checkbox" v-model="chrImportLoadVisage"/>
 									<span>Load visage model (Dracthyr/Worgen)</span>
@@ -700,7 +700,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-install" v-if="screen === 'tab-install'">
 						<div class="list-container">
-							<listbox :selection="selectionInstall" :items="listfileInstall" :filter="userInputFilterInstall" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="install file"></listbox>
+							<listbox v-model:selection="selectionInstall" :items="listfileInstall" :filter="userInputFilterInstall" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="install file"></listbox>
 						</div>
 						<div id="tab-install-tray">
 							<div class="filter">
@@ -720,7 +720,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-raw" v-if="screen === 'tab-raw'">
 						<div class="list-container">
-							<listbox :selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file"></listbox>
+							<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file"></listbox>
 						</div>
 						<div id="tab-raw-tray">
 							<div class="filter">
@@ -735,7 +735,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
+							<listbox v-model:selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
 						</div>
 						<div id="tab-video-tray">
 							<div class="filter">
@@ -749,7 +749,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-text" v-if="screen === 'tab-text'">
 						<div class="list-container">
-							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file"></listbox>
+							<listbox v-model:selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -769,7 +769,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file"></listbox>
+							<listbox v-model:selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -783,7 +783,7 @@
 									<span class="title">{{ soundPlayerTitle }}</span>
 									<span>{{ soundPlayerDurationFormatted }}</span>
 								</div>
-								<slider id="slider-seek" v-model="soundPlayerSeek" @input="emit('click-sound-seek', $event)"></slider>
+								<slider id="slider-seek" v-model="soundPlayerSeek" @update:model-value="emit('click-sound-seek', $event)"></slider>
 								<div class="buttons">
 									<input type="button" :class="{ isPlaying: !soundPlayerState }" @click="click('sound-toggle', $event)"/>
 									<slider id="slider-volume" v-model="config.soundPlayerVolume"></slider>
@@ -806,7 +806,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-data" v-if="screen === 'tab-data'">
 						<div class="list-container">
-							<listbox :selection="selectionDB2s" :items="listfileDB2s" :filter="userInputFilterDB2s" :keyinput="true"
+							<listbox v-model:selection="selectionDB2s" :items="listfileDB2s" :filter="userInputFilterDB2s" :keyinput="true"
 								:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"
 								:copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></listbox>
 						</div>

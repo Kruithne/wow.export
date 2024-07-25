@@ -33,6 +33,7 @@ module.exports = {
 	 * disable: If provided, used as reactive disable flag.
 	 */
 	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable'],
+	emits: ['update:selection'],
 
 	/**
 	 * Reactive instance data.
@@ -75,7 +76,7 @@ module.exports = {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -139,12 +140,18 @@ module.exports = {
 					res = res.filter(e => e.toLowerCase().includes(filter));
 			}
 
-			// Remove anything from the user selection that has now been filtered out.
-			// Iterate backwards here due to re-indexing as elements are spliced.
-			for (let i = this.selection.length - 1; i >= 0; i--) {
-				if (!res.includes(this.selection[i]))
-					this.selection.splice(i, 1);
-			}
+			let hasChanges = false;
+			const newSelection = this.selection.filter((item) => {
+				const includes = res.includes(item);
+
+				if (!includes)
+					hasChanges = true;
+
+				return includes;
+			});
+
+			if (hasChanges)
+				this.$emit('update:selection', newSelection);
 
 			return res;
 		},
@@ -227,8 +234,10 @@ module.exports = {
 
 			// Replace the current selection with one from the clipboard.
 			const entries = e.clipboardData.getData('text').split(/\r?\n/).filter(i => this.itemList.includes(i));
-			this.selection.splice(0);
-			this.selection.push(...entries);
+			const newSelection = this.selection.slice();
+			newSelection.splice(0);
+			newSelection.push(...entries);
+			this.$emit('update:selection', newSelection);
 		},
 
 		/**
@@ -263,7 +272,7 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				let entries = this.selection;
+				let entries = this.selection.slice();
 				if (this.copymode == 'DIR')
 					entries = entries.map(e => path.dirname(e));
 				else if (this.copymode == 'FID')
@@ -300,11 +309,14 @@ module.exports = {
 							this.recalculateBounds();
 						}
 
-						if (!e.shiftKey || this.single)
-							this.selection.splice(0);
+						const newSelection = this.selection.slice();
 
-						this.selection.push(next);
+						if (!e.shiftKey || this.single)
+							newSelection.splice(0);
+
+						newSelection.push(next);
 						this.lastSelectItem = next;
+						this.$emit('update:selection', newSelection);
 					}
 				}
 			}
@@ -316,17 +328,17 @@ module.exports = {
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
-			console.log(item, event);
 			if (this.disable)
 				return;
 			
 			const checkIndex = this.selection.indexOf(item);
+			const newSelection = this.selection.slice();
 
 			if (this.single) {
 				// Listbox is in single-entry mode, replace selection.
 				if (checkIndex === -1) {
-					this.selection.splice(0);
-					this.selection.push(item);
+					newSelection.splice(0);
+					newSelection.push(item);
 				}
 
 				this.lastSelectItem = item;
@@ -334,9 +346,9 @@ module.exports = {
 				if (event.ctrlKey) {
 					// Ctrl-key held, so allow multiple selections.
 					if (checkIndex > -1)
-						this.selection.splice(checkIndex, 1);
+						newSelection.splice(checkIndex, 1);
 					else
-						this.selection.push(item);
+						newSelection.push(item);
 				} else if (event.shiftKey) {
 					// Shift-key held, select a range.
 					if (this.lastSelectItem && this.lastSelectItem !== item) {
@@ -348,18 +360,21 @@ module.exports = {
 						const range = this.filteredItems.slice(lowest, lowest + delta + 1);
 
 						for (const select of range) {
-							if (this.selection.indexOf(select) === -1)
-								this.selection.push(select);
+							if (newSelection.indexOf(select) === -1)
+								newSelection.push(select);
 						}
 					}				
-				} else if (checkIndex === -1 || (checkIndex > -1 && this.selection.length > 1)) {
+				} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 					// Normal click, replace entire selection.
-					this.selection.splice(0);
-					this.selection.push(item);
+					newSelection.splice(0);
+					newSelection.push(item);
 				}
 
 				this.lastSelectItem = item;
 			}
+
+			this.$emit('update:selection', newSelection);
+			console.log('emit');
 		}
 	},
 

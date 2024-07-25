@@ -18,7 +18,7 @@ module.exports = {
 	 * Invoked before this component is destroyed.
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		this.observer.disconnect();
 	},
 

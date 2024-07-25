@@ -6,6 +6,7 @@
 
 module.exports = {
 	props: ['value', 'source', 'placeholder', 'maxheight'],
+	emits: ['update:value'],
 
 	data: function() {
 		return {

@@ -33,6 +33,7 @@ module.exports = {
 	 * selection: Array defining selected tiles.
 	 */
 	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
+	emits: ['update:selection'],
 
 	data: function() {
 		return {
@@ -316,16 +317,18 @@ module.exports = {
 					return;
 				}
 
-				this.selection.length = 0; // Reset the selection array.
+				const newSelection = [];
 				
 				// Iterate over all available tiles in the mask and select them.
 				for (let i = 0, n = this.mask.length; i < n; i++) {
 					if (this.mask[i] === 1)
-						this.selection.push(i);
+						newSelection.push(i);
 				}
 
+				this.$emit('update:selection', newSelection);
+
 				// Trigger a re-render to show the new selection.
-				this.render();
+				setTimeout(() => this.render(), 100);
 				
 				// Absorb this event preventing further action.
 				event.preventDefault();

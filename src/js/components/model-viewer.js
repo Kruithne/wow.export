@@ -55,7 +55,7 @@ module.exports = {
 	/**
 	 * Invoked when the component is destroyed.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		this.isRendering = false;
 		this.controls.dispose();
 		this.renderer.dispose();

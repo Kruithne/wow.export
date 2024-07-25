@@ -4,7 +4,8 @@
 	License: MIT
  */
 module.exports = {
-	props: ['value'],
+	props: ['modelValue'],
+	emits: ['update:modelValue'],
 
 	/**
 	 * Invoked when the component is mounted.
@@ -15,8 +16,7 @@ module.exports = {
 		node.setAttribute('type', 'file');
 		node.setAttribute('nwdirectory', true);
 		node.addEventListener('change', () => {
-			this.$el.value = node.value;
-			this.$emit('input', node.value);
+			this.$emit('update:modelValue', node.value);
 		});
 
 		this.fileSelector = node;
@@ -26,7 +26,7 @@ module.exports = {
 	 * Invoked when this component is destroyed.
 	 * Used to remove internal references to file node.
 	 */
-	destroyed: function() {
+	unmounted: function() {
 		this.fileSelector.remove();
 	},
 
@@ -43,5 +43,5 @@ module.exports = {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<input type="text" :value="value" @focus="openDialog" @input="$emit('input', $event.target.value)"/>`
+	template: `<input type="text" :value="modelValue" @focus="openDialog" @input="$emit('update:modelValue', $event.target.value)"/>`
 };
