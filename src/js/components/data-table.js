@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-Vue.component('data-table', {
+module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
@@ -218,4 +218,4 @@ Vue.component('data-table', {
 			</table>
 		</div>
 	`
-});
+};

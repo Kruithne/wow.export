@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('listboxb', {
+module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
 	 * selection: Reactive selection controller.
@@ -275,4 +275,4 @@ Vue.component('listboxb', {
 			<span class="sub sub-0">{{ item.label }}</span>
 		</div>
 	</div>`
-});
+};

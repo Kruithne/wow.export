@@ -4,7 +4,7 @@
 	License: MIT
  */
 
-Vue.component('combo-box', {
+module.exports = {
 	props: ['value', 'source', 'placeholder', 'maxheight'],
 
 	data: function() {
@@ -91,4 +91,4 @@ Vue.component('combo-box', {
 			</ul>
 		</div>
 	`
-});
+};

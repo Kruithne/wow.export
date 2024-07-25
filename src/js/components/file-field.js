@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('file-field', {
+module.exports = {
 	props: ['value'],
 
 	/**
@@ -44,4 +44,4 @@ Vue.component('file-field', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<input type="text" :value="value" @focus="openDialog" @input="$emit('input', $event.target.value)"/>`
-});
+};

@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('checkboxlist', {
+module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
 	 */
@@ -174,4 +174,4 @@ Vue.component('checkboxlist', {
 			<span>{{ item.label }}</span>
 		</div>
 	</div>`
-});
+};

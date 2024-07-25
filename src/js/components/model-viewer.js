@@ -5,7 +5,7 @@
  */
 const CameraControls = require('../3D/camera/CameraControls');
 
-Vue.component('model-viewer', {
+module.exports = {
 	props: ['context'],
 
 	methods: {
@@ -66,4 +66,4 @@ Vue.component('model-viewer', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div class="image ui-model-viewer"></div>`
-});
+};

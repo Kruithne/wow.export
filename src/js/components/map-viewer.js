@@ -23,7 +23,7 @@ const state = {
 	selectCache: new Set()
 };
 
-Vue.component('map-viewer', {
+module.exports = {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).
@@ -546,4 +546,4 @@ Vue.component('map-viewer', {
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
-});
+};

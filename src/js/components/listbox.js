@@ -16,7 +16,7 @@ const fid_filter = (e) => {
 	return e;
 };
 
-Vue.component('listbox', {
+module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
@@ -316,6 +316,7 @@ Vue.component('listbox', {
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
+			console.log(item, event);
 			if (this.disable)
 				return;
 			
@@ -372,4 +373,4 @@ Vue.component('listbox', {
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
-});
+};

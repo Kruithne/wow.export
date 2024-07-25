@@ -5,7 +5,7 @@
  */
 const IconRender = require('../icon-render');
 
-Vue.component('itemlistbox', {
+module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
@@ -325,4 +325,4 @@ Vue.component('itemlistbox', {
 		</div>
 	</div>
 	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
-});
+};
