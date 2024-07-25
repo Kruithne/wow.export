@@ -374,7 +374,6 @@ module.exports = {
 			}
 
 			this.$emit('update:selection', newSelection);
-			console.log('emit');
 		}
 	},
 
