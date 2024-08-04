@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('checkboxlist', {
+module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
 	 */
@@ -41,7 +41,7 @@ Vue.component('checkboxlist', {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -174,4 +174,4 @@ Vue.component('checkboxlist', {
 			<span>{{ item.label }}</span>
 		</div>
 	</div>`
-});
+};

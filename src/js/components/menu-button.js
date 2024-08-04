@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('menu-button', {
+module.exports = {
 	/**
 	 * options: An array of objects with label/value properties.
 	 * default: The default value from the options array.
@@ -78,4 +78,4 @@ Vue.component('menu-button', {
 			<span v-for="option in options" @click="select(option)">{{ option.label ?? option.value }}</span>
 		</context-menu>
 	</div>`
-});
+};

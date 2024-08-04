@@ -13,7 +13,7 @@ window.addEventListener('mousemove', event => {
 	clientMouseY = event.clientY;
 });
 
-Vue.component('context-menu', {
+module.exports = {
 	/**
 	 * node: Object which this context menu represents.
 	 */
@@ -44,4 +44,4 @@ Vue.component('context-menu', {
 		<slot v-bind:node="node"></slot>
 	</div>
 	`
-});
+};

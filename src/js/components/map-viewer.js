@@ -23,7 +23,7 @@ const state = {
 	selectCache: new Set()
 };
 
-Vue.component('map-viewer', {
+module.exports = {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).
@@ -33,6 +33,7 @@ Vue.component('map-viewer', {
 	 * selection: Array defining selected tiles.
 	 */
 	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
+	emits: ['update:selection'],
 
 	data: function() {
 		return {
@@ -242,6 +243,9 @@ Vue.component('map-viewer', {
 			// Get local reference to the canvas context.
 			const ctx = this.context;
 
+			// Workaround, without this the canvas doesn't work on first render
+			ctx.fillRect(0, 0, 1, 1);
+
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected. 
@@ -316,16 +320,18 @@ Vue.component('map-viewer', {
 					return;
 				}
 
-				this.selection.length = 0; // Reset the selection array.
+				const newSelection = [];
 				
 				// Iterate over all available tiles in the mask and select them.
 				for (let i = 0, n = this.mask.length; i < n; i++) {
 					if (this.mask[i] === 1)
-						this.selection.push(i);
+						newSelection.push(i);
 				}
 
+				this.$emit('update:selection', newSelection);
+
 				// Trigger a re-render to show the new selection.
-				this.render();
+				setTimeout(() => this.render(), 100);
 				
 				// Absorb this event preventing further action.
 				event.preventDefault();
@@ -546,4 +552,4 @@ Vue.component('map-viewer', {
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
 	</div>`
-});
+};

@@ -25,153 +25,156 @@ const dropHandlers = [];
 // step in the loading process, allowing components to initialize.
 let loaders = [];
 
-// The `view` object is used as the data source for the main Vue instance.
-// All properties within it will be reactive once the view has been initialized.
-const view = {
-	screenStack: [], // Controls the currently active interface screen.
-	isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-	isDev: !BUILD_RELEASE, // True if in development environment.
-	loadingProgress: '', // Sets the progress text for the loading screen.
-	loadingTitle: '', // Sets the title text for the loading screen.
-	loadPct: -1, // Controls active loading bar percentage.
-	toast: null, // Controls the currently active toast bar.
-	cdnRegions: [], // CDN region data.
-	selectedCDNRegion: null, // Active CDN region.
-	lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
-	config: {}, // Will contain default/user-set configuration. Use config module to operate.
-	configEdit: {}, // Temporary configuration clone used during user configuration editing.
-	availableLocalBuilds: null, // Array containing local builds to display during source select.
-	availableRemoteBuilds: null, // Array containing remote builds to display during source select.
-	casc: null, // Active CASC instance.
-	cacheSize: 0, // Active size of the user cache.
-	userInputTactKey: '', // Value of manual tact key field.
-	userInputTactKeyName: '', // Value of manual tact key name field.
-	userInputFilterTextures: '', // Value of the 'filter' field for textures.
-	userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
-	userInputFilterVideos: '', // Value of the 'filter' field for video files.
-	userInputFilterText: '', // Value of the 'filter' field for text files.
-	userInputFilterModels: '', // Value of the 'filter' field for models.
-	userInputFilterMaps: '', // Value of the 'filter' field for maps.
-	userInputFilterItems: '', // Value of the 'filter' field of items.
-	userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
-	userInputFilterRaw: '', // Value of the 'filter' field for raw files.
-	userInputFilterInstall: '', // Value of the 'filter' field for install files.
-	selectionTextures: [], // Current user selection of texture files.
-	selectionModels: [], // Current user selection of models.
-	selectionSounds: [], // Current user selection of sounds.
-	selectionVideos: [],  // Current user selection of videos.
-	selectionText: [], // Current user selection of text files.
-	selectionMaps: [], // Current user selection of maps.
-	selectionItems: [], // Current user selection of items.
-	selectionDB2s: [], // Current user selection of DB2s.
-	selectionRaw: [], // Current user selection of raw files.
-	selectionInstall: [], // Current user selection of install files.
-	listfileTextures: [], // Filtered listfile for texture files.
-	listfileSounds: [], // Filtered listfile for sound files.
-	listfileVideos: [], // Filtered listfile for video files.
-	listfileText: [], // Filtered listfile for text files.
-	listfileModels: [], // Filtered listfile for M2/WMO models.
-	listfileItems: [], // Filtered item entries.
-	listfileDB2s: [], // Filtered DB2 entries.
-	listfileRaw: [], // Full raw file listfile.
-	listfileInstall: [], // Filtered listfile for install files.
-	installTags: [], // Install manifest tags.
-	tableBrowserHeaders: [], // DB2 headers
-	tableBrowserRows: [], // DB2 rows
-	availableLocale: Locale, // Available CASC locale.
-	fileDropPrompt: null, // Prompt to display for file drag/drops.
-	textViewerSelectedText: '', // Active text for the text viewer.
-	soundPlayerSeek: 0, // Current seek of the sound player.
-	soundPlayerState: false, // Playing state of the sound player.
-	soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
-	soundPlayerDuration: 0, // Duration of the currently playing sound track.
-	modelViewerContext: null, // 3D context for the model viewer.
-	modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
-	modelViewerGeosets: [], // Active M2 model geoset control.
-	modelViewerSkins: [], // Active M2 model skins.
-	modelViewerSkinsSelection: [], // Selected M2 model skins.
-	modelViewerAnims: [], // Available animations.
-	modelViewerAnimSelection: [], // Selected M2 model animation (single).
-	modelViewerWMOGroups: [], // Active WMO model group control.
-	modelViewerWMOSets: [], // Active WMO doodad set control.
-	modelViewerAutoAdjust: true, // Automatic camera adjustment.
-	textureRibbonStack: [], // Texture preview stack for model viewer.
-	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
-	textureRibbonPage: 0, // Active page of texture slots to render.
-	itemViewerTypeMask: [], // Active item type control.
-	modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
-	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
-	modelTexturePreviewURL: '', // Active URL of the texture preview image on the model viewer.
-	modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
-	texturePreviewWidth: 256, // Active width of the texture preview.
-	texturePreviewHeight: 256, // Active height of the texture preview.
-	texturePreviewURL: '', // Active URL of the texture preview image.
-	texturePreviewInfo: '', // Text information for a displayed texture.
-	overrideModelList: [], // Override list of models.
-	overrideModelName: '', // Override model name.
-	overrideTextureList: [], // Override list of textures.
-	overrideTextureName: '', // Override texture name.
-	mapViewerMaps: [], // Available maps for the map viewer.
-	mapViewerHasWorldModel: false, // Does selected map have a world model?
-	mapViewerTileLoader: null, // Tile loader for active map viewer map.
-	mapViewerSelectedMap: null, // Currently selected map.
-	mapViewerSelectedDir: null,
-	mapViewerChunkMask: null, // Map viewer chunk mask.
-	mapViewerSelection: [], // Map viewer tile selection
-	chrModelViewerContext: null, // 3D context for the character-specific model viewer.
-	chrCustRaces: [], // Available character races to select from
-	chrCustRaceSelection: [], // Current race ID selected
-	chrCustModels: [], // Available character customization models.
-	chrCustModelSelection: [], // Selected character customization model.
-	chrCustOptions: [], // Available character customization options.
-	chrCustOptionSelection: [], // Selected character customization option.
-	chrCustChoices: [], // Available character customization choices.
-	chrCustChoiceSelection: [], // Selected character customization choice.
-	chrCustActiveChoices: [], // Active character customization choices.
-	chrCustGeosets: [], // Character customization model geoset control.
-	chrCustTab: 'models', // Active tab for character customization.
-	chrCustRightTab: 'geosets', // Active right tab for character customization.
-	chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
-	chrImportChrName: '', // Character import, character name input.
-	chrImportRegions: [],
-	chrImportSelectedRegion: '',
-	chrImportRealms: [],
-	chrImportSelectedRealm: null,
-	chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
-	chrImportChrModelID: 0, // Temporary storage for target character model ID. 
-	chrImportChoices: [], // Temporary storage for character import choices.
-	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
-	exportCancelled: false, // Export cancellation state.
-	isXmas: (new Date().getMonth() === 11),
-	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
-	contextMenus: {
-		nodeTextureRibbon: null, // Context menu node for the texture ribbon.
-		nodeItem: null, // Context menu node for the items listfile.
-		stateNavExtra: false, // State controller for the extra nav menu.
-		stateModelExport: false, // State controller for the model export menu.
-	},
-	menuButtonTextures: [
-		{ label: 'Export as PNG', value: 'PNG' },
-		{ label: 'Export as BLP (Raw)', value: 'BLP' },
-		{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
-	],
-	menuButtonTextureQuality: [
-		{ label: 'Alpha Maps', value: -1 },
-		{ label: 'None', value: 0 },
-		{ label: 'Minimap (512)', value: 512 },
-		{ label: 'Low (1k)', value: 1024 },
-		{ label: 'Medium (4k)', value: 4096 },
-		{ label: 'High (8k)', value: 8192 },
-		{ label: 'Ultra (16k)', value: 16384 }
-	],
-	menuButtonModels: [
-		{ label: 'Export OBJ', value: 'OBJ' },
-		{ label: 'Export glTF', value: 'GLTF' },
-		{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
-		{ label: 'Export PNG (3D Preview)', value: 'PNG' },
-		{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
-	]
-};
+const newView = () => {
+	return {
+		screenStack: [], // Controls the currently active interface screen.
+		isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
+		isDev: !BUILD_RELEASE, // True if in development environment.
+		loadingProgress: '', // Sets the progress text for the loading screen.
+		loadingTitle: '', // Sets the title text for the loading screen.
+		loadPct: -1, // Controls active loading bar percentage.
+		toast: null, // Controls the currently active toast bar.
+		cdnRegions: [], // CDN region data.
+		selectedCDNRegion: null, // Active CDN region.
+		lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
+		config: {}, // Will contain default/user-set configuration. Use config module to operate.
+		configEdit: {}, // Temporary configuration clone used during user configuration editing.
+		availableLocalBuilds: null, // Array containing local builds to display during source select.
+		availableRemoteBuilds: null, // Array containing remote builds to display during source select.
+		casc: null, // Active CASC instance.
+		cacheSize: 0, // Active size of the user cache.
+		userInputTactKey: '', // Value of manual tact key field.
+		userInputTactKeyName: '', // Value of manual tact key name field.
+		userInputFilterTextures: '', // Value of the 'filter' field for textures.
+		userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
+		userInputFilterVideos: '', // Value of the 'filter' field for video files.
+		userInputFilterText: '', // Value of the 'filter' field for text files.
+		userInputFilterModels: '', // Value of the 'filter' field for models.
+		userInputFilterMaps: '', // Value of the 'filter' field for maps.
+		userInputFilterItems: '', // Value of the 'filter' field of items.
+		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
+		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
+		userInputFilterInstall: '', // Value of the 'filter' field for install files.
+		selectionTextures: [], // Current user selection of texture files.
+		selectionModels: [], // Current user selection of models.
+		selectionSounds: [], // Current user selection of sounds.
+		selectionVideos: [],  // Current user selection of videos.
+		selectionText: [], // Current user selection of text files.
+		selectionMaps: [], // Current user selection of maps.
+		selectionItems: [], // Current user selection of items.
+		selectionDB2s: [], // Current user selection of DB2s.
+		selectionRaw: [], // Current user selection of raw files.
+		selectionInstall: [], // Current user selection of install files.
+		listfileTextures: [], // Filtered listfile for texture files.
+		listfileSounds: [], // Filtered listfile for sound files.
+		listfileVideos: [], // Filtered listfile for video files.
+		listfileText: [], // Filtered listfile for text files.
+		listfileModels: [], // Filtered listfile for M2/WMO models.
+		listfileItems: [], // Filtered item entries.
+		listfileDB2s: [], // Filtered DB2 entries.
+		listfileRaw: [], // Full raw file listfile.
+		listfileInstall: [], // Filtered listfile for install files.
+		installTags: [], // Install manifest tags.
+		tableBrowserHeaders: [], // DB2 headers
+		tableBrowserRows: [], // DB2 rows
+		availableLocale: Locale, // Available CASC locale.
+		fileDropPrompt: null, // Prompt to display for file drag/drops.
+		textViewerSelectedText: '', // Active text for the text viewer.
+		soundPlayerSeek: 0, // Current seek of the sound player.
+		soundPlayerState: false, // Playing state of the sound player.
+		soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
+		soundPlayerDuration: 0, // Duration of the currently playing sound track.
+		modelViewerContext: null, // 3D context for the model viewer.
+		modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
+		modelViewerGeosets: [], // Active M2 model geoset control.
+		modelViewerSkins: [], // Active M2 model skins.
+		modelViewerSkinsSelection: [], // Selected M2 model skins.
+		modelViewerAnims: [], // Available animations.
+		modelViewerAnimSelection: [], // Selected M2 model animation (single).
+		modelViewerWMOGroups: [], // Active WMO model group control.
+		modelViewerWMOSets: [], // Active WMO doodad set control.
+		modelViewerAutoAdjust: true, // Automatic camera adjustment.
+		textureRibbonStack: [], // Texture preview stack for model viewer.
+		textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
+		textureRibbonPage: 0, // Active page of texture slots to render.
+		itemViewerTypeMask: [], // Active item type control.
+		modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
+		modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
+		modelTexturePreviewURL: '', // Active URL of the texture preview image on the model viewer.
+		modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
+		texturePreviewWidth: 256, // Active width of the texture preview.
+		texturePreviewHeight: 256, // Active height of the texture preview.
+		texturePreviewURL: '', // Active URL of the texture preview image.
+		texturePreviewInfo: '', // Text information for a displayed texture.
+		overrideModelList: [], // Override list of models.
+		overrideModelName: '', // Override model name.
+		overrideTextureList: [], // Override list of textures.
+		overrideTextureName: '', // Override texture name.
+		mapViewerMaps: [], // Available maps for the map viewer.
+		mapViewerHasWorldModel: false, // Does selected map have a world model?
+		mapViewerTileLoader: null, // Tile loader for active map viewer map.
+		mapViewerSelectedMap: null, // Currently selected map.
+		mapViewerSelectedDir: null,
+		mapViewerChunkMask: null, // Map viewer chunk mask.
+		mapViewerSelection: [], // Map viewer tile selection
+		chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+		chrCustRaces: [], // Available character races to select from
+		chrCustRaceSelection: [], // Current race ID selected
+		chrCustModels: [], // Available character customization models.
+		chrCustModelSelection: [], // Selected character customization model.
+		chrCustOptions: [], // Available character customization options.
+		chrCustOptionSelection: [], // Selected character customization option.
+		chrCustChoices: [], // Available character customization choices.
+		chrCustChoiceSelection: [], // Selected character customization choice.
+		chrCustActiveChoices: [], // Active character customization choices.
+		chrCustGeosets: [], // Character customization model geoset control.
+		chrCustTab: 'models', // Active tab for character customization.
+		chrCustRightTab: 'geosets', // Active right tab for character customization.
+		chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
+		chrImportChrName: '', // Character import, character name input.
+		chrImportRegions: [],
+		chrImportSelectedRegion: '',
+		chrImportRealms: [],
+		chrImportSelectedRealm: null,
+		chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
+		chrImportChrModelID: 0, // Temporary storage for target character model ID. 
+		chrImportChoices: [], // Temporary storage for character import choices.
+		realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
+		exportCancelled: false, // Export cancellation state.
+		isXmas: (new Date().getMonth() === 11),
+		regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
+		contextMenus: {
+			nodeTextureRibbon: null, // Context menu node for the texture ribbon.
+			nodeItem: null, // Context menu node for the items listfile.
+			stateNavExtra: false, // State controller for the extra nav menu.
+			stateModelExport: false, // State controller for the model export menu.
+		},
+		menuButtonTextures: [
+			{ label: 'Export as PNG', value: 'PNG' },
+			{ label: 'Export as BLP (Raw)', value: 'BLP' },
+			{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
+		],
+		menuButtonTextureQuality: [
+			{ label: 'Alpha Maps', value: -1 },
+			{ label: 'None', value: 0 },
+			{ label: 'Minimap (512)', value: 512 },
+			{ label: 'Low (1k)', value: 1024 },
+			{ label: 'Medium (4k)', value: 4096 },
+			{ label: 'High (8k)', value: 8192 },
+			{ label: 'Ultra (16k)', value: 16384 }
+		],
+		menuButtonModels: [
+			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export glTF', value: 'GLTF' },
+			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
+			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
+			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
+		]
+	}
+}
+
+// The `view` object is used as a reference to the data for the main Vue instance.
+const view = null;
 
 /**
  * Open a stream to the last export file.
@@ -198,9 +201,9 @@ const openLastExportStream = () => {
  * @param {function} func 
  */
 const block = async (func) => {
-	view.isBusy++;
+	core.view.isBusy++;
 	await func();
-	view.isBusy--;
+	core.view.isBusy--;
 };
 
 /**
@@ -209,16 +212,16 @@ const block = async (func) => {
  * @returns {Progress}
  */
 const createProgress = (segments = 1) => {
-	view.loadPct = 0;
+	core.view.loadPct = 0;
 	return {
 		segWeight: 1 / segments,
 		value: 0,
 		step: async function(text) {
 			this.value++;
-			view.loadPct = Math.min(this.value * this.segWeight, 1);
+			core.view.loadPct = Math.min(this.value * this.segWeight, 1);
 
 			if (text)
-				view.loadingProgress = text;
+				core.view.loadingProgress = text;
 
 			await generics.redraw();
 		}
@@ -236,7 +239,7 @@ const hideToast = (userCancel = false) => {
 		toastTimer = -1;
 	}
 
-	view.toast = null;
+	core.view.toast = null;
 
 	if (userCancel)
 		events.emit('toast-cancelled');
@@ -251,7 +254,7 @@ const hideToast = (userCancel = false) => {
  * @param {boolean} closable If true, toast can manually be closed.
  */
 const setToast = (toastType, message, options = null, ttl = 10000, closable = true) => {
-	view.toast = { type: toastType, message, options, closable };
+	core.view.toast = { type: toastType, message, options, closable };
 
 	// Remove any outstanding toast timer we may have.
 	clearTimeout(toastTimer);
@@ -265,7 +268,7 @@ const setToast = (toastType, message, options = null, ttl = 10000, closable = tr
  * Open user-configured export directory with OS default.
  */
 const openExportDirectory = () => {
-	nw.Shell.openItem(view.config.exportDirectory)
+	nw.Shell.openItem(core.view.config.exportDirectory)
 };
 
 /**
@@ -316,6 +319,7 @@ const runLoadFuncs = async () => {
 const core = { 
 	events,
 	view,
+	newView,
 	block,
 	createProgress,
 	setToast,
