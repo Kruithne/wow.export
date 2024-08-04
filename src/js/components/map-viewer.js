@@ -243,6 +243,9 @@ module.exports = {
 			// Get local reference to the canvas context.
 			const ctx = this.context;
 
+			// Workaround, without this the canvas doesn't work on first render
+			ctx.fillRect(0, 0, 1, 1);
+
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected. 
