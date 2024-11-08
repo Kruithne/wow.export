@@ -14,6 +14,10 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
+const WDCReader = require('../db/WDCReader');
+
+const textureAtlasEntries = new Map(); // fileDataID => { name: string, left: number, top: number, width: number, height: number }[]
+let hasLoadedAtlasTable = false;
 
 let selectedFileDataID = 0;
 
@@ -72,6 +76,61 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 	}
 
 	core.view.isBusy--;
+};
+
+const loadTextureAtlasData = async () => {
+	if (!hasLoadedAtlasTable && !core.view.isBusy) {
+		// show a loading screen
+		const progress = core.createProgress(3);
+		core.view.setScreen('loading');
+		core.view.isBusy++;
+
+		// load UiTextureAtlas which maps fileDataID to an atlas ID
+		await progress.step('Loading texture atlases...');
+		const uiTextureAtlasTable = new WDCReader('DBFilesClient/UiTextureAtlas.db2');
+		await uiTextureAtlasTable.parse();
+
+		// load UiTextureAtlasMember which contains individual atlas regions
+		await progress.step('Loading texture atlas regions...');
+		const uiTextureAtlasMemberTable = new WDCReader('DBFilesClient/UiTextureAtlasMember.db2');
+		await uiTextureAtlasMemberTable.parse();
+
+		await progress.step('Parsing texture atlases...');
+
+		// in the interest of using less memory and avoiding an unnecessary lookup, we store atlas regions
+		// mapped directly to their fileDataID, we have no current need for the atlas ID itself.
+
+		const atlasIdToFidMap = new Map();
+		for (const [id, row] of uiTextureAtlasTable.getAllRows()) {
+			atlasIdToFidMap.set(id, row.FileDataID);
+			textureAtlasEntries.set(row.FileDataID, []);
+		}
+
+		for (const row of uiTextureAtlasMemberTable.getAllRows().values()) {
+			const fileDataID = atlasIdToFidMap.get(row.UiTextureAtlasID);
+			if (!fileDataID) // atlas member with for a non-existant atlas
+				continue;
+
+			textureAtlasEntries.get(fileDataID).push({
+				name: row.ComittedName,
+				width: row.Width,
+				height: row.Height,
+				left: row.ComittedLeft,
+				top: row.ComittedTop
+			});
+		}
+
+		hasLoadedAtlasTable = true;
+
+		// hide the loading screen
+		core.view.loadPct = -1;
+		core.view.isBusy--;
+		core.view.setScreen('tab-textures');
+	}
+};
+
+const updateTextureAtlasOverlay = () => {
+	// todo: implement me :)
 };
 
 /**
@@ -235,6 +294,9 @@ core.registerLoadFunc(async () => {
 		if (!core.view.isBusy && selectedFileDataID > 0)
 			previewTextureByID(selectedFileDataID);
 	});
+
+	// Track when user changes the "Show Atlas Regions" option.
+	core.view.$watch('config.showTextureAtlas', () => loadTextureAtlasData());
 });
 
 module.exports = { previewTextureByID };
