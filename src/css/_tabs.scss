@@ -418,6 +418,7 @@
 			top: 0;
 			transform: scale(1);
 			transform-origin: top left;
+			pointer-events: none;
 
 			.atlas-region {
 				border: 1px dashed rgb(214, 24, 195);
