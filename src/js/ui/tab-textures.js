@@ -150,7 +150,7 @@ const updateTextureAtlasOverlayScaling = () => {
 	const overlay = document.getElementById('atlas-overlay');
 	if (!overlay)
 		return;
-	
+
 	const container = overlay.parentElement;
 
 	const scaleX = container.clientWidth / core.view.textureAtlasOverlayWidth;
@@ -358,12 +358,12 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
-	core.events.once('screen-tab-textures', () => {
-		loadTextureAtlasData();
+	core.events.once('screen-tab-textures', async () => {
+		await loadTextureAtlasData();
 	});
 
-	core.view.$watch('config.showTextureAtlas', () => {
-		loadTextureAtlasData();
+	core.view.$watch('config.showTextureAtlas', async () => {
+		await loadTextureAtlasData();
 		updateTextureAtlasOverlay();
 	});
 });
