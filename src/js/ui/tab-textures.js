@@ -170,8 +170,6 @@ const attachOverlayListener = () => {
  * Update rendering of texture atlas overlays.
  */
 const updateTextureAtlasOverlay = () => {
-	core.view.textureAtlasOverlaySelectedID = 0;
-
 	const atlasID = textureAtlasMap.get(selectedFileDataID);
 	const entry = textureAtlasEntries.get(atlasID);
 	const renderRegions = [];
@@ -218,36 +216,50 @@ const getFileInfoPair = (input) => {
 	return { fileName, fileDataID };
 };
 
-const exportTextureAtlasRegion = async (fileDataID, atlasID) => {
-	const helper = new ExportHelper(1, 'texture');
+const exportTextureAtlasRegions = async (fileDataID) => {
+	const atlasID = textureAtlasMap.get(fileDataID);
+	const atlas = textureAtlasEntries.get(atlasID);
+
+	const fileName = listfile.getByID(fileDataID);
+	const exportDir = ExportHelper.replaceExtension(fileName);
+
+	const helper = new ExportHelper(atlas.regions.length, 'texture');
 	helper.start();
+	
+	let exportFileName = fileName;
 
 	try {
 		const data = await core.view.casc.getFile(fileDataID);
 		const blp = new BLPFile(data);
 		
 		const canvas = blp.toCanvas();
-		const atlas = textureAtlasRegions.get(core.view.textureAtlasOverlaySelectedID);
-
-		const fileName = listfile.getByID(fileDataID);
-		const exportPath = ExportHelper.replaceFile(ExportHelper.getExportPath(fileName), atlas.name + '.png');
-
 		const ctx = canvas.getContext('2d');
-		const crop = ctx.getImageData(atlas.left, atlas.top, atlas.width, atlas.height);
+		
+		for (const regionID of atlas.regions) {
+			if (helper.isCancelled())
+				return;
+			
+			const region = textureAtlasRegions.get(regionID);
 
-		const saveCanvas = document.createElement('canvas');
-		saveCanvas.width = atlas.width;
-		saveCanvas.height = atlas.height;
-
-		const saveCtx = saveCanvas.getContext('2d');
-		saveCtx.putImageData(crop, 0, 0);
-
-		const buf = await BufferWrapper.fromCanvas(saveCanvas, 'image/png');
-		await buf.writeToFile(exportPath);
-
-		helper.mark(fileName, true);
+			exportFileName = path.join(exportDir, region.name);
+			const exportPath = ExportHelper.getExportPath(exportFileName + '.png');
+	
+			const crop = ctx.getImageData(region.left, region.top, region.width, region.height);
+	
+			const saveCanvas = document.createElement('canvas');
+			saveCanvas.width = region.width;
+			saveCanvas.height = region.height;
+	
+			const saveCtx = saveCanvas.getContext('2d');
+			saveCtx.putImageData(crop, 0, 0);
+	
+			const buf = await BufferWrapper.fromCanvas(saveCanvas, 'image/png');
+			await buf.writeToFile(exportPath);
+	
+			helper.mark(exportFileName, true);
+		}
 	} catch (e) {
-		helper.mark(fileName, false, e.message, e.stack);
+		helper.mark(exportFileName, false, e.message, e.stack);
 	}
 
 	helper.finish();
@@ -403,11 +415,7 @@ core.registerLoadFunc(async () => {
 
 	// Track when the user clicks to export a texture atlas region.
 	core.events.on('click-export-texture-atlas-region', () => {
-		if (core.view.textureAtlasOverlaySelectedID > 0 && selectedFileDataID > 0) {
-			exportTextureAtlasRegion(selectedFileDataID, core.view.textureAtlasOverlaySelectedID);
-		} else {
-			core.setToast('info', 'You need to select a texture atlas region first.');
-		}
+		exportTextureAtlasRegions(selectedFileDataID);
 	});
 
 	// Track when user toggles the "Show Atlas Regions" checkbox.
