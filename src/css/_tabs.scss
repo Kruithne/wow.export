@@ -419,6 +419,10 @@
 			align-items: center;
 			justify-content: center;
 			font-size: 30px;
+
+			.atlas-region {
+				border: 1px solid rgb(214, 24, 195);
+			}
 		}
 	}
 }

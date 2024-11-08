@@ -376,7 +376,9 @@
 						</div>
 						<div class="preview-container">
 							<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
-							<div class="atlas-overlay" v-if="config.showTextureAtlas">ATLAS ENABLED</div>
+							<div class="atlas-overlay" v-if="config.showTextureAtlas">
+								<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ width: region.width + 'px', height: region.height + 'px', left: region.left + 'px', top: region.top + 'px' }">{{ region.name }}</div>
+							</div>
 							<ul class="preview-channels" v-if="texturePreviewURL.length > 0">
 								<li id="channel-red" :class="{ selected: (config.exportChannelMask & 0b1) }" @click.self="config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
 								<li id="channel-green" :class="{ selected: (config.exportChannelMask & 0b10) }" @click.self="config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>

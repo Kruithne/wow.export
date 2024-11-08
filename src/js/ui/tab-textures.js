@@ -139,7 +139,7 @@ const loadTextureAtlasData = async () => {
  * Update rendering of texture atlas overlays.
  */
 const updateTextureAtlasOverlay = () => {
-	// todo: implement me :)
+	core.view.textureAtlasOverlayRegions = textureAtlasEntries.get(selectedFileDataID) ?? [];
 };
 
 /**
