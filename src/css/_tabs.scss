@@ -420,8 +420,28 @@
 			transform-origin: top left;
 
 			.atlas-region {
-				border: 1px solid rgb(214, 24, 195);
+				border: 1px dashed rgb(214, 24, 195);
 				position: absolute;
+				cursor: pointer;
+
+				&:hover {
+					border-style: solid;
+
+					span {
+						display: block;
+					}
+				}
+
+				span {
+					display: none;
+					position: absolute;
+					bottom: 100%;
+					padding: 3px;
+					background: rgb(214, 24, 195);
+					color: white;
+					white-space: nowrap;
+					overflow: visible;
+				}
 			}
 		}
 	}
