@@ -60,6 +60,7 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 		}
 
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
+		updateTextureAtlasOverlay();
 
 		selectedFileDataID = fileDataID;
 		core.hideToast();
@@ -296,8 +297,11 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
-	core.view.$watch('config.showTextureAtlas', () => loadTextureAtlasData());
 	core.events.once('screen-tab-textures', () => loadTextureAtlasData());
+	core.view.$watch('config.showTextureAtlas', () => {
+		loadTextureAtlasData();
+		updateTextureAtlasOverlay();
+	});
 });
 
 module.exports = { previewTextureByID };
