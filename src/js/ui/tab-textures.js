@@ -125,9 +125,7 @@ const loadTextureAtlasData = async () => {
 				width: row.Width,
 				height: row.Height,
 				left: row.CommittedLeft,
-				top: row.CommittedTop,
-				bottom: row.CommittedBottom,
-				right: row.CommittedRight
+				top: row.CommittedTop
 			});
 		}
 
