@@ -109,7 +109,7 @@ const loadTextureAtlasData = async () => {
 			textureAtlasEntries.set(id, {
 				width: row.AtlasWidth,
 				height: row.AtlasHeight,
-				regions: []
+				regions: new Map()
 			});
 		}
 
@@ -120,7 +120,7 @@ const loadTextureAtlasData = async () => {
 				continue;
 
 			loadedRegions++;
-			entry.regions.push({
+			entry.regions.set(row.ID, {
 				name: row.CommittedName,
 				width: row.Width,
 				height: row.Height,
@@ -175,7 +175,7 @@ const updateTextureAtlasOverlay = () => {
 		core.view.textureAtlasOverlayWidth = entry.width;
 		core.view.textureAtlasOverlayHeight = entry.height;
 
-		for (const region of entry.regions) {
+		for (const region of entry.regions.values()) {
 			renderRegions.push({
 				name: region.name,
 
