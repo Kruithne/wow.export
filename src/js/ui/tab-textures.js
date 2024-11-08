@@ -16,7 +16,10 @@ const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
 const WDCReader = require('../db/WDCReader');
 
-const textureAtlasEntries = new Map(); // fileDataID => { name: string, left: number, top: number, width: number, height: number }[]
+const textureAtlasEntries = new Map(); // atlasID => { width: number, height: number, regions: [] }
+const textureAtlasMap = new Map(); // fileDataID => atlasID
+
+let hasAttachedObserver = false;
 let hasLoadedAtlasTable = false;
 
 let selectedFileDataID = 0;
@@ -102,30 +105,34 @@ const loadTextureAtlasData = async () => {
 
 		await progress.step('Parsing texture atlases...');
 
-		// in the interest of using less memory and avoiding an unnecessary lookup, we store atlas regions
-		// mapped directly to their fileDataID, we have no current need for the atlas ID itself.
-
-		const atlasIdToFidMap = new Map();
 		for (const [id, row] of uiTextureAtlasTable.getAllRows()) {
-			atlasIdToFidMap.set(id, row.FileDataID);
-			textureAtlasEntries.set(row.FileDataID, []);
-		}
-
-		for (const row of uiTextureAtlasMemberTable.getAllRows().values()) {
-			const fileDataID = atlasIdToFidMap.get(row.UiTextureAtlasID);
-			if (!fileDataID) // atlas member with for a non-existant atlas
-				continue;
-
-			textureAtlasEntries.get(fileDataID).push({
-				name: row.ComittedName,
-				width: row.Width,
-				height: row.Height,
-				left: row.CommittedLeft,
-				top: row.CommittedTop
+			textureAtlasMap.set(row.FileDataID, id);
+			textureAtlasEntries.set(id, {
+				width: row.AtlasWidth,
+				height: row.AtlasHeight,
+				regions: []
 			});
 		}
 
-		log.write('Loaded %d texture atlases with %d regions', textureAtlasEntries.size, uiTextureAtlasMemberTable.rows.size);
+		let loadedRegions = 0;
+		for (const row of uiTextureAtlasMemberTable.getAllRows().values()) {
+			const entry = textureAtlasEntries.get(row.UiTextureAtlasID);
+			if (!entry) // atlas member with non-existant atlas
+				continue;
+
+			loadedRegions++;
+			entry.regions.push({
+				name: row.CommittedName,
+				width: row.Width,
+				height: row.Height,
+				left: row.CommittedLeft,
+				top: row.CommittedTop,
+				bottom: row.CommittedBottom,
+				right: row.CommittedRight
+			});
+		}
+
+		log.write('Loaded %d texture atlases with %d regions', textureAtlasEntries.size, loadedRegions);
 
 		hasLoadedAtlasTable = true;
 
@@ -137,10 +144,52 @@ const loadTextureAtlasData = async () => {
 };
 
 /**
+ * Update the transform scale of the texture atlas overlay.
+ */
+const updateTextureAtlasOverlayScaling = () => {
+	const overlay = document.getElementById('atlas-overlay');
+	const container = overlay.parentElement;
+
+	const scaleX = container.clientWidth / core.view.textureAtlasOverlayWidth;
+	const scaleY = container.clientHeight / core.view.textureAtlasOverlayHeight;
+
+	overlay.style.transform = `scale(${Math.min(scaleX, scaleY)})`;
+};
+
+/**
  * Update rendering of texture atlas overlays.
  */
 const updateTextureAtlasOverlay = () => {
-	core.view.textureAtlasOverlayRegions = textureAtlasEntries.get(selectedFileDataID) ?? [];
+	const atlasID = textureAtlasMap.get(selectedFileDataID);
+	const entry = textureAtlasEntries.get(atlasID);
+	const renderRegions = [];
+
+	if (entry) {
+		core.view.textureAtlasOverlayWidth = entry.width;
+		core.view.textureAtlasOverlayHeight = entry.height;
+
+		for (const region of entry.regions) {
+			renderRegions.push({
+				name: region.name,
+
+				width: region.width + 'px',
+				height: region.height + 'px',
+				top: ((region.top / entry.height) * 100) + '%',
+				left: ((region.left / entry.width) * 100) + '%',
+			});
+		}
+
+		if (!hasAttachedObserver) {
+			const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
+			observer.observe(document.getElementById('atlas-overlay').parentElement);
+
+			hasAttachedObserver = true;
+		}
+
+		updateTextureAtlasOverlayScaling();
+	}
+
+	core.view.textureAtlasOverlayRegions = renderRegions;
 };
 
 /**
@@ -306,7 +355,10 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
-	core.events.once('screen-tab-textures', () => loadTextureAtlasData());
+	core.events.once('screen-tab-textures', () => {
+		loadTextureAtlasData();
+	});
+
 	core.view.$watch('config.showTextureAtlas', () => {
 		loadTextureAtlasData();
 		updateTextureAtlasOverlay();

@@ -376,9 +376,6 @@
 						</div>
 						<div class="preview-container">
 							<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
-							<div class="atlas-overlay" v-if="config.showTextureAtlas">
-								<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ width: region.width + 'px', height: region.height + 'px', left: region.left + 'px', top: region.top + 'px' }">{{ region.name }}</div>
-							</div>
 							<ul class="preview-channels" v-if="texturePreviewURL.length > 0">
 								<li id="channel-red" :class="{ selected: (config.exportChannelMask & 0b1) }" @click.self="config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
 								<li id="channel-green" :class="{ selected: (config.exportChannelMask & 0b10) }" @click.self="config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
@@ -386,6 +383,9 @@
 								<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
 							</ul>
 							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
+								<div id="atlas-overlay" v-if="config.showTextureAtlas" :style="{ width: textureAtlasOverlayWidth + 'px', height: textureAtlasOverlayWidth + 'px' }">
+									<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ left: region.left, top: region.top, width: region.width, height: region.height }">{{ region.name }}</div>
+								</div>
 								<div class="image" :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
 							</div>
 						</div>

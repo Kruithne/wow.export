@@ -99,6 +99,8 @@ const view = {
 	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 	textureRibbonPage: 0, // Active page of texture slots to render.
 	textureAtlasOverlayRegions: [], // Texture atlas render regions.
+	textureAtlasOverlayWidth: 0, // Width of the texture atlas overlay.
+	textureAtlasOverlayHeight: 0, // Height of the texture atlas overlay.
 	itemViewerTypeMask: [], // Active item type control.
 	modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
 	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
