@@ -124,6 +124,8 @@ const loadTextureAtlasData = async () => {
 			});
 		}
 
+		log.write('Loaded %d texture atlases with %d regions', textureAtlasEntries.size, uiTextureAtlasMemberTable.rows.size);
+
 		hasLoadedAtlasTable = true;
 
 		// hide the loading screen
