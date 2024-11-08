@@ -295,8 +295,9 @@ core.registerLoadFunc(async () => {
 			previewTextureByID(selectedFileDataID);
 	});
 
-	// Track when user changes the "Show Atlas Regions" option.
+	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
 	core.view.$watch('config.showTextureAtlas', () => loadTextureAtlasData());
+	core.events.once('screen-tab-textures', () => loadTextureAtlasData());
 });
 
 module.exports = { previewTextureByID };
