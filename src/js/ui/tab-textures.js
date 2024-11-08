@@ -60,9 +60,10 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 		}
 
 		view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
+		selectedFileDataID = fileDataID;
+
 		updateTextureAtlasOverlay();
 
-		selectedFileDataID = fileDataID;
 		core.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
