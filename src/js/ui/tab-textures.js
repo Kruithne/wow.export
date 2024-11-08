@@ -79,6 +79,9 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 	core.view.isBusy--;
 };
 
+/**
+ * Load texture atlas regions from data tables.
+ */
 const loadTextureAtlasData = async () => {
 	if (!hasLoadedAtlasTable && !core.view.isBusy && core.view.config.showTextureAtlas) {
 		// show a loading screen
@@ -130,6 +133,9 @@ const loadTextureAtlasData = async () => {
 	}
 };
 
+/**
+ * Update rendering of texture atlas overlays.
+ */
 const updateTextureAtlasOverlay = () => {
 	// todo: implement me :)
 };
