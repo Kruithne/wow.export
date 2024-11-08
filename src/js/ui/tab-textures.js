@@ -17,6 +17,7 @@ const JSONWriter = require('../3D/writers/JSONWriter');
 const WDCReader = require('../db/WDCReader');
 
 const textureAtlasEntries = new Map(); // atlasID => { width: number, height: number, regions: [] }
+const textureAtlasRegions = new Map(); // regionID => { name: string, width: number, height: number, top: number, left: number }
 const textureAtlasMap = new Map(); // fileDataID => atlasID
 
 let hasLoadedAtlasTable = false;
@@ -109,24 +110,28 @@ const loadTextureAtlasData = async () => {
 			textureAtlasEntries.set(id, {
 				width: row.AtlasWidth,
 				height: row.AtlasHeight,
-				regions: new Map()
+				regions: []
 			});
 		}
 
 		let loadedRegions = 0;
-		for (const row of uiTextureAtlasMemberTable.getAllRows().values()) {
+		for (const [id, row] of uiTextureAtlasMemberTable.getAllRows()) {
 			const entry = textureAtlasEntries.get(row.UiTextureAtlasID);
-			if (!entry) // atlas member with non-existant atlas
+			if (!entry) {
+				debugger;
 				continue;
+			}
 
-			loadedRegions++;
-			entry.regions.set(row.ID, {
+			entry.regions.push(id);
+			textureAtlasRegions.set(id, {
 				name: row.CommittedName,
 				width: row.Width,
 				height: row.Height,
 				left: row.CommittedLeft,
 				top: row.CommittedTop
 			});
+
+			loadedRegions++;
 		}
 
 		log.write('Loaded %d texture atlases with %d regions', textureAtlasEntries.size, loadedRegions);
@@ -165,6 +170,8 @@ const attachOverlayListener = () => {
  * Update rendering of texture atlas overlays.
  */
 const updateTextureAtlasOverlay = () => {
+	core.view.textureAtlasOverlaySelectedID = 0;
+
 	const atlasID = textureAtlasMap.get(selectedFileDataID);
 	const entry = textureAtlasEntries.get(atlasID);
 	const renderRegions = [];
@@ -173,10 +180,11 @@ const updateTextureAtlasOverlay = () => {
 		core.view.textureAtlasOverlayWidth = entry.width;
 		core.view.textureAtlasOverlayHeight = entry.height;
 
-		for (const region of entry.regions.values()) {
+		for (const id of entry.regions) {
+			const region = textureAtlasRegions.get(id);
 			renderRegions.push({
+				id,
 				name: region.name,
-
 				width: region.width + 'px',
 				height: region.height + 'px',
 				top: ((region.top / entry.height) * 100) + '%',
@@ -208,6 +216,41 @@ const getFileInfoPair = (input) => {
 	}
 
 	return { fileName, fileDataID };
+};
+
+const exportTextureAtlasRegion = async (fileDataID, atlasID) => {
+	const helper = new ExportHelper(1, 'texture');
+	helper.start();
+
+	try {
+		const data = await core.view.casc.getFile(fileDataID);
+		const blp = new BLPFile(data);
+		
+		const canvas = blp.toCanvas();
+		const atlas = textureAtlasRegions.get(core.view.textureAtlasOverlaySelectedID);
+
+		const fileName = listfile.getByID(fileDataID);
+		const exportPath = ExportHelper.replaceFile(ExportHelper.getExportPath(fileName), atlas.name + '.png');
+
+		const ctx = canvas.getContext('2d');
+		const crop = ctx.getImageData(atlas.left, atlas.top, atlas.width, atlas.height);
+
+		const saveCanvas = document.createElement('canvas');
+		saveCanvas.width = atlas.width;
+		saveCanvas.height = atlas.height;
+
+		const saveCtx = saveCanvas.getContext('2d');
+		saveCtx.putImageData(crop, 0, 0);
+
+		const buf = await BufferWrapper.fromCanvas(saveCanvas, 'image/png');
+		await buf.writeToFile(exportPath);
+
+		helper.mark(fileName, true);
+	} catch (e) {
+		helper.mark(fileName, false, e.message, e.stack);
+	}
+
+	helper.finish();
 };
 
 const exportFiles = async (files, isLocal = false, exportID = -1) => {
@@ -352,12 +395,22 @@ core.registerLoadFunc(async () => {
 			previewTextureByID(selectedFileDataID);
 	});
 
-	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
+	// Track when the "Textures" tab is opened.
 	core.events.on('screen-tab-textures', async () => {
 		await loadTextureAtlasData();
 		attachOverlayListener();
 	});
 
+	// Track when the user clicks to export a texture atlas region.
+	core.events.on('click-export-texture-atlas-region', () => {
+		if (core.view.textureAtlasOverlaySelectedID > 0 && selectedFileDataID > 0) {
+			exportTextureAtlasRegion(selectedFileDataID, core.view.textureAtlasOverlaySelectedID);
+		} else {
+			core.setToast('info', 'You need to select a texture atlas region first.');
+		}
+	});
+
+	// Track when user toggles the "Show Atlas Regions" checkbox.
 	core.view.$watch('config.showTextureAtlas', async () => {
 		await loadTextureAtlasData();
 		updateTextureAtlasOverlay();

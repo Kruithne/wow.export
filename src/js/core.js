@@ -101,6 +101,7 @@ const view = {
 	textureAtlasOverlayRegions: [], // Texture atlas render regions.
 	textureAtlasOverlayWidth: 0, // Width of the texture atlas overlay.
 	textureAtlasOverlayHeight: 0, // Height of the texture atlas overlay.
+	textureAtlasOverlaySelectedID: 0, // Selected atlas region ID.
 	itemViewerTypeMask: [], // Active item type control.
 	modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
 	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
