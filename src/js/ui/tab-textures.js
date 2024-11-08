@@ -79,7 +79,7 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 };
 
 const loadTextureAtlasData = async () => {
-	if (!hasLoadedAtlasTable && !core.view.isBusy) {
+	if (!hasLoadedAtlasTable && !core.view.isBusy && core.view.config.showTextureAtlas) {
 		// show a loading screen
 		const progress = core.createProgress(3);
 		core.view.setScreen('loading');
