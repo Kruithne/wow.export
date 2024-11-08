@@ -19,7 +19,6 @@ const WDCReader = require('../db/WDCReader');
 const textureAtlasEntries = new Map(); // atlasID => { width: number, height: number, regions: [] }
 const textureAtlasMap = new Map(); // fileDataID => atlasID
 
-let hasAttachedObserver = false;
 let hasLoadedAtlasTable = false;
 
 let selectedFileDataID = 0;
@@ -159,6 +158,11 @@ const updateTextureAtlasOverlayScaling = () => {
 	overlay.style.transform = `scale(${Math.min(scaleX, scaleY)})`;
 };
 
+const attachOverlayListener = () => {
+	const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
+	observer.observe(document.getElementById('atlas-overlay').parentElement);
+};
+
 /**
  * Update rendering of texture atlas overlays.
  */
@@ -180,13 +184,6 @@ const updateTextureAtlasOverlay = () => {
 				top: ((region.top / entry.height) * 100) + '%',
 				left: ((region.left / entry.width) * 100) + '%',
 			});
-		}
-
-		if (!hasAttachedObserver) {
-			const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
-			observer.observe(document.getElementById('atlas-overlay').parentElement);
-
-			hasAttachedObserver = true;
 		}
 
 		updateTextureAtlasOverlayScaling();
@@ -358,8 +355,9 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Load texture atlas data when necessary (checks in loadTextureAtlasData)
-	core.events.once('screen-tab-textures', async () => {
+	core.events.on('screen-tab-textures', async () => {
 		await loadTextureAtlasData();
+		attachOverlayListener();
 	});
 
 	core.view.$watch('config.showTextureAtlas', async () => {
