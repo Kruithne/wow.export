@@ -148,6 +148,9 @@ const loadTextureAtlasData = async () => {
  */
 const updateTextureAtlasOverlayScaling = () => {
 	const overlay = document.getElementById('atlas-overlay');
+	if (!overlay)
+		return;
+	
 	const container = overlay.parentElement;
 
 	const scaleX = container.clientWidth / core.view.textureAtlasOverlayWidth;
