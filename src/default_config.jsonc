@@ -35,6 +35,7 @@
 	"exportTextureFormat": "PNG",
 	"exportChannelMask": 15,
 	"showTextureInfo": true,
+	"showTextureAtlas": false,
 	"exportModelFormat": "OBJ",
 	"overwriteFiles": true,
 	"exportM2Bones": false,

@@ -176,6 +176,8 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate 
 	
 	for (const currentUrl of url_stack) {
 		try {
+			log.write(`downloadFile -> ${currentUrl}`);
+
 			let data = await requestData(currentUrl, partialOfs, partialLen);
 
 			if (deflate) {
@@ -195,7 +197,8 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate 
 
 			return wrapped;
 		} catch (error) {
-			console.error(`Failed to download from ${currentUrl}: ${error.message}`);
+			log.write(`Failed to download from ${currentUrl}: ${error.message}`);
+			log.write(error);
 		}
 	}
 	

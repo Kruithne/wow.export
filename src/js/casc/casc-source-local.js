@@ -110,13 +110,29 @@ class CASCLocal extends CASC {
 	 * Load the BuildConfig from the installation directory.
 	 */
 	async loadConfigs() {
-		// Load and parse BuildConfig from disk.
+		// Load and parse configs from disk with CDN fallback.
 		await this.progress.step('Fetching build configurations');
-		this.buildConfig = CDNConfig(await fsp.readFile(this.formatConfigPath(this.build.BuildKey), 'utf8'));
-		this.cdnConfig = CDNConfig(await fsp.readFile(this.formatConfigPath(this.build.CDNKey), 'utf8'));
+		this.buildConfig = await this.getConfigFileWithRemoteFallback(this.build.BuildKey);
+		this.cdnConfig = await this.getConfigFileWithRemoteFallback(this.build.CDNKey);
 
 		log.write('BuildConfig: %o', this.buildConfig);
 		log.write('CDNConfig: %o', this.cdnConfig);
+	}
+
+	/** 
+	 * Get config from disk with CDN fallback 
+	 */
+	async getConfigFileWithRemoteFallback(key) {
+		const configPath = this.formatConfigPath(key);
+		if (!await generics.fileExists(configPath)) {
+			log.write('Local config file %s does not exist, falling back to CDN...', key);
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			return this.remote.getCDNConfig(key);
+		} else {
+			return CDNConfig(await fsp.readFile(configPath, 'utf8'));
+		}
 	}
 
 	/**
@@ -241,13 +257,13 @@ class CASCLocal extends CASC {
 			return local;
 		} catch (e) {
 			// Attempt 2: Load from cache from previous fallback.
-			log.write('Local file %s does not exist, falling back to cache...', key);
+			log.write('Local data file %s does not exist, falling back to cache...', key);
 			const cached = await this.cache.getFile(key, constants.CACHE.DIR_DATA);
 			if (cached !== null)
 				return cached;
 
 			// Attempt 3: Download from CDN.
-			log.write('Local file %s not cached, falling back to CDN...', key);
+			log.write('Local data file %s not cached, falling back to CDN...', key);
 			if (!this.remote)
 				await this.initializeRemoteCASC();
 
@@ -255,11 +271,11 @@ class CASCLocal extends CASC {
 			let data;
 			if (archive !== undefined) {
 				// Archive exists for key, attempt partial remote download.
-				log.write('Local file %s has archive, attempt partial download...', key);
+				log.write('Local data file %s has archive, attempt partial download...', key);
 				data = await this.remote.getDataFilePartial(this.remote.formatCDNKey(archive.key), archive.offset, archive.size);
 			} else {
 				// No archive for this file, attempt direct download.
-				log.write('Local file %s has no archive, attempting direct download...', key);
+				log.write('Local data file %s has no archive, attempting direct download...', key);
 				data = await this.remote.getDataFile(this.remote.formatCDNKey(key));
 			}
 

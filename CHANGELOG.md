@@ -1,12 +1,30 @@
-0.1.60 (xx-03-2024)
+0.1.65 (08-11-2024)
+- Added option to view and export texture atlas regions from the texture viewer.
+
+0.1.64 (21-07-2024)
+- Fix issue with exports not starting for some users due to an issue introduced in 0.1.62.
+
+0.1.63 (20-07-2024)
+- Added more verbose logging for required downloads during loading to hopefully figure out why some users are having issues.
+
+0.1.62 (19-07-2024)
+- Added warning for users who set the last export file as a directory.
+- Fixed issue with raw map exports skipping certain WMOs.
+
+0.1.61 (16-07-2024)
+- Fixed issue with raw WMO exports failing due to missing LOD groups.
+
+0.1.60 (15-07-2024)
 - Added exporting of .skel files and files referenced by .skel files for raw M2 exports.
 - Added exporting of WMO LOD groups for raw WMO exports.
 - Added exporting of other WDT files for raw map exports.
 - Added option to blend the terrain textures from the exported alpha maps in the Blender add-on.
 - Improved blending on some character textures.
 - Improved memory usage for WMO previewing and exporting.
+- Improved CASC loading to fall back to CDN for missing config files.
 - Fixed missing map name from raw ADT export filenames.
 - Fixed missing bone data from OBJ exports with bone JSON exports enabled.
+- Fixed issue where filtering textures by items would only show textures for one gender.
 - Fixed issue with alpha maps from early maps such as Emerald Dream being exported incorrectly.
 - Fixed issue causing seams to appear on baked character textures.
 - Fixed issue with character tab layout being unusable on higher display sizes.
