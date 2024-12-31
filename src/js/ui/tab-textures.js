@@ -145,21 +145,32 @@ const loadTextureAtlasData = async () => {
 	}
 };
 
-/**
- * Update the transform scale of the texture atlas overlay.
- */
 const updateTextureAtlasOverlayScaling = () => {
 	const overlay = document.getElementById('atlas-overlay');
-	if (!overlay)
-		return;
+	if (!overlay) return;
 
 	const container = overlay.parentElement;
 
-	const scaleX = container.clientWidth / core.view.textureAtlasOverlayWidth;
-	const scaleY = container.clientHeight / core.view.textureAtlasOverlayHeight;
+	const texture_width = core.view.textureAtlasOverlayWidth;
+	const texture_height = core.view.textureAtlasOverlayHeight;
 
-	overlay.style.transform = `scale(${Math.min(scaleX, scaleY)})`;
-};
+	const container_width = container.clientWidth;
+	const container_height = container.clientHeight;
+
+	const render_width = Math.min(texture_width, container_width);
+	const render_height = Math.min(texture_height, container_height);
+
+	let final_width = render_width;
+	let final_height = render_height;
+
+	if (render_height < render_width)
+		final_width = texture_width * (render_height / texture_height);
+	else
+		final_height = texture_height * (render_width / texture_width);
+	
+	overlay.style.width = final_width + 'px';
+	overlay.style.height = final_height + 'px';
+}
 
 const attachOverlayListener = () => {
 	const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
@@ -183,8 +194,8 @@ const updateTextureAtlasOverlay = () => {
 			renderRegions.push({
 				id,
 				name: region.name,
-				width: region.width + 'px',
-				height: region.height + 'px',
+				width: ((region.width / entry.width) * 100) + '%',
+				height: ((region.height / entry.height) * 100) + '%',
 				top: ((region.top / entry.height) * 100) + '%',
 				left: ((region.left / entry.width) * 100) + '%',
 			});
