@@ -1,4 +1,4 @@
-0.1.65 (08-11-2024)
+0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
 - Added support for newer root manifest format introduced 11.1+.
 - Added patch region for China.
