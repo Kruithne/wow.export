@@ -155,20 +155,11 @@ const updateTextureAtlasOverlayScaling = () => {
 	const texture_height = core.view.textureAtlasOverlayHeight;
 
 	const container_width = container.clientWidth;
-	const container_height = container.clientHeight;
-
 	const render_width = Math.min(texture_width, container_width);
-	const render_height = Math.min(texture_height, container_height);
 
-	let final_width = render_width;
-	let final_height = render_height;
-
-	if (render_height < render_width)
-		final_width = texture_width * (render_height / texture_height);
-	else
-		final_height = texture_height * (render_width / texture_width);
+	const final_height = texture_height * (render_width / texture_width);
 	
-	overlay.style.width = final_width + 'px';
+	overlay.style.width = render_width + 'px';
 	overlay.style.height = final_height + 'px';
 }
 
