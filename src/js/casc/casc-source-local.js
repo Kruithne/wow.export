@@ -112,7 +112,22 @@ class CASCLocal extends CASC {
 	async loadConfigs() {
 		// Load and parse configs from disk with CDN fallback.
 		await this.progress.step('Fetching build configurations');
-		this.buildConfig = await this.getConfigFileWithRemoteFallback(this.build.BuildKey);
+
+		if (await generics.fileExists("fakebuildconfig")) {
+			this.buildConfig = CDNConfig(await fsp.readFile("fakebuildconfig", 'utf8'));
+			log.write("WARNING: Using fake build config. No support given for weird stuff happening.");
+
+			// Reconstruct version from the fake config's build name.
+			// This is used for e.g. DBD version selection so needs to be correct.
+			const splitName = this.buildConfig.buildName.split("patch");
+			const buildNumber = splitName[0].replace("WOW-", "");
+			const splitPatch = splitName[1].split("_");
+			
+			this.build.Version = splitPatch[0] + "." + buildNumber;
+		} else {
+			this.buildConfig = await this.getConfigFileWithRemoteFallback(this.build.BuildKey);
+		}
+		
 		this.cdnConfig = await this.getConfigFileWithRemoteFallback(this.build.CDNKey);
 
 		log.write('BuildConfig: %o', this.buildConfig);

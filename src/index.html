@@ -383,7 +383,7 @@
 								<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
 							</ul>
 							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
-								<div id="atlas-overlay" v-if="config.showTextureAtlas" :style="{ width: textureAtlasOverlayWidth + 'px', height: textureAtlasOverlayWidth + 'px' }">
+								<div id="atlas-overlay" v-if="config.showTextureAtlas">
 									<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ left: region.left, top: region.top, width: region.width, height: region.height }">
 										<span>{{ region.name }}</span>
 									</div>

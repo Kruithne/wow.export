@@ -95,7 +95,7 @@ module.exports = {
 	],
 
 	PATCH: {
-		REGIONS: ['eu', 'us', 'kr', 'tw'], // Valid CDN regions.
+		REGIONS: ['eu', 'us', 'kr', 'tw', 'cn'], // Valid CDN regions.
 		DEFAULT_REGION: 'us', // Region which is selected by default.
 		HOST: 'http://%s.patch.battle.net:1119/', // Blizzard patch server host.
 		SERVER_CONFIG: '/cdns', // CDN config file on patch server.
