@@ -173,9 +173,12 @@ const ADTChunkHandlers = {
 
 					const instanceOfs = data.offset;
 
-					// Rounding up to cover all necessary bytes for the bitmap here. Probably correct?
 					if (instance.offsetExistsBitmap > 0)
-						instance.bitmap = data.readUInt8(Math.ceil((instance.width * instance.height + 7) / 8));
+					{
+						data.seek(base + instance.offsetExistsBitmap);
+						const bitmapDataLength = Math.floor((instance.width * instance.height + 7) / 8);
+						instance.bitmap = data.readUInt8(bitmapDataLength);
+					}
 
 					data.seek(instanceOfs);
 				}
