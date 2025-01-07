@@ -537,7 +537,7 @@ class WMOExporter {
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
 								const m2Export = new M2Exporter(data, undefined, fileDataID);
-								await m2Export.exportAsOBJ(m2Path, false, helper);
+								await m2Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
 
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
@@ -707,7 +707,16 @@ class WMOExporter {
 		manifest.addProperty('fileDataID', this.wmo.fileDataID);
 
 		// Write the raw WMO file with no conversion.
-		await this.wmo.data.writeToFile(out);
+		if (this.wmo.data === undefined)
+		{
+			const wmoData = await casc.getFile(this.wmo.fileDataID)
+			await wmoData.writeToFile(out);
+		}
+		else
+		{
+			await this.wmo.data.writeToFile(out);
+		}
+		
 		fileManifest?.push({ type: 'WMO', fileDataID: this.wmo.fileDataID, file: out });
 
 		await this.wmo.load();
@@ -742,10 +751,13 @@ class WMOExporter {
 						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '.wmo');
 					
 					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? listfile.getByFilename(groupName);
-					const groupData = await casc.getFile(groupFileDataID);
-					
 					groupOffset++;
 
+					if (groupFileDataID === 0)
+						continue;
+
+					const groupData = await casc.getFile(groupFileDataID);
+					
 					let groupFile;
 					if (config.enableSharedChildren)
 						groupFile = ExportHelper.getExportPath(groupName);

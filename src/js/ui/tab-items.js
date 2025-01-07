@@ -123,14 +123,16 @@ const viewItemTextures = (item) => {
 	const list = new Set();
 
 	for (const textureID of item.textures) {
-		const fileDataID = DBTextureFileData.getTextureFileDataID(textureID);
-		let entry = listfile.getByID(fileDataID);
+		const fileDataIDs = DBTextureFileData.getTextureFDIDsByMatID(textureID);
+		for (const fileDataID of fileDataIDs) {
+			let entry = listfile.getByID(fileDataID);
 
-		if (entry !== undefined) {
-			if (core.view.config.listfileShowFileDataIDs)
-				entry += ' [' + fileDataID + ']';
+			if (entry !== undefined) {
+				if (core.view.config.listfileShowFileDataIDs)
+					entry += ' [' + fileDataID + ']';
 
-			list.add(entry);
+				list.add(entry);
+			}
 		}
 	}
 

@@ -12,7 +12,6 @@ const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const FileWriter = require('../file-writer');
 const BLPFile = require('../casc/blp');
 
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
@@ -287,7 +286,7 @@ const getVariantTextureIDs = (fileName) => {
 };
 
 const exportFiles = async (files, isLocal = false, exportID = -1) => {
-	const exportPaths = new FileWriter(core.view.lastExportPath, 'utf8');
+	const exportPaths = core.openLastExportStream();
 	const format = core.view.config.exportModelFormat;
 
 	const manifest = { type: 'MODELS', exportID, succeeded: [], failed: [] };
@@ -306,7 +305,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				const outDir = path.dirname(outFile);
 
 				await buf.writeToFile(outFile);
-				await exportPaths.writeLine('PNG:' + outFile);
+				await exportPaths?.writeLine('PNG:' + outFile);
 
 				log.write('Saved 3D preview screenshot to %s', outFile);
 				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
@@ -392,7 +391,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 				switch (format) {
 					case 'RAW': {
-						await exportPaths.writeLine(exportPath);
+						await exportPaths?.writeLine(exportPath);
 
 						let exporter;
 						if (fileType === MODEL_TYPE_M2)
@@ -401,6 +400,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							exporter = new WMOExporter(data, fileDataID);
 
 						await exporter.exportRaw(exportPath, helper, fileManifest);
+						if (fileType === MODEL_TYPE_WMO)
+							WMOExporter.clearCache();
 						break;
 					}
 					case 'OBJ':
@@ -416,10 +417,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
-								await exportPaths.writeLine('M2_OBJ:' + exportPath);
+								await exportPaths?.writeLine('M2_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-								await exportPaths.writeLine('M2_GLTF:' + exportPath);
+								await exportPaths?.writeLine('M2_GLTF:' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -441,10 +442,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, helper, fileManifest);
-								await exportPaths.writeLine('WMO_OBJ:' + exportPath);
+								await exportPaths?.writeLine('WMO_OBJ:' + exportPath);
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper);
-								await exportPaths.writeLine('WMO_GLTF:' + exportPath, fileManifest);
+								await exportPaths?.writeLine('WMO_GLTF:' + exportPath, fileManifest);
 							}
 
 							WMOExporter.clearCache();
@@ -474,7 +475,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	}
 
 	// Write export information.
-	exportPaths.close();
+	exportPaths?.close();
 
 	// Dispatch file manifest to RCP.
 	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
