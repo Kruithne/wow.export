@@ -67,6 +67,7 @@
 	"mapsIncludeWMO": true,
 	"mapsIncludeM2": true,
 	"mapsIncludeWMOSets": true,
+	"mapsSingleWMO": false,
 	"mapsIncludeFoliage": true,
 	"mapsIncludeLiquid": false,
 	"mapsIncludeGameObjects": true,
