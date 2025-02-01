@@ -241,7 +241,9 @@ Vue.component('listbox', {
 			const child = this.$refs.root.querySelector('.item');
 
 			if (child !== null) {
-				const scrollCount = core.view.config.scrollSpeed === 0 ? Math.floor(this.$refs.root.clientHeight / child.clientHeight) : core.view.config.scrollSpeed;
+				const scrollCount = core.view.config.scrollSpeed === 0 ?  
+					Math.floor(this.$refs.root.clientHeight / child.clientHeight) : 
+					core.view.config.scrollSpeed;
 				const direction = e.deltaY > 0 ? 1 : -1;
 				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
 				this.recalculateBounds();
