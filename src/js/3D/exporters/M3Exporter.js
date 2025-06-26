@@ -233,7 +233,7 @@ class M3Exporter {
 	}
 
 	/**
-	 * Export the model as a raw M2 file, including related files
+	 * Export the model as a raw M3 file, including related files
 	 * such as textures, bones, animations, etc.
 	 * @param {string} out 
 	 * @param {ExportHelper} helper 
@@ -247,7 +247,7 @@ class M3Exporter {
 
 		manifest.addProperty('fileDataID', this.fileDataID);
 
-		// Write the M2 file with no conversion.
+		// Write the M3 file with no conversion.
 		await this.m3.data.writeToFile(out);
 		fileManifest?.push({ type: 'M3', fileDataID: this.fileDataID, file: out });
 

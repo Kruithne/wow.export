@@ -411,6 +411,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 						let exporter;
 						if (fileType === MODEL_TYPE_M2)
 							exporter = new M2Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+						else if (fileType === MODEL_TYPE_M3)
+							exporter = new M3Exporter(data, getVariantTextureIDs(fileName), fileDataID);
 						else if (fileType === MODEL_TYPE_WMO)
 							exporter = new WMOExporter(data, fileDataID);
 
