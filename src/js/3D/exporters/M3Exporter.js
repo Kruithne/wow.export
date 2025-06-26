@@ -83,11 +83,13 @@ class M3Exporter {
 		// gltf.setBoneIndexArray(this.m3.boneIndices)
 
 		gltf.addUVArray(this.m3.uv);
-		gltf.addUVArray(this.m3.uv2);
+		if (core.view.config.modelsExportUV2 && this.m3.uv1 !== undefined)
+			gltf.addUVArray(this.m3.uv1);
 
 		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
 		gltf.setTextureMap(textureMap);
 
+		const index = 0;
 		for (let lodIndex = 0; lodIndex < this.m3.lodLevels.length; lodIndex++) {
 			if (lodIndex != index)
 				continue;
@@ -100,34 +102,6 @@ class M3Exporter {
 				gltf.addMesh(geosetName, this.m3.indices.slice(geoset.indexStart, geoset.indexStart + geoset.indexCount), "");
 			}
 		}
-
-		// TODO: M3
-		// for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
-		// 	// Skip geosets that are not enabled.
-		// 	if (this.geosetMask && !this.geosetMask[mI]?.checked)
-		// 		continue;
-
-		// 	const mesh = skin.subMeshes[mI];
-		// 	const indices = new Array(mesh.triangleCount);
-		// 	for (let vI = 0; vI < mesh.triangleCount; vI++)
-		// 		indices[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
-
-		// 	let texture = null;
-		// 	const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
-		// 	if (texUnit)
-		// 		texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
-
-		// 	let matName;
-		// 	if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
-		// 		matName = texture.fileDataID;
-
-		// 	if (this.dataTextures.has(this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]])) {
-		// 		matName = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
-		// 		console.log("Setting meshIndex " + mI + " to " + matName);
-		// 	}
-
-		// 	gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
-		// }
 
 		await gltf.write(core.view.config.overwriteFiles);
 	}
@@ -162,8 +136,8 @@ class M3Exporter {
 		obj.setNormalArray(this.m3.normals);
 		obj.addUVArray(this.m3.uv);
 
-		if (core.view.config.modelsExportUV2)
-			obj.addUVArray(this.m3.uv2);
+		if (core.view.config.modelsExportUV2 && this.m3.uv1 !== undefined)
+			obj.addUVArray(this.m3.uv1);
 
 		// Textures
 		const validTextures = await this.exportTextures(outDir, false, mtl, helper);
@@ -187,30 +161,6 @@ class M3Exporter {
 				obj.addMesh(geosetName, this.m3.indices.slice(geoset.indexStart, geoset.indexStart + geoset.indexCount), "");
 			}
 		}
-
-		// Faces
-		// TODO: M3
-		// for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
-		// 	// Skip geosets that are not enabled.
-		// 	if (this.geosetMask && !this.geosetMask[mI].checked)
-		// 		continue;
-
-		// 	const mesh = skin.subMeshes[mI];
-		// 	const verts = new Array(mesh.triangleCount);
-		// 	for (let vI = 0; vI < mesh.triangleCount; vI++)
-		// 		verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
-
-		// 	let texture = null;
-		// 	const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
-		// 	if (texUnit)
-		// 		texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
-
-		// 	let matName;
-		// 	if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID))
-		// 		matName = validTextures.get(texture.fileDataID).matName;
-
-		// 	obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
-		// }
 
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
