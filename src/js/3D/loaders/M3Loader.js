@@ -191,30 +191,32 @@ class M3Loader {
 				break;
 			}
 			case CHUNK_VUV0:
-				if (format != "2F32")
-					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
-				this.uv = this.ReadBufferAsFormat(format, chunkSize);
-				break;
-			case CHUNK_VUV1:
-				if (format != "2F32")
-					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
-				this.uv1 = this.ReadBufferAsFormat(format, chunkSize);
-				break;
 			case CHUNK_VUV2:
-				if (format != "2F32")
-					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
-				this.uv2 = this.ReadBufferAsFormat(format, chunkSize);
-				break;
 			case CHUNK_VUV3:
-				if (format != "2F32")
-					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
-				this.uv3 = this.ReadBufferAsFormat(format, chunkSize);
-				break;
 			case CHUNK_VUV4:
+			{
 				if (format != "2F32")
 					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
-				this.uv4 = this.ReadBufferAsFormat(format, chunkSize);
+				const floatArray = this.ReadBufferAsFormat(format, chunkSize);
+				const fixedUVs = new Float32Array(floatArray.length);
+				for (let i = 0; i < floatArray.length; i += 2) {
+					fixedUVs[i] = floatArray[i];
+					fixedUVs[i + 1] = (floatArray[i + 1] - 1) * -1;
+				}
+
+				if (chunkID == CHUNK_VUV0)
+					this.uv = fixedUVs;
+				else if (chunkID == CHUNK_VUV2)
+					this.uv1 = fixedUVs;
+				else if (chunkID == CHUNK_VUV2)
+					this.uv2 = fixedUVs;
+				else if (chunkID == CHUNK_VUV3)
+					this.uv3 = fixedUVs;
+				else if (chunkID == CHUNK_VUV4)
+					this.uv4 = fixedUVs;
 				break;
+			}
+
 			case CHUNK_VTAN:
 				if (format != "4F32")
 					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
