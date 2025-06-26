@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -11,8 +11,10 @@ const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
+const M3Renderer = require('./M3Renderer');
 const listfile = require('../../casc/listfile');
 const textureRibbon = require('../../ui/texture-ribbon');
+const constants = require('../../constants');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
@@ -29,7 +31,7 @@ class WMORenderer {
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
 		this.textures = [];
-		this.m2Renderers = new Map();
+		this.modelRenderers = new Map();
 		this.m2Clones = [];
 		this.useRibbon = useRibbon;
 	}
@@ -228,21 +230,32 @@ class WMORenderer {
 			if (fileDataID > 0) {
 				try {
 					let mesh;
-					if (this.m2Renderers.has(fileDataID)) {
+					if (this.modelRenderers.has(fileDataID)) {
 						// We already built this m2, re-use it.
-						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
+						mesh = this.modelRenderers.get(fileDataID).meshGroup.clone(true);
 						renderGroup.add(mesh);
 						this.m2Clones.push(mesh);
 					} else {
-						// New M2, load it from CASC and prepare for render.
+						// New model, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
-						const m2 = new M2Renderer(data, renderGroup, false, false);
-						
-						await m2.load();
-						await m2.loadSkin(0);
 
-						mesh = m2.meshGroup;
-						this.m2Renderers.set(fileDataID, m2);
+						const modelMagic = data.readUInt32LE();
+						data.seek(0);
+						if (modelMagic == constants.MAGIC.MD21) {
+							const m2 = new M2Renderer(data, renderGroup, false, false);
+							await m2.load();
+							await m2.loadSkin(0);
+
+							mesh = m2.meshGroup;
+							this.modelRenderers.set(fileDataID, m2);
+						} else if (modelMagic == constants.MAGIC.M3DT) {
+							const m3 = new M3Renderer(data, renderGroup, false, false);
+							await m3.load();
+							await m3.loadLOD(0);
+
+							mesh = m3.meshGroup;
+							this.modelRenderers.set(fileDataID, m3);
+						}
 					}
 
 					// Apply relative position/rotation/scale.
@@ -254,7 +267,8 @@ class WMORenderer {
 
 					mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);
 				} catch (e) {
-					log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					log.write('Failed to load doodad %d (offset %d) for %s: %s', fileDataID, doodad.offset, set.name, e.message);
+					console.log(e);
 				}
 			}
 		}
@@ -349,7 +363,7 @@ class WMORenderer {
 		}
 
 		// Dispose of all M2 renderers for doodad sets.
-		for (const renderer of this.m2Renderers.values())
+		for (const renderer of this.modelRenderers.values())
 			renderer.dispose();
 
 		// Remove M2 clones from the renderGroup.
@@ -364,7 +378,7 @@ class WMORenderer {
 		}
 
 		// Dereference M2 renderers for faster clean-up.
-		this.m2Renderers = undefined;
+		this.modelRenderers = undefined;
 		this.m2Clones = undefined;
 
 		// Unregister reactive watchers.

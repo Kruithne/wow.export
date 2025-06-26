@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
@@ -18,6 +18,8 @@ const GLTFWriter = require('../writers/GLTFWriter');
 const JSONWriter = require('../writers/JSONWriter');
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
+const M3Exporter = require('./M3Exporter');
+const constants = require('../../constants');
 
 const doodadCache = new Set();
 
@@ -536,9 +538,16 @@ class WMOExporter {
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
-								const m2Export = new M2Exporter(data, undefined, fileDataID);
-								await m2Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
-
+								const modelMagic = data.readUInt32LE();
+								data.seek(0);
+								if (modelMagic == constants.MAGIC.MD21) {
+									const m2Export = new M2Exporter(data, undefined, fileDataID);
+									await m2Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
+								} else if (modelMagic == constants.MAGIC.M3DT) {
+									const m3Export = new M3Exporter(data, undefined, fileDataID);
+									await m3Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
+								}
+								
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
 									return;
@@ -820,9 +829,17 @@ class WMOExporter {
 
 						// Only export doodads that are not already exported.
 						if (!doodadCache.has(fileDataID)) {
+							
 							const data = await casc.getFile(fileDataID);
-							const m2Export = new M2Exporter(data, undefined, fileDataID);
-							await m2Export.exportRaw(m2Path, helper);
+							const modelMagic = data.readUInt32LE();
+							data.seek(0);
+							if (modelMagic == constants.MAGIC.MD21) {
+								const m2Export = new M2Exporter(data, undefined, fileDataID);
+								await m2Export.exportRaw(m2Path, helper);
+							} else if (modelMagic == constants.MAGIC.M3DT) {
+								const m3Export = new M3Exporter(data, undefined, fileDataID);
+								await m3Export.exportRaw(m2Path, helper);
+							}
 
 							// Abort if the export has been cancelled.
 							if (helper.isCancelled())

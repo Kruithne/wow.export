@@ -167,6 +167,9 @@ class CASC {
 	getModelFormats() {
 		// Filters for the model viewer depending on user settings.
 		const modelExt = [];
+		if (core.view.config.modelsShowM3)
+			modelExt.push('.m3');
+
 		if (core.view.config.modelsShowM2)
 			modelExt.push('.m2');
 		

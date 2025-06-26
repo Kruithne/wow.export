@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../core');
@@ -18,7 +18,9 @@ const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
+const M3Renderer = require('../3D/renderers/M3Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
+const M3Exporter = require('../3D/exporters/M3Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
@@ -26,6 +28,7 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 const textureRibbon = require('./texture-ribbon');
 // const AnimMapper = require('../3D/AnimMapper');
 
+const MODEL_TYPE_M3 = Symbol('modelM3');
 const MODEL_TYPE_M2 = Symbol('modelM2');
 const MODEL_TYPE_WMO = Symbol('modelWMO');
 
@@ -139,12 +142,17 @@ const previewModel = async (fileName) => {
 		const fileDataID = listfile.getByFilename(fileName);
 		const file = await core.view.casc.getFile(fileDataID);
 		let isM2 = false;
+		let isM3 = false;
 
 		const fileNameLower = fileName.toLowerCase();
 		if (fileNameLower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
 			activeRenderer = new M2Renderer(file, renderGroup, true, core.view.config.modelViewerShowTextures);
 			isM2 = true;
+		} else if (fileNameLower.endsWith('.m3')) {
+			core.view.modelViewerActiveType = 'm3';
+			activeRenderer = new M3Renderer(file, renderGroup, true, core.view.config.modelViewerShowTextures);
+			isM3 = true;
 		} else if (fileNameLower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
 			activeRenderer = new WMORenderer(file, fileName, renderGroup, core.view.config.modelViewerShowTextures);
@@ -208,6 +216,8 @@ const previewModel = async (fileName) => {
 			// 	core.view.modelViewerAnims = animList;
 			// 	core.view.modelViewerAnimSelection = animList.slice(0, 1);
 			// }
+		} else if (isM3) {
+			// TODO: M3
 		}
 
 		updateCameraBounding();
@@ -352,7 +362,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 					const magic = data.readUInt32LE();
 					data.seek(0);
 
-					if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
+					if (magic == constants.MAGIC.M3DT) {
+						fileType = MODEL_TYPE_M3;
+						fileName = listfile.formatUnknownFile(fileDataID, '.m3');
+					} else if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
 						fileType = MODEL_TYPE_M2;
 						fileName = listfile.formatUnknownFile(fileDataID, '.m2');
 					} else {
@@ -363,7 +376,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				} else {
 					// We already have a filename for this entry, so we can assume the file type via extension.
 					const fileNameLower = fileName.toLowerCase();
-					if (fileNameLower.endsWith('.m2') === true)
+					if (fileNameLower.endsWith('.m3') === true)
+						fileType = MODEL_TYPE_M3;
+					else if (fileNameLower.endsWith('.m2') === true)
 						fileType = MODEL_TYPE_M2;
 					else if (fileNameLower.endsWith('.wmo') === true)
 						fileType = MODEL_TYPE_WMO;
@@ -421,6 +436,24 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							} else if (format === 'GLTF') {
 								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
 								await exportPaths?.writeLine('M2_GLTF:' + exportPath);
+							}
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
+						} else if (fileType === MODEL_TYPE_M3) {
+							const exporter = new M3Exporter(data, getVariantTextureIDs(fileName), fileDataID);
+
+							// Respect geoset masking for selected model.
+							// if (fileName == activePath)
+							// 	exporter.setGeosetMask(core.view.modelViewerGeosets);
+
+							if (format === 'OBJ') {
+								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
+								await exportPaths?.writeLine('M3_OBJ:' + exportPath);
+							} else if (format === 'GLTF') {
+								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
+								await exportPaths?.writeLine('M3_GLTF:' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -488,6 +521,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 const updateListfile = () => {
 	// Filters for the model viewer depending on user settings.
 	const modelExt = [];
+	if (core.view.config.modelsShowM3)
+		modelExt.push('.m3');
+
 	if (core.view.config.modelsShowM2)
 		modelExt.push('.m2');
 	
@@ -532,6 +568,7 @@ core.events.on('rcp-export-models', (files, id) => {
 
 core.registerLoadFunc(async () => {
 	// Track changes to the visible model listfile types.
+	core.view.$watch('config.modelsShowM3', updateListfile);
 	core.view.$watch('config.modelsShowM2', updateListfile);
 	core.view.$watch('config.modelsShowWMO', updateListfile);
 
