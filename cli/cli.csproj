@@ -4,5 +4,20 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		
+		<PublishAot>true</PublishAot>
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<PublishTrimmed>true</PublishTrimmed>
+		
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		
+		<AssemblyName>wow_export_cli</AssemblyName>
+		<OutputPath>../dist/cli/</OutputPath>
+
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
 	</PropertyGroup>
 </Project>
