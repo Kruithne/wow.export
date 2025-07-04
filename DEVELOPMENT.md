@@ -30,5 +30,5 @@ dotnet run # build CLI and run directly
 ### GUI
 
 ```bash
-bunx electron ./app
+bunx electron ./gui
 ```
