@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+	<title>WoW Export Tool</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div class="container">
+		<header>
+			<h1>WoW Export Tool</h1>
+			<div class="version-info">
+				<span id="app-version"></span>
+			</div>
+		</header>
+
+		<main>
+			<section class="file-operations">
+				<h2>File Operations</h2>
+				<div class="file-controls">
+					<input type="text" id="file-path" placeholder="Enter file path...">
+					<button id="read-file-btn">Read File</button>
+					<button id="write-file-btn">Write File</button>
+				</div>
+				<textarea id="file-content" placeholder="File content will appear here..."></textarea>
+			</section>
+
+			<section class="system-info">
+				<h2>System Information</h2>
+				<div class="info-grid">
+					<div class="info-item">
+						<label>Platform:</label>
+						<span id="platform-info"></span>
+					</div>
+					<div class="info-item">
+						<label>Node.js:</label>
+						<span id="node-version"></span>
+					</div>
+					<div class="info-item">
+						<label>Chrome:</label>
+						<span id="chrome-version"></span>
+					</div>
+					<div class="info-item">
+						<label>Electron:</label>
+						<span id="electron-version"></span>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer>
+			<p>WoW Export Tool - Electron Desktop Application</p>
+		</footer>
+	</div>
+
+	<script src="renderer.js"></script>
+</body>
+</html>

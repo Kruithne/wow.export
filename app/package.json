@@ -1,0 +1,19 @@
+{
+	"name": "wow_export_app",
+	"version": "2.0.0",
+	"description": "The Export Toolkit for World of Warcraft",
+	"main": "main.js",
+	"license": "MIT",
+	"contributors": [
+		"Kruithne <kruithne@gmail.com> (https://kruithne.net/)",
+		"Marlamin <marlamin@marlamin.com> (https://marlamin.com/)"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Kruithne/wow.export.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Kruithne/wow.export/issues"
+	},
+	"homepage": "https://github.com/Kruithne/wow.export#readme"
+}

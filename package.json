@@ -1,0 +1,7 @@
+{
+	"dependencies": {},
+	"devDependencies": {
+		"electron": "^37.2.0",
+		"electron-packager": "^17.1.2"
+	}
+}

@@ -1,6 +1,0 @@
-# This folder contains full release builds of wow.export in ZIP archives.
-# Structure: /<platform>/wow.export-<version>.zip
-# Example: /win-x64/wow.export-0.1.3.zip
-
-*
-!.gitignore
