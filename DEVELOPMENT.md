@@ -30,6 +30,5 @@ dotnet run # build CLI and run directly
 ### GUI
 
 ```bash
-# adjust platform/arch as needed
-bunx electron-packager ./app wow_export --platform=win32 --arch=x64 --out=dist/ --overwrite
+bunx electron ./app
 ```
