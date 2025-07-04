@@ -1,0 +1,189 @@
+name: Create Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (semver format)'
+        required: true
+        type: string
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version '${{ github.event.inputs.version }}' is not a valid semver version."
+            exit 1
+          fi
+
+  update-versions:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Update GUI version
+        run: |
+          cd gui
+          sed -i 's/"version": ".*"/"version": "${{ github.event.inputs.version }}"/' package.json
+
+      - name: Update CLI version
+        run: |
+          cd cli
+          sed -i 's/<Version>.*<\/Version>/<Version>${{ github.event.inputs.version }}<\/Version>/' cli.csproj
+          sed -i 's/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ github.event.inputs.version }}.0<\/AssemblyVersion>/' cli.csproj
+          sed -i 's/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ github.event.inputs.version }}.0<\/FileVersion>/' cli.csproj
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit version changes
+        run: |
+          git add gui/package.json cli/cli.csproj
+          git commit -m "Release ${{ github.event.inputs.version }}"
+          git push
+
+  build:
+    needs: update-versions
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            runtime: win-x64
+            cli-ext: .exe
+          - os: ubuntu-latest
+            platform: linux
+            runtime: linux-x64
+            cli-ext: ''
+          - os: macos-latest
+            platform: darwin
+            runtime: osx-x64
+            cli-ext: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build CLI
+        run: |
+          cd cli
+          dotnet publish -c Release -r ${{ matrix.runtime }} --self-contained true
+
+      - name: Build GUI
+        run: |
+          bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite
+
+      - name: Combine CLI and GUI
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            GUI_DIR="dist/wow_export-win32-x64"
+            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            GUI_DIR="dist/wow_export-linux-x64"
+            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
+          else
+            GUI_DIR="dist/wow_export-darwin-x64"
+            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
+          fi
+          
+          # Copy CLI executable to GUI directory
+          cp "$CLI_FILE" "$GUI_DIR/"
+          
+          # Create the final package with underscore naming
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            FINAL_NAME="wow_export_win32_x64"
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            FINAL_NAME="wow_export_linux_x64"
+          else
+            FINAL_NAME="wow_export_darwin_x64"
+          fi
+          
+          # Rename directory to use underscores
+          mv "$GUI_DIR" "dist/$FINAL_NAME"
+          
+          # Create ZIP file
+          cd dist
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            powershell Compress-Archive -Path "$FINAL_NAME" -DestinationPath "$FINAL_NAME.zip"
+          else
+            zip -r "$FINAL_NAME.zip" "$FINAL_NAME"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wow_export_${{ matrix.platform }}_x64
+          path: dist/wow_export_${{ matrix.platform }}_x64.zip
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: Release ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_win32_x64/wow_export_win32_x64.zip
+          asset_name: wow_export_win32_x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_linux_x64/wow_export_linux_x64.zip
+          asset_name: wow_export_linux_x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_darwin_x64/wow_export_darwin_x64.zip
+          asset_name: wow_export_darwin_x64.zip
+          asset_content_type: application/zip
