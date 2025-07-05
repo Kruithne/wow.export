@@ -101,6 +101,10 @@ public partial class Log
 	private static readonly Action<string, string?> _success_logger = CreateLogger("DONE", "#2ecc71");
 	private static readonly Action<string, string?> _error_logger = CreateLogger("ERR!", "#e74c3c");
 	private static readonly Action<string, string?> _warn_logger = CreateLogger("WARN", "#f39c12");
+	private static readonly Action<string, string?> _user_logger = CreateLogger("USER", "#9b59b6");
+	
+	private static readonly string _user_prefix_bg = Colors.HexToAnsiBg("#9b59b6");
+	private static readonly string _user_prefix_fg = Colors.HexToAnsi("#9b59b6");
 
 	private static string PadPrefix(string prefix)
 	{
@@ -125,6 +129,23 @@ public partial class Log
 	public static void Warn(string message, string? custom_prefix = null)
 	{
 		_warn_logger(message, custom_prefix);
+	}
+
+	public static void User(string message, string? custom_prefix = null)
+	{
+		_user_logger(message, custom_prefix);
+	}
+
+	public static string GetUserInput(string prompt)
+	{
+		string highlighted_prompt = GetHighlightRegex().Replace(prompt, match =>
+		{
+			string content = match.Groups[1].Value;
+			return $"{_user_prefix_fg}{content}{Colors.Reset}";
+		});
+		
+		Console.Write($"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ");
+		return Console.ReadLine() ?? string.Empty;
 	}
 
 	public static void Blank()
