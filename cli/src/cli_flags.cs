@@ -14,7 +14,7 @@ public enum CLIFlag
 	[Description("Set operation mode (accepts value)")]
 	SOME_MODE,
 	
-	[Description("Select CDN region (eu, us, kr, cn, tw)")]
+	[Description("Select CDN region (*eu*, *us*, *kr*, *cn*, *tw*)")]
 	CDN_REGION
 }
 
