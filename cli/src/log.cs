@@ -91,7 +91,7 @@ public partial class Log
 			
 			string highlighted_message = GetHighlightRegex().Replace(message, match =>
 			{
-				var content = match.Groups[1].Value;
+				string content = match.Groups[1].Value;
 				return $"{prefix_fg}{content}{Colors.Reset}";
 			});
 			
@@ -221,7 +221,6 @@ public abstract class MenuOption(string id, string display_name)
 		return options;
 	}
 }
-
 
 public class DynamicMenuOption(string id, string display_name, object? data = null) : MenuOption(id, display_name)
 {
