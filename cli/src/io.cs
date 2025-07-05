@@ -4,7 +4,7 @@ namespace wow_export;
 
 public static class IO
 {
-	private static readonly string _cached_app_data_path;
+	public static readonly string AppDataDirectory;
 	
 	static IO()
 	{
@@ -25,12 +25,7 @@ public static class IO
 			base_path = Path.Combine(home_path, ".local", "share");
 		}
 		
-		_cached_app_data_path = Path.Combine(base_path, "wow.export");
-	}
-	
-	public static string GetAppDataPath()
-	{
-		return _cached_app_data_path;
+		AppDataDirectory = Path.Combine(base_path, "wow.export");
 	}
 	
 	public static void CreateDirectory(string directory_path)
@@ -41,7 +36,7 @@ public static class IO
 	
 	public static string GetAppDataDirectory(string subdirectory, bool create = false)
 	{
-		string combined_path = Path.Combine(_cached_app_data_path, subdirectory);
+		string combined_path = Path.Combine(AppDataDirectory, subdirectory);
 		
 		if (create)
 			CreateDirectory(combined_path);
