@@ -20,7 +20,7 @@ public enum CLIFlag
 
 public static class CLIFlags
 {
-	private static readonly Dictionary<CLIFlag, string?> _parsed_flags = new();
+	private static readonly Dictionary<CLIFlag, string?> _parsed_flags = [];
 	
 	static CLIFlags()
 	{			
