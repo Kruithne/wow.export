@@ -5,6 +5,8 @@ namespace wow_export;
 
 public partial class Log
 {
+	private static string? _last_prefix = null;
+	
 	static Log()
 	{
 		EnableAnsiColors();
@@ -93,7 +95,10 @@ public partial class Log
 				return $"{prefix_fg}{content}{Colors.Reset}";
 			});
 			
-			Console.WriteLine($"{prefix_bg}{Colors.Black} {actual_prefix} {Colors.Reset} {highlighted_message}");
+			string display_prefix = _last_prefix == actual_prefix ? "├".PadLeft((actual_prefix.Length + 1) / 2).PadRight(actual_prefix.Length) : actual_prefix;
+			_last_prefix = actual_prefix;
+			
+			Console.WriteLine($"{prefix_bg}{Colors.Black} {display_prefix} {Colors.Reset} {highlighted_message}");
 		};
 	}
 
@@ -183,6 +188,7 @@ public partial class Log
 
 	public static void Blank()
 	{
+		_last_prefix = null;
 		Console.WriteLine();
 	}
 }
