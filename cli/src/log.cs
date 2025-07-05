@@ -147,9 +147,77 @@ public partial class Log
 		Console.Write($"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ");
 		return Console.ReadLine() ?? string.Empty;
 	}
+	
+	public static T GetUserInput<T>(string prompt, T[] options) where T : MenuOption
+	{
+		while (true)
+		{
+			User(prompt);
+			
+			for (int i = 0; i < options.Length; i++)
+			{
+				T option = options[i];
+				User($"{i + 1}. {option.DisplayName} ({option.Id})");
+			}
+			
+			Console.Write($"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ");
+			string? input = Console.ReadLine();
+			
+			if (string.IsNullOrEmpty(input))
+			{
+				Error("Please enter a valid selection.");
+				Blank();
+				continue;
+			}
+			
+			if (!int.TryParse(input, out int selection) || selection < 1 || selection > options.Length)
+			{
+				Error($"Please enter a number between 1 and {options.Length}.");
+				Blank();
+				continue;
+			}
+			
+			return options[selection - 1];
+		}
+	}
 
 	public static void Blank()
 	{
 		Console.WriteLine();
 	}
+}
+
+public abstract class MenuOption(string id, string display_name)
+{
+	public string Id { get; protected set; } = id;
+	public string DisplayName { get; protected set; } = display_name;
+
+	public static DynamicMenuOption Create(string id, string display_name, object? data = null)
+	{
+		return new DynamicMenuOption(id, display_name, data);
+	}
+	
+	public static DynamicMenuOption[] CreateList(string[] ids, string[] display_names, object[]? data = null)
+	{
+		if (ids.Length != display_names.Length)
+			throw new ArgumentException("ids and display_names arrays must have the same length");
+		
+		if (data != null && data.Length != ids.Length)
+			throw new ArgumentException("data array must have the same length as ids array");
+		
+		DynamicMenuOption[] options = new DynamicMenuOption[ids.Length];
+		for (int i = 0; i < ids.Length; i++)
+		{
+			object? item_data = data?[i];
+			options[i] = new DynamicMenuOption(ids[i], display_names[i], item_data);
+		}
+		
+		return options;
+	}
+}
+
+
+public class DynamicMenuOption(string id, string display_name, object? data = null) : MenuOption(id, display_name)
+{
+	public object? Data { get; private set; } = data;
 }
