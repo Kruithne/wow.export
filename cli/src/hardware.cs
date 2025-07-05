@@ -103,7 +103,7 @@ public static class Hardware
 				else if (line.StartsWith("cpu MHz"))
 				{
 					string mhz_str = line.Split(':')[1].Trim();
-					double.TryParse(mhz_str, out cpu_mhz);
+					_ = double.TryParse(mhz_str, out cpu_mhz);
 				}
 				else if (line.StartsWith("physical id"))
 				{
@@ -140,9 +140,9 @@ public static class Hardware
 		string freq_output = RunCommand("sysctl", "-n hw.cpufrequency_max");
 		
 		string cpu_name = string.IsNullOrEmpty(sysctl_output) ? "Unknown" : sysctl_output.Trim();
-		int.TryParse(core_count_output?.Trim(), out int cores);
-		int.TryParse(logical_count_output?.Trim(), out int logical_processors);
-		long.TryParse(freq_output?.Trim(), out long frequency_hz);
+		_ = int.TryParse(core_count_output?.Trim(), out int cores);
+		_ = int.TryParse(logical_count_output?.Trim(), out int logical_processors);
+		_ = long.TryParse(freq_output?.Trim(), out long frequency_hz);
 		
 		return new CpuInfo
 		{
@@ -177,7 +177,7 @@ public static class Hardware
 				
 				if (!string.IsNullOrEmpty(name) && name != "Name")
 				{
-					long.TryParse(adapter_ram_str, out long adapter_ram);
+					_ = long.TryParse(adapter_ram_str, out long adapter_ram);
 					
 					gpus.Add(new GpuInfo
 					{
@@ -190,7 +190,7 @@ public static class Hardware
 			}
 		}
 		
-		return gpus.Count > 0 ? gpus.ToArray() : [new GpuInfo { Name = "Unknown", Vendor = "Unknown" }];
+		return gpus.Count > 0 ? [.. gpus] : [new GpuInfo { Name = "Unknown", Vendor = "Unknown" }];
 	}
 
 	private static GpuInfo[] GetLinuxGpuInfo()
@@ -247,7 +247,7 @@ public static class Hardware
 			}
 		}
 		
-		return gpus.Count > 0 ? gpus.ToArray() : [new GpuInfo { Name = "Unknown", Vendor = "Unknown" }];
+		return gpus.Count > 0 ? [.. gpus] : [new GpuInfo { Name = "Unknown", Vendor = "Unknown" }];
 	}
 
 	private static string ExtractVendor(string gpu_name)
