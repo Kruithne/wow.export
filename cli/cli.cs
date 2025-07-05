@@ -12,7 +12,6 @@ public class Program
 			Log.Info("Report any issues at *https://github.com/Kruithne/wow.export/issues*");
 			Log.Blank();
 			
-			// Check for help flag and exit early if present
 			if (CLIFlags.Has(CLIFlag.HELP))
 			{
 				CLIFlags.PrintHelp();
