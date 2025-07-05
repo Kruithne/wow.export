@@ -69,8 +69,6 @@ public static class CLIFlags
 	
 	public static void PrintHelp()
 	{
-		Log.Info("Usage: wow_export_cli [flags]", "HELP");
-		Log.Blank();
 		Log.Info("Flags:", "HELP");
 		
 		foreach (CLIFlag flag in Enum.GetValues<CLIFlag>())
