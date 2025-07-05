@@ -36,7 +36,7 @@ public static class CLIFlags
 				
 			string flag_text = arg[2..]; // remove "--" prefix
 			string? flag_name;
-			string? flag_value = null;
+			string? flag_value;
 			
 			int equals_index = flag_text.IndexOf('=');
 			if (equals_index >= 0)
