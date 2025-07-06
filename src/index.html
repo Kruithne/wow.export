@@ -699,6 +699,10 @@
 								<input type="checkbox" v-model="config.modelsExportAnimations"/>
 								<span>Export animations</span>
 							</label>
+							<label class="ui-checkbox" title="Include _p Bone Prefixes in Armature for backwards compatibility with previous model exports">
+								<input type="checkbox" v-model="config.modelsExportWithBonePrefix"/>
+								<span>Include Bone Prefixes</span>
+							</label>
 							<label class="ui-checkbox" title="Include Base Clothing">
 								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
 								<span>Include base clothing</span>
