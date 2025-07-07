@@ -6,10 +6,23 @@ namespace wow_export;
 public partial class Log
 {
 	private static string? _last_prefix = null;
+	private static readonly StreamWriter _log_stream;
 	
 	static Log()
 	{
 		EnableAnsiColors();
+		
+		try
+		{
+			IO.CreateDirectory(IO.AppDataDirectory);
+			string log_file_path = Path.Combine(IO.AppDataDirectory, "runtime.log");
+			_log_stream = new StreamWriter(log_file_path, append: false) { AutoFlush = true };
+		}
+		catch (Exception ex)
+		{
+			_log_stream = StreamWriter.Null;
+			Error($"Failed to create runtime log file: *{ex.Message}*");
+		}
 	}
 	
 	public static class Colors
@@ -79,6 +92,32 @@ public partial class Log
 
 	[GeneratedRegex(@"\*([^*]+)\*")]
 	private static partial Regex GetHighlightRegex();
+	
+	[GeneratedRegex(@"\x1b\[[0-9;]*m")]
+	private static partial Regex GetAnsiColorRegex();
+	
+	private static string StripAnsiColors(string text)
+	{
+		return GetAnsiColorRegex().Replace(text, string.Empty);
+	}
+	
+	private static void WriteOutput(string message)
+	{
+		Console.WriteLine(message);
+		WriteLog(StripAnsiColors(message));
+	}
+	
+	private static void WriteLog(string message)
+	{
+		try
+		{
+			_log_stream.WriteLine(message);
+		}
+		catch
+		{
+			// prevent crash on log failure
+		}
+	}
 
 	public static Action<string, string?> CreateLogger(string default_prefix, string prefix_color)
 	{
@@ -106,11 +145,11 @@ public partial class Log
 				string before_tree = tree_char[..tree_pos];
 				string after_tree = tree_char[(tree_pos + 1)..];
 				
-				Console.WriteLine($" {before_tree}{prefix_fg}├{Colors.Reset}{after_tree}  {highlighted_message}");
+				WriteOutput($" {before_tree}{prefix_fg}├{Colors.Reset}{after_tree}  {highlighted_message}");
 			}
 			else
 			{
-				Console.WriteLine($"{prefix_bg}{Colors.Black} {actual_prefix} {Colors.Reset} {highlighted_message}");
+				WriteOutput($"{prefix_bg}{Colors.Black} {actual_prefix} {Colors.Reset} {highlighted_message}");
 			}
 		};
 	}
@@ -162,8 +201,15 @@ public partial class Log
 			return $"{_user_prefix_fg}{content}{Colors.Reset}";
 		});
 		
-		Console.Write($"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ");
-		return Console.ReadLine() ?? string.Empty;
+		string console_output = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ";
+		
+		Console.Write(console_output);
+		WriteLog($" USER  {StripAnsiColors(highlighted_prompt)} > ");
+		
+		string? user_input = Console.ReadLine() ?? string.Empty;
+		WriteLog(user_input);
+		
+		return user_input;
 	}
 	
 	public static T GetUserInput<T>(string prompt, T[] options) where T : MenuOption
@@ -178,8 +224,13 @@ public partial class Log
 				User($"{i + 1}. {option.DisplayName} ({option.Id})");
 			}
 			
-			Console.Write($"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ");
+			string console_prompt = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ";
+			
+			Console.Write(console_prompt);
+			WriteLog(" USER  > ");
+			
 			string? input = Console.ReadLine();
+			WriteLog(input ?? string.Empty);
 			
 			if (string.IsNullOrEmpty(input))
 			{
@@ -202,7 +253,7 @@ public partial class Log
 	public static void Blank()
 	{
 		_last_prefix = null;
-		Console.WriteLine();
+		WriteOutput(string.Empty);
 	}
 }
 
