@@ -3,10 +3,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron_api', {
 	get_app_version: () => ipcRenderer.invoke('get-app-version'),
 	
-	read_file: (file_path) => ipcRenderer.invoke('read-file', file_path),
-	
-	write_file: (file_path, content) => ipcRenderer.invoke('write-file', file_path, content),
-	
 	send_cli_message: (message_id, data) => ipcRenderer.invoke('send-cli-message', message_id, data),
 	
 	on_cli_handshake: (callback) => ipcRenderer.on('cli-handshake-complete', callback),

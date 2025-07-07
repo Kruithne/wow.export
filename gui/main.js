@@ -175,7 +175,6 @@ function create_window() {
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js'),
 			contextIsolation: true,
-			enableRemoteModule: false,
 			nodeIntegration: false
 		}
 	});
@@ -212,23 +211,7 @@ ipcMain.handle('get-app-version', () => {
 	return app.getVersion();
 });
 
-ipcMain.handle('read-file', async (event, file_path) => {
-	try {
-		const data = await fs.promises.readFile(file_path, 'utf-8');
-		return { success: true, data };
-	} catch (error) {
-		return { success: false, error: error.message };
-	}
-});
 
-ipcMain.handle('write-file', async (event, file_path, content) => {
-	try {
-		await fs.promises.writeFile(file_path, content, 'utf-8');
-		return { success: true };
-	} catch (error) {
-		return { success: false, error: error.message };
-	}
-});
 
 function spawn_cli_process() {
 	let cli_path;

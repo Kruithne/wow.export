@@ -1,7 +1,5 @@
 interface ElectronApi {
 	get_app_version(): Promise<string>;
-	read_file(file_path: string): Promise<string>;
-	write_file(file_path: string, content: string): Promise<void>;
 	send_cli_message(message_id: string, data: any): Promise<any>;
 	on_cli_handshake(callback: (event: any, ...args: any[]) => void): void;
 	on_cli_spawn_error(callback: (event: any, ...args: any[]) => void): void;
