@@ -8,7 +8,7 @@ public class Program
 	{
 		try
 		{
-			Log.Info($"Welcome to wow.export version *{GetAssemblyVersion()}*");
+			Log.Info($"Welcome to wow.export version {GetAssemblyVersionWithBuild()}");
 			Log.Info("Report any issues at *https://github.com/Kruithne/wow.export/issues*");
 			Log.Blank();
 			
@@ -49,6 +49,22 @@ public class Program
 			throw new InternalError("Assembly version is not available.");
 
 		return version.ToString(3);
+	}
+	
+	public static string GetAssemblyVersionWithBuild()
+	{
+		string base_version = GetAssemblyVersion();
+		
+		string? informational_version = Assembly.GetExecutingAssembly()
+			.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+		
+		if (informational_version != null && informational_version.Contains('+'))
+		{
+			string build_hash = informational_version.Split('+')[1];
+			return $"*{base_version}* (build *{build_hash}*)";
+		}
+		
+		return base_version;
 	}
 	
 	private static void InitializeIpcMode()
