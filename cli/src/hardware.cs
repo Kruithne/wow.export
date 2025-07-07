@@ -9,13 +9,13 @@ public static class Hardware
 	{
 		try
 		{
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			if (OperatingSystem.IsWindows())
 				return GetWindowsCpuInfo();
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			if (OperatingSystem.IsLinux())
 				return GetLinuxCpuInfo();
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			if (OperatingSystem.IsMacOS())
 				return GetMacCpuInfo();
 		}
 		catch
@@ -30,13 +30,13 @@ public static class Hardware
 	{
 		try
 		{
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			if (OperatingSystem.IsWindows())
 				return GetWindowsGpuInfo();
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			if (OperatingSystem.IsLinux())
 				return GetLinuxGpuInfo();
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			if (OperatingSystem.IsMacOS())
 				return GetMacGpuInfo();
 		}
 		catch

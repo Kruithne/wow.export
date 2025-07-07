@@ -10,11 +10,11 @@ public static class IO
 	{
 		string base_path;
 		
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		if (OperatingSystem.IsWindows())
 		{
 			base_path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 		}
-		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+		else if (OperatingSystem.IsMacOS())
 		{
 			string home_path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 			base_path = Path.Combine(home_path, "Library", "Application Support");
