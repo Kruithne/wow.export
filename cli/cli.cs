@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 
 namespace wow_export;
 
@@ -67,6 +68,24 @@ public class Program
 		{
 			string data_string = message.data.ToString() ?? "null";
 			Log.Info($"Handshake data: *{data_string}*");
+			
+			try
+			{
+				using JsonDocument doc = JsonDocument.Parse(data_string);
+				if (doc.RootElement.TryGetProperty("versions", out JsonElement versions))
+				{
+					string platform = versions.TryGetProperty("platform", out JsonElement platformElement) ? platformElement.GetString() ?? "unknown" : "unknown";
+					string electron = versions.TryGetProperty("electron", out JsonElement electronElement) ? electronElement.GetString() ?? "unknown" : "unknown";
+					string chrome = versions.TryGetProperty("chrome", out JsonElement chromeElement) ? chromeElement.GetString() ?? "unknown" : "unknown";
+					string node = versions.TryGetProperty("node", out JsonElement nodeElement) ? nodeElement.GetString() ?? "unknown" : "unknown";
+					
+					Log.Info($"GUI Versions: Platform *{platform}* Electron *{electron}* Chrome *{chrome}* Node *{node}*");
+				}
+			}
+			catch (Exception ex)
+			{
+				Log.Error($"Failed to parse version information: {ex.Message}");
+			}
 		}
 		
 		IpcManager.SendMessage("HANDSHAKE_RESPONSE", new HandshakeResponse 

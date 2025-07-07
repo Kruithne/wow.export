@@ -273,7 +273,13 @@ function spawn_cli_process() {
 		
 		cli_ipc_client.send_message('HANDSHAKE', {
 			test_value: test_value,
-			timestamp: new Date().toISOString()
+			timestamp: new Date().toISOString(),
+			versions: {
+				platform: process.platform,
+				electron: process.versions.electron,
+				chrome: process.versions.chrome,
+				node: process.versions.node
+			}
 		});
 	}, 1000);
 }
