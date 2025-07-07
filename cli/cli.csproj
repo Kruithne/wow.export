@@ -21,5 +21,8 @@
 		<AssemblyVersion>2.0.0.0</AssemblyVersion>
 		<FileVersion>2.0.0.0</FileVersion>
 		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<Company>Kruithne, Marlamin</Company>
+		<Copyright>Copyright © $([System.DateTime]::Now.ToString('yyyy')) Kruithne, Marlamin</Copyright>
+		<Product>wow.export</Product>
 	</PropertyGroup>
 </Project>

@@ -101,12 +101,13 @@ jobs:
 
       - name: Build GUI
         run: |
+          CURRENT_YEAR=$(date +'%Y')
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.ico
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.ico --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin" --win32metadata.CompanyName="Kruithne, Marlamin" --win32metadata.ProductName="wow.export"
           elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.icns
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.icns --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin"
           else
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.png
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.png --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin"
           fi
 
       - name: Combine CLI and GUI

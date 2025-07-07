@@ -2,6 +2,7 @@
 	"name": "wow_export_app",
 	"version": "2.0.0",
 	"description": "The Export Toolkit for World of Warcraft",
+	"author": "Kruithne, Marlamin",
 	"main": "main.js",
 	"license": "MIT",
 	"contributors": [
