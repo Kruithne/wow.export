@@ -95,10 +95,23 @@ public partial class Log
 				return $"{prefix_fg}{content}{Colors.Reset}";
 			});
 			
-			string display_prefix = _last_prefix == actual_prefix ? "├".PadLeft((actual_prefix.Length + 1) / 2).PadRight(actual_prefix.Length) : actual_prefix;
+			bool is_tree_symbol = _last_prefix == actual_prefix;
 			_last_prefix = actual_prefix;
 			
-			Console.WriteLine($"{prefix_bg}{Colors.Black} {display_prefix} {Colors.Reset} {highlighted_message}");
+			if (is_tree_symbol)
+			{
+				string spacing = " ".PadRight(actual_prefix.Length);
+				string tree_char = "├".PadLeft((actual_prefix.Length + 1) / 2).PadRight(actual_prefix.Length);
+				int tree_pos = tree_char.IndexOf('├');
+				string before_tree = tree_char[..tree_pos];
+				string after_tree = tree_char[(tree_pos + 1)..];
+				
+				Console.WriteLine($" {before_tree}{prefix_fg}├{Colors.Reset}{after_tree}  {highlighted_message}");
+			}
+			else
+			{
+				Console.WriteLine($"{prefix_bg}{Colors.Black} {actual_prefix} {Colors.Reset} {highlighted_message}");
+			}
 		};
 	}
 
