@@ -34,8 +34,6 @@ public static class Error
 			crash_content.AppendLine($"Architecture: {RuntimeInformation.OSArchitecture}");
 			crash_content.AppendLine($"Framework: {RuntimeInformation.FrameworkDescription}");
 			crash_content.AppendLine($"Process Architecture: {RuntimeInformation.ProcessArchitecture}");
-			crash_content.AppendLine($"Machine Name: {Environment.MachineName}");
-			crash_content.AppendLine($"User Name: {Environment.UserName}");
 			crash_content.AppendLine();
 			
 			crash_content.AppendLine("=== CPU INFORMATION ===");
