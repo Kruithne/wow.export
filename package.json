@@ -1,6 +1,9 @@
 {
-	"dependencies": {},
+	"dependencies": {
+		"vue": "^3.5.17"
+	},
 	"devDependencies": {
+		"@types/vue": "^2.0.0",
 		"electron": "^37.2.0",
 		"electron-packager": "^17.1.2",
 		"typescript": "^5.8.3"

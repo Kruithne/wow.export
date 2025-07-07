@@ -2,33 +2,23 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
 	<title>WoW Export Tool</title>
 	<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-	<div class="container">
+	<div id="app" class="container">
 		<header>
 			<h1>WoW Export Tool</h1>
 			<div class="version-info">
-				<span id="app-version"></span>
+				<span>{{ app_version }}</span>
 			</div>
 		</header>
 
 		<main>
-			<section class="file-operations">
-				<h2>File Operations</h2>
-				<div class="file-controls">
-					<input type="text" id="file-path" placeholder="Enter file path...">
-					<button id="read-file-btn">Read File</button>
-					<button id="write-file-btn">Write File</button>
-				</div>
-				<textarea id="file-content" placeholder="File content will appear here..."></textarea>
-			</section>
-
 			<section class="cli-status">
 				<h2>CLI Status</h2>
-				<div id="handshake-info" style="color: orange;">Connecting to CLI...</div>
+				<div :style="{color: cli_status.color}">{{ cli_status.message }}</div>
 			</section>
 
 			<section class="system-info">
@@ -36,19 +26,19 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<label>Platform:</label>
-						<span id="platform-info"></span>
+						<span>{{ system_info.platform }}</span>
 					</div>
 					<div class="info-item">
 						<label>Node.js:</label>
-						<span id="node-version"></span>
+						<span>{{ system_info.node_version }}</span>
 					</div>
 					<div class="info-item">
 						<label>Chrome:</label>
-						<span id="chrome-version"></span>
+						<span>{{ system_info.chrome_version }}</span>
 					</div>
 					<div class="info-item">
 						<label>Electron:</label>
-						<span id="electron-version"></span>
+						<span>{{ system_info.electron_version }}</span>
 					</div>
 				</div>
 			</section>
@@ -59,6 +49,6 @@
 		</footer>
 	</div>
 
-	<script src="renderer.js"></script>
+	<script type="module" src="renderer.js"></script>
 </body>
 </html>
