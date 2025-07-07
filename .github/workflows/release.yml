@@ -101,7 +101,13 @@ jobs:
 
       - name: Build GUI
         run: |
-          bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.ico
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.icns
+          else
+            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.png
+          fi
 
       - name: Combine CLI and GUI
         shell: bash
