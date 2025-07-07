@@ -106,7 +106,8 @@ public partial class Log
 	
 	private static void WriteOutput(string message)
 	{
-		Console.WriteLine(message);
+		if (CLIFlags.GetContext() == CLIContext.CLI)
+			Console.WriteLine(message);
 		WriteLog(StripAnsiColors(message));
 	}
 	
@@ -206,7 +207,8 @@ public partial class Log
 		
 		string console_output = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ";
 		
-		Console.Write(console_output);
+		if (CLIFlags.GetContext() == CLIContext.CLI)
+			Console.Write(console_output);
 		WriteLog($" USER  {StripAnsiColors(highlighted_prompt)} > ");
 		
 		string? user_input = Console.ReadLine() ?? string.Empty;
@@ -229,7 +231,8 @@ public partial class Log
 			
 			string console_prompt = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ";
 			
-			Console.Write(console_prompt);
+			if (CLIFlags.GetContext() == CLIContext.CLI)
+				Console.Write(console_prompt);
 			WriteLog(" USER  > ");
 			
 			string? input = Console.ReadLine();

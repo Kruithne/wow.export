@@ -17,6 +17,12 @@ public class Program
 				CLIFlags.PrintHelp();
 				return;
 			}
+			
+			if (CLIFlags.GetContext() == CLIContext.IPC)
+			{
+				InitializeIpcMode();
+				return;
+			}
 		}
 		catch (Exception ex)
 		{
@@ -43,5 +49,30 @@ public class Program
 			throw new InternalError("Assembly version is not available.");
 
 		return version.ToString(3);
+	}
+	
+	private static void InitializeIpcMode()
+	{	
+		IpcManager.RegisterHandler("HANDSHAKE", HandleHandshake);
+
+		Log.Info($"IPC mode initialized with *{IpcManager.GetHandlerCount()}* handlers");
+		IpcManager.StartListening();
+		
+		Log.Info("IPC listener has exited");
+	}
+	
+	private static void HandleHandshake(IpcMessage message, IpcBinaryChunk[] binary_chunks)
+	{	
+		if (message.data != null)
+		{
+			string data_string = message.data.ToString() ?? "null";
+			Log.Info($"Handshake data: *{data_string}*");
+		}
+		
+		IpcManager.SendMessage("HANDSHAKE_RESPONSE", new HandshakeResponse 
+		{ 
+			version = GetAssemblyVersion(),
+			timestamp = DateTime.UtcNow.ToString("O")
+		});
 	}
 }

@@ -7,6 +7,12 @@ contextBridge.exposeInMainWorld('electron_api', {
 	
 	write_file: (file_path, content) => ipcRenderer.invoke('write-file', file_path, content),
 	
+	send_cli_message: (message_id, data) => ipcRenderer.invoke('send-cli-message', message_id, data),
+	
+	on_cli_handshake: (callback) => ipcRenderer.on('cli-handshake-complete', callback),
+	
+	on_cli_spawn_error: (callback) => ipcRenderer.on('cli-spawn-error', callback),
+	
 	platform: process.platform,
 	
 	versions: {

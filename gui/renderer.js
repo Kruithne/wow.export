@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
 	await load_system_info();
 	setup_event_listeners();
+	setup_cli_communication();
 });
 
 async function load_system_info() {
@@ -62,6 +63,28 @@ function setup_event_listeners() {
 		} catch (error) {
 			console.error('Error writing file:', error);
 			alert('Error writing file');
+		}
+	});
+}
+
+function setup_cli_communication() {
+	window.electron_api.on_cli_handshake((event, data) => {
+		console.log('CLI handshake completed:', data);
+		
+		const handshake_info = document.getElementById('handshake-info');
+		if (handshake_info) {
+			handshake_info.textContent = `CLI Connected - Version: ${data.version}, Time: ${data.timestamp}`;
+			handshake_info.style.color = 'green';
+		}
+	});
+	
+	window.electron_api.on_cli_spawn_error((event, error_message) => {
+		console.error('CLI spawn error:', error_message);
+		
+		const handshake_info = document.getElementById('handshake-info');
+		if (handshake_info) {
+			handshake_info.textContent = `CLI Error: ${error_message}`;
+			handshake_info.style.color = 'red';
 		}
 	});
 }
