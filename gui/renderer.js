@@ -27,6 +27,7 @@ createApp({
 			try {
 				const version = await window.electron_api.get_app_version();
 				this.app_version = `v${version}`;
+				document.title = `wow.export ${this.app_version}`;
 				
 				this.system_info.platform = window.electron_api.platform;
 				this.system_info.node_version = window.electron_api.versions.node;
@@ -35,6 +36,7 @@ createApp({
 			} catch (error) {
 				console.error('Error loading system info:', error);
 				this.app_version = 'Error loading version';
+				document.title = 'wow.export';
 			}
 		},
 		
