@@ -67,6 +67,9 @@ public partial class Log
 
 	public static void EnableAnsiColors()
 	{
+		if (!OperatingSystem.IsWindows())
+			return;
+		
 		try
 		{
 			var handle = GetStdHandle(-11); // STD_OUTPUT_HANDLE
