@@ -52,13 +52,15 @@ public static class Error
 				GpuInfo gpu = gpu_info[i];
 				crash_content.AppendLine($"GPU {i + 1}: {gpu.Name}");
 				crash_content.AppendLine($"  Vendor: {gpu.Vendor}");
+
 				if (gpu.Vram > 0)
 					crash_content.AppendLine($"  VRAM: {Utils.FormatFileSize(gpu.Vram)}");
+
 				if (!string.IsNullOrEmpty(gpu.VideoProcessor))
 					crash_content.AppendLine($"  Video Processor: {gpu.VideoProcessor}");
 			}
-			crash_content.AppendLine();
 			
+			crash_content.AppendLine();
 			crash_content.AppendLine("=== MEMORY DIAGNOSTICS ===");
 			
 			// Process memory information
