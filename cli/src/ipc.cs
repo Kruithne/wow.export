@@ -15,6 +15,8 @@ public enum IpcMessageType : uint
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Dictionary<string, object>))]
 [JsonSerializable(typeof(HandshakeResponse))]
+[JsonSerializable(typeof(HandshakeData))]
+[JsonSerializable(typeof(HandshakeVersions))]
 internal partial class IpcJsonContext : JsonSerializerContext
 {
 }
@@ -38,7 +40,21 @@ public class HandshakeResponse
 	public string timestamp { get; set; } = string.Empty;
 }
 
+public class HandshakeVersions
+{
+	public string platform { get; set; } = string.Empty;
+	public string electron { get; set; } = string.Empty;
+	public string chrome { get; set; } = string.Empty;
+	public string node { get; set; } = string.Empty;
+}
+
+public class HandshakeData
+{
+	public HandshakeVersions versions { get; set; } = new HandshakeVersions();
+}
+
 public delegate void IpcMessageHandler(IpcMessage message, IpcBinaryChunk[] binary_chunks);
+public delegate void IpcMessageHandler<T>(T data, IpcBinaryChunk[] binary_chunks);
 
 public static class IpcManager
 {
@@ -54,6 +70,30 @@ public static class IpcManager
 	public static void RegisterHandler(string message_id, IpcMessageHandler handler)
 	{
 		_handlers[message_id] = handler;
+	}
+
+	public static void RegisterHandler<T>(string message_id, IpcMessageHandler<T> handler)
+	{
+		_handlers[message_id] = (message, binary_chunks) =>
+		{
+			T? data = default;
+			if (message.data != null)
+			{
+				try
+				{
+					string data_string = message.data.ToString() ?? "null";
+					data = (T?)JsonSerializer.Deserialize(data_string, typeof(T), IpcJsonContext.Default);
+				}
+				catch (Exception ex)
+				{
+					Log.Error($"Failed to deserialize data for message '{message_id}': {ex.Message}");
+					return;
+				}
+			}
+			
+			if (data != null)
+				handler(data, binary_chunks);
+		};
 	}
 
 	public static void SendMessage(string message_id, object? data = null, IpcBinaryChunk[]? binary_chunks = null)
