@@ -188,13 +188,6 @@ public static class IpcManager
 		}
 	}
 
-	private static async Task<T> ReadStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Stream stream) where T : struct
-	{
-		int size = Marshal.SizeOf<T>();
-		byte[] bytes = new byte[size];
-		await stream.ReadExactlyAsync(bytes);
-		return BytesToStruct<T>(bytes);
-	}
 
 	private static byte[] StructToBytes<T>(T structure) where T : struct
 	{
@@ -215,22 +208,4 @@ public static class IpcManager
 		return bytes;
 	}
 
-	private static T BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(byte[] bytes) where T : struct
-	{
-		int size = Marshal.SizeOf<T>();
-		
-		if (bytes.Length != size)
-			throw new ArgumentException($"Byte array size {bytes.Length} does not match struct size {size}");
-		
-		IntPtr ptr = Marshal.AllocHGlobal(size);
-		try
-		{
-			Marshal.Copy(bytes, 0, ptr, size);
-			return Marshal.PtrToStructure<T>(ptr);
-		}
-		finally
-		{
-			Marshal.FreeHGlobal(ptr);
-		}
-	}
 }

@@ -45,10 +45,7 @@ public partial class Program
 	{
 		Version? version = Assembly.GetExecutingAssembly().GetName().Version;
 
-		if (version == null)
-			throw new InternalError("Assembly version is not available.");
-
-		return version.ToString(3);
+		return version?.ToString(3) ?? throw new InternalError("Assembly version is not available.");
 	}
 	
 	public static string GetAssemblyBuildHash()

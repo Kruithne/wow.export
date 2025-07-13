@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -9,6 +10,8 @@ namespace wow_export;
 public class InternalError(string message, object? diagnostic_info = null, [CallerFilePath] string file_path = "", [CallerLineNumber] int line_number = 0) : Exception(message)
 {
 	public string ErrorCode { get; } = $"{Path.GetFileNameWithoutExtension(file_path)}_{line_number}";
+	
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Diagnostic info is only used for debugging purposes and properties are accessed reflectively")]
 	public object? DiagnosticInfo { get; } = diagnostic_info;
 }
 
@@ -121,6 +124,7 @@ public static class Error
 		}
 	}
 	
+	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Diagnostic info properties are only accessed for debugging purposes")]
 	private static string FormatDiagnosticInfo(object diagnostic_info)
 	{
 		PropertyInfo[] properties = diagnostic_info.GetType().GetProperties();
