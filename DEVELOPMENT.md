@@ -30,11 +30,11 @@ Running all build scripts will produce a final output in `/dist/out` for the cur
 
 ```bash
 # build cli (executable)
-bun build_cli.js
+bun build_cli
 
 # build core (dynamic library)
-bun build_core.js
+bun build_core
 
 # build gui (electron application)
-bun build_gui.js
+bun build_gui
 ```
