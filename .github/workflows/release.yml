@@ -46,6 +46,13 @@ jobs:
           sed -i 's/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ github.event.inputs.version }}.0<\/AssemblyVersion>/' cli.csproj
           sed -i 's/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ github.event.inputs.version }}.0<\/FileVersion>/' cli.csproj
 
+      - name: Update Core version
+        run: |
+          cd core
+          sed -i 's/<Version>.*<\/Version>/<Version>${{ github.event.inputs.version }}<\/Version>/' core.csproj
+          sed -i 's/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ github.event.inputs.version }}.0<\/AssemblyVersion>/' core.csproj
+          sed -i 's/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ github.event.inputs.version }}.0<\/FileVersion>/' core.csproj
+
       - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"
@@ -53,7 +60,7 @@ jobs:
 
       - name: Commit version changes
         run: |
-          git add gui/package.json cli/cli.csproj
+          git add gui/package.json cli/cli.csproj core/core.csproj
           git commit -m "Release ${{ github.event.inputs.version }}"
           git push
 
@@ -94,40 +101,19 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build Core
+        run: bun build_core.js
+
       - name: Build CLI
-        run: |
-          cd cli
-          dotnet publish -c Release -r ${{ matrix.runtime }} --self-contained true
+        run: bun build_cli.js
 
       - name: Build GUI
-        run: |
-          CURRENT_YEAR=$(date +'%Y')
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.ico --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin" --win32metadata.CompanyName="Kruithne, Marlamin" --win32metadata.ProductName="wow.export"
-          elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.icns --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin"
-          else
-            bunx electron-packager ./gui wow_export --platform=${{ matrix.platform }} --arch=x64 --out=dist/ --overwrite --icon=gui/assets/icon.png --app-copyright="Copyright © $CURRENT_YEAR Kruithne, Marlamin"
-          fi
+        run: bun build_gui.js
 
-      - name: Combine CLI and GUI
+      - name: Create Release Package
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            GUI_DIR="dist/wow_export-win32-x64"
-            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
-          elif [ "${{ matrix.platform }}" = "linux" ]; then
-            GUI_DIR="dist/wow_export-linux-x64"
-            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
-          else
-            GUI_DIR="dist/wow_export-darwin-x64"
-            CLI_FILE="cli/bin/Release/net8.0/${{ matrix.runtime }}/publish/wow_export_cli${{ matrix.cli-ext }}"
-          fi
-          
-          # Copy CLI executable to GUI directory
-          cp "$CLI_FILE" "$GUI_DIR/"
-          
-          # Create the final package with underscore naming
+          # Create final package name
           if [ "${{ matrix.platform }}" = "win32" ]; then
             FINAL_NAME="wow_export_win32_x64"
           elif [ "${{ matrix.platform }}" = "linux" ]; then
@@ -136,15 +122,12 @@ jobs:
             FINAL_NAME="wow_export_darwin_x64"
           fi
           
-          # Rename directory to use underscores
-          mv "$GUI_DIR" "dist/$FINAL_NAME"
-          
-          # Create ZIP file
+          # Create ZIP file from dist/out contents
           cd dist
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            powershell Compress-Archive -Path "$FINAL_NAME" -DestinationPath "$FINAL_NAME.zip"
+            powershell Compress-Archive -Path "out/*" -DestinationPath "$FINAL_NAME.zip"
           else
-            zip -r "$FINAL_NAME.zip" "$FINAL_NAME"
+            cd out && zip -r "../$FINAL_NAME.zip" . && cd ..
           fi
 
       - name: Upload artifacts

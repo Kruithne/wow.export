@@ -18,17 +18,23 @@ cd wow.export
 bun install
 ```
 
-## Development Build
-### CLI
+## Development
 
 ```bash
-cd cli
-dotnet build # build CLI executable (required for GUI)
-dotnet run # build CLI and run directly
+electron gui # launch gui
 ```
 
-### GUI
+## Building
+
+Running all build scripts will produce a final output in `/dist/out` for the current platform. Cross-compilation is not supported.
 
 ```bash
-bunx electron ./gui
+# build cli (executable)
+bun build_cli.js
+
+# build core (dynamic library)
+bun build_core.js
+
+# build gui (electron application)
+bun build_gui.js
 ```
