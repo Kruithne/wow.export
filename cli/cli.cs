@@ -1,13 +1,29 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace wow_export;
 
-public class Program
+public partial class Program
 {
+	[LibraryImport("wow_export")]
+	private static partial nint GetCoreVersion();
+
 	public static void Main()
 	{
 		try
 		{
+			// Test core DLL loading
+			try
+			{
+				nint core_version_ptr = GetCoreVersion();
+				string core_version = Marshal.PtrToStringAnsi(core_version_ptr) ?? "Unknown";
+				Console.WriteLine($"Loaded: {core_version}");
+			}
+			catch (Exception dll_ex)
+			{
+				Console.WriteLine($"Failed to load core DLL: {dll_ex.Message}");
+			}
+
 			Log.Info($"Welcome to wow.export version {GetAssemblyVersionWithBuild()}");
 			Log.Info("Report any issues at *https://github.com/Kruithne/wow.export/issues*");
 			Log.Blank();

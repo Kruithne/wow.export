@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
+		<OutputType>Library</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -8,20 +8,17 @@
 		
 		<PublishAot>true</PublishAot>
 		<SelfContained>true</SelfContained>
-		<PublishTrimmed>true</PublishTrimmed>
-
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		
 		
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		
-		<AssemblyName>wow_export_cli</AssemblyName>
+		<AssemblyName>wow_export</AssemblyName>
 		<OutputPath>../dist/native/</OutputPath>
 
 		<Version>2.0.0</Version>
 		<AssemblyVersion>2.0.0.0</AssemblyVersion>
 		<FileVersion>2.0.0.0</FileVersion>
-		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<Company>Kruithne, Marlamin</Company>
 		<Copyright>Copyright © $([System.DateTime]::Now.ToString('yyyy')) Kruithne, Marlamin</Copyright>
 		<Product>wow.export</Product>
