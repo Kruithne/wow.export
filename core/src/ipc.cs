@@ -149,7 +149,7 @@ public static class IpcManager
 		
 		if (!_handlers.TryGetValue(message_id, out Delegate? handler))
 		{
-			Log.Error($"No handler registered for message ID: {message_id}");
+			Log.Write($"No handler registered for message ID: {message_id}");
 			return;
 		}
 		
@@ -170,7 +170,7 @@ public static class IpcManager
 				break;
 				
 			default:
-				Log.Error($"Unknown message ID: {message_id}");
+				Log.Write($"Unknown message ID: {message_id}");
 				break;
 		}
 	}
@@ -188,8 +188,8 @@ public static class IpcManager
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"IPC listener error: {ex.Message}");
-			Log.Error("IPC listener has stopped");
+			Log.Write($"IPC listener error: {ex.Message}");
+			Log.Write("IPC listener has stopped");
 		}
 	}
 

@@ -8,8 +8,8 @@ public partial class Program
 	{
 		try
 		{
-			Log.Info($"Welcome to wow.export core version {GetAssemblyVersionWithBuild()}");
-			Log.Info("Report any issues at *https://github.com/Kruithne/wow.export/issues*");
+			Log.Write($"Welcome to wow.export core version {GetAssemblyVersionWithBuild()}");
+			Log.Write("Report any issues at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 			
 			if (CLIFlags.Has(CLIFlag.HELP))
@@ -27,12 +27,12 @@ public partial class Program
 		catch (Exception ex)
 		{
 			Log.Blank();
-			Log.Error("A *fatal* error has occurred which has caused wow.export to *crash*");
-			Log.Error("Considering reporting this error at *https://github.com/Kruithne/wow.export/issues*");
+			Log.Write("A fatal error has occurred which has caused wow.export to crash");
+			Log.Write("Considering reporting this error at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 
 			string error_code = ex is InternalError internal_error ? internal_error.ErrorCode : "unknown";
-			Log.Error($"*{ex.GetType().Name}*: {ex.Message} (*{error_code}*)");
+			Log.Write($"{ex.GetType().Name}: {ex.Message} ({error_code})");
 
 			Error.CreateCrashDump(ex);
 
@@ -79,7 +79,7 @@ public partial class Program
 		string build_hash = GetAssemblyBuildHash();
 		
 		if (!string.IsNullOrEmpty(build_hash))
-			return $"*{base_version}* (build *{build_hash}*)";
+			return $"{base_version} (build {build_hash})";
 		
 		return base_version;
 	}
@@ -87,16 +87,14 @@ public partial class Program
 	private static void InitializeIpcMode()
 	{	
 		IpcManager.RegisterStringHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
-
-		Log.Info($"IPC mode initialized with *{IpcManager.GetHandlerCount()}* handlers");
 		IpcManager.StartListening();
 		
-		Log.Info("IPC listener has exited");
+		Log.Write("IPC listener has exited");
 	}
 	
 	private static void HandleHandshake(string client_version)
 	{	
-		Log.Info($"Client version: {client_version}");
+		Log.Write($"Client version: {client_version}");
 		
 		string core_version = GetCoreVersionString();
 		

@@ -20,10 +20,10 @@ public enum CLIFlag
 	[Description("Set operation mode (accepts value)")]
 	SOME_MODE,
 	
-	[Description("Select CDN region (*eu*, *us*, *kr*, *cn*, *tw*)")]
+	[Description("Select CDN region (eu, us, kr, cn, tw)")]
 	CDN_REGION,
 	
-	[Description("Set application context (*cli*, *ipc*)")]
+	[Description("Set application context (cli, ipc)")]
 	CONTEXT
 }
 
@@ -88,19 +88,19 @@ public static class CLIFlags
 	
 	public static void PrintHelp()
 	{
-		Log.Info("Flags:", "HELP");
+		Log.Write("Flags:");
 		
 		foreach (CLIFlag flag in Enum.GetValues<CLIFlag>())
 		{
 			string flag_name = GetFlagName(flag);
 			string description = GetFlagDescription(flag);
 			
-			string formatted_flag = $"  *--{flag_name}*";
+			string formatted_flag = $"  --{flag_name}";
 			
 			int padding = Math.Max(25 - formatted_flag.Length + 2, 2);
 			string spaces = new(' ', padding);
 			
-			Log.Info($"{formatted_flag}{spaces}{description}", "HELP");
+			Log.Write($"{formatted_flag}{spaces}{description}");
 		}
 		
 		Log.Blank();

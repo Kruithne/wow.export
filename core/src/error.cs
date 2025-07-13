@@ -113,11 +113,11 @@ public static class Error
 			crash_content.AppendLine();
 			
 			File.WriteAllText(crash_file_path, crash_content.ToString());
-			Log.Error($"Created crash dump file *{crash_file_path}*");
+			Log.Write($"Created crash dump file {crash_file_path}");
 		}
 		catch
 		{
-			Log.Error("Crash dump generation failed");
+			Log.Write("Crash dump generation failed");
 		}
 	}
 	

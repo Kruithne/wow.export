@@ -18,7 +18,7 @@ public class Log
 		}
 	}
 	
-	private static void WriteLog(string message)
+	public static void Write(string message)
 	{
 		try
 		{
@@ -30,48 +30,9 @@ public class Log
 		}
 	}
 
-	public static Action<string, string?> CreateLogger(string default_prefix)
-	{
-		return (message, custom_prefix) =>
-		{
-			string actual_prefix = custom_prefix != null ? PadPrefix(custom_prefix) : default_prefix;
-			WriteLog($" {actual_prefix}  {message}");
-		};
-	}
-
-	private static readonly Action<string, string?> _info_logger = CreateLogger("INFO");
-	private static readonly Action<string, string?> _success_logger = CreateLogger("DONE");
-	private static readonly Action<string, string?> _error_logger = CreateLogger("ERR!");
-	private static readonly Action<string, string?> _warn_logger = CreateLogger("WARN");
-
-	private static string PadPrefix(string prefix)
-	{
-		return prefix.Length >= 4 ? prefix : prefix.PadRight(4);
-	}
-
-	public static void Info(string message, string? custom_prefix = null)
-	{
-		_info_logger(message, custom_prefix);
-	}
-
-	public static void Success(string message, string? custom_prefix = null)
-	{
-		_success_logger(message, custom_prefix);
-	}
-
-	public static void Error(string message, string? custom_prefix = null)
-	{
-		_error_logger(message, custom_prefix);
-	}
-
-	public static void Warn(string message, string? custom_prefix = null)
-	{
-		_warn_logger(message, custom_prefix);
-	}
-
 	public static void Blank()
 	{
-		WriteLog(string.Empty);
+		Write(string.Empty);
 	}
 }
 
