@@ -105,11 +105,6 @@ public static class IpcManager
 {
 	private static readonly Dictionary<IpcMessageId, Delegate> _handlers = [];
 
-	public static int GetHandlerCount()
-	{
-		return _handlers.Count;
-	}
-
 	public static void RegisterHandler<T>(IpcMessageId message_id, IpcBinaryMessageHandler<T> handler) where T : struct
 	{
 		_handlers[message_id] = handler;
