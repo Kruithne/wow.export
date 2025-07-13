@@ -215,17 +215,11 @@ ipcMain.handle('get-app-version', () => {
 
 function spawn_cli_process() {
 	let cli_path;
-	let platform_arch;
 	
 	if (process.platform === 'win32') {
-		platform_arch = 'win-x64';
-		cli_path = path.join(__dirname, '..', 'dist', 'cli', 'net8.0', platform_arch, 'wow_export_cli.exe');
-	} else if (process.platform === 'darwin') {
-		platform_arch = 'osx-x64';
-		cli_path = path.join(__dirname, '..', 'dist', 'cli', 'net8.0', platform_arch, 'wow_export_cli');
+		cli_path = 'wow_export_cli.exe';
 	} else {
-		platform_arch = 'linux-x64';
-		cli_path = path.join(__dirname, '..', 'dist', 'cli', 'net8.0', platform_arch, 'wow_export_cli');
+		cli_path = 'wow_export_cli';
 	}
 	
 	console.log('Spawning CLI process:', cli_path);
