@@ -1,0 +1,101 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
+
+namespace wow_export;
+
+public class CliIpcClient(Process process)
+{
+	private readonly Process _process = process;
+	private readonly Dictionary<IpcMessageId, Delegate> _handlers = [];
+
+	public void RegisterHandler<T>(IpcMessageId message_id, IpcBinaryMessageHandler<T> handler) where T : struct
+	{
+		_handlers[message_id] = handler;
+	}
+
+	public void SendMessage<T>(IpcMessageId message_id, T header) where T : struct
+	{
+		Stream stdin = _process.StandardInput.BaseStream;
+		IpcManager.SendMessage(stdin, message_id, header);
+	}
+
+	public async Task StartListening()
+	{
+		try
+		{
+			using Stream stdout = _process.StandardOutput.BaseStream;
+			while (!_process.HasExited)
+			{
+				await ReadAndDispatchMessage(stdout);
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"IPC client listener error: {ex.Message}");
+		}
+	}
+
+	private async Task ReadAndDispatchMessage(Stream stream)
+	{
+		byte[] id_bytes = new byte[4];
+		await stream.ReadExactlyAsync(id_bytes);
+		
+		uint message_id_raw = BitConverter.ToUInt32(id_bytes);
+		IpcMessageId message_id = (IpcMessageId)message_id_raw;
+		
+		if (!_handlers.TryGetValue(message_id, out Delegate? handler))
+		{
+			Log.Error($"No handler registered for message ID: {message_id}");
+			return;
+		}
+		
+		switch (message_id)
+		{
+			case IpcMessageId.HANDSHAKE_REQUEST:
+				{
+					HandshakeRequestHeader header = await ReadStruct<HandshakeRequestHeader>(stream);
+					((IpcBinaryMessageHandler<HandshakeRequestHeader>)handler)(header);
+				}
+				break;
+				
+			case IpcMessageId.HANDSHAKE_RESPONSE:
+				{
+					HandshakeResponseHeader header = await ReadStruct<HandshakeResponseHeader>(stream);
+					((IpcBinaryMessageHandler<HandshakeResponseHeader>)handler)(header);
+				}
+				break;
+				
+			default:
+				Log.Error($"Unknown message ID: {message_id}");
+				break;
+		}
+	}
+
+	private static async Task<T> ReadStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Stream stream) where T : struct
+	{
+		int size = Marshal.SizeOf<T>();
+		byte[] bytes = new byte[size];
+		await stream.ReadExactlyAsync(bytes);
+		return BytesToStruct<T>(bytes);
+	}
+
+	private static T BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(byte[] bytes) where T : struct
+	{
+		int size = Marshal.SizeOf<T>();
+		
+		if (bytes.Length != size)
+			throw new ArgumentException($"Byte array size {bytes.Length} does not match struct size {size}");
+		
+		IntPtr ptr = Marshal.AllocHGlobal(size);
+		try
+		{
+			Marshal.Copy(bytes, 0, ptr, size);
+			return Marshal.PtrToStructure<T>(ptr);
+		}
+		finally
+		{
+			Marshal.FreeHGlobal(ptr);
+		}
+	}
+}

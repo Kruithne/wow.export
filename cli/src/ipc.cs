@@ -1,271 +1,225 @@
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace wow_export;
 
-public enum IpcMessageType : uint
+public enum IpcMessageId : uint
 {
-	JSON = 0x4A534F4E,
-	CBIN = 0x4342494E
+	HANDSHAKE_REQUEST = 1,
+	HANDSHAKE_RESPONSE = 2,
 }
 
-[JsonSerializable(typeof(IpcMessage))]
-[JsonSerializable(typeof(object))]
-[JsonSerializable(typeof(string[]))]
-[JsonSerializable(typeof(Dictionary<string, object>))]
-[JsonSerializable(typeof(HandshakeResponse))]
-[JsonSerializable(typeof(HandshakeData))]
-[JsonSerializable(typeof(HandshakeVersions))]
-internal partial class IpcJsonContext : JsonSerializerContext
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct HandshakeRequestHeader
 {
-}
-
-public class IpcMessage
-{
-	public string id { get; set; } = string.Empty;
-	public object? data { get; set; }
-	public string[]? cbin { get; set; }
-}
-
-public class IpcBinaryChunk
-{
-	public string uuid { get; set; } = string.Empty;
-	public byte[] data { get; set; } = [];
-}
-
-public class HandshakeResponse
-{
-	public string version { get; set; } = string.Empty;
-	public string timestamp { get; set; } = string.Empty;
-}
-
-public class HandshakeVersions
-{
-	public string platform { get; set; } = string.Empty;
-	public string electron { get; set; } = string.Empty;
-	public string chrome { get; set; } = string.Empty;
-	public string node { get; set; } = string.Empty;
-}
-
-public class HandshakeData
-{
-	public HandshakeVersions versions { get; set; } = new HandshakeVersions();
-}
-
-public delegate void IpcMessageHandler(IpcMessage message, IpcBinaryChunk[] binary_chunks);
-
-public class CliIpcClient
-{
-	private readonly Process _process;
-	private readonly Dictionary<string, IpcMessageHandler> _handlers = [];
-	private readonly Dictionary<string, IpcBinaryChunk> _pending_binaries = [];
-	private readonly Dictionary<string, (IpcMessage message, List<string> awaiting_uuids)> _pending_messages = [];
-
-	public CliIpcClient(Process process)
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+	public byte[] platform;
+	
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+	public byte[] electron_version;
+	
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+	public byte[] chrome_version;
+	
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+	public byte[] node_version;
+	
+	public long timestamp;
+	
+	public static HandshakeRequestHeader Create(string platform_str, string electron_str, string chrome_str, string node_str)
 	{
-		_process = process;
+		HandshakeRequestHeader header = new()
+		{
+			platform = new byte[64],
+			electron_version = new byte[32],
+			chrome_version = new byte[32],
+			node_version = new byte[32],
+			timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+		};
+		
+		IpcStructHelper.CopyStringToByteArray(platform_str, header.platform);
+		IpcStructHelper.CopyStringToByteArray(electron_str, header.electron_version);
+		IpcStructHelper.CopyStringToByteArray(chrome_str, header.chrome_version);
+		IpcStructHelper.CopyStringToByteArray(node_str, header.node_version);
+		
+		return header;
+	}
+	
+	public string GetPlatform() => IpcStructHelper.GetStringFromByteArray(platform);
+	public string GetElectronVersion() => IpcStructHelper.GetStringFromByteArray(electron_version);
+	public string GetChromeVersion() => IpcStructHelper.GetStringFromByteArray(chrome_version);
+	public string GetNodeVersion() => IpcStructHelper.GetStringFromByteArray(node_version);
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct HandshakeResponseHeader
+{
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+	public byte[] version;
+	
+	public long timestamp;
+	
+	public static HandshakeResponseHeader Create(string version_str)
+	{
+		HandshakeResponseHeader header = new()
+		{
+			version = new byte[32],
+			timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+		};
+		
+		IpcStructHelper.CopyStringToByteArray(version_str, header.version);
+		
+		return header;
+	}
+	
+	public string GetVersion() => IpcStructHelper.GetStringFromByteArray(version);
+}
+
+public static class IpcStructHelper
+{
+	public static void CopyStringToByteArray(string str, byte[] array)
+	{
+		if (string.IsNullOrEmpty(str))
+			return;
+			
+		byte[] str_bytes = Encoding.UTF8.GetBytes(str);
+		int copy_length = Math.Min(str_bytes.Length, array.Length - 1);
+		Array.Copy(str_bytes, array, copy_length);
+		array[copy_length] = 0; // null terminator
+	}
+	
+	public static string GetStringFromByteArray(byte[] array)
+	{
+		int null_index = Array.IndexOf(array, (byte)0);
+		int length = null_index >= 0 ? null_index : array.Length;
+		return Encoding.UTF8.GetString(array, 0, length);
+	}
+}
+
+public delegate void IpcBinaryMessageHandler<T>(T header) where T : struct;
+
+public static class IpcManager
+{
+	private static readonly Dictionary<IpcMessageId, Delegate> _handlers = [];
+
+	public static int GetHandlerCount()
+	{
+		return _handlers.Count;
 	}
 
-	public void RegisterHandler(string message_id, IpcMessageHandler handler)
+	public static void RegisterHandler<T>(IpcMessageId message_id, IpcBinaryMessageHandler<T> handler) where T : struct
 	{
 		_handlers[message_id] = handler;
 	}
 
-	public void SendMessage(string message_id, object? data = null, IpcBinaryChunk[]? binary_chunks = null)
+	public static void SendMessage<T>(Stream stream, IpcMessageId message_id, T header) where T : struct
 	{
-		IpcMessage message = new IpcMessage
-		{
-			id = message_id,
-			data = data
-		};
-
-		if (binary_chunks != null && binary_chunks.Length > 0)
-		{
-			message.cbin = binary_chunks.Select(chunk => chunk.uuid).ToArray();
-		}
-
-		string json_string = JsonSerializer.Serialize(message, IpcJsonContext.Default.IpcMessage);
-		byte[] json_bytes = Encoding.UTF8.GetBytes(json_string);
-
-		WriteMessage(IpcMessageType.JSON, json_bytes);
-
-		if (binary_chunks != null)
-		{
-			foreach (IpcBinaryChunk chunk in binary_chunks)
-			{
-				byte[] uuid_bytes = Encoding.UTF8.GetBytes(chunk.uuid);
-				byte[] combined_data = new byte[uuid_bytes.Length + chunk.data.Length];
-				Array.Copy(uuid_bytes, 0, combined_data, 0, uuid_bytes.Length);
-				Array.Copy(chunk.data, 0, combined_data, uuid_bytes.Length, chunk.data.Length);
-				WriteMessage(IpcMessageType.CBIN, combined_data);
-			}
-		}
-	}
-
-	public async Task StartListening()
-	{
-		try
-		{
-			using Stream stdout = _process.StandardOutput.BaseStream;
-			while (!_process.HasExited)
-			{
-				await ReadMessage(stdout);
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.Error($"IPC client listener error: {ex.Message}");
-		}
-	}
-
-	private void WriteMessage(IpcMessageType type, byte[] data)
-	{
-		Stream stdin = _process.StandardInput.BaseStream;
+		byte[] id_bytes = BitConverter.GetBytes((uint)message_id);
+		byte[] header_bytes = StructToBytes(header);
 		
-		byte[] type_bytes = BitConverter.GetBytes((uint)type);
-		byte[] length_bytes = BitConverter.GetBytes((uint)data.Length);
-		
-		stdin.Write(type_bytes);
-		stdin.Write(length_bytes);
-		stdin.Write(data);
-		stdin.Flush();
+		stream.Write(id_bytes);
+		stream.Write(header_bytes);
+		stream.Flush();
 	}
 
-	private async Task ReadMessage(Stream stream)
+	public static async Task ReadAndDispatchMessage(Stream stream)
 	{
-		byte[] header = new byte[8];
-		await stream.ReadExactlyAsync(header);
-
-		uint type_raw = BitConverter.ToUInt32(header, 0);
-		uint length = BitConverter.ToUInt32(header, 4);
-
-		byte[] payload = new byte[length];
-		await stream.ReadExactlyAsync(payload);
-
-		IpcMessageType message_type = (IpcMessageType)type_raw;
-
-		switch (message_type)
+		byte[] id_bytes = new byte[4];
+		await stream.ReadExactlyAsync(id_bytes);
+		
+		uint message_id_raw = BitConverter.ToUInt32(id_bytes);
+		IpcMessageId message_id = (IpcMessageId)message_id_raw;
+		
+		if (!_handlers.TryGetValue(message_id, out Delegate? handler))
 		{
-			case IpcMessageType.JSON:
-				HandleJsonMessage(payload);
+			Log.Error($"No handler registered for message ID: {message_id}");
+			return;
+		}
+		
+		switch (message_id)
+		{
+			case IpcMessageId.HANDSHAKE_REQUEST:
+				{
+					HandshakeRequestHeader header = await ReadStruct<HandshakeRequestHeader>(stream);
+					((IpcBinaryMessageHandler<HandshakeRequestHeader>)handler)(header);
+				}
 				break;
-
-			case IpcMessageType.CBIN:
-				HandleBinaryMessage(payload);
+				
+			case IpcMessageId.HANDSHAKE_RESPONSE:
+				{
+					HandshakeResponseHeader header = await ReadStruct<HandshakeResponseHeader>(stream);
+					((IpcBinaryMessageHandler<HandshakeResponseHeader>)handler)(header);
+				}
 				break;
 				
 			default:
-				Log.Error($"Unknown IPC message type: {type_raw:X8}");
+				Log.Error($"Unknown message ID: {message_id}");
 				break;
 		}
 	}
 
-	private void HandleJsonMessage(byte[] payload)
+	public static void StartListening()
 	{
-		try
-		{
-			string json_string = Encoding.UTF8.GetString(payload);
-			IpcMessage? message = JsonSerializer.Deserialize(json_string, IpcJsonContext.Default.IpcMessage);
-
-			if (message?.id == null)
-			{
-				Log.Error("Received JSON message without ID");
-				return;
-			}
-
-			if (message.cbin == null || message.cbin.Length == 0)
-			{
-				ProcessMessage(message, []);
-			}
-			else
-			{
-				string message_key = Guid.NewGuid().ToString();
-				_pending_messages[message_key] = (message, message.cbin.ToList());
-				CheckPendingMessage(message_key);
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.Error($"Error processing JSON message: {ex.Message}");
-		}
-	}
-
-	private void HandleBinaryMessage(byte[] payload)
-	{
-		try
-		{
-			string uuid = Encoding.UTF8.GetString(payload, 0, 36);
-			byte[] binary_data = payload[36..];
-
-			IpcBinaryChunk chunk = new IpcBinaryChunk
-			{
-				uuid = uuid,
-				data = binary_data
-			};
-
-			_pending_binaries[uuid] = chunk;
-			CheckAllPendingMessages();
-		}
-		catch (Exception ex)
-		{
-			Log.Error($"Error processing binary message: {ex.Message}");
-		}
-	}
-
-	private void CheckAllPendingMessages()
-	{
-		foreach (string message_key in _pending_messages.Keys.ToArray())
-		{
-			CheckPendingMessage(message_key);
-		}
-	}
-
-	private void CheckPendingMessage(string message_key)
-	{
-		if (!_pending_messages.TryGetValue(message_key, out var pending))
+		if (CLIFlags.GetContext() != CLIContext.IPC)
 			return;
 
-		(IpcMessage message, List<string> awaiting_uuids) = pending;
-
-		awaiting_uuids.RemoveAll(_pending_binaries.ContainsKey);
-
-		if (awaiting_uuids.Count == 0)
+		try
 		{
-			IpcBinaryChunk[] binary_chunks = message.cbin?
-				.Where(_pending_binaries.ContainsKey)
-				.Select(uuid => _pending_binaries[uuid])
-				.ToArray() ?? [];
-
-			ProcessMessage(message, binary_chunks);
-
-			if (message.cbin != null)
-			{
-				foreach (string uuid in message.cbin)
-					_pending_binaries.Remove(uuid);
-			}
-
-			_pending_messages.Remove(message_key);
+			using Stream stdin = Console.OpenStandardInput();
+			while (true)
+				ReadAndDispatchMessage(stdin).Wait();
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"IPC listener error: {ex.Message}");
+			Log.Error("IPC listener has stopped");
 		}
 	}
 
-	private void ProcessMessage(IpcMessage message, IpcBinaryChunk[] binary_chunks)
+	private static async Task<T> ReadStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Stream stream) where T : struct
 	{
-		if (_handlers.TryGetValue(message.id, out IpcMessageHandler? handler))
+		int size = Marshal.SizeOf<T>();
+		byte[] bytes = new byte[size];
+		await stream.ReadExactlyAsync(bytes);
+		return BytesToStruct<T>(bytes);
+	}
+
+	private static byte[] StructToBytes<T>(T structure) where T : struct
+	{
+		int size = Marshal.SizeOf<T>();
+		byte[] bytes = new byte[size];
+		
+		IntPtr ptr = Marshal.AllocHGlobal(size);
+		try
 		{
-			try
-			{
-				handler(message, binary_chunks);
-			}
-			catch (Exception ex)
-			{
-				Log.Error($"Error in message handler for '{message.id}': {ex.Message}");
-			}
+			Marshal.StructureToPtr(structure, ptr, false);
+			Marshal.Copy(ptr, bytes, 0, size);
 		}
-		else
+		finally
 		{
-			Log.Error($"No handler registered for message ID: {message.id}");
+			Marshal.FreeHGlobal(ptr);
+		}
+		
+		return bytes;
+	}
+
+	private static T BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(byte[] bytes) where T : struct
+	{
+		int size = Marshal.SizeOf<T>();
+		
+		if (bytes.Length != size)
+			throw new ArgumentException($"Byte array size {bytes.Length} does not match struct size {size}");
+		
+		IntPtr ptr = Marshal.AllocHGlobal(size);
+		try
+		{
+			Marshal.Copy(bytes, 0, ptr, size);
+			return Marshal.PtrToStructure<T>(ptr);
+		}
+		finally
+		{
+			Marshal.FreeHGlobal(ptr);
 		}
 	}
 }

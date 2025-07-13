@@ -1,7 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
 
 namespace wow_export;
 
@@ -107,7 +105,7 @@ public partial class Program
 		core_process.Start();
 		
 		ipc_client = new CliIpcClient(core_process);
-		ipc_client.RegisterHandler("HANDSHAKE_RESPONSE", HandleHandshakeResponse);
+		ipc_client.RegisterHandler<HandshakeResponseHeader>(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -116,37 +114,22 @@ public partial class Program
 	
 	private static void SendHandshake()
 	{
-		string test_value = Guid.NewGuid().ToString();
-		Log.Info($"Sending handshake to core with test value: {test_value}");
+		Log.Info("Sending handshake to core");
 		
-		HandshakeData handshake_data = new HandshakeData
-		{
-			versions = new HandshakeVersions
-			{
-				platform = Environment.OSVersion.Platform.ToString(),
-				electron = "N/A",
-				chrome = "N/A", 
-				node = "N/A"
-			}
-		};
+		HandshakeRequestHeader handshake_request = HandshakeRequestHeader.Create(
+			Environment.OSVersion.Platform.ToString(),
+			"N/A", // electron version
+			"N/A", // chrome version  
+			"N/A"  // node version
+		);
 		
-		ipc_client?.SendMessage("HANDSHAKE", handshake_data);
+		ipc_client?.SendMessage(IpcMessageId.HANDSHAKE_REQUEST, handshake_request);
 	}
 	
-	private static void HandleHandshakeResponse(IpcMessage message, IpcBinaryChunk[] binary_chunks)
+	private static void HandleHandshakeResponse(HandshakeResponseHeader response)
 	{
 		Log.Info("Received handshake response from core");
-		
-		if (message.data != null)
-		{
-			string data_string = message.data.ToString() ?? "null";
-			HandshakeResponse? response = JsonSerializer.Deserialize<HandshakeResponse>(data_string);
-			
-			if (response != null)
-			{
-				Log.Info($"Core version: {response.version}");
-				Log.Info($"Handshake timestamp: {response.timestamp}");
-			}
-		}
+		Log.Info($"Core version: {response.GetVersion()}");
+		Log.Info($"Handshake timestamp: {DateTimeOffset.FromUnixTimeSeconds(response.timestamp)}");
 	}
 }

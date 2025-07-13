@@ -11,7 +11,7 @@ createApp({
 				electron_version: 'Loading...'
 			},
 			cli_status: {
-				message: 'Connecting to CLI...',
+				message: 'Connecting to Core...',
 				color: 'orange'
 			}
 		};
@@ -43,13 +43,13 @@ createApp({
 		setup_cli_communication() {
 			window.electron_api.on_cli_handshake((_, data) => {
 				console.log('CLI handshake completed:', data);
-				this.cli_status.message = `CLI Connected - Version: ${data.version}, Time: ${data.timestamp}`;
+				this.cli_status.message = `Core Connected - Version: ${data.version}, Time: ${data.timestamp}`;
 				this.cli_status.color = 'green';
 			});
 			
 			window.electron_api.on_cli_spawn_error((_, error_message) => {
-				console.error('CLI spawn error:', error_message);
-				this.cli_status.message = `CLI Error: ${error_message}`;
+				console.error('Core spawn error:', error_message);
+				this.cli_status.message = `Core Error: ${error_message}`;
 				this.cli_status.color = 'red';
 			});
 		}

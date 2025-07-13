@@ -3,168 +3,240 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
-const MESSAGE_TYPE_JSON = 0x4A534F4E;
-const MESSAGE_TYPE_CBIN = 0x4342494E;
+const IpcMessageId = {
+	HANDSHAKE_REQUEST: 1,
+	HANDSHAKE_RESPONSE: 2
+};
 
 let main_window;
 let cli_process;
 let cli_ipc_client;
 
-class CliIpcClient {
+class CliBinaryIpcClient {
 	constructor() {
 		this.handlers = {};
-		this.pending_binaries = {};
-		this.pending_messages = {};
+		this.buffer = Buffer.alloc(0);
 	}
 	
 	register_handler(message_id, handler) {
 		this.handlers[message_id] = handler;
 	}
 	
-	send_message(message_id, data = null, binary_chunks = null) {
-		const message = {
-			id: message_id,
-			data: data
-		};
-		
-		if (binary_chunks && binary_chunks.length > 0) {
-			message.cbin = binary_chunks.map(chunk => chunk.uuid);
-		}
-		
-		const json_string = JSON.stringify(message);
-		const json_bytes = Buffer.from(json_string, 'utf-8');
-		
-		this.write_message(MESSAGE_TYPE_JSON, json_bytes);
-		
-		if (binary_chunks) {
-			for (const chunk of binary_chunks) {
-				this.write_message(MESSAGE_TYPE_CBIN, chunk.data);
-			}
-		}
+	send_handshake_request(platform, electron_version, chrome_version, node_version) {
+		console.log('Creating handshake request header...');
+		const header = this.create_handshake_request_header(platform, electron_version, chrome_version, node_version);
+		console.log('Handshake header created, size:', header.length);
+		console.log('Sending handshake request message ID:', IpcMessageId.HANDSHAKE_REQUEST);
+		this.send_message(IpcMessageId.HANDSHAKE_REQUEST, header);
 	}
 	
-	write_message(type, data) {
-		console.log(`Sending message: type=0x${type.toString(16)}, length=${data.length}`);
+	send_message(message_id, header_buffer) {
+		console.log(`Sending binary message: id=${message_id}, header_size=${header_buffer.length}`);
 		
-		const type_buffer = Buffer.alloc(4);
-		type_buffer.writeUInt32LE(type, 0);
+		const id_buffer = Buffer.alloc(4);
+		id_buffer.writeUInt32LE(message_id, 0);
 		
-		const length_buffer = Buffer.alloc(4);
-		length_buffer.writeUInt32LE(data.length, 0);
+		console.log('Message ID buffer (hex):', id_buffer.toString('hex'));
+		console.log('Header buffer (first 32 bytes):', header_buffer.slice(0, 32).toString('hex'));
 		
-		console.log(`Header bytes: ${Buffer.concat([type_buffer, length_buffer]).toString('hex')}`);
+		cli_process.stdin.write(id_buffer);
+		cli_process.stdin.write(header_buffer);
 		
-		cli_process.stdin.write(type_buffer);
-		cli_process.stdin.write(length_buffer);
-		cli_process.stdin.write(data);
+		console.log('Message sent to core process');
 	}
 	
 	handle_stdout_data(data) {
-		if (data.length >= 8) {
-			const type = data.readUInt32LE(0);
-			const length = data.readUInt32LE(4);
+		console.log('Received data from core:', data.length, 'bytes');
+		console.log('Data (hex):', data.toString('hex'));
+		
+		this.buffer = Buffer.concat([this.buffer, data]);
+		console.log('Total buffer size:', this.buffer.length);
+		
+		while (this.buffer.length >= 4) {
+			const message_id = this.buffer.readUInt32LE(0);
+			console.log('Parsed message ID:', message_id);
 			
-			console.log(`Received header: type=0x${type.toString(16)}, length=${length}`);
+			const header_size = this.get_header_size(message_id);
+			console.log('Expected header size:', header_size);
 			
-			if (data.length >= 8 + length) {
-				const payload = data.slice(8, 8 + length);
-				
-				if (type === MESSAGE_TYPE_JSON) {
-					this.handle_json_message(payload);
-				} else if (type === MESSAGE_TYPE_CBIN) {
-					this.handle_binary_message(payload);
-				}
+			if (header_size === 0) {
+				console.error(`Unknown message ID: ${message_id}`);
+				console.log('Buffer contents (hex):', this.buffer.slice(0, Math.min(16, this.buffer.length)).toString('hex'));
+				this.buffer = this.buffer.slice(4);
+				continue;
 			}
+			
+			if (this.buffer.length < 4 + header_size) {
+				console.log('Waiting for more data. Have:', this.buffer.length, 'Need:', 4 + header_size);
+				break; // Wait for more data
+			}
+			
+			const header_buffer = this.buffer.slice(4, 4 + header_size);
+			this.buffer = this.buffer.slice(4 + header_size);
+			
+			console.log('Dispatching message ID:', message_id, 'with header size:', header_buffer.length);
+			this.dispatch_message(message_id, header_buffer);
 		}
 	}
 	
-	handle_json_message(payload) {
+	get_header_size(message_id) {
+		switch (message_id) {
+			case IpcMessageId.HANDSHAKE_REQUEST:
+				return 64 + 32 + 32 + 32 + 8;
+			case IpcMessageId.HANDSHAKE_RESPONSE:
+				return 32 + 8;
+			default:
+				return 0;
+		}
+	}
+	
+	dispatch_message(message_id, header_buffer) {
+		console.log('Attempting to dispatch message ID:', message_id);
+		
+		if (!this.handlers[message_id]) {
+			console.error(`No handler registered for message ID: ${message_id}`);
+			console.log('Available handlers:', Object.keys(this.handlers));
+			return;
+		}
+		
 		try {
-			const json_string = payload.toString('utf-8');
-			const message = JSON.parse(json_string);
-			
-			if (!message.id) {
-				console.error('Received JSON message without ID');
-				return;
-			}
-			
-			console.log('Received JSON message:', message);
-			
-			if (!message.cbin || message.cbin.length === 0) {
-				this.process_message(message, []);
-			} else {
-				const message_key = Math.random().toString(36).substr(2, 9);
-				this.pending_messages[message_key] = {
-					message: message,
-					awaiting_uuids: [...message.cbin]
-				};
-				this.check_pending_message(message_key);
+			switch (message_id) {
+				case IpcMessageId.HANDSHAKE_REQUEST:
+					{
+						console.log('Parsing handshake request header...');
+						const header = this.parse_handshake_request_header(header_buffer);
+						console.log('Parsed handshake request:', header);
+						this.handlers[message_id](header);
+					}
+					break;
+				case IpcMessageId.HANDSHAKE_RESPONSE:
+					{
+						console.log('Parsing handshake response header...');
+						const header = this.parse_handshake_response_header(header_buffer);
+						console.log('Parsed handshake response:', header);
+						this.handlers[message_id](header);
+					}
+					break;
+				default:
+					console.error(`Unknown message ID in dispatch: ${message_id}`);
+					break;
 			}
 		} catch (error) {
-			console.error('Error processing JSON message:', error);
+			console.error(`Error in message handler for '${message_id}':`, error);
+			console.error('Error stack:', error.stack);
 		}
 	}
 	
-	handle_binary_message(payload) {
-		try {
-			const uuid = payload.slice(0, 36).toString('utf-8');
-			const binary_data = payload.slice(36);
-			
-			const chunk = {
-				uuid: uuid,
-				data: binary_data
-			};
-			
-			this.pending_binaries[uuid] = chunk;
-			this.check_all_pending_messages();
-		} catch (error) {
-			console.error('Error processing binary message:', error);
-		}
-	}
-	
-	check_all_pending_messages() {
-		for (const message_key of Object.keys(this.pending_messages)) {
-			this.check_pending_message(message_key);
-		}
-	}
-	
-	check_pending_message(message_key) {
-		const pending = this.pending_messages[message_key];
-		if (!pending) return;
+	create_handshake_request_header(platform, electron_version, chrome_version, node_version) {
+		console.log('Creating handshake request with:', { platform, electron_version, chrome_version, node_version });
 		
-		pending.awaiting_uuids = pending.awaiting_uuids.filter(uuid => 
-			!this.pending_binaries[uuid]
-		);
+		const header = Buffer.alloc(64 + 32 + 32 + 32 + 8);
+		let offset = 0;
 		
-		if (pending.awaiting_uuids.length === 0) {
-			const binary_chunks = pending.message.cbin
-				? pending.message.cbin
-					.filter(uuid => this.pending_binaries[uuid])
-					.map(uuid => this.pending_binaries[uuid])
-				: [];
-			
-			this.process_message(pending.message, binary_chunks);
-			
-			if (pending.message.cbin) {
-				for (const uuid of pending.message.cbin) {
-					delete this.pending_binaries[uuid];
-				}
-			}
-			
-			delete this.pending_messages[message_key];
-		}
+		// platform (64 bytes)
+		console.log('Writing platform at offset:', offset);
+		this.copy_string_to_buffer(platform, header, offset, 64);
+		offset += 64;
+		
+		// electron_version (32 bytes)
+		console.log('Writing electron_version at offset:', offset);
+		this.copy_string_to_buffer(electron_version, header, offset, 32);
+		offset += 32;
+		
+		// chrome_version (32 bytes)
+		console.log('Writing chrome_version at offset:', offset);
+		this.copy_string_to_buffer(chrome_version, header, offset, 32);
+		offset += 32;
+		
+		// node_version (32 bytes)
+		console.log('Writing node_version at offset:', offset);
+		this.copy_string_to_buffer(node_version, header, offset, 32);
+		offset += 32;
+		
+		// timestamp (8 bytes)
+		const timestamp = Math.floor(Date.now() / 1000);
+		console.log('Writing timestamp at offset:', offset, 'value:', timestamp);
+		header.writeBigInt64LE(BigInt(timestamp), offset);
+		
+		console.log('Created header with total size:', header.length);
+		return header;
 	}
 	
-	process_message(message, binary_chunks) {
-		if (this.handlers[message.id]) {
-			try {
-				this.handlers[message.id](message, binary_chunks);
-			} catch (error) {
-				console.error(`Error in message handler for '${message.id}':`, error);
-			}
-		} else {
-			console.error(`No handler registered for message ID: ${message.id}`);
+	parse_handshake_response_header(buffer) {
+		console.log('Parsing handshake response, buffer size:', buffer.length);
+		console.log('Buffer (hex):', buffer.toString('hex'));
+		
+		let offset = 0;
+		
+		// version (32 bytes)
+		console.log('Reading version at offset:', offset);
+		const version = this.get_string_from_buffer(buffer, offset, 32);
+		console.log('Parsed version:', version);
+		offset += 32;
+		
+		// timestamp (8 bytes)
+		console.log('Reading timestamp at offset:', offset);
+		const timestamp = buffer.readBigInt64LE(offset);
+		console.log('Parsed timestamp (raw):', timestamp);
+		
+		const result = {
+			version: version,
+			timestamp: Number(timestamp)
+		};
+		
+		console.log('Final parsed handshake response:', result);
+		return result;
+	}
+	
+	parse_handshake_request_header(buffer) {
+		let offset = 0;
+		
+		// platform (64 bytes)
+		const platform = this.get_string_from_buffer(buffer, offset, 64);
+		offset += 64;
+		
+		// electron_version (32 bytes)
+		const electron_version = this.get_string_from_buffer(buffer, offset, 32);
+		offset += 32;
+		
+		// chrome_version (32 bytes)
+		const chrome_version = this.get_string_from_buffer(buffer, offset, 32);
+		offset += 32;
+		
+		// node_version (32 bytes)
+		const node_version = this.get_string_from_buffer(buffer, offset, 32);
+		offset += 32;
+		
+		// timestamp (8 bytes)
+		const timestamp = buffer.readBigInt64LE(offset);
+		
+		return {
+			platform: platform,
+			electron_version: electron_version,
+			chrome_version: chrome_version,
+			node_version: node_version,
+			timestamp: Number(timestamp)
+		};
+	}
+	
+	copy_string_to_buffer(str, buffer, offset, max_length) {
+		if (!str) return;
+		
+		const str_bytes = Buffer.from(str, 'utf8');
+		const copy_length = Math.min(str_bytes.length, max_length - 1);
+		str_bytes.copy(buffer, offset, 0, copy_length);
+		buffer[offset + copy_length] = 0; // null terminator
+	}
+	
+	get_string_from_buffer(buffer, offset, max_length) {
+		const end_offset = offset + max_length;
+		let null_index = buffer.indexOf(0, offset);
+		
+		if (null_index === -1 || null_index >= end_offset) {
+			null_index = end_offset;
 		}
+		
+		return buffer.slice(offset, null_index).toString('utf8');
 	}
 }
 
@@ -236,16 +308,28 @@ function spawn_cli_process() {
 		stdio: ['pipe', 'pipe', 'pipe']
 	});
 	
-	cli_ipc_client = new CliIpcClient();
+	cli_ipc_client = new CliBinaryIpcClient();
 	
-	cli_ipc_client.register_handler('HANDSHAKE_RESPONSE', (message, binary_chunks) => {
-		console.log('Received handshake response from core:', message);
+	console.log('Registering handshake response handler for message ID:', IpcMessageId.HANDSHAKE_RESPONSE);
+	cli_ipc_client.register_handler(IpcMessageId.HANDSHAKE_RESPONSE, (header) => {
+		console.log('HANDSHAKE RESPONSE HANDLER CALLED!');
+		console.log('Received handshake response from core:', header);
 		
-		if (main_window)
-			main_window.webContents.send('cli-handshake-complete', message.data);
+		if (main_window) {
+			console.log('Sending cli-handshake-complete event to renderer');
+			main_window.webContents.send('cli-handshake-complete', {
+				version: header.version,
+				timestamp: new Date(header.timestamp * 1000).toISOString()
+			});
+		} else {
+			console.error('main_window is not available');
+		}
 	});
 	
+	console.log('Handler registration complete');
+	
 	cli_process.stdout.on('data', (data) => {
+		console.log('Raw stdout data received from core process');
 		cli_ipc_client.handle_stdout_data(data);
 	});
 	
@@ -255,26 +339,38 @@ function spawn_cli_process() {
 	
 	cli_process.on('close', (code) => {
 		console.log(`Core process exited with code ${code}`);
+		if (main_window) {
+			main_window.webContents.send('cli-spawn-error', `Core process exited with code ${code}`);
+		}
 	});
 	
 	cli_process.on('error', (error) => {
 		console.error('Core process error:', error);
+		if (main_window) {
+			main_window.webContents.send('cli-spawn-error', `Core process error: ${error.message}`);
+		}
 	});
 	
 	setTimeout(() => {
-		const test_value = Math.random().toString(36).substring(2, 15);
-		console.log('Sending handshake to core with test value:', test_value);
-		
-		cli_ipc_client.send_message('HANDSHAKE', {
-			test_value: test_value,
-			timestamp: new Date().toISOString(),
-			versions: {
-				platform: process.platform,
-				electron: process.versions.electron,
-				chrome: process.versions.chrome,
-				node: process.versions.node
-			}
+		console.log('Timeout reached, attempting to send binary handshake to core');
+		console.log('Process versions:', {
+			platform: process.platform,
+			electron: process.versions.electron,
+			chrome: process.versions.chrome,
+			node: process.versions.node
 		});
+		
+		if (cli_process && !cli_process.killed) {
+			console.log('Core process is alive, sending handshake...');
+			cli_ipc_client.send_handshake_request(
+				process.platform,
+				process.versions.electron,
+				process.versions.chrome,
+				process.versions.node
+			);
+		} else {
+			console.error('Core process is not available for handshake');
+		}
 	}, 1000);
 }
 

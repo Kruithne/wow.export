@@ -69,7 +69,7 @@ public partial class Program
 	
 	private static void InitializeIpcMode()
 	{	
-		IpcManager.RegisterHandler<HandshakeData>("HANDSHAKE", HandleHandshake);
+		IpcManager.RegisterHandler<HandshakeRequestHeader>(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
 
 		Log.Info($"IPC mode initialized with *{IpcManager.GetHandlerCount()}* handlers");
 		IpcManager.StartListening();
@@ -77,14 +77,13 @@ public partial class Program
 		Log.Info("IPC listener has exited");
 	}
 	
-	private static void HandleHandshake(HandshakeData data, IpcBinaryChunk[] binary_chunks)
+	private static void HandleHandshake(HandshakeRequestHeader request_header)
 	{	
-		Log.Info($"GUI Versions: Platform *{data.versions.platform}* Electron *{data.versions.electron}* Chrome *{data.versions.chrome}* Node *{data.versions.node}*");
+		Log.Info($"Client Versions: Platform *{request_header.GetPlatform()}* Electron *{request_header.GetElectronVersion()}* Chrome *{request_header.GetChromeVersion()}* Node *{request_header.GetNodeVersion()}*");
 		
-		IpcManager.SendMessage("HANDSHAKE_RESPONSE", new HandshakeResponse 
-		{ 
-			version = GetAssemblyVersion(),
-			timestamp = DateTime.UtcNow.ToString("O")
-		});
+		HandshakeResponseHeader response_header = HandshakeResponseHeader.Create(GetAssemblyVersion());
+		
+		using Stream stdout = Console.OpenStandardOutput();
+		IpcManager.SendMessage(stdout, IpcMessageId.HANDSHAKE_RESPONSE, response_header);
 	}
 }
