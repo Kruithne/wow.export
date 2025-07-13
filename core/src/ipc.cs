@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -55,25 +54,49 @@ public class HandshakeData
 }
 
 public delegate void IpcMessageHandler(IpcMessage message, IpcBinaryChunk[] binary_chunks);
+public delegate void IpcMessageHandler<T>(T data, IpcBinaryChunk[] binary_chunks);
 
-public class CliIpcClient
+public static class IpcManager
 {
-	private readonly Process _process;
-	private readonly Dictionary<string, IpcMessageHandler> _handlers = [];
-	private readonly Dictionary<string, IpcBinaryChunk> _pending_binaries = [];
-	private readonly Dictionary<string, (IpcMessage message, List<string> awaiting_uuids)> _pending_messages = [];
+	private static readonly Dictionary<string, IpcMessageHandler> _handlers = [];
+	private static readonly Dictionary<string, IpcBinaryChunk> _pending_binaries = [];
+	private static readonly Dictionary<string, (IpcMessage message, List<string> awaiting_uuids)> _pending_messages = [];
 
-	public CliIpcClient(Process process)
+	public static int GetHandlerCount()
 	{
-		_process = process;
+		return _handlers.Count;
 	}
 
-	public void RegisterHandler(string message_id, IpcMessageHandler handler)
+	public static void RegisterHandler(string message_id, IpcMessageHandler handler)
 	{
 		_handlers[message_id] = handler;
 	}
 
-	public void SendMessage(string message_id, object? data = null, IpcBinaryChunk[]? binary_chunks = null)
+	public static void RegisterHandler<T>(string message_id, IpcMessageHandler<T> handler)
+	{
+		_handlers[message_id] = (message, binary_chunks) =>
+		{
+			T? data = default;
+			if (message.data != null)
+			{
+				try
+				{
+					string data_string = message.data.ToString() ?? "null";
+					data = (T?)JsonSerializer.Deserialize(data_string, typeof(T), IpcJsonContext.Default);
+				}
+				catch (Exception ex)
+				{
+					Log.Error($"Failed to deserialize data for message '{message_id}': {ex.Message}");
+					return;
+				}
+			}
+			
+			if (data != null)
+				handler(data, binary_chunks);
+		};
+	}
+
+	public static void SendMessage(string message_id, object? data = null, IpcBinaryChunk[]? binary_chunks = null)
 	{
 		IpcMessage message = new IpcMessage
 		{
@@ -104,42 +127,46 @@ public class CliIpcClient
 		}
 	}
 
-	public async Task StartListening()
+	public static void StartListening()
 	{
+		if (CLIFlags.GetContext() != CLIContext.IPC)
+			return;
+
 		try
 		{
-			using Stream stdout = _process.StandardOutput.BaseStream;
-			while (!_process.HasExited)
-			{
-				await ReadMessage(stdout);
-			}
+			using Stream stdin = Console.OpenStandardInput();
+			while (true)
+				ReadMessage(stdin).Wait();
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"IPC client listener error: {ex.Message}");
+			Log.Error($"IPC listener error: {ex.Message}");
+			Log.Error("IPC listener has stopped");
 		}
 	}
 
-	private void WriteMessage(IpcMessageType type, byte[] data)
+	private static void WriteMessage(IpcMessageType type, byte[] data)
 	{
-		Stream stdin = _process.StandardInput.BaseStream;
+		using Stream stdout = Console.OpenStandardOutput();
 		
 		byte[] type_bytes = BitConverter.GetBytes((uint)type);
 		byte[] length_bytes = BitConverter.GetBytes((uint)data.Length);
 		
-		stdin.Write(type_bytes);
-		stdin.Write(length_bytes);
-		stdin.Write(data);
-		stdin.Flush();
+		stdout.Write(type_bytes);
+		stdout.Write(length_bytes);
+		stdout.Write(data);
+		stdout.Flush();
 	}
 
-	private async Task ReadMessage(Stream stream)
+	private static async Task ReadMessage(Stream stream)
 	{
 		byte[] header = new byte[8];
 		await stream.ReadExactlyAsync(header);
 
 		uint type_raw = BitConverter.ToUInt32(header, 0);
 		uint length = BitConverter.ToUInt32(header, 4);
+		
+		Log.Info($"Received message header: type=0x{type_raw:X8}, length={length}");
 
 		byte[] payload = new byte[length];
 		await stream.ReadExactlyAsync(payload);
@@ -162,7 +189,7 @@ public class CliIpcClient
 		}
 	}
 
-	private void HandleJsonMessage(byte[] payload)
+	private static void HandleJsonMessage(byte[] payload)
 	{
 		try
 		{
@@ -192,7 +219,7 @@ public class CliIpcClient
 		}
 	}
 
-	private void HandleBinaryMessage(byte[] payload)
+	private static void HandleBinaryMessage(byte[] payload)
 	{
 		try
 		{
@@ -214,7 +241,7 @@ public class CliIpcClient
 		}
 	}
 
-	private void CheckAllPendingMessages()
+	private static void CheckAllPendingMessages()
 	{
 		foreach (string message_key in _pending_messages.Keys.ToArray())
 		{
@@ -222,7 +249,7 @@ public class CliIpcClient
 		}
 	}
 
-	private void CheckPendingMessage(string message_key)
+	private static void CheckPendingMessage(string message_key)
 	{
 		if (!_pending_messages.TryGetValue(message_key, out var pending))
 			return;
@@ -250,7 +277,7 @@ public class CliIpcClient
 		}
 	}
 
-	private void ProcessMessage(IpcMessage message, IpcBinaryChunk[] binary_chunks)
+	private static void ProcessMessage(IpcMessage message, IpcBinaryChunk[] binary_chunks)
 	{
 		if (_handlers.TryGetValue(message.id, out IpcMessageHandler? handler))
 		{

@@ -1,30 +1,20 @@
+using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
 
 namespace wow_export;
 
 public partial class Program
 {
-	[LibraryImport("wow_export")]
-	private static partial nint GetCoreVersion();
+	private static Process? core_process;
+	private static CliIpcClient? ipc_client;
 
 	public static void Main()
 	{
 		try
 		{
-			// Test core DLL loading
-			try
-			{
-				nint core_version_ptr = GetCoreVersion();
-				string core_version = Marshal.PtrToStringAnsi(core_version_ptr) ?? "Unknown";
-				Console.WriteLine($"Loaded: {core_version}");
-			}
-			catch (Exception dll_ex)
-			{
-				Console.WriteLine($"Failed to load core DLL: {dll_ex.Message}");
-			}
-
-			Log.Info($"Welcome to wow.export version {GetAssemblyVersionWithBuild()}");
+			Log.Info($"Welcome to wow.export CLI version {GetAssemblyVersionWithBuild()}");
 			Log.Info("Report any issues at *https://github.com/Kruithne/wow.export/issues*");
 			Log.Blank();
 			
@@ -34,11 +24,10 @@ public partial class Program
 				return;
 			}
 			
-			if (CLIFlags.GetContext() == CLIContext.IPC)
-			{
-				InitializeIpcMode();
-				return;
-			}
+			SpawnCoreProcess();
+			
+			Log.Info("CLI initialized, waiting for commands...");
+			Console.ReadLine();
 		}
 		catch (Exception ex)
 		{
@@ -54,6 +43,10 @@ public partial class Program
 
 			Log.Blank();
 			return;
+		}
+		finally
+		{
+			core_process?.Kill();
 		}
 	}
 	
@@ -83,24 +76,77 @@ public partial class Program
 		return base_version;
 	}
 	
-	private static void InitializeIpcMode()
-	{	
-		IpcManager.RegisterHandler<HandshakeData>("HANDSHAKE", HandleHandshake);
-
-		Log.Info($"IPC mode initialized with *{IpcManager.GetHandlerCount()}* handlers");
-		IpcManager.StartListening();
+	private static void SpawnCoreProcess()
+	{
+		string core_executable = Environment.OSVersion.Platform == PlatformID.Win32NT 
+			? "wow_export_core.exe" 
+			: "wow_export_core";
 		
-		Log.Info("IPC listener has exited");
+		if (!File.Exists(core_executable))
+		{
+			Log.Error($"Core executable not found at: {core_executable}");
+			return;
+		}
+		
+		Log.Info($"Spawning core process: {core_executable}");
+		
+		core_process = new Process
+		{
+			StartInfo = new ProcessStartInfo
+			{
+				FileName = core_executable,
+				Arguments = "--context=ipc",
+				RedirectStandardInput = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+				CreateNoWindow = true
+			}
+		};
+		
+		core_process.Start();
+		
+		ipc_client = new CliIpcClient(core_process);
+		ipc_client.RegisterHandler("HANDSHAKE_RESPONSE", HandleHandshakeResponse);
+		
+		Task.Run(() => ipc_client.StartListening());
+		
+		Task.Delay(1000).ContinueWith(_ => SendHandshake());
 	}
 	
-	private static void HandleHandshake(HandshakeData data, IpcBinaryChunk[] binary_chunks)
-	{	
-		Log.Info($"GUI Versions: Platform *{data.versions.platform}* Electron *{data.versions.electron}* Chrome *{data.versions.chrome}* Node *{data.versions.node}*");
+	private static void SendHandshake()
+	{
+		string test_value = Guid.NewGuid().ToString();
+		Log.Info($"Sending handshake to core with test value: {test_value}");
 		
-		IpcManager.SendMessage("HANDSHAKE_RESPONSE", new HandshakeResponse 
-		{ 
-			version = GetAssemblyVersion(),
-			timestamp = DateTime.UtcNow.ToString("O")
-		});
+		HandshakeData handshake_data = new HandshakeData
+		{
+			versions = new HandshakeVersions
+			{
+				platform = Environment.OSVersion.Platform.ToString(),
+				electron = "N/A",
+				chrome = "N/A", 
+				node = "N/A"
+			}
+		};
+		
+		ipc_client?.SendMessage("HANDSHAKE", handshake_data);
+	}
+	
+	private static void HandleHandshakeResponse(IpcMessage message, IpcBinaryChunk[] binary_chunks)
+	{
+		Log.Info("Received handshake response from core");
+		
+		if (message.data != null)
+		{
+			string data_string = message.data.ToString() ?? "null";
+			HandshakeResponse? response = JsonSerializer.Deserialize<HandshakeResponse>(data_string);
+			
+			if (response != null)
+			{
+				Log.Info($"Core version: {response.version}");
+				Log.Info($"Handshake timestamp: {response.timestamp}");
+			}
+		}
 	}
 }

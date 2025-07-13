@@ -214,32 +214,32 @@ ipcMain.handle('get-app-version', () => {
 
 
 function spawn_cli_process() {
-	let cli_path;
+	let core_path;
 	
 	if (process.platform === 'win32') {
-		cli_path = 'wow_export_cli.exe';
+		core_path = 'wow_export_core.exe';
 	} else {
-		cli_path = 'wow_export_cli';
+		core_path = 'wow_export_core';
 	}
 	
-	console.log('Spawning CLI process:', cli_path);
+	console.log('Spawning core process:', core_path);
 	
-	if (!fs.existsSync(cli_path)) {
-		console.error('CLI executable not found at:', cli_path);
+	if (!fs.existsSync(core_path)) {
+		console.error('Core executable not found at:', core_path);
 		if (main_window)
-			main_window.webContents.send('cli-spawn-error', `CLI executable not found at: ${cli_path}`);
+			main_window.webContents.send('cli-spawn-error', `Core executable not found at: ${core_path}`);
 
 		return;
 	}
 	
-	cli_process = spawn(cli_path, ['--context=ipc'], {
+	cli_process = spawn(core_path, ['--context=ipc'], {
 		stdio: ['pipe', 'pipe', 'pipe']
 	});
 	
 	cli_ipc_client = new CliIpcClient();
 	
 	cli_ipc_client.register_handler('HANDSHAKE_RESPONSE', (message, binary_chunks) => {
-		console.log('Received handshake response from CLI:', message);
+		console.log('Received handshake response from core:', message);
 		
 		if (main_window)
 			main_window.webContents.send('cli-handshake-complete', message.data);
@@ -250,20 +250,20 @@ function spawn_cli_process() {
 	});
 	
 	cli_process.stderr.on('data', (data) => {
-		console.error('CLI stderr:', data.toString());
+		console.error('Core stderr:', data.toString());
 	});
 	
 	cli_process.on('close', (code) => {
-		console.log(`CLI process exited with code ${code}`);
+		console.log(`Core process exited with code ${code}`);
 	});
 	
 	cli_process.on('error', (error) => {
-		console.error('CLI process error:', error);
+		console.error('Core process error:', error);
 	});
 	
 	setTimeout(() => {
 		const test_value = Math.random().toString(36).substring(2, 15);
-		console.log('Sending handshake to CLI with test value:', test_value);
+		console.log('Sending handshake to core with test value:', test_value);
 		
 		cli_ipc_client.send_message('HANDSHAKE', {
 			test_value: test_value,
@@ -283,5 +283,5 @@ ipcMain.handle('send-cli-message', (event, message_id, data) => {
 		cli_ipc_client.send_message(message_id, data);
 		return { success: true };
 	}
-	return { success: false, error: 'CLI not connected' };
+	return { success: false, error: 'Core not connected' };
 });
