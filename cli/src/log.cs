@@ -6,23 +6,10 @@ namespace wow_export;
 public partial class Log
 {
 	private static string? _last_prefix = null;
-	private static readonly StreamWriter _log_stream;
 	
 	static Log()
 	{
 		EnableAnsiColors();
-		
-		try
-		{
-			IO.CreateDirectory(IO.AppDataDirectory);
-			string log_file_path = Path.Combine(IO.AppDataDirectory, "runtime.log");
-			_log_stream = new StreamWriter(log_file_path, append: false) { AutoFlush = true };
-		}
-		catch (Exception ex)
-		{
-			_log_stream = StreamWriter.Null;
-			Error($"Failed to create runtime log file: *{ex.Message}*");
-		}
 	}
 	
 	public static class Colors
@@ -96,31 +83,9 @@ public partial class Log
 	[GeneratedRegex(@"\*([^*]+)\*")]
 	private static partial Regex GetHighlightRegex();
 	
-	[GeneratedRegex(@"\x1b\[[0-9;]*m")]
-	private static partial Regex GetAnsiColorRegex();
-	
-	private static string StripAnsiColors(string text)
-	{
-		return GetAnsiColorRegex().Replace(text, string.Empty);
-	}
-	
 	private static void WriteOutput(string message)
 	{
-		if (CLIFlags.GetContext() == CLIContext.CLI)
-			Console.WriteLine(message);
-		WriteLog(StripAnsiColors(message));
-	}
-	
-	private static void WriteLog(string message)
-	{
-		try
-		{
-			_log_stream.WriteLine(message);
-		}
-		catch
-		{
-			// prevent crash on log failure
-		}
+		Console.WriteLine(message);
 	}
 
 	public static Action<string, string?> CreateLogger(string default_prefix, string prefix_color)
@@ -206,14 +171,9 @@ public partial class Log
 		});
 		
 		string console_output = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ";
-		
-		if (CLIFlags.GetContext() == CLIContext.CLI)
-			Console.Write(console_output);
-		WriteLog($" USER  {StripAnsiColors(highlighted_prompt)} > ");
+		Console.Write(console_output);
 		
 		string? user_input = Console.ReadLine() ?? string.Empty;
-		WriteLog(user_input);
-		
 		return user_input;
 	}
 	
@@ -230,13 +190,9 @@ public partial class Log
 			}
 			
 			string console_prompt = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ";
-			
-			if (CLIFlags.GetContext() == CLIContext.CLI)
-				Console.Write(console_prompt);
-			WriteLog(" USER  > ");
+			Console.Write(console_prompt);
 			
 			string? input = Console.ReadLine();
-			WriteLog(input ?? string.Empty);
 			
 			if (string.IsNullOrEmpty(input))
 			{

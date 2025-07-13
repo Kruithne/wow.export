@@ -46,10 +46,10 @@ public struct HandshakeRequestHeader
 		return header;
 	}
 	
-	public string GetPlatform() => IpcStructHelper.GetStringFromByteArray(platform);
-	public string GetElectronVersion() => IpcStructHelper.GetStringFromByteArray(electron_version);
-	public string GetChromeVersion() => IpcStructHelper.GetStringFromByteArray(chrome_version);
-	public string GetNodeVersion() => IpcStructHelper.GetStringFromByteArray(node_version);
+	public readonly string GetPlatform() => IpcStructHelper.GetStringFromByteArray(platform);
+	public readonly string GetElectronVersion() => IpcStructHelper.GetStringFromByteArray(electron_version);
+	public readonly string GetChromeVersion() => IpcStructHelper.GetStringFromByteArray(chrome_version);
+	public readonly string GetNodeVersion() => IpcStructHelper.GetStringFromByteArray(node_version);
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -73,7 +73,7 @@ public struct HandshakeResponseHeader
 		return header;
 	}
 	
-	public string GetVersion() => IpcStructHelper.GetStringFromByteArray(version);
+	public readonly string GetVersion() => IpcStructHelper.GetStringFromByteArray(version);
 }
 
 public static class IpcStructHelper
@@ -161,9 +161,6 @@ public static class IpcManager
 
 	public static void StartListening()
 	{
-		if (CLIFlags.GetContext() != CLIContext.IPC)
-			return;
-
 		try
 		{
 			using Stream stdin = Console.OpenStandardInput();

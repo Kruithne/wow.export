@@ -3,12 +3,6 @@ using System.Reflection;
 
 namespace wow_export;
 
-public enum CLIContext
-{
-	CLI,
-	IPC
-}
-
 public enum CLIFlag
 {
 	[Description("Show this help message")]
@@ -21,10 +15,7 @@ public enum CLIFlag
 	SOME_MODE,
 	
 	[Description("Select CDN region (*eu*, *us*, *kr*, *cn*, *tw*)")]
-	CDN_REGION,
-	
-	[Description("Set application context (*cli*, *ipc*)")]
-	CONTEXT
+	CDN_REGION
 }
 
 public static class CLIFlags
@@ -61,7 +52,7 @@ public static class CLIFlags
 			
 			string enum_name = flag_name.Replace('-', '_').ToUpperInvariant();
 			
-			if (Enum.TryParse<CLIFlag>(enum_name, out CLIFlag flag))
+			if (Enum.TryParse(enum_name, out CLIFlag flag))
 				_parsed_flags[flag] = flag_value;
 		}
 	}
@@ -74,16 +65,6 @@ public static class CLIFlags
 	public static string? Get(CLIFlag flag)
 	{
 		return _parsed_flags.TryGetValue(flag, out string? value) ? value : null;
-	}
-	
-	public static CLIContext GetContext()
-	{
-		string? context = Get(CLIFlag.CONTEXT);
-		return context?.ToLowerInvariant() switch
-		{
-			"ipc" => CLIContext.IPC,
-			_ => CLIContext.CLI
-		};
 	}
 	
 	public static void PrintHelp()
