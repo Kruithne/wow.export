@@ -10,70 +10,30 @@ public enum IpcMessageId : uint
 	HANDSHAKE_RESPONSE = 2,
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct HandshakeRequestHeader
+public struct HandshakeRequestMessage
 {
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
-	public byte[] platform;
+	public string client_version;
 	
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] electron_version;
-	
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] chrome_version;
-	
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] node_version;
-	
-	public long timestamp;
-	
-	public static HandshakeRequestHeader Create(string platform_str, string electron_str, string chrome_str, string node_str)
+	public static HandshakeRequestMessage Create(string client_version_str)
 	{
-		HandshakeRequestHeader header = new HandshakeRequestHeader
+		return new HandshakeRequestMessage
 		{
-			platform = new byte[64],
-			electron_version = new byte[32],
-			chrome_version = new byte[32],
-			node_version = new byte[32],
-			timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+			client_version = client_version_str
 		};
-		
-		IpcStructHelper.CopyStringToByteArray(platform_str, header.platform);
-		IpcStructHelper.CopyStringToByteArray(electron_str, header.electron_version);
-		IpcStructHelper.CopyStringToByteArray(chrome_str, header.chrome_version);
-		IpcStructHelper.CopyStringToByteArray(node_str, header.node_version);
-		
-		return header;
 	}
-	
-	public string GetPlatform() => IpcStructHelper.GetStringFromByteArray(platform);
-	public string GetElectronVersion() => IpcStructHelper.GetStringFromByteArray(electron_version);
-	public string GetChromeVersion() => IpcStructHelper.GetStringFromByteArray(chrome_version);
-	public string GetNodeVersion() => IpcStructHelper.GetStringFromByteArray(node_version);
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct HandshakeResponseHeader
+public struct HandshakeResponseMessage
 {
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] version;
+	public string core_version;
 	
-	public long timestamp;
-	
-	public static HandshakeResponseHeader Create(string version_str)
+	public static HandshakeResponseMessage Create(string core_version_str)
 	{
-		HandshakeResponseHeader header = new HandshakeResponseHeader
+		return new HandshakeResponseMessage
 		{
-			version = new byte[32],
-			timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+			core_version = core_version_str
 		};
-		
-		IpcStructHelper.CopyStringToByteArray(version_str, header.version);
-		
-		return header;
 	}
-	
-	public string GetVersion() => IpcStructHelper.GetStringFromByteArray(version);
 }
 
 public static class IpcStructHelper
@@ -97,7 +57,49 @@ public static class IpcStructHelper
 	}
 }
 
+public static class IpcStringHelper
+{
+	public static void WriteString(Stream stream, string str)
+	{
+		byte[] str_bytes = string.IsNullOrEmpty(str) ? [] : Encoding.UTF8.GetBytes(str);
+		byte[] length_bytes = BitConverter.GetBytes((uint)str_bytes.Length);
+		
+		stream.Write(length_bytes);
+		if (str_bytes.Length > 0)
+			stream.Write(str_bytes);
+	}
+	
+	public static async Task<string> ReadStringAsync(Stream stream)
+	{
+		byte[] length_bytes = new byte[4];
+		await stream.ReadExactlyAsync(length_bytes);
+		
+		uint length = BitConverter.ToUInt32(length_bytes);
+		if (length == 0)
+			return string.Empty;
+			
+		byte[] str_bytes = new byte[length];
+		await stream.ReadExactlyAsync(str_bytes);
+		
+		return Encoding.UTF8.GetString(str_bytes);
+	}
+	
+	public static byte[] GetStringBytes(string str)
+	{
+		byte[] str_bytes = string.IsNullOrEmpty(str) ? [] : Encoding.UTF8.GetBytes(str);
+		byte[] length_bytes = BitConverter.GetBytes((uint)str_bytes.Length);
+		
+		byte[] result = new byte[4 + str_bytes.Length];
+		Array.Copy(length_bytes, 0, result, 0, 4);
+		if (str_bytes.Length > 0)
+			Array.Copy(str_bytes, 0, result, 4, str_bytes.Length);
+			
+		return result;
+	}
+}
+
 public delegate void IpcBinaryMessageHandler<T>(T header) where T : struct;
+public delegate void IpcStringMessageHandler(string message_data);
 
 public static class IpcManager
 {
@@ -112,6 +114,11 @@ public static class IpcManager
 	{
 		_handlers[message_id] = handler;
 	}
+	
+	public static void RegisterStringHandler(IpcMessageId message_id, IpcStringMessageHandler handler)
+	{
+		_handlers[message_id] = handler;
+	}
 
 	public static void SendMessage<T>(Stream stream, IpcMessageId message_id, T header) where T : struct
 	{
@@ -120,6 +127,15 @@ public static class IpcManager
 		
 		stream.Write(id_bytes);
 		stream.Write(header_bytes);
+		stream.Flush();
+	}
+	
+	public static void SendStringMessage(Stream stream, IpcMessageId message_id, string message_data)
+	{
+		byte[] id_bytes = BitConverter.GetBytes((uint)message_id);
+		
+		stream.Write(id_bytes);
+		IpcStringHelper.WriteString(stream, message_data);
 		stream.Flush();
 	}
 
@@ -141,15 +157,15 @@ public static class IpcManager
 		{
 			case IpcMessageId.HANDSHAKE_REQUEST:
 				{
-					HandshakeRequestHeader header = await ReadStruct<HandshakeRequestHeader>(stream);
-					((IpcBinaryMessageHandler<HandshakeRequestHeader>)handler)(header);
+					string client_version = await IpcStringHelper.ReadStringAsync(stream);
+					((IpcStringMessageHandler)handler)(client_version);
 				}
 				break;
 				
 			case IpcMessageId.HANDSHAKE_RESPONSE:
 				{
-					HandshakeResponseHeader header = await ReadStruct<HandshakeResponseHeader>(stream);
-					((IpcBinaryMessageHandler<HandshakeResponseHeader>)handler)(header);
+					string core_version = await IpcStringHelper.ReadStringAsync(stream);
+					((IpcStringMessageHandler)handler)(core_version);
 				}
 				break;
 				

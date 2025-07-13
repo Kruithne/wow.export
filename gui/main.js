@@ -23,11 +23,16 @@ class CliBinaryIpcClient {
 	}
 	
 	send_handshake_request(platform, electron_version, chrome_version, node_version) {
-		console.log('Creating handshake request header...');
-		const header = this.create_handshake_request_header(platform, electron_version, chrome_version, node_version);
-		console.log('Handshake header created, size:', header.length);
+		console.log('Creating handshake request...');
+		
+		// Create GUI version string: gui-{app_version}-electron{electron_ver}-node{node_ver}-{platform}
+		const package_info = require('./package.json');
+		const app_version = package_info.version || '1.0.0';
+		const gui_version = `gui-${app_version}-electron${electron_version}-node${node_version}-${platform}`;
+		
+		console.log('GUI version string:', gui_version);
 		console.log('Sending handshake request message ID:', IpcMessageId.HANDSHAKE_REQUEST);
-		this.send_message(IpcMessageId.HANDSHAKE_REQUEST, header);
+		this.send_string_message(IpcMessageId.HANDSHAKE_REQUEST, gui_version);
 	}
 	
 	send_message(message_id, header_buffer) {
@@ -45,6 +50,27 @@ class CliBinaryIpcClient {
 		console.log('Message sent to core process');
 	}
 	
+	send_string_message(message_id, message_string) {
+		console.log(`Sending string message: id=${message_id}, string="${message_string}"`);
+		
+		const id_buffer = Buffer.alloc(4);
+		id_buffer.writeUInt32LE(message_id, 0);
+		
+		const string_bytes = Buffer.from(message_string, 'utf8');
+		const length_buffer = Buffer.alloc(4);
+		length_buffer.writeUInt32LE(string_bytes.length, 0);
+		
+		console.log('Message ID buffer (hex):', id_buffer.toString('hex'));
+		console.log('String length:', string_bytes.length);
+		console.log('String bytes (hex):', string_bytes.toString('hex'));
+		
+		cli_process.stdin.write(id_buffer);
+		cli_process.stdin.write(length_buffer);
+		cli_process.stdin.write(string_bytes);
+		
+		console.log('String message sent to core process');
+	}
+	
 	handle_stdout_data(data) {
 		console.log('Received data from core:', data.length, 'bytes');
 		console.log('Data (hex):', data.toString('hex'));
@@ -56,187 +82,45 @@ class CliBinaryIpcClient {
 			const message_id = this.buffer.readUInt32LE(0);
 			console.log('Parsed message ID:', message_id);
 			
-			const header_size = this.get_header_size(message_id);
-			console.log('Expected header size:', header_size);
-			
-			if (header_size === 0) {
+			// All handshake messages are now string-based
+			if (message_id === IpcMessageId.HANDSHAKE_REQUEST || message_id === IpcMessageId.HANDSHAKE_RESPONSE) {
+				// Need at least 8 bytes: 4 for message_id + 4 for string length
+				if (this.buffer.length < 8) {
+					console.log('Waiting for string length. Have:', this.buffer.length, 'Need: 8');
+					break;
+				}
+				
+				const string_length = this.buffer.readUInt32LE(4);
+				console.log('String length:', string_length);
+				
+				const total_needed = 8 + string_length;
+				if (this.buffer.length < total_needed) {
+					console.log('Waiting for string data. Have:', this.buffer.length, 'Need:', total_needed);
+					break;
+				}
+				
+				const string_bytes = this.buffer.slice(8, 8 + string_length);
+				const message_string = string_bytes.toString('utf8');
+				this.buffer = this.buffer.slice(8 + string_length);
+				
+				console.log('Dispatching string message ID:', message_id, 'with string:', message_string);
+				this.dispatch_string_message(message_id, message_string);
+			} else {
 				console.error(`Unknown message ID: ${message_id}`);
 				console.log('Buffer contents (hex):', this.buffer.slice(0, Math.min(16, this.buffer.length)).toString('hex'));
 				this.buffer = this.buffer.slice(4);
-				continue;
 			}
-			
-			if (this.buffer.length < 4 + header_size) {
-				console.log('Waiting for more data. Have:', this.buffer.length, 'Need:', 4 + header_size);
-				break; // Wait for more data
-			}
-			
-			const header_buffer = this.buffer.slice(4, 4 + header_size);
-			this.buffer = this.buffer.slice(4 + header_size);
-			
-			console.log('Dispatching message ID:', message_id, 'with header size:', header_buffer.length);
-			this.dispatch_message(message_id, header_buffer);
 		}
 	}
 	
-	get_header_size(message_id) {
-		switch (message_id) {
-			case IpcMessageId.HANDSHAKE_REQUEST:
-				return 64 + 32 + 32 + 32 + 8;
-			case IpcMessageId.HANDSHAKE_RESPONSE:
-				return 32 + 8;
-			default:
-				return 0;
-		}
-	}
-	
-	dispatch_message(message_id, header_buffer) {
-		console.log('Attempting to dispatch message ID:', message_id);
+	dispatch_string_message(message_id, message_string) {
+		console.log(`Dispatching string message: id=${message_id}, string="${message_string}"`);
 		
-		if (!this.handlers[message_id]) {
+		if (this.handlers[message_id]) {
+			this.handlers[message_id](message_string);
+		} else {
 			console.error(`No handler registered for message ID: ${message_id}`);
-			console.log('Available handlers:', Object.keys(this.handlers));
-			return;
 		}
-		
-		try {
-			switch (message_id) {
-				case IpcMessageId.HANDSHAKE_REQUEST:
-					{
-						console.log('Parsing handshake request header...');
-						const header = this.parse_handshake_request_header(header_buffer);
-						console.log('Parsed handshake request:', header);
-						this.handlers[message_id](header);
-					}
-					break;
-				case IpcMessageId.HANDSHAKE_RESPONSE:
-					{
-						console.log('Parsing handshake response header...');
-						const header = this.parse_handshake_response_header(header_buffer);
-						console.log('Parsed handshake response:', header);
-						this.handlers[message_id](header);
-					}
-					break;
-				default:
-					console.error(`Unknown message ID in dispatch: ${message_id}`);
-					break;
-			}
-		} catch (error) {
-			console.error(`Error in message handler for '${message_id}':`, error);
-			console.error('Error stack:', error.stack);
-		}
-	}
-	
-	create_handshake_request_header(platform, electron_version, chrome_version, node_version) {
-		console.log('Creating handshake request with:', { platform, electron_version, chrome_version, node_version });
-		
-		const header = Buffer.alloc(64 + 32 + 32 + 32 + 8);
-		let offset = 0;
-		
-		// platform (64 bytes)
-		console.log('Writing platform at offset:', offset);
-		this.copy_string_to_buffer(platform, header, offset, 64);
-		offset += 64;
-		
-		// electron_version (32 bytes)
-		console.log('Writing electron_version at offset:', offset);
-		this.copy_string_to_buffer(electron_version, header, offset, 32);
-		offset += 32;
-		
-		// chrome_version (32 bytes)
-		console.log('Writing chrome_version at offset:', offset);
-		this.copy_string_to_buffer(chrome_version, header, offset, 32);
-		offset += 32;
-		
-		// node_version (32 bytes)
-		console.log('Writing node_version at offset:', offset);
-		this.copy_string_to_buffer(node_version, header, offset, 32);
-		offset += 32;
-		
-		// timestamp (8 bytes)
-		const timestamp = Math.floor(Date.now() / 1000);
-		console.log('Writing timestamp at offset:', offset, 'value:', timestamp);
-		header.writeBigInt64LE(BigInt(timestamp), offset);
-		
-		console.log('Created header with total size:', header.length);
-		return header;
-	}
-	
-	parse_handshake_response_header(buffer) {
-		console.log('Parsing handshake response, buffer size:', buffer.length);
-		console.log('Buffer (hex):', buffer.toString('hex'));
-		
-		let offset = 0;
-		
-		// version (32 bytes)
-		console.log('Reading version at offset:', offset);
-		const version = this.get_string_from_buffer(buffer, offset, 32);
-		console.log('Parsed version:', version);
-		offset += 32;
-		
-		// timestamp (8 bytes)
-		console.log('Reading timestamp at offset:', offset);
-		const timestamp = buffer.readBigInt64LE(offset);
-		console.log('Parsed timestamp (raw):', timestamp);
-		
-		const result = {
-			version: version,
-			timestamp: Number(timestamp)
-		};
-		
-		console.log('Final parsed handshake response:', result);
-		return result;
-	}
-	
-	parse_handshake_request_header(buffer) {
-		let offset = 0;
-		
-		// platform (64 bytes)
-		const platform = this.get_string_from_buffer(buffer, offset, 64);
-		offset += 64;
-		
-		// electron_version (32 bytes)
-		const electron_version = this.get_string_from_buffer(buffer, offset, 32);
-		offset += 32;
-		
-		// chrome_version (32 bytes)
-		const chrome_version = this.get_string_from_buffer(buffer, offset, 32);
-		offset += 32;
-		
-		// node_version (32 bytes)
-		const node_version = this.get_string_from_buffer(buffer, offset, 32);
-		offset += 32;
-		
-		// timestamp (8 bytes)
-		const timestamp = buffer.readBigInt64LE(offset);
-		
-		return {
-			platform: platform,
-			electron_version: electron_version,
-			chrome_version: chrome_version,
-			node_version: node_version,
-			timestamp: Number(timestamp)
-		};
-	}
-	
-	copy_string_to_buffer(str, buffer, offset, max_length) {
-		if (!str) return;
-		
-		const str_bytes = Buffer.from(str, 'utf8');
-		const copy_length = Math.min(str_bytes.length, max_length - 1);
-		str_bytes.copy(buffer, offset, 0, copy_length);
-		buffer[offset + copy_length] = 0; // null terminator
-	}
-	
-	get_string_from_buffer(buffer, offset, max_length) {
-		const end_offset = offset + max_length;
-		let null_index = buffer.indexOf(0, offset);
-		
-		if (null_index === -1 || null_index >= end_offset) {
-			null_index = end_offset;
-		}
-		
-		return buffer.slice(offset, null_index).toString('utf8');
 	}
 }
 
@@ -311,15 +195,15 @@ function spawn_cli_process() {
 	cli_ipc_client = new CliBinaryIpcClient();
 	
 	console.log('Registering handshake response handler for message ID:', IpcMessageId.HANDSHAKE_RESPONSE);
-	cli_ipc_client.register_handler(IpcMessageId.HANDSHAKE_RESPONSE, (header) => {
+	cli_ipc_client.register_handler(IpcMessageId.HANDSHAKE_RESPONSE, (core_version) => {
 		console.log('HANDSHAKE RESPONSE HANDLER CALLED!');
-		console.log('Received handshake response from core:', header);
+		console.log('Received handshake response from core:', core_version);
 		
 		if (main_window) {
 			console.log('Sending cli-handshake-complete event to renderer');
 			main_window.webContents.send('cli-handshake-complete', {
-				version: header.version,
-				timestamp: new Date(header.timestamp * 1000).toISOString()
+				version: core_version,
+				timestamp: new Date().toISOString()
 			});
 		} else {
 			console.error('main_window is not available');

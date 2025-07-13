@@ -51,25 +51,42 @@ public partial class Program
 		return version.ToString(3);
 	}
 	
-	public static string GetAssemblyVersionWithBuild()
+	public static string GetAssemblyBuildHash()
 	{
-		string base_version = GetAssemblyVersion();
-		
 		string? informational_version = Assembly.GetExecutingAssembly()
 			.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 		
 		if (informational_version != null && informational_version.Contains('+'))
-		{
-			string build_hash = informational_version.Split('+')[1];
+			return informational_version.Split('+')[1];
+		
+		return string.Empty;
+	}
+	
+	public static string GetCoreVersionString()
+	{
+		string base_version = GetAssemblyVersion();
+		string build_hash = GetAssemblyBuildHash();
+		
+		if (!string.IsNullOrEmpty(build_hash))
+			return $"core-{base_version}-{build_hash}";
+		
+		return $"core-{base_version}";
+	}
+	
+	public static string GetAssemblyVersionWithBuild()
+	{
+		string base_version = GetAssemblyVersion();
+		string build_hash = GetAssemblyBuildHash();
+		
+		if (!string.IsNullOrEmpty(build_hash))
 			return $"*{base_version}* (build *{build_hash}*)";
-		}
 		
 		return base_version;
 	}
 	
 	private static void InitializeIpcMode()
 	{	
-		IpcManager.RegisterHandler<HandshakeRequestHeader>(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
+		IpcManager.RegisterStringHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
 
 		Log.Info($"IPC mode initialized with *{IpcManager.GetHandlerCount()}* handlers");
 		IpcManager.StartListening();
@@ -77,13 +94,13 @@ public partial class Program
 		Log.Info("IPC listener has exited");
 	}
 	
-	private static void HandleHandshake(HandshakeRequestHeader request_header)
+	private static void HandleHandshake(string client_version)
 	{	
-		Log.Info($"Client Versions: Platform *{request_header.GetPlatform()}* Electron *{request_header.GetElectronVersion()}* Chrome *{request_header.GetChromeVersion()}* Node *{request_header.GetNodeVersion()}*");
+		Log.Info($"Client version: {client_version}");
 		
-		HandshakeResponseHeader response_header = HandshakeResponseHeader.Create(GetAssemblyVersion());
+		string core_version = GetCoreVersionString();
 		
 		using Stream stdout = Console.OpenStandardOutput();
-		IpcManager.SendMessage(stdout, IpcMessageId.HANDSHAKE_RESPONSE, response_header);
+		IpcManager.SendStringMessage(stdout, IpcMessageId.HANDSHAKE_RESPONSE, core_version);
 	}
 }

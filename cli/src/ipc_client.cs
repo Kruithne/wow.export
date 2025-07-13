@@ -13,11 +13,22 @@ public class CliIpcClient(Process process)
 	{
 		_handlers[message_id] = handler;
 	}
+	
+	public void RegisterStringHandler(IpcMessageId message_id, IpcStringMessageHandler handler)
+	{
+		_handlers[message_id] = handler;
+	}
 
 	public void SendMessage<T>(IpcMessageId message_id, T header) where T : struct
 	{
 		Stream stdin = _process.StandardInput.BaseStream;
 		IpcManager.SendMessage(stdin, message_id, header);
+	}
+	
+	public void SendStringMessage(IpcMessageId message_id, string message_data)
+	{
+		Stream stdin = _process.StandardInput.BaseStream;
+		IpcManager.SendStringMessage(stdin, message_id, message_data);
 	}
 
 	public async Task StartListening()
@@ -54,15 +65,15 @@ public class CliIpcClient(Process process)
 		{
 			case IpcMessageId.HANDSHAKE_REQUEST:
 				{
-					HandshakeRequestHeader header = await ReadStruct<HandshakeRequestHeader>(stream);
-					((IpcBinaryMessageHandler<HandshakeRequestHeader>)handler)(header);
+					string client_version = await IpcStringHelper.ReadStringAsync(stream);
+					((IpcStringMessageHandler)handler)(client_version);
 				}
 				break;
 				
 			case IpcMessageId.HANDSHAKE_RESPONSE:
 				{
-					HandshakeResponseHeader header = await ReadStruct<HandshakeResponseHeader>(stream);
-					((IpcBinaryMessageHandler<HandshakeResponseHeader>)handler)(header);
+					string core_version = await IpcStringHelper.ReadStringAsync(stream);
+					((IpcStringMessageHandler)handler)(core_version);
 				}
 				break;
 				

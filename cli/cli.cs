@@ -55,18 +55,35 @@ public partial class Program
 		return version.ToString(3);
 	}
 	
-	public static string GetAssemblyVersionWithBuild()
+	public static string GetAssemblyBuildHash()
 	{
-		string base_version = GetAssemblyVersion();
-		
 		string? informational_version = Assembly.GetExecutingAssembly()
 			.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 		
 		if (informational_version != null && informational_version.Contains('+'))
-		{
-			string build_hash = informational_version.Split('+')[1];
+			return informational_version.Split('+')[1];
+		
+		return string.Empty;
+	}
+	
+	public static string GetCliVersionString()
+	{
+		string base_version = GetAssemblyVersion();
+		string build_hash = GetAssemblyBuildHash();
+		
+		if (!string.IsNullOrEmpty(build_hash))
+			return $"cli-{base_version}-{build_hash}";
+		
+		return $"cli-{base_version}";
+	}
+	
+	public static string GetAssemblyVersionWithBuild()
+	{
+		string base_version = GetAssemblyVersion();
+		string build_hash = GetAssemblyBuildHash();
+		
+		if (!string.IsNullOrEmpty(build_hash))
 			return $"*{base_version}* (build *{build_hash}*)";
-		}
 		
 		return base_version;
 	}
@@ -102,7 +119,7 @@ public partial class Program
 		core_process.Start();
 		
 		ipc_client = new CliIpcClient(core_process);
-		ipc_client.RegisterHandler<HandshakeResponseHeader>(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
+		ipc_client.RegisterStringHandler(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -113,20 +130,14 @@ public partial class Program
 	{
 		Log.Info("Sending handshake to core");
 		
-		HandshakeRequestHeader handshake_request = HandshakeRequestHeader.Create(
-			Environment.OSVersion.Platform.ToString(),
-			"N/A", // electron version
-			"N/A", // chrome version  
-			"N/A"  // node version
-		);
+		string cli_version = GetCliVersionString();
 		
-		ipc_client?.SendMessage(IpcMessageId.HANDSHAKE_REQUEST, handshake_request);
+		ipc_client?.SendStringMessage(IpcMessageId.HANDSHAKE_REQUEST, cli_version);
 	}
 	
-	private static void HandleHandshakeResponse(HandshakeResponseHeader response)
+	private static void HandleHandshakeResponse(string core_version)
 	{
 		Log.Info("Received handshake response from core");
-		Log.Info($"Core version: {response.GetVersion()}");
-		Log.Info($"Handshake timestamp: {DateTimeOffset.FromUnixTimeSeconds(response.timestamp)}");
+		Log.Info($"Core version: {core_version}");
 	}
 }
