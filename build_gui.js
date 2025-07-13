@@ -66,6 +66,9 @@ async function main() {
 		'--arch=x64',
 		'--out=dist/',
 		'--overwrite',
+		'--asar',
+		'--prune=true',
+		'--ignore="(\\.md$|\\.txt$|\\.map$|test|spec|__tests__|\\.git)"',
 		`--icon=${icon_path}`,
 		`--app-copyright=Copyright © ${current_year} Kruithne, Marlamin`
 	];
