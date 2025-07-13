@@ -16,5 +16,8 @@
 	"bugs": {
 		"url": "https://github.com/Kruithne/wow.export/issues"
 	},
-	"homepage": "https://github.com/Kruithne/wow.export#readme"
+	"homepage": "https://github.com/Kruithne/wow.export#readme",
+	"dependencies": {
+		"vue": "^3.5.17"
+	}
 }
