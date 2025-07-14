@@ -23,10 +23,9 @@ class CliBinaryIpcClient {
 	}
 	
 	send_handshake_request(platform, electron_version, chrome_version, node_version) {
-		// Create GUI version string: gui-{app_version}-electron{electron_ver}-node{node_ver}-{platform}
 		const package_info = require('./package.json');
 		const app_version = package_info.version || '1.0.0';
-		const gui_version = `gui-${app_version}-electron${electron_version}-node${node_version}-${platform}`;
+		const gui_version = `gui-${app_version}-electron${electron_version}-node${node_version}-chrome-${chrome_version}-${platform}`;
 		
 		this.send_string_message(IpcMessageId.HANDSHAKE_REQUEST, gui_version);
 	}
