@@ -52,7 +52,7 @@ public partial class Program
 	
 	private static void SpawnCoreProcess()
 	{
-		string core_executable = Environment.OSVersion.Platform == PlatformID.Win32NT 
+		string core_executable = OperatingSystem.IsWindows()
 			? "wow_export_core.exe" 
 			: "wow_export_core";
 		
