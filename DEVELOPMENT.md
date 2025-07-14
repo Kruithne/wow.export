@@ -26,6 +26,9 @@ bun debug_cli
 
 # build core (debug) and launch gui
 bun debug_gui
+
+# tail runtime.log from app data
+bun tail_runtime_log
 ```
 
 ## Building
