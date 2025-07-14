@@ -107,6 +107,32 @@ jobs:
       - name: Build CLI
         run: bun build_cli.js
 
+      - name: Create CLI-Only Package
+        shell: bash
+        run: |
+          # Create CLI-only package name
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            CLI_ONLY_NAME="wow_export_cli_only_win32_x64"
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            CLI_ONLY_NAME="wow_export_cli_only_linux_x64"
+          else
+            CLI_ONLY_NAME="wow_export_cli_only_darwin_x64"
+          fi
+          
+          # Create CLI-only ZIP file from dist/out contents (core + CLI only)
+          cd dist
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            powershell Compress-Archive -Path "out/*" -DestinationPath "$CLI_ONLY_NAME.zip"
+          else
+            cd out && zip -r "../$CLI_ONLY_NAME.zip" . && cd ..
+          fi
+
+      - name: Upload CLI-Only artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wow_export_cli_only_${{ matrix.platform }}_x64
+          path: dist/wow_export_cli_only_${{ matrix.platform }}_x64.zip
+
       - name: Build GUI
         run: bun build_gui.js
 
@@ -153,6 +179,30 @@ jobs:
           release_name: Release ${{ github.event.inputs.version }}
           draft: false
           prerelease: false
+
+      - name: Upload Windows CLI-Only Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_cli_only_win32_x64/wow_export_cli_only_win32_x64.zip
+          asset_name: wow_export_cli_only_win32_x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux CLI-Only Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_cli_only_linux_x64/wow_export_cli_only_linux_x64.zip
+          asset_name: wow_export_cli_only_linux_x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS CLI-Only Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/wow_export_cli_only_darwin_x64/wow_export_cli_only_darwin_x64.zip
+          asset_name: wow_export_cli_only_darwin_x64.zip
+          asset_content_type: application/zip
 
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
