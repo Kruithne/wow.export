@@ -27,4 +27,8 @@
 		<Product>wow.export</Product>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="../shared/shared.csproj" />
+	</ItemGroup>
+
 </Project>

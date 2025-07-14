@@ -6,14 +6,17 @@ public static class AssemblyInfo
 {
 	public static string GetVersion()
 	{
-		Version? version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+		Version? version = Assembly.GetExecutingAssembly().GetName().Version;
 
-		return version?.ToString(3) ?? throw new InternalError("Assembly version is not available.");
+		if (version == null)
+			throw new InvalidOperationException("Assembly version is not available.");
+
+		return version.ToString(3);
 	}
 	
 	public static string GetBuildHash()
 	{
-		string? informational_version = System.Reflection.Assembly.GetExecutingAssembly()
+		string? informational_version = Assembly.GetExecutingAssembly()
 			.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 		
 		if (informational_version != null && informational_version.Contains('+'))
@@ -33,13 +36,24 @@ public static class AssemblyInfo
 		return $"core-{base_version}";
 	}
 	
+	public static string GetCliVersionString()
+	{
+		string base_version = GetVersion();
+		string build_hash = GetBuildHash();
+		
+		if (!string.IsNullOrEmpty(build_hash))
+			return $"cli-{base_version}-{build_hash}";
+		
+		return $"cli-{base_version}";
+	}
+	
 	public static string GetVersionWithBuild()
 	{
 		string base_version = GetVersion();
 		string build_hash = GetBuildHash();
 		
 		if (!string.IsNullOrEmpty(build_hash))
-			return $"{base_version} (build {build_hash})";
+			return $"*{base_version}* (build *{build_hash}*)";
 		
 		return base_version;
 	}

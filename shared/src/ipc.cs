@@ -101,7 +101,7 @@ public static class IpcStringHelper
 public class IPCMessageReader(Stream stream)
 {
 	private readonly Stream _stream = stream;
-
+	
 	public async Task<string> ReadLengthPrefixedString()
 	{
 		return await IpcStringHelper.ReadStringAsync(_stream);
@@ -218,7 +218,7 @@ public static class IpcManager
 		
 		if (!_handlers.TryGetValue(message_id, out IpcMessageHandler? handler))
 		{
-			Log.Write($"No handler registered for message ID: {message_id}");
+			// No handler registered - silently return
 			return;
 		}
 		
@@ -234,13 +234,11 @@ public static class IpcManager
 			while (true)
 				DispatchMessage(stdin).Wait();
 		}
-		catch (Exception ex)
+		catch (Exception)
 		{
-			Log.Write($"IPC listener error: {ex.Message}");
-			Log.Write("IPC listener has stopped");
+			// IPC listener error - silently handle
 		}
 	}
-
 
 	private static byte[] StructToBytes<T>(T structure) where T : struct
 	{
@@ -260,5 +258,4 @@ public static class IpcManager
 		
 		return bytes;
 	}
-
 }
