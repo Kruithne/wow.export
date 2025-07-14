@@ -210,32 +210,22 @@ public partial class Log
 				continue;
 			}
 			
-			// Try parsing as number first (priority 1)
 			if (int.TryParse(input, out int selection) && selection >= 1 && selection <= options.Length)
-			{
 				return options[selection - 1];
-			}
 			
-			// Try matching by ID (priority 2)
 			string input_lower = input.ToLower();
 			for (int i = 0; i < options.Length; i++)
 			{
-				if (options[i].Id.ToLower() == input_lower)
-				{
+				if (options[i].Id.Equals(input_lower, StringComparison.CurrentCultureIgnoreCase))
 					return options[i];
-				}
 			}
 			
-			// Try matching by display name (priority 3)
 			for (int i = 0; i < options.Length; i++)
 			{
-				if (options[i].DisplayName.ToLower() == input_lower)
-				{
+				if (options[i].DisplayName.Equals(input_lower, StringComparison.CurrentCultureIgnoreCase))
 					return options[i];
-				}
 			}
 			
-			// No match found (priority 4 - error)
 			Error($"Please enter a number (1-{options.Length}), an ID, or a display name from the list above.");
 			Blank();
 			continue;

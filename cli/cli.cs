@@ -47,7 +47,6 @@ public partial class Program
 		}
 	}
 	
-	
 	private static void SpawnCoreProcess()
 	{
 		string core_executable = OperatingSystem.IsWindows()
