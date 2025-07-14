@@ -69,7 +69,6 @@ public partial class Program
 			StartInfo = new ProcessStartInfo
 			{
 				FileName = core_executable,
-				Arguments = "--context=ipc",
 				RedirectStandardInput = true,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
