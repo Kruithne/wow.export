@@ -3,9 +3,12 @@
 import { spawn } from 'bun';
 import { join } from 'path';
 import { build_debug_core, copy_debug_directory } from './build/debug_utils.js';
+import { compile_protobuf } from './compile_protobuf.js';
 
 async function main() {
 	console.log('Building Core for GUI debugging...');
+	
+	await compile_protobuf();
 	
 	const gui_debug_dir = join(process.cwd(), 'dist', 'debug_gui');
 	

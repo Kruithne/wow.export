@@ -3,6 +3,7 @@
 import { spawn } from 'bun';
 import { join } from 'path';
 import { get_platform, get_runtime, ensure_directory, copy_file } from './build/build_utils.js';
+import { compile_protobuf } from './compile_protobuf.js';
 
 function get_executable_filename() {
 	switch (process.platform) {
@@ -18,6 +19,8 @@ async function main() {
 	const runtime = get_runtime();
 	
 	console.log(`Building CLI executable for ${platform} (${runtime})...`);
+	
+	await compile_protobuf();
 	
 	const out_dir = join(process.cwd(), 'dist', 'out');
 	await ensure_directory(out_dir);

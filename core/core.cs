@@ -11,9 +11,9 @@ public partial class Program
 			Log.Write("Report any issues at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 			
-			IpcManager.RegisterHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
-			IpcManager.RegisterHandler(IpcMessageId.REQ_REGION_LIST, HandleRegionListRequest);
-			IpcManager.StartListening();
+			ProtobufIpcManager.RegisterHandler<HandshakeRequest>(HandleHandshakeRequest);
+			ProtobufIpcManager.RegisterHandler<RegionListRequest>(HandleRegionListRequest);
+			ProtobufIpcManager.StartListening();
 		}
 		catch (Exception ex)
 		{
@@ -32,20 +32,26 @@ public partial class Program
 		}
 	}
 	
-	private static void HandleHandshake(IPCMessageReader data)
+	private static void HandleHandshakeRequest(HandshakeRequest request)
 	{	
-		string client_version = data.ReadLengthPrefixedString().Result;
-		Log.Write($"Client version: {client_version}");
+		Log.Write($"Client version: {request.ClientVersion}");
 		
 		string core_version = AssemblyInfo.GetCoreVersionString();
 		
+		HandshakeResponse response = new()
+		{
+			CoreVersion = core_version
+		};
+		
 		using Stream stdout = Console.OpenStandardOutput();
-		IpcManager.SendStringMessage(stdout, IpcMessageId.HANDSHAKE_RESPONSE, core_version);
+		ProtobufIpcManager.SendMessage(stdout, response);
 	}
 	
-	private static void HandleRegionListRequest(IPCMessageReader data)
+	private static void HandleRegionListRequest(RegionListRequest request)
 	{	
+		RegionListResponse response = ProtobufConversion.CreateRegionListResponse(CDNRegionData.ALL_REGIONS);
+		
 		using Stream stdout = Console.OpenStandardOutput();
-		IpcManager.SendArrayMessage(stdout, IpcMessageId.RES_REGION_LIST, CDNRegionData.ALL_REGIONS);
+		ProtobufIpcManager.SendMessage(stdout, response);
 	}
 }

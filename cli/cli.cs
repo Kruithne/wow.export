@@ -80,8 +80,8 @@ public partial class Program
 		Log.Verbose($"Spawned core process with PID *{core_process.Id}*");
 		
 		ipc_client = new CliIpcClient(core_process);
-		ipc_client.RegisterHandler(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
-		ipc_client.RegisterHandler(IpcMessageId.RES_REGION_LIST, HandleRegionListResponse);
+		ipc_client.RegisterHandler<HandshakeResponse>(HandleHandshakeResponse);
+		ipc_client.RegisterHandler<RegionListResponse>(HandleRegionListResponse);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -90,22 +90,28 @@ public partial class Program
 	
 	private static void SendHandshake()
 	{	
-		string cli_version = AssemblyInfo.GetCliVersionString();	
-		ipc_client?.SendStringMessage(IpcMessageId.HANDSHAKE_REQUEST, cli_version);
+		string cli_version = AssemblyInfo.GetCliVersionString();
+		
+		HandshakeRequest request = new()
+		{
+			ClientVersion = cli_version
+		};
+		
+		ipc_client?.SendMessage(request);
 	}
 	
-	private static void HandleHandshakeResponse(IPCMessageReader data)
+	private static void HandleHandshakeResponse(HandshakeResponse response)
 	{
-		string core_version = data.ReadLengthPrefixedString().Result;
-		Log.Info($"Core version *{core_version}* initialized");
+		Log.Info($"Core version *{response.CoreVersion}* initialized");
 		Log.Blank();
 		
-		ipc_client?.SendEmptyMessage(IpcMessageId.REQ_REGION_LIST);
+		RegionListRequest request = new();
+		ipc_client?.SendMessage(request);
 	}
 	
-	private static void HandleRegionListResponse(IPCMessageReader data)
+	private static void HandleRegionListResponse(RegionListResponse response)
 	{
-		CDNRegionData[] regions = data.ReadArray<CDNRegionData>().Result;
+		CDNRegionData[] regions = ProtobufConversion.ExtractRegionsFromResponse(response);
 		Log.Verbose($"Received *{regions.Length}* regions");
 		
 		RegionSelector.SetAvailableRegions(regions);

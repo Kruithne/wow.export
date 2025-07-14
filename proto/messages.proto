@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package wow_export;
+
+option csharp_namespace = "wow_export";
+
+message HandshakeRequest {
+    string client_version = 1;
+}
+
+message HandshakeResponse {
+    string core_version = 1;
+}
+
+message RegionListRequest {
+}
+
+message RegionListResponse {
+    repeated CDNRegionProto regions = 1;
+}
+
+message CDNRegionProto {
+    string id = 1;
+    string display_name = 2;
+    string patch_host_template = 3;
+    string ribbit_host_template = 4;
+}
+
+message IpcMessage {
+    oneof message_type {
+        HandshakeRequest handshake_request = 1;
+        HandshakeResponse handshake_response = 2;
+        RegionListRequest region_list_request = 3;
+        RegionListResponse region_list_response = 4;
+    }
+}

@@ -18,6 +18,7 @@
 	},
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"dependencies": {
-		"vue": "^3.5.17"
+		"vue": "^3.5.17",
+		"protobufjs": "^7.5.0"
 	}
 }
