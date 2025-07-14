@@ -68,14 +68,14 @@ class CliBinaryIpcClient {
 				if (this.buffer.length < total_needed)
 					break;
 				
-				const string_bytes = this.buffer.slice(8, 8 + string_length);
+				const string_bytes = this.buffer.subarray(8, 8 + string_length);
 				const message_string = string_bytes.toString('utf8');
-				this.buffer = this.buffer.slice(8 + string_length);
+				this.buffer = this.buffer.subarray(8 + string_length);
 				
 				this.dispatch_string_message(message_id, message_string);
 			} else {
 				console.error(`Unknown message ID: ${message_id}`);
-				this.buffer = this.buffer.slice(4);
+				this.buffer = this.buffer.subarray(4);
 			}
 		}
 	}
