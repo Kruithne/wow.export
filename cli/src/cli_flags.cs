@@ -15,7 +15,10 @@ public enum CLIFlag
 	SOME_MODE,
 	
 	[Description("Select CDN region (*eu*, *us*, *kr*, *cn*, *tw*)")]
-	CDN_REGION
+	CDN_REGION,
+	
+	[Description("Enable verbose debug output")]
+	VERBOSE
 }
 
 public static class CLIFlags

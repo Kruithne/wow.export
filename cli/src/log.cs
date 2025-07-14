@@ -128,6 +128,7 @@ public partial class Log
 	private static readonly Action<string, string?> _error_logger = CreateLogger("ERR!", "#e74c3c");
 	private static readonly Action<string, string?> _warn_logger = CreateLogger("WARN", "#f39c12");
 	private static readonly Action<string, string?> _user_logger = CreateLogger("USER", "#9b59b6");
+	private static readonly Action<string, string?> _verbose_logger = CreateLogger("DBUG", "#95a5a6");
 	
 	private static readonly string _user_prefix_bg = Colors.HexToAnsiBg("#9b59b6");
 	private static readonly string _user_prefix_fg = Colors.HexToAnsi("#9b59b6");
@@ -160,6 +161,14 @@ public partial class Log
 	public static void User(string message, string? custom_prefix = null)
 	{
 		_user_logger(message, custom_prefix);
+	}
+
+	public static void Verbose(string message, string? custom_prefix = null)
+	{
+		if (!CLIFlags.Has(CLIFlag.VERBOSE))
+			return;
+			
+		_verbose_logger(message, custom_prefix);
 	}
 
 	public static string GetUserInput(string prompt)

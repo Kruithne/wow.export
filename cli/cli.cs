@@ -20,12 +20,10 @@ public partial class Program
 				CLIFlags.PrintHelp();
 				return;
 			}
-			
+
+			Log.Info($"Initializing...");
 			SpawnCoreProcess();
 			
-			Log.Info("CLI initialized, waiting for commands...");
-			
-			// Keep the application running until we're done
 			while (true)
 			{
 				Thread.Sleep(100);
@@ -62,7 +60,7 @@ public partial class Program
 			return;
 		}
 		
-		Log.Info($"Spawning core process: {core_executable}");
+		Log.Verbose($"Spawning core process *{core_executable}*");
 		
 		core_process = new Process
 		{
@@ -78,6 +76,8 @@ public partial class Program
 		};
 		
 		core_process.Start();
+
+		Log.Verbose($"Spawned core process with PID *{core_process.Id}*");
 		
 		ipc_client = new CliIpcClient(core_process);
 		ipc_client.RegisterHandler(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
@@ -89,28 +89,24 @@ public partial class Program
 	}
 	
 	private static void SendHandshake()
-	{
-		Log.Info("Sending handshake to core");
-		
-		string cli_version = AssemblyInfo.GetCliVersionString();
-		
+	{	
+		string cli_version = AssemblyInfo.GetCliVersionString();	
 		ipc_client?.SendStringMessage(IpcMessageId.HANDSHAKE_REQUEST, cli_version);
 	}
 	
 	private static void HandleHandshakeResponse(IPCMessageReader data)
 	{
 		string core_version = data.ReadLengthPrefixedString().Result;
-		Log.Info("Received handshake response from core");
-		Log.Info($"Core version: {core_version}");
+		Log.Info($"Core version *{core_version}* initialized");
+		Log.Blank();
 		
-		Log.Info("Requesting region list from core");
 		ipc_client?.SendEmptyMessage(IpcMessageId.REQ_REGION_LIST);
 	}
 	
 	private static void HandleRegionListResponse(IPCMessageReader data)
 	{
 		CDNRegionData[] regions = data.ReadArray<CDNRegionData>().Result;
-		Log.Info($"Received {regions.Length} regions from core");
+		Log.Verbose($"Received *{regions.Length}* regions");
 		
 		RegionSelector.SetAvailableRegions(regions);
 		RegionSelector.SelectRegion();
