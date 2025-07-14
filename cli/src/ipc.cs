@@ -98,19 +98,93 @@ public static class IpcStringHelper
 	}
 }
 
-public delegate void IpcBinaryMessageHandler<T>(T header) where T : struct;
-public delegate void IpcStringMessageHandler(string message_data);
+public class IPCMessageReader(Stream stream)
+{
+	private readonly Stream _stream = stream;
+	
+	public async Task<string> ReadLengthPrefixedString()
+	{
+		return await IpcStringHelper.ReadStringAsync(_stream);
+	}
+	
+	public async Task<string> ReadString(int length)
+	{
+		if (length <= 0)
+			return string.Empty;
+			
+		byte[] str_bytes = new byte[length];
+		await _stream.ReadExactlyAsync(str_bytes);
+		return Encoding.UTF8.GetString(str_bytes);
+	}
+	
+	public async Task<uint> ReadUInt32()
+	{
+		byte[] bytes = new byte[4];
+		await _stream.ReadExactlyAsync(bytes);
+		return BitConverter.ToUInt32(bytes);
+	}
+	
+	public async Task<int> ReadInt32()
+	{
+		byte[] bytes = new byte[4];
+		await _stream.ReadExactlyAsync(bytes);
+		return BitConverter.ToInt32(bytes);
+	}
+	
+	public async Task<ushort> ReadUInt16()
+	{
+		byte[] bytes = new byte[2];
+		await _stream.ReadExactlyAsync(bytes);
+		return BitConverter.ToUInt16(bytes);
+	}
+	
+	public async Task<short> ReadInt16()
+	{
+		byte[] bytes = new byte[2];
+		await _stream.ReadExactlyAsync(bytes);
+		return BitConverter.ToInt16(bytes);
+	}
+	
+	public async Task<byte> ReadByte()
+	{
+		byte[] bytes = new byte[1];
+		await _stream.ReadExactlyAsync(bytes);
+		return bytes[0];
+	}
+	
+	public async Task<byte[]> ReadBytes(int count)
+	{
+		byte[] bytes = new byte[count];
+		await _stream.ReadExactlyAsync(bytes);
+		return bytes;
+	}
+	
+	public async Task<T> ReadStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>() where T : struct
+	{
+		int size = Marshal.SizeOf<T>();
+		byte[] bytes = new byte[size];
+		await _stream.ReadExactlyAsync(bytes);
+		
+		IntPtr ptr = Marshal.AllocHGlobal(size);
+		try
+		{
+			Marshal.Copy(bytes, 0, ptr, size);
+			return Marshal.PtrToStructure<T>(ptr);
+		}
+		finally
+		{
+			Marshal.FreeHGlobal(ptr);
+		}
+	}
+}
+
+public delegate void IpcMessageHandler(IPCMessageReader data);
 
 public static class IpcManager
 {
-	private static readonly Dictionary<IpcMessageId, Delegate> _handlers = [];
+	private static readonly Dictionary<IpcMessageId, IpcMessageHandler> _handlers = [];
 
-	public static void RegisterHandler<T>(IpcMessageId message_id, IpcBinaryMessageHandler<T> handler) where T : struct
-	{
-		_handlers[message_id] = handler;
-	}
-	
-	public static void RegisterStringHandler(IpcMessageId message_id, IpcStringMessageHandler handler)
+	public static void RegisterHandler(IpcMessageId message_id, IpcMessageHandler handler)
 	{
 		_handlers[message_id] = handler;
 	}
@@ -134,7 +208,7 @@ public static class IpcManager
 		stream.Flush();
 	}
 
-	public static async Task ReadAndDispatchMessage(Stream stream)
+	public static async Task DispatchMessage(Stream stream)
 	{
 		byte[] id_bytes = new byte[4];
 		await stream.ReadExactlyAsync(id_bytes);
@@ -142,32 +216,14 @@ public static class IpcManager
 		uint message_id_raw = BitConverter.ToUInt32(id_bytes);
 		IpcMessageId message_id = (IpcMessageId)message_id_raw;
 		
-		if (!_handlers.TryGetValue(message_id, out Delegate? handler))
+		if (!_handlers.TryGetValue(message_id, out IpcMessageHandler? handler))
 		{
 			Log.Error($"No handler registered for message ID: {message_id}");
 			return;
 		}
 		
-		switch (message_id)
-		{
-			case IpcMessageId.HANDSHAKE_REQUEST:
-				{
-					string client_version = await IpcStringHelper.ReadStringAsync(stream);
-					((IpcStringMessageHandler)handler)(client_version);
-				}
-				break;
-				
-			case IpcMessageId.HANDSHAKE_RESPONSE:
-				{
-					string core_version = await IpcStringHelper.ReadStringAsync(stream);
-					((IpcStringMessageHandler)handler)(core_version);
-				}
-				break;
-				
-			default:
-				Log.Error($"Unknown message ID: {message_id}");
-				break;
-		}
+		IPCMessageReader reader = new(stream);
+		handler(reader);
 	}
 
 	public static void StartListening()
@@ -176,7 +232,7 @@ public static class IpcManager
 		{
 			using Stream stdin = Console.OpenStandardInput();
 			while (true)
-				ReadAndDispatchMessage(stdin).Wait();
+				DispatchMessage(stdin).Wait();
 		}
 		catch (Exception ex)
 		{

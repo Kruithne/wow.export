@@ -7,14 +7,9 @@ namespace wow_export;
 public class CliIpcClient(Process process)
 {
 	private readonly Process _process = process;
-	private readonly Dictionary<IpcMessageId, Delegate> _handlers = [];
+	private readonly Dictionary<IpcMessageId, IpcMessageHandler> _handlers = [];
 
-	public void RegisterHandler<T>(IpcMessageId message_id, IpcBinaryMessageHandler<T> handler) where T : struct
-	{
-		_handlers[message_id] = handler;
-	}
-	
-	public void RegisterStringHandler(IpcMessageId message_id, IpcStringMessageHandler handler)
+	public void RegisterHandler(IpcMessageId message_id, IpcMessageHandler handler)
 	{
 		_handlers[message_id] = handler;
 	}
@@ -38,7 +33,7 @@ public class CliIpcClient(Process process)
 			using Stream stdout = _process.StandardOutput.BaseStream;
 			while (!_process.HasExited)
 			{
-				await ReadAndDispatchMessage(stdout);
+				await DispatchMessage(stdout);
 			}
 		}
 		catch (Exception ex)
@@ -47,7 +42,7 @@ public class CliIpcClient(Process process)
 		}
 	}
 
-	private async Task ReadAndDispatchMessage(Stream stream)
+	private async Task DispatchMessage(Stream stream)
 	{
 		byte[] id_bytes = new byte[4];
 		await stream.ReadExactlyAsync(id_bytes);
@@ -55,32 +50,14 @@ public class CliIpcClient(Process process)
 		uint message_id_raw = BitConverter.ToUInt32(id_bytes);
 		IpcMessageId message_id = (IpcMessageId)message_id_raw;
 		
-		if (!_handlers.TryGetValue(message_id, out Delegate? handler))
+		if (!_handlers.TryGetValue(message_id, out IpcMessageHandler? handler))
 		{
 			Log.Error($"No handler registered for message ID: {message_id}");
 			return;
 		}
 		
-		switch (message_id)
-		{
-			case IpcMessageId.HANDSHAKE_REQUEST:
-				{
-					string client_version = await IpcStringHelper.ReadStringAsync(stream);
-					((IpcStringMessageHandler)handler)(client_version);
-				}
-				break;
-				
-			case IpcMessageId.HANDSHAKE_RESPONSE:
-				{
-					string core_version = await IpcStringHelper.ReadStringAsync(stream);
-					((IpcStringMessageHandler)handler)(core_version);
-				}
-				break;
-				
-			default:
-				Log.Error($"Unknown message ID: {message_id}");
-				break;
-		}
+		IPCMessageReader reader = new(stream);
+		handler(reader);
 	}
 
 	private static async Task<T> ReadStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Stream stream) where T : struct

@@ -11,7 +11,7 @@ public partial class Program
 			Log.Write("Report any issues at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 			
-			IpcManager.RegisterStringHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
+			IpcManager.RegisterHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
 			IpcManager.StartListening();
 		}
 		catch (Exception ex)
@@ -32,8 +32,9 @@ public partial class Program
 	}
 	
 	
-	private static void HandleHandshake(string client_version)
+	private static void HandleHandshake(IPCMessageReader data)
 	{	
+		string client_version = data.ReadLengthPrefixedString().Result;
 		Log.Write($"Client version: {client_version}");
 		
 		string core_version = AssemblyInfo.GetCoreVersionString();
