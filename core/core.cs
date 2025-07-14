@@ -7,7 +7,7 @@ public partial class Program
 	{
 		try
 		{
-			Log.Write($"Welcome to wow.export core version {AssemblyInfo.GetVersionWithBuild()}");
+			Log.Write($"wow.export core version {AssemblyInfo.GetVersionWithBuild()}");
 			Log.Write("Report any issues at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 			
@@ -32,7 +32,6 @@ public partial class Program
 		}
 	}
 	
-	
 	private static void HandleHandshake(IPCMessageReader data)
 	{	
 		string client_version = data.ReadLengthPrefixedString().Result;
@@ -45,9 +44,7 @@ public partial class Program
 	}
 	
 	private static void HandleRegionListRequest(IPCMessageReader data)
-	{
-		Log.Write("Sending region list to client");
-		
+	{	
 		using Stream stdout = Console.OpenStandardOutput();
 		IpcManager.SendArrayMessage(stdout, IpcMessageId.RES_REGION_LIST, CDNRegionData.ALL_REGIONS);
 	}
