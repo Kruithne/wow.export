@@ -29,6 +29,19 @@ If you're installing wow.export for the first time, check out the [Releases page
 
 As of 2.0.0, wow.export officially supports Windows, Linux and macOS with builds for both x86 and ARM architecture.
 
+### Available Distributions
+
+| Archive Name | Platform | Architecture |
+|--------------|----------|--------------|
+| wow_export_win32_x64 | Windows | x64 |
+| wow_export_linux_x64 | Linux | x64 |
+| wow_export_darwin_x64 | macOS | x64 |
+| wow_export_cli_only_win32_x64 \* | Windows | x64 |
+| wow_export_cli_only_linux_x64 \* | Linux | x64 |
+| wow_export_cli_only_darwin_x64 \* | macOS | x64 |
+
+**\* CLI-Only distributions** are stripped down terminal-only releases ideal for server environments, automation workflows, or users who only need command-line functionality.
+
 ## 🔃 Updating
 
 wow.export is a self-updating application. If a new version is released, it will automatically update itself to the newest version on launch.
