@@ -24,7 +24,12 @@ public partial class Program
 			SpawnCoreProcess();
 			
 			Log.Info("CLI initialized, waiting for commands...");
-			Console.ReadLine();
+			
+			// Keep the application running until we're done
+			while (true)
+			{
+				Thread.Sleep(100);
+			}
 		}
 		catch (Exception ex)
 		{
@@ -77,6 +82,7 @@ public partial class Program
 		
 		ipc_client = new CliIpcClient(core_process);
 		ipc_client.RegisterHandler(IpcMessageId.HANDSHAKE_RESPONSE, HandleHandshakeResponse);
+		ipc_client.RegisterHandler(IpcMessageId.RES_REGION_LIST, HandleRegionListResponse);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -97,5 +103,17 @@ public partial class Program
 		string core_version = data.ReadLengthPrefixedString().Result;
 		Log.Info("Received handshake response from core");
 		Log.Info($"Core version: {core_version}");
+		
+		Log.Info("Requesting region list from core");
+		ipc_client?.SendEmptyMessage(IpcMessageId.REQ_REGION_LIST);
+	}
+	
+	private static void HandleRegionListResponse(IPCMessageReader data)
+	{
+		CDNRegionData[] regions = data.ReadArray<CDNRegionData>().Result;
+		Log.Info($"Received {regions.Length} regions from core");
+		
+		RegionSelector.SetAvailableRegions(regions);
+		RegionSelector.SelectRegion();
 	}
 }

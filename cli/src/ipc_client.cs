@@ -23,6 +23,18 @@ public class CliIpcClient(Process process)
 		Stream stdin = _process.StandardInput.BaseStream;
 		IpcManager.SendStringMessage(stdin, message_id, message_data);
 	}
+	
+	public void SendArrayMessage<T>(IpcMessageId message_id, T[] array) where T : struct
+	{
+		Stream stdin = _process.StandardInput.BaseStream;
+		IpcManager.SendArrayMessage(stdin, message_id, array);
+	}
+	
+	public void SendEmptyMessage(IpcMessageId message_id)
+	{
+		Stream stdin = _process.StandardInput.BaseStream;
+		IpcManager.SendEmptyMessage(stdin, message_id);
+	}
 
 	public async Task StartListening()
 	{

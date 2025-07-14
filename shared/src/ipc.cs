@@ -8,6 +8,8 @@ public enum IpcMessageId : uint
 {
 	HANDSHAKE_REQUEST = 1,
 	HANDSHAKE_RESPONSE = 2,
+	REQ_REGION_LIST = 3,
+	RES_REGION_LIST = 4,
 }
 
 public struct HandshakeRequestMessage
@@ -176,6 +178,19 @@ public class IPCMessageReader(Stream stream)
 			Marshal.FreeHGlobal(ptr);
 		}
 	}
+	
+	public async Task<T[]> ReadArray<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>() where T : struct
+	{
+		uint length = await ReadUInt32();
+		T[] array = new T[length];
+		
+		for (int i = 0; i < length; i++)
+		{
+			array[i] = await ReadStruct<T>();
+		}
+		
+		return array;
+	}
 }
 
 public delegate void IpcMessageHandler(IPCMessageReader data);
@@ -205,6 +220,30 @@ public static class IpcManager
 		
 		stream.Write(id_bytes);
 		IpcStringHelper.WriteString(stream, message_data);
+		stream.Flush();
+	}
+	
+	public static void SendArrayMessage<T>(Stream stream, IpcMessageId message_id, T[] array) where T : struct
+	{
+		byte[] id_bytes = BitConverter.GetBytes((uint)message_id);
+		byte[] length_bytes = BitConverter.GetBytes((uint)array.Length);
+		
+		stream.Write(id_bytes);
+		stream.Write(length_bytes);
+		
+		foreach (T item in array)
+		{
+			byte[] item_bytes = StructToBytes(item);
+			stream.Write(item_bytes);
+		}
+		
+		stream.Flush();
+	}
+	
+	public static void SendEmptyMessage(Stream stream, IpcMessageId message_id)
+	{
+		byte[] id_bytes = BitConverter.GetBytes((uint)message_id);
+		stream.Write(id_bytes);
 		stream.Flush();
 	}
 

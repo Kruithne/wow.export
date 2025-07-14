@@ -12,6 +12,7 @@ public partial class Program
 			Log.Blank();
 			
 			IpcManager.RegisterHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
+			IpcManager.RegisterHandler(IpcMessageId.REQ_REGION_LIST, HandleRegionListRequest);
 			IpcManager.StartListening();
 		}
 		catch (Exception ex)
@@ -41,5 +42,13 @@ public partial class Program
 		
 		using Stream stdout = Console.OpenStandardOutput();
 		IpcManager.SendStringMessage(stdout, IpcMessageId.HANDSHAKE_RESPONSE, core_version);
+	}
+	
+	private static void HandleRegionListRequest(IPCMessageReader data)
+	{
+		Log.Write("Sending region list to client");
+		
+		using Stream stdout = Console.OpenStandardOutput();
+		IpcManager.SendArrayMessage(stdout, IpcMessageId.RES_REGION_LIST, CDNRegionData.ALL_REGIONS);
 	}
 }
