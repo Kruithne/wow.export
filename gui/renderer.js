@@ -42,7 +42,6 @@ createApp({
 		
 		setup_cli_communication() {
 			window.electron_api.on_cli_handshake((_, data) => {
-				console.log('CLI handshake completed:', data);
 				this.cli_status.message = `Core Connected - Version: ${data.version}, Time: ${data.timestamp}`;
 				this.cli_status.color = 'green';
 			});

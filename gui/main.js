@@ -23,36 +23,23 @@ class CliBinaryIpcClient {
 	}
 	
 	send_handshake_request(platform, electron_version, chrome_version, node_version) {
-		console.log('Creating handshake request...');
-		
 		// Create GUI version string: gui-{app_version}-electron{electron_ver}-node{node_ver}-{platform}
 		const package_info = require('./package.json');
 		const app_version = package_info.version || '1.0.0';
 		const gui_version = `gui-${app_version}-electron${electron_version}-node${node_version}-${platform}`;
 		
-		console.log('GUI version string:', gui_version);
-		console.log('Sending handshake request message ID:', IpcMessageId.HANDSHAKE_REQUEST);
 		this.send_string_message(IpcMessageId.HANDSHAKE_REQUEST, gui_version);
 	}
 	
 	send_message(message_id, header_buffer) {
-		console.log(`Sending binary message: id=${message_id}, header_size=${header_buffer.length}`);
-		
 		const id_buffer = Buffer.alloc(4);
 		id_buffer.writeUInt32LE(message_id, 0);
 		
-		console.log('Message ID buffer (hex):', id_buffer.toString('hex'));
-		console.log('Header buffer (first 32 bytes):', header_buffer.slice(0, 32).toString('hex'));
-		
 		cli_process.stdin.write(id_buffer);
 		cli_process.stdin.write(header_buffer);
-		
-		console.log('Message sent to core process');
 	}
 	
 	send_string_message(message_id, message_string) {
-		console.log(`Sending string message: id=${message_id}, string="${message_string}"`);
-		
 		const id_buffer = Buffer.alloc(4);
 		id_buffer.writeUInt32LE(message_id, 0);
 		
@@ -60,62 +47,41 @@ class CliBinaryIpcClient {
 		const length_buffer = Buffer.alloc(4);
 		length_buffer.writeUInt32LE(string_bytes.length, 0);
 		
-		console.log('Message ID buffer (hex):', id_buffer.toString('hex'));
-		console.log('String length:', string_bytes.length);
-		console.log('String bytes (hex):', string_bytes.toString('hex'));
-		
 		cli_process.stdin.write(id_buffer);
 		cli_process.stdin.write(length_buffer);
 		cli_process.stdin.write(string_bytes);
-		
-		console.log('String message sent to core process');
 	}
 	
 	handle_stdout_data(data) {
-		console.log('Received data from core:', data.length, 'bytes');
-		console.log('Data (hex):', data.toString('hex'));
-		
 		this.buffer = Buffer.concat([this.buffer, data]);
-		console.log('Total buffer size:', this.buffer.length);
 		
 		while (this.buffer.length >= 4) {
 			const message_id = this.buffer.readUInt32LE(0);
-			console.log('Parsed message ID:', message_id);
 			
-			// All handshake messages are now string-based
 			if (message_id === IpcMessageId.HANDSHAKE_REQUEST || message_id === IpcMessageId.HANDSHAKE_RESPONSE) {
 				// Need at least 8 bytes: 4 for message_id + 4 for string length
-				if (this.buffer.length < 8) {
-					console.log('Waiting for string length. Have:', this.buffer.length, 'Need: 8');
+				if (this.buffer.length < 8)
 					break;
-				}
 				
 				const string_length = this.buffer.readUInt32LE(4);
-				console.log('String length:', string_length);
 				
 				const total_needed = 8 + string_length;
-				if (this.buffer.length < total_needed) {
-					console.log('Waiting for string data. Have:', this.buffer.length, 'Need:', total_needed);
+				if (this.buffer.length < total_needed)
 					break;
-				}
 				
 				const string_bytes = this.buffer.slice(8, 8 + string_length);
 				const message_string = string_bytes.toString('utf8');
 				this.buffer = this.buffer.slice(8 + string_length);
 				
-				console.log('Dispatching string message ID:', message_id, 'with string:', message_string);
 				this.dispatch_string_message(message_id, message_string);
 			} else {
 				console.error(`Unknown message ID: ${message_id}`);
-				console.log('Buffer contents (hex):', this.buffer.slice(0, Math.min(16, this.buffer.length)).toString('hex'));
 				this.buffer = this.buffer.slice(4);
 			}
 		}
 	}
 	
 	dispatch_string_message(message_id, message_string) {
-		console.log(`Dispatching string message: id=${message_id}, string="${message_string}"`);
-		
 		if (this.handlers[message_id]) {
 			this.handlers[message_id](message_string);
 		} else {
@@ -144,7 +110,6 @@ function create_window() {
 	if (process.argv.includes('--dev'))
 		main_window.webContents.openDevTools();
 
-	// Disable dev tools context menu in production
 	if (is_production) {
 		main_window.webContents.on('context-menu', (event) => {
 			event.preventDefault();
@@ -189,8 +154,6 @@ function spawn_cli_process() {
 		core_path = 'wow_export_core';
 	}
 	
-	console.log('Spawning core process:', core_path);
-	
 	if (!fs.existsSync(core_path)) {
 		console.error('Core executable not found at:', core_path);
 		if (main_window)
@@ -203,15 +166,12 @@ function spawn_cli_process() {
 		stdio: ['pipe', 'pipe', 'pipe']
 	});
 	
+	console.log('Core process spawned with PID:', cli_process.pid);
+	
 	cli_ipc_client = new CliBinaryIpcClient();
 	
-	console.log('Registering handshake response handler for message ID:', IpcMessageId.HANDSHAKE_RESPONSE);
 	cli_ipc_client.register_handler(IpcMessageId.HANDSHAKE_RESPONSE, (core_version) => {
-		console.log('HANDSHAKE RESPONSE HANDLER CALLED!');
-		console.log('Received handshake response from core:', core_version);
-		
 		if (main_window) {
-			console.log('Sending cli-handshake-complete event to renderer');
 			main_window.webContents.send('cli-handshake-complete', {
 				version: core_version,
 				timestamp: new Date().toISOString()
@@ -221,10 +181,7 @@ function spawn_cli_process() {
 		}
 	});
 	
-	console.log('Handler registration complete');
-	
 	cli_process.stdout.on('data', (data) => {
-		console.log('Raw stdout data received from core process');
 		cli_ipc_client.handle_stdout_data(data);
 	});
 	
@@ -247,16 +204,7 @@ function spawn_cli_process() {
 	});
 	
 	setTimeout(() => {
-		console.log('Timeout reached, attempting to send binary handshake to core');
-		console.log('Process versions:', {
-			platform: process.platform,
-			electron: process.versions.electron,
-			chrome: process.versions.chrome,
-			node: process.versions.node
-		});
-		
 		if (cli_process && !cli_process.killed) {
-			console.log('Core process is alive, sending handshake...');
 			cli_ipc_client.send_handshake_request(
 				process.platform,
 				process.versions.electron,
