@@ -125,13 +125,16 @@ class CliBinaryIpcClient {
 }
 
 function create_window() {
+	const is_production = app.isPackaged;
+	
 	main_window = new BrowserWindow({
 		width: 1200,
 		height: 800,
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js'),
 			contextIsolation: true,
-			nodeIntegration: false
+			nodeIntegration: false,
+			devTools: !is_production
 		}
 	});
 
@@ -139,6 +142,13 @@ function create_window() {
 
 	if (process.argv.includes('--dev'))
 		main_window.webContents.openDevTools();
+
+	// Disable dev tools context menu in production
+	if (is_production) {
+		main_window.webContents.on('context-menu', (event) => {
+			event.preventDefault();
+		});
+	}
 
 	main_window.on('closed', () => {
 		main_window = null;

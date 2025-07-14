@@ -16,7 +16,7 @@ async function main() {
 	console.log(`Launching GUI from ${gui_debug_dir}...`);
 	
 	const electron_process = spawn({
-		cmd: ['bunx', 'electron', '../../gui'],
+		cmd: ['bunx', 'electron', '../../gui', '--dev'],
 		cwd: gui_debug_dir,
 		stdio: ['inherit', 'inherit', 'inherit']
 	});
