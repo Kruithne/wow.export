@@ -33,6 +33,12 @@ As of 2.0.0, wow.export officially supports Windows, Linux and macOS with builds
 
 wow.export is a self-updating application. If a new version is released, it will automatically update itself to the newest version on launch.
 
+## 📟 GUI vs CLI
+
+**GUI**: The graphical user interface is the intended desktop user experience for wow.export. It provides an intuitive visual interface for browsing, previewing, and exporting World of Warcraft assets with full mouse and keyboard support.
+
+**CLI**: The command-line interface is designed for terminal users and integration with automated workflows. It provides programmatic access to wow.export's functionality, making it suitable for scripting, batch processing, and server environments.
+
 ## 💸 Supporting
 
 The development of this project is officially [supported via Patreon](https://www.patreon.com/c/kruithne). Kruithne provides a number of guides, scripts and additional tools, and in return all funds go directly to supporting development time and server costs for this project.
