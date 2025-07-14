@@ -12,17 +12,8 @@ public partial class Program
 			Log.Write("Report any issues at https://github.com/Kruithne/wow.export/issues");
 			Log.Blank();
 			
-			if (CLIFlags.Has(CLIFlag.HELP))
-			{
-				CLIFlags.PrintHelp();
-				return;
-			}
-			
-			if (CLIFlags.GetContext() == CLIContext.IPC)
-			{
-				InitializeIpcMode();
-				return;
-			}
+			IpcManager.RegisterStringHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
+			IpcManager.StartListening();
 		}
 		catch (Exception ex)
 		{
@@ -79,14 +70,6 @@ public partial class Program
 			return $"{base_version} (build {build_hash})";
 		
 		return base_version;
-	}
-	
-	private static void InitializeIpcMode()
-	{	
-		IpcManager.RegisterStringHandler(IpcMessageId.HANDSHAKE_REQUEST, HandleHandshake);
-		IpcManager.StartListening();
-		
-		Log.Write("IPC listener has exited");
 	}
 	
 	private static void HandleHandshake(string client_version)

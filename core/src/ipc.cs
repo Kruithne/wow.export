@@ -172,9 +172,6 @@ public static class IpcManager
 
 	public static void StartListening()
 	{
-		if (CLIFlags.GetContext() != CLIContext.IPC)
-			return;
-
 		try
 		{
 			using Stream stdin = Console.OpenStandardInput();
