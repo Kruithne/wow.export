@@ -111,7 +111,6 @@ class ProtobufIpcClient {
 	}
 }
 
-// Helper functions to convert between protobuf and existing data structures
 function protobuf_region_to_data(proto_region) {
 	return {
 		id: proto_region.id,
