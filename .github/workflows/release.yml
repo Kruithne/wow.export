@@ -303,3 +303,27 @@ jobs:
           asset_path: ./artifacts/wow_export_darwin_arm64/wow_export_darwin_arm64.zip
           asset_name: wow_export_darwin_arm64.zip
           asset_content_type: application/zip
+
+  deploy-updates:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Deploy Updates
+        run: |
+          for platform in "win32_x64" "win32_arm64" "linux_x64" "linux_arm64" "darwin_x64" "darwin_arm64"; do
+            URL=$(gh release view v${{ github.event.inputs.version }} --json assets --jq ".assets[] | select(.name==\"wow_export_${platform}.zip\") | .url")
+            bun deploy_build.js $platform "$URL" "${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }}"
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}

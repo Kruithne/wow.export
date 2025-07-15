@@ -20,13 +20,13 @@ public static class Updater
 	private static string GetPlatformString()
 	{
 		if (OperatingSystem.IsWindows())
-			return "windows";
+			return "win32";
 		
 		if (OperatingSystem.IsLinux())
 			return "linux";
 		
 		if (OperatingSystem.IsMacOS())
-			return "macos";
+			return "darwin";
 		
 		return "unknown";
 	}
