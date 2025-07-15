@@ -3,7 +3,7 @@
 import { spawn } from 'bun';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { get_platform, ensure_directory } from './build/build_utils.js';
+import { get_platform, get_architecture, ensure_directory } from './build/build_utils.js';
 import { compile_protobuf } from './compile_protobuf.js';
 
 function get_electron_platform() {
@@ -26,7 +26,8 @@ function get_icon_path() {
 
 function get_output_directory_name() {
 	const electron_platform = get_electron_platform();
-	return `wow_export-${electron_platform}-x64`;
+	const arch = get_architecture();
+	return `wow_export-${electron_platform}-${arch}`;
 }
 
 async function copy_directory_contents(source_path, dest_path) {
@@ -49,6 +50,7 @@ async function copy_directory_contents(source_path, dest_path) {
 async function main() {
 	const platform = get_platform();
 	const electron_platform = get_electron_platform();
+	const arch = get_architecture();
 	const icon_path = get_icon_path();
 	
 	console.log(`Building GUI application for ${platform}...`);
@@ -66,7 +68,7 @@ async function main() {
 		'./gui',
 		'wow_export',
 		`--platform=${electron_platform}`,
-		'--arch=x64',
+		`--arch=${arch}`,
 		'--out=dist/',
 		'--overwrite',
 		'--asar',

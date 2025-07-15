@@ -9,11 +9,20 @@ export function get_platform() {
 	}
 }
 
+export function get_architecture() {
+	switch (process.arch) {
+		case 'x64': return 'x64';
+		case 'arm64': return 'arm64';
+		default: throw new Error(`Unsupported architecture: ${process.arch}`);
+	}
+}
+
 export function get_runtime() {
+	const arch = get_architecture();
 	switch (process.platform) {
-		case 'win32': return 'win-x64';
-		case 'darwin': return 'osx-x64';
-		case 'linux': return 'linux-x64';
+		case 'win32': return `win-${arch}`;
+		case 'darwin': return `osx-${arch}`;
+		case 'linux': return `linux-${arch}`;
 		default: throw new Error(`Unsupported platform: ${process.platform}`);
 	}
 }
