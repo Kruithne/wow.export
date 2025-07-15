@@ -1,18 +1,18 @@
-<p align="center"><img src="docs/wow_export_logo.svg" width=200></p>
+<p align="center"><img src="docs/assets/wow_export_logo.svg" width=200></p>
 
-# <img src="docs/wow_export_logo.svg" width=20> wow.export
+# <img src="docs/assets/wow_export_logo.svg" width=20> wow.export
 
 wow.export is the number one export toolkit for World of Warcraft. Using either an offline local installation or the online Blizzard CDN servers, wow.export allows you to preview models, textures, sound, music, cinematics and much more, and export them to modern formats.
 
 <p align="center">
-	<img src="docs/screenshot_1.png" width=250>
+	<img src="docs/assets/screenshot_1.png" width=250>
 	<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-	<img src="docs/screenshot_2.png" width=250>
+	<img src="docs/assets/screenshot_2.png" width=250>
 </p>
 <p align="center">
-	<img src="docs/screenshot_3.png" width=250>
+	<img src="docs/assets/screenshot_3.png" width=250>
 	<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-	<img src="docs/screenshot_4.png" width=250>
+	<img src="docs/assets/screenshot_4.png" width=250>
 </p>
 
 ## 📦 Installing
@@ -20,11 +20,11 @@ wow.export is the number one export toolkit for World of Warcraft. Using either 
 If you're installing wow.export for the first time, check out the [Releases page](https://github.com/Kruithne/wow.export/releases), there you'll find the latest releases for all supported platforms.
 
 <p align="center">
-	<img src="docs/os_logo_apple.svg" width=40>
+	<img src="docs/assets/os_logo_apple.svg" width=40>
 	<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-	<img src="docs/os_logo_windows.svg" width=40>
+	<img src="docs/assets/os_logo_windows.svg" width=40>
 	<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-	<img src="docs/os_logo_linux.svg" width=40>
+	<img src="docs/assets/os_logo_linux.svg" width=40>
 </p>
 
 As of 2.0.0, wow.export officially supports Windows, Linux and macOS with builds for both x86 and ARM architecture.
