@@ -45,3 +45,11 @@ bun build_core
 # build gui (electron application)
 bun build_gui
 ```
+
+## Inter-Process Communication (IPC)
+
+The application uses a protobuf-based IPC system for communication between components:
+
+The system uses a length-prefixed binary protocol where each message consists of a 4-byte length header followed by a protobuf-encoded payload. Messages are defined in `/proto/messages.proto` and automatically compiled for both C# (.NET) and JavaScript environments.
+
+For detailed technical documentation, see [docs/IPC.md](docs/IPC.md).
