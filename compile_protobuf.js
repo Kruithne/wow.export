@@ -2,7 +2,7 @@
 
 import { spawn } from 'bun';
 import { join } from 'path';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 
 async function compile_protobuf() {
 	console.log('Compiling protobuf schemas...');
@@ -18,7 +18,6 @@ async function compile_protobuf() {
 	
 	console.log('Generating JavaScript protobuf classes using protobufjs...');
 	
-	// Generate JavaScript using pbjs
 	const pbjs_result = spawn({
 		cmd: [
 			'bun', 'x', 'pbjs',
