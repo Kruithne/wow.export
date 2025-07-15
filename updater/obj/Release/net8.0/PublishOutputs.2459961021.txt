@@ -1,1 +1,0 @@
-/mnt/d/wow_export_2/dist/native/net8.0/linux-x64/publish/wow_export_updater
