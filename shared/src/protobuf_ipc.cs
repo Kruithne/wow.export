@@ -79,6 +79,12 @@ public static class ProtobufIpcManager
 			case UpdateApplicationResponse response:
 				envelope.UpdateApplicationResponse = response;
 				break;
+			case UpdateApplicationStats stats:
+				envelope.UpdateApplicationStats = stats;
+				break;
+			case UpdateApplicationProgress progress:
+				envelope.UpdateApplicationProgress = progress;
+				break;
 			default:
 				throw new ArgumentException($"Unknown message type: {typeof(T).Name}");
 		}
@@ -105,6 +111,12 @@ public static class ProtobufIpcManager
 				break;
 			case IpcMessage.MessageTypeOneofCase.UpdateApplicationResponse:
 				await DispatchTypedMessage(ipc_message.UpdateApplicationResponse);
+				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationStats:
+				await DispatchTypedMessage(ipc_message.UpdateApplicationStats);
+				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationProgress:
+				await DispatchTypedMessage(ipc_message.UpdateApplicationProgress);
 				break;
 			case IpcMessage.MessageTypeOneofCase.None:
 			default:

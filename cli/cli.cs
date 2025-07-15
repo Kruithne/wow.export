@@ -82,6 +82,8 @@ public partial class Program
 		ipc_client.RegisterHandler<HandshakeResponse>(HandleHandshakeResponse);
 		ipc_client.RegisterHandler<RegionListResponse>(HandleRegionListResponse);
 		ipc_client.RegisterHandler<UpdateApplicationResponse>(HandleUpdateApplicationResponse);
+		ipc_client.RegisterHandler<UpdateApplicationStats>(HandleUpdateApplicationStats);
+		ipc_client.RegisterHandler<UpdateApplicationProgress>(HandleUpdateApplicationProgress);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -119,6 +121,21 @@ public partial class Program
 		
 		RegionListRequest request = new();
 		ipc_client?.SendMessage(request);
+	}
+	
+	private static uint total_files_to_update = 0;
+	
+	private static void HandleUpdateApplicationStats(UpdateApplicationStats stats)
+	{
+		total_files_to_update = stats.TotalFiles;
+		string total_size = Utils.FormatFileSize((long)stats.TotalSize);
+		Log.Info($"Updating {stats.TotalFiles} files ({total_size})");
+	}
+	
+	private static void HandleUpdateApplicationProgress(UpdateApplicationProgress progress)
+	{
+		string file_size = Utils.FormatFileSize((long)progress.FileSize);
+		Log.Info($"Downloading {progress.FileName} {progress.FileNumber}/{total_files_to_update} ({file_size})");
 	}
 	
 	private static void HandleRegionListResponse(RegionListResponse response)

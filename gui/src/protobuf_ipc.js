@@ -88,6 +88,10 @@ class ProtobufIpcClient {
 			this.dispatch_typed_message('update_application_request', ipc_message.update_application_request);
 		} else if (ipc_message.update_application_response) {
 			this.dispatch_typed_message('update_application_response', ipc_message.update_application_response);
+		} else if (ipc_message.update_application_stats) {
+			this.dispatch_typed_message('update_application_stats', ipc_message.update_application_stats);
+		} else if (ipc_message.update_application_progress) {
+			this.dispatch_typed_message('update_application_progress', ipc_message.update_application_progress);
 		} else {
 			console.error('Unknown message type in IPC message');
 		}
@@ -121,6 +125,12 @@ class ProtobufIpcClient {
 				break;
 			case 'update_application_response':
 				envelope.update_application_response = message;
+				break;
+			case 'update_application_stats':
+				envelope.update_application_stats = message;
+				break;
+			case 'update_application_progress':
+				envelope.update_application_progress = message;
 				break;
 			default:
 				throw new Error(`Unknown message type: ${message_type}`);

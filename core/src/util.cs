@@ -1,3 +1,6 @@
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+
 namespace wow_export;
 
 public static class Utils
@@ -21,5 +24,37 @@ public static class Utils
 		
 		double gigabytes = byte_count / (1024.0 * 1024 * 1024);
 		return $"{gigabytes:F1}gb";
+	}
+	
+	public static string ComputeSha256Hash(string file_path)
+	{
+		try
+		{
+			using FileStream file_stream = new(file_path, FileMode.Open, FileAccess.Read);
+			using SHA256 sha256 = SHA256.Create();
+			byte[] hash_bytes = sha256.ComputeHash(file_stream);
+			return Convert.ToHexString(hash_bytes).ToLowerInvariant();
+		}
+		catch (Exception ex)
+		{
+			Log.Write($"Failed to compute SHA256 hash for {file_path}: {ex.Message}");
+			return string.Empty;
+		}
+	}
+	
+	public static bool DoesFileMatchSize(string file_path, long expected_size)
+	{
+		try
+		{
+			if (!File.Exists(file_path))
+				return false;
+			
+			FileInfo file_info = new(file_path);
+			return file_info.Length == expected_size;
+		}
+		catch
+		{
+			return false;
+		}
 	}
 }

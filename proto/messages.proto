@@ -33,6 +33,17 @@ message UpdateApplicationRequest {
 message UpdateApplicationResponse {
 }
 
+message UpdateApplicationStats {
+    uint32 total_files = 1;
+    uint64 total_size = 2;
+}
+
+message UpdateApplicationProgress {
+    uint32 file_number = 1;
+    string file_name = 2;
+    uint64 file_size = 3;
+}
+
 message IpcMessage {
     oneof message_type {
         HandshakeRequest handshake_request = 1;
@@ -41,5 +52,7 @@ message IpcMessage {
         RegionListResponse region_list_response = 4;
         UpdateApplicationRequest update_application_request = 5;
         UpdateApplicationResponse update_application_response = 6;
+        UpdateApplicationStats update_application_stats = 7;
+        UpdateApplicationProgress update_application_progress = 8;
     }
 }

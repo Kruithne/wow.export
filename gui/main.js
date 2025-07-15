@@ -111,6 +111,25 @@ function spawn_cli_process() {
 		}
 	});
 	
+	let total_files_to_update = 0;
+	
+	cli_ipc_client.register_handler('update_application_stats', (stats) => {
+		total_files_to_update = stats.total_files;
+		if (main_window) {
+			main_window.webContents.send('update-status-message', `Updating ${stats.total_files} files`);
+		} else {
+			console.log(`Updating ${stats.total_files} files`);
+		}
+	});
+	
+	cli_ipc_client.register_handler('update_application_progress', (progress) => {
+		if (main_window) {
+			main_window.webContents.send('update-status-message', `Downloading ${progress.file_name} ${progress.file_number}/${total_files_to_update}`);
+		} else {
+			console.log(`Downloading ${progress.file_name} ${progress.file_number}/${total_files_to_update}`);
+		}
+	});
+	
 	cli_process.stdout.on('data', (data) => {
 		cli_ipc_client.handle_stdout_data(data);
 	});

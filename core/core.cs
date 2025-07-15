@@ -67,18 +67,36 @@ public partial class Program
 	{
 		Task.Run(async () =>
 		{
-			Log.Write("Checking for updates...");
-			await Task.Delay(5000);
+			bool updates_available = await Updater.CheckForUpdatesAsync(
+				stats_callback: SendUpdateStats,
+				progress_callback: SendUpdateProgress
+			);
 			
-			// todo
-			// LaunchUpdater();
-			// return;
-
-			UpdateApplicationResponse response = new();
-			
-			using Stream stdout = Console.OpenStandardOutput();
-			ProtobufIpcManager.SendMessage(stdout, response);
+			if (updates_available)
+				LaunchUpdater();
+			else
+				SendUpdateResponse();
 		});
+	}
+	
+	private static void SendUpdateResponse()
+	{
+		UpdateApplicationResponse response = new();
+		
+		using Stream stdout = Console.OpenStandardOutput();
+		ProtobufIpcManager.SendMessage(stdout, response);
+	}
+	
+	private static void SendUpdateStats(UpdateApplicationStats stats)
+	{
+		using Stream stdout = Console.OpenStandardOutput();
+		ProtobufIpcManager.SendMessage(stdout, stats);
+	}
+	
+	private static void SendUpdateProgress(UpdateApplicationProgress progress)
+	{
+		using Stream stdout = Console.OpenStandardOutput();
+		ProtobufIpcManager.SendMessage(stdout, progress);
 	}
 	
 	private static void LaunchUpdater()
@@ -115,8 +133,6 @@ public partial class Program
 			};
 			
 			updater_process.Start();
-			
-			// Exit core process to allow updater to do its work
 			Environment.Exit(0);
 		}
 		catch (Exception ex)
