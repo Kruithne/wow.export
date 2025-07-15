@@ -91,10 +91,12 @@ public partial class Program
 	private static void SendHandshake()
 	{	
 		string cli_version = AssemblyInfo.GetCliVersionString();
+		string process_name = OperatingSystem.IsWindows() ? "wow_export_cli.exe" : "wow_export_cli";
 		
 		HandshakeRequest request = new()
 		{
-			ClientVersion = cli_version
+			ClientVersion = cli_version,
+			ProcessName = process_name
 		};
 		
 		ipc_client?.SendMessage(request);

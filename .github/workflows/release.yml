@@ -53,6 +53,13 @@ jobs:
           sed -i 's/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ github.event.inputs.version }}.0<\/AssemblyVersion>/' core.csproj
           sed -i 's/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ github.event.inputs.version }}.0<\/FileVersion>/' core.csproj
 
+      - name: Update Updater version
+        run: |
+          cd updater
+          sed -i 's/<Version>.*<\/Version>/<Version>${{ github.event.inputs.version }}<\/Version>/' updater.csproj
+          sed -i 's/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ github.event.inputs.version }}.0<\/AssemblyVersion>/' updater.csproj
+          sed -i 's/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ github.event.inputs.version }}.0<\/FileVersion>/' updater.csproj
+
       - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"
@@ -60,7 +67,7 @@ jobs:
 
       - name: Commit version changes
         run: |
-          git add gui/package.json cli/cli.csproj core/core.csproj
+          git add gui/package.json cli/cli.csproj core/core.csproj updater/updater.csproj
           git commit -m "Release ${{ github.event.inputs.version }}"
           git push
 
@@ -121,6 +128,9 @@ jobs:
 
       - name: Build Core
         run: bun build_core.js
+
+      - name: Build Updater
+        run: bun build_updater.js
 
       - name: Build CLI
         run: bun build_cli.js

@@ -1,5 +1,6 @@
 export interface HandshakeRequest {
   client_version?: string;
+  process_name?: string;
 }
 
 export function encodeHandshakeRequest(message: HandshakeRequest): Uint8Array {
@@ -14,6 +15,13 @@ function _encodeHandshakeRequest(message: HandshakeRequest, bb: ByteBuffer): voi
   if ($client_version !== undefined) {
     writeVarint32(bb, 10);
     writeString(bb, $client_version);
+  }
+
+  // optional string process_name = 2;
+  let $process_name = message.process_name;
+  if ($process_name !== undefined) {
+    writeVarint32(bb, 18);
+    writeString(bb, $process_name);
   }
 }
 
@@ -34,6 +42,12 @@ function _decodeHandshakeRequest(bb: ByteBuffer): HandshakeRequest {
       // optional string client_version = 1;
       case 1: {
         message.client_version = readString(bb, readVarint32(bb));
+        break;
+      }
+
+      // optional string process_name = 2;
+      case 2: {
+        message.process_name = readString(bb, readVarint32(bb));
         break;
       }
 

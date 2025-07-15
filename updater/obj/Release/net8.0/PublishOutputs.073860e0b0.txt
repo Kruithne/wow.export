@@ -1,0 +1,1 @@
+D:\wow_export_2\dist\native\net8.0\win-x64\publish\wow_export_updater.exe

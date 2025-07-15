@@ -28,9 +28,11 @@ class ProtobufIpcClient {
 		const package_info = require('../package.json');
 		const app_version = package_info.version || '1.0.0';
 		const gui_version = `gui-${app_version}-electron${electron_version}-node${node_version}-chrome-${chrome_version}-${platform}`;
+		const process_name = platform === 'win32' ? 'wow_export.exe' : 'wow_export';
 		
 		const request = {
-			client_version: gui_version
+			client_version: gui_version,
+			process_name: process_name
 		};
 		
 		this.send_message(cli_process, request, 'handshake_request');

@@ -6,6 +6,7 @@ option csharp_namespace = "wow_export";
 
 message HandshakeRequest {
     string client_version = 1;
+    string process_name = 2;
 }
 
 message HandshakeResponse {
