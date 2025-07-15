@@ -41,6 +41,11 @@ class ProtobufIpcClient {
 		this.send_message(cli_process, request, 'region_list_request');
 	}
 	
+	send_update_application_request(cli_process) {
+		const request = {};
+		this.send_message(cli_process, request, 'update_application_request');
+	}
+	
 	handle_stdout_data(data) {
 		this.buffer = Buffer.concat([this.buffer, data]);
 		
@@ -77,6 +82,10 @@ class ProtobufIpcClient {
 			this.dispatch_typed_message('region_list_request', ipc_message.region_list_request);
 		} else if (ipc_message.region_list_response) {
 			this.dispatch_typed_message('region_list_response', ipc_message.region_list_response);
+		} else if (ipc_message.update_application_request) {
+			this.dispatch_typed_message('update_application_request', ipc_message.update_application_request);
+		} else if (ipc_message.update_application_response) {
+			this.dispatch_typed_message('update_application_response', ipc_message.update_application_response);
 		} else {
 			console.error('Unknown message type in IPC message');
 		}
@@ -104,6 +113,12 @@ class ProtobufIpcClient {
 				break;
 			case 'region_list_response':
 				envelope.region_list_response = message;
+				break;
+			case 'update_application_request':
+				envelope.update_application_request = message;
+				break;
+			case 'update_application_response':
+				envelope.update_application_response = message;
 				break;
 			default:
 				throw new Error(`Unknown message type: ${message_type}`);

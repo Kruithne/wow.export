@@ -67,6 +67,12 @@ public class CliIpcClient(Process process)
 			case IpcMessage.MessageTypeOneofCase.RegionListResponse:
 				DispatchTypedMessage(ipc_message.RegionListResponse);
 				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationRequest:
+				DispatchTypedMessage(ipc_message.UpdateApplicationRequest);
+				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationResponse:
+				DispatchTypedMessage(ipc_message.UpdateApplicationResponse);
+				break;
 			case IpcMessage.MessageTypeOneofCase.None:
 			default:
 				// Unknown message type - silently ignore

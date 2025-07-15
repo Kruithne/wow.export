@@ -271,11 +271,81 @@ function _decodeCDNRegionProto(bb: ByteBuffer): CDNRegionProto {
   return message;
 }
 
+export interface UpdateApplicationRequest {
+}
+
+export function encodeUpdateApplicationRequest(message: UpdateApplicationRequest): Uint8Array {
+  let bb = popByteBuffer();
+  _encodeUpdateApplicationRequest(message, bb);
+  return toUint8Array(bb);
+}
+
+function _encodeUpdateApplicationRequest(message: UpdateApplicationRequest, bb: ByteBuffer): void {
+}
+
+export function decodeUpdateApplicationRequest(binary: Uint8Array): UpdateApplicationRequest {
+  return _decodeUpdateApplicationRequest(wrapByteBuffer(binary));
+}
+
+function _decodeUpdateApplicationRequest(bb: ByteBuffer): UpdateApplicationRequest {
+  let message: UpdateApplicationRequest = {} as any;
+
+  end_of_message: while (!isAtEnd(bb)) {
+    let tag = readVarint32(bb);
+
+    switch (tag >>> 3) {
+      case 0:
+        break end_of_message;
+
+      default:
+        skipUnknownField(bb, tag & 7);
+    }
+  }
+
+  return message;
+}
+
+export interface UpdateApplicationResponse {
+}
+
+export function encodeUpdateApplicationResponse(message: UpdateApplicationResponse): Uint8Array {
+  let bb = popByteBuffer();
+  _encodeUpdateApplicationResponse(message, bb);
+  return toUint8Array(bb);
+}
+
+function _encodeUpdateApplicationResponse(message: UpdateApplicationResponse, bb: ByteBuffer): void {
+}
+
+export function decodeUpdateApplicationResponse(binary: Uint8Array): UpdateApplicationResponse {
+  return _decodeUpdateApplicationResponse(wrapByteBuffer(binary));
+}
+
+function _decodeUpdateApplicationResponse(bb: ByteBuffer): UpdateApplicationResponse {
+  let message: UpdateApplicationResponse = {} as any;
+
+  end_of_message: while (!isAtEnd(bb)) {
+    let tag = readVarint32(bb);
+
+    switch (tag >>> 3) {
+      case 0:
+        break end_of_message;
+
+      default:
+        skipUnknownField(bb, tag & 7);
+    }
+  }
+
+  return message;
+}
+
 export interface IpcMessage {
   handshake_request?: HandshakeRequest;
   handshake_response?: HandshakeResponse;
   region_list_request?: RegionListRequest;
   region_list_response?: RegionListResponse;
+  update_application_request?: UpdateApplicationRequest;
+  update_application_response?: UpdateApplicationResponse;
 }
 
 export function encodeIpcMessage(message: IpcMessage): Uint8Array {
@@ -328,6 +398,28 @@ function _encodeIpcMessage(message: IpcMessage, bb: ByteBuffer): void {
     writeByteBuffer(bb, nested);
     pushByteBuffer(nested);
   }
+
+  // optional UpdateApplicationRequest update_application_request = 5;
+  let $update_application_request = message.update_application_request;
+  if ($update_application_request !== undefined) {
+    writeVarint32(bb, 42);
+    let nested = popByteBuffer();
+    _encodeUpdateApplicationRequest($update_application_request, nested);
+    writeVarint32(bb, nested.limit);
+    writeByteBuffer(bb, nested);
+    pushByteBuffer(nested);
+  }
+
+  // optional UpdateApplicationResponse update_application_response = 6;
+  let $update_application_response = message.update_application_response;
+  if ($update_application_response !== undefined) {
+    writeVarint32(bb, 50);
+    let nested = popByteBuffer();
+    _encodeUpdateApplicationResponse($update_application_response, nested);
+    writeVarint32(bb, nested.limit);
+    writeByteBuffer(bb, nested);
+    pushByteBuffer(nested);
+  }
 }
 
 export function decodeIpcMessage(binary: Uint8Array): IpcMessage {
@@ -372,6 +464,22 @@ function _decodeIpcMessage(bb: ByteBuffer): IpcMessage {
       case 4: {
         let limit = pushTemporaryLength(bb);
         message.region_list_response = _decodeRegionListResponse(bb);
+        bb.limit = limit;
+        break;
+      }
+
+      // optional UpdateApplicationRequest update_application_request = 5;
+      case 5: {
+        let limit = pushTemporaryLength(bb);
+        message.update_application_request = _decodeUpdateApplicationRequest(bb);
+        bb.limit = limit;
+        break;
+      }
+
+      // optional UpdateApplicationResponse update_application_response = 6;
+      case 6: {
+        let limit = pushTemporaryLength(bb);
+        message.update_application_response = _decodeUpdateApplicationResponse(bb);
         bb.limit = limit;
         break;
       }

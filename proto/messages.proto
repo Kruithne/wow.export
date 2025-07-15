@@ -26,11 +26,19 @@ message CDNRegionProto {
     string ribbit_host_template = 4;
 }
 
+message UpdateApplicationRequest {
+}
+
+message UpdateApplicationResponse {
+}
+
 message IpcMessage {
     oneof message_type {
         HandshakeRequest handshake_request = 1;
         HandshakeResponse handshake_response = 2;
         RegionListRequest region_list_request = 3;
         RegionListResponse region_list_response = 4;
+        UpdateApplicationRequest update_application_request = 5;
+        UpdateApplicationResponse update_application_response = 6;
     }
 }

@@ -249,6 +249,68 @@ function _decodeCDNRegionProto(bb) {
   return message;
 }
 
+export function encodeUpdateApplicationRequest(message) {
+  let bb = popByteBuffer();
+  _encodeUpdateApplicationRequest(message, bb);
+  return toUint8Array(bb);
+}
+
+function _encodeUpdateApplicationRequest(message, bb) {
+}
+
+export function decodeUpdateApplicationRequest(binary) {
+  return _decodeUpdateApplicationRequest(wrapByteBuffer(binary));
+}
+
+function _decodeUpdateApplicationRequest(bb) {
+  let message = {};
+
+  end_of_message: while (!isAtEnd(bb)) {
+    let tag = readVarint32(bb);
+
+    switch (tag >>> 3) {
+      case 0:
+        break end_of_message;
+
+      default:
+        skipUnknownField(bb, tag & 7);
+    }
+  }
+
+  return message;
+}
+
+export function encodeUpdateApplicationResponse(message) {
+  let bb = popByteBuffer();
+  _encodeUpdateApplicationResponse(message, bb);
+  return toUint8Array(bb);
+}
+
+function _encodeUpdateApplicationResponse(message, bb) {
+}
+
+export function decodeUpdateApplicationResponse(binary) {
+  return _decodeUpdateApplicationResponse(wrapByteBuffer(binary));
+}
+
+function _decodeUpdateApplicationResponse(bb) {
+  let message = {};
+
+  end_of_message: while (!isAtEnd(bb)) {
+    let tag = readVarint32(bb);
+
+    switch (tag >>> 3) {
+      case 0:
+        break end_of_message;
+
+      default:
+        skipUnknownField(bb, tag & 7);
+    }
+  }
+
+  return message;
+}
+
 export function encodeIpcMessage(message) {
   let bb = popByteBuffer();
   _encodeIpcMessage(message, bb);
@@ -299,6 +361,28 @@ function _encodeIpcMessage(message, bb) {
     writeByteBuffer(bb, nested);
     pushByteBuffer(nested);
   }
+
+  // optional UpdateApplicationRequest update_application_request = 5;
+  let $update_application_request = message.update_application_request;
+  if ($update_application_request !== undefined) {
+    writeVarint32(bb, 42);
+    let nested = popByteBuffer();
+    _encodeUpdateApplicationRequest($update_application_request, nested);
+    writeVarint32(bb, nested.limit);
+    writeByteBuffer(bb, nested);
+    pushByteBuffer(nested);
+  }
+
+  // optional UpdateApplicationResponse update_application_response = 6;
+  let $update_application_response = message.update_application_response;
+  if ($update_application_response !== undefined) {
+    writeVarint32(bb, 50);
+    let nested = popByteBuffer();
+    _encodeUpdateApplicationResponse($update_application_response, nested);
+    writeVarint32(bb, nested.limit);
+    writeByteBuffer(bb, nested);
+    pushByteBuffer(nested);
+  }
 }
 
 export function decodeIpcMessage(binary) {
@@ -343,6 +427,22 @@ function _decodeIpcMessage(bb) {
       case 4: {
         let limit = pushTemporaryLength(bb);
         message.region_list_response = _decodeRegionListResponse(bb);
+        bb.limit = limit;
+        break;
+      }
+
+      // optional UpdateApplicationRequest update_application_request = 5;
+      case 5: {
+        let limit = pushTemporaryLength(bb);
+        message.update_application_request = _decodeUpdateApplicationRequest(bb);
+        bb.limit = limit;
+        break;
+      }
+
+      // optional UpdateApplicationResponse update_application_response = 6;
+      case 6: {
+        let limit = pushTemporaryLength(bb);
+        message.update_application_response = _decodeUpdateApplicationResponse(bb);
         bb.limit = limit;
         break;
       }

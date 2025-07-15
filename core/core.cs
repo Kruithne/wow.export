@@ -13,6 +13,7 @@ public partial class Program
 			
 			ProtobufIpcManager.RegisterHandler<HandshakeRequest>(HandleHandshakeRequest);
 			ProtobufIpcManager.RegisterHandler<RegionListRequest>(HandleRegionListRequest);
+			ProtobufIpcManager.RegisterHandler<UpdateApplicationRequest>(HandleUpdateApplicationRequest);
 			ProtobufIpcManager.StartListening();
 		}
 		catch (Exception ex)
@@ -53,5 +54,19 @@ public partial class Program
 		
 		using Stream stdout = Console.OpenStandardOutput();
 		ProtobufIpcManager.SendMessage(stdout, response);
+	}
+	
+	private static void HandleUpdateApplicationRequest(UpdateApplicationRequest request)
+	{
+		Task.Run(async () =>
+		{
+			Log.Write("Checking for updates...");
+			await Task.Delay(5000);
+			
+			UpdateApplicationResponse response = new();
+			
+			using Stream stdout = Console.OpenStandardOutput();
+			ProtobufIpcManager.SendMessage(stdout, response);
+		});
 	}
 }

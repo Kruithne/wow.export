@@ -94,6 +94,18 @@ function spawn_cli_process() {
 				version: response.core_version,
 				timestamp: new Date().toISOString()
 			});
+			
+			main_window.webContents.send('update-status-message', 'Checking for updates...');
+			cli_ipc_client.send_update_application_request(cli_process);
+		} else {
+			console.error('main_window is not available');
+		}
+	});
+	
+	cli_ipc_client.register_handler('update_application_response', (response) => {
+		if (main_window) {
+			main_window.webContents.send('update-status-message', 'Application is up to date');
+			cli_ipc_client.send_region_list_request(cli_process);
 		} else {
 			console.error('main_window is not available');
 		}

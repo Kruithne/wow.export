@@ -73,6 +73,12 @@ public static class ProtobufIpcManager
 			case RegionListResponse response:
 				envelope.RegionListResponse = response;
 				break;
+			case UpdateApplicationRequest request:
+				envelope.UpdateApplicationRequest = request;
+				break;
+			case UpdateApplicationResponse response:
+				envelope.UpdateApplicationResponse = response;
+				break;
 			default:
 				throw new ArgumentException($"Unknown message type: {typeof(T).Name}");
 		}
@@ -93,6 +99,12 @@ public static class ProtobufIpcManager
 				break;
 			case IpcMessage.MessageTypeOneofCase.RegionListResponse:
 				await DispatchTypedMessage(ipc_message.RegionListResponse);
+				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationRequest:
+				await DispatchTypedMessage(ipc_message.UpdateApplicationRequest);
+				break;
+			case IpcMessage.MessageTypeOneofCase.UpdateApplicationResponse:
+				await DispatchTypedMessage(ipc_message.UpdateApplicationResponse);
 				break;
 			case IpcMessage.MessageTypeOneofCase.None:
 			default:

@@ -81,6 +81,7 @@ public partial class Program
 		ipc_client = new CliIpcClient(core_process);
 		ipc_client.RegisterHandler<HandshakeResponse>(HandleHandshakeResponse);
 		ipc_client.RegisterHandler<RegionListResponse>(HandleRegionListResponse);
+		ipc_client.RegisterHandler<UpdateApplicationResponse>(HandleUpdateApplicationResponse);
 		
 		Task.Run(() => ipc_client.StartListening());
 		
@@ -102,6 +103,16 @@ public partial class Program
 	private static void HandleHandshakeResponse(HandshakeResponse response)
 	{
 		Log.Info($"Core version *{response.CoreVersion}* initialized");
+		Log.Blank();
+		
+		Log.Info("Checking for updates...");
+		UpdateApplicationRequest update_request = new();
+		ipc_client?.SendMessage(update_request);
+	}
+	
+	private static void HandleUpdateApplicationResponse(UpdateApplicationResponse response)
+	{
+		Log.Success("Everything is up-to-date!");
 		Log.Blank();
 		
 		RegionListRequest request = new();
