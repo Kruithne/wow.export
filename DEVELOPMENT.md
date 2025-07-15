@@ -14,7 +14,13 @@
 
 ```bash
 git clone https://github.com/Kruithne/wow.export.git
+
+# install project dependencies
 cd wow.export
+bun install
+
+# install gui dependencies
+cd gui
 bun install
 ```
 
