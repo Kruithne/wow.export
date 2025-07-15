@@ -129,13 +129,13 @@ public partial class Program
 	{
 		total_files_to_update = stats.TotalFiles;
 		string total_size = Utils.FormatFileSize((long)stats.TotalSize);
-		Log.Info($"Updating {stats.TotalFiles} files ({total_size})");
+		Log.Info($"Updating *{stats.TotalFiles}* files (*{total_size}*)");
 	}
 	
 	private static void HandleUpdateApplicationProgress(UpdateApplicationProgress progress)
 	{
 		string file_size = Utils.FormatFileSize((long)progress.FileSize);
-		Log.Info($"Downloading {progress.FileName} {progress.FileNumber}/{total_files_to_update} ({file_size})");
+		Log.Info($"Downloading *{progress.FileName}* *{progress.FileNumber}*/*{total_files_to_update}* (*{file_size}*)");
 	}
 	
 	private static void HandleRegionListResponse(RegionListResponse response)
