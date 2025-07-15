@@ -52,6 +52,19 @@ wow.export is a self-updating application. If a new version is released, it will
 
 **CLI**: The command-line interface is designed for terminal users and integration with automated workflows. It provides programmatic access to wow.export's functionality, making it suitable for scripting, batch processing, and server environments.
 
+## 🚩 Command Line Flags
+
+The CLI tool supports various command-line flags to control its behavior and functionality. These flags can be used individually or combined to customize the export process.
+
+> ![NOTE]
+> These flags are for the CLI tool only and have no effect on the standard GUI version.
+
+| Flag | Description | Example Usage |
+|------|-------------|---------------|
+| `--help` | Show help message and exit | `./wow_export_cli --help` |
+| `--verbose` | Enable verbose debug logging | `./wow_export_cli --verbose` |
+| `--cdn-region` | Select CDN region (eu, us, kr, cn, tw) | `./wow_export_cli --cdn-region=us` |
+
 ## 💸 Supporting
 
 The development of this project is officially [supported via Patreon](https://www.patreon.com/c/kruithne). Kruithne provides a number of guides, scripts and additional tools, and in return all funds go directly to supporting development time and server costs for this project.
