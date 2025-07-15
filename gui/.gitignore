@@ -1,1 +1,5 @@
 node_modules
+
+# generated protobuf files
+src/proto/messages.js
+src/proto/messages.d.ts
