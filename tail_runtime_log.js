@@ -29,18 +29,13 @@ class RuntimeLogTail {
 	async start() {
 		console.log(`Tailing runtime log: ${this.log_path}`);
 		
-		// Check if file exists initially
-		if (!existsSync(this.log_path)) {
+		if (!existsSync(this.log_path))
 			console.log('Log file does not exist yet, waiting...');
-		} else {
-			// Read existing content first
+		else
 			await this.read_from_position();
-		}
 		
-		// Start watching for changes
 		this.start_watching();
 		
-		// Handle graceful shutdown
 		process.on('SIGINT', () => {
 			console.log('\nStopping tail...');
 			this.stop();
@@ -49,34 +44,32 @@ class RuntimeLogTail {
 	}
 
 	start_watching() {
-		if (this.is_watching) return;
+		if (this.is_watching)
+			return;
 		
 		this.is_watching = true;
 		watchFile(this.log_path, { interval: 100 }, (curr, prev) => {
 			if (!existsSync(this.log_path)) {
-				// File was deleted
 				this.file_position = 0;
 				return;
 			}
 			
-			// Check if file was truncated (cleared)
-			if (curr.size < this.file_position) {
+			if (curr.size < this.file_position)
 				this.file_position = 0;
-			}
 			
-			// Read new content if file size changed
-			if (curr.size !== prev.size) {
+			if (curr.size !== prev.size)
 				this.read_from_position();
-			}
 		});
 	}
 
 	async read_from_position() {
-		if (!existsSync(this.log_path)) return;
+		if (!existsSync(this.log_path))
+			return;
 		
 		try {
 			const stats = statSync(this.log_path);
-			if (stats.size <= this.file_position) return;
+			if (stats.size <= this.file_position)
+				return;
 			
 			const stream = createReadStream(this.log_path, {
 				start: this.file_position,
@@ -89,22 +82,18 @@ class RuntimeLogTail {
 				buffer += chunk;
 				const lines = buffer.split('\n');
 				
-				// Keep the last incomplete line in buffer
 				buffer = lines.pop() || '';
 				
-				// Output complete lines
 				lines.forEach(line => {
-					if (line.trim()) {
+					if (line.trim())
 						console.log(line);
-					}
 				});
 			});
 			
 			stream.on('end', () => {
-				// Output any remaining content
-				if (buffer.trim()) {
+				if (buffer.trim())
 					console.log(buffer);
-				}
+
 				this.file_position = stats.size;
 			});
 			
@@ -134,7 +123,6 @@ async function main() {
 	const tail = new RuntimeLogTail();
 	await tail.start();
 	
-	// Keep the process running
 	await new Promise(() => {});
 }
 
