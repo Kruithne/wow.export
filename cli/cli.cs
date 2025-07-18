@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 
 namespace wow_export;
 
@@ -6,6 +7,7 @@ public partial class Program
 {
 	private static Process? core_process;
 	private static CliIpcClient? ipc_client;
+	private static CDNRegionData? selected_region;
 
 	public static void Main()
 	{
@@ -148,7 +150,31 @@ public partial class Program
 		CDNRegionData[] regions = ProtobufConversion.ExtractRegionsFromResponse(response);
 		Log.Verbose($"Received *{regions.Length}* regions");
 		
-		RegionSelector.SetAvailableRegions(regions);
-		RegionSelector.SelectRegion();
+		if (regions.Length == 0)
+		{
+			Log.Error("No regions available for selection");
+			return;
+		}
+		
+		string? specified_region = CLIFlags.Get(CLIFlag.CDN_REGION);
+		
+		if (specified_region != null)
+		{
+			foreach (CDNRegionData region in regions)
+			{
+				if (region.id == specified_region)
+				{
+					selected_region = region;
+					Log.Success($"Selected region: {region.display_name}");
+					return;
+				}
+			}
+			
+			string[] available_region_ids = regions.Select(r => r.id).ToArray();
+			throw new InvalidCdnRegionException(specified_region, available_region_ids);
+		}
+		
+		string[] region_ids = regions.Select(r => r.id).ToArray();
+		throw new MissingCdnRegionException(region_ids);
 	}
 }
