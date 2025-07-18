@@ -41,18 +41,14 @@ public static class RegionSelector
 			return;
 		}
 		
-		MenuOption[] menu_options = new MenuOption[_available_regions.Length];
+		string[] region_ids = new string[_available_regions.Length];
 		for (int i = 0; i < _available_regions.Length; i++)
-		{
-			CDNRegionData region = _available_regions[i];
-			menu_options[i] = new DynamicMenuOption(region.id, region.display_name, region);
-		}
-		
-		MenuOption selected_option = Log.GetUserInput("Select a CDN region:", menu_options);
-		if (selected_option is DynamicMenuOption dynamic_option)
-			_selected_region = (CDNRegionData?)dynamic_option.Data;
-		
-		if (_selected_region.HasValue)
-			Log.Success($"Selected region: {_selected_region.Value.display_name}");
+			region_ids[i] = $"*{_available_regions[i].id}*";
+			
+		string available_regions_formatted = string.Join(", ", region_ids);
+
+		Log.Error("The *--cdn-region* flag is required.");
+		Log.Info($"Available regions: {available_regions_formatted}");
+		throw new Exception("CDN region not specified");
 	}
 }

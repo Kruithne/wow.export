@@ -127,11 +127,7 @@ public partial class Log
 	private static readonly Action<string, string?> _success_logger = CreateLogger("DONE", "#2ecc71");
 	private static readonly Action<string, string?> _error_logger = CreateLogger("ERR!", "#e74c3c");
 	private static readonly Action<string, string?> _warn_logger = CreateLogger("WARN", "#f39c12");
-	private static readonly Action<string, string?> _user_logger = CreateLogger("USER", "#9b59b6");
 	private static readonly Action<string, string?> _verbose_logger = CreateLogger("DBUG", "#95a5a6");
-	
-	private static readonly string _user_prefix_bg = Colors.HexToAnsiBg("#9b59b6");
-	private static readonly string _user_prefix_fg = Colors.HexToAnsi("#9b59b6");
 
 	private static string PadPrefix(string prefix)
 	{
@@ -158,78 +154,12 @@ public partial class Log
 		_warn_logger(message, custom_prefix);
 	}
 
-	public static void User(string message, string? custom_prefix = null)
-	{
-		_user_logger(message, custom_prefix);
-	}
-
 	public static void Verbose(string message, string? custom_prefix = null)
 	{
 		if (!CLIFlags.Has(CLIFlag.VERBOSE))
 			return;
 			
 		_verbose_logger(message, custom_prefix);
-	}
-
-	public static string GetUserInput(string prompt)
-	{
-		string highlighted_prompt = GetHighlightRegex().Replace(prompt, match =>
-		{
-			string content = match.Groups[1].Value;
-			return $"{_user_prefix_fg}{content}{Colors.Reset}";
-		});
-		
-		string console_output = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} {highlighted_prompt} > ";
-		Console.Write(console_output);
-		
-		string? user_input = Console.ReadLine() ?? string.Empty;
-		return user_input;
-	}
-	
-	public static T GetUserInput<T>(string prompt, T[] options) where T : MenuOption
-	{
-		while (true)
-		{
-			User(prompt);
-			
-			for (int i = 0; i < options.Length; i++)
-			{
-				T option = options[i];
-				User($"{i + 1}. {option.DisplayName} ({option.Id})");
-			}
-			
-			string console_prompt = $"{_user_prefix_bg}{Colors.Black} USER {Colors.Reset} > ";
-			Console.Write(console_prompt);
-			
-			string? input = Console.ReadLine();
-			
-			if (string.IsNullOrEmpty(input))
-			{
-				Error("Please enter a valid selection.");
-				Blank();
-				continue;
-			}
-			
-			if (int.TryParse(input, out int selection) && selection >= 1 && selection <= options.Length)
-				return options[selection - 1];
-			
-			string input_lower = input.ToLower();
-			for (int i = 0; i < options.Length; i++)
-			{
-				if (options[i].Id.Equals(input_lower, StringComparison.CurrentCultureIgnoreCase))
-					return options[i];
-			}
-			
-			for (int i = 0; i < options.Length; i++)
-			{
-				if (options[i].DisplayName.Equals(input_lower, StringComparison.CurrentCultureIgnoreCase))
-					return options[i];
-			}
-			
-			Error($"Please enter a number (1-{options.Length}), an ID, or a display name from the list above.");
-			Blank();
-			continue;
-		}
 	}
 
 	public static void Blank()

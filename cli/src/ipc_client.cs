@@ -31,6 +31,12 @@ public class CliIpcClient(Process process)
 		}
 		catch (Exception ex)
 		{
+			if (ex.Message == "CDN region not specified")
+			{
+				Log.Blank();
+				Environment.Exit(1);
+			}
+			
 			Log.Error($"IPC client listener error: {ex.Message}");
 		}
 	}

@@ -24,10 +24,7 @@ public partial class Program
 			Log.Info($"Initializing...");
 			SpawnCoreProcess();
 			
-			while (true)
-			{
-				Thread.Sleep(100);
-			}
+			core_process?.WaitForExit();
 		}
 		catch (Exception ex)
 		{
@@ -39,7 +36,7 @@ public partial class Program
 			Log.Error($"*{ex.GetType().Name}*: {ex.Message}");
 
 			Log.Blank();
-			return;
+			Environment.Exit(1);
 		}
 		finally
 		{
