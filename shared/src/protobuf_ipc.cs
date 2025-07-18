@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Google.Protobuf;
 
 namespace wow_export;
