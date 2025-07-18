@@ -170,10 +170,10 @@ public partial class Program
 			}
 			
 			string[] available_region_ids = [.. regions.Select(r => r.id)];
-			throw new InvalidCdnRegionException(specified_region, available_region_ids);
+			throw new InvalidCDNRegionException(specified_region, available_region_ids);
 		}
 		
 		string[] region_ids = [.. regions.Select(r => r.id)];
-		throw new MissingCdnRegionException(region_ids);
+		throw new MissingCDNRegionException(region_ids);
 	}
 }
