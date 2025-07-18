@@ -9,6 +9,8 @@ public partial class Program
 
 	public static void Main()
 	{
+		GlobalExceptionHandler.Register();
+		
 		try
 		{
 			Log.Info($"Welcome to wow.export CLI version {AssemblyInfo.GetVersionWithBuild()}");
@@ -26,17 +28,13 @@ public partial class Program
 			
 			core_process?.WaitForExit();
 		}
+		catch (GracefulExitException ex)
+		{
+			ApplicationExit.GracefulExit(ex);
+		}
 		catch (Exception ex)
 		{
-			Log.Blank();
-			Log.Error("A *fatal* error has occurred which has caused wow.export to *crash*");
-			Log.Error("Considering reporting this error at *https://github.com/Kruithne/wow.export/issues*");
-			Log.Blank();
-
-			Log.Error($"*{ex.GetType().Name}*: {ex.Message}");
-
-			Log.Blank();
-			Environment.Exit(1);
+			ApplicationExit.FatalExit(ex);
 		}
 		finally
 		{

@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace wow_export;
 
 public static class RegionSelector
@@ -37,8 +39,8 @@ public static class RegionSelector
 				}
 			}
 			
-			Log.Error($"Region '{specified_region}' not found in available regions");
-			return;
+			string[] invalid_region_ids = _available_regions.Select(r => r.id).ToArray();
+			throw new InvalidCdnRegionException(specified_region, invalid_region_ids);
 		}
 		
 		string[] region_ids = new string[_available_regions.Length];
@@ -49,6 +51,7 @@ public static class RegionSelector
 
 		Log.Error("The *--cdn-region* flag is required.");
 		Log.Info($"Available regions: {available_regions_formatted}");
-		throw new Exception("CDN region not specified");
+		string[] available_region_ids = _available_regions.Select(r => r.id).ToArray();
+		throw new MissingCdnRegionException(available_region_ids);
 	}
 }
