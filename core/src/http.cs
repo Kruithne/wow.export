@@ -6,7 +6,7 @@ public static class HttpClient
 {
 	private static readonly System.Net.Http.HttpClient http_client = new();
 	
-	public static async Task<T?> DownloadJsonAsync<T>(string url)
+	public static async Task<UpdateManifestEntry[]?> DownloadUpdateManifestAsync(string url)
 	{
 		try
 		{
@@ -16,12 +16,12 @@ public static class HttpClient
 			response.EnsureSuccessStatusCode();
 			
 			string json_content = await response.Content.ReadAsStringAsync();
-			return JsonSerializer.Deserialize<T>(json_content);
+			return JsonSerializer.Deserialize(json_content, UpdaterJsonContext.Default.UpdateManifestEntryArray);
 		}
 		catch (Exception ex)
 		{
 			Log.Write($"Failed to download JSON from {url}: {ex.Message}");
-			return default;
+			return null;
 		}
 	}
 	

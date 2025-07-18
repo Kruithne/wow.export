@@ -15,6 +15,13 @@ public class UpdateManifestEntry
 	public string Hash { get; set; } = string.Empty;
 }
 
+[JsonSerializable(typeof(UpdateManifestEntry[]))]
+[JsonSerializable(typeof(UpdateManifestEntry))]
+[JsonSourceGenerationOptions(WriteIndented = false)]
+public partial class UpdaterJsonContext : JsonSerializerContext
+{
+}
+
 public static class Updater
 {
 	private static string GetPlatformString()
@@ -59,7 +66,7 @@ public static class Updater
 			string manifest_url = GetUpdateManifestUrl();
 			Log.Write($"Downloading update manifest from: {manifest_url}");
 			
-			UpdateManifestEntry[]? manifest = await HttpClient.DownloadJsonAsync<UpdateManifestEntry[]>(manifest_url);
+			UpdateManifestEntry[]? manifest = await HttpClient.DownloadUpdateManifestAsync(manifest_url);
 			
 			if (manifest == null || manifest.Length == 0)
 			{
