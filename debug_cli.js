@@ -21,8 +21,9 @@ async function main() {
 	console.log(`Launching CLI from ${cli_debug_dir}...`);
 	
 	const cli_filename = process.platform === 'win32' ? 'wow_export_cli.exe' : 'wow_export_cli';
+	const cli_args = process.argv.slice(2);
 	const cli_process = spawn({
-		cmd: [`./${cli_filename}`],
+		cmd: [`./${cli_filename}`, ...cli_args],
 		cwd: cli_debug_dir,
 		stdio: ['inherit', 'inherit', 'inherit']
 	});
