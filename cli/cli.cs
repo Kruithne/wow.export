@@ -109,6 +109,16 @@ public partial class Program
 		Log.Info($"Core version *{response.CoreVersion}* initialized");
 		Log.Blank();
 		
+		if (Utils.IsDebugMode())
+		{
+			Log.Info("Debug mode, skipping update check");
+			Log.Blank();
+			
+			RegionListRequest request = new();
+			ipc_client?.SendMessage(request);
+			return;
+		}
+		
 		Log.Info("Checking for updates...");
 		UpdateApplicationRequest update_request = new();
 		ipc_client?.SendMessage(update_request);

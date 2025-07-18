@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { ProtobufIpcClient } = require('./src/protobuf_ipc');
+const { is_debug_mode } = require('./src/debug_utils');
 
 let main_window;
 let cli_process;
@@ -95,8 +96,13 @@ function spawn_cli_process() {
 				timestamp: new Date().toISOString()
 			});
 			
-			main_window.webContents.send('update-status-message', 'Checking for updates...');
-			cli_ipc_client.send_update_application_request(cli_process);
+			if (is_debug_mode()) {
+				main_window.webContents.send('update-status-message', 'Debug mode - skipping update check');
+				cli_ipc_client.send_region_list_request(cli_process);
+			} else {
+				main_window.webContents.send('update-status-message', 'Checking for updates...');
+				cli_ipc_client.send_update_application_request(cli_process);
+			}
 		} else {
 			console.error('main_window is not available');
 		}

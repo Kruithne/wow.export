@@ -56,4 +56,13 @@ public static class Utils
 			return false;
 		}
 	}
+	
+	public static bool IsDebugMode()
+	{
+		#if DEBUG
+			return true;
+		#else
+			return System.Diagnostics.Debugger.IsAttached;
+		#endif
+	}
 }
