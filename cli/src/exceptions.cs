@@ -8,36 +8,18 @@ public abstract class CLIException : Exception
 	protected CLIException(string message, Exception inner_exception) : base(message, inner_exception) { }
 }
 
-public class GracefulExitException : CLIException
+public class GracefulExitException(int exit_code, string message) : CLIException(message)
 {
-	public int ExitCode { get; }
-	
-	public GracefulExitException(int exit_code, string message) : base(message)
-	{
-		ExitCode = exit_code;
-	}
+	public int ExitCode { get; } = exit_code;
 }
 
-public class MissingCdnRegionException : GracefulExitException
+public class MissingCdnRegionException(string[] available_regions) : GracefulExitException(1, "CDN region not specified")
 {
-	public string[] AvailableRegions { get; }
-	
-	public MissingCdnRegionException(string[] available_regions) 
-		: base(1, "CDN region not specified")
-	{
-		AvailableRegions = available_regions;
-	}
+	public string[] AvailableRegions { get; } = available_regions;
 }
 
-public class InvalidCdnRegionException : GracefulExitException
+public class InvalidCdnRegionException(string invalid_region, string[] available_regions) : GracefulExitException(1, $"Region '{invalid_region}' not found in available regions")
 {
-	public string InvalidRegion { get; }
-	public string[] AvailableRegions { get; }
-	
-	public InvalidCdnRegionException(string invalid_region, string[] available_regions)
-		: base(1, $"Region '{invalid_region}' not found in available regions")
-	{
-		InvalidRegion = invalid_region;
-		AvailableRegions = available_regions;
-	}
+	public string InvalidRegion { get; } = invalid_region;
+	public string[] AvailableRegions { get; } = available_regions;
 }
