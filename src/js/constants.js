@@ -112,6 +112,7 @@ module.exports = {
 	},
 
 	MAGIC: {
+		M3DT: 0x5444334D, // M3 model magic.
 		MD21: 0x3132444D, // M2 model magic.
 		MD20: 0x3032444D // M2 model magic (legacy)
 	},
@@ -125,6 +126,7 @@ module.exports = {
 		{ match: 'BLP2', ext: '.blp' },
 		{ match: 'MD20', ext: '.m2' },
 		{ match: 'MD21', ext: '.m2' },
+		{ match: 'M3DT', ext: '.m3' },
 		{ match: 'SKIN', ext: '.skin' },
 		{ match: '\x01\x00\x00\x00BIDA', ext: '.bone' },
 		{ match: 'SYHP\x02\x00\x00\x00', ext: '.phys' },
