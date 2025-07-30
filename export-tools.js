@@ -31,9 +31,7 @@ function folderExistsSync(path) {
     }
 }
 
-if (!folderExistsSync('./tests/user_data')) {
-    fs.mkdir('./tests/user_data');
-}
+fs.mkdirSync('./tests/user_data', { recursive: true });
 
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 const MAP_OFFSET = constants.GAME.MAP_OFFSET;
@@ -188,6 +186,8 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
             });
 
             await adt.export(exportPath, 0, gameObjects, helper);
+
+            write_console(JSON.stringify({all: exportTiles.length, current: i + 1}));
         }
     }
 }
@@ -274,7 +274,7 @@ const downloadMaps = async (region, product, version, mapId, exportPath) => {
     const region = argv[1] || 'eu';
     const product = argv[2] || 'wowt';
     const version = argv[3] || '11.1.7.61967';
-    const mapId = argv[4] || 1;
+    const mapId = argv[4] || 0;
     const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
 
     if (comm == 'versions') {
