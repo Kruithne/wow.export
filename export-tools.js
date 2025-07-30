@@ -228,7 +228,7 @@ const sendAvailableMaps = async (region, product, version) => {
 
     var mapEntries = maps.map(parseMapEntry);
 
-    write_console(JSON.stringify(mapEntries.map(x => { return { id: x.id, name: x.name } })));
+    write_console(JSON.stringify(mapEntries.map(x => { return { id: x.id, name: x.name, dir: x.dir } })));
 }
 
 const downloadMaps = async (region, product, version, mapId, exportPath) => {
