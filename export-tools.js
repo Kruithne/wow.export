@@ -127,11 +127,24 @@ const exportMap = async (map) => {
 
     console.log(`export map ${map.dir} ${map.id}`);
 
-    core.view.config.
+    const config = core.view.config;
+    config.mapsExportRaw = false;
+    config.pathFormat = "posix";
+    config.mapsIncludeHoles = true;
+    config.overwriteFiles = true;
+    config.mapsIncludeWMO = true;
+    config.mapsIncludeM2 = true;
+    config.mapsIncludeGameObjects = true;
+    config.enableSharedChildren = true;
+    config.removePathSpaces = true;
+    config.mapsIncludeWMOSets = true; //??
+    config.mapsIncludeLiquid = true;
+    config.mapsIncludeFoliage = false;
+	config.exportDirectory = 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+
 
     if (tiles) {
-        
-        const wowTests = 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+
         const exportPath = path.join(wowTests, 'maps', map.dir.toLowerCase());
 
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
