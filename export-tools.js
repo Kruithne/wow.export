@@ -55,7 +55,11 @@ const parseMapEntry = (entry) => {
     if (!match)
         throw new Error('Unexpected map entry');
 
-    return { id: parseInt(match[1]), name: match[2], dir: match[3] };
+    var name = match[2];
+    var id = parseInt(match[1]);
+    var dir = match[3];
+
+    return { id, name, dir };
 };
 
 const loadMap = async (mapID, mapDir) => {
@@ -145,9 +149,17 @@ const collectGameObjects = async (mapID, filter) => {
 };
 
 const exportMap = async (map, exportDirectory, region, product, version) => {
+    const config = core.view.config;
+    const exportPath = path.join(exportDirectory, 'maps', map.id + "-" + map.name.toLowerCase());
+    const completedFile = path.join(exportPath, "completed.txt");
+
+    if (fs.existsSync(completedFile)) {
+        write_console(JSON.stringify({ all: 0, current: 0 }));
+        return;
+    }
+
     const tiles = await loadMap(map.id, map.dir);
 
-    const config = core.view.config;
     config.mapsExportRaw = false;
     config.pathFormat = "posix";
     config.mapsIncludeHoles = true;
@@ -166,7 +178,7 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
 
     if (tiles) {
 
-        const exportPath = path.join(config.exportDirectory, 'maps', map.dir.toLowerCase());
+
 
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
         const helper = new ExportHelper(exportTiles.length, 'tile');
@@ -190,6 +202,8 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
             write_console(JSON.stringify({ all: exportTiles.length, current: i + 1 }));
         }
     }
+
+    fs.writeFileSync(completedFile, new Date().toISOString(), 'utf8');
 }
 
 
