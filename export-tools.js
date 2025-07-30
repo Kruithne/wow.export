@@ -1,5 +1,11 @@
 global.BUILD_RELEASE = false;
 
+var write_console = console.log;
+console.log = function () {
+
+}
+
+const log = require('./src/js/log');
 const core = require('./src/js/core');
 core.view.$watch = () => { };
 const path = require('path');
@@ -14,9 +20,27 @@ const util = require('util');
 const WDTLoader = require('./src/js/3D/loaders/WDTLoader');
 const listfile = require('./src/js/casc/listfile');
 const constants = require('./src/js/constants');
+const { argv } = require('process');
+const fs = require('fs');
+
+function folderExistsSync(path) {
+    try {
+        return fs.statSync(path).isDirectory();
+    } catch (err) {
+        return false;
+    }
+}
+
+if (!folderExistsSync('./tests/user_data')) {
+    fs.mkdir('./tests/user_data');
+}
 
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 const MAP_OFFSET = constants.GAME.MAP_OFFSET;
+
+log.write = function () {
+
+}
 
 core.createProgress = (segments) => {
     return {
@@ -122,10 +146,8 @@ const collectGameObjects = async (mapID, filter) => {
     return result;
 };
 
-const exportMap = async (map) => {
+const exportMap = async (map, exportDirectory, region, product, version) => {
     const tiles = await loadMap(map.id, map.dir);
-
-    console.log(`export map ${map.dir} ${map.id}`);
 
     const config = core.view.config;
     config.mapsExportRaw = false;
@@ -140,12 +162,13 @@ const exportMap = async (map) => {
     config.mapsIncludeWMOSets = true; //??
     config.mapsIncludeLiquid = true;
     config.mapsIncludeFoliage = false;
-	config.exportDirectory = 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+    config.modelsExportCollision = true;
+    config.exportDirectory = exportDirectory;
 
 
     if (tiles) {
 
-        const exportPath = path.join(wowTests, 'maps', map.dir.toLowerCase());
+        const exportPath = path.join(config.exportDirectory, 'maps', map.dir.toLowerCase());
 
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
         const helper = new ExportHelper(exportTiles.length, 'tile');
@@ -169,21 +192,60 @@ const exportMap = async (map) => {
     }
 }
 
-(async () => {
 
+const sendAvailableVersions = async (region) => {
+    const casc = new CASCRemote(region);
+    await casc.init();
+
+    write_console(JSON.stringify(casc.builds.map(x => { return { ver: x.VersionsName, name: x.Product } })));
+}
+
+const sendAvailableMaps = async (region, product, version) => {
     core.rcp = new RCPServer();
     core.rcp.load();
 
-    const casc = new CASCRemote('eu');
+    const casc = new CASCRemote(region);
     await casc.init();
     casc.locale = core.view.availableLocale.flags.enUS;
-    var products = casc.getProductList();
+    //var products = casc.getProductList();
+    Config.load();
+    Config.resetAllToDefault();
+
+    var index = casc.builds.findIndex(e => e.Product === product && e.VersionsName === version);
+
+    await casc.load(index);
+
+    //Читаем файлы карт
+    const table = new WDCReader('DBFilesClient/Map.db2');
+    await table.parse();
+
+    const maps = [];
+    for (const [id, entry] of table.getAllRows()) {
+        const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
+        if (listfile.getByFilename(wdtPath))
+            maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+    }
+
+    var mapEntries = maps.map(parseMapEntry);
+
+    write_console(JSON.stringify(mapEntries.map(x => { return { id: x.id, name: x.name } })));
+}
+
+const downloadMaps = async (region, product, version, mapId, exportPath) => {
+    core.rcp = new RCPServer();
+    core.rcp.load();
+
+    const casc = new CASCRemote(region);
+    await casc.init();
+    casc.locale = core.view.availableLocale.flags.enUS;
+    //var products = casc.getProductList();
     Config.load();
     Config.resetAllToDefault();
 
 
-    var buildIndex = 0;
-    await casc.load(buildIndex);
+    var index = casc.builds.findIndex(e => e.Product === product && e.VersionsName === version);
+
+    await casc.load(index);
 
     //Читаем файлы карт
     const table = new WDCReader('DBFilesClient/Map.db2');
@@ -201,8 +263,29 @@ const exportMap = async (map) => {
 
     var mapEntries = maps.map(parseMapEntry);
 
-    await exportMap(mapEntries[0]);
+    await exportMap(mapEntries.find(x => x.id == mapId), exportPath, region, product, version);
+};
 
+(async () => {
+
+    var argv = process.argv.slice(2);
+
+    const comm = argv[0] || 'download'
+    const region = argv[1] || 'eu';
+    const product = argv[2] || 'wowt';
+    const version = argv[3] || '11.1.7.61967';
+    const mapId = argv[4] || 1;
+    const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+
+    if (comm == 'versions') {
+        sendAvailableVersions(region);
+    }
+    else if (comm == 'maps') {
+        sendAvailableMaps(region, product, version);
+    }
+    else if (comm == 'download') {
+        await downloadMaps(region, product, version, mapId, exportPath);
+    }
 
 })();
 
