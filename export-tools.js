@@ -127,6 +127,8 @@ const exportMap = async (map) => {
 
     console.log(`export map ${map.dir} ${map.id}`);
 
+    core.view.config.
+
     if (tiles) {
         
         const wowTests = 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
@@ -144,12 +146,12 @@ const exportMap = async (map) => {
             const endX = startX + TILE_SIZE;
             const endY = startY + TILE_SIZE;
 
-            gameObjects = await collectGameObjects(selectedMapID, obj => {
+            const gameObjects = await collectGameObjects(selectedMapID, obj => {
                 const [posX, posY] = obj.Pos;
                 return posX > startX && posX < endX && posY > startY && posY < endY;
             });
 
-            await adt.export(wowTests, 0, null, helper);
+            await adt.export(exportPath, 0, gameObjects, helper);
         }
     }
 }
