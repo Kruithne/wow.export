@@ -187,7 +187,7 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
 
             await adt.export(exportPath, 0, gameObjects, helper);
 
-            write_console(JSON.stringify({all: exportTiles.length, current: i + 1}));
+            write_console(JSON.stringify({ all: exportTiles.length, current: i + 1 }));
         }
     }
 }
@@ -266,27 +266,44 @@ const downloadMaps = async (region, product, version, mapId, exportPath) => {
     await exportMap(mapEntries.find(x => x.id == mapId), exportPath, region, product, version);
 };
 
+const main = async (attempts) => {
+
+    attempts = attempts || 0;
+
+    try {
+
+        var argv = process.argv.slice(2);
+
+        const comm = argv[0] || 'download'
+        const region = argv[1] || 'eu';
+        const product = argv[2] || 'wowt';
+        const version = argv[3] || '11.1.7.61967';
+        const mapId = argv[4] || 0;
+        const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+
+        if (comm == 'versions') {
+            await sendAvailableVersions(region);
+        }
+        else if (comm == 'maps') {
+            await sendAvailableMaps(region, product, version);
+        }
+        else if (comm == 'download') {
+            await downloadMaps(region, product, version, mapId, exportPath);
+        }
+    }
+    catch (ex) {
+        if (attempts < 3) {
+            await main(attempts + 1);
+        }
+        else {
+            throw ex;
+        }
+    }
+}
+
 (async () => {
-
-    var argv = process.argv.slice(2);
-
-    const comm = argv[0] || 'download'
-    const region = argv[1] || 'eu';
-    const product = argv[2] || 'wowt';
-    const version = argv[3] || '11.1.7.61967';
-    const mapId = argv[4] || 0;
-    const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
-
-    if (comm == 'versions') {
-        sendAvailableVersions(region);
-    }
-    else if (comm == 'maps') {
-        sendAvailableMaps(region, product, version);
-    }
-    else if (comm == 'download') {
-        await downloadMaps(region, product, version, mapId, exportPath);
-    }
-
+    await main(0);
 })();
+
 
 
