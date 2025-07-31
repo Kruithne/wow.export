@@ -178,8 +178,6 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
 
     if (tiles) {
 
-
-
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
         const helper = new ExportHelper(exportTiles.length, 'tile');
         helper.start();
