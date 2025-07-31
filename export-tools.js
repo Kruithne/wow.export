@@ -281,7 +281,7 @@ const downloadMaps = async (region, product, version, mapId, exportPath) => {
 const main = async (attempts) => {
     var argv = process.argv.slice(2);
 
-    const comm = argv[0] || 'maps'
+    const comm = argv[0] || 'versions'
     const region = argv[1] || 'eu';
     const product = argv[2] || 'wowt';
     const version = argv[3] || '11.1.7.61967';
