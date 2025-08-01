@@ -151,12 +151,7 @@ const collectGameObjects = async (mapID, filter) => {
 const exportMap = async (map, exportDirectory, region, product, version) => {
     const config = core.view.config;
     const exportPath = path.join(exportDirectory, 'maps', map.id + "-" + map.name.toLowerCase());
-    const completedFile = path.join(exportPath, "completed.txt");
-
-    if (fs.existsSync(completedFile)) {
-        write_console(JSON.stringify({ all: 0, current: 0 }));
-        return;
-    }
+    const completedFile = path.join(exportPath, "completed-cursor.txt");
 
     const tiles = await loadMap(map.id, map.dir);
 
@@ -182,7 +177,14 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
         const helper = new ExportHelper(exportTiles.length, 'tile');
         helper.start();
 
-        for (var i = 0; i < exportTiles.length; i++) {
+        var i = 0;
+
+        if (fs.existsSync(completedFile)) {
+            var res = fs.readFileSync(completedFile, 'utf8');
+            i = parseInt(res);
+        }
+
+        for (; i < exportTiles.length; i++) {
             var adt = new ADTExporter(map.id, map.dir, exportTiles[i]);
 
             const startX = MAP_OFFSET - (adt.tileX * TILE_SIZE) - TILE_SIZE;
@@ -197,11 +199,13 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
 
             await adt.export(exportPath, 0, gameObjects, helper);
 
+            fs.writeFileSync(completedFile, i.toString(), 'utf8');
+
             write_console(JSON.stringify({ all: exportTiles.length, current: i + 1 }));
         }
     }
 
-    fs.writeFileSync(completedFile, new Date().toISOString(), 'utf8');
+    
 }
 
 
