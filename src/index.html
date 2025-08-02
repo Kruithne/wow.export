@@ -109,6 +109,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Include Bone Prefixes</h1>
+						<p>If enabled, wow.export will Include _p Bone prefixes in model skeleton/armature.</p>
+						<p>Disabling this will break backwards compatibility with previous glTF model and animation exports.</p>
+						<label class="ui-checkbox" title="">
+							<input type="checkbox" v-model="configEdit.modelsExportWithBonePrefix"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Enable Shared Textures (Recommended)</h1>
 						<p>If enabled, exported textures will be exported to their own path rather than with their parent.</p>
 						<p>This dramatically reduces disk space used by not duplicating textures.</p>

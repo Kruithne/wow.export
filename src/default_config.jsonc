@@ -61,6 +61,7 @@
 	"modelsExportTextures": true,
 	"modelsExportAlpha": true,
 	"modelsExportAnimations": false,
+	"modelsExportWithBonePrefix": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,
