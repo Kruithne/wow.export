@@ -106,7 +106,7 @@ const loadMap = async (mapID, mapDir) => {
 
 gameObjectsDB2 = null;
 
-const collectGameObjects = async (mapID, filter) => {
+const collectGameObjects = async (mapID) => {
     // Load GameObjects.db2/GameObjectDisplayInfo.db2 on-demand.
     if (gameObjectsDB2 === null) {
         const objTable = new WDCReader('DBFilesClient/GameObjects.db2');
@@ -135,17 +135,8 @@ const collectGameObjects = async (mapID, filter) => {
         }
     }
 
-    const result = new Set();
     const mapObjects = gameObjectsDB2.get(mapID);
-
-    if (mapObjects !== undefined) {
-        for (const obj of mapObjects) {
-            if (filter !== undefined && filter(obj))
-                result.add(obj);
-        }
-    }
-
-    return result;
+    return [...mapObjects];
 };
 
 const exportMap = async (map, exportDirectory, region, product, version) => {
@@ -154,6 +145,7 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
     const completedFile = path.join(exportPath, "completed-cursor.txt");
 
     const tiles = await loadMap(map.id, map.dir);
+    const gameObjectsAll = await collectGameObjects(map.id);
 
     config.mapsExportRaw = false;
     config.pathFormat = "posix";
@@ -170,9 +162,7 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
     config.modelsExportCollision = true;
     config.exportDirectory = exportDirectory;
 
-
     if (tiles) {
-
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
         const helper = new ExportHelper(exportTiles.length, 'tile');
         helper.start();
@@ -192,10 +182,16 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
             const endX = startX + TILE_SIZE;
             const endY = startY + TILE_SIZE;
 
-            const gameObjects = await collectGameObjects(selectedMapID, obj => {
+            const filtered = gameObjectsAll.filter(obj => {
                 const [posX, posY] = obj.Pos;
                 return posX > startX && posX < endX && posY > startY && posY < endY;
             });
+
+            const gameObjects = new Set();
+
+            for (const obj of filtered) {
+                gameObjects.add(obj);
+            }
 
             await adt.export(exportPath, 0, gameObjects, helper);
 
@@ -205,7 +201,7 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
         }
     }
 
-    
+
 }
 
 
@@ -285,7 +281,7 @@ const downloadMaps = async (region, product, version, mapId, exportPath) => {
 const main = async (attempts) => {
     var argv = process.argv.slice(2);
 
-    const comm = argv[0] || 'versions'
+    const comm = argv[0] || 'download'
     const region = argv[1] || 'eu';
     const product = argv[2] || 'wowt';
     const version = argv[3] || '11.1.7.61967';
