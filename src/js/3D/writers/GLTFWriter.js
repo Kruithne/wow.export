@@ -412,22 +412,40 @@ class GLTFWriter {
 				}
 
 				const bone_name = BoneMapper.get_bone_name(bone.boneID, bi, bone.boneNameCRC);
+
 				const prefix_node = {
 					name: bone_name + '_p',
 					translation: bone.pivot.map((v, i) => v - parent_pos[i]),
 					children: [nodeIndex + 1]
 				};
-	
-				const node = { name: bone_name };
-	
+
+				// Define how node acts, if we don't use prefixes we need to add position translation
+				const node = core.view.config.modelsExportWithBonePrefix ?
+				{ name: bone_name } :
+				{ name: bone_name, translation: bone.pivot.map((v, i) => v - parent_pos[i])};
+				
 				bone_lookup_map.set(bi, node);
-	
-				nodes.push(prefix_node);
-				nodes.push(node);
-	
+
+				if (core.view.config.modelsExportWithBonePrefix){
+					nodes.push(prefix_node);
+					nodes.push(node);
+				}
+				else{
+					nodes.push(node);
+				}
+
 				this.inverseBindMatrices.push(...vec3_to_mat4x4(bone.pivot));
-	
-				skin.joints.push(nodeIndex + 1);
+
+				// We need to wrap this in ifelse or we will create race condition due to the node push above (what)
+				if (core.view.config.modelsExportWithBonePrefix){
+					skin.joints.push(nodeIndex + 1);
+				}
+				else{
+					//Don't do +1 if we remove the prefix nodes
+					//https://github.com/Kruithne/wow.export/commit/7a19dcb60ff20b5ca1e2b2f83b6c10ae0afcf5a2#diff-e1681bb244fd61a8a3840e513733c6d99e50b715768f2971a87200d2abd86152L291-L304
+					skin.joints.push(nodeIndex);
+				}
+
 				
 				// Skip rest of the bone logic if we're not exporting animations.
 				if (!core.view.config.modelsExportAnimations)
