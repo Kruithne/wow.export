@@ -161,6 +161,9 @@ const exportMap = async (map, exportDirectory, region, product, version) => {
     config.mapsIncludeFoliage = false;
     config.modelsExportCollision = true;
     config.exportDirectory = exportDirectory;
+    config.exportWMOMeta = true;
+    config.modelsExportWMOGroups = true;
+    config.exportFoliageMeta = false;
 
     if (tiles) {
         const exportTiles = tiles.map((t, i) => { return { t, i } }).filter(t => t.t == 1).map(t => t.i);
@@ -283,10 +286,10 @@ const main = async (attempts) => {
 
     const comm = argv[0] || 'download'
     const region = argv[1] || 'eu';
-    const product = argv[2] || 'wowt';
-    const version = argv[3] || '11.1.7.61967';
+    const product = argv[2] || 'wow';
+    const version = argv[3] || '11.2.0.62493';
     const mapId = argv[4] || 0;
-    const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wowTests';
+    const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wow\\source\\eu_wow_11_2_0_62493';
 
     if (comm == 'versions') {
         await sendAvailableVersions(region);
