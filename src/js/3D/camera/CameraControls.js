@@ -62,7 +62,7 @@ class CameraControls {
 		this.offset = new THREE.Vector3();
 
 		this.quat = new THREE.Quaternion().setFromUnitVectors(camera.up, new THREE.Vector3(0, 1, 0));
-		this.quat_inverse = this.quat.clone().inverse();
+		this.quat_inverse = this.quat.clone().invert();
 
 		this.last_position = new THREE.Vector3();
 		this.last_quaternion = new THREE.Quaternion();

@@ -28,8 +28,9 @@
 		"request": "^2.88.0",
 		"sass": "^1.52.1",
 		"ssh2-sftp-client": "^9.0.4",
-		"terser": "^5.14.2",
 		"tar": "^5.0.10",
+		"terser": "^5.14.2",
+		"three": "^0.179.1",
 		"uuid": "^3.3.3"
 	},
 	"devDependencies": {

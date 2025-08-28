@@ -24,7 +24,7 @@ Vue.component('model-viewer', {
 	 */
 	mounted: function() {
 		const container = this.$el;
-		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, outputColorSpace: THREE.LinearSRGBColorSpace });
 
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
