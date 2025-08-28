@@ -86,10 +86,10 @@ const TestRunner = require('./js/iat/test-runner');
 const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
+
 const THREE = require('three');
 window.THREE = THREE;
-
-THREE.ColorManagement.enabled = false;
+THREE.ColorManagement.enabled = true;
 
 require('./js/components/listbox');
 require('./js/components/listboxb');

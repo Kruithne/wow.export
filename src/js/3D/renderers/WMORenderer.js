@@ -143,6 +143,8 @@ class WMORenderer {
 					if (!(texture.flags & 0x80))
 						tex.wrapT = THREE.RepeatWrapping;
 
+					tex.colorSpace = THREE.SRGBColorSpace;
+					
 					tex.needsUpdate = true;
 
 					this.textures.push(tex);

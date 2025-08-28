@@ -548,7 +548,7 @@ core.events.once('screen-tab-models', () => {
 	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 	scene = new THREE.Scene();
-	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
+	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 3);
 	scene.add(light);
 	scene.add(renderGroup);
 

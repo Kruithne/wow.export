@@ -258,6 +258,8 @@ class M2Renderer {
 			if (this.m2.textures[i].flags & 0x2)
 				tex.wrapT = THREE.RepeatWrapping;
 
+			tex.colorSpace = THREE.SRGBColorSpace;
+
 			// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
 
 			tex.needsUpdate = true;
@@ -335,6 +337,8 @@ class M2Renderer {
 			if (this.m2.textures[i].flags & 0x2)
 				tex.wrapT = THREE.RepeatWrapping;
 
+			tex.colorSpace = THREE.SRGBColorSpace;
+
 			tex.needsUpdate = true;
 
 			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
@@ -387,7 +391,9 @@ class M2Renderer {
 	
 					if (texture.flags & 0x2)
 						tex.wrapT = THREE.RepeatWrapping;
-	
+
+					tex.colorSpace = THREE.SRGBColorSpace;
+
 					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
 					
 					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
