@@ -1,3 +1,10 @@
+0.1.66 (xx-09-2025)
+- Added expansion icon for Midnight.
+- Added partial support for M3 models (geometry only).
+- Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
+- Updated Battle.net patch service URLs.
+- Updated three.js from r111 to r179 (some color changes might be observed in previews).
+
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
 - Added support for newer root manifest format introduced 11.1+.
