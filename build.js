@@ -21,7 +21,7 @@ const sass = require('sass');
 const uuid = require('uuid/v4');
 const crypto = require('crypto');
 const argv = process.argv.splice(2);
-const pkg = require('pkg');
+const pkg = require('@yao-pkg/pkg');
 
 const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
