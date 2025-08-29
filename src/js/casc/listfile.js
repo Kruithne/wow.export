@@ -339,7 +339,6 @@ const isLoaded = () => {
  * @returns {void}
  */
 const addEntry = (fileDataID, fileName) => {
-	log.write("Adding file to listfile:", fileDataID, fileName);
 	idLookup.set(fileDataID, fileName);
 	nameLookup.set(fileName, fileDataID);
 };
