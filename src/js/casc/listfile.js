@@ -334,6 +334,16 @@ const isLoaded = () => {
 	return loaded;
 };
 
+/**
+ * Adds an entry to the listfile.
+ * @returns {void}
+ */
+const addEntry = (fileDataID, fileName) => {
+	log.write("Adding file to listfile:", fileDataID, fileName);
+	idLookup.set(fileDataID, fileName);
+	nameLookup.set(fileName, fileDataID);
+};
+
 module.exports = {
 	loadListfile,
 	loadUnknowns,
@@ -347,5 +357,6 @@ module.exports = {
 	formatEntries,
 	formatUnknownFile,
 	ingestIdentifiedFiles,
-	isLoaded
+	isLoaded,
+	addEntry
 };
