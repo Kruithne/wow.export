@@ -44,5 +44,3 @@ bun ./build.js <BUILD1> <BUILD2> ...
 To debug wow.export, compile a `win-x64-debug` build using the build script. This will produce a bare-bones build using the SDK framework and without any production polish. Upon starting the debug version, DevTools will be automatically launched alongside the application.
 
 For the debug build, source code will not be compiled, rather a symlink is created. This means changes to the source code are instantly reflected in the application, simply run `chrome.runtime.reload()` in DevTools console to refresh sources (pressing F5 does not drop references and will lead to memory leaks).
-
-To quickly launch the debug build from the project directory, run `node debug` from your terminal. This will also handle compilation of `.scss` files both on startup and when changes are detected (allowing styling to be hot-reloaded via DevTools).

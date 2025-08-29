@@ -10,7 +10,6 @@ import tar from 'tar';
 import path from 'node:path';
 import util from 'node:util';
 import rcedit from 'rcedit';
-import sass from 'sass'; // todo: replace
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process'; // todo?
 
@@ -275,18 +274,6 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			for (const output of out_build.outputs)
 				log.success('Created bundle *%s*', output.hash);
-
-			// Compile SCSS files into a single minified CSS output.
-			const sassEntry = path.join(sourceDirectory, bundleConfig.sassEntry);
-			log.info('Compiling stylesheet (entry: *%s*)...', sassEntry);
-
-			const sassBuild = await util.promisify(sass.render)({
-				file: sassEntry,
-				outputStyle: 'compressed'
-			});
-
-			await fs.writeFile(path.join(sourceTarget, bundleConfig.sassOut), sassBuild.css, 'utf8');
-			log.success('Compiled stylesheet (*%d* files) in *%ds*', sassBuild.stats.includedFiles.length, sassBuild.stats.duration / 1000);
 		}
 
 		if (sourceType === 'CLONE' || isBundle) {

@@ -8,9 +8,5 @@
 /.vscode
 /.idea
 
-# Compiled stylesheets (use .scss for source).
-*.css
-*.css.map
-
 # Runtime directory for tests.
 /tests/user_data

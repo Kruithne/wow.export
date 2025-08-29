@@ -21,7 +21,6 @@
 	"dependencies": {
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
 		"rcedit": "^2.0.0",
-		"sass": "^1.52.1",
 		"ssh2-sftp-client": "^9.0.4",
 		"tar": "^5.0.10",
 		"three": "^0.179.1"
