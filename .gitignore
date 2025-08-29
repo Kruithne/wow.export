@@ -10,3 +10,6 @@
 
 # Runtime directory for tests.
 /tests/user_data
+
+# environment
+.env.local

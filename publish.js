@@ -3,204 +3,139 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const chalk = require('chalk');
-const path = require('path');
-const util = require('util');
-const fs = require('fs');
-const fsp = fs.promises;
-const argv = process.argv.splice(2);
-const AdmZip = require('adm-zip');
-const SFTPClient = require('ssh2-sftp-client');
+import path from 'node:path';
+import manifest from './package.json';
 
-/**
- * Defines the location of the build configuration file.
- * @type {string}
- */
-const BUILD_CONFIG_FILE = path.join(__dirname, 'build.conf');
+const ENDPOINT_BASE = 'wss://kruithne.net/wow.export/v2';
 
-/**
- * Defines the location of the publish configuration file.
- * @type {string}
- */
-const PUBLISH_CONFIG_FILE = path.join(__dirname, 'publish.conf');
-
-/**
- * Defines the build manifest file, relative to the build directory.
- * @type {string}
- */
-const MANIFEST_FILE = 'package.json';
-
-/**
- * Defines the build directory.
- * @type {string}
- */
 const BUILD_DIR = path.join(__dirname, 'bin');
+const PUBLISH_BUILDS = ['win-x64'];
 
-/**
- * Pattern used to locate text surrounded by curly brackets in a string.
- * @type {RegExp}
- */
-const HIGHLIGHT_PATTERN = /{([^}]+)}/g;
-
-/**
- * Highlights all text in `message` contained within curly brackets by
- * calling `colorFunc` on each and substituting the result.
- * @param {string} message String that will be highlighted.
- * @param {function} colorFunc Colouring function.
- */
-const filterHighlights = (message, colorFunc) => {
-	return message.replace(HIGHLIGHT_PATTERN, (_, g1) => colorFunc(g1));
-};
-
-/**
- * Logging utility.
- * @type {Object<string, function>}
- */
-const log = {
-	error: (msg, ...params) => log.print('{ERR} ' + msg, chalk.red, ...params),
-	warn: (msg, ...params) => log.print('{WARN} ' + msg, chalk.yellow, ...params),
-	success: (msg, ...params) => log.print('{DONE} ' + msg, chalk.green, ...params),
-	info: (msg, ...params) => log.print('{INFO} ' + msg, chalk.blue, ...params),
-	print: (msg, colorFunc, ...params) => console.log(filterHighlights(msg, colorFunc), ...params)
-};
-
-(async () => {
-	let sftp;
-
+for (const build_tag of PUBLISH_BUILDS) {
 	try {
-		const buildConfig = JSON.parse(await fsp.readFile(BUILD_CONFIG_FILE));
-		const publishConfig = JSON.parse(await fsp.readFile(PUBLISH_CONFIG_FILE));
+		console.log(`publishing build ${build_tag}...`);
 
-		let sftpConfig = {
-			host: process.env.SFTP_HOST,
-			port: process.env.SFTP_PORT ?? 22,
-			username: process.env.SFTP_USER,
-			password: process.env.SFTP_PASS,
-			privateKey: process.env.SFTP_PRIVATE_KEY,
-			remoteUpdateDir: process.env.SFTP_REMOTE_UPDATE_DIR,
-			remotePackageDir: process.env.SFTP_REMOTE_PACKAGE_DIR
-		};
+		const update_key = process.env.WOW_EXPORT_V2_UPDATE_KEY;
+		if (update_key === undefined)
+			throw new Error('environment var WOW_EXPORT_V2_UPDATE_KEY not defined');
 
-		// Collect available build names.
-		const builds = buildConfig.builds.map(build => build.name);
+		const build_dir_path = path.join(BUILD_DIR, build_tag);
+		const build_dir = Bun.file(build_dir_path);
+		await build_dir.stat(); // existence check
 
-		// Check all provided CLI parameters for valid build names.
-		const targetBuilds = [];
-		if (argv.includes('*')) {
-			// If * is present as a parameter, include all builds.
-			targetBuilds.push(...builds);
-		} else {
-			for (let arg of argv) {
-				arg = arg.toLowerCase();
+		const update_file_path = path.join(build_dir_path, 'update');
+		const update_file = Bun.file(update_file_path);
+		await update_file.stat(); // existence check
 
-				if (builds.includes(arg)) {
-					if (!targetBuilds.includes(arg))
-						targetBuilds.push(arg);
-					else
-						log.warn('Duplicate build {%s} provided in arguments, only publishing once.', arg);
-				} else {
-					log.error('Unknown build {%s}, check build configuration.', arg);
+		const update_manifest = Bun.file(update_file_path + '.json');
+		await update_manifest.stat(); // existence check
+
+		const m_size = update_manifest.size;
+		const c_size = update_file.size;
+		const t_size = m_size + c_size;
+
+		const data = new ArrayBuffer(t_size);
+
+		const update_file_data = await update_file.arrayBuffer();
+		const update_manifest_data = await update_manifest.arrayBuffer();
+
+		const view = new Uint8Array(data);
+		view.set(new Uint8Array(update_file_data), 0);
+		view.set(new Uint8Array(update_manifest_data), update_file.size);
+
+		console.log({ m_size, c_size, t_size });
+		console.log(`uploading update data via WebSocket...`);
+
+		const ws_url = `${ENDPOINT_BASE}/trigger_update/test/${m_size}/${c_size}`;
+		
+		const socket = new WebSocket(ws_url, {
+			headers: {
+				authorization: update_key
+			}
+		});
+
+		await new Promise((resolve, reject) => {
+			let uploaded_bytes = 0;
+			let last_logged_progress = 0;
+			let current_chunk_index = 0;
+			let ack_timeout = null;
+			const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks
+			const ACK_TIMEOUT = 30000; // 30 seconds timeout for ack
+			const chunks = [];
+			
+			// Pre-slice all chunks
+			for (let start = 0; start < t_size; start += CHUNK_SIZE) {
+				const end = Math.min(start + CHUNK_SIZE, t_size);
+				chunks.push(data.slice(start, end));
+			}
+			
+			function sendNextChunk() {
+				if (current_chunk_index >= chunks.length) {
+					console.log('All chunks sent, closing connection');
+					socket.close();
 					return;
 				}
-			}
-		}
-
-		// User has not selected any valid builds; display available and exit.
-		if (targetBuilds.length === 0) {
-			log.warn('You have not selected any builds.');
-			log.info('Available builds: ' + builds.map(e => '{' + e + '}').join(', '));
-			return;
-		}
-
-		const uploads = [];
-		const publishStart = Date.now();
-		log.info('Selected builds: ' + targetBuilds.map(e => '{' + e + '}').join(', '));
-
-		for (const build of targetBuilds) {
-			const publishBuildStart = Date.now();
-
-			const buildDir = path.join(BUILD_DIR, build);
-			const buildManifestPath = path.join(buildDir, MANIFEST_FILE);
-			const buildManifest = JSON.parse(await fsp.readFile(buildManifestPath));
-
-			log.info('Packaging {%s} ({%s})...', buildManifest.version, buildManifest.guid);
-
-			// Prepare update files for upload.
-			for (const file of publishConfig.updateFiles) {
-				const remote = util.format(sftpConfig.remoteUpdateDir, build, file);
-				const local = path.join(buildDir, file);
-
-				uploads.push({ local, remote, tmpProtection: true });
-			}
-
-			const zip = new AdmZip();
-			zip.addLocalFolder(buildDir, '', entry => {
-				// Do not package update files with the download archive.
-				return !publishConfig.updateFiles.includes(entry)
-			});
-
-			const packageName = util.format(publishConfig.packageName, buildManifest.version);
-			const packageOut = path.join(publishConfig.packageOut, packageName);
-
-			// Ensure directories exist for the package.e
-			await fsp.mkdir(path.dirname(packageOut), { recursive: true });
-
-			log.info('Writing package {%s}...', packageOut);
-			zip.writeZip(packageOut);
-
-			// Store the package path for upload.
-			const remoteFile = util.format(sftpConfig.remotePackageDir, build, packageName);
-			uploads.push({ remote: remoteFile, local: packageOut });
-
-			const publishBuildElapsed = (Date.now() - publishBuildStart) / 1000;
-			log.success('Build {%s} version {%s} packaged in {%ds}', build, buildManifest.version, publishBuildElapsed);
-		}
-
-		if (uploads.length > 0) {
-			const uploadStart = Date.now();
-			log.info('Establishing SFTP connection to {%s} @ {%d}', sftpConfig.host, sftpConfig.port);
-
-			// Load private key from disk if defined.
-			if (typeof sftpConfig.privateKey === 'string')
-				sftpConfig.privateKey = await fsp.readFile(sftpConfig.privateKey);
-
-			sftp = new SFTPClient();
-			await sftp.connect(sftpConfig);
-
-			const renames = new Map();
-			for (const upload of uploads) {
-				log.info('Uploading {%s} to {%s}...', upload.local, upload.remote);
-
-				if (upload.tmpProtection) {
-					// Upload as a temporary file then rename on the server.
-					const tmpRemote = upload.remote + '.tmp';
-
-					await sftp.mkdir(path.dirname(upload.remote), true);
-					await sftp.put(upload.local, tmpRemote);
-
-					renames.set(tmpRemote, upload.remote);
-				} else {
-					// Upload files normally.
-					await sftp.mkdir(path.dirname(upload.remote), true);
-					await sftp.put(upload.local, upload.remote);
+				
+				const chunk = chunks[current_chunk_index];
+				console.log(`Sending chunk ${current_chunk_index + 1}/${chunks.length} (${chunk.byteLength} bytes)`);
+				socket.send(chunk);
+				uploaded_bytes += chunk.byteLength;
+				current_chunk_index++;
+				
+				const progress = Math.floor((uploaded_bytes / t_size) * 100);
+				if (progress >= last_logged_progress + 10 || uploaded_bytes >= t_size) {
+					console.log(`Upload progress: ${progress}% (${uploaded_bytes}/${t_size} bytes)`);
+					last_logged_progress = progress;
+				}
+				
+				// Set timeout for ack
+				if (current_chunk_index < chunks.length) {
+					ack_timeout = setTimeout(() => {
+						console.log(`Timeout waiting for ack after chunk ${current_chunk_index}`);
+						socket.close(1002, 'Ack timeout');
+					}, ACK_TIMEOUT);
 				}
 			}
+			
+			socket.onopen = () => {
+				console.log('WebSocket connection established');
+				sendNextChunk(); // Send first chunk
+			};
+			
+			socket.onmessage = (event) => {
+				if (event.data === 'ack') {
+					console.log(`Received ack for chunk ${current_chunk_index}`);
+					if (ack_timeout) {
+						clearTimeout(ack_timeout);
+						ack_timeout = null;
+					}
+					sendNextChunk(); // Send next chunk after acknowledgment
+				} else {
+					console.log(`Unexpected message from server: ${event.data}`);
+				}
+			};
 
-			log.info('Renaming remote temporary files...');
-			for (const [from, to] of renames)
-				await sftp.posixRename(from, to);
+			socket.onerror = (error) => {
+				reject(new Error(`WebSocket error: ${error.message || 'Unknown error'}`));
+			};
 
-			const uploadElapsed = (Date.now() - uploadStart) / 1000;
-			log.success('Uploaded {%d} files in {%ds}', uploads.length, uploadElapsed);
-		}
+			socket.onclose = (event) => {
+				console.log(`WebSocket closed: code=${event.code}, reason="${event.reason}", chunks sent=${current_chunk_index}/${chunks.length}`);
+				if (event.code === 1000) {
+					resolve();
+				} else {
+					reject(new Error(`WebSocket closed unexpectedly: ${event.code} ${event.reason}`));
+				}
+			};
+		});
 
-		const publishElapsed = (Date.now() - publishStart) / 1000;
-		log.success('Published all packages in {%ds}', publishElapsed);
+		console.log(`successfully published build ${build_tag}`);
+
+		// await update_file.delete();
+		// await update_manifest.delete();
+	
+		// todo: create ZIP archive and upload that too.
 	} catch (e) {
-		log.error('Publish failed due to error: %s', e.message);
-		log.error(e.stack);
-	} finally {
-		if (sftp)
-			await sftp.end();
+		console.error(`failed to publish build ${build_tag}: ${e.message}`);
 	}
-})();
+}
