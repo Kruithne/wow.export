@@ -44,15 +44,15 @@ for (const build_tag of PUBLISH_BUILDS) {
 		view.set(new Uint8Array(update_file_data), 0);
 		view.set(new Uint8Array(update_manifest_data), update_file.size);
 
-		await Bun.write(path.join(PUBLISH_DIR, 'update'), data);
-
+		const pub_dir = path.join(PUBLISH_DIR, build_tag);
+		await Bun.write(path.join(pub_dir, 'update'), data);
 		
 		await update_file.delete();
 		await update_manifest.delete();
 		
 		const zip = new AdmZip();
 		zip.addLocalFolder(build_dir_path);
-		zip.writeZip(path.join(PUBLISH_DIR, util.format(ZIP_FORMAT, build_tag, manifest.version)));
+		zip.writeZip(path.join(pub_dir, util.format(ZIP_FORMAT, build_tag, manifest.version)));
 		
 		console.log(`successfully published build ${build_tag}`);
 	} catch (e) {
