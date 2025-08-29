@@ -46,8 +46,5 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
       - name: Trigger update webhook
-        run: >
-          curl -X POST https://kruithne.net/wow.export/v2/trigger_update/test
-          -H "Authorization: ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }}"
-          -H "Content-Type: application/json"
-          -d "{\"update_url\": \"${{ steps.upload-update.outputs.browser_download_url }}\", \"manifest_url\": \"${{ steps.upload-manifest.outputs.browser_download_url }}\", \"package_url\": \"${{ steps.upload-zip.outputs.browser_download_url }}\"}"
+        shell: cmd
+        run: 'curl -X POST "https://kruithne.net/wow.export/v2/trigger_update/test" -H "Authorization: ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }}" -H "Content-Type: application/json" -d "{\"update_url\": \"${{ steps.upload-update.outputs.browser_download_url }}\", \"manifest_url\": \"${{ steps.upload-manifest.outputs.browser_download_url }}\", \"package_url\": \"${{ steps.upload-zip.outputs.browser_download_url }}\"}"'
