@@ -288,6 +288,40 @@ core.events.once('screen-tab-maps', async () => {
 	const maps = [];
 	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
+
+		if (entry.WdtFileDataID != null && listfile.getByID(entry.WdtFileDataID) == null) {
+			log.write('Adding files to listfile for map %s (%d)', entry.MapName_lang);
+			listfile.addEntry(entry.WdtFileDataID, wdtPath);
+
+			try {
+				const data = await core.view.casc.getFileByName(wdtPath);
+				const wdt = selectedWDT = new WDTLoader(data);
+				wdt.load();
+
+				for (let x = 0; x < 64; x++) {
+					for (let y = 0; y < 64; y++) {
+						const tile = wdt.entries[x * 64 + y];
+						if (tile.rootADT != 0) {
+							const tileBasePath = util.format('world/maps/%s/map%s_%s_%s', entry.Directory, entry.Directory, x, y);
+							listfile.addEntry(tile.rootADT, tileBasePath + ".adt");
+							listfile.addEntry(tile.obj0ADT, tileBasePath + "_obj0.adt");
+							listfile.addEntry(tile.obj1ADT, tileBasePath + "_obj1.adt");
+							listfile.addEntry(tile.tex0ADT, tileBasePath + "_tex0.adt");
+							listfile.addEntry(tile.lodADT, tileBasePath + "_lod.adt");
+
+							const paddedX = x.toString().padStart(2, '0');
+							const paddedY = y.toString().padStart(2, '0');
+							listfile.addEntry(tile.minimapTexture, util.format('world/minimaps/%s/map%s_%s.blp', entry.Directory, paddedX, paddedY));
+							listfile.addEntry(tile.mapTexture, util.format('world/maptextures/%s/%s_%s_%s.blp', entry.Directory, entry.Directory, paddedX, paddedY));
+							listfile.addEntry(tile.mapTextureN, util.format('world/maptextures/%s/%s_%s_%s_n.blp', entry.Directory, entry.Directory, paddedX, paddedY));
+						}
+					}
+				}
+			} catch (e) {
+				log.write('Failed to add files to listfile for WDT %s', wdtPath);
+			}
+		}
+
 		if (listfile.getByFilename(wdtPath))
 			maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
 	}
