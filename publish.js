@@ -24,6 +24,7 @@ for (const build_tag of PUBLISH_BUILDS) {
 		const update_manifest_path = update_file_path + '.json';
 
 		const pub_dir = path.join(PUBLISH_DIR, build_tag);
+		await fs.mkdir(pub_dir, { recursive: true });
 
 		await fs.rename(update_file_path, path.join(pub_dir, 'update'));
 		await fs.rename(update_manifest_path, path.join(pub_dir, 'update.json'));
