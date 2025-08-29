@@ -23,8 +23,7 @@ When an update to wow.export is available, you will be prompted in the applicati
 
 ## Building (Developers Only)
 - 🔨 Building wow.export **requires** Node 15.3.0 or above.
-- 🧙‍ For building on Windows, [node-gyp prerequisites](https://github.com/nodejs/node-gyp#on-windows) **may** be required.
-- 🍷 For building Windows builds on platforms **other** than Windows, Wine 1.6 or above is required.
+- 🔨 Building wow.export **requires** Bun 1.2 or above.
 
 ```
 git fetch https://github.com/Kruithne/wow.export.git

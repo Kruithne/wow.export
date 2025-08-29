@@ -20,8 +20,8 @@ const terser = require('terser');
 const sass = require('sass');
 const uuid = require('uuid/v4');
 const crypto = require('crypto');
+const { spawnSync } = require('child_process');
 const argv = process.argv.splice(2);
-const pkg = require('@yao-pkg/pkg');
 
 const CONFIG_FILE = './build.conf';
 const MANIFEST_FILE = './package.json';
@@ -663,7 +663,19 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			const updaterOutput = path.join(buildDir, build.updater.out);
 
 			log.info('Compiling updater application (*%s*)...', build.updater.target);
-			await pkg.exec([config.updaterScript, '--target', build.updater.target, '--output', updaterOutput]);
+
+			const bunArgs = [
+				'build',
+				config.updaterScript,
+				'--compile',
+				'--target=' + build.updater.target,
+				'--outfile',
+				updaterOutput
+			];
+			
+			const result = spawnSync('bun', bunArgs, { stdio: 'inherit' });
+			if (result.status !== 0)
+				throw new Error(`Bun build failed with code ${result.status}`);
 
 			const updaterElapsed = (Date.now() - updaterStart) / 1000;
 			log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);

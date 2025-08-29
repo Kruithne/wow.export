@@ -4,6 +4,8 @@
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
 - Updated Battle.net patch service URLs.
 - Updated three.js from r111 to r179 (some color changes might be observed in previews).
+- Replaced pkg dependency for building updater with bun to eliminate cross-platform issues.
+- Added cross-platform support for Linux & MacOS into updater application.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.

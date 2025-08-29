@@ -23,7 +23,6 @@
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
 		"chalk": "^2.4.2",
 		"filesize": "^5.0.3",
-		"@yao-pkg/pkg": "^6.6.0",
 		"rcedit": "^2.0.0",
 		"request": "^2.88.0",
 		"sass": "^1.52.1",
