@@ -136,7 +136,11 @@ const collectGameObjects = async (mapID) => {
     }
 
     const mapObjects = gameObjectsDB2.get(mapID);
-    return [...mapObjects];
+    if(mapObjects)
+    {
+        return [...mapObjects];
+    }
+    return [];
 };
 
 const exportMap = async (map, exportDirectory, region, product, version) => {
@@ -288,7 +292,7 @@ const main = async (attempts) => {
     const region = argv[1] || 'eu';
     const product = argv[2] || 'wow';
     const version = argv[3] || '11.2.0.62493';
-    const mapId = argv[4] || 0;
+    const mapId = argv[4] || 30;
     const exportPath = argv[5] || 'C:\\Users\\Hrust\\OneDrive\\Рабочий стол\\wow\\source\\eu_wow_11_2_0_62493';
 
     if (comm == 'versions') {
