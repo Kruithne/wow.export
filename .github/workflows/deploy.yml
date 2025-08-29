@@ -11,25 +11,43 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up node
-        uses: actions/setup-node@v3
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 16
-          cache: npm
-      - name: npm install
-        run: npm ci
+          bun-version: latest
+      - name: bun install
+        run: bun install
       - name: Compile wow.export win-x64
-        run: mkdir bin\win-x64 && node build.js win-x64
+        run: bun build.js win-x64
       - name: Publish
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          SFTP_PASS: ${{ secrets.SFTP_PASS }}
-          SFTP_REMOTE_UPDATE_DIR: ${{ secrets.SFTP_REMOTE_UPDATE_DIR }}
-          SFTP_REMOTE_PACKAGE_DIR: ${{ secrets.SFTP_REMOTE_PACKAGE_DIR }}
-        run: node publish.js win-x64
-      - name: Upload release
-        uses: softprops/action-gh-release@v0.1.13
+        run: bun publish.js win-x64
+      - name: Upload update file
+        id: upload-update
+        uses: svenstaro/upload-release-action@v2
         with:
-          files: bin\packages\wow.export-*.zip
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: publish/win-x64/update
+          asset_name: update
+          tag: ${{ github.ref }}
+      - name: Upload update.json file
+        id: upload-manifest
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: publish/win-x64/update.json
+          asset_name: update.json
+          tag: ${{ github.ref }}
+      - name: Upload zip package
+        id: upload-zip
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: publish/win-x64/wow-export-win-x64-*.zip
+          file_glob: true
+          tag: ${{ github.ref }}
+      - name: Trigger update webhook
+        run: |
+          curl -X POST https://kruithne.net/wow.export/v2/trigger_update/win-x64 \
+            -H "Authorization: ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"update_url": "${{ steps.upload-update.outputs.browser_download_url }}", "manifest_url": "${{ steps.upload-manifest.outputs.browser_download_url }}", "package_url": "${{ steps.upload-zip.outputs.browser_download_url }}"}'
