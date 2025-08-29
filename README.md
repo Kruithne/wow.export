@@ -22,21 +22,20 @@ To install wow.export, navigate to the [site](https://www.kruithne.net/wow.expor
 When an update to wow.export is available, you will be prompted in the application to update. This process is done entirely automatically once you accept the update!
 
 ## Building (Developers Only)
-- 🔨 Building wow.export **requires** Node 15.3.0 or above.
 - 🔨 Building wow.export **requires** Bun 1.2 or above.
 
 ```
 git fetch https://github.com/Kruithne/wow.export.git
-npm install
+bun install
 
 # This will list available builds.
-node ./build.js
+bun ./build.js
 
 # This will compile -all- available builds.
-node ./build.js *
+bun ./build.js *
 
 # Substitute <BUILD> for the build(s) you wish to compile, space-delimitated.
-node ./build.js <BUILD1> <BUILD2> ...
+bun ./build.js <BUILD1> <BUILD2> ...
 ```
 
 ## Debugging (Developers Only)

@@ -16,23 +16,18 @@
 	},
 	"homepage": "https://github.com/Kruithne/wow.export#readme",
 	"engines": {
-		"node": ">=14.21.3"
+		"bun": ">=1.2.0"
 	},
 	"dependencies": {
-		"acorn": "^8.0.4",
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
-		"chalk": "^2.4.2",
-		"filesize": "^5.0.3",
 		"rcedit": "^2.0.0",
-		"request": "^2.88.0",
 		"sass": "^1.52.1",
 		"ssh2-sftp-client": "^9.0.4",
 		"tar": "^5.0.10",
-		"terser": "^5.14.2",
-		"three": "^0.179.1",
-		"uuid": "^3.3.3"
+		"three": "^0.179.1"
 	},
 	"devDependencies": {
+		"@types/bun": "^1.2.21",
 		"eslint": "^6.8.0",
 		"eslint-plugin-vue": "^6.1.2"
 	}
