@@ -2,6 +2,7 @@
 - Added expansion icon for Midnight.
 - Added partial support for M3 models (geometry only).
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
+- Added option that controls the amount of lines when scrolling (thanks NoodleBug!).
 - Updated Battle.net patch service URLs.
 - Updated three.js from r111 to r179 (some color changes might be observed in previews).
 - Replaced pkg dependency for building updater with bun to eliminate cross-platform issues.
