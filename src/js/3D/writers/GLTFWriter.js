@@ -488,20 +488,15 @@ class GLTFWriter {
 							}
 						);
 
-						// Write out bone timestamps to buffer.
-						let timeMin = 9999999;
-						let timeMax = 0;
+						const anim_duration = this.animations[i].duration;
+						let time_min = 0;
+						let time_max = anim_duration / 1000;
 
 						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
-							// TODO: We need to recalculate these properly.
-							const time = bone.translation.timestamps[i][j] / 1000;
+							const raw_ts = bone.translation.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
 							animationBuffer.writeFloatLE(time);
-
-							if (time < timeMin)
-								timeMin = time;
-
-							if (time > timeMax)
-								timeMax = time;
 						}
 
 						// Add new SCALAR accessor for this bone's translation timestamps as floats.
@@ -511,8 +506,8 @@ class GLTFWriter {
 							byteOffset: 0,
 							type: "SCALAR",
 							componentType: 5126, // Float
-							min: [timeMin],
-							max: [timeMax]
+							min: [time_min],
+							max: [time_max]
 						});
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
@@ -610,20 +605,15 @@ class GLTFWriter {
 							}
 						);
 
-						// Write out bone timestamps to buffer.
-						let timeMin = 9999999;
-						let timeMax = 0;
-
+						const anim_duration = this.animations[i].duration;
+						let time_min = 0;
+						let time_max = anim_duration / 1000;
+						
 						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
-							// TODO: We need to recalculate these properly.
-							const time = bone.rotation.timestamps[i][j] / 1000;
+							const raw_ts = bone.rotation.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
 							animationBuffer.writeFloatLE(time);
-
-							if (time < timeMin)
-								timeMin = time;
-
-							if (time > timeMax)
-								timeMax = time;
 						}
 
 						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
@@ -633,8 +623,8 @@ class GLTFWriter {
 							byteOffset: 0,
 							type: "SCALAR",
 							componentType: 5126, // Float
-							min: [timeMin],
-							max: [timeMax]
+							min: [time_min],
+							max: [time_max]
 						});
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
@@ -738,20 +728,15 @@ class GLTFWriter {
 							}
 						);
 
-						// Write out bone timestamps to buffer.
-						let timeMin = 9999999;
-						let timeMax = 0;
+						const anim_duration = this.animations[i].duration;
+						let time_min = 0;
+						let time_max = anim_duration / 1000;
 						
 						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
-							// TODO: We need to recalculate these properly.
-							const time = bone.scale.timestamps[i][j] / 1000;
+							const raw_ts = bone.scale.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
 							animationBuffer.writeFloatLE(time);
-
-							if (time < timeMin)
-								timeMin = time;
-
-							if (time > timeMax)
-								timeMax = time;
 						}
 
 						// Add new SCALAR accessor for this bone's scale timestamps as floats.
@@ -761,8 +746,8 @@ class GLTFWriter {
 							byteOffset: 0,
 							type: "SCALAR",
 							componentType: 5126, // Float
-							min: [timeMin],
-							max: [timeMax]
+							min: [time_min],
+							max: [time_max]
 						});
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
