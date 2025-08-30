@@ -11,3 +11,5 @@
 
 # Runtime directory for tests.
 /tests/user_data
+
+.vs

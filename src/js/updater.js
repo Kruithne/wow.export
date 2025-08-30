@@ -19,30 +19,7 @@ let updateManifest;
  * Check if there are any available updates.
  * Returns a Promise that resolves to true if an update is available.
  */
-const checkForUpdates = async () => {
-	try {
-		const localManifest = nw.App.manifest;
-		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + 'update.json';
-		log.write('Checking for updates (%s)...', manifestURL);
-
-		const manifest = await generics.getJSON(manifestURL);
-
-		assert(typeof manifest.guid === 'string', 'Update manifest does not contain a valid build GUID');
-		assert(typeof manifest.contents === 'object', 'Update manifest does not contain a valid contents list');
-
-		if (manifest.guid !== localManifest.guid) {
-			updateManifest = manifest;
-			log.write('Update available, prompting using (%s != %s)', manifest.guid, localManifest.guid);
-			return true;
-		}
-
-		log.write('Not updating (%s == %s)', manifest.guid, localManifest.guid);
-		return false;
-	} catch (e) {
-		log.write('Not updating due to error: %s', e.message);
-		return false;
-	}
-};
+const checkForUpdates = async () => false;
 
 /**
  * Apply an outstanding update.
