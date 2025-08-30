@@ -12,7 +12,7 @@
 - Blender add-on installation now supports Linux & MacOS.
 - Exported PNG images now properly utilize Sub, Up, Average and Paeth filters, resulting in better compression.
 - Search inputs are now debounced, preventing UI stuttering when typing.
-- WMO textures now export correctly on when exporting as GLTF.
+- WMO textures now export correctly when exporting as GLTF.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
