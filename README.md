@@ -16,8 +16,6 @@ wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [W
 ## Installing
 To install wow.export, navigate to the [site](https://www.kruithne.net/wow.export/) and download the latest version. That's it!
 
-> **OSX/Linux**: We are currently not producing builds targeted for non-Windows builds. If you wish to use wow.export on OSX or Linux, you will need to compile your own build from the source. See GH-1 for known issues.
-
 ## Updating
 When an update to wow.export is available, you will be prompted in the application to update. This process is done entirely automatically once you accept the update!
 
