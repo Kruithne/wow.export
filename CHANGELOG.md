@@ -17,6 +17,7 @@
 - Fixed issue that prevented terrain exported with texture quality "None" from being importable due to referencing missing textures
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
 - Map selections can now be exported as stitched PNG images - including the whole map!
+- Added "Show Background" option to set a customizable background colour to the model viewer.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.

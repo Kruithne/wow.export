@@ -542,6 +542,7 @@
 								</div>
 							</div>
 							<div class="preview-background" id="model-preview">
+								<input v-if="config.modelViewerShowBackground" type="color" id="background-color-input" v-model="config.modelViewerBackgroundColor" title="Click to change background color"/>
 								<model-viewer :context="modelViewerContext"></model-viewer>
 							</div>
 						</div>
@@ -582,6 +583,10 @@
 							<label class="ui-checkbox" title="Show model textures in the preview pane">
 								<input type="checkbox" v-model="config.modelViewerShowTextures"/>
 								<span>Show Textures</span>
+							</label>
+							<label class="ui-checkbox" title="Show a background color in the 3D viewport">
+								<input type="checkbox" v-model="config.modelViewerShowBackground"/>
+								<span>Show Background</span>
 							</label>
 							<span class="header">Export</span>
 							<label class="ui-checkbox" title="Include textures when exporting models">

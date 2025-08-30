@@ -552,6 +552,9 @@ core.events.once('screen-tab-models', () => {
 	scene.add(light);
 	scene.add(renderGroup);
 
+	if (core.view.config.modelViewerShowBackground)
+		scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
+
 	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
 
 	if (core.view.config.modelViewerShowGrid)
@@ -619,6 +622,18 @@ core.registerLoadFunc(async () => {
 			scene.remove(grid);
 	});
 
+	core.view.$watch('config.modelViewerShowBackground', () => {
+		if (core.view.config.modelViewerShowBackground)
+			scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
+		else
+			scene.background = null;
+	});
+
+	core.view.$watch('config.modelViewerBackgroundColor', () => {
+		if (core.view.config.modelViewerShowBackground)
+			scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
+	});
+
 	// Track selection changes on the model listbox and preview first model.
 	core.view.$watch('selectionModels', async selection => {
 		// Don't do anything if we're not loading models.
@@ -646,4 +661,5 @@ core.registerLoadFunc(async () => {
 
 		await exportFiles(userSelection, false);
 	});
+
 });

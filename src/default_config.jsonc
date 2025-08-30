@@ -50,6 +50,8 @@
 	"listfileShowFileDataIDs": false,
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,
+	"modelViewerShowBackground": false,
+	"modelViewerBackgroundColor": "#000000",
 	"modelViewerWireframe": false,
 	"modelViewerShowTextures": true,
 	"modelsExportCollision": false,

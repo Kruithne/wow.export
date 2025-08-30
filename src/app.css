@@ -1292,6 +1292,43 @@ input[type=number]::-webkit-outer-spin-button {
 	background-size: contain;
 }
 
+#background-color-input {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 24px;
+	height: 24px;
+	border: 2px solid var(--border);
+	border-radius: 4px;
+	cursor: pointer;
+	z-index: 100;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	padding: 0;
+}
+
+#background-color-input::-webkit-color-swatch-wrapper {
+	padding: 0;
+	border: none;
+	border-radius: 2px;
+}
+
+#background-color-input::-webkit-color-swatch {
+	border: none;
+	border-radius: 2px;
+}
+
+#background-color-input::-moz-color-swatch {
+	border: none;
+	border-radius: 2px;
+}
+
+#background-color-input:hover {
+	border-color: var(--accent);
+}
+
 #model-texture-preview {
 	position: absolute;
 	width: 100%;
