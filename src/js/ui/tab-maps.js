@@ -4,6 +4,7 @@
 	License: MIT
  */
 const util = require('util');
+const crypto = require('crypto');
 const core = require('../core');
 const log = require('../log');
 const path = require('path');
@@ -16,6 +17,7 @@ const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
 const ExportHelper = require('../casc/export-helper');
 const WMOExporter = require('../3D/exporters/WMOExporter');
+const TiledPNGWriter = require('../tiled-png-writer');
 
 let selectedMapID;
 let selectedMapDir;
@@ -265,6 +267,85 @@ const exportSelectedMap = async () => {
 	helper.finish();
 };
 
+const exportSelectedMapAsPNG = async () => {
+	const export_tiles = core.view.mapViewerSelection;
+
+	if (export_tiles.length === 0)
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+
+	const helper = new ExportHelper(export_tiles.length, 'tile');
+	helper.start();
+
+	try {
+		const tile_coords = export_tiles.map(index => ({
+			index,
+			x: Math.floor(index / constants.GAME.MAP_SIZE),
+			y: index % constants.GAME.MAP_SIZE
+		}));
+
+		const min_x = Math.min(...tile_coords.map(t => t.x));
+		const max_x = Math.max(...tile_coords.map(t => t.x));
+		const min_y = Math.min(...tile_coords.map(t => t.y));
+		const max_y = Math.max(...tile_coords.map(t => t.y));
+
+		const first_tile = await loadMapTile(tile_coords[0].x, tile_coords[0].y, 512);
+		if (!first_tile)
+			throw new Error('Unable to load first tile to determine tile size');
+
+		const tile_size = first_tile.width;
+		log.write('Detected tile size: %dx%d pixels', tile_size, tile_size);
+
+		const tiles_wide = (max_x - min_x) + 1;
+		const tiles_high = (max_y - min_y) + 1;
+		const final_width = tiles_wide * tile_size;
+		const final_height = tiles_high * tile_size;
+
+		log.write('PNG canvas %dx%d pixels (%d x %d tiles)', final_width, final_height, tiles_wide, tiles_high);
+
+		const writer = new TiledPNGWriter(final_width, final_height, tile_size);
+
+		for (const tile_coord of tile_coords) {
+			if (helper.isCancelled())
+				break;
+
+			const tile_data = await loadMapTile(tile_coord.x, tile_coord.y, tile_size);
+			
+			if (tile_data) {
+				const rel_x = tile_coord.x - min_x;
+				const rel_y = tile_coord.y - min_y;
+				
+				writer.addTile(rel_x, rel_y, tile_data);
+				log.write('Added tile %d,%d at position %d,%d', tile_coord.x, tile_coord.y, rel_x, rel_y);
+				helper.mark(`Tile ${tile_coord.x},${tile_coord.y}`, true);
+			} else {
+				log.write('Failed to load tile %d,%d, leaving gap', tile_coord.x, tile_coord.y);
+				helper.mark(`Tile ${tile_coord.x},${tile_coord.y}`, false, 'Tile not available');
+			}
+		}
+
+		const sorted_tiles = [...export_tiles].sort((a, b) => a - b);
+		const tile_hash = crypto.createHash('md5').update(sorted_tiles.join(',')).digest('hex').substring(0, 8);
+		
+		const filename = `${selectedMapDir}_${tile_hash}.png`;
+		const out_path = ExportHelper.getExportPath(path.join('maps', selectedMapDir, filename));
+
+		await writer.write(out_path);
+
+		const stats = writer.getStats();
+		log.write('Map export complete: %s (%d tiles)', out_path, stats.totalTiles);
+		
+		const exportPaths = core.openLastExportStream();
+		await exportPaths?.writeLine('png:' + out_path);
+		exportPaths?.close();
+
+	} catch (e) {
+		helper.mark('PNG export', false, e.message, e.stack);
+		log.write('PNG export failed: %s', e.message);
+	}
+
+	helper.finish();
+};
+
 /**
  * Parse a map entry from the listbox.
  * @param {string} entry 
@@ -351,4 +432,5 @@ core.registerLoadFunc(async () => {
 	// Track when user clicks to export a map or world model.
 	core.events.on('click-export-map', () => exportSelectedMap());
 	core.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
+	core.events.on('click-export-map-png', () => exportSelectedMapAsPNG());
 });

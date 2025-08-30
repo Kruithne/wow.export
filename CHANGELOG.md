@@ -16,6 +16,7 @@
 - Fixed issue causing cylic GLTF animations have incorrect frame ranges.
 - Fixed issue that prevented terrain exported with texture quality "None" from being importable due to referencing missing textures
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
+- Map selections can now be exported as stitched PNG images - including the whole map!
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.

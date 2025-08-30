@@ -434,6 +434,7 @@
 						<div class="spaced-preview-controls">
 							<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
 							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export ' + mapViewerSelection.length + ' Tiles') : 'Export Tiles'" @click="click('export-map', $event)" :class="{ disabled: isBusy}"/>
+							<input type="button" :value="mapViewerSelection.length > 0 ? ('Export PNG (' + mapViewerSelection.length + ' tiles)') : 'Export PNG'" @click="click('export-map-png', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0}"/>
 						</div>
 
 						<div id="maps-sidebar" class="sidebar">
