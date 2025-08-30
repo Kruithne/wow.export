@@ -865,7 +865,7 @@ class GLTFWriter {
 				}
 			});
 
-			materialMap.set(fileDataID, materialIndex);
+			materialMap.set(texFile.matName, materialIndex);
 		}
 
 		const mesh_component_meta = Array(this.meshes.length);

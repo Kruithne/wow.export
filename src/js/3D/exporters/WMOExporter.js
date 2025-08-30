@@ -312,7 +312,7 @@ class WMOExporter {
 					indices[i] = group.indices[batch.firstFace + i] + indOfs;
 
 				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
-				gltf.addMesh(groupName + bI, indices, gltf_texture_lookup.get(matID));
+				gltf.addMesh(groupName + bI, indices, texMaps.materialMap.get(matID));
 			}
 
 			indOfs += indCount;
