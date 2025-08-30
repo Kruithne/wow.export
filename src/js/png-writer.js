@@ -125,7 +125,7 @@ const FILTER_SUMS = {
 };
 
 const paeth = (left, up, upLeft) => {
-	let paeth = left + up + upLeft;
+	let paeth = left + up - upLeft;
 	let paethLeft = Math.abs(paeth - left);
 	let paethUp = Math.abs(paeth - up);
 	let paethUpLeft = Math.abs(paeth - upLeft);
