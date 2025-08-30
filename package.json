@@ -21,7 +21,6 @@
 	"dependencies": {
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
 		"rcedit": "^2.0.0",
-		"tar": "^5.0.10",
 		"three": "^0.179.1",
 		"vue": "2.7.16"
 	},

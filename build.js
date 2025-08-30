@@ -6,7 +6,6 @@
 import fs from 'node:fs/promises';
 import AdmZip from 'adm-zip';
 import zlib from 'node:zlib';
-import tar from 'tar';
 import path from 'node:path';
 import util from 'node:util';
 import rcedit from 'rcedit';
@@ -174,11 +173,37 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				}
 			}
 		} else if (bundleType === 'GZ') { // 0x8B1F
-			await tar.x({ file: bundlePath, cwd: buildDir, strip: 1, filter: (path) => {
-				const filter = extractFilter(path);
-				filter ? extractCount++ : filterCount++;
-				return filter;
-			}});
+			const list_result = spawnSync('tar', ['-tf', bundlePath], { encoding: 'utf8' });
+			if (list_result.status !== 0)
+				throw new Error(`Failed to list archive contents: ${list_result.stderr}`);
+			
+			const all_files = list_result.stdout.split('\n').filter(line => line.trim() && !line.endsWith('/'));
+			const files_to_extract = [];
+			
+			for (const file of all_files) {
+				if (extractFilter(file)) {
+					const stripped_path = file.split('/').slice(1).join('/');
+					if (stripped_path) {
+						files_to_extract.push(file);
+						extractCount++;
+					}
+				} else {
+					filterCount++;
+				}
+			}
+			
+			if (files_to_extract.length > 0) {
+				const extract_args = [
+					'-xf', bundlePath,
+					'-C', buildDir,
+					'--strip-components=1',
+					...files_to_extract
+				];
+				
+				const extract_res = spawnSync('tar', extract_args, { encoding: 'utf8' });
+				if (extract_res.status !== 0)
+					throw new Error(`Extraction failed: ${extract_res.stderr}`);
+			}
 		} else {
 			// Developer didn't config a build properly.
 			throw new Error('Unexpected bundle type: ' + bundleType);
