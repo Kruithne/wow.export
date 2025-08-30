@@ -11,6 +11,7 @@
 - Removed build dependencies node, acorn, terser, filesize, chalk, request, tar, ssh2-sftp-client and sass.
 - Blender add-on installation now supports Linux & MacOS.
 - Exported PNG images now properly utilize Sub, Up, Average and Paeth filters, resulting in better compression.
+- Search inputs are now debounced, preventing UI stuttering when typing.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.

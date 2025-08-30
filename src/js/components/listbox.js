@@ -7,6 +7,8 @@
 const path = require('path');
 const core = require('../core');
 
+const FILTER_DEBOUNCE_MS = 200;
+
 const fid_filter = (e) => {
 	const start = e.indexOf(' [');
 	const end = e.lastIndexOf(']');
@@ -44,7 +46,9 @@ Vue.component('listbox', {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1,
-			lastSelectItem: null
+			lastSelectItem: null,
+			debouncedFilter: null,
+			filterTimeout: null
 		}
 	},
 
@@ -70,6 +74,8 @@ Vue.component('listbox', {
 		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
 		this.observer.observe(this.$refs.root);
+
+		this.debouncedFilter = this.filter;
 	},
 
 	/**
@@ -88,6 +94,19 @@ Vue.component('listbox', {
 
 		// Disconnect resize observer.
 		this.observer.disconnect();
+
+		clearTimeout(this.filterTimeout);
+	},
+
+	watch: {
+		filter: function(newFilter) {
+			clearTimeout(this.filterTimeout);
+
+			this.filterTimeout = setTimeout(() => {
+				this.debouncedFilter = newFilter;
+				this.filterTimeout = null;
+			}, FILTER_DEBOUNCE_MS);
+		}
 	},
 
 	computed: {
@@ -118,24 +137,24 @@ Vue.component('listbox', {
 
 		/**
 		 * Reactively filtered version of the underlying data array.
-		 * Automatically refilters when the filter input is changed.
+		 * Uses debounced filter to prevent UI stuttering on large datasets.
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
-			if (!this.filter)
+			if (!this.debouncedFilter)
 				return this.itemList;
 
 			let res = this.itemList;
 
 			if (this.regex) {
 				try {
-					const filter = new RegExp(this.filter.trim(), 'i');
+					const filter = new RegExp(this.debouncedFilter.trim(), 'i');
 					res = res.filter(e => e.match(filter));
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.
 				}
 			} else {
-				const filter = this.filter.trim().toLowerCase();
+				const filter = this.debouncedFilter.trim().toLowerCase();
 				if (filter.length > 0)
 					res = res.filter(e => e.toLowerCase().includes(filter));
 			}
