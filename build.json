@@ -155,7 +155,6 @@
 			"bundleType": "ZIP",
 			"buildArchive": "ZIP",
 			"sourceMethod": "BUNDLE",
-			"sourceTarget": "./src",
 			"bundleConfig": {
 				"filterExt": [".js"],
 				"jsEntry": "app.js"
