@@ -2,9 +2,16 @@ import bpy
 import bmesh
 import os
 import csv
+import hashlib
+import json
+from collections import defaultdict
 
 from math import radians
 from mathutils import Quaternion
+
+IS_B40 = bpy.app.version >= (4, 0, 0)
+
+SPECULAR_INPUT_NAME = 'Specular IOR Level' if IS_B40 else 'Specular'
 
 def importWoWOBJAddon(objectFile, settings):
     importWoWOBJ(objectFile, None, settings)
@@ -15,6 +22,281 @@ def getFirstNodeOfType(nodes, nodeType):
             return node
 
     return None
+
+
+def normalizeName(name):
+    # Blender doesn't support names longer than 63.
+    # Hashing retains uniqueness (to prevent collisions) while fitting in the limit.
+    if len(name) > 59:
+        return name[:48] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
+
+    return name
+
+
+def loadImage(textureLocation):
+    imageName, imageExt = os.path.splitext(os.path.basename(textureLocation))
+    imageName = normalizeName(imageName)
+
+    if not imageName in bpy.data.images:
+        loadedImage = bpy.data.images.load(textureLocation)
+        loadedImage.name = imageName
+
+    return bpy.data.images[imageName]
+
+def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive):
+    material = bpy.data.materials.new(name=materialName)
+    material.use_nodes = True
+
+    if blendMode in {2, 4}:
+        material.blend_method = 'BLEND'
+    else:
+        material.blend_method = 'CLIP'
+
+    node_tree = material.node_tree
+    nodes = node_tree.nodes
+
+    # Note on socket reference localization:
+    # Unlike nodes, sockets can be referenced in English regardless of localization.
+    # This will break if the user sets the socket names to any non-default value.
+
+    # Create new Principled BSDF and Image Texture nodes.
+    principled = None
+    outNode = None
+
+    for node in nodes:
+        if not principled and node.type == 'BSDF_PRINCIPLED':
+            principled = node
+
+        if not outNode and node.type == 'OUTPUT_MATERIAL':
+            outNode = node
+
+        if principled and outNode:
+            break
+
+    # If there is no Material Output node, create one.
+    if not outNode:
+        outNode = nodes.new('ShaderNodeOutputMaterial')
+        outNode.location = (300, 400)
+
+    # If there is no default Principled BSDF node, create one and link it to material output.
+    if not principled:
+        principled = nodes.new('ShaderNodeBsdfPrincipled')
+        principled.location = (0, 400)
+        node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+
+    # Create a new Image Texture node.
+    image = nodes.new('ShaderNodeTexImage')
+
+    image.image = loadImage(textureLocation)
+    image.image.alpha_mode = 'CHANNEL_PACKED'
+
+    if blendMode == 4 and createEmissive:
+        nodes.remove(principled)
+        emission = nodes.new('ShaderNodeEmission')
+        node_tree.links.new(image.outputs['Color'], emission.inputs['Color'])
+        node_tree.links.new(image.outputs['Alpha'], emission.inputs['Strength'])
+
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+
+        add_shader = nodes.new('ShaderNodeAddShader')
+        node_tree.links.new(transparent.outputs['BSDF'], add_shader.inputs[0])
+        node_tree.links.new(emission.outputs['Emission'], add_shader.inputs[1])
+        node_tree.links.new(add_shader.outputs['Shader'], outNode.inputs['Surface'])
+    else:
+        node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
+
+        if blendMode != 0:
+            node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
+
+        # Set the specular value to 0 by default.
+        principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+
+    return material
+
+
+MIX_NODE_COLOR_SOCKETS = {'in': {}, 'out': {}}
+
+def calculate_color_sockets(mix_node):
+    input_index = 0
+    for idx, i in enumerate(mix_node.inputs):
+        if 'Fac' in i.name and i.type == 'VALUE':
+            MIX_NODE_COLOR_SOCKETS['in']['Factor'] = idx
+        if i.type == 'RGBA':
+            MIX_NODE_COLOR_SOCKETS['in'][('A', 'B')[input_index]] = idx
+            input_index += 1
+
+    for idx, i in enumerate(mix_node.outputs):
+        if i.type == 'RGBA':
+            MIX_NODE_COLOR_SOCKETS['out']['Result'] = idx
+
+def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
+    material = bpy.data.materials.new(name=materialName)
+    try:
+        material.use_nodes = True
+        material.blend_method = 'CLIP'
+
+        node_tree = material.node_tree
+        nodes = node_tree.nodes
+
+        principled = None
+        outNode = None
+
+        for node in nodes:
+            if not principled and node.type == 'BSDF_PRINCIPLED':
+                principled = node
+
+            if not outNode and node.type == 'OUTPUT_MATERIAL':
+                outNode = node
+
+            if principled and outNode:
+                break
+
+        # If there is no Material Output node, create one.
+        if not outNode:
+            outNode = nodes.new('ShaderNodeOutputMaterial')
+
+        # If there is no default Principled BSDF node, create one and link it to material output.
+        if not principled:
+            principled = nodes.new('ShaderNodeBsdfPrincipled')
+            node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+
+        # Set the specular value to 0 by default.
+        principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+
+        texture_coords = nodes.new('ShaderNodeTexCoord')
+        texture_coords.location = (-1700, 600)
+
+        alpha_map_frame = nodes.new(type='NodeFrame')
+        alpha_map_frame.label = 'Alpha map'
+
+        alpha_map = nodes.new('ShaderNodeTexImage')
+        alpha_map.location = (-700, -100)
+        alpha_map.width = 140
+        alpha_map.image = loadImage(textureLocation)
+        alpha_map.image.colorspace_settings.name = 'Non-Color'
+        alpha_map.interpolation = 'Cubic'
+        alpha_map.extension = 'EXTEND'
+        alpha_map.parent = alpha_map_frame
+
+        alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
+        alpha_map_channels.location = (-500, -100)
+        alpha_map_channels.width = 140
+        alpha_map_channels.parent = alpha_map_frame
+
+        node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
+
+        base_layer_frame = nodes.new(type='NodeFrame')
+        base_layer_frame.label = 'Layer #0'
+        
+        base_layer = nodes.new('ShaderNodeTexImage')
+        base_layer.location = (-1000, 0)
+        base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
+        base_layer.image.alpha_mode = 'NONE'
+        base_layer.hide = True
+        base_layer.parent = base_layer_frame
+
+        texture_mapping = nodes.new('ShaderNodeMapping')
+        texture_mapping.location = (-1300, 0)
+        texture_mapping.inputs[3].default_value[0] = 8 / layers[0]['scale']
+        texture_mapping.inputs[3].default_value[1] = 8 / layers[0]['scale']
+        texture_mapping.inputs[3].default_value[2] = 8 / layers[0]['scale']
+        texture_mapping.parent = base_layer_frame
+
+        node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
+        
+        node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
+
+        # if('heightFile' in layers[0]):
+        #     height_map = nodes.new('ShaderNodeTexImage')
+        #     height_map.location = (-1000, -50)
+        #     height_map.image = loadImage(os.path.join(baseDir, layers[0]['heightFile']))
+        #     height_map.image.alpha_mode = 'NONE'
+        #     height_map.parent = base_layer_frame
+
+        #     node_tree.links.new(texture_mapping.outputs['Vector'], height_map.inputs['Vector'])
+
+        last_map_node_pos = 0
+        last_tex_node_pos = 0
+        last_height_tex_node_pos = -50
+        last_mix_node_pos = 0
+        last_mix_node = None
+
+        for idx, layer in enumerate(layers[1:]):
+            try:
+                mix_node = nodes.new('ShaderNodeMix')
+                mix_node.location = (-300, last_mix_node_pos + 200)
+                mix_node.data_type = 'RGBA'
+                last_mix_node_pos += 200
+            except:
+                mix_node = nodes.new('ShaderNodeMixRGB')
+                mix_node.location = (-300, last_mix_node_pos + 200)
+                last_mix_node_pos += 200
+
+            if not MIX_NODE_COLOR_SOCKETS['in']:
+                calculate_color_sockets(mix_node)
+
+            node_tree.links.new(
+                alpha_map_channels.outputs[idx],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['Factor']])
+
+            if last_mix_node is None:
+                node_tree.links.new(
+                    base_layer.outputs['Color'],
+                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+            else:
+                node_tree.links.new(
+                    last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+
+            layer_frame = nodes.new(type='NodeFrame')
+            layer_frame.label = 'Layer #' + str(idx + 1)
+            texture_mapping_layer = nodes.new('ShaderNodeMapping')
+            texture_mapping_layer.location = (-1300, last_map_node_pos + 420)
+            texture_mapping_layer.inputs[3].default_value[0] = 8 / layer['scale']
+            texture_mapping_layer.inputs[3].default_value[1] = 8 / layer['scale']
+            texture_mapping_layer.inputs[3].default_value[2] = 8 / layer['scale']
+            texture_mapping_layer.parent = layer_frame
+            last_map_node_pos += 420
+
+            node_tree.links.new(texture_coords.outputs['UV'], texture_mapping_layer.inputs['Vector'])
+
+            layer_texture = nodes.new('ShaderNodeTexImage')
+            layer_texture.location = (-1000, last_tex_node_pos + 420)
+            layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
+            layer_texture.image.alpha_mode = 'NONE'
+            layer_texture.hide = True
+            layer_texture.parent = layer_frame
+            last_tex_node_pos += 420
+
+            # if('heightFile' in layer):
+            #     layer_height_map = nodes.new('ShaderNodeTexImage')
+            #     layer_height_map.location = (-1000, last_height_tex_node_pos + 420)
+            #     layer_height_map.image = loadImage(os.path.join(baseDir, layer['heightFile']))
+            #     layer_height_map.image.alpha_mode = 'NONE'
+            #     layer_height_map.parent = layer_frame
+            #     last_height_tex_node_pos += 420
+
+            #     node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_height_map.inputs['Vector'])
+
+            node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
+            node_tree.links.new(
+                layer_texture.outputs['Color'],
+                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
+
+            last_mix_node = mix_node
+
+        if last_mix_node is None:
+            node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
+        else:
+            node_tree.links.new(
+                last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+                principled.inputs['Base Color'])
+
+        return material
+    except Exception as e:
+        print('failed to create terrain material for %s' % materialName)
+        print(e)
+        bpy.data.materials.remove(material)
 
 def importWoWOBJ(objectFile, givenParent = None, settings = None):
     baseDir, fileName = os.path.split(objectFile)
@@ -36,7 +318,23 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
             self.verts = set()
             self.faces = []
 
+    json_info = {}
+    try:
+        with open(os.path.join(baseDir, fileName[:fileName.rfind('.')] + '.json')) as fp:
+            json_info = json.load(fp)
+            if json_info.get('fileType') == 'm2':
+                json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
+            elif json_info.get('fileType') == 'wmo':
+                json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
+                json_info['mtlIndexes'] = {
+                    json_info['mtlTextureIds'][data['texture1']]: idx
+                    for idx, data in enumerate(json_info['materials'])
+                    if data['texture1'] in json_info['mtlTextureIds']}
+    except:
+        pass
+
     curMesh = OBJMesh()
+    matBlendModes = defaultdict(list)
     meshIndex = -1
     with open(objectFile, 'rb') as f:
         for line in f:
@@ -71,7 +369,25 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 meshes.append(OBJMesh())
                 meshes[meshIndex].name = line_split[1].decode('utf-8')
             elif line_start == b'usemtl':
-                meshes[meshIndex].usemtl = line_split[1].decode('utf-8')
+                materialName = normalizeName(line_split[1].decode('utf-8'))
+
+                if settings.useAlpha:
+                    blendingMode = None
+
+                    if json_info.get('fileType') == 'm2':
+                        blendingMode = json_info['materials'][json_info['skinTexUnits'][meshIndex]['materialIndex']]['blendingMode']
+                    elif json_info.get('fileType') == 'wmo':
+                        try:
+                            blendingMode = json_info['materials'][json_info['mtlIndexes'][materialName]]['blendMode']
+                        except KeyError:
+                            print('error getting material blending mode for %s' % materialName)
+
+                    if blendingMode is not None:
+                        matBlendModes[materialName].append(blendingMode)
+                        # use texture with specific blending mode
+                        materialName += '_B' + str(blendingMode)
+
+                meshes[meshIndex].usemtl = materialName
 
     # Defaults to master collection if no collection exists.
     collection = bpy.context.view_layer.active_layer_collection.collection.objects
@@ -89,7 +405,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 line_start = line_split[0]
 
                 if line_start == 'newmtl':
-                    matname = line_split[1]
+                    matname = normalizeName(line_split[1])
                 elif line_start == 'map_Kd':
                     matfile = line_split[1]
                     materials[matname] = os.path.join(baseDir, matfile)
@@ -113,71 +429,42 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     # Create a new material instance for each material entry.
     if settings.importTextures:
+        usedMaterials = {mesh.usemtl for mesh in meshes}
+
         for materialName, textureLocation in materials.items():
-            material = None
-            if materialName in bpy.data.materials:
-                material = bpy.data.materials[materialName]
-            else:
-                material = bpy.data.materials.new(name=materialName)
-                material.use_nodes = True
-                material.blend_method = 'CLIP'
+            material = bpy.data.materials.get(materialName)
+            materialB = {}
+            for bm in matBlendModes[materialName]:
+                materialBName = materialName + '_B' + str(bm)
+                materialB[bm] = (materialBName, bpy.data.materials.get(materialBName))
 
-                node_tree = material.node_tree
-                nodes = node_tree.nodes
+            if material is None:
+                if settings.useTerrainBlending:
+                    material_json = {}
+                    try:
+                        with open(os.path.join(baseDir, materialName + '.json')) as fp:
+                            material_json = json.load(fp)
+                    except:
+                        pass
 
-                # Note on socket reference localization:
-                # Unlike nodes, sockets can be referenced in English regardless of localization.
-                # This will break if the user sets the socket names to any non-default value.
+                    if 'layers' in material_json:
+                        material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
+                
+                if material is None and materialName in usedMaterials:
+                    material = createStandardMaterial(materialName, textureLocation, -1, False)
 
-                # Create new Principled BSDF and Image Texture nodes.
-                principled = None
-                outNode = None
+            if settings.useAlpha:
+                for bm, (materialBName, materialBMat) in materialB.items():
+                    # create materials with different blending modes
+                    if materialBName in usedMaterials and materialBMat is None:
+                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials))
 
-                for node in nodes:
-                    if not principled and node.type == 'BSDF_PRINCIPLED':
-                        principled = node
+            if materialName in usedMaterials:
+                obj.data.materials.append(material)
 
-                    if not outNode and node.type == 'OUTPUT_MATERIAL':
-                        outNode = node
-
-                    if principled and outNode:
-                        break
-
-                # If there is no Material Output node, create one.
-                if not outNode:
-                    outNode = nodes.new('ShaderNodeOutputMaterial')
-
-                # If there is no default Principled BSDF node, create one and link it to material output.
-                if not principled:
-                    principled = nodes.new('ShaderNodeBsdfPrincipled')
-                    node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
-
-                # Create a new Image Texture node.
-                image = nodes.new('ShaderNodeTexImage')
-
-                # Load the image file itself if necessary.
-                imageName = os.path.basename(textureLocation)
-                if not imageName in bpy.data.images:
-                    bpy.data.images.load(textureLocation)
-
-                image.image = bpy.data.images[imageName]
-
-                node_tree.links.new(image.outputs['Color'], principled.inputs['Base Color'])
-
-                image.image.alpha_mode = 'CHANNEL_PACKED'
-                if settings.useAlpha:
-                    node_tree.links.new(image.outputs['Alpha'], principled.inputs['Alpha'])
-
-                specularInputName = 'Specular'
-
-                # New Blender 4.0+ Principle BSDF change specular input name
-                if bpy.app.version >= (4, 0, 0):
-                    specularInputName = 'Specular IOR Level'
-
-                # Set the specular value to 0 by default.
-                principled.inputs[specularInputName].default_value = 0
-
-            obj.data.materials.append(bpy.data.materials[materialName])
+            for (materialBName, materialBMat) in materialB.values():
+                if materialBName in usedMaterials:
+                    obj.data.materials.append(materialBMat)
 
     ## Meshes
     bm = bmesh.new()
@@ -255,7 +542,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     use_csv = settings.importWMO or settings.importM2 or settings.importWMOSets or settings.importGOBJ
 
     if use_csv and os.path.exists(csvPath):
-         with open(csvPath) as csvFile:
+        with open(csvPath) as csvFile:
             reader = csv.DictReader(csvFile, delimiter=';')
             if 'Type' in reader.fieldnames:
                 importType = 'ADT'

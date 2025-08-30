@@ -5,6 +5,7 @@
  */
 
 const path = require('path');
+const core = require('../core');
 
 const fid_filter = (e) => {
 	const start = e.indexOf(' [');
@@ -30,8 +31,9 @@ Vue.component('listbox', {
 	 * includefilecount: If true, includes a file counter on the component.
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 * override: If provided, used as an override listfile.
+	 * disable: If provided, used as reactive disable flag.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable'],
 
 	/**
 	 * Reactive instance data.
@@ -217,6 +219,9 @@ Vue.component('listbox', {
 		 * @param {ClipboardEvent} e 
 		 */
 		handlePaste: function(e) {
+			if (this.disable)
+				return;
+
 			// Paste selection must be enabled for this feature.
 			if (!this.pasteselection)
 				return;
@@ -236,7 +241,9 @@ Vue.component('listbox', {
 			const child = this.$refs.root.querySelector('.item');
 
 			if (child !== null) {
-				const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
+				const scrollCount = core.view.config.scrollSpeed === 0 ?  
+					Math.floor(this.$refs.root.clientHeight / child.clientHeight) : 
+					core.view.config.scrollSpeed;
 				const direction = e.deltaY > 0 ? 1 : -1;
 				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
 				this.recalculateBounds();
@@ -271,6 +278,9 @@ Vue.component('listbox', {
 
 				nw.Clipboard.get().set(entries.join('\n'), 'text');
 			} else {
+				if (this.disable)
+					return;
+
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
 				const isArrowDown = e.key === 'ArrowDown';
@@ -309,6 +319,9 @@ Vue.component('listbox', {
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
+			if (this.disable)
+				return;
+			
 			const checkIndex = this.selection.indexOf(item);
 
 			if (this.single) {

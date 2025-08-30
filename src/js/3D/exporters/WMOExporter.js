@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
@@ -18,6 +18,8 @@ const GLTFWriter = require('../writers/GLTFWriter');
 const JSONWriter = require('../writers/JSONWriter');
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
+const M3Exporter = require('./M3Exporter');
+const constants = require('../../constants');
 
 const doodadCache = new Set();
 
@@ -198,29 +200,31 @@ class WMOExporter {
 	 * @param {ExportHelper} helper 
 	 */
 	async exportAsGLTF(out, helper) {
-		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
-		
-		// TODO: Skip overwrite if file exists?
+		// Skip export if file exists and overwriting is disabled.
+		if (!core.view.config.overwriteFiles && await generics.fileExists(out))
+			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', out);
 
-		const wmoName = path.basename(out, '.wmo');
-		const gltf = new GLTFWriter(outGLTF, wmoName);
+		const wmo_name = path.basename(out, '.gltf');
+		const gltf = new GLTFWriter(out, wmo_name);
 
 		const groupMask = this.groupMask;
 
-		log.write('Exporting WMO model %s as GLTF: %s', wmoName, outGLTF);
+		log.write('Exporting WMO model %s as GLTF: %s', wmo_name, out);
 
 		await this.wmo.load();
 
-		helper.setCurrentTaskName(wmoName + ' textures');
+		helper.setCurrentTaskName(wmo_name + ' textures');
 		const texMaps = await this.exportTextures(out, null, helper);
 
 		if (helper.isCancelled())
 			return;
 
-		const textureMap = texMaps.textureMap;
-		const materialMap = texMaps.materialMap;
+		const gltf_texture_lookup = new Map();
+		const texture_map_fids = [...texMaps.textureMap.keys()];
+		for (let i = 0; i < texture_map_fids.length; i++)
+			gltf_texture_lookup.set(i, texture_map_fids[i]);
 
-		gltf.setTextureMap(textureMap);
+		gltf.setTextureMap(texMaps.textureMap);
 
 		const groups = [];
 		let nInd = 0;
@@ -248,7 +252,7 @@ class WMOExporter {
 				continue;
 
 			// Skip masked groups.
-			if (!mask?.has(i))
+			if (mask && !mask?.has(i))
 				continue;
 
 			// 3 vertices per indices.
@@ -260,7 +264,8 @@ class WMOExporter {
 
 		const vertices = new Array(nInd * 3);
 		const normals = new Array(nInd * 3);
-		const uvs = new Array(nInd * 2);
+
+		const uv_maps = [];
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -277,17 +282,23 @@ class WMOExporter {
 			for (let i = 0, n = groupNormals.length; i < n; i++)
 				normals[vertOfs + i] = groupNormals[i];
 
-			const uvOfs = indOfs * 2;
+			const uv_ofs = indOfs * 2;
+
 			if (group.uvs) {
-				// UVs exist, use the first array available.
-				const groupUvs = group.uvs[0];
-				for (let i = 0, n = groupUvs.length; i < n; i++)
-					uvs[uvOfs + i] = groupUvs[i];
+				for (let i = 0, n = group.uvs.length; i < n; i++) {
+					if (!uv_maps[i])
+						uv_maps[i] = new Array(indCount * 2).fill(0);
+
+					const uv = group.uvs[i];
+					const uv_map = uv_maps[i];
+					for (let i = 0, n = uv.length; i < n; i++)
+						uv_map[uv_ofs + i] = uv[i];
+				}
 			} else {
 				// No UVs available for the mesh, zero fill.
-				const uvCount = indCount * 2;
-				for (let i = 0; i < uvCount; i++)
-					uvs[uvOfs + i] = 0;
+				const uv_count = indCount * 2;
+				for (let i = 0; i < uv_count; i++)
+					uv_maps[0][uv_ofs + i] = 0;
 			}
 
 			const groupName = this.wmo.groupNames[group.nameOfs];
@@ -301,7 +312,7 @@ class WMOExporter {
 					indices[i] = group.indices[batch.firstFace + i] + indOfs;
 
 				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
-				gltf.addMesh(groupName + bI, indices, materialMap.get(matID));
+				gltf.addMesh(groupName + bI, indices, gltf_texture_lookup.get(matID));
 			}
 
 			indOfs += indCount;
@@ -309,7 +320,9 @@ class WMOExporter {
 
 		gltf.setVerticesArray(vertices);
 		gltf.setNormalArray(normals);
-		gltf.setUVArray(uvs);
+		
+		for (const uv_map of uv_maps)
+			gltf.addUVArray(uv_map);
 
 		// TODO: Add support for exporting doodads inside a GLTF WMO.
 
@@ -525,9 +538,16 @@ class WMOExporter {
 							// Only export doodads that are not already exported.
 							if (!doodadCache.has(fileDataID)) {
 								const data = await casc.getFile(fileDataID);
-								const m2Export = new M2Exporter(data, undefined, fileDataID);
-								await m2Export.exportAsOBJ(m2Path, false, helper);
-
+								const modelMagic = data.readUInt32LE();
+								data.seek(0);
+								if (modelMagic == constants.MAGIC.MD21) {
+									const m2Export = new M2Exporter(data, undefined, fileDataID);
+									await m2Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
+								} else if (modelMagic == constants.MAGIC.M3DT) {
+									const m3Export = new M3Exporter(data, undefined, fileDataID);
+									await m3Export.exportAsOBJ(m2Path, core.view.config.modelsExportCollision, helper);
+								}
+								
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
 									return;
@@ -696,7 +716,16 @@ class WMOExporter {
 		manifest.addProperty('fileDataID', this.wmo.fileDataID);
 
 		// Write the raw WMO file with no conversion.
-		await this.wmo.data.writeToFile(out);
+		if (this.wmo.data === undefined)
+		{
+			const wmoData = await casc.getFile(this.wmo.fileDataID)
+			await wmoData.writeToFile(out);
+		}
+		else
+		{
+			await this.wmo.data.writeToFile(out);
+		}
+		
 		fileManifest?.push({ type: 'WMO', fileDataID: this.wmo.fileDataID, file: out });
 
 		await this.wmo.load();
@@ -714,28 +743,115 @@ class WMOExporter {
 		if (config.modelsExportWMOGroups) {
 			const groupManifest = [];
 			const wmoFileName = this.wmo.fileName;
-			for (let i = 0, n = this.wmo.groupCount; i < n; i++) {
+
+			const lodCount = this.wmo.groupIDs.length / this.wmo.groupCount;
+
+			let groupOffset = 0;
+			for (let lodIndex = 0; lodIndex < lodCount; lodIndex++) {
+				for (let groupIndex = 0; groupIndex < this.wmo.groupCount; groupIndex++) {
+					// Abort if the export has been cancelled.
+					if (helper.isCancelled())
+						return;
+	
+					let groupName;
+					if (lodIndex > 0)
+						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '_lod' + lodIndex + '.wmo');
+					else
+						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '.wmo');
+					
+					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? listfile.getByFilename(groupName);
+					groupOffset++;
+
+					if (groupFileDataID === 0)
+						continue;
+
+					const groupData = await casc.getFile(groupFileDataID);
+					
+					let groupFile;
+					if (config.enableSharedChildren)
+						groupFile = ExportHelper.getExportPath(groupName);
+					else
+						groupFile = path.join(out, path.basename(groupName));
+	
+					await groupData.writeToFile(groupFile);
+	
+					fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
+					groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+				}
+			}
+
+			manifest.addProperty('groups', groupManifest);
+		}
+
+		// Doodad sets.
+		const doodadSets = this.wmo.doodadSets;
+		for (let i = 0, n = doodadSets.length; i < n; i++) {
+			const set = doodadSets[i];
+			const count = set.doodadCount;
+			log.write('Exporting WMO doodad set %s with %d doodads...', set.name, count);
+
+			helper.setCurrentTaskName('Doodad set ' + set.name);
+			helper.setCurrentTaskMax(count);
+
+			for (let i = 0; i < count; i++) {
 				// Abort if the export has been cancelled.
 				if (helper.isCancelled())
 					return;
 
-				const groupName = ExportHelper.replaceExtension(wmoFileName, '_' + i.toString().padStart(3, '0') + '.wmo');
-				const groupFileDataID = this.wmo.groupIDs?.[i] ?? listfile.getByFilename(groupName);
-				const groupData = await casc.getFile(groupFileDataID);
+				helper.setCurrentTaskValue(i);
 
-				let groupFile;
-				if (config.enableSharedChildren)
-					groupFile = ExportHelper.getExportPath(groupName);
-				else
-					groupFile = path.join(out, path.basename(groupName));
+				const doodad = this.wmo.doodads[set.firstInstanceIndex + i];
+				let fileDataID = 0;
+				let fileName;
+	
+				if (this.wmo.fileDataIDs) {
+					// Retail, use fileDataID and lookup the filename.
+					fileDataID = this.wmo.fileDataIDs[doodad.offset];
+					fileName = listfile.getByID(fileDataID);
+				} else {
+					// Classic, use fileName and lookup the fileDataID.
+					fileName = this.wmo.doodadNames[doodad.offset];
+					fileDataID = listfile.getByFilename(fileName) || 0;
+				}
+	
+				if (fileDataID > 0) {
+					try {
+						if (fileName === undefined) {
+							// Handle unknown files.
+							fileName = listfile.formatUnknownFile(fileDataID, '.m2');
+						}
 
-				await groupData.writeToFile(groupFile);
+						let m2Path;
+						if (core.view.config.enableSharedChildren)
+							m2Path = ExportHelper.getExportPath(fileName);
+						else
+							m2Path = ExportHelper.replaceFile(out, fileName);
 
-				fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
-				groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+						// Only export doodads that are not already exported.
+						if (!doodadCache.has(fileDataID)) {
+							
+							const data = await casc.getFile(fileDataID);
+							const modelMagic = data.readUInt32LE();
+							data.seek(0);
+							if (modelMagic == constants.MAGIC.MD21) {
+								const m2Export = new M2Exporter(data, undefined, fileDataID);
+								await m2Export.exportRaw(m2Path, helper);
+							} else if (modelMagic == constants.MAGIC.M3DT) {
+								const m3Export = new M3Exporter(data, undefined, fileDataID);
+								await m3Export.exportRaw(m2Path, helper);
+							}
+
+							// Abort if the export has been cancelled.
+							if (helper.isCancelled())
+								return;
+
+							doodadCache.add(fileDataID);
+						}
+					} catch (e) {
+						log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					}
+				}
 			}
-
-			manifest.addProperty('groups', groupManifest);
 		}
 
 		await manifest.write();

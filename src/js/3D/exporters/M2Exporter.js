@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
@@ -10,13 +10,15 @@ const generics = require('../../generics');
 const listfile = require('../../casc/listfile');
 
 const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
+const M2Loader= require('../loaders/M2Loader');
+const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const JSONWriter = require('../writers/JSONWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
 const GeosetMapper = require('../GeosetMapper');
 const ExportHelper = require('../../casc/export-helper');
+const BufferWrapper = require('../../buffer');
 
 class M2Exporter {
 	/**
@@ -29,6 +31,7 @@ class M2Exporter {
 		this.m2 = new M2Loader(data);
 		this.fileDataID = fileDataID;
 		this.variantTextures = variantTextures;
+		this.dataTextures = new Map();
 	}
 
 	/**
@@ -37,6 +40,13 @@ class M2Exporter {
 	 */
 	setGeosetMask(mask) {
 		this.geosetMask = mask;
+	}
+
+	/**
+	 * Export additional texture from canvas
+	 */
+	async addURITexture(out, dataURI) {
+		this.dataTextures.set(out, dataURI);
 	}
 
 	/**
@@ -61,6 +71,39 @@ class M2Exporter {
 		const usePosix = config.pathFormat === 'posix';
 
 		let textureIndex = 0;
+
+		// Export data textures first.
+		for (const [textureName, dataTexture] of this.dataTextures) {
+			try {
+				let texFile = 'data-' + textureName + '.png';
+				let texPath = path.join(out, texFile);
+
+				const matName = 'mat_' + textureName;
+
+				if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const data = BufferWrapper.fromBase64(dataTexture.replace(/^data[^,]+,/,''));
+					log.write('Exporting data texture %d -> %s', textureName, texPath);
+					await data.writeToFile(texPath);
+				} else {
+					log.write('Skipping data texture export %s (file exists, overwrite disabled)', texPath);
+				}
+
+				if (usePosix)
+					texFile = ExportHelper.win32ToPosix(texFile);
+
+				mtl?.addMaterial(matName, texFile);
+				validTextures.set('data-' + textureName, {
+					matName: fullTexPaths ? texFile : matName,
+					matPathRelative: texFile,
+					matPath: texPath
+				});
+			} catch (e) {
+				log.write('Failed to export data texture %d for M2: %s', textureName, e.message);
+			}
+
+			textureIndex++;
+		}
+
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
@@ -69,10 +112,15 @@ class M2Exporter {
 			const textureType = this.m2.textureTypes[textureIndex];
 			let texFileDataID = texture.fileDataID;
 
+			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+			
 			if (textureType > 0) {
 				let targetFileDataID = 0;
 
-				if (textureType >= 11 && textureType < 14) {
+				if (this.dataTextures.has(textureType)) {
+					// Not a fileDataID, but a data texture.
+					targetFileDataID = 'data-' + textureType;
+				} else if (textureType >= 11 && textureType < 14) {
 					// Creature textures.
 					targetFileDataID = this.variantTextures[textureType - 11];
 				} else if (textureType > 1 && textureType < 5) {
@@ -86,7 +134,7 @@ class M2Exporter {
 				texture.fileDataID = targetFileDataID;
 			}
 
-			if (texFileDataID > 0) {
+			if (!Number.isNaN(texFileDataID) && texFileDataID > 0) {
 				try {
 					let texFile = texFileDataID + (raw ? '.blp' : '.png');
 					let texPath = path.join(out, texFile);
@@ -159,31 +207,110 @@ class M2Exporter {
 		const outDir = path.dirname(out);
 
 		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && generics.fileExists(outGLTF))
+		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
 			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
 
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const gltf = new GLTFWriter(out, this.m2.name);
-		log.write('Exporting M2 model %s as GLTF: %s', this.m2.name, outGLTF);
+		const model_name = path.basename(outGLTF, '.gltf');
+		const gltf = new GLTFWriter(out, model_name);
+		log.write('Exporting M2 model %s as GLTF: %s', model_name, outGLTF);
+
+		if (this.m2.skeletonFileID) {
+			const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
+			const skel = new SKELLoader(skel_file);
+
+			await skel.load();
+
+			if (core.view.config.modelsExportAnimations)
+				await skel.loadAnims();
+
+			if (skel.parent_skel_file_id > 0) {
+				const parent_skel_file = await core.view.casc.getFile(skel.parent_skel_file_id);
+				const parent_skel = new SKELLoader(parent_skel_file);
+				await parent_skel.load();
+
+				if (core.view.config.modelsExportAnimations) {
+					await parent_skel.loadAnims();
+
+					// Map of animation indices from child to parent.
+					const animIndexMap = new Map();
+
+					for (let i = 0; i < skel.animations.length; i++) {
+						const anim = skel.animations[i];
+						for (let j = 0; j < parent_skel.animations.length; j++) {
+							const parent_anim = parent_skel.animations[j];
+							if (parent_anim.id === anim.id && parent_anim.variationIndex === anim.variationIndex) {
+								animIndexMap.set(i, j);
+								break;
+							}
+						}
+					}
+
+					// Override parent bone animation data with child skeleton animation data if animation is present on both.
+					for (let i = 0; i < skel.bones.length; i++) {
+						if (i >= parent_skel.bones.length) 
+							break;
+
+						const bone = skel.bones[i];
+						const parentBone = parent_skel.bones[i];
+
+						for (const anim of animIndexMap) {
+							if (bone.translation.timestamps.length > anim[0] && parentBone.translation.timestamps.length > anim[1])
+								parent_skel.bones[i].translation.timestamps[anim[1]] = bone.translation.timestamps[anim[0]];
+
+							if (bone.translation.values.length > anim[0] && parentBone.translation.values.length > anim[1])
+								parent_skel.bones[i].translation.values[anim[1]] = bone.translation.values[anim[0]];
+
+							if (bone.rotation.timestamps.length > anim[0] && parentBone.rotation.timestamps.length > anim[1])
+								parent_skel.bones[i].rotation.timestamps[anim[1]] = bone.rotation.timestamps[anim[0]];
+
+							if (bone.rotation.values.length > anim[0] && parentBone.rotation.values.length > anim[1])
+								parent_skel.bones[i].rotation.values[anim[1]] = bone.rotation.values[anim[0]];
+
+							if (bone.scale.timestamps.length > anim[0] && parentBone.scale.timestamps.length > anim[1])
+								parent_skel.bones[i].scale.timestamps[anim[1]] = bone.scale.timestamps[anim[0]];
+
+							if (bone.scale.values.length > anim[0] && parentBone.scale.values.length > anim[1])
+								parent_skel.bones[i].scale.values[anim[1]] = bone.scale.values[anim[0]];
+						}
+					}
+
+					gltf.setAnimations(parent_skel.animations);
+				}
+
+				gltf.setBonesArray(parent_skel.bones);
+			} else {
+				if (core.view.config.modelsExportAnimations)
+					gltf.setAnimations(skel.animations);
+
+				gltf.setBonesArray(skel.bones);
+			}
+
+		} else {
+			if (core.view.config.modelsExportAnimations) {
+				await this.m2.loadAnims();
+				gltf.setAnimations(this.m2.animations);
+			}
+
+			gltf.setBonesArray(this.m2.bones);
+		}
 
 		gltf.setVerticesArray(this.m2.vertices);
 		gltf.setNormalArray(this.m2.normals);
-		gltf.setUVArray(this.m2.uv);
 		gltf.setBoneWeightArray(this.m2.boneWeights);
-		gltf.setBoneIndiceArray(this.m2.boneIndices)
-		gltf.setBonesArray(this.m2.bones);
+		gltf.setBoneIndexArray(this.m2.boneIndices)
 
-		// TODO: Handle UV2 for GLTF.
+		gltf.addUVArray(this.m2.uv);
+		gltf.addUVArray(this.m2.uv2);
 
-		// TODO: full texture paths.
 		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
 		gltf.setTextureMap(textureMap);
 
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
 			// Skip geosets that are not enabled.
-			if (!this.geosetMask[mI]?.checked)
+			if (this.geosetMask && !this.geosetMask[mI]?.checked)
 				continue;
 
 			const mesh = skin.subMeshes[mI];
@@ -196,10 +323,14 @@ class M2Exporter {
 			if (texUnit)
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
-			// TODO: Better material naming.
 			let matName;
 			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
 				matName = texture.fileDataID;
+
+			if (this.dataTextures.has(this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]])) {
+				matName = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
+				console.log("Setting meshIndex " + mI + " to " + matName);
+			}
 
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
 		}
@@ -227,10 +358,11 @@ class M2Exporter {
 
 		const outDir = path.dirname(out);
 
-		log.write('Exporting M2 model %s as OBJ: %s', this.m2.name, out);
+		// Use internal M2 name or fallback to the OBJ file name.
+		const model_name = path.basename(out, '.obj');
+		obj.setName(model_name);
 
-		// Use internal M2 name for object.
-		obj.setName(this.m2.name);
+		log.write('Exporting M2 model %s as OBJ: %s', model_name, out);
 
 		// Verts, normals, UVs
 		obj.setVertArray(this.m2.vertices);
@@ -253,7 +385,27 @@ class M2Exporter {
 		// A normal meta-data file is around 8kb without bones, 65mb with bones.
 		if (exportBones) {
 			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
-			json.addProperty('bones', this.m2.bones);
+
+			if (this.m2.skeletonFileID) {
+				const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
+				const skel = new SKELLoader(skel_file);
+	
+				await skel.load();
+	
+				if (skel.parent_skel_file_id > 0) {
+					const parent_skel_file = await core.view.casc.getFile(skel.parent_skel_file_id);
+					const parent_skel = new SKELLoader(parent_skel_file);
+					await parent_skel.load();
+	
+					json.addProperty('bones', parent_skel.bones);
+				} else {
+					json.addProperty('bones', skel.bones);
+				}
+	
+			} else {
+				json.addProperty('bones', this.m2.bones);
+			}
+
 			json.addProperty('boneWeights', this.m2.boneWeights);
 			json.addProperty('boneIndicies', this.m2.boneIndices);
 
@@ -439,6 +591,124 @@ class M2Exporter {
 			await skelData.writeToFile(skelFile);
 			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: path.relative(outDir, skelFile) });
 			fileManifest?.push({ type: 'SKEL', fileDataID: this.m2.skeletonFileID, file: skelFile });
+
+			const skel = new SKELLoader(skelData);
+			await skel.load();
+
+			if (config.modelsExportAnim) {
+				await skel.loadAnims();
+				if (config.modelsExportAnim && skel.animFileIDs) {
+					const animManifest = [];
+					const animCache = new Set();
+					for (const anim of skel.animFileIDs) {
+						if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+							const animData = await casc.getFile(anim.fileDataID);
+							const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+							
+							let animFile;
+							if (config.enableSharedChildren)
+								animFile = ExportHelper.getExportPath(animFileName);
+							else
+								animFile = path.join(outDir, path.basename(animFileName));
+
+							await animData.writeToFile(animFile);
+							animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+							fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
+							animCache.add(anim.fileDataID);
+						}
+					}
+
+					manifest.addProperty('skelAnims', animManifest);
+				}
+
+				if (config.modelsExportBone && skel.boneFileIDs) {
+					const boneManifest = [];
+					for (let i = 0, n = skel.boneFileIDs.length; i < n; i++) {
+						const boneFileID = skel.boneFileIDs[i];
+						const boneData = await casc.getFile(boneFileID);
+						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+		
+						let boneFile;
+						if (config.enableSharedChildren)
+							boneFile = ExportHelper.getExportPath(boneFileName);
+						else
+							boneFile = path.join(outDir, path.basename(boneFileName));
+		
+						await boneData.writeToFile(boneFile);
+						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
+					}
+		
+					manifest.addProperty('skelBones', boneManifest);
+				}
+			}
+
+			if (skel.parent_skel_file_id > 0) {
+				const parentSkelData = await core.view.casc.getFile(skel.parent_skel_file_id);
+				const parentSkelFileName = listfile.getByID(skel.parent_skel_file_id);
+	
+				let parentSkelFile;
+				if (config.enableSharedChildren)
+					parentSkelFile = ExportHelper.getExportPath(parentSkelFileName);
+				else
+					parentSkelFile = path.join(outDir, path.basename(parentSkelFileName));
+	
+				await parentSkelData.writeToFile(parentSkelFile);
+	
+				manifest.addProperty('parentSkeleton', { fileDataID: skel.parent_skel_file_id, file: path.relative(outDir, parentSkelFile) });
+				fileManifest?.push({ type: 'PARENT_SKEL', fileDataID: skel.parent_skel_file_id, file: parentSkelFile });
+	
+				const parentSkel = new SKELLoader(parentSkelData);
+				await parentSkel.load();
+
+				if (config.modelsExportAnim) {
+					await parentSkel.loadAnims();
+					if (config.modelsExportAnim && parentSkel.animFileIDs) {
+						const animManifest = [];
+						const animCache = new Set();
+						for (const anim of parentSkel.animFileIDs) {
+							if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
+								const animData = await casc.getFile(anim.fileDataID);
+								const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+								
+								let animFile;
+								if (config.enableSharedChildren)
+									animFile = ExportHelper.getExportPath(animFileName);
+								else
+									animFile = path.join(outDir, path.basename(animFileName));
+	
+								await animData.writeToFile(animFile);
+								animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+								fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
+								animCache.add(anim.fileDataID);
+							}
+						}
+	
+						manifest.addProperty('parentSkelAnims', animManifest);
+					}
+				}
+
+				if (config.modelsExportBone && parentSkel.boneFileIDs) {
+					const boneManifest = [];
+					for (let i = 0, n = parentSkel.boneFileIDs.length; i < n; i++) {
+						const boneFileID = parentSkel.boneFileIDs[i];
+						const boneData = await casc.getFile(boneFileID);
+						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+		
+						let boneFile;
+						if (config.enableSharedChildren)
+							boneFile = ExportHelper.getExportPath(boneFileName);
+						else
+							boneFile = path.join(outDir, path.basename(boneFileName));
+		
+						await boneData.writeToFile(boneFile);
+						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
+					}
+		
+					manifest.addProperty('parentSkelBones', boneManifest);
+				}
+			}
 		}
 
 		// Write relative bone files.

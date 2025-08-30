@@ -2,7 +2,6 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<script defer type="text/javascript" src="lib/vue.js"></script>
-		<script defer type="text/javascript" src="lib/three.js"></script>
 		<script defer type="text/javascript" src="app.js"></script>
 		<link rel="stylesheet" type="text/css" data-href="app.css" href="app.css"/>
 		<title>wow.export</title>
@@ -15,6 +14,7 @@
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
 						<div class="option" id="nav-models" @click="setScreen('tab-models')" :class="{ active: screen === 'tab-models' }">Models</div>
+						<div class="option" id="nav-characters" @click="setScreen('tab-characters')" :class="{ active: screen === 'tab-characters' }">Characters</div>
 						<div class="option" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
 						<div class="option" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
@@ -75,6 +75,11 @@
 						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
 					</div>
 					<div>
+						<h1>Scroll Speed</h1>
+						<p>How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)</p>
+						<input type="number" v-model.number="configEdit.scrollSpeed"/>
+					</div>
+					<div>
 						<h1>Show File Data IDs</h1>
 						<p>If enabled, all capable listfiles will have entries suffixed with their fileDataID.</p>
 						<label class="ui-checkbox">
@@ -104,6 +109,15 @@
 						<p>Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableM2Skins"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Include Bone Prefixes</h1>
+						<p>If enabled, wow.export will Include _p Bone prefixes in model skeleton/armature.</p>
+						<p>Disabling this will break backwards compatibility with previous glTF model and animation exports.</p>
+						<label class="ui-checkbox" title="">
+							<input type="checkbox" v-model="configEdit.modelsExportWithBonePrefix"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -151,12 +165,22 @@
 						</ul>
 					</div>
 					<div>
-						<h1>Use Absolute MTL Paths</h1>
+						<h1>Use Absolute MTL Texture Paths</h1>
 						<p>If enabled, MTL files will contain absolute textures paths rather than relative ones.</p>
 						<p>This will cause issues when sharing exported models between computers.</p>
-						<p>Enable this option if you are having issues importing models in Cinema 4D with Shared Textures enabled.</p>
+						<p>Enable this option if you are having issues importing OBJ models with Shared Textures enabled.</p>
 						<label class="ui-checkbox">
 							<input type="checkbox" v-model="configEdit.enableAbsoluteMTLPaths"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Use Absolute glTF Texture Paths</h1>
+						<p>If enabled, glTF files will contain absolute textures paths rather than relative ones.</p>
+						<p>This will cause issues when sharing exported models between computers.</p>
+						<p>Enable this option if you are having issues importing glTF models with Shared Textures enabled.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableAbsoluteGLTFPaths"/>
 							<span>Enable</span>
 						</label>
 					</div>
@@ -263,6 +287,14 @@
 						</label>
 					</div>
 					<div>
+						<h1>Show unknown items</h1>
+						<p>When enabled, wow.export will list all items in the items tab, even those without a name.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.itemViewerShowAll"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Cache Expiry</h1>
 						<p>After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).</p>
 						<input type="number" v-model.number="configEdit.cacheExpiry"/>
@@ -284,6 +316,16 @@
 						<input type="text" width="140" v-model.trim="userInputTactKeyName" maxlength="16" placeholder="e.g 8F4098E2470FE0C8"/>
 						<input type="text" width="280" v-model.trim="userInputTactKey" maxlength="32" placeholder="e.g AA718D1F1A23078D49AD0C606A72F3D5"/>
 						<input type="button" value="Add" @click="click('tact-key', $event)"/>
+					</div>
+					<div>
+						<h1>Realm List Source</h1>
+						<p>Remote URL used for retrieving the realm list. (Must use same format)</p>
+						<p><input type="text" class="long" v-model.trim="configEdit.realmListURL"/></p>
+					</div>
+					<div>
+						<h1>Character Appearance API Endpoint</h1>
+						<p>Remote URL used for retrieving data from the Battle.net Character Appearance API. (Must use same format)</p>
+						<p><input type="text" class="long" v-model.trim="configEdit.armoryURL"/></p>
 					</div>
 					<div>
 						<h1>Listfile Source</h1>
@@ -354,10 +396,19 @@
 								<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
 							</ul>
 							<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
+								<div id="atlas-overlay" v-if="config.showTextureAtlas">
+									<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ left: region.left, top: region.top, width: region.width, height: region.height }">
+										<span>{{ region.name }}</span>
+									</div>
+								</div>
 								<div class="image" :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
 							</div>
 						</div>
 						<div class="preview-controls">
+							<label class="ui-checkbox">
+								<input type="checkbox" v-model="config.showTextureAtlas"/>
+								<span>Show Atlas Regions</span>
+							</label>
 							<label class="ui-checkbox">
 								<input type="checkbox" v-model="config.showTextureInfo"/>
 								<span>Show Info</span>
@@ -366,6 +417,7 @@
 								<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
 								<span>Transparency</span>
 							</label>
+							<input v-if="config.showTextureAtlas" type="button" value="Export Atlas Regions" @click="click('export-texture-atlas-region', $event)" :class="{ disabled: isBusy }" style="margin-right: 5px"/>
 							<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
 						</div>
 					</div>
@@ -502,6 +554,10 @@
 								<input type="checkbox" v-model="config.modelsShowM2"/>
 								<span>Show M2</span>
 							</label>
+							<label class="ui-checkbox" title="Include M3 objects in the list">
+								<input type="checkbox" v-model="config.modelsShowM3"/>
+								<span>Show M3</span>
+							</label>
 							<label class="ui-checkbox" title="Include WMO objects in the list">
 								<input type="checkbox" v-model="config.modelsShowWMO"/>
 								<span>Show WMO</span>
@@ -536,6 +592,10 @@
 								<input type="checkbox" v-model="config.modelsExportAlpha"/>
 								<span>Texture Alpha</span>
 							</label>
+							<label v-if="config.exportModelFormat === 'GLTF' && modelViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Export animations</span>
+							</label>
 							<template v-if="config.exportModelFormat === 'RAW'">
 								<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
 									<input type="checkbox" v-model="config.modelsExportSkin"/>
@@ -562,12 +622,16 @@
 								<span class="header">Geosets</span>
 								<checkboxlist :items="modelViewerGeosets"></checkboxlist>
 								<div class="list-toggles">
-									<a @click="setAllGeosets(true)">Enable All</a> / <a @click="setAllGeosets(false)">Disable All</a>
+									<a @click="setAllGeosets(true, modelViewerGeosets)">Enable All</a> / <a @click="setAllGeosets(false, modelViewerGeosets)">Disable All</a>
 								</div>
 								<template v-if="config.modelsExportTextures">
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
+								<!--<template v-if="config.exportModelFormat === 'GLTF'">
+									<span class="header">Animations</span>
+									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
+								</template>-->
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>
@@ -578,6 +642,85 @@
 								<span class="header">Doodad Sets</span>
 								<checkboxlist :items="modelViewerWMOSets"></checkboxlist>
 							</template>
+						</div>
+					</div>
+				</keep-alive>
+				<keep-alive>
+					<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
+						<div class="left-panel">
+							<div class="tab-control">
+								<span @click="chrCustTab = 'models'" :class="{ selected: chrCustTab === 'models' }">Models</span>
+								<span @click="chrCustTab = 'options'" :class="{ selected: chrCustTab === 'options' }">Options</span>
+							</div>
+							<div class="model-tab" v-show="chrCustTab  === 'models'">
+								<span class="header">Character Race 
+									<label class="ui-checkbox" id="inline-npc-races">
+										<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
+										<span>Show NPC races</span>
+									</label>
+								</span>
+								<listboxb id="listbox-chr-race" class="section-end" :items="chrCustRaces" :selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
+								<span class="header">Body Type</span>
+								<listboxb id="listbox-chr-model" :items="chrCustModels" :selection="chrCustModelSelection" :single="true"></listboxb>
+							</div>
+							<div class="option-tab" v-show="chrCustTab  === 'options'">
+								<span class="header">Customizations</span>
+								<listboxb id="listbox-chr-option" :items="chrCustOptions" :selection="chrCustOptionSelection" :single="true"></listboxb>
+								<span class="header">Customization Options</span>
+								<listboxb id="listbox-chr-choice" :items="chrCustChoices" :selection="chrCustChoiceSelection" :single="true"></listboxb>
+								<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
+							</div>
+						</div>
+						<div class="char-preview preview-container">
+							<div class="preview-background">
+								<model-viewer :context="chrModelViewerContext"></model-viewer>
+							</div>
+							<div class="texture-preview-panel" id="chr-texture-preview" v-show="config.chrShowTextureOverlay">
+								<div id="chr-overlay-btn">
+									<input type="button" value="&gt;" @click="click('chr-next-overlay', $event)"/>
+									<input type="button" value="&lt;" @click="click('chr-prev-overlay', $event)"/>
+								</div>
+							</div>
+						</div>
+						<div class="right-panel">
+							<div class="tab-control">
+								<span @click="chrCustRightTab = 'geosets'" :class="{ selected: chrCustRightTab === 'geosets' }">Geosets</span>
+								<span @click="chrCustRightTab = 'import'" :class="{ selected: chrCustRightTab === 'import' }">Import</span>
+							</div>
+							<div id="character-import-panel" v-if="chrCustRightTab == 'import'">
+								<div class="header"><b>Character Import</b></div>
+								<ul class="ui-multi-button">
+									<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
+								</ul>
+								<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
+								<combo-box :value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" @update:value="chrImportSelectedRealm = $event" maxheight="10"></combo-box>
+								<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
+									<input type="checkbox" v-model="chrImportLoadVisage"/>
+									<span>Load visage model (Dracthyr/Worgen)</span>
+								</label>
+								<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
+							</div>
+							<div v-if="chrCustRightTab == 'geosets'">
+								<div class="header"><b>Geosets</b></div>
+								<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
+								<checkboxlist id="checkbox-geosets" :items="chrCustGeosets"></checkboxlist>
+								<div class="list-toggles">
+									<a @click="setAllGeosets(true, chrCustGeosets)">Enable All</a> / <a @click="setAllGeosets(false, chrCustGeosets)">Disable All</a>
+								</div>
+							</div>
+							<label class="ui-checkbox" title="Include Animations in Export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Export animations</span>
+							</label>
+							<label class="ui-checkbox" title="Include Base Clothing">
+								<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
+								<span>Include base clothing</span>
+							</label>
+							<label class="ui-checkbox" title="Show Texture Overlay">
+								<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
+								<span>Show texture overlay</span>
+							</label>
+							<input type="button" id="export-char-btn" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
 						</div>
 					</div>
 				</keep-alive>

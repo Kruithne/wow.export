@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -11,8 +11,10 @@ const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2Renderer = require('./M2Renderer');
+const M3Renderer = require('./M3Renderer');
 const listfile = require('../../casc/listfile');
 const textureRibbon = require('../../ui/texture-ribbon');
+const constants = require('../../constants');
 
 const DEFAULT_MATERIAL = new THREE.MeshPhongMaterial({ color: 0x57afe2, side: THREE.DoubleSide });
 
@@ -22,14 +24,16 @@ class WMORenderer {
 	 * @param {BufferWrapper} data 
 	 * @param {string|number} fileID
 	 * @param {THREE.Group} renderGroup
+	 * @param {boolean} [useRibbon=true]
 	 */
-	constructor(data, fileID, renderGroup) {
+	constructor(data, fileID, renderGroup, useRibbon = true) {
 		this.data = data;
 		this.fileID = fileID;
 		this.renderGroup = renderGroup;
 		this.textures = [];
-		this.m2Renderers = new Map();
+		this.modelRenderers = new Map();
 		this.m2Clones = [];
+		this.useRibbon = useRibbon;
 	}
 
 	/**
@@ -120,36 +124,39 @@ class WMORenderer {
 					texture.fileDataID = material.texture1;
 			}
 
-			if (texture.fileDataID > 0) {
-				const tex = new THREE.Texture();
-				const loader = new THREE.ImageLoader();
+			materials[i] = DEFAULT_MATERIAL;
 
+			if (texture.fileDataID > 0) {
 				const ribbonSlot = textureRibbon.addSlot();
 				textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const blpURI = blp.getDataURL(0b0111);
+					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+					tex.flipY = true;
+					tex.magFilter = THREE.LinearFilter;
+					tex.minFilter = THREE.LinearFilter;
 
-					textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+					if (!(texture.flags & 0x40))
+						tex.wrapS = THREE.RepeatWrapping;
 
-					loader.load(blpURI, image => {
-						tex.image = image;
-						tex.format = THREE.RGBAFormat;
-						tex.needsUpdate = true;
-					});
+					if (!(texture.flags & 0x80))
+						tex.wrapT = THREE.RepeatWrapping;
+
+					tex.colorSpace = THREE.SRGBColorSpace;
+					
+					tex.needsUpdate = true;
+
+					this.textures.push(tex);
+					materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
+
+					if (this.useRibbon) {
+						const blpURI = blp.getDataURL(0b0111);
+						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+					}
 				}).catch(e => {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
-
-				if (!(texture.flags & 0x40))
-					tex.wrapS = THREE.RepeatWrapping;
-
-				if (!(texture.flags & 0x80))
-					tex.wrapT = THREE.RepeatWrapping;
-
-				this.textures.push(tex);
-				materials[i] = new THREE.MeshPhongMaterial({ map: tex, side: THREE.DoubleSide });
 			} else {
 				materials[i] = DEFAULT_MATERIAL;
 			}
@@ -165,7 +172,6 @@ class WMORenderer {
 				this.loadAuxiliaryTextureForRibbon(material.runtimeData[2], wmo);
 				this.loadAuxiliaryTextureForRibbon(material.runtimeData[3], wmo);
 			}
-
 		}
 	}
 
@@ -175,6 +181,9 @@ class WMORenderer {
 	 * @param {WMOLoader} wmo
 	 */
 	async loadAuxiliaryTextureForRibbon(textureID, wmo) {
+		if (!this.useRibbon)
+			return;
+
 		if (wmo.textureNames)
 			textureID = listfile.getByFilename(textureID) || 0;
 
@@ -223,21 +232,32 @@ class WMORenderer {
 			if (fileDataID > 0) {
 				try {
 					let mesh;
-					if (this.m2Renderers.has(fileDataID)) {
+					if (this.modelRenderers.has(fileDataID)) {
 						// We already built this m2, re-use it.
-						mesh = this.m2Renderers.get(fileDataID).meshGroup.clone(true);
+						mesh = this.modelRenderers.get(fileDataID).meshGroup.clone(true);
 						renderGroup.add(mesh);
 						this.m2Clones.push(mesh);
 					} else {
-						// New M2, load it from CASC and prepare for render.
+						// New model, load it from CASC and prepare for render.
 						const data = await casc.getFile(fileDataID);
-						const m2 = new M2Renderer(data, renderGroup, false, false);
-						
-						await m2.load();
-						await m2.loadSkin(0);
 
-						mesh = m2.meshGroup;
-						this.m2Renderers.set(fileDataID, m2);
+						const modelMagic = data.readUInt32LE();
+						data.seek(0);
+						if (modelMagic == constants.MAGIC.MD21) {
+							const m2 = new M2Renderer(data, renderGroup, false, false);
+							await m2.load();
+							await m2.loadSkin(0);
+
+							mesh = m2.meshGroup;
+							this.modelRenderers.set(fileDataID, m2);
+						} else if (modelMagic == constants.MAGIC.M3DT) {
+							const m3 = new M3Renderer(data, renderGroup, false, false);
+							await m3.load();
+							await m3.loadLOD(0);
+
+							mesh = m3.meshGroup;
+							this.modelRenderers.set(fileDataID, m3);
+						}
 					}
 
 					// Apply relative position/rotation/scale.
@@ -249,7 +269,8 @@ class WMORenderer {
 
 					mesh.scale.set(doodad.scale, doodad.scale, doodad.scale);
 				} catch (e) {
-					log.write('Failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+					log.write('Failed to load doodad %d (offset %d) for %s: %s', fileDataID, doodad.offset, set.name, e.message);
+					console.log(e);
 				}
 			}
 		}
@@ -344,7 +365,7 @@ class WMORenderer {
 		}
 
 		// Dispose of all M2 renderers for doodad sets.
-		for (const renderer of this.m2Renderers.values())
+		for (const renderer of this.modelRenderers.values())
 			renderer.dispose();
 
 		// Remove M2 clones from the renderGroup.
@@ -359,7 +380,7 @@ class WMORenderer {
 		}
 
 		// Dereference M2 renderers for faster clean-up.
-		this.m2Renderers = undefined;
+		this.modelRenderers = undefined;
 		this.m2Clones = undefined;
 
 		// Unregister reactive watchers.

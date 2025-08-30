@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -60,6 +60,23 @@ class BufferWrapper {
 	 */
 	static from(source) {
 		return new BufferWrapper(Buffer.from(source));
+	}
+
+	/**
+	 * Create a buffer from a source using Buffer.from().
+	 * @param {Array} source 
+	 */
+	static fromBase64(source) {
+		return new BufferWrapper(Buffer.from(source, 'base64'));
+	}
+
+	/**
+	 * Concatenate an array of buffers into a single buffer.
+	 * @param {BufferWrapper[]} buffers 
+	 * @returns {BufferWrapper}
+	 */
+	static concat(buffers) {
+		return new BufferWrapper(Buffer.concat(buffers.map(buf => buf.raw)));
 	}
 
 	/**
@@ -585,6 +602,17 @@ class BufferWrapper {
 		this.seek(ofs);
 
 		return str.split(/\r\n|\n|\r/);
+	}
+
+	/**
+	 * Fill a buffer with the given value.
+	 * @param {number} value 
+	 * @param {number} length 
+	 */
+	fill(value, length = this.remainingBytes) {
+		this._checkBounds(length);
+		this._buf.fill(value, this._ofs, this._ofs + length);
+		this._ofs += length;
 	}
 
 	/**

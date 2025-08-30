@@ -54,6 +54,7 @@ class WMOLoader {
 
 		// Mark this instance as loaded.
 		this.loaded = true;
+		this.data = undefined;
 	}
 
 	/**
@@ -80,17 +81,6 @@ class WMOLoader {
 		await group.load();
 
 		return group;
-	}
-
-	/**
-	 * Read a position, corrected from WoW's co-ordinate system.
-	 */
-	readPosition() {
-		const x = this.data.readFloatLE();
-		const z = this.data.readFloatLE();
-		const y = this.data.readFloatLE() * -1;
-
-		return [x, y, z];
 	}
 }
 

@@ -43,7 +43,7 @@ core.registerLoadFunc(async () => {
 					if (e instanceof BLTEIntegrityError)
 						isCorrupted = true;
 					else
-						helper.mark(fileName, false, e.message);
+						helper.mark(fileName, false, e.message, e.stack);
 				}
 
 				if (isCorrupted) {
@@ -56,7 +56,7 @@ core.registerLoadFunc(async () => {
 
 						helper.mark(fileName, true);
 					} catch (e) {
-						helper.mark(fileName, false, e.message);
+						helper.mark(fileName, false, e.message, e.stack);
 					}
 				}
 			} else {

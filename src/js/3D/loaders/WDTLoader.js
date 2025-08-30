@@ -41,7 +41,13 @@ const WDTChunkHandlers = {
 	// MPHD (Flags)
 	0x4D504844: function(data) {
 		this.flags = data.readUInt32LE();
-		// 7 * UInt32 fileDataIDs
+		this.lgtFileDataID = data.readUInt32LE();
+		this.occFileDataID = data.readUInt32LE();
+		this.fogsFileDataID = data.readUInt32LE();
+		this.mpvFileDataID = data.readUInt32LE();
+		this.texFileDataID = data.readUInt32LE();
+		this.wdlFileDataID = data.readUInt32LE();
+		this.pd4FileDataID = data.readUInt32LE();
 	},
 
 	// MAIN (Tiles)

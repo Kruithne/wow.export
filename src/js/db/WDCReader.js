@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const util = require('util');
@@ -23,6 +23,7 @@ const TABLE_FORMATS = {
 	0x434C5331: { name: 'CLS1', wdcVersion: 2 },
 	0x33434457: { name: 'WDC3', wdcVersion: 3 },
 	0x34434457: { name: 'WDC4', wdcVersion: 4 },
+	0x35434457: { name: 'WDC5', wdcVersion: 5 },
 };
 
 /**
@@ -237,6 +238,12 @@ class WDCReader {
 		const wdcVersion = format.wdcVersion;
 		log.write('Processing DB file %s as %s', this.fileName, format.name);
 
+		// Skip over WDC5 specific information for now
+		if (wdcVersion === 5) {
+			data.readUInt32LE(); // Schema version?
+			data.readUInt8(128); // Schema build string
+		}
+
 		// wdc_db2_header
 		const recordCount = data.readUInt32LE();
 		data.move(4); // fieldCount
@@ -337,7 +344,7 @@ class WDCReader {
 		assert.strictEqual(data.offset, prevPos + commonDataSize, 'Read incorrect amount of common data');
 
 		// New WDC4 chunk: TODO read
-		if (wdcVersion === 4) {
+		if (wdcVersion > 3) {
 			for (let sectionIndex = 0; sectionIndex < sectionCount - 1; sectionIndex++) {
 				let entryCount = data.readUInt32LE();
 				data.move(entryCount * 4);
@@ -368,7 +375,7 @@ class WDCReader {
 					offsetMap[minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
 
-			if ((wdcVersion === 3 || wdcVersion === 4) && isNormal) {
+			if ((wdcVersion > 2) && isNormal) {
 				data.seek(stringBlockOfs);
 				for (let i = 0; i < header.stringTableSize;)
 				{
@@ -401,7 +408,7 @@ class WDCReader {
 					copyTable.set(destinationRowID, sourceRowID);
 			}
 
-			if (wdcVersion === 3 || wdcVersion === 4) {
+			if (wdcVersion > 2) {
 				// offset_map_entry offset_map[section_headers.offset_map_id_count];
 				offsetMap = new Array(header.offsetMapIDCount);
 				for (let i = 0, n = header.offsetMapIDCount; i < n; i++)
@@ -432,7 +439,7 @@ class WDCReader {
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
 			// TODO: Read
-			if (wdcVersion === 3 || wdcVersion === 4)
+			if (wdcVersion > 2)
 				data.move(header.offsetMapIDCount * 4);
 
 			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, relationshipMap };
@@ -461,13 +468,13 @@ class WDCReader {
 				}
 
 				// Check if first integer after string block (from id list or copy table) is non-0
-				if (isZeroed && (wdcVersion === 3 || wdcVersion === 4) && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
+				if (isZeroed && (wdcVersion > 2) && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
 					data.seek(section.stringBlockOfs + header.stringTableSize);
 					isZeroed = data.readUInt32LE() === 0;
 				}
 
 				// Check if first entry in offsetMap has size 0
-				if (isZeroed && (wdcVersion === 3 || wdcVersion === 4) && header.offsetMapIDCount > 0) 
+				if (isZeroed && (wdcVersion > 2) && header.offsetMapIDCount > 0) 
 					isZeroed = offsetMap[0].size === 0;
 				
 				if (isZeroed) {

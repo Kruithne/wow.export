@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const core = require('../../core');
@@ -9,6 +9,7 @@ const log = require('../../log');
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const GeosetMapper = require('../GeosetMapper');
+const ShaderMapper = require('../ShaderMapper');
 const RenderCache = require('./RenderCache');
 
 const textureRibbon = require('../../ui/texture-ribbon');
@@ -31,7 +32,9 @@ class M2Renderer {
 		this.renderCache = new RenderCache();
 		this.syncID = -1;
 		this.useRibbon = useRibbon;
+		this.shaderMap = new Map();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
+		this.geosetKey = 'modelViewerGeosets';
 	}
 
 	/**
@@ -43,11 +46,12 @@ class M2Renderer {
 		await this.m2.load();
 
 		this.loadTextures();
+
 		if (this.m2.vertices.length > 0) {
 			await this.loadSkin(0);
 
 			if (this.reactive) {
-				this.geosetWatcher = core.view.$watch('modelViewerGeosets', () => this.updateGeosets(), { deep: true });
+				this.geosetWatcher = core.view.$watch(this.geosetKey, () => this.updateGeosets(), { deep: true });
 				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
 			}
 		}
@@ -78,7 +82,7 @@ class M2Renderer {
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.geosetArray[i].checked;
 	}
-	
+
 	/**
 	 * Load a skin with a given index.
 	 */
@@ -92,6 +96,8 @@ class M2Renderer {
 		const dataVerts = new THREE.BufferAttribute(new Float32Array(m2.vertices), 3);
 		const dataNorms = new THREE.BufferAttribute(new Float32Array(m2.normals), 3);
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
+		const dataBoneIndices = new THREE.BufferAttribute(new Uint8Array(m2.boneIndices), 4);
+		const dataBoneWeights = new THREE.BufferAttribute(new Uint8Array(m2.boneWeights), 4);
 
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
@@ -101,6 +107,8 @@ class M2Renderer {
 			geometry.setAttribute('position', dataVerts);
 			geometry.setAttribute('normal', dataNorms);
 			geometry.setAttribute('uv', dataUVs);
+			geometry.setAttribute('skinIndex', dataBoneIndices);
+			geometry.setAttribute('skinWeight', dataBoneWeights);
 
 			// Map triangle array to indices.
 			const index = new Array(skin.triangles.length);
@@ -113,16 +121,90 @@ class M2Renderer {
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
 			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
 
+			if (texUnit) {
+				this.shaderMap.set(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]], 
+					{
+						"VS": ShaderMapper.getVertexShader(texUnit.textureCount, texUnit.shaderID), 
+						"PS": ShaderMapper.getPixelShader(texUnit.textureCount, texUnit.shaderID),
+						"DS": ShaderMapper.getDomainShader(texUnit.textureCount, texUnit.shaderID),
+						"HS": ShaderMapper.getHullShader(texUnit.textureCount, texUnit.shaderID)
+					}
+				);
+
+				// console.log("TexUnit [" + i + "] Unit for geo " + skinMesh.submeshID + " material index " + texUnit.materialIndex + " has " + texUnit.textureCount + " textures", skinMesh, texUnit, m2.materials[texUnit.materialIndex]);
+				// console.log("TexUnit Shaders [" + i + "]", this.shaderMap.get(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]]));
+			}
+	
+			// if (m2.bones.length > 0) {
+			// 	const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
+			// 	this.meshGroup.add(skinnedMesh);
+
+			// 	const bone_lookup_map = new Map();
+			// 	const bones = [];
+
+			// 	// Add bone nodes.
+			// 	const rootNode = new THREE.Bone();
+			// 	bones.push(rootNode);
+
+			// 	const inverseBindMatrices = [];
+			// 	//inverseBindMatrices.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+			// 	for (let i = 0; i < m2.bones.length; i++) {
+			// 		//const nodeIndex = bones.length;
+			// 		const bone = m2.bones[i];
+					
+			// 		const node = new THREE.Bone();
+
+			// 		let parent_pos = [0, 0, 0];
+			// 		if (bone.parentBone > -1) {
+			// 			const parent_bone = m2.bones[bone.parentBone];
+			// 			parent_pos = parent_bone.pivot;
+			// 		}
+
+			// 		var parentPos = bone.pivot.map((v, i) => v - parent_pos[i]);
+			// 		node.position.x = parentPos[0];
+			// 		node.position.y = parentPos[1];
+			// 		node.position.z = parentPos[2];
+		
+			// 		bone_lookup_map.set(i, node);
+		
+			// 		if (bone.parentBone > -1) {
+			// 			const parent_node = bone_lookup_map.get(bone.parentBone);
+			// 			parent_node.add(node);
+			// 		} else {
+			// 			// Parent stray bones to the skeleton root.
+			// 			rootNode.add(node);
+			// 		}
+
+			// 		bones.push(node);
+
+			// 		inverseBindMatrices.push([vec3_to_mat4x4(bone.pivot)]);
+		
+			// 		//skin.joints.push(nodeIndex + 1);
+			// 	}
+
+			// 	const skeleton = new THREE.Skeleton( bones );
+
+			// 	skinnedMesh.bind( skeleton );
+
+			// 	// core.view.modelViewerContext.scene.add(new THREE.SkeletonHelper( bones[0] ));
+
+			// } else {
 			this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
+			// }
 
 			if (this.reactive) {
-				const isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01'));
+				let isDefault = (skinMesh.submeshID === 0 || skinMesh.submeshID.toString().endsWith('01') || skinMesh.submeshID.toString().startsWith('32'));
+
+				// Don't enable eyeglow/earrings by default
+				if (skinMesh.submeshID.toString().startsWith('17') || skinMesh.submeshID.toString().startsWith('35'))
+					isDefault = false;
+	
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: isDefault, id: skinMesh.submeshID };
 			}
 		}
 
 		if (this.reactive) {
-			core.view.modelViewerGeosets = this.geosetArray;
+			core.view[this.geosetKey] = this.geosetArray;
 			GeosetMapper.map(this.geosetArray);
 		}
 
@@ -155,6 +237,48 @@ class M2Renderer {
 	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
+	async overrideTextureTypeWithCanvas(type, canvas) {
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			// Don't mess with textures not for this type.
+			if (textureTypes[i] !== type)
+				continue;
+
+			// i is the same as m2.textures[i]
+
+			const tex = new THREE.CanvasTexture(canvas);
+
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			tex.colorSpace = THREE.SRGBColorSpace;
+
+			// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+
+			tex.needsUpdate = true;
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {number} type 
+	 * @param {number} fileDataID 
+	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
 		const renderWireframe = core.view.config.modelViewerWireframe;
@@ -164,23 +288,60 @@ class M2Renderer {
 			if (textureTypes[i] !== type)
 				continue;
 
-			const tex = new THREE.Texture();
-			const loader = new THREE.ImageLoader();
-
 			const data = await core.view.casc.getFile(fileDataID);
 			const blp = new BLPFile(data);
-			const blpURI = blp.getDataURL(0b0111);
 
 			if (this.useRibbon) {
 				textureRibbon.setSlotFile(i, fileDataID, this.syncID);
-				textureRibbon.setSlotSrc(i, blpURI, this.syncID);
+				textureRibbon.setSlotSrc(i, blp.getDataURL(0b0111), this.syncID);
 			}
 
-			loader.load(blpURI, image => {
-				tex.image = image;
-				tex.format = THREE.RGBAFormat;
-				tex.needsUpdate = true;
-			});
+			// Load DXT textures directly for performance boost for previews, disabled pending workaround for https://github.com/mrdoob/three.js/issues/4316 on our end or theirs
+			// if (blp.encoding == 2) { 
+			// 	const compressedTexture = new THREE.CompressedTexture();
+			// 	compressedTexture.mipmaps = [];
+			// 	compressedTexture.width = blp.width;
+			// 	compressedTexture.height = blp.height;
+			// 	compressedTexture.isCubemap = false;
+
+			// 	for (let i = 0; i < blp.mapCount; i++) {
+			// 		const scale = Math.pow(2, i);
+			// 		compressedTexture.mipmaps.push({ data: blp.getRawMimap(i), width: blp.width / scale, height: blp.height / scale});
+			// 	}
+
+			// 	switch (blp.alphaEncoding) {
+			// 		case 0: // DXT1
+			// 			compressedTexture.format = blp.alphaDepth > 0 ? THREE.RGBA_S3TC_DXT1_Format : THREE.RGB_S3TC_DXT1_Format;
+			// 			break;
+			// 		case 1: // DXT3
+			// 			compressedTexture.format = THREE.RGBA_S3TC_DXT3_Format;
+			// 			break;
+			// 		case 7: // DXT5
+			// 			compressedTexture.format = THREE.RGBA_S3TC_DXT5_Format;
+			// 			break;
+			// 	}
+
+			// 	compressedTexture.needsUpdate = true;
+
+			// 	tex = compressedTexture;
+			// }
+
+			const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			tex.colorSpace = THREE.SRGBColorSpace;
+
+			tex.needsUpdate = true;
+
+			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
 
 			this.renderCache.retire(this.materials[i]);
 
@@ -208,43 +369,41 @@ class M2Renderer {
 			const texture = textures[i];
 
 			const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
+			this.materials[i] = this.defaultMaterial;
 
 			if (texture.fileDataID > 0) {
-				const tex = new THREE.Texture();
-				const loader = new THREE.ImageLoader();
-
 				if (ribbonSlot !== null)
 					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const blpURI = blp.getDataURL(0b0111);
-
+					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+					tex.magFilter = THREE.LinearFilter;
+					tex.minFilter = THREE.LinearFilter;
+					tex.flipY = true;
+					tex.needsUpdate = true;
+					
 					if (ribbonSlot !== null)
-						textureRibbon.setSlotSrc(ribbonSlot, blpURI, this.syncID);
+						textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(0b0111), this.syncID);
 
-					loader.load(blpURI, image => {
-						tex.image = image;
-						tex.format = THREE.RGBAFormat;
-						tex.needsUpdate = true;
-					});
+					if (texture.flags & 0x1)
+						tex.wrapS = THREE.RepeatWrapping;
+	
+					if (texture.flags & 0x2)
+						tex.wrapT = THREE.RepeatWrapping;
+
+					tex.colorSpace = THREE.SRGBColorSpace;
+
+					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
+					
+					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+					this.renderCache.register(material, tex);
+	
+					this.materials[i] = material;
+					this.renderCache.addUser(material);
 				}).catch(e => {
 					log.write('Failed to side-load texture %d for 3D preview: %s', texture.fileDataID, e.message);
 				});
-
-				if (texture.flags & 0x1)
-					tex.wrapS = THREE.RepeatWrapping;
-
-				if (texture.flags & 0x2)
-					tex.wrapT = THREE.RepeatWrapping;
-
-				const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
-				this.renderCache.register(material, tex);
-
-				this.materials[i] = material;
-				this.renderCache.addUser(material);
-			} else {
-				this.materials[i] = this.defaultMaterial;
 			}
 		}
 

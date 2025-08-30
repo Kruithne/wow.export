@@ -1,3 +1,94 @@
+0.1.66 (xx-09-2025)
+- Added expansion icon for Midnight.
+- Added partial support for M3 models (geometry only).
+- Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
+- Added option that controls the amount of lines when scrolling (thanks NoodleBug!).
+- Updated Battle.net patch service URLs.
+- Updated three.js from r111 to r179 (some color changes might be observed in previews).
+- Replaced pkg dependency for building updater with bun to eliminate cross-platform issues.
+- Added cross-platform support for Linux & MacOS into updater application.
+- Removed build dependencies node, acorn, terser, filesize, chalk, request, ssh2-sftp-client and sass.
+
+0.1.65 (31-12-2024)
+- Added option to view and export texture atlas regions from the texture viewer.
+- Added support for newer root manifest format introduced 11.1+.
+- Added patch region for China.
+
+0.1.64 (21-07-2024)
+- Fix issue with exports not starting for some users due to an issue introduced in 0.1.62.
+
+0.1.63 (20-07-2024)
+- Added more verbose logging for required downloads during loading to hopefully figure out why some users are having issues.
+
+0.1.62 (19-07-2024)
+- Added warning for users who set the last export file as a directory.
+- Fixed issue with raw map exports skipping certain WMOs.
+
+0.1.61 (16-07-2024)
+- Fixed issue with raw WMO exports failing due to missing LOD groups.
+
+0.1.60 (15-07-2024)
+- Added exporting of .skel files and files referenced by .skel files for raw M2 exports.
+- Added exporting of WMO LOD groups for raw WMO exports.
+- Added exporting of other WDT files for raw map exports.
+- Added option to blend the terrain textures from the exported alpha maps in the Blender add-on.
+- Improved blending on some character textures.
+- Improved memory usage for WMO previewing and exporting.
+- Improved CASC loading to fall back to CDN for missing config files.
+- Fixed missing map name from raw ADT export filenames.
+- Fixed missing bone data from OBJ exports with bone JSON exports enabled.
+- Fixed issue where filtering textures by items would only show textures for one gender.
+- Fixed issue with alpha maps from early maps such as Emerald Dream being exported incorrectly.
+- Fixed issue causing seams to appear on baked character textures.
+- Fixed issue with character tab layout being unusable on higher display sizes.
+- Fixed issue that caused character texture overlay to stop appearing after changing tabs.
+- Fixed issue that caused geoset control in the Models and Character tabs to be linked.
+- Fixed issue that caused wow.export to run out of memory when exporting incredibly large WMOs.
+
+0.1.59 (29-02-2024)
+- Initial support for exporting textured character models and their customizations to glTF. Some customizations are not yet supported.
+  Note: Please see the pinned issue on top of our GitHub issues page for known issues/requests before reporting a bug/making a suggestion.
+- New and improved 3D camera controls in the model viewer.
+- Holding SHIFT and ALT now allows for more precise camera movement.
+- Fixed missing animations on models that share rigs (e.g. void elf/upright orc/nightborne).
+- Added expansion icon for The War Within.
+- Improved default geoset selection.
+
+0.1.58 (11-02-2024)
+- M2 models can now be exported with all their animations when using glTF. (Beta feature)
+- Added additional bone names for non-keybone bones.
+- Added optional setting (disabled by default) to also display unnamed/unknown items in the "Items" tab.
+- Added exporting of all doodads when exporting raw WMOs.
+- Fixed alpha channels not decoding correctly on some BLPs.
+- Fixed skin names appearing in raw export filenames for M2s.
+- Improved performance when loading models for previewing while "Show Textures" is disabled.
+  Note: When enabling the "Show Textures" checkbox a reload of the model is needed for textures to appear.
+
+0.1.57 (25-01-2024)
+- M2 models can now be exported in the glTF format (complete with armature)! 🎉
+- WMO models can now be exported in glTF format (does not support doodads).
+- Fixed issue with models added since 9.2+ not containing names.
+
+⭐ [Special thank you to Kathen for contributions in 0.1.57]
+
+0.1.56 (20-01-2024)
+- Blender add-on fix (make sure to update the addon).
+
+0.1.55 (19-01-2024)
+- Updated default listfile, encryption key and data definition downloads to come from GitHub.
+- Fixed fallbacks for listfile, encryption key and data definition downloads.
+- Fixed long material names crashing Blender imports (make sure to update the addon).
+- Fixed unnecessary log message always being logged during listfile parsing.
+
+0.1.54 (09-12-2023)
+- Fixed loading of 10.2.5 installations by adding WDC5 support for DB2 files.
+
+0.1.53 (05-12-2023)
+- Fixed an issue that caused wow.export to crash on startup.
+
+0.1.52 (05-12-2023)
+- Updated add-on to support Blender 4.0.
+
 0.1.51 (25-09-2023)
 - Added fallback URLs for listfile, encryption key and data definition downloads.
 - Added support for HTTP 302 redirects when downloading files.

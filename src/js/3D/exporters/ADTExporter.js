@@ -221,12 +221,49 @@ class ADTExporter {
 		let wdt = wdtCache.get(this.mapDir);
 		if (!wdt) {
 			const wdtFile = await casc.getFileByName(prefix + '.wdt');
-			if (config.mapsExportRaw)
-				await wdtFile.writeToFile(path.join(dir, this.mapDir + '.wdt'));
 
 			wdt = new WDTLoader(wdtFile);
 			await wdt.load();
 			wdtCache.set(this.mapDir, wdt);
+
+			if (config.mapsExportRaw) {
+				await wdtFile.writeToFile(path.join(dir, this.mapDir + '.wdt'));
+				
+				if (wdt.lgtFileDataID > 0) {
+					const lgtFile = await casc.getFile(wdt.lgtFileDataID);
+					lgtFile.writeToFile(path.join(dir, this.mapDir + '_lgt.wdt'));
+				}
+
+				if (wdt.occFileDataID > 0) {
+					const occFile = await casc.getFile(wdt.occFileDataID);
+					occFile.writeToFile(path.join(dir, this.mapDir + '_occ.wdt'));
+				}
+
+				if (wdt.fogsFileDataID > 0) {
+					const fogsFile = await casc.getFile(wdt.fogsFileDataID);
+					fogsFile.writeToFile(path.join(dir, this.mapDir + '_fogs.wdt'));
+				}
+
+				if (wdt.mpvFileDataID > 0) {
+					const mpvFile = await casc.getFile(wdt.mpvFileDataID);
+					mpvFile.writeToFile(path.join(dir, this.mapDir + '_mpv.wdt'));
+				}
+
+				if (wdt.texFileDataID > 0) {
+					const texFile = await casc.getFile(wdt.texFileDataID);
+					texFile.writeToFile(path.join(dir, this.mapDir + '.tex'));
+				}
+
+				if (wdt.wdlFileDataID > 0) {
+					const wdlFile = await casc.getFile(wdt.wdlFileDataID);
+					wdlFile.writeToFile(path.join(dir, this.mapDir + '.wdl'));
+				}
+
+				if (wdt.pd4FileDataID > 0) {
+					const pd4File = await casc.getFile(wdt.pd4FileDataID);
+					pd4File.writeToFile(path.join(dir, this.mapDir + '.pd4'));
+				}
+			}
 		}
 
 		console.log(wdt);
@@ -247,18 +284,18 @@ class ADTExporter {
 		const objFile = await casc.getFile(obj0FileDataID);
 
 		if (config.mapsExportRaw) {
-			await rootFile.writeToFile(path.join(dir, this.tileID + '.adt'));
-			await texFile.writeToFile(path.join(dir, this.tileID + '_tex0.adt'));
-			await objFile.writeToFile(path.join(dir, this.tileID + '_obj0.adt'));
+			await rootFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '.adt'));
+			await texFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_tex0.adt'));
+			await objFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_obj0.adt'));
 
 			// We only care about these when exporting raw files.
 			const obj1File = await casc.getFile(obj1FileDataID);
-			await obj1File.writeToFile(path.join(dir, this.tileID + '_obj1.adt'));
+			await obj1File.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_obj1.adt'));
 
 			// LOD is not available on Classic.
 			if (maid.lodADT > 0) {
 				const lodFile = await casc.getFile(maid.lodADT);
-				await lodFile.writeToFile(path.join(dir, this.tileID + '_lod.adt'));
+				await lodFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_lod.adt'));
 			}		
 		}
 
@@ -271,9 +308,7 @@ class ADTExporter {
 		const objAdt = new ADTLoader(objFile);
 		objAdt.loadObj();
 
-		if (config.mapsExportRaw) {
-			// 
-		} else {
+		if (!config.mapsExportRaw) {
 			const vertices = new Array(16 * 16 * 145 * 3);
 			const normals = new Array(16 * 16 * 145 * 3);
 			const uvs = new Array(16 * 16 * 145 * 2);
@@ -532,6 +567,8 @@ class ADTExporter {
 						const texChunk = texAdt.texChunks[chunkIndex];
 						const rootChunk = rootAdt.chunks[chunkIndex];
 
+						const fix_alpha_map = !(rootChunk.flags & (1 << 15));
+
 						const alphaLayers = texChunk.alphaLayers || [];
 						const imageData = ctx.createImageData(64, 64);
 
@@ -539,8 +576,24 @@ class ADTExporter {
 						for (let i = 1; i < alphaLayers.length; i++) {
 							const layer = alphaLayers[i];
 
-							for (let j = 0; j < layer.length; j++)
-								imageData.data[(j * 4) + (i - 1)] = layer[j];
+							for (let j = 0; j < layer.length; j++) {
+								const isLastColumn = (j % 64) === 63;
+								const isLastRow = j >= 63 * 64;
+							
+								// fix_alpha_map: layer is 63x63, fill last column/row.
+								if (fix_alpha_map) {
+									if (isLastColumn && !isLastRow) {
+										imageData.data[(j * 4) + (i - 1)] = layer[j - 1];
+									} else if (isLastRow) {
+										const prevRowIndex = j - 64;
+										imageData.data[(j * 4) + (i - 1)] = layer[prevRowIndex];
+									} else {
+										imageData.data[(j * 4) + (i - 1)] = layer[j];
+									}
+								} else {
+									imageData.data[(j * 4) + (i - 1)] = layer[j];
+								}
+							}
 						}
 
 						// Set all the alpha values to max.
@@ -884,6 +937,42 @@ class ADTExporter {
 					}
 				}
 			}
+		} else {
+			const saveRawLayerTexture = async (fileDataID) => {
+				if (fileDataID === 0)
+					return;
+
+				const blp = await core.view.casc.getFile(fileDataID);
+
+				let fileName = listfile.getByID(fileDataID);
+				if (fileName !== undefined)
+					fileName = ExportHelper.replaceExtension(fileName, '.blp');
+				else
+					fileName = listfile.formatUnknownFile(fileDataID, '.blp');
+			
+				let texFile;
+				let texPath;
+			
+				if (config.enableSharedTextures) {
+					texPath = ExportHelper.getExportPath(fileName);
+					texFile = path.relative(dir, texPath);
+				} else {
+					texPath = path.join(dir, path.basename(fileName));
+					texFile = path.basename(texPath);
+				}
+			
+				await blp.writeToFile(texPath);
+			
+				return usePosix ? ExportHelper.win32ToPosix(texFile) : texFile;
+			};
+
+			const materialIDs = texAdt.diffuseTextureFileDataIDs;
+			for (const fileDataID of materialIDs)
+				await saveRawLayerTexture(fileDataID);
+			
+			const heightIDs = texAdt.heightTextureFileDataIDs;
+			for (const fileDataID of heightIDs)
+				await saveRawLayerTexture(fileDataID);
 		}
 
 		// Export dooads / WMOs.
@@ -933,7 +1022,7 @@ class ADTExporter {
 								if (config.mapsExportRaw)
 									await m2.exportRaw(modelPath, helper);
 								else
-									await m2.exportAsOBJ(modelPath, false, helper);
+									await m2.exportAsOBJ(modelPath, config.modelsExportCollision, helper);
 								
 								// Abort if the export has been cancelled.
 								if (helper.isCancelled())
@@ -1079,6 +1168,8 @@ class ADTExporter {
 							log.write('Error: %s', e);
 						}
 					}
+
+					WMOExporter.clearCache();
 				}
 
 				await csv.write();
@@ -1183,7 +1274,7 @@ class ADTExporter {
 					await m2.exportRaw(path.join(foliageDir, modelName), helper);
 				} else {
 					const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
-					await m2.exportAsOBJ(path.join(foliageDir, modelPath), false, helper);
+					await m2.exportAsOBJ(path.join(foliageDir, modelPath), config.modelsExportCollision, helper);
 				}
 
 				// Abort if the export has been cancelled.

@@ -139,6 +139,10 @@ class CASCRemote extends CASC {
 	getProductList() {
 		const products = [];
 		for (const entry of this.builds) {
+			// This check exists because some regions (e.g. China) may not have all products.
+			if (entry === undefined)
+				continue;
+
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			products.push(util.format('%s %s', product.title, entry.VersionsName));
 		}

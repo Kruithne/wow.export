@@ -3,12 +3,11 @@
 
 # Output directory for builds.
 /bin
+/publish
 
 # IDE configuration.
 /.vscode
-
-# Compiled stylesheets (use .scss for source).
-*.css
+/.idea
 
 # Runtime directory for tests.
 /tests/user_data

@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const BLTEReader = require('./blte-reader').BLTEReader;
@@ -167,6 +167,9 @@ class CASC {
 	getModelFormats() {
 		// Filters for the model viewer depending on user settings.
 		const modelExt = [];
+		if (core.view.config.modelsShowM3)
+			modelExt.push('.m3');
+
 		if (core.view.config.modelsShowM2)
 			modelExt.push('.m2');
 		
@@ -266,25 +269,51 @@ class CASC {
 		const rootEntries = this.rootEntries;
 
 		if (magic == ROOT_MAGIC) { // 8.2
-			let totalFileCount = root.readUInt32LE();
-			let namedFileCount = root.readUInt32LE();
+			let headerSize = root.readUInt32LE();
+			let version = root.readUInt32LE();
 
-			// TEMP FIX: If total file count is very low, we're dealing with a post-10.1.7 root format.
-			if (totalFileCount < 100) {
-				// The already read values totalFileCount and namedFileCount are now headerSize and version respectively.
-				// However, since we already read those we just reread the proper file counts for now.
+			if (headerSize != 0x18) {
+				version = 0; // This will break with future header size increases.
+			} else {
+				if (version != 1 && version != 2)
+					throw new Error('Unknown root version: ' + version);
+			}
+
+			let totalFileCount;
+			let namedFileCount;
+
+			if (version == 0)
+			{
+				totalFileCount = headerSize;
+				namedFileCount = version;
+				headerSize = 12;
+			}
+			else
+			{
 				totalFileCount = root.readUInt32LE();
 				namedFileCount = root.readUInt32LE();
-				root.readUInt32LE(); // Padding?
 			}
+
+			root.seek(headerSize);
 
 			const allowNamelessFiles = totalFileCount !== namedFileCount;
 		
 			while (root.remainingBytes > 0) {
 				const numRecords = root.readUInt32LE();
 				
-				const contentFlags = root.readUInt32LE();
-				const localeFlags = root.readUInt32LE();
+				let contentFlags;
+				let localeFlags;
+
+				if (version == 0 || version == 1) {
+					contentFlags = root.readUInt32LE();
+					localeFlags = root.readUInt32LE();
+				} else if (version == 2) {
+					localeFlags = root.readUInt32LE();
+					const cflags1 = root.readUInt32LE();
+					const cflags2 = root.readUInt32LE();
+					const cflags3 = root.readUInt8();
+					contentFlags = cflags1 | cflags2 | (cflags3 << 17);
+				}
 
 				const fileDataIDs = new Array(numRecords);
 

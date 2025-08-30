@@ -1,11 +1,14 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
+const log = require('./log');
+const fs = require('fs');
+const FileWriter = require('./file-writer');
 
 let toastTimer = -1; // Used by setToast() for TTL toast prompts.
 
@@ -87,12 +90,17 @@ const view = {
 	modelViewerGeosets: [], // Active M2 model geoset control.
 	modelViewerSkins: [], // Active M2 model skins.
 	modelViewerSkinsSelection: [], // Selected M2 model skins.
+	modelViewerAnims: [], // Available animations.
+	modelViewerAnimSelection: [], // Selected M2 model animation (single).
 	modelViewerWMOGroups: [], // Active WMO model group control.
 	modelViewerWMOSets: [], // Active WMO doodad set control.
 	modelViewerAutoAdjust: true, // Automatic camera adjustment.
 	textureRibbonStack: [], // Texture preview stack for model viewer.
 	textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 	textureRibbonPage: 0, // Active page of texture slots to render.
+	textureAtlasOverlayRegions: [], // Texture atlas render regions.
+	textureAtlasOverlayWidth: 0, // Width of the texture atlas overlay.
+	textureAtlasOverlayHeight: 0, // Height of the texture atlas overlay.
 	itemViewerTypeMask: [], // Active item type control.
 	modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
 	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
@@ -113,6 +121,29 @@ const view = {
 	mapViewerSelectedDir: null,
 	mapViewerChunkMask: null, // Map viewer chunk mask.
 	mapViewerSelection: [], // Map viewer tile selection
+	chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+	chrCustRaces: [], // Available character races to select from
+	chrCustRaceSelection: [], // Current race ID selected
+	chrCustModels: [], // Available character customization models.
+	chrCustModelSelection: [], // Selected character customization model.
+	chrCustOptions: [], // Available character customization options.
+	chrCustOptionSelection: [], // Selected character customization option.
+	chrCustChoices: [], // Available character customization choices.
+	chrCustChoiceSelection: [], // Selected character customization choice.
+	chrCustActiveChoices: [], // Active character customization choices.
+	chrCustGeosets: [], // Character customization model geoset control.
+	chrCustTab: 'models', // Active tab for character customization.
+	chrCustRightTab: 'geosets', // Active right tab for character customization.
+	chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
+	chrImportChrName: '', // Character import, character name input.
+	chrImportRegions: [],
+	chrImportSelectedRegion: '',
+	chrImportRealms: [],
+	chrImportSelectedRealm: null,
+	chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
+	chrImportChrModelID: 0, // Temporary storage for target character model ID. 
+	chrImportChoices: [], // Temporary storage for character import choices.
+	realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 	exportCancelled: false, // Export cancellation state.
 	isXmas: (new Date().getMonth() === 11),
 	regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
@@ -138,12 +169,30 @@ const view = {
 	],
 	menuButtonModels: [
 		{ label: 'Export OBJ', value: 'OBJ' },
-		//{ label: 'Export glTF', value: 'GLTF' },
-		//{ label: 'Export glTF (Binary)', value: 'GLB' },
+		{ label: 'Export glTF', value: 'GLTF' },
 		{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
 		{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 		{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 	]
+};
+
+/**
+ * Open a stream to the last export file.
+ * @returns FileWriter|null
+ */
+const openLastExportStream = () => {
+	const lastExportFilePath = core.view.lastExportPath;
+	if (fs.existsSync(lastExportFilePath) === false)
+		return null;
+
+	const lastExportFileStat = fs.statSync(lastExportFilePath);
+
+	if (lastExportFileStat.isDirectory()) {
+		log.write('ERROR: Last export file has been configured as a directory instead of a file!');
+		return null;
+	}
+
+	return new FileWriter(lastExportFilePath, 'utf8');
 };
 
 /**
@@ -278,7 +327,8 @@ const core = {
 	registerDropHandler,
 	getDropHandler,
 	registerLoadFunc,
-	runLoadFuncs
+	runLoadFuncs,
+	openLastExportStream
 };
 
 module.exports = core;

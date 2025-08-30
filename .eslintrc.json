@@ -11,8 +11,9 @@
         "BUILD_RELEASE": true,
         "chrome": true,
         "crash": true,
-		"getErrorDump": true,
-		"BigInt": true
+        "getErrorDump": true,
+        "BigInt": true,
+        "Bun": true
     },
     "env": {
         "browser": true,
@@ -20,9 +21,9 @@
         "node": true
     },
     "rules": {
-		/* Custom */
-		"space-before-blocks": "error",
-		"curly": [2, "multi-or-nest", "consistent"],
+        /* Custom */
+        "space-before-blocks": "error",
+        "curly": [2, "multi-or-nest", "consistent"],
         "no-trailing-spaces": "off",
         "indent": [
             "error",

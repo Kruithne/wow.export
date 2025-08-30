@@ -87,12 +87,17 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
+const THREE = require('three');
+window.THREE = THREE;
+THREE.ColorManagement.enabled = true;
+
 require('./js/components/listbox');
 require('./js/components/listboxb');
 require('./js/components/itemlistbox');
 require('./js/components/checkboxlist');
 require('./js/components/menu-button');
 require('./js/components/file-field');
+require('./js/components/combobox');
 require('./js/components/slider');
 require('./js/components/model-viewer');
 require('./js/components/map-viewer');
@@ -112,6 +117,7 @@ require('./js/ui/tab-items');
 require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
+require('./js/ui/tab-characters');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
@@ -217,10 +223,11 @@ document.addEventListener('click', function(e) {
 			/**
 			 * Mark all geosets to the given state.
 			 * @param {boolean} state 
+			 * @param {object} geosets
 			 */
-			setAllGeosets: function(state) {
-				if (this.modelViewerGeosets) {
-					for (const node of this.modelViewerGeosets)
+			setAllGeosets: function(state, geosets) {
+				if (geosets) {
+					for (const node of geosets)
 						node.checked = state;
 				}
 			},
@@ -684,17 +691,18 @@ document.addEventListener('click', function(e) {
 	// Load/update BLTE decryption keys.
 	tactKeys.load();
 
-	// Check for updates (without blocking).
+	// Check for updates.
 	if (BUILD_RELEASE) {
+		core.view.isBusy++;
+		core.view.showLoadScreen('Checking for updates...');
+
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
-				// Update is available, prompt to update. If user declines,
-				// begin checking the local Blender add-on version.
-				core.setToast('info', 'A new update is available. You should update, it\'s probably really cool!', {
-					'Update Now': () => updater.applyUpdate(),
-					'Maybe Later': () => blender.checkLocalVersion()
-				}, -1, false);
+				updater.applyUpdate();
 			} else {
+				core.view.isBusy--;
+				core.view.setScreen('source-select');
+				
 				// No update available, start checking Blender add-on.
 				blender.checkLocalVersion();
 			}

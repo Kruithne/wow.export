@@ -1,6 +1,6 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Martin Benjamins <marlamin@marlamin.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 
@@ -43,7 +43,11 @@ const GEOSET_GROUPS = {
 	3800: 'Tails',
 	3900: 'Vines',
 	4000: 'Chins/Tusks',
-	4100: 'Noses'
+	4100: 'Noses',
+	4200: 'HairDecoA',
+	4300: 'HairDecoB',
+	4400: 'BodySize',
+	5100: 'EyeGlowB'
 };
 
 /**

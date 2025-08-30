@@ -51,9 +51,11 @@ class Settings:
     importM2 = True
     importGOBJ = True
     importTextures = True
+    useTerrainBlending = True
+    createEmissiveMaterials = True
     createDoodadSetCollections = False
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, createDoodadSetCollections = False):
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = True, createDoodadSetCollections = False):
         self.useAlpha = useAlpha
         self.createVertexGroups = createVertexGroups
         self.allowDuplicates = allowDuplicates
@@ -62,6 +64,8 @@ class Settings:
         self.importM2 = importM2
         self.importGOBJ = importGOBJ
         self.importTextures = importTextures
+        self.useTerrainBlending = useTerrainBlending
+        self.createEmissiveMaterials = createEmissiveMaterials
         self.createDoodadSetCollections = createDoodadSetCollections
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
@@ -83,6 +87,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     useAlpha: bpy.props.BoolProperty(name = 'Use Alpha', description = 'Link alpha channel for materials', default = 1)
     createVertexGroups: bpy.props.BoolProperty(name = 'Create Vertex Groups', description = 'Create vertex groups for submeshes', default = 0)
     allowDuplicates: bpy.props.BoolProperty(name = 'Allow Duplicates (ADT)', description = 'Bypass the duplicate M2/WMO protection for ADT tiles', default = 0)
+    useTerrainBlending: bpy.props.BoolProperty(name = 'Use terrain blending', description = 'Blend terrain textures using exported alpha maps', default = 1)
+    createEmissiveMaterials: bpy.props.BoolProperty(name = 'Create emissive materials', description = 'When applicable based on the material\'s blending mode. Might be less compatible when exporting to use in other software', default = 1)
     createDoodadSetCollections: bpy.props.BoolProperty(name = 'Create Doodad Set Collections', description = 'If enabled, will create a collection of each doodad set (if available), and move the imported objects into them. Useful for single model imports with many sets.', default = 0)
 
     def execute(self, context):
@@ -95,6 +101,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             importM2 = self.importM2,
             importGOBJ = self.importGOBJ,
             importTextures = self.importTextures,
+            useTerrainBlending = self.useTerrainBlending,
+            createEmissiveMaterials = self.createEmissiveMaterials,
             createDoodadSetCollections = self.createDoodadSetCollections
         )
 
@@ -122,6 +130,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, 'useAlpha')
         box.prop(self, 'createVertexGroups')
         box.prop(self, 'allowDuplicates')
+        box.prop(self, 'useTerrainBlending')
+        box.prop(self, 'createEmissiveMaterials')
         box.prop(self, 'createDoodadSetCollections')
 
 def menu_func_import(self, context):

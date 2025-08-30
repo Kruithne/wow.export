@@ -66,6 +66,7 @@ module.exports = {
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
+		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 	},
 
 	CONFIG:  {
@@ -94,9 +95,9 @@ module.exports = {
 	],
 
 	PATCH: {
-		REGIONS: ['eu', 'us', 'kr', 'tw'], // Valid CDN regions.
+		REGIONS: ['eu', 'us', 'kr', 'tw', 'cn'], // Valid CDN regions.
 		DEFAULT_REGION: 'us', // Region which is selected by default.
-		HOST: 'http://%s.patch.battle.net:1119/', // Blizzard patch server host.
+		HOST: 'https://%s.version.battle.net/', // Blizzard patch server host.
 		SERVER_CONFIG: '/cdns', // CDN config file on patch server.
 		VERSION_CONFIG: '/versions' // Versions config file on patch server.
 	},
@@ -111,6 +112,7 @@ module.exports = {
 	},
 
 	MAGIC: {
+		M3DT: 0x5444334D, // M3 model magic.
 		MD21: 0x3132444D, // M2 model magic.
 		MD20: 0x3032444D // M2 model magic (legacy)
 	},
@@ -124,6 +126,7 @@ module.exports = {
 		{ match: 'BLP2', ext: '.blp' },
 		{ match: 'MD20', ext: '.m2' },
 		{ match: 'MD21', ext: '.m2' },
+		{ match: 'M3DT', ext: '.m3' },
 		{ match: 'SKIN', ext: '.skin' },
 		{ match: '\x01\x00\x00\x00BIDA', ext: '.bone' },
 		{ match: 'SYHP\x02\x00\x00\x00', ext: '.phys' },

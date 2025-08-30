@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-require('../3D/lib/OrbitControls');
+const CameraControls = require('../3D/camera/CameraControls');
 
 Vue.component('model-viewer', {
 	props: ['context'],
@@ -24,13 +24,12 @@ Vue.component('model-viewer', {
 	 */
 	mounted: function() {
 		const container = this.$el;
-		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, outputColorSpace: THREE.SRGBColorSpace  });
 
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
 
-		this.controls = new THREE.OrbitControls(this.context.camera, canvas);
-		//this.controls.enableKeys = false;
+		this.controls = new CameraControls(this.context.camera, canvas);
 		this.context.controls = this.controls;
 
 		this.onResize = () => {

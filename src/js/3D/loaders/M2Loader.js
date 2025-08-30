@@ -1,39 +1,24 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 
 const Texture = require('../Texture');
 const Skin = require('../Skin');
 const constants = require('../../constants');
+const M2Generics = require('./M2Generics');
+const ANIMLoader = require('./ANIMLoader');
+const core = require('../../core');
+const BufferWrapper = require('../../buffer');
+const AnimMapper = require('../AnimMapper');
+const log = require('../../log');
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
 const CHUNK_SKID = 0x44494B53;
 const CHUNK_BFID = 0x44494642;
 const CHUNK_AFID = 0x44494641;
-
-/**
- * An axis-aligned box.
- * @typedef {{ min: number, max: number }} CAaBox
- */
-
-class M2Track {
-	/**
-	 * Construct a new M2Track instance.
-	 * @param {number} globalSeq 
-	 * @param {number} interpolation 
-	 * @param {Array} timestamps 
-	 * @param {Array} values 
-	 */
-	constructor(globalSeq, interpolation, timestamps, values) {
-		this.globalSeq = globalSeq;
-		this.interpolation = interpolation;
-		this.timestamps = timestamps;
-		this.values = values;
-	}
-}
 
 class M2Loader {
 	/**
@@ -43,6 +28,7 @@ class M2Loader {
 	constructor(data) {
 		this.data = data;
 		this.isLoaded = false;
+		this.animFiles = new Map();
 	}
 
 	/**
@@ -93,6 +79,62 @@ class M2Loader {
 	 */
 	getSkinList() {
 		return this.skins;
+	}
+
+	/**
+	 * Load and apply .anim files to loaded M2 model.
+	 */
+	async loadAnims() {
+		for (let i = 0; i < this.animations.length; i++) {
+			let animation = this.animations[i];
+
+			// If animation is an alias, resolve it.
+			if ((animation.flags & 0x40) === 0x40) {
+				while ((animation.flags & 0x40) === 0x40)
+					animation = this.animations[animation.aliasNext];
+			}
+
+			if ((animation.flags & 0x20) === 0x20) {
+				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
+				continue;
+			}
+
+			for (const entry of this.animFileIDs) {
+				if (entry.animID !== animation.id || entry.subAnimID !== animation.variationIndex)
+					continue;
+
+				const fileDataID = entry.fileDataID;
+				if (!this.animFiles.has(i)) {
+					if (fileDataID === 0) {
+						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
+						continue;
+					}
+					
+					log.write('Loading .anim file for animation: ' + entry.animID + ' (' + AnimMapper.get_anim_name(entry.animID) + ') - ' + entry.subAnimID);
+
+					let animIsChunked = false;
+					
+					if ((this.flags & 0x200000) === 0x200000 || this.skeletonFileID > 0)
+						animIsChunked = true;
+
+					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
+					await loader.load(animIsChunked);
+
+					// If the .anim file is chunked, we need to load the skeletonBoneData.
+					if (loader.skeletonBoneData !== undefined)
+						this.animFiles.set(i, BufferWrapper.from(loader.skeletonBoneData));
+					else
+						this.animFiles.set(i, BufferWrapper.from(loader.animData));
+				}
+			}
+
+			if (!this.animFiles.has(i))
+				log.write("Failed to load .anim file for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
+		}
+
+		this.data.seek(this.md21Ofs + 44);
+
+		this.parseChunk_MD21_bones(this.md21Ofs, true);
 	}
 
 	/**
@@ -169,7 +211,10 @@ class M2Loader {
 	
 		this.version = this.data.readUInt32LE();
 		this.parseChunk_MD21_modelName(ofs);
-		this.data.move(4 + 8 + 8 + 8); // flags, loops, seq
+		this.flags = this.data.readUInt32LE();
+		this.parseChunk_MD21_globalLoops(ofs);
+		this.parseChunk_MD21_animations(ofs);
+		this.parseChunk_MD21_animationLookup(ofs);
 		this.parseChunk_MD21_bones(ofs);
 		this.data.move(8);
 		this.parseChunk_MD21_vertices(ofs);
@@ -186,54 +231,22 @@ class M2Loader {
 		this.parseChunk_MD21_transparencyLookup(ofs);
 		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.parseChunk_MD21_collision(ofs);
+		this.parseChunk_MD21_attachments(ofs);
+		// this.data.move(8); // attachmentIndicesByID / attachment_lookup_table
+		// this.data.move(8); // events
+		// this.data.move(8); // lights
+		// this.data.move(8); // cameras
+		// this.data.move(8); // camera_lookup_table
+		// this.data.move(8); // ribbon_emitters
+		// this.data.move(8); // particle_emitters
+		
+		// // if 0x8 is set, textureCombinerCombos
+		// if (this.flags & 0x8)
+		// 	this.data.move(8);
+
 	}
 
-	/**
-	 * Read an M2Array.
-	 * @param {function} read 
-	 * @returns {Array}
-	 */
-	readM2Array(read) {
-		const data = this.data;
-		const arrCount = data.readUInt32LE();
-		const arrOfs = data.readUInt32LE();
-
-		const base = data.offset;
-		data.seek(this.md21Ofs + arrOfs);
-
-		const arr = Array(arrCount);
-		for (let i = 0; i < arrCount; i++)
-			arr[i] = read();
-
-		data.seek(base);
-		return arr;
-	}
-
-	/**
-	 * Read an axis-aligned box with a given min/max.
-	 * @returns {CAaBox}
-	 */
-	readCAaBox() {
-		return { min: this.data.readFloatLE(3), max: this.data.readFloatLE(3) };
-	}
-
-	/**
-	 * Read an M2 track.
-	 * @param {function} read 
-	 * @returns {M2Track}
-	 */
-	readM2Track(read) {
-		const data = this.data;
-		const interpolation = data.readUInt16LE();
-		const globalSeq = data.readUInt16LE();
-
-		const timestamps = this.readM2Array(() => this.readM2Array(() => data.readUInt32LE()));
-		const values = this.readM2Array(() => this.readM2Array(read));
-
-		return new M2Track(globalSeq, interpolation, timestamps, values);
-	}
-
-	parseChunk_MD21_bones(ofs) {
+	parseChunk_MD21_bones(ofs, useAnims = false) {
 		const data = this.data;
 		const boneCount = data.readUInt32LE();
 		const boneOfs = data.readUInt32LE();
@@ -243,19 +256,76 @@ class M2Loader {
 
 		this.md21Ofs = ofs;
 
+		// TODO: We have to use data from .anim instead if useAnims is true. We can only do this after M2 is fully loaded because of the way we parse chunks.
+
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
-			bones[i] = {
+			const bone = {
 				boneID: data.readInt32LE(),
 				flags: data.readUInt32LE(),
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: this.readM2Track(() => data.readFloatLE(3)),
-				rotation: this.readM2Track(() => data.readUInt16LE(4).map(e => (e / 65565) - 1)),
-				scale: this.readM2Track(() => data.readFloatLE(3)),
+				translation: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
+				rotation: M2Generics.read_m2_track(data, ofs, "compquat", useAnims, this.animFiles),
+				scale: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
 				pivot: data.readFloatLE(3)
 			};
+
+			// Convert bone transformations coordinate system.
+			const translations = bone.translation.values;
+			const rotations = bone.rotation.values;
+			const scale = bone.scale.values;
+			const pivot = bone.pivot;
+
+			for (let i = 0; i < translations.length; i++) {
+				for (let j = 0; j < translations[i].length; j++) {
+					const dx = translations[i][j][0];
+					const dy = translations[i][j][1];
+					const dz = translations[i][j][2];
+
+					translations[i][j][0] = dx;
+					translations[i][j][2] = dy * -1;
+					translations[i][j][1] = dz;
+				}
+			}
+
+			for (let i = 0; i < rotations.length; i++) {
+				for (let j = 0; j < rotations[i].length; j++) {
+					const dx = rotations[i][j][0];
+					const dy = rotations[i][j][1];
+					const dz = rotations[i][j][2];
+					const dw = rotations[i][j][3];
+
+					rotations[i][j][0] = dx;
+					rotations[i][j][2] = dy * -1;
+					rotations[i][j][1] = dz;
+					rotations[i][j][3] = dw;
+				}
+			}
+
+			for (let i = 0; i < scale.length; i++) {
+				for (let j = 0; j < scale[i].length; j++) {
+					const dx = scale[i][j][0];
+					const dy = scale[i][j][1];
+					const dz = scale[i][j][2];
+
+					scale[i][j][0] = dx;
+					scale[i][j][2] = dy;
+					scale[i][j][1] = dz;
+				}
+			}
+
+			{
+				const pivotX = pivot[0];
+				const pivotY = pivot[1];
+				const pivotZ = pivot[2];
+				pivot[0] = pivotX;
+				pivot[2] = pivotY * -1;
+				pivot[1] = pivotZ;
+			}
+
+			bones[i] = bone;
 		}
 
 		data.seek(base);
@@ -267,9 +337,9 @@ class M2Loader {
 	 */
 	parseChunk_MD21_collision(ofs) {
 		// Parse collision boxes before the full collision chunk.
-		this.boundingBox = this.readCAaBox();
+		this.boundingBox = M2Generics.read_caa_bb(this.data);
 		this.boundingSphereRadius = this.data.readFloatLE();
-		this.collisionBox = this.readCAaBox();
+		this.collisionBox = M2Generics.read_caa_bb(this.data);
 		this.collisionSphereRadius = this.data.readFloatLE();
 
 		const indicesCount = this.data.readUInt32LE();
@@ -307,6 +377,31 @@ class M2Loader {
 			normals[index] = this.data.readFloatLE();
 			normals[index + 2] = this.data.readFloatLE() * -1;
 			normals[index + 1] = this.data.readFloatLE();
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse attachments data from an MD21 chunk.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_attachments(ofs) {
+		const attachmentCount = this.data.readUInt32LE();
+		const attachmentOffset = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(attachmentOffset + ofs);
+
+		const entries = this.attachments = new Array(attachmentCount);
+		for (let i = 0; i < attachmentCount; i++) {
+			entries[i] = {
+				id: this.data.readUInt32LE(),
+				bone: this.data.readUInt16LE(),
+				unknown: this.data.readUInt16LE(),
+				position: this.data.readFloatLE(3),
+				animateAttached: M2Generics.read_m2_track(this.data, this.md21Ofs, "uint8"),
+			};
 		}
 
 		this.data.seek(base);
@@ -384,27 +479,25 @@ class M2Loader {
 		const boneIndices = this.boneIndices = Array(verticesCount * 4);
 	
 		for (let i = 0; i < verticesCount; i++) {
-			const index = i * 3;
-			vertices[index] = this.data.readFloatLE();
-			vertices[index + 2] = this.data.readFloatLE() * -1;
-			vertices[index + 1] = this.data.readFloatLE();
+			vertices[i * 3] = this.data.readFloatLE();
+			vertices[i * 3 + 2] = this.data.readFloatLE() * -1;
+			vertices[i * 3 + 1] = this.data.readFloatLE();
 	
 			for (let x = 0; x < 4; x++)
-				boneWeights[index + x] = this.data.readUInt8();
+				boneWeights[i * 4 + x] = this.data.readUInt8();
 
 			for (let x = 0; x < 4; x++)
-				boneIndices[index + x] = this.data.readUInt8();
+				boneIndices[i * 4 + x] = this.data.readUInt8();
 	
-			normals[index] = this.data.readFloatLE();
-			normals[index + 2] = this.data.readFloatLE() * -1;
-			normals[index + 1] = this.data.readFloatLE();
+			normals[i * 3] = this.data.readFloatLE();
+			normals[i * 3 + 2] = this.data.readFloatLE() * -1;
+			normals[i * 3 + 1] = this.data.readFloatLE();
 	
-			const uvIndex = i * 2;
-			uv[uvIndex] = this.data.readFloatLE();
-			uv[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
+			uv[i * 2] = this.data.readFloatLE();
+			uv[i * 2 + 1] = (this.data.readFloatLE() - 1) * -1;
 
-			uv2[uvIndex] = this.data.readFloatLE();
-			uv2[uvIndex + 1] = (this.data.readFloatLE() - 1) * -1;
+			uv2[i * 2] = this.data.readFloatLE();
+			uv2[i * 2 + 1] = (this.data.readFloatLE() - 1) * -1;
 		}
 
 		this.data.seek(base);
@@ -424,9 +517,9 @@ class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: this.readM2Track(() => this.data.readFloatLE(3)),
-				rotation: this.readM2Track(() => this.data.readFloatLE(4)),
-				scaling: this.readM2Track(() => this.data.readFloatLE(3))
+				translation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
+				rotation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float4"),
+				scaling: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3")
 			};
 		}
 
@@ -482,7 +575,7 @@ class M2Loader {
 
 		const weights = this.textureWeights = new Array(weightCount);
 		for (let i = 0; i < weightCount; i++)
-			weights[i] = this.readM2Track(() => this.data.readInt16LE());
+			weights[i] = M2Generics.read_m2_track(this.data, this.md21Ofs, "int16");
 
 		this.data.seek(base);
 	}
@@ -501,8 +594,8 @@ class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: this.readM2Track(() => this.data.readFloatLE(3)),
-				alpha: this.readM2Track(() => this.data.readInt16LE())
+				color: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
+				alpha: M2Generics.read_m2_track(this.data, this.md21Ofs, "int16")
 			}
 		}
 
@@ -562,6 +655,74 @@ class M2Loader {
 		const base = this.data.offset;
 		this.data.seek(textureComboOfs + ofs);
 		this.textureCombos = this.data.readUInt16LE(textureComboCount);
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse animations.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_animations(ofs) {
+		const animationCount = this.data.readUInt32LE();
+		const animationOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(animationOfs + ofs);
+
+		const animations = this.animations = new Array(animationCount);
+		for (let i = 0; i < animationCount; i++) {
+			animations[i] = {
+				id: this.data.readUInt16LE(),
+				variationIndex: this.data.readUInt16LE(),
+				duration: this.data.readUInt32LE(),
+				movespeed: this.data.readFloatLE(),
+				flags: this.data.readUInt32LE(),
+				frequency: this.data.readInt16LE(),
+				padding: this.data.readUInt16LE(),
+				replayMin: this.data.readUInt32LE(),
+				replayMax: this.data.readUInt32LE(),
+				blendTimeIn: this.data.readUInt16LE(),
+				blendTimeOut: this.data.readUInt16LE(),
+				boxPosMin: this.data.readFloatLE(3),
+				boxPosMax: this.data.readFloatLE(3),
+				boxRadius: this.data.readFloatLE(),
+				variationNext: this.data.readInt16LE(),
+				aliasNext: this.data.readUInt16LE()
+			};
+		}
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse animation lookup.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_animationLookup(ofs) {
+		const animationLookupCount = this.data.readUInt32LE();
+		const animationLookupOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(animationLookupOfs + ofs);
+
+		this.animationLookup = this.data.readInt16LE(animationLookupCount);
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Parse global loops.
+	 * @param {number} ofs 
+	 */
+	parseChunk_MD21_globalLoops(ofs) {
+		const globalLoopCount = this.data.readUInt32LE();
+		const globalLoopOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(globalLoopOfs + ofs);
+
+		this.globalLoops = this.data.readInt16LE(globalLoopCount);
+
 		this.data.seek(base);
 	}
 }

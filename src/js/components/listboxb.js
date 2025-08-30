@@ -9,8 +9,9 @@ Vue.component('listboxb', {
 	 * selection: Reactive selection controller.
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
+	 * disable: If provided, used as reactive disable flag.
 	 */
-	props: ['items', 'selection', 'single', 'keyinput'],
+	props: ['items', 'selection', 'single', 'keyinput', 'disable'],
 
 	/**
 	 * Reactive instance data.
@@ -178,6 +179,9 @@ Vue.component('listboxb', {
 				// Copy selection to clipboard.
 				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
 			} else {
+				if (this.disable)
+					return;
+
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
 				const isArrowDown = e.key === 'ArrowDown';
@@ -216,6 +220,9 @@ Vue.component('listboxb', {
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
+			if (this.disable)
+				return;
+			
 			const checkIndex = this.selection.indexOf(item);
 
 			if (this.single) {
