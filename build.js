@@ -10,7 +10,6 @@ import path from 'node:path';
 import util from 'node:util';
 import rcedit from 'rcedit';
 import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process'; // todo?
 
 const argv = process.argv.splice(2);
 
@@ -173,11 +172,11 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				}
 			}
 		} else if (bundleType === 'GZ') { // 0x8B1F
-			const list_result = spawnSync('tar', ['-tf', bundlePath], { encoding: 'utf8' });
-			if (list_result.status !== 0)
-				throw new Error(`Failed to list archive contents: ${list_result.stderr}`);
+			const list_result = Bun.spawnSync({ cmd: ['tar', '-tf', bundlePath] });
+			if (list_result.exitCode !== 0)
+				throw new Error(`Failed to list archive contents: ${list_result.stderr?.toString() || 'Unknown error'}`);
 			
-			const all_files = list_result.stdout.split('\n').filter(line => line.trim() && !line.endsWith('/'));
+			const all_files = list_result.stdout?.toString().split('\n').filter(line => line.trim() && !line.endsWith('/')) || [];
 			const files_to_extract = [];
 			
 			for (const file of all_files) {
@@ -200,9 +199,9 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					...files_to_extract
 				];
 				
-				const extract_res = spawnSync('tar', extract_args, { encoding: 'utf8' });
-				if (extract_res.status !== 0)
-					throw new Error(`Extraction failed: ${extract_res.stderr}`);
+				const extract_res = Bun.spawnSync({ cmd: ['tar', ...extract_args] });
+				if (extract_res.exitCode !== 0)
+					throw new Error(`Extraction failed: ${extract_res.stderr?.toString() || 'Unknown error'}`);
 			}
 		} else {
 			// Developer didn't config a build properly.
@@ -353,9 +352,9 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				updaterOutput
 			];
 			
-			const result = spawnSync('bun', bunArgs, { stdio: 'inherit' });
-			if (result.status !== 0)
-				throw new Error(`Bun build failed with code ${result.status}`);
+			const result = Bun.spawnSync({ cmd: ['bun', ...bunArgs], stdio: ['inherit', 'inherit', 'inherit'] });
+			if (result.exitCode !== 0)
+				throw new Error(`Bun build failed with code ${result.exitCode}`);
 
 			const updaterElapsed = (Date.now() - updaterStart) / 1000;
 			log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);
