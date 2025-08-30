@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 
 const argv = process.argv.splice(2);
 
-const CONFIG_FILE = './build.conf';
+const CONFIG_FILE = './build.json';
 const MANIFEST_FILE = './package.json';
 
 const log_color = (color, text) => `${Bun.color(color, 'ansi_16m')}${text}\x1b[0m`;
