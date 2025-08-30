@@ -275,7 +275,7 @@ const exportSelectedMapAsPNG = async () => {
 	if (export_tiles.length === 0)
 		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
-	const helper = new ExportHelper(export_tiles.length, 'tile');
+	const helper = new ExportHelper(export_tiles.length + 1, 'tile');
 	helper.start();
 
 	try {
@@ -318,10 +318,10 @@ const exportSelectedMapAsPNG = async () => {
 				
 				writer.addTile(rel_x, rel_y, tile_data);
 				log.write('Added tile %d,%d at position %d,%d', tile_coord.x, tile_coord.y, rel_x, rel_y);
-				helper.mark(`Tile ${tile_coord.x},${tile_coord.y}`, true);
+				helper.mark(`Tile ${tile_coord.x} ${tile_coord.y}`, true);
 			} else {
 				log.write('Failed to load tile %d,%d, leaving gap', tile_coord.x, tile_coord.y);
-				helper.mark(`Tile ${tile_coord.x},${tile_coord.y}`, false, 'Tile not available');
+				helper.mark(`Tile ${tile_coord.x} ${tile_coord.y}`, false, 'Tile not available');
 			}
 		}
 
@@ -339,6 +339,8 @@ const exportSelectedMapAsPNG = async () => {
 		const exportPaths = core.openLastExportStream();
 		await exportPaths?.writeLine('png:' + out_path);
 		exportPaths?.close();
+
+		helper.mark(path.join('maps', selectedMapDir, filename), true);
 
 	} catch (e) {
 		helper.mark('PNG export', false, e.message, e.stack);
@@ -474,7 +476,7 @@ const exportSelectedMapAsHeightmaps = async () => {
 
 			await export_paths?.writeLine('png:' + out_path);
 			
-			helper.mark(filename, true);
+			helper.mark(path.join('maps', selectedMapDir, 'heightmaps', filename), true);
 			log.write('Exported heightmap: %s', out_path);
 
 		} catch (e) {
