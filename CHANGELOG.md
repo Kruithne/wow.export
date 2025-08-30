@@ -18,6 +18,7 @@
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
 - Map selections can now be exported as stitched PNG images - including the whole map!
 - Added "Show Background" option to set a customizable background colour to the model viewer.
+- Added "Export Heightmaps" button for maps, allowing 32-bit heightmap generation with cross-tile range relativity.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.

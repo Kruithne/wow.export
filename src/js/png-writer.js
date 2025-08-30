@@ -5,19 +5,17 @@
  */
 const BufferWrapper = require('./buffer');
 
-const BITS_PER_PIXEL = 4;
-
 const FILTERS = {
 	// None
-	0: (data, dataOfs, byteWidth, raw, rawOfs) => {
+	0: (data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel) => {
 		for (let x = 0; x < byteWidth; x++)
 			raw[rawOfs + x] = data[dataOfs + x];
 	},
 
 	// Sub
-	1: (data, dataOfs, byteWidth, raw, rawOfs) => {
+	1: (data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel) => {
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let value = data[dataOfs + x] - left;
 
 			raw[rawOfs + x] = value;
@@ -25,7 +23,7 @@ const FILTERS = {
 	},
 
 	// Up
-	2: (data, dataOfs, byteWidth, raw, rawOfs) => {
+	2: (data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel) => {
 		for (let x = 0; x < byteWidth; x++) {
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
 			let value = data[dataOfs + x] - up;
@@ -35,9 +33,9 @@ const FILTERS = {
 	},
 
 	// Average
-	3: (data, dataOfs, byteWidth, raw, rawOfs) => {
+	3: (data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel) => {
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
 			let value = data[dataOfs + x] - ((left + up) >> 1);
 
@@ -46,11 +44,11 @@ const FILTERS = {
 	},
 
 	// Paeth
-	4: (data, dataOfs, byteWidth, raw, rawOfs) => {
+	4: (data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel) => {
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
-			let upLeft = dataOfs > 0 && x >= BITS_PER_PIXEL ? data[dataOfs + x - (byteWidth + BITS_PER_PIXEL)] : 0;
+			let upLeft = dataOfs > 0 && x >= bytesPerPixel ? data[dataOfs + x - (byteWidth + bytesPerPixel)] : 0;
 			let value = data[dataOfs + x] - paeth(left, up, upLeft);
 
 			raw[rawOfs + x] = value;
@@ -60,7 +58,7 @@ const FILTERS = {
 
 const FILTER_SUMS = {
 	// None
-	0: (data, dataOfs, byteWidth) => {
+	0: (data, dataOfs, byteWidth, bytesPerPixel) => {
 		let sum = 0;
 		for (let i = dataOfs, len = dataOfs + byteWidth; i < len; i++)
 			sum += Math.abs(data[i]);
@@ -69,10 +67,10 @@ const FILTER_SUMS = {
 	},
 
 	// Sub
-	1: (data, dataOfs, byteWidth) => {
+	1: (data, dataOfs, byteWidth, bytesPerPixel) => {
 		let sum = 0;
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let value = data[dataOfs + x] - left;
 
 			sum += Math.abs(value);
@@ -82,7 +80,7 @@ const FILTER_SUMS = {
 	},
 
 	// Up
-	2: (data, dataOfs, byteWidth) => {
+	2: (data, dataOfs, byteWidth, bytesPerPixel) => {
 		let sum = 0;
 		for (let x = dataOfs, len = dataOfs + byteWidth; x < len; x++) {
 			let up = dataOfs > 0 ? data[x - byteWidth] : 0;
@@ -95,10 +93,10 @@ const FILTER_SUMS = {
 	},
 
 	// Average
-	3: (data, dataOfs, byteWidth) => {
+	3: (data, dataOfs, byteWidth, bytesPerPixel) => {
 		let sum = 0;
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
 			let value = data[dataOfs + x] - ((left + up) >> 1);
 
@@ -109,12 +107,12 @@ const FILTER_SUMS = {
 	},
 
 	// Paeth
-	4: (data, dataOfs, byteWidth) => {
+	4: (data, dataOfs, byteWidth, bytesPerPixel) => {
 		let sum = 0;
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= bytesPerPixel ? data[dataOfs + x - bytesPerPixel] : 0;
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
-			let upLeft = dataOfs > 0 && x >= BITS_PER_PIXEL ? data[dataOfs + x - (byteWidth + BITS_PER_PIXEL)] : 0;
+			let upLeft = dataOfs > 0 && x >= bytesPerPixel ? data[dataOfs + x - (byteWidth + bytesPerPixel)] : 0;
 			let value = data[dataOfs + x] - paeth(left, up, upLeft);
 
 			sum += Math.abs(value);
@@ -140,14 +138,15 @@ const paeth = (left, up, upLeft) => {
 };
 
 /**
- * Apply adapative filtering to RGBA data.
+ * Apply adaptive filtering to image data.
  * @param {Buffer} data 
  * @param {number} width 
  * @param {number} height 
+ * @param {number} bytesPerPixel
  * @returns {Buffer}
  */
-const filter = (data, width, height) => {
-	let byteWidth = width * BITS_PER_PIXEL;
+const filter = (data, width, height, bytesPerPixel) => {
+	let byteWidth = width * bytesPerPixel;
 	let dataOfs = 0;
 
 	let rawOfs = 0;
@@ -158,7 +157,7 @@ const filter = (data, width, height) => {
 		let min = Infinity;
 
 		for (let i = 0, len = Object.keys(FILTERS).length; i < len; i++) {
-			let sum = FILTER_SUMS[i](data, dataOfs, byteWidth);
+			let sum = FILTER_SUMS[i](data, dataOfs, byteWidth, bytesPerPixel);
 			if (sum < min) {
 				selectedFilter = i;
 				min = sum;
@@ -168,7 +167,7 @@ const filter = (data, width, height) => {
 		raw[rawOfs] = selectedFilter;
 		rawOfs++;
 	
-		FILTERS[selectedFilter](data, dataOfs, byteWidth, raw, rawOfs);
+		FILTERS[selectedFilter](data, dataOfs, byteWidth, raw, rawOfs, bytesPerPixel);
 		rawOfs += byteWidth;
 		dataOfs += byteWidth;
 	}
@@ -198,7 +197,7 @@ class PNGWriter {
 	 * @returns {BufferWrapper}
 	 */
 	getBuffer() {
-		const filtered = new BufferWrapper(filter(this.data, this.width, this.height));
+		const filtered = new BufferWrapper(filter(this.data, this.width, this.height, this.bytesPerPixel));
 		const deflated = filtered.deflate();
 		const buf = BufferWrapper.alloc(8 + 25 + deflated.byteLength + 12 + 12, false);
 
@@ -210,8 +209,8 @@ class PNGWriter {
 		ihdr.writeUInt32LE(0x52444849); // IHDR
 		ihdr.writeUInt32BE(this.width); // Image width
 		ihdr.writeUInt32BE(this.height); // Image height
-		ihdr.writeUInt8(8); // Bit-depth (1, 2, 4, 8, or 16)
-		ihdr.writeUInt8(6); // Colour type (0 grayscale, 2 rgb, 3 indexed, 4 transparency, or 6 RGBA)
+		ihdr.writeUInt8(this.bitDepth); // Bit-depth
+		ihdr.writeUInt8(this.colorType); // Colour type
 		ihdr.writeUInt8(0); // Compression (0)
 		ihdr.writeUInt8(0); // Filter (0)
 		ihdr.writeUInt8(0); // Interlace (0)

@@ -15,9 +15,11 @@ const WDCReader = require('../db/WDCReader');
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
+const ADTLoader = require('../3D/loaders/ADTLoader');
 const ExportHelper = require('../casc/export-helper');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 const TiledPNGWriter = require('../tiled-png-writer');
+const PNGWriter = require('../png-writer');
 
 let selectedMapID;
 let selectedMapDir;
@@ -346,6 +348,243 @@ const exportSelectedMapAsPNG = async () => {
 	helper.finish();
 };
 
+const exportSelectedMapAsHeightmaps = async () => {
+	const export_tiles = core.view.mapViewerSelection;
+	const export_quality = core.view.config.exportMapQuality;
+
+	if (export_tiles.length === 0)
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+
+	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir, 'heightmaps'));
+	const export_paths = core.openLastExportStream();
+
+	core.setToast('progress', 'Calculating height range across all tiles...', null, -1, false);
+	let global_min_height = Infinity;
+	let global_max_height = -Infinity;
+	
+	const tile_height_data = new Map();
+
+	for (let i = 0; i < export_tiles.length; i++) {
+		const tile_index = export_tiles[i];
+
+		try {
+			const adt = new ADTExporter(selectedMapID, selectedMapDir, tile_index);
+			const height_data = await extractHeightDataFromTile(adt, export_quality);
+			
+			if (height_data && height_data.heights) {
+				let tile_min = Infinity;
+				let tile_max = -Infinity;
+				
+				for (let j = 0; j < height_data.heights.length; j++) {
+					const height = height_data.heights[j];
+					if (height < tile_min)
+						tile_min = height;
+
+					if (height > tile_max)
+						tile_max = height;
+				}
+				
+				global_min_height = Math.min(global_min_height, tile_min);
+				global_max_height = Math.max(global_max_height, tile_max);
+				
+				// Store for second pass
+				tile_height_data.set(tile_index, height_data);
+				
+				log.write('Tile %d: height range [%f, %f]', tile_index, tile_min, tile_max);
+			}
+		} catch (e) {
+			log.write('Failed to extract height data from tile %d: %s', tile_index, e.message);
+		}
+	}
+
+	if (global_min_height === Infinity || global_max_height === -Infinity) {
+		core.hideToast();
+		return core.setToast('error', 'No valid height data found in selected tiles', null, -1);
+	}
+
+	const height_range = global_max_height - global_min_height;
+	log.write('Global height range: [%f, %f] (range: %f)', global_min_height, global_max_height, height_range);
+
+	// Hide the calculation toast and start the export helper
+	core.hideToast();
+	
+	const helper = new ExportHelper(export_tiles.length, 'heightmap');
+	helper.start();
+	
+	for (let i = 0; i < export_tiles.length; i++) {
+		const tile_index = export_tiles[i];
+
+		// Abort if the export has been cancelled.
+		if (helper.isCancelled())
+			break;
+
+		const height_data = tile_height_data.get(tile_index);
+		if (!height_data) {
+			const tile_id = Math.floor(tile_index / constants.GAME.MAP_SIZE) + '_' + (tile_index % constants.GAME.MAP_SIZE);
+			helper.mark(`heightmap_${tile_id}.png`, false, 'No height data available');
+			continue;
+		}
+
+		const tile_id = Math.floor(tile_index / constants.GAME.MAP_SIZE) + '_' + (tile_index % constants.GAME.MAP_SIZE);
+		const filename = `heightmap_${tile_id}.png`;
+
+		try {
+			const filename = `heightmap_${tile_id}.png`;
+			const out_path = path.join(dir, filename);
+
+			const writer = new PNGWriter(export_quality, export_quality);
+			writer.bytesPerPixel = 4;
+			writer.bitDepth = 8;
+			writer.colorType = 6; // RGBA
+			
+			const pixel_data = writer.getPixelData();
+			
+			for (let j = 0; j < height_data.heights.length; j++) {
+				const normalized_height = (height_data.heights[j] - global_min_height) / height_range;
+				const gray_value = Math.floor(normalized_height * 255);
+				const pixel_offset = j * 4;
+				
+				pixel_data[pixel_offset] = gray_value; // R
+				pixel_data[pixel_offset + 1] = gray_value; // G  
+				pixel_data[pixel_offset + 2] = gray_value; // B
+				pixel_data[pixel_offset + 3] = 255; // A (fully opaque)
+			}
+			
+			await writer.write(out_path);
+
+			await export_paths?.writeLine('png:' + out_path);
+			
+			helper.mark(filename, true);
+			log.write('Exported heightmap: %s', out_path);
+
+		} catch (e) {
+			helper.mark(filename, false, e.message, e.stack);
+			log.write('Failed to export heightmap for tile %d: %s', tile_index, e.message);
+		}
+	}
+
+	export_paths?.close();
+	helper.finish();
+};
+
+/**
+ * Sample height at a specific position within a chunk using bilinear interpolation.
+ * @param {Object} chunk - Chunk data with vertices array
+ * @param {number} localX - X position within chunk (0-1 range)
+ * @param {number} localY - Y position within chunk (0-1 range)
+ * @returns {number} - Interpolated height value
+ */
+const sampleChunkHeight = (chunk, localX, localY) => {
+	// local -> vertex
+	const vx = localX * 8; // 8 units across chunk
+	const vy = localY * 8; // 8 units down chunk
+	
+	// get surrounding
+	const x0 = Math.floor(vx);
+	const y0 = Math.floor(vy);
+	const x1 = Math.min(8, x0 + 1);
+	const y1 = Math.min(8, y0 + 1);
+	
+	// vertex indices using 17x17 alternating pattern
+	const get_vert_idx = (x, y) => {
+		let index = 0;
+		for (let row = 0; row < y * 2; row++)
+			index += (row % 2) ? 8 : 9;
+
+		const is_short = !!(y * 2 % 2);
+		index += is_short ? Math.min(x, 7) : Math.min(x, 8);
+		return index;
+	};
+	
+	// corners
+	const h00 = chunk.vertices[get_vert_idx(x0, y0)] + chunk.position[2];
+	const h10 = chunk.vertices[get_vert_idx(x1, y0)] + chunk.position[2];
+	const h01 = chunk.vertices[get_vert_idx(x0, y1)] + chunk.position[2];
+	const h11 = chunk.vertices[get_vert_idx(x1, y1)] + chunk.position[2];
+	
+	// bilinear interpolation
+	const fx = vx - x0;
+	const fy = vy - y0;
+	
+	const h0 = h00 * (1 - fx) + h10 * fx;
+	const h1 = h01 * (1 - fx) + h11 * fx;
+	
+	return h0 * (1 - fy) + h1 * fy;
+};
+
+/**
+ * Extract height data from a terrain tile.
+ * @param {ADTExporter} adt 
+ * @param {number} resolution 
+ * @returns {Object|null}
+ */
+const extractHeightDataFromTile = async (adt, resolution) => {
+	const map_dir = adt.mapDir;
+	const tile_x = adt.tileX;
+	const tile_y = adt.tileY;
+	const prefix = util.format('world/maps/%s/%s', map_dir, map_dir);
+	const tile_prefix = prefix + '_' + adt.tileY + '_' + adt.tileX;
+
+	try {
+		const root_fid = listfile.getByFilename(tile_prefix + '.adt');
+		if (!root_fid) {
+			log.write('Cannot find fileDataID for %s.adt', tile_prefix);
+			return null;
+		}
+
+		const root_file = await core.view.casc.getFile(root_fid);
+		const root_adt = new ADTLoader(root_file);
+		
+		root_adt.loadRoot();
+
+		if (!root_adt.chunks || root_adt.chunks.length === 0) {
+			log.write('No chunks found in ADT file %s', tile_prefix);
+			return null;
+		}
+
+		const heights = [];
+		const px_per_row = resolution;
+		
+		for (let i = 0; i < resolution * resolution; i++)
+			heights.push(0);
+		
+		for (let py = 0; py < resolution; py++) {
+			for (let px = 0; px < resolution; px++) {
+				const chunk_x = Math.floor(px * 16 / resolution);
+				const chunk_y = Math.floor(py * 16 / resolution);
+				const chunk_index = chunk_y * 16 + chunk_x;
+				
+				if (chunk_index >= root_adt.chunks.length)
+					continue;
+				
+				const chunk = root_adt.chunks[chunk_index];
+				if (!chunk || !chunk.vertices)
+					continue;
+				
+				// map pixel to position within the chunk (0-1 range)
+				const local_x = (px * 16 / resolution) - chunk_x;
+				const local_y = (py * 16 / resolution) - chunk_y;
+				
+				const height = sampleChunkHeight(chunk, local_x, local_y);
+				
+				const height_idx = py * px_per_row + px;
+				heights[height_idx] = height;
+			}
+		}
+
+		return {
+			heights: heights,
+			resolution: resolution,
+			tileX: tile_x,
+			tileY: tile_y
+		};
+
+	} catch (e) {
+		log.write('Error extracting height data from tile %s: %s', tile_prefix, e.message);
+		return null;
+	}
+};
+
 /**
  * Parse a map entry from the listbox.
  * @param {string} entry 
@@ -433,4 +672,5 @@ core.registerLoadFunc(async () => {
 	core.events.on('click-export-map', () => exportSelectedMap());
 	core.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
 	core.events.on('click-export-map-png', () => exportSelectedMapAsPNG());
+	core.events.on('click-export-map-heightmaps', () => exportSelectedMapAsHeightmaps());
 });
