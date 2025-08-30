@@ -6,6 +6,7 @@
 //      Linux: ~/.config/<name>/wow.export
 {
 	"listfileURL": "https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv",
+	"scrollSpeed": 0,
 	"listfileFallbackURL": "https://www.kruithne.net/wow.export/data/listfile/master?v=%s",
 	"listfileCacheRefresh": 3,
 	"listfileSortByID": false,

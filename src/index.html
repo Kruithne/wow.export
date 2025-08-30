@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<script defer type="text/javascript" src="lib/vue.js"></script>
 		<script defer type="text/javascript" src="app.js"></script>
 		<link rel="stylesheet" type="text/css" data-href="app.css" href="app.css"/>
 		<title>wow.export</title>
@@ -73,6 +72,11 @@
 						<p>Local directory where files will be exported to.</p>
 						<p v-if="isEditExportPathConcerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
 						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
+					</div>
+					<div>
+						<h1>Scroll Speed</h1>
+						<p>How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)</p>
+						<input type="number" v-model.number="configEdit.scrollSpeed"/>
 					</div>
 					<div>
 						<h1>Show File Data IDs</h1>
