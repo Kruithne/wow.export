@@ -183,6 +183,9 @@ class PNGWriter {
 	constructor(width, height) {
 		this.width = width;
 		this.height = height;
+		this.bytesPerPixel = 4;
+		this.bitDepth = 8;
+		this.colorType = 6; // RGBA
 		this.data = Buffer.alloc(width * height * 4);
 	}
 
