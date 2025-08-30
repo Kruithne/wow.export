@@ -424,4 +424,5 @@ const deflateBuffer = util.promisify(zlib.deflate);
 })().catch(e => {
 	log.error('An unexpected error has halted the build:');
 	log.error(e);
+	process.exit(1);
 });
