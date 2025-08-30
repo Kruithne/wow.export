@@ -13,6 +13,7 @@
 - Exported PNG images now properly utilize Sub, Up, Average and Paeth filters, resulting in better compression.
 - Search inputs are now debounced, preventing UI stuttering when typing.
 - WMO textures now export correctly when exporting as GLTF.
+- Fixed issue causing cylic GLTF animations have incorrect frame ranges.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
