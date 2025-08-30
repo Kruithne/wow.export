@@ -75,6 +75,11 @@
 						<file-field v-model="configEdit.exportDirectory" :class="{ concern: isEditExportPathConcerning }"></file-field>
 					</div>
 					<div>
+						<h1>Scroll Speed</h1>
+						<p>How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)</p>
+						<input type="number" v-model.number="configEdit.scrollSpeed"/>
+					</div>
+					<div>
 						<h1>Show File Data IDs</h1>
 						<p>If enabled, all capable listfiles will have entries suffixed with their fileDataID.</p>
 						<label class="ui-checkbox">
