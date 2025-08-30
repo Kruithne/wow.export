@@ -8,6 +8,7 @@
         "rcedit": "^2.0.0",
         "tar": "^5.0.10",
         "three": "^0.179.1",
+        "vue": "2.6.10",
       },
       "devDependencies": {
         "@types/bun": "^1.2.21",
@@ -270,6 +271,8 @@
     "uri-js": ["uri-js@4.2.2", "", { "dependencies": { "punycode": "^2.1.0" } }, "sha512-KY9Frmirql91X2Qgjry0Wd4Y+YTdrdZheS8TFwvkbLWf/G5KNJDCh6pKL5OZctEW4+0Baa5idK2ZQuELRwPznQ=="],
 
     "v8-compile-cache": ["v8-compile-cache@2.1.0", "", {}, "sha512-usZBT3PW+LOjM25wbqIlZwPeJV+3OSz3M1k1Ws8snlW39dZyYL9lOGC5FgPVHfk0jKmjiDV8Z0mIbVQPiwFs7g=="],
+
+    "vue": ["vue@2.6.10", "", {}, "sha512-ImThpeNU9HbdZL3utgMCq0oiMzAkt1mcgy3/E6zWC/G6AaQoeuFdsl9nDhTDU3X1R6FK7nsIUuRACVcjI+A2GQ=="],
 
     "vue-eslint-parser": ["vue-eslint-parser@7.0.0", "", { "dependencies": { "debug": "^4.1.1", "eslint-scope": "^5.0.0", "eslint-visitor-keys": "^1.1.0", "espree": "^6.1.2", "esquery": "^1.0.1", "lodash": "^4.17.15" } }, "sha512-yR0dLxsTT7JfD2YQo9BhnQ6bUTLsZouuzt9SKRP7XNaZJV459gvlsJo4vT2nhZ/2dH9j3c53bIx9dnqU2prM9g=="],
 

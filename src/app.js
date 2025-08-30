@@ -86,7 +86,7 @@ const TestRunner = require('./js/iat/test-runner');
 const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
-
+const Vue = require('vue/dist/vue.js');
 const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
