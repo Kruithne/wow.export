@@ -12,7 +12,8 @@ import AdmZip from 'adm-zip';
 const BUILD_DIR = path.join(__dirname, 'bin');
 const PUBLISH_DIR = path.join(__dirname, 'publish');
 
-const PUBLISH_BUILDS = ['win-x64'];
+const argv = process.argv.splice(2);
+const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x64'];
 const ZIP_FORMAT = 'wow-export-%s-%s.zip';
 
 for (const build_tag of PUBLISH_BUILDS) {
