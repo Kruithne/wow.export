@@ -122,7 +122,11 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			const startTime = Date.now();
 			const response = await fetch(bundleURL);
-			await Bun.write(bundlePath, response);
+			if (!response.ok)
+				throw new Error('Download failed: ' + response.statusText);
+
+			const data = await response.arrayBuffer();
+			await Bun.write(bundlePath, data);
 
 			const elapsed = (Date.now() - startTime) / 1000;
 			const bundleStats = await fs.stat(bundlePath);
