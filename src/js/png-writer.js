@@ -157,7 +157,7 @@ const filter = (data, width, height) => {
 	for (let y = 0; y < height; y++) {
 		let min = Infinity;
 
-		for (let i = 0, len = FILTERS.length; i < len; i++) {
+		for (let i = 0, len = Object.keys(FILTERS).length; i < len; i++) {
 			let sum = FILTER_SUMS[i](data, dataOfs, byteWidth);
 			if (sum < min) {
 				selectedFilter = i;
