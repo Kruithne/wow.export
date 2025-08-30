@@ -25,6 +25,10 @@ const dropHandlers = [];
 // step in the loading process, allowing components to initialize.
 let loaders = [];
 
+// scrollPositions stores persistent scroll positions for listbox components
+// keyed by persistScrollKey (e.g., "models", "textures", etc.)
+const scrollPositions = {};
+
 // The `view` object is used as the data source for the main Vue instance.
 // All properties within it will be reactive once the view has been initialized.
 const view = {
@@ -316,6 +320,34 @@ const runLoadFuncs = async () => {
 	loaders = undefined;
 };
 
+/**
+ * Save scroll position for a listbox with the given key.
+ * @param {string} key - Unique identifier for the listbox
+ * @param {number} scrollRel - Relative scroll position (0-1)
+ * @param {number} scrollIndex - Current scroll index
+ */
+const saveScrollPosition = (key, scrollRel, scrollIndex) => {
+	if (!key)
+		return;
+	
+	scrollPositions[key] = {
+		scrollRel: scrollRel || 0,
+		scrollIndex: scrollIndex || 0,
+		timestamp: Date.now()
+	};
+};
+
+/**
+ * Get saved scroll position for a listbox with the given key.
+ * @param {string} key - Unique identifier for the listbox
+ * @returns {object|null} - Saved scroll state or null if not found
+ */
+const getScrollPosition = (key) => {
+	if (!key || !scrollPositions[key]) return null;
+	
+	return scrollPositions[key];
+};
+
 const core = { 
 	events,
 	view,
@@ -328,7 +360,9 @@ const core = {
 	getDropHandler,
 	registerLoadFunc,
 	runLoadFuncs,
-	openLastExportStream
+	openLastExportStream,
+	saveScrollPosition,
+	getScrollPosition
 };
 
 module.exports = core;

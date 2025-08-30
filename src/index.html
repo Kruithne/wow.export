@@ -380,7 +380,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
 						<div class="list-container">
-							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture"></listbox>
+							<listbox :selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -424,7 +424,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 						<div class="list-container">
-							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map"></listbox>
+							<listbox id="listbox-maps" :selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -514,7 +514,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 						<div class="list-container">
-							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model"></listbox>
+							<listbox :selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -726,7 +726,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-install" v-if="screen === 'tab-install'">
 						<div class="list-container">
-							<listbox :selection="selectionInstall" :items="listfileInstall" :filter="userInputFilterInstall" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="install file"></listbox>
+							<listbox :selection="selectionInstall" :items="listfileInstall" :filter="userInputFilterInstall" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="install file" persistscrollkey="install"></listbox>
 						</div>
 						<div id="tab-install-tray">
 							<div class="filter">
@@ -746,7 +746,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-raw" v-if="screen === 'tab-raw'">
 						<div class="list-container">
-							<listbox :selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file"></listbox>
+							<listbox :selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="raw"></listbox>
 						</div>
 						<div id="tab-raw-tray">
 							<div class="filter">
@@ -761,7 +761,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
 						<div class="list-container">
-							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video"></listbox>
+							<listbox :selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video" persistscrollkey="videos"></listbox>
 						</div>
 						<div id="tab-video-tray">
 							<div class="filter">
@@ -775,7 +775,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-text" v-if="screen === 'tab-text'">
 						<div class="list-container">
-							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file"></listbox>
+							<listbox :selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file" persistscrollkey="text"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -795,7 +795,7 @@
 				<keep-alive>
 					<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
 						<div class="list-container">
-							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file"></listbox>
+							<listbox :selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds"></listbox>
 						</div>
 						<div class="filter">
 							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>

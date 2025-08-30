@@ -34,8 +34,9 @@ Vue.component('listbox', {
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 * override: If provided, used as an override listfile.
 	 * disable: If provided, used as reactive disable flag.
+	 * persistscrollkey: If provided, enables scroll position persistence with this key.
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey'],
 
 	/**
 	 * Reactive instance data.
@@ -48,7 +49,8 @@ Vue.component('listbox', {
 			slotCount: 1,
 			lastSelectItem: null,
 			debouncedFilter: null,
-			filterTimeout: null
+			filterTimeout: null,
+			scrollPositionRestored: false
 		}
 	},
 
@@ -76,6 +78,17 @@ Vue.component('listbox', {
 		this.observer.observe(this.$refs.root);
 
 		this.debouncedFilter = this.filter;
+
+		if (this.persistscrollkey) {
+			this.$nextTick(() => {
+				const saved_state = core.getScrollPosition(this.persistscrollkey);
+				if (saved_state && this.filteredItems.length > 0) {
+					this.scrollRel = saved_state.scrollRel || 0;
+					this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
+					this.recalculateBounds();
+				}
+			});
+		}
 	},
 
 	/**
@@ -83,6 +96,11 @@ Vue.component('listbox', {
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
 	beforeDestroy: function() {
+		// Save final scroll position if persistence is enabled
+		if (this.persistscrollkey) {
+			core.saveScrollPosition(this.persistscrollkey, this.scrollRel, this.scrollIndex);
+		}
+
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -106,6 +124,20 @@ Vue.component('listbox', {
 				this.debouncedFilter = newFilter;
 				this.filterTimeout = null;
 			}, FILTER_DEBOUNCE_MS);
+		},
+
+		filteredItems: function(newItems) {
+			if (this.persistscrollkey && newItems.length > 0) {
+				this.$nextTick(() => {
+					const saved_state = core.getScrollPosition(this.persistscrollkey);
+					if (saved_state && !this.scrollPositionRestored) {
+						this.scrollRel = saved_state.scrollRel || 0;
+						this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
+						this.recalculateBounds();
+						this.scrollPositionRestored = true;
+					}
+				});
+			}
 		}
 	},
 
@@ -203,6 +235,9 @@ Vue.component('listbox', {
 			const max = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
+			
+			if (this.persistscrollkey)
+				core.saveScrollPosition(this.persistscrollkey, this.scrollRel, this.scrollIndex);
 		},
 
 		/**
