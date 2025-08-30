@@ -14,6 +14,7 @@
 - Search inputs are now debounced, preventing UI stuttering when typing.
 - WMO textures now export correctly when exporting as GLTF.
 - Fixed issue causing cylic GLTF animations have incorrect frame ranges.
+- Fixed issue that prevented terrain exported with texture quality "None" from being importable due to referencing missing textures
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
