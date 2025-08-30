@@ -678,7 +678,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     else:
                         originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
                         importedFile = originalObject.copy()
-                        collection.link(importedFile)
+                        if not settings.createDoodadSetCollections:
+                            collection.link(importedFile)
 
                     importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
 
@@ -691,4 +692,22 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     if row['ScaleFactor']:
                         importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
 
+                    if settings.createDoodadSetCollections:
+                        if row['DoodadSet']:
+                            print("Valid DoodadSet found: " + row['DoodadSet'])
+                            collectionName = row['DoodadSet']
+                            collection = bpy.data.collections.get(collectionName)
+                            
+                            if collection is None:
+                                print("Collection for " + collectionName + " does not exist. Creating collection..")
+                                collection = bpy.data.collections.new(collectionName)
+                                bpy.context.scene.collection.children.link(collection)
+                            
+                            if collection.name not in bpy.context.scene.collection.children:
+                                print("Collection " + collectionName + " isn't linked to scene. Linking collection..")
+                                bpy.context.scene.collection.children.link(collection)
+
+                            if collection:
+                                print("Valid collection present. Linking " + importedFile.name)
+                                collection.objects.link(importedFile)
     return obj
