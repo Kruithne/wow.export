@@ -4,11 +4,11 @@
 	License: MIT
  */
 
-// BUILD_RELEASE will be set globally by Terser during bundling allowing us
-// to discern a production build. However, for debugging builds it will throw
-// a ReferenceError without the following check. Any code that only runs when
-// BUILD_RELEASE is set to false will be removed as dead-code during compile.
-BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
+// BUILD_RELEASE will be set by the bundler during production builds allowing us
+// to discern a production build. For debugging builds, process.env.BUILD_RELEASE
+// will be undefined. Any code that only runs when BUILD_RELEASE is false will
+// be removed as dead-code during compile.
+BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
 
 /**
  * crash() is used to inform the user that the application has exploded.
@@ -86,7 +86,10 @@ const TestRunner = require('./js/iat/test-runner');
 const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
+
 const Vue = require('vue/dist/vue.js');
+window.Vue = Vue;
+
 const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;

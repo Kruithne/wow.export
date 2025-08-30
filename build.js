@@ -293,7 +293,10 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				entrypoints: [jsEntry],
 				outdir: sourceTarget,
 				target: 'node',
-				format: 'cjs'
+				format: 'cjs',
+				define: {
+					'process.env.BUILD_RELEASE': '"true"'
+				}
 			});
 
 			for (const output of out_build.outputs)
