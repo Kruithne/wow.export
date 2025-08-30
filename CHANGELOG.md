@@ -7,6 +7,7 @@
 - Replaced pkg dependency for building updater with bun to eliminate cross-platform issues.
 - Added cross-platform support for Linux & MacOS into updater application.
 - Removed build dependencies node, acorn, terser, filesize, chalk, request, ssh2-sftp-client and sass.
+- Blender add-on installation now supports Linux & MacOS.
 
 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
