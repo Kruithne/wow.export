@@ -126,7 +126,6 @@ module.exports = {
 	 * install the Blender add-on shipped with this application.
 	 */
 	startAutomaticInstall: async () => {
-		// ToDo: Modify this to work on non-Windows platforms. GH-1.
 		core.view.isBusy++;
 		core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
 		log.write('Starting automatic installation of Blender add-on...');

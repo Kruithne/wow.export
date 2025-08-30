@@ -6,6 +6,7 @@
 
 // This file defines constants used throughout the application.
 const path = require('path');
+const os = require('os');
 
 // Whether or not we're currently unit testing
 const isUnitTest = typeof nw === 'undefined';
@@ -14,6 +15,21 @@ const INSTALL_PATH = isUnitTest ? process.cwd() : path.dirname(process.execPath)
 const DATA_PATH = isUnitTest ? "./tests/user_data" : nw.App.dataPath;
 
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
+
+const getBlenderBaseDir = () => {
+	const platform = os.platform();
+	const home_dir = os.homedir();
+	
+	switch (platform) {
+		case 'win32':
+			return path.join(process.env.APPDATA, 'Blender Foundation', 'Blender');
+		case 'darwin': // macOS
+			return path.join(home_dir, 'Library', 'Application Support', 'Blender');
+		case 'linux':
+		default:
+			return path.join(home_dir, '.config', 'blender');
+	}
+};
 
 module.exports = {
 	INSTALL_PATH, // Path to the application installation.
@@ -36,8 +52,8 @@ module.exports = {
 
 	// Defines Blender constants.
 	BLENDER: {
-		DIR: process.env.APPDATA + '\\Blender Foundation\\Blender', // Blender app-data directory.
-		ADDON_DIR: 'scripts\\addons\\io_scene_wowobj', // Install path for add-ons
+		DIR: getBlenderBaseDir(), // Blender app-data directory (cross-platform).
+		ADDON_DIR: path.join('scripts', 'addons', 'io_scene_wowobj'), // Install path for add-ons
 		LOCAL_DIR: path.join(INSTALL_PATH, 'addon', 'io_scene_wowobj'), // Local copy of our Blender add-on.
 		ADDON_ENTRY: '__init__.py', // Add-on entry point that contains the version.
 		MIN_VER: 2.8 // Minimum version supported by our add-on.
