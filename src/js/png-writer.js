@@ -98,7 +98,7 @@ const FILTER_SUMS = {
 	3: (data, dataOfs, byteWidth) => {
 		let sum = 0;
 		for (let x = 0; x < byteWidth; x++) {
-			let left = x > BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
+			let left = x >= BITS_PER_PIXEL ? data[dataOfs + x - BITS_PER_PIXEL] : 0;
 			let up = dataOfs > 0 ? data[dataOfs + x - byteWidth] : 0;
 			let value = data[dataOfs + x] - ((left + up) >> 1);
 
