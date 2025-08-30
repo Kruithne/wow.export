@@ -23,7 +23,7 @@
 		"rcedit": "^2.0.0",
 		"tar": "^5.0.10",
 		"three": "^0.179.1",
-		"vue": "2.6.10"
+		"vue": "2.7.16"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.2.21",
