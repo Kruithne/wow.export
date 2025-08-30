@@ -7,10 +7,16 @@ on:
 jobs: 
   build:
     name: Build and publish
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [win-x64, linux-x64, osx-x64]
+        include:
+          - platform: win-x64
+            os: windows-latest
+          - platform: linux-x64
+            os: ubuntu-latest
+          - platform: osx-x64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
