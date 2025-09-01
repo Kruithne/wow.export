@@ -26,7 +26,9 @@ const state = {
 	prevOffsetX: 0, // Previous offsets to detect panning vs full redraws
 	prevOffsetY: 0,
 	prevZoomFactor: 2,
-	doubleBuffer: null
+	doubleBuffer: null,
+	needsFinalPass: false, // Track if we need to run the final pass after queue is empty
+	finalPassTimeout: null // Timeout for delayed final pass execution
 };
 
 Vue.component('map-viewer', {
@@ -107,6 +109,12 @@ Vue.component('map-viewer', {
 
 		// Disconnect the resize observer for the canvas.
 		this.observer.disconnect();
+
+		// Clean up final pass timeout
+		if (state.finalPassTimeout) {
+			clearTimeout(state.finalPassTimeout);
+			state.finalPassTimeout = null;
+		}
 	},
 
 	watch: {
@@ -143,6 +151,12 @@ Vue.component('map-viewer', {
 			state.prevOffsetX = null;
 			state.prevOffsetY = null;
 			state.prevZoomFactor = null;
+			state.needsFinalPass = false;
+
+			if (state.finalPassTimeout) {
+				clearTimeout(state.finalPassTimeout);
+				state.finalPassTimeout = null;
+			}
 		},
 
 		/**
@@ -152,8 +166,136 @@ Vue.component('map-viewer', {
 			const tile = state.tileQueue.shift();
 			if (tile)
 				this.loadTile(tile);
-			else
+			else {
 				this.awaitingTile = false;
+				// Trigger final pass once all tiles are processed, but only if needed
+				// Add a small delay to avoid running it too frequently during rapid panning
+				if (state.needsFinalPass) {
+					state.needsFinalPass = false;
+					if (state.finalPassTimeout)
+						clearTimeout(state.finalPassTimeout);
+
+					state.finalPassTimeout = setTimeout(() => {
+						this.performFinalPass();
+						state.finalPassTimeout = null;
+					}, 100);
+				}
+			}
+		},
+
+		/**
+		 * Perform a final pass to detect and fix tiles with transparency issues.
+		 * This addresses seams caused by tiles being clipped but still marked as rendered.
+		 */
+		performFinalPass: function() {
+			// Skip if no map or canvas available
+			if (this.map === null || !this.$refs.canvas)
+				return;
+
+			const canvas = this.$refs.canvas;
+			const ctx = this.context;
+			const viewport = this.$el;
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
+			
+			// Calculate viewport bounds relative to canvas
+			const bufferX = (canvas.width - viewport.clientWidth) / 2;
+			const bufferY = (canvas.height - viewport.clientHeight) / 2;
+			
+			// Calculate visible tile range
+			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
+			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
+			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+
+			const tilesNeedingRerender = [];
+
+			// Check each visible tile for transparency issues
+			for (let x = startX; x < endX; x++) {
+				for (let y = startY; y < endY; y++) {
+					const index = (x * MAP_SIZE) + y;
+					
+					// Skip if not masked or not supposedly rendered
+					if (this.mask && this.mask[index] !== 1)
+						continue;
+					if (!state.rendered.has(index))
+						continue;
+
+					const drawX = (x * tileSize) + state.offsetX;
+					const drawY = (y * tileSize) + state.offsetY;
+					
+					// Skip tiles completely outside viewport
+					if (drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
+						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
+						continue;
+
+					// Check if this tile has transparency where it shouldn't
+					if (this.tileHasUnexpectedTransparency(drawX, drawY, tileSize)) {
+						tilesNeedingRerender.push({ x, y, index, tileSize });
+						// Remove from rendered set so it can be re-queued
+						state.rendered.delete(index);
+						state.requested.delete(index);
+					}
+				}
+			}
+
+			// Re-queue tiles that need re-rendering
+			for (const tile of tilesNeedingRerender) {
+				this.queueTile(tile.x, tile.y, tile.index, tile.tileSize);
+			}
+		},
+
+		/**
+		 * Check if a tile has unexpected transparency (indicating clipping issues).
+		 * Uses efficient sampling to detect transparency without checking every pixel.
+		 * @param {number} drawX Canvas X position of tile
+		 * @param {number} drawY Canvas Y position of tile  
+		 * @param {number} tileSize Size of tile
+		 * @returns {boolean} True if tile has unexpected transparency
+		 */
+		tileHasUnexpectedTransparency: function(drawX, drawY, tileSize) {
+			const canvas = this.$refs.canvas;
+			const ctx = this.context;
+			
+			// Clamp tile bounds to canvas
+			const left = Math.max(0, Math.floor(drawX));
+			const top = Math.max(0, Math.floor(drawY));
+			const right = Math.min(canvas.width, Math.ceil(drawX + tileSize));
+			const bottom = Math.min(canvas.height, Math.ceil(drawY + tileSize));
+			
+			// Skip if tile is completely outside canvas
+			if (left >= right || top >= bottom)
+				return false;
+			
+			const width = right - left;
+			const height = bottom - top;
+			
+			if (width < 4 || height < 4)
+				return false;
+
+			try {
+				const imageData = ctx.getImageData(left, top, width, height);
+				const data = imageData.data;
+				
+				const samplePoints = [
+					[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1], // corners
+					[Math.floor(width / 2), 0], [Math.floor(width / 2), height - 1], // top/bottom center
+					[0, Math.floor(height / 2)], [width - 1, Math.floor(height / 2)], // left/right center
+					[Math.floor(width / 2), Math.floor(height / 2)] // center
+				];
+
+				for (const [px, py] of samplePoints) {
+					const index = (py * width + px) * 4;
+					const alpha = data[index + 3]; // Alpha channel
+					
+					if (alpha === 0)
+						return true;
+				}
+
+				return false;
+				
+			} catch (error) {
+				return false;
+			}
 		},
 
 		/**
@@ -337,11 +479,13 @@ Vue.component('map-viewer', {
 			const isPan = state.prevZoomFactor === state.zoomFactor && 
 						  state.prevOffsetX !== null && state.prevOffsetY !== null;
 
-			if (isPan) {
+			if (isPan)
 				this.renderWithDoubleBuffer(canvas, canvasSize, tileSize);
-			} else {
+			else
 				this.renderFullRedraw(canvas, canvasSize, tileSize);
-			}
+
+			// Mark that we may need a final pass to check for clipping issues
+			state.needsFinalPass = true;
 
 			// Update previous state for next render
 			state.prevOffsetX = state.offsetX;
