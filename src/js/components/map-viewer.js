@@ -285,7 +285,7 @@ Vue.component('map-viewer', {
 			// after a new map has been selected. 
 			const cache = state.cache;
 
-			// Calculate which tiles are visible in the canvas area
+			// Calculate which tiles might be visible (using full canvas area to avoid missing any)
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
 			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
@@ -298,8 +298,12 @@ Vue.component('map-viewer', {
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
 
-					// Only render tiles that fit COMPLETELY within canvas bounds
-					if (drawX < 0 || drawY < 0 || drawX + tileSize > canvas.width || drawY + tileSize > canvas.height)
+					const viewport = this.$el;
+					const bufferX = (canvas.width - viewport.clientWidth) / 2;
+					const bufferY = (canvas.height - viewport.clientHeight) / 2;
+					
+					if (drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
+						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
 						continue;
 
 					// Cache is a one-dimensional array, calculate the index as such.
