@@ -21,8 +21,12 @@ const state = {
 	zoomFactor: 2,
 	tileQueue: [],
 	selectCache: new Set(),
-	// Track which tiles have been requested to avoid duplicate requests
-	requested: new Set()
+	requested: new Set(), // Track which tiles have been requested to avoid duplicate requests
+	rendered: new Set(), // Track which tiles are currently rendered on the canvas
+	prevOffsetX: 0, // Previous offsets to detect panning vs full redraws
+	prevOffsetY: 0,
+	prevZoomFactor: 2,
+	doubleBuffer: null
 };
 
 Vue.component('map-viewer', {
@@ -54,6 +58,9 @@ Vue.component('map-viewer', {
 		// Store a local reference to the canvas context for faster rendering.
 		this.context = this.$refs.canvas.getContext('2d');
 		this.overlayContext = this.$refs.overlayCanvas.getContext('2d');
+
+		state.doubleBuffer ??= document.createElement('canvas');
+		this.doubleBufferContext = state.doubleBuffer.getContext('2d');
 
 		// Create anonymous pass-through functions for our event handlers
 		// to maintain context. We store them so we can unregister them later.
@@ -126,11 +133,16 @@ Vue.component('map-viewer', {
 
 	methods: {
 		/**
-		 * Clear tile queue and requested set.
+		 * Clear tile queue, requested set, and rendered set.
+		 * Also reset previous tracking to force full redraw.
 		 */
 		clearTileState: function() {
 			state.tileQueue = [];
 			state.requested.clear();
+			state.rendered.clear();
+			state.prevOffsetX = null;
+			state.prevOffsetY = null;
+			state.prevZoomFactor = null;
 		},
 
 		/**
@@ -157,7 +169,7 @@ Vue.component('map-viewer', {
 				return;
 				
 			state.requested.add(index);
-			const node = [x, y, index, tileSize];
+			const node = [x, y, index, tileSize, 'main'];
 
 			if (this.awaitingTile)
 				state.tileQueue.push(node);
@@ -166,14 +178,35 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * Load a given tile and draw it directly to canvas.
+		 * Add a tile to the queue to be loaded for double-buffer rendering.
+		 * @param {number} x 
+		 * @param {number} y 
+		 * @param {number} index 
+		 * @param {number} tileSize 
+		 */
+		queueTileForDoubleBuffer: function(x, y, index, tileSize) {
+			// Skip if already requested
+			if (state.requested.has(index))
+				return;
+				
+			state.requested.add(index);
+			const node = [x, y, index, tileSize, 'double-buffer'];
+
+			if (this.awaitingTile)
+				state.tileQueue.push(node);
+			else
+				this.loadTile(node);
+		},
+
+		/**
+		 * Load a given tile and draw it to the appropriate canvas.
 		 * Triggers a queue-check once loaded.
 		 * @param {Array} tile 
 		 */
 		loadTile: function(tile) {
 			this.awaitingTile = true;
 
-			const [x, y, index, tileSize] = tile;
+			const [x, y, index, tileSize, renderTarget = 'main'] = tile;
 			const currentZoomFactor = state.zoomFactor;
 
 			this.loader(x, y, tileSize).then(data => {
@@ -183,8 +216,17 @@ Vue.component('map-viewer', {
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
 					
-					// Draw tile directly to canvas
-					this.context.putImageData(data, drawX, drawY);
+					if (renderTarget === 'double-buffer') {
+						// For double-buffer rendering, draw to both the double-buffer and main canvas
+						this.doubleBufferContext.putImageData(data, drawX, drawY);
+						this.context.putImageData(data, drawX, drawY);
+					} else {
+						// For main rendering, draw directly to main canvas
+						this.context.putImageData(data, drawX, drawY);
+					}
+
+					// Mark this tile as rendered
+					state.rendered.add(index);
 				}
 
 				// Remove from requested set since loading is complete
@@ -247,7 +289,7 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * Update the position of the internal container.
+		 * Update the position of the internal container with double-buffer optimization.
 		 */
 		render: function() {
 			// If no map has been selected, do not render.
@@ -266,6 +308,17 @@ Vue.component('map-viewer', {
 			if (canvas.width !== canvasSize.width || canvas.height !== canvasSize.height) {
 				canvas.width = canvasSize.width;
 				canvas.height = canvasSize.height;
+
+				// Force full redraw when canvas size changes
+				state.prevOffsetX = null;
+				state.prevOffsetY = null;
+				state.prevZoomFactor = null;
+			}
+
+			// Update double-buffer dimensions to match
+			if (state.doubleBuffer.width !== canvasSize.width || state.doubleBuffer.height !== canvasSize.height) {
+				state.doubleBuffer.width = canvasSize.width;
+				state.doubleBuffer.height = canvasSize.height;
 			}
 
 			// Update overlay canvas dimensions to match
@@ -280,51 +333,142 @@ Vue.component('map-viewer', {
 			// Calculate current tile size based on zoom factor
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
-			// Get local reference to the canvas context.
+			// Check if this is a simple pan (same zoom, only offset changed)
+			const isPan = state.prevZoomFactor === state.zoomFactor && 
+						  state.prevOffsetX !== null && state.prevOffsetY !== null;
+
+			if (isPan) {
+				this.renderWithDoubleBuffer(canvas, canvasSize, tileSize);
+			} else {
+				this.renderFullRedraw(canvas, canvasSize, tileSize);
+			}
+
+			// Update previous state for next render
+			state.prevOffsetX = state.offsetX;
+			state.prevOffsetY = state.offsetY;
+			state.prevZoomFactor = state.zoomFactor;
+
+			// Render overlays after main canvas rendering
+			this.renderOverlay();
+		},
+
+		/**
+		 * Render using double-buffer technique for efficient panning.
+		 */
+		renderWithDoubleBuffer: function(canvas, canvasSize, tileSize) {
 			const ctx = this.context;
+			const doubleCtx = this.doubleBufferContext;
+			
+			// Calculate the offset delta from last render
+			const deltaX = state.offsetX - state.prevOffsetX;
+			const deltaY = state.offsetY - state.prevOffsetY;
 
-			// Clear the entire canvas before redrawing
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			// Copy current canvas to double-buffer with the new offset applied
+			doubleCtx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+			doubleCtx.drawImage(canvas, deltaX, deltaY);
 
-			// Get local reference to the overlay canvas context and clear it
-			const overlayCtx = overlayCanvas ? this.overlayContext : null;
-			overlayCtx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+			const viewport = this.$el;
+			const bufferX = (canvas.width - viewport.clientWidth) / 2;
+			const bufferY = (canvas.height - viewport.clientHeight) / 2;
 
-			// Calculate which tiles might be visible (using full canvas area to avoid missing any)
+			// Calculate which tiles should be visible in the current view
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
 			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
 			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
 
-			// Iterate only over tiles that might be visible in the canvas
+			// Track tiles that should be visible but aren't rendered
+			const missingTiles = [];
+			const trackedTiles = [];
+
+			// Check all tiles in the visible range
 			for (let x = startX; x < endX; x++) {
 				for (let y = startY; y < endY; y++) {
-					// drawX/drawY is the position to draw this tile on the canvas
+					const index = (x * MAP_SIZE) + y;
+
+					// Skip if this tile is masked out
+					if (this.mask && this.mask[index] !== 1)
+						continue;
+
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
+					
+					// Check if this tile should be visible in viewport
+					const isInViewport = !(drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
+											drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight);
 
-					const viewport = this.$el;
-					const bufferX = (canvas.width - viewport.clientWidth) / 2;
-					const bufferY = (canvas.height - viewport.clientHeight) / 2;
+					if (isInViewport) {
+						if (!state.rendered.has(index)) {
+							missingTiles.push({ x, y, index, drawX, drawY });
+							this.queueTileForDoubleBuffer(x, y, index, tileSize);
+						} else {
+							trackedTiles.push({ x, y, index });
+						}
+					}
+				}
+			}
+
+			// Clean up tiles that are no longer visible anywhere on canvas
+			const tilesToRemove = [];
+			for (const index of state.rendered) {
+				const x = Math.floor(index / MAP_SIZE);
+				const y = index % MAP_SIZE;
+				const drawX = (x * tileSize) + state.offsetX;
+				const drawY = (y * tileSize) + state.offsetY;
+				
+				if (drawX + tileSize <= 0 || drawX >= canvas.width || drawY + tileSize <= 0 || drawY >= canvas.height)
+					tilesToRemove.push(index);
+			}
+			
+			for (let i = 0; i < tilesToRemove.length; i++)
+				state.rendered.delete(tilesToRemove[i]);
+
+
+			// Copy double-buffer back to main canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(state.doubleBuffer, 0, 0);
+		},
+
+		/**
+		 * Render with full redraw (used for zoom changes, map changes, etc.).
+		 */
+		renderFullRedraw: function(canvas, canvasSize, tileSize) {
+			const ctx = this.context;
+
+			// Clear the entire canvas and rendered set
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			state.rendered.clear();
+
+			// Calculate which tiles are visible
+			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
+			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
+			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+
+			const viewport = this.$el;
+			const bufferX = (canvas.width - viewport.clientWidth) / 2;
+			const bufferY = (canvas.height - viewport.clientHeight) / 2;
+
+			// Queue all visible tiles for loading
+			for (let x = startX; x < endX; x++) {
+				for (let y = startY; y < endY; y++) {
+					const drawX = (x * tileSize) + state.offsetX;
+					const drawY = (y * tileSize) + state.offsetY;
 					
 					if (drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
 						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
 						continue;
 
-					// Calculate tile index
 					const index = (x * MAP_SIZE) + y;
 
-					// This chunk is masked out, so skip rendering it.
+					// Skip if this tile is masked out
 					if (this.mask && this.mask[index] !== 1)
 						continue;
 
-					// Queue tile for loading if not already requested
+					// Queue tile for loading
 					this.queueTile(x, y, index, tileSize);
 				}
 			}
-
-			// Render overlays after main canvas rendering
-			this.renderOverlay();
 		},
 
 		/**
