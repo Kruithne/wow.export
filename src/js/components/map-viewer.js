@@ -234,30 +234,31 @@ Vue.component('map-viewer', {
 			// Clear the overlay canvas.
 			ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-			// Viewport width/height defines what is visible to the user.
-			const viewport = this.$el;
-			const viewportWidth = viewport.clientWidth;
-			const viewportHeight = viewport.clientHeight;
-
 			// Calculate tile size based on current zoom.
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
-			// Iterate over all possible tiles in a map and render overlays as needed.
-			for (let x = 0; x < MAP_SIZE; x++) {
-				for (let y = 0; y < MAP_SIZE; y++) {
-					// drawX/drawY is the absolute position to draw this tile.
+			// Calculate which tiles are visible in the canvas area (same logic as main render)
+			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
+			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
+			const endX = Math.min(MAP_SIZE, startX + Math.ceil(overlayCanvas.width / tileSize) + 1);
+			const endY = Math.min(MAP_SIZE, startY + Math.ceil(overlayCanvas.height / tileSize) + 1);
+
+			// Iterate only over tiles that might be visible in the canvas
+			for (let x = startX; x < endX; x++) {
+				for (let y = startY; y < endY; y++) {
+					// drawX/drawY is the position to draw this tile on the canvas
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
+
+					// Only render overlays for tiles that fit COMPLETELY within canvas bounds
+					if (drawX < 0 || drawY < 0 || drawX + tileSize > overlayCanvas.width || drawY + tileSize > overlayCanvas.height)
+						continue;
 
 					// Cache is a one-dimensional array, calculate the index as such.
 					const index = (x * MAP_SIZE) + y;
 
 					// This chunk is masked out, so skip rendering it.
 					if (this.mask && this.mask[index] !== 1)
-						continue;
-
-					// Skip tiles that are not in (or around) the viewport.
-					if (drawX > (viewportWidth + tileSize) || drawY > (viewportHeight + tileSize) || drawX + tileSize < -tileSize || drawY + tileSize < -tileSize)
 						continue;
 
 					// Draw the selection overlay if this tile is selected.
@@ -276,6 +277,26 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * Calculate optimal canvas dimensions based on tile size and zoom levels.
+		 * Canvas is sized to accommodate full tiles with a buffer zone that ensures
+		 * tiles are never rendered partially at any zoom level.
+		 */
+		calculateCanvasSize: function() {
+			const viewport = this.$el;
+			const viewportWidth = viewport.clientWidth;
+			const viewportHeight = viewport.clientHeight;
+
+			// Buffer must be large enough for the largest possible tile (zoom factor = 1)
+			const maxTileSize = this.tileSize; // At zoom factor 1 (most zoomed in)
+			
+			// Canvas needs to be viewport size + buffer on all sides to ensure full tiles
+			return {
+				width: viewportWidth + (maxTileSize * 2), // +1 tile buffer on each side
+				height: viewportHeight + (maxTileSize * 2) // +1 tile buffer on each side
+			};
+		},
+
+		/**
 		 * Update the position of the internal container.
 		 */
 		render: function() {
@@ -288,39 +309,54 @@ Vue.component('map-viewer', {
 			if (!canvas)
 				return;
 
-			// Update the internal canvas dimensions to match the element.
-			canvas.width = canvas.offsetWidth;
-			canvas.height = canvas.offsetHeight;
-
-			// Update overlay canvas dimensions to match the element.
-			const overlayCanvas = this.$refs.overlayCanvas;
-			if (overlayCanvas) {
-				overlayCanvas.width = overlayCanvas.offsetWidth;
-				overlayCanvas.height = overlayCanvas.offsetHeight;
+			// Calculate optimal canvas size
+			const canvasSize = this.calculateCanvasSize();
+			
+			// Update canvas dimensions only if they've changed to avoid unnecessary redraws
+			if (canvas.width !== canvasSize.width || canvas.height !== canvasSize.height) {
+				canvas.width = canvasSize.width;
+				canvas.height = canvasSize.height;
 			}
 
-			// Viewport width/height defines what is visible to the user.
-			const viewport = this.$el;
-			const viewportWidth = viewport.clientWidth;
-			const viewportHeight = viewport.clientHeight;
+			// Update overlay canvas dimensions to match
+			const overlayCanvas = this.$refs.overlayCanvas;
+			if (overlayCanvas) {
+				if (overlayCanvas.width !== canvasSize.width || overlayCanvas.height !== canvasSize.height) {
+					overlayCanvas.width = canvasSize.width;
+					overlayCanvas.height = canvasSize.height;
+				}
+			}
 
-			// Calculate which tiles will appear within the viewer.
+			// Calculate current tile size based on zoom factor
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
 			// Get local reference to the canvas context.
 			const ctx = this.context;
+
+			// Clear the entire canvas before redrawing
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 			// We need to use a local reference to the cache so that async callbacks
 			// for tile loading don't overwrite the most current cache if they resolve
 			// after a new map has been selected. 
 			const cache = state.cache;
 
-			// Iterate over all possible tiles in a map and render as needed.
-			for (let x = 0; x < MAP_SIZE; x++) {
-				for (let y = 0; y < MAP_SIZE; y++) {
-					// drawX/drawY is the absolute position to draw this tile.
+			// Calculate which tiles are visible in the canvas area
+			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
+			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
+			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+
+			// Iterate only over tiles that might be visible in the canvas
+			for (let x = startX; x < endX; x++) {
+				for (let y = startY; y < endY; y++) {
+					// drawX/drawY is the position to draw this tile on the canvas
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
+
+					// Only render tiles that fit COMPLETELY within canvas bounds
+					if (drawX < 0 || drawY < 0 || drawX + tileSize > canvas.width || drawY + tileSize > canvas.height)
+						continue;
 
 					// Cache is a one-dimensional array, calculate the index as such.
 					const index = (x * MAP_SIZE) + y;
@@ -329,17 +365,6 @@ Vue.component('map-viewer', {
 					// This chunk is masked out, so skip rendering it.
 					if (this.mask && this.mask[index] !== 1)
 						continue;
-
-					// Skip tiles that are not in (or around) the viewport.
-					if (drawX > (viewportWidth + tileSize) || drawY > (viewportHeight + tileSize) || drawX + tileSize < -tileSize || drawY + tileSize < -tileSize) {
-						// Clear out cache entries for tiles no longer in viewport.
-						if (cached !== undefined) {
-							ctx.clearRect(drawX, drawY, tileSize, tileSize);
-							cache[index] = undefined;
-						}
-
-						continue;
-					}
 
 					// No cache, request it (async) then skip.
 					if (cached === undefined) {
@@ -494,9 +519,15 @@ Vue.component('map-viewer', {
 		 */
 		mapPositionFromClientPoint: function(x, y) {
 			const viewport = this.$el.getBoundingClientRect();
+			const canvas = this.$refs.canvas;
 			
-			const viewOfsX = (x - viewport.x) - state.offsetX;
-			const viewOfsY = (y - viewport.y) - state.offsetY;
+			// Calculate canvas position relative to viewport (centered)
+			const canvasOffsetX = (viewport.width - canvas.width) / 2;
+			const canvasOffsetY = (viewport.height - canvas.height) / 2;
+			
+			// Convert client coordinates to canvas coordinates
+			const viewOfsX = (x - viewport.x - canvasOffsetX) - state.offsetX;
+			const viewOfsY = (y - viewport.y - canvasOffsetY) - state.offsetY;
 
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 
@@ -524,9 +555,10 @@ Vue.component('map-viewer', {
 			const ofsX = (((posX - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
 			const ofsY = (((posY - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
 
-			const viewport = this.$el;
-			state.offsetX = ofsX + (viewport.clientWidth / 2);
-			state.offsetY = ofsY + (viewport.clientHeight / 2);
+			const canvas = this.$refs.canvas;
+			// Center the position on the canvas (canvas is now larger than viewport and centered)
+			state.offsetX = ofsX + (canvas.width / 2);
+			state.offsetY = ofsY + (canvas.height / 2);
 
 			this.render();
 		},
