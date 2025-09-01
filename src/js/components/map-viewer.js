@@ -28,7 +28,9 @@ const state = {
 	prevZoomFactor: 2,
 	doubleBuffer: null,
 	needsFinalPass: false, // Track if we need to run the final pass after queue is empty
-	finalPassTimeout: null // Timeout for delayed final pass execution
+	finalPassTimeout: null, // Timeout for delayed final pass execution
+	activeTileRequests: 0, // Track number of tiles currently being loaded
+	maxConcurrentTiles: 4 // Maximum number of tiles to load concurrently
 };
 
 Vue.component('map-viewer', {
@@ -152,6 +154,7 @@ Vue.component('map-viewer', {
 			state.prevOffsetY = null;
 			state.prevZoomFactor = null;
 			state.needsFinalPass = false;
+			state.activeTileRequests = 0;
 
 			if (state.finalPassTimeout) {
 				clearTimeout(state.finalPassTimeout);
@@ -160,13 +163,17 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * Process the next tile in the loading queue.
+		 * Process tiles in the loading queue up to the concurrency limit.
 		 */
 		checkTileQueue: function() {
-			const tile = state.tileQueue.shift();
-			if (tile)
+			// Process multiple tiles up to the concurrency limit
+			while (state.tileQueue.length > 0 && state.activeTileRequests < state.maxConcurrentTiles) {
+				const tile = state.tileQueue.shift();
 				this.loadTile(tile);
-			else {
+			}
+
+			// Check if we're done processing all tiles
+			if (state.tileQueue.length === 0 && state.activeTileRequests === 0) {
 				this.awaitingTile = false;
 				// Trigger final pass once all tiles are processed, but only if needed
 				// Add a small delay to avoid running it too frequently during rapid panning
@@ -347,6 +354,7 @@ Vue.component('map-viewer', {
 		 */
 		loadTile: function(tile) {
 			this.awaitingTile = true;
+			state.activeTileRequests++;
 
 			const [x, y, index, tileSize, renderTarget = 'main'] = tile;
 			const currentZoomFactor = state.zoomFactor;
@@ -373,6 +381,7 @@ Vue.component('map-viewer', {
 
 				// Remove from requested set since loading is complete
 				state.requested.delete(index);
+				state.activeTileRequests--;
 				this.checkTileQueue();
 			});
 		},
