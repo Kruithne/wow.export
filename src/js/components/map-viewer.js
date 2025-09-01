@@ -51,6 +51,7 @@ Vue.component('map-viewer', {
 	mounted: function() {
 		// Store a local reference to the canvas context for faster rendering.
 		this.context = this.$refs.canvas.getContext('2d');
+		this.overlayContext = this.$refs.overlayCanvas.getContext('2d');
 
 		// Create anonymous pass-through functions for our event handlers
 		// to maintain context. We store them so we can unregister them later.
@@ -117,7 +118,7 @@ Vue.component('map-viewer', {
 		 * Invoked when the tile being hovered over changes.
 		 */
 		hoverTile: function() {
-			this.render();
+			this.renderOverlay();
 		}
 	},
 
@@ -215,6 +216,66 @@ Vue.component('map-viewer', {
 		},
 
 		/**
+		 * Render overlays (selection and hover) on the overlay canvas.
+		 */
+		renderOverlay: function() {
+			// If no map has been selected, do not render.
+			if (this.map === null)
+				return;
+
+			// No canvas reference? Component likely dismounting.
+			const overlayCanvas = this.$refs.overlayCanvas;
+			if (!overlayCanvas)
+				return;
+
+			// Get local reference to the overlay canvas context.
+			const ctx = this.overlayContext;
+
+			// Clear the overlay canvas.
+			ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+			// Viewport width/height defines what is visible to the user.
+			const viewport = this.$el;
+			const viewportWidth = viewport.clientWidth;
+			const viewportHeight = viewport.clientHeight;
+
+			// Calculate tile size based on current zoom.
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
+
+			// Iterate over all possible tiles in a map and render overlays as needed.
+			for (let x = 0; x < MAP_SIZE; x++) {
+				for (let y = 0; y < MAP_SIZE; y++) {
+					// drawX/drawY is the absolute position to draw this tile.
+					const drawX = (x * tileSize) + state.offsetX;
+					const drawY = (y * tileSize) + state.offsetY;
+
+					// Cache is a one-dimensional array, calculate the index as such.
+					const index = (x * MAP_SIZE) + y;
+
+					// This chunk is masked out, so skip rendering it.
+					if (this.mask && this.mask[index] !== 1)
+						continue;
+
+					// Skip tiles that are not in (or around) the viewport.
+					if (drawX > (viewportWidth + tileSize) || drawY > (viewportHeight + tileSize) || drawX + tileSize < -tileSize || drawY + tileSize < -tileSize)
+						continue;
+
+					// Draw the selection overlay if this tile is selected.
+					if (this.selection.includes(index)) {
+						ctx.fillStyle = 'rgba(159, 241, 161, 0.5)';
+						ctx.fillRect(drawX, drawY, tileSize, tileSize);	
+					}
+
+					// Draw the hover overlay if this tile is hovered over.
+					if (this.hoverTile === index) {
+						ctx.fillStyle = 'rgba(87, 175, 226, 0.5)';
+						ctx.fillRect(drawX, drawY, tileSize, tileSize);
+					}
+				}
+			}
+		},
+
+		/**
 		 * Update the position of the internal container.
 		 */
 		render: function() {
@@ -230,6 +291,13 @@ Vue.component('map-viewer', {
 			// Update the internal canvas dimensions to match the element.
 			canvas.width = canvas.offsetWidth;
 			canvas.height = canvas.offsetHeight;
+
+			// Update overlay canvas dimensions to match the element.
+			const overlayCanvas = this.$refs.overlayCanvas;
+			if (overlayCanvas) {
+				overlayCanvas.width = overlayCanvas.offsetWidth;
+				overlayCanvas.height = overlayCanvas.offsetHeight;
+			}
 
 			// Viewport width/height defines what is visible to the user.
 			const viewport = this.$el;
@@ -284,20 +352,11 @@ Vue.component('map-viewer', {
 						// If the tile is renderable, render it.
 						ctx.putImageData(cached, drawX, drawY);
 					}
-
-					// Draw the selection overlay if this tile is selected.
-					if (this.selection.includes(index)) {
-						ctx.fillStyle = 'rgba(159, 241, 161, 0.5)';
-						ctx.fillRect(drawX, drawY, tileSize, tileSize);	
-					}
-
-					// Draw the hover overlay if this tile is hovered over.
-					if (this.hoverTile === index) {
-						ctx.fillStyle = 'rgba(87, 175, 226, 0.5)';
-						ctx.fillRect(drawX, drawY, tileSize, tileSize);
-					}
 				}
 			}
+
+			// Render overlays on the separate overlay canvas.
+			this.renderOverlay();
 		},
 
 		/**
@@ -325,7 +384,7 @@ Vue.component('map-viewer', {
 				}
 
 				// Trigger a re-render to show the new selection.
-				this.render();
+				this.renderOverlay();
 				
 				// Absorb this event preventing further action.
 				event.preventDefault();
@@ -368,7 +427,7 @@ Vue.component('map-viewer', {
 				this.selection.push(index);
 
 			// Trigger a re-render so the overlay updates.
-			this.render();
+			this.renderOverlay();
 		},
 
 		/**
@@ -545,5 +604,6 @@ Vue.component('map-viewer', {
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>
+		<canvas ref="overlayCanvas" class="overlay-canvas"></canvas>
 	</div>`
 });
