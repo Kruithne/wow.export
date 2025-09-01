@@ -58,7 +58,7 @@ Vue.component('map-viewer', {
 	 */
 	mounted: function() {
 		// Store a local reference to the canvas context for faster rendering.
-		this.context = this.$refs.canvas.getContext('2d');
+		this.context = this.$refs.canvas.getContext('2d', { willReadFrequently: true });
 		this.overlayContext = this.$refs.overlayCanvas.getContext('2d');
 
 		state.doubleBuffer ??= document.createElement('canvas');
