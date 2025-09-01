@@ -20,7 +20,9 @@ const state = {
 	offsetY: 0,
 	zoomFactor: 2,
 	tileQueue: [],
-	selectCache: new Set()
+	selectCache: new Set(),
+	// Track which tiles have been requested to avoid duplicate requests
+	requested: new Set()
 };
 
 Vue.component('map-viewer', {
@@ -107,7 +109,7 @@ Vue.component('map-viewer', {
 		 */
 		map: function() {
 			// Reset the cache.
-			this.initializeCache();
+			this.clearTileState();
 
 			// Set the map position to a default position.
 			// This will trigger a re-render for us too.
@@ -124,11 +126,11 @@ Vue.component('map-viewer', {
 
 	methods: {
 		/**
-		 * Initialize a fresh cache array.
+		 * Clear tile queue and requested set.
 		 */
-		initializeCache: function() {
+		clearTileState: function() {
 			state.tileQueue = [];
-			state.cache = new Array(MAP_SIZE_SQ);
+			state.requested.clear();
 		},
 
 		/**
@@ -143,13 +145,18 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * Add a tile to the queue to be loaded.
+		 * Add a tile to the queue to be loaded if not already requested.
 		 * @param {number} x 
 		 * @param {number} y 
 		 * @param {number} index 
 		 * @param {number} tileSize 
 		 */
 		queueTile: function(x, y, index, tileSize) {
+			// Skip if already requested
+			if (state.requested.has(index))
+				return;
+				
+			state.requested.add(index);
 			const node = [x, y, index, tileSize];
 
 			if (this.awaitingTile)
@@ -159,26 +166,29 @@ Vue.component('map-viewer', {
 		},
 
 		/**
-		 * Load a given tile into the cache.
-		 * Triggers a re-render and queue-check once loaded.
+		 * Load a given tile and draw it directly to canvas.
+		 * Triggers a queue-check once loaded.
 		 * @param {Array} tile 
 		 */
 		loadTile: function(tile) {
 			this.awaitingTile = true;
 
 			const [x, y, index, tileSize] = tile;
-
-			// We need to use a local reference to the cache so that async callbacks
-			// for tile loading don't overwrite the most current cache if they resolve
-			// after a new map has been selected. 
-			const cache = state.cache;
+			const currentZoomFactor = state.zoomFactor;
 
 			this.loader(x, y, tileSize).then(data => {
-				cache[index] = data;
+				// Only draw if tile loaded successfully and zoom hasn't changed
+				if (data !== false && data instanceof ImageData && currentZoomFactor === state.zoomFactor) {
+					// Calculate draw position
+					const drawX = (x * tileSize) + state.offsetX;
+					const drawY = (y * tileSize) + state.offsetY;
+					
+					// Draw tile directly to canvas
+					this.context.putImageData(data, drawX, drawY);
+				}
 
-				if (data !== false)
-					this.render();
-
+				// Remove from requested set since loading is complete
+				state.requested.delete(index);
 				this.checkTileQueue();
 			});
 		},
@@ -280,11 +290,6 @@ Vue.component('map-viewer', {
 			const overlayCtx = overlayCanvas ? this.overlayContext : null;
 			overlayCtx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-			// We need to use a local reference to the cache so that async callbacks
-			// for tile loading don't overwrite the most current cache if they resolve
-			// after a new map has been selected. 
-			const cache = state.cache;
-
 			// Calculate which tiles might be visible (using full canvas area to avoid missing any)
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
@@ -306,25 +311,15 @@ Vue.component('map-viewer', {
 						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
 						continue;
 
-					// Cache is a one-dimensional array, calculate the index as such.
+					// Calculate tile index
 					const index = (x * MAP_SIZE) + y;
-					const cached = cache[index];
 
 					// This chunk is masked out, so skip rendering it.
 					if (this.mask && this.mask[index] !== 1)
 						continue;
 
-					// No cache, request it (async) then skip.
-					if (cached === undefined) {
-						// Set the tile cache to 'true' so it is skipped while loading.
-						cache[index] = true;
-
-						// Add this tile to the loading queue.
-						this.queueTile(x, y, index, tileSize);
-					} else if (cached instanceof ImageData) {
-						// If the tile is renderable, render it.
-						ctx.putImageData(cached, drawX, drawY);
-					}
+					// Queue tile for loading if not already requested
+					this.queueTile(x, y, index, tileSize);
 
 					// Render overlays for this tile if overlay canvas exists
 					if (overlayCtx) {
@@ -396,10 +391,6 @@ Vue.component('map-viewer', {
 			if (this.mask) {
 				// If we have a WDT, and this tile is not defined, disallow selection.
 				if (this.mask[index] !== 1)
-					return;
-			} else {
-				// No WDT, disallow selection if tile is not rendered.
-				if (typeof state.cache[index] !== 'object')
 					return;
 			}
 
@@ -533,7 +524,7 @@ Vue.component('map-viewer', {
 			state.zoomFactor = factor;
 
 			// Invalidate the cache so that tiles are re-rendered.
-			this.initializeCache();
+			this.clearTileState();
 		},
 
 		/**
