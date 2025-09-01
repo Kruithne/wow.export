@@ -632,7 +632,7 @@ core.events.once('screen-tab-maps', async () => {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 
 		if (entry.WdtFileDataID != null && listfile.getByID(entry.WdtFileDataID) == null) {
-			log.write('Adding files to listfile for map %s (%d)', entry.MapName_lang);
+			log.write('Adding files to listfile for map %s (%d)', entry.MapName_lang, entry.WdtFileDataID);
 			listfile.addEntry(entry.WdtFileDataID, wdtPath);
 
 			try {
