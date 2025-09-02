@@ -1076,6 +1076,7 @@ class ADTExporter {
 					const usingNames = !!objAdt.wmoNames;
 					for (const model of objAdt.worldModels) {
 						const useADTSets = model & 0x80;
+						const singleWMO = config.mapsSingleWMO && !useADTSets;
 						helper.setCurrentTaskValue(worldModelIndex++);
 
 						let fileDataID;
@@ -1091,12 +1092,16 @@ class ADTExporter {
 							}
 
 							if (!config.mapsExportRaw) {
+								let fileNameSuffix = '_set' + model.doodadSet + '.obj';
+								if (singleWMO)
+									fileNameSuffix = '.obj';
+
 								if (fileName !== undefined) {
 									// Replace WMO extension with OBJ.
-									fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
+									fileName = ExportHelper.replaceExtension(fileName, fileNameSuffix);
 								} else {
 									// Handle unknown WMO files.
-									fileName = listfile.formatUnknownFile(fileDataID, '_set' + model.doodadSet + '.obj');
+									fileName = listfile.formatUnknownFile(fileDataID, fileNameSuffix);
 								}
 							}
 
@@ -1107,7 +1112,13 @@ class ADTExporter {
 								modelPath = path.join(dir, path.basename(fileName));
 
 							const doodadSets = useADTSets ? objAdt.doodadSets : [model.doodadSet];
-							const cacheID = fileDataID + '-' + doodadSets.join(',');
+							if (doodadSets.indexOf(0) === -1) {
+								// also add the default set to the list, since it's always exported
+								doodadSets.splice(0, 0, 0);
+							}
+							let cacheID = fileDataID + '-' + doodadSets.join(',');
+							if (singleWMO)
+								cacheID = fileDataID;
 
 							if (!objectCache.has(cacheID)) {
 								const data = await casc.getFile(fileDataID);
@@ -1123,9 +1134,14 @@ class ADTExporter {
 										for (const setIndex of objAdt.doodadSets)
 											mask[setIndex] = { checked: true };
 									} else {
-										mask[model.doodadSet] = { checked: true };
+										if (singleWMO) {
+											for (let setIndex = 0; setIndex < wmoLoader.wmo.doodadSets.length; setIndex++)
+												mask[setIndex] = { checked: true };
+										} else {
+											mask[model.doodadSet] = { checked: true };
+										}
 									}
-									
+
 									wmoLoader.setDoodadSetMask(mask);
 								}
 
