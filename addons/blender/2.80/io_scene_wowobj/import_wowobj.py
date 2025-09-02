@@ -129,6 +129,244 @@ def calculate_color_sockets(mix_node):
         if i.type == 'RGBA':
             MIX_NODE_COLOR_SOCKETS['out']['Result'] = idx
 
+def createLiquidMaterial(materialName, liquidType):
+    material = bpy.data.materials.new(name=materialName)
+    material.use_nodes = True
+    material.blend_method = 'BLEND'
+    
+    node_tree = material.node_tree
+    nodes = node_tree.nodes
+    
+    principled = None
+    outNode = None
+    
+    for node in nodes:
+        if not principled and node.type == 'BSDF_PRINCIPLED':
+            principled = node
+        if not outNode and node.type == 'OUTPUT_MATERIAL':
+            outNode = node
+        if principled and outNode:
+            break
+    
+    if not outNode:
+        outNode = nodes.new('ShaderNodeOutputMaterial')
+        outNode.location = (300, 400)
+    
+    if not principled:
+        principled = nodes.new('ShaderNodeBsdfPrincipled')
+        principled.location = (0, 400)
+        node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
+    
+    # Water (type 2) - clear blue water
+    if liquidType == 2:
+        principled.inputs['Base Color'].default_value = (0.2, 0.5, 0.8, 1.0)
+        principled.inputs['Alpha'].default_value = 0.7
+        if IS_B40:
+            principled.inputs['Transmission Weight'].default_value = 1.0
+        else:
+            principled.inputs['Transmission'].default_value = 1.0
+    # Ocean water (type 14) - deeper blue
+    elif liquidType == 14:
+        principled.inputs['Base Color'].default_value = (0.1, 0.3, 0.6, 1.0)
+        principled.inputs['Alpha'].default_value = 0.8
+        if IS_B40:
+            principled.inputs['Transmission Weight'].default_value = 1.0
+        else:
+            principled.inputs['Transmission'].default_value = 1.0
+    # Magma/Lava (type 3)
+    elif liquidType == 3:
+        principled.inputs['Base Color'].default_value = (1.0, 0.3, 0.1, 1.0)
+        principled.inputs['Alpha'].default_value = 0.9
+        principled.inputs['Emission Strength' if IS_B40 else 'Emission'].default_value = 0.5
+    # Slime (type 4)
+    elif liquidType == 4:
+        principled.inputs['Base Color'].default_value = (0.3, 0.8, 0.2, 1.0)
+        principled.inputs['Alpha'].default_value = 0.8
+    # Default liquid
+    else:
+        principled.inputs['Base Color'].default_value = (0.3, 0.6, 0.9, 1.0)
+        principled.inputs['Alpha'].default_value = 0.6
+        if IS_B40:
+            principled.inputs['Transmission Weight'].default_value = 0.8
+        else:
+            principled.inputs['Transmission'].default_value = 0.8
+    
+    principled.inputs[SPECULAR_INPUT_NAME].default_value = 0.8
+    principled.inputs['Roughness'].default_value = 0.1
+    
+    return material
+
+
+def importLiquidChunks(liquidFile, baseObj, settings):
+    print(f'Attempting to import liquid from: {liquidFile}')
+    
+    try:
+        with open(liquidFile, 'r', encoding='utf-8') as fp:
+            liquid_data = json.load(fp)
+        print(f'Successfully loaded liquid JSON with keys: {list(liquid_data.keys())}')
+    except Exception as e:
+        print(f'Could not read liquid data from {liquidFile}: {e}')
+        return
+    
+    if 'liquidChunks' not in liquid_data:
+        print('No liquidChunks found in JSON data')
+        return
+    
+    liquidparent = bpy.data.objects.new('Liquids', None)
+    liquidparent.parent = baseObj
+    liquidparent.name = 'Liquids'
+    liquidparent.rotation_euler = [0, 0, 0]
+    liquidparent.rotation_euler.x = radians(-90)
+    
+    collection = bpy.context.view_layer.active_layer_collection.collection.objects
+    collection.link(liquidparent)
+    
+    liquidChunks = liquid_data['liquidChunks']
+    print(f'Processing {len(liquidChunks)} liquid chunk slots')
+    
+    chunk_size = 33.33333  # Each chunk is 33.33 units wide
+    tile_size = 533.33333  # TILE_SIZE constant from wow.export
+    liquid_objects_created = 0
+    
+    for chunk_idx, chunk in enumerate(liquidChunks):
+        if not chunk or chunk is None:
+            continue
+            
+        if not chunk.get('instances') or not isinstance(chunk.get('instances'), list):
+            continue
+            
+        chunk_x = chunk_idx % 16
+        chunk_y = chunk_idx // 16
+        
+        print(f'Processing chunk {chunk_idx} ({chunk_x}, {chunk_y}) with {len(chunk["instances"])} instances')
+        
+        for instance_idx, instance in enumerate(chunk['instances']):
+            if not instance or instance is None:
+                continue
+                
+            liquid_type = instance.get('liquidType', 2)
+            width = instance.get('width', 8)
+            height = instance.get('height', 8)
+            x_offset = instance.get('xOffset', 0)
+            y_offset = instance.get('yOffset', 0)
+            min_height = instance.get('minHeightLevel', 0.0)
+            max_height = instance.get('maxHeightLevel', 0.0)
+            
+            vertex_data = instance.get('vertexData', {})
+            height_map = vertex_data.get('height', [])
+            bitmap = instance.get('bitmap', [])
+            
+            print(f'  Instance {instance_idx}: type={liquid_type}, size={width}x{height}, offset=({x_offset},{y_offset}), heights={min_height:.2f}-{max_height:.2f}')
+            print(f'    Height map: {len(height_map)} values, Bitmap: {len(bitmap)} bytes')
+            
+            # Skip instances with no geometry
+            if width <= 0 or height <= 0:
+                continue
+            
+            mesh_name = f'Liquid_Chunk_{chunk_x:02d}_{chunk_y:02d}_{instance_idx}'
+            mesh = bpy.data.meshes.new(mesh_name)
+            liquid_obj = bpy.data.objects.new(mesh_name, mesh)
+            
+            liquid_obj.parent = liquidparent
+            collection.link(liquid_obj)
+            
+            bm = bmesh.new()
+            
+            # Create vertices
+            vertices = []
+            vertex_count = (width + 1) * (height + 1)
+            
+            for y in range(height + 1):
+                for x in range(width + 1):
+                    vert_idx = y * (width + 1) + x
+                    
+                    # Calculate world position
+                    raw_x = (chunk_x * chunk_size) + (x_offset + x) * (chunk_size / 8.0)
+                    raw_y = (chunk_y * chunk_size) + (y_offset + y) * (chunk_size / 8.0)
+                    
+                    # Apply coordinate system transformation to match terrain
+                    world_x = -raw_x + tile_size  # Scale by -1 and move +TILE_SIZE
+                    world_y = raw_y - (tile_size * 2)  # Move -TILE_SIZE*2
+                    
+                    # Get height from height map or use default
+                    if height_map and vert_idx < len(height_map):
+                        world_z = height_map[vert_idx]
+                    elif min_height == max_height:
+                        world_z = min_height
+                    else:
+                        world_z = (min_height + max_height) / 2.0
+                    
+                    vert = bm.verts.new((world_x, world_y, world_z))
+                    vertices.append(vert)
+            
+            bm.verts.ensure_lookup_table()
+            
+            # Create faces based on bitmap or create all faces if no bitmap
+            faces_created = 0
+            bitmap_idx = 0
+            
+            for y in range(height):
+                for x in range(width):
+                    should_create_face = True
+                    
+                    # Check bitmap to see if this face should exist
+                    if bitmap and len(bitmap) > 0:
+                        byte_idx = bitmap_idx // 8
+                        bit_idx = bitmap_idx % 8
+                        if byte_idx < len(bitmap):
+                            bit_value = (bitmap[byte_idx] >> bit_idx) & 1
+                            should_create_face = bool(bit_value)
+                        bitmap_idx += 1
+                    
+                    if should_create_face:
+                        # Create quad face (counter-clockwise winding)
+                        try:
+                            v1 = vertices[y * (width + 1) + x]
+                            v2 = vertices[y * (width + 1) + (x + 1)]
+                            v3 = vertices[(y + 1) * (width + 1) + (x + 1)]
+                            v4 = vertices[(y + 1) * (width + 1) + x]
+                            
+                            face = bm.faces.new([v1, v2, v3, v4])
+                            face.smooth = True
+                            faces_created += 1
+                        except ValueError as e:
+                            # Skip degenerate faces
+                            print(f'    Warning: Could not create face at ({x},{y}): {e}')
+                            pass
+            
+            print(f'    Created {len(vertices)} vertices and {faces_created} faces')
+            
+            # Only create object if we have geometry
+            if faces_created > 0:
+                bm.to_mesh(mesh)
+                
+                if settings.importTextures:
+                    material_name = f'Liquid_Type_{liquid_type}'
+                    material = bpy.data.materials.get(material_name)
+                    if material is None:
+                        material = createLiquidMaterial(material_name, liquid_type)
+                    
+                    liquid_obj.data.materials.append(material)
+                
+                liquid_obj.location = (0, 0, 0)
+                liquid_objects_created += 1
+            else:
+                collection.unlink(liquid_obj)
+                bpy.data.objects.remove(liquid_obj)
+                bpy.data.meshes.remove(mesh)
+                print(f'    Skipped empty liquid instance')
+            
+            bm.free()
+    
+    # Remove parent if no liquid objects were created
+    if liquid_objects_created == 0:
+        collection.unlink(liquidparent)
+        bpy.data.objects.remove(liquidparent)
+        print('No liquid geometry found, removed empty parent object')
+    else:
+        print(f'Liquid import complete: Created {liquid_objects_created} liquid objects')
+
+
 def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
     material = bpy.data.materials.new(name=materialName)
     try:
@@ -536,6 +774,19 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     max_size = 51200 / 3
     map_size = max_size * 2
     adt_size = map_size / 64
+
+    ## Import liquids
+    if settings.importLiquid:
+        baseDir, fileName = os.path.split(objectFile)
+        baseName = fileName[:fileName.rfind('.')]
+        tileID = baseName.replace('adt_', '') if baseName.startswith('adt_') else baseName
+        liquidPath = os.path.join(baseDir, f'liquid_{tileID}.json')
+        print(f'Checking for liquid file: {liquidPath}')
+        if os.path.exists(liquidPath):
+            print(f'Liquid file found! Importing liquid data from {liquidPath}')
+            importLiquidChunks(liquidPath, obj, settings)
+        else:
+            print(f'No liquid file found at {liquidPath}')
 
     ## Import doodads and/or WMOs
     csvPath = objectFile.replace('.obj', '_ModelPlacementInformation.csv')

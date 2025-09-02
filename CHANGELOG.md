@@ -1,5 +1,6 @@
 ## 0.1.66 (xx-09-2025)
 ### General/features
+- Added "Import Liquids" to Blender add-on, fully supporting all liquid types on map tiles.
 - Added "Export Heightmaps" button for maps, allowing 16-bit/32-bit heightmap generation with cross-tile range relativity.
 - Added "Show Background" option to set a customizable background colour to the model viewer.
 - Added partial support for M3 models (geometry only).
@@ -29,6 +30,7 @@
 - Fixed issue with WMO textures being incorrectly assigned in glTF exports.
 - Fixed issue causing cyclic glTF animations have incorrect frame ranges.
 - Fixed issue that prevented terrain exported with texture quality "None" from being importable due to referencing missing textures.
+- Fixed issue that caused MH2O bitmaps in advanced data to be incorrect.
 
 ### Internal
 - Updated three.js from r111 to r179 (some color changes might be observed in model previews).

@@ -54,8 +54,9 @@ class Settings:
     useTerrainBlending = True
     createEmissiveMaterials = True
     createDoodadSetCollections = False
+    importLiquid = True
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = True, createDoodadSetCollections = False):
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = True, createDoodadSetCollections = False, importLiquid = True):
         self.useAlpha = useAlpha
         self.createVertexGroups = createVertexGroups
         self.allowDuplicates = allowDuplicates
@@ -67,6 +68,7 @@ class Settings:
         self.useTerrainBlending = useTerrainBlending
         self.createEmissiveMaterials = createEmissiveMaterials
         self.createDoodadSetCollections = createDoodadSetCollections
+        self.importLiquid = importLiquid
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File with additional ADT metadata'''
@@ -90,6 +92,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     useTerrainBlending: bpy.props.BoolProperty(name = 'Use terrain blending', description = 'Blend terrain textures using exported alpha maps', default = 1)
     createEmissiveMaterials: bpy.props.BoolProperty(name = 'Create emissive materials', description = 'When applicable based on the material\'s blending mode. Might be less compatible when exporting to use in other software', default = 1)
     createDoodadSetCollections: bpy.props.BoolProperty(name = 'Create Doodad Set Collections', description = 'If enabled, will create a collection of each doodad set (if available), and move the imported objects into them. Useful for single model imports with many sets.', default = 0)
+    importLiquid: bpy.props.BoolProperty(name = 'Import Liquid', description = 'If exported, liquid chunks will be imported as plane geometry', default = 1)
 
     def execute(self, context):
         settings = Settings(
@@ -103,7 +106,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             importTextures = self.importTextures,
             useTerrainBlending = self.useTerrainBlending,
             createEmissiveMaterials = self.createEmissiveMaterials,
-            createDoodadSetCollections = self.createDoodadSetCollections
+            createDoodadSetCollections = self.createDoodadSetCollections,
+            importLiquid = self.importLiquid
         )
 
         from . import import_wowobj
@@ -133,6 +137,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, 'useTerrainBlending')
         box.prop(self, 'createEmissiveMaterials')
         box.prop(self, 'createDoodadSetCollections')
+        box.prop(self, 'importLiquid')
 
 def menu_func_import(self, context):
     self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')
