@@ -17,6 +17,9 @@
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
 - Map viewer can now zoom out two additional levels.
 
+### Performance
+- Map viewer no longer keeps map tiles in memory, dramatically improving memory usage.
+
 ### Cross-platform support
 - Started generating builds for Mac/Linux (still a work in progress, not yet finished).
 - Added cross-platform support for Linux & MacOS into updater application.
