@@ -940,6 +940,7 @@ input[type=number]::-webkit-outer-spin-button {
 	justify-content: center;
 	white-space: nowrap;
 	flex-wrap: wrap;
+	z-index: 5;
 }
 .ui-map-viewer .info span {
 	margin: 0 10px;
