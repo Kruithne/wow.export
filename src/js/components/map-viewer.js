@@ -856,10 +856,10 @@ Vue.component('map-viewer', {
 			const ofsX = (((posX - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
 			const ofsY = (((posY - MAP_COORD_BASE) / TILE_SIZE) * tileSize);
 
-			const canvas = this.$refs.canvas;
-			// Center the position on the canvas (canvas is now larger than viewport and centered)
-			state.offsetX = ofsX + (canvas.width / 2);
-			state.offsetY = ofsY + (canvas.height / 2);
+			const viewport = this.$el;
+			const maxTileSize = this.tileSize;
+			state.offsetX = ofsX + (viewport.clientWidth / 2) + maxTileSize;
+			state.offsetY = ofsY + (viewport.clientHeight / 2) + maxTileSize;
 
 			this.render();
 		},
