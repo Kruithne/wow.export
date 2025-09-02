@@ -8,7 +8,6 @@ const core = require('../core');
 const constants = require('../constants');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
-const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
 const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 
