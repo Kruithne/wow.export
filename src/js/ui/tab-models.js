@@ -311,7 +311,11 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			
 			if (format === 'PNG') {
 				const exportPath = ExportHelper.getExportPath(activePath);
-				const outFile = ExportHelper.replaceExtension(exportPath, '.png');
+				let outFile = ExportHelper.replaceExtension(exportPath, '.png');
+				
+				if (core.view.config.modelsExportPngIncrements)
+					outFile = await ExportHelper.getIncrementalFilename(outFile);
+				
 				const outDir = path.dirname(outFile);
 
 				await buf.writeToFile(outFile);

@@ -55,6 +55,7 @@
 	"modelViewerWireframe": false,
 	"modelViewerShowTextures": true,
 	"modelsExportCollision": false,
+	"modelsExportPngIncrements": true,
 	"modelsExportSkin": false,
 	"modelsExportSkel": false,
 	"modelsExportBone": false,

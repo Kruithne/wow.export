@@ -7,6 +7,7 @@ const path = require('path');
 const util = require('util');
 const core = require('../core');
 const log = require('../log');
+const generics = require('../generics');
 
 const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
 //const TOAST_OPT_DIR = { 'Open Export Directory': () => core.openExportDirectory() };
@@ -77,6 +78,30 @@ class ExportHelper {
 		// path module does not expose any decent conversion API, so simply
 		// convert slashes like a cave-person and call it a day.
 		return str.replaceAll('\\', '/');
+	}
+
+	/**
+	 * Returns a filename with incremental suffix if the original already exists.
+	 * @param {string} filePath The original file path
+	 * @returns {Promise<string>} The available filename with incremental suffix if needed
+	 */
+	static async getIncrementalFilename(filePath) {
+		if (!(await generics.fileExists(filePath)))
+			return filePath;
+
+		const dir = path.dirname(filePath);
+		const ext = path.extname(filePath);
+		const basename = path.basename(filePath, ext);
+
+		let counter = 1;
+		let newPath;
+
+		do {
+			newPath = path.join(dir, `${basename}_${counter}${ext}`);
+			counter++;
+		} while (await generics.fileExists(newPath));
+
+		return newPath;
 	}
 
 	/**
