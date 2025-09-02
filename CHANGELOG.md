@@ -11,6 +11,7 @@
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
 - Added option that controls the amount of scroll lines, default is 4 which should make scrolling smoother (thanks NoodleBug!).
 - Added option to the Blender addon to create collections for WMO doodad sets (thanks KiaArmani!).
+- Added option to prefix 3D preview exports to prevent overwrite (enabled by default).
 
 ### UI
 - Added expansion icon for Midnight.
