@@ -15,6 +15,7 @@
 - Added expansion icon for Midnight.
 - Search inputs are now debounced, preventing UI stuttering when typing.
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
+- Map viewer can now zoom out two additional levels.
 
 ### Cross-platform support
 - Started generating builds for Mac/Linux (still a work in progress, not yet finished).
