@@ -6,6 +6,7 @@
 - Added partial support for M3 models (geometry only).
 - Map selections can now be exported as stitched PNG images - including the whole map!
 - Exported PNG images now properly utilize Sub, Up, Average and Paeth filters, resulting in better compression.
+- Added UV layer inspection on the model-viewer. Preview a texture from the ribbon and choose a UV layer to overlay.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).

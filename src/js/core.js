@@ -110,6 +110,8 @@ const view = {
 	modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
 	modelTexturePreviewURL: '', // Active URL of the texture preview image on the model viewer.
 	modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
+	modelTexturePreviewUVOverlay: '', // UV overlay data URL for texture preview.
+	modelViewerUVLayers: [], // Available UV layers for the active model.
 	texturePreviewWidth: 256, // Active width of the texture preview.
 	texturePreviewHeight: 256, // Active height of the texture preview.
 	texturePreviewURL: '', // Active URL of the texture preview image.

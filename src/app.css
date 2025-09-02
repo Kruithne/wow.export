@@ -1289,17 +1289,21 @@ input[type=number]::-webkit-outer-spin-button {
 	background-color: var(--trans-check-b);
 	box-shadow: black 0 0 3px 0;
 	background-image: linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a)), linear-gradient(45deg, var(--trans-check-a) 25%, transparent 25%, transparent 75%, var(--trans-check-a) 75%, var(--trans-check-a));
-	display: table;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	width: 100%;
 	height: 100%;
 	position: relative;
 	overflow: hidden;
 }
 .preview-container .preview-background .image {
+	position: relative;
 	width: 100%;
 	height: 100%;
 	background-repeat: no-repeat;
 	background-size: contain;
+	background-position: center;
 }
 
 #background-color-input {
@@ -1347,15 +1351,64 @@ input[type=number]::-webkit-outer-spin-button {
 }
 #model-texture-preview-toast {
 	position: absolute;
-	left: 0;
-	top: 0;
-	right: 0;
-	text-align: center;
-	padding: 5px;
-	background: rgba(0, 0, 0, 0.753);
+	top: 10px;
+	right: 10px;
+	background: rgba(0, 0, 0, 0.7);
+	border: 1px solid var(--border);
+	color: var(--text);
+	padding: 5px 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+}
+
+#model-texture-preview-toast:hover {
+	background: rgba(0, 0, 0, 0.8);
+	border-color: var(--accent);
+}
+
+.uv-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-position: center;
+}
+
+#uv-layer-buttons {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	display: flex;
+	gap: 5px;
+}
+
+.uv-layer-button {
+	background: rgba(0, 0, 0, 0.7);
+	border: 1px solid var(--border);
+	color: var(--text);
+	padding: 5px 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.uv-layer-button:hover {
+	background: rgba(0, 0, 0, 0.8);
+	border-color: var(--accent);
+}
+
+.uv-layer-button.active {
+	background: rgba(0, 0, 0, 0.7);
+	border-color: #00ff00;
+	color: #00ff00;
 }
 
 #tab-textures .preview-container {

@@ -377,6 +377,14 @@ document.addEventListener('click', function(e) {
 			onTextureRibbonResize: function(width) {
 				textureRibbon.onResize(width);
 			},
+
+			/**
+			 * Toggle UV layer visibility.
+			 * @param {string} layerName - Name of the UV layer to toggle
+			 */
+			toggleUVLayer: function(layerName) {
+				core.events.emit('toggle-uv-layer', layerName);
+			},
 			
 			/**
 			 * Switches to the textures tab and filters for the given file.

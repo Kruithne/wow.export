@@ -550,9 +550,21 @@
 								</context-menu>
 							</resize-layer>
 							<div id="model-texture-preview" v-if="modelTexturePreviewURL.length > 0" class="preview-background">
-								<div id="model-texture-preview-toast" @click="modelTexturePreviewURL = ''">Previewing {{ modelTexturePreviewName }}, click here to return to the model</div>
+								<div id="model-texture-preview-toast" @click="modelTexturePreviewURL = ''">Close Preview</div>
 								<div class="image" :style="{ 'max-width': modelTexturePreviewWidth + 'px', 'max-height': modelTexturePreviewHeight + 'px' }">
 									<div class="image" :style="{ 'background-image': 'url(' + modelTexturePreviewURL + ')' }"></div>
+									<div class="uv-overlay" v-if="modelTexturePreviewUVOverlay" :style="{ 'background-image': 'url(' + modelTexturePreviewUVOverlay + ')' }"></div>
+								</div>
+								<div id="uv-layer-buttons" v-if="modelViewerUVLayers.length > 0">
+									<button 
+										v-for="layer in modelViewerUVLayers" 
+										:key="layer.name"
+										:class="{ active: layer.active }"
+										@click="toggleUVLayer(layer.name)"
+										class="uv-layer-button"
+									>
+										{{ layer.name }}
+									</button>
 								</div>
 							</div>
 							<div class="preview-background" id="model-preview">

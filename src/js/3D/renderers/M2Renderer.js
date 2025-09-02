@@ -35,6 +35,9 @@ class M2Renderer {
 		this.shaderMap = new Map();
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 		this.geosetKey = 'modelViewerGeosets';
+		this.uvData = null; // Store UV data for layer preview
+		this.uv2Data = null; // Store secondary UV data for layer preview
+		this.indicesData = null; // Store triangle indices for UV layer preview
 	}
 
 	/**
@@ -98,6 +101,15 @@ class M2Renderer {
 		const dataUVs = new THREE.BufferAttribute(new Float32Array(m2.uv), 2);
 		const dataBoneIndices = new THREE.BufferAttribute(new Uint8Array(m2.boneIndices), 4);
 		const dataBoneWeights = new THREE.BufferAttribute(new Uint8Array(m2.boneWeights), 4);
+
+		this.uvData = new Float32Array(m2.uv);
+		this.uv2Data = m2.uv2 ? new Float32Array(m2.uv2) : null;
+		
+		const allIndices = new Array(skin.triangles.length);
+		for (let j = 0, m = allIndices.length; j < m; j++)
+			allIndices[j] = skin.indices[skin.triangles[j]];
+
+		this.indicesData = new Uint16Array(allIndices);
 
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
@@ -432,6 +444,27 @@ class M2Renderer {
 			// Drop the reference to the mesh group.
 			this.meshGroup = undefined;
 		}
+	}
+
+	/**
+	 * Get UV layer data for UV overlay generation.
+	 * @returns {object} Object containing UV layers and indices data
+	 */
+	getUVLayers() {
+		if (!this.uvData || !this.indicesData)
+			return { layers: [], indices: null };
+
+		const layers = [
+			{ name: 'UV1', data: this.uvData, active: false }
+		];
+
+		if (this.uv2Data)
+			layers.push({ name: 'UV2', data: this.uv2Data, active: false });
+
+		return {
+			layers,
+			indices: this.indicesData
+		};
 	}
 
 	/**

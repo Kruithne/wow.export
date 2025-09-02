@@ -26,6 +26,7 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('./texture-ribbon');
+const uvDrawer = require('./uv-drawer');
 // const AnimMapper = require('../3D/AnimMapper');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
@@ -68,6 +69,51 @@ const getModelDisplays = (fileDataID) => {
  */
 const clearTexturePreview = () => {
 	core.view.modelTexturePreviewURL = '';
+	core.view.modelTexturePreviewUVOverlay = '';
+	core.view.modelViewerUVLayers = [];
+};
+
+/**
+ * Initialize UV layers for the current model.
+ */
+const initializeUVLayers = () => {
+	if (!activeRenderer || !activeRenderer.getUVLayers) {
+		core.view.modelViewerUVLayers = [];
+		return;
+	}
+
+	const uvLayerData = activeRenderer.getUVLayers();
+	core.view.modelViewerUVLayers = [
+		{ name: 'UV Off', data: null, active: true },
+		...uvLayerData.layers
+	];
+};
+
+/**
+ * Toggle UV layer visibility.
+ * @param {string} layerName - Name of the UV layer to toggle
+ */
+const toggleUVLayer = (layerName) => {
+	const layer = core.view.modelViewerUVLayers.find(l => l.name === layerName);
+	if (!layer)
+		return;
+
+	core.view.modelViewerUVLayers.forEach(l => {
+		l.active = (l === layer);
+	});
+
+	if (layerName === 'UV Off' || !layer.data) {
+		core.view.modelTexturePreviewUVOverlay = '';
+	} else if (activeRenderer && activeRenderer.getUVLayers) {
+		const uvLayerData = activeRenderer.getUVLayers();
+		const overlayDataURL = uvDrawer.generateUVLayerDataURL(
+			layer.data,
+			core.view.modelTexturePreviewWidth,
+			core.view.modelTexturePreviewHeight,
+			uvLayerData.indices
+		);
+		core.view.modelTexturePreviewUVOverlay = overlayDataURL;
+	}
 };
 
 /**
@@ -92,6 +138,9 @@ const previewTextureByID = async (fileDataID, name) => {
 		view.modelTexturePreviewWidth = blp.width;
 		view.modelTexturePreviewHeight = blp.height;
 		view.modelTexturePreviewName = name;
+
+		// Initialize UV layers when texture preview is shown
+		initializeUVLayers();
 
 		core.hideToast();
 	} catch (e) {
@@ -664,6 +713,11 @@ core.registerLoadFunc(async () => {
 		}
 
 		await exportFiles(userSelection, false);
+	});
+
+	// Track when the user clicks to toggle UV layer.
+	core.events.on('toggle-uv-layer', (layerName) => {
+		toggleUVLayer(layerName);
 	});
 
 });
