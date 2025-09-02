@@ -264,6 +264,11 @@ def importLiquidChunks(liquidFile, baseObj, settings):
             print(f'  Instance {instance_idx}: type={liquid_type}, size={width}x{height}, offset=({x_offset},{y_offset}), heights={min_height:.2f}-{max_height:.2f}')
             print(f'    Height map: {len(height_map)} values, Bitmap: {len(bitmap)} bytes')
             
+            world_position = instance.get('worldPosition')
+            terrain_chunk_pos = instance.get('terrainChunkPosition')
+            print(f'    Using world coordinates: {world_position}')
+            print(f'    Terrain chunk position: {terrain_chunk_pos}')
+            
             # Skip instances with no geometry
             if width <= 0 or height <= 0:
                 continue
@@ -285,17 +290,22 @@ def importLiquidChunks(liquidFile, baseObj, settings):
                 for x in range(width + 1):
                     vert_idx = y * (width + 1) + x
                     
-                    # Calculate world position
-                    raw_x = (chunk_x * CHUNK_SIZE) + (x_offset + x) * (CHUNK_SIZE / 8.0)
-                    raw_y = (chunk_y * CHUNK_SIZE) + (y_offset + y) * (CHUNK_SIZE / 8.0)
+                    # Calculate vertex offset from the instance center
+                    vertex_offset_x = (x - width / 2) * (CHUNK_SIZE / 8.0)
+                    vertex_offset_y = (y - height / 2) * (CHUNK_SIZE / 8.0)
                     
-                    # Apply coordinate system transformation to match terrain
-                    world_x = -raw_x + TILE_SIZE
-                    world_y = raw_y - (TILE_SIZE * 2)
+                    # Apply same coordinate transformation as terrain
+                    # world_position[0] = worldX (from chunkY), world_position[2] = worldZ (from chunkX)
+                    # Terrain subtracts offsets, so we subtract vertex offsets from world position
+                    world_x = world_position[0] - vertex_offset_x  # worldX - x_offset
+                    world_y = -(world_position[2] - vertex_offset_y)  # Negate to fix Y-axis direction
                     
                     # Get height from height map or use default
                     if height_map and vert_idx < len(height_map):
                         world_z = height_map[vert_idx]
+                    elif not height_map:
+                        # Use the world position height when no height map is available
+                        world_z = world_position[1]
                     elif min_height == max_height:
                         world_z = min_height
                     else:

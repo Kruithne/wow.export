@@ -1183,8 +1183,40 @@ class ADTExporter {
 			const liquidFile = path.join(dir, 'liquid_' + this.tileID + '.json');
 			log.write('Exporting liquid data to %s', liquidFile);
 
+			const enhancedLiquidChunks = rootAdt.liquidChunks.map((chunk, chunkIndex) => {
+				if (!chunk || !chunk.instances)
+					return chunk;
+
+				const terrainChunk = rootAdt.chunks[chunkIndex];
+				const enhancedInstances = chunk.instances.map(instance => {
+					if (!instance) return instance;
+
+					const chunkX = terrainChunk.position[0];
+					const chunkY = terrainChunk.position[1]; 
+					const chunkZ = terrainChunk.position[2];
+
+					const centerX = instance.xOffset + instance.width / 2;
+					const centerY = instance.yOffset + instance.height / 2;
+					
+					const worldX = chunkY - (centerX * UNIT_SIZE);
+					const worldY = (instance.minHeightLevel + instance.maxHeightLevel) / 2 + chunkZ;
+					const worldZ = chunkX - (centerY * UNIT_SIZE);
+
+					return {
+						...instance,
+						worldPosition: [worldX, worldY, worldZ],
+						terrainChunkPosition: [chunkX, chunkY, chunkZ]
+					};
+				});
+
+				return {
+					...chunk,
+					instances: enhancedInstances
+				};
+			});
+
 			const liquidJSON = new JSONWriter(liquidFile);
-			liquidJSON.addProperty('liquidChunks', rootAdt.liquidChunks)
+			liquidJSON.addProperty('liquidChunks', enhancedLiquidChunks);
 			await liquidJSON.write();
 		}
 
