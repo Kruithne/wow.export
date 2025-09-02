@@ -1343,6 +1343,7 @@ input[type=number]::-webkit-outer-spin-button {
 	position: absolute;
 	width: 100%;
 	height: 100%;
+	z-index: 5;
 }
 #model-texture-preview-toast {
 	position: absolute;

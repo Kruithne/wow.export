@@ -32,6 +32,7 @@
 - Fixed issue causing cyclic glTF animations have incorrect frame ranges.
 - Fixed issue that prevented terrain exported with texture quality "None" from being importable due to referencing missing textures.
 - Fixed issue that caused MH2O bitmaps in advanced data to be incorrect.
+- Fixed issue that preventing texture previews on the model viewer from working.
 
 ### Internal
 - Updated three.js from r111 to r179 (some color changes might be observed in model previews).
