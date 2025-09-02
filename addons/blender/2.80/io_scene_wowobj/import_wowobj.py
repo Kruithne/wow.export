@@ -13,6 +13,13 @@ IS_B40 = bpy.app.version >= (4, 0, 0)
 
 SPECULAR_INPUT_NAME = 'Specular IOR Level' if IS_B40 else 'Specular'
 
+# WoW coordinate system constants
+MAX_SIZE = 51200 / 3
+MAP_SIZE = MAX_SIZE * 2
+ADT_SIZE = MAP_SIZE / 64
+CHUNK_SIZE = 33.33333
+TILE_SIZE = 533.33333
+
 def importWoWOBJAddon(objectFile, settings):
     importWoWOBJ(objectFile, None, settings)
 
@@ -224,8 +231,6 @@ def importLiquidChunks(liquidFile, baseObj, settings):
     liquidChunks = liquid_data['liquidChunks']
     print(f'Processing {len(liquidChunks)} liquid chunk slots')
     
-    chunk_size = 33.33333  # Each chunk is 33.33 units wide
-    tile_size = 533.33333  # TILE_SIZE constant from wow.export
     liquid_objects_created = 0
     
     for chunk_idx, chunk in enumerate(liquidChunks):
@@ -281,12 +286,12 @@ def importLiquidChunks(liquidFile, baseObj, settings):
                     vert_idx = y * (width + 1) + x
                     
                     # Calculate world position
-                    raw_x = (chunk_x * chunk_size) + (x_offset + x) * (chunk_size / 8.0)
-                    raw_y = (chunk_y * chunk_size) + (y_offset + y) * (chunk_size / 8.0)
+                    raw_x = (chunk_x * CHUNK_SIZE) + (x_offset + x) * (CHUNK_SIZE / 8.0)
+                    raw_y = (chunk_y * CHUNK_SIZE) + (y_offset + y) * (CHUNK_SIZE / 8.0)
                     
                     # Apply coordinate system transformation to match terrain
-                    world_x = -raw_x + tile_size  # Scale by -1 and move +TILE_SIZE
-                    world_y = raw_y - (tile_size * 2)  # Move -TILE_SIZE*2
+                    world_x = -raw_x + TILE_SIZE
+                    world_y = raw_y - (TILE_SIZE * 2)
                     
                     # Get height from height map or use default
                     if height_map and vert_idx < len(height_map):
@@ -770,10 +775,6 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     collection.link(obj)
     obj.select_set(True)
 
-    ## WoW coordinate system
-    max_size = 51200 / 3
-    map_size = max_size * 2
-    adt_size = map_size / 64
 
     ## Import liquids
     if settings.importLiquid:
@@ -855,7 +856,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         # Make WMO parent that holds WMO and doodads
                         parent = bpy.data.objects.new(os.path.basename(row['ModelFile']) + ' parent', None)
                         parent.parent = wmoparent
-                        parent.location = (max_size - float(row['PositionX']), (max_size - float(row['PositionZ'])) * -1, float(row['PositionY']))
+                        parent.location = (MAX_SIZE - float(row['PositionX']), (MAX_SIZE - float(row['PositionZ'])) * -1, float(row['PositionY']))
                         parent.rotation_euler = [0, 0, 0]
                         parent.rotation_euler.x += radians(float(row['RotationZ']))
                         parent.rotation_euler.y += radians(float(row['RotationX']))
@@ -895,8 +896,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
                         importedFile.parent = doodadparent
 
-                        importedFile.location.x = (max_size - float(row['PositionX']))
-                        importedFile.location.y = (max_size - float(row['PositionZ'])) * -1
+                        importedFile.location.x = (MAX_SIZE - float(row['PositionX']))
+                        importedFile.location.y = (MAX_SIZE - float(row['PositionZ'])) * -1
                         importedFile.location.z = float(row['PositionY'])
                         importedFile.rotation_euler.x += radians(float(row['RotationZ']))
                         importedFile.rotation_euler.y += radians(float(row['RotationX']))
