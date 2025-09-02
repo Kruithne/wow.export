@@ -157,31 +157,31 @@ def createLiquidMaterial(materialName, liquidType):
         principled.location = (0, 400)
         node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
     
-    # Water (type 2) - clear blue water
-    if liquidType == 2:
-        principled.inputs['Base Color'].default_value = (0.2, 0.5, 0.8, 1.0)
-        principled.inputs['Alpha'].default_value = 0.7
-        if IS_B40:
-            principled.inputs['Transmission Weight'].default_value = 1.0
-        else:
-            principled.inputs['Transmission'].default_value = 1.0
-    # Ocean water (type 14) - deeper blue
-    elif liquidType == 14:
+    # Ocean (type 1)
+    if liquidType == 1:
         principled.inputs['Base Color'].default_value = (0.1, 0.3, 0.6, 1.0)
         principled.inputs['Alpha'].default_value = 0.8
         if IS_B40:
             principled.inputs['Transmission Weight'].default_value = 1.0
         else:
             principled.inputs['Transmission'].default_value = 1.0
-    # Magma/Lava (type 3)
-    elif liquidType == 3:
+    # Magma (type 2 in newer builds, type 6 in older)
+    elif liquidType == 2 or liquidType == 6:
         principled.inputs['Base Color'].default_value = (1.0, 0.3, 0.1, 1.0)
         principled.inputs['Alpha'].default_value = 0.9
         principled.inputs['Emission Strength' if IS_B40 else 'Emission'].default_value = 0.5
-    # Slime (type 4)
-    elif liquidType == 4:
+    # Slime (type 3)
+    elif liquidType == 3:
         principled.inputs['Base Color'].default_value = (0.3, 0.8, 0.2, 1.0)
         principled.inputs['Alpha'].default_value = 0.8
+    # River (type 4) - clear blue water
+    elif liquidType == 4:
+        principled.inputs['Base Color'].default_value = (0.2, 0.5, 0.8, 1.0)
+        principled.inputs['Alpha'].default_value = 0.7
+        if IS_B40:
+            principled.inputs['Transmission Weight'].default_value = 1.0
+        else:
+            principled.inputs['Transmission'].default_value = 1.0
     # Default liquid
     else:
         principled.inputs['Base Color'].default_value = (0.3, 0.6, 0.9, 1.0)
