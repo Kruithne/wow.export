@@ -26,6 +26,7 @@ const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('./texture-ribbon');
+const textureExporter = require('./texture-exporter');
 const uvDrawer = require('./uv-drawer');
 // const AnimMapper = require('../3D/AnimMapper');
 
@@ -718,6 +719,11 @@ core.registerLoadFunc(async () => {
 	// Track when the user clicks to toggle UV layer.
 	core.events.on('toggle-uv-layer', (layerName) => {
 		toggleUVLayer(layerName);
+	});
+
+	// Track when the user clicks to export a texture from the ribbon.
+	core.events.on('click-export-ribbon-texture', async (fileDataID, displayName) => {
+		await textureExporter.exportSingleTexture(fileDataID);
 	});
 
 });

@@ -7,7 +7,6 @@ const core = require('../core');
 const log = require('../log');
 const util = require('util');
 const path = require('path');
-const generics = require('../generics');
 const listfile = require('../casc/listfile');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
@@ -15,6 +14,7 @@ const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
 const WDCReader = require('../db/WDCReader');
+const textureExporter = require('./texture-exporter');
 
 const textureAtlasEntries = new Map(); // atlasID => { width: number, height: number, regions: [] }
 const textureAtlasRegions = new Map(); // regionID => { name: string, width: number, height: number, top: number, left: number }
@@ -198,25 +198,6 @@ const updateTextureAtlasOverlay = () => {
 	core.view.textureAtlasOverlayRegions = renderRegions;
 };
 
-/**
- * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
- * @param {number|string} input 
- * @returns {object}
- */
-const getFileInfoPair = (input) => {
-	let fileName;
-	let fileDataID;
-
-	if (typeof input === 'number') {
-		fileDataID = input;
-		fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
-	} else {
-		fileName = listfile.stripFileEntry(input);
-		fileDataID = listfile.getByFilename(fileName);
-	}
-
-	return { fileName, fileDataID };
-};
 
 const exportTextureAtlasRegions = async (fileDataID) => {
 	const atlasID = textureAtlasMap.get(fileDataID);
@@ -267,106 +248,17 @@ const exportTextureAtlasRegions = async (fileDataID) => {
 	helper.finish();
 };
 
-const exportFiles = async (files, isLocal = false, exportID = -1) => {
-	const format = core.view.config.exportTextureFormat;
-
-	if (format === 'CLIPBOARD') {
-		const { fileName, fileDataID } = getFileInfoPair(files[0]);
-
-		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
-		const blp = new BLPFile(data);
-		const png = blp.toPNG(core.view.config.exportChannelMask);
-		
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(png.toBase64(), 'png', true);
-
-		log.write('Copied texture to clipboard (%s)', fileName);
-		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
-
-		return;
-	}
-
-	const helper = new ExportHelper(files.length, 'texture');
-	helper.start();
-
-	const exportPaths = core.openLastExportStream();
-
-	const overwriteFiles = isLocal || core.view.config.overwriteFiles;
-	const exportMeta = core.view.config.exportBLPMeta;
-
-	const manifest = { type: 'TEXTURES', exportID, succeeded: [], failed: [] };
-
-	for (let fileEntry of files) {
-		// Abort if the export has been cancelled.
-		if (helper.isCancelled())
-			return;
-			
-		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
-		
-		try {
-			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
-			if (format !== 'BLP')
-				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
-
-			if (overwriteFiles || !await generics.fileExists(exportPath)) {
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
-
-				if (format === 'BLP') {
-					// Export as raw file with no conversion.
-					await data.writeToFile(exportPath);
-					await exportPaths?.writeLine('BLP:' + exportPath);
-				} else {
-					// Export as PNG.
-					const blp = new BLPFile(data);
-					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
-					await exportPaths?.writeLine('PNG:' + exportPath);
-
-					if (exportMeta) {
-						const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
-						const json = new JSONWriter(jsonOut);
-						json.addProperty('encoding', blp.encoding);
-						json.addProperty('alphaDepth', blp.alphaDepth);
-						json.addProperty('alphaEncoding', blp.alphaEncoding);
-						json.addProperty('mipmaps', blp.containsMipmaps);
-						json.addProperty('width', blp.width);
-						json.addProperty('height', blp.height);
-						json.addProperty('mipmapCount', blp.mapCount);
-						json.addProperty('mipmapSizes', blp.mapSizes);
-						
-						await json.write(overwriteFiles);
-						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut })
-					}
-				}
-			} else {
-				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
-			}
-
-			helper.mark(fileName, true);
-			manifest.succeeded.push({ type: format, fileDataID, file: exportPath });
-		} catch (e) {
-			helper.mark(fileName, false, e.message, e.stack);
-			manifest.failed.push({ type: format, fileDataID });
-		}
-	}
-
-	exportPaths?.close();
-
-	helper.finish();
-
-	// Dispatch file manifest to RCP.
-	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
-};
 
 // Register a drop handler for BLP files.
 core.registerDropHandler({
 	ext: ['.blp'],
 	prompt: count => util.format('Export %d textures as %s', count, core.view.config.exportTextureFormat),
-	process: files => exportFiles(files, true)
+	process: files => textureExporter.exportFiles(files, true)
 });
 
 core.events.on('rcp-export-textures', (files, id) => {
 	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false, id);
+	textureExporter.exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {
@@ -393,10 +285,10 @@ core.registerLoadFunc(async () => {
 		const userSelection = core.view.selectionTextures;
 		if (userSelection.length > 0) {
 			// In most scenarios, we have a user selection to export.
-			await exportFiles(userSelection);
+			await textureExporter.exportFiles(userSelection);
 		} else if (selectedFileDataID > 0) {
 			// Less common, but we might have a direct preview that isn't selected.
-			await exportFiles([selectedFileDataID]); 
+			await textureExporter.exportFiles([selectedFileDataID]); 
 		} else {
 			// Nothing to be exported, show the user an error.
 			core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
@@ -427,4 +319,4 @@ core.registerLoadFunc(async () => {
 	});
 });
 
-module.exports = { previewTextureByID };
+module.exports = { previewTextureByID, exportTextureAtlasRegions };
