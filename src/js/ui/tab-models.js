@@ -310,11 +310,34 @@ const previewModel = async (fileName) => {
 
 /**
  * Update the camera to match render group bounding.
+ * @param {boolean} forceReposition - Force camera repositioning even if auto-adjust is off
  */
-const updateCameraBounding = () => {
-	// Get the bounding box for the model.
+const updateCameraBounding = (forceReposition = false) => {
+	// Force update of all world matrices first
+	renderGroup.traverse((child) => {
+		if (child instanceof THREE.SkinnedMesh && child.skeleton) {
+			child.skeleton.update();
+			child.updateMatrixWorld(true);
+		}
+	});
+	
+	// Calculate bounding box based on animated bone positions
 	const boundingBox = new THREE.Box3();
-	boundingBox.setFromObject(renderGroup);
+	const tempVector = new THREE.Vector3();
+	
+	renderGroup.traverse((child) => {
+		if (child.type === 'Bone') {
+			child.getWorldPosition(tempVector);
+			boundingBox.expandByPoint(tempVector);
+		}
+	});
+	
+	// Fallback if bounding from bones fails
+	if (boundingBox.isEmpty())
+		boundingBox.setFromObject(renderGroup);
+
+	if (boundingBox.isEmpty())
+		return;
 
 	// Calculate center point and size from bounding box.
 	const center = boundingBox.getCenter(new THREE.Vector3());
@@ -324,7 +347,7 @@ const updateCameraBounding = () => {
 	const fov = camera.fov * (Math.PI / 180);
 	let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
 
-	if (isFirstModel || core.view.modelViewerAutoAdjust) {
+	if (isFirstModel || core.view.modelViewerAutoAdjust || forceReposition) {
 		camera.position.set(center.x, center.y, cameraZ);
 		isFirstModel = false;
 	}
@@ -338,6 +361,7 @@ const updateCameraBounding = () => {
 	if (controls) {
 		controls.target = center;
 		controls.maxDistance = cameraToFarEdge * 2;
+		controls.update();
 	}
 };
 
@@ -690,6 +714,9 @@ core.registerLoadFunc(async () => {
 		if (selectedAnimationId !== null && selectedAnimationId !== undefined) {
 			if (selectedAnimationId === 'none') {
 				activeRenderer?.stopAnimation?.();
+
+				if (core.view.modelViewerAutoAdjust)
+					requestAnimationFrame(() => updateCameraBounding(true));
 				return;
 			}
 
@@ -697,6 +724,9 @@ core.registerLoadFunc(async () => {
 			if (animInfo && animInfo.m2Index !== undefined && animInfo.m2Index >= 0) {
 				log.write(`Playing animation ${selectedAnimationId} at M2 index ${animInfo.m2Index}`);
 				activeRenderer.playAnimation(animInfo.m2Index);
+
+				if (core.view.modelViewerAutoAdjust)
+					requestAnimationFrame(() => updateCameraBounding(true));
 			}
 		}
 	});

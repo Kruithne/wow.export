@@ -327,6 +327,17 @@ class M2Renderer {
 	}
 
 	/**
+	 * Stop current animation
+	 */
+	stopAnimation() {
+		if (!this.animationMixer)
+			return;
+
+		this.animationMixer.stopAllAction();
+		this.currentAnimation = null;
+	}
+
+	/**
 	 * Update animation mixer
 	 * @param {number} deltaTime - Delta time in seconds
 	 */
