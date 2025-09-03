@@ -150,6 +150,23 @@
 			}
 		},
 		{
+			"name": "linux-x64-debug",
+			"bundle": "nwjs-sdk-v%s-linux-x64.tar.gz",
+			"bundleType": "GZ",
+			"sourceMethod": "LINK",
+			"sourceTarget": "./src",
+			"manifestTarget": "./package.json",
+			"filter": {
+				"blacklist": [
+					"locales\/[^.]+.pak(.info|)$",
+					"notification_helper.exe"
+				],
+				"whitelist": [
+					"locales\/en-US.pak$"
+				]
+			}
+		},
+		{
 			"name": "osx-x64",
 			"bundle": "nwjs-v%s-osx-x64.zip",
 			"bundleType": "ZIP",
@@ -174,7 +191,7 @@
 				"infoStringsPath": "./wow.export.app/Contents/Resources/en.lproj/InfoPlist.strings",
 				"infoXMLPath": "./wow.export.app/Contents/Info.plist"
 			},
-			"include": { 
+			"include": {
 				"./resources/wet.icns": "./wow.export.app/Contents/Resources/app.icns",
 				"LEGAL": "./wow.export.app/License/LEGAL",
 				"addons/blender/2.80/io_scene_wowobj/__init__.py": "addon/io_scene_wowobj/__init__.py",
