@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-Vue.component('data-table', {
+module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
@@ -48,7 +48,7 @@ Vue.component('data-table', {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -218,4 +218,4 @@ Vue.component('data-table', {
 			</table>
 		</div>
 	`
-});
+};

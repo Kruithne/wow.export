@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('resize-layer', {
+module.exports = {
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html
@@ -18,9 +18,9 @@ Vue.component('resize-layer', {
 	 * Invoked before this component is destroyed.
 	 * @see https://vuejs.org/v2/guide/instance.html
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		this.observer.disconnect();
 	},
 
 	template: `<div><slot></slot></div>`
-});
+};

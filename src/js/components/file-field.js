@@ -3,8 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('file-field', {
-	props: ['value'],
+module.exports = {
+	props: ['modelValue'],
+	emits: ['update:modelValue'],
 
 	/**
 	 * Invoked when the component is mounted.
@@ -15,18 +16,17 @@ Vue.component('file-field', {
 		node.setAttribute('type', 'file');
 		node.setAttribute('nwdirectory', true);
 		node.addEventListener('change', () => {
-			this.$el.value = node.value;
-			this.$emit('input', node.value);
+			this.$emit('update:modelValue', node.value);
 		});
 
 		this.fileSelector = node;
 	},
 
 	/**
-	 * Invoked when this component is destroyed.
+	 * Invoked when this component is unmounted.
 	 * Used to remove internal references to file node.
 	 */
-	destroyed: function() {
+	unmounted: function() {
 		this.fileSelector.remove();
 	},
 
@@ -43,5 +43,5 @@ Vue.component('file-field', {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<input type="text" :value="value" @focus="openDialog" @input="$emit('input', $event.target.value)"/>`
-});
+	template: `<input type="text" :value="modelValue" @focus="openDialog" @input="$emit('update:modelValue', $event.target.value)"/>`
+};

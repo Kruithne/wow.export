@@ -92,26 +92,26 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
-const Vue = require('vue/dist/vue.js');
+const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
 
 const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
-require('./js/components/listbox');
-require('./js/components/listboxb');
-require('./js/components/itemlistbox');
-require('./js/components/checkboxlist');
-require('./js/components/menu-button');
-require('./js/components/file-field');
-require('./js/components/combobox');
-require('./js/components/slider');
-require('./js/components/model-viewer');
-require('./js/components/map-viewer');
-require('./js/components/data-table');
-require('./js/components/resize-layer');
-require('./js/components/context-menu');
+const Listbox = require('./js/components/listbox');
+const Listboxb = require('./js/components/listboxb');
+const Itemlistbox = require('./js/components/itemlistbox');
+const Checkboxlist = require('./js/components/checkboxlist');
+const MenuButton = require('./js/components/menu-button');
+const FileField = require('./js/components/file-field');
+const ComboBox = require('./js/components/combobox');
+const Slider = require('./js/components/slider');
+const ModelViewer = require('./js/components/model-viewer');
+const MapViewer = require('./js/components/map-viewer');
+const DataTable = require('./js/components/data-table');
+const ResizeLayer = require('./js/components/resize-layer');
+const ContextMenu = require('./js/components/context-menu');
 
 const TabTextures = require('./js/ui/tab-textures');
 const TabItems = require('./js/ui/tab-items');
@@ -154,13 +154,14 @@ document.addEventListener('click', function(e) {
 	// Append the application version to the title bar.
 	document.title += ' v' + nw.App.manifest.version;
 
-	// Interlink error handling for Vue.
-	Vue.config.errorHandler = err => crash('ERR_VUE', err.message);
-
 	// Initialize Vue.
-	core.view = new Vue({
-		el: '#container',
-		data: core.view,
+	const app = Vue.createApp({
+		data() {
+			return core.makeNewView();
+		},
+		created() {
+			core.view = this;
+		},
 		methods: {
 			/**
 			 * Invoked when the user chooses to manually install the Blender add-on.
@@ -276,7 +277,7 @@ document.addEventListener('click', function(e) {
 					if (this.screenStack[0] !== screenID)
 						this.screenStack.unshift(screenID);
 				} else {
-					this.$set(this.screenStack, 0, screenID);
+					this.screenStack[0] = screenID;
 				}
 			},
 
@@ -586,6 +587,24 @@ document.addEventListener('click', function(e) {
 			}
 		}
 	});
+
+	// Interlink error handling for Vue.
+	app.config.errorHandler = err => crash('ERR_VUE', err.message);
+
+	app.component('Listbox', Listbox);
+	app.component('Listboxb', Listboxb);
+	app.component('Itemlistbox', Itemlistbox);
+	app.component('Checkboxlist', Checkboxlist);
+	app.component('MenuButton', MenuButton);
+	app.component('FileField', FileField);
+	app.component('ComboBox', ComboBox);
+	app.component('Slider', Slider);
+	app.component('ModelViewer', ModelViewer);
+	app.component('MapViewer', MapViewer);
+	app.component('DataTable', DataTable);
+	app.component('ResizeLayer', ResizeLayer);
+	app.component('ContextMenu', ContextMenu);
+	app.mount('#container');
 
 	// Log some basic information for potential diagnostics.
 	const manifest = nw.App.manifest;
