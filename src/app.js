@@ -69,6 +69,11 @@ if (!BUILD_RELEASE) {
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
 
+const win = nw.Window.get();
+// Launch DevTools for debug builds.
+if (!BUILD_RELEASE)
+	win.showDevTools();
+
 // Imports
 const os = require('os');
 const path = require('path');
@@ -124,7 +129,6 @@ require('./js/ui/tab-characters');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
-const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 win.on('close', () => process.exit()); // Ensure we exit when window is closed.
 
@@ -132,10 +136,6 @@ win.on('close', () => process.exit()); // Ensure we exit when window is closed.
 // later but we disable here to prevent them working if init fails.
 window.ondragover = e => { e.preventDefault(); return false; };
 window.ondrop = e => { e.preventDefault(); return false; };
-
-// Launch DevTools for debug builds.
-if (!BUILD_RELEASE)
-	win.showDevTools();
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
