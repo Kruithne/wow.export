@@ -55,8 +55,9 @@ class Settings:
     createEmissiveMaterials = True
     createDoodadSetCollections = False
     importLiquid = True
+    importUVAnimations = True
 
-    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = True, createDoodadSetCollections = False, importLiquid = True):
+    def __init__(self, useAlpha = True, createVertexGroups = False, allowDuplicates = False, importWMO = True, importWMOSets = True, importM2 = True, importGOBJ = True, importTextures = True, useTerrainBlending = True, createEmissiveMaterials = True, createDoodadSetCollections = False, importLiquid = True, importUVAnimations = True):
         self.useAlpha = useAlpha
         self.createVertexGroups = createVertexGroups
         self.allowDuplicates = allowDuplicates
@@ -69,6 +70,7 @@ class Settings:
         self.createEmissiveMaterials = createEmissiveMaterials
         self.createDoodadSetCollections = createDoodadSetCollections
         self.importLiquid = importLiquid
+        self.importUVAnimations = importUVAnimations
 
 class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File with additional ADT metadata'''
@@ -93,6 +95,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
     createEmissiveMaterials: bpy.props.BoolProperty(name = 'Create emissive materials', description = 'When applicable based on the material\'s blending mode. Might be less compatible when exporting to use in other software', default = 1)
     createDoodadSetCollections: bpy.props.BoolProperty(name = 'Create Doodad Set Collections', description = 'If enabled, will create a collection of each doodad set (if available), and move the imported objects into them. Useful for single model imports with many sets.', default = 0)
     importLiquid: bpy.props.BoolProperty(name = 'Import Liquid', description = 'If exported, liquid chunks will be imported as plane geometry', default = 1)
+    importUVAnimations: bpy.props.BoolProperty(name = 'Import UV Animations', description = 'If available in M2 models, UV texture animations will be imported and set up automatically', default = 1)
 
     def execute(self, context):
         settings = Settings(
@@ -107,7 +110,8 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             useTerrainBlending = self.useTerrainBlending,
             createEmissiveMaterials = self.createEmissiveMaterials,
             createDoodadSetCollections = self.createDoodadSetCollections,
-            importLiquid = self.importLiquid
+            importLiquid = self.importLiquid,
+            importUVAnimations = self.importUVAnimations
         )
 
         from . import import_wowobj
@@ -131,6 +135,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, 'importM2')
         box.prop(self, 'importGOBJ')
         box.prop(self, 'importTextures')
+        box.prop(self, 'importUVAnimations')
         box.prop(self, 'useAlpha')
         box.prop(self, 'createVertexGroups')
         box.prop(self, 'allowDuplicates')

@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from math import radians
 from mathutils import Quaternion
+from .animation_processor import process_texture_transform
 
 IS_B40 = bpy.app.version >= (4, 0, 0)
 
@@ -38,6 +39,145 @@ def normalizeName(name):
         return name[:48] + '_' + hashlib.md5(name.encode()).hexdigest()[:10]
 
     return name
+
+
+def create_texture_panner_node_group():
+    """Create reusable TexturePanner node group for UV animation"""
+    group_name = "TexturePanner"
+    
+    if group_name in bpy.data.node_groups:
+        return bpy.data.node_groups[group_name]
+    
+    group = bpy.data.node_groups.new(group_name, 'ShaderNodeTree')
+    group.nodes.clear()
+    
+    if hasattr(group, 'interface'):
+        # Blender 4.0+ interface system
+        group.interface.new_socket('UV', in_out='INPUT', socket_type='NodeSocketVector')
+        group.interface.new_socket('Translate X Rate', in_out='INPUT', socket_type='NodeSocketFloat')
+        group.interface.new_socket('Translate Y Rate', in_out='INPUT', socket_type='NodeSocketFloat')
+        group.interface.new_socket('Rotate Rate', in_out='INPUT', socket_type='NodeSocketFloat')
+        group.interface.new_socket('Scale X Rate', in_out='INPUT', socket_type='NodeSocketFloat')
+        group.interface.new_socket('Scale Y Rate', in_out='INPUT', socket_type='NodeSocketFloat')
+        group.interface.new_socket('UV', in_out='OUTPUT', socket_type='NodeSocketVector')
+    else:
+        # Blender 3.x interface system
+        group.inputs.new('NodeSocketVector', 'UV')
+        group.inputs.new('NodeSocketFloat', 'Translate X Rate')
+        group.inputs.new('NodeSocketFloat', 'Translate Y Rate')
+        group.inputs.new('NodeSocketFloat', 'Rotate Rate')
+        group.inputs.new('NodeSocketFloat', 'Scale X Rate')
+        group.inputs.new('NodeSocketFloat', 'Scale Y Rate')
+        group.outputs.new('NodeSocketVector', 'UV')
+    
+    nodes = group.nodes
+    links = group.links
+    
+    group_input = nodes.new('NodeGroupInput')
+    group_input.location = (-800, 0)
+    
+    group_output = nodes.new('NodeGroupOutput')
+    group_output.location = (600, 0)
+    
+    driver_node = nodes.new('ShaderNodeValue')
+    driver_node.name = "TimeDriver"
+    driver_node.location = (-600, 300)
+    driver_node.label = "Frame"
+    
+    # 0.01 factor smooths the animation. probably a more accurate value for this.
+    smooth_mult = nodes.new('ShaderNodeMath')
+    smooth_mult.operation = 'MULTIPLY'
+    smooth_mult.location = (-450, 300)
+    smooth_mult.label = "Smooth Time"
+    smooth_mult.inputs[1].default_value = 0.01
+    
+    translate_x_mult = nodes.new('ShaderNodeMath')
+    translate_x_mult.operation = 'MULTIPLY'
+    translate_x_mult.location = (-300, 200)
+    translate_x_mult.label = "Translate X"
+    
+    translate_y_mult = nodes.new('ShaderNodeMath')
+    translate_y_mult.operation = 'MULTIPLY'
+    translate_y_mult.location = (-300, 100)
+    translate_y_mult.label = "Translate Y"
+    
+    combine_translate = nodes.new('ShaderNodeCombineXYZ')
+    combine_translate.location = (-100, 150)
+    combine_translate.label = "Translation"
+    
+    add_translate = nodes.new('ShaderNodeVectorMath')
+    add_translate.operation = 'ADD'
+    add_translate.location = (100, 0)
+    add_translate.label = "Apply Translation"
+    
+    try:
+        driver = driver_node.outputs[0].driver_add("default_value")
+        driver.driver.expression = "frame"
+        while len(driver.driver.variables) > 0:
+            driver.driver.variables.remove(driver.driver.variables[0])
+    except Exception as e:
+        print(f"Failed to create driver: {e}")
+        driver_node.outputs[0].default_value = 1.0
+    
+    # Frame to smooth multiplier
+    links.new(driver_node.outputs[0], smooth_mult.inputs[0])
+    
+    # Smooth time to rate multipliers
+    links.new(smooth_mult.outputs[0], translate_x_mult.inputs[0])
+    links.new(smooth_mult.outputs[0], translate_y_mult.inputs[0])
+    
+    # Group inputs to rate multipliers
+    links.new(group_input.outputs['Translate X Rate'], translate_x_mult.inputs[1])
+    links.new(group_input.outputs['Translate Y Rate'], translate_y_mult.inputs[1])
+    
+    # Rate calculations to combine node
+    links.new(translate_x_mult.outputs[0], combine_translate.inputs['X'])
+    links.new(translate_y_mult.outputs[0], combine_translate.inputs['Y'])
+    
+    # UV input to translation
+    links.new(group_input.outputs['UV'], add_translate.inputs[0])
+    links.new(combine_translate.outputs[0], add_translate.inputs[1])
+    
+    # Final result to group output
+    links.new(add_translate.outputs[0], group_output.inputs['UV'])
+    
+    return group
+
+
+def create_animated_texture_nodes(nodes, node_tree, animation_data, texture_path, x_pos, y_pos):
+    """Create texture nodes with UV animation"""
+    # Create TexturePanner node group instance
+    panner_group = create_texture_panner_node_group()
+    panner_node = nodes.new('ShaderNodeGroup')
+    panner_node.node_tree = panner_group
+    panner_node.location = (x_pos - 300, y_pos)
+    
+    # Set animation rates from processed data
+    panner_node.inputs['Translate X Rate'].default_value = animation_data['translate_rate'][0]
+    panner_node.inputs['Translate Y Rate'].default_value = animation_data['translate_rate'][1] 
+    panner_node.inputs['Rotate Rate'].default_value = animation_data['rotate_rate']
+    panner_node.inputs['Scale X Rate'].default_value = animation_data['scale_rate'][0]
+    panner_node.inputs['Scale Y Rate'].default_value = animation_data['scale_rate'][1]
+    
+    # Create UV input node
+    uv_node = nodes.new('ShaderNodeTexCoord')
+    uv_node.location = (x_pos - 500, y_pos)
+    
+    # Create texture image node
+    image_node = nodes.new('ShaderNodeTexImage')
+    image_node.location = (x_pos, y_pos)
+    image_node.image = loadImage(texture_path)
+    image_node.image.alpha_mode = 'CHANNEL_PACKED'
+    
+    # Connect UV flow: UVCoord -> TexturePanner -> TextureImage
+    node_tree.links.new(uv_node.outputs['UV'], panner_node.inputs['UV'])
+    node_tree.links.new(panner_node.outputs['UV'], image_node.inputs['Vector'])
+    
+    return {
+        'image_node': image_node,
+        'panner_node': panner_node,
+        'uv_node': uv_node
+    }
 
 
 def isTerrainFile(fileName):
@@ -494,7 +634,7 @@ def has_advanced_m2_data(json_info):
             'skin' in json_info and 
             'textureUnits' in json_info['skin'])
 
-def createAdvancedM2Material(material_name, texture_unit, materials, textures, texture_combos, settings, base_dir):
+def createAdvancedM2Material(material_name, texture_unit, materials, textures, texture_combos, settings, base_dir, texture_transforms=None, texture_transforms_lookup=None):
     shader_id = texture_unit['shaderID']
     texture_count = texture_unit['textureCount']
     material_index = texture_unit['materialIndex']
@@ -552,6 +692,21 @@ def createAdvancedM2Material(material_name, texture_unit, materials, textures, t
         combo_end = min(texture_combo_index + texture_count, len(texture_combos))
         texture_indices = texture_combos[texture_combo_index:combo_end]
     
+    # Check for texture animation (only if UV animations are enabled)
+    transform_combo_index = texture_unit.get('textureTransformComboIndex', -1)
+    animation_data = None
+    
+    if settings.importUVAnimations:
+        if (transform_combo_index not in {-1, 65535} and 
+            texture_transforms_lookup and texture_transforms and
+            transform_combo_index < len(texture_transforms_lookup)):
+            
+            transform_index = texture_transforms_lookup[transform_combo_index]
+            
+            if transform_index < len(texture_transforms):
+                transform_data = texture_transforms[transform_index]
+                animation_data = process_texture_transform(transform_data)
+    
     for i, texture_index in enumerate(texture_indices):
         if texture_index < len(textures):
             texture_data = textures[texture_index]
@@ -569,11 +724,17 @@ def createAdvancedM2Material(material_name, texture_unit, materials, textures, t
                 texture_path = os.path.normpath(os.path.join(base_dir, normalized_filename))
             
             try:
-                image_node = nodes.new('ShaderNodeTexImage')
-                image_node.location = (tex_x_offset + i * 250, 200 - i * 200)
-                image_node.image = loadImage(texture_path)
-                image_node.image.alpha_mode = 'CHANNEL_PACKED'
-                texture_nodes.append(image_node)
+                if animation_data and i == 0:  # Only animate the first texture
+                    # Create animated texture setup
+                    animated_nodes = create_animated_texture_nodes(nodes, node_tree, animation_data, texture_path, tex_x_offset + i * 250, 200 - i * 200)
+                    texture_nodes.append(animated_nodes['image_node'])
+                else:
+                    # Create static texture node
+                    image_node = nodes.new('ShaderNodeTexImage')
+                    image_node.location = (tex_x_offset + i * 250, 200 - i * 200)
+                    image_node.image = loadImage(texture_path)
+                    image_node.image.alpha_mode = 'CHANNEL_PACKED'
+                    texture_nodes.append(image_node)
             except Exception as e:
                 print(f"Failed to load texture {texture_filename}: {e}")
                 continue
@@ -895,6 +1056,9 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
                 # Create mapping from mesh name to skin section index for proper lookup
                 json_info['meshToSkinSection'] = {}
+                # Extract texture transform data for animation
+                json_info['textureTransforms'] = json_info.get('textureTransforms', [])
+                json_info['textureTransformsLookup'] = json_info.get('textureTransformsLookup', [])
             elif json_info.get('fileType') == 'wmo':
                 json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
                 json_info['mtlIndexes'] = {
@@ -1053,7 +1217,9 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                             json_materials = json_info.get('materials', [])
                             json_textures = json_info.get('textures', [])
                             json_texture_combos = json_info.get('textureCombos', [])
-                            material = createAdvancedM2Material(materialName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir)
+                            json_texture_transforms = json_info.get('textureTransforms', [])
+                            json_texture_transforms_lookup = json_info.get('textureTransformsLookup', [])
+                            material = createAdvancedM2Material(materialName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup)
                         else:
                             material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
                     else:
@@ -1077,7 +1243,9 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                                 json_materials = json_info.get('materials', [])
                                 json_textures = json_info.get('textures', [])
                                 json_texture_combos = json_info.get('textureCombos', [])
-                                materialB[bm] = (materialBName, createAdvancedM2Material(materialBName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir))
+                                json_texture_transforms = json_info.get('textureTransforms', [])
+                                json_texture_transforms_lookup = json_info.get('textureTransformsLookup', [])
+                                materialB[bm] = (materialBName, createAdvancedM2Material(materialBName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup))
                             else:
                                 materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
                         else:
