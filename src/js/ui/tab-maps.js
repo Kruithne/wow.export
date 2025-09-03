@@ -357,6 +357,9 @@ const exportSelectedMapAsHeightmaps = async () => {
 	if (export_tiles.length === 0)
 		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
+	if (export_quality <= 0)
+		return core.setToast('error', 'Cannot export heightmaps with "None" texture quality selected.', null, -1);
+
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir, 'heightmaps'));
 	const export_paths = core.openLastExportStream();
 
