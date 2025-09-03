@@ -40,6 +40,27 @@ def normalizeName(name):
     return name
 
 
+def isTerrainFile(fileName):
+    return fileName.startswith('adt_')
+
+
+def detectTextureMode(materials):
+    singleTexturePattern = True
+    
+    for materialName in materials.keys():
+        if not materialName.startswith('tex_'):
+            continue
+            
+        parts = materialName.split('_')
+        if len(parts) == 3:
+            continue
+        elif len(parts) == 4:
+            singleTexturePattern = False
+            break
+        
+    return 'EXTEND' if singleTexturePattern else 'CLIP'
+
+
 def loadImage(textureLocation):
     imageName, imageExt = os.path.splitext(os.path.basename(textureLocation))
     imageName = normalizeName(imageName)
@@ -50,7 +71,7 @@ def loadImage(textureLocation):
 
     return bpy.data.images[imageName]
 
-def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive):
+def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive, extension_mode='REPEAT'):
     material = bpy.data.materials.new(name=materialName)
     material.use_nodes = True
 
@@ -96,6 +117,7 @@ def createStandardMaterial(materialName, textureLocation, blendMode, createEmiss
 
     image.image = loadImage(textureLocation)
     image.image.alpha_mode = 'CHANNEL_PACKED'
+    image.extension = extension_mode
 
     if blendMode == 4 and createEmissive:
         nodes.remove(principled)
@@ -382,7 +404,7 @@ def importLiquidChunks(liquidFile, baseObj, settings):
         print(f'Liquid import complete: Created {liquid_objects_created} liquid objects')
 
 
-def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
+def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extension_mode='REPEAT'):
     material = bpy.data.materials.new(name=materialName)
     try:
         material.use_nodes = True
@@ -445,6 +467,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
         base_layer.location = (-1000, 0)
         base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
         base_layer.image.alpha_mode = 'NONE'
+        base_layer.extension = extension_mode
         base_layer.hide = True
         base_layer.parent = base_layer_frame
 
@@ -517,6 +540,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir):
             layer_texture.location = (-1000, last_tex_node_pos + 420)
             layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
             layer_texture.image.alpha_mode = 'NONE'
+            layer_texture.extension = extension_mode
             layer_texture.hide = True
             layer_texture.parent = layer_frame
             last_tex_node_pos += 420
@@ -683,6 +707,12 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     # Create a new material instance for each material entry.
     if settings.importTextures:
         usedMaterials = {mesh.usemtl for mesh in meshes}
+        
+        # Detect terrain file and texture extension mode
+        terrainFile = isTerrainFile(fileName)
+        textureExtensionMode = 'REPEAT'
+        if terrainFile:
+            textureExtensionMode = detectTextureMode(materials)
 
         for materialName, textureLocation in materials.items():
             material = bpy.data.materials.get(materialName)
@@ -701,16 +731,16 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         pass
 
                     if 'layers' in material_json:
-                        material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir)
+                        material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir, textureExtensionMode)
                 
                 if material is None and materialName in usedMaterials:
-                    material = createStandardMaterial(materialName, textureLocation, -1, False)
+                    material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
 
             if settings.useAlpha:
                 for bm, (materialBName, materialBMat) in materialB.items():
                     # create materials with different blending modes
                     if materialBName in usedMaterials and materialBMat is None:
-                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials))
+                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
 
             if materialName in usedMaterials:
                 obj.data.materials.append(material)

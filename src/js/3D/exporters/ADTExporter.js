@@ -200,6 +200,54 @@ class ADTExporter {
 	}
 
 	/**
+	 * Calculate UV bounds for normalization.
+	 * @param {Object} rootAdt The root ADT data
+	 * @param {number} firstChunkX First chunk X coordinate
+	 * @param {number} firstChunkY First chunk Y coordinate
+	 * @returns {Object} UV bounds {minU, maxU, minV, maxV}
+	 */
+	calculateUVBounds(rootAdt, firstChunkX, firstChunkY) {
+		let minU = Infinity, maxU = -Infinity;
+		let minV = Infinity, maxV = -Infinity;
+
+		for (let x = 0; x < 16; x++) {
+			for (let y = 0; y < 16; y++) {
+				const chunk = rootAdt.chunks[x * 16 + y];
+				if (!chunk || !chunk.vertices) continue;
+
+				const chunkX = chunk.position[0];
+				const chunkY = chunk.position[1];
+				const chunkZ = chunk.position[2];
+
+				for (let row = 0, idx = 0; row < 17; row++) {
+					const isShort = !!(row % 2);
+					const colCount = isShort ? 8 : 9;
+
+					for (let col = 0; col < colCount; col++) {
+						let vx = chunkY - (col * UNIT_SIZE);
+						let vz = chunkX - (row * UNIT_SIZE_HALF);
+
+						if (isShort)
+							vx -= UNIT_SIZE_HALF;
+
+						const u = -(vx - firstChunkX) / TILE_SIZE;
+						const v = (vz - firstChunkY) / TILE_SIZE;
+
+						minU = Math.min(minU, u);
+						maxU = Math.max(maxU, u);
+						minV = Math.min(minV, v);
+						maxV = Math.max(maxV, v);
+
+						idx++;
+					}
+				}
+			}
+		}
+
+		return { minU, maxU, minV, maxV };
+	}
+
+	/**
 	 * Export the ADT tile.
 	 * @param {string} dir Directory to export the tile into.
 	 * @param {number} textureRes
@@ -333,6 +381,11 @@ class ADTExporter {
 			const isSplittingTextures = isLargeBake && core.view.config.splitLargeTerrainBakes;
 			const includeHoles = core.view.config.mapsIncludeHoles;
 		
+			// Calculate UV bounds for single texture mode normalization
+			let uvBounds = null;
+			if (quality !== 0 && !isSplittingTextures && !isSplittingAlphaMaps)
+				uvBounds = this.calculateUVBounds(rootAdt, firstChunkX, firstChunkY);
+		
 			let ofs = 0;
 			let chunkID = 0;
 			for (let x = 0, midX = 0; x < 16; x++) {
@@ -387,8 +440,11 @@ class ADTExporter {
 							const uvIdx = isShort ? col + 0.5 : col;
 							const uvIndex = midX * 2;
 
-							uvsBake[uvIndex + 0] = -(vx - firstChunkX) / TILE_SIZE;
-							uvsBake[uvIndex + 1] = (vz - firstChunkY) / TILE_SIZE;
+							const uRaw = -(vx - firstChunkX) / TILE_SIZE;
+							const vRaw = (vz - firstChunkY) / TILE_SIZE;
+							
+							uvsBake[uvIndex + 0] = uRaw;
+							uvsBake[uvIndex + 1] = vRaw;
 
 							if (quality === 0) {
 								uvs[uvIndex + 0] = uvIdx / 8;
@@ -397,8 +453,15 @@ class ADTExporter {
 								uvs[uvIndex + 0] = uvIdx / 8;
 								uvs[uvIndex + 1] = 1 - (row / 16);
 							} else {
-								uvs[uvIndex + 0] = uvsBake[uvIndex + 0];
-								uvs[uvIndex + 1] = uvsBake[uvIndex + 1];
+								// Single texture mode - apply normalization
+								if (uvBounds) {
+									uvs[uvIndex + 0] = (uRaw - uvBounds.minU) / (uvBounds.maxU - uvBounds.minU);
+									uvs[uvIndex + 1] = (vRaw - uvBounds.minV) / (uvBounds.maxV - uvBounds.minV);
+								} else {
+									// Fallback to raw values if bounds calculation failed
+									uvs[uvIndex + 0] = uRaw;
+									uvs[uvIndex + 1] = vRaw;
+								}
 							}
 
 							idx++;
