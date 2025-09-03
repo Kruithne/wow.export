@@ -9,6 +9,7 @@
 - Exported PNG images now properly utilize Sub, Up, Average and Paeth filters, resulting in better compression.
 - Added UV layer inspection on the model-viewer. Preview a texture from the ribbon and choose a UV layer to overlay.
 - Model textures can now be exported directly from the texture ribbon when previewing a model.
+- Importing M2 models into Blender using the wow.export add-on now correctly handles transparency and other basic shader settings (requires exported metadata).
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).

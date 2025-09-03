@@ -143,20 +143,24 @@ def createStandardMaterial(materialName, textureLocation, blendMode, createEmiss
     return material
 
 
-MIX_NODE_COLOR_SOCKETS = {'in': {}, 'out': {}}
 
-def calculate_color_sockets(mix_node):
+def get_mix_node_sockets(mix_node):
+    """Get mix node socket indices for cross-version compatibility"""
+    sockets = {'in': {}, 'out': {}}
     input_index = 0
-    for idx, i in enumerate(mix_node.inputs):
-        if 'Fac' in i.name and i.type == 'VALUE':
-            MIX_NODE_COLOR_SOCKETS['in']['Factor'] = idx
-        if i.type == 'RGBA':
-            MIX_NODE_COLOR_SOCKETS['in'][('A', 'B')[input_index]] = idx
+    
+    for idx, socket in enumerate(mix_node.inputs):
+        if 'Fac' in socket.name and socket.type == 'VALUE':
+            sockets['in']['Factor'] = idx
+        elif socket.type == 'RGBA':
+            sockets['in'][('A', 'B')[input_index]] = idx
             input_index += 1
 
-    for idx, i in enumerate(mix_node.outputs):
-        if i.type == 'RGBA':
-            MIX_NODE_COLOR_SOCKETS['out']['Result'] = idx
+    for idx, socket in enumerate(mix_node.outputs):
+        if socket.type == 'RGBA':
+            sockets['out']['Result'] = idx
+    
+    return sockets
 
 def createLiquidMaterial(materialName, liquidType):
     material = bpy.data.materials.new(name=materialName)
@@ -404,6 +408,302 @@ def importLiquidChunks(liquidFile, baseObj, settings):
         print(f'Liquid import complete: Created {liquid_objects_created} liquid objects')
 
 
+
+def get_m2_shader_effects(shader_id, texture_count=2):
+    """Get pixel shader name using WoW's M2GetPixelShaderID logic"""
+    if shader_id & 0x8000:
+        shader_id &= (~0x8000)
+        ind = shader_id.bit_length()
+        return "PS_Combiners_Opaque"
+    else:
+        if texture_count == 1:
+            if shader_id & 0x70:
+                return "PS_Combiners_Mod"
+            else:
+                return "PS_Combiners_Opaque"
+        else:
+            lower = shader_id & 7
+            if shader_id & 0x70:
+                if lower == 0:
+                    return "PS_Combiners_Mod_Opaque"
+                elif lower == 3:
+                    return "PS_Combiners_Mod_Add"
+                elif lower == 4:
+                    return "PS_Combiners_Mod_Mod2x"
+                elif lower == 6:
+                    return "PS_Combiners_Mod_Mod2xNA"
+                elif lower == 7:
+                    return "PS_Combiners_Mod_AddNA"
+                else:
+                    return "PS_Combiners_Mod_Mod"
+            else:
+                if lower == 0:
+                    return "PS_Combiners_Opaque_Opaque"
+                elif lower == 3:
+                    return "PS_Combiners_Opaque_AddAlpha"
+                elif lower == 4:
+                    return "PS_Combiners_Opaque_Mod2x"
+                elif lower == 6:
+                    return "PS_Combiners_Opaque_Mod2xNA"
+                elif lower == 7:
+                    return "PS_Combiners_Opaque_AddAlpha"
+                else:
+                    return "PS_Combiners_Opaque_Mod"
+
+def get_m2_vertex_shader(shader_id, texture_count=2):
+    """Get vertex shader name using WoW's vertex shader logic"""
+    if shader_id & 0x8000:
+        shader_id &= (~0x8000)
+        return "VS_Diffuse_T1_T1"
+    else:
+        if texture_count == 1:
+            if shader_id & 0x80:
+                return "VS_Diffuse_Env"
+            else:
+                if shader_id & 0x4000:
+                    return "VS_Diffuse_T2"
+                else:
+                    return "VS_Diffuse_T1"
+        else:
+            if shader_id & 0x80:
+                if shader_id & 0x8:
+                    return "VS_Diffuse_Env_Env"
+                else:
+                    return "VS_Diffuse_Env_T1"
+            else:
+                if shader_id & 0x8:
+                    return "VS_Diffuse_T1_Env"
+                else:
+                    if shader_id & 0x4000:
+                        return "VS_Diffuse_T1_T2"
+                    else:
+                        return "VS_Diffuse_T1_T1"
+
+def get_m2_render_flags(flags):
+    render_flags = {
+        'unlit': bool(flags & 0x1),
+        'unfogged': bool(flags & 0x2),
+        'two_sided': bool(flags & 0x4),
+        'depth_test': not bool(flags & 0x10),
+        'depth_write': not bool(flags & 0x20)
+    }
+    return render_flags
+
+def has_advanced_m2_data(json_info):
+    return (json_info.get('fileType') == 'm2' and 
+            'skin' in json_info and 
+            'textureUnits' in json_info['skin'])
+
+def createAdvancedM2Material(material_name, texture_unit, materials, textures, texture_combos, settings, base_dir):
+    shader_id = texture_unit['shaderID']
+    texture_count = texture_unit['textureCount']
+    material_index = texture_unit['materialIndex']
+    texture_combo_index = texture_unit.get('textureComboIndex', 0)
+    
+    material = bpy.data.materials.new(name=material_name)
+    material.use_nodes = True
+    
+    material_data = materials[material_index] if material_index < len(materials) else {}
+    blending_mode = material_data.get('blendingMode', 0)
+    material_flags = material_data.get('flags', 0)
+    
+    render_flags = get_m2_render_flags(material_flags)
+    pixel_shader = get_m2_shader_effects(shader_id, texture_count)
+    vertex_shader = get_m2_vertex_shader(shader_id, texture_count)
+    
+    if blending_mode in {2, 4}:
+        material.blend_method = 'BLEND'
+    elif blending_mode in {1, 5}:
+        material.blend_method = 'CLIP'
+    else:
+        material.blend_method = 'OPAQUE'
+    
+    node_tree = material.node_tree
+    nodes = node_tree.nodes
+    
+    principled = None
+    out_node = None
+    
+    for node in nodes:
+        if not principled and node.type == 'BSDF_PRINCIPLED':
+            principled = node
+        if not out_node and node.type == 'OUTPUT_MATERIAL':
+            out_node = node
+        if principled and out_node:
+            break
+    
+    if not out_node:
+        out_node = nodes.new('ShaderNodeOutputMaterial')
+        out_node.location = (300, 400)
+    
+    if not principled:
+        principled = nodes.new('ShaderNodeBsdfPrincipled')
+        principled.location = (0, 400)
+        node_tree.links.new(principled.outputs['BSDF'], out_node.inputs['Surface'])
+    
+    principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+    
+    texture_nodes = []
+    tex_x_offset = -600
+    
+    # Resolve texture indices using texture combos system
+    texture_indices = []
+    if texture_combo_index < len(texture_combos) and texture_count > 0:
+        combo_end = min(texture_combo_index + texture_count, len(texture_combos))
+        texture_indices = texture_combos[texture_combo_index:combo_end]
+    
+    for i, texture_index in enumerate(texture_indices):
+        if texture_index < len(textures):
+            texture_data = textures[texture_index]
+            texture_filename = texture_data.get('fileNameExternal', '')
+            
+            if not texture_filename:
+                continue
+            
+            # Handle path resolution for M2 textures
+            if os.path.isabs(texture_filename):
+                texture_path = texture_filename
+            else:
+                # Convert backslashes to forward slashes and resolve relative paths
+                normalized_filename = texture_filename.replace('\\', '/')
+                texture_path = os.path.normpath(os.path.join(base_dir, normalized_filename))
+            
+            try:
+                image_node = nodes.new('ShaderNodeTexImage')
+                image_node.location = (tex_x_offset + i * 250, 200 - i * 200)
+                image_node.image = loadImage(texture_path)
+                image_node.image.alpha_mode = 'CHANNEL_PACKED'
+                texture_nodes.append(image_node)
+            except Exception as e:
+                print(f"Failed to load texture {texture_filename}: {e}")
+                continue
+    
+    if not texture_nodes:
+        return material
+    
+    main_texture = texture_nodes[0]
+    
+    if blending_mode == 4 and settings.createEmissiveMaterials:
+        nodes.remove(principled)
+        emission = nodes.new('ShaderNodeEmission')
+        emission.location = (0, 400)
+        node_tree.links.new(main_texture.outputs['Color'], emission.inputs['Color'])
+        
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+        transparent.location = (0, 200)
+        
+        add_shader = nodes.new('ShaderNodeAddShader')
+        add_shader.location = (200, 300)
+        node_tree.links.new(transparent.outputs['BSDF'], add_shader.inputs[0])
+        node_tree.links.new(emission.outputs['Emission'], add_shader.inputs[1])
+        node_tree.links.new(add_shader.outputs['Shader'], out_node.inputs['Surface'])
+        
+        if len(texture_nodes) > 1:
+            node_tree.links.new(texture_nodes[1].outputs['Alpha'], emission.inputs['Strength'])
+    elif blending_mode == 3:
+        nodes.remove(principled)
+        emission = nodes.new('ShaderNodeEmission')
+        emission.location = (0, 400)
+        node_tree.links.new(main_texture.outputs['Color'], emission.inputs['Color'])
+        node_tree.links.new(emission.outputs['Emission'], out_node.inputs['Surface'])
+    elif blending_mode in {5, 6}:
+        mix_shader = nodes.new('ShaderNodeMixShader')
+        mix_shader.location = (100, 400)
+        
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+        transparent.location = (-100, 200)
+        
+        node_tree.links.new(transparent.outputs['BSDF'], mix_shader.inputs[1])
+        node_tree.links.new(principled.outputs['BSDF'], mix_shader.inputs[2])
+        node_tree.links.new(mix_shader.outputs['Shader'], out_node.inputs['Surface'])
+        
+        if texture_nodes:
+            alpha_texture = texture_nodes[1] if len(texture_nodes) > 1 else main_texture
+            node_tree.links.new(alpha_texture.outputs['Alpha'], mix_shader.inputs['Fac'])
+    elif blending_mode == 7:
+        multiply_mix = None
+        try:
+            multiply_mix = nodes.new('ShaderNodeMix')
+            multiply_mix.data_type = 'RGBA'
+            multiply_mix.blend_type = 'MULTIPLY'
+        except:
+            multiply_mix = nodes.new('ShaderNodeMixRGB')
+            multiply_mix.blend_type = 'MULTIPLY'
+        
+        multiply_mix.location = (-200, 400)
+        
+        sockets = get_mix_node_sockets(multiply_mix)
+        
+        multiply_mix.inputs[sockets['in']['Factor']].default_value = 1.0
+        node_tree.links.new(main_texture.outputs['Color'], multiply_mix.inputs[sockets['in']['A']])
+        
+        if len(texture_nodes) > 1:
+            node_tree.links.new(texture_nodes[1].outputs['Color'], multiply_mix.inputs[sockets['in']['B']])
+        else:
+            multiply_mix.inputs[sockets['in']['B']].default_value = [1.0, 1.0, 1.0, 1.0]
+        
+        node_tree.links.new(multiply_mix.outputs[sockets['out']['Result']], principled.inputs['Base Color'])
+    elif blending_mode == 8:
+        multiply_mix = None
+        try:
+            multiply_mix = nodes.new('ShaderNodeMix')
+            multiply_mix.data_type = 'RGBA'
+            multiply_mix.blend_type = 'MULTIPLY'
+        except:
+            multiply_mix = nodes.new('ShaderNodeMixRGB')
+            multiply_mix.blend_type = 'MULTIPLY'
+        
+        multiply_mix.location = (-200, 400)
+        
+        sockets = get_mix_node_sockets(multiply_mix)
+        
+        multiply_mix.inputs[sockets['in']['Factor']].default_value = 1.0
+        node_tree.links.new(main_texture.outputs['Color'], multiply_mix.inputs[sockets['in']['A']])
+        
+        multiply_mix.inputs[sockets['in']['B']].default_value = [2.0, 2.0, 2.0, 1.0]
+        
+        if len(texture_nodes) > 1:
+            math_multiply = nodes.new('ShaderNodeMath')
+            math_multiply.operation = 'MULTIPLY'
+            math_multiply.location = (-400, 200)
+            math_multiply.inputs[1].default_value = 2.0
+            
+            node_tree.links.new(texture_nodes[1].outputs['Color'], math_multiply.inputs[0])
+            node_tree.links.new(math_multiply.outputs['Value'], multiply_mix.inputs[sockets['in']['B']])
+        
+        node_tree.links.new(multiply_mix.outputs[sockets['out']['Result']], principled.inputs['Base Color'])
+    else:
+        if len(texture_nodes) > 1 and pixel_shader in {'TWO_LAYER_DIFFUSE', 'TWO_LAYER_DIFFUSE_ALPHA'}:
+            mix_node = None
+            try:
+                mix_node = nodes.new('ShaderNodeMix')
+                mix_node.data_type = 'RGBA'
+            except:
+                mix_node = nodes.new('ShaderNodeMixRGB')
+            
+            mix_node.location = (-200, 400)
+            
+            sockets = get_mix_node_sockets(mix_node)
+            
+            node_tree.links.new(main_texture.outputs['Color'], mix_node.inputs[sockets['in']['A']])
+            node_tree.links.new(texture_nodes[1].outputs['Color'], mix_node.inputs[sockets['in']['B']])
+            
+            if len(texture_nodes) > 2:
+                node_tree.links.new(texture_nodes[2].outputs['Alpha'], mix_node.inputs[sockets['in']['Factor']])
+            else:
+                mix_node.inputs[sockets['in']['Factor']].default_value = 0.5
+            
+            node_tree.links.new(mix_node.outputs[sockets['out']['Result']], principled.inputs['Base Color'])
+        else:
+            node_tree.links.new(main_texture.outputs['Color'], principled.inputs['Base Color'])
+    
+    if blending_mode not in {3, 4} and blending_mode != 0 and texture_nodes:
+        alpha_texture = texture_nodes[1] if len(texture_nodes) > 1 else main_texture
+        if blending_mode not in {5, 6}:
+            node_tree.links.new(alpha_texture.outputs['Alpha'], principled.inputs['Alpha'])
+    
+    return material
+
 def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extension_mode='REPEAT'):
     material = bpy.data.materials.new(name=materialName)
     try:
@@ -508,21 +808,20 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
                 mix_node.location = (-300, last_mix_node_pos + 200)
                 last_mix_node_pos += 200
 
-            if not MIX_NODE_COLOR_SOCKETS['in']:
-                calculate_color_sockets(mix_node)
+            sockets = get_mix_node_sockets(mix_node)
 
             node_tree.links.new(
                 alpha_map_channels.outputs[idx],
-                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['Factor']])
+                mix_node.inputs[sockets['in']['Factor']])
 
             if last_mix_node is None:
                 node_tree.links.new(
                     base_layer.outputs['Color'],
-                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+                    mix_node.inputs[sockets['in']['A']])
             else:
                 node_tree.links.new(
-                    last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
-                    mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['A']])
+                    last_mix_node.outputs[sockets['out']['Result']],
+                    mix_node.inputs[sockets['in']['A']])
 
             layer_frame = nodes.new(type='NodeFrame')
             layer_frame.label = 'Layer #' + str(idx + 1)
@@ -545,28 +844,20 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
             layer_texture.parent = layer_frame
             last_tex_node_pos += 420
 
-            # if('heightFile' in layer):
-            #     layer_height_map = nodes.new('ShaderNodeTexImage')
-            #     layer_height_map.location = (-1000, last_height_tex_node_pos + 420)
-            #     layer_height_map.image = loadImage(os.path.join(baseDir, layer['heightFile']))
-            #     layer_height_map.image.alpha_mode = 'NONE'
-            #     layer_height_map.parent = layer_frame
-            #     last_height_tex_node_pos += 420
-
-            #     node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_height_map.inputs['Vector'])
-
             node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
             node_tree.links.new(
                 layer_texture.outputs['Color'],
-                mix_node.inputs[MIX_NODE_COLOR_SOCKETS['in']['B']])
+                mix_node.inputs[sockets['in']['B']])
 
             last_mix_node = mix_node
 
         if last_mix_node is None:
             node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
         else:
+            # Get sockets for the last mix node - we know it exists since last_mix_node is not None
+            sockets = get_mix_node_sockets(last_mix_node)
             node_tree.links.new(
-                last_mix_node.outputs[MIX_NODE_COLOR_SOCKETS['out']['Result']],
+                last_mix_node.outputs[sockets['out']['Result']],
                 principled.inputs['Base Color'])
 
         return material
@@ -600,7 +891,10 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
         with open(os.path.join(baseDir, fileName[:fileName.rfind('.')] + '.json')) as fp:
             json_info = json.load(fp)
             if json_info.get('fileType') == 'm2':
+                # Create mapping from skin section index to texture unit
                 json_info['skinTexUnits'] = {i['skinSectionIndex']: i for i in json_info['skin']['textureUnits']}
+                # Create mapping from mesh name to skin section index for proper lookup
+                json_info['meshToSkinSection'] = {}
             elif json_info.get('fileType') == 'wmo':
                 json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
                 json_info['mtlIndexes'] = {
@@ -645,6 +939,16 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 meshIndex += 1
                 meshes.append(OBJMesh())
                 meshes[meshIndex].name = line_split[1].decode('utf-8')
+                # Extract skin section index from mesh name for M2 files
+                if json_info.get('fileType') == 'm2':
+                    mesh_name = meshes[meshIndex].name
+                    # Mesh names are typically like 'Geoset_000', extract the number
+                    try:
+                        skin_section_idx = int(mesh_name.split('_')[-1])
+                        json_info['meshToSkinSection'][meshIndex] = skin_section_idx
+                    except (ValueError, IndexError):
+                        # Fallback: use mesh index if name parsing fails
+                        json_info['meshToSkinSection'][meshIndex] = meshIndex
             elif line_start == b'usemtl':
                 materialName = normalizeName(line_split[1].decode('utf-8'))
 
@@ -734,13 +1038,50 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir, textureExtensionMode)
                 
                 if material is None and materialName in usedMaterials:
-                    material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
+                    if has_advanced_m2_data(json_info):
+                        # Find the FIRST mesh that uses this material to get the correct texture unit
+                        texture_unit_found = None
+                        for mesh_idx, mesh in enumerate(meshes):
+                            if mesh.usemtl == materialName or mesh.usemtl.startswith(materialName + '_B'):
+                                # Use the mesh to skin section mapping
+                                skin_section_idx = json_info['meshToSkinSection'].get(mesh_idx, mesh_idx)
+                                if skin_section_idx in json_info.get('skinTexUnits', {}):
+                                    texture_unit_found = json_info['skinTexUnits'][skin_section_idx]
+                                    break
+                        
+                        if texture_unit_found:
+                            json_materials = json_info.get('materials', [])
+                            json_textures = json_info.get('textures', [])
+                            json_texture_combos = json_info.get('textureCombos', [])
+                            material = createAdvancedM2Material(materialName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir)
+                        else:
+                            material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
+                    else:
+                        material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
 
             if settings.useAlpha:
                 for bm, (materialBName, materialBMat) in materialB.items():
                     # create materials with different blending modes
                     if materialBName in usedMaterials and materialBMat is None:
-                        materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
+                        if has_advanced_m2_data(json_info):
+                            # Find the mesh that uses this blend mode material
+                            texture_unit_found = None
+                            for mesh_idx, mesh in enumerate(meshes):
+                                if mesh.usemtl == materialBName:
+                                    skin_section_idx = json_info['meshToSkinSection'].get(mesh_idx, mesh_idx)
+                                    if skin_section_idx in json_info.get('skinTexUnits', {}):
+                                        texture_unit_found = json_info['skinTexUnits'][skin_section_idx]
+                                        break
+                            
+                            if texture_unit_found:
+                                json_materials = json_info.get('materials', [])
+                                json_textures = json_info.get('textures', [])
+                                json_texture_combos = json_info.get('textureCombos', [])
+                                materialB[bm] = (materialBName, createAdvancedM2Material(materialBName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir))
+                            else:
+                                materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
+                        else:
+                            materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
 
             if materialName in usedMaterials:
                 obj.data.materials.append(material)
