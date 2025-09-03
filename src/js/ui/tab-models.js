@@ -28,7 +28,7 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 const textureRibbon = require('./texture-ribbon');
 const textureExporter = require('./texture-exporter');
 const uvDrawer = require('./uv-drawer');
-// const AnimMapper = require('../3D/AnimMapper');
+const AnimMapper = require('../3D/AnimMapper');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
 const MODEL_TYPE_M2 = Symbol('modelM2');
@@ -257,15 +257,21 @@ const previewModel = async (fileName) => {
 			core.view.modelViewerSkins = skinList;
 			core.view.modelViewerSkinsSelection = skinList.slice(0, 1);
 
-			// if (fileNameLower.endsWith('.m2')) {
-			// 	const animList = [];
+			if (fileNameLower.endsWith('.m2')) {
+				const animList = [];
 
-			// 	for (const animationID of Array.from(new Set(activeRenderer.m2.animations.map((animation) => animation.id))).sort())
-			// 		animList.push({ id: animationID, label: AnimMapper.get_anim_name(animationID) });
-				
-			// 	core.view.modelViewerAnims = animList;
-			// 	core.view.modelViewerAnimSelection = animList.slice(0, 1);
-			// }
+				for (let i = 0; i < activeRenderer.m2.animations.length; i++) {
+					const animation = activeRenderer.m2.animations[i];
+					animList.push({ 
+						id: `${Math.floor(animation.id)}.${animation.variationIndex}`, // unique key
+						animationId: animation.id, // original ID for lookup
+						m2Index: i, // actual M2 animation index
+						label: AnimMapper.get_anim_name(animation.id) + " (" + Math.floor(animation.id) + "." + animation.variationIndex + ")"
+					});
+				}
+					
+				core.view.modelViewerAnims = animList;
+			}
 		} else if (isM3) {
 			// TODO: M3
 		}
@@ -669,6 +675,19 @@ core.registerLoadFunc(async () => {
 		activeRenderer.applyReplaceableTextures(display);
 	});
 
+	core.view.$watch('modelViewerAnimSelection', async selectedAnimationId => {
+		if (!activeRenderer || !activeRenderer.playAnimation || core.view.modelViewerAnims.length === 0)
+			return;
+
+		if (selectedAnimationId !== null && selectedAnimationId !== undefined) {
+			const animInfo = core.view.modelViewerAnims.find(anim => anim.id == selectedAnimationId);
+			if (animInfo && animInfo.m2Index !== undefined) {
+				log.write(`Playing animation ${selectedAnimationId} at M2 index ${animInfo.m2Index}`);
+				activeRenderer.playAnimation(animInfo.m2Index);
+			}
+		}
+	});
+
 	core.view.$watch('config.modelViewerShowGrid', () => {
 		if (core.view.config.modelViewerShowGrid)
 			scene.add(grid);
@@ -727,3 +746,7 @@ core.registerLoadFunc(async () => {
 	});
 
 });
+
+module.exports = {
+	getActiveRenderer: () => activeRenderer
+};

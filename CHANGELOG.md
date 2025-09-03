@@ -1,5 +1,6 @@
 ## 0.1.66 (xx-09-2025)
 ### General/features
+- Added animation previews to the built-in modelviewer.
 - Added "Import Liquids" to Blender add-on, fully supporting all liquid types on map tiles.
 - Added "Export Heightmaps" button for maps, allowing 16-bit/32-bit heightmap generation with cross-tile range relativity.
 - Added "Show Background" option to set a customizable background colour to the model viewer.

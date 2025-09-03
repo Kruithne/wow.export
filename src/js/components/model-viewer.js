@@ -4,6 +4,7 @@
 	License: MIT
  */
 const CameraControls = require('../3D/camera/CameraControls');
+const tabModels = require('../ui/tab-models');
 
 Vue.component('model-viewer', {
 	props: ['context'],
@@ -13,6 +14,17 @@ Vue.component('model-viewer', {
 			if (!this.isRendering)
 				return;
 	
+			const currentTime = performance.now() * 0.001;
+			if (this.lastTime === undefined)
+				this.lastTime = currentTime;
+
+			const deltaTime = currentTime - this.lastTime;
+			this.lastTime = currentTime;
+
+			const activeRenderer = tabModels.getActiveRenderer();
+			if (activeRenderer && activeRenderer.updateAnimation)
+				activeRenderer.updateAnimation(deltaTime);
+
 			this.controls.update();
 			this.renderer.render(this.context.scene, this.context.camera);
 			requestAnimationFrame(() => this.render());

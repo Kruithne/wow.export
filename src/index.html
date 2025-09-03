@@ -571,6 +571,13 @@
 							<div class="preview-background" id="model-preview">
 								<input v-if="config.modelViewerShowBackground" type="color" id="background-color-input" v-model="config.modelViewerBackgroundColor" title="Click to change background color"/>
 								<model-viewer :context="modelViewerContext"></model-viewer>
+								<div v-if="modelViewerAnims && modelViewerAnims.length > 0" class="animation-dropdown-overlay">
+									<select class="animation-dropdown" v-model="modelViewerAnimSelection">
+										<option v-for="animation in modelViewerAnims" :key="animation.id" :value="animation.id">
+											{{ animation.label }}
+										</option>
+									</select>
+								</div>
 							</div>
 						</div>
 						<div class="preview-controls">
@@ -660,10 +667,6 @@
 									<span class="header">Skins</span>
 									<listboxb :items="modelViewerSkins" :selection="modelViewerSkinsSelection" :single="true"></listboxb>
 								</template>
-								<!--<template v-if="config.exportModelFormat === 'GLTF'">
-									<span class="header">Animations</span>
-									<listboxb :items="modelViewerAnims" :selection="modelViewerAnimSelection" :single="true"></listboxb>
-								</template>-->
 							</template>
 							<template v-if="modelViewerActiveType === 'wmo'">
 								<span class="header">WMO Groups</span>
