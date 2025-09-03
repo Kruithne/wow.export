@@ -174,7 +174,9 @@ const previewModel = async (fileName) => {
 	core.view.modelViewerSkins = [];
 	core.view.modelViewerSkinsSelection = [];
 
+	// Reset animation selection.
 	core.view.modelViewerAnims = [];
+	core.view.modelViewerAnimSelection = null;
 
 	try {
 		// Dispose the currently active renderer.
@@ -270,7 +272,13 @@ const previewModel = async (fileName) => {
 					});
 				}
 					
-				core.view.modelViewerAnims = animList;
+				const finalAnimList = [
+					{ id: 'none', label: 'None', m2Index: -1 },
+					...animList
+				];
+				
+				core.view.modelViewerAnims = finalAnimList;
+				core.view.modelViewerAnimSelection = 'none';
 			}
 		} else if (isM3) {
 			// TODO: M3
@@ -680,8 +688,13 @@ core.registerLoadFunc(async () => {
 			return;
 
 		if (selectedAnimationId !== null && selectedAnimationId !== undefined) {
+			if (selectedAnimationId === 'none') {
+				activeRenderer?.stopAnimation?.();
+				return;
+			}
+
 			const animInfo = core.view.modelViewerAnims.find(anim => anim.id == selectedAnimationId);
-			if (animInfo && animInfo.m2Index !== undefined) {
+			if (animInfo && animInfo.m2Index !== undefined && animInfo.m2Index >= 0) {
 				log.write(`Playing animation ${selectedAnimationId} at M2 index ${animInfo.m2Index}`);
 				activeRenderer.playAnimation(animInfo.m2Index);
 			}
