@@ -28,7 +28,9 @@ module.exports = {
 			resizeStartX: 0,
 			resizeStartWidth: 0,
 			isOverResizeZone: false,
-			resizeZoneColumnIndex: -1
+			resizeZoneColumnIndex: -1,
+			sortColumn: -1,
+			sortDirection: 'off'
 		}
 	},
 
@@ -92,7 +94,7 @@ module.exports = {
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
-			return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
+			return Math.round((this.sortedItems.length - this.slotCount) * this.scrollRel);
 		},
 
 		/**
@@ -137,18 +139,59 @@ module.exports = {
 		},
 
 		/**
+		 * Sorted version of the filtered data array.
+		 * Applies sorting based on sortColumn and sortDirection.
+		 */
+		sortedItems: function() {
+			const filtered = this.filteredItems;
+			
+			if (this.sortColumn === -1 || this.sortDirection === 'off')
+				return filtered;
+
+			const sorted = [...filtered];
+			const columnIndex = this.sortColumn;
+
+			sorted.sort((a, b) => {
+				const aVal = a[columnIndex];
+				const bVal = b[columnIndex];
+				
+				// Handle null/undefined values
+				if (aVal == null && bVal == null)return 0;
+				if (aVal == null) return this.sortDirection === 'asc' ? -1 : 1;
+				if (bVal == null) return this.sortDirection === 'asc' ? 1 : -1;
+				
+				// Numeric comparison
+				const aNum = Number(aVal);
+				const bNum = Number(bVal);
+				
+				if (!isNaN(aNum) && !isNaN(bNum)) {
+					const numResult = aNum - bNum;
+					return this.sortDirection === 'asc' ? numResult : -numResult;
+				}
+				
+				// String comparison
+				const aStr = String(aVal).toLowerCase();
+				const bStr = String(bVal).toLowerCase();
+				const strResult = aStr.localeCompare(bStr);
+				return this.sortDirection === 'asc' ? strResult : -strResult;
+			});
+
+			return sorted;
+		},
+
+		/**
 		 * Dynamic array of items which should be displayed from the underlying
 		 * data array. Reactively updates based on scroll and data.
 		 */
 		displayItems: function() {
-			return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
+			return this.sortedItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
 		itemWeight: function() {
-			return 1 / this.filteredItems.length;
+			return 1 / this.sortedItems.length;
 		},
 
 		/**
@@ -269,6 +312,15 @@ module.exports = {
 		},
 
 		displayItems: {
+			handler: function() {
+				this.$nextTick(() => {
+					this.refreshHorizontalScrollbar();
+				});
+			},
+			immediate: true
+		},
+
+		sortedItems: {
 			handler: function() {
 				this.$nextTick(() => {
 					this.refreshHorizontalScrollbar();
@@ -501,6 +553,40 @@ module.exports = {
 				e.preventDefault();
 			}
 		},
+
+		/**
+		 * Handle column header clicks for sorting.
+		 * @param {number} columnIndex - Index of the clicked column
+		 */
+		toggleSort: function(columnIndex) {
+			if (this.sortColumn === columnIndex) {
+				// Same column - cycle through: off -> asc -> desc -> off
+				if (this.sortDirection === 'off') {
+					this.sortDirection = 'asc';
+				} else if (this.sortDirection === 'asc') {
+					this.sortDirection = 'desc';
+				} else {
+					this.sortDirection = 'off';
+					this.sortColumn = -1;
+				}
+			} else {
+				// Different column - set to ascending
+				this.sortColumn = columnIndex;
+				this.sortDirection = 'asc';
+			}
+		},
+
+		/**
+		 * Get sort indicator for a given column.
+		 * @param {number} columnIndex - Index of the column
+		 * @returns {string} Sort indicator symbol
+		 */
+		getSortIndicator: function(columnIndex) {
+			if (this.sortColumn !== columnIndex || this.sortDirection === 'off') {
+				return '';
+			}
+			return this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+		},
 	},
 
 	/**
@@ -519,7 +605,12 @@ module.exports = {
 			<table ref="table" :style="{ transform: tableHorizontalOffset }">
 				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
-						<th v-for="(header, index) in headers" :style="columnStyles['col-' + index] || {}">{{header}}</th>
+						<th v-for="(header, index) in headers" 
+							:style="columnStyles['col-' + index] || {}"
+							@click="!isOverResizeZone && toggleSort(index)"
+							:class="{ sortable: !isOverResizeZone }">
+							{{header}}{{getSortIndicator(index)}}
+						</th>
 					</tr>
 				</thead>
 				<tbody>
