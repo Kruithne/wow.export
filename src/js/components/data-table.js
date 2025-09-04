@@ -22,7 +22,7 @@ module.exports = {
 			selection: [],
 			forceScrollbarUpdate: 0,
 			columnWidths: [],
-			manuallyResizedColumns: [],
+			manuallyResizedColumns: {},
 			isResizing: false,
 			resizeColumnIndex: -1,
 			resizeStartX: 0,
@@ -342,8 +342,9 @@ module.exports = {
 				const widths = [];
 				
 				headerCells.forEach((cell, index) => {
-					if (this.manuallyResizedColumns.includes(index) && this.columnWidths[index]) {
-						widths.push(this.columnWidths[index]);
+					const columnName = this.headers[index];
+					if (this.manuallyResizedColumns[columnName]) {
+						widths.push(this.manuallyResizedColumns[columnName]);
 					} else {
 						widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
 					}
@@ -403,9 +404,9 @@ module.exports = {
 				if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
 					this.columnWidths[this.resizeColumnIndex] = newWidth;
 					
-					// Mark this column as manually resized
-					if (!this.manuallyResizedColumns.includes(this.resizeColumnIndex))
-						this.manuallyResizedColumns.push(this.resizeColumnIndex);
+					// Mark this column as manually resized by column name
+					const columnName = this.headers[this.resizeColumnIndex];
+					this.manuallyResizedColumns[columnName] = newWidth;
 				}
 			}
 		},
