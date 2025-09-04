@@ -24,7 +24,7 @@ const EPS = 0.000001;
 const ZOOM_SCALE = 0.95;
 
 const ROTATE_SPEED = 1;
-const PAN_SPEED = 0.025;
+const PAN_SPEED = 1.0;
 
 const KEY_PAN_SPEED = 3;
 const KEY_PAN_SPEED_SHIFT = 0.5;
@@ -144,7 +144,8 @@ class CameraControls {
 		} else if (this.state === STATE_PANNING) {
 			this.transform_end.set(event.clientX, event.clientY);
 
-			this.transform_delta.subVectors(this.transform_end, this.transform_start).multiplyScalar(PAN_SPEED);
+			const panScale = this.getPanScale() * PAN_SPEED;
+			this.transform_delta.subVectors(this.transform_end, this.transform_start).multiplyScalar(panScale);
 			this.pan(this.transform_delta.x, 0, this.transform_delta.y);
 
 			this.transform_start.copy(this.transform_end);
@@ -162,6 +163,18 @@ class CameraControls {
 			this.transform_start.copy(this.transform_end);
 			this.update();
 		}
+	}
+
+	getPanScale() {
+		const height = this.dom_element.clientHeight || 1;
+
+		if (this.camera.isPerspectiveCamera) {
+			const distance = this.spherical ? this.spherical.radius : this.camera.position.length();
+			const vFov = THREE.MathUtils.degToRad(this.camera.fov || 50);
+			return (2 * Math.tan(vFov / 2) * distance) / height;
+		}
+
+		return 1 / height;
 	}
 
 	on_mouse_up() {

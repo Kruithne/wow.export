@@ -42,6 +42,7 @@
 - Fixed issue that preventing texture previews on the model viewer from working.
 - Fixed issue causing terrain UV maps to be non-normalized causing visible seams.
 - Fixed issue that caused model viewer camera to not properly show the model in frame.
+- Fixed issue that caused panning on larger models to be slow and difficult.
 
 ### Internal
 - Updated three.js from r111 to r179 (some color changes might be observed in model previews).
