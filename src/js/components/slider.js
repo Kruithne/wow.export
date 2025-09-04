@@ -3,11 +3,12 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-Vue.component('slider', {
+module.exports = {
 	/**
 	 * value: Slider value between 0 and 1.
 	 */
-	props: ['value'],
+	props: ['modelValue'],
+	emits: ['update:modelValue'],
 
 	data: function() {
 		return {
@@ -31,7 +32,7 @@ Vue.component('slider', {
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners.
 	 */
-	beforeDestroy: function() {
+	beforeUnmount: function() {
 		// Unregister global mouse listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
@@ -43,7 +44,7 @@ Vue.component('slider', {
 		 * @param {number} value 
 		 */
 		setValue: function(value) {
-			this.$emit('input', Math.min(1, Math.max(0, value)));
+			this.$emit('update:modelValue', Math.min(1, Math.max(0, value)));
 		},
 
 		/**
@@ -52,7 +53,7 @@ Vue.component('slider', {
 		 */
 		startMouse: function(e) {
 			this.scrollStartX = e.clientX
-			this.scrollStart = this.value;
+			this.scrollStart = this.modelValue;
 			this.isScrolling = true;
 		},
 
@@ -92,7 +93,7 @@ Vue.component('slider', {
 	 * HTML mark-up to render for this component.
 	 */
 	template: `<div class="ui-slider" @click="handleClick">
-		<div class="fill" :style="{ width: (value * 100) + '%' }"></div>
-		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (value * 100) + '%' }"></div>
+		<div class="fill" :style="{ width: (modelValue * 100) + '%' }"></div>
+		<div class="handle" ref="handle" @mousedown="startMouse" :style="{ left: (modelValue * 100) + '%' }"></div>
 	</div>`
-});
+};
