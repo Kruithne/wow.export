@@ -7,16 +7,16 @@ charset = utf-8
 max_line_length = 120
 indent_size = 4
 indent_style = space
-trim_trailing_whitespace = false
+trim_trailing_whitespace = true
 
 [{*.js,*.jsx,*.ts,*.tsx}]
 max_line_length = 120
-indent_size = 2
+indent_size = 4
 indent_style = tab
-trim_trailing_whitespace = false
+trim_trailing_whitespace = true
 
 [*.{vue,html,css,scss,json}]
-indent_size = 2
+indent_size = 4
 indent_style = tab
 
 [*.md]
