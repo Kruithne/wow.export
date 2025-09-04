@@ -21,7 +21,14 @@ module.exports = {
 			lastSelectItem: null,
 			selection: [],
 			forceScrollbarUpdate: 0,
-			columnWidths: []
+			columnWidths: [],
+			manuallyResizedColumns: [],
+			isResizing: false,
+			resizeColumnIndex: -1,
+			resizeStartX: 0,
+			resizeStartWidth: 0,
+			isOverResizeZone: false,
+			resizeZoneColumnIndex: -1
 		}
 	},
 
@@ -214,6 +221,16 @@ module.exports = {
 			});
 			
 			return styles;
+		},
+
+		/**
+		 * Dynamic cursor style for header based on resize zone state.
+		 */
+		headerCursorStyle: function() {
+			if (this.isOverResizeZone || this.isResizing) {
+				return { cursor: 'col-resize' };
+			}
+			return {};
 		}
 	},
 
@@ -315,6 +332,7 @@ module.exports = {
 
 		/**
 		 * Calculate and store column widths based on header cell widths.
+		 * Preserves manually resized columns.
 		 */
 		calculateColumnWidths: function() {
 			if (!this.$refs.datatableheader || !this.headers) return;
@@ -323,9 +341,12 @@ module.exports = {
 				const headerCells = this.$refs.datatableheader.querySelectorAll('th');
 				const widths = [];
 				
-				headerCells.forEach((cell) => {
-					// Get the computed width of the header cell
-					widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
+				headerCells.forEach((cell, index) => {
+					if (this.manuallyResizedColumns.includes(index) && this.columnWidths[index]) {
+						widths.push(this.columnWidths[index]);
+					} else {
+						widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
+					}
 				});
 				
 				this.columnWidths = widths;
@@ -373,6 +394,20 @@ module.exports = {
 				this.horizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
 				this.recalculateHorizontalBounds();
 			}
+			
+			if (this.isResizing) {
+				const deltaX = e.clientX - this.resizeStartX;
+				const newWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
+				
+				// Update the column width
+				if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
+					this.columnWidths[this.resizeColumnIndex] = newWidth;
+					
+					// Mark this column as manually resized
+					if (!this.manuallyResizedColumns.includes(this.resizeColumnIndex))
+						this.manuallyResizedColumns.push(this.resizeColumnIndex);
+				}
+			}
 		},
 
 		/**
@@ -381,6 +416,12 @@ module.exports = {
 		stopMouse: function() {
 			this.isScrolling = false;
 			this.isHorizontalScrolling = false;
+			if (this.isResizing) {
+				this.isResizing = false;
+				this.resizeColumnIndex = -1;
+				this.isOverResizeZone = false;
+				this.resizeZoneColumnIndex = -1;
+			}
 		},
 
 		/**
@@ -418,6 +459,47 @@ module.exports = {
 				}
 			}
 		},
+
+		/**
+		 * Invoked when mouse moves over header cells to detect resize zones.
+		 * @param {MouseEvent} e
+		 */
+		headerMouseMove: function(e) {
+			if (this.isResizing) return;
+			
+			const headerCells = this.$refs.datatableheader.querySelectorAll('th');
+			const resizeZoneWidth = 5; // 5px zone on each side of border
+			
+			this.isOverResizeZone = false;
+			this.resizeZoneColumnIndex = -1;
+			
+			for (let i = 0; i < headerCells.length; i++) {
+				const cell = headerCells[i];
+				const rect = cell.getBoundingClientRect();
+				
+				if (i < headerCells.length - 1) {
+					if (e.clientX >= rect.right - resizeZoneWidth && e.clientX <= rect.right + resizeZoneWidth) {
+						this.isOverResizeZone = true;
+						this.resizeZoneColumnIndex = i;
+						break;
+					}
+				}
+			}
+		},
+
+		/**
+		 * Invoked when mouse is pressed down on header to potentially start resize.
+		 * @param {MouseEvent} e
+		 */
+		headerMouseDown: function(e) {
+			if (this.isOverResizeZone && this.resizeZoneColumnIndex >= 0) {
+				this.isResizing = true;
+				this.resizeColumnIndex = this.resizeZoneColumnIndex;
+				this.resizeStartX = e.clientX;
+				this.resizeStartWidth = this.columnWidths[this.resizeZoneColumnIndex];
+				e.preventDefault();
+			}
+		},
 	},
 
 	/**
@@ -434,7 +516,7 @@ module.exports = {
 				</div>
 			</div>
 			<table ref="table" :style="{ transform: tableHorizontalOffset }">
-				<thead ref="datatableheader">
+				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
 						<th v-for="(header, index) in headers" :style="columnStyles['col-' + index] || {}">{{header}}</th>
 					</tr>
