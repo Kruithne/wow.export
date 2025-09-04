@@ -29,6 +29,7 @@ const textureRibbon = require('./texture-ribbon');
 const textureExporter = require('./texture-exporter');
 const uvDrawer = require('./uv-drawer');
 const AnimMapper = require('../3D/AnimMapper');
+const CameraBounding = require('../3D/camera/CameraBounding');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
 const MODEL_TYPE_M2 = Symbol('modelM2');
@@ -42,8 +43,6 @@ const exportExtensions = {
 const activeSkins = new Map();
 let selectedVariantTextureIDs = new Array();
 let selectedSkinName = null;
-
-let isFirstModel = true;
 
 let camera, scene, grid;
 const renderGroup = new THREE.Group();
@@ -284,7 +283,7 @@ const previewModel = async (fileName) => {
 			// TODO: M3
 		}
 
-		updateCameraBounding();
+		CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls);
 
 		activePath = fileName;
 
@@ -308,62 +307,6 @@ const previewModel = async (fileName) => {
 	core.view.isBusy--;
 };
 
-/**
- * Update the camera to match render group bounding.
- * @param {boolean} forceReposition - Force camera repositioning even if auto-adjust is off
- */
-const updateCameraBounding = (forceReposition = false) => {
-	// Force update of all world matrices first
-	renderGroup.traverse((child) => {
-		if (child instanceof THREE.SkinnedMesh && child.skeleton) {
-			child.skeleton.update();
-			child.updateMatrixWorld(true);
-		}
-	});
-	
-	// Calculate bounding box based on animated bone positions
-	const boundingBox = new THREE.Box3();
-	const tempVector = new THREE.Vector3();
-	
-	renderGroup.traverse((child) => {
-		if (child.type === 'Bone') {
-			child.getWorldPosition(tempVector);
-			boundingBox.expandByPoint(tempVector);
-		}
-	});
-	
-	// Fallback if bounding from bones fails
-	if (boundingBox.isEmpty())
-		boundingBox.setFromObject(renderGroup);
-
-	if (boundingBox.isEmpty())
-		return;
-
-	// Calculate center point and size from bounding box.
-	const center = boundingBox.getCenter(new THREE.Vector3());
-	const size = boundingBox.getSize(new THREE.Vector3());
-
-	const maxDim = Math.max(size.x, size.y, size.z);
-	const fov = camera.fov * (Math.PI / 180);
-	let cameraZ = (Math.abs(maxDim / 4 * Math.tan(fov * 2))) * 6;
-
-	if (isFirstModel || core.view.modelViewerAutoAdjust || forceReposition) {
-		camera.position.set(center.x, center.y, cameraZ);
-		isFirstModel = false;
-	}
-
-	const minZ = boundingBox.min.z;
-	const cameraToFarEdge = (minZ < 0) ? -minZ + cameraZ : cameraZ - minZ;
-
-	camera.updateProjectionMatrix();
-
-	const controls = core.view.modelViewerContext.controls;
-	if (controls) {
-		controls.target = center;
-		controls.maxDistance = cameraToFarEdge * 2;
-		controls.update();
-	}
-};
 
 /**
  * Resolves variant texture IDs based on user selection.
@@ -716,7 +659,7 @@ core.registerLoadFunc(async () => {
 				activeRenderer?.stopAnimation?.();
 
 				if (core.view.modelViewerAutoAdjust)
-					requestAnimationFrame(() => updateCameraBounding(true));
+					requestAnimationFrame(() => CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls));
 				return;
 			}
 
@@ -726,7 +669,7 @@ core.registerLoadFunc(async () => {
 				activeRenderer.playAnimation(animInfo.m2Index);
 
 				if (core.view.modelViewerAutoAdjust)
-					requestAnimationFrame(() => updateCameraBounding(true));
+					requestAnimationFrame(() => CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls));
 			}
 		}
 	});
