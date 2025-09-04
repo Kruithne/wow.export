@@ -44,9 +44,9 @@
 ### Internal
 - Updated three.js from r111 to r179 (some color changes might be observed in model previews).
 - Updated Battle.net patch service URLs.
-- Updated to Vue 2.7.16.
+- Updated to Vue 3.5.21.
 - Replaced pkg dependency for building updater with bun to eliminate cross-platform issues.
-- Removed build dependencies node, acorn, terser, filesize, chalk, request, tar, ssh2-sftp-client and sass.
+- Removed build dependencies node, acorn, terser, filesize, chalk, request, tar, ssh2-sftp-client, eslint and sass.
 
 ## 0.1.65 (31-12-2024)
 - Added option to view and export texture atlas regions from the texture viewer.
