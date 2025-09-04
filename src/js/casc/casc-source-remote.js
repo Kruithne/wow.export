@@ -99,7 +99,6 @@ class CASCRemote extends CASC {
 	 * @param {string} [contentKey=null]
 	 */
 	// TODO: This could do with being an interface.
-	// eslint-disable-next-line no-unused-vars
 	async getFile(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
