@@ -33,18 +33,10 @@ module.exports = {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
 		this.onScroll = e => this.syncScrollPosition(e);
-		// this.onPaste = e => this.handlePaste(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 		this.$refs.root.addEventListener('scroll', this.onScroll);
-
-		// document.addEventListener('paste', this.onPaste);
-
-		// if (this.keyinput) {
-		// 	this.onKeyDown = e => this.handleKey(e);
-		// 	document.addEventListener('keydown', this.onKeyDown);
-		// }
 
 		// // Register observer for layout changes.
 		this.observer = new ResizeObserver(() => {
