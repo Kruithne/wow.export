@@ -35,7 +35,7 @@ async function initializeAvailableTables() {
 		}
 
 		manifest.sort();
-		log.write('Initialized %d available DB2 tables from DBD repository', dbdManifest.length);
+		log.write('Initialized %d available DB2 tables from DBD repository', manifest.length);
 	} catch (e) {
 		log.write('Failed to initialize available DB2 tables: %s', e.message);
 	}
