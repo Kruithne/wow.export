@@ -56,7 +56,14 @@ core.registerLoadFunc(async () => {
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
 				
-				core.view.tableBrowserHeaders = [...db2Reader.schema.keys()];
+				const allHeaders = [...db2Reader.schema.keys()];
+				const idIndex = allHeaders.findIndex(header => header.toUpperCase() === 'ID');
+				if (idIndex > 0) {
+					const idHeader = allHeaders.splice(idIndex, 1)[0];
+					allHeaders.unshift(idHeader);
+				}
+
+				core.view.tableBrowserHeaders = allHeaders;
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0) 
@@ -67,8 +74,15 @@ core.registerLoadFunc(async () => {
 				const parsed = Array(rows.size);
 
 				let index = 0;
-				for (const row of rows.values())
-					parsed[index++] = Object.values(row);
+				for (const row of rows.values()) {
+					const rowValues = Object.values(row);
+					if (idIndex > 0) {
+						const idValue = rowValues.splice(idIndex, 1)[0];
+						rowValues.unshift(idValue);
+					}
+					
+					parsed[index++] = rowValues;
+				}
 
 				core.view.tableBrowserRows = parsed;
 
