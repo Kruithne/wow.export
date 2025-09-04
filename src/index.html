@@ -20,7 +20,7 @@
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
-						<!--<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>-->
+						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
@@ -350,6 +350,12 @@
 						<p>Remote URL used to update DBD definitions. (Must use same format)</p>
 						<p>Primary <input type="text" class="long" v-model.trim="configEdit.dbdURL"/></p>
 						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.dbdFallbackURL" /></p>
+					</div>
+					<div>
+						<h1>DBD Manifest Repository</h1>
+						<p>Remote URL used to obtain DBD manifest information. (Must use same format)</p>
+						<p>Primary <input type="text" class="long" v-model.trim="configEdit.dbdFilenameURL"/></p>
+						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.dbdFilenameFallbackURL" /></p>
 					</div>
 					<div>
 						<h1>Enable Remote Control Protocol (Advanced)</h1>
@@ -851,7 +857,7 @@
 				</div>
 				<div class="tab list-tab" id="tab-data" v-if="screen === 'tab-data'">
 					<div class="list-container">
-						<listbox v-model:selection="selectionDB2s" :items="listfileDB2s" :filter="userInputFilterDB2s" :keyinput="true"
+						<listbox v-model:selection="selectionDB2s" :items="dbdManifest" :filter="userInputFilterDB2s" :keyinput="true"
 							:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"
 							:copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></listbox>
 					</div>

@@ -134,6 +134,9 @@ core.events.on('click-config-apply', () => {
 	if (cfg.dbdURL.length === 0 || !cfg.dbdURL.startsWith('http'))
 		return core.setToast('error', 'A valid URL is required for DBD updates.', { 'Use Default': () => cfg.dbdURL = defaultConfig.dbdURL }, -1);
 
+	if (cfg.dbdFilenameURL.length === 0 || !cfg.dbdFilenameURL.startsWith('http'))
+		return core.setToast('error', 'A valid URL is required for DBD manfiest.', { 'Use Default': () => cfg.dbdFilenameURL = defaultConfig.dbdFilenameURL }, -1);
+
 	// Everything checks out, apply.
 	core.view.config = cfg;
 	core.view.showPreviousScreen();

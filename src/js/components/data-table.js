@@ -15,7 +15,10 @@ module.exports = {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1,
-			lastSelectItem: null
+			lastSelectItem: null,
+			filter: '',
+			regex: false,
+			selection: []
 		}
 	},
 

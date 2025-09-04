@@ -75,9 +75,9 @@ const makeNewView = () => {
 		listfileText: [], // Filtered listfile for text files.
 		listfileModels: [], // Filtered listfile for M2/WMO models.
 		listfileItems: [], // Filtered item entries.
-		listfileDB2s: [], // Filtered DB2 entries.
 		listfileRaw: [], // Full raw file listfile.
 		listfileInstall: [], // Filtered listfile for install files.
+		dbdManifest: [], // DB2 entires from DBD manifest.
 		installTags: [], // Install manifest tags.
 		tableBrowserHeaders: [], // DB2 headers
 		tableBrowserRows: [], // DB2 rows

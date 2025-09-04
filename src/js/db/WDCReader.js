@@ -26,6 +26,7 @@ const TABLE_FORMATS = {
 	0x35434457: { name: 'WDC5', wdcVersion: 5 },
 };
 
+
 /**
  * Returns the schema type symbol for a DBD field.
  * @param {DBDField} entry 
