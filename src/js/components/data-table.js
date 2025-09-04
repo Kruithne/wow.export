@@ -20,7 +20,8 @@ module.exports = {
 			slotCount: 1,
 			lastSelectItem: null,
 			selection: [],
-			forceScrollbarUpdate: 0
+			forceScrollbarUpdate: 0,
+			columnWidths: []
 		}
 	},
 
@@ -46,8 +47,14 @@ module.exports = {
 		// }
 
 		// // Register observer for layout changes.
-		this.observer = new ResizeObserver(() => this.resize());
+		this.observer = new ResizeObserver(() => {
+			this.resize();
+			this.calculateColumnWidths();
+		});
 		this.observer.observe(this.$refs.root);
+		
+		// Calculate initial column widths
+		this.calculateColumnWidths();
 	},
 
 
@@ -192,6 +199,29 @@ module.exports = {
 				display: 'block',
 				width: scrollbarWidth + 'px'
 			};
+		},
+
+		/**
+		 * Generate column styles with fixed widths and text overflow handling.
+		 */
+		columnStyles: function() {
+			if (!this.columnWidths || this.columnWidths.length === 0) {
+				return {};
+			}
+			
+			const styles = {};
+			this.columnWidths.forEach((width, index) => {
+				styles[`col-${index}`] = {
+					width: width + 'px',
+					maxWidth: width + 'px',
+					minWidth: width + 'px',
+					overflow: 'hidden',
+					textOverflow: 'ellipsis',
+					whiteSpace: 'nowrap'
+				};
+			});
+			
+			return styles;
 		}
 	},
 
@@ -203,6 +233,18 @@ module.exports = {
 			handler: function() {
 				this.$nextTick(() => {
 					this.refreshHorizontalScrollbar();
+				});
+			},
+			immediate: true
+		},
+
+		/**
+		 * Watch for header changes to recalculate column widths
+		 */
+		headers: {
+			handler: function() {
+				this.$nextTick(() => {
+					this.calculateColumnWidths();
 				});
 			},
 			immediate: true
@@ -277,6 +319,25 @@ module.exports = {
 			
 			// Trigger computed property re-evaluation by changing reactive data
 			this.forceScrollbarUpdate++;
+		},
+
+		/**
+		 * Calculate and store column widths based on header cell widths.
+		 */
+		calculateColumnWidths: function() {
+			if (!this.$refs.datatableheader || !this.headers) return;
+			
+			this.$nextTick(() => {
+				const headerCells = this.$refs.datatableheader.querySelectorAll('th');
+				const widths = [];
+				
+				headerCells.forEach((cell) => {
+					// Get the computed width of the header cell
+					widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
+				});
+				
+				this.columnWidths = widths;
+			});
 		},
 
 		/**
@@ -383,12 +444,12 @@ module.exports = {
 			<table ref="table" :style="{ transform: tableHorizontalOffset }">
 				<thead ref="datatableheader">
 					<tr>
-						<th v-for="header in headers">{{header}}</th>
+						<th v-for="(header, index) in headers" :style="columnStyles['col-' + index] || {}">{{header}}</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="row in displayItems">
-						<td v-for="field in row">{{field}}</td>
+						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}">{{field}}</td>
 					</tr>
 				</tbody>
 			</table>
