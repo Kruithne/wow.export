@@ -1510,6 +1510,10 @@ input[type=number]::-webkit-outer-spin-button {
 	min-width: 20vw;
 }
 
+#tab-data .data-table-filter {
+	grid-column: 2;
+}
+
 .filter {
 	display: flex;
 	align-items: center;

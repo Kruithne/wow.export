@@ -57,6 +57,7 @@ const makeNewView = () => {
 		userInputFilterMaps: '', // Value of the 'filter' field for maps.
 		userInputFilterItems: '', // Value of the 'filter' field of items.
 		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
+		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
 		selectionTextures: [], // Current user selection of texture files.

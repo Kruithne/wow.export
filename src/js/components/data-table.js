@@ -7,7 +7,7 @@ module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
-	props: ['headers', 'rows'],
+	props: ['headers', 'rows', 'filter', 'regex'],
 
 	data: function() {
 		return {
@@ -16,8 +16,6 @@ module.exports = {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null,
-			filter: '',
-			regex: false,
 			selection: []
 		}
 	},
@@ -96,15 +94,22 @@ module.exports = {
 
 			if (this.regex) {
 				try {
-					const filter = new RegExp(this.filter.trim());
-					res = res.filter(e => e.match(filter));
+					const filter = new RegExp(this.filter.trim(), 'i');
+					res = res.filter(row => {
+						// Search across all fields in the row
+						return row.some(field => String(field).match(filter));
+					});
 				} catch (e) {
 					// Regular expression did not compile, skip filtering.
 				}
 			} else {
 				const filter = this.filter.trim().toLowerCase();
-				if (filter.length > 0)
-					res = res.filter(e => e.toLowerCase().includes(filter));
+				if (filter.length > 0) {
+					res = res.filter(row => {
+						// Search across all fields in the row
+						return row.some(field => String(field).toLowerCase().includes(filter));
+					});
+				}
 			}
 
 			// Remove anything from the user selection that has now been filtered out.
