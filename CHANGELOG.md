@@ -11,6 +11,7 @@
 - Model textures can now be exported directly from the texture ribbon when previewing a model.
 - Importing M2 models into Blender using the wow.export add-on now correctly handles transparency and other basic shader settings (requires exported metadata).
 - Added UV animation support to the wow.export Blender add-on (requires exported metadata).
+- Added "Show Bones" option to preview model armature in the model viewer.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).

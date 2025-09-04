@@ -53,6 +53,7 @@
 	"modelViewerShowBackground": false,
 	"modelViewerBackgroundColor": "#000000",
 	"modelViewerWireframe": false,
+	"modelViewerShowBones": false,
 	"modelViewerShowTextures": true,
 	"modelsExportCollision": false,
 	"modelsExportPngIncrements": true,

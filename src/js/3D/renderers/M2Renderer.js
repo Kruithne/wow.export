@@ -43,6 +43,7 @@ class M2Renderer {
 		this.animationMixer = null;
 		this.animationClips = new Map();
 		this.currentAnimation = null;
+		this.boneHelper = null;
 	}
 
 	/**
@@ -61,6 +62,7 @@ class M2Renderer {
 			if (this.reactive) {
 				this.geosetWatcher = core.view.$watch(this.geosetKey, () => this.updateGeosets(), { deep: true });
 				this.wireframeWatcher = core.view.$watch('config.modelViewerWireframe', () => this.updateWireframe(), { deep: true });
+				this.bonesWatcher = core.view.$watch('config.modelViewerShowBones', () => this.updateBoneVisibility(), { deep: true });
 			}
 		}
 
@@ -76,6 +78,79 @@ class M2Renderer {
 		for (const material of this.materials) {
 			material.wireframe = renderWireframe;
 			material.needsUpdate = true;
+		}
+	}
+
+	/**
+	 * Update bone visibility based on config setting.
+	 */
+	updateBoneVisibility() {
+		const showBones = core.view.config.modelViewerShowBones;
+		
+		if (showBones && this.skeleton && !this.boneHelper) {
+			this.createBoneHelper();
+		} else if (!showBones && this.boneHelper) {
+			this.destroyBoneHelper();
+		}
+	}
+
+	/**
+	 * Create visual representation of bones.
+	 */
+	createBoneHelper() {
+		if (!this.skeleton || this.boneHelper) 
+			return;
+
+		this.boneHelper = new THREE.Group();
+		this.boneHelper.name = 'BoneHelper';
+
+		const bones = this.skeleton.bones;
+		
+		for (let i = 0; i < bones.length; i++) {
+			const bone = bones[i];
+
+			for (const child of bone.children) {
+				if (bones.includes(child)) {
+					const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+						new THREE.Vector3(0, 0, 0), // Start at bone position
+						child.position.clone() // End at child bone position
+					]);
+					
+					const lineMaterial = new THREE.LineBasicMaterial({ 
+						color: 0xffffff, 
+						transparent: true, 
+						opacity: 0.8,
+						depthTest: false
+					});
+					const line = new THREE.Line(lineGeometry, lineMaterial);
+					line.renderOrder = 998;
+					
+					bone.add(line);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Remove bone helper visualization.
+	 */
+	destroyBoneHelper() {
+		if (this.skeleton && this.boneHelper) {
+			for (const bone of this.skeleton.bones) {
+				const remove = [];
+				for (const child of bone.children) {
+					if (child.type === 'Mesh' || child.type === 'Line')
+						remove.push(child);
+				}
+				
+				for (const child of remove) {
+					bone.remove(child);
+					child.geometry?.dispose();
+					child.material?.dispose();
+				}
+			}
+			
+			this.boneHelper = null;
 		}
 	}
 
@@ -277,6 +352,9 @@ class M2Renderer {
 			inverseBindMatrix.copy(bones[i].matrixWorld).invert();
 			this.skeleton.boneInverses.push(inverseBindMatrix);
 		}
+
+		if (this.reactive && core.view.config.modelViewerShowBones)
+			this.createBoneHelper();
 	}
 
 	/**
@@ -557,6 +635,9 @@ class M2Renderer {
 		if (this.geosetArray)
 			this.geosetArray.splice(0);
 
+		// Clean up bone helper
+		this.destroyBoneHelper();
+
 		if (this.meshGroup) {
 			// Remove this mesh group from the render group.
 			this.renderGroup.remove(this.meshGroup);
@@ -601,6 +682,7 @@ class M2Renderer {
 		// Unregister reactive watchers.
 		this.geosetWatcher?.();
 		this.wireframeWatcher?.();
+		this.bonesWatcher?.();
 
 		this.renderCache.retire(...this.materials);
 
