@@ -14,9 +14,13 @@ module.exports = {
 			scroll: 0,
 			scrollRel: 0,
 			isScrolling: false,
+			horizontalScroll: 0,
+			horizontalScrollRel: 0,
+			isHorizontalScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null,
-			selection: []
+			selection: [],
+			forceScrollbarUpdate: 0
 		}
 	},
 
@@ -27,10 +31,12 @@ module.exports = {
 	mounted: function() {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
+		this.onScroll = e => this.syncScrollPosition(e);
 		// this.onPaste = e => this.handlePaste(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
+		this.$refs.root.addEventListener('scroll', this.onScroll);
 
 		// document.addEventListener('paste', this.onPaste);
 
@@ -53,6 +59,8 @@ module.exports = {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+		if (this.$refs.root)
+			this.$refs.root.removeEventListener('scroll', this.onScroll);
 
 		// document.removeEventListener('paste', this.onPaste);
 
@@ -135,6 +143,87 @@ module.exports = {
 		 */
 		itemWeight: function() {
 			return 1 / this.filteredItems.length;
+		},
+
+		/**
+		 * Horizontal offset of the scroll widget in pixels.
+		 * Between 0 and the width of the component.
+		 */
+		horizontalScrollOffset: function() {
+			return (this.horizontalScroll) + 'px';
+		},
+
+		/**
+		 * Horizontal offset for the table content based on scroll position.
+		 */
+		tableHorizontalOffset: function() {
+			const scrollRel = this.horizontalScrollRel;
+			
+			if (!this.$refs.root || !this.$refs.table)
+				return 'translateX(0px)';
+			
+			const containerWidth = this.$refs.root.clientWidth;
+			const tableWidth = this.$refs.table.scrollWidth;
+			const maxScroll = Math.max(0, tableWidth - containerWidth);
+			
+			const offset = -maxScroll * scrollRel;
+			
+			return `translateX(${offset}px)`;
+		},
+
+		/**
+		 * Determines if horizontal scrollbar should be visible and its width.
+		 */
+		horizontalScrollbarStyle: function() {
+			if (!this.displayItems || this.displayItems.length === 0 || !this.$refs.root || !this.$refs.table)
+				return { display: 'none' };
+			
+			const containerWidth = this.$refs.root.clientWidth;
+			const tableWidth = this.$refs.table.scrollWidth;
+			
+			// Only show scrollbar if table is wider than container 
+			if (tableWidth <= containerWidth)
+				return { display: 'none' };
+			
+			// Calculate scrollbar width based on content ratio
+			const scrollbarWidth = Math.max(45, (containerWidth / tableWidth) * (containerWidth - 16));
+			
+			return {
+				display: 'block',
+				width: scrollbarWidth + 'px'
+			};
+		}
+	},
+
+	watch: {
+		/**
+		 * Watch for data changes to refresh scrollbar visibility
+		 */
+		rows: {
+			handler: function() {
+				this.$nextTick(() => {
+					this.refreshHorizontalScrollbar();
+				});
+			},
+			immediate: true
+		},
+
+		filteredItems: {
+			handler: function() {
+				this.$nextTick(() => {
+					this.refreshHorizontalScrollbar();
+				});
+			},
+			immediate: true
+		},
+
+		displayItems: {
+			handler: function() {
+				this.$nextTick(() => {
+					this.refreshHorizontalScrollbar();
+				});
+			},
+			immediate: true
 		}
 	},
 
@@ -146,6 +235,9 @@ module.exports = {
 		resize: function() {
 			this.scroll = (this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor((this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight) / 32);
+			
+			if (this.$refs.dthscroller)
+				this.horizontalScroll = (this.$refs.root.clientWidth - (this.$refs.dthscroller.clientWidth)) * this.horizontalScrollRel;
 		},
 
 		/**
@@ -156,6 +248,52 @@ module.exports = {
 			const max = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
+		},
+
+		/**
+		 * Restricts the horizontal scroll offset to prevent overflowing and
+		 * calculates the relative (0-1) offset based on the horizontal scroll.
+		 */
+		recalculateHorizontalBounds: function() {
+			if (!this.$refs.dthscroller) return;
+			const max = this.$refs.root.clientWidth - (this.$refs.dthscroller.clientWidth);
+			this.horizontalScroll = Math.min(max, Math.max(0, this.horizontalScroll));
+			this.horizontalScrollRel = max > 0 ? this.horizontalScroll / max : 0;
+		},
+
+		/**
+		 * Determines if horizontal scrolling is needed based on table width vs container width.
+		 */
+		needsHorizontalScrolling: function() {
+			if (!this.$refs.root || !this.$refs.table) return false;
+			return this.$refs.table.scrollWidth > this.$refs.root.clientWidth;
+		},
+
+		/**
+		 * Refresh horizontal scrollbar state based on current content
+		 */
+		refreshHorizontalScrollbar: function() {
+			if (!this.$refs.root || !this.$refs.table) return;
+			
+			// Trigger computed property re-evaluation by changing reactive data
+			this.forceScrollbarUpdate++;
+		},
+
+		/**
+		 * Sync custom scrollbar position with native scroll position
+		 */
+		syncScrollPosition: function(e) {
+			if (!this.$refs.root || !this.$refs.table || this.isHorizontalScrolling)
+				return;
+			
+			const containerWidth = this.$refs.root.clientWidth;
+			const tableWidth = this.$refs.table.scrollWidth;
+			const maxScroll = Math.max(0, tableWidth - containerWidth);
+			
+			if (maxScroll > 0) {
+				this.horizontalScrollRel = this.$refs.root.scrollLeft / maxScroll;
+				this.horizontalScroll = (this.$refs.root.clientWidth - (this.$refs.dthscroller?.clientWidth || 45)) * this.horizontalScrollRel;
+			}
 		},
 
 		/**
@@ -177,6 +315,11 @@ module.exports = {
 				this.scroll = this.scrollStart + (e.clientY - this.scrollStartY);
 				this.recalculateBounds();
 			}
+			
+			if (this.isHorizontalScrolling) {
+				this.horizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
+				this.recalculateHorizontalBounds();
+			}
 		},
 
 		/**
@@ -184,6 +327,17 @@ module.exports = {
 		 */
 		stopMouse: function() {
 			this.isScrolling = false;
+			this.isHorizontalScrolling = false;
+		},
+
+		/**
+		 * Invoked when a mouse-down event is captured on the horizontal scroll widget.
+		 * @param {MouseEvent} e 
+		 */
+		startHorizontalMouse: function(e) {
+			this.horizontalScrollStartX = e.clientX;
+			this.horizontalScrollStart = this.horizontalScroll;
+			this.isHorizontalScrolling = true;
 		},
 
 		/**
@@ -191,14 +345,24 @@ module.exports = {
 		 * @param {WheelEvent} e
 		 */
 		wheelMouse: function(e) {
-			const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
-			const child = this.$refs.root.querySelector('tr');
-
-			if (child !== null) {
-				const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
+			if (e.shiftKey && this.needsHorizontalScrolling()) {
+				// Horizontal scrolling with shift+wheel
 				const direction = e.deltaY > 0 ? 1 : -1;
-				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
-				this.recalculateBounds();
+				const scrollAmount = 50; // Fixed scroll amount for horizontal
+				this.horizontalScroll += scrollAmount * direction;
+				this.recalculateHorizontalBounds();
+				e.preventDefault();
+			} else {
+				// Vertical scrolling
+				const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+				const child = this.$refs.root.querySelector('tr');
+
+				if (child !== null) {
+					const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
+					const direction = e.deltaY > 0 ? 1 : -1;
+					this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
+					this.recalculateBounds();
+				}
 			}
 		},
 	},
@@ -212,7 +376,11 @@ module.exports = {
 				<div>
 				</div>
 			</div>
-			<table>
+			<div class="hscroller" ref="dthscroller" @mousedown="startHorizontalMouse" :class="{ using: isHorizontalScrolling }" :style="Object.assign({ left: horizontalScrollOffset }, horizontalScrollbarStyle)">
+				<div>
+				</div>
+			</div>
+			<table ref="table" :style="{ transform: tableHorizontalOffset }">
 				<thead ref="datatableheader">
 					<tr>
 						<th v-for="header in headers">{{header}}</th>
