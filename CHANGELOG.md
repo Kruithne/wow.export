@@ -1,4 +1,4 @@
-## 0.1.66 (xx-09-2025)
+## 0.2.0 (xx-09-2025)
 ### General/features
 - Added animation previews to the built-in modelviewer.
 - Added "Import Liquids" to Blender add-on, fully supporting all liquid types on map tiles.
