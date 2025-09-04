@@ -12,7 +12,7 @@
 	"listfileSortByID": false,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/refs/heads/master/definitions/%s.dbd",
 	"dbdFallbackURL": "https://www.kruithne.net/wow.export/data/dbd/?def=%s",
-	"dbdFilenameURL": "https://api.github.com/repos/wowdev/WoWDBDefs/git/trees/master?recursive=1",
+	"dbdFilenameURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/refs/heads/master/manifest.json",
 	"dbdFilenameFallbackURL": "https://www.kruithne.net/wow.export/data/dbd",
 	"updateURL": "https://www.kruithne.net/wow.export/update/%s/",
 	"cacheExpiry": 7,
