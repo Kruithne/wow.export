@@ -6,13 +6,12 @@
 const core = require('../core');
 const log = require('../log');
 const WDCReader = require('../db/WDCReader');
-const path = require('path');
 const generics = require('../generics');
 
 let selectedFile = null;
 
 /**
- * Initialize the available table names by fetching the DBD repository.
+ * Initialize the available table names by fetching the DBD manifest.
  * @returns {Promise<void>}
  */
 async function initializeAvailableTables() {
@@ -25,17 +24,19 @@ async function initializeAvailableTables() {
 		const dbdFilenameFallbackURL = core.view.config.dbdFilenameFallbackURL;
 		
 		const raw = await generics.downloadFile([dbdFilenameURL, dbdFilenameFallbackURL]);
-		const root = raw.readJSON();
+		const manifestData = raw.readJSON();
 
-		for (const entry of root.tree) {
-			if (entry.path.startsWith('definitions/') && entry.path.endsWith('.dbd')) {
-				const name = path.basename(entry.path, '.dbd');
-				manifest.push(name);
+		for (const entry of manifestData) {
+			if (entry.tableName && entry.db2FileDataID) {
+				if (!core.view.casc.fileExists(entry.db2FileDataID))
+					continue;
+				
+				manifest.push(entry.tableName);
 			}
 		}
 
 		manifest.sort();
-		log.write('Initialized %d available DB2 tables from DBD repository', manifest.length);
+		log.write('Initialized %d available DB2 tables from DBD manifest', manifest.length);
 	} catch (e) {
 		log.write('Failed to initialize available DB2 tables: %s', e.message);
 	}
@@ -80,7 +81,7 @@ core.registerLoadFunc(async () => {
 						const idValue = rowValues.splice(idIndex, 1)[0];
 						rowValues.unshift(idValue);
 					}
-					
+
 					parsed[index++] = rowValues;
 				}
 

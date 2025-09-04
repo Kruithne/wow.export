@@ -80,6 +80,25 @@ class CASC {
 	}
 
 	/**
+	 * Check if a file exists by its fileDataID.
+	 * @param {number} fileDataID 
+	 * @returns {boolean}
+	 */
+	fileExists(fileDataID) {
+		const root = this.rootEntries.get(fileDataID);
+		if (root === undefined)
+			return false;
+
+		for (const [rootTypeIdx] of root.entries()) {
+			const rootType = this.rootTypes[rootTypeIdx];
+			if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0))
+				return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID 
 	 */
