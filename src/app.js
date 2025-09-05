@@ -624,6 +624,8 @@ document.addEventListener('click', function(e) {
 		log.write('No export directory set, setting to %s', core.view.config.exportDirectory);
 	}
 
+	listfile.preload();
+
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;
 	window.ondragenter = e => {

@@ -178,7 +178,7 @@ class CASCRemote extends CASC {
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
-		this.progress = core.createProgress(16);
+		this.progress = core.createProgress(17);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
@@ -186,9 +186,10 @@ class CASCRemote extends CASC {
 
 		core.view.casc = this;
 
+		await this.prepareListfile();
 		await this.loadListfile(this.build.BuildConfig);
+
 		await this.loadTables();
-		await this.filterListfile();
 		await this.initializeComponents();
 	}
 

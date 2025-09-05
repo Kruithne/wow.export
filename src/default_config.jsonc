@@ -7,7 +7,7 @@
 {
 	"listfileURL": "https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv",
 	"scrollSpeed": 4,
-	"listfileFallbackURL": "https://www.kruithne.net/wow.export/data/listfile/master?v=%s",
+	"listfileFallbackURL": "https://www.kruithne.net/wow.export/data/listfile/master",
 	"listfileCacheRefresh": 3,
 	"listfileSortByID": false,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/refs/heads/master/definitions/%s.dbd",

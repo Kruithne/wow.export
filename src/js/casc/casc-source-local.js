@@ -92,7 +92,7 @@ class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = core.createProgress(13);
+		this.progress = core.createProgress(14);
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
@@ -100,9 +100,10 @@ class CASCLocal extends CASC {
 
 		core.view.casc = this;
 
+		await this.prepareListfile();
 		await this.loadListfile(this.build.BuildKey);
+
 		await this.loadTables();
-		await this.filterListfile();
 		await this.initializeComponents();
 	}
 

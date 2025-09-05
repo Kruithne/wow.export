@@ -352,6 +352,67 @@ const deleteDirectory = async (dir) => {
 };
 
 /**
+ * Process work in non-blocking batches using MessageChannel scheduling.
+ * Allows large amounts of work to be done without freezing the UI.
+ * 
+ * @param {string} name - Name for logging purposes
+ * @param {Array} work - Array of items to process
+ * @param {function} processor - Function called for each item: (item, index) => void
+ * @param {number} [batchSize=1000] - Items to process per batch
+ * @returns {Promise<void>} Promise that resolves when all work is complete
+ */
+const batchWork = async (name, work, processor, batchSize = 1000) => {	
+	return new Promise((resolve, reject) => {
+		let index = 0;
+		const total = work.length;
+		const startTime = Date.now();
+		let lastProgressPercent = 0;
+		
+		log.write('Starting batch work "%s" with %d items...', name, total);
+		
+		const channel = new MessageChannel();
+		channel.port2.onmessage = () => processBatch();
+		const scheduleNext = () => channel.port1.postMessage(null);
+		
+		const cleanup = () => {
+			channel.port1.close();
+			channel.port2.close();
+		};
+		
+		const processBatch = () => {
+			try {
+				const endIndex = Math.min(index + batchSize, total);
+				
+				for (let i = index; i < endIndex; i++)
+					processor(work[i], i);
+				
+				index = endIndex;
+				
+				const progressPercent = Math.floor((index / total) * 100);
+				if (progressPercent >= lastProgressPercent + 10 && progressPercent < 100) {
+					log.write('Batch work "%s" progress: %d%% (%d/%d)', name, progressPercent, index, total);
+					lastProgressPercent = progressPercent;
+				}
+				
+				if (index < total) {
+					scheduleNext();
+				} else {
+					const duration = Date.now() - startTime;
+					log.write('Batch work "%s" completed in %dms (%d items)', name, duration, total);
+					cleanup();
+					resolve();
+				}
+			} catch (error) {
+				cleanup();
+				reject(error);
+			}
+		};
+		
+		processBatch();
+	});
+};
+
+/**
  * Return a formatted representation of seconds.
  * Example: 26 will return 00:26
  * @param {number} seconds 
@@ -379,5 +440,6 @@ module.exports = {
 	fileExists,
 	readFile,
 	deleteDirectory,
-	formatPlaybackSeconds
+	formatPlaybackSeconds,
+	batchWork
 };

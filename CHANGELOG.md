@@ -20,7 +20,8 @@
 - Sort icon on column headers enables per-column sorting.
 
 ### Loading
-- Remote CDN hosts are now speculatively pre-resolved.
+- Remote CDN hosts are now speculatively pre-resolved, reducing load times.
+- Listfiles are pre-loaded and filtered ahead-of-time, reducing load times.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
@@ -28,6 +29,7 @@
 - Added option to the Blender addon to create collections for WMO doodad sets (thanks KiaArmani!).
 - Added option to prefix 3D preview exports to prevent overwrite (enabled by default).
 - Metadata exports for M2 and WMOs are now enabled by default.
+- Listfile URL no longer supports build wildcard (long unsupported by official endpoints).
 
 ### UI
 - Added expansion icon for Midnight.
