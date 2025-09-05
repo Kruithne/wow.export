@@ -32,7 +32,10 @@ module.exports = {
 			sortDirection: 'off',
 			horizontalScrollAnimationId: null,
 			pendingHorizontalUpdate: false,
-			targetHorizontalScroll: 0
+			targetHorizontalScroll: 0,
+			resizeAnimationId: null,
+			pendingResizeUpdate: false,
+			targetColumnWidth: 0
 		}
 	},
 
@@ -79,6 +82,11 @@ module.exports = {
 		if (this.horizontalScrollAnimationId) {
 			cancelAnimationFrame(this.horizontalScrollAnimationId);
 			this.horizontalScrollAnimationId = null;
+		}
+
+		if (this.resizeAnimationId) {
+			cancelAnimationFrame(this.resizeAnimationId);
+			this.resizeAnimationId = null;
 		}
 
 		// Disconnect resize observer.
@@ -504,15 +512,21 @@ module.exports = {
 			
 			if (this.isResizing) {
 				const deltaX = e.clientX - this.resizeStartX;
-				const newWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
+				this.targetColumnWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
 				
-				// Update the column width
-				if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
-					this.columnWidths[this.resizeColumnIndex] = newWidth;
-					
-					// Mark this column as manually resized by column name
-					const columnName = this.headers[this.resizeColumnIndex];
-					this.manuallyResizedColumns[columnName] = newWidth;
+				if (!this.pendingResizeUpdate) {
+					this.pendingResizeUpdate = true;
+					this.resizeAnimationId = requestAnimationFrame(() => {
+						// Update the column width
+						if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
+							this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
+							
+							// Mark this column as manually resized by column name
+							const columnName = this.headers[this.resizeColumnIndex];
+							this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
+						}
+						this.pendingResizeUpdate = false;
+					});
 				}
 			}
 		},
@@ -532,6 +546,18 @@ module.exports = {
 				if (this.targetHorizontalScroll !== this.horizontalScroll) {
 					this.horizontalScroll = this.targetHorizontalScroll;
 					this.recalculateHorizontalBounds();
+				}
+			}
+			
+			if (this.resizeAnimationId) {
+				cancelAnimationFrame(this.resizeAnimationId);
+				this.resizeAnimationId = null;
+				this.pendingResizeUpdate = false;
+				
+				if (this.targetColumnWidth !== 0 && this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
+					this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
+					const columnName = this.headers[this.resizeColumnIndex];
+					this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
 				}
 			}
 			
