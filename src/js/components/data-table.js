@@ -30,7 +30,11 @@ module.exports = {
 			isOverResizeZone: false,
 			resizeZoneColumnIndex: -1,
 			sortColumn: -1,
-			sortDirection: 'off'
+			sortDirection: 'off',
+			// Performance optimization for horizontal scroll drag
+			horizontalScrollAnimationId: null,
+			pendingHorizontalUpdate: false,
+			targetHorizontalScroll: 0
 		}
 	},
 
@@ -73,6 +77,11 @@ module.exports = {
 		if (this.$refs.root) {
 			this.$refs.root.removeEventListener('scroll', this.onScroll);
 			this.$refs.root.removeEventListener('mousedown', this.onMiddleMouseDown);
+		}
+
+		if (this.horizontalScrollAnimationId) {
+			cancelAnimationFrame(this.horizontalScrollAnimationId);
+			this.horizontalScrollAnimationId = null;
 		}
 
 		// document.removeEventListener('paste', this.onPaste);
@@ -451,8 +460,16 @@ module.exports = {
 			}
 			
 			if (this.isHorizontalScrolling) {
-				this.horizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
-				this.recalculateHorizontalBounds();
+				this.targetHorizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
+				
+				if (!this.pendingHorizontalUpdate) {
+					this.pendingHorizontalUpdate = true;
+					this.horizontalScrollAnimationId = requestAnimationFrame(() => {
+						this.horizontalScroll = this.targetHorizontalScroll;
+						this.recalculateHorizontalBounds();
+						this.pendingHorizontalUpdate = false;
+					});
+				}
 			}
 			
 			if (this.isResizing) {
@@ -476,6 +493,18 @@ module.exports = {
 		stopMouse: function() {
 			this.isScrolling = false;
 			this.isHorizontalScrolling = false;
+			
+			if (this.horizontalScrollAnimationId) {
+				cancelAnimationFrame(this.horizontalScrollAnimationId);
+				this.horizontalScrollAnimationId = null;
+				this.pendingHorizontalUpdate = false;
+				
+				if (this.targetHorizontalScroll !== this.horizontalScroll) {
+					this.horizontalScroll = this.targetHorizontalScroll;
+					this.recalculateHorizontalBounds();
+				}
+			}
+			
 			if (this.isResizing) {
 				this.isResizing = false;
 				this.resizeColumnIndex = -1;
