@@ -52,7 +52,7 @@ let activePath;
 
 /**
  * Lookup model displays for items/creatures.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @returns {Array}
  */
 const getModelDisplays = (fileDataID) => {
@@ -118,7 +118,7 @@ const toggleUVLayer = (layerName) => {
 
 /**
  * Preview a texture by the given fileDataID.
- * @param {number} fileDataID 
+ * @param {number} fileDataID
  * @param {string} name
  */
 const previewTextureByID = async (fileDataID, name) => {
@@ -263,19 +263,19 @@ const previewModel = async (fileName) => {
 
 				for (let i = 0; i < activeRenderer.m2.animations.length; i++) {
 					const animation = activeRenderer.m2.animations[i];
-					animList.push({ 
+					animList.push({
 						id: `${Math.floor(animation.id)}.${animation.variationIndex}`, // unique key
 						animationId: animation.id, // original ID for lookup
 						m2Index: i, // actual M2 animation index
 						label: AnimMapper.get_anim_name(animation.id) + " (" + Math.floor(animation.id) + "." + animation.variationIndex + ")"
 					});
 				}
-					
+
 				const finalAnimList = [
 					{ id: 'none', label: 'None', m2Index: -1 },
 					...animList
 				];
-				
+
 				core.view.modelViewerAnims = finalAnimList;
 				core.view.modelViewerAnimSelection = 'none';
 			}
@@ -310,7 +310,7 @@ const previewModel = async (fileName) => {
 
 /**
  * Resolves variant texture IDs based on user selection.
- * @param {string} fileName 
+ * @param {string} fileName
  * @returns {Array}
  */
 const getVariantTextureIDs = (fileName) => {
@@ -336,24 +336,24 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		// For PNG exports, we only export the viewport, not the selected files.
 		if (activePath) {
 			core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
-			
+
 			const canvas = document.getElementById('model-preview').querySelector('canvas');
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
-			
+
 			if (format === 'PNG') {
 				const exportPath = ExportHelper.getExportPath(activePath);
 				let outFile = ExportHelper.replaceExtension(exportPath, '.png');
-				
+
 				if (core.view.config.modelsExportPngIncrements)
 					outFile = await ExportHelper.getIncrementalFilename(outFile);
-				
+
 				const outDir = path.dirname(outFile);
 
 				await buf.writeToFile(outFile);
 				await exportPaths?.writeLine('PNG:' + outFile);
 
 				log.write('Saved 3D preview screenshot to %s', outFile);
-				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => nw.Shell.openItem(outDir) }, -1);
+				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => mainWindow.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				const clipboard = nw.Clipboard.get();
 				clipboard.set(buf.toBase64(), 'png', true);
@@ -373,7 +373,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())
 				return;
-			
+
 			let fileName;
 			let fileDataID;
 
@@ -386,11 +386,11 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			}
 
 			const fileManifest = [];
-			
+
 			try {
 				let fileType;
 				const data = await (isLocal ? BufferWrapper.readFile(fileName) : casc.getFile(fileDataID));
-				
+
 				if (fileName === undefined) {
 					// In the event that we're exporting a file by ID that does not exist in the listfile
 					// then we can't presume the file type and need to investigate the headers.
@@ -563,7 +563,7 @@ const updateListfile = () => {
 
 	if (core.view.config.modelsShowM2)
 		modelExt.push('.m2');
-	
+
 	if (core.view.config.modelsShowWMO)
 		modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
 

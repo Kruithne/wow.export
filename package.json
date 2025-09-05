@@ -19,12 +19,17 @@
 		"bun": ">=1.2.0"
 	},
 	"dependencies": {
+		"@msgpack/msgpack": "^3.1.2",
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
 		"rcedit": "^2.0.0",
 		"three": "^0.179.1",
 		"vue": "^3.5.21"
 	},
 	"devDependencies": {
-		"@types/bun": "^1.2.21"
+		"@types/bun": "^1.2.21",
+		"fs-extra": "^11.3.1",
+		"recast": "^0.23.11",
+		"vite": "^7.1.4",
+		"wait-on": "^8.0.4"
 	}
 }

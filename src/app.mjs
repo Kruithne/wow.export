@@ -4,12 +4,6 @@
 	License: MIT
  */
 
-// BUILD_RELEASE will be set by the bundler during production builds allowing us
-// to discern a production build. For debugging builds, process.env.BUILD_RELEASE
-// will be undefined. Any code that only runs when BUILD_RELEASE is false will
-// be removed as dead-code during compile.
-BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
-
 /**
  * crash() is used to inform the user that the application has exploded.
  * It is purposely global and primitive as we have no idea what state
@@ -18,7 +12,7 @@ BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
  * @param {string} errorText
  */
 let isCrashed = false;
-crash = (errorCode, errorText) => {
+window.crash = (errorCode, errorText) => {
 	// Prevent a never-ending cycle of depression.
 	if (isCrashed)
 		return;
@@ -57,22 +51,9 @@ crash = (errorCode, errorText) => {
 		core.events.emit('crash');
 };
 
-// Debugging reloader.
-if (!BUILD_RELEASE) {
-	window.addEventListener('keyup', e => {
-		if (e.code === 'F5')
-			chrome.runtime.reload();
-	});
-}
-
 // Register crash handlers.
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
-
-const win = nw.Window.get();
-// Launch DevTools for debug builds.
-if (!BUILD_RELEASE)
-	win.showDevTools();
 
 // Imports
 const os = require('os');
@@ -129,8 +110,7 @@ require('./js/ui/tab-characters');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
-win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
-win.on('close', () => process.exit()); // Ensure we exit when window is closed.
+mainWindow.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
@@ -162,7 +142,15 @@ document.addEventListener('click', function(e) {
 		created() {
 			core.view = this;
 		},
+		provide() {
+			return {
+				view: this
+			};
+		},
 		methods: {
+			setToast: core.setToast,
+			hideToast: core.hideToast,
+
 			/**
 			 * Invoked when the user chooses to manually install the Blender add-on.
 			 */
@@ -357,14 +345,6 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
-			 * Hide the toast bar.
-			 * @param {boolean} userCancel
-			 */
-			hideToast: function(userCancel = false) {
-				core.hideToast(userCancel)
-			},
-
-			/**
 			 * Restart the application.
 			 */
 			restartApplication: function() {
@@ -515,7 +495,7 @@ document.addEventListener('click', function(e) {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale.flags).map(e => { return { value: e }});
+				return Object.keys(this.availableLocale.flags).map(e => { return { value: e };});
 			},
 
 			/**
@@ -576,7 +556,7 @@ document.addEventListener('click', function(e) {
 			 * @param {float} val 
 			 */
 			loadPct: function(val) {
-				win.setProgressBar(val);
+				mainWindow.setProgressBar(val);
 			},
 
 			/**
@@ -588,8 +568,10 @@ document.addEventListener('click', function(e) {
 		}
 	});
 
-	// Interlink error handling for Vue.
-	app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	if (BUILD_RELEASE) {
+		// Interlink error handling for Vue.
+		app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	}
 
 	app.component('Listbox', Listbox);
 	app.component('Listboxb', Listboxb);

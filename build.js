@@ -10,6 +10,8 @@ import path from 'node:path';
 import util from 'node:util';
 import rcedit from 'rcedit';
 import crypto from 'node:crypto';
+import fse from 'fs-extra';
+import { rollup } from 'rollup';
 
 const argv = process.argv.splice(2);
 
@@ -30,13 +32,13 @@ const log = {
 function format_bytes(bytes) {
 	if (bytes === 0)
 		return '0b';
-	
+
 	const units = ['b', 'kb', 'mb', 'gb'];
 	const i = Math.floor(Math.log(bytes) / Math.log(1024));
-	
+
 	// no more than gb
 	const unit_index = Math.min(i, 3);
-	
+
 	// format with at most 2 decimal places and remove trailing zeros
 	return (bytes / Math.pow(1024, unit_index)).toFixed(2)
 		.replace(/\.0+$|(\.\d*[1-9])0+$/, '$1') + units[unit_index];
@@ -59,6 +61,30 @@ const collectFiles = async (dir, out = []) => {
 
 	return out;
 };
+
+/**
+ * Removes all files with a specific extension recursively from a directory.
+ * @param {string} directoryPath Directory to recursively search.
+ * @param {array} targetExtension Extension of files to be removed.
+ */
+async function removeFilesByExtension(directoryPath, targetExtension) {
+	try {
+		const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+
+		for (const entry of entries) {
+			const fullPath = path.join(directoryPath, entry.name);
+			if (entry.isDirectory()) {
+				await removeFilesByExtension(fullPath, targetExtension);
+			} else {
+				const ext = path.extname(entry.name);
+				if (ext.toLowerCase() === targetExtension.toLowerCase())
+					await fs.unlink(fullPath);
+			}
+		}
+	} catch (err) {
+		console.error(`Error processing directory: ${err}`);
+	}
+}
 
 // Create a promisified version of zlib.deflate.
 const deflateBuffer = util.promisify(zlib.deflate);
@@ -167,7 +193,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				if (extractFilter(entryName)) {
 					const entryPath = entryName.substring(bundleName.length);
 					const entryDir = path.join(buildDir, path.dirname(entryPath));
-	
+
 					await fs.mkdir(entryDir, { recursive: true });
 					zip.extractEntryTo(entryName, entryDir, false, true);
 					extractCount++;
@@ -179,10 +205,10 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			const list_result = Bun.spawnSync({ cmd: ['tar', '-tf', bundlePath] });
 			if (list_result.exitCode !== 0)
 				throw new Error(`Failed to list archive contents: ${list_result.stderr?.toString() || 'Unknown error'}`);
-			
+
 			const all_files = list_result.stdout?.toString().split('\n').filter(line => line.trim() && !line.endsWith('/')) || [];
 			const files_to_extract = [];
-			
+
 			for (const file of all_files) {
 				if (extractFilter(file)) {
 					const stripped_path = file.split('/').slice(1).join('/');
@@ -194,7 +220,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					filterCount++;
 				}
 			}
-			
+
 			if (files_to_extract.length > 0) {
 				const extract_args = [
 					'-xf', bundlePath,
@@ -202,7 +228,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					'--strip-components=1',
 					...files_to_extract
 				];
-				
+
 				const extract_res = Bun.spawnSync({ cmd: ['tar', ...extract_args] });
 				if (extract_res.exitCode !== 0)
 					throw new Error(`Extraction failed: ${extract_res.stderr?.toString() || 'Unknown error'}`);
@@ -287,7 +313,19 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		} else if (isBundle) {
 			// Bundle everything together, packaged for production release.
 			const bundleConfig = build.bundleConfig;
-			const jsEntry = path.join(sourceDirectory, bundleConfig.jsEntry);
+			const preBuildDir = path.join(outDir, '_prebuild');
+			await fs.rm(preBuildDir, { recursive: true, force: true });
+			await fs.mkdir(preBuildDir, { recursive: true });
+			await fse.copy(sourceDirectory, preBuildDir, { overwrite: true });
+			const rollupBundle = await rollup({input: path.join(sourceDirectory, bundleConfig.jsEntry.replace('.js', '.mjs'))});
+			await rollupBundle.write({
+				file: path.join(preBuildDir, bundleConfig.jsEntry),
+				format: 'cjs',
+				inlineDynamicImports: true,
+			});
+			removeFilesByExtension(preBuildDir, '.mjs');
+
+			const jsEntry = path.join(preBuildDir, bundleConfig.jsEntry);
 			log.info('Bundling sources (entry: *%s*)...', jsEntry);
 
 			// Make sure the source directory exists.
@@ -358,7 +396,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				'--outfile',
 				updaterOutput
 			];
-			
+
 			const result = Bun.spawnSync({ cmd: ['bun', ...bunArgs], stdio: ['inherit', 'inherit', 'inherit'] });
 			if (result.exitCode !== 0)
 				throw new Error(`Bun build failed with code ${result.exitCode}`);
@@ -376,6 +414,9 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 		// Apply manifest properties defined in the config.
 		Object.assign(manifest, config.manifest);
+
+		// Apply custom build manifest
+		Object.assign(manifest, build.manifest || {});
 
 		// Apply build specific meta data to the manifest.
 		Object.assign(manifest, { flavour: build.name, guid: buildGUID });
@@ -413,7 +454,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				entryCount++;
 			}
 
-			const manifestData = { contents, guid: buildGUID }
+			const manifestData = { contents, guid: buildGUID };
 			const manifestOut = path.join(buildDir, build.updateBundle.manifest);
 			await fs.writeFile(manifestOut, JSON.stringify(manifestData, null, '\t'), 'utf8');
 			log.info('Update package built (*%s* (*%s* deflated) in *%d* files)', format_bytes(totalSize), format_bytes(compSize), entryCount);

@@ -21,7 +21,7 @@ events.setMaxListeners(666);
 // Each item is an object defining .ext, .prompt() and .process().
 const dropHandlers = [];
 
-// loaders is an array of promises which need to be resolved as a 
+// loaders is an array of promises which need to be resolved as a
 // step in the loading process, allowing components to initialize.
 let loaders = [];
 
@@ -147,7 +147,7 @@ const makeNewView = () => {
 		chrImportRealms: [],
 		chrImportSelectedRealm: null,
 		chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
-		chrImportChrModelID: 0, // Temporary storage for target character model ID. 
+		chrImportChrModelID: 0, // Temporary storage for target character model ID.
 		chrImportChoices: [], // Temporary storage for character import choices.
 		realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 		exportCancelled: false, // Export cancellation state.
@@ -181,7 +181,7 @@ const makeNewView = () => {
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		]
 	};
-}
+};
 
 // The `view` object is used as a reference to the data for the main Vue instance.
 const view = null;
@@ -208,7 +208,7 @@ const openLastExportStream = () => {
 /**
  * Run an async function while preventing the user from starting others.
  * This is heavily used in UI to disable components during big tasks.
- * @param {function} func 
+ * @param {function} func
  */
 const block = async (func) => {
 	core.view.isBusy++;
@@ -218,7 +218,7 @@ const block = async (func) => {
 
 /**
  * Create a progress interface for easy status reporting.
- * @param {number} segments 
+ * @param {number} segments
  * @returns {Progress}
  */
 const createProgress = (segments = 1) => {
@@ -258,7 +258,7 @@ const hideToast = (userCancel = false) => {
 /**
  * Display a toast message.
  * @param {string} toastType 'error', 'info', 'success', 'progress'
- * @param {string} message 
+ * @param {string} message
  * @param {object} options
  * @param {number} ttl Time in milliseconds before removing the toast.
  * @param {boolean} closable If true, toast can manually be closed.
@@ -272,18 +272,18 @@ const setToast = (toastType, message, options = null, ttl = 10000, closable = tr
 	// Create a timer to remove this toast.
 	if (ttl > -1)
 		toastTimer = setTimeout(hideToast, ttl);
-}
+};
 
 /**
  * Open user-configured export directory with OS default.
  */
 const openExportDirectory = () => {
-	nw.Shell.openItem(core.view.config.exportDirectory)
+	mainWindow.Shell.openItem(core.view.config.exportDirectory);
 };
 
 /**
  * Register a handler for file drops.
- * @param {object} handler 
+ * @param {object} handler
  */
 const registerDropHandler = (handler) => {
 	// Ensure the extensions are all lower-case.
@@ -293,7 +293,7 @@ const registerDropHandler = (handler) => {
 
 /**
  * Get a drop handler for the given file path.
- * @param {string} file 
+ * @param {string} file
  */
 const getDropHandler = (file) => {
 	file = file.toLowerCase();
@@ -304,13 +304,13 @@ const getDropHandler = (file) => {
 				return handler;
 		}
 	}
-	
+
 	return null;
 };
 
 /**
  * Register a promise to be resolved during the last loading step.
- * @param {function} func 
+ * @param {function} func
  */
 const registerLoadFunc = (func) => {
 	loaders.push(func);
@@ -322,7 +322,7 @@ const registerLoadFunc = (func) => {
 const runLoadFuncs = async () => {
 	while (loaders.length > 0)
 		await loaders.shift()();
-		
+
 	loaders = undefined;
 };
 
@@ -335,7 +335,7 @@ const runLoadFuncs = async () => {
 const saveScrollPosition = (key, scrollRel, scrollIndex) => {
 	if (!key)
 		return;
-	
+
 	scrollPositions[key] = {
 		scrollRel: scrollRel || 0,
 		scrollIndex: scrollIndex || 0,
@@ -350,18 +350,18 @@ const saveScrollPosition = (key, scrollRel, scrollIndex) => {
  */
 const getScrollPosition = (key) => {
 	if (!key || !scrollPositions[key]) return null;
-	
+
 	return scrollPositions[key];
 };
 
-const core = { 
+const core = {
 	events,
 	view,
 	makeNewView,
 	block,
 	createProgress,
 	setToast,
-	hideToast,	
+	hideToast,
 	openExportDirectory,
 	registerDropHandler,
 	getDropHandler,
