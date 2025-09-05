@@ -85,7 +85,7 @@ core.events.once('screen-source-select', async () => {
 			node.delay = -1;
 			log.write('Failed ping to %s: %s', cdnURL, e.message);
 		}).finally(() => {
-			code.view.cdnRegions = [...regions]; // force reactivity
+			core.view.cdnRegions = [...regions]; // force reactivity
 		}));
 	}
 
