@@ -82,6 +82,7 @@ const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
 const listfile = require('./js/casc/listfile');
+const cdnResolver = require('./js/casc/cdn-resolver');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
@@ -335,6 +336,7 @@ document.addEventListener('click', function(e) {
 				this.selectedCDNRegion = region;
 				this.lockCDNRegion = true;
 				this.config.sourceSelectUserRegion = region.tag;
+				cdnResolver.startPreResolution(region.tag);
 			},
 
 			/**

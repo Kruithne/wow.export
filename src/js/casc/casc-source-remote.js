@@ -14,6 +14,7 @@ const CDNConfig = require('./cdn-config');
 const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BLTEReader = require('./blte-reader').BLTEReader;
+const cdnResolver = require('./cdn-resolver');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 
@@ -361,39 +362,15 @@ class CASCRemote extends CASC {
 	}
 
 	/**
-	 * Run a ping for all hosts in the server config and resolve fastest.
-	 * Returns NULL if all the hosts failed to ping.
+	 * Resolve the fastest CDN host for this region and server configuration.
 	 */
 	async resolveCDNHost() {
 		if (this.progress)
 			await this.progress.step('Locating fastest CDN server');
 
-		log.write('Resolving best host: %s', this.serverConfig.Hosts);
-
-		let bestHost = null;
-		const hosts = this.serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
-		const hostPings = [];
-
-		for (const host of hosts) {
-			hostPings.push(generics.ping(host).then(ping => {
-				log.write('Host %s resolved with %dms ping', host, ping);
-				if (bestHost === null || ping < bestHost.ping)
-					bestHost = { host, ping };
-			}).catch(e => {
-				log.write('Host %s failed to resolve a ping: %s', host, e);
-			}));
-		}
-
-		// Ensure that every ping has resolved or failed.
-		await Promise.allSettled(hostPings);
-
-		// No hosts resolved.
-		if (bestHost === null)
-			throw new Error('Unable to resolve a CDN host.');
-
-		log.write('%s resolved as the fastest host with a ping of %dms', bestHost.host, bestHost.ping);
-		this.host = bestHost.host + this.serverConfig.Path + '/';
+		this.host = await cdnResolver.getBestHost(this.region, this.serverConfig);
 	}
+
 
 	/**
 	 * Format a CDN key for use in CDN requests.

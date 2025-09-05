@@ -14,6 +14,9 @@
 - Added "Show Bones" option to preview model armature in the model viewer.
 - Added "Data" tab that allows you to view data tables available within the client!
 
+### Loading
+- Remote CDN hosts are now speculatively pre-resolved.
+
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
 - Added option that controls the amount of scroll lines, default is 4 which should make scrolling smoother (thanks NoodleBug!).

@@ -12,6 +12,7 @@ const ExternalLinks = require('../external-links');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
+const cdnResolver = require('../casc/cdn-resolver');
 
 let cascSource = null;
 
@@ -73,8 +74,11 @@ core.events.once('screen-source-select', async () => {
 		regions.push(node);
 
 		// Mark this region as the selected one.
-		if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION))
+		if (region === userRegion || (typeof userRegion !== 'string' && region === constants.PATCH.DEFAULT_REGION)) {
 			core.view.selectedCDNRegion = node;
+			// Start pre-resolving CDN hosts for this region
+			cdnResolver.startPreResolution(region);
+		}
 
 		// Run a rudimentary ping check for each CDN. 
 		pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
@@ -171,8 +175,11 @@ core.events.once('screen-source-select', async () => {
 				continue;
 
 			// Switch the selected region for the fastest one.
-			if (region.delay < selectedRegion.delay)
+			if (region.delay < selectedRegion.delay) {
 				core.view.selectedCDNRegion = region;
+				// Start pre-resolving CDN hosts for the new fastest region
+				cdnResolver.startPreResolution(region.tag);
+			}
 		}
 	});
 });
