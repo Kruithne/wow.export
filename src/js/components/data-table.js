@@ -224,6 +224,8 @@ module.exports = {
 		 * Determines if horizontal scrollbar should be visible and its width.
 		 */
 		horizontalScrollbarStyle: function() {
+			this.forceScrollbarUpdate; // Reactive dependency ref
+			
 			if (!this.displayItems || this.displayItems.length === 0 || !this.$refs.root || !this.$refs.table)
 				return { display: 'none' };
 			
