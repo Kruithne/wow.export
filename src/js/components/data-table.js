@@ -84,11 +84,6 @@ module.exports = {
 			this.horizontalScrollAnimationId = null;
 		}
 
-		// document.removeEventListener('paste', this.onPaste);
-
-		// if (this.keyinput)
-		// 	document.removeEventListener('keydown', this.onKeyDown);
-
 		// Disconnect resize observer.
 		this.observer.disconnect();
 	},
