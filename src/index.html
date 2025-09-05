@@ -434,8 +434,25 @@
 					</div>
 				</div>
 				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
-					<div class="list-container">
-						<listbox id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox>
+					<div class="map-placeholder">
+						<div class="expansion-buttons">
+							<button class="expansion-button show-all"
+									title="Show All"
+									:class="{ active: selectedExpansionFilter === -1 }"
+									@click="selectedExpansionFilter = -1">
+							</button>
+							<button v-for="expansion in constants.EXPANSIONS" 
+									:key="expansion.id"
+									class="expansion-button"
+									:title="expansion.name"
+									:class="{ active: selectedExpansionFilter === expansion.id }"
+									@click="selectedExpansionFilter = expansion.id"
+									:style="'background-image: var(--expansion-icon-' + expansion.id + ')'">
+							</button>
+						</div>
+					</div>
+					<div class="list-container" id="maps-list-container">
+						<listbox-maps id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :expansion-filter="selectedExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
 					</div>
 					<div class="filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>

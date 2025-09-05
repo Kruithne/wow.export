@@ -101,6 +101,7 @@ window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
 const Listbox = require('./js/components/listbox');
+const ListboxMaps = require('./js/components/listbox-maps');
 const Listboxb = require('./js/components/listboxb');
 const Itemlistbox = require('./js/components/itemlistbox');
 const Checkboxlist = require('./js/components/checkboxlist');
@@ -594,6 +595,7 @@ document.addEventListener('click', function(e) {
 	app.config.errorHandler = err => crash('ERR_VUE', err.message);
 
 	app.component('Listbox', Listbox);
+	app.component('ListboxMaps', ListboxMaps);
 	app.component('Listboxb', Listboxb);
 	app.component('Itemlistbox', Itemlistbox);
 	app.component('Checkboxlist', Checkboxlist);
