@@ -696,15 +696,15 @@ module.exports = {
 		},
 
 		/**
-		 * Get sort indicator for a given column.
+		 * Get sort icon name for a given column.
 		 * @param {number} columnIndex - Index of the column
-		 * @returns {string} Sort indicator symbol
+		 * @returns {string} Sort icon class name
 		 */
-		getSortIndicator: function(columnIndex) {
-			if (this.sortColumn !== columnIndex || this.sortDirection === 'off') {
-				return '';
-			}
-			return this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+		getSortIconName: function(columnIndex) {
+			if (this.sortColumn !== columnIndex || this.sortDirection === 'off')
+				return 'sort-icon-off';
+			
+			return this.sortDirection === 'asc' ? 'sort-icon-up' : 'sort-icon-down';
 		},
 
 		/**
@@ -714,8 +714,6 @@ module.exports = {
 		 * @param {Event} e - The click event
 		 */
 		handleFilterIconClick: function(columnIndex, e) {
-			e.stopPropagation();
-			
 			const columnName = this.headers[columnIndex].toLowerCase();
 			const filterPrefix = columnName + ':';
 			
@@ -762,16 +760,21 @@ module.exports = {
 				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
 						<th v-for="(header, index) in headers" 
-							:style="columnStyles['col-' + index] || {}"
-							@click="!isOverResizeZone && toggleSort(index)"
-							:class="{ sortable: !isOverResizeZone }">
+							:style="columnStyles['col-' + index] || {}">
 							<span class="header-content">
-								{{header}}{{getSortIndicator(index)}}
-								<span 
-									class="filter-icon" 
-									@click="handleFilterIconClick(index, $event)"
-									title="Filter this column">
-								</span>
+								{{header}}
+								<div class="header-icons">
+									<span 
+										class="filter-icon" 
+										@click="handleFilterIconClick(index, $event)"
+										title="Filter this column">
+									</span>
+									<span 
+										:class="'sort-icon ' + getSortIconName(index)" 
+										@click="toggleSort(index)"
+										title="Sort this column">
+									</span>
+								</div>
 							</span>
 						</th>
 					</tr>
