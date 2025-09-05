@@ -836,11 +836,10 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .ui-datatable table {
-	width: max-content;
-	min-width: 100%;
+	width: 100%;
 	background: var(--background-dark);
 	padding: 0px;
-	table-layout: auto;
+	table-layout: fixed;
 }
 
 .ui-datatable table:nth-child(even) {

@@ -20,7 +20,6 @@ module.exports = {
 			slotCount: 1,
 			lastSelectItem: null,
 			selection: [],
-			forceScrollbarUpdate: 0,
 			columnWidths: [],
 			manuallyResizedColumns: {},
 			isResizing: false,
@@ -52,15 +51,14 @@ module.exports = {
 		this.$refs.root.addEventListener('scroll', this.onScroll);
 		this.$refs.root.addEventListener('mousedown', this.onMiddleMouseDown);
 
-		// // Register observer for layout changes.
 		this.observer = new ResizeObserver(() => {
 			this.resize();
-			this.calculateColumnWidths();
 		});
 		this.observer.observe(this.$refs.root);
 		
-		// Calculate initial column widths
-		this.calculateColumnWidths();
+		this.$nextTick(() => {
+			this.calculateColumnWidths();
+		});
 	},
 
 
@@ -222,19 +220,15 @@ module.exports = {
 		 * Determines if horizontal scrollbar should be visible and its width.
 		 */
 		horizontalScrollbarStyle: function() {
-			this.forceScrollbarUpdate; // Reactive dependency ref
-			
 			if (!this.displayItems || this.displayItems.length === 0 || !this.$refs.root || !this.$refs.table)
 				return { display: 'none' };
 			
 			const containerWidth = this.$refs.root.clientWidth;
 			const tableWidth = this.$refs.table.scrollWidth;
 			
-			// Only show scrollbar if table is wider than container 
 			if (tableWidth <= containerWidth)
 				return { display: 'none' };
 			
-			// Calculate scrollbar width based on content ratio
 			const scrollbarWidth = Math.max(45, (containerWidth / tableWidth) * (containerWidth - 16));
 			
 			return {
@@ -279,51 +273,13 @@ module.exports = {
 
 	watch: {
 		/**
-		 * Watch for data changes to refresh scrollbar visibility
-		 */
-		rows: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		/**
 		 * Watch for header changes to recalculate column widths
 		 */
 		headers: {
 			handler: function() {
+				this.manuallyResizedColumns = {};
 				this.$nextTick(() => {
 					this.calculateColumnWidths();
-				});
-			},
-			immediate: true
-		},
-
-		filteredItems: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		displayItems: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		sortedItems: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
 				});
 			},
 			immediate: true
@@ -471,38 +427,29 @@ module.exports = {
 			return this.$refs.table.scrollWidth > this.$refs.root.clientWidth;
 		},
 
-		/**
-		 * Refresh horizontal scrollbar state based on current content
-		 */
-		refreshHorizontalScrollbar: function() {
-			if (!this.$refs.root || !this.$refs.table) return;
-			
-			// Trigger computed property re-evaluation by changing reactive data
-			this.forceScrollbarUpdate++;
-		},
 
 		/**
-		 * Calculate and store column widths based on header cell widths.
-		 * Preserves manually resized columns.
+		 * Calculate column widths based on header text length ONLY.
+		 * No DOM measurements. No dynamic shit. Just text length.
 		 */
 		calculateColumnWidths: function() {
-			if (!this.$refs.datatableheader || !this.headers) return;
+			if (!this.headers) return;
 			
-			this.$nextTick(() => {
-				const headerCells = this.$refs.datatableheader.querySelectorAll('th');
-				const widths = [];
+			const widths = [];
+			
+			this.headers.forEach((header, index) => {
+				const columnName = header;
 				
-				headerCells.forEach((cell, index) => {
-					const columnName = this.headers[index];
-					if (this.manuallyResizedColumns[columnName]) {
-						widths.push(this.manuallyResizedColumns[columnName]);
-					} else {
-						widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
-					}
-				});
-				
-				this.columnWidths = widths;
+				if (this.manuallyResizedColumns[columnName]) {
+					widths.push(this.manuallyResizedColumns[columnName]);
+				} else {
+					// Calculate width based on text length: 8px per character + 40px for icons/padding
+					const textWidth = (header.length * 8) + 40;
+					widths.push(Math.max(120, textWidth));
+				}
 			});
+			
+			this.columnWidths = widths;
 		},
 
 		/**
