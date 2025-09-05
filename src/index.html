@@ -866,11 +866,11 @@
 						<input type="text" v-model="userInputFilterDB2s" placeholder="Filter DB2s.." />
 					</div>
 					<div class="list-container">
-						<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows" :filter="userInputFilterDataTable" :regex="config.regexFilters"></data-table>
+						<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows" :filter="userInputFilterDataTable" :regex="config.regexFilters" @update:filter="userInputFilterDataTable = $event"></data-table>
 					</div>
 					<div class="filter data-table-filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
+						<input type="text" id="data-table-filter-input" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
 					</div>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">

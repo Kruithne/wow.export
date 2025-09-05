@@ -31,7 +31,6 @@ module.exports = {
 			resizeZoneColumnIndex: -1,
 			sortColumn: -1,
 			sortDirection: 'off',
-			// Performance optimization for horizontal scroll drag
 			horizontalScrollAnimationId: null,
 			pendingHorizontalUpdate: false,
 			targetHorizontalScroll: 0
@@ -709,6 +708,34 @@ module.exports = {
 		},
 
 		/**
+		 * Handle clicking the filter icon for a column.
+		 * Inserts the column filter prefix and focuses the filter input.
+		 * @param {number} columnIndex - Index of the column
+		 * @param {Event} e - The click event
+		 */
+		handleFilterIconClick: function(columnIndex, e) {
+			e.stopPropagation();
+			
+			const columnName = this.headers[columnIndex].toLowerCase();
+			const filterPrefix = columnName + ':';
+			
+			const currentFilter = this.filter || '';
+			const newFilter = currentFilter ? currentFilter + ' ' + filterPrefix : filterPrefix;
+			
+			this.$emit('update:filter', newFilter);
+			
+			this.$nextTick(() => {
+				this.$nextTick(() => {
+					const filterInput = document.getElementById('data-table-filter-input');
+					if (filterInput) {
+						filterInput.focus();
+						filterInput.setSelectionRange(filterInput.value.length, filterInput.value.length);
+					}
+				});
+			});
+		},
+
+		/**
 		 * Prevent middle mouse button from triggering autopan.
 		 * @param {MouseEvent} e
 		 */
@@ -738,7 +765,14 @@ module.exports = {
 							:style="columnStyles['col-' + index] || {}"
 							@click="!isOverResizeZone && toggleSort(index)"
 							:class="{ sortable: !isOverResizeZone }">
-							{{header}}{{getSortIndicator(index)}}
+							<span class="header-content">
+								{{header}}{{getSortIndicator(index)}}
+								<span 
+									class="filter-icon" 
+									@click="handleFilterIconClick(index, $event)"
+									title="Filter this column">
+								</span>
+							</span>
 						</th>
 					</tr>
 				</thead>

@@ -16,6 +16,7 @@
 ### Data Tables
 - Added "Data" tab that allows you to view data tables within the client!
 - Per-column data table filtering e.g id:5000 name:"test name" (supports regex).
+- Search icon on column headers enables quick per-column filtering.
 
 ### Loading
 - Remote CDN hosts are now speculatively pre-resolved.

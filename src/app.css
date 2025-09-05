@@ -862,6 +862,30 @@ input[type=number]::-webkit-outer-spin-button {
 .ui-datatable table tr th {
 	border: 1px solid var(--border);
 	padding: 10px;
+	position: relative;
+}
+
+.ui-datatable table tr th .header-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.ui-datatable table tr th .filter-icon {
+	width: 12px;
+	height: 12px;
+	cursor: pointer;
+	margin-left: 8px;
+	flex-shrink: 0;
+	background-image: url(./fa-icons/search.svg);
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+}
+
+.ui-datatable table tr th .filter-icon:hover {
+	opacity: 1;
 }
 
 .ui-datatable table tr td {
