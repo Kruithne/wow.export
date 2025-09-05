@@ -42,10 +42,12 @@ module.exports = {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
 		this.onScroll = e => this.syncScrollPosition(e);
+		this.onMiddleMouseDown = e => this.preventMiddleMousePan(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 		this.$refs.root.addEventListener('scroll', this.onScroll);
+		this.$refs.root.addEventListener('mousedown', this.onMiddleMouseDown);
 
 		// // Register observer for layout changes.
 		this.observer = new ResizeObserver(() => {
@@ -67,8 +69,11 @@ module.exports = {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
-		if (this.$refs.root)
+		
+		if (this.$refs.root) {
 			this.$refs.root.removeEventListener('scroll', this.onScroll);
+			this.$refs.root.removeEventListener('mousedown', this.onMiddleMouseDown);
+		}
 
 		// document.removeEventListener('paste', this.onPaste);
 
@@ -588,6 +593,15 @@ module.exports = {
 				return '';
 			}
 			return this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+		},
+
+		/**
+		 * Prevent middle mouse button from triggering autopan.
+		 * @param {MouseEvent} e
+		 */
+		preventMiddleMousePan: function(e) {
+			if (e.button === 1)
+				e.preventDefault();
 		},
 	},
 
