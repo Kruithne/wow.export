@@ -109,33 +109,23 @@ module.exports = {
 		/**
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
+		 * Supports both column-specific filters (e.g., "id:5000 name:test") and general filters.
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
 			if (!this.filter)
 				return this.rows;
 
-			let res = this.rows;
+			const { columnFilters, generalFilter } = this.parseFilterInput(this.filter.trim());
+			if (Object.keys(columnFilters).length === 0 && !generalFilter)
+				return this.rows;
 
-			if (this.regex) {
-				try {
-					const filter = new RegExp(this.filter.trim(), 'i');
-					res = res.filter(row => {
-						// Search across all fields in the row
-						return row.some(field => String(field).match(filter));
-					});
-				} catch (e) {
-					// Regular expression did not compile, skip filtering.
-				}
-			} else {
-				const filter = this.filter.trim().toLowerCase();
-				if (filter.length > 0) {
-					res = res.filter(row => {
-						// Search across all fields in the row
-						return row.some(field => String(field).toLowerCase().includes(filter));
-					});
-				}
-			}
+			let res = this.rows.filter(row => {
+				const passesColumnFilters = this.matchesColumnFilters(row, columnFilters, this.regex);
+				const passesGeneralFilter = this.matchesGeneralFilter(row, generalFilter, this.regex);
+				
+				return passesColumnFilters && passesGeneralFilter;
+			});
 
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.
@@ -342,6 +332,105 @@ module.exports = {
 	},
 
 	methods: {
+		/**
+		 * Parse filter input to extract column-specific filters and general filter.
+		 * @param {string} filterInput - The filter input string
+		 * @returns {Object} Object containing columnFilters and generalFilter
+		 */
+		parseFilterInput: function(filterInput) {
+			if (!filterInput)
+				return { columnFilters: {}, generalFilter: '' };
+
+			const columnFilters = {};
+			let generalFilter = '';
+			
+			// Split by spaces, but preserve quoted strings
+			const parts = filterInput.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+			
+			for (const part of parts) {
+				const colonIndex = part.indexOf(':');
+				if (colonIndex > 0 && colonIndex < part.length - 1) {
+					// This looks like a column filter (column:value)
+					const columnName = part.substring(0, colonIndex).toLowerCase();
+					const filterValue = part.substring(colonIndex + 1);
+					
+					const headerIndex = this.headers.findIndex(header => 
+						header.toLowerCase() === columnName
+					);
+					
+					if (headerIndex !== -1) {
+						columnFilters[headerIndex] = filterValue;
+						continue;
+					}
+				}
+				
+				// Not a valid column filter, add to general filter
+				if (generalFilter)
+					generalFilter += ' ';
+				
+				generalFilter += part;
+			}
+			
+			return { columnFilters, generalFilter: generalFilter.trim() };
+		},
+
+		/**
+		 * Check if a row matches the given column filters.
+		 * @param {Array} row - The row data
+		 * @param {Object} columnFilters - Column-specific filters
+		 * @param {boolean} useRegex - Whether to use regex matching
+		 * @returns {boolean} True if row matches all column filters
+		 */
+		matchesColumnFilters: function(row, columnFilters, useRegex) {
+			for (const [columnIndex, filterValue] of Object.entries(columnFilters)) {
+				const cellValue = String(row[parseInt(columnIndex)]);
+				
+				if (useRegex) {
+					try {
+						const filter = new RegExp(filterValue, 'i');
+						if (!cellValue.match(filter)) {
+							return false;
+						}
+					} catch (e) {
+						// Invalid regex, fall back to string matching
+						if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+							return false;
+						}
+					}
+				} else {
+					if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+						return false;
+					}
+				}
+			}
+			return true;
+		},
+
+		/**
+		 * Check if a row matches the general filter.
+		 * @param {Array} row - The row data
+		 * @param {string} generalFilter - General filter string
+		 * @param {boolean} useRegex - Whether to use regex matching
+		 * @returns {boolean} True if row matches general filter
+		 */
+		matchesGeneralFilter: function(row, generalFilter, useRegex) {
+			if (!generalFilter) return true;
+			
+			if (useRegex) {
+				try {
+					const filter = new RegExp(generalFilter, 'i');
+					return row.some(field => String(field).match(filter));
+				} catch (e) {
+					// Invalid regex, fall back to string matching
+					const filterLower = generalFilter.toLowerCase();
+					return row.some(field => String(field).toLowerCase().includes(filterLower));
+				}
+			} else {
+				const filterLower = generalFilter.toLowerCase();
+				return row.some(field => String(field).toLowerCase().includes(filterLower));
+			}
+		},
+
 		/**
 		 * Invoked by a ResizeObserver when the main component node
 		 * is resized due to layout changes.

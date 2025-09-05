@@ -12,7 +12,10 @@
 - Importing M2 models into Blender using the wow.export add-on now correctly handles transparency and other basic shader settings (requires exported metadata).
 - Added UV animation support to the wow.export Blender add-on (requires exported metadata).
 - Added "Show Bones" option to preview model armature in the model viewer.
-- Added "Data" tab that allows you to view data tables available within the client!
+
+### Data Tables
+- Added "Data" tab that allows you to view data tables within the client!
+- Per-column data table filtering e.g id:5000 name:"test name" (supports regex).
 
 ### Loading
 - Remote CDN hosts are now speculatively pre-resolved.
