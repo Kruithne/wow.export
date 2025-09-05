@@ -828,13 +828,11 @@ input[type=number]::-webkit-outer-spin-button {
 	height: 100%;
 	overflow-x: scroll;
 	overflow-y: hidden;
-	scrollbar-width: none; /* Firefox */
-	-ms-overflow-style: none; /* IE and Edge */
 	overscroll-behavior-x: none;
 }
 
 .ui-datatable::-webkit-scrollbar {
-	display: none; /* Chrome, Safari and Opera */
+	display: none;
 }
 
 .ui-datatable table {
