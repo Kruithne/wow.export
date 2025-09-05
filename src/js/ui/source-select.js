@@ -81,13 +81,11 @@ core.events.once('screen-source-select', async () => {
 		}
 
 		// Run a rudimentary ping check for each CDN. 
-		pings.push(generics.ping(cdnURL).then(ms => {
-			node.delay = ms;
-			core.view.cdnRegions = [...regions]; // force reactivity
-		}).catch(e => {
+		pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
 			node.delay = -1;
-			core.view.cdnRegions = [...regions]; // force reactivity
 			log.write('Failed ping to %s: %s', cdnURL, e.message);
+		}).finally(() => {
+			code.view.cdnRegions = [...regions]; // force reactivity
 		}));
 	}
 
