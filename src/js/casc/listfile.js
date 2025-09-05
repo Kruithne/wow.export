@@ -3,13 +3,14 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const path = require('path');
+const fsp = require('fs').promises;
 const generics = require('../generics');
 const constants = require('../constants');
 const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
-const BuildCache = require('./build-cache');
 
 const WDCReader = require('../db/WDCReader');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
@@ -42,8 +43,11 @@ const _doPreload = async () => {
 		if (typeof url !== 'string')
 			throw new Error('Missing/malformed listfileURL in configuration!');
 
-		const cache = new BuildCache('listfile');
-		await cache.init();
+		// Ensure listfile cache directory exists
+		await fsp.mkdir(constants.CACHE.DIR_LISTFILE, { recursive: true });
+
+		const cacheFile = path.join(constants.CACHE.DIR_LISTFILE, constants.CACHE.LISTFILE_DATA);
+		const metaFile = path.join(constants.CACHE.DIR_LISTFILE, constants.CACHE.LISTFILE_META);
 
 		preloadedIdLookup.clear();
 		preloadedNameLookup.clear();
@@ -51,15 +55,29 @@ const _doPreload = async () => {
 
 		let data;
 		if (url.startsWith('http')) {
-			// Listfile URL is http, check for cache/updates (same logic as loadListfile)
+			// Listfile URL is http, check for cache/updates
 			let requireDownload = false;
-			const cached = await cache.getFile(constants.CACHE.BUILD_LISTFILE);
+			let cached = null;
+			let meta = {};
 
-			if (cache.meta.lastListfileUpdate) {
+			try {
+				const metaRaw = await fsp.readFile(metaFile, 'utf8');
+				meta = JSON.parse(metaRaw);
+			} catch (e) {
+				// No meta cached
+			}
+
+			try {
+				cached = await BufferWrapper.readFile(cacheFile);
+			} catch (e) {
+				// No cache
+			}
+
+			if (meta.lastListfileUpdate) {
 				let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
 				ttl *= 24 * 60 * 60 * 1000; // Reduce from days to milliseconds.
 
-				if (ttl === 0 || (Date.now() - cache.meta.lastListfileUpdate) > ttl) {
+				if (ttl === 0 || (Date.now() - meta.lastListfileUpdate) > ttl) {
 					// Local cache file needs updating (or has invalid manifest entry).
 					log.write('Cached listfile is out-of-date (> %d).', ttl);
 					requireDownload = true;
@@ -86,9 +104,10 @@ const _doPreload = async () => {
 					
 					data = await generics.downloadFile([url, fallback_url]);
 
-					cache.storeFile(constants.CACHE.BUILD_LISTFILE, data);
-					cache.meta.lastListfileUpdate = Date.now();
-					cache.saveManifest();
+					// Store the downloaded data
+					await fsp.writeFile(cacheFile, data.raw);
+					meta.lastListfileUpdate = Date.now();
+					await fsp.writeFile(metaFile, JSON.stringify(meta));
 				} catch (e) {
 					if (cached === null) {
 						log.write('Failed to download listfile during preload, no cached version for fallback: %s', e.message);

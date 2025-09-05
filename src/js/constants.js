@@ -77,10 +77,13 @@ module.exports = {
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
 		DIR_DBD: path.join(DATA_PATH, 'casc', 'dbd'), // Cache for DBD files.
+		DIR_LISTFILE: path.join(DATA_PATH, 'casc', 'listfile'), // Master listfile cache directory.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
+		LISTFILE_DATA: 'listfile.txt', // Master listfile data file.
+		LISTFILE_META: 'meta.json', // Master listfile metadata file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
 		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 	},
