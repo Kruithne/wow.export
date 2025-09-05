@@ -66,6 +66,6 @@ const nwProcess = spawn(nwPath, {
 
 // When the spawned process is closed, exit the Node.js process as well
 nwProcess.on('close', code => {
-	viteProcess.kill();
+	viteProcess.kill('SIGINT');
 	process.exit(code);
 });
