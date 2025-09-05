@@ -83,7 +83,6 @@ module.exports = {
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
 		LISTFILE_DATA: 'listfile.txt', // Master listfile data file.
-		LISTFILE_META: 'meta.json', // Master listfile metadata file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
 		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 	},
