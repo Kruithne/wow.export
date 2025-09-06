@@ -392,48 +392,7 @@
 					<span @click="removeOverrideTextures">Remove</span>
 					<div class="close" @click="removeOverrideTextures"></div>
 				</div>
-				<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
-					<div class="list-container">
-						<listbox v-model:selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
-					</div>
-					<div class="preview-container">
-						<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
-						<ul class="preview-channels" v-if="texturePreviewURL.length > 0">
-							<li id="channel-red" :class="{ selected: (config.exportChannelMask & 0b1) }" @click.self="config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
-							<li id="channel-green" :class="{ selected: (config.exportChannelMask & 0b10) }" @click.self="config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
-							<li id="channel-blue" :class="{ selected: (config.exportChannelMask & 0b100) }" @click.self="config.exportChannelMask ^= 0b100" title="Toggle blue colour channel.">B</li>
-							<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
-						</ul>
-						<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
-							<div id="atlas-overlay" v-if="config.showTextureAtlas">
-								<div class="atlas-region" v-for="region of textureAtlasOverlayRegions" :style="{ left: region.left, top: region.top, width: region.width, height: region.height }">
-									<span>{{ region.name }}</span>
-								</div>
-							</div>
-							<div class="image" :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
-						</div>
-					</div>
-					<div class="preview-controls">
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.showTextureAtlas"/>
-							<span>Show Atlas Regions</span>
-						</label>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.showTextureInfo"/>
-							<span>Show Info</span>
-						</label>
-						<label class="ui-checkbox">
-							<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
-							<span>Transparency</span>
-						</label>
-						<input v-if="config.showTextureAtlas" type="button" value="Export Atlas Regions" @click="click('export-texture-atlas-region', $event)" :class="{ disabled: isBusy }" style="margin-right: 5px"/>
-						<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
-					</div>
-				</div>
+				<tab-textures v-if="screen === 'tab-textures'"></tab-textures>
 				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 					<div class="list-container">
 						<listbox id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox>

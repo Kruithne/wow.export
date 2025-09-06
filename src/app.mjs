@@ -73,14 +73,14 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
-const Vue = require('vue/dist/vue.cjs.js');
+import * as Vue from 'vue/dist/vue.esm-bundler.js';
 window.Vue = Vue;
 
 const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
-const Listbox = require('./js/components/listbox');
+import Listbox from './js/components/listbox.mjs';
 const Listboxb = require('./js/components/listboxb');
 const Itemlistbox = require('./js/components/itemlistbox');
 const Checkboxlist = require('./js/components/checkboxlist');
@@ -94,7 +94,7 @@ const DataTable = require('./js/components/data-table');
 const ResizeLayer = require('./js/components/resize-layer');
 const ContextMenu = require('./js/components/context-menu');
 
-const TabTextures = require('./js/ui/tab-textures');
+import TabTextures from './js/ui/tab-textures.mjs';
 const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
 require('./js/ui/tab-audio');
@@ -144,13 +144,11 @@ document.addEventListener('click', function(e) {
 		},
 		provide() {
 			return {
-				view: this
+				app: this,
+				core,
 			};
 		},
 		methods: {
-			setToast: core.setToast,
-			hideToast: core.hideToast,
-
 			/**
 			 * Invoked when the user chooses to manually install the Blender add-on.
 			 */
@@ -571,6 +569,14 @@ document.addEventListener('click', function(e) {
 	if (BUILD_RELEASE) {
 		// Interlink error handling for Vue.
 		app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	} else {
+		await import('./js/components/crashed-component.mjs');
+		app.config.errorHandler = (err, vm, info) => {
+			console.error('Vue component crashed,', err, info);
+			Vue.nextTick(() => {
+				vm.$el.innerHTML = '<crashed-component style="flex-grow: 1"></crashed-component>';
+			});
+		};
 	}
 
 	app.component('Listbox', Listbox);
@@ -586,6 +592,7 @@ document.addEventListener('click', function(e) {
 	app.component('DataTable', DataTable);
 	app.component('ResizeLayer', ResizeLayer);
 	app.component('ContextMenu', ContextMenu);
+	app.component('TabTextures', TabTextures);
 	app.mount('#container');
 
 	// Log some basic information for potential diagnostics.

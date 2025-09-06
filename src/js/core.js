@@ -102,9 +102,6 @@ const makeNewView = () => {
 		textureRibbonStack: [], // Texture preview stack for model viewer.
 		textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 		textureRibbonPage: 0, // Active page of texture slots to render.
-		textureAtlasOverlayRegions: [], // Texture atlas render regions.
-		textureAtlasOverlayWidth: 0, // Width of the texture atlas overlay.
-		textureAtlasOverlayHeight: 0, // Height of the texture atlas overlay.
 		itemViewerTypeMask: [], // Active item type control.
 		modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
 		modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
@@ -114,7 +111,6 @@ const makeNewView = () => {
 		modelViewerUVLayers: [], // Available UV layers for the active model.
 		texturePreviewWidth: 256, // Active width of the texture preview.
 		texturePreviewHeight: 256, // Active height of the texture preview.
-		texturePreviewURL: '', // Active URL of the texture preview image.
 		texturePreviewInfo: '', // Text information for a displayed texture.
 		overrideModelList: [], // Override list of models.
 		overrideModelName: '', // Override model name.
