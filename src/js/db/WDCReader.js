@@ -521,11 +521,15 @@ class WDCReader {
 			}
 
 			const hasIDMap = section.idList.length > 0;
+			const emptyIDMap = hasIDMap && section.idList.every(id => id === 0); 
 			for (let i = 0, n = header.recordCount; i < n; i++) {
 				let recordID;
 
 				if (hasIDMap)
 					recordID = section.idList[i];
+
+				if(hasIDMap && emptyIDMap)
+					recordID = i;
 
 				const recordOfs = isNormal ? (i * recordSize) : offsetMap[wdcVersion === 2 ? recordID : i].offset;
 
