@@ -153,7 +153,7 @@ export const TabTexturesContent = {
 				<listbox v-model:selection="selectionTextures" :items="app.listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
 			</div>
 			<div class="filter">
-				<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+				<div class="regex-info" v-if="config.regexFilters" :title="app.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
 			</div>
 			<div class="preview-container">
