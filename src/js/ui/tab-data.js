@@ -10,6 +10,8 @@ const generics = require('../generics');
 const dataExporter = require('./data-exporter');
 
 let selectedFile = null;
+let selectedFileDataID = null;
+let manifestLookup = new Map();
 
 /**
  * Initialize the available table names by fetching the DBD manifest.
@@ -33,6 +35,7 @@ async function initializeAvailableTables() {
 					continue;
 				
 				manifest.push(entry.tableName);
+				manifestLookup.set(entry.tableName, entry.db2FileDataID);
 			}
 		}
 
@@ -54,6 +57,9 @@ core.registerLoadFunc(async () => {
 			try {
 				// Use the table name directly (already in proper case from DBD repository)
 				const tableName = first;
+				
+				// Get the fileDataID for this table from our lookup
+				selectedFileDataID = manifestLookup.get(tableName) || null;
 				
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
@@ -127,5 +133,15 @@ core.registerLoadFunc(async () => {
 		}
 		
 		await dataExporter.exportDataTable(headers, rowsToExport, selectedFile || 'unknown_table');
+	});
+
+	// Track when the user clicks to export raw DB2 file.
+	core.events.on('click-export-db2-raw', async () => {
+		if (!selectedFile || !selectedFileDataID) {
+			core.setToast('info', 'No DB2 file selected to export.');
+			return;
+		}
+		
+		await dataExporter.exportRawDB2(selectedFile, selectedFileDataID);
 	});
 });

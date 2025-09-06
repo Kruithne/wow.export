@@ -13,6 +13,7 @@
 - Added UV animation support to the wow.export Blender add-on (requires exported metadata).
 - Added "Show Bones" option to preview model armature in the model viewer.
 - Maps can now be filtered by expansion using expansion icons above the map list.
+- Added "Zones" tab which allows you to view all zones within the game.
 
 ### Data Tables
 - Added "Data" tab that allows you to view data tables within the client!

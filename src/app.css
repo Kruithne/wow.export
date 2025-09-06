@@ -288,6 +288,9 @@ body {
 #nav-maps::before {
 	background-image: url(./fa-icons/map.svg);
 }
+#nav-zones::before {
+	background-image: url(./fa-icons/mountain-castle.svg);
+}
 #nav-videos::before {
 	background-image: url(./fa-icons/film.svg);
 }
@@ -1279,7 +1282,8 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-template-rows: auto 1fr 60px;
 }
 
-#tab-maps .map-placeholder {
+.map-placeholder,
+.zone-placeholder {
 	grid-column: 1;
 	grid-row: 1;
 	padding: 10px;
@@ -1287,7 +1291,7 @@ input[type=number]::-webkit-outer-spin-button {
 	font-weight: bold;
 }
 
-#tab-maps .expansion-buttons {
+.expansion-buttons {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
@@ -1323,6 +1327,11 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-row: 2;
 }
 
+#tab-zones .list-container {
+	grid-column: 1;
+	grid-row: 2;
+}
+
 #tab-maps #maps-list-container {
 	margin-top: 0;
 }
@@ -1346,10 +1355,10 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-row: 1/span 3;
 }
 
-#tab-maps #listbox-maps .sub {
+.listbox-icons .sub {
 	margin-right: 5px;
 }
-#tab-maps #listbox-maps .sub-0 {
+.listbox-icons .sub-0 {
 	background-repeat: no-repeat;
 	background-position: center;
 	width: 40px;
@@ -1357,26 +1366,33 @@ input[type=number]::-webkit-outer-spin-button {
 	display: inline-block;
 }
 
-#tab-maps #listbox-maps .sub-0[data-item="0"] { background-image: var(--expansion-icon-0); }
-#tab-maps #listbox-maps .sub-0[data-item="1"] { background-image: var(--expansion-icon-1); }
-#tab-maps #listbox-maps .sub-0[data-item="2"] { background-image: var(--expansion-icon-2); }
-#tab-maps #listbox-maps .sub-0[data-item="3"] { background-image: var(--expansion-icon-3); }
-#tab-maps #listbox-maps .sub-0[data-item="4"] { background-image: var(--expansion-icon-4); }
-#tab-maps #listbox-maps .sub-0[data-item="5"] { background-image: var(--expansion-icon-5); }
-#tab-maps #listbox-maps .sub-0[data-item="6"] { background-image: var(--expansion-icon-6); }
-#tab-maps #listbox-maps .sub-0[data-item="7"] { background-image: var(--expansion-icon-7); }
-#tab-maps #listbox-maps .sub-0[data-item="8"] { background-image: var(--expansion-icon-8); }
-#tab-maps #listbox-maps .sub-0[data-item="9"] { background-image: var(--expansion-icon-9); }
-#tab-maps #listbox-maps .sub-0[data-item="10"] { background-image: var(--expansion-icon-10); }
-#tab-maps #listbox-maps .sub-0[data-item="11"] { background-image: var(--expansion-icon-11); }
+.listbox-icons .sub-0[data-item="0"] { background-image: var(--expansion-icon-0); }
+.listbox-icons .sub-0[data-item="1"] { background-image: var(--expansion-icon-1); }
+.listbox-icons .sub-0[data-item="2"] { background-image: var(--expansion-icon-2); }
+.listbox-icons .sub-0[data-item="3"] { background-image: var(--expansion-icon-3); }
+.listbox-icons .sub-0[data-item="4"] { background-image: var(--expansion-icon-4); }
+.listbox-icons .sub-0[data-item="5"] { background-image: var(--expansion-icon-5); }
+.listbox-icons .sub-0[data-item="6"] { background-image: var(--expansion-icon-6); }
+.listbox-icons .sub-0[data-item="7"] { background-image: var(--expansion-icon-7); }
+.listbox-icons .sub-0[data-item="8"] { background-image: var(--expansion-icon-8); }
+.listbox-icons .sub-0[data-item="9"] { background-image: var(--expansion-icon-9); }
+.listbox-icons .sub-0[data-item="10"] { background-image: var(--expansion-icon-10); }
+.listbox-icons .sub-0[data-item="11"] { background-image: var(--expansion-icon-11); }
 
-#tab-maps #listbox-maps .sub-1 {
+.listbox-icons .sub-1 {
 	color: var(--form-button-menu);
 }
 
-#tab-maps #listbox-maps .sub-3 {
+.listbox-icons .sub-3 {
 	opacity: 0.5;
 	font-style: italic;
+}
+
+/* Zones tab styling now handled by .listbox-icons class */
+
+#tab-zones.tab.list-tab {
+	grid-template-columns: 1.5fr 2fr;
+	grid-template-rows: auto 1fr 60px;
 }
 
 #tab-install {
@@ -1705,6 +1721,38 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-row: 2;
 	position: relative;
 }
+
+#tab-zones .filter {
+	grid-row: 3;
+}
+
+#tab-zones .zone-export-controls {
+	display: flex;
+	justify-content: flex-end;
+	align-items: start;
+	padding: 10px;
+}
+
+#tab-zones .zone-viewer-container {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+	margin: 20px;
+	aspect-ratio: 1.6 / 1;
+	align-self: center;
+}
+
+#tab-zones .zone-viewer-container .preview-background {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+#tab-zones .zone-viewer-container canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
 .filter > .regex-info {
 	position: absolute;
 	right: 17px;

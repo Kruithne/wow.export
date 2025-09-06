@@ -95,5 +95,6 @@
 	"pathFormat": "win32",
 	"rcpEnabled": false,
 	"rcpPort": 17751,
-	"lastExportFile": ""
+	"lastExportFile": "",
+	"showZoneOverlays": true
 }

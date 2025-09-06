@@ -19,6 +19,7 @@
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
+						<div class="option" id="nav-zones" @click="setScreen('tab-zones')" :class="{ active: screen === 'tab-zones' }">Zones</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
@@ -406,7 +407,7 @@
 						</div>
 					</div>
 					<div class="list-container" id="maps-list-container">
-						<listbox-maps id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :expansion-filter="selectedExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
+						<listbox-maps id="listbox-maps" class="listbox-icons" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :expansion-filter="selectedExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
 					</div>
 					<div class="filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -472,6 +473,44 @@
 								<span>Use 32-bit depth</span>
 							</label>
 						</template>
+					</div>
+				</div>
+				<div class="tab list-tab" id="tab-zones" v-if="screen === 'tab-zones'">
+					<div class="zone-placeholder">
+						<div class="expansion-buttons">
+							<button class="expansion-button show-all"
+									title="Show All"
+									:class="{ active: selectedZoneExpansionFilter === -1 }"
+									@click="selectedZoneExpansionFilter = -1">
+							</button>
+							<button v-for="expansion in constants.EXPANSIONS" 
+									:key="expansion.id"
+									class="expansion-button"
+									:title="expansion.name"
+									:class="{ active: selectedZoneExpansionFilter === expansion.id }"
+									@click="selectedZoneExpansionFilter = expansion.id"
+									:style="'background-image: var(--expansion-icon-' + expansion.id + ')'">
+							</button>
+						</div>
+					</div>
+					<div class="list-container">
+						<listbox-zones id="listbox-zones" class="listbox-icons" v-model:selection="selectionZones" :items="zoneViewerZones" :filter="userInputFilterZones" :expansion-filter="selectedZoneExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></listbox-zones>
+					</div>
+					<div class="filter">
+						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+						<input type="text" v-model="userInputFilterZones" placeholder="Filter zones..."/>
+					</div>
+					<div class="zone-export-controls">
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="config.showZoneOverlays"/>
+							<span>Show Overlays</span>
+						</label>
+						<input type="button" value="Export Map" @click="click('export-zone', $event)" :class="{ disabled: isBusy || !selectionZones || selectionZones.length === 0 }"/>
+					</div>
+					<div class="zone-viewer-container preview-container">
+						<div class="preview-background">
+							<canvas id="zone-canvas"></canvas>
+						</div>
 					</div>
 				</div>
 				<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
@@ -850,6 +889,7 @@
 							<span>Export all rows</span>
 						</label>
 						<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
+						<input type="button" value="Export DB2" @click="click('export-db2-raw', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
 					</div>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">

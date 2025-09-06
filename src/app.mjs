@@ -80,6 +80,7 @@ THREE.ColorManagement.enabled = true;
 
 import Listbox from './js/components/listbox.mjs';
 import ListboxMaps from './js/components/listbox-maps.mjs';
+import ListboxZones from './js/components/listbox-zones.mjs';
 const Listboxb = require('./js/components/listboxb');
 const Itemlistbox = require('./js/components/itemlistbox');
 const Checkboxlist = require('./js/components/checkboxlist');
@@ -101,6 +102,7 @@ require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-maps');
+require('./js/ui/tab-zones');
 require('./js/ui/tab-items');
 require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
@@ -543,6 +545,7 @@ document.addEventListener('click', function(e) {
 
 	app.component('Listbox', Listbox);
 	app.component('ListboxMaps', ListboxMaps);
+	app.component('ListboxZones', ListboxZones);
 	app.component('Listboxb', Listboxb);
 	app.component('Itemlistbox', Itemlistbox);
 	app.component('Checkboxlist', Checkboxlist);
