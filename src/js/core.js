@@ -6,6 +6,7 @@
 const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
+const constants = require('./constants');
 const log = require('./log');
 const fs = require('fs');
 const FileWriter = require('./file-writer');
@@ -43,6 +44,7 @@ const makeNewView = () => {
 		lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
 		config: {}, // Will contain default/user-set configuration. Use config module to operate.
 		configEdit: {}, // Temporary configuration clone used during user configuration editing.
+		constants: constants, // Application constants including expansion definitions.
 		availableLocalBuilds: null, // Array containing local builds to display during source select.
 		availableRemoteBuilds: null, // Array containing remote builds to display during source select.
 		casc: null, // Active CASC instance.
@@ -66,6 +68,7 @@ const makeNewView = () => {
 		selectionMaps: [], // Current user selection of maps.
 		selectionItems: [], // Current user selection of items.
 		selectionDB2s: [], // Current user selection of DB2s.
+		selectionDataTable: [], // Current user selection of data table rows.
 		selectionRaw: [], // Current user selection of raw files.
 		selectionInstall: [], // Current user selection of install files.
 		listfileTextures: [], // Filtered listfile for texture files.
@@ -116,6 +119,7 @@ const makeNewView = () => {
 		mapViewerSelectedDir: null,
 		mapViewerChunkMask: null, // Map viewer chunk mask.
 		mapViewerSelection: [], // Map viewer tile selection
+		selectedExpansionFilter: -1, // Currently selected expansion filter (-1 = show all)
 		chrModelViewerContext: null, // 3D context for the character-specific model viewer.
 		chrCustRaces: [], // Available character races to select from
 		chrCustRaceSelection: [], // Current race ID selected

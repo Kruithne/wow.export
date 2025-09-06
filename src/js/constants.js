@@ -77,10 +77,12 @@ module.exports = {
 		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
 		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
 		DIR_DBD: path.join(DATA_PATH, 'casc', 'dbd'), // Cache for DBD files.
+		DIR_LISTFILE: path.join(DATA_PATH, 'casc', 'listfile'), // Master listfile cache directory.
 		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
 		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
 		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
 		BUILD_ROOT: 'root', // Build-specific root file.
+		LISTFILE_DATA: 'listfile.txt', // Master listfile data file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
 		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 	},
@@ -151,5 +153,21 @@ module.exports = {
 		{ match: 'RIFF', ext: '.avi' },
 		{ match: 'WDC3', ext: '.db2' },
 		{ match: 'WDC4', ext: '.db2' }
+	],
+
+	// WoW expansion definitions matching data-item IDs used in expansion icons
+	EXPANSIONS: [
+		{ id: 0, name: 'Classic', shortName: 'Classic' },
+		{ id: 1, name: 'The Burning Crusade', shortName: 'TBC' },
+		{ id: 2, name: 'Wrath of the Lich King', shortName: 'WotLK' },
+		{ id: 3, name: 'Cataclysm', shortName: 'Cataclysm' },
+		{ id: 4, name: 'Mists of Pandaria', shortName: 'MoP' },
+		{ id: 5, name: 'Warlords of Draenor', shortName: 'WoD' },
+		{ id: 6, name: 'Legion', shortName: 'Legion' },
+		{ id: 7, name: 'Battle for Azeroth', shortName: 'BfA' },
+		{ id: 8, name: 'Shadowlands', shortName: 'SL' },
+		{ id: 9, name: 'Dragonflight', shortName: 'DF' },
+		{ id: 10, name: 'The War Within', shortName: 'TWW' },
+		{ id: 11, name: 'Midnight', shortName: 'Midnight' }
 	]
 };

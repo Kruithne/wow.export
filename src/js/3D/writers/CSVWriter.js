@@ -35,6 +35,22 @@ class CSVWriter {
 	}
 
 	/**
+	 * Escape a CSV field value if it contains special characters.
+	 * @param {*} value - The value to escape
+	 * @returns {string} - The escaped value
+	 */
+	escapeCSVField(value) {
+		if (value === null || value === undefined)
+			return '';
+		
+		const str = value.toString();
+		if (str.includes(';') || str.includes('"') || str.includes('\n'))
+			return '"' + str.replace(/"/g, '""') + '"';
+		
+		return str;
+	}
+
+	/**
 	 * Write the CSV to disk.
 	 * @param {boolean} overwrite
 	 */
@@ -51,14 +67,14 @@ class CSVWriter {
 		const writer = new FileWriter(this.out);
 
 		// Write header.
-		await writer.writeLine(this.fields.join(';'));
+		await writer.writeLine(this.fields.map(field => this.escapeCSVField(field)).join(';'));
 
 		// Write rows.
 		const nFields = this.fields.length;
 		for (const row of this.rows) {
 			const rowOut = new Array(nFields);
 			for (let i = 0; i < nFields; i++)
-				rowOut[i] = row[this.fields[i]];
+				rowOut[i] = this.escapeCSVField(row[this.fields[i]]);
 
 			await writer.writeLine(rowOut.join(';'));
 		}

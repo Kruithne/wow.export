@@ -7,6 +7,7 @@ const core = require('../core');
 const log = require('../log');
 const WDCReader = require('../db/WDCReader');
 const generics = require('../generics');
+const dataExporter = require('./data-exporter');
 
 let selectedFile = null;
 
@@ -65,6 +66,7 @@ core.registerLoadFunc(async () => {
 				}
 
 				core.view.tableBrowserHeaders = allHeaders;
+				core.view.selectionDataTable = [];
 
 				const rows = db2Reader.getAllRows();
 				if (rows.size == 0) 
@@ -94,5 +96,36 @@ core.registerLoadFunc(async () => {
 				log.write('Failed to open CASC file: %s', e.message);
 			}
 		}
+	});
+
+	// Track when the user clicks to export data table as CSV.
+	core.events.on('click-export-data-csv', async () => {
+		const headers = core.view.tableBrowserHeaders;
+		const allRows = core.view.tableBrowserRows;
+		const selection = core.view.selectionDataTable;
+		const exportAll = core.view.config.dataExportAll;
+		
+		if (!headers || !allRows || headers.length === 0 || allRows.length === 0) {
+			core.setToast('info', 'No data table loaded to export.');
+			return;
+		}
+
+		let rowsToExport;
+		if (exportAll) {
+			rowsToExport = allRows;
+		} else {
+			if (!selection || selection.length === 0) {
+				core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
+				return;
+			}
+			
+			rowsToExport = selection.map(rowIndex => allRows[rowIndex]).filter(row => row !== undefined);
+			if (rowsToExport.length === 0) {
+				core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
+				return;
+			}
+		}
+		
+		await dataExporter.exportDataTable(headers, rowsToExport, selectedFile || 'unknown_table');
 	});
 });

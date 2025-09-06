@@ -7,7 +7,8 @@ module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
-	props: ['headers', 'rows', 'filter', 'regex'],
+	props: ['headers', 'rows', 'filter', 'regex', 'selection'],
+	emits: ['update:selection'],
 
 	data: function() {
 		return {
@@ -19,8 +20,6 @@ module.exports = {
 			isHorizontalScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null,
-			selection: [],
-			forceScrollbarUpdate: 0,
 			columnWidths: [],
 			manuallyResizedColumns: {},
 			isResizing: false,
@@ -30,7 +29,14 @@ module.exports = {
 			isOverResizeZone: false,
 			resizeZoneColumnIndex: -1,
 			sortColumn: -1,
-			sortDirection: 'off'
+			sortDirection: 'off',
+			horizontalScrollAnimationId: null,
+			pendingHorizontalUpdate: false,
+			targetHorizontalScroll: 0,
+			resizeAnimationId: null,
+			pendingResizeUpdate: false,
+			targetColumnWidth: 0,
+			lastSelectItem: null
 		}
 	},
 
@@ -42,20 +48,24 @@ module.exports = {
 		this.onMouseMove = e => this.moveMouse(e);
 		this.onMouseUp = e => this.stopMouse(e);
 		this.onScroll = e => this.syncScrollPosition(e);
+		this.onMiddleMouseDown = e => this.preventMiddleMousePan(e);
 
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 		this.$refs.root.addEventListener('scroll', this.onScroll);
+		this.$refs.root.addEventListener('mousedown', this.onMiddleMouseDown);
 
-		// // Register observer for layout changes.
+		this.onKeyDown = e => this.handleKey(e);
+		document.addEventListener('keydown', this.onKeyDown);
+
 		this.observer = new ResizeObserver(() => {
 			this.resize();
-			this.calculateColumnWidths();
 		});
 		this.observer.observe(this.$refs.root);
 		
-		// Calculate initial column widths
-		this.calculateColumnWidths();
+		this.$nextTick(() => {
+			this.calculateColumnWidths();
+		});
 	},
 
 
@@ -67,13 +77,22 @@ module.exports = {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
-		if (this.$refs.root)
+		document.removeEventListener('keydown', this.onKeyDown);
+		
+		if (this.$refs.root) {
 			this.$refs.root.removeEventListener('scroll', this.onScroll);
+			this.$refs.root.removeEventListener('mousedown', this.onMiddleMouseDown);
+		}
 
-		// document.removeEventListener('paste', this.onPaste);
+		if (this.horizontalScrollAnimationId) {
+			cancelAnimationFrame(this.horizontalScrollAnimationId);
+			this.horizontalScrollAnimationId = null;
+		}
 
-		// if (this.keyinput)
-		// 	document.removeEventListener('keydown', this.onKeyDown);
+		if (this.resizeAnimationId) {
+			cancelAnimationFrame(this.resizeAnimationId);
+			this.resizeAnimationId = null;
+		}
 
 		// Disconnect resize observer.
 		this.observer.disconnect();
@@ -100,40 +119,36 @@ module.exports = {
 		/**
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
+		 * Supports both column-specific filters (e.g., "id:5000 name:test") and general filters.
 		 */
 		filteredItems: function() {
 			// Skip filtering if no filter is set.
 			if (!this.filter)
 				return this.rows;
 
-			let res = this.rows;
+			const { columnFilters, generalFilter } = this.parseFilterInput(this.filter.trim());
+			if (Object.keys(columnFilters).length === 0 && !generalFilter)
+				return this.rows;
 
-			if (this.regex) {
-				try {
-					const filter = new RegExp(this.filter.trim(), 'i');
-					res = res.filter(row => {
-						// Search across all fields in the row
-						return row.some(field => String(field).match(filter));
-					});
-				} catch (e) {
-					// Regular expression did not compile, skip filtering.
-				}
-			} else {
-				const filter = this.filter.trim().toLowerCase();
-				if (filter.length > 0) {
-					res = res.filter(row => {
-						// Search across all fields in the row
-						return row.some(field => String(field).toLowerCase().includes(filter));
-					});
-				}
-			}
+			let res = this.rows.filter(row => {
+				const passesColumnFilters = this.matchesColumnFilters(row, columnFilters, this.regex);
+				const passesGeneralFilter = this.matchesGeneralFilter(row, generalFilter, this.regex);
+				
+				return passesColumnFilters && passesGeneralFilter;
+			});
 
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.
-			for (let i = this.selection.length - 1; i >= 0; i--) {
-				if (!res.includes(this.selection[i]))
-					this.selection.splice(i, 1);
-			}
+			let hasChanges = false;
+			const newSelection = this.selection.filter((rowIndex) => {
+				const includes = rowIndex < res.length;
+				if (!includes)
+					hasChanges = true;
+				return includes;
+			});
+
+			if (hasChanges)
+				this.$emit('update:selection', newSelection);
 
 			return res;
 		},
@@ -230,11 +245,9 @@ module.exports = {
 			const containerWidth = this.$refs.root.clientWidth;
 			const tableWidth = this.$refs.table.scrollWidth;
 			
-			// Only show scrollbar if table is wider than container 
 			if (tableWidth <= containerWidth)
 				return { display: 'none' };
 			
-			// Calculate scrollbar width based on content ratio
 			const scrollbarWidth = Math.max(45, (containerWidth / tableWidth) * (containerWidth - 16));
 			
 			return {
@@ -279,22 +292,11 @@ module.exports = {
 
 	watch: {
 		/**
-		 * Watch for data changes to refresh scrollbar visibility
-		 */
-		rows: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		/**
 		 * Watch for header changes to recalculate column widths
 		 */
 		headers: {
 			handler: function() {
+				this.manuallyResizedColumns = {};
 				this.$nextTick(() => {
 					this.calculateColumnWidths();
 				});
@@ -302,35 +304,117 @@ module.exports = {
 			immediate: true
 		},
 
-		filteredItems: {
+		/**
+		 * Watch for rows changes to reset selection (new table loaded)
+		 */
+		rows: {
 			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		displayItems: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
-		},
-
-		sortedItems: {
-			handler: function() {
-				this.$nextTick(() => {
-					this.refreshHorizontalScrollbar();
-				});
-			},
-			immediate: true
+				this.lastSelectItem = null;
+				this.$emit('update:selection', []);
+			}
 		}
 	},
 
 	methods: {
+		/**
+		 * Parse filter input to extract column-specific filters and general filter.
+		 * @param {string} filterInput - The filter input string
+		 * @returns {Object} Object containing columnFilters and generalFilter
+		 */
+		parseFilterInput: function(filterInput) {
+			if (!filterInput)
+				return { columnFilters: {}, generalFilter: '' };
+
+			const columnFilters = {};
+			let generalFilter = '';
+			
+			// Split by spaces, but preserve quoted strings
+			const parts = filterInput.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+			
+			for (const part of parts) {
+				const colonIndex = part.indexOf(':');
+				if (colonIndex > 0 && colonIndex < part.length - 1) {
+					// This looks like a column filter (column:value)
+					const columnName = part.substring(0, colonIndex).toLowerCase();
+					const filterValue = part.substring(colonIndex + 1);
+					
+					const headerIndex = this.headers.findIndex(header => 
+						header.toLowerCase() === columnName
+					);
+					
+					if (headerIndex !== -1) {
+						columnFilters[headerIndex] = filterValue;
+						continue;
+					}
+				}
+				
+				// Not a valid column filter, add to general filter
+				if (generalFilter)
+					generalFilter += ' ';
+				
+				generalFilter += part;
+			}
+			
+			return { columnFilters, generalFilter: generalFilter.trim() };
+		},
+
+		/**
+		 * Check if a row matches the given column filters.
+		 * @param {Array} row - The row data
+		 * @param {Object} columnFilters - Column-specific filters
+		 * @param {boolean} useRegex - Whether to use regex matching
+		 * @returns {boolean} True if row matches all column filters
+		 */
+		matchesColumnFilters: function(row, columnFilters, useRegex) {
+			for (const [columnIndex, filterValue] of Object.entries(columnFilters)) {
+				const cellValue = String(row[parseInt(columnIndex)]);
+				
+				if (useRegex) {
+					try {
+						const filter = new RegExp(filterValue, 'i');
+						if (!cellValue.match(filter)) {
+							return false;
+						}
+					} catch (e) {
+						// Invalid regex, fall back to string matching
+						if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+							return false;
+						}
+					}
+				} else {
+					if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+						return false;
+					}
+				}
+			}
+			return true;
+		},
+
+		/**
+		 * Check if a row matches the general filter.
+		 * @param {Array} row - The row data
+		 * @param {string} generalFilter - General filter string
+		 * @param {boolean} useRegex - Whether to use regex matching
+		 * @returns {boolean} True if row matches general filter
+		 */
+		matchesGeneralFilter: function(row, generalFilter, useRegex) {
+			if (!generalFilter) return true;
+			
+			if (useRegex) {
+				try {
+					const filter = new RegExp(generalFilter, 'i');
+					return row.some(field => String(field).match(filter));
+				} catch (e) {
+					// Invalid regex, fall back to string matching
+					const filterLower = generalFilter.toLowerCase();
+					return row.some(field => String(field).toLowerCase().includes(filterLower));
+				}
+			} else {
+				const filterLower = generalFilter.toLowerCase();
+				return row.some(field => String(field).toLowerCase().includes(filterLower));
+			}
+		},
+
 		/**
 		 * Invoked by a ResizeObserver when the main component node
 		 * is resized due to layout changes.
@@ -372,38 +456,29 @@ module.exports = {
 			return this.$refs.table.scrollWidth > this.$refs.root.clientWidth;
 		},
 
-		/**
-		 * Refresh horizontal scrollbar state based on current content
-		 */
-		refreshHorizontalScrollbar: function() {
-			if (!this.$refs.root || !this.$refs.table) return;
-			
-			// Trigger computed property re-evaluation by changing reactive data
-			this.forceScrollbarUpdate++;
-		},
 
 		/**
-		 * Calculate and store column widths based on header cell widths.
-		 * Preserves manually resized columns.
+		 * Calculate column widths based on header text length ONLY.
+		 * No DOM measurements. No dynamic shit. Just text length.
 		 */
 		calculateColumnWidths: function() {
-			if (!this.$refs.datatableheader || !this.headers) return;
+			if (!this.headers) return;
 			
-			this.$nextTick(() => {
-				const headerCells = this.$refs.datatableheader.querySelectorAll('th');
-				const widths = [];
+			const widths = [];
+			
+			this.headers.forEach((header, index) => {
+				const columnName = header;
 				
-				headerCells.forEach((cell, index) => {
-					const columnName = this.headers[index];
-					if (this.manuallyResizedColumns[columnName]) {
-						widths.push(this.manuallyResizedColumns[columnName]);
-					} else {
-						widths.push(Math.max(100, cell.offsetWidth)); // Minimum 100px width
-					}
-				});
-				
-				this.columnWidths = widths;
+				if (this.manuallyResizedColumns[columnName]) {
+					widths.push(this.manuallyResizedColumns[columnName]);
+				} else {
+					// Calculate width based on text length: 8px per character + 40px for icons/padding
+					const textWidth = (header.length * 8) + 40;
+					widths.push(Math.max(120, textWidth));
+				}
 			});
+			
+			this.columnWidths = widths;
 		},
 
 		/**
@@ -444,21 +519,35 @@ module.exports = {
 			}
 			
 			if (this.isHorizontalScrolling) {
-				this.horizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
-				this.recalculateHorizontalBounds();
+				this.targetHorizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
+				
+				if (!this.pendingHorizontalUpdate) {
+					this.pendingHorizontalUpdate = true;
+					this.horizontalScrollAnimationId = requestAnimationFrame(() => {
+						this.horizontalScroll = this.targetHorizontalScroll;
+						this.recalculateHorizontalBounds();
+						this.pendingHorizontalUpdate = false;
+					});
+				}
 			}
 			
 			if (this.isResizing) {
 				const deltaX = e.clientX - this.resizeStartX;
-				const newWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
+				this.targetColumnWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
 				
-				// Update the column width
-				if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
-					this.columnWidths[this.resizeColumnIndex] = newWidth;
-					
-					// Mark this column as manually resized by column name
-					const columnName = this.headers[this.resizeColumnIndex];
-					this.manuallyResizedColumns[columnName] = newWidth;
+				if (!this.pendingResizeUpdate) {
+					this.pendingResizeUpdate = true;
+					this.resizeAnimationId = requestAnimationFrame(() => {
+						// Update the column width
+						if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
+							this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
+							
+							// Mark this column as manually resized by column name
+							const columnName = this.headers[this.resizeColumnIndex];
+							this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
+						}
+						this.pendingResizeUpdate = false;
+					});
 				}
 			}
 		},
@@ -469,6 +558,30 @@ module.exports = {
 		stopMouse: function() {
 			this.isScrolling = false;
 			this.isHorizontalScrolling = false;
+			
+			if (this.horizontalScrollAnimationId) {
+				cancelAnimationFrame(this.horizontalScrollAnimationId);
+				this.horizontalScrollAnimationId = null;
+				this.pendingHorizontalUpdate = false;
+				
+				if (this.targetHorizontalScroll !== this.horizontalScroll) {
+					this.horizontalScroll = this.targetHorizontalScroll;
+					this.recalculateHorizontalBounds();
+				}
+			}
+			
+			if (this.resizeAnimationId) {
+				cancelAnimationFrame(this.resizeAnimationId);
+				this.resizeAnimationId = null;
+				this.pendingResizeUpdate = false;
+				
+				if (this.targetColumnWidth !== 0 && this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
+					this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
+					const columnName = this.headers[this.resizeColumnIndex];
+					this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
+				}
+			}
+			
 			if (this.isResizing) {
 				this.isResizing = false;
 				this.resizeColumnIndex = -1;
@@ -577,15 +690,137 @@ module.exports = {
 		},
 
 		/**
-		 * Get sort indicator for a given column.
+		 * Get sort icon name for a given column.
 		 * @param {number} columnIndex - Index of the column
-		 * @returns {string} Sort indicator symbol
+		 * @returns {string} Sort icon class name
 		 */
-		getSortIndicator: function(columnIndex) {
-			if (this.sortColumn !== columnIndex || this.sortDirection === 'off') {
-				return '';
+		getSortIconName: function(columnIndex) {
+			if (this.sortColumn !== columnIndex || this.sortDirection === 'off')
+				return 'sort-icon-off';
+			
+			return this.sortDirection === 'asc' ? 'sort-icon-up' : 'sort-icon-down';
+		},
+
+		/**
+		 * Handle clicking the filter icon for a column.
+		 * Inserts the column filter prefix and focuses the filter input.
+		 * @param {number} columnIndex - Index of the column
+		 * @param {Event} e - The click event
+		 */
+		handleFilterIconClick: function(columnIndex, e) {
+			const columnName = this.headers[columnIndex].toLowerCase();
+			const filterPrefix = columnName + ':';
+			
+			const currentFilter = this.filter || '';
+			const newFilter = currentFilter ? currentFilter + ' ' + filterPrefix : filterPrefix;
+			
+			this.$emit('update:filter', newFilter);
+			
+			this.$nextTick(() => {
+				this.$nextTick(() => {
+					const filterInput = document.getElementById('data-table-filter-input');
+					if (filterInput) {
+						filterInput.focus();
+						filterInput.setSelectionRange(filterInput.value.length, filterInput.value.length);
+					}
+				});
+			});
+		},
+
+		/**
+		 * Prevent middle mouse button from triggering autopan.
+		 * @param {MouseEvent} e
+		 */
+		preventMiddleMousePan: function(e) {
+			if (e.button === 1)
+				e.preventDefault();
+		},
+
+		/**
+		 * Invoked when a keydown event is fired.
+		 * @param {KeyboardEvent} e 
+		 */
+		handleKey: function(e) {
+			// If document.activeElement is the document body, then we can safely assume
+			// the user is not focusing anything, and can intercept keyboard input.
+			if (document.activeElement !== document.body)
+				return;
+
+			// User hasn't selected anything in the table yet.
+			if (this.lastSelectItem === null)
+				return;
+
+			// Arrow keys.
+			const isArrowUp = e.key === 'ArrowUp';
+			const isArrowDown = e.key === 'ArrowDown';
+			if (isArrowUp || isArrowDown) {
+				const delta = isArrowUp ? -1 : 1;
+
+				// Move/expand selection one.
+				const lastSelectIndex = this.lastSelectItem;
+				const nextIndex = lastSelectIndex + delta;
+				if (nextIndex >= 0 && nextIndex < this.sortedItems.length) {
+					const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
+					let diff = Math.abs(nextIndex - lastViewIndex);
+					if (isArrowDown)
+						diff += 1;
+
+					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+						const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+						this.scroll += ((diff * this.itemWeight) * weight) * delta;
+						this.recalculateBounds();
+					}
+
+					const newSelection = this.selection.slice();
+
+					if (!e.shiftKey)
+						newSelection.splice(0);
+
+					newSelection.push(nextIndex);
+					this.lastSelectItem = nextIndex;
+					this.$emit('update:selection', newSelection);
+				}
 			}
-			return this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+		},
+
+		/**
+		 * Invoked when a user selects a row in the table.
+		 * @param {number} rowIndex - Index of the row in sortedItems
+		 * @param {MouseEvent} event
+		 */
+		selectRow: function(rowIndex, event) {
+			const checkIndex = this.selection.indexOf(rowIndex);
+			const newSelection = this.selection.slice();
+
+			if (event.ctrlKey) {
+				// Ctrl-key held, so allow multiple selections.
+				if (checkIndex > -1)
+					newSelection.splice(checkIndex, 1);
+				else
+					newSelection.push(rowIndex);
+			} else if (event.shiftKey) {
+				// Shift-key held, select a range.
+				if (this.lastSelectItem !== null && this.lastSelectItem !== rowIndex) {
+					const lastSelectIndex = this.lastSelectItem;
+					const thisSelectIndex = rowIndex;
+
+					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+					const highest = lowest + delta;
+
+					for (let i = lowest; i <= highest; i++) {
+						if (newSelection.indexOf(i) === -1)
+							newSelection.push(i);
+					}
+				}
+			} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
+				// Normal click, replace entire selection.
+				newSelection.splice(0);
+				newSelection.push(rowIndex);
+			}
+
+			this.lastSelectItem = rowIndex;
+			this.$emit('update:selection', newSelection);
 		},
 	},
 
@@ -606,15 +841,29 @@ module.exports = {
 				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
 						<th v-for="(header, index) in headers" 
-							:style="columnStyles['col-' + index] || {}"
-							@click="!isOverResizeZone && toggleSort(index)"
-							:class="{ sortable: !isOverResizeZone }">
-							{{header}}{{getSortIndicator(index)}}
+							:style="columnStyles['col-' + index] || {}">
+							<span class="header-content">
+								{{header}}
+								<div class="header-icons">
+									<span 
+										class="filter-icon" 
+										@click="handleFilterIconClick(index, $event)"
+										title="Filter this column">
+									</span>
+									<span 
+										:class="'sort-icon ' + getSortIconName(index)" 
+										@click="toggleSort(index)"
+										title="Sort this column">
+									</span>
+								</div>
+							</span>
 						</th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="row in displayItems">
+					<tr v-for="(row, rowIndex) in displayItems" 
+						@click="selectRow(scrollIndex + rowIndex, $event)"
+						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
 						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}">{{field}}</td>
 					</tr>
 				</tbody>

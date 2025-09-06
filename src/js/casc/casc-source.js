@@ -169,14 +169,21 @@ class CASC {
 	}
 
 	/**
+	 * Prepare listfile data before loading.
+	 * Ensures preloading is complete to avoid race conditions.
+	 */
+	async prepareListfile() {
+		await this.progress.step('Preparing listfiles...');
+		await listfile.prepareListfile();
+	}
+
+	/**
 	 * Load the listfile for selected build.
 	 * @param {string} buildKey 
 	 */
 	async loadListfile(buildKey) {
-		await this.progress.step('Loading listfile');
-		const entries = await listfile.loadListfile(buildKey, this.cache, this.rootEntries);
-		if (entries === 0)
-			throw new Error('No listfile entries found');
+		await this.progress.step('Loading listfiles');
+		listfile.applyPreload(this.rootEntries);
 	}
 
 	/**

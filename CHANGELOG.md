@@ -12,7 +12,18 @@
 - Importing M2 models into Blender using the wow.export add-on now correctly handles transparency and other basic shader settings (requires exported metadata).
 - Added UV animation support to the wow.export Blender add-on (requires exported metadata).
 - Added "Show Bones" option to preview model armature in the model viewer.
-- Added "Data" tab that allows you to view data tables available within the client!
+- Maps can now be filtered by expansion using expansion icons above the map list.
+
+### Data Tables
+- Added "Data" tab that allows you to view data tables within the client!
+- Per-column data table filtering e.g id:5000 name:"test name" (supports regex).
+- Search icon on column headers enables quick per-column filtering.
+- Sort icon on column headers enables per-column sorting.
+- Data tables can be exported as CSV files (either whole, or based on a selection).
+
+### Loading
+- Remote CDN hosts are now speculatively pre-resolved, reducing load times.
+- Listfiles are pre-loaded and filtered ahead-of-time, reducing load times.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
@@ -20,6 +31,7 @@
 - Added option to the Blender addon to create collections for WMO doodad sets (thanks KiaArmani!).
 - Added option to prefix 3D preview exports to prevent overwrite (enabled by default).
 - Metadata exports for M2 and WMOs are now enabled by default.
+- Listfile URL no longer supports build wildcard (long unsupported by official endpoints).
 
 ### UI
 - Added expansion icon for Midnight.
@@ -27,8 +39,9 @@
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
 - Map viewer can now zoom out two additional levels.
 
-### Performance
+### Technical
 - Map viewer no longer keeps map tiles in memory, dramatically improving memory usage.
+- Exported CSV files (data tables, model placement, etc) now escape special characters.
 
 ### Cross-platform support
 - Started generating builds for Mac/Linux (still a work in progress, not yet finished).

@@ -63,6 +63,7 @@ const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
 const listfile = require('./js/casc/listfile');
+const cdnResolver = require('./js/casc/cdn-resolver');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
@@ -81,6 +82,7 @@ window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
 import Listbox from './js/components/listbox.mjs';
+const ListboxMaps = require('./js/components/listbox-maps');
 const Listboxb = require('./js/components/listboxb');
 const Itemlistbox = require('./js/components/itemlistbox');
 const Checkboxlist = require('./js/components/checkboxlist');
@@ -315,6 +317,7 @@ document.addEventListener('click', function(e) {
 				this.selectedCDNRegion = region;
 				this.lockCDNRegion = true;
 				this.config.sourceSelectUserRegion = region.tag;
+				cdnResolver.startPreResolution(region.tag);
 			},
 
 			/**
@@ -542,6 +545,7 @@ document.addEventListener('click', function(e) {
 	}
 
 	app.component('Listbox', Listbox);
+	app.component('ListboxMaps', ListboxMaps);
 	app.component('Listboxb', Listboxb);
 	app.component('Itemlistbox', Itemlistbox);
 	app.component('Checkboxlist', Checkboxlist);
@@ -572,6 +576,8 @@ document.addEventListener('click', function(e) {
 		core.view.config.exportDirectory = path.join(os.homedir(), 'wow.export');
 		log.write('No export directory set, setting to %s', core.view.config.exportDirectory);
 	}
+
+	listfile.preload();
 
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;

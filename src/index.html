@@ -389,8 +389,25 @@
 				</div>
 				<tab-textures></tab-textures>
 				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
-					<div class="list-container">
-						<listbox id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox>
+					<div class="map-placeholder">
+						<div class="expansion-buttons">
+							<button class="expansion-button show-all"
+									title="Show All"
+									:class="{ active: selectedExpansionFilter === -1 }"
+									@click="selectedExpansionFilter = -1">
+							</button>
+							<button v-for="expansion in constants.EXPANSIONS" 
+									:key="expansion.id"
+									class="expansion-button"
+									:title="expansion.name"
+									:class="{ active: selectedExpansionFilter === expansion.id }"
+									@click="selectedExpansionFilter = expansion.id"
+									:style="'background-image: var(--expansion-icon-' + expansion.id + ')'">
+							</button>
+						</div>
+					</div>
+					<div class="list-container" id="maps-list-container">
+						<listbox-maps id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :expansion-filter="selectedExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
 					</div>
 					<div class="filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -821,11 +838,19 @@
 						<input type="text" v-model="userInputFilterDB2s" placeholder="Filter DB2s.." />
 					</div>
 					<div class="list-container">
-						<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows" :filter="userInputFilterDataTable" :regex="config.regexFilters"></data-table>
+						<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows" :filter="userInputFilterDataTable" :regex="config.regexFilters" :selection="selectionDataTable" @update:filter="userInputFilterDataTable = $event" @update:selection="selectionDataTable = $event"></data-table>
 					</div>
 					<div class="filter data-table-filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
+						<input type="text" id="data-table-filter-input" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
+					</div>
+					<div class="right-panel">
+						<span class="header">Export</span>
+						<label class="ui-checkbox" title="Export all rows">
+							<input type="checkbox" v-model="config.dataExportAll"/>
+							<span>Export all rows</span>
+						</label>
+						<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
 					</div>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">
