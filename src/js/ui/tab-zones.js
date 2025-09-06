@@ -190,10 +190,10 @@ const loadZoneMap = async (zoneID) => {
 				const layerNum = parseInt(layerIndex);
 				
 				log.write('Rendering layer %d with %d tiles', layerNum, layerTiles.length);				
-				await renderMapTiles(ctx, layerTiles, artStyle, layerNum);
+				await renderMapTiles(ctx, layerTiles, artStyle, layerNum, zoneID);
 			}
 
-			await renderWorldMapOverlays(ctx, artStyle);
+			await renderWorldMapOverlays(ctx, artStyle, zoneID);
 		}
 
 		log.write('Successfully rendered zone map for zone ID %d (UiMap ID %d)', zoneID, uiMapID);
@@ -210,8 +210,9 @@ const loadZoneMap = async (zoneID) => {
  * @param {Array} tiles
  * @param {Object} artStyle
  * @param {number} layerIndex
+ * @param {number} expectedZoneID
  */
-const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0) => {
+const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0, expectedZoneID) => {
 	// Sort tiles by position for proper rendering order
 	tiles.sort((a, b) => {
 		if (a.RowIndex !== b.RowIndex)
@@ -234,6 +235,12 @@ const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0) => {
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
 
+			// Check if zone changed while loading
+			if (selectedZoneID !== expectedZoneID) {
+				log.write('Skipping tile render - zone changed from %d to %d', expectedZoneID, selectedZoneID);
+				return { success: false, tile: tile, skipped: true };
+			}
+
 			const tileCanvas = blp.toCanvas(0b1111);
 			ctx.drawImage(tileCanvas, finalX, finalY);
 
@@ -253,8 +260,9 @@ const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0) => {
  * Render WorldMapOverlay explored area overlays.
  * @param {CanvasRenderingContext2D} ctx
  * @param {Object} artStyle
+ * @param {number} expectedZoneID
  */
-const renderWorldMapOverlays = async (ctx, artStyle) => {
+const renderWorldMapOverlays = async (ctx, artStyle, expectedZoneID) => {
 	const overlays = [];
 	for (const [id, overlay] of worldMapOverlayTable.getAllRows()) {
 		if (overlay.UiMapArtID === artStyle.ID)
@@ -281,7 +289,7 @@ const renderWorldMapOverlays = async (ctx, artStyle) => {
 		log.write('Rendering WorldMapOverlay ID %d with %d tiles at offset (%d,%d)', 
 			overlay.ID, overlayTiles.length, overlay.OffsetX, overlay.OffsetY);
 
-		await renderOverlayTiles(ctx, overlayTiles, overlay, artStyle);
+		await renderOverlayTiles(ctx, overlayTiles, overlay, artStyle, expectedZoneID);
 	}
 };
 
@@ -291,8 +299,9 @@ const renderWorldMapOverlays = async (ctx, artStyle) => {
  * @param {Array} tiles
  * @param {Object} overlay
  * @param {Object} artStyle
+ * @param {number} expectedZoneID
  */
-const renderOverlayTiles = async (ctx, tiles, overlay, artStyle) => {
+const renderOverlayTiles = async (ctx, tiles, overlay, artStyle, expectedZoneID) => {
 	tiles.sort((a, b) => {
 		if (a.RowIndex !== b.RowIndex)
 			return a.RowIndex - b.RowIndex;
@@ -310,6 +319,12 @@ const renderOverlayTiles = async (ctx, tiles, overlay, artStyle) => {
 
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
+
+			// Check if zone changed while loading
+			if (selectedZoneID !== expectedZoneID) {
+				log.write('Skipping overlay tile render - zone changed from %d to %d', expectedZoneID, selectedZoneID);
+				return { success: false, tile: tile, skipped: true };
+			}
 
 			const tileCanvas = blp.toCanvas(0b1111);
 			ctx.drawImage(tileCanvas, baseX, baseY);
