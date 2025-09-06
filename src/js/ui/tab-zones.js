@@ -239,7 +239,7 @@ const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0) => {
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
 
-			const tileCanvas = blp.toCanvas(0b0111);
+			const tileCanvas = blp.toCanvas(0b1111);
 			ctx.drawImage(tileCanvas, finalX, finalY);
 
 			return { success: true, tile: tile };
