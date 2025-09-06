@@ -546,6 +546,14 @@
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 						<input type="text" v-model="userInputFilterZones" placeholder="Filter zones..."/>
 					</div>
+					<div class="zone-export-controls">
+						<input type="button" value="Export Map" @click="click('export-zone', $event)" :class="{ disabled: isBusy || !selectionZones || selectionZones.length === 0 }"/>
+					</div>
+					<div class="zone-viewer-container preview-container">
+						<div class="preview-background">
+							<canvas id="zone-canvas"></canvas>
+						</div>
+					</div>
 				</div>
 				<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
 					<div class="list-container">
