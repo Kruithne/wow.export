@@ -45,20 +45,18 @@ const exportZoneMap = async () => {
 		return;
 	}
 
-	const canvas = document.getElementById('zone-canvas');
-	if (!canvas) {
-		log.write('Zone canvas not found for export');
-		core.setToast('error', 'No zone map is currently displayed to export.');
-		return;
-	}
-
-	if (canvas.width === 0 || canvas.height === 0) {
-		core.setToast('info', 'No map data has been rendered for this zone yet.');
-		return;
-	}
-
 	try {
 		const zone = parseZoneEntry(userSelection[0]);
+		const exportCanvas = document.createElement('canvas');
+		
+		log.write('Exporting zone map: %s (%d)', zone.zoneName, zone.id);
+		
+		const mapInfo = await renderZoneToCanvas(exportCanvas, zone.id, true);
+		
+		if (mapInfo.width === 0 || mapInfo.height === 0) {
+			core.setToast('info', 'No map data available to export for this zone.');
+			return;
+		}
 		
 		// Normalize filename by removing special characters and replacing spaces with underscores
 		const normalizedZoneName = zone.zoneName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
@@ -70,9 +68,9 @@ const exportZoneMap = async () => {
 		const helper = new ExportHelper(1, 'zone');
 		helper.start();
 
-		log.write('Exporting zone map: %s', filename);
+		log.write('Exporting zone map at full resolution (%dx%d): %s', mapInfo.width, mapInfo.height, filename);
 
-		const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+		const buf = await BufferWrapper.fromCanvas(exportCanvas, 'image/png');
 		await buf.writeToFile(exportPath);
 
 		helper.mark(path.join('zones', filename), true);
@@ -86,7 +84,128 @@ const exportZoneMap = async () => {
 };
 
 /**
- * Load and render a zone map on the canvas.
+ * Render a zone map to any canvas.
+ * @param {HTMLCanvasElement} canvas - Target canvas
+ * @param {number} zoneID - AreaTable zone ID
+ * @param {boolean} setCanvasSize - Whether to resize the canvas to map dimensions
+ * @returns {Object} - Map metadata including dimensions
+ */
+const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
+	const ctx = canvas.getContext('2d');
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	const assignmentRows = uiMapAssignmentTable.getAllRows();
+	let uiMapID = null;
+	
+	for (const [id, assignment] of assignmentRows) {
+		if (assignment.AreaID === zoneID) {
+			uiMapID = assignment.UiMapID;
+			break;
+		}
+	}
+
+	if (!uiMapID) {
+		log.write('No UiMap found for zone ID %d', zoneID);
+		throw new Error('No map data available for this zone');
+	}
+
+	const mapData = uiMapTable.getRow(uiMapID);
+	if (!mapData) {
+		log.write('UiMap entry not found for ID %d', uiMapID);
+		throw new Error('UiMap entry not found');
+	}
+
+	const artStyles = [];
+	
+	const linkedArtIDs = [];
+	for (const [id, linkEntry] of uiMapXMapArtTable.getAllRows()) {
+		if (linkEntry.UiMapID === uiMapID)
+			linkedArtIDs.push(linkEntry.UiMapArtID);
+	}
+
+	for (const artID of linkedArtIDs) {
+		const artEntry = uiMapArtTable.getRow(artID);
+		if (artEntry) {
+			const styleLayer = uiMapArtStyleLayerTable.getRow(artEntry.UiMapArtStyleID);
+			if (styleLayer) {
+				const combinedStyle = {
+					...artEntry,
+					LayerIndex: styleLayer.LayerIndex,
+					LayerWidth: styleLayer.LayerWidth,
+					LayerHeight: styleLayer.LayerHeight,
+					TileWidth: styleLayer.TileWidth,
+					TileHeight: styleLayer.TileHeight
+				};
+				artStyles.push(combinedStyle);
+			} else {
+				log.write('No style layer found for UiMapArtStyleID %d', artEntry.UiMapArtStyleID);
+			}
+		}
+	}
+
+	if (artStyles.length === 0) {
+		log.write('No art styles found for UiMap ID %d', uiMapID);
+		throw new Error('No art styles found for map');
+	}
+
+	log.write('Found %d art styles for UiMap ID %d', artStyles.length, uiMapID);
+	artStyles.sort((a, b) => (a.LayerIndex || 0) - (b.LayerIndex || 0));
+
+	let mapWidth = 0, mapHeight = 0;
+
+	for (const artStyle of artStyles) {
+		const allTiles = [];
+		for (const [id, tileEntry] of uiMapArtTileTable.getAllRows()) {
+			if (tileEntry.UiMapArtID === artStyle.ID)
+				allTiles.push(tileEntry);
+		}
+
+		if (allTiles.length === 0) {
+			log.write('No tiles found for UiMapArt ID %d', artStyle.ID);
+			continue;
+		}
+
+		const tilesByLayer = allTiles.reduce((layers, tile) => {
+			const layerIndex = tile.LayerIndex || 0;
+			if (!layers[layerIndex])
+				layers[layerIndex] = [];
+
+			layers[layerIndex].push(tile);
+			return layers;
+		}, {});
+
+		if (artStyle.LayerIndex === 0) {
+			mapWidth = artStyle.LayerWidth;
+			mapHeight = artStyle.LayerHeight;
+			if (setCanvasSize) {
+				canvas.width = mapWidth;
+				canvas.height = mapHeight;
+			}
+		}
+
+		const layerIndices = Object.keys(tilesByLayer).sort((a, b) => parseInt(a) - parseInt(b));
+		for (const layerIndex of layerIndices) {
+			const layerTiles = tilesByLayer[layerIndex];
+			const layerNum = parseInt(layerIndex);
+			
+			log.write('Rendering layer %d with %d tiles', layerNum, layerTiles.length);				
+			await renderMapTiles(ctx, layerTiles, artStyle, layerNum, zoneID);
+		}
+
+		await renderWorldMapOverlays(ctx, artStyle, zoneID);
+	}
+
+	log.write('Successfully rendered zone map for zone ID %d (UiMap ID %d)', zoneID, uiMapID);
+	
+	return {
+		width: mapWidth,
+		height: mapHeight,
+		uiMapID: uiMapID
+	};
+};
+
+/**
+ * Load and render a zone map on the display canvas.
  * @param {number} zoneID - AreaTable zone ID
  */
 const loadZoneMap = async (zoneID) => {
@@ -96,108 +215,8 @@ const loadZoneMap = async (zoneID) => {
 		return;
 	}
 
-	const ctx = canvas.getContext('2d');
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
 	try {
-		const assignmentRows = uiMapAssignmentTable.getAllRows();
-		let uiMapID = null;
-		
-		for (const [id, assignment] of assignmentRows) {
-			if (assignment.AreaID === zoneID) {
-				uiMapID = assignment.UiMapID;
-				break;
-			}
-		}
-
-		if (!uiMapID) {
-			log.write('No UiMap found for zone ID %d', zoneID);
-			core.setToast('info', 'No map data available for this zone', null, 4000);
-			return;
-		}
-
-		const mapData = uiMapTable.getRow(uiMapID);
-		if (!mapData) {
-			log.write('UiMap entry not found for ID %d', uiMapID);
-			return;
-		}
-
-		const artStyles = [];
-		
-		const linkedArtIDs = [];
-		for (const [id, linkEntry] of uiMapXMapArtTable.getAllRows()) {
-			if (linkEntry.UiMapID === uiMapID)
-				linkedArtIDs.push(linkEntry.UiMapArtID);
-		}
-
-		for (const artID of linkedArtIDs) {
-			const artEntry = uiMapArtTable.getRow(artID);
-			if (artEntry) {
-				const styleLayer = uiMapArtStyleLayerTable.getRow(artEntry.UiMapArtStyleID);
-				if (styleLayer) {
-					const combinedStyle = {
-						...artEntry,
-						LayerIndex: styleLayer.LayerIndex,
-						LayerWidth: styleLayer.LayerWidth,
-						LayerHeight: styleLayer.LayerHeight,
-						TileWidth: styleLayer.TileWidth,
-						TileHeight: styleLayer.TileHeight
-					};
-					artStyles.push(combinedStyle);
-				} else {
-					log.write('No style layer found for UiMapArtStyleID %d', artEntry.UiMapArtStyleID);
-				}
-			}
-		}
-
-		if (artStyles.length === 0) {
-			log.write('No art styles found for UiMap ID %d', uiMapID);
-			return;
-		}
-
-		log.write('Found %d art styles for UiMap ID %d', artStyles.length, uiMapID);
-		artStyles.sort((a, b) => (a.LayerIndex || 0) - (b.LayerIndex || 0));
-
-		for (const artStyle of artStyles) {
-			const allTiles = [];
-			for (const [id, tileEntry] of uiMapArtTileTable.getAllRows()) {
-				if (tileEntry.UiMapArtID === artStyle.ID)
-					allTiles.push(tileEntry);
-			}
-
-			if (allTiles.length === 0) {
-				log.write('No tiles found for UiMapArt ID %d', artStyle.ID);
-				continue;
-			}
-
-			const tilesByLayer = allTiles.reduce((layers, tile) => {
-				const layerIndex = tile.LayerIndex || 0;
-				if (!layers[layerIndex])
-					layers[layerIndex] = [];
-
-				layers[layerIndex].push(tile);
-				return layers;
-			}, {});
-
-			if (artStyle.LayerIndex === 0) {
-				canvas.width = artStyle.LayerWidth;
-				canvas.height = artStyle.LayerHeight;
-			}
-
-			const layerIndices = Object.keys(tilesByLayer).sort((a, b) => parseInt(a) - parseInt(b));
-			for (const layerIndex of layerIndices) {
-				const layerTiles = tilesByLayer[layerIndex];
-				const layerNum = parseInt(layerIndex);
-				
-				log.write('Rendering layer %d with %d tiles', layerNum, layerTiles.length);				
-				await renderMapTiles(ctx, layerTiles, artStyle, layerNum, zoneID);
-			}
-
-			await renderWorldMapOverlays(ctx, artStyle, zoneID);
-		}
-
-		log.write('Successfully rendered zone map for zone ID %d (UiMap ID %d)', zoneID, uiMapID);
-
+		await renderZoneToCanvas(canvas, zoneID, true);
 	} catch (e) {
 		log.write('Failed to render zone map: %s', e.message);
 		core.setToast('error', 'Failed to load map data: ' + e.message);
