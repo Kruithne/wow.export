@@ -1,18 +1,9 @@
-BUILD_RELEASE = false;
-
 const net = require('node:net');
 const path = require('path');
 const fsp = require('fs').promises;
 const { Readable } = require('stream');
 const msgpack = require('@msgpack/msgpack');
 const BuildCache = require('./js/casc/build-cache');
-
-try {
-	const debugSocket = net.connect(process.env.DEBUG_SOCKET);
-	debugSocket.on('data', (data) => { if (data.toString() === 'please_exit') process.exit(); });
-} catch {
-	console.log('couldnt get debug socket');
-}
 
 const win = nw.Window.get();
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -61,9 +52,11 @@ async function processFetchText(id) {
 	}
 }
 
-const mainWindowSocketPath = process.env.PLATFORM === 'win'
+const mainWindowSocketPath = process.platform === 'win32'
 	? path.join('\\\\?\\pipe', process.cwd(), 'main-window')
 	: '/tmp/wow.export-main-window.sock';
+if (process.platform !== 'win32')
+	fs.unlinkSync(mainWindowSocketPath);
 mainWindow = net.createServer().listen(mainWindowSocketPath);
 mainWindow.on('connection', async (socket) => {
 	socket.write(msgpack.encode({

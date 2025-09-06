@@ -1,4 +1,4 @@
-import { ref } from "vue";
+const { ref } = Vue;
 
 let state = null;
 

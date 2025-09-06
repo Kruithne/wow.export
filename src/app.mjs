@@ -74,15 +74,12 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
-import * as Vue from 'vue/dist/vue.esm-bundler.js';
-window.Vue = Vue;
-
 const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
 import Listbox from './js/components/listbox.mjs';
-const ListboxMaps = require('./js/components/listbox-maps');
+import ListboxMaps from './js/components/listbox-maps.mjs';
 const Listboxb = require('./js/components/listboxb');
 const Itemlistbox = require('./js/components/itemlistbox');
 const Checkboxlist = require('./js/components/checkboxlist');

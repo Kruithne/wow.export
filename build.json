@@ -59,23 +59,6 @@
 				"whitelist": [
 					"locales\/en-US.pak$"
 				]
-			}
-		},
-		{
-			"name": "win-x64-debug-hmr",
-			"bundle": "nwjs-sdk-v%s-win-x64.zip",
-			"bundleType": "ZIP",
-			"sourceMethod": "LINK",
-			"sourceTarget": "./src",
-			"manifestTarget": "./package.json",
-			"filter": {
-				"blacklist": [
-					"locales\/[^.]+.pak(.info|)$",
-					"notification_helper.exe"
-				],
-				"whitelist": [
-					"locales\/en-US.pak$"
-				]
 			},
 			"manifest": {
 				"main": "./src/hmr-main.html"
@@ -172,23 +155,6 @@
 		},
 		{
 			"name": "linux-x64-debug",
-			"bundle": "nwjs-sdk-v%s-linux-x64.tar.gz",
-			"bundleType": "GZ",
-			"sourceMethod": "LINK",
-			"sourceTarget": "./src",
-			"manifestTarget": "./package.json",
-			"filter": {
-				"blacklist": [
-					"locales\/[^.]+.pak(.info|)$",
-					"notification_helper.exe"
-				],
-				"whitelist": [
-					"locales\/en-US.pak$"
-				]
-			}
-		},
-		{
-			"name": "linux-x64-debug-hmr",
 			"bundle": "nwjs-sdk-v%s-linux-x64.tar.gz",
 			"bundleType": "GZ",
 			"sourceMethod": "LINK",

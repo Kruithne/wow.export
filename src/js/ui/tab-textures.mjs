@@ -3,15 +3,14 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
-
 const util = require('util');
 const path = require('path');
-const log = require('/js/log');
-const listfile = require('/js/casc/listfile');
-const BLPFile = require('/js/casc/blp');
-const EncryptionError = require('/js/casc/blte-reader').EncryptionError;
-const textureExporter = require('/js/ui/texture-exporter');
+const { computed, inject, onMounted, onUnmounted, ref, watch } = Vue;
+const log = require('@/js/log');
+const listfile = require('@/js/casc/listfile');
+const BLPFile = require('@/js/casc/blp');
+const EncryptionError = require('@/js/casc/blte-reader').EncryptionError;
+const textureExporter = require('@/js/ui/texture-exporter');
 
 import useTextureAtlas from './textures/texture-atlas.mjs';
 import useUiState from './textures/ui-state.mjs';

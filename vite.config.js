@@ -5,7 +5,7 @@ const parser = require('recast/parsers/babel');
 function convertModuleImport(moduleImport, relativeBase) {
 	if (moduleImport.startsWith('.'))
 		return join(dirname(relativeBase), moduleImport).substring(1).replace(/\\/g, '/');
-	else if (moduleImport.startsWith('/'))
+	else if (moduleImport.startsWith('@/'))
 		return join('src', moduleImport.substring(1)).replace(/\\/g, '/');
 }
 
@@ -222,7 +222,7 @@ const hmrPlugin = {
 	async transformIndexHtml(html) {
 		return html.replace(
 			'<script defer type="text/javascript" src="app.js"></script>',
-			'<script type="module" src="app-loader.js"></script>'
+			'<script type="text/javascript" src="init.js"></script><script type="module" src="app-loader.js"></script>'
 		);
 	},
 	async transform(code, id) {
@@ -246,7 +246,8 @@ const hmrPlugin = {
 
 export default {
 	root: join(__dirname, 'src'),
-	server: { port: process.env.SERVER_PORT },
+	server: { port: process.env.SERVER_PORT ?? 4175 },
 	plugins: [hmrPlugin],
 	sourcemap: true,
+	clearScreen: false,
 };

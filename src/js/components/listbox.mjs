@@ -5,7 +5,7 @@
  */
 
 const path = require('path');
-const core = require('../core');
+const core = require('@/js/core');
 
 const FILTER_DEBOUNCE_MS = 200;
 

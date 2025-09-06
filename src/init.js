@@ -8,7 +8,9 @@
 // to discern a production build. However, for debugging builds it will throw
 // a ReferenceError without the following check. Any code that only runs when
 // BUILD_RELEASE is set to false will be removed as dead-code during compile.
-BUILD_RELEASE = typeof BUILD_RELEASE !== 'undefined';
+BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
+
+var Vue = require('vue/dist/vue.cjs.js');
 
 if (!BUILD_RELEASE && typeof chrome.runtime === 'undefined') {
 	require('./js/init-hmr');

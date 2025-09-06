@@ -11,9 +11,12 @@ let resolveMainWindow = null;
 let fetchId = 0;
 const fetchResolve = {};
 
-const mainWindowSocketPath = process.env.PLATFORM === 'win'
+const mainWindowSocketPath = process.platform === 'win32'
 	? path.join('\\\\?\\pipe', process.cwd(), 'main-window')
 	: '/tmp/wow.export-main-window.sock';
+if (process.platform !== 'win32')
+	fs.unlinkSync(mainWindowSocketPath);
+
 mainWindow = net.connect(
 	mainWindowSocketPath,
 	async function () {

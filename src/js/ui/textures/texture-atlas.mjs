@@ -1,12 +1,11 @@
-import { inject, ref } from 'vue';
-
 const path = require('path');
-const log = require('/js/log');
-const WDCReader = require('/js/db/WDCReader');
-const listfile = require('/js/casc/listfile');
-const ExportHelper = require('/js/casc/export-helper');
-const BLPFile = require('/js/casc/blp');
-const BufferWrapper = require('/js/buffer');
+const { inject, ref } = Vue;
+const log = require('@/js/log');
+const WDCReader = require('@/js/db/WDCReader');
+const listfile = require('@/js/casc/listfile');
+const ExportHelper = require('@/js/casc/export-helper');
+const BLPFile = require('@/js/casc/blp');
+const BufferWrapper = require('@/js/buffer');
 
 let state = null;
 

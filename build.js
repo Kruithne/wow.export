@@ -317,11 +317,22 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			await fs.rm(preBuildDir, { recursive: true, force: true });
 			await fs.mkdir(preBuildDir, { recursive: true });
 			await fse.copy(sourceDirectory, preBuildDir, { overwrite: true });
+			let initFile = await fs.readFile(path.join(sourceDirectory, 'init.js'), 'utf8');
+			initFile = initFile.replace("require('./js/init-hmr');", "");
 			const rollupBundle = await rollup({input: path.join(sourceDirectory, bundleConfig.jsEntry.replace('.js', '.mjs'))});
 			await rollupBundle.write({
 				file: path.join(preBuildDir, bundleConfig.jsEntry),
 				format: 'cjs',
 				inlineDynamicImports: true,
+				plugins: [{
+					name: 'fixRequires',
+					generateBundle(options, bundle, isWrite) {
+						if (!isWrite)
+							return;
+						const appjs = bundle['app.js'];
+						appjs.code = initFile + appjs.code.replaceAll("require('@/js", "require('./js").replaceAll('require("@/js', 'require("./js');
+					}
+				}]
 			});
 			removeFilesByExtension(preBuildDir, '.mjs');
 
