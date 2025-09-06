@@ -29,14 +29,27 @@ core.events.once('screen-tab-zones', async () => {
 	core.setToast('progress', 'Loading zone data, please wait...', null, -1, false);
 
 	try {
+		const mapTable = new WDCReader('DBFilesClient/Map.db2');
+		await mapTable.parse();
+		
+		const expansionMap = new Map();
+		for (const [id, entry] of mapTable.getAllRows())
+			expansionMap.set(id, entry.ExpansionID);
+		
+		log.write('Loaded %d maps for expansion mapping', expansionMap.size);
+
 		const table = new WDCReader('DBFilesClient/AreaTable.db2');
 		await table.parse();
 
 		const zones = [];
 		for (const [id, entry] of table.getAllRows()) {
-			// Format: ExpansionID(0)\x19[ID]\x19ZoneName\x19(AreaName_lang)
-			// Using expansion 0 as requested, with grey area name
-			zones.push(util.format('0\x19[%d]\x19%s\x19(%s)', id, entry.ZoneName, entry.AreaName_lang));
+			const expansionId = expansionMap.get(entry.ContinentID) || 0;
+			
+			// Format: ExpansionID\x19[ID]\x19ZoneName\x19(AreaName_lang)
+			zones.push(
+				util.format('%d\x19[%d]\x19%s\x19(%s)',
+				expansionId, id, entry.ZoneName, entry.AreaName_lang)
+			);
 		}
 
 		core.view.zoneViewerZones = zones;
