@@ -1282,7 +1282,8 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-template-rows: auto 1fr 60px;
 }
 
-#tab-maps .map-placeholder {
+.map-placeholder,
+.zone-placeholder {
 	grid-column: 1;
 	grid-row: 1;
 	padding: 10px;
@@ -1290,7 +1291,7 @@ input[type=number]::-webkit-outer-spin-button {
 	font-weight: bold;
 }
 
-#tab-maps .expansion-buttons {
+.expansion-buttons {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
@@ -1322,6 +1323,11 @@ input[type=number]::-webkit-outer-spin-button {
 
 
 #tab-maps .list-container {
+	grid-column: 1;
+	grid-row: 2;
+}
+
+#tab-zones .list-container {
 	grid-column: 1;
 	grid-row: 2;
 }
@@ -1385,7 +1391,8 @@ input[type=number]::-webkit-outer-spin-button {
 /* Zones tab styling now handled by .listbox-icons class */
 
 #tab-zones.tab.list-tab {
-	grid-template-columns: 1fr 2fr;
+	grid-template-columns: 1.5fr 2fr;
+	grid-template-rows: auto 1fr 60px;
 }
 
 #tab-install {
@@ -1713,6 +1720,10 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-column: 1;
 	grid-row: 2;
 	position: relative;
+}
+
+#tab-zones .filter {
+	grid-row: 3;
 }
 .filter > .regex-info {
 	position: absolute;
