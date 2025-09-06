@@ -72,7 +72,7 @@
 			"sourceMethod": "BUNDLE",
 			"sourceTarget": "./src",
 			"bundleConfig": {
-				"filterExt": [".mjs", ".js"],
+				"filterExt": [".js"],
 				"jsEntry": "app.js"
 			},
 			"updater": {
@@ -125,7 +125,7 @@
 			"sourceMethod": "BUNDLE",
 			"sourceTarget": "./src",
 			"bundleConfig": {
-				"filterExt": [".mjs", ".js"],
+				"filterExt": [".js"],
 				"jsEntry": "app.js"
 			},
 			"updater": {
@@ -180,7 +180,7 @@
 			"buildArchive": "ZIP",
 			"sourceMethod": "BUNDLE",
 			"bundleConfig": {
-				"filterExt": [".mjs", ".js"],
+				"filterExt": [".js"],
 				"jsEntry": "app.js"
 			},
 			"updater": {
