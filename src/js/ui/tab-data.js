@@ -7,6 +7,7 @@ const core = require('../core');
 const log = require('../log');
 const WDCReader = require('../db/WDCReader');
 const generics = require('../generics');
+const dataExporter = require('./data-exporter');
 
 let selectedFile = null;
 
@@ -93,6 +94,18 @@ core.registerLoadFunc(async () => {
 				core.setToast('error', 'Unable to open DB2 file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);
 				log.write('Failed to open CASC file: %s', e.message);
 			}
+		}
+	});
+
+	// Track when the user clicks to export data table as CSV.
+	core.events.on('click-export-data-csv', async () => {
+		const headers = core.view.tableBrowserHeaders;
+		const rows = core.view.tableBrowserRows;
+		
+		if (headers && rows && headers.length > 0 && rows.length > 0) {
+			await dataExporter.exportDataTable(headers, rows, selectedFile || 'unknown_table');
+		} else {
+			core.setToast('info', 'No data table loaded to export.');
 		}
 	});
 });

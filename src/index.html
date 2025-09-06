@@ -889,6 +889,7 @@
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
 						<input type="text" id="data-table-filter-input" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
 					</div>
+					<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }" style="margin-left: 10px;"/>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">
 					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">

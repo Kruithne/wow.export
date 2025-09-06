@@ -1675,7 +1675,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #tab-data {
-	grid-template-columns: 1fr 5fr;
+	grid-template-columns: 1fr 5fr 1fr;
 }
 
 #tab-data .list-container {
