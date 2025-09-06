@@ -19,6 +19,7 @@
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
+						<div class="option" id="nav-zones" @click="setScreen('tab-zones')" :class="{ active: screen === 'tab-zones' }">Zones</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
@@ -518,6 +519,15 @@
 								<span>Use 32-bit depth</span>
 							</label>
 						</template>
+					</div>
+				</div>
+				<div class="tab list-tab" id="tab-zones" v-if="screen === 'tab-zones'">
+					<div class="list-container">
+						<listbox-zones id="listbox-zones" v-model:selection="selectionZones" :items="zoneViewerZones" :filter="userInputFilterZones" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></listbox-zones>
+					</div>
+					<div class="filter">
+						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+						<input type="text" v-model="userInputFilterZones" placeholder="Filter zones..."/>
 					</div>
 				</div>
 				<div class="tab" id="tab-items" v-if="screen === 'tab-items'">

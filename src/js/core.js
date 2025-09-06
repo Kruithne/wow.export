@@ -57,6 +57,7 @@ const makeNewView = () => {
 		userInputFilterText: '', // Value of the 'filter' field for text files.
 		userInputFilterModels: '', // Value of the 'filter' field for models.
 		userInputFilterMaps: '', // Value of the 'filter' field for maps.
+		userInputFilterZones: '', // Value of the 'filter' field for zones.
 		userInputFilterItems: '', // Value of the 'filter' field of items.
 		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
@@ -68,6 +69,7 @@ const makeNewView = () => {
 		selectionVideos: [],  // Current user selection of videos.
 		selectionText: [], // Current user selection of text files.
 		selectionMaps: [], // Current user selection of maps.
+		selectionZones: [], // Current user selection of zones.
 		selectionItems: [], // Current user selection of items.
 		selectionDB2s: [], // Current user selection of DB2s.
 		selectionDataTable: [], // Current user selection of data table rows.
@@ -124,6 +126,7 @@ const makeNewView = () => {
 		overrideTextureList: [], // Override list of textures.
 		overrideTextureName: '', // Override texture name.
 		mapViewerMaps: [], // Available maps for the map viewer.
+		zoneViewerZones: [], // Available zones for the zone viewer.
 		mapViewerHasWorldModel: false, // Does selected map have a world model?
 		mapViewerTileLoader: null, // Tile loader for active map viewer map.
 		mapViewerSelectedMap: null, // Currently selected map.
