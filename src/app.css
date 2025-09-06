@@ -1675,7 +1675,11 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #tab-data {
-	grid-template-columns: 1fr 5fr 1fr;
+	grid-template-columns: 1fr 6fr 1fr;
+}
+
+#tab-data .right-panel {
+	padding: 20px 20px 20px 0;
 }
 
 #tab-data .list-container {
