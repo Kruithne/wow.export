@@ -154,12 +154,7 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 	let mapWidth = 0, mapHeight = 0;
 
 	for (const artStyle of artStyles) {
-		const allTiles = [];
-		for (const [id, tileEntry] of uiMapArtTileTable.getAllRows()) {
-			if (tileEntry.UiMapArtID === artStyle.ID)
-				allTiles.push(tileEntry);
-		}
-
+		const allTiles = uiMapArtTileTable.getRelationRows(artStyle.ID);
 		if (allTiles.length === 0) {
 			log.write('No tiles found for UiMapArt ID %d', artStyle.ID);
 			continue;
@@ -284,24 +279,14 @@ const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0, expectedZone
  * @param {number} expectedZoneID
  */
 const renderWorldMapOverlays = async (ctx, artStyle, expectedZoneID) => {
-	const overlays = [];
-	for (const [id, overlay] of worldMapOverlayTable.getAllRows()) {
-		if (overlay.UiMapArtID === artStyle.ID)
-			overlays.push(overlay);
-	}
-
+	const overlays = worldMapOverlayTable.getRelationRows(artStyle.ID);
 	if (overlays.length === 0) {
 		log.write('No WorldMapOverlay entries found for UiMapArt ID %d', artStyle.ID);
 		return;
 	}
 
 	for (const overlay of overlays) {
-		const overlayTiles = [];
-		for (const [id, tile] of worldMapOverlayTileTable.getAllRows()) {
-			if (tile.WorldMapOverlayID === overlay.ID)
-				overlayTiles.push(tile);
-		}
-
+		const overlayTiles = worldMapOverlayTileTable.getRelationRows(overlay.ID);
 		if (overlayTiles.length === 0) {
 			log.write('No tiles found for WorldMapOverlay ID %d', overlay.ID);
 			continue;
