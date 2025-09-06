@@ -48,7 +48,7 @@ core.events.once('screen-tab-zones', async () => {
 			// Format: ExpansionID\x19[ID]\x19ZoneName\x19(AreaName_lang)
 			zones.push(
 				util.format('%d\x19[%d]\x19%s\x19(%s)',
-				expansionId, id, entry.ZoneName, entry.AreaName_lang)
+				expansionId, id, entry.AreaName_lang, entry.ZoneName)
 			);
 		}
 
