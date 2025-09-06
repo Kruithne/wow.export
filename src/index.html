@@ -547,6 +547,10 @@
 						<input type="text" v-model="userInputFilterZones" placeholder="Filter zones..."/>
 					</div>
 					<div class="zone-export-controls">
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="config.showZoneOverlays"/>
+							<span>Show Overlays</span>
+						</label>
 						<input type="button" value="Export Map" @click="click('export-zone', $event)" :class="{ disabled: isBusy || !selectionZones || selectionZones.length === 0 }"/>
 					</div>
 					<div class="zone-viewer-container preview-container">

@@ -192,7 +192,9 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 			await renderMapTiles(ctx, layerTiles, artStyle, layerNum, zoneID);
 		}
 
-		await renderWorldMapOverlays(ctx, artStyle, zoneID);
+		if (core.view.config.showZoneOverlays) {
+			await renderWorldMapOverlays(ctx, artStyle, zoneID);
+		}
 	}
 
 	log.write('Successfully rendered zone map for zone ID %d (UiMap ID %d)', zoneID, uiMapID);
@@ -339,9 +341,14 @@ const renderOverlayTiles = async (ctx, tiles, overlay, artStyle, expectedZoneID)
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
 
-			// Check if zone changed while loading
+			// Check if zone changed or overlays disabled while loading
 			if (selectedZoneID !== expectedZoneID) {
 				log.write('Skipping overlay tile render - zone changed from %d to %d', expectedZoneID, selectedZoneID);
+				return { success: false, tile: tile, skipped: true };
+			}
+			
+			if (!core.view.config.showZoneOverlays) {
+				log.write('Skipping overlay tile render - overlays disabled while loading');
 				return { success: false, tile: tile, skipped: true };
 			}
 
@@ -467,5 +474,13 @@ core.registerLoadFunc(async () => {
 	// Track when the user clicks to export the zone map.
 	core.events.on('click-export-zone', async () => {
 		await exportZoneMap();
+	});
+	
+	// Watch for changes to overlay setting and reload current map
+	core.view.$watch('config.showZoneOverlays', async (newValue, oldValue) => {
+		if (newValue !== oldValue && selectedZoneID && !core.view.isBusy) {
+			log.write('Zone overlay setting changed, reloading zone %d', selectedZoneID);
+			await loadZoneMap(selectedZoneID);
+		}
 	});
 });
