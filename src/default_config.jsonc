@@ -81,6 +81,7 @@
 	"mapsIncludeGameObjects": true,
 	"mapsIncludeHoles": true,
 	"mapsExportRaw": false,
+	"dataExportAll": true,
 	"regexFilters": false,
 	"exportMapQuality": 4096,
 	"heightmap32BitDepth": false,

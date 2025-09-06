@@ -19,7 +19,7 @@
 - Per-column data table filtering e.g id:5000 name:"test name" (supports regex).
 - Search icon on column headers enables quick per-column filtering.
 - Sort icon on column headers enables per-column sorting.
-- Data tables can be exported as CSV files.
+- Data tables can be exported as CSV files (either whole, or based on a selection).
 
 ### Loading
 - Remote CDN hosts are now speculatively pre-resolved, reducing load times.

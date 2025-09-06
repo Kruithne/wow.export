@@ -7,7 +7,8 @@ module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
-	props: ['headers', 'rows', 'filter', 'regex'],
+	props: ['headers', 'rows', 'filter', 'regex', 'selection'],
+	emits: ['update:selection'],
 
 	data: function() {
 		return {
@@ -19,7 +20,6 @@ module.exports = {
 			isHorizontalScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null,
-			selection: [],
 			columnWidths: [],
 			manuallyResizedColumns: {},
 			isResizing: false,
@@ -35,7 +35,8 @@ module.exports = {
 			targetHorizontalScroll: 0,
 			resizeAnimationId: null,
 			pendingResizeUpdate: false,
-			targetColumnWidth: 0
+			targetColumnWidth: 0,
+			lastSelectItem: null
 		}
 	},
 
@@ -53,6 +54,9 @@ module.exports = {
 		document.addEventListener('mouseup', this.onMouseUp);
 		this.$refs.root.addEventListener('scroll', this.onScroll);
 		this.$refs.root.addEventListener('mousedown', this.onMiddleMouseDown);
+
+		this.onKeyDown = e => this.handleKey(e);
+		document.addEventListener('keydown', this.onKeyDown);
 
 		this.observer = new ResizeObserver(() => {
 			this.resize();
@@ -73,6 +77,7 @@ module.exports = {
 		// // Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+		document.removeEventListener('keydown', this.onKeyDown);
 		
 		if (this.$refs.root) {
 			this.$refs.root.removeEventListener('scroll', this.onScroll);
@@ -134,10 +139,16 @@ module.exports = {
 
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.
-			for (let i = this.selection.length - 1; i >= 0; i--) {
-				if (!res.includes(this.selection[i]))
-					this.selection.splice(i, 1);
-			}
+			let hasChanges = false;
+			const newSelection = this.selection.filter((rowIndex) => {
+				const includes = rowIndex < res.length;
+				if (!includes)
+					hasChanges = true;
+				return includes;
+			});
+
+			if (hasChanges)
+				this.$emit('update:selection', newSelection);
 
 			return res;
 		},
@@ -291,6 +302,16 @@ module.exports = {
 				});
 			},
 			immediate: true
+		},
+
+		/**
+		 * Watch for rows changes to reset selection (new table loaded)
+		 */
+		rows: {
+			handler: function() {
+				this.lastSelectItem = null;
+				this.$emit('update:selection', []);
+			}
 		}
 	},
 
@@ -714,6 +735,93 @@ module.exports = {
 			if (e.button === 1)
 				e.preventDefault();
 		},
+
+		/**
+		 * Invoked when a keydown event is fired.
+		 * @param {KeyboardEvent} e 
+		 */
+		handleKey: function(e) {
+			// If document.activeElement is the document body, then we can safely assume
+			// the user is not focusing anything, and can intercept keyboard input.
+			if (document.activeElement !== document.body)
+				return;
+
+			// User hasn't selected anything in the table yet.
+			if (this.lastSelectItem === null)
+				return;
+
+			// Arrow keys.
+			const isArrowUp = e.key === 'ArrowUp';
+			const isArrowDown = e.key === 'ArrowDown';
+			if (isArrowUp || isArrowDown) {
+				const delta = isArrowUp ? -1 : 1;
+
+				// Move/expand selection one.
+				const lastSelectIndex = this.lastSelectItem;
+				const nextIndex = lastSelectIndex + delta;
+				if (nextIndex >= 0 && nextIndex < this.sortedItems.length) {
+					const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
+					let diff = Math.abs(nextIndex - lastViewIndex);
+					if (isArrowDown)
+						diff += 1;
+
+					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
+						const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+						this.scroll += ((diff * this.itemWeight) * weight) * delta;
+						this.recalculateBounds();
+					}
+
+					const newSelection = this.selection.slice();
+
+					if (!e.shiftKey)
+						newSelection.splice(0);
+
+					newSelection.push(nextIndex);
+					this.lastSelectItem = nextIndex;
+					this.$emit('update:selection', newSelection);
+				}
+			}
+		},
+
+		/**
+		 * Invoked when a user selects a row in the table.
+		 * @param {number} rowIndex - Index of the row in sortedItems
+		 * @param {MouseEvent} event
+		 */
+		selectRow: function(rowIndex, event) {
+			const checkIndex = this.selection.indexOf(rowIndex);
+			const newSelection = this.selection.slice();
+
+			if (event.ctrlKey) {
+				// Ctrl-key held, so allow multiple selections.
+				if (checkIndex > -1)
+					newSelection.splice(checkIndex, 1);
+				else
+					newSelection.push(rowIndex);
+			} else if (event.shiftKey) {
+				// Shift-key held, select a range.
+				if (this.lastSelectItem !== null && this.lastSelectItem !== rowIndex) {
+					const lastSelectIndex = this.lastSelectItem;
+					const thisSelectIndex = rowIndex;
+
+					const delta = Math.abs(lastSelectIndex - thisSelectIndex);
+					const lowest = Math.min(lastSelectIndex, thisSelectIndex);
+					const highest = lowest + delta;
+
+					for (let i = lowest; i <= highest; i++) {
+						if (newSelection.indexOf(i) === -1)
+							newSelection.push(i);
+					}
+				}
+			} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
+				// Normal click, replace entire selection.
+				newSelection.splice(0);
+				newSelection.push(rowIndex);
+			}
+
+			this.lastSelectItem = rowIndex;
+			this.$emit('update:selection', newSelection);
+		},
 	},
 
 	/**
@@ -753,7 +861,9 @@ module.exports = {
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="row in displayItems">
+					<tr v-for="(row, rowIndex) in displayItems" 
+						@click="selectRow(scrollIndex + rowIndex, $event)"
+						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
 						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}">{{field}}</td>
 					</tr>
 				</tbody>

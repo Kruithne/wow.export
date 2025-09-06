@@ -70,6 +70,7 @@ const makeNewView = () => {
 		selectionMaps: [], // Current user selection of maps.
 		selectionItems: [], // Current user selection of items.
 		selectionDB2s: [], // Current user selection of DB2s.
+		selectionDataTable: [], // Current user selection of data table rows.
 		selectionRaw: [], // Current user selection of raw files.
 		selectionInstall: [], // Current user selection of install files.
 		listfileTextures: [], // Filtered listfile for texture files.
