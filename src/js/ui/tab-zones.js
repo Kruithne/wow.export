@@ -200,12 +200,7 @@ const loadZoneMap = async (zoneID) => {
 
 	} catch (e) {
 		log.write('Failed to render zone map: %s', e.message);
-		ctx.fillStyle = '#f00';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = '#fff';
-		ctx.font = '16px Arial';
-		ctx.textAlign = 'center';
-		ctx.fillText('Error loading map data', canvas.width / 2, canvas.height / 2);
+		core.setToast('error', 'Failed to load map data: ' + e.message);
 	}
 };
 
