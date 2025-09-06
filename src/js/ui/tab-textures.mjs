@@ -17,7 +17,7 @@ import useUiState from './textures/ui-state.mjs';
 
 
 export const TabTexturesContent = {
-	props: ['uiState', 'textureAtlas', 'previewTextureById'],
+	props: ['previewTextureById'],
 	setup({previewTextureById}) {
 		const core = inject('core');
 		const app = inject('app');
