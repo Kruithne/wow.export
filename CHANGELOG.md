@@ -39,8 +39,9 @@
 - Changing tab (Models, Textures, etc) no longer resets your scroll position.
 - Map viewer can now zoom out two additional levels.
 
-### Performance
+### Technical
 - Map viewer no longer keeps map tiles in memory, dramatically improving memory usage.
+- Exported CSV files (data tables, model placement, etc) now escape special characters.
 
 ### Cross-platform support
 - Started generating builds for Mac/Linux (still a work in progress, not yet finished).
