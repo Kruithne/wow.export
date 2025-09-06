@@ -24,7 +24,7 @@ module.exports = {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -120,7 +120,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -130,7 +130,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -164,7 +164,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -178,7 +178,7 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
+				mainWindow.setClipboard(this.selection.join('\n'), 'text');
 			} else {
 				if (this.disable)
 					return;
@@ -220,13 +220,13 @@ module.exports = {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
 			if (this.disable)
 				return;
-			
+
 			const checkIndex = this.selection.indexOf(item);
 			const newSelection = this.selection.slice();
 

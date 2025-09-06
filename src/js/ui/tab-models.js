@@ -355,8 +355,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				log.write('Saved 3D preview screenshot to %s', outFile);
 				core.setToast('success', util.format('Successfully exported preview to %s', outFile), { 'View in Explorer': () => mainWindow.Shell.openItem(outDir) }, -1);
 			} else if (format === 'CLIPBOARD') {
-				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toBase64(), 'png', true);
+				mainWindow.setClipboard(buf.toBase64(), 'png', true);
 
 				log.write('Copied 3D preview to clipboard (%s)', activePath);
 				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);

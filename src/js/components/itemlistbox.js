@@ -29,7 +29,7 @@ module.exports = {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -167,7 +167,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -177,7 +177,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -211,7 +211,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -225,7 +225,7 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.map(e => e.displayName).join('\n'), 'text');
+				mainWindow.setClipboard(this.selection.map(e => e.displayName).join('\n'), 'text');
 			} else {
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
@@ -265,7 +265,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
@@ -301,7 +301,7 @@ module.exports = {
 							if (newSelection.indexOf(select) === -1)
 								newSelection.push(select);
 						}
-					}				
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 					// Normal click, replace entire selection.
 					newSelection.splice(0);

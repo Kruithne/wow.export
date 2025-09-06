@@ -49,7 +49,6 @@ const makeNewView = () => {
 		cacheSize: 0, // Active size of the user cache.
 		userInputTactKey: '', // Value of manual tact key field.
 		userInputTactKeyName: '', // Value of manual tact key name field.
-		userInputFilterTextures: '', // Value of the 'filter' field for textures.
 		userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 		userInputFilterVideos: '', // Value of the 'filter' field for video files.
 		userInputFilterText: '', // Value of the 'filter' field for text files.
@@ -60,7 +59,6 @@ const makeNewView = () => {
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
-		selectionTextures: [], // Current user selection of texture files.
 		selectionModels: [], // Current user selection of models.
 		selectionSounds: [], // Current user selection of sounds.
 		selectionVideos: [],  // Current user selection of videos.
@@ -109,13 +107,8 @@ const makeNewView = () => {
 		modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
 		modelTexturePreviewUVOverlay: '', // UV overlay data URL for texture preview.
 		modelViewerUVLayers: [], // Available UV layers for the active model.
-		texturePreviewWidth: 256, // Active width of the texture preview.
-		texturePreviewHeight: 256, // Active height of the texture preview.
-		texturePreviewInfo: '', // Text information for a displayed texture.
 		overrideModelList: [], // Override list of models.
 		overrideModelName: '', // Override model name.
-		overrideTextureList: [], // Override list of textures.
-		overrideTextureName: '', // Override texture name.
 		mapViewerMaps: [], // Available maps for the map viewer.
 		mapViewerHasWorldModel: false, // Does selected map have a world model?
 		mapViewerTileLoader: null, // Tile loader for active map viewer map.
@@ -155,11 +148,6 @@ const makeNewView = () => {
 			stateNavExtra: false, // State controller for the extra nav menu.
 			stateModelExport: false, // State controller for the model export menu.
 		},
-		menuButtonTextures: [
-			{ label: 'Export as PNG', value: 'PNG' },
-			{ label: 'Export as BLP (Raw)', value: 'BLP' },
-			{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
-		],
 		menuButtonTextureQuality: [
 			{ label: 'Alpha Maps', value: -1 },
 			{ label: 'None', value: 0 },

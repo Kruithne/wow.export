@@ -112,7 +112,7 @@ export default {
 			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
-		this.observer.disconnect();
+		this.observer?.disconnect();
 
 		clearTimeout(this.filterTimeout);
 	},
@@ -339,7 +339,7 @@ export default {
 				if (this.copytrimwhitespace)
 					entries = entries.map(e => e.replace(/\s/g, ''));
 
-				nw.Clipboard.get().set(entries.join('\n'), 'text');
+				mainWindow.setClipboard(entries.join('\n'), 'text');
 			} else {
 				if (this.disable)
 					return;

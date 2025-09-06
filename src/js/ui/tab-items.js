@@ -38,8 +38,8 @@ const ITEM_SLOTS_MERGED = {
 class Item {
 	/**
 	 * Construct a new Item instance.
-	 * @param {number} id 
-	 * @param {object} itemSparseRow 
+	 * @param {number} id
+	 * @param {object} itemSparseRow
 	 * @param {?object} itemAppearanceRow
 	 * @param {?Array} textures
 	 * @param {?Array} models
@@ -84,7 +84,7 @@ class Item {
 
 /**
  * Switches to the model viewer, selecting the models for the given item.
- * @param {object} item 
+ * @param {object} item
  */
 const viewItemModels = (item) => {
 	core.view.setScreen('tab-models');
@@ -107,7 +107,7 @@ const viewItemModels = (item) => {
 
 	// Reset the user filter for models.
 	core.view.userInputFilterModels = '';
-	
+
 	core.view.overrideModelList = [...list];
 	core.view.selectionModels = [...list];
 	core.view.overrideModelName = item.name;
@@ -115,7 +115,7 @@ const viewItemModels = (item) => {
 
 /**
  * Switches to the texture viewer, selecting the models for the given item.
- * @param {object} item 
+ * @param {object} item
  */
 const viewItemTextures = (item) => {
 	core.view.setScreen('tab-textures');
@@ -136,12 +136,14 @@ const viewItemTextures = (item) => {
 		}
 	}
 
-	// Reset the user filter for textures.
-	core.view.userInputFilterTextures = '';
-	
-	core.view.overrideTextureList = [...list];
-	core.view.selectionTextures = [...list];
-	core.view.overrideTextureName = item.name;
+	core.view.apis.texture.setOverrides({
+		// Reset the user filter for textures.
+		userInputFilterTextures: '',
+
+		overrideTextureList : [...list],
+		selectionTextures: [...list],
+		overrideTextureName : item.name,
+	});
 };
 
 core.events.once('screen-tab-items', async () => {
@@ -225,23 +227,23 @@ core.events.once('screen-tab-items', async () => {
 
 			const itemAppearanceID = appearanceMap.get(itemID);
 			const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
-	
+
 			let materials = null;
 			let models = null;
 			if (itemAppearanceRow !== null) {
 				materials = [];
 				models = [];
-	
+
 				const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
 				if (itemDisplayInfoRow !== null) {
 					materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
 					models.push(...itemDisplayInfoRow.ModelResourcesID);
 				}
-	
+
 				const materialRes = materialMap.get(itemAppearanceRow.ItemDisplayInfoID);
 				if (materialRes !== undefined)
 					Array.isArray(materialRes) ? materials.push(...materialRes) : materials.push(materialRes);
-	
+
 				materials = materials.filter(e => e !== 0);
 				models = models.filter(e => e !== 0);
 			}

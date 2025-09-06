@@ -53,6 +53,10 @@ chrome.runtime = {
 	}
 };
 
+mainWindow.setClipboard = function (data, ty, raw) {
+	mainWindow.write(msgpack.encode({ type: "setClipboard", value: { data, type: ty, raw } }));
+};
+
 const origFetch = fetch;
 fetch = async function (url, init) {
 	if (!url.startsWith('http'))

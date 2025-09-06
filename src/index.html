@@ -380,19 +380,14 @@
 				<div id="toast" v-if="toast" :class="toast.type">
 					{{ toast.message }}
 					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
-					<div class="close" v-if="toast.closable" @click="hideToast(true)"></div>
+					<div class="close" v-if="toast.closable" @click="core.hideToast(true)"></div>
 				</div>
 				<div id="toast" v-if="!toast && screen === 'tab-models' && overrideModelList.length > 0" class="progress">
 					Filtering models for item: {{ overrideModelName }}
 					<span @click="removeOverrideModels">Remove</span>
 					<div class="close" @click="removeOverrideModels"></div>
 				</div>
-				<div id="toast" v-if="!toast && screen === 'tab-textures' && overrideTextureList.length > 0" class="progress">
-					Filtering textures for item: {{ overrideTextureName }}
-					<span @click="removeOverrideTextures">Remove</span>
-					<div class="close" @click="removeOverrideTextures"></div>
-				</div>
-				<tab-textures v-if="screen === 'tab-textures'"></tab-textures>
+				<tab-textures></tab-textures>
 				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 					<div class="list-container">
 						<listbox id="listbox-maps" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox>
@@ -502,7 +497,7 @@
 							<context-menu :node="contextMenus.nodeTextureRibbon" v-slot:default="context" @close="contextMenus.nodeTextureRibbon = null">
 								<span @click.self="click('preview-texture', $event, context.node.fileDataID, context.node.displayName)">Preview {{ context.node.displayName }}</span>
 								<span @click.self="click('export-ribbon-texture', $event, context.node.fileDataID, context.node.displayName)">Export {{ context.node.displayName }}</span>
-								<span @click.self="goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
+								<span @click.self="apis.texture.goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
 								<span @click.self="copyToClipboard(context.node.fileDataID)">Copy file data ID to clipboard</span>
 								<span @click.self="copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
 								<span @click.self="copyToClipboard(context.node.fileName)">Copy file path to clipboard</span>

@@ -141,6 +141,8 @@ document.addEventListener('click', function(e) {
 		},
 		created() {
 			core.view = this;
+			this.apis = {};
+			this.core = core;
 		},
 		provide() {
 			return {
@@ -306,14 +308,6 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
-			 * Invoked when a user cancels a texture override filter.
-			 */
-			removeOverrideTextures: function() {
-				this.overrideTextureList = [];
-				this.overrideTextureName = '';
-			},
-
-			/**
 			 * Invoked when the user manually selects a CDN region.
 			 * @param {object} region 
 			 */
@@ -366,43 +360,11 @@ document.addEventListener('click', function(e) {
 			},
 			
 			/**
-			 * Switches to the textures tab and filters for the given file.
-			 * @param {number} fileDataID 
-			 */
-			goToTexture: function(fileDataID) {
-				const view = core.view;
-				view.setScreen('tab-textures');
-
-				// Directly preview the requested file, even if it's not in the listfile.
-				TabTextures.previewTextureByID(fileDataID);
-
-				// Since we're doing a direct preview, we need to reset the users current
-				// selection, so if they hit export, they get the expected result.
-				view.selectionTextures.splice(0);
-
-				// Despite direct preview, *attempt* to filter for the file as well.
-				if (view.config.listfileShowFileDataIDs) {
-					// If the user has fileDataIDs shown, filter by that.
-					if (view.config.regexFilters)
-						view.userInputFilterTextures = '\\[' + fileDataID + '\\]';
-					else
-						view.userInputFilterTextures = '[' + fileDataID + ']';
-				} else {
-					// Without fileDataIDs, lookup the texture name and filter by that.
-					const fileName = listfile.getByID(fileDataID);
-					if (fileName !== undefined)
-						view.userInputFilterTextures = listfile.getByID(fileName);
-					else if (view.config.enableUnknownFiles)
-						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
-				}
-			},
-
-			/**
 			 * Copy given data as text to the system clipboard.
 			 * @param {string} data 
 			 */
 			copyToClipboard: function(data) {
-				nw.Clipboard.get().set(data.toString(), 'text');
+				mainWindow.setClipboard(data.toString(), 'text');
 			},
 
 			/**

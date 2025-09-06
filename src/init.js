@@ -34,6 +34,9 @@ if (!BUILD_RELEASE && typeof chrome.runtime === 'undefined') {
 		isReady: new Promise((resolve) => resolve()),
 		Shell: {
 			openItem: nw.Shell.openItem
+		},
+		setClipboard(data, ty, raw) {
+			nw.Clipboard.get().set(data, ty, raw);
 		}
 	};
 }

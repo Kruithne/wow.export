@@ -165,9 +165,6 @@ export default function () {
 	};
 
 	state = {
-		entries: textureAtlasEntries,
-		regions: textureAtlasRegions,
-		map: textureAtlasMap,
 		overlayWidth,
 		overlayHeight,
 		overlayRegions,

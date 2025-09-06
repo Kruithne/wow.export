@@ -106,6 +106,10 @@ mainWindow.on('connection', async (socket) => {
 					result: await processFetchText(message.id)
 				}));
 				break;
+
+			case 'setClipboard':
+				nw.Clipboard.get().set(message.value.data, message.value.type, message.value.raw);
+				break;
 		}
 	}
 });
