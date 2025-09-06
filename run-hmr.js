@@ -1,5 +1,6 @@
 import { promises as fsp, rmSync } from 'fs';
 import { spawn } from 'child_process';
+import path from 'path';
 import waitOn from 'wait-on';
 import { createServer } from 'net';
 
@@ -42,7 +43,7 @@ await waitOn({
 });
 
 const debugSocketPath = platform === 'win'
-	? join('\\\\?\\pipe' , nwPath, 'debug-window')
+	? path.join('\\\\?\\pipe' , nwPath, 'debug-window')
 	: '/tmp/wow.export-debug-window.sock';
 
 let debugSocket;
