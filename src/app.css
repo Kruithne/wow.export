@@ -2005,3 +2005,198 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 12px;
 	min-width: 150px;
 }
+
+#tab-home {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr auto;
+}
+
+.home-button-tray {
+	display: grid;
+	grid-template-columns: auto auto;
+	align-items: center;
+	justify-content: center;
+	align-content: center;
+	gap: 20px;
+}
+
+.home-button-tray > div {
+	width: 300px;
+	border: 1px solid white;
+	border-radius: 10px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	height: 65px;
+	justify-content: center;
+	cursor: pointer;
+	position: relative;
+	overflow: hidden;
+	background-repeat: no-repeat;
+	background-position: right center;
+	background-size: 120px;
+	background-color: #00000014;
+	transition: all 0.3s ease;
+}
+
+.home-button-tray > div::before {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: -20px;
+	transform: translateY(-50%) rotate(20deg);
+	width: 120px;
+	height: 120px;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	opacity: 0.2;
+	transition: transform 0.3s ease;
+}
+
+#home-buttons > div:nth-child(1)::before {
+	background-image: url(./fa-icons/cube.svg);
+}
+
+#home-buttons > div:nth-child(2)::before {
+	background-image: url(./fa-icons/person-solid.svg);
+}
+
+#home-buttons > div:nth-child(3)::before {
+	background-image: url(./fa-icons/cubes.svg);
+}
+
+#home-buttons > div:nth-child(4)::before {
+	background-image: url(./fa-icons/image.svg);
+}
+
+#home-buttons > div:nth-child(5)::before {
+	background-image: url(./fa-icons/music.svg);
+}
+
+#home-buttons > div:nth-child(6)::before {
+	background-image: url(./fa-icons/film.svg);
+}
+
+#home-buttons > div:nth-child(7)::before {
+	background-image: url(./fa-icons/map.svg);
+}
+
+#home-buttons > div:nth-child(8)::before {
+	background-image: url(./fa-icons/mountain-castle.svg);
+}
+
+#home-buttons > div:nth-child(9)::before {
+	background-image: url(./fa-icons/file-lines.svg);
+}
+
+#home-buttons > div:nth-child(10)::before {
+	background-image: url(./fa-icons/database.svg);
+}
+
+#home-help-buttons > div:nth-child(1)::before {
+	background-image: url(./fa-icons/discord.svg);
+}
+
+#home-help-buttons > div:nth-child(2)::before {
+	background-image: url(./fa-icons/github.svg);
+}
+
+#home-help-buttons > div:nth-child(3)::before {
+	background-image: url(./fa-icons/patreon.svg);
+}
+
+.home-button-tray > div:hover {
+	border-color: var(--nav-option-selected);
+	color: var(--nav-option-selected);
+}
+
+.home-button-tray > div:hover::before {
+	transform: translateY(-50%) rotate(20deg) scale(1.1);
+}
+
+#home-help-buttons {
+	grid-column: 1 / -1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 20px;
+	padding: 20px 0;
+}
+
+#home-help-buttons > div {
+	width: 300px;
+	border: 1px solid white;
+	border-radius: 10px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	height: 65px;
+	justify-content: center;
+	cursor: pointer;
+	position: relative;
+	overflow: hidden;
+	background-repeat: no-repeat;
+	background-position: right center;
+	background-size: 120px;
+	background-color: #00000014;
+	transition: all 0.3s ease;
+}
+
+#home-help-buttons > div::before {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: -20px;
+	transform: translateY(-50%) rotate(20deg);
+	width: 120px;
+	height: 120px;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	opacity: 0.2;
+	transition: transform 0.3s ease;
+}
+
+#home-help-buttons > div:hover {
+	border-color: var(--nav-option-selected);
+	color: var(--nav-option-selected);
+}
+
+#home-help-buttons > div:hover::before {
+	transform: translateY(-50%) rotate(20deg) scale(1.1);
+}
+
+#home-changes {
+	padding: 50px;
+	display: flex;
+	flex-direction: column;
+	align-content: center;
+	justify-content: center;
+}
+
+@media (max-width: 1349px) {
+	#home-changes {
+		display: none;
+	}
+	
+	#home-buttons {
+		grid-column: 1 / -1;
+		justify-content: center;
+	}
+}
+
+#home-changes h1 {
+	margin-bottom: 15px;
+}
+
+#home-changelog {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+#home-changelog p {
+	font-size: 1.2em;
+}
