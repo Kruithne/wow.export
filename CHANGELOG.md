@@ -25,6 +25,7 @@
 ### Loading
 - Remote CDN hosts are now speculatively pre-resolved, reducing load times.
 - Listfiles are pre-loaded and filtered ahead-of-time, reducing load times.
+- Unknown sounds are no longer pre-loaded, reducing load times.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).

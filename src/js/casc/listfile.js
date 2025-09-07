@@ -315,24 +315,6 @@ const loadUnknowns = async () => {
 
 	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
 	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
-	
-	// Load unknown sounds from SoundKitEntry table.
-	const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
-	await soundKitEntries.parse();
-	
-	let unknownCount = 0;
-	for (const entry of soundKitEntries.getAllRows().values()) {
-		if (!idLookup.has(entry.FileDataID)) {
-			// List unknown sound files using the .unk_sound extension. Files will be
-			// dynamically checked upon export and given the correct extension.
-			const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';
-			idLookup.set(entry.FileDataID, fileName);
-			nameLookup.set(fileName, entry.FileDataID);
-			unknownCount++;
-		}
-	}
-
-	log.write('Added %d unknown sound files from SoundKitEntry to listfile', unknownCount);
 };
 
 /**

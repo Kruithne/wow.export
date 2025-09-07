@@ -11,6 +11,7 @@ const generics = require('../generics');
 const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
+const WDCReader = require('../db/WDCReader');
 
 const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
 const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
@@ -18,6 +19,7 @@ const AUDIO_TYPE_MP3 = Symbol('AudioTypeMP3');
 
 let selectedFile = null;
 let isTrackLoaded = false;
+let hasSoundDataLoaded = false;
 
 let audioNode = null;
 let data;
@@ -149,6 +151,52 @@ const loadSelectedTrack = async () => {
 	core.view.isBusy--;
 };
 
+/**
+ * Load sound data from SoundKitEntry table.
+ */
+const loadSoundData = async () => {
+	if (!hasSoundDataLoaded && !core.view.isBusy && core.view.config.enableUnknownFiles) {
+		// Show a loading screen
+		const progress = core.createProgress(2);
+		core.view.setScreen('loading');
+		core.view.isBusy++;
+
+		try {
+			// Load unknown sounds from SoundKitEntry table
+			await progress.step('Loading sound entries...');
+			const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
+			await soundKitEntries.parse();
+
+			await progress.step('Processing unknown sound files...');
+			
+			let unknownCount = 0;
+			for (const entry of soundKitEntries.getAllRows().values()) {
+				if (!listfile.getByID(entry.FileDataID)) {
+					// List unknown sound files using the .unk_sound extension. Files will be
+					// dynamically checked upon export and given the correct extension.
+					const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';
+					listfile.addEntry(entry.FileDataID, fileName);
+					unknownCount++;
+				}
+			}
+
+			log.write('Added %d unknown sound files from SoundKitEntry to listfile', unknownCount);
+			hasSoundDataLoaded = true;
+
+			// Refresh the sound listfile filter
+			core.events.emit('listfile-needs-updating');
+		} catch (e) {
+			log.write('Failed to load sound data: %s', e.message);
+			core.setToast('error', 'Failed to load sound data', { 'View Log': () => log.openRuntimeLog() }, -1);
+		}
+
+		// Hide the loading screen
+		core.view.loadPct = -1;
+		core.view.isBusy--;
+		core.view.setScreen('tab-sounds');
+	}
+};
+
 core.registerLoadFunc(async () => {
 	// Create internal audio node.
 	audioNode = document.createElement('audio');
@@ -238,6 +286,11 @@ core.registerLoadFunc(async () => {
 		}
 
 		helper.finish();
+	});
+
+	// Track when the "Audio" tab is opened.
+	core.events.on('screen-tab-sounds', async () => {
+		await loadSoundData();
 	});
 
 	// If the application crashes, we need to make sure to stop playing sound.
