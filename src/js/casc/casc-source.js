@@ -226,41 +226,6 @@ class CASC {
 		core.view.$watch('config.listfileShowFileDataIDs', () => core.events.emit('listfile-needs-updating'), { immediate: true });
 	}
 
-	/**
-	 * Load tables that are required globally.
-	 */
-	async loadTables() {
-		await this.progress.step('Loading model file data');
-		await DBModelFileData.initializeModelFileData();
-
-		await this.progress.step('Loading texture file data');
-		await DBTextureFileData.initializeTextureFileData();
-
-		// Once the above two tables have loaded, ingest fileDataIDs as
-		// unknown entries to the listfile.
-		if (core.view.config.enableUnknownFiles) {
-			this.progress.step('Checking data tables for unknown files');
-			await listfile.loadUnknowns();
-		} else {
-			await this.progress.step();
-		}
-
-		if (core.view.config.enableM2Skins) {
-			await this.progress.step('Loading item displays');
-			await DBItemDisplays.initializeItemDisplays();
-
-			await this.progress.step('Loading creature data');
-			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-			await creatureDisplayInfo.parse();
-
-			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-			await creatureModelData.parse();
-
-			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
-		} else {
-			await this.progress.step();
-		}
-	}
 
 	/**
 	 * Initialize external components as part of the CASC load process.

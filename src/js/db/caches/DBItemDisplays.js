@@ -15,6 +15,8 @@ const itemDisplays = new Map();
  * Initialize item displays from ItemDisplayInfo.db2
  */
 const initializeItemDisplays = async () => {
+	await DBTextureFileData.ensureInitialized();
+	
 	log.write('Loading item textures...');
 	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
 	await itemDisplayInfo.parse();

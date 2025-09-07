@@ -46,9 +46,28 @@ async function initializeAvailableTables() {
 	}
 }
 
+// Initialize data tab on first open
+core.events.once('screen-tab-data', async () => {
+	// Show loading screen for data table manifest
+	const progress = core.createProgress(1);
+	core.view.setScreen('loading');
+	core.view.isBusy++;
+
+	try {
+		await progress.step('Loading data table manifest...');
+		await initializeAvailableTables();
+		
+		core.view.isBusy--;
+		core.view.setScreen('tab-data');
+	} catch (error) {
+		core.view.isBusy--;
+		core.view.setScreen('tab-data');
+		log.write('Failed to initialize data tab: %o', error);
+		core.setToast('error', 'Failed to load data table manifest. Check the log for details.');
+	}
+});
+
 core.registerLoadFunc(async () => {
-	await initializeAvailableTables();
-	
 	// Track selection changes on the text listbox and set first as active entry.
 	core.view.$watch('selectionDB2s', async selection => {
 		// Check if the first table in the selection is "new".

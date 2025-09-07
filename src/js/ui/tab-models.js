@@ -14,8 +14,10 @@ const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const BLPFile = require('../casc/blp');
 
+const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
+const WDCReader = require('../db/WDCReader');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M3Renderer = require('../3D/renderers/M3Renderer');
@@ -578,27 +580,76 @@ core.registerDropHandler({
 	process: files => exportFiles(files, true)
 });
 
-// The first time the user opens up the model tab, initialize 3D preview.
-core.events.once('screen-tab-models', () => {
-	camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
+// The first time the user opens up the model tab, initialize model data and 3D preview.
+core.events.once('screen-tab-models', async () => {
+	// Calculate loading steps based on configuration
+	let stepCount = 2; // Base: model file data + 3D initialization
+	if (core.view.config.enableUnknownFiles) stepCount++;
+	if (core.view.config.enableM2Skins) stepCount += 2; // Item displays + creature data
+	
+	// Show loading screen
+	const progress = core.createProgress(stepCount);
+	core.view.setScreen('loading');
+	core.view.isBusy++;
 
-	scene = new THREE.Scene();
-	const light = new THREE.HemisphereLight(0xffffff, 0x080820, 3);
-	scene.add(light);
-	scene.add(renderGroup);
+	try {
+		// Load model file data
+		await progress.step('Loading model file data...');
+		await DBModelFileData.initializeModelFileData();
 
-	if (core.view.config.modelViewerShowBackground)
-		scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
+		// Load unknown model files if enabled
+		if (core.view.config.enableUnknownFiles) {
+			await progress.step('Loading unknown models...');
+			await listfile.loadUnknownModels();
+		}
 
-	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
+		// Load M2 skins data if enabled
+		if (core.view.config.enableM2Skins) {
+			await progress.step('Loading item displays...');
+			await DBItemDisplays.initializeItemDisplays();
 
-	if (core.view.config.modelViewerShowGrid)
-		scene.add(grid);
+			await progress.step('Loading creature data...');
+			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
+			await creatureDisplayInfo.parse();
 
-	// WoW models are by default facing the wrong way; rotate everything.
-	renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
+			await creatureModelData.parse();
 
-	core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
+			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+		}
+
+		// Initialize 3D preview
+		await progress.step('Initializing 3D preview...');
+		camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
+
+		scene = new THREE.Scene();
+		const light = new THREE.HemisphereLight(0xffffff, 0x080820, 3);
+		scene.add(light);
+		scene.add(renderGroup);
+
+		if (core.view.config.modelViewerShowBackground)
+			scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
+
+		grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
+
+		if (core.view.config.modelViewerShowGrid)
+			scene.add(grid);
+
+		// WoW models are by default facing the wrong way; rotate everything.
+		renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
+
+		core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
+
+		// Loading complete, return to models tab
+		core.view.isBusy--;
+		core.view.setScreen('tab-models');
+		
+	} catch (error) {
+		core.view.isBusy--;
+		core.view.setScreen('tab-models');
+		log.write('Failed to initialize models tab: %o', error);
+		core.setToast('error', 'Failed to initialize models tab. Check the log for details.');
+	}
 });
 
 core.events.on('rcp-export-models', (files, id) => {

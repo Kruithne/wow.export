@@ -9,7 +9,7 @@
 		<div id="logo-background"></div>
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
-				<div id="logo">wow.export</div>
+				<div id="logo" @click="setScreen('tab-home')" :class="{ active: screen === 'tab-home' }" style="cursor: pointer;">wow.export</div>
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
 						<div class="option" id="nav-models" @click="setScreen('tab-models')" :class="{ active: screen === 'tab-models' }">Models</div>
@@ -387,6 +387,14 @@
 					<span @click="removeOverrideModels">Remove</span>
 					<div class="close" @click="removeOverrideModels"></div>
 				</div>
+				
+				<!-- Home Tab -->
+				<div class="tab" id="tab-home" v-if="screen === 'tab-home'">
+					<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 24px; color: #888;">
+						Placeholder
+					</div>
+				</div>
+				
 				<div id="toast" v-if="!toast && screen === 'tab-textures' && overrideTextureList.length > 0" class="progress">
 					Filtering textures for item: {{ overrideTextureName }}
 					<span @click="removeOverrideTextures">Remove</span>

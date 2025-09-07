@@ -46,7 +46,7 @@ const loadInstall = (index) => {
 
 		try {
 			await cascSource.load(index);
-			core.view.setScreen('tab-models');
+			core.view.setScreen('tab-home');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
 			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {

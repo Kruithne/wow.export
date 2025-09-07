@@ -461,8 +461,8 @@ document.addEventListener('click', function(e) {
 			 * Invoked when the user selects the textures button on an item.
 			 * @param {object} item 
 			 */
-			viewTextures: function(item) {
-				TabItems.viewItemTextures(item);
+			viewTextures: async function(item) {
+				await TabItems.viewItemTextures(item);
 			}
 		},
 

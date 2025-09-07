@@ -45,6 +45,15 @@ const getTextureFDIDsByMatID = (matResID) => {
 };
 
 /**
+ * Ensure texture file data is initialized. Call this before using other functions.
+ * @returns {Promise<void>}
+ */
+const ensureInitialized = async () => {
+	if (matResIDToFileDataID.size === 0)
+		await initializeTextureFileData();
+};
+
+/**
  * Retrieve a list of all file data IDs cached from TextureFileData.db2
  * NOTE: This is reset once called by the listfile module; adjust if needed elsewhere.
  * @returns {Set}
@@ -55,6 +64,7 @@ const getFileDataIDs = () => {
 
 module.exports = {
 	initializeTextureFileData,
+	ensureInitialized,
 	getTextureFDIDsByMatID,
 	getFileDataIDs
 };

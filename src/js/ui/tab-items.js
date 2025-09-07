@@ -117,21 +117,24 @@ const viewItemModels = (item) => {
  * Switches to the texture viewer, selecting the models for the given item.
  * @param {object} item 
  */
-const viewItemTextures = (item) => {
+const viewItemTextures = async (item) => {
 	core.view.setScreen('tab-textures');
+	await DBTextureFileData.ensureInitialized();
 
 	const list = new Set();
 
 	for (const textureID of item.textures) {
 		const fileDataIDs = DBTextureFileData.getTextureFDIDsByMatID(textureID);
-		for (const fileDataID of fileDataIDs) {
-			let entry = listfile.getByID(fileDataID);
+		if (fileDataIDs) {
+			for (const fileDataID of fileDataIDs) {
+				let entry = listfile.getByID(fileDataID);
 
-			if (entry !== undefined) {
-				if (core.view.config.listfileShowFileDataIDs)
-					entry += ' [' + fileDataID + ']';
+				if (entry !== undefined) {
+					if (core.view.config.listfileShowFileDataIDs)
+						entry += ' [' + fileDataID + ']';
 
-				list.add(entry);
+					list.add(entry);
+				}
 			}
 		}
 	}

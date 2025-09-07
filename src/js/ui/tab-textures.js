@@ -21,6 +21,7 @@ const textureAtlasRegions = new Map(); // regionID => { name: string, width: num
 const textureAtlasMap = new Map(); // fileDataID => atlasID
 
 let hasLoadedAtlasTable = false;
+let hasLoadedUnknownTextures = false;
 
 let selectedFileDataID = 0;
 
@@ -85,14 +86,11 @@ const previewTextureByID = async (fileDataID, texture = null) => {
 
 /**
  * Load texture atlas regions from data tables.
+ * This function should only be called as part of the main texture tab loading screen.
+ * @param {object} progress - Progress object for reporting steps
  */
-const loadTextureAtlasData = async () => {
-	if (!hasLoadedAtlasTable && !core.view.isBusy && core.view.config.showTextureAtlas) {
-		// show a loading screen
-		const progress = core.createProgress(3);
-		core.view.setScreen('loading');
-		core.view.isBusy++;
-
+const loadTextureAtlasData = async (progress) => {
+	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas) {
 		// load UiTextureAtlas which maps fileDataID to an atlas ID
 		await progress.step('Loading texture atlases...');
 		const uiTextureAtlasTable = new WDCReader('DBFilesClient/UiTextureAtlas.db2');
@@ -135,13 +133,29 @@ const loadTextureAtlasData = async () => {
 		}
 
 		log.write('Loaded %d texture atlases with %d regions', textureAtlasEntries.size, loadedRegions);
-
 		hasLoadedAtlasTable = true;
+	}
+};
 
-		// hide the loading screen
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-textures');
+/**
+ * Load texture atlas data after a settings change.
+ */
+const reloadTextureAtlasData = async () => {
+	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas && !core.view.isBusy) {
+		const progress = core.createProgress(3);
+		core.view.setScreen('loading');
+		core.view.isBusy++;
+		
+		try {
+			await loadTextureAtlasData(progress);
+			core.view.isBusy--;
+			core.view.setScreen('tab-textures');
+		} catch (error) {
+			core.view.isBusy--;
+			core.view.setScreen('tab-textures');
+			log.write('Failed to load texture atlas data: %o', error);
+			core.setToast('error', 'Failed to load texture atlas data. Check the log for details.');
+		}
 	}
 };
 
@@ -303,7 +317,43 @@ core.registerLoadFunc(async () => {
 
 	// Track when the "Textures" tab is opened.
 	core.events.on('screen-tab-textures', async () => {
-		await loadTextureAtlasData();
+		const needsUnknownTextures = core.view.config.enableUnknownFiles && !hasLoadedUnknownTextures;
+		const needsAtlasData = !hasLoadedAtlasTable && core.view.config.showTextureAtlas;
+		
+		if ((needsUnknownTextures || needsAtlasData) && !core.view.isBusy) {
+			let stepCount = 0;
+			if (needsUnknownTextures)
+				stepCount += 2; // texture file data + unknown textures
+
+			if (needsAtlasData)
+				stepCount += 3; // atlas + regions + parsing
+			
+			const progress = core.createProgress(stepCount);
+			core.view.setScreen('loading');
+			core.view.isBusy++;
+			
+			try {
+				if (needsUnknownTextures) {
+					await progress.step('Loading texture file data...');
+					await progress.step('Loading unknown textures...');
+					await listfile.loadUnknownTextures();
+					hasLoadedUnknownTextures = true;
+				}
+				
+				if (needsAtlasData)
+					await loadTextureAtlasData(progress);
+				
+				core.view.isBusy--;
+				core.view.setScreen('tab-textures');
+				
+			} catch (error) {
+				core.view.isBusy--;
+				core.view.setScreen('tab-textures');
+				log.write('Failed to initialize textures tab: %o', error);
+				core.setToast('error', 'Failed to load texture data. Check the log for details.');
+			}
+		}
+		
 		attachOverlayListener();
 	});
 
@@ -314,7 +364,7 @@ core.registerLoadFunc(async () => {
 
 	// Track when user toggles the "Show Atlas Regions" checkbox.
 	core.view.$watch('config.showTextureAtlas', async () => {
-		await loadTextureAtlasData();
+		await reloadTextureAtlasData();
 		updateTextureAtlasOverlay();
 	});
 });

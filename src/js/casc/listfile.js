@@ -12,7 +12,6 @@ const log = require('../log');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 
-const WDCReader = require('../db/WDCReader');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
 const DBModelFileData = require('../db/caches/DBModelFileData');
 
@@ -306,15 +305,32 @@ const applyPreload = (rootEntries) => {
 
 
 /**
- * Load unknown files from TextureFileData/ModelFileData.
- * Must be called after DBTextureFileData/DBModelFileData have loaded.
+ * Load unknown texture files from TextureFileData.
+ * Called from texture tab loading.
+ */
+const loadUnknownTextures = async () => {
+	await DBTextureFileData.ensureInitialized();
+	const unkBlp = await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
+	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
+	return unkBlp;
+};
+
+/**
+ * Load unknown model files from ModelFileData.
+ * Called during CASC initialization if unknown files are enabled.
+ */
+const loadUnknownModels = async () => {
+	const unkM2 = await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
+	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
+	return unkM2;
+};
+
+/**
+ * Load unknown files from ModelFileData only.
+ * TextureFileData unknown files are now loaded in texture tab.
  */
 const loadUnknowns = async () => {
-	const unkBlp = await loadIDTable(DBTextureFileData.getFileDataIDs(), '.blp');
-	const unkM2 = await loadIDTable(DBModelFileData.getFileDataIDs(), '.m2');
-
-	log.write('Added %d unknown BLP textures from TextureFileData to listfile', unkBlp);
-	log.write('Added %d unknown M2 models from ModelFileData to listfile', unkM2);
+	await loadUnknownModels();
 };
 
 /**
@@ -500,6 +516,8 @@ const addEntry = (fileDataID, fileName) => {
 
 module.exports = {
 	loadUnknowns,
+	loadUnknownTextures,
+	loadUnknownModels,
 	preload,
 	prepareListfile,
 	applyPreload,

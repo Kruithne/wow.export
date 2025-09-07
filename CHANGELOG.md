@@ -23,9 +23,12 @@
 - Data tables can be exported as CSV files (either whole, or based on a selection).
 
 ### Loading
+- wow.export now only loads data that is necessary on startup. Individual tabs will now incur smaller mini-loading screens as data is required. This reduces initial load times by 30+ seconds and decreases overall memory usage for most users.
 - Remote CDN hosts are now speculatively pre-resolved, reducing load times.
 - Listfiles are pre-loaded and filtered ahead-of-time, reducing load times.
 - Unknown sounds are no longer pre-loaded, reducing load times.
+- Texture file data is no longer pre-loaded, reducing load times.
+- Model file, creature and item data is no longer pre-loaded, reducing load times.
 
 ### Settings
 - Added option that controls the inclusion of prefix bones in glTF exports (thanks thunderysteak!).
