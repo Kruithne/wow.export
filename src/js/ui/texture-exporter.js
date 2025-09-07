@@ -15,7 +15,7 @@ const JSONWriter = require('../3D/writers/JSONWriter');
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
- * @param {number|string} input 
+ * @param {number|string} input
  * @returns {object}
  */
 const getFileInfoPair = (input) => {
@@ -48,9 +48,8 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
 		const blp = new BLPFile(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
-		
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(png.toBase64(), 'png', true);
+
+		mainWindow.setClipboard(png.toBase64(), 'png', true);
 
 		log.write('Copied texture to clipboard (%s)', fileName);
 		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
@@ -72,9 +71,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
-			
+
 		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
-		
+
 		try {
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
 			if (format !== 'BLP')
@@ -104,9 +103,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 						json.addProperty('height', blp.height);
 						json.addProperty('mipmapCount', blp.mapCount);
 						json.addProperty('mipmapSizes', blp.mapSizes);
-						
+
 						await json.write(overwriteFiles);
-						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut })
+						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut });
 					}
 				}
 			} else {

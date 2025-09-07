@@ -32,7 +32,7 @@ const cacheIntegrityReady = async () => {
 class BuildCache {
 	/**
 	 * Construct a new BuildCache instance.
-	 * @param {string} key 
+	 * @param {string} key
 	 */
 	constructor(key) {
 		this.key = key;
@@ -41,7 +41,7 @@ class BuildCache {
 		this.cacheDir = path.join(constants.CACHE.DIR_BUILDS, key);
 		this.manifestPath = path.join(this.cacheDir, constants.CACHE.BUILD_MANIFEST);
 	}
-	
+
 	/**
 	 * Initialize the build cache instance.
 	 */
@@ -131,7 +131,8 @@ class BuildCache {
 		cacheIntegrity[filePath] = hash;
 
 		await fsp.writeFile(filePath, data.raw);
-		core.view.cacheSize += data.byteLength;
+		if (core.view != null)
+			core.view.cacheSize += data.byteLength;
 
 		await this.saveCacheIntegrity();
 	}
@@ -177,11 +178,11 @@ core.events.on('click-cache-clear', async () => {
 
 	await fsp.rm(constants.CACHE.DIR, { recursive: true, force: true });
 	await fsp.mkdir(constants.CACHE.DIR);
-	
+
 	core.view.cacheSize = 0;
 	log.write('Purge complete, awaiting mandatory restart.');
 	core.setToast('success', 'Cache has been successfully cleared, a restart is required.', { 'Restart': () => core.view.restartApplication() }, -1, false);
-	
+
 	core.events.emit('cache-cleared');
 });
 

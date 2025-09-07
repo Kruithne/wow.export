@@ -3,10 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const CameraControls = require('../3D/camera/CameraControls');
-const tabModels = require('../ui/tab-models');
+const CameraControls = require('@/js/3D/camera/CameraControls');
+const tabModels = require('@/js/ui/tab-models');
 
-module.exports = {
+export default {
 	props: ['context'],
 
 	methods: {

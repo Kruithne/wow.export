@@ -20,7 +20,7 @@ const TOAST_OPT_LOG = { 'View Log': () => log.openRuntimeLog() };
 class ExportHelper {
 	/**
 	 * Return an export path for the given file.
-	 * @param {string} file 
+	 * @param {string} file
 	 */
 	static getExportPath(file) {
 		// Remove whitespace due to MTL incompatibility for textures.
@@ -32,7 +32,7 @@ class ExportHelper {
 
 	/**
 	 * Returns a relative path from the export directory to the given file.
-	 * @param {string} file 
+	 * @param {string} file
 	 * @returns {string}
 	 */
 	static getRelativeExport(file) {
@@ -41,8 +41,8 @@ class ExportHelper {
 
 	/**
 	 * Takes the directory from fileA and combines it with the basename of fileB.
-	 * @param {string} fileA 
-	 * @param {string} fileB 
+	 * @param {string} fileA
+	 * @param {string} fileB
 	 * @returns {string}
 	 */
 	static replaceFile(fileA, fileB) {
@@ -51,8 +51,8 @@ class ExportHelper {
 
 	/**
 	 * Replace an extension on a file path with another.
-	 * @param {string} file 
-	 * @param {string} ext 
+	 * @param {string} file
+	 * @param {string} ext
 	 * @returns {string}
 	 */
 	static replaceExtension(file, ext = '') {
@@ -61,8 +61,8 @@ class ExportHelper {
 
 	/**
 	 * Replace the base name of a file path, keeping the directory and extension.
-	 * @param {string} filePath 
-	 * @param {string} fileName 
+	 * @param {string} filePath
+	 * @param {string} fileName
 	 * @returns {string}
 	 */
 	static replaceBaseName(filePath, fileName) {
@@ -71,7 +71,7 @@ class ExportHelper {
 
 	/**
 	 * Converts a win32 compatible path to a POSIX compatible path.
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {string}
 	 */
 	static win32ToPosix(str) {
@@ -106,8 +106,8 @@ class ExportHelper {
 
 	/**
 	 * Construct a new ExportHelper instance.
-	 * @param {number} count 
-	 * @param {string} unit 
+	 * @param {number} count
+	 * @param {string} unit
 	 */
 	constructor(count, unit = 'item') {
 		this.count = count;
@@ -171,19 +171,19 @@ class ExportHelper {
 
 	/**
 	 * Finish the export.
-	 * @param {boolean} includeDirLink 
+	 * @param {boolean} includeDirLink
 	 */
 	finish(includeDirLink = true) {
 		// Prevent duplicate calls to finish() in the event of user cancellation.
 		if (this.isFinished)
 			return;
-		
+
 		log.write('Finished export (%d succeeded, %d failed)', this.succeeded, this.failed);
 
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
 			const lastExportPath = ExportHelper.getExportPath(path.dirname(this.lastItem));
-			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
+			const toastOpt = { 'View in Explorer': () => mainWindow.Shell.openItem(lastExportPath) };
 
 			if (this.count > 1)
 				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);
@@ -207,7 +207,7 @@ class ExportHelper {
 
 	/**
 	 * Set the current task name.
-	 * @param {string} name 
+	 * @param {string} name
 	 */
 	setCurrentTaskName(name) {
 		this.currentTaskName = name;
@@ -216,7 +216,7 @@ class ExportHelper {
 
 	/**
 	 * Set the maximum value of the current task.
-	 * @param {number} max 
+	 * @param {number} max
 	 */
 	setCurrentTaskMax(max) {
 		this.currentTaskMax = max;
@@ -225,7 +225,7 @@ class ExportHelper {
 
 	/**
 	 * Set the value of the current task.
-	 * @param {number} value 
+	 * @param {number} value
 	 */
 	setCurrentTaskValue(value) {
 		this.currentTaskValue = value;
@@ -273,7 +273,7 @@ class ExportHelper {
 			this.succeeded++;
 		} else {
 			log.write('Failed to export %s (%s)', item, error);
-			
+
 			if (stackTrace != null)
 				console.log(stackTrace);
 		}

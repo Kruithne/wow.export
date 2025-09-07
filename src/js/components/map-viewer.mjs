@@ -4,8 +4,8 @@
 	License: MIT
  */
 const util = require('util');
-const core = require('../core');
-const constants = require('../constants');
+const core = require('@/js/core');
+const constants = require('@/js/constants');
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
@@ -32,7 +32,7 @@ const state = {
 	maxConcurrentTiles: 4 // Maximum number of tiles to load concurrently
 };
 
-module.exports = {
+export default {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).

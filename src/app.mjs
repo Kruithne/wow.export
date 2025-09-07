@@ -4,12 +4,6 @@
 	License: MIT
  */
 
-// BUILD_RELEASE will be set by the bundler during production builds allowing us
-// to discern a production build. For debugging builds, process.env.BUILD_RELEASE
-// will be undefined. Any code that only runs when BUILD_RELEASE is false will
-// be removed as dead-code during compile.
-BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
-
 /**
  * crash() is used to inform the user that the application has exploded.
  * It is purposely global and primitive as we have no idea what state
@@ -18,7 +12,7 @@ BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
  * @param {string} errorText
  */
 let isCrashed = false;
-crash = (errorCode, errorText) => {
+window.crash = (errorCode, errorText) => {
 	// Prevent a never-ending cycle of depression.
 	if (isCrashed)
 		return;
@@ -57,22 +51,9 @@ crash = (errorCode, errorText) => {
 		core.events.emit('crash');
 };
 
-// Debugging reloader.
-if (!BUILD_RELEASE) {
-	window.addEventListener('keyup', e => {
-		if (e.code === 'F5')
-			chrome.runtime.reload();
-	});
-}
-
 // Register crash handlers.
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
-
-const win = nw.Window.get();
-// Launch DevTools for debug builds.
-if (!BUILD_RELEASE)
-	win.showDevTools();
 
 // Imports
 const os = require('os');
@@ -93,28 +74,21 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 
-const Vue = require('vue/dist/vue.cjs.js');
-window.Vue = Vue;
-
-const THREE = require('three');
-window.THREE = THREE;
-THREE.ColorManagement.enabled = true;
-
-const Listbox = require('./js/components/listbox');
-const ListboxMaps = require('./js/components/listbox-maps');
-const ListboxZones = require('./js/components/listbox-zones');
-const Listboxb = require('./js/components/listboxb');
-const Itemlistbox = require('./js/components/itemlistbox');
-const Checkboxlist = require('./js/components/checkboxlist');
-const MenuButton = require('./js/components/menu-button');
-const FileField = require('./js/components/file-field');
-const ComboBox = require('./js/components/combobox');
-const Slider = require('./js/components/slider');
-const ModelViewer = require('./js/components/model-viewer');
-const MapViewer = require('./js/components/map-viewer');
-const DataTable = require('./js/components/data-table');
-const ResizeLayer = require('./js/components/resize-layer');
-const ContextMenu = require('./js/components/context-menu');
+import Listbox from './js/components/listbox.mjs';
+import ListboxMaps from './js/components/listbox-maps.mjs';
+import ListboxZones from './js/components/listbox-zones.mjs';
+import Listboxb from './js/components/listboxb.mjs';
+import Itemlistbox from './js/components/itemlistbox.mjs';
+import Checkboxlist from './js/components/checkboxlist.mjs';
+import MenuButton from './js/components/menu-button.mjs';
+import FileField from './js/components/file-field.mjs';
+import ComboBox from './js/components/combobox.mjs';
+import Slider from './js/components/slider.mjs';
+import ModelViewer from './js/components/model-viewer.mjs';
+import MapViewer from './js/components/map-viewer.mjs';
+import DataTable from './js/components/data-table.mjs';
+import ResizeLayer from './js/components/resize-layer.mjs';
+import ContextMenu from './js/components/context-menu.mjs';
 
 const TabTextures = require('./js/ui/tab-textures');
 const TabItems = require('./js/ui/tab-items');
@@ -133,8 +107,7 @@ require('./js/ui/tab-characters');
 
 const RCPServer = require('./js/rcp/rcp-server');
 
-win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
-win.on('close', () => process.exit()); // Ensure we exit when window is closed.
+mainWindow.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
@@ -367,7 +340,7 @@ document.addEventListener('click', function(e) {
 			 * @param {boolean} userCancel
 			 */
 			hideToast: function(userCancel = false) {
-				core.hideToast(userCancel)
+				core.hideToast(userCancel);
 			},
 
 			/**
@@ -392,10 +365,10 @@ document.addEventListener('click', function(e) {
 			toggleUVLayer: function(layerName) {
 				core.events.emit('toggle-uv-layer', layerName);
 			},
-			
+
 			/**
 			 * Switches to the textures tab and filters for the given file.
-			 * @param {number} fileDataID 
+			 * @param {number} fileDataID
 			 */
 			goToTexture: function(fileDataID) {
 				const view = core.view;
@@ -424,13 +397,13 @@ document.addEventListener('click', function(e) {
 						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
 				}
 			},
-
+			
 			/**
 			 * Copy given data as text to the system clipboard.
 			 * @param {string} data 
 			 */
 			copyToClipboard: function(data) {
-				nw.Clipboard.get().set(data.toString(), 'text');
+				mainWindow.setClipboard(data.toString(), 'text');
 			},
 
 			/**
@@ -521,7 +494,7 @@ document.addEventListener('click', function(e) {
 			 * Returns an Array of available locale keys.
 			 */
 			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale.flags).map(e => { return { value: e }});
+				return Object.keys(this.availableLocale.flags).map(e => { return { value: e };});
 			},
 
 			/**
@@ -582,7 +555,7 @@ document.addEventListener('click', function(e) {
 			 * @param {float} val 
 			 */
 			loadPct: function(val) {
-				win.setProgressBar(val);
+				mainWindow.setProgressBar(val);
 			},
 
 			/**
@@ -594,8 +567,18 @@ document.addEventListener('click', function(e) {
 		}
 	});
 
-	// Interlink error handling for Vue.
-	app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	if (BUILD_RELEASE) {
+		// Interlink error handling for Vue.
+		app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	} else {
+		await import('./js/components/crashed-component.mjs');
+		app.config.errorHandler = (err, vm, info) => {
+			console.error('Vue component crashed,', err, info);
+			Vue.nextTick(() => {
+				vm.$el.innerHTML = '<crashed-component style="flex-grow: 1"></crashed-component>';
+			});
+		};
+	}
 
 	app.component('Listbox', Listbox);
 	app.component('ListboxMaps', ListboxMaps);

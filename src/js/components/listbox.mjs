@@ -5,7 +5,7 @@
  */
 
 const path = require('path');
-const core = require('../core');
+const core = require('@/js/core');
 
 const FILTER_DEBOUNCE_MS = 200;
 
@@ -19,7 +19,7 @@ const fid_filter = (e) => {
 	return e;
 };
 
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
@@ -52,7 +52,7 @@ module.exports = {
 			debouncedFilter: null,
 			filterTimeout: null,
 			scrollPositionRestored: false
-		}
+		};
 	},
 
 	/**
@@ -98,9 +98,9 @@ module.exports = {
 	 */
 	beforeUnmount: function() {
 		// Save final scroll position if persistence is enabled
-		if (this.persistscrollkey) 
+		if (this.persistscrollkey)
 			core.saveScrollPosition(this.persistscrollkey, this.scrollRel, this.scrollIndex);
-		
+
 
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
@@ -112,7 +112,7 @@ module.exports = {
 			document.removeEventListener('keydown', this.onKeyDown);
 
 		// Disconnect resize observer.
-		this.observer.disconnect();
+		this.observer?.disconnect();
 
 		clearTimeout(this.filterTimeout);
 	},
@@ -162,7 +162,7 @@ module.exports = {
 
 		/**
 		 * Returns the active item list to
-		 * @returns 
+		 * @returns
 		 */
 		itemList: function() {
 			return this.override?.length > 0 ? this.override : this.items;
@@ -242,14 +242,14 @@ module.exports = {
 			const max = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
-			
+
 			if (this.persistscrollkey)
 				core.saveScrollPosition(this.persistscrollkey, this.scrollRel, this.scrollIndex);
 		},
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -259,7 +259,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -277,7 +277,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a user attempts to paste a selection.
-		 * @param {ClipboardEvent} e 
+		 * @param {ClipboardEvent} e
 		 */
 		handlePaste: function(e) {
 			if (this.disable)
@@ -304,8 +304,8 @@ module.exports = {
 			const child = this.$refs.root.querySelector('.item');
 
 			if (child !== null) {
-				const scrollCount = core.view.config.scrollSpeed === 0 ?  
-					Math.floor(this.$refs.root.clientHeight / child.clientHeight) : 
+				const scrollCount = core.view.config.scrollSpeed === 0 ?
+					Math.floor(this.$refs.root.clientHeight / child.clientHeight) :
 					core.view.config.scrollSpeed;
 				const direction = e.deltaY > 0 ? 1 : -1;
 				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
@@ -315,7 +315,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -339,7 +339,7 @@ module.exports = {
 				if (this.copytrimwhitespace)
 					entries = entries.map(e => e.replace(/\s/g, ''));
 
-				nw.Clipboard.get().set(entries.join('\n'), 'text');
+				mainWindow.setClipboard(entries.join('\n'), 'text');
 			} else {
 				if (this.disable)
 					return;
@@ -381,13 +381,13 @@ module.exports = {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
 			if (this.disable)
 				return;
-			
+
 			const checkIndex = this.selection.indexOf(item);
 			const newSelection = this.selection.slice();
 
@@ -420,7 +420,7 @@ module.exports = {
 							if (newSelection.indexOf(select) === -1)
 								newSelection.push(select);
 						}
-					}				
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 					// Normal click, replace entire selection.
 					newSelection.splice(0);

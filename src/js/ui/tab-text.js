@@ -40,8 +40,7 @@ core.registerLoadFunc(async () => {
 
 	// Track when the user clicks to copy the open text file to clipboard.
 	core.events.on('click-copy-text', async () => {
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(core.view.textViewerSelectedText, 'text');
+		mainWindow.setClipboard(core.view.textViewerSelectedText, 'text');
 		core.setToast('success', util.format('Copied contents of %s to the clipboard.', selectedFile), null, -1, true);
 	});
 
@@ -55,7 +54,7 @@ core.registerLoadFunc(async () => {
 
 		const helper = new ExportHelper(userSelection.length, 'file');
 		helper.start();
-		
+
 		const overwriteFiles = core.view.config.overwriteFiles;
 		for (let fileName of userSelection) {
 			// Abort if the export has been cancelled.
@@ -63,7 +62,7 @@ core.registerLoadFunc(async () => {
 				return;
 
 			fileName = listfile.stripFileEntry(fileName);
-				
+
 			try {
 				const exportPath = ExportHelper.getExportPath(fileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {

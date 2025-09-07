@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * Invoked when this component is mounted.
 	 * @see https://vuejs.org/v2/guide/instance.html

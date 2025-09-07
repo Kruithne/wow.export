@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
@@ -36,8 +36,7 @@ module.exports = {
 			resizeAnimationId: null,
 			pendingResizeUpdate: false,
 			targetColumnWidth: 0,
-			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -62,7 +61,7 @@ module.exports = {
 			this.resize();
 		});
 		this.observer.observe(this.$refs.root);
-		
+
 		this.$nextTick(() => {
 			this.calculateColumnWidths();
 		});
@@ -78,7 +77,7 @@ module.exports = {
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
 		document.removeEventListener('keydown', this.onKeyDown);
-		
+
 		if (this.$refs.root) {
 			this.$refs.root.removeEventListener('scroll', this.onScroll);
 			this.$refs.root.removeEventListener('mousedown', this.onMiddleMouseDown);
@@ -133,7 +132,7 @@ module.exports = {
 			let res = this.rows.filter(row => {
 				const passesColumnFilters = this.matchesColumnFilters(row, columnFilters, this.regex);
 				const passesGeneralFilter = this.matchesGeneralFilter(row, generalFilter, this.regex);
-				
+
 				return passesColumnFilters && passesGeneralFilter;
 			});
 
@@ -159,7 +158,7 @@ module.exports = {
 		 */
 		sortedItems: function() {
 			const filtered = this.filteredItems;
-			
+
 			if (this.sortColumn === -1 || this.sortDirection === 'off')
 				return filtered;
 
@@ -169,21 +168,21 @@ module.exports = {
 			sorted.sort((a, b) => {
 				const aVal = a[columnIndex];
 				const bVal = b[columnIndex];
-				
+
 				// Handle null/undefined values
-				if (aVal == null && bVal == null)return 0;
+				if (aVal == null && bVal == null) return 0;
 				if (aVal == null) return this.sortDirection === 'asc' ? -1 : 1;
 				if (bVal == null) return this.sortDirection === 'asc' ? 1 : -1;
-				
+
 				// Numeric comparison
 				const aNum = Number(aVal);
 				const bNum = Number(bVal);
-				
+
 				if (!isNaN(aNum) && !isNaN(bNum)) {
 					const numResult = aNum - bNum;
 					return this.sortDirection === 'asc' ? numResult : -numResult;
 				}
-				
+
 				// String comparison
 				const aStr = String(aVal).toLowerCase();
 				const bStr = String(bVal).toLowerCase();
@@ -222,16 +221,16 @@ module.exports = {
 		 */
 		tableHorizontalOffset: function() {
 			const scrollRel = this.horizontalScrollRel;
-			
+
 			if (!this.$refs.root || !this.$refs.table)
 				return 'translateX(0px)';
-			
+
 			const containerWidth = this.$refs.root.clientWidth;
 			const tableWidth = this.$refs.table.scrollWidth;
 			const maxScroll = Math.max(0, tableWidth - containerWidth);
-			
+
 			const offset = -maxScroll * scrollRel;
-			
+
 			return `translateX(${offset}px)`;
 		},
 
@@ -241,15 +240,15 @@ module.exports = {
 		horizontalScrollbarStyle: function() {
 			if (!this.displayItems || this.displayItems.length === 0 || !this.$refs.root || !this.$refs.table)
 				return { display: 'none' };
-			
+
 			const containerWidth = this.$refs.root.clientWidth;
 			const tableWidth = this.$refs.table.scrollWidth;
-			
+
 			if (tableWidth <= containerWidth)
 				return { display: 'none' };
-			
+
 			const scrollbarWidth = Math.max(45, (containerWidth / tableWidth) * (containerWidth - 16));
-			
+
 			return {
 				display: 'block',
 				width: scrollbarWidth + 'px'
@@ -260,10 +259,10 @@ module.exports = {
 		 * Generate column styles with fixed widths and text overflow handling.
 		 */
 		columnStyles: function() {
-			if (!this.columnWidths || this.columnWidths.length === 0) {
+			if (!this.columnWidths || this.columnWidths.length === 0)
 				return {};
-			}
-			
+
+
 			const styles = {};
 			this.columnWidths.forEach((width, index) => {
 				styles[`col-${index}`] = {
@@ -275,7 +274,7 @@ module.exports = {
 					whiteSpace: 'nowrap'
 				};
 			});
-			
+
 			return styles;
 		},
 
@@ -283,9 +282,9 @@ module.exports = {
 		 * Dynamic cursor style for header based on resize zone state.
 		 */
 		headerCursorStyle: function() {
-			if (this.isOverResizeZone || this.isResizing) {
+			if (this.isOverResizeZone || this.isResizing)
 				return { cursor: 'col-resize' };
-			}
+
 			return {};
 		}
 	},
@@ -327,34 +326,34 @@ module.exports = {
 
 			const columnFilters = {};
 			let generalFilter = '';
-			
+
 			// Split by spaces, but preserve quoted strings
 			const parts = filterInput.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-			
+
 			for (const part of parts) {
 				const colonIndex = part.indexOf(':');
 				if (colonIndex > 0 && colonIndex < part.length - 1) {
 					// This looks like a column filter (column:value)
 					const columnName = part.substring(0, colonIndex).toLowerCase();
 					const filterValue = part.substring(colonIndex + 1);
-					
-					const headerIndex = this.headers.findIndex(header => 
+
+					const headerIndex = this.headers.findIndex(header =>
 						header.toLowerCase() === columnName
 					);
-					
+
 					if (headerIndex !== -1) {
 						columnFilters[headerIndex] = filterValue;
 						continue;
 					}
 				}
-				
+
 				// Not a valid column filter, add to general filter
 				if (generalFilter)
 					generalFilter += ' ';
-				
+
 				generalFilter += part;
 			}
-			
+
 			return { columnFilters, generalFilter: generalFilter.trim() };
 		},
 
@@ -368,23 +367,23 @@ module.exports = {
 		matchesColumnFilters: function(row, columnFilters, useRegex) {
 			for (const [columnIndex, filterValue] of Object.entries(columnFilters)) {
 				const cellValue = String(row[parseInt(columnIndex)]);
-				
+
 				if (useRegex) {
 					try {
 						const filter = new RegExp(filterValue, 'i');
-						if (!cellValue.match(filter)) {
+						if (!cellValue.match(filter))
 							return false;
-						}
+
 					} catch (e) {
 						// Invalid regex, fall back to string matching
-						if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+						if (!cellValue.toLowerCase().includes(filterValue.toLowerCase()))
 							return false;
-						}
+
 					}
 				} else {
-					if (!cellValue.toLowerCase().includes(filterValue.toLowerCase())) {
+					if (!cellValue.toLowerCase().includes(filterValue.toLowerCase()))
 						return false;
-					}
+
 				}
 			}
 			return true;
@@ -399,7 +398,7 @@ module.exports = {
 		 */
 		matchesGeneralFilter: function(row, generalFilter, useRegex) {
 			if (!generalFilter) return true;
-			
+
 			if (useRegex) {
 				try {
 					const filter = new RegExp(generalFilter, 'i');
@@ -422,7 +421,7 @@ module.exports = {
 		resize: function() {
 			this.scroll = (this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor((this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight) / 32);
-			
+
 			if (this.$refs.dthscroller)
 				this.horizontalScroll = (this.$refs.root.clientWidth - (this.$refs.dthscroller.clientWidth)) * this.horizontalScrollRel;
 		},
@@ -463,12 +462,12 @@ module.exports = {
 		 */
 		calculateColumnWidths: function() {
 			if (!this.headers) return;
-			
+
 			const widths = [];
-			
+
 			this.headers.forEach((header, index) => {
 				const columnName = header;
-				
+
 				if (this.manuallyResizedColumns[columnName]) {
 					widths.push(this.manuallyResizedColumns[columnName]);
 				} else {
@@ -477,7 +476,7 @@ module.exports = {
 					widths.push(Math.max(120, textWidth));
 				}
 			});
-			
+
 			this.columnWidths = widths;
 		},
 
@@ -487,11 +486,11 @@ module.exports = {
 		syncScrollPosition: function(e) {
 			if (!this.$refs.root || !this.$refs.table || this.isHorizontalScrolling)
 				return;
-			
+
 			const containerWidth = this.$refs.root.clientWidth;
 			const tableWidth = this.$refs.table.scrollWidth;
 			const maxScroll = Math.max(0, tableWidth - containerWidth);
-			
+
 			if (maxScroll > 0) {
 				this.horizontalScrollRel = this.$refs.root.scrollLeft / maxScroll;
 				this.horizontalScroll = (this.$refs.root.clientWidth - (this.$refs.dthscroller?.clientWidth || 45)) * this.horizontalScrollRel;
@@ -500,7 +499,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -510,17 +509,17 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
 				this.scroll = this.scrollStart + (e.clientY - this.scrollStartY);
 				this.recalculateBounds();
 			}
-			
+
 			if (this.isHorizontalScrolling) {
 				this.targetHorizontalScroll = this.horizontalScrollStart + (e.clientX - this.horizontalScrollStartX);
-				
+
 				if (!this.pendingHorizontalUpdate) {
 					this.pendingHorizontalUpdate = true;
 					this.horizontalScrollAnimationId = requestAnimationFrame(() => {
@@ -530,18 +529,18 @@ module.exports = {
 					});
 				}
 			}
-			
+
 			if (this.isResizing) {
 				const deltaX = e.clientX - this.resizeStartX;
 				this.targetColumnWidth = Math.max(50, this.resizeStartWidth + deltaX); // Minimum width of 50px
-				
+
 				if (!this.pendingResizeUpdate) {
 					this.pendingResizeUpdate = true;
 					this.resizeAnimationId = requestAnimationFrame(() => {
 						// Update the column width
 						if (this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
 							this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
-							
+
 							// Mark this column as manually resized by column name
 							const columnName = this.headers[this.resizeColumnIndex];
 							this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
@@ -558,30 +557,30 @@ module.exports = {
 		stopMouse: function() {
 			this.isScrolling = false;
 			this.isHorizontalScrolling = false;
-			
+
 			if (this.horizontalScrollAnimationId) {
 				cancelAnimationFrame(this.horizontalScrollAnimationId);
 				this.horizontalScrollAnimationId = null;
 				this.pendingHorizontalUpdate = false;
-				
+
 				if (this.targetHorizontalScroll !== this.horizontalScroll) {
 					this.horizontalScroll = this.targetHorizontalScroll;
 					this.recalculateHorizontalBounds();
 				}
 			}
-			
+
 			if (this.resizeAnimationId) {
 				cancelAnimationFrame(this.resizeAnimationId);
 				this.resizeAnimationId = null;
 				this.pendingResizeUpdate = false;
-				
+
 				if (this.targetColumnWidth !== 0 && this.columnWidths && this.resizeColumnIndex >= 0 && this.resizeColumnIndex < this.columnWidths.length) {
 					this.columnWidths[this.resizeColumnIndex] = this.targetColumnWidth;
 					const columnName = this.headers[this.resizeColumnIndex];
 					this.manuallyResizedColumns[columnName] = this.targetColumnWidth;
 				}
 			}
-			
+
 			if (this.isResizing) {
 				this.isResizing = false;
 				this.resizeColumnIndex = -1;
@@ -592,7 +591,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the horizontal scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startHorizontalMouse: function(e) {
 			this.horizontalScrollStartX = e.clientX;
@@ -606,7 +605,7 @@ module.exports = {
 		 */
 		wheelMouse: function(e) {
 			let delta = e.deltaY;
-			if(e.deltaX !== 0)
+			if (e.deltaX !== 0)
 				delta = e.deltaX;
 
 			if ((e.shiftKey || e.deltaX !== 0) && this.needsHorizontalScrolling()) {
@@ -636,17 +635,17 @@ module.exports = {
 		 */
 		headerMouseMove: function(e) {
 			if (this.isResizing) return;
-			
+
 			const headerCells = this.$refs.datatableheader.querySelectorAll('th');
 			const resizeZoneWidth = 5; // 5px zone on each side of border
-			
+
 			this.isOverResizeZone = false;
 			this.resizeZoneColumnIndex = -1;
-			
+
 			for (let i = 0; i < headerCells.length; i++) {
 				const cell = headerCells[i];
 				const rect = cell.getBoundingClientRect();
-				
+
 				if (i < headerCells.length - 1) {
 					if (e.clientX >= rect.right - resizeZoneWidth && e.clientX <= rect.right + resizeZoneWidth) {
 						this.isOverResizeZone = true;
@@ -701,7 +700,7 @@ module.exports = {
 		getSortIconName: function(columnIndex) {
 			if (this.sortColumn !== columnIndex || this.sortDirection === 'off')
 				return 'sort-icon-off';
-			
+
 			return this.sortDirection === 'asc' ? 'sort-icon-up' : 'sort-icon-down';
 		},
 
@@ -714,12 +713,12 @@ module.exports = {
 		handleFilterIconClick: function(columnIndex, e) {
 			const columnName = this.headers[columnIndex].toLowerCase();
 			const filterPrefix = columnName + ':';
-			
+
 			const currentFilter = this.filter || '';
 			const newFilter = currentFilter ? currentFilter + ' ' + filterPrefix : filterPrefix;
-			
+
 			this.$emit('update:filter', newFilter);
-			
+
 			this.$nextTick(() => {
 				this.$nextTick(() => {
 					const filterInput = document.getElementById('data-table-filter-input');
@@ -742,7 +741,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -844,18 +843,18 @@ module.exports = {
 			<table ref="table" :style="{ transform: tableHorizontalOffset }">
 				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
-						<th v-for="(header, index) in headers" 
+						<th v-for="(header, index) in headers"
 							:style="columnStyles['col-' + index] || {}">
 							<span class="header-content">
 								{{header}}
 								<div class="header-icons">
-									<span 
-										class="filter-icon" 
+									<span
+										class="filter-icon"
 										@click="handleFilterIconClick(index, $event)"
 										title="Filter this column">
 									</span>
-									<span 
-										:class="'sort-icon ' + getSortIconName(index)" 
+									<span
+										:class="'sort-icon ' + getSortIconName(index)"
 										@click="toggleSort(index)"
 										title="Sort this column">
 									</span>
@@ -865,7 +864,7 @@ module.exports = {
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(row, rowIndex) in displayItems" 
+					<tr v-for="(row, rowIndex) in displayItems"
 						@click="selectRow(scrollIndex + rowIndex, $event)"
 						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
 						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}">{{field}}</td>
