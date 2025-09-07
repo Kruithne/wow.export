@@ -605,9 +605,13 @@ module.exports = {
 		 * @param {WheelEvent} e
 		 */
 		wheelMouse: function(e) {
-			if (e.shiftKey && this.needsHorizontalScrolling()) {
+			let delta = e.deltaY;
+			if(e.deltaX !== 0)
+				delta = e.deltaX;
+
+			if ((e.shiftKey || e.deltaX !== 0) && this.needsHorizontalScrolling()) {
 				// Horizontal scrolling with shift+wheel
-				const direction = e.deltaY > 0 ? 1 : -1;
+				const direction = delta > 0 ? 1 : -1;
 				const scrollAmount = 50; // Fixed scroll amount for horizontal
 				this.horizontalScroll += scrollAmount * direction;
 				this.recalculateHorizontalBounds();
