@@ -59,7 +59,7 @@ const timeLog = () => {
 /**
  * Logs the time (in milliseconds) between the last log.timeLog()
  * call and this call, with the given label prefixed.
- * @param {string} label 
+ * @param {string} label
  */
 const timeEnd = (label, ...params) => {
 	write(label + ' (%dms)', ...params, (Date.now() - markTimer));
@@ -69,7 +69,7 @@ const timeEnd = (label, ...params) => {
  * Open the runtime log in the users external editor.
  */
 const openRuntimeLog = () => {
-	nw.Shell.openItem(constants.RUNTIME_LOG);
+	mainWindow.Shell.openItem(constants.RUNTIME_LOG);
 };
 
 /**

@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * options: An array of objects with label/value properties.
 	 * default: The default value from the options array.
@@ -17,7 +17,7 @@ module.exports = {
 		return {
 			selectedObj: null, // Currently selected option.
 			open: false // If the menu is open or not.
-		}
+		};
 	},
 
 	methods: {
@@ -72,7 +72,7 @@ module.exports = {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-		template: `<div class="ui-menu-button" :class="{ disabled, dropdown, open }">
+	template: `<div class="ui-menu-button" :class="{ disabled, dropdown, open }">
 		<input type="button" :value="this.selected.label ?? this.selected.value" :class="{ disabled }" @click="handleClick"/>
 		<div class="arrow" @click.stop="openMenu"></div>
 		<context-menu :node="open" @close="open = false">

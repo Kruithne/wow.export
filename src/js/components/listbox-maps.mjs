@@ -4,12 +4,12 @@
 	License: MIT
  */
 
-const listboxComponent = require('./listbox');
+import listboxComponent from './listbox.mjs';
 
-module.exports = {
+export default {
 	/**
 	 * Extends the base listbox component with expansion filtering for maps.
-	 * 
+	 *
 	 * Additional props:
 	 * expansionFilter: Reactive value for filtering by expansion ID (-1 for all, 0+ for specific expansion)
 	 */
@@ -23,7 +23,7 @@ module.exports = {
 
 	watch: {
 		...listboxComponent.watch,
-		
+
 		expansionFilter: function() {
 			this.scroll = 0;
 			this.scrollRel = 0;

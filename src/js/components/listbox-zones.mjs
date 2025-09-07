@@ -4,9 +4,9 @@
 	License: MIT
  */
 
-const listboxComponent = require('./listbox');
+import listboxComponent from './listbox.mjs';
 
-module.exports = {
+export default {
 	/**
 	 * Extends the base listbox component with expansion filtering for zones.
 	 * 

@@ -80,7 +80,7 @@ core.events.once('screen-source-select', async () => {
 			cdnResolver.startPreResolution(region);
 		}
 
-		// Run a rudimentary ping check for each CDN. 
+		// Run a rudimentary ping check for each CDN.
 		pings.push(generics.ping(cdnURL).then(ms => node.delay = ms).catch(e => {
 			node.delay = -1;
 			log.write('Failed ping to %s: %s', cdnURL, e.message);
@@ -102,7 +102,7 @@ core.events.once('screen-source-select', async () => {
 
 	const openInstall = async (installPath, product) => {
 		core.hideToast();
-		
+
 		try {
 			cascSource = new CASCLocal(installPath);
 			await cascSource.init();
@@ -114,6 +114,8 @@ core.events.once('screen-source-select', async () => {
 		} catch (e) {
 			core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', selector.value), null, -1);
 			log.write('Failed to initialize local CASC source: %s', e.message);
+			if (!BUILD_RELEASE)
+				console.error(e);
 
 			// In the event the given installation directory is now invalid, remove all
 			// recent local entries using that directory. If product was provided, we can
@@ -151,11 +153,13 @@ core.events.once('screen-source-select', async () => {
 				// No builds available, likely CDN is not available.
 				if (cascSource.builds.length === 0)
 					throw new Error('No builds available.');
-				
+
 				core.view.availableRemoteBuilds = cascSource.getProductList();
 			} catch (e) {
 				core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
 				log.write('Failed to initialize remote CASC source: %s', e.message);
+				if (!BUILD_RELEASE)
+					console.error(e);
 			}
 		});
 	});

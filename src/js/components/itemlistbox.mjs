@@ -3,15 +3,20 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+const IconRender = require('../icon-render');
+
+export default {
 	/**
 	 * items: Item entries displayed in the list.
+	 * filter: Optional reactive filter for items.
 	 * selection: Reactive selection controller.
 	 * single: If set, only one entry can be selected.
 	 * keyinput: If true, listbox registers for keyboard input.
-	 * disable: If provided, used as reactive disable flag.
+	 * regex: If true, filter will be treated as a regular expression.
+	 * includefilecount: If true, includes a file counter on the component.
+	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 */
-	props: ['items', 'selection', 'single', 'keyinput', 'disable'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'includefilecount', 'unittype'],
 	emits: ['update:selection'],
 
 	/**
@@ -24,7 +29,7 @@ module.exports = {
 			isScrolling: false,
 			slotCount: 1,
 			lastSelectItem: null
-		}
+		};
 	},
 
 	/**
@@ -45,7 +50,7 @@ module.exports = {
 
 		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
-		this.observer.observe(this.$el);
+		this.observer.observe(this.$refs.root);
 	},
 
 	/**
@@ -56,6 +61,8 @@ module.exports = {
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
+
+		document.removeEventListener('paste', this.onPaste);
 
 		if (this.keyinput)
 			document.removeEventListener('keydown', this.onKeyDown);
@@ -79,7 +86,47 @@ module.exports = {
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
-			return Math.round((this.items.length - this.slotCount) * this.scrollRel);
+			return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
+		},
+
+		/**
+		 * Reactively filtered version of the underlying data array.
+		 * Automatically refilters when the filter input is changed.
+		 */
+		filteredItems: function() {
+			// Skip filtering if no filter is set.
+			if (!this.filter)
+				return this.items;
+
+			let res = this.items;
+
+			if (this.regex) {
+				try {
+					const filter = new RegExp(this.filter.trim(), 'i');
+					res = res.filter(e => e.displayName.match(filter));
+				} catch (e) {
+					// Regular expression did not compile, skip filtering.
+				}
+			} else {
+				const filter = this.filter.trim().toLowerCase();
+				if (filter.length > 0)
+					res = res.filter(e => e.displayName.toLowerCase().includes(filter));
+			}
+
+			let hasChanges = false;
+			const newSelection = this.selection.filter((item) => {
+				const includes = res.includes(item);
+
+				if (!includes)
+					hasChanges = true;
+
+				return includes;
+			});
+
+			if (hasChanges)
+				this.$emit('update:selection', newSelection);
+
+			return res;
 		},
 
 		/**
@@ -87,14 +134,14 @@ module.exports = {
 		 * data array. Reactively updates based on scroll and data.
 		 */
 		displayItems: function() {
-			return this.items.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
+			return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
 		itemWeight: function() {
-			return 1 / this.items.length;
+			return 1 / this.filteredItems.length;
 		}
 	},
 
@@ -104,8 +151,8 @@ module.exports = {
 		 * is resized due to layout changes.
 		 */
 		resize: function() {
-			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
-			this.slotCount = Math.floor(this.$el.clientHeight / 26);
+			this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
+			this.slotCount = Math.floor(this.$refs.root.clientHeight / 26);
 		},
 
 		/**
@@ -113,14 +160,14 @@ module.exports = {
 		 * calculates the relative (0-1) offset based on the scroll.
 		 */
 		recalculateBounds: function() {
-			const max = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+			const max = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
 		},
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -130,7 +177,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -151,11 +198,11 @@ module.exports = {
 		 * @param {WheelEvent} e
 		 */
 		wheelMouse: function(e) {
-			const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
-			const child = this.$el.querySelector('.item');
+			const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
+			const child = this.$refs.root.querySelector('.item');
 
 			if (child !== null) {
-				const scrollCount = Math.floor(this.$el.clientHeight / child.clientHeight);
+				const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
 				const direction = e.deltaY > 0 ? 1 : -1;
 				this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
 				this.recalculateBounds();
@@ -164,7 +211,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -178,11 +225,8 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
+				mainWindow.setClipboard(this.selection.map(e => e.displayName).join('\n'), 'text');
 			} else {
-				if (this.disable)
-					return;
-
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';
 				const isArrowDown = e.key === 'ArrowDown';
@@ -190,9 +234,9 @@ module.exports = {
 					const delta = isArrowUp ? -1 : 1;
 
 					// Move/expand selection one.
-					const lastSelectIndex = this.items.indexOf(this.lastSelectItem);
+					const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
 					const nextIndex = lastSelectIndex + delta;
-					const next = this.items[nextIndex];
+					const next = this.filteredItems[nextIndex];
 					if (next) {
 						const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
 						let diff = Math.abs(nextIndex - lastViewIndex);
@@ -200,7 +244,7 @@ module.exports = {
 							diff += 1;
 
 						if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
-							const weight = this.$el.clientHeight - (this.$refs.scroller.clientHeight);
+							const weight = this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight);
 							this.scroll += ((diff * this.itemWeight) * weight) * delta;
 							this.recalculateBounds();
 						}
@@ -212,6 +256,7 @@ module.exports = {
 
 						newSelection.push(next);
 						this.lastSelectItem = next;
+
 						this.$emit('update:selection', newSelection);
 					}
 				}
@@ -220,13 +265,10 @@ module.exports = {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
-			if (this.disable)
-				return;
-			
 			const checkIndex = this.selection.indexOf(item);
 			const newSelection = this.selection.slice();
 
@@ -248,12 +290,12 @@ module.exports = {
 				} else if (event.shiftKey) {
 					// Shift-key held, select a range.
 					if (this.lastSelectItem && this.lastSelectItem !== item) {
-						const lastSelectIndex = this.items.indexOf(this.lastSelectItem);
-						const thisSelectIndex = this.items.indexOf(item);
+						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+						const thisSelectIndex = this.filteredItems.indexOf(item);
 
 						const delta = Math.abs(lastSelectIndex - thisSelectIndex);
 						const lowest = Math.min(lastSelectIndex, thisSelectIndex);
-						const range = this.items.slice(lowest, lowest + delta + 1);
+						const range = this.filteredItems.slice(lowest, lowest + delta + 1);
 
 						for (const select of range) {
 							if (newSelection.indexOf(select) === -1)
@@ -273,13 +315,28 @@ module.exports = {
 		}
 	},
 
+	watch: {
+		/**
+		 * Invoked when the displayItems variable changes.
+		 */
+		displayItems: function() {
+			for (const item of this.displayItems)
+				IconRender.loadIcon(item.icon);
+		}
+	},
+
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-listbox" @wheel="wheelMouse">
+	template: `<div><div ref="root" class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
 		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
-			<span class="sub sub-0">{{ item.label }}</span>
+			<div :class="['item-icon', 'icon-' + item.icon ]"></div>
+			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }} <span class="item-id">({{ item.id }})</span></div>
+			<ul class="item-buttons">
+				<li @click.self="$emit('options', item)">Options</li>
+			</ul>
 		</div>
-	</div>`
+	</div>
+	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
 };

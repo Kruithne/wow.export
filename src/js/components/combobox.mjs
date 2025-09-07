@@ -4,7 +4,7 @@
 	License: MIT
  */
 
-module.exports = {
+export default {
 	props: ['value', 'source', 'placeholder', 'maxheight'],
 	emits: ['update:value'],
 
@@ -12,7 +12,7 @@ module.exports = {
 		return {
 			currentText: '',
 			isActive: false
-		}
+		};
 	},
 
 	watch: {

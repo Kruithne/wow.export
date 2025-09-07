@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 */
@@ -18,7 +18,7 @@ module.exports = {
 			scrollRel: 0,
 			isScrolling: false,
 			slotCount: 1
-		}
+		};
 	},
 
 	/**
@@ -92,7 +92,7 @@ module.exports = {
 		resize: function() {
 			this.scroll = (this.$el.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
 			this.slotCount = Math.floor(this.$el.clientHeight / 26);
-			
+
 		},
 
 		/**
@@ -107,7 +107,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-down event is captured on the scroll widget.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		startMouse: function(e) {
 			this.scrollStartY = e.clientY;
@@ -117,7 +117,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a mouse-move event is captured globally.
-		 * @param {MouseEvent} e 
+		 * @param {MouseEvent} e
 		 */
 		moveMouse: function(e) {
 			if (this.isScrolling) {
@@ -151,7 +151,7 @@ module.exports = {
 
 		/**
 		 * Propagate entry clicks to the child checkbox.
-		 * @param {MouseEvent} event 
+		 * @param {MouseEvent} event
 		 */
 		propagateClick: function(event) {
 			let target = event.target;

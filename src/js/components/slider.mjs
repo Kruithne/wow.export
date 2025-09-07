@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * value: Slider value between 0 and 1.
 	 */
@@ -13,7 +13,7 @@ module.exports = {
 	data: function() {
 		return {
 			isScrolling: false, // True if the slider is being dragged.
-		}
+		};
 	},
 
 	/**
@@ -52,7 +52,7 @@ module.exports = {
 		 * @param {MouseEvent} e 
 		 */
 		startMouse: function(e) {
-			this.scrollStartX = e.clientX
+			this.scrollStartX = e.clientX;
 			this.scrollStart = this.modelValue;
 			this.isScrolling = true;
 		},

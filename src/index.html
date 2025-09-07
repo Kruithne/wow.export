@@ -1056,7 +1056,7 @@
 								<ul id="source-cdn" class="ui-multi-button">
 									<li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
 										{{ region.tag.toUpperCase() }}
-										<span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
+										<span v-if="region.delay !== null">{{ region.delay &lt; 0 ? 'N/A' : region.delay + 'ms' }}</span>
 									</li>
 								</ul>
 							</div>

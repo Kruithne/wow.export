@@ -2,11 +2,12 @@
 	"outputDirectory": "./bin",
 	"cacheDirectory": "./bin/_cache",
 	"sourceDirectory": "./src",
-	"webkitVersion": "0.69.1",
+	"webkitVersion": "0.76.0",
 	"webkitURL": "https://dl.nwjs.io/v%s/%s",
 	"manifest": {
 		"name": "wow.export",
 		"main": "./src/index.html",
+		"domain": "wow.export",
 		"chromium-args": "--disable-devtools --disable-raf-throttling --mixed-context --enable-node-worker --disable-logging --password-store=basic",
 		"product_string": "wow.export",
 		"user-agent": "wow.export (%ver); %osinfo",
@@ -58,6 +59,9 @@
 				"whitelist": [
 					"locales\/en-US.pak$"
 				]
+			},
+			"manifest": {
+				"main": "./src/hmr-main.html"
 			}
 		},
 		{
@@ -164,6 +168,9 @@
 				"whitelist": [
 					"locales\/en-US.pak$"
 				]
+			},
+			"manifest": {
+				"main": "./src/hmr-main.html"
 			}
 		},
 		{

@@ -13,7 +13,7 @@ window.addEventListener('mousemove', event => {
 	clientMouseY = event.clientY;
 });
 
-module.exports = {
+export default {
 	/**
 	 * node: Object which this context menu represents.
 	 */
@@ -25,7 +25,7 @@ module.exports = {
 			positionY: 0,
 			isLow: false,
 			isLeft: false,
-		}
+		};
 	},
 
 	methods: {
@@ -39,9 +39,9 @@ module.exports = {
 
 	watch: {
 		node: function(newVal) {
-			if (newVal) {
+			if (newVal) 
 				this.$nextTick(() => this.reposition());
-			}
+			
 		}
 	},
 
