@@ -1706,6 +1706,14 @@ input[type=number]::-webkit-outer-spin-button {
 	padding: 20px 20px 20px 0;
 }
 
+#tab-data .right-panel-buttons {
+	display: flex;
+	flex-direction: column;
+	margin-top: 10px;
+	gap: 10px;
+	padding: 10px;
+}
+
 #tab-data .list-container {
 	min-width: 20vw;
 }

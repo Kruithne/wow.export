@@ -934,8 +934,10 @@
 							<input type="checkbox" v-model="config.dataExportAll"/>
 							<span>Export all rows</span>
 						</label>
-						<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
-						<input type="button" value="Export DB2" @click="click('export-db2-raw', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
+						<div class="right-panel-buttons">
+							<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
+							<input type="button" value="Export DB2" @click="click('export-db2-raw', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
+						</div>
 					</div>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">
