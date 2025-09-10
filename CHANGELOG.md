@@ -37,6 +37,7 @@
 - Added option to prefix 3D preview exports to prevent overwrite (enabled by default).
 - Metadata exports for M2 and WMOs are now enabled by default.
 - Listfile URL no longer supports build wildcard (long unsupported by official endpoints).
+- Added "Name Exported File" option which can be disabled to export using fileDataIDs as filenames.
 
 ### UI
 - Added expansion icon for Midnight.

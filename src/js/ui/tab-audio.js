@@ -267,9 +267,21 @@ core.registerLoadFunc(async () => {
 				else if (fileType === AUDIO_TYPE_MP3)
 					fileName = ExportHelper.replaceExtension(fileName, '.mp3');
 			}
+			
+			let exportFileName = fileName;
+			
+			if (!core.view.config.exportNamedFiles) {
+				const fileDataID = listfile.getByFilename(fileName);
+				if (fileDataID) {
+					const ext = path.extname(fileName);
+					const dir = path.dirname(fileName);
+					const fileDataIDName = fileDataID + ext;
+					exportFileName = dir === '.' ? fileDataIDName : path.join(dir, fileDataIDName);
+				}
+			}
 				
 			try {
-				const exportPath = ExportHelper.getExportPath(fileName);
+				const exportPath = ExportHelper.getExportPath(exportFileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
 					if (!data)
 						data = await core.view.casc.getFileByName(fileName);

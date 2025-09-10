@@ -63,9 +63,20 @@ core.registerLoadFunc(async () => {
 				return;
 
 			fileName = listfile.stripFileEntry(fileName);
+			let exportFileName = fileName;
+			
+			if (!core.view.config.exportNamedFiles) {
+				const fileDataID = listfile.getByFilename(fileName);
+				if (fileDataID) {
+					const ext = path.extname(fileName);
+					const dir = path.dirname(fileName);
+					const fileDataIDName = fileDataID + ext;
+					exportFileName = dir === '.' ? fileDataIDName : path.join(dir, fileDataIDName);
+				}
+			}
 				
 			try {
-				const exportPath = ExportHelper.getExportPath(fileName);
+				const exportPath = ExportHelper.getExportPath(exportFileName);
 				if (overwriteFiles || !await generics.fileExists(exportPath)) {
 					const data = await core.view.casc.getFileByName(fileName);
 					await data.writeToFile(exportPath);

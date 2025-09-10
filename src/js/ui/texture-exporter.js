@@ -76,7 +76,17 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
 		
 		try {
-			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(fileName);
+			let exportFileName = fileName;
+			
+			// Use fileDataID as filename if exportNamedFiles is disabled
+			if (!isLocal && !core.view.config.exportNamedFiles) {
+				const ext = fileName.toLowerCase().endsWith('.blp') ? '.blp' : '.png';
+				const dir = require('path').dirname(fileName);
+				const fileDataIDName = fileDataID + ext;
+				exportFileName = dir === '.' ? fileDataIDName : require('path').join(dir, fileDataIDName);
+			}
+			
+			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(exportFileName);
 			if (format !== 'BLP')
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 

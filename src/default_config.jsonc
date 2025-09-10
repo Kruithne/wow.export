@@ -46,6 +46,7 @@
 	"exportWMOMeta": true,
 	"exportBLPMeta": false,
 	"exportFoliageMeta": false,
+	"exportNamedFiles": true,
 	"modelsShowM2": true,
 	"modelsShowM3": true,
 	"modelsShowWMO": true,

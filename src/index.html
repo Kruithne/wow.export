@@ -244,6 +244,15 @@
 						</label>
 					</div>
 					<div>
+						<h1>Name Exported Files</h1>
+						<p>When enabled, files are exported using their listfile names (e.g., "ability_stealth.png").</p>
+						<p>When disabled, files are exported using their fileDataID numbers (e.g., "12345.png").</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.exportNamedFiles"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
 						<h1>Prevent 3D Preview Overwrites</h1>
 						<p>If enabled, 3D preview exports will add increments to prevent overwriting existing files.</p>
 						<label class="ui-checkbox">

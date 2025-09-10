@@ -122,7 +122,19 @@ core.events.on('click-export-raw', async () => {
 			return;
 
 		fileName = listfile.stripFileEntry(fileName);
-		const exportPath = ExportHelper.getExportPath(fileName);
+		let exportFileName = fileName;
+		
+		if (!core.view.config.exportNamedFiles) {
+			const fileDataID = listfile.getByFilename(fileName);
+			if (fileDataID) {
+				const ext = path.extname(fileName);
+				const dir = path.dirname(fileName);
+				const fileDataIDName = fileDataID + ext;
+				exportFileName = dir === '.' ? fileDataIDName : path.join(dir, fileDataIDName);
+			}
+		}
+		
+		const exportPath = ExportHelper.getExportPath(exportFileName);
 
 		if (overwriteFiles || !await generics.fileExists(exportPath)) {
 			try {
