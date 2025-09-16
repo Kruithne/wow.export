@@ -90,7 +90,7 @@ const exportRawDB2 = async (tableName, fileDataID) => {
 			log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
 			helper.mark(fileName, true);
 		} else {
-			const fileData = await core.view.casc.getFile(fileDataID);
+			const fileData = await core.view.casc.getFile(fileDataID, true);
 			if (!fileData) {
 				throw new Error('Failed to retrieve DB2 file from CASC');
 			}
