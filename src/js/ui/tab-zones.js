@@ -126,7 +126,13 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 	for (const artID of linkedArtIDs) {
 		const artEntry = uiMapArtTable.getRow(artID);
 		if (artEntry) {
-			const styleLayer = uiMapArtStyleLayerTable.getRow(artEntry.UiMapArtStyleID);
+			let styleLayer;
+
+			for (const [id, artStyleLayer] of uiMapArtStyleLayerTable.getAllRows()) {
+				if (artStyleLayer.UiMapArtStyleID === artEntry.UiMapArtStyleID)
+					styleLayer = artStyleLayer;
+			}
+
 			if (styleLayer) {
 				const combinedStyle = {
 					...artEntry,
