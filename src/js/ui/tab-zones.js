@@ -374,11 +374,17 @@ core.events.once('screen-tab-zones', async () => {
 		
 		log.write('Loaded %d maps for expansion mapping', expansionMap.size);
 
+		const availableZones = new Set();
+
 		// Load required tables for map rendering
 		await progress.step('Loading UI map assignments...');
 		uiMapAssignmentTable = new WDCReader('DBFilesClient/UiMapAssignment.db2');
 		await uiMapAssignmentTable.parse();
 		log.write('Loaded UiMapAssignment.db2 with %d entries', uiMapAssignmentTable.getAllRows().size);
+
+		for (const [id, entry] of uiMapAssignmentTable.getAllRows()) {
+			availableZones.add(entry.AreaID);
+		}
 
 		await progress.step('Loading UI maps...');
 		uiMapTable = new WDCReader('DBFilesClient/UiMap.db2');
@@ -422,6 +428,9 @@ core.events.once('screen-tab-zones', async () => {
 		const zones = [];
 		for (const [id, entry] of table.getAllRows()) {
 			const expansionId = expansionMap.get(entry.ContinentID) || 0;
+
+			if (!availableZones.has(id))
+				continue;
 			
 			// Format: ExpansionID\x19[ID]\x19ZoneName\x19(AreaName_lang)
 			zones.push(
