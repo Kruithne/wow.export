@@ -1,6 +1,8 @@
 ## 0.2.0 (xx-09-2025)
+wow.export's first update of the year is a big one and with that there's a bunch of new features as well as various improvements, changes and fixes. Please note that some newer features might still be rough around the edges, we expect there to be another update in the next few months that improves these and also adds support for any changes Midnight Alpha might bring.
+
 ### General/features
-- Added animation previews to the built-in modelviewer.
+- Added animation previews to the built-in modelviewer (work in progress, many don't preview correctly yet).
 - Added "Import Liquids" to Blender add-on, fully supporting all liquid types on map tiles.
 - Added "Export Heightmaps" button for maps, allowing 16-bit/32-bit heightmap generation with cross-tile range relativity.
 - Added "Show Background" option to set a customizable background colour to the model viewer.
@@ -15,7 +17,7 @@
 - Maps can now be filtered by expansion using expansion icons above the map list.
 - Added "Zones" tab which allows you to view all zones within the game.
 
-### Data Tables
+### Data Tables (work in progress)
 - Added "Data" tab that allows you to view data tables within the client!
 - Per-column data table filtering e.g id:5000 name:"test name" (supports regex).
 - Search icon on column headers enables quick per-column filtering.
@@ -50,7 +52,7 @@
 - Exported CSV files (data tables, model placement, etc) now escape special characters.
 
 ### Cross-platform support
-- Started generating builds for Mac/Linux (still a work in progress, not yet finished).
+- Started generating builds for Linux & MacOS (still a work in progress, not yet finished).
 - Added cross-platform support for Linux & MacOS into updater application.
 - Blender add-on installation now supports Linux & MacOS.
 
