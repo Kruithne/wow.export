@@ -384,7 +384,7 @@ async function previewModel(fileDataID) {
 
 		await activeRenderer.load();
 		//textureShaderMap = activeRenderer.shaderMap;
-		CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls);
+		CameraBounding.fitObjectInView(renderGroup, camera, core.view.chrModelViewerContext.controls);
 
 		activeModel = fileDataID;
 
