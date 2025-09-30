@@ -8,14 +8,22 @@ const WDCReader = require('../WDCReader');
 
 const creatureDisplays = new Map();
 const displayIDToFileDataID = new Map();
+let isInitialized = false;
 
 /**
  * Initialize creature data.
- * @param {WDCReader} creatureDisplayInfo 
- * @param {WDCReader} creatureModelData 
  */
-const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) => {
+const initializeCreatureData = async () => {
+	if (isInitialized)
+		return;
+
 	log.write('Loading creature textures...');
+
+	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
+	await creatureDisplayInfo.parse();
+
+	const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
+	await creatureModelData.parse();
 
 	const creatureGeosetMap = new Map();
 
@@ -69,6 +77,7 @@ const initializeCreatureData = async (creatureDisplayInfo, creatureModelData) =>
 	}
 
 	log.write('Loaded textures for %d creatures', creatureDisplays.size);
+	isInitialized = true;
 };
 
 /**

@@ -609,13 +609,7 @@ core.events.once('screen-tab-models', async () => {
 			await DBItemDisplays.initializeItemDisplays();
 
 			await progress.step('Loading creature data...');
-			const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-			await creatureDisplayInfo.parse();
-
-			const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-			await creatureModelData.parse();
-
-			await DBCreatures.initializeCreatureData(creatureDisplayInfo, creatureModelData);
+			await DBCreatures.initializeCreatureData();
 		}
 
 		// Initialize 3D preview

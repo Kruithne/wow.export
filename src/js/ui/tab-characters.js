@@ -662,7 +662,7 @@ core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
 	// Initialize a loading screen.
-	const progress = core.createProgress(15);
+	const progress = core.createProgress(16);
 	state.setScreen('loading');
 	state.isBusy++;
 
@@ -694,6 +694,9 @@ core.events.once('screen-tab-characters', async () => {
 	await progress.step('Loading character models..');
 	const chrModelDB = new WDCReader('DBFilesClient/ChrModel.db2');
 	await chrModelDB.parse();
+
+	await progress.step('Loading creature data...');
+	await DBCreatures.initializeCreatureData();
 
 	await progress.step('Loading character customization choices...');
 	chrCustChoiceDB = new WDCReader('DBFilesClient/ChrCustomizationChoice.db2');
