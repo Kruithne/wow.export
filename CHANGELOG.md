@@ -1,5 +1,5 @@
 ## 0.2.1 (01-10-2025)
-- Fixed an issue that caused the auto-updater to not restart wow.export after updating.
+- Fixed an issue that caused the auto-updater to not restart wow.export after updating (update: this did not fix it, might still happen until next update).
 
 ## 0.2.0 (01-10-2025)
 wow.export's first update of the year is a big one and with that there's a bunch of new features as well as various improvements, changes and fixes. Please note that some newer features might still be rough around the edges, we expect there to be another update in the next few months that improves these and also adds support for any changes Midnight Alpha might bring.
