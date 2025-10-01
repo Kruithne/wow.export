@@ -54,11 +54,6 @@ jobs:
           file: publish/${{ matrix.platform }}/wow-export-${{ matrix.platform }}-*.*
           file_glob: true
           tag: ${{ github.ref }}
-      - name: Bypass Cloudflare for GitHub Action
-        uses: xiaotianxt/bypass-cloudflare-for-github-action@v1.1.1
-        with:
-          cf_zone_id: ${{ secrets.CF_ZONE_ID }}
-          cf_api_token: ${{ secrets.CF_API_TOKEN }}
       - name: Trigger update webhook
         shell: bash
         run: 'bun trigger_release.js ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }} ${{ matrix.platform }} "${{ steps.upload-update.outputs.browser_download_url }}" "${{ steps.upload-manifest.outputs.browser_download_url }}" "${{ steps.upload-package.outputs.browser_download_url }}"'
