@@ -1,4 +1,4 @@
-## 0.2.0 (01-10-2025)
+## 0.2.1 (01-10-2025)
 wow.export's first update of the year is a big one and with that there's a bunch of new features as well as various improvements, changes and fixes. Please note that some newer features might still be rough around the edges, we expect there to be another update in the next few months that improves these and also adds support for any changes Midnight Alpha might bring.
 
 ### General/features
