@@ -29,6 +29,12 @@ module.exports = data => {
 	const entries = {};
 	let lines = data.split(/\r?\n/);
 
+	// Valid config files start with "# " (e.g., "# Build Configuration", "# CDN Configuration")
+	const hasValidHeader = lines.length > 0 && lines[0].trim().startsWith('# ');
+
+	if (!hasValidHeader)
+		throw new Error('Invalid CDN config: unexpected start of config');
+
 	for (const line of lines) {
 		// Skip empty lines/comments.
 		if (line.trim().length === 0 || line.startsWith('#'))
@@ -40,6 +46,6 @@ module.exports = data => {
 
 		entries[normalizeKey(match[1])] = match[2];
 	}
-	
+
 	return entries;
 };

@@ -18,6 +18,9 @@ class CDNResolver {
 		// Map of cacheKey -> { promise, bestHost }
 		// cacheKey = region + '|' + hosts to handle different products with different hosts
 		this.resolutionCache = new Map();
+		
+		// Track hosts that have failed to respond properly (e.g., censored responses)
+		this.failedHosts = new Set();
 	}
 
 	/**
@@ -39,33 +42,85 @@ class CDNResolver {
 	async getBestHost(region, serverConfig) {
 		const cacheKey = this._getCacheKey(region, serverConfig.Hosts);
 		const cached = this.resolutionCache.get(cacheKey);
-		
+
 		if (cached && cached.bestHost) {
 			log.write('Using cached CDN host for %s: %s', region, cached.bestHost.host);
 			return cached.bestHost.host + serverConfig.Path + '/';
 		}
-		
+
 		if (cached && cached.promise) {
 			log.write('Waiting for CDN resolution for %s', region);
 			const result = await cached.promise;
 			return result.host + serverConfig.Path + '/';
 		}
-		
+
 		log.write('Resolving CDN hosts for %s: %s', region, serverConfig.Hosts);
 		const promise = this._resolveHosts(region, serverConfig);
-		
+
 		this.resolutionCache.set(cacheKey, {
 			promise,
 			bestHost: null
 		});
-		
-		const bestHost = await promise;
+
+		const rankedHosts = await promise;
 		this.resolutionCache.set(cacheKey, {
 			promise: null,
-			bestHost
+			bestHost: rankedHosts[0],
+			rankedHosts
 		});
-		
-		return bestHost.host + serverConfig.Path + '/';
+
+		return rankedHosts[0].host + serverConfig.Path + '/';
+	}
+
+	/**
+	 * Get all available hosts for a region ranked by ping speed.
+	 * Excludes hosts that have previously failed.
+	 * @param {string} region Region tag
+	 * @param {object} serverConfig Server configuration with Hosts and Path
+	 * @returns {Promise<Array<string>>} Array of host URLs ranked by speed
+	 */
+	async getRankedHosts(region, serverConfig) {
+		const cacheKey = this._getCacheKey(region, serverConfig.Hosts);
+		const cached = this.resolutionCache.get(cacheKey);
+
+		if (cached && cached.rankedHosts) {
+			log.write('Using cached ranked CDN hosts for %s', region);
+			return cached.rankedHosts.map(h => h.host + serverConfig.Path + '/');
+		}
+
+		if (cached && cached.promise) {
+			log.write('Waiting for CDN resolution for %s', region);
+			await cached.promise;
+			const updated = this.resolutionCache.get(cacheKey);
+			return updated.rankedHosts.map(h => h.host + serverConfig.Path + '/');
+		}
+
+		log.write('Resolving CDN hosts for %s: %s', region, serverConfig.Hosts);
+		const promise = this._resolveHosts(region, serverConfig);
+
+		this.resolutionCache.set(cacheKey, {
+			promise,
+			bestHost: null,
+			rankedHosts: null
+		});
+
+		const rankedHosts = await promise;
+		this.resolutionCache.set(cacheKey, {
+			promise: null,
+			bestHost: rankedHosts[0],
+			rankedHosts
+		});
+
+		return rankedHosts.map(h => h.host + serverConfig.Path + '/');
+	}
+
+	/**
+	 * Mark a host as failed (e.g., due to censorship or invalid responses).
+	 * @param {string} host Host URL to mark as failed
+	 */
+	markHostFailed(host) {
+		log.write('Marking CDN host as failed: %s', host);
+		this.failedHosts.add(host);
 	}
 
 	/**
@@ -106,24 +161,28 @@ class CDNResolver {
 	}
 
 	/**
-	 * Ping all hosts in server config and find the fastest one.
-	 * @param {string} region Region tag  
+	 * Ping all hosts in server config and rank them by speed.
+	 * Excludes hosts that have previously failed.
+	 * @param {string} region Region tag
 	 * @param {object} serverConfig Server configuration
-	 * @returns {Promise<object>} Best host with ping information
+	 * @returns {Promise<Array<object>>} Array of hosts sorted by ping (fastest first)
 	 */
 	async _resolveHosts(region, serverConfig) {
 		log.write('Resolving best host for %s: %s', region, serverConfig.Hosts);
 
-		let bestHost = null;
 		const hosts = serverConfig.Hosts.split(' ').map(e => 'https://' + e + '/');
+		const validHosts = [];
 		const hostPings = [];
 
 		for (const host of hosts) {
+			if (this.failedHosts.has(host)) {
+				log.write('Skipping previously failed host: %s', host);
+				continue;
+			}
+
 			hostPings.push(generics.ping(host).then(ping => {
 				log.write('Host %s resolved with %dms ping', host, ping);
-				if (bestHost === null || ping < bestHost.ping) {
-					bestHost = { host, ping };
-				}
+				validHosts.push({ host, ping });
 			}).catch(e => {
 				log.write('Host %s failed to resolve a ping: %s', host, e);
 			}));
@@ -131,11 +190,13 @@ class CDNResolver {
 
 		await Promise.allSettled(hostPings);
 
-		if (bestHost === null)
-			throw new Error('Unable to resolve a CDN host.');
+		if (validHosts.length === 0)
+			throw new Error('Unable to resolve any CDN hosts (all failed or blocked).');
 
-		log.write('%s resolved as the fastest host with a ping of %dms', bestHost.host, bestHost.ping);
-		return bestHost;
+		validHosts.sort((a, b) => a.ping - b.ping);
+
+		log.write('%s resolved as the fastest host with a ping of %dms', validHosts[0].host, validHosts[0].ping);
+		return validHosts;
 	}
 }
 

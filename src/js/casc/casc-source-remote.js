@@ -78,16 +78,43 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Download and parse a CDN config file.
-	 * @param {string} key 
+	 * Attempts multiple CDN hosts in order of ping speed if one fails.
+	 * @param {string} key
+	 * @param {Array<string>} [cdnHosts=null] Optional array of CDN hosts to try (in priority order)
 	 */
-	async getCDNConfig(key) {
-		const url = this.host + 'config/' + this.formatCDNKey(key);
-		const res = await generics.get(url);
+	async getCDNConfig(key, cdnHosts = null) {
+		// If no hosts provided, use the current host
+		const hostsToTry = cdnHosts || [this.host];
 
-		if (!res.ok)
-			throw new Error(util.format('Unable to retrieve CDN config file %s (HTTP %d)', key, res.status));
+		let lastError = null;
+		for (const host of hostsToTry) {
+			try {
+				const url = host + 'config/' + this.formatCDNKey(key);
+				log.write('Attempting to retrieve CDN config from: %s', url);
+				const res = await generics.get(url);
 
-		return CDNConfig(await res.text());
+				if (!res.ok)
+					throw new Error(util.format('HTTP %d from CDN config endpoint', res.status));
+
+				const configText = await res.text();
+				const config = CDNConfig(configText);
+
+				if (host !== this.host) {
+					log.write('Successfully retrieved config from fallback host: %s', host);
+					this.host = host;
+				}
+
+				return config;
+			} catch (error) {
+				log.write('Failed to retrieve CDN config from %s: %s', host, error.message);
+				lastError = error;
+
+				cdnResolver.markHostFailed(host);
+				continue;
+			}
+		}
+
+		throw new Error(util.format('Unable to retrieve CDN config file %s from any CDN host. Last error: %s', key, lastError?.message || 'Unknown error'));
 	}
 
 	/**
@@ -354,8 +381,10 @@ class CASCRemote extends CASC {
 		if (this.progress)
 			await this.progress.step('Fetching build configurations');
 
-		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig);
-		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig);
+		const cdnHosts = await cdnResolver.getRankedHosts(this.region, this.serverConfig);
+
+		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig, cdnHosts);
+		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig, cdnHosts);
 
 		log.write('CDNConfig: %o', this.cdnConfig);
 		log.write('BuildConfig: %o', this.buildConfig);
