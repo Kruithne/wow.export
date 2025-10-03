@@ -12,6 +12,7 @@
 - Fixed an issue that would cause an ERR_LOG_OVERFLOW crash on I/O limited machines.
 - Fixed an issue that caused the animation preview dropdown to remain visible during texture previews, hiding the UV overlay buttons.
 - Fixed issue that prevented the texture atlas regions from being selectable.
+- Fixed issue that caused texture atlas region tooltips to render off-screen.
 - Removed deprecated Remote Control Protocol (RCP) system that was no longer maintained or used.
 
 ## 0.2.1 (01-10-2025)

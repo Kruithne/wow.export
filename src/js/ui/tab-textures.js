@@ -180,6 +180,32 @@ const updateTextureAtlasOverlayScaling = () => {
 const attachOverlayListener = () => {
 	const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
 	observer.observe(document.getElementById('atlas-overlay').parentElement);
+
+	const overlay = document.getElementById('atlas-overlay');
+	if (overlay) {
+		overlay.addEventListener('mousemove', (e) => {
+			const region = e.target.closest('.atlas-region');
+			if (region) {
+				const rect = region.getBoundingClientRect();
+				const x = e.clientX - rect.left;
+				const y = e.clientY - rect.top;
+
+				const isBottom = y > (rect.height / 2);
+				const isRight = x > (rect.width / 2);
+
+				region.classList.remove('tooltip-top-left', 'tooltip-top-right', 'tooltip-bottom-left', 'tooltip-bottom-right');
+
+				if (isBottom && isRight)
+					region.classList.add('tooltip-bottom-right');
+				else if (isBottom && !isRight)
+					region.classList.add('tooltip-bottom-left');
+				else if (!isBottom && isRight)
+					region.classList.add('tooltip-top-right');
+				else
+					region.classList.add('tooltip-top-left');
+			}
+		});
+	}
 };
 
 /**

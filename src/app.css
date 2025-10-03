@@ -1637,9 +1637,11 @@ input[type=number]::-webkit-outer-spin-button {
 	align-items: center;
 	cursor: pointer;
 }
+
 #tab-textures .preview-container .preview-channels li:hover, #tab-textures .preview-container .preview-channels li.selected {
 	background: var(--font-alt);
 }
+
 #tab-textures .preview-container .preview-info {
 	position: absolute;
 	left: 0;
@@ -1653,6 +1655,7 @@ input[type=number]::-webkit-outer-spin-button {
 	text-overflow: ellipsis;
 	z-index: 2;
 }
+
 #tab-textures .preview-container #atlas-overlay {
 	position: absolute;
 	left: 0;
@@ -1668,13 +1671,14 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-textures .preview-container #atlas-overlay .atlas-region:hover, #tab-textures .preview-container #atlas-overlay .atlas-region.selected {
 	border-style: solid;
 }
+
 #tab-textures .preview-container #atlas-overlay .atlas-region:hover span, #tab-textures .preview-container #atlas-overlay .atlas-region.selected span {
 	display: block;
 }
+
 #tab-textures .preview-container #atlas-overlay .atlas-region span {
 	display: none;
 	position: absolute;
-	bottom: 100%;
 	padding: 3px;
 	background: rgb(214, 24, 195);
 	color: white;
@@ -1682,9 +1686,28 @@ input[type=number]::-webkit-outer-spin-button {
 	overflow: visible;
 }
 
+/* Quadrant-based tooltip positioning */
+#tab-textures .preview-container #atlas-overlay .atlas-region.tooltip-top-left span {
+	bottom: 100%;
+	left: 0;
+}
+#tab-textures .preview-container #atlas-overlay .atlas-region.tooltip-top-right span {
+	bottom: 100%;
+	right: 0;
+}
+#tab-textures .preview-container #atlas-overlay .atlas-region.tooltip-bottom-left span {
+	top: 100%;
+	left: 0;
+}
+#tab-textures .preview-container #atlas-overlay .atlas-region.tooltip-bottom-right span {
+	top: 100%;
+	right: 0;
+}
+
 #tab-text .preview-controls input {
 	margin-left: 5px;
 }
+
 #tab-text .preview-container .preview-background {
 	background: var(--background-dark);
 	position: relative;
