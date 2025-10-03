@@ -11,6 +11,7 @@
 - Fixed an issue that caused two rows to be outside the visible viewport on the data table viewer.
 - Fixed an issue that would cause an ERR_LOG_OVERFLOW crash on I/O limited machines.
 - Fixed an issue that caused the animation preview dropdown to remain visible during texture previews, hiding the UV overlay buttons.
+- Fixed issue that prevented the texture atlas regions from being selectable.
 
 ## 0.2.1 (01-10-2025)
 - Fixed an issue that caused the auto-updater to not restart wow.export after updating (update: this did not fix it, might still happen until next update).
