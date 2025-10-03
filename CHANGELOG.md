@@ -1,4 +1,5 @@
 ## 0.2.2 (03-10-2025)
+- Improved CDN fallback support for countries with heavy censorship.
 - Requests to Blizzard CDN servers will now use HTTPS instead of HTTP.
 - Fixed an issue that prevented models with rotation/scale M2Tracks from importing into Blender.
 - Fixed an issue that caused Legion and Battle for Azeroth expansion icons to be swapped.
