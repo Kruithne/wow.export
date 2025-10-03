@@ -8,7 +8,7 @@ const util = require('util');
 const constants = require('./constants');
 
 const MAX_LOG_POOL = 10000; // 1-2MB~
-const MAX_DRAIN_PER_TICK = 10;
+const MAX_DRAIN_PER_TICK = 50;
 
 let markTimer = 0;
 let isClogged = false;
