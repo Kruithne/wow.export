@@ -548,9 +548,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 
 	// Write export information.
 	exportPaths?.close();
-
-	// Dispatch file manifest to RCP.
-	core.rcp.dispatchHook('HOOK_EXPORT_COMPLETE', manifest);
 };
 
 /**
@@ -644,11 +641,6 @@ core.events.once('screen-tab-models', async () => {
 		log.write('Failed to initialize models tab: %o', error);
 		core.setToast('error', 'Failed to initialize models tab. Check the log for details.');
 	}
-});
-
-core.events.on('rcp-export-models', (files, id) => {
-	// RCP should provide an array of fileDataIDs to export.
-	exportFiles(files, false, id);
 });
 
 core.registerLoadFunc(async () => {

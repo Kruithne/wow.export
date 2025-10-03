@@ -270,11 +270,6 @@ core.registerDropHandler({
 	process: files => textureExporter.exportFiles(files, true)
 });
 
-core.events.on('rcp-export-textures', (files, id) => {
-	// RCP should provide an array of fileDataIDs to export.
-	textureExporter.exportFiles(files, false, id);
-});
-
 core.registerLoadFunc(async () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.

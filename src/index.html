@@ -368,19 +368,6 @@
 						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.dbdFilenameFallbackURL" /></p>
 					</div>
 					<div>
-						<h1>Enable Remote Control Protocol (Advanced)</h1>
-						<p>When enabled, wow.export will listen for remote commands on a specified port.</p>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="configEdit.rcpEnabled"/>
-							<span>Enable</span>
-						</label>
-					</div>
-					<div>
-						<h1>RCP Port</h1>
-						<p>Specifies the port in which wow.export will listen for RCP connections on.</p>
-						<input type="number" v-model.number="configEdit.rcpPort"/>
-					</div>
-					<div>
 						<h1>Last Export File Location</h1>
 						<p>Override the text file location which export manifest entries are written to.</p>
 						<input type="text" v-model.trim="configEdit.lastExportFile" :placeholder="lastExportPathDefault" class="long"/>

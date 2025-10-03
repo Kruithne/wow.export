@@ -234,15 +234,6 @@ class CASC {
 	async initializeComponents() {
 		await this.progress.step('Initializing components');
 		await core.runLoadFuncs();
-
-		// Dispatch RCP hook.
-		core.rcp.dispatchHook('HOOK_INSTALL_READY', {
-			type: this.constructor.name,
-			build: this.build,
-			buildConfig: this.buildConfig,
-			buildName: this.getBuildName(),
-			buildKey: this.getBuildKey()
-		});
 	}
 
 	/**

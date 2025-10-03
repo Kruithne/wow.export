@@ -94,8 +94,6 @@
 	"chrShowTextureOverlay": false,
 	"itemViewerShowAll": false,
 	"pathFormat": "win32",
-	"rcpEnabled": false,
-	"rcpPort": 17751,
 	"lastExportFile": "",
 	"showZoneOverlays": true
 }
