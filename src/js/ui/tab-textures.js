@@ -24,6 +24,7 @@ let hasLoadedAtlasTable = false;
 let hasLoadedUnknownTextures = false;
 
 let selectedFileDataID = 0;
+let resizeObserver = null;
 
 /**
  * Preview a texture by the given fileDataID.
@@ -161,20 +162,32 @@ const reloadTextureAtlasData = async () => {
 
 const updateTextureAtlasOverlayScaling = () => {
 	const overlay = document.getElementById('atlas-overlay');
-	if (!overlay) return;
+	if (!overlay)
+		return;
 
 	const container = overlay.parentElement;
 
-	const texture_width = core.view.textureAtlasOverlayWidth;
-	const texture_height = core.view.textureAtlasOverlayHeight;
+	const texture_width = core.view.texturePreviewWidth;
+	const texture_height = core.view.texturePreviewHeight;
+
+	if (!texture_width || !texture_height)
+		return;
 
 	const container_width = container.clientWidth;
-	const render_width = Math.min(texture_width, container_width);
+	const container_height = container.clientHeight;
 
-	const final_height = texture_height * (render_width / texture_width);
-	
+	const width_ratio = container_width / texture_width;
+	const height_ratio = container_height / texture_height;
+	const scale = Math.min(width_ratio, height_ratio);
+
+	const render_width = texture_width * scale;
+	const render_height = texture_height * scale;
+
 	overlay.style.width = render_width + 'px';
-	overlay.style.height = final_height + 'px';
+	overlay.style.height = render_height + 'px';
+
+	overlay.style.left = ((container_width - render_width) / 2) + 'px';
+	overlay.style.top = ((container_height - render_height) / 2) + 'px';
 }
 
 const attachOverlayListener = () => {
@@ -182,8 +195,9 @@ const attachOverlayListener = () => {
 	if (!atlasOverlay || !atlasOverlay.parentElement)
 		return;
 
-	const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
-	observer.observe(atlasOverlay.parentElement);
+	resizeObserver?.disconnect();
+	resizeObserver = new ResizeObserver(updateTextureAtlasOverlayScaling);
+	resizeObserver.observe(atlasOverlay.parentElement);
 
 	const overlay = document.getElementById('atlas-overlay');
 	if (overlay) {
@@ -235,11 +249,15 @@ const updateTextureAtlasOverlay = () => {
 				left: ((region.left / entry.width) * 100) + '%',
 			});
 		}
-
-		updateTextureAtlasOverlayScaling();
 	}
 
 	core.view.textureAtlasOverlayRegions = renderRegions;
+
+	if (entry) {
+		core.view.$nextTick(() => {
+			updateTextureAtlasOverlayScaling();
+		});
+	}
 };
 
 
