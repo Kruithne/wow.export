@@ -237,7 +237,7 @@ class BLTEReader extends BufferWrapper {
 		const keyName = keyNameBytes.reverse().join('');
 		const ivSize = data.readUInt8();
 
-		if (ivSize !== 4)
+		if ((ivSize !== 4 && ivSize !== 8) || ivSize > 8)
 			throw new Error('[BLTE] Unexpected ivSize: ' + ivSize);
 
 		const ivShort = data.readUInt8(ivSize);
@@ -249,7 +249,7 @@ class BLTEReader extends BufferWrapper {
 			throw new Error('[BLTE] Unexpected encryption type: ' + encryptType);
 
 		for (let shift = 0, i = 0; i < 4; shift += 8, i++)
-			ivShort[i] ^= (index >> shift) & 0xFF;
+			ivShort[i] = (ivShort[i] ^ ((index >> shift) & 0xFF)) & 0xFF;
 
 		const key = tactKeys.getKey(keyName);
 		if (typeof key !== 'string')
