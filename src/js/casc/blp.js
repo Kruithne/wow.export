@@ -5,6 +5,7 @@
  */
 const BufferWrapper = require('../buffer');
 const PNGWriter = require('../png-writer');
+const webp = require('webp-wasm');
 
 const DXT1 = 0x1;
 const DXT3 = 0x2;
@@ -138,12 +139,55 @@ class BLPImage {
 
 	/**
 	 * Save this BLP as PNG file.
-	 * @param {string} file 
+	 * @param {string} file
 	 * @param {number} mask
 	 * @param {number} mipmap
 	 */
 	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
 		return await this.toPNG(mask, mipmap).writeToFile(file);
+	}
+
+	/**
+	 * Convert this BLP to WebP format.
+	 * @param {number} mask
+	 * @param {number} mipmap
+	 * @returns {Promise<Buffer>}
+	 */
+	async toWebP(mask = 0b1111, mipmap = 0) {
+		this._prepare(mipmap);
+
+		// Create RGBA pixel data buffer
+		const pixelData = Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
+
+		switch (this.encoding) {
+			case 1: this._getUncompressed(pixelData, mask); break;
+			case 2: this._getCompressed(pixelData, mask); break;
+			case 3: this._marshalBGRA(pixelData, mask); break;
+		}
+
+		const imgData = {
+			data: pixelData,
+			width: this.scaledWidth,
+			height: this.scaledHeight
+		};
+
+		const webpBuffer = await webp.encode(imgData, {
+			quality: 90,
+			lossless: false
+		});
+
+		return webpBuffer;
+	}
+
+	/**
+	 * Save this BLP as WebP file.
+	 * @param {string} file
+	 * @param {number} mask
+	 * @param {number} mipmap
+	 */
+	async saveToWebP(file, mask = 0b1111, mipmap = 0) {
+		const webpBuffer = await this.toWebP(mask, mipmap);
+		await new BufferWrapper(webpBuffer).writeToFile(file);
 	}
 
 	/**

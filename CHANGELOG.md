@@ -1,4 +1,5 @@
 ## 0.2.2 (03-10-2025)
+- Implemented option to export textures as WebP.
 - Improved CDN fallback support for countries with heavy censorship.
 - Requests to Blizzard CDN servers will now use HTTPS instead of HTTP.
 - Updated decryption logic to support a file format change in Midnight Alpha.

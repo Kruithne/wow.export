@@ -12,10 +12,11 @@ const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const JSONWriter = require('../3D/writers/JSONWriter');
+const webp = require('webp-wasm');
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
- * @param {number|string} input 
+ * @param {number|string} input
  * @returns {object}
  */
 const getFileInfoPair = (input) => {
@@ -31,6 +32,30 @@ const getFileInfoPair = (input) => {
 	}
 
 	return { fileName, fileDataID };
+};
+
+/**
+ * Export BLP metadata to a JSON file.
+ * @param {BLPFile} blp - The BLP file instance
+ * @param {string} exportPath - The export path of the image file
+ * @param {boolean} overwriteFiles - Whether to overwrite existing files
+ * @param {object} manifest - The export manifest object
+ * @param {number} fileDataID - The file data ID
+ */
+const exportBLPMetadata = async (blp, exportPath, overwriteFiles, manifest, fileDataID) => {
+	const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
+	const json = new JSONWriter(jsonOut);
+	json.addProperty('encoding', blp.encoding);
+	json.addProperty('alphaDepth', blp.alphaDepth);
+	json.addProperty('alphaEncoding', blp.alphaEncoding);
+	json.addProperty('mipmaps', blp.containsMipmaps);
+	json.addProperty('width', blp.width);
+	json.addProperty('height', blp.height);
+	json.addProperty('mipmapCount', blp.mapCount);
+	json.addProperty('mipmapSizes', blp.mapSizes);
+
+	await json.write(overwriteFiles);
+	manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut });
 };
 
 /**
@@ -87,7 +112,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 			}
 			
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(exportFileName);
-			if (format !== 'BLP')
+			if (format === 'WEBP')
+				exportPath = ExportHelper.replaceExtension(exportPath, '.webp');
+			else if (format !== 'BLP')
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
@@ -97,27 +124,22 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 					// Export as raw file with no conversion.
 					await data.writeToFile(exportPath);
 					await exportPaths?.writeLine('BLP:' + exportPath);
+				} else if (format === 'WEBP') {
+					// Export as WebP.
+					const blp = new BLPFile(data);
+					await blp.saveToWebP(exportPath, core.view.config.exportChannelMask);
+					await exportPaths?.writeLine('WEBP:' + exportPath);
+
+					if (exportMeta)
+						await exportBLPMetadata(blp, exportPath, overwriteFiles, manifest, fileDataID);
 				} else {
 					// Export as PNG.
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
 					await exportPaths?.writeLine('PNG:' + exportPath);
 
-					if (exportMeta) {
-						const jsonOut = ExportHelper.replaceExtension(exportPath, '.json');
-						const json = new JSONWriter(jsonOut);
-						json.addProperty('encoding', blp.encoding);
-						json.addProperty('alphaDepth', blp.alphaDepth);
-						json.addProperty('alphaEncoding', blp.alphaEncoding);
-						json.addProperty('mipmaps', blp.containsMipmaps);
-						json.addProperty('width', blp.width);
-						json.addProperty('height', blp.height);
-						json.addProperty('mipmapCount', blp.mapCount);
-						json.addProperty('mipmapSizes', blp.mapSizes);
-						
-						await json.write(overwriteFiles);
-						manifest.succeeded.push({ type: 'META', fileDataID, file: jsonOut })
-					}
+					if (exportMeta)
+						await exportBLPMetadata(blp, exportPath, overwriteFiles, manifest, fileDataID);
 				}
 			} else {
 				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);

@@ -169,6 +169,7 @@ const makeNewView = () => {
 		},
 		menuButtonTextures: [
 			{ label: 'Export as PNG', value: 'PNG' },
+			{ label: 'Export as WebP', value: 'WEBP' },
 			{ label: 'Export as BLP (Raw)', value: 'BLP' },
 			{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
 		],
