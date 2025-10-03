@@ -20,27 +20,6 @@
 		}
 	},
 	"updaterScript": "./updater/updater.js",
-	"terserConfig": {
-		"toplevel": true,
-		"output": {
-			"comments": false
-		},
-		"compress": {
-			"pure_funcs": [
-				"assert.strictEqual",
-				"assert.notStrictEqual",
-				"assert.fail",
-				"assert.throws",
-				"assert.doesNotThrow",
-				"assert.deepStrictEqual",
-				"assert.notDeepStrictEqual"
-			],
-			"dead_code": true,
-			"global_defs": {
-				"BUILD_RELEASE": true
-			}
-		}
-	},
 	"manifestInherit": ["name", "description", "license", "version", "contributors"],
 	"builds": [
 		{
