@@ -1,9 +1,11 @@
-attribute vec3 aVertexPosition;
-attribute vec2 aTextureCoord;
-attribute vec4 aVertexColor;
+#version 300 es
 
-varying highp vec2 vTextureCoord;
-varying vec4 vVertexColor;
+in vec3 aVertexPosition;
+in vec2 aTextureCoord;
+in vec4 aVertexColor;
+
+out highp vec2 vTextureCoord;
+out vec4 vVertexColor;
 
 uniform vec2 uTranslation;
 uniform vec2 uResolution;
