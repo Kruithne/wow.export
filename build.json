@@ -40,7 +40,7 @@
 			}
 		},
 		{
-			"name": "win-x64",
+			"name": "win-x64-test",
 			"bundle": "nwjs-v%s-win-x64.zip",
 			"bundleType": "ZIP",
 			"buildArchive": "ZIP",
@@ -52,7 +52,14 @@
 			},
 			"updater": {
 				"target": "bun-windows-x64",
-				"out": "updater.exe"
+				"out": "updater.exe",
+				"metadata": {
+					"title": "wow.export updater",
+					"publisher": "Tamara's Workbench",
+					"description": "Updater for wow.export",
+					"copyright": "Marlamin, Kruithne © {{year}}",
+					"icon": "./resources/icon.ico"
+				}
 			},
 			"updateBundle": {
 				"bundle": "update",

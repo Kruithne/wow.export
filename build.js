@@ -60,6 +60,22 @@ const collectFiles = async (dir, out = []) => {
 	return out;
 };
 
+/**
+ * Apply placeholder replacements to a string value.
+ * e.g: {{year}} -> placeholders.year
+ * @param {string} value
+ * @param {object} placeholders
+ * @returns {string}
+ */
+const applyPlaceholders = (value, placeholders) => {
+	if (typeof value === 'string') {
+		return value.replace(/\{\{(\w+)\}\}/g, (match, placeholder) => {
+			return placeholders[placeholder] ?? match;
+		});
+	}
+	return value;
+};
+
 // Create a promisified version of zlib.deflate.
 const deflateBuffer = util.promisify(zlib.deflate);
 
@@ -349,18 +365,11 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				'product-version': meta.version
 			}, build.rcedit);
 
-			const placeholders = {
-				year: new Date().getFullYear()
-			};
+			const placeholders = { year: new Date().getFullYear() };
 
 			if (rcConfig['version-string']) {
-				for (const [key, value] of Object.entries(rcConfig['version-string'])) {
-					if (typeof value === 'string') {
-						rcConfig['version-string'][key] = value.replace(/\{\{(\w+)\}\}/g, (match, placeholder) => {
-							return placeholders[placeholder] ?? match;
-						});
-					}
-				}
+				for (const [key, value] of Object.entries(rcConfig['version-string']))
+					rcConfig['version-string'][key] = applyPlaceholders(value, placeholders);
 			}
 
 			log.info('Writing resource strings on binary...');
@@ -382,7 +391,33 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				'--outfile',
 				updaterOutput
 			];
-			
+
+			if (build.updater.metadata) {
+				const metadata = build.updater.metadata;
+				const placeholders = { year: new Date().getFullYear() };
+
+				if (build.updater.target.includes('windows')) {
+					if (metadata.title)
+						bunArgs.push('--windows-title=' + applyPlaceholders(metadata.title, placeholders));
+
+					if (metadata.publisher)
+						bunArgs.push('--windows-publisher=' + applyPlaceholders(metadata.publisher, placeholders));
+
+					if (metadata.description)
+						bunArgs.push('--windows-description=' + applyPlaceholders(metadata.description, placeholders));
+
+					if (metadata.copyright)
+						bunArgs.push('--windows-copyright=' + applyPlaceholders(metadata.copyright, placeholders));
+
+					if (metadata.icon)
+						bunArgs.push('--windows-icon=' + path.resolve(metadata.icon));
+
+					bunArgs.push('--windows-version=' + meta.version);
+				}
+
+				log.info('Applied updater metadata: *%s*', metadata.title || 'unknown');
+			}
+
 			const result = Bun.spawnSync({ cmd: ['bun', ...bunArgs], stdio: ['inherit', 'inherit', 'inherit'] });
 			if (result.exitCode !== 0)
 				throw new Error(`Bun build failed with code ${result.exitCode}`);
