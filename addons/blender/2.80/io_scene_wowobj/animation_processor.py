@@ -85,30 +85,47 @@ def process_texture_transform(transform_data):
                     elif abs(total_change_y) > min_change_threshold:
                         result['translate_rate'][1] = -min_rate if total_change_y > 0 else min_rate
     
-    # Process rotation track  
+    # rotation track
     rotation_track = transform_data.get('rotation')
     if rotation_track and rotation_track.get('timestamps') and rotation_track.get('values'):
         timestamps = rotation_track['timestamps']
         values = rotation_track['values']
-        
-        if len(timestamps) > 1 and len(values) > 1:
-            # Get first and last quaternion values to determine overall rotation
-            first_quat = values[0] if len(values[0]) >= 4 else [0.0, 0.0, 0.0, 1.0]
-            last_quat = values[-1] if len(values[-1]) >= 4 else [0.0, 0.0, 0.0, 1.0]
-            
-            total_time = (timestamps[-1] - timestamps[0]) / 1000.0
-            # For UV rotation, we typically care about Z component
+
+        actual_values = []
+        actual_timestamps = []
+
+        if len(timestamps) > 0 and isinstance(timestamps[0], list):
+            # only keep non-empty entries
+            for i in range(len(timestamps)):
+                if timestamps[i] and values[i]:
+                    for j in range(len(timestamps[i])):
+                        if j < len(values[i]):
+                            actual_timestamps.append(timestamps[i][j])
+                            actual_values.append(values[i][j])
+            if not actual_timestamps:
+                actual_timestamps = timestamps
+                actual_values = values
+        else:
+            actual_timestamps = timestamps
+            actual_values = values
+
+        if len(actual_timestamps) > 1 and len(actual_values) > 1:
+            # use first and last quaternion values to determine overall rotation
+            first_quat = actual_values[0] if len(actual_values[0]) >= 4 else [0.0, 0.0, 0.0, 1.0]
+            last_quat = actual_values[-1] if len(actual_values[-1]) >= 4 else [0.0, 0.0, 0.0, 1.0]
+
+            total_time = (actual_timestamps[-1] - actual_timestamps[0]) / 1000.0
             total_rotation_change = last_quat[2] - first_quat[2]
-            
+
             deltas = []
             time_deltas = []
-            
-            for i in range(1, len(timestamps)):
-                time_delta = timestamps[i] - timestamps[i-1]
+
+            for i in range(1, len(actual_timestamps)):
+                time_delta = actual_timestamps[i] - actual_timestamps[i-1]
                 if time_delta > 0:
                     # Rotation values are quaternions [x, y, z, w], we focus on Z axis
-                    value_delta = values[i][2] - values[i-1][2] if len(values[i]) > 2 else 0.0
-                    
+                    value_delta = actual_values[i][2] - actual_values[i-1][2] if len(actual_values[i]) > 2 else 0.0
+
                     deltas.append(value_delta)
                     time_deltas.append(time_delta)
             
@@ -134,27 +151,45 @@ def process_texture_transform(transform_data):
     if scaling_track and scaling_track.get('timestamps') and scaling_track.get('values'):
         timestamps = scaling_track['timestamps']
         values = scaling_track['values']
-        
-        if len(timestamps) > 1 and len(values) > 1:
-            # Get first and last values to determine overall scaling direction
-            first_scale = values[0] if len(values[0]) >= 2 else [1.0, 1.0]
-            last_scale = values[-1] if len(values[-1]) >= 2 else [1.0, 1.0]
-            
-            total_time = (timestamps[-1] - timestamps[0]) / 1000.0
+
+        actual_values = []
+        actual_timestamps = []
+
+        if len(timestamps) > 0 and isinstance(timestamps[0], list):
+            # only keep non-empty entries
+            for i in range(len(timestamps)):
+                if timestamps[i] and values[i]:
+                    for j in range(len(timestamps[i])):
+                        if j < len(values[i]):
+                            actual_timestamps.append(timestamps[i][j])
+                            actual_values.append(values[i][j])
+            if not actual_timestamps:
+                actual_timestamps = timestamps
+                actual_values = values
+        else:
+            actual_timestamps = timestamps
+            actual_values = values
+
+        if len(actual_timestamps) > 1 and len(actual_values) > 1:
+            # use first and last values to determine overall scaling direction
+            first_scale = actual_values[0] if len(actual_values[0]) >= 2 else [1.0, 1.0]
+            last_scale = actual_values[-1] if len(actual_values[-1]) >= 2 else [1.0, 1.0]
+
+            total_time = (actual_timestamps[-1] - actual_timestamps[0]) / 1000.0
             total_scale_change_x = last_scale[0] - first_scale[0]
             total_scale_change_y = last_scale[1] - first_scale[1]
-            
+
             deltas_x = []
             deltas_y = []
             time_deltas = []
-            
-            for i in range(1, len(timestamps)):
-                time_delta = timestamps[i] - timestamps[i-1]
+
+            for i in range(1, len(actual_timestamps)):
+                time_delta = actual_timestamps[i] - actual_timestamps[i-1]
                 if time_delta > 0:
                     # Values are arrays of [x, y, z], we only need x and y for UV
-                    value_delta_x = values[i][0] - values[i-1][0] if len(values[i]) > 0 else 0.0
-                    value_delta_y = values[i][1] - values[i-1][1] if len(values[i]) > 1 else 0.0
-                    
+                    value_delta_x = actual_values[i][0] - actual_values[i-1][0] if len(actual_values[i]) > 0 else 0.0
+                    value_delta_y = actual_values[i][1] - actual_values[i-1][1] if len(actual_values[i]) > 1 else 0.0
+
                     deltas_x.append(value_delta_x)
                     deltas_y.append(value_delta_y)
                     time_deltas.append(time_delta)
