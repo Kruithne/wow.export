@@ -200,6 +200,11 @@
 						<menu-button class="spaced" :dropdown="true" :options="availableLocaleKeys" :default="selectedLocaleKey" @change="configEdit.cascLocale = availableLocale.flags[$event]"></menu-button>
 					</div>
 					<div>
+						<h1>WebP Quality</h1>
+						<p>Quality setting for WebP exports. Range is 1-100 (100 is lossless)</p>
+						<input type="number" min="1" max="100" v-model.number="configEdit.exportWebPQuality"/>
+					</div>
+					<div>
 						<h1>Export Model Collision</h1>
 						<p>If enabled, M2 models exported as OBJ will also have their collision exported into a .phys.obj file.</p>
 						<label class="ui-checkbox">

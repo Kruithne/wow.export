@@ -74,7 +74,7 @@ const exportZoneMap = async () => {
 
 		log.write('Exporting zone map at full resolution (%dx%d): %s', mapInfo.width, mapInfo.height, filename);
 
-		const buf = await BufferWrapper.fromCanvas(exportCanvas, mimeType);
+		const buf = await BufferWrapper.fromCanvas(exportCanvas, mimeType, core.view.config.exportWebPQuality);
 		await buf.writeToFile(exportPath);
 
 		helper.mark(path.join('zones', filename), true);

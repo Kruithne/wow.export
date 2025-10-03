@@ -151,9 +151,10 @@ class BLPImage {
 	 * Convert this BLP to WebP format.
 	 * @param {number} mask
 	 * @param {number} mipmap
+	 * @param {number} quality - Quality setting (1-100), 100 = lossless
 	 * @returns {Promise<Buffer>}
 	 */
-	async toWebP(mask = 0b1111, mipmap = 0) {
+	async toWebP(mask = 0b1111, mipmap = 0, quality = 90) {
 		this._prepare(mipmap);
 
 		// Create RGBA pixel data buffer
@@ -171,10 +172,11 @@ class BLPImage {
 			height: this.scaledHeight
 		};
 
-		const webpBuffer = await webp.encode(imgData, {
-			quality: 90,
-			lossless: false
-		});
+		const options = quality === 100
+			? { lossless: true }
+			: { quality: quality, lossless: false };
+
+		const webpBuffer = await webp.encode(imgData, options);
 
 		return webpBuffer;
 	}
@@ -184,9 +186,10 @@ class BLPImage {
 	 * @param {string} file
 	 * @param {number} mask
 	 * @param {number} mipmap
+	 * @param {number} quality - Quality setting (1-100), 100 = lossless
 	 */
-	async saveToWebP(file, mask = 0b1111, mipmap = 0) {
-		const webpBuffer = await this.toWebP(mask, mipmap);
+	async saveToWebP(file, mask = 0b1111, mipmap = 0, quality = 90) {
+		const webpBuffer = await this.toWebP(mask, mipmap, quality);
 		await new BufferWrapper(webpBuffer).writeToFile(file);
 	}
 

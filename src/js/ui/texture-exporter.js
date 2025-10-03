@@ -127,7 +127,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				} else if (format === 'WEBP') {
 					// Export as WebP.
 					const blp = new BLPFile(data);
-					await blp.saveToWebP(exportPath, core.view.config.exportChannelMask);
+					await blp.saveToWebP(exportPath, core.view.config.exportChannelMask, 0, core.view.config.exportWebPQuality);
 					await exportPaths?.writeLine('WEBP:' + exportPath);
 
 					if (exportMeta)

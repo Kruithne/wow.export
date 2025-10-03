@@ -301,7 +301,7 @@ const exportTextureAtlasRegions = async (fileDataID) => {
 			const saveCtx = saveCanvas.getContext('2d');
 			saveCtx.putImageData(crop, 0, 0);
 
-			const buf = await BufferWrapper.fromCanvas(saveCanvas, mimeType);
+			const buf = await BufferWrapper.fromCanvas(saveCanvas, mimeType, core.view.config.exportWebPQuality);
 			await buf.writeToFile(exportPath);
 
 			helper.mark(exportFileName, true);

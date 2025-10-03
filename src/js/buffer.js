@@ -9,6 +9,7 @@ const zlib = require('zlib');
 const path = require('path');
 const crc32 = require('./crc32');
 const fsp = require('fs').promises;
+const webp = require('webp-wasm');
 
 const LITTLE_ENDIAN = {
 	READ_INT: Buffer.prototype.readIntLE,
@@ -81,15 +82,26 @@ class BufferWrapper {
 
 	/**
 	 * Create a BufferWrapper from a canvas element.
-	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas 
-	 * @param {string} mimeType 
+	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas
+	 * @param {string} mimeType
+	 * @param {number} quality - Quality setting (1-100), 100 = lossless for WebP
 	 */
-	static async fromCanvas(canvas, mimeType) {
+	static async fromCanvas(canvas, mimeType, quality = 90) {
+		if (mimeType === 'image/webp' && quality === 100) {
+			const ctx = canvas.getContext('2d');
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+			const webpBuffer = await webp.encode(imageData, { lossless: true });
+			return new BufferWrapper(webpBuffer);
+		}
+
+		const browserQuality = quality / 100; // Convert 1-100 to 0.0-1.0
+		
 		let blob;
 		if (canvas instanceof OffscreenCanvas)
-			blob = await canvas.convertToBlob({ type: mimeType });
+			blob = await canvas.convertToBlob({ type: mimeType, quality: browserQuality });
 		else
-			blob = await new Promise(res => canvas.toBlob(res, mimeType));
+			blob = await new Promise(res => canvas.toBlob(res, mimeType, browserQuality));
 
 		return new BufferWrapper(Buffer.from(await blob.arrayBuffer()));
 	}
