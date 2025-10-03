@@ -429,8 +429,10 @@ module.exports = {
 		 * is resized due to layout changes.
 		 */
 		resize: function() {
-			this.scroll = (this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight)) * this.scrollRel;
-			this.slotCount = Math.floor((this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight) / 32);
+			// Calculate available height for scrolling (subtract header and scrollbar widget)
+			const availableHeight = this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight;
+			this.scroll = (availableHeight - (this.$refs.dtscroller.clientHeight)) * this.scrollRel;
+			this.slotCount = Math.max(1, Math.floor(availableHeight / 32) - 2);
 			
 			if (this.$refs.dthscroller)
 				this.horizontalScroll = (this.$refs.root.clientWidth - (this.$refs.dthscroller.clientWidth)) * this.horizontalScrollRel;
@@ -441,7 +443,8 @@ module.exports = {
 		 * calculates the relative (0-1) offset based on the scroll.
 		 */
 		recalculateBounds: function() {
-			const max = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+			const availableHeight = this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight;
+			const max = availableHeight - (this.$refs.dtscroller.clientHeight);
 			this.scroll = Math.min(max, Math.max(0, this.scroll));
 			this.scrollRel = this.scroll / max;
 		},
@@ -642,12 +645,12 @@ module.exports = {
 				this.recalculateHorizontalBounds();
 				e.preventDefault();
 			} else {
-				// Vertical scrolling
-				const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+				const availableHeight = this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight;
+				const weight = availableHeight - (this.$refs.dtscroller.clientHeight);
 				const child = this.$refs.root.querySelector('tr');
 
 				if (child !== null) {
-					const scrollCount = Math.floor(this.$refs.root.clientHeight / child.clientHeight);
+					const scrollCount = this.slotCount;
 					const direction = e.deltaY > 0 ? 1 : -1;
 					this.scroll += ((scrollCount * this.itemWeight) * weight) * direction;
 					this.recalculateBounds();
@@ -795,7 +798,8 @@ module.exports = {
 						diff += 1;
 
 					if ((isArrowUp && nextIndex < lastViewIndex) || (isArrowDown && nextIndex >= lastViewIndex)) {
-						const weight = this.$refs.root.clientHeight - (this.$refs.dtscroller.clientHeight);
+						const availableHeight = this.$refs.root.clientHeight - this.$refs.datatableheader.clientHeight;
+						const weight = availableHeight - (this.$refs.dtscroller.clientHeight);
 						this.scroll += ((diff * this.itemWeight) * weight) * delta;
 						this.recalculateBounds();
 					}

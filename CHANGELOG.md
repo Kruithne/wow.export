@@ -7,6 +7,8 @@
 - Fixed an issue preventing "View Recent Changes" from working on non-Windows builds.
 - Fixed an issue that prevented the new Blender add-on from working due to a missing script.
 - Fixed an issue that caused the horizontal scrollbar to not immediately appear/update when viewing data tables.
+- Fixed an issue that caused the vertical scrollbar to go past the viewport on the data table viewer.
+- Fixed an issue that caused two rows to be outside the visible viewport on the data table viewer.
 
 ## 0.2.1 (01-10-2025)
 - Fixed an issue that caused the auto-updater to not restart wow.export after updating (update: this did not fix it, might still happen until next update).
