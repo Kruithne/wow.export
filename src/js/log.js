@@ -82,11 +82,11 @@ const write = (...parameters) => {
 		isClogged = !stream.write(line);
 	} else {
 		// Stream is blocked, pool instead.
-		// If pool exceeds MAX_LOG_POOL, explode.
-		if (pool.length < MAX_LOG_POOL)
+		if (pool.length < MAX_LOG_POOL) {
 			pool.push(line);
-		else
-			throw new Error('ERR_LOG_OVERFLOW: The log pool has overflowed.');
+		} else if (pool.length === MAX_LOG_POOL) {
+			pool.push('[' + getTimestamp() + '] WARNING: Log pool overflow - some log entries have been truncated.\n');
+		}
 	}
 
 	// Mirror output to debugger.
