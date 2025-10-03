@@ -61,16 +61,20 @@ const exportZoneMap = async () => {
 		// Normalize filename by removing special characters and replacing spaces with underscores
 		const normalizedZoneName = zone.zoneName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
 		const normalizedAreaName = zone.areaName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
-		
-		const filename = `Zone_${zone.id}_${normalizedZoneName}_${normalizedAreaName}.png`;
+
+		const format = core.view.config.exportTextureFormat;
+		const ext = format === 'WEBP' ? '.webp' : '.png';
+		const mimeType = format === 'WEBP' ? 'image/webp' : 'image/png';
+
+		const filename = `Zone_${zone.id}_${normalizedZoneName}_${normalizedAreaName}${ext}`;
 		const exportPath = ExportHelper.getExportPath(path.join('zones', filename));
-		
+
 		const helper = new ExportHelper(1, 'zone');
 		helper.start();
 
 		log.write('Exporting zone map at full resolution (%dx%d): %s', mapInfo.width, mapInfo.height, filename);
 
-		const buf = await BufferWrapper.fromCanvas(exportCanvas, 'image/png');
+		const buf = await BufferWrapper.fromCanvas(exportCanvas, mimeType);
 		await buf.writeToFile(exportPath);
 
 		helper.mark(path.join('zones', filename), true);

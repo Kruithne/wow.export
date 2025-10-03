@@ -173,6 +173,10 @@ const makeNewView = () => {
 			{ label: 'Export as BLP (Raw)', value: 'BLP' },
 			{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
 		],
+		menuButtonMapExport: [
+			{ label: 'Export as PNG', value: 'PNG' },
+			{ label: 'Export as WebP', value: 'WEBP' }
+		],
 		menuButtonTextureQuality: [
 			{ label: 'Alpha Maps', value: -1 },
 			{ label: 'None', value: 0 },

@@ -270,37 +270,40 @@ const exportTextureAtlasRegions = async (fileDataID) => {
 
 	const helper = new ExportHelper(atlas.regions.length, 'texture');
 	helper.start();
-	
+
 	let exportFileName = fileName;
+	const format = core.view.config.exportTextureFormat;
+	const ext = format === 'WEBP' ? '.webp' : '.png';
+	const mimeType = format === 'WEBP' ? 'image/webp' : 'image/png';
 
 	try {
 		const data = await core.view.casc.getFile(fileDataID);
 		const blp = new BLPFile(data);
-		
+
 		const canvas = blp.toCanvas();
 		const ctx = canvas.getContext('2d');
-		
+
 		for (const regionID of atlas.regions) {
 			if (helper.isCancelled())
 				return;
-			
+
 			const region = textureAtlasRegions.get(regionID);
 
 			exportFileName = path.join(exportDir, region.name);
-			const exportPath = ExportHelper.getExportPath(exportFileName + '.png');
-	
+			const exportPath = ExportHelper.getExportPath(exportFileName + ext);
+
 			const crop = ctx.getImageData(region.left, region.top, region.width, region.height);
-	
+
 			const saveCanvas = document.createElement('canvas');
 			saveCanvas.width = region.width;
 			saveCanvas.height = region.height;
-	
+
 			const saveCtx = saveCanvas.getContext('2d');
 			saveCtx.putImageData(crop, 0, 0);
-	
-			const buf = await BufferWrapper.fromCanvas(saveCanvas, 'image/png');
+
+			const buf = await BufferWrapper.fromCanvas(saveCanvas, mimeType);
 			await buf.writeToFile(exportPath);
-	
+
 			helper.mark(exportFileName, true);
 		}
 	} catch (e) {
