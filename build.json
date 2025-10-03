@@ -73,9 +73,9 @@
 				"binary": "wow.export.exe",
 				"icon": "./resources/icon.ico",
 				"version-string": {
-					"CompanyName": "Party Tortollans",
+					"CompanyName": "Tamara's Workbench",
 					"FileDescription": "Export Toolkit for World of Warcraft",
-					"LegalCopyright": "Marlamin © {{year}}",
+					"LegalCopyright": "Marlamin, Kruithne © {{year}}",
 					"ProductName": "wow.export",
 					"OriginalFilename": "wow.export.exe"
 				}
