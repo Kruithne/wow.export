@@ -114,6 +114,7 @@
 			"manifestTarget": "./package.json",
 			"include": {
 				"LEGAL": "license/LEGAL",
+				"CHANGELOG.md": "src/CHANGELOG.md",
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/2.80/io_scene_wowobj/__init__.py": "addon/io_scene_wowobj/__init__.py",
 				"addons/blender/2.80/io_scene_wowobj/import_wowobj.py": "addon/io_scene_wowobj/import_wowobj.py",
@@ -173,6 +174,7 @@
 			"include": {
 				"./resources/wet.icns": "./wow.export.app/Contents/Resources/app.icns",
 				"LEGAL": "./wow.export.app/License/LEGAL",
+				"CHANGELOG.md": "./wow.export.app/Contents/Resources/app.nw/src/CHANGELOG.md",
 				"addons/blender/2.80/io_scene_wowobj/__init__.py": "addon/io_scene_wowobj/__init__.py",
 				"addons/blender/2.80/io_scene_wowobj/import_wowobj.py": "addon/io_scene_wowobj/import_wowobj.py",
 				"addons/blender/2.80/io_scene_wowobj/README.txt": "addon/io_scene_wowobj/README.txt"

@@ -3,6 +3,7 @@
 - Fixed an issue that prevented models with rotation/scale M2Tracks from importing into Blender.
 - Fixed an issue that caused Legion and Battle for Azeroth expansion icons to be swapped.
 - Fixed an issue that caused the notification toasts to appear underneath other UI elements.
+- Fixed an issue preventing "View Recent Changes" from working on non-Windows builds.
 
 ## 0.2.1 (01-10-2025)
 - Fixed an issue that caused the auto-updater to not restart wow.export after updating (update: this did not fix it, might still happen until next update).
