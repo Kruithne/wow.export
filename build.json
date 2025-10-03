@@ -75,7 +75,7 @@
 				"version-string": {
 					"CompanyName": "Party Tortollans",
 					"FileDescription": "Export Toolkit for World of Warcraft",
-					"LegalCopyright": "Marlamin © 2019",
+					"LegalCopyright": "Marlamin © {{year}}",
 					"ProductName": "wow.export",
 					"OriginalFilename": "wow.export.exe"
 				}

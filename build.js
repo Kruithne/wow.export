@@ -349,6 +349,20 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				'product-version': meta.version
 			}, build.rcedit);
 
+			const placeholders = {
+				year: new Date().getFullYear()
+			};
+
+			if (rcConfig['version-string']) {
+				for (const [key, value] of Object.entries(rcConfig['version-string'])) {
+					if (typeof value === 'string') {
+						rcConfig['version-string'][key] = value.replace(/\{\{(\w+)\}\}/g, (match, placeholder) => {
+							return placeholders[placeholder] ?? match;
+						});
+					}
+				}
+			}
+
 			log.info('Writing resource strings on binary...');
 			await rcedit(path.join(buildDir, rcConfig.binary), rcConfig);
 		}
