@@ -178,8 +178,12 @@ const updateTextureAtlasOverlayScaling = () => {
 }
 
 const attachOverlayListener = () => {
+	const atlasOverlay = document.getElementById('atlas-overlay');
+	if (!atlasOverlay || !atlasOverlay.parentElement)
+		return;
+
 	const observer = new ResizeObserver(updateTextureAtlasOverlayScaling);
-	observer.observe(document.getElementById('atlas-overlay').parentElement);
+	observer.observe(atlasOverlay.parentElement);
 
 	const overlay = document.getElementById('atlas-overlay');
 	if (overlay) {
