@@ -715,7 +715,7 @@
 						<div class="preview-background" id="model-preview">
 							<input v-if="config.modelViewerShowBackground" type="color" id="background-color-input" v-model="config.modelViewerBackgroundColor" title="Click to change background color"/>
 							<model-viewer :context="modelViewerContext"></model-viewer>
-							<div v-if="modelViewerAnims && modelViewerAnims.length > 0" class="animation-dropdown-overlay">
+							<div v-if="modelViewerAnims && modelViewerAnims.length > 0 && !modelTexturePreviewURL" class="animation-dropdown-overlay">
 								<select class="animation-dropdown" v-model="modelViewerAnimSelection">
 									<option v-for="animation in modelViewerAnims" :key="animation.id" :value="animation.id">
 										{{ animation.label }}
