@@ -228,19 +228,43 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		// Additional source merges: Source is relative to cwd, target relative to build directory.
 		const include = Object.entries(build.include || {});
 		if (include.length > 0) {
-			for (const [source, target] of include)
-				mappings.push({ source: path.resolve(source), target, clone: true });
+			for (const [source, target] of include) {
+				// Check if source ends with /* for recursive directory copy
+				if (source.endsWith('/*')) {
+					const sourceDir = path.resolve(source.slice(0, -2));
+					const targetBase = target.endsWith('/*') ? target.slice(0, -2) : target;
+					mappings.push({ source: sourceDir, target: targetBase, clone: true, recursive: true });
+				} else {
+					mappings.push({ source: path.resolve(source), target, clone: true });
+				}
+			}
 		}
 
 		for (const map of mappings) {
-			const targetPath = path.join(buildDir, map.target);
-			log.info('*%s* -> *%s*', map.source, targetPath);
+			if (map.recursive) {
+				// Recursively copy directory contents
+				const targetPath = path.join(buildDir, map.target);
+				log.info('*%s/* -> *%s/* (recursive)', map.source, targetPath);
 
-			// In the event that we specify a deeper path that does not
-			// exist, make sure we create missing directories first.
-			await fs.mkdir(path.dirname(targetPath), { recursive: true });
-			const func = map.clone ? fs.copyFile : fs.rename;
-			await func(map.source, targetPath);
+				await fs.mkdir(targetPath, { recursive: true });
+				const files = await collectFiles(map.source);
+
+				for (const file of files) {
+					const relativePath = path.relative(map.source, file);
+					const destPath = path.join(targetPath, relativePath);
+					await fs.mkdir(path.dirname(destPath), { recursive: true });
+					await fs.copyFile(file, destPath);
+				}
+			} else {
+				const targetPath = path.join(buildDir, map.target);
+				log.info('*%s* -> *%s*', map.source, targetPath);
+
+				// In the event that we specify a deeper path that does not
+				// exist, make sure we create missing directories first.
+				await fs.mkdir(path.dirname(targetPath), { recursive: true });
+				const func = map.clone ? fs.copyFile : fs.rename;
+				await func(map.source, targetPath);
+			}
 		}
 
 		const osxConfig = build.osxConfig;
