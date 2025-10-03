@@ -6,6 +6,7 @@
 - Fixed an issue that caused the notification toasts to appear underneath other UI elements.
 - Fixed an issue preventing "View Recent Changes" from working on non-Windows builds.
 - Fixed an issue that prevented the new Blender add-on from working due to a missing script.
+- Fixed an issue that caused the horizontal scrollbar to not immediately appear/update when viewing data tables.
 
 ## 0.2.1 (01-10-2025)
 - Fixed an issue that caused the auto-updater to not restart wow.export after updating (update: this did not fix it, might still happen until next update).

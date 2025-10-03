@@ -36,7 +36,8 @@ module.exports = {
 			resizeAnimationId: null,
 			pendingResizeUpdate: false,
 			targetColumnWidth: 0,
-			lastSelectItem: null
+			lastSelectItem: null,
+			forceHorizontalUpdate: 0,
 		}
 	},
 
@@ -239,6 +240,8 @@ module.exports = {
 		 * Determines if horizontal scrollbar should be visible and its width.
 		 */
 		horizontalScrollbarStyle: function() {
+			const _ = this.forceHorizontalUpdate; // force dependency to trigger re-evaluation
+
 			if (!this.displayItems || this.displayItems.length === 0 || !this.$refs.root || !this.$refs.table)
 				return { display: 'none' };
 			
@@ -299,6 +302,9 @@ module.exports = {
 				this.manuallyResizedColumns = {};
 				this.$nextTick(() => {
 					this.calculateColumnWidths();
+					this.$nextTick(() => {
+						this.resetHorizontalScroll();
+					});
 				});
 			},
 			immediate: true
@@ -311,6 +317,9 @@ module.exports = {
 			handler: function() {
 				this.lastSelectItem = null;
 				this.$emit('update:selection', []);
+				this.$nextTick(() => {
+					this.resetHorizontalScroll();
+				});
 			}
 		}
 	},
@@ -477,8 +486,24 @@ module.exports = {
 					widths.push(Math.max(120, textWidth));
 				}
 			});
-			
+
 			this.columnWidths = widths;
+		},
+
+		/**
+		 * Reset horizontal scroll position and force recalculation.
+		 * Called when new table data is loaded.
+		 */
+		resetHorizontalScroll: function() {
+			this.horizontalScroll = 0;
+			this.horizontalScrollRel = 0;
+
+			if (this.$refs.table) {
+				const forceLayout = this.$refs.table.offsetHeight;
+				// this triggers a re-evaluation by reading offsetHeight
+			}
+
+			this.forceHorizontalUpdate++;
 		},
 
 		/**
