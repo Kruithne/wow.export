@@ -115,7 +115,7 @@ class CDNResolver {
 		log.write('Resolving best host for %s: %s', region, serverConfig.Hosts);
 
 		let bestHost = null;
-		const hosts = serverConfig.Hosts.split(' ').map(e => 'http://' + e + '/');
+		const hosts = serverConfig.Hosts.split(' ').map(e => 'https://' + e + '/');
 		const hostPings = [];
 
 		for (const host of hosts) {
