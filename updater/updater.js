@@ -173,8 +173,10 @@ async function is_file_locked(file) {
 		if (binary) {
 			const child = Bun.spawn([path.join(install_dir, binary)]);
 			child.unref();
+			log('wow.export has been updated, have fun!');
+			await Bun.sleep(5000);
 		}
-	
+
 		log('Removing update files...');
 		delete_directory(update_dir);
 	} catch (e) {

@@ -1,3 +1,6 @@
+## 0.2.3 (XX-10-2025)
+- Fix issue that caused the auto updater to not restart wow.export automatically.
+
 ## 0.2.2 (06-10-2025)
 - Implemented option to export textures as WebP (textures, atlas and zone maps).
 - Improved CDN fallback support for countries with heavy censorship.
