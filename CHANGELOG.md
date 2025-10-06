@@ -1,4 +1,4 @@
-## 0.2.2 (03-10-2025)
+## 0.2.2 (06-10-2025)
 - Implemented option to export textures as WebP (textures, atlas and zone maps).
 - Improved CDN fallback support for countries with heavy censorship.
 - Requests to Blizzard CDN servers will now use HTTPS instead of HTTP.
