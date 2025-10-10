@@ -50,6 +50,7 @@ let dbDoodads;
 let glShaderProg;
 let glCanvas;
 let gl;
+let glCurrent8LayerMode = false;
 
 /**
  * Load a texture from CASC and bind it to the GL context.
@@ -901,11 +902,13 @@ class ADTExporter {
 						if (!gl) {
 							glCanvas = document.createElement('canvas');
 							gl = glCanvas.getContext('webgl2');
+							glCurrent8LayerMode = needs8Layers;
 
 							log.write('Using WebGL 2.0 for terrain baking' + (needs8Layers ? ' (8-layer mode)' : ''));
 							await compileShaders(!hasHeightTexturing, needs8Layers);
-						} else if (needs8Layers) {
-							await compileShaders(!hasHeightTexturing, true);
+						} else if (needs8Layers !== glCurrent8LayerMode) {
+							glCurrent8LayerMode = needs8Layers;
+							await compileShaders(!hasHeightTexturing, needs8Layers);
 						}
 
 						// Materials
