@@ -63,19 +63,20 @@ class M3Exporter {
 		return validTextures;
 	}
 
-	async exportAsGLTF(out, helper) {
-		const outGLTF = ExportHelper.replaceExtension(out, '.gltf');
+	async exportAsGLTF(out, helper, format = 'gltf') {
+		const ext = format === 'glb' ? '.glb' : '.gltf';
+		const outGLTF = ExportHelper.replaceExtension(out, ext);
 		const outDir = path.dirname(out);
 
 		// Skip export if file exists and overwriting is disabled.
 		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
-			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', outGLTF);
+			return log.write('Skipping %s export of %s (already exists, overwrite disabled)', format.toUpperCase(), outGLTF);
 
 		await this.m3.load();
 
-		const model_name = path.basename(outGLTF, '.gltf');
+		const model_name = path.basename(outGLTF, ext);
 		const gltf = new GLTFWriter(out, model_name);
-		log.write('Exporting M3 model %s as GLTF: %s', model_name, outGLTF);
+		log.write('Exporting M3 model %s as %s: %s', model_name, format.toUpperCase(), outGLTF);
 
 		gltf.setVerticesArray(this.m3.vertices);
 		gltf.setNormalArray(this.m3.normals);
@@ -103,7 +104,7 @@ class M3Exporter {
 			}
 		}
 
-		await gltf.write(core.view.config.overwriteFiles);
+		await gltf.write(core.view.config.overwriteFiles, format);
 	}
 
 	/**

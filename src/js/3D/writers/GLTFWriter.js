@@ -161,15 +161,18 @@ class GLTFWriter {
 		this.meshes.push({ name, triangles, matName });
 	}
 
-	async write(overwrite = true) {
-		const outGLTF = ExportHelper.replaceExtension(this.out, '.gltf');
+	async write(overwrite = true, format = 'gltf') {
+		const outGLTF = ExportHelper.replaceExtension(this.out, format === 'glb' ? '.glb' : '.gltf');
 		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
 
 		const out_dir = path.dirname(outGLTF);
 		const use_absolute = core.view.config.enableAbsoluteGLTFPaths;
 
 		// If overwriting is disabled, check file existence.
-		if (!overwrite && await generics.fileExists(outGLTF) && await generics.fileExists(outBIN))
+		if (!overwrite && await generics.fileExists(outGLTF))
+			return;
+
+		if (!overwrite && format === 'gltf' && await generics.fileExists(outBIN))
 			return;
 
 		const manifest = nw.App.manifest;
@@ -192,7 +195,6 @@ class GLTFWriter {
 			],
 			buffers: [
 				{
-					uri: path.basename(outBIN),
 					byteLength: 0
 				}
 			],
@@ -1038,8 +1040,19 @@ class GLTFWriter {
 		root.buffers[0].byteLength = bin_combined.byteLength;
 
 		await generics.createDirectory(path.dirname(this.out));
-		await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
-		await bin_combined.writeToFile(outBIN);
+
+		if (format === 'glb') {
+			// glb mode: package json and bin into glb container
+			const GLBWriter = require('./GLBWriter');
+			const glb_writer = new GLBWriter(JSON.stringify(root), bin_combined);
+			const glb_buffer = glb_writer.pack();
+			await glb_buffer.writeToFile(outGLTF);
+		} else {
+			// gltf mode: write separate json and bin files
+			root.buffers[0].uri = path.basename(outBIN);
+			await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
+			await bin_combined.writeToFile(outBIN);
+		}
 
 		// Write out animation buffers
 		for (const [animationName, animationBuffer] of animationBufferMap) {

@@ -199,17 +199,20 @@ class WMOExporter {
 	 * @param {string} out 
 	 * @param {ExportHelper} helper 
 	 */
-	async exportAsGLTF(out, helper) {
-		// Skip export if file exists and overwriting is disabled.
-		if (!core.view.config.overwriteFiles && await generics.fileExists(out))
-			return log.write('Skipping GLTF export of %s (already exists, overwrite disabled)', out);
+	async exportAsGLTF(out, helper, format = 'gltf') {
+		const ext = format === 'glb' ? '.glb' : '.gltf';
+		const outFile = ExportHelper.replaceExtension(out, ext);
 
-		const wmo_name = path.basename(out, '.gltf');
+		// Skip export if file exists and overwriting is disabled.
+		if (!core.view.config.overwriteFiles && await generics.fileExists(outFile))
+			return log.write('Skipping %s export of %s (already exists, overwrite disabled)', format.toUpperCase(), outFile);
+
+		const wmo_name = path.basename(outFile, ext);
 		const gltf = new GLTFWriter(out, wmo_name);
 
 		const groupMask = this.groupMask;
 
-		log.write('Exporting WMO model %s as GLTF: %s', wmo_name, out);
+		log.write('Exporting WMO model %s as %s: %s', wmo_name, format.toUpperCase(), outFile);
 
 		await this.wmo.load();
 
@@ -326,7 +329,7 @@ class WMOExporter {
 
 		// TODO: Add support for exporting doodads inside a GLTF WMO.
 
-		await gltf.write(core.view.config.overwriteFiles);
+		await gltf.write(core.view.config.overwriteFiles, format);
 	}
 
 	/**
