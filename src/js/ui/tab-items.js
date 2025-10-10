@@ -149,9 +149,12 @@ const viewItemTextures = async (item) => {
 
 core.events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = core.createProgress(5);
+	const progress = core.createProgress(6);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
+
+	await progress.step('Loading model file data...');
+	await DBModelFileData.initializeModelFileData();
 
 	await progress.step('Loading item data...');
 	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');

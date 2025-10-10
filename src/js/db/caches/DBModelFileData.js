@@ -9,11 +9,15 @@ const WDCReader = require('../WDCReader');
 
 const modelResIDToFileDataID = new Map();
 const fileDataIDs = new Set();
+let initialized = false;
 
 /**
  * Initialize model file data from ModelFileData.db2
  */
 const initializeModelFileData = async () => {
+	if (initialized)
+		return;
+
 	log.write('Loading model mapping...');
 	const modelFileData = new WDCReader('DBFilesClient/ModelFileData.db2');
 	await modelFileData.parse();
@@ -29,6 +33,7 @@ const initializeModelFileData = async () => {
 			modelResIDToFileDataID.set(modelFileDataRow.ModelResourcesID, [modelFileDataID]);
 	}
 	log.write('Loaded model mapping for %d models', modelResIDToFileDataID.size);
+	initialized = true;
 };
 
 /**
