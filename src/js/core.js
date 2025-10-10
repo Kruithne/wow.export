@@ -175,8 +175,10 @@ const makeNewView = () => {
 			{ label: 'Copy to Clipboard', value: 'CLIPBOARD' }
 		],
 		menuButtonMapExport: [
-			{ label: 'Export as PNG', value: 'PNG' },
-			{ label: 'Export as WebP', value: 'WEBP' }
+			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export PNG', value: 'PNG' },
+			{ label: 'Export Raw', value: 'RAW' },
+			{ label: 'Export Heightmaps', value: 'HEIGHTMAPS' }
 		],
 		menuButtonTextureQuality: [
 			{ label: 'Alpha Maps', value: -1 },

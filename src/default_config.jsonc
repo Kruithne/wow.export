@@ -85,6 +85,7 @@
 	"mapsExportRaw": false,
 	"dataExportAll": true,
 	"regexFilters": false,
+	"exportMapFormat": "OBJ",
 	"exportMapQuality": 4096,
 	"heightmap32BitDepth": false,
 	"splitLargeTerrainBakes": true,

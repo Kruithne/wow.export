@@ -259,7 +259,8 @@ class ADTExporter {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
-		const out = { type: config.mapsExportRaw ? 'ADT_RAW' : 'ADT_OBJ', path: '' };
+		const isRawExport = config.exportMapFormat === 'RAW';
+		const out = { type: isRawExport ? 'ADT_RAW' : 'ADT_OBJ', path: '' };
 
 		const usePosix = config.pathFormat === 'posix';
 		const prefix = util.format('world/maps/%s/%s', this.mapDir, this.mapDir);
@@ -274,7 +275,7 @@ class ADTExporter {
 			await wdt.load();
 			wdtCache.set(this.mapDir, wdt);
 
-			if (config.mapsExportRaw) {
+			if (isRawExport) {
 				await wdtFile.writeToFile(path.join(dir, this.mapDir + '.wdt'));
 				
 				if (wdt.lgtFileDataID > 0) {
@@ -331,7 +332,7 @@ class ADTExporter {
 		const texFile = await casc.getFile(tex0FileDataID);
 		const objFile = await casc.getFile(obj0FileDataID);
 
-		if (config.mapsExportRaw) {
+		if (isRawExport) {
 			await rootFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '.adt'));
 			await texFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_tex0.adt'));
 			await objFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_obj0.adt'));
@@ -1066,7 +1067,7 @@ class ADTExporter {
 						const fileDataID = model.FileDataID ?? model.mmidEntry;
 						let fileName = listfile.getByID(fileDataID);
 
-						if (!config.mapsExportRaw) {
+						if (!isRawExport) {
 							if (fileName !== undefined) {
 								// Replace M2 extension with OBJ.
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
@@ -1087,7 +1088,7 @@ class ADTExporter {
 								const data = await casc.getFile(fileDataID);
 								const m2 = new M2Exporter(data, undefined, fileDataID);
 
-								if (config.mapsExportRaw)
+								if (isRawExport)
 									await m2.exportRaw(modelPath, helper);
 								else
 									await m2.exportAsOBJ(modelPath, config.modelsExportCollision, helper);
@@ -1158,7 +1159,7 @@ class ADTExporter {
 								fileName = listfile.getByID(fileDataID);
 							}
 
-							if (!config.mapsExportRaw) {
+							if (!isRawExport) {
 								if (fileName !== undefined) {
 									// Replace WMO extension with OBJ.
 									fileName = ExportHelper.replaceExtension(fileName, '_set' + model.doodadSet + '.obj');
@@ -1197,7 +1198,7 @@ class ADTExporter {
 									wmoLoader.setDoodadSetMask(mask);
 								}
 
-								if (config.mapsExportRaw)
+								if (isRawExport)
 									await wmoLoader.exportRaw(modelPath, helper);
 								else
 									await wmoLoader.exportAsOBJ(modelPath, helper);
@@ -1345,7 +1346,7 @@ class ADTExporter {
 						for (const entry of Object.values(doodadModelIDs)) {
 							const fileName = listfile.getByID(entry.fileDataID);
 
-							if (config.mapsExportRaw)
+							if (isRawExport)
 								entry.fileName = path.basename(fileName);
 							else
 								entry.fileName = ExportHelper.replaceExtension(path.basename(fileName), '.obj');
@@ -1370,7 +1371,7 @@ class ADTExporter {
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);
 
-				if (config.mapsExportRaw) {
+				if (isRawExport) {
 					await m2.exportRaw(path.join(foliageDir, modelName), helper);
 				} else {
 					const modelPath = ExportHelper.replaceExtension(modelName, '.obj');

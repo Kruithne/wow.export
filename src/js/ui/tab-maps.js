@@ -694,8 +694,16 @@ core.registerLoadFunc(async () => {
 	});
 
 	// Track when user clicks to export a map or world model.
-	core.events.on('click-export-map', () => exportSelectedMap());
+	core.events.on('click-export-map', () => {
+		const format = core.view.config.exportMapFormat;
+		if (format === 'OBJ')
+			exportSelectedMap();
+		else if (format === 'PNG')
+			exportSelectedMapAsPNG();
+		else if (format === 'RAW')
+			exportSelectedMapAsRaw();
+		else if (format === 'HEIGHTMAPS')
+			exportSelectedMapAsHeightmaps();
+	});
 	core.events.on('click-export-map-wmo', () => exportSelectedMapWMO());
-	core.events.on('click-export-map-png', () => exportSelectedMapAsPNG());
-	core.events.on('click-export-map-heightmaps', () => exportSelectedMapAsHeightmaps());
 });

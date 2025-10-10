@@ -563,18 +563,12 @@
 					</div>
 					<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="mapViewerChunkMask" v-model:selection="mapViewerSelection"></map-viewer>
 					<div class="spaced-preview-controls">
-						<input type="button" value="Export Heightmaps" @click="click('export-map-heightmaps', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0}"/>
 						<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
-						<input type="button" value="Export OBJ" @click="click('export-map', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0}"/>
-						<input type="button" value="Export PNG" @click="click('export-map-png', $event)" :class="{ disabled: isBusy || mapViewerSelection.length === 0}"/>
+						<menu-button :options="menuButtonMapExport" :default="config.exportMapFormat" @change="config.exportMapFormat = $event" :disabled="isBusy || mapViewerSelection.length === 0" @click="click('export-map', $event)"></menu-button>
 					</div>
 
 					<div id="maps-sidebar" class="sidebar">
 						<span class="header">Export Options</span>
-						<label class="ui-checkbox" title="Export raw files">
-							<input type="checkbox" v-model="config.mapsExportRaw"/>
-							<span>Export Raw</span>
-						</label>
 						<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
 							<input type="checkbox" v-model="config.mapsIncludeWMO"/>
 							<span>Export WMO</span>
