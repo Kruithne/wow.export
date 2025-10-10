@@ -76,7 +76,7 @@ const filter_articles = (search) => {
 
 	const keywords = search.toLowerCase().trim().split(/\s+/);
 	const scored = help_articles.map(article => {
-		const matched = keywords.filter(kw => article.tags.includes(kw)).length;
+		const matched = keywords.filter(kw => article.tags.some(tag => tag.includes(kw))).length;
 		return { article, matched };
 	}).filter(s => s.matched > 0);
 
