@@ -7,6 +7,7 @@
 - Fix issue that caused the auto updater to not restart wow.export automatically.
 - Fix regression that caused textures to appear black in terrain baking.
 - Fix an issue that would cause a crash-to-desktop when exporting 8k+ heightmaps.
+- Fix an issue that prevented glTF character models from exporting with textures.
 
 ## 0.2.2 (06-10-2025)
 - Implemented option to export textures as WebP (textures, atlas and zone maps).

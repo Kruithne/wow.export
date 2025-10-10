@@ -324,12 +324,13 @@ class M2Exporter {
 				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
 
 			let matName;
-			if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID))
+			if (texture?.fileDataID && textureMap.has(texture.fileDataID))
 				matName = textureMap.get(texture.fileDataID).matName;
 
 			if (this.dataTextures.has(this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]])) {
-				matName = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
-				console.log("Setting meshIndex " + mI + " to " + matName);
+				const dataTextureKey = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
+				if (textureMap.has(dataTextureKey))
+					matName = textureMap.get(dataTextureKey).matName;
 			}
 
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
