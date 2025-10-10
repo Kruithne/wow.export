@@ -1,8 +1,11 @@
 ## 0.2.3 (XX-10-2025)
 - Visually overhauled the `View Recent Changes` tab.
+- Allow `View Recent Changes` to work in development builds.
+- `Export Raw` option has been removed from maps and merged into the export button.
+- Consolidated `Raw`, `Heightmap`, `OBJ` and `PNG` map exports into one button.
 - Fix issue that caused the auto updater to not restart wow.export automatically.
 - Fix regression that caused textures to appear black in terrain baking.
-- Allow `View Recent Changes` to work in development builds.
+- Fix an issue that would cause a crash-to-desktop when exporting 8k+ heightmaps.
 
 ## 0.2.2 (06-10-2025)
 - Implemented option to export textures as WebP (textures, atlas and zone maps).
