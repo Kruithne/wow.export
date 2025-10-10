@@ -290,6 +290,12 @@ body {
 	text-decoration: underline;
 }
 
+.markdown-content-inner img {
+	border: 1px solid rgb(255 255 255 / 76%);
+	border-radius: 4px;
+	max-width: 100%;
+}
+
 .markdown-content .vscroller {
 	position: absolute;
 	right: 3px;

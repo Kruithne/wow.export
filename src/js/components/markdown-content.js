@@ -204,6 +204,17 @@ module.exports = {
 		parseInline: function(text) {
 			text = this.escapeHtml(text);
 
+			// images
+			text = text.replace(/!\[(.+?)\]\((.+?)\)/g, (match, alt, src) => {
+				if (src.startsWith('./'))
+					src = src.substring(2);
+
+				if (!src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:'))
+					src = 'help_docs/' + src;
+
+				return '<img src="' + src + '" alt="' + alt + '">';
+			});
+
 			// bold
 			text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 			text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
