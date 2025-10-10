@@ -3,6 +3,7 @@
 - Allow `View Recent Changes` to work in development builds.
 - `Export Raw` option has been removed from maps and merged into the export button.
 - Consolidated `Raw`, `Heightmap`, `OBJ` and `PNG` map exports into one button.
+- Added an informational notice when viewing a map with no terrain with a global WMO.
 - Fix issue that caused opening the `Items` tab to crash.
 - Fix issue that caused the auto updater to not restart wow.export automatically.
 - Fix regression that caused textures to appear black in terrain baking.

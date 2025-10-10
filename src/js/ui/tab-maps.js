@@ -58,6 +58,13 @@ const loadMap = async (mapID, mapDir) => {
 			core.view.mapViewerHasWorldModel = true;
 
 		core.view.mapViewerChunkMask = wdt.tiles;
+
+		// check if map has no terrain tiles but has global wmo
+		const has_terrain = wdt.tiles && wdt.tiles.some(tile => tile === 1);
+		const has_global_wmo = wdt.worldModelPlacement !== undefined;
+
+		if (!has_terrain && has_global_wmo)
+			core.setToast('info', 'This map has no terrain tiles. Use "Export Global WMO" to export the world model.', null, 6000);
 	} catch (e) {
 		// Unable to load WDT, default to all chunks enabled.
 		log.write('Cannot load %s, defaulting to all chunks enabled', wdtPath);
