@@ -111,5 +111,7 @@ core.events.once('screen-help', async () => {
 	await load_help_docs();
 	core.view.helpArticles = help_articles;
 	core.view.helpFilteredArticles = help_articles;
-	core.view.helpSelectedArticle = null;
+
+	const kb002 = help_articles.find(a => a.kb_id === 'KB002');
+	core.view.helpSelectedArticle = kb002 || null;
 });

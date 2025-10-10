@@ -70,22 +70,26 @@
 					</div>
 				</div>
 				<div id="help-screen" v-if="screen === 'help'">
-					<div v-if="!helpSelectedArticle" class="help-list-view">
+					<div class="help-list-container">
+						<h1>Help</h1>
 						<div class="filter">
 							<input type="text" v-model="helpSearchQuery" placeholder="Search help articles..."/>
 						</div>
 						<div id="help-articles">
-							<div v-for="article in helpFilteredArticles" @click="helpSelectedArticle = article" class="help-article-item">
+							<div v-for="article in helpFilteredArticles" @click="helpSelectedArticle = article" class="help-article-item" :class="{ selected: helpSelectedArticle === article }">
 								<div class="help-article-title">{{ article.title }}</div>
-								<div class="help-article-tags">{{ article.tags.join(', ') }}</div>
+								<div class="help-article-tags">
+									<span v-if="article.kb_id" class="help-kb-id">{{ article.kb_id }}</span>
+									<span>{{ article.tags.join(', ') }}</span>
+								</div>
 							</div>
 						</div>
-						<input type="button" value="Go Back" @click="showPreviousScreen"/>
 					</div>
-					<div v-if="helpSelectedArticle" class="help-article-view">
-						<markdown-content :content="helpSelectedArticle.body"></markdown-content>
-						<input type="button" value="Go Back" @click="helpSelectedArticle = null"/>
+					<div class="help-article-container">
+						<markdown-content v-if="helpSelectedArticle" :content="helpSelectedArticle.body"></markdown-content>
+						<div v-else class="help-placeholder">Select an article to view</div>
 					</div>
+					<input type="button" value="Go Back" @click="showPreviousScreen"/>
 				</div>
 				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">
 					<div>
@@ -1102,7 +1106,7 @@
 		</div>
 		<noscript>
 			<div id="crash-screen">
-				<h1>Oh no! The kakapo has exploded...</h1>
+				<h1>Oh no! The kākāpō has exploded...</h1>
 				<div id="crash-screen-versions">
 					<span id="crash-screen-version">???</span>
 					<span id="crash-screen-flavour">???</span>
