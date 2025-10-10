@@ -1269,7 +1269,7 @@ class ADTExporter {
 							// Delete individual textures
 							for (const mat of materials) {
 								if (mat !== undefined)
-									gl.deleteTexture(mat.texture);
+									gl.deleteTexture(mat.diffuseTex);
 							}
 						}
 					}
