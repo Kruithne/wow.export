@@ -131,6 +131,7 @@ require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/tab-characters');
+require('./js/ui/screen-help');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 win.on('close', () => process.exit()); // Ensure we exit when window is closed.

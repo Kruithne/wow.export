@@ -89,6 +89,7 @@ const makeNewView = () => {
 		tableBrowserRows: [], // DB2 rows
 		availableLocale: Locale, // Available CASC locale.
 		fileDropPrompt: null, // Prompt to display for file drag/drops.
+		changelogText: '', // Markdown content for changelog.
 		textViewerSelectedText: '', // Active text for the text viewer.
 		soundPlayerSeek: 0, // Current seek of the sound player.
 		soundPlayerState: false, // Playing state of the sound player.
@@ -192,7 +193,11 @@ const makeNewView = () => {
 			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
-		]
+		],
+		helpArticles: [],
+		helpFilteredArticles: [],
+		helpSelectedArticle: null,
+		helpSearchQuery: ''
 	};
 }
 

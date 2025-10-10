@@ -23,6 +23,7 @@
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
+					<div id="nav-help" v-if="!isBusy" @click="setScreen('help', true)"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
 						<span @click.self="setScreen('blender', true)" id="menu-extra-blender">Install Blender Add-on</span>
@@ -34,6 +35,7 @@
 						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
 						<span v-if="isDev" @click.self="runIntegrationTests" id="menu-extra-tests">Run Integration Tests</span>
 						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
+						<span @click.self="setScreen('help', true)" id="menu-extra-help">Help</span>
 					</context-menu>
 				</div>
 			</div>
@@ -65,6 +67,25 @@
 						<input type="button" value="Install Automatically (Recommended)" @click="installBlenderAddon" :class="{ disabled: isBusy }"/>
 						<input type="button" value="Install Manually (Advanced)" @click="openBlenderAddonFolder"/>
 						<input type="button" value="Go Back" @click="showPreviousScreen"/>
+					</div>
+				</div>
+				<div id="help-screen" v-if="screen === 'help'">
+					<div v-if="!helpSelectedArticle" class="help-list-view">
+						<h1>Help</h1>
+						<div class="filter">
+							<input type="text" v-model="helpSearchQuery" placeholder="Search help articles..."/>
+						</div>
+						<div id="help-articles">
+							<div v-for="article in helpFilteredArticles" @click="helpSelectedArticle = article" class="help-article-item">
+								<div class="help-article-title">{{ article.title }}</div>
+								<div class="help-article-tags">{{ article.tags.join(', ') }}</div>
+							</div>
+						</div>
+						<input type="button" value="Go Back" @click="showPreviousScreen"/>
+					</div>
+					<div v-if="helpSelectedArticle" class="help-article-view">
+						<markdown-content :content="helpSelectedArticle.body"></markdown-content>
+						<input type="button" value="Go Back" @click="helpSelectedArticle = null"/>
 					</div>
 				</div>
 				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">
