@@ -567,12 +567,8 @@ const extractHeightDataFromTile = async (adt, resolution) => {
 			return null;
 		}
 
-		const heights = [];
+		const heights = new Float32Array(resolution * resolution);
 		const px_per_row = resolution;
-		
-		for (let i = 0; i < resolution * resolution; i++)
-			heights.push(0);
-		
 		for (let py = 0; py < resolution; py++) {
 			for (let px = 0; px < resolution; px++) {
 				const chunk_x = Math.floor(px * 16 / resolution);
