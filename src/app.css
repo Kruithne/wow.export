@@ -375,11 +375,13 @@ body {
 	cursor: pointer;
 	background: var(--background-dark);
 	border-radius: 8px;
-	transition: all 0.2s;
+	border: 1px solid white;
+	transition: all 0.3s ease;
 }
 
 .help-article-item:hover {
-	background: rgba(255, 255, 255, 0.08);
+	border-color: var(--nav-option-selected);
+	color: var(--nav-option-selected);
 }
 
 .help-article-title {
