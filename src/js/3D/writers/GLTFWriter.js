@@ -340,21 +340,21 @@ class GLTFWriter {
 								break;
 							}
 						}
-	
+
 						for (let i = 0; i < bone.rotation.timestamps.length; i++) {
 							if (i == animationIndex && bone.rotation.interpolation < 2) {
 								requiredBufferSize += bone.rotation.timestamps[i].length * 4;
 								break;
 							}
 						}
-	
+
 						for (let i = 0; i < bone.scale.timestamps.length; i++) {
 							if (i == animationIndex && bone.scale.interpolation < 2) {
 								requiredBufferSize += bone.scale.timestamps[i].length * 4;
 								break;
 							}
 						}
-	
+
 						// Vector3 values
 						for (let i = 0; i < bone.translation.values.length; i++) {
 							if (i == animationIndex && bone.translation.interpolation < 2) {
@@ -362,14 +362,14 @@ class GLTFWriter {
 								break;
 							}
 						}
-	
+
 						for (let i = 0; i < bone.scale.values.length; i++) {
 							if (i == animationIndex && bone.scale.interpolation < 2) {
 								requiredBufferSize += bone.scale.values[i].length * 3 * 4;
 								break;
 							}
 						}
-	
+
 						// Quaternion values
 						for (let i = 0; i < bone.rotation.values.length; i++) {
 							if (i == animationIndex && bone.rotation.interpolation < 2) {
@@ -378,16 +378,21 @@ class GLTFWriter {
 							}
 						}
 					}
-	
+
 					if (requiredBufferSize > 0) {
 						animationBufferMap.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, BufferWrapper.alloc(requiredBufferSize, true));
-						
-						root.buffers.push({
-							uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
-							byteLength: requiredBufferSize
-						});
-	
-						animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
+
+						if (format === 'glb') {
+							// glb mode: animations go into buffer 0 (main binary chunk)
+							animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, 0);
+						} else {
+							// gltf mode: animations get separate buffer files
+							root.buffers.push({
+								uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
+								byteLength: requiredBufferSize
+							});
+							animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
+						}
 					}
 				}
 
@@ -479,11 +484,12 @@ class GLTFWriter {
 					for (let i = 0; i < bone.translation.timestamps.length; i++) {
 						if (bone.translation.timestamps[i].length == 0)
 							continue;
-					
+
 						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
 						const animationBuffer = animationBufferMap.get(animName);
 
 						// Add new bufferView for bone timestamps.
+						// note: byteOffset stored here is relative to animation buffer, will be updated later for glb
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
 							byteLength: bone.translation.timestamps[i].length * 4,
@@ -1080,6 +1086,37 @@ class GLTFWriter {
 			}
 		}
 
+		// pack animation buffers into binary for glb mode
+		if (format === 'glb' && animationBufferMap.size > 0) {
+			const anim_buffer_base_offsets = new Map();
+
+			// store base offset for each animation buffer
+			for (const [animName, animBuffer] of animationBufferMap) {
+				anim_buffer_base_offsets.set(animName, bin_ofs);
+				bin_ofs += animBuffer.byteLength;
+				bins.push(animBuffer);
+			}
+
+			// update all bufferViews that reference animation data
+			for (const bufferView of root.bufferViews) {
+				if (bufferView.buffer === 0 && bufferView.name && (
+					bufferView.name.startsWith('TRANS_') ||
+					bufferView.name.startsWith('ROT_') ||
+					bufferView.name.startsWith('SCALE_')
+				)) {
+					// extract animation name from bufferView name
+					const name_parts = bufferView.name.split('_');
+					const bone_idx = name_parts[2];
+					const anim_idx = name_parts[3];
+					const animName = this.animations[anim_idx].id + "-" + this.animations[anim_idx].variationIndex;
+
+					// update byteOffset to absolute position in combined buffer
+					const base_offset = anim_buffer_base_offsets.get(animName);
+					bufferView.byteOffset += base_offset;
+				}
+			}
+		}
+
 		const bin_combined = BufferWrapper.concat(bins);
 		root.buffers[0].byteLength = bin_combined.byteLength;
 
@@ -1098,10 +1135,12 @@ class GLTFWriter {
 			await bin_combined.writeToFile(outBIN);
 		}
 
-		// Write out animation buffers
-		for (const [animationName, animationBuffer] of animationBufferMap) {
-			const animationPath = path.join(out_dir, path.basename(outBIN, ".bin") + "_anim" + animationName + ".bin");
-			await animationBuffer.writeToFile(animationPath);
+		// write out animation buffers (gltf mode only, glb embeds them)
+		if (format === 'gltf') {
+			for (const [animationName, animationBuffer] of animationBufferMap) {
+				const animationPath = path.join(out_dir, path.basename(outBIN, ".bin") + "_anim" + animationName + ".bin");
+				await animationBuffer.writeToFile(animationPath);
+			}
 		}
 	}
 }
