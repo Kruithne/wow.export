@@ -755,15 +755,12 @@ document.addEventListener('click', function(e) {
 		setImmediate(async () => {
 			const element = document.getElementById('changelog-text');
 
-			if (BUILD_RELEASE) {
-				try {
-					const text = await fsp.readFile('./src/CHANGELOG.md', 'utf8');
-					element.textContent = text;
-				} catch (e) {
-					element.textContent = 'Error loading changelog';
-				}
-			} else {
-				element.textContent = 'Cannot load changelog in DEBUG mode';
+			try {
+				const changelog_path = BUILD_RELEASE ? './src/CHANGELOG.md' : '../../CHANGELOG.md';
+				const text = await fsp.readFile(changelog_path, 'utf8');
+				element.textContent = text;
+			} catch (e) {
+				element.textContent = 'Error loading changelog';
 			}
 		});
 	});
