@@ -50,20 +50,23 @@ class M2Exporter {
 	}
 
 	/**
-	 * Export the textures for this M2 model.
-	 * @param {string} out 
+	 * Export the textures for this M2 model (for GLB mode, returns buffers instead of writing).
+	 * @param {string} out
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
 	 * @param {ExportHelper} helper
 	 * @param {boolean} [fullTexPaths=false]
+	 * @param {boolean} [glbMode=false]
 	 * @returns {Map<number, string>}
 	 */
-	async exportTextures(out, raw = false, mtl = null, helper, fullTexPaths = false) {
+	async exportTextures(out, raw = false, mtl = null, helper, fullTexPaths = false, glbMode = false) {
 		const config = core.view.config;
 		const validTextures = new Map();
+		const texture_buffers = new Map();
+		const files_to_cleanup = [];
 
 		if (!config.modelsExportTextures)
-			return validTextures;
+			return { validTextures, texture_buffers, files_to_cleanup };
 
 		await this.m2.load();
 
@@ -77,11 +80,13 @@ class M2Exporter {
 			try {
 				let texFile = 'data-' + textureName + '.png';
 				let texPath = path.join(out, texFile);
-
 				const matName = 'mat_' + textureName;
+				const data = BufferWrapper.fromBase64(dataTexture.replace(/^data[^,]+,/,''));
 
-				if (config.overwriteFiles || !await generics.fileExists(texPath)) {
-					const data = BufferWrapper.fromBase64(dataTexture.replace(/^data[^,]+,/,''));
+				if (glbMode) {
+					texture_buffers.set('data-' + textureName, data);
+					log.write('Buffering data texture %d for GLB embedding', textureName);
+				} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 					log.write('Exporting data texture %d -> %s', textureName, texPath);
 					await data.writeToFile(texPath);
 				} else {
@@ -166,17 +171,29 @@ class M2Exporter {
 						texFile = path.relative(out, texPath);
 					}
 
-					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const file_existed = await generics.fileExists(texPath);
+
+					if (glbMode && !raw) {
+						// glb mode: convert to PNG buffer without writing
+						const data = await core.view.casc.getFile(texFileDataID);
+						const blp = new BLPFile(data);
+						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
+						texture_buffers.set(texFileDataID, png_buffer);
+						log.write('Buffering M2 texture %d for GLB embedding', texFileDataID);
+
+						if (!file_existed)
+							files_to_cleanup.push(texPath);
+					} else if (config.overwriteFiles || !file_existed) {
 						const data = await core.view.casc.getFile(texFileDataID);
 						log.write('Exporting M2 texture %d -> %s', texFileDataID, texPath);
 
 						if (raw === true) {
-							// Write raw BLP files.
+							// write raw BLP files
 							await data.writeToFile(texPath);
 						} else {
-							// Convert BLP to PNG.
+							// convert BLP to PNG
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, useAlpha? 0b1111 : 0b0111);
+							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
 						log.write('Skipping M2 texture export %s (file exists, overwrite disabled)', texPath);
@@ -198,6 +215,9 @@ class M2Exporter {
 
 			textureIndex++;
 		}
+
+		if (glbMode)
+			return { validTextures, texture_buffers, files_to_cleanup };
 
 		return validTextures;
 	}
@@ -306,7 +326,15 @@ class M2Exporter {
 		gltf.addUVArray(this.m2.uv);
 		gltf.addUVArray(this.m2.uv2);
 
-		const textureMap = await this.exportTextures(outDir, false, null, helper, true);
+		let textureMap;
+		if (format === 'glb') {
+			const result = await this.exportTextures(outDir, false, null, helper, true, true);
+			textureMap = result.validTextures;
+			gltf.setTextureBuffers(result.texture_buffers);
+		} else {
+			textureMap = await this.exportTextures(outDir, false, null, helper, true, false);
+		}
+
 		gltf.setTextureMap(textureMap);
 
 		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {

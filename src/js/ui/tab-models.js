@@ -39,7 +39,8 @@ const MODEL_TYPE_WMO = Symbol('modelWMO');
 
 const exportExtensions = {
 	'OBJ': '.obj',
-	'GLTF': '.gltf'
+	'GLTF': '.gltf',
+	'GLB': '.glb'
 };
 
 const activeSkins = new Map();
@@ -460,6 +461,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 					}
 					case 'OBJ':
 					case 'GLTF':
+					case 'GLB':
 						exportPath = ExportHelper.replaceExtension(exportPath, exportExtensions[format]);
 
 						if (fileType === MODEL_TYPE_M2) {
@@ -472,9 +474,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
 								await exportPaths?.writeLine('M2_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-								await exportPaths?.writeLine('M2_GLTF:' + exportPath);
+							} else if (format === 'GLTF' || format === 'GLB') {
+								await exporter.exportAsGLTF(exportPath, helper, format.toLowerCase());
+								await exportPaths?.writeLine('M2_' + format + ':' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -490,9 +492,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, core.view.config.modelsExportCollision, helper, fileManifest);
 								await exportPaths?.writeLine('M3_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper, fileManifest);
-								await exportPaths?.writeLine('M3_GLTF:' + exportPath);
+							} else if (format === 'GLTF' || format === 'GLB') {
+								await exporter.exportAsGLTF(exportPath, helper, format.toLowerCase());
+								await exportPaths?.writeLine('M3_' + format + ':' + exportPath);
 							}
 
 							// Abort if the export has been cancelled.
@@ -515,9 +517,9 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(exportPath, helper, fileManifest);
 								await exportPaths?.writeLine('WMO_OBJ:' + exportPath);
-							} else if (format === 'GLTF') {
-								await exporter.exportAsGLTF(exportPath, helper);
-								await exportPaths?.writeLine('WMO_GLTF:' + exportPath, fileManifest);
+							} else if (format === 'GLTF' || format === 'GLB') {
+								await exporter.exportAsGLTF(exportPath, helper, format.toLowerCase());
+								await exportPaths?.writeLine('WMO_' + format + ':' + exportPath);
 							}
 
 							WMOExporter.clearCache();

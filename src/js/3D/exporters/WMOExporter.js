@@ -50,21 +50,24 @@ class WMOExporter {
 
 	/**
 	 * Export textures for this WMO.
-	 * @param {string} out 
-	 * @param {?MTLWriter} mtl 
+	 * @param {string} out
+	 * @param {?MTLWriter} mtl
 	 * @param {ExportHelper}
 	 * @param {boolean} [raw=false]
-	 * @returns {{ textureMap: Map, materialMap: Map }}
+	 * @param {boolean} [glbMode=false]
+	 * @returns {{ textureMap: Map, materialMap: Map, texture_buffers: Map, files_to_cleanup: Array }}
 	 */
-	async exportTextures(out, mtl = null, helper, raw = false) {
+	async exportTextures(out, mtl = null, helper, raw = false, glbMode = false) {
 		const config = core.view.config;
 		const casc = core.view.casc;
 
 		const textureMap = new Map();
 		const materialMap = new Map();
+		const texture_buffers = new Map();
+		const files_to_cleanup = [];
 
 		if (!config.modelsExportTextures)
-			return { textureMap, materialMap };
+			return { textureMap, materialMap, texture_buffers, files_to_cleanup };
 
 		// Ensure the WMO is loaded before reading materials.
 		await this.wmo.load();
@@ -159,7 +162,19 @@ class WMOExporter {
 						texFile = path.relative(path.dirname(out), texPath);
 					}
 
-					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const file_existed = await generics.fileExists(texPath);
+
+					if (glbMode && !raw) {
+						// glb mode: convert to PNG buffer without writing
+						const data = await casc.getFile(fileDataID);
+						const blp = new BLPFile(data);
+						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
+						texture_buffers.set(fileDataID, png_buffer);
+						log.write('Buffering WMO texture %d for GLB embedding', fileDataID);
+
+						if (!file_existed)
+							files_to_cleanup.push(texPath);
+					} else if (config.overwriteFiles || !file_existed) {
 						const data = await casc.getFile(fileDataID);
 
 						log.write('Exporting WMO texture %d -> %s', fileDataID, texPath);
@@ -167,7 +182,7 @@ class WMOExporter {
 							await data.writeToFile(texPath);
 						} else {
 							const blp = new BLPFile(data);
-							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111); // material.blendMode !== 0
+							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
 						log.write('Skipping WMO texture export %s (file exists, overwrite disabled)', texPath);
@@ -191,7 +206,7 @@ class WMOExporter {
 			}
 		}
 
-		return { textureMap, materialMap };
+		return { textureMap, materialMap, texture_buffers, files_to_cleanup };
 	}
 
 	/**
@@ -217,7 +232,7 @@ class WMOExporter {
 		await this.wmo.load();
 
 		helper.setCurrentTaskName(wmo_name + ' textures');
-		const texMaps = await this.exportTextures(out, null, helper);
+		const texMaps = await this.exportTextures(out, null, helper, false, format === 'glb');
 
 		if (helper.isCancelled())
 			return;
@@ -228,6 +243,8 @@ class WMOExporter {
 			gltf_texture_lookup.set(i, texture_map_fids[i]);
 
 		gltf.setTextureMap(texMaps.textureMap);
+		if (format === 'glb')
+			gltf.setTextureBuffers(texMaps.texture_buffers);
 
 		const groups = [];
 		let nInd = 0;

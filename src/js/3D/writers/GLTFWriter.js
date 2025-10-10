@@ -82,8 +82,9 @@ class GLTFWriter {
 		this.bones = [];
 		this.inverseBindMatrices = [];
 		this.animations = [];
-		
+
 		this.textures = new Map();
+		this.texture_buffers = new Map();
 		this.meshes = [];
 	}
 
@@ -93,6 +94,14 @@ class GLTFWriter {
 	 */
 	setTextureMap(textures) {
 		this.textures = textures;
+	}
+
+	/**
+	 * Set the texture buffers for embedding in GLB.
+	 * @param {Map} texture_buffers
+	 */
+	setTextureBuffers(texture_buffers) {
+		this.texture_buffers = texture_buffers;
 	}
 
 	/**
@@ -828,18 +837,31 @@ class GLTFWriter {
 			root.textures = [];
 			root.materials = [];
 		}
-		
+
 		const materialMap = new Map();
+		const texture_buffer_views = [];
+
 		for (const [fileDataID, texFile] of this.textures) {
 			const imageIndex = root.images.length;
 			const textureIndex = root.textures.length;
 			const materialIndex = root.materials.length;
 
-			let mat_path = texFile.matPathRelative;
-			if (use_absolute)
-				mat_path = path.resolve(out_dir, mat_path);
+			if (format === 'glb' && this.texture_buffers.has(fileDataID)) {
+				// glb mode with embedded textures: use bufferView reference
+				texture_buffer_views.push({ fileDataID, buffer: this.texture_buffers.get(fileDataID) });
+				root.images.push({
+					bufferView: -1,
+					mimeType: 'image/png'
+				});
+			} else {
+				// gltf mode or no buffer: use uri reference
+				let mat_path = texFile.matPathRelative;
+				if (use_absolute)
+					mat_path = path.resolve(out_dir, mat_path);
 
-			root.images.push({ uri: mat_path });
+				root.images.push({ uri: mat_path });
+			}
+
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
 				name: path.basename(texFile.matName, path.extname(texFile.matName)),
@@ -1034,6 +1056,28 @@ class GLTFWriter {
 
 			add_scene_node(node);
 			bins.push(buffer);
+		}
+
+		// pack texture buffers into binary for glb mode
+		if (format === 'glb' && texture_buffer_views.length > 0) {
+			for (let i = 0; i < texture_buffer_views.length; i++) {
+				const tex_view = texture_buffer_views[i];
+				const tex_buffer = tex_view.buffer;
+
+				// create bufferView for this texture
+				const buffer_view_index = root.bufferViews.length;
+				root.bufferViews.push({
+					buffer: 0,
+					byteLength: tex_buffer.byteLength,
+					byteOffset: bin_ofs
+				});
+
+				// update the image's bufferView reference
+				root.images[i].bufferView = buffer_view_index;
+
+				bin_ofs += tex_buffer.byteLength;
+				bins.push(tex_buffer);
+			}
 		}
 
 		const bin_combined = BufferWrapper.concat(bins);
