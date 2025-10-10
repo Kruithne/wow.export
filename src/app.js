@@ -115,6 +115,7 @@ const MapViewer = require('./js/components/map-viewer');
 const DataTable = require('./js/components/data-table');
 const ResizeLayer = require('./js/components/resize-layer');
 const ContextMenu = require('./js/components/context-menu');
+const MarkdownContent = require('./js/components/markdown-content');
 
 const TabTextures = require('./js/ui/tab-textures');
 const TabItems = require('./js/ui/tab-items');
@@ -610,6 +611,7 @@ document.addEventListener('click', function(e) {
 	app.component('DataTable', DataTable);
 	app.component('ResizeLayer', ResizeLayer);
 	app.component('ContextMenu', ContextMenu);
+	app.component('MarkdownContent', MarkdownContent);
 	app.mount('#container');
 
 	// Log some basic information for potential diagnostics.
@@ -753,14 +755,12 @@ document.addEventListener('click', function(e) {
 	// Load the changelog when the user opens the screen.
 	core.events.on('screen-changelog', () => {
 		setImmediate(async () => {
-			const element = document.getElementById('changelog-text');
-
 			try {
 				const changelog_path = BUILD_RELEASE ? './src/CHANGELOG.md' : '../../CHANGELOG.md';
 				const text = await fsp.readFile(changelog_path, 'utf8');
-				element.textContent = text;
+				core.view.changelogText = text;
 			} catch (e) {
-				element.textContent = 'Error loading changelog';
+				core.view.changelogText = 'Error loading changelog';
 			}
 		});
 	});

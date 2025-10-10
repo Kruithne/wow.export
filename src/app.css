@@ -202,16 +202,125 @@ body {
 #changelog h1 {
 	margin-bottom: 10px;
 }
-#changelog pre {
+#changelog .markdown-content {
 	border: 1px solid var(--border);
 	background: var(--background-dark);
 	font-size: 20px;
 	padding: 20px;
 	box-shadow: rgba(0, 0, 0, 0.45) 0 0 20px 0 inset;
-	overflow: auto;
+	position: relative;
+	overflow: hidden;
 }
 #changelog input {
 	margin: 20px auto;
+	width: 200px;
+}
+
+.markdown-content {
+	position: relative;
+	overflow: hidden;
+}
+.markdown-content-inner {
+	word-wrap: break-word;
+}
+.markdown-content-inner h1 {
+	font-size: 1.8em;
+	margin: 0;
+	font-weight: bold;
+}
+.markdown-content-inner h2 {
+	font-size: 1.5em;
+	margin: 0;
+	font-weight: bold;
+}
+.markdown-content-inner h3 {
+	font-size: 1.2em;
+	margin: 0;
+	font-weight: bold;
+}
+.markdown-content-inner p {
+	margin: 0;
+	line-height: 1.4;
+}
+.markdown-content-inner ul {
+	margin: 0;
+	padding-left: 2em;
+	list-style-type: disc;
+}
+.markdown-content-inner li {
+	margin: 0;
+	line-height: 1.4;
+}
+.markdown-content-inner code {
+	background: rgba(0, 0, 0, 0.3);
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-family: monospace;
+}
+.markdown-content-inner pre {
+	background: rgba(0, 0, 0, 0.3);
+	padding: 10px;
+	border-radius: 5px;
+	overflow-x: auto;
+	margin: 0;
+}
+.markdown-content-inner pre code {
+	background: none;
+	padding: 0;
+}
+.markdown-content-inner strong {
+	font-weight: bold;
+}
+.markdown-content-inner em {
+	font-style: italic;
+}
+.markdown-content-inner a {
+	color: var(--font-highlight);
+	text-decoration: underline;
+}
+.markdown-content .vscroller {
+	position: absolute;
+	right: 3px;
+	width: 8px;
+	height: 45px;
+	opacity: 0.7;
+	cursor: pointer;
+	z-index: 1;
+}
+.markdown-content .vscroller > div {
+	position: absolute;
+	top: 3px;
+	bottom: 3px;
+	left: 0;
+	right: 0;
+	background: var(--border);
+	border: 1px solid var(--border);
+	border-radius: 5px;
+}
+.markdown-content .vscroller:hover > div,
+.markdown-content .vscroller.using > div {
+	background: var(--font-highlight);
+}
+
+#help-screen {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+#help-screen h1 {
+	margin-bottom: 20px;
+}
+#help-screen p {
+	margin-bottom: 20px;
+}
+#help-screen input {
 	width: 200px;
 }
 
