@@ -768,7 +768,10 @@ class ADTExporter {
 						// Create new GL context and compile shaders.
 						if (!gl) {
 							glCanvas = document.createElement('canvas');
-							gl = glCanvas.getContext('webgl');
+							gl = glCanvas.getContext('webgl2');
+
+							if (!gl)
+								throw new Error('WebGL2 not supported');
 
 							await compileShaders(!hasHeightTexturing);
 						}
