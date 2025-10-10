@@ -262,6 +262,39 @@ const exportSelectedMap = async () => {
 	}
 
 	exportPaths?.close();
+	ADTExporter.clearCache();
+	helper.finish();
+};
+
+const exportSelectedMapAsRaw = async () => {
+	const exportTiles = core.view.mapViewerSelection;
+
+	if (exportTiles.length === 0)
+		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+
+	const helper = new ExportHelper(exportTiles.length, 'tile');
+	helper.start();
+
+	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir));
+	const exportPaths = core.openLastExportStream();
+	const markPath = path.join('maps', selectedMapDir, selectedMapDir);
+
+	for (const index of exportTiles) {
+		if (helper.isCancelled())
+			break;
+
+		const adt = new ADTExporter(selectedMapID, selectedMapDir, index);
+
+		try {
+			const out = await adt.export(dir, 0, undefined, helper);
+			await exportPaths?.writeLine(out.type + ':' + out.path);
+			helper.mark(markPath, true);
+		} catch (e) {
+			helper.mark(markPath, false, e.message, e.stack);
+		}
+	}
+
+	exportPaths?.close();
 
 	// Clear the internal ADTLoader cache.
 	ADTExporter.clearCache();
