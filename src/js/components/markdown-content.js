@@ -226,7 +226,12 @@ module.exports = {
 			text = text.replace(/`(.+?)`/g, '<code>$1</code>');
 
 			// links
-			text = text.replace(/\[(.+?)\]\((.+?)\)/g, '<a data-external="$2">$1</a>');
+			text = text.replace(/\[(.+?)\]\((.+?)\)/g, (match, label, href) => {
+				if (href.startsWith('::KB'))
+					return '<a data-kb-link="' + href.substring(2) + '">' + label + '</a>';
+
+				return '<a data-external="' + href + '">' + label + '</a>';
+			});
 
 			return text;
 		},
