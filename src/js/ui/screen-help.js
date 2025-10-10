@@ -80,6 +80,13 @@ const filter_articles = (search) => {
 		let score = 0;
 
 		for (const kw of keywords) {
+			// check kb_id
+			if (article.kb_id && article.kb_id.toLowerCase() === kw)
+				score += 3;
+			else if (article.kb_id && article.kb_id.toLowerCase().includes(kw))
+				score += 2;
+
+			// check tags
 			for (const tag of article.tags) {
 				if (tag === kw)
 					score += 2;
