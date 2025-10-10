@@ -171,11 +171,6 @@
 			},
 			"sourceTarget": "./wow.export.app/Contents/Resources/app.nw/src",
 			"manifestTarget": "./wow.export.app/Contents/Resources/app.nw/package.json",
-			"osxConfig": {
-				"CFBundleDisplayName": "wow.export",
-				"infoStringsPath": "./wow.export.app/Contents/Resources/en.lproj/InfoPlist.strings",
-				"infoXMLPath": "./wow.export.app/Contents/Info.plist"
-			},
 			"include": {
 				"./resources/wet.icns": "./wow.export.app/Contents/Resources/app.icns",
 				"LEGAL": "./wow.export.app/License/LEGAL",

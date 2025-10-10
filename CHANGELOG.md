@@ -8,6 +8,7 @@
 - Fix regression that caused textures to appear black in terrain baking.
 - Fix an issue that would cause a crash-to-desktop when exporting 8k+ heightmaps.
 - Fix an issue that prevented glTF character models from exporting with textures.
+- Fix an issue that prevented OSX builds from launching due to being 'damaged'.
 
 ## 0.2.2 (06-10-2025)
 - Implemented option to export textures as WebP (textures, atlas and zone maps).

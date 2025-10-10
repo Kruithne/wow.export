@@ -283,23 +283,6 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			}
 		}
 
-		const osxConfig = build.osxConfig;
-		if (osxConfig) {
-			// Adjust the CFBundleDisplayName value in the XML dict.
-			const xmlPath = path.join(buildDir, osxConfig.infoXMLPath);
-			let xml = await fs.readFile(xmlPath, 'utf8');
-			xml =  xml.replace(/(<key>CFBundleDisplayName<\/key>\n\t<string>)([^<]+)(<\/string>)/, util.format('$1%s$3', osxConfig.CFBundleDisplayName));
-			await fs.writeFile(xmlPath, xml, 'utf8');
-
-			// Adjust the CFBundleDisplayName value in the locale string list.
-			const infoPath = path.join(buildDir, osxConfig.infoStringsPath);
-			let strs = await fs.readFile(infoPath, 'utf8');
-			strs = strs.replace(/(CFBundleDisplayName\s=\s)("nwjs")/, util.format('$1"%s"', osxConfig.CFBundleDisplayName));
-			await fs.writeFile(infoPath, strs, 'utf8');
-
-			log.success('Modified CFBundleDisplayName value for OSX resources');
-		}
-
 		// Clone or link sources (depending on build-specific flag).
 		const sourceType = build.sourceMethod.toUpperCase();
 		const sourceDirectory = path.resolve(config.sourceDirectory);
