@@ -76,9 +76,10 @@ const filter_articles = (search) => {
 
 	const keywords = search.toLowerCase().trim().split(/\s+/);
 	const scored = help_articles.map(article => {
+		const has_default = article.tags.includes('default');
 		const matched = keywords.filter(kw => article.tags.some(tag => tag.includes(kw))).length;
-		return { article, matched };
-	}).filter(s => s.matched > 0);
+		return { article, matched, has_default };
+	}).filter(s => s.matched > 0 || s.has_default);
 
 	scored.sort((a, b) => b.matched - a.matched);
 	return scored.map(s => s.article);
