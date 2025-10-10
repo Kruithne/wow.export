@@ -226,7 +226,7 @@ module.exports = {
 			text = text.replace(/`(.+?)`/g, '<code>$1</code>');
 
 			// links
-			text = text.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+			text = text.replace(/\[(.+?)\]\((.+?)\)/g, '<a data-external="$2">$1</a>');
 
 			return text;
 		},
