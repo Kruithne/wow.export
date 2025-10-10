@@ -143,6 +143,16 @@ window.ondrop = e => { e.preventDefault(); return false; };
 
 // Force all links to open in the users default application.
 document.addEventListener('click', function(e) {
+	const kbElement = e.target.closest('[data-kb-link]');
+	if (kbElement) {
+		e.preventDefault();
+		const kb_id = kbElement.getAttribute('data-kb-link');
+		const article = core.view.helpArticles.find(a => a.kb_id === kb_id);
+		if (article)
+			core.view.helpSelectedArticle = article;
+		return;
+	}
+
 	const externalElement = e.target.closest('[data-external]');
 	if (!externalElement)
 		return;
