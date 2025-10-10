@@ -1,4 +1,6 @@
 ## 0.2.3 (XX-10-2025)
+- wow.export now has a built-in help section with common FAQs and tutorials.
+- Added new GLB (glTF binary) format for exporting models with full-resource packing.
 - Visually overhauled the `View Recent Changes` tab.
 - Allow `View Recent Changes` to work in development builds.
 - `Export Raw` option has been removed from maps and merged into the export button.
