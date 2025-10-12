@@ -1,4 +1,4 @@
-## 0.2.3 (XX-10-2025)
+## 0.2.3 (12-10-2025)
 - wow.export now has a built-in help section with common FAQs and tutorials.
 - Added new GLB (glTF binary) format for exporting models with full-resource packing.
 - Added 'Split WMO Groups' to export WMO groups as separate OBJ files.
