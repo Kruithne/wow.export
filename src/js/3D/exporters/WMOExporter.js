@@ -356,11 +356,17 @@ class WMOExporter {
 	 * @param {Array} fileManifest
 	 */
 	async exportAsOBJ(out, helper, fileManifest) {
+		const config = core.view.config;
+
+		// check if split mode enabled
+		if (config.modelsExportSplitWMOGroups) {
+			await this.exportGroupsAsSeparateOBJ(out, helper, fileManifest);
+			return;
+		}
+
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
-
-		const config = core.view.config;
 
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
@@ -721,9 +727,347 @@ class WMOExporter {
 	}
 
 	/**
-	 * 
-	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 * export each wmo group as separate obj file
+	 * @param {string} out
+	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
+	 */
+	async exportGroupsAsSeparateOBJ(out, helper, fileManifest) {
+		const casc = core.view.casc;
+		const config = core.view.config;
+
+		const groupMask = this.groupMask;
+		const doodadSetMask = this.doodadSetMask;
+
+		const wmo = this.wmo;
+		await wmo.load();
+
+		const wmoName = path.basename(out, '.obj');
+		const outDir = path.dirname(out);
+
+		log.write('exporting wmo model %s as split obj: %s', wmoName, out);
+
+		// export textures once, shared across all groups
+		helper.setCurrentTaskName(wmoName + ' textures');
+
+		const sharedMTL = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
+		const texMaps = await this.exportTextures(out, sharedMTL, helper);
+
+		if (helper.isCancelled())
+			return;
+
+		const textureMap = texMaps.textureMap;
+		const materialMap = texMaps.materialMap;
+
+		for (const [texFileDataID, texInfo] of textureMap)
+			fileManifest?.push({ type: 'PNG', fileDataID: texFileDataID, file: texInfo.matPath });
+
+		// build group mask
+		let mask;
+		if (groupMask) {
+			mask = new Set();
+			for (const group of groupMask) {
+				if (group.checked)
+					mask.add(group.groupIndex);
+			}
+		}
+
+		helper.setCurrentTaskName(wmoName + ' groups');
+		helper.setCurrentTaskMax(wmo.groupCount);
+
+		// export each group separately
+		for (let i = 0, n = wmo.groupCount; i < n; i++) {
+			if (helper.isCancelled())
+				return;
+
+			helper.setCurrentTaskValue(i);
+
+			const group = await wmo.getGroup(i);
+
+			// skip empty groups
+			if (!group.renderBatches || group.renderBatches.length === 0)
+				continue;
+
+			// skip masked groups
+			if (mask && !mask.has(i))
+				continue;
+
+			const groupName = wmo.groupNames[group.nameOfs];
+			const groupFileName = wmoName + '_' + groupName + '.obj';
+			const groupOut = path.join(outDir, groupFileName);
+
+			const obj = new OBJWriter(groupOut);
+			obj.setName(groupFileName);
+
+			log.write('exporting wmo group %s: %s', groupName, groupOut);
+
+			// prepare arrays for this group
+			const indCount = group.vertices.length / 3;
+			const vertsArray = new Array(indCount * 3);
+			const normalsArray = new Array(indCount * 3);
+
+			// copy vertices
+			const groupVerts = group.vertices;
+			for (let j = 0, len = groupVerts.length; j < len; j++)
+				vertsArray[j] = groupVerts[j];
+
+			// copy normals
+			const groupNormals = group.normals;
+			for (let j = 0, len = groupNormals.length; j < len; j++)
+				normalsArray[j] = groupNormals[j];
+
+			// handle uv layers
+			const groupUVs = group.uvs ?? [];
+			const uvCount = indCount * 2;
+			const maxLayerCount = config.modelsExportUV2 ? groupUVs.length : Math.min(groupUVs.length, 1);
+			const uvArrays = new Array(maxLayerCount);
+
+			for (let j = 0; j < maxLayerCount; j++) {
+				uvArrays[j] = new Array(uvCount);
+				const uv = groupUVs[j];
+				for (let k = 0; k < uvCount; k++)
+					uvArrays[j][k] = uv?.[k] ?? 0;
+			}
+
+			obj.setVertArray(vertsArray);
+			obj.setNormalArray(normalsArray);
+
+			for (const arr of uvArrays)
+				obj.addUVArray(arr);
+
+			// add render batches
+			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
+				const batch = group.renderBatches[bI];
+				const indices = new Array(batch.numFaces);
+
+				for (let j = 0; j < batch.numFaces; j++)
+					indices[j] = group.indices[batch.firstFace + j];
+
+				const matID = batch.flags === 2 ? batch.possibleBox2[2] : batch.materialID;
+				obj.addMesh(groupName + bI, indices, materialMap.get(matID));
+			}
+
+			if (!sharedMTL.isEmpty)
+				obj.setMaterialLibrary(path.basename(sharedMTL.out));
+
+			await obj.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'OBJ', fileDataID: this.wmo.fileDataID, file: obj.out });
+		}
+
+		// write shared mtl
+		await sharedMTL.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'MTL', fileDataID: this.wmo.fileDataID, file: sharedMTL.out });
+
+		// export doodad placement csv (shared across all groups)
+		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
+		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
+			const useAbsolute = config.enableAbsoluteCSVPaths;
+			const usePosix = config.pathFormat === 'posix';
+			const csv = new CSVWriter(csvPath);
+			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
+
+			// doodad sets
+			const doodadSets = wmo.doodadSets;
+			for (let i = 0, n = doodadSets.length; i < n; i++) {
+				if (!doodadSetMask?.[i]?.checked)
+					continue;
+
+				const set = doodadSets[i];
+				const count = set.doodadCount;
+				log.write('exporting wmo doodad set %s with %d doodads...', set.name, count);
+
+				helper.setCurrentTaskName(wmoName + ', doodad set ' + set.name);
+				helper.setCurrentTaskMax(count);
+
+				for (let j = 0; j < count; j++) {
+					if (helper.isCancelled())
+						return;
+
+					helper.setCurrentTaskValue(j);
+
+					const doodad = wmo.doodads[set.firstInstanceIndex + j];
+					let fileDataID = 0;
+					let fileName;
+
+					if (wmo.fileDataIDs) {
+						fileDataID = wmo.fileDataIDs[doodad.offset];
+						fileName = listfile.getByID(fileDataID);
+					} else {
+						fileName = wmo.doodadNames[doodad.offset];
+						fileDataID = listfile.getByFilename(fileName) || 0;
+					}
+
+					if (fileDataID > 0) {
+						try {
+							if (fileName !== undefined) {
+								fileName = ExportHelper.replaceExtension(fileName, '.obj');
+							} else {
+								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
+							}
+
+							let m2Path;
+							if (config.enableSharedChildren)
+								m2Path = ExportHelper.getExportPath(fileName);
+							else
+								m2Path = ExportHelper.replaceFile(out, fileName);
+
+							if (!doodadCache.has(fileDataID)) {
+								const data = await casc.getFile(fileDataID);
+								const modelMagic = data.readUInt32LE();
+								data.seek(0);
+								if (modelMagic == constants.MAGIC.MD21) {
+									const m2Export = new M2Exporter(data, undefined, fileDataID);
+									await m2Export.exportAsOBJ(m2Path, config.modelsExportCollision, helper);
+								} else if (modelMagic == constants.MAGIC.M3DT) {
+									const m3Export = new M3Exporter(data, undefined, fileDataID);
+									await m3Export.exportAsOBJ(m2Path, config.modelsExportCollision, helper);
+								}
+
+								if (helper.isCancelled())
+									return;
+
+								doodadCache.add(fileDataID);
+							}
+
+							let modelPath = path.relative(outDir, m2Path);
+
+							if (useAbsolute === true)
+								modelPath = path.resolve(outDir, modelPath);
+
+							if (usePosix)
+								modelPath = ExportHelper.win32ToPosix(modelPath);
+
+							csv.addRow({
+								ModelFile: modelPath,
+								PositionX: doodad.position[0],
+								PositionY: doodad.position[1],
+								PositionZ: doodad.position[2],
+								RotationW: doodad.rotation[3],
+								RotationX: doodad.rotation[0],
+								RotationY: doodad.rotation[1],
+								RotationZ: doodad.rotation[2],
+								ScaleFactor: doodad.scale,
+								DoodadSet: set.name,
+								FileDataID: fileDataID,
+							});
+						} catch (e) {
+							log.write('failed to load doodad %d for %s: %s', fileDataID, set.name, e.message);
+						}
+					}
+				}
+			}
+
+			await csv.write();
+			fileManifest?.push({ type: 'PLACEMENT', fileDataID: this.wmo.fileDataID, file: csv.out });
+		} else {
+			log.write('skipping model placement export %s (file exists, overwrite disabled)', csvPath);
+		}
+
+		// export meta if enabled
+		if (config.exportWMOMeta) {
+			helper.clearCurrentTask();
+			helper.setCurrentTaskName(wmoName + ', writing meta data');
+
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+			json.addProperty('fileType', 'wmo');
+			json.addProperty('fileDataID', wmo.fileDataID);
+			json.addProperty('fileName', wmo.fileName);
+			json.addProperty('version', wmo.version);
+			json.addProperty('counts', {
+				material: wmo.materialCount,
+				group: wmo.groupCount,
+				portal: wmo.portalCount,
+				light: wmo.lightCount,
+				model: wmo.modelCount,
+				doodad: wmo.doodadCount,
+				set: wmo.setCount,
+				lod: wmo.lodCount
+			});
+
+			json.addProperty('portalVertices', wmo.portalVertices);
+			json.addProperty('portalInfo', wmo.portalInfo);
+			json.addProperty('portalMapObjectRef', wmo.mopr);
+			json.addProperty('ambientColor', wmo.ambientColor);
+			json.addProperty('areaTableID', wmo.areaTableID);
+			json.addProperty('boundingBox1', wmo.boundingBox1);
+			json.addProperty('boundingBox2', wmo.boundingBox2);
+			json.addProperty('fog', wmo.fogs);
+			json.addProperty('flags', wmo.flags);
+
+			const groups = Array(wmo.groups.length);
+			for (let i = 0, n = wmo.groups.length; i < n; i++) {
+				const group = wmo.groups[i];
+				groups[i] = {
+					groupName: wmo.groupNames[group.nameOfs],
+					groupDescription: wmo.groupNames[group.descOfs],
+					enabled: !mask || mask.has(i),
+					version: group.version,
+					flags: group.flags,
+					ambientColor: group.ambientColor,
+					boundingBox1: group.boundingBox1,
+					boundingBox2: group.boundingBox2,
+					numPortals: group.numPortals,
+					numBatchesA: group.numBatchesA,
+					numBatchesB: group.numBatchesB,
+					numBatchesC: group.numBatchesC,
+					liquidType: group.liquidType,
+					groupID: group.groupID,
+					materialInfo: group.materialInfo,
+					renderBatches: group.renderBatches,
+					vertexColours: group.vertexColours,
+					liquid: group.liquid
+				};
+			}
+
+			const textures = [];
+			const textureCache = new Set();
+			for (const material of wmo.materials) {
+				const materialTextures = [material.texture1, material.texture2, material.texture3];
+
+				if (material.shader == 23) {
+					materialTextures.push(material.color3);
+					materialTextures.push(material.flags3);
+					materialTextures.push(material.runtimeData[0]);
+					materialTextures.push(material.runtimeData[1]);
+					materialTextures.push(material.runtimeData[2]);
+					materialTextures.push(material.runtimeData[3]);
+				}
+
+				for (const materialTexture of materialTextures) {
+					if (materialTexture === 0 || textureCache.has(materialTexture))
+						continue;
+
+					const textureEntry = textureMap.get(materialTexture);
+
+					textureCache.add(materialTexture);
+					textures.push({
+						fileDataID: materialTexture,
+						fileNameInternal: listfile.getByID(materialTexture),
+						fileNameExternal: textureEntry?.matPathRelative,
+						mtlName: textureEntry?.matName
+					});
+				}
+			}
+
+			json.addProperty('groups', groups);
+			json.addProperty('groupNames', Object.values(wmo.groupNames));
+			json.addProperty('groupInfo', wmo.groupInfo);
+			json.addProperty('textures', textures);
+			json.addProperty('materials', wmo.materials);
+			json.addProperty('doodadSets', wmo.doodadSets);
+			json.addProperty('fileDataIDs', wmo.fileDataIDs);
+			json.addProperty('doodads', wmo.doodads);
+			json.addProperty('groupIDs', wmo.groupIDs);
+
+			await json.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'META', fileDataID: this.wmo.fileDataID, file: json.out });
+		}
+	}
+
+	/**
+	 *
+	 * @param {string} out
+	 * @param {ExportHelper} helper
 	 * @param {Array} [fileManifest]
 	 */
 	async exportRaw(out, helper, fileManifest) {

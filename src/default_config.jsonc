@@ -66,6 +66,7 @@
 	"modelsExportBone": false,
 	"modelsExportAnim": false,
 	"modelsExportWMOGroups": false,
+	"modelsExportSplitWMOGroups": false,
 	"modelsExportUV2": false,
 	"modelsExportTextures": true,
 	"modelsExportAlpha": true,
