@@ -1,3 +1,7 @@
+## 0.2.4 (14-10-2025)
+- Added the option to export character models as GLB (GLTF Binary).
+- Fixed an issue that prevented character models from being exported.
+
 ## 0.2.3 (12-10-2025)
 - wow.export now has a built-in help section with common FAQs and tutorials.
 - Added new GLB (glTF binary) format for exporting models with full-resource packing.
