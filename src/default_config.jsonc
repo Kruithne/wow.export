@@ -89,6 +89,7 @@
 	"regexFilters": false,
 	"exportMapFormat": "OBJ",
 	"exportMapQuality": 4096,
+	"heightmapResolution": 1024,
 	"heightmap32BitDepth": false,
 	"splitLargeTerrainBakes": true,
 	"splitAlphaMaps": true,

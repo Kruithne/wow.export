@@ -1,5 +1,7 @@
 ## 0.2.4 (14-10-2025)
 - Reduced memory usage when exporting heightmaps by ~4000x.
+- Heightmap resolution is now separate from terrain texture quality.
+- Added option to export heightmaps at 64x64 (native non-scaled resolution).
 - Added the option to export character models as GLB (GLTF Binary).
 - Fixed an issue that prevented character models from being exported.
 

@@ -189,6 +189,14 @@ const makeNewView = () => {
 			{ label: 'High (8k)', value: 8192 },
 			{ label: 'Ultra (16k)', value: 16384 }
 		],
+		menuButtonHeightmapResolution: [
+			{ label: '64x64', value: 64 },
+			{ label: '128x128', value: 128 },
+			{ label: '512x512', value: 512 },
+			{ label: '1024x1024 (1k)', value: 1024 },
+			{ label: '2048x2048 (2k)', value: 2048 },
+			{ label: '4096x4096 (4k)', value: 4096 }
+		],
 		menuButtonModels: [
 			{ label: 'Export OBJ', value: 'OBJ' },
 			{ label: 'Export glTF', value: 'GLTF' },

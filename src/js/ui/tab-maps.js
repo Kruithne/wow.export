@@ -392,13 +392,13 @@ const exportSelectedMapAsPNG = async () => {
 
 const exportSelectedMapAsHeightmaps = async () => {
 	const export_tiles = core.view.mapViewerSelection;
-	const export_quality = core.view.config.exportMapQuality;
+	const export_resolution = core.view.config.heightmapResolution;
 
 	if (export_tiles.length === 0)
 		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
 
-	if (export_quality <= 0)
-		return core.setToast('error', 'Cannot export heightmaps with "None" texture quality selected.', null, -1);
+	if (export_resolution <= 0)
+		return core.setToast('error', 'Invalid heightmap resolution selected.', null, -1);
 
 	const dir = ExportHelper.getExportPath(path.join('maps', selectedMapDir, 'heightmaps'));
 	const export_paths = core.openLastExportStream();
@@ -412,8 +412,8 @@ const exportSelectedMapAsHeightmaps = async () => {
 
 		try {
 			const adt = new ADTExporter(selectedMapID, selectedMapDir, tile_index);
-			const height_data = await extractHeightDataFromTile(adt, export_quality);
-			
+			const height_data = await extractHeightDataFromTile(adt, export_resolution);
+
 			if (height_data && height_data.heights) {
 				let tile_min = Infinity;
 				let tile_max = -Infinity;
@@ -463,7 +463,7 @@ const exportSelectedMapAsHeightmaps = async () => {
 
 		try {
 			const adt = new ADTExporter(selectedMapID, selectedMapDir, tile_index);
-			const height_data = await extractHeightDataFromTile(adt, export_quality);
+			const height_data = await extractHeightDataFromTile(adt, export_resolution);
 
 			if (!height_data || !height_data.heights) {
 				helper.mark(`heightmap_${tile_id}.png`, false, 'No height data available');
@@ -472,7 +472,7 @@ const exportSelectedMapAsHeightmaps = async () => {
 
 			const out_path = path.join(dir, filename);
 
-			const writer = new PNGWriter(export_quality, export_quality);
+			const writer = new PNGWriter(export_resolution, export_resolution);
 			if (core.view.config.heightmap32BitDepth) {
 				writer.bytesPerPixel = 4;
 				writer.bitDepth = 8;
