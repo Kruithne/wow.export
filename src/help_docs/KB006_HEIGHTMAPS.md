@@ -8,9 +8,19 @@ A heightmap is a 2D image where the brightness represents the depth. Black is at
 
 To export a heightmap, select one or more tiles in the map viewer and set the export mode to `Export Heightmaps`.
 
-Pay attention to the `Terrain Texture Quality` on the sidebar, as this also controls the dimensions of your heightmap texture.
+You can control both the `resolution` and the `bit-depth` of exported heightmaps from the sidebar.
 
-Note: Higher resolutions are achieved with bilinear interpolation, that does not necessarily increase quality.
+![heightmap controls](res/KB006_controls.png)
+
+Internally, heightmaps are 64x64. The higher resolutions exist for compatibility with other software/engines. Higher resolutions are achieved with bilinear interpolation. This means a higher resolution does not increase quality.
+
+Choose the bit-depth that is supported by your target software:
+
+- 8-bit: grayscale, 1 byte/pixel, 0-255 range
+- 16-bit: grayscale, 2 bytes/pixel, 0-65535 range
+- 32-bit: RGBA, 4 bytes/pixel, float32 encoded
+
+Exporting at a bit-depth (especially 32-bit) that is not supported by your software will result in unexpected results.
 
 ![export heightmaps](res/KB006_heightmap_export.png)
 
@@ -26,12 +36,3 @@ To ensure that the tiles are exported with `global height space` or at least `re
 Before exporting, wow.export will iterate over all of the tiles and calculate the absolute highest and lowest points, and scale the heightmaps relative to this, resulting in seamless terrain.
 
 ![relative height space](res/KB006_relative_height_space.png)
-
-## 32-bit Depth
-For higher precision, wow.export can export heightmaps using 32-bit depth. This will use all 4 bytes to store the height value as a float32, resulting in extremely fine height variation.
-
-The resulting images will look something like this, which is to be expected.
-
-![32-bit float](res/KB006_32float.png)
-
-Be sure your software supports 32-bit float heightmaps before using it, otherwise the results will be unexpected!
