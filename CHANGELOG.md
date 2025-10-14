@@ -1,4 +1,5 @@
 ## 0.2.4 (14-10-2025)
+- Reduced memory usage when exporting heightmaps by ~4000x.
 - Added the option to export character models as GLB (GLTF Binary).
 - Fixed an issue that prevented character models from being exported.
 

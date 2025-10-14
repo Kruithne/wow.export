@@ -406,8 +406,6 @@ const exportSelectedMapAsHeightmaps = async () => {
 	core.setToast('progress', 'Calculating height range across all tiles...', null, -1, false);
 	let global_min_height = Infinity;
 	let global_max_height = -Infinity;
-	
-	const tile_height_data = new Map();
 
 	for (let i = 0; i < export_tiles.length; i++) {
 		const tile_index = export_tiles[i];
@@ -431,10 +429,7 @@ const exportSelectedMapAsHeightmaps = async () => {
 				
 				global_min_height = Math.min(global_min_height, tile_min);
 				global_max_height = Math.max(global_max_height, tile_max);
-				
-				// Store for second pass
-				tile_height_data.set(tile_index, height_data);
-				
+
 				log.write('Tile %d: height range [%f, %f]', tile_index, tile_min, tile_max);
 			}
 		} catch (e) {
@@ -463,18 +458,18 @@ const exportSelectedMapAsHeightmaps = async () => {
 		if (helper.isCancelled())
 			break;
 
-		const height_data = tile_height_data.get(tile_index);
-		if (!height_data) {
-			const tile_id = Math.floor(tile_index / constants.GAME.MAP_SIZE) + '_' + (tile_index % constants.GAME.MAP_SIZE);
-			helper.mark(`heightmap_${tile_id}.png`, false, 'No height data available');
-			continue;
-		}
-
 		const tile_id = Math.floor(tile_index / constants.GAME.MAP_SIZE) + '_' + (tile_index % constants.GAME.MAP_SIZE);
 		const filename = `heightmap_${tile_id}.png`;
 
 		try {
-			const filename = `heightmap_${tile_id}.png`;
+			const adt = new ADTExporter(selectedMapID, selectedMapDir, tile_index);
+			const height_data = await extractHeightDataFromTile(adt, export_quality);
+
+			if (!height_data || !height_data.heights) {
+				helper.mark(`heightmap_${tile_id}.png`, false, 'No height data available');
+				continue;
+			}
+
 			const out_path = path.join(dir, filename);
 
 			const writer = new PNGWriter(export_quality, export_quality);
