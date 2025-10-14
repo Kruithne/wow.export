@@ -865,6 +865,7 @@ def createAdvancedM2Material(material_name, texture_unit, materials, textures, t
 
 def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extension_mode='REPEAT'):
     material = bpy.data.materials.new(name=materialName)
+
     try:
         material.use_nodes = True
         material.blend_method = 'CLIP'
@@ -900,24 +901,45 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
         texture_coords = nodes.new('ShaderNodeTexCoord')
         texture_coords.location = (-1700, 600)
 
-        alpha_map_frame = nodes.new(type='NodeFrame')
-        alpha_map_frame.label = 'Alpha map'
+        # calculate required alpha map count - each image holds 4 layers (RGBA)
+        alpha_layer_count = len(layers) - 1  # exclude base layer
+        required_alpha_images = max(1, (alpha_layer_count + 3) // 4) if alpha_layer_count > 0 else 0
 
-        alpha_map = nodes.new('ShaderNodeTexImage')
-        alpha_map.location = (-700, -100)
-        alpha_map.width = 140
-        alpha_map.image = loadImage(textureLocation)
-        alpha_map.image.colorspace_settings.name = 'Non-Color'
-        alpha_map.interpolation = 'Cubic'
-        alpha_map.extension = 'EXTEND'
-        alpha_map.parent = alpha_map_frame
+        alpha_maps = []
+        alpha_map_channels = []
 
-        alpha_map_channels = nodes.new('ShaderNodeSeparateColor')
-        alpha_map_channels.location = (-500, -100)
-        alpha_map_channels.width = 140
-        alpha_map_channels.parent = alpha_map_frame
+        # load multiple alpha map images with new naming convention
+        for image_idx in range(required_alpha_images):
+            alpha_map_frame = nodes.new(type='NodeFrame')
+            alpha_map_frame.label = f'Alpha map {image_idx}'
 
-        node_tree.links.new(alpha_map.outputs['Color'], alpha_map_channels.inputs['Color'])
+            # generate filename based on naming convention
+            if image_idx == 0:
+                # first image uses original naming: tex_30_25_0.png
+                alpha_map_path = textureLocation
+            else:
+                # additional images: tex_30_25_0_1.png, tex_30_25_0_2.png, etc.
+                base_path, ext = os.path.splitext(textureLocation)
+                alpha_map_path = f'{base_path}_{image_idx}{ext}'
+
+            alpha_map = nodes.new('ShaderNodeTexImage')
+            alpha_map.location = (-700, -100 - image_idx * 300)
+            alpha_map.width = 140
+            alpha_map.image = loadImage(alpha_map_path)
+            alpha_map.image.colorspace_settings.name = 'Non-Color'
+            alpha_map.interpolation = 'Cubic'
+            alpha_map.extension = 'EXTEND'
+            alpha_map.parent = alpha_map_frame
+
+            channels = nodes.new('ShaderNodeSeparateColor')
+            channels.location = (-500, -100 - image_idx * 300)
+            channels.width = 140
+            channels.parent = alpha_map_frame
+
+            node_tree.links.new(alpha_map.outputs['Color'], channels.inputs['Color'])
+
+            alpha_maps.append(alpha_map)
+            alpha_map_channels.append(channels)
 
         base_layer_frame = nodes.new(type='NodeFrame')
         base_layer_frame.label = 'Layer #0'
@@ -957,6 +979,13 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
         last_mix_node = None
 
         for idx, layer in enumerate(layers[1:]):
+            layer_index = idx + 1  # since we start from layers[1:]
+
+            # calculate which alpha map image and channel this layer uses
+            image_index = (layer_index - 1) // 4
+            channel_index = (layer_index - 1) % 4
+            channel_names = ['Red', 'Green', 'Blue', 'Alpha']
+
             try:
                 mix_node = nodes.new('ShaderNodeMix')
                 mix_node.location = (-300, last_mix_node_pos + 200)
@@ -969,9 +998,18 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
 
             sockets = get_mix_node_sockets(mix_node)
 
-            node_tree.links.new(
-                alpha_map_channels.outputs[idx],
-                mix_node.inputs[sockets['in']['Factor']])
+            # connect to the correct alpha map and channel
+            if image_index < len(alpha_map_channels):
+                if channel_index == 3:
+                    # alpha channel comes from the image texture node directly
+                    node_tree.links.new(
+                        alpha_maps[image_index].outputs['Alpha'],
+                        mix_node.inputs[sockets['in']['Factor']])
+                else:
+                    # RGB channels come from the separate color node
+                    node_tree.links.new(
+                        alpha_map_channels[image_index].outputs[channel_names[channel_index]],
+                        mix_node.inputs[sockets['in']['Factor']])
 
             if last_mix_node is None:
                 node_tree.links.new(
