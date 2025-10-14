@@ -185,20 +185,18 @@ def isTerrainFile(fileName):
 
 
 def detectTextureMode(materials):
-    singleTexturePattern = True
-    
+    multiTilePattern = False
+
     for materialName in materials.keys():
         if not materialName.startswith('tex_'):
             continue
-            
+
         parts = materialName.split('_')
-        if len(parts) == 3:
-            continue
-        elif len(parts) == 4:
-            singleTexturePattern = False
+        if len(parts) == 4:
+            multiTilePattern = True
             break
-        
-    return 'EXTEND' if singleTexturePattern else 'CLIP'
+
+    return 'EXTEND' if multiTilePattern else 'CLIP'
 
 
 def loadImage(textureLocation):

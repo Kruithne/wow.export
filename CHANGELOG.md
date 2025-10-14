@@ -1,5 +1,6 @@
 ## 0.2.5 (XX-10-2025)
 - Added support for new 8+ layer terrain blending on Midnight maps.
+- Fixed an issue causing seams to appear on maps imported with the Blender add-on.
 
 ## 0.2.4 (14-10-2025)
 - Reduced memory usage when exporting heightmaps by ~4000x.
