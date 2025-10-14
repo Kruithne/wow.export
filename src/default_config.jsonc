@@ -41,6 +41,7 @@
 	"showTextureInfo": true,
 	"showTextureAtlas": false,
 	"exportModelFormat": "OBJ",
+	"exportCharacterFormat": "GLTF",
 	"overwriteFiles": true,
 	"exportM2Bones": false,
 	"exportM2Meta": true,

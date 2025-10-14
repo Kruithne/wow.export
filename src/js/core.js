@@ -197,6 +197,10 @@ const makeNewView = () => {
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],
+		menuButtonCharacterExport: [
+			{ label: 'Export glTF', value: 'GLTF' },
+			{ label: 'Export GLB', value: 'GLB' },
+		],
 		helpArticles: [],
 		helpFilteredArticles: [],
 		helpSelectedArticle: null,

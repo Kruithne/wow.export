@@ -522,8 +522,6 @@ const exportCharModel = async () => {
 	
 	const fileDataID = activeModel;
 	const fileName = listfile.getByID(fileDataID);
-
-	const fileManifest = [];
 	
 	try {
 		const data = await casc.getFile(fileDataID);
@@ -536,8 +534,9 @@ const exportCharModel = async () => {
 		// Respect geoset masking for selected model.
 		exporter.setGeosetMask(core.view.chrCustGeosets);
 
-		await exporter.exportAsGLTF(exportPath, helper, 'gltf');
-		await exportPaths?.writeLine('M2_GLTF:' + exportPath);
+		const format = core.view.config.exportCharacterFormat.toLowerCase();
+		await exporter.exportAsGLTF(exportPath, helper, format);
+		await exportPaths?.writeLine('M2_' + core.view.config.exportCharacterFormat + ':' + exportPath);
 
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())

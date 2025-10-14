@@ -917,7 +917,7 @@
 							<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
 							<span>Show texture overlay</span>
 						</label>
-						<input type="button" id="export-char-btn" value="Export glTF" @click="click('export-character', $event)" :class="{ disabled: isBusy }"/>
+						<menu-button :options="menuButtonCharacterExport" :default="config.exportCharacterFormat" @change="config.exportCharacterFormat = $event" :disabled="isBusy" @click="click('export-character', $event)"></menu-button>
 					</div>
 				</div>
 				<div class="tab list-tab" id="tab-install" v-if="screen === 'tab-install'">
