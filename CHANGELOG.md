@@ -1,3 +1,6 @@
+## 0.2.5 (XX-10-2025)
+- Added support for new 8+ layer terrain blending on Midnight maps.
+
 ## 0.2.4 (14-10-2025)
 - Reduced memory usage when exporting heightmaps by ~4000x.
 - Heightmap resolution is now separate from terrain texture quality.

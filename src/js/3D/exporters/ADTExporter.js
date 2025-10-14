@@ -114,11 +114,54 @@ const bindAlphaLayer = (layer) => {
  * Unbind all textures from the GL context.
  */
 const unbindAllTextures = () => {
-	// Unbind textures.
 	for (let i = 0, n = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS); i < n; i++) {
 		gl.activeTexture(gl.TEXTURE0 + i);
 		gl.bindTexture(gl.TEXTURE_2D, null);
+		gl.bindTexture(gl.TEXTURE_2D_ARRAY, null);
 	}
+};
+
+const build_texture_array = async (file_data_ids, is_height) => {
+	// Force 512x512 to avoid canvas corruption
+	const target_size = 512;
+
+	const tex_array = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex_array);
+	gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA, target_size, target_size, file_data_ids.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+	for (let i = 0; i < file_data_ids.length; i++) {
+		const blp = new BLPFile(await core.view.casc.getFile(file_data_ids[i]));
+		const blp_rgba = blp.toUInt8Array(0);
+
+		if (blp.width === target_size && blp.height === target_size) {
+			// Direct upload without processing
+			gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, target_size, target_size, 1, gl.RGBA, gl.UNSIGNED_BYTE, blp_rgba);
+		} else {
+			// Manual nearest-neighbor resize to avoid canvas corruption
+			const resized = new Uint8Array(target_size * target_size * 4);
+			const scale_x = blp.width / target_size;
+			const scale_y = blp.height / target_size;
+
+			for (let y = 0; y < target_size; y++) {
+				for (let x = 0; x < target_size; x++) {
+					const src_x = Math.floor(x * scale_x);
+					const src_y = Math.floor(y * scale_y);
+					const src_idx = (src_y * blp.width + src_x) * 4;
+					const dst_idx = (y * target_size + x) * 4;
+
+					resized[dst_idx] = blp_rgba[src_idx];
+					resized[dst_idx + 1] = blp_rgba[src_idx + 1];
+					resized[dst_idx + 2] = blp_rgba[src_idx + 2];
+					resized[dst_idx + 3] = blp_rgba[src_idx + 3];
+				}
+			}
+
+			gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, target_size, target_size, 1, gl.RGBA, gl.UNSIGNED_BYTE, resized);
+		}
+	}
+
+	gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+	return tex_array;
 };
 
 /**
@@ -357,7 +400,7 @@ class ADTExporter {
 		const objAdt = new ADTLoader(objFile);
 		objAdt.loadObj();
 
-		if (!config.mapsExportRaw) {
+		if (!isRawExport) {
 			const vertices = new Array(16 * 16 * 145 * 3);
 			const normals = new Array(16 * 16 * 145 * 3);
 			const uvs = new Array(16 * 16 * 145 * 2);
@@ -782,25 +825,44 @@ class ADTExporter {
 						const heightIDs = texAdt.heightTextureFileDataIDs;
 						const texParams = texAdt.texParams;
 
-						helper.setCurrentTaskName('Tile ' + this.tileID + ', loading textures');
-						helper.setCurrentTaskMax(materialIDs.length);
+						helper.setCurrentTaskName('Tile ' + this.tileID + ', building texture arrays');
 
+						// collect unique texture ids for arrays
+						const unique_diffuse_ids = [...new Set(materialIDs.filter(id => id !== 0))];
+						const unique_height_ids = [...new Set(heightIDs.filter(id => id !== 0))];
+
+						log.write('[DEBUG] unique_diffuse_ids: [%s]', unique_diffuse_ids.join(', '));
+						log.write('[DEBUG] unique_height_ids: [%s]', unique_height_ids.join(', '));
+
+						const diffuse_array = await build_texture_array(unique_diffuse_ids, false);
+						const height_array = await build_texture_array(unique_height_ids.length > 0 ? unique_height_ids : unique_diffuse_ids, true);
+
+						// map file data id -> array index
+						const diffuse_id_to_index = new Map();
+						unique_diffuse_ids.forEach((id, idx) => diffuse_id_to_index.set(id, idx));
+
+						const height_id_to_index = new Map();
+						(unique_height_ids.length > 0 ? unique_height_ids : unique_diffuse_ids).forEach((id, idx) => height_id_to_index.set(id, idx));
+
+						// build material metadata
 						const materials = new Array(materialIDs.length);
+						log.write('[DEBUG] building materials, count=%d', materialIDs.length);
 						for (let i = 0, n = materials.length; i < n; i++) {
-							// Abort if the export has been cancelled.
-							if (helper.isCancelled())
-								return;
-
-							helper.setCurrentTaskValue(i);
-
-							const diffuseFileDataID = materialIDs[i];
-							const heightFileDataID = heightIDs[i];
-
-							if (diffuseFileDataID === 0)
+							if (materialIDs[i] === 0) {
+								log.write('[DEBUG] mat[%d] skipped, id=0', i);
 								continue;
+							}
 
-							const mat = materials[i] = { scale: 1, heightScale: 0, heightOffset: 1 };
-							mat.diffuseTex = await loadTexture(diffuseFileDataID);
+							const mat = materials[i] = {
+								scale: 1,
+								heightScale: 0,
+								heightOffset: 1,
+								diffuseIndex: diffuse_id_to_index.get(materialIDs[i]),
+								heightIndex: heightIDs[i] ? height_id_to_index.get(heightIDs[i]) : diffuse_id_to_index.get(materialIDs[i])
+							};
+
+							log.write('[DEBUG] mat[%d]: diffuseID=%d, heightID=%d, diffuseIdx=%d, heightIdx=%d',
+								i, materialIDs[i], heightIDs[i] || 0, mat.diffuseIndex, mat.heightIndex);
 
 							if (texParams && texParams[i]) {
 								const params = texParams[i];
@@ -809,8 +871,9 @@ class ADTExporter {
 								if (params.height !== 0 || params.offset !== 1) {
 									mat.heightScale = params.height;
 									mat.heightOffset = params.offset;
-									mat.heightTex = heightFileDataID ? await loadTexture(heightFileDataID) : mat.diffuseTex;
 								}
+								log.write('[DEBUG] mat[%d]: scale=%f, heightScale=%f, heightOffset=%f',
+									i, mat.scale, mat.heightScale, mat.heightOffset);
 							}
 						}
 
@@ -818,29 +881,13 @@ class ADTExporter {
 						const aTexCoord = gl.getAttribLocation(glShaderProg, 'aTextureCoord');
 						const aVertexColor = gl.getAttribLocation(glShaderProg, 'aVertexColor');
 
-						const uLayers = new Array(4);
-						const uScales = new Array(4);
-						const uHeights = new Array(4);
-						const uBlends = new Array(4);
+						const uDiffuseLayers = gl.getUniformLocation(glShaderProg, 'uDiffuseLayers');
+						const uHeightLayers = gl.getUniformLocation(glShaderProg, 'uHeightLayers');
+						const uLayerCount = gl.getUniformLocation(glShaderProg, 'uLayerCount');
 
-						for (let i = 0; i < 4; i++) {
-							uLayers[i] = gl.getUniformLocation(glShaderProg, 'pt_layer' + i);
-							uScales[i] = gl.getUniformLocation(glShaderProg, 'layerScale' + i);
-
-							if (hasHeightTexturing)
-								uHeights[i] = gl.getUniformLocation(glShaderProg, 'pt_height' + i);
-
-							if (i > 0)
-								uBlends[i] = gl.getUniformLocation(glShaderProg, 'pt_blend' + i);
-						}
-
-						let uHeightScale;
-						let uHeightOffset;
-
-						if (hasHeightTexturing) {
-							uHeightScale = gl.getUniformLocation(glShaderProg, 'pc_heightScale');
-							uHeightOffset = gl.getUniformLocation(glShaderProg, 'pc_heightOffset');
-						}
+						const uAlphaBlends = [];
+						for (let i = 0; i < 7; i++)
+							uAlphaBlends[i] = gl.getUniformLocation(glShaderProg, 'uAlphaBlend' + i);
 
 						const uTranslation = gl.getUniformLocation(glShaderProg, 'uTranslation');
 						const uResolution = gl.getUniformLocation(glShaderProg, 'uResolution');
@@ -908,53 +955,112 @@ class ADTExporter {
 								const chunkIndex = (x * 16) + y;
 								const texChunk = texAdt.texChunks[chunkIndex];
 								const indices = chunkMeshes[chunkIndex];
-
-								const alphaLayers = texChunk.alphaLayers || [];
-								const alphaTextures = new Array(alphaLayers.length);
-
-								for (let i = 1; i < alphaLayers.length; i++) {
-									gl.activeTexture(gl.TEXTURE3 + i);
-
-									const alphaTex = bindAlphaLayer(alphaLayers[i]);
-									gl.bindTexture(gl.TEXTURE_2D, alphaTex);
-
-									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-									gl.uniform1i(uBlends[i], i + 3);
-
-									// Store to clean up after render.
-									alphaTextures[i] = alphaTex;
-								}
-
 								const texLayers = texChunk.layers;
-								const heightScales = new Array(4).fill(1);
-								const heightOffsets = new Array(4).fill(1);
 
-								for (let i = 0, n = texLayers.length; i < n; i++) {
-									const mat = materials[texLayers[i].textureId];
-									if (mat === undefined)
-										continue;
+								const chunk_layer_count = Math.min(texLayers.length, 8);
+								gl.uniform1i(uLayerCount, chunk_layer_count);
 
-									gl.activeTexture(gl.TEXTURE0 + i);
-									gl.bindTexture(gl.TEXTURE_2D, mat.diffuseTex);
-
-									gl.uniform1i(uLayers[i], i);
-									gl.uniform1f(uScales[i], mat.scale);
-
-									if (hasHeightTexturing && mat.heightTex) {
-										gl.activeTexture(gl.TEXTURE7 + i);
-										gl.bindTexture(gl.TEXTURE_2D, mat.heightTex);
-
-										gl.uniform1i(uHeights[i], 7 + i);
-										heightScales[i] = mat.heightScale;
-										heightOffsets[i] = mat.heightOffset;
+								if (chunkID === 0) {
+									log.write('[DEBUG] chunk[%d]: layer_count=%d', chunkIndex, chunk_layer_count);
+									for (let i = 0; i < chunk_layer_count; i++) {
+										log.write('[DEBUG]   layer[%d]: textureId=%d, flags=0x%s',
+											i, texLayers[i].textureId, texLayers[i].flags.toString(16));
 									}
 								}
 
-								if (hasHeightTexturing) {
-									gl.uniform4f(uHeightScale, ...heightScales);
-									gl.uniform4f(uHeightOffset, ...heightOffsets);
+								// clear all texture bindings before setting up new ones
+								unbindAllTextures();
+
+								// rebind texture arrays
+								gl.activeTexture(gl.TEXTURE0);
+								gl.bindTexture(gl.TEXTURE_2D_ARRAY, diffuse_array);
+								gl.uniform1i(uDiffuseLayers, 0);
+
+								gl.activeTexture(gl.TEXTURE1);
+								gl.bindTexture(gl.TEXTURE_2D_ARRAY, height_array);
+								gl.uniform1i(uHeightLayers, 1);
+
+								// bind alpha layers (units 2-8)
+								const alphaLayers = texChunk.alphaLayers || [];
+								const alphaTextures = new Array(8);
+
+								if (chunkID === 0) {
+									log.write('[DEBUG] chunk[%d]: alphaLayers.length=%d', chunkIndex, alphaLayers.length);
+									if (alphaLayers.length > 0) {
+										const layer0_sample = alphaLayers[0].slice(0, 8);
+										log.write('[DEBUG]   alphaLayer[0] first 8: [%s]', layer0_sample.join(', '));
+									}
+								}
+
+								for (let i = 1; i < Math.min(alphaLayers.length, 8); i++) {
+									gl.activeTexture(gl.TEXTURE0 + 2 + (i - 1));
+									const alphaTex = bindAlphaLayer(alphaLayers[i]);
+									gl.bindTexture(gl.TEXTURE_2D, alphaTex);
+									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+									alphaTextures[i - 1] = alphaTex;
+
+									if (chunkID === 0) {
+										const layer_sample = alphaLayers[i].slice(0, 8);
+										log.write('[DEBUG]   alphaLayer[%d] first 8: [%s]', i, layer_sample.join(', '));
+									}
+								}
+
+								// set alpha blend uniforms for all 7 possible layers
+								for (let i = 0; i < 7; i++)
+									gl.uniform1i(uAlphaBlends[i], 2 + i);
+
+								// set per-layer uniforms using chunk layer info
+								const layer_scales = new Array(8).fill(1);
+								const height_scales = new Array(8).fill(0);
+								const height_offsets = new Array(8).fill(1);
+								const diffuse_indices = new Array(8).fill(0);
+								const height_indices = new Array(8).fill(0);
+
+								for (let i = 0; i < chunk_layer_count; i++) {
+									const mat = materials[texLayers[i].textureId];
+									if (mat === undefined) {
+										log.write('[DEBUG] chunk[%d] layer[%d]: mat is undefined for textureId=%d',
+											chunkIndex, i, texLayers[i].textureId);
+										continue;
+									}
+
+									layer_scales[i] = mat.scale;
+									height_scales[i] = mat.heightScale;
+									height_offsets[i] = mat.heightOffset;
+									diffuse_indices[i] = mat.diffuseIndex;
+									height_indices[i] = mat.heightIndex;
+
+									if (chunkID === 0) {
+										log.write('[DEBUG] chunk[%d] layer[%d]: scale=%f, hScale=%f, hOffset=%f, diffIdx=%d, hIdx=%d',
+											chunkIndex, i, mat.scale, mat.heightScale, mat.heightOffset,
+											mat.diffuseIndex, mat.heightIndex);
+									}
+								}
+
+								for (let i = 0; i < 8; i++) {
+									const loc = gl.getUniformLocation(glShaderProg, `uLayerScales[${i}]`);
+									gl.uniform1f(loc, layer_scales[i]);
+								}
+
+								for (let i = 0; i < 8; i++) {
+									const loc = gl.getUniformLocation(glShaderProg, `uHeightScales[${i}]`);
+									gl.uniform1f(loc, height_scales[i]);
+								}
+
+								for (let i = 0; i < 8; i++) {
+									const loc = gl.getUniformLocation(glShaderProg, `uHeightOffsets[${i}]`);
+									gl.uniform1f(loc, height_offsets[i]);
+								}
+
+								for (let i = 0; i < 8; i++) {
+									const loc = gl.getUniformLocation(glShaderProg, `uDiffuseIndices[${i}]`);
+									gl.uniform1f(loc, diffuse_indices[i]);
+								}
+
+								for (let i = 0; i < 8; i++) {
+									const loc = gl.getUniformLocation(glShaderProg, `uHeightIndices[${i}]`);
+									gl.uniform1f(loc, height_indices[i]);
 								}
 
 								const indexBuffer = gl.createBuffer();
@@ -962,11 +1068,12 @@ class ADTExporter {
 								gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 								gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
-								unbindAllTextures();
-
-								// Destroy alpha layers rendered for the tile.
-								for (const tex of alphaTextures)
-									gl.deleteTexture(tex);
+								// cleanup alpha textures
+								for (const tex of alphaTextures) {
+									if (tex) {
+										gl.deleteTexture(tex);
+									}
+								}
 
 								if (isSplittingTextures) {
 									// Save this individual chunk.
@@ -989,6 +1096,10 @@ class ADTExporter {
 							}
 						}
 
+						// cleanup texture arrays
+						gl.deleteTexture(diffuse_array);
+						gl.deleteTexture(height_array);
+
 						// Save the completed composite tile.
 						if (!isSplittingTextures) {
 							const buf = await BufferWrapper.fromCanvas(composite, 'image/png');
@@ -997,12 +1108,6 @@ class ADTExporter {
 
 						// Clear buffer.
 						gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-						// Delete loaded textures.
-						for (const mat of materials) {
-							if (mat !== undefined)
-								gl.deleteTexture(mat.texture);
-						}
 					}
 				}
 			}

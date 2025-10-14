@@ -1,61 +1,76 @@
 #version 300 es
 precision highp float;
+precision highp sampler2DArray;
 
 in highp vec2 vTextureCoord;
 in vec4 vVertexColor;
 
 out vec4 fragColor;
 
-uniform vec4 pc_heightScale;
-uniform vec4 pc_heightOffset;
+uniform int uLayerCount;
+uniform sampler2DArray uDiffuseLayers;
+uniform sampler2DArray uHeightLayers;
+uniform sampler2D uAlphaBlend0;
+uniform sampler2D uAlphaBlend1;
+uniform sampler2D uAlphaBlend2;
+uniform sampler2D uAlphaBlend3;
+uniform sampler2D uAlphaBlend4;
+uniform sampler2D uAlphaBlend5;
+uniform sampler2D uAlphaBlend6;
 
-uniform sampler2D pt_layer0;
-uniform sampler2D pt_layer1;
-uniform sampler2D pt_layer2;
-uniform sampler2D pt_layer3;
-
-uniform float layerScale0;
-uniform float layerScale1;
-uniform float layerScale2;
-uniform float layerScale3;
-
-uniform sampler2D pt_height0;
-uniform sampler2D pt_height1;
-uniform sampler2D pt_height2;
-uniform sampler2D pt_height3;
-
-uniform sampler2D pt_blend1;
-uniform sampler2D pt_blend2;
-uniform sampler2D pt_blend3;
+uniform float uLayerScales[8];
+uniform float uHeightScales[8];
+uniform float uHeightOffsets[8];
+uniform float uDiffuseIndices[8];
+uniform float uHeightIndices[8];
 
 void main() {
-	vec2 tc0 = vTextureCoord * (8.0 / layerScale0);
-	vec2 tc1 = vTextureCoord * (8.0 / layerScale1);
-	vec2 tc2 = vTextureCoord * (8.0 / layerScale2);
-	vec2 tc3 = vTextureCoord * (8.0 / layerScale3);
+	float alphas[8];
+	alphas[0] = 1.0;
+	alphas[1] = uLayerCount > 1 ? texture(uAlphaBlend0, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[2] = uLayerCount > 2 ? texture(uAlphaBlend1, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[3] = uLayerCount > 3 ? texture(uAlphaBlend2, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[4] = uLayerCount > 4 ? texture(uAlphaBlend3, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[5] = uLayerCount > 5 ? texture(uAlphaBlend4, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[6] = uLayerCount > 6 ? texture(uAlphaBlend5, mod(vTextureCoord, 1.0)).r : 0.0;
+	alphas[7] = uLayerCount > 7 ? texture(uAlphaBlend6, mod(vTextureCoord, 1.0)).r : 0.0;
 
-	float blendTex0 = texture(pt_blend1, mod(vTextureCoord, 1.0)).r;
-	float blendTex1 = texture(pt_blend2, mod(vTextureCoord, 1.0)).r;
-	float blendTex2 = texture(pt_blend3, mod(vTextureCoord, 1.0)).r;
-
-	vec3 blendTex = vec3(blendTex0, blendTex1, blendTex2);
-
-	vec4 layerWeights = vec4(1.0 - clamp(dot(vec3(1.0), blendTex), 0.0, 1.0), blendTex);
-	vec4 layerPct = vec4(
-		layerWeights.x * (texture(pt_height0, tc0).a * pc_heightScale[0] + pc_heightOffset[0]),
-		layerWeights.y * (texture(pt_height1, tc1).a * pc_heightScale[1] + pc_heightOffset[1]),
-		layerWeights.z * (texture(pt_height2, tc2).a * pc_heightScale[2] + pc_heightOffset[2]),
-		layerWeights.w * (texture(pt_height3, tc3).a * pc_heightScale[3] + pc_heightOffset[3])
+	vec3 alpha_sum = vec3(
+		alphas[1] + alphas[2] + alphas[3] + alphas[4] + alphas[5] + alphas[6] + alphas[7]
 	);
 
-	vec4 layerPctMax = vec4(max(max(layerPct.x, layerPct.y), max(layerPct.z, layerPct.w)));
-	layerPct = layerPct * (vec4(1.0) - clamp(layerPctMax - layerPct, 0.0, 1.0));
-	layerPct = layerPct / vec4(dot(vec4(1.0), layerPct));
+	float layer_weights[8];
+	layer_weights[0] = 1.0 - clamp(alpha_sum.x, 0.0, 1.0);
+	for (int i = 1; i < 8; i++)
+		layer_weights[i] = alphas[i];
 
-	vec4 weightedLayer_0 = texture(pt_layer0, tc0) * layerPct.x;
-	vec4 weightedLayer_1 = texture(pt_layer1, tc1) * layerPct.y;
-	vec4 weightedLayer_2 = texture(pt_layer2, tc2) * layerPct.z;
-	vec4 weightedLayer_3 = texture(pt_layer3, tc3) * layerPct.w;
+	float layer_pcts[8];
+	for (int i = 0; i < 8; i++) {
+		vec2 tc = vTextureCoord * (8.0 / uLayerScales[i]);
+		float height_val = texture(uHeightLayers, vec3(tc, uHeightIndices[i])).a;
+		layer_pcts[i] = layer_weights[i] * (height_val * uHeightScales[i] + uHeightOffsets[i]);
+	}
 
-	fragColor = vec4((weightedLayer_0.xyz + weightedLayer_1.xyz + weightedLayer_2.xyz + weightedLayer_3.xyz) * vVertexColor.rgb * 2.0, 1.0);
+	float max_pct = 0.0;
+	for (int i = 0; i < 8; i++)
+		max_pct = max(max_pct, layer_pcts[i]);
+
+	for (int i = 0; i < 8; i++)
+		layer_pcts[i] = layer_pcts[i] * (1.0 - clamp(max_pct - layer_pcts[i], 0.0, 1.0));
+
+	float pct_sum = 0.0;
+	for (int i = 0; i < 8; i++)
+		pct_sum += layer_pcts[i];
+
+	for (int i = 0; i < 8; i++)
+		layer_pcts[i] = layer_pcts[i] / pct_sum;
+
+	vec3 final_color = vec3(0.0);
+	for (int i = 0; i < 8; i++) {
+		vec2 tc = vTextureCoord * (8.0 / uLayerScales[i]);
+		vec4 layer_sample = texture(uDiffuseLayers, vec3(tc, uDiffuseIndices[i]));
+		final_color += layer_sample.rgb * layer_pcts[i];
+	}
+
+	fragColor = vec4(final_color * vVertexColor.rgb * 2.0, 1.0);
 }

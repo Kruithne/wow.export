@@ -402,6 +402,7 @@ const TexMCNKChunkHandlers = {
 	0x4D434C59: function(data, chunkSize) {
 		const count = chunkSize / 16;
 		const layers = this.layers = new Array(count);
+		this.layerCount = count;
 
 		for (let i = 0; i < count; i++) {
 			layers[i] = {
