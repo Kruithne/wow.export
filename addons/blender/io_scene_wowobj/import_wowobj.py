@@ -948,7 +948,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
         base_layer.location = (-1000, 0)
         base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
         base_layer.image.alpha_mode = 'NONE'
-        base_layer.extension = extension_mode
+        base_layer.extension = 'REPEAT'
         base_layer.hide = True
         base_layer.parent = base_layer_frame
 
@@ -1036,7 +1036,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
             layer_texture.location = (-1000, last_tex_node_pos + 420)
             layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
             layer_texture.image.alpha_mode = 'NONE'
-            layer_texture.extension = extension_mode
+            layer_texture.extension = 'REPEAT'
             layer_texture.hide = True
             layer_texture.parent = layer_frame
             last_tex_node_pos += 420
