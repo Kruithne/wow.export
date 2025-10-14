@@ -536,7 +536,7 @@ const exportCharModel = async () => {
 		// Respect geoset masking for selected model.
 		exporter.setGeosetMask(core.view.chrCustGeosets);
 
-		await exporter.exportAsGLTF(exportPath, helper, fileManifest);
+		await exporter.exportAsGLTF(exportPath, helper, 'gltf');
 		await exportPaths?.writeLine('M2_GLTF:' + exportPath);
 
 		// Abort if the export has been cancelled.
