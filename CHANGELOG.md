@@ -2,6 +2,8 @@
 - Reduced memory usage when exporting heightmaps by ~4000x.
 - Heightmap resolution is now separate from terrain texture quality.
 - Added option to export heightmaps at 64x64 (native non-scaled resolution).
+- Added option to export 8-bit (grayscale, 1 byte/pixel, 0-255 range) heightmaps.
+- Replaced 32-bit depth toggle for heightmaps with a bit-depth dropdown.
 - Added the option to export character models as GLB (GLTF Binary).
 - Fixed an issue that prevented character models from being exported.
 

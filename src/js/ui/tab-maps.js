@@ -473,40 +473,53 @@ const exportSelectedMapAsHeightmaps = async () => {
 			const out_path = path.join(dir, filename);
 
 			const writer = new PNGWriter(export_resolution, export_resolution);
-			if (core.view.config.heightmap32BitDepth) {
+			const bit_depth = core.view.config.heightmapBitDepth;
+
+			if (bit_depth === 32) {
 				writer.bytesPerPixel = 4;
 				writer.bitDepth = 8;
 				writer.colorType = 6; // RGBA
-				
+
 				const pixel_data = writer.getPixelData();
-				
+
 				for (let j = 0; j < height_data.heights.length; j++) {
 					const normalized_height = (height_data.heights[j] - global_min_height) / height_range;
 					const float_buffer = new ArrayBuffer(4);
 					const float_view = new Float32Array(float_buffer);
 					const byte_view = new Uint8Array(float_buffer);
 					float_view[0] = normalized_height;
-					
+
 					const pixel_offset = j * 4;
 					pixel_data[pixel_offset] = byte_view[0]; // R
-					pixel_data[pixel_offset + 1] = byte_view[1]; // G  
+					pixel_data[pixel_offset + 1] = byte_view[1]; // G
 					pixel_data[pixel_offset + 2] = byte_view[2]; // B
 					pixel_data[pixel_offset + 3] = byte_view[3]; // A
 				}
-			} else {
+			} else if (bit_depth === 16) {
 				writer.bytesPerPixel = 2;
 				writer.bitDepth = 16;
 				writer.colorType = 0; // Grayscale
-				
+
 				const pixel_data = writer.getPixelData();
-				
+
 				for (let j = 0; j < height_data.heights.length; j++) {
 					const normalized_height = (height_data.heights[j] - global_min_height) / height_range;
 					const gray_value = Math.floor(normalized_height * 65535);
 					const pixel_offset = j * 2;
-					
+
 					pixel_data[pixel_offset] = (gray_value >> 8) & 0xFF;
 					pixel_data[pixel_offset + 1] = gray_value & 0xFF;
+				}
+			} else {
+				writer.bytesPerPixel = 1;
+				writer.bitDepth = 8;
+				writer.colorType = 0; // Grayscale
+
+				const pixel_data = writer.getPixelData();
+
+				for (let j = 0; j < height_data.heights.length; j++) {
+					const normalized_height = (height_data.heights[j] - global_min_height) / height_range;
+					pixel_data[j] = Math.floor(normalized_height * 255);
 				}
 			}
 			

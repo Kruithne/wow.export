@@ -90,7 +90,7 @@
 	"exportMapFormat": "OBJ",
 	"exportMapQuality": 4096,
 	"heightmapResolution": 1024,
-	"heightmap32BitDepth": false,
+	"heightmapBitDepth": 16,
 	"splitLargeTerrainBakes": true,
 	"splitAlphaMaps": true,
 	"itemViewerEnabledTypes": ["Head", "Neck", "Shoulder", "Shirt", "Chest", "Waist", "Legs", "Feet", "Wrist", "Hands", "One-hand", "Off-hand", "Two-hand", "Main-hand", "Ranged", "Back", "Tabard"],

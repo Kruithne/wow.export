@@ -614,10 +614,7 @@
 							<menu-button :options="menuButtonTextureQuality" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 							<span class="header">Heightmaps</span>
 							<menu-button :options="menuButtonHeightmapResolution" :default="config.heightmapResolution" @change="config.heightmapResolution = $event" :disabled="isBusy" :dropdown="true"></menu-button>
-							<label class="ui-checkbox" title="Use 32-bit depth for heightmaps (higher precision but non-standard format)">
-								<input type="checkbox" v-model="config.heightmap32BitDepth"/>
-								<span>Use 32-bit depth</span>
-							</label>
+							<menu-button :options="menuButtonHeightmapBitDepth" :default="config.heightmapBitDepth" @change="config.heightmapBitDepth = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 						</template>
 					</div>
 				</div>

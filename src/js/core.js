@@ -197,6 +197,11 @@ const makeNewView = () => {
 			{ label: '2048x2048 (2k)', value: 2048 },
 			{ label: '4096x4096 (4k)', value: 4096 }
 		],
+		menuButtonHeightmapBitDepth: [
+			{ label: '8-bit Depth', value: 8 },
+			{ label: '16-bit Depth', value: 16 },
+			{ label: '32-bit Depth', value: 32 }
+		],
 		menuButtonModels: [
 			{ label: 'Export OBJ', value: 'OBJ' },
 			{ label: 'Export glTF', value: 'GLTF' },
