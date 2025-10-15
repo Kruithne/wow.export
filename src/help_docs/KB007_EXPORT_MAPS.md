@@ -66,15 +66,7 @@ To render terrain efficiently and at full-resolution, you need to use `alpha map
 
 ![alpha layers](res/KB007_alpha_layers.png)
 
-While these are the best option for 1:1 quality and efficiency, they will require some assembly in the 3D software of your choice as they're not natively supported.
-
-To save on space, wow.export will combine these alpha maps into single images, with each layer being on the individual red, green and blue channels.
-
-![rgb](res/KB007_rgb.png)
-
-Below is the shader setup for a single chunk, to demonstrate how it works. This will need to be repeated for all 255 chunks on the tile.
-
-![alpha blending](res/KB007_alpha_blending.png)
+While these are the best option for 1:1 quality and efficiency, they will require some assembly in the 3D software of your choice as they're not natively supported. For a technical breakdown of how to do this, see [KB010](::KB010).
 
 For those using Blender, the wow.export Blender add-on will automatically setup alpha maps for you, allowing you to get 1:1 in-game quality terrain in a single click.
 
