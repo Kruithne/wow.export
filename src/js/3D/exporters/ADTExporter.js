@@ -20,6 +20,7 @@ const ADTLoader = require('../loaders/ADTLoader');
 
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
+const PNGWriter = require('../../png-writer');
 
 const WDCReader = require('../../db/WDCReader');
 
@@ -591,10 +592,6 @@ class ADTExporter {
 				if (isAlphaMaps) {
 					// Export alpha maps.
 
-					// Create a 2D canvas for drawing the alpha maps.
-					const canvas = document.createElement('canvas');
-					const ctx = canvas.getContext('2d');
-
 					const materialIDs = texAdt.diffuseTextureFileDataIDs;
 					const heightIDs = texAdt.heightTextureFileDataIDs;
 					const texParams = texAdt.texParams;
@@ -656,15 +653,6 @@ class ADTExporter {
 					}
 
 					// Alpha maps are 64x64, we're not up-scaling here.
-					if (isSplittingAlphaMaps) {
-						// Each individual tile will be exported separately.
-						canvas.width = 64;
-						canvas.height = 64;
-					} else {
-						// Tiles will be drawn onto one big image.
-						canvas.width = 64 * 16;
-						canvas.height = 64 * 16;
-					}
 
 					const chunks = texAdt.texChunks;
 					const chunkCount = chunks.length;
@@ -696,7 +684,17 @@ class ADTExporter {
 							const texLayers = texChunk.layers;
 
 							for (let imageIndex = 0; imageIndex < Math.max(1, requiredImages); imageIndex++) {
-								const imageData = ctx.createImageData(64, 64);
+								const pngWriter = new PNGWriter(64, 64);
+								const pixelData = pngWriter.getPixelData();
+
+								// Set unused channels to 0 and alpha channel to 255 if not used for data first
+								for (let j = 0; j < 64 * 64; j++) {
+									const pixelOffset = j * 4;
+									pixelData[pixelOffset + 0] = 0; // R = 0
+									pixelData[pixelOffset + 1] = 0; // G = 0
+									pixelData[pixelOffset + 2] = 0; // B = 0
+									pixelData[pixelOffset + 3] = 255; // A = 255
+								}
 
 								// Write layers to this image (4 layers per image starting from layer 1)
 								const startLayer = (imageIndex * 4) + 1;
@@ -713,40 +711,24 @@ class ADTExporter {
 										// fix_alpha_map: layer is 63x63, fill last column/row.
 										if (fix_alpha_map) {
 											if (isLastColumn && !isLastRow) {
-												imageData.data[(j * 4) + channelIdx] = layer[j - 1];
+												pixelData[(j * 4) + channelIdx] = layer[j - 1];
 											} else if (isLastRow) {
 												const prevRowIndex = j - 64;
-												imageData.data[(j * 4) + channelIdx] = layer[prevRowIndex];
+												pixelData[(j * 4) + channelIdx] = layer[prevRowIndex];
 											} else {
-												imageData.data[(j * 4) + channelIdx] = layer[j];
+												pixelData[(j * 4) + channelIdx] = layer[j];
 											}
 										} else {
-											imageData.data[(j * 4) + channelIdx] = layer[j];
+											pixelData[(j * 4) + channelIdx] = layer[j];
 										}
 									}
 								}
-
-								// Set unused channels to 0 and alpha channel to 255 if not used for data
-								for (let j = 0; j < 64 * 64; j++) {
-									const pixelOffset = j * 4;
-									// set unused channels to 0
-									for (let ch = endLayer - startLayer; ch < 4; ch++) {
-										if (ch === 3 && endLayer - startLayer < 4) {
-											imageData.data[pixelOffset + ch] = 255; // alpha = 255
-										} else if (ch < 3) {
-											imageData.data[pixelOffset + ch] = 0; // R, G, B = 0
-										}
-									}
-								}
-
-								ctx.putImageData(imageData, 0, 0);
 
 								// determine file name: first image keeps original naming, additional get suffix
 								const imageSuffix = imageIndex === 0 ? '' : '_' + imageIndex;
 								const tilePath = path.join(dir, 'tex_' + prefix + imageSuffix + '.png');
 
-								const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
-								await buf.writeToFile(tilePath);
+								await pngWriter.write(tilePath);
 							}
 
 							// Create JSON metadata with image/channel mapping
@@ -809,11 +791,16 @@ class ADTExporter {
 
 						// export multiple combined images if needed
 						for (let imageIndex = 0; imageIndex < maxLayersNeeded; imageIndex++) {
-							// clear canvas for this image
-							const combinedCanvas = document.createElement('canvas');
-							combinedCanvas.width = 64 * 16;
-							combinedCanvas.height = 64 * 16;
-							const combinedCtx = combinedCanvas.getContext('2d');
+							const pngWriter = new PNGWriter(64 * 16, 64 * 16);
+							const pixelData = pngWriter.getPixelData();
+
+							// Initialize all pixels to default values
+							for (let i = 0; i < pixelData.length; i += 4) {
+								pixelData[i + 0] = 0; // R = 0
+								pixelData[i + 1] = 0; // G = 0
+								pixelData[i + 2] = 0; // B = 0
+								pixelData[i + 3] = 255; // A = 255
+							}
 
 							// process all chunks for this image
 							for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
@@ -824,8 +811,6 @@ class ADTExporter {
 
 								const chunkX = chunkIndex % 16;
 								const chunkY = Math.floor(chunkIndex / 16);
-
-								const imageData = combinedCtx.createImageData(64, 64);
 
 								// Write layers to this image (4 layers per image starting from layer 1)
 								const startLayer = (imageIndex * 4) + 1;
@@ -839,44 +824,34 @@ class ADTExporter {
 										const isLastColumn = (j % 64) === 63;
 										const isLastRow = j >= 63 * 64;
 
+										// Calculate position in combined image
+										const localX = j % 64;
+										const localY = Math.floor(j / 64);
+										const globalX = chunkX * 64 + localX;
+										const globalY = chunkY * 64 + localY;
+										const globalIndex = (globalY * (64 * 16) + globalX) * 4 + channelIdx;
+
 										// fix_alpha_map: layer is 63x63, fill last column/row.
 										if (fix_alpha_map) {
 											if (isLastColumn && !isLastRow) {
-												imageData.data[(j * 4) + channelIdx] = layer[j - 1];
+												pixelData[globalIndex] = layer[j - 1];
 											} else if (isLastRow) {
 												const prevRowIndex = j - 64;
-												imageData.data[(j * 4) + channelIdx] = layer[prevRowIndex];
+												pixelData[globalIndex] = layer[prevRowIndex];
 											} else {
-												imageData.data[(j * 4) + channelIdx] = layer[j];
+												pixelData[globalIndex] = layer[j];
 											}
 										} else {
-											imageData.data[(j * 4) + channelIdx] = layer[j];
+											pixelData[globalIndex] = layer[j];
 										}
 									}
 								}
-
-								// Set unused channels to 0 and alpha channel to 255 if not used for data
-								for (let j = 0; j < 64 * 64; j++) {
-									const pixelOffset = j * 4;
-									// set unused channels to 0
-									for (let ch = endLayer - startLayer; ch < 4; ch++) {
-										if (ch === 3 && endLayer - startLayer < 4) {
-											imageData.data[pixelOffset + ch] = 255; // alpha = 255
-										} else if (ch < 3) {
-											imageData.data[pixelOffset + ch] = 0; // R, G, B = 0
-										}
-									}
-								}
-
-								// place chunk image in the combined canvas
-								combinedCtx.putImageData(imageData, 64 * chunkX, 64 * chunkY);
 							}
 
 							// save the combined image
 							const imageSuffix = imageIndex === 0 ? '' : '_' + imageIndex;
 							const mergedPath = path.join(dir, 'tex_' + this.tileID + imageSuffix + '.png');
-							const buf = await BufferWrapper.fromCanvas(combinedCanvas, 'image/png');
-							await buf.writeToFile(mergedPath);
+							await pngWriter.write(mergedPath);
 						}
 
 						// write json metadata

@@ -144,6 +144,255 @@ def create_texture_panner_node_group():
     return group
 
 
+def create_competitive_blend_node_group():
+	"""create reusable competitive terrain blending node group"""
+	group_name = 'competitive_terrain_blend'
+
+	if group_name in bpy.data.node_groups:
+		return bpy.data.node_groups[group_name]
+
+	group = bpy.data.node_groups.new(group_name, 'ShaderNodeTree')
+	group.nodes.clear()
+
+	if hasattr(group, 'interface'):
+		# blender 4.0+ interface system
+		for i in range(8):
+			group.interface.new_socket(f'diffuse_{i}', in_out='INPUT', socket_type='NodeSocketColor')
+			group.interface.new_socket(f'height_{i}', in_out='INPUT', socket_type='NodeSocketFloat')
+			if i > 0:  # skip alpha_0 since it's unused
+				group.interface.new_socket(f'alpha_{i}', in_out='INPUT', socket_type='NodeSocketFloat')
+			group.interface.new_socket(f'height_scale_{i}', in_out='INPUT', socket_type='NodeSocketFloat')
+			group.interface.new_socket(f'height_offset_{i}', in_out='INPUT', socket_type='NodeSocketFloat')
+		group.interface.new_socket('result', in_out='OUTPUT', socket_type='NodeSocketColor')
+	else:
+		# blender 3.x interface system
+		for i in range(8):
+			group.inputs.new('NodeSocketColor', f'diffuse_{i}')
+			group.inputs.new('NodeSocketFloat', f'height_{i}')
+			if i > 0:  # skip alpha_0 since it's unused
+				group.inputs.new('NodeSocketFloat', f'alpha_{i}')
+			group.inputs.new('NodeSocketFloat', f'height_scale_{i}')
+			group.inputs.new('NodeSocketFloat', f'height_offset_{i}')
+		group.outputs.new('NodeSocketColor', 'result')
+
+	nodes = group.nodes
+	links = group.links
+
+	group_input = nodes.new('NodeGroupInput')
+	group_input.location = (-2000, 0)
+
+	group_output = nodes.new('NodeGroupOutput')
+	group_output.location = (800, 0)
+
+	# calculate alpha sum for base layer weight (layer 0)
+	# we need to sum alpha_1 through alpha_7 (6 additions total)
+	alpha_sum_adds = []
+	for i in range(6):  # 6 add nodes for 7 alpha inputs (1-7)
+		add_node = nodes.new('ShaderNodeMath')
+		add_node.operation = 'ADD'
+		add_node.location = (-1700 + i * 50, 800)
+		alpha_sum_adds.append(add_node)
+
+	# chain alpha additions (sum alpha_1 through alpha_7)
+	for i in range(len(alpha_sum_adds)):
+		if i == 0:
+			# first add: alpha_1 + alpha_2
+			links.new(group_input.outputs['alpha_1'], alpha_sum_adds[i].inputs[0])
+			links.new(group_input.outputs['alpha_2'], alpha_sum_adds[i].inputs[1])
+		else:
+			# subsequent adds: previous_sum + alpha_(i+2)
+			links.new(alpha_sum_adds[i-1].outputs[0], alpha_sum_adds[i].inputs[0])
+			alpha_index = i + 2
+			if alpha_index < 8:  # ensure we don't go beyond alpha_7
+				links.new(group_input.outputs[f'alpha_{alpha_index}'], alpha_sum_adds[i].inputs[1])
+
+	# clamp alpha sum to 0-1
+	alpha_sum_clamp = nodes.new('ShaderNodeClamp')
+	alpha_sum_clamp.location = (-1200, 800)
+	alpha_sum_clamp.inputs['Min'].default_value = 0.0
+	alpha_sum_clamp.inputs['Max'].default_value = 1.0
+	links.new(alpha_sum_adds[-1].outputs[0], alpha_sum_clamp.inputs['Value'])
+
+	# calculate base layer weight: 1.0 - alpha_sum
+	base_weight_sub = nodes.new('ShaderNodeMath')
+	base_weight_sub.operation = 'SUBTRACT'
+	base_weight_sub.location = (-1000, 800)
+	base_weight_sub.inputs[0].default_value = 1.0
+	links.new(alpha_sum_clamp.outputs[0], base_weight_sub.inputs[1])
+
+	# calculate weighted layer percentages
+	layer_pcts = []
+	for i in range(8):
+		# height modulation: height * height_scale + height_offset
+		height_mult = nodes.new('ShaderNodeMath')
+		height_mult.operation = 'MULTIPLY'
+		height_mult.location = (-1600, 400 - i * 100)
+		links.new(group_input.outputs[f'height_{i}'], height_mult.inputs[0])
+		links.new(group_input.outputs[f'height_scale_{i}'], height_mult.inputs[1])
+
+		height_add = nodes.new('ShaderNodeMath')
+		height_add.operation = 'ADD'
+		height_add.location = (-1400, 400 - i * 100)
+		links.new(height_mult.outputs[0], height_add.inputs[0])
+		links.new(group_input.outputs[f'height_offset_{i}'], height_add.inputs[1])
+
+		# weight * height_modulated
+		weight_mult = nodes.new('ShaderNodeMath')
+		weight_mult.operation = 'MULTIPLY'
+		weight_mult.location = (-1200, 400 - i * 100)
+
+		if i == 0:
+			links.new(base_weight_sub.outputs[0], weight_mult.inputs[0])
+		else:
+			links.new(group_input.outputs[f'alpha_{i}'], weight_mult.inputs[0])
+
+		links.new(height_add.outputs[0], weight_mult.inputs[1])
+		layer_pcts.append(weight_mult)
+
+	# find maximum percentage
+	max_nodes = []
+	for i in range(len(layer_pcts) - 1):
+		max_node = nodes.new('ShaderNodeMath')
+		max_node.operation = 'MAXIMUM'
+		max_node.location = (-900, 600 - i * 50)
+
+		if i == 0:
+			links.new(layer_pcts[0].outputs[0], max_node.inputs[0])
+			links.new(layer_pcts[1].outputs[0], max_node.inputs[1])
+		else:
+			links.new(max_nodes[i-1].outputs[0], max_node.inputs[0])
+			links.new(layer_pcts[i+1].outputs[0], max_node.inputs[1])
+
+		max_nodes.append(max_node)
+
+	# competitive suppression: pct * (1.0 - clamp(max_pct - pct, 0.0, 1.0))
+	suppressed_pcts = []
+	for i, pct_node in enumerate(layer_pcts):
+		# max_pct - pct
+		diff_sub = nodes.new('ShaderNodeMath')
+		diff_sub.operation = 'SUBTRACT'
+		diff_sub.location = (-600, 400 - i * 100)
+		links.new(max_nodes[-1].outputs[0], diff_sub.inputs[0])
+		links.new(pct_node.outputs[0], diff_sub.inputs[1])
+
+		# clamp(diff, 0.0, 1.0)
+		diff_clamp = nodes.new('ShaderNodeClamp')
+		diff_clamp.location = (-400, 400 - i * 100)
+		diff_clamp.inputs['Min'].default_value = 0.0
+		diff_clamp.inputs['Max'].default_value = 1.0
+		links.new(diff_sub.outputs[0], diff_clamp.inputs['Value'])
+
+		# 1.0 - clamped_diff
+		suppress_sub = nodes.new('ShaderNodeMath')
+		suppress_sub.operation = 'SUBTRACT'
+		suppress_sub.location = (-200, 400 - i * 100)
+		suppress_sub.inputs[0].default_value = 1.0
+		links.new(diff_clamp.outputs[0], suppress_sub.inputs[1])
+
+		# pct * suppression_factor
+		final_pct = nodes.new('ShaderNodeMath')
+		final_pct.operation = 'MULTIPLY'
+		final_pct.location = (0, 400 - i * 100)
+		links.new(pct_node.outputs[0], final_pct.inputs[0])
+		links.new(suppress_sub.outputs[0], final_pct.inputs[1])
+
+		suppressed_pcts.append(final_pct)
+
+	# calculate sum of suppressed percentages
+	pct_sum_adds = []
+	for i in range(len(suppressed_pcts) - 1):
+		add_node = nodes.new('ShaderNodeMath')
+		add_node.operation = 'ADD'
+		add_node.location = (200, 600 - i * 50)
+
+		if i == 0:
+			links.new(suppressed_pcts[0].outputs[0], add_node.inputs[0])
+			links.new(suppressed_pcts[1].outputs[0], add_node.inputs[1])
+		else:
+			links.new(pct_sum_adds[i-1].outputs[0], add_node.inputs[0])
+			links.new(suppressed_pcts[i+1].outputs[0], add_node.inputs[1])
+
+		pct_sum_adds.append(add_node)
+
+	# normalize percentages
+	normalized_pcts = []
+	for i, pct_node in enumerate(suppressed_pcts):
+		normalize_div = nodes.new('ShaderNodeMath')
+		normalize_div.operation = 'DIVIDE'
+		normalize_div.location = (400, 400 - i * 100)
+		links.new(pct_node.outputs[0], normalize_div.inputs[0])
+		links.new(pct_sum_adds[-1].outputs[0], normalize_div.inputs[1])
+		normalized_pcts.append(normalize_div)
+
+	# blend colors using normalized percentages (multiply each color by its weight)
+	color_blends = []
+	for i in range(8):  # process all 8 layers
+		# separate RGB multiply node to multiply color by weight
+		separate_rgb = nodes.new('ShaderNodeSeparateColor')
+		separate_rgb.location = (400, 400 - i * 50)
+		links.new(group_input.outputs[f'diffuse_{i}'], separate_rgb.inputs['Color'])
+
+		# multiply each channel by the normalized percentage
+		mult_r = nodes.new('ShaderNodeMath')
+		mult_r.operation = 'MULTIPLY'
+		mult_r.location = (550, 450 - i * 50)
+		links.new(separate_rgb.outputs['Red'], mult_r.inputs[0])
+		links.new(normalized_pcts[i].outputs[0], mult_r.inputs[1])
+
+		mult_g = nodes.new('ShaderNodeMath')
+		mult_g.operation = 'MULTIPLY'
+		mult_g.location = (550, 400 - i * 50)
+		links.new(separate_rgb.outputs['Green'], mult_g.inputs[0])
+		links.new(normalized_pcts[i].outputs[0], mult_g.inputs[1])
+
+		mult_b = nodes.new('ShaderNodeMath')
+		mult_b.operation = 'MULTIPLY'
+		mult_b.location = (550, 350 - i * 50)
+		links.new(separate_rgb.outputs['Blue'], mult_b.inputs[0])
+		links.new(normalized_pcts[i].outputs[0], mult_b.inputs[1])
+
+		# combine back to color
+		combine_rgb = nodes.new('ShaderNodeCombineColor')
+		combine_rgb.location = (700, 400 - i * 50)
+		links.new(mult_r.outputs[0], combine_rgb.inputs['Red'])
+		links.new(mult_g.outputs[0], combine_rgb.inputs['Green'])
+		links.new(mult_b.outputs[0], combine_rgb.inputs['Blue'])
+
+		color_blends.append(combine_rgb)
+
+	# sum all color contributions
+	color_sum_adds = []
+	for i in range(7):  # 7 add nodes for 8 colors
+		add_node = nodes.new('ShaderNodeMixRGB' if not hasattr(bpy.types, 'ShaderNodeMix') else 'ShaderNodeMix')
+		if hasattr(add_node, 'data_type'):
+			add_node.data_type = 'RGBA'
+		add_node.blend_type = 'ADD'
+		add_node.location = (850, 600 - i * 50)
+
+		if i == 0:
+			# first add: color_0 + color_1
+			links.new(color_blends[0].outputs[0], add_node.inputs['A'])
+			links.new(color_blends[1].outputs[0], add_node.inputs['B'])
+		else:
+			# subsequent adds: previous_sum + color_(i+1)
+			links.new(color_sum_adds[i-1].outputs['Result'], add_node.inputs['A'])
+			links.new(color_blends[i+1].outputs[0], add_node.inputs['B'])
+
+		# set factor to 1.0 for full addition
+		add_node.inputs[0].default_value = 1.0
+
+		color_sum_adds.append(add_node)
+
+	# connect final result
+	if len(color_sum_adds) > 0:
+		links.new(color_sum_adds[-1].outputs['Result'], group_output.inputs['result'])
+	else:
+		# fallback: connect first color blend directly if no summation was done
+		links.new(color_blends[0].outputs[0], group_output.inputs['result'])
+
+	return group
+
+
 def create_animated_texture_nodes(nodes, node_tree, animation_data, texture_path, x_pos, y_pos):
     """Create texture nodes with UV animation"""
     # Create TexturePanner node group instance
@@ -899,7 +1148,7 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
         principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
 
         texture_coords = nodes.new('ShaderNodeTexCoord')
-        texture_coords.location = (-1700, 600)
+        texture_coords.location = (-2200, 0)
 
         # calculate required alpha map count - each image holds 4 layers (RGBA)
         alpha_layer_count = len(layers) - 1  # exclude base layer
@@ -908,7 +1157,6 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
         alpha_maps = []
         alpha_map_channels = []
 
-        # load multiple alpha map images with new naming convention
         for image_idx in range(required_alpha_images):
             alpha_map_frame = nodes.new(type='NodeFrame')
             alpha_map_frame.label = f'Alpha map {image_idx}'
@@ -918,12 +1166,12 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
                 # first image uses original naming: tex_30_25_0.png
                 alpha_map_path = textureLocation
             else:
-                # additional images: tex_30_25_0_1.png, tex_30_25_0_2.png, etc.
+                # additional images: _1, _2 etc
                 base_path, ext = os.path.splitext(textureLocation)
                 alpha_map_path = f'{base_path}_{image_idx}{ext}'
 
             alpha_map = nodes.new('ShaderNodeTexImage')
-            alpha_map.location = (-700, -100 - image_idx * 300)
+            alpha_map.location = (-1900, -100 - image_idx * 300)
             alpha_map.width = 140
             alpha_map.image = loadImage(alpha_map_path)
             alpha_map.image.colorspace_settings.name = 'Non-Color'
@@ -932,130 +1180,151 @@ def createBlendedTerrain(materialName, textureLocation, layers, baseDir, extensi
             alpha_map.parent = alpha_map_frame
 
             channels = nodes.new('ShaderNodeSeparateColor')
-            channels.location = (-500, -100 - image_idx * 300)
+            channels.location = (-1700, -100 - image_idx * 300)
             channels.width = 140
             channels.parent = alpha_map_frame
 
             node_tree.links.new(alpha_map.outputs['Color'], channels.inputs['Color'])
+            node_tree.links.new(texture_coords.outputs['UV'], alpha_map.inputs['Vector'])
 
             alpha_maps.append(alpha_map)
             alpha_map_channels.append(channels)
 
-        base_layer_frame = nodes.new(type='NodeFrame')
-        base_layer_frame.label = 'Layer #0'
-        
-        base_layer = nodes.new('ShaderNodeTexImage')
-        base_layer.location = (-1000, 0)
-        base_layer.image = loadImage(os.path.join(baseDir, layers[0]['file']))
-        base_layer.image.alpha_mode = 'NONE'
-        base_layer.extension = 'REPEAT'
-        base_layer.hide = True
-        base_layer.parent = base_layer_frame
+        # create competitive blend node group instance
+        competitive_blend_group = create_competitive_blend_node_group()
+        competitive_blend_node = nodes.new('ShaderNodeGroup')
+        competitive_blend_node.node_tree = competitive_blend_group
+        competitive_blend_node.location = (0, 0)
 
-        texture_mapping = nodes.new('ShaderNodeMapping')
-        texture_mapping.location = (-1300, 0)
-        texture_mapping.inputs[3].default_value[0] = 8 / layers[0]['scale']
-        texture_mapping.inputs[3].default_value[1] = 8 / layers[0]['scale']
-        texture_mapping.inputs[3].default_value[2] = 8 / layers[0]['scale']
-        texture_mapping.parent = base_layer_frame
+        # prepare layer data arrays
+        diffuse_textures = []
+        height_textures = []
+        alpha_values = []
 
-        node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
-        
-        node_tree.links.new(texture_mapping.outputs['Vector'], base_layer.inputs['Vector'])
-
-        # if('heightFile' in layers[0]):
-        #     height_map = nodes.new('ShaderNodeTexImage')
-        #     height_map.location = (-1000, -50)
-        #     height_map.image = loadImage(os.path.join(baseDir, layers[0]['heightFile']))
-        #     height_map.image.alpha_mode = 'NONE'
-        #     height_map.parent = base_layer_frame
-
-        #     node_tree.links.new(texture_mapping.outputs['Vector'], height_map.inputs['Vector'])
-
-        last_map_node_pos = 0
-        last_tex_node_pos = 0
-        last_height_tex_node_pos = -50
-        last_mix_node_pos = 0
-        last_mix_node = None
-
-        for idx, layer in enumerate(layers[1:]):
-            layer_index = idx + 1  # since we start from layers[1:]
-
-            # calculate which alpha map image and channel this layer uses
-            image_index = (layer_index - 1) // 4
-            channel_index = (layer_index - 1) % 4
-            channel_names = ['Red', 'Green', 'Blue', 'Alpha']
-
-            try:
-                mix_node = nodes.new('ShaderNodeMix')
-                mix_node.location = (-300, last_mix_node_pos + 200)
-                mix_node.data_type = 'RGBA'
-                last_mix_node_pos += 200
-            except:
-                mix_node = nodes.new('ShaderNodeMixRGB')
-                mix_node.location = (-300, last_mix_node_pos + 200)
-                last_mix_node_pos += 200
-
-            sockets = get_mix_node_sockets(mix_node)
-
-            # connect to the correct alpha map and channel
-            if image_index < len(alpha_map_channels):
-                if channel_index == 3:
-                    # alpha channel comes from the image texture node directly
-                    node_tree.links.new(
-                        alpha_maps[image_index].outputs['Alpha'],
-                        mix_node.inputs[sockets['in']['Factor']])
-                else:
-                    # RGB channels come from the separate color node
-                    node_tree.links.new(
-                        alpha_map_channels[image_index].outputs[channel_names[channel_index]],
-                        mix_node.inputs[sockets['in']['Factor']])
-
-            if last_mix_node is None:
-                node_tree.links.new(
-                    base_layer.outputs['Color'],
-                    mix_node.inputs[sockets['in']['A']])
-            else:
-                node_tree.links.new(
-                    last_mix_node.outputs[sockets['out']['Result']],
-                    mix_node.inputs[sockets['in']['A']])
-
+        # setup layers for competitive blending
+        for layer_idx, layer in enumerate(layers[:8]):  # limit to 8 layers for shader
             layer_frame = nodes.new(type='NodeFrame')
-            layer_frame.label = 'Layer #' + str(idx + 1)
-            texture_mapping_layer = nodes.new('ShaderNodeMapping')
-            texture_mapping_layer.location = (-1300, last_map_node_pos + 420)
-            texture_mapping_layer.inputs[3].default_value[0] = 8 / layer['scale']
-            texture_mapping_layer.inputs[3].default_value[1] = 8 / layer['scale']
-            texture_mapping_layer.inputs[3].default_value[2] = 8 / layer['scale']
-            texture_mapping_layer.parent = layer_frame
-            last_map_node_pos += 420
+            layer_frame.label = f'Layer #{layer_idx}'
 
-            node_tree.links.new(texture_coords.outputs['UV'], texture_mapping_layer.inputs['Vector'])
+            # create texture mapping for this layer
+            texture_mapping = nodes.new('ShaderNodeMapping')
+            texture_mapping.location = (-2000, 500 - layer_idx * 150)
+            texture_mapping.inputs[3].default_value[0] = 8 / layer['scale']
+            texture_mapping.inputs[3].default_value[1] = 8 / layer['scale']
+            texture_mapping.inputs[3].default_value[2] = 8 / layer['scale']
+            texture_mapping.parent = layer_frame
+            node_tree.links.new(texture_coords.outputs['UV'], texture_mapping.inputs['Vector'])
 
-            layer_texture = nodes.new('ShaderNodeTexImage')
-            layer_texture.location = (-1000, last_tex_node_pos + 420)
-            layer_texture.image = loadImage(os.path.join(baseDir, layer['file']))
-            layer_texture.image.alpha_mode = 'NONE'
-            layer_texture.extension = 'REPEAT'
-            layer_texture.hide = True
-            layer_texture.parent = layer_frame
-            last_tex_node_pos += 420
+            # create diffuse texture
+            diffuse_texture = nodes.new('ShaderNodeTexImage')
+            diffuse_texture.location = (-1800, 500 - layer_idx * 150)
+            diffuse_texture.image = loadImage(os.path.join(baseDir, layer['file']))
+            diffuse_texture.image.alpha_mode = 'NONE'
+            diffuse_texture.extension = 'REPEAT'
+            diffuse_texture.parent = layer_frame
+            node_tree.links.new(texture_mapping.outputs['Vector'], diffuse_texture.inputs['Vector'])
+            diffuse_textures.append(diffuse_texture)
 
-            node_tree.links.new(texture_mapping_layer.outputs['Vector'], layer_texture.inputs['Vector'])
+            # create height texture if available
+            if 'heightFile' in layer:
+                height_texture = nodes.new('ShaderNodeTexImage')
+                height_texture.location = (-1600, 500 - layer_idx * 150)
+                height_texture.image = loadImage(os.path.join(baseDir, layer['heightFile']))
+                height_texture.image.colorspace_settings.name = 'Non-Color'
+                height_texture.extension = 'REPEAT'
+                height_texture.parent = layer_frame
+                node_tree.links.new(texture_mapping.outputs['Vector'], height_texture.inputs['Vector'])
+                height_textures.append(height_texture)
+            else:
+                # create a constant white value for missing height maps
+                constant_value = nodes.new('ShaderNodeValue')
+                constant_value.location = (-1600, 500 - layer_idx * 150)
+                constant_value.outputs[0].default_value = 1.0
+                constant_value.parent = layer_frame
+                height_textures.append(constant_value)
+
+            # extract alpha value for this layer
+            if layer_idx == 0:
+                # base layer alpha is calculated inside the competitive blend group
+                alpha_constant = nodes.new('ShaderNodeValue')
+                alpha_constant.location = (-1400, 500 - layer_idx * 150)
+                alpha_constant.outputs[0].default_value = 1.0  # placeholder, actual calculation in group
+                alpha_constant.parent = layer_frame
+                alpha_values.append(alpha_constant)
+            else:
+                # calculate which alpha map image and channel this layer uses
+                image_index = (layer_idx - 1) // 4
+                channel_index = (layer_idx - 1) % 4
+
+                if image_index < len(alpha_map_channels):
+                    if channel_index == 3:
+                        # alpha channel from image texture directly
+                        alpha_values.append(alpha_maps[image_index])
+                    else:
+                        # RGB channels from separate color node
+                        alpha_values.append(alpha_map_channels[image_index])
+                else:
+                    # no alpha data for this layer, use constant 0
+                    alpha_constant = nodes.new('ShaderNodeValue')
+                    alpha_constant.location = (-1400, 500 - layer_idx * 150)
+                    alpha_constant.outputs[0].default_value = 0.0
+                    alpha_constant.parent = layer_frame
+                    alpha_values.append(alpha_constant)
+
+        # connect all inputs to competitive blend node
+        for i in range(min(8, len(layers))):
+            layer = layers[i]
+
+            # connect diffuse texture
             node_tree.links.new(
-                layer_texture.outputs['Color'],
-                mix_node.inputs[sockets['in']['B']])
+                diffuse_textures[i].outputs['Color'],
+                competitive_blend_node.inputs[f'diffuse_{i}']
+            )
 
-            last_mix_node = mix_node
+            # connect height texture
+            if hasattr(height_textures[i], 'type') and height_textures[i].type == 'TEX_IMAGE':
+                # image texture node - use alpha channel for height
+                node_tree.links.new(
+                    height_textures[i].outputs['Alpha'],
+                    competitive_blend_node.inputs[f'height_{i}']
+                )
+            else:
+                # constant value node or any other node type
+                node_tree.links.new(
+                    height_textures[i].outputs[0],
+                    competitive_blend_node.inputs[f'height_{i}']
+                )
 
-        if last_mix_node is None:
-            node_tree.links.new(base_layer.outputs['Color'], principled.inputs['Base Color'])
-        else:
-            # Get sockets for the last mix node - we know it exists since last_mix_node is not None
-            sockets = get_mix_node_sockets(last_mix_node)
-            node_tree.links.new(
-                last_mix_node.outputs[sockets['out']['Result']],
-                principled.inputs['Base Color'])
+            # connect alpha value (skip alpha_0 since it doesn't exist as an input)
+            if i > 0:
+                image_index = (i - 1) // 4
+                channel_index = (i - 1) % 4
+                channel_names = ['Red', 'Green', 'Blue']
+
+                if image_index < len(alpha_map_channels):
+                    if channel_index == 3:
+                        node_tree.links.new(
+                            alpha_maps[image_index].outputs['Alpha'],
+                            competitive_blend_node.inputs[f'alpha_{i}']
+                        )
+                    else:
+                        node_tree.links.new(
+                            alpha_map_channels[image_index].outputs[channel_names[channel_index]],
+                            competitive_blend_node.inputs[f'alpha_{i}']
+                        )
+                else:
+                    # no alpha data for this layer, set to 0
+                    competitive_blend_node.inputs[f'alpha_{i}'].default_value = 0.0
+
+            # set layer parameters from JSON
+            competitive_blend_node.inputs[f'height_scale_{i}'].default_value = layer.get('heightScale', 0.0)
+            competitive_blend_node.inputs[f'height_offset_{i}'].default_value = layer.get('heightOffset', 1.0)
+
+        # connect competitive blend result to principled BSDF
+        node_tree.links.new(
+            competitive_blend_node.outputs['result'],
+            principled.inputs['Base Color']
+        )
 
         return material
     except Exception as e:

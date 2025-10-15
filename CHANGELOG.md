@@ -1,6 +1,8 @@
 ## 0.2.5 (XX-10-2025)
 - Added support for new variable layer terrain blending on Midnight maps.
 - Added support (import + export) for variable layer alpha maps on Midnight maps.
+- Added texture height support for alpha maps in Blender add-on.
+- Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
 - Fixed an issue causing seams to appear on maps imported with the Blender add-on.
 
 ## 0.2.4 (14-10-2025)
