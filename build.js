@@ -10,22 +10,14 @@ import path from 'node:path';
 import util from 'node:util';
 import rcedit from 'rcedit';
 import crypto from 'node:crypto';
+import { log, log_color } from './build/log.js';
 
 const argv = process.argv.splice(2);
 
 const CONFIG_FILE = './build.json';
 const MANIFEST_FILE = './package.json';
 
-const log_color = (color, text) => `${Bun.color(color, 'ansi_16m')}${text}\x1b[0m`;
 const log_colour_array = (arr, color = 'cyan') => arr.map(e => log_color(color, e.name || e)).join(', ');
-
-const log = {
-	error: (msg, ...params) => log.print(log_color('red', 'ERR ') + msg, ...params),
-	warn: (msg, ...params) => log.print(log_color('yellow', 'WARN ') + msg, ...params),
-	success: (msg, ...params) => log.print(log_color('green', 'DONE ') + msg, ...params),
-	info: (msg, ...params) => log.print(log_color('cyan', 'INFO ') + msg, ...params),
-	print: (msg, ...params) => console.log(msg.replace(/\*([^*]+)\*/gm, (m, g1) => log_color('cyan', g1)), ...params)
-};
 
 function format_bytes(bytes) {
 	if (bytes === 0)
@@ -115,6 +107,24 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 	const allBuildsStart = Date.now();
 	log.info('Selected builds: %s', log_colour_array(targetBuilds));
+
+	// build native addons once before processing any build targets
+	if (config.nativeAddonScript) {
+		const addonScriptPath = path.resolve(config.nativeAddonScript);
+		log.info('Building native addons (*%s*)...', addonScriptPath);
+
+		const addonStart = Date.now();
+		const addon_result = Bun.spawnSync({
+			cmd: ['bun', addonScriptPath],
+			stdio: ['inherit', 'inherit', 'inherit']
+		});
+
+		if (addon_result.exitCode !== 0)
+			throw new Error('Native addon build failed');
+
+		const addonElapsed = (Date.now() - addonStart) / 1000;
+		log.success('Native addons built in *%ds*', addonElapsed);
+	}
 
 	for (const build of targetBuilds) {
 		const buildGUID = Bun.randomUUIDv7();
