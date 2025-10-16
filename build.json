@@ -2,7 +2,7 @@
 	"outputDirectory": "./bin",
 	"cacheDirectory": "./bin/_cache",
 	"sourceDirectory": "./src",
-	"webkitVersion": "0.69.1",
+	"webkitVersion": "0.104.1",
 	"webkitURL": "https://dl.nwjs.io/v%s/%s",
 	"manifest": {
 		"name": "wow.export",
@@ -20,6 +20,7 @@
 		}
 	},
 	"updaterScript": "./updater/updater.js",
+	"nativeAddonScript": "./build/build-native-addons.js",
 	"manifestInherit": ["name", "description", "license", "version", "contributors"],
 	"builds": [
 		{
@@ -37,6 +38,9 @@
 				"whitelist": [
 					"locales\/en-US.pak$"
 				]
+			},
+			"include": {
+				"node_addons/mmap/build/Release/mmap.node": "mmap.node"
 			}
 		},
 		{
@@ -71,7 +75,8 @@
 				"CHANGELOG.md": "src/CHANGELOG.md",
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
-				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm"
+				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
+				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
 			},
 			"remap": {
 				"nw.exe": "wow.export.exe",
@@ -123,7 +128,8 @@
 				"CHANGELOG.md": "src/CHANGELOG.md",
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
-				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm"
+				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
+				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
 			},
 			"remap": {
 				"nw": "wow.export",
@@ -176,7 +182,8 @@
 				"LEGAL": "./wow.export.app/License/LEGAL",
 				"CHANGELOG.md": "./wow.export.app/Contents/Resources/app.nw/src/CHANGELOG.md",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
-				"node_modules/webp-wasm/webp_node_enc.wasm": "./wow.export.app/Contents/Resources/app.nw/src/webp_node_enc.wasm"
+				"node_modules/webp-wasm/webp_node_enc.wasm": "./wow.export.app/Contents/Resources/app.nw/src/webp_node_enc.wasm",
+				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
 			},
 			"remap": {
 				"nwjs.app": "wow.export.app",

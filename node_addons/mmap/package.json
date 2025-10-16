@@ -1,0 +1,10 @@
+{
+	"name": "mmap",
+	"version": "1.0.0",
+	"author": "Kruithne <kruithne@gmail.com>",
+	"description": "mmap n-api",
+	"main": "index.js",
+	"dependencies": {
+		"node-addon-api": "^8.5.0"
+	}
+}
