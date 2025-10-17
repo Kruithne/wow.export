@@ -496,7 +496,7 @@ const applyPreload = (rootEntries) => {
 		}
 		
 		const filterAndFormat = (fileDataIDs) => {
-			const result = formatEntries(fileDataIDs.filter(id => rootEntries.has(id)));
+			const result = formatEntries(fileDataIDs);
 			fileDataIDs.length = 0;
 			return result;
 		};
