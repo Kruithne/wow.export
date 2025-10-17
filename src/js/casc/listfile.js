@@ -185,12 +185,11 @@ const listfile_preload_binary = async () => {
 
 			const preload_map = pf_preload_map[i];
 
-			await generics.batchWork('preload pf file ' + i, new Array(entry_count), async (_, index) => {
+			for (let j = 0; j < entry_count; j++) {
 				const file_data_id = file_buffer.readUInt32BE();
 				const filename = file_buffer.readNullTerminatedString('utf8');
-
 				preload_map.set(file_data_id, filename);
-			}, 1000);
+			}
 
 			log.write('Preloaded %d entries from pf file %d', preload_map.size, i);
 		}
@@ -557,13 +556,17 @@ const applyPreload = (rootEntries) => {
 				}
 			}
 
-			const filterMapAndFormat = (preload_map) => {
+			const filterMapToIds = (preload_map) => {
 				const filtered_ids = [];
 				for (const fid of preload_map.keys()) {
 					if (rootEntries.has(fid))
 						filtered_ids.push(fid);
 				}
+				return filtered_ids;
+			};
 
+			const filter_and_format = (preload_map) => {
+				const filtered_ids = filterMapToIds(preload_map);
 				const formatted_array = new Array(filtered_ids.length);
 				for (let i = 0; i < filtered_ids.length; i++) {
 					const fid = filtered_ids[i];
@@ -575,11 +578,11 @@ const applyPreload = (rootEntries) => {
 				return formatted_array;
 			};
 
-			core.view.listfileTextures = filterMapAndFormat(preload_textures);
-			core.view.listfileSounds = filterMapAndFormat(preload_sounds);
-			core.view.listfileVideos = filterMapAndFormat(preload_videos);
-			core.view.listfileText = filterMapAndFormat(preload_text);
-			core.view.listfileModels = filterMapAndFormat(preload_models);
+			core.view.listfileTextures = filter_and_format(preload_textures);
+			core.view.listfileSounds = filter_and_format(preload_sounds);
+			core.view.listfileVideos = filter_and_format(preload_videos);
+			core.view.listfileText = filter_and_format(preload_text);
+			core.view.listfileModels = filter_and_format(preload_models);
 		}
 
 		if (valid_entries === 0) {
@@ -711,15 +714,51 @@ const ingestIdentifiedFiles = (entries) => {
 	}
 };
 
-/**
-* Returns a full listfile, sorted and formatted.
-* @returns {Array}
-*/
-const getFullListfile = () => {
-	if (is_binary_mode)
-		return formatEntries([...binary_id_to_offset.keys()]);
-	
-	return formatEntries([...legacy_id_lookup.keys()]);
+const renderListfile = async (file_data_ids, include_main_index = false) => {
+	const result = [];
+
+	if (is_binary_mode) {
+		const pf_files = [
+			BIN_LF_COMPONENTS.STRINGS,
+			BIN_LF_COMPONENTS.PF_MODELS,
+			BIN_LF_COMPONENTS.PF_TEXTURES,
+			BIN_LF_COMPONENTS.PF_SOUNDS,
+			BIN_LF_COMPONENTS.PF_VIDEOS,
+			BIN_LF_COMPONENTS.PF_TEXT
+		];
+
+		const start_index = include_main_index ? 0 : 1;
+		const id_set = file_data_ids ? new Set(file_data_ids) : null;
+
+		for (let i = start_index; i < pf_files.length; i++) {
+			const file_path = path.join(constants.CACHE.DIR_LISTFILE, pf_files[i]);
+			const file_buffer = await BufferWrapper.readFile(file_path);
+			const entry_count = file_buffer.readUInt32BE();
+
+			for (let j = 0; j < entry_count; j++) {
+				const file_data_id = file_buffer.readUInt32BE();
+				const filename = file_buffer.readNullTerminatedString('utf8');
+
+				if (id_set === null || id_set.has(file_data_id))
+					result.push(`${filename} [${file_data_id}]`);
+			}
+		}
+	}
+
+	// include legacy lookup entries (manually added via addEntry)
+	if (file_data_ids === undefined) {
+		for (const [file_data_id, filename] of legacy_id_lookup) {
+			result.push(`${filename} [${file_data_id}]`);
+		}
+	} else {
+		const id_set = new Set(file_data_ids);
+		for (const [file_data_id, filename] of legacy_id_lookup) {
+			if (id_set.has(file_data_id))
+				result.push(`${filename} [${file_data_id}]`);
+		}
+	}
+
+	return result;
 };
 
 /**
@@ -851,7 +890,6 @@ module.exports = {
 	applyPreload,
 	getByID,
 	getByFilename,
-	getFullListfile,
 	getFilenamesByExtension,
 	getFilteredEntries,
 	getByIDOrUnknown,
@@ -860,5 +898,6 @@ module.exports = {
 	formatUnknownFile,
 	ingestIdentifiedFiles,
 	isLoaded,
-	addEntry
+	addEntry,
+	renderListfile
 };

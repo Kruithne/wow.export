@@ -17,20 +17,17 @@ const computeRawFiles = async () => {
 	if (isDirty) {
 		isDirty = false;
 
+		core.setToast('progress', core.view.config.enableUnknownFiles ? 'Scanning game client for all files...' : 'Scanning game client for all known files...');
+		await generics.redraw();
+
 		if (core.view.config.enableUnknownFiles) {
-			core.setToast('progress', 'Scanning game client for all files...');
-			await generics.redraw();
-
 			const rootEntries = core.view.casc.getValidRootEntries();
-			core.view.listfileRaw = listfile.formatEntries(rootEntries);
-			core.setToast('success', util.format('Found %d files in the game client', core.view.listfileRaw.length));
+			core.view.listfileRaw = await listfile.renderListfile(rootEntries, true);
 		} else {
-			core.setToast('progress', 'Scanning game client for all known files...');
-			await generics.redraw();
-
-			core.view.listfileRaw = listfile.getFullListfile();
-			core.setToast('success', util.format('Found %d known files in the game client', core.view.listfileRaw.length));
+			core.view.listfileRaw = await listfile.renderListfile();
 		}
+
+		core.setToast('success', util.format('Found %d files in the game client', core.view.listfileRaw.length));
 	}
 };
 
