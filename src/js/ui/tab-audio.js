@@ -59,22 +59,18 @@ class PlaybackState {
 			return Math.min(position, audioBuffer.duration);
 		}
 
-		log.write('[PlaybackState] get_current_position: state=%s, position_at_pause=%f', this.state, this.position_at_pause);
 		return this.position_at_pause;
 	}
 
 	start_playback(from_position) {
-		log.write('[PlaybackState] start_playback: from_position=%f, current_time=%f', from_position, audioContext.currentTime);
 		this.playback_started_at = audioContext.currentTime;
 		this.position_at_pause = from_position;
 		this.state = PLAYBACK_STATE.PLAYING;
 	}
 
 	pause_playback() {
-		log.write('[PlaybackState] pause_playback: state=%s', this.state);
 		if (this.state === PLAYBACK_STATE.PLAYING) {
 			this.position_at_pause = this.get_current_position();
-			log.write('[PlaybackState] pause_playback: saved position=%f', this.position_at_pause);
 			this.state = PLAYBACK_STATE.PAUSED;
 		}
 	}
@@ -84,7 +80,6 @@ class PlaybackState {
 			return;
 
 		this.position_at_pause = Math.max(0, Math.min(position, audioBuffer.duration));
-		log.write('[PlaybackState] seek_to: position=%f, state=%s, position_at_pause=%f', position, this.state, this.position_at_pause);
 
 		if (this.state === PLAYBACK_STATE.PLAYING) {
 			this.pending_seek = this.position_at_pause;
@@ -125,7 +120,6 @@ class AudioSourceManager {
 		this.source.loop = this.is_loop_enabled;
 
 		this.source.onended = () => {
-			log.write('[AudioSourceManager] onended fired, loop=%s, state=%s', this.is_loop_enabled, playback_state.state);
 			if (!this.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
 				playback_state.state = PLAYBACK_STATE.LOADED;
 				playback_state.position_at_pause = 0;
@@ -148,7 +142,6 @@ class AudioSourceManager {
 	destroy_source() {
 		if (this.source) {
 			try {
-				log.write('[AudioSourceManager] destroy_source: stopping source');
 				this.source.onended = null;
 				this.source.stop();
 				this.source.disconnect();
@@ -268,7 +261,6 @@ const playSelectedTrack = async () => {
  * Pause the currently playing track.
  */
 const pauseSelectedTrack = () => {
-	log.write('[pauseSelectedTrack] called, state=%s', playback_state.state);
 	if (playback_state.state !== PLAYBACK_STATE.PLAYING)
 		return;
 
@@ -276,14 +268,12 @@ const pauseSelectedTrack = () => {
 	source_manager.destroy_source();
 	stop_animation_loop();
 	core.view.soundPlayerState = false;
-	log.write('[pauseSelectedTrack] completed, position_at_pause=%f', playback_state.position_at_pause);
 };
 
 /**
  * Seek to a specific position in the track.
  */
 const seek_to_position = (position_seconds) => {
-	log.write('[seek_to_position] called: position=%f, state=%s', position_seconds, playback_state.state);
 	if (!isTrackLoaded || !audioBuffer)
 		return;
 
@@ -296,14 +286,12 @@ const seek_to_position = (position_seconds) => {
 		const start_position = playback_state.pending_seek || playback_state.position_at_pause;
 		playback_state.pending_seek = null;
 
-		log.write('[seek_to_position] restarting playback from position=%f', start_position);
 		source_manager.create_source();
 		source_manager.start_source(start_position);
 		playback_state.start_playback(start_position);
 	} else {
 		playback_state.seek_to(position_seconds);
 		core.view.soundPlayerSeek = playback_state.position_at_pause / audioBuffer.duration;
-		log.write('[seek_to_position] paused, updated seek to=%f', playback_state.position_at_pause);
 	}
 };
 
@@ -350,6 +338,7 @@ const loadSelectedTrack = async () => {
 				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
+		// WARNING: these log.write() calls are load-bearing, do not remove
 		log.write('audio decode: buffer length=%d, byteOffset=%d, byteLength=%d', data.raw.buffer.byteLength, data.raw.byteOffset, data.raw.byteLength);
 		log.write('audio decode: first 16 bytes: %s', data.readHexString(16));
 		data.seek(0);
