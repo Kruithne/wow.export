@@ -5,6 +5,8 @@
 //      OSX: ~/Library/Application Support/<name>/Default\wow.export
 //      Linux: ~/.config/<name>/wow.export
 {
+	"enableBinaryListfile": true,
+	"listfileBinarySource": "https://www.kruithne.net/wow.export/data/listfile/%s",
 	"listfileURL": "https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv",
 	"scrollSpeed": 4,
 	"listfileFallbackURL": "https://www.kruithne.net/wow.export/data/listfile/master",
@@ -49,9 +51,6 @@
 	"exportBLPMeta": false,
 	"exportFoliageMeta": false,
 	"exportNamedFiles": true,
-	"modelsShowM2": true,
-	"modelsShowM3": true,
-	"modelsShowWMO": true,
 	"listfileShowFileDataIDs": false,
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,

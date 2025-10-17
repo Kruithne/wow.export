@@ -210,7 +210,7 @@ class CASC {
 		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
 		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
 		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
-		core.view.listfileModels = listfile.getFilenamesByExtension(this.getModelFormats());
+		core.view.listfileModels = listfile.getFilenamesByExtension(['.m2', '.m3', '.wmo']);
 	}
 
 	/**

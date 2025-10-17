@@ -552,26 +552,6 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 	exportPaths?.close();
 };
 
-/**
- * Update the 3D model listfile.
- * Invoke when users change the visibility settings for model types.
- */
-const updateListfile = () => {
-	// Filters for the model viewer depending on user settings.
-	const modelExt = [];
-	if (core.view.config.modelsShowM3)
-		modelExt.push('.m3');
-
-	if (core.view.config.modelsShowM2)
-		modelExt.push('.m2');
-	
-	if (core.view.config.modelsShowWMO)
-		modelExt.push(['.wmo', constants.LISTFILE_MODEL_FILTER]);
-
-	// Create a new listfile using the given configuration.
-	core.view.listfileModels = listfile.getFilenamesByExtension(modelExt, core.view.config.listfileShowFileDataIDs);
-};
-
 // Register a drop handler for M2 files.
 core.registerDropHandler({
 	ext: ['.m2'],
@@ -646,11 +626,6 @@ core.events.once('screen-tab-models', async () => {
 });
 
 core.registerLoadFunc(async () => {
-	// Track changes to the visible model listfile types.
-	core.view.$watch('config.modelsShowM3', updateListfile);
-	core.view.$watch('config.modelsShowM2', updateListfile);
-	core.view.$watch('config.modelsShowWMO', updateListfile);
-
 	// When the selected model skin is changed, update our model.
 	core.view.$watch('modelViewerSkinsSelection', async selection => {
 		// Don't do anything if we're lacking skins.

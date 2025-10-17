@@ -374,7 +374,20 @@
 						<p><input type="text" class="long" v-model.trim="configEdit.armoryURL"/></p>
 					</div>
 					<div>
-						<h1>Listfile Source</h1>
+						<h1>Use Binary Listfile Format</h1>
+						<p>If enabled, wow.export will use the optimized binary listfile format instead of the legacy CSV format.</p>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="configEdit.enableBinaryListfile"/>
+							<span>Enable</span>
+						</label>
+					</div>
+					<div>
+						<h1>Listfile Binary Source</h1>
+						<p>Remote URL used for downloading the optimized binary listfile format. (Must use same format)</p>
+						<p><input type="text" class="long" v-model.trim="configEdit.listfileBinarySource"/></p>
+					</div>
+					<div>
+						<h1>Listfile Source (Legacy)</h1>
 						<p>Remote URL or local path used for updating the CASC listfile. (Must use same format)</p>
 						<p>Primary <input type="text" class="long" v-model.trim="configEdit.listfileURL"/></p>
 						<p>Fallback <input type="text" class="long" v-model.trim="configEdit.listfileFallbackURL" /></p>
@@ -736,19 +749,6 @@
 						<menu-button :options="menuButtonModels" :default="config.exportModelFormat" @change="config.exportModelFormat = $event" class="upward" :disabled="isBusy" @click="click('export-model', $event)"></menu-button>
 					</div>
 					<div id="model-sidebar" class="sidebar">
-						<span class="header">Listing</span>
-						<label class="ui-checkbox" title="Include M2 objects in the list">
-							<input type="checkbox" v-model="config.modelsShowM2"/>
-							<span>Show M2</span>
-						</label>
-						<label class="ui-checkbox" title="Include M3 objects in the list">
-							<input type="checkbox" v-model="config.modelsShowM3"/>
-							<span>Show M3</span>
-						</label>
-						<label class="ui-checkbox" title="Include WMO objects in the list">
-							<input type="checkbox" v-model="config.modelsShowWMO"/>
-							<span>Show WMO</span>
-						</label>
 						<span class="header">Preview</span>
 						<label class="ui-checkbox" title="Automatically preview a model when selecting it">
 							<input type="checkbox" v-model="config.modelsAutoPreview"/>
