@@ -678,7 +678,7 @@ core.events.once('screen-tab-maps', async () => {
 	for (const [id, entry] of table.getAllRows()) {
 		const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 
-		if (entry.WdtFileDataID != null && listfile.getByID(entry.WdtFileDataID) === undefined) {
+		if (entry.WdtFileDataID !== 0 && listfile.getByID(entry.WdtFileDataID) === undefined) {
 			log.write('Adding files to listfile for map %s (%d)', entry.MapName_lang, entry.WdtFileDataID);
 			listfile.addEntry(entry.WdtFileDataID, wdtPath);
 
