@@ -223,7 +223,6 @@ class CASC {
 		core.events.on('listfile-needs-updating', () => this.updateListfileFilters());
 
 		core.view.$watch('config.listfileSortByID', () => core.events.emit('listfile-needs-updating'));
-		core.view.$watch('config.listfileShowFileDataIDs', () => core.events.emit('listfile-needs-updating'), { immediate: true });
 	}
 
 

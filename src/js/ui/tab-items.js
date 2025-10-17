@@ -96,12 +96,8 @@ const viewItemModels = (item) => {
 		for (const fileDataID of fileDataIDs) {
 			let entry = listfile.getByID(fileDataID);
 
-			if (entry !== undefined) {
-				if (core.view.config.listfileShowFileDataIDs)
-					entry += ' [' + fileDataID + ']';
-
-				list.add(entry);
-			}
+			if (entry !== undefined)
+				list.add(`${entry} [${fileDataID}]`);
 		}
 	}
 
@@ -129,12 +125,8 @@ const viewItemTextures = async (item) => {
 			for (const fileDataID of fileDataIDs) {
 				let entry = listfile.getByID(fileDataID);
 
-				if (entry !== undefined) {
-					if (core.view.config.listfileShowFileDataIDs)
-						entry += ' [' + fileDataID + ']';
-
-					list.add(entry);
-				}
+				if (entry !== undefined)
+					list.add(`${entry} [${fileDataID}]`);
 			}
 		}
 	}

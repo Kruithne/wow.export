@@ -51,7 +51,6 @@
 	"exportBLPMeta": false,
 	"exportFoliageMeta": false,
 	"exportNamedFiles": true,
-	"listfileShowFileDataIDs": false,
 	"modelsAutoPreview": true,
 	"modelViewerShowGrid": true,
 	"modelViewerShowBackground": false,

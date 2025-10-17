@@ -418,21 +418,11 @@ document.addEventListener('click', function(e) {
 				// selection, so if they hit export, they get the expected result.
 				view.selectionTextures.splice(0);
 
-				// Despite direct preview, *attempt* to filter for the file as well.
-				if (view.config.listfileShowFileDataIDs) {
-					// If the user has fileDataIDs shown, filter by that.
-					if (view.config.regexFilters)
-						view.userInputFilterTextures = '\\[' + fileDataID + '\\]';
-					else
-						view.userInputFilterTextures = '[' + fileDataID + ']';
-				} else {
-					// Without fileDataIDs, lookup the texture name and filter by that.
-					const fileName = listfile.getByID(fileDataID);
-					if (fileName !== undefined)
-						view.userInputFilterTextures = listfile.getByID(fileName);
-					else if (view.config.enableUnknownFiles)
-						view.userInputFilterTextures = listfile.formatUnknownFile(fileDataID, '.blp');
-				}
+				// If the user has fileDataIDs shown, filter by that.
+				if (view.config.regexFilters)
+					view.userInputFilterTextures = '\\[' + fileDataID + '\\]';
+				else
+					view.userInputFilterTextures = '[' + fileDataID + ']';
 			},
 
 			/**
