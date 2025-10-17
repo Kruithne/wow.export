@@ -22,15 +22,12 @@ const BIN_LF_COMPONENTS = {
 	ID_INDEX: 'listfile-id-index.dat',
 	STRINGS: 'listfile-strings.dat',
 	TREE_INDEX: 'listfile-tree-index.dat',
-	TREE_NODES: 'listfile-tree-nodes.dat'
-};
-
-const LISTFILE_FLAGS = {
-	TEXTURE: 0x01,
-	SOUND: 0x02,
-	MODEL: 0x04,
-	VIDEO: 0x08,
-	TEXT: 0x10
+	TREE_NODES: 'listfile-tree-nodes.dat',
+	PF_MODELS: 'listfile-pf-models.dat',
+	PF_TEXTURES: 'listfile-pf-textures.dat',
+	PF_SOUNDS: 'listfile-pf-sounds.dat',
+	PF_VIDEOS: 'listfile-pf-videos.dat',
+	PF_TEXT: 'listfile-pf-text.dat'
 };
 
 // these are populated by the legacy text-based listfile format
@@ -45,19 +42,19 @@ let preloadedNameLookup = new Map();
 
 // binary format only
 let binary_id_to_offset = new Map();
-let binary_id_to_flags = new Map();
+let binary_id_to_pf_index = new Map();
 
-let binary_strings_mmap = null;
+let binary_strings_mmap = [];
 let binary_tree_nodes_mmap = null;
 let binary_tree_index_mmap = null;
 
 let is_binary_mode = false;
 
-let preload_textures = [];
-let preload_sounds = [];
-let preload_videos = [];
-let preload_text = [];
-let preload_models = [];
+let preload_textures = null;
+let preload_sounds = null;
+let preload_videos = null;
+let preload_text = null;
+let preload_models = null;
 
 let is_preloaded = false;
 let preload_promise = null;
@@ -118,55 +115,83 @@ const listfile_preload_binary = async () => {
 		log.write('Loading binary listfile ID index into memory...');
 		const idx_file = path.join(constants.CACHE.DIR_LISTFILE, BIN_LF_COMPONENTS.ID_INDEX);
 		const idx_buffer = await BufferWrapper.readFile(idx_file);
-		
+
 		binary_id_to_offset.clear();
-		binary_id_to_flags.clear();
-		
+		binary_id_to_pf_index.clear();
+
 		const entry_count = idx_buffer.byteLength / 9;
 		for (let i = 0; i < entry_count; i++) {
 			const id = idx_buffer.readUInt32BE();
 			const string_offset = idx_buffer.readUInt32BE();
-			const flags = idx_buffer.readUInt8();
-			
+			const pf_index = idx_buffer.readUInt8();
+
 			binary_id_to_offset.set(id, string_offset);
-			binary_id_to_flags.set(id, flags);
+			binary_id_to_pf_index.set(id, pf_index);
 		}
-		
+
 		log.write('Loaded %d binary listfile entries', binary_id_to_offset.size);
-		
-		// build preload arrays by filtering IDs based on flags
-		preload_textures = [];
-		preload_sounds = [];
-		preload_models = [];
-		preload_videos = [];
-		preload_text = [];
-		
-		for (const [id, flags] of binary_id_to_flags.entries()) {
-			if (flags & LISTFILE_FLAGS.TEXTURE)
-				preload_textures.push(id);
-			else if (flags & LISTFILE_FLAGS.SOUND)
-				preload_sounds.push(id);
-			else if (flags & LISTFILE_FLAGS.MODEL)
-				preload_models.push(id);
-			else if (flags & LISTFILE_FLAGS.VIDEO)
-				preload_videos.push(id);
-			else if (flags & LISTFILE_FLAGS.TEXT)
-				preload_text.push(id);
+
+		// preload pre-filtered listfiles
+		preload_models = new Map();
+		preload_textures = new Map();
+		preload_sounds = new Map();
+		preload_videos = new Map();
+		preload_text = new Map();
+
+		const pf_preload_map = [
+			null,
+			preload_models,
+			preload_textures,
+			preload_sounds,
+			preload_videos,
+			preload_text
+		];
+
+		const pf_files = [
+			BIN_LF_COMPONENTS.STRINGS,
+			BIN_LF_COMPONENTS.PF_MODELS,
+			BIN_LF_COMPONENTS.PF_TEXTURES,
+			BIN_LF_COMPONENTS.PF_SOUNDS,
+			BIN_LF_COMPONENTS.PF_VIDEOS,
+			BIN_LF_COMPONENTS.PF_TEXT
+		];
+
+		// memory-map strings files
+		binary_strings_mmap = new Array(6);
+
+		for (let i = 0; i < pf_files.length; i++) {
+			try {
+				const mmap_obj = new mmap.MmapObject();
+				const file_path = path.join(constants.CACHE.DIR_LISTFILE, pf_files[i]);
+				log.write('Mapping pf file %d: %s', i, file_path);
+				if (!mmap_obj.mapFile(file_path, { protection: 'readonly' }))
+					throw new Error('Failed to map pf file: ' + mmap_obj.lastError);
+
+				binary_strings_mmap[i] = mmap_obj;
+			} catch (e) {
+				log.write('Error mapping pf file %d: %s', i, e.message);
+				throw e;
+			}
 		}
-		
-		log.write('Filtered binary listfile: %d textures, %d sounds, %d models, %d videos, %d text',
-			preload_textures.length, preload_sounds.length, preload_models.length, preload_videos.length, preload_text.length);
-			
-		// memory-map strings file
-		try {
-			binary_strings_mmap = new mmap.MmapObject();
-			const strings_file = path.join(constants.CACHE.DIR_LISTFILE, BIN_LF_COMPONENTS.STRINGS);
-			log.write('Mapping strings file: %s', strings_file);
-			if (!binary_strings_mmap.mapFile(strings_file, { protection: 'readonly' }))
-				throw new Error('Failed to map strings file: ' + binary_strings_mmap.lastError);
-		} catch (e) {
-			log.write('Error mapping strings file: %s', e.message);
-			throw e;
+
+		// preload pre-filtered files (1-5, skip 0 which is main)
+		for (let i = 1; i < pf_files.length; i++) {
+			const file_path = path.join(constants.CACHE.DIR_LISTFILE, pf_files[i]);
+			log.write('Preloading pf file %d: %s', i, file_path);
+
+			const file_buffer = await BufferWrapper.readFile(file_path);
+			const entry_count = file_buffer.readUInt32BE();
+
+			const preload_map = pf_preload_map[i];
+
+			await generics.batchWork('preload pf file ' + i, new Array(entry_count), async (_, index) => {
+				const file_data_id = file_buffer.readUInt32BE();
+				const filename = file_buffer.readNullTerminatedString('utf8');
+
+				preload_map.set(file_data_id, filename);
+			}, 1000);
+
+			log.write('Preloaded %d entries from pf file %d', preload_map.size, i);
 		}
 		
 		// memory-map tree nodes file
@@ -466,10 +491,10 @@ const applyPreload = (rootEntries) => {
 		log.write('No preloaded listfile available, falling back to normal loading');
 		return 0;
 	}
-	
+
 	try {
 		log.write('Applying preloaded listfile data...');
-		
+
 		let valid_entries = 0;
 		if (!is_binary_mode) {
 			for (const [fileDataID, fileName] of preloadedIdLookup.entries()) {
@@ -479,34 +504,59 @@ const applyPreload = (rootEntries) => {
 					valid_entries++;
 				}
 			}
+
+			const filterAndFormat = (fileDataIDs) => {
+				const result = formatEntries(fileDataIDs);
+				fileDataIDs.length = 0;
+				return result;
+			};
+
+			core.view.listfileTextures = filterAndFormat(preload_textures);
+			core.view.listfileSounds = filterAndFormat(preload_sounds);
+			core.view.listfileVideos = filterAndFormat(preload_videos);
+			core.view.listfileText = filterAndFormat(preload_text);
+			core.view.listfileModels = filterAndFormat(preload_models);
 		} else {
+			// binary mode: filter maps and convert to arrays
 			for (const id of binary_id_to_offset.keys()) {
 				if (!rootEntries.has(id)) {
 					binary_id_to_offset.delete(id);
-					binary_id_to_flags.delete(id);
+					binary_id_to_pf_index.delete(id);
 				} else {
 					valid_entries++;
 				}
 			}
+
+			const filterMapAndFormat = (preload_map) => {
+				const filtered_ids = [];
+				for (const fid of preload_map.keys()) {
+					if (rootEntries.has(fid))
+						filtered_ids.push(fid);
+				}
+
+				const formatted_array = new Array(filtered_ids.length);
+				for (let i = 0; i < filtered_ids.length; i++) {
+					const fid = filtered_ids[i];
+					const filename = preload_map.get(fid);
+					formatted_array[i] = `${filename} [${fid}]`;
+				}
+
+				preload_map.clear();
+				return formatted_array;
+			};
+
+			core.view.listfileTextures = filterMapAndFormat(preload_textures);
+			core.view.listfileSounds = filterMapAndFormat(preload_sounds);
+			core.view.listfileVideos = filterMapAndFormat(preload_videos);
+			core.view.listfileText = filterMapAndFormat(preload_text);
+			core.view.listfileModels = filterMapAndFormat(preload_models);
 		}
-		
+
 		if (valid_entries === 0) {
 			log.write('No preloaded entries matched rootEntries');
 			return 0;
 		}
-		
-		const filterAndFormat = (fileDataIDs) => {
-			const result = formatEntries(fileDataIDs);
-			fileDataIDs.length = 0;
-			return result;
-		};
-		
-		core.view.listfileTextures = filterAndFormat(preload_textures);
-		core.view.listfileSounds = filterAndFormat(preload_sounds);
-		core.view.listfileVideos = filterAndFormat(preload_videos);
-		core.view.listfileText = filterAndFormat(preload_text);
-		core.view.listfileModels = filterAndFormat(preload_models);
-		
+
 		loaded = true;
 		log.write('Applied %d preloaded listfile entries', valid_entries);
 	} catch (e) {
@@ -559,13 +609,14 @@ const loadIDTable = async (ids, ext) => {
 const getFilenamesByExtension = (exts) => {
 	if (!Array.isArray(exts))
 		exts = [exts];
-	
+
 	let entries = [];
-	
+
 	if (is_binary_mode) {
 		// binary mode: read strings from mmap and check extensions
 		for (const [fileDataID, offset] of binary_id_to_offset.entries()) {
-			const filename = binary_read_string_at_offset(offset);
+			const pf_index = binary_id_to_pf_index.get(fileDataID);
+			const filename = binary_read_string_at_offset(pf_index, offset);
 			for (const ext of exts) {
 				if (Array.isArray(ext)) {
 					if (filename.endsWith(ext[0]) && !filename.match(ext[1])) {
@@ -598,25 +649,28 @@ const getFilenamesByExtension = (exts) => {
 			}
 		}
 	}
-	
+
 	return formatEntries(entries);
 };
 
-const formatEntries = (entries) => {
+const formatEntries = (file_data_ids) => {
 	// If sorting by ID, perform the sort while the array is only IDs.
 	if (core.view.config.listfileSortByID)
-		entries.sort((a, b) => a - b);
-	
-	if (core.view.config.listfileShowFileDataIDs)
-		entries = entries.map(e => getByIDOrUnknown(e) + ' [' + e + ']');
-	else
-		entries = entries.map(e => getByIDOrUnknown(e));
-	
+		file_data_ids.sort((a, b) => a - b);
+
+	const n_entries = file_data_ids.length;
+	const entries = new Array(n_entries);
+
+	for (let i = 0; i < n_entries; i++) {
+		const fid = file_data_ids[i];
+		entries[i] = `${getByIDOrUnknown(fid)} [${fid}]`;
+	}
+
 	// If sorting by name, sort now that the filenames have been added.
 	if (!core.view.config.listfileSortByID)
-		entries.sort();
-	
-	return entries;
+		file_data_ids.sort();
+
+	return file_data_ids;
 };
 
 const ingestIdentifiedFiles = (entries) => {
@@ -648,15 +702,16 @@ const getFullListfile = () => {
 
 /**
 * Read string at offset from memory-mapped binary strings file
+* @param {number} pf_index
 * @param {number} offset
 * @returns {string}
 */
-const binary_read_string_at_offset = (offset) => {
-	const data = binary_strings_mmap.data;
+const binary_read_string_at_offset = (pf_index, offset) => {
+	const data = binary_strings_mmap[pf_index].data;
 	let end = offset;
 	while (end < data.length && data[end] !== 0)
 		end++;
-	
+
 	return Buffer.from(data.subarray(offset, end)).toString('utf8');
 };
 
@@ -670,10 +725,11 @@ const getByID = (id) => {
 		const offset = binary_id_to_offset.get(id);
 		if (offset === undefined)
 			return undefined;
-		
-		return binary_read_string_at_offset(offset);
+
+		const pf_index = binary_id_to_pf_index.get(id);
+		return binary_read_string_at_offset(pf_index, offset);
 	}
-	
+
 	return legacy_id_lookup.get(id);
 };
 
@@ -729,10 +785,11 @@ const getByFilename = (filename) => {
 const getFilteredEntries = (search) => {
 	const results = [];
 	const isRegExp = search instanceof RegExp;
-	
+
 	if (is_binary_mode) {
 		for (const [fileDataID, offset] of binary_id_to_offset.entries()) {
-			const fileName = binary_read_string_at_offset(offset);
+			const pf_index = binary_id_to_pf_index.get(fileDataID);
+			const fileName = binary_read_string_at_offset(pf_index, offset);
 			if (isRegExp ? fileName.match(search) : fileName.includes(search))
 				results.push({ fileDataID, fileName });
 		}
@@ -742,7 +799,7 @@ const getFilteredEntries = (search) => {
 				results.push({ fileDataID, fileName });
 		}
 	}
-	
+
 	return results;
 };
 
