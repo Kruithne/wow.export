@@ -844,6 +844,8 @@ const isLoaded = () => {
 * @returns {void}
 */
 const addEntry = (fileDataID, fileName) => {
+	fileName = fileName.toLowerCase();
+	
 	legacy_id_lookup.set(fileDataID, fileName);
 	legacy_name_lookup.set(fileName, fileDataID);
 };
