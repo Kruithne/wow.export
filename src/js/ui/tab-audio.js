@@ -21,26 +21,184 @@ let selectedFile = null;
 let isTrackLoaded = false;
 let hasSoundDataLoaded = false;
 
-let audioNode = null;
+let audioContext = null;
+let audioBuffer = null;
+let audioSource = null;
+let gainNode = null;
+let animationFrameId = null;
 let data;
+
+const PLAYBACK_STATE = {
+	UNLOADED: 'UNLOADED',
+	LOADING: 'LOADING',
+	LOADED: 'LOADED',
+	PLAYING: 'PLAYING',
+	PAUSED: 'PAUSED',
+	SEEKING: 'SEEKING'
+};
+
+class PlaybackState {
+	constructor() {
+		this.state = PLAYBACK_STATE.UNLOADED;
+		this.playback_started_at = 0;
+		this.position_at_pause = 0;
+		this.pending_seek = null;
+	}
+
+	get_current_position() {
+		if (!audioBuffer)
+			return 0;
+
+		if (this.state === PLAYBACK_STATE.PLAYING) {
+			const elapsed = audioContext.currentTime - this.playback_started_at;
+			const position = this.position_at_pause + elapsed;
+
+			if (core.view.config.soundPlayerLoop)
+				return position % audioBuffer.duration;
+
+			return Math.min(position, audioBuffer.duration);
+		}
+
+		log.write('[PlaybackState] get_current_position: state=%s, position_at_pause=%f', this.state, this.position_at_pause);
+		return this.position_at_pause;
+	}
+
+	start_playback(from_position) {
+		log.write('[PlaybackState] start_playback: from_position=%f, current_time=%f', from_position, audioContext.currentTime);
+		this.playback_started_at = audioContext.currentTime;
+		this.position_at_pause = from_position;
+		this.state = PLAYBACK_STATE.PLAYING;
+	}
+
+	pause_playback() {
+		log.write('[PlaybackState] pause_playback: state=%s', this.state);
+		if (this.state === PLAYBACK_STATE.PLAYING) {
+			this.position_at_pause = this.get_current_position();
+			log.write('[PlaybackState] pause_playback: saved position=%f', this.position_at_pause);
+			this.state = PLAYBACK_STATE.PAUSED;
+		}
+	}
+
+	seek_to(position) {
+		if (!audioBuffer)
+			return;
+
+		this.position_at_pause = Math.max(0, Math.min(position, audioBuffer.duration));
+		log.write('[PlaybackState] seek_to: position=%f, state=%s, position_at_pause=%f', position, this.state, this.position_at_pause);
+
+		if (this.state === PLAYBACK_STATE.PLAYING) {
+			this.pending_seek = this.position_at_pause;
+			this.state = PLAYBACK_STATE.SEEKING;
+		}
+	}
+
+	reset() {
+		this.state = PLAYBACK_STATE.UNLOADED;
+		this.playback_started_at = 0;
+		this.position_at_pause = 0;
+		this.pending_seek = null;
+	}
+
+	mark_loaded() {
+		this.state = PLAYBACK_STATE.LOADED;
+		this.position_at_pause = 0;
+	}
+}
+
+const playback_state = new PlaybackState();
+
+class AudioSourceManager {
+	constructor() {
+		this.source = null;
+		this.is_loop_enabled = false;
+	}
+
+	create_source() {
+		if (!audioBuffer || !audioContext)
+			return null;
+
+		this.destroy_source();
+
+		this.source = audioContext.createBufferSource();
+		this.source.buffer = audioBuffer;
+		this.source.connect(gainNode);
+		this.source.loop = this.is_loop_enabled;
+
+		this.source.onended = () => {
+			log.write('[AudioSourceManager] onended fired, loop=%s, state=%s', this.is_loop_enabled, playback_state.state);
+			if (!this.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
+				playback_state.state = PLAYBACK_STATE.LOADED;
+				playback_state.position_at_pause = 0;
+				stop_animation_loop();
+				core.view.soundPlayerState = false;
+				core.view.soundPlayerSeek = 0;
+			}
+		};
+
+		return this.source;
+	}
+
+	start_source(offset = 0) {
+		if (this.source) {
+			const clamped_offset = Math.max(0, Math.min(offset, audioBuffer.duration));
+			this.source.start(0, clamped_offset);
+		}
+	}
+
+	destroy_source() {
+		if (this.source) {
+			try {
+				log.write('[AudioSourceManager] destroy_source: stopping source');
+				this.source.onended = null;
+				this.source.stop();
+				this.source.disconnect();
+			} catch (e) {
+				log.write('[AudioSourceManager] destroy_source: error stopping source: %s', e.message);
+			}
+
+			this.source = null;
+		}
+	}
+
+	set_loop(enabled) {
+		this.is_loop_enabled = enabled;
+
+		if (this.source)
+			this.source.loop = enabled;
+	}
+
+	is_active() {
+		return this.source !== null;
+	}
+}
+
+const source_manager = new AudioSourceManager();
 
 /**
  * Update the current status of the sound player seek bar.
  */
 const updateSeek = () => {
-	if (!core.view.soundPlayerState || !audioNode)
+	if (!audioBuffer || playback_state.state !== PLAYBACK_STATE.PLAYING) {
+		animationFrameId = null;
 		return;
-
-	core.view.soundPlayerSeek = audioNode.currentTime / audioNode.duration;
-
-	if (core.view.soundPlayerSeek === 1) {
-		if (core.view.config.soundPlayerLoop)
-			audioNode.play();
-		else
-			core.view.soundPlayerState = false;
 	}
 
-	requestAnimationFrame(updateSeek);
+	const current_position = playback_state.get_current_position();
+	core.view.soundPlayerSeek = current_position / audioBuffer.duration;
+
+	animationFrameId = requestAnimationFrame(updateSeek);
+};
+
+const start_animation_loop = () => {
+	if (animationFrameId === null)
+		updateSeek();
+};
+
+const stop_animation_loop = () => {
+	if (animationFrameId !== null) {
+		cancelAnimationFrame(animationFrameId);
+		animationFrameId = null;
+	}
 };
 
 /**
@@ -62,6 +220,39 @@ const detectFileType = (data) => {
 };
 
 /**
+ * Start playback from current position.
+ */
+const start_playback = () => {
+	if (!isTrackLoaded || !audioBuffer)
+		return;
+
+	if (playback_state.state === PLAYBACK_STATE.PLAYING)
+		return;
+
+	const start_position = playback_state.position_at_pause;
+
+	source_manager.set_loop(core.view.config.soundPlayerLoop);
+	source_manager.create_source();
+	source_manager.start_source(start_position);
+
+	playback_state.start_playback(start_position);
+	core.view.soundPlayerState = true;
+	start_animation_loop();
+};
+
+/**
+ * Stop playback completely and reset position.
+ */
+const stop_playback = () => {
+	source_manager.destroy_source();
+	playback_state.pause_playback();
+	playback_state.position_at_pause = 0;
+	stop_animation_loop();
+	core.view.soundPlayerState = false;
+	core.view.soundPlayerSeek = 0;
+};
+
+/**
  * Play the currently loaded track.
  * Selected track will be loaded if it's not already.
  */
@@ -69,20 +260,51 @@ const playSelectedTrack = async () => {
 	if (!isTrackLoaded)
 		await loadSelectedTrack();
 
-	// Ensure the track actually loaded.
-	if (isTrackLoaded) {
-		core.view.soundPlayerState = true;
-		audioNode.play();
-		updateSeek();
-	}
+	if (isTrackLoaded)
+		start_playback();
 };
 
 /**
  * Pause the currently playing track.
  */
 const pauseSelectedTrack = () => {
+	log.write('[pauseSelectedTrack] called, state=%s', playback_state.state);
+	if (playback_state.state !== PLAYBACK_STATE.PLAYING)
+		return;
+
+	playback_state.pause_playback();
+	source_manager.destroy_source();
+	stop_animation_loop();
 	core.view.soundPlayerState = false;
-	audioNode.pause();
+	log.write('[pauseSelectedTrack] completed, position_at_pause=%f', playback_state.position_at_pause);
+};
+
+/**
+ * Seek to a specific position in the track.
+ */
+const seek_to_position = (position_seconds) => {
+	log.write('[seek_to_position] called: position=%f, state=%s', position_seconds, playback_state.state);
+	if (!isTrackLoaded || !audioBuffer)
+		return;
+
+	const was_playing = playback_state.state === PLAYBACK_STATE.PLAYING;
+
+	if (was_playing) {
+		source_manager.destroy_source();
+		playback_state.seek_to(position_seconds);
+
+		const start_position = playback_state.pending_seek || playback_state.position_at_pause;
+		playback_state.pending_seek = null;
+
+		log.write('[seek_to_position] restarting playback from position=%f', start_position);
+		source_manager.create_source();
+		source_manager.start_source(start_position);
+		playback_state.start_playback(start_position);
+	} else {
+		playback_state.seek_to(position_seconds);
+		core.view.soundPlayerSeek = playback_state.position_at_pause / audioBuffer.duration;
+		log.write('[seek_to_position] paused, updated seek to=%f', playback_state.position_at_pause);
+	}
 };
 
 /**
@@ -90,11 +312,15 @@ const pauseSelectedTrack = () => {
  * Playback will be halted.
  */
 const unloadSelectedTrack = () => {
+	source_manager.destroy_source();
+	stop_animation_loop();
+
 	isTrackLoaded = false;
 	core.view.soundPlayerState = false;
 	core.view.soundPlayerDuration = 0;
 	core.view.soundPlayerSeek = 0;
-	audioNode.src = '';
+	audioBuffer = null;
+	playback_state.reset();
 
 	data?.revokeDataURL();
 };
@@ -124,17 +350,18 @@ const loadSelectedTrack = async () => {
 				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
-		audioNode.src = data.getDataURL();
+		log.write('audio decode: buffer length=%d, byteOffset=%d, byteLength=%d', data.raw.buffer.byteLength, data.raw.byteOffset, data.raw.byteLength);
+		log.write('audio decode: first 16 bytes: %s', data.readHexString(16));
+		data.seek(0);
 
-		await new Promise(res => {
-			audioNode.onloadeddata = res;
-			audioNode.onerror = res;
-		});
+		const array_buffer = data.raw.buffer.slice(data.raw.byteOffset, data.raw.byteOffset + data.raw.byteLength);
+		log.write('audio decode: sliced array_buffer length=%d', array_buffer.byteLength);
 
-		if (isNaN(audioNode.duration))
-			throw new Error('Invalid audio duration.');
+		audioBuffer = await audioContext.decodeAudioData(array_buffer);
+		core.view.soundPlayerDuration = audioBuffer.duration;
 
 		isTrackLoaded = true;
+		playback_state.mark_loaded();
 		core.hideToast();
 	} catch (e) {
 		if (e instanceof EncryptionError) {
@@ -195,21 +422,24 @@ const loadSoundData = async () => {
 };
 
 core.registerLoadFunc(async () => {
-	// Create internal audio node.
-	audioNode = document.createElement('audio');
-	audioNode.volume = core.view.config.soundPlayerVolume;
-	audioNode.ondurationchange = () => core.view.soundPlayerDuration = audioNode.duration;
+	audioContext = new (window.AudioContext || window.webkitAudioContext)();
+	gainNode = audioContext.createGain();
+	gainNode.connect(audioContext.destination);
+	gainNode.gain.value = core.view.config.soundPlayerVolume;
 
-	// Track changes to config.soundPlayerVolume and adjust our gain node.
 	core.view.$watch('config.soundPlayerVolume', value => {
-		audioNode.volume = value;
+		gainNode.gain.value = value;
 	});
 
-	// Track requests to seek the current sound file and directly edit the
-	// time of the audio node. core.view.soundPlayerSeek will automatically update.
+	core.view.$watch('config.soundPlayerLoop', value => {
+		source_manager.set_loop(value);
+	});
+
 	core.events.on('click-sound-seek', seek => {
-		if (audioNode && isTrackLoaded)
-			audioNode.currentTime = audioNode.duration * seek;
+		if (audioBuffer && isTrackLoaded) {
+			const position_seconds = audioBuffer.duration * seek;
+			seek_to_position(position_seconds);
+		}
 	});
 
 	// Track sound-player-toggle events.
@@ -302,11 +532,12 @@ core.registerLoadFunc(async () => {
 		await loadSoundData();
 	});
 
-	// If the application crashes, we need to make sure to stop playing sound.
 	core.events.on('crash', () => {
-		if (audioNode)
-			audioNode.remove();
-
 		unloadSelectedTrack();
+
+		if (audioContext) {
+			audioContext.close();
+			audioContext = null;
+		}
 	});
 });
