@@ -12,12 +12,6 @@ const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
 const InstallManifest = require('./install-manifest');
 
-const WDCReader = require('../db/WDCReader');
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBTextureFileData = require('../db/caches/DBTextureFileData');
-const DBItemDisplays = require('../db/caches/DBItemDisplays');
-const DBCreatures = require('../db/caches/DBCreatures');
-
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
 
