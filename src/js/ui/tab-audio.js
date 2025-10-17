@@ -175,16 +175,13 @@ const loadSoundData = async () => {
 					// List unknown sound files using the .unk_sound extension. Files will be
 					// dynamically checked upon export and given the correct extension.
 					const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';
-					listfile.addEntry(entry.FileDataID, fileName);
+					listfile.addEntry(entry.FileDataID, fileName, core.view.listfileSounds);
 					unknownCount++;
 				}
 			}
 
 			log.write('Added %d unknown sound files from SoundKitEntry to listfile', unknownCount);
 			hasSoundDataLoaded = true;
-
-			// Refresh the sound listfile filter
-			core.events.emit('listfile-needs-updating');
 		} catch (e) {
 			log.write('Failed to load sound data: %s', e.message);
 			core.setToast('error', 'Failed to load sound data', { 'View Log': () => log.openRuntimeLog() }, -1);

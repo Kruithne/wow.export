@@ -205,27 +205,6 @@ class CASC {
 		return modelExt;
 	}
 
-	updateListfileFilters() {
-		core.view.listfileTextures = listfile.getFilenamesByExtension('.blp');
-		core.view.listfileSounds = listfile.getFilenamesByExtension(['.ogg', '.mp3', '.unk_sound']);
-		core.view.listfileVideos = listfile.getFilenamesByExtension('.avi');
-		core.view.listfileText = listfile.getFilenamesByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd']);
-		core.view.listfileModels = listfile.getFilenamesByExtension(['.m2', '.m3', '.wmo']);
-	}
-
-	/**
-	 * Creates filtered versions of the master listfile.
-	 */
-	async filterListfile() {
-		// Pre-filter extensions for tabs.
-		await this.progress.step('Filtering listfiles');
-
-		core.events.on('listfile-needs-updating', () => this.updateListfileFilters());
-
-		core.view.$watch('config.listfileSortByID', () => core.events.emit('listfile-needs-updating'));
-	}
-
-
 	/**
 	 * Initialize external components as part of the CASC load process.
 	 * This allows us to do it seamlessly under the cover of the same loading screen.

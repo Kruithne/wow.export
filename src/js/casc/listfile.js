@@ -700,8 +700,6 @@ const ingestIdentifiedFiles = (entries) => {
 		legacy_id_lookup.set(fileDataID, fileName);
 		legacy_name_lookup.set(fileName, fileDataID);
 	}
-	
-	core.events.emit('listfile-needs-updating');
 };
 
 /**
@@ -839,15 +837,14 @@ const isLoaded = () => {
 	return loaded;
 };
 
-/**
-* Adds an entry to the listfile.
-* @returns {void}
-*/
-const addEntry = (fileDataID, fileName) => {
+const addEntry = (fileDataID, fileName, listfile) => {
 	fileName = fileName.toLowerCase();
-	
+
 	legacy_id_lookup.set(fileDataID, fileName);
 	legacy_name_lookup.set(fileName, fileDataID);
+
+	// optional runtime listfile to include this entry in
+	listfile?.push(`${fileName} [${fileDataID}]`);
 };
 // endregion
 

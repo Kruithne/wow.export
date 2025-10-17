@@ -36,7 +36,6 @@ const computeRawFiles = async () => {
 
 core.registerLoadFunc(async () => {
 	core.events.on('screen-tab-raw', () => computeRawFiles());
-	core.events.on('listfile-needs-updating', () => { isDirty = true; });
 	core.view.$watch('config.cascLocale', () => { isDirty = true; });
 });
 
