@@ -31,6 +31,7 @@ const BIN_LF_COMPONENTS = {
 };
 
 // these are populated by the legacy text-based listfile format
+// these are also used for runtime populated listfile entries
 const legacy_name_lookup = new Map();
 const legacy_id_lookup = new Map();
 
@@ -312,6 +313,26 @@ const listfile_binary_find_file = (node_ofs, filename) => {
 	}
 
 	return undefined;
+};
+
+const listfile_binary_lookup_filename = (filename) => {
+	// listfile entries added at runtime are stored in legacy lookup
+	const direct_lookup = legacy_name_lookup.get(filename);
+	if (direct_lookup !== undefined)
+		return direct_lookup;
+
+	const components = filename.split('/');
+	let node_ofs = 0;
+	
+	for (let i = 0; i < components.length - 1; i++) {
+		const component = components[i];
+		node_ofs = listfile_binary_find_component_child(node_ofs, component);
+		if (node_ofs === -1)
+			return undefined;
+	}
+	
+	const target_filename = components[components.length - 1];
+	return listfile_binary_find_file(node_ofs, target_filename);
 };
 // endregion
 	
@@ -673,13 +694,7 @@ const formatEntries = (file_data_ids) => {
 	return file_data_ids;
 };
 
-const ingestIdentifiedFiles = (entries) => {
-	if (is_binary_mode) {
-		// todo: add to binary structures properly
-		log.write('Cannot ingest identified files to binary listfile yet');
-		return;
-	}
-	
+const ingestIdentifiedFiles = (entries) => {	
 	for (const [fileDataID, ext] of entries) {
 		const fileName = 'unknown/' + fileDataID + ext;
 		legacy_id_lookup.set(fileDataID, fileName);
@@ -722,6 +737,11 @@ const binary_read_string_at_offset = (pf_index, offset) => {
 */
 const getByID = (id) => {
 	if (is_binary_mode) {
+		// listfile entries added at runtime are stored in legacy lookup
+		const direct_lookup = legacy_id_lookup.get(id);
+		if (direct_lookup !== undefined)
+			return direct_lookup;
+
 		const offset = binary_id_to_offset.get(id);
 		if (offset === undefined)
 			return undefined;
@@ -751,28 +771,15 @@ const getByIDOrUnknown = (id, ext = '') => {
 */
 const getByFilename = (filename) => {
 	filename = filename.toLowerCase().replace(/\\/g, '/');
-	
-	if (is_binary_mode) {
-		const components = filename.split('/');
-		let node_ofs = 0;
-		
-		for (let i = 0; i < components.length - 1; i++) {
-			const component = components[i];
-			node_ofs = listfile_binary_find_component_child(node_ofs, component);
-			if (node_ofs === -1)
-				return undefined;
-		}
-		
-		const target_filename = components[components.length - 1];
-		return listfile_binary_find_file(node_ofs, target_filename);
-	}
-	
-	let lookup = legacy_name_lookup.get(filename);
+
+	let lookup = is_binary_mode
+		? listfile_binary_lookup_filename(filename)
+		: legacy_name_lookup.get(filename);
 	
 	// In the rare occasion we have a reference to an MDL/MDX file and it fails
 	// to resolve (as expected), attempt to resolve the M2 of the same name.
 	if (!lookup && (filename.endsWith('.mdl') || filename.endsWith('mdx')))
-		lookup = legacy_name_lookup.get(ExportHelper.replaceExtension(filename, '.m2'));
+		return getByFilename(ExportHelper.replaceExtension(filename, '.m2'));
 	
 	return lookup;
 };
@@ -837,12 +844,6 @@ const isLoaded = () => {
 * @returns {void}
 */
 const addEntry = (fileDataID, fileName) => {
-	if (is_binary_mode) {
-		// todo: add to binary structures properly
-		log.write('Cannot add entry to binary listfile yet: %s -> %s', fileDataID, fileName);
-		return;
-	}
-	
 	legacy_id_lookup.set(fileDataID, fileName);
 	legacy_name_lookup.set(fileName, fileDataID);
 };
