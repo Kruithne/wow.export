@@ -171,7 +171,7 @@ const loadSoundData = async () => {
 			
 			let unknownCount = 0;
 			for (const entry of soundKitEntries.getAllRows().values()) {
-				if (!listfile.getByID(entry.FileDataID)) {
+				if (!listfile.existsByID(entry.FileDataID)) {
 					// List unknown sound files using the .unk_sound extension. Files will be
 					// dynamically checked upon export and given the correct extension.
 					const fileName = 'unknown/' + entry.FileDataID + '.unk_sound';

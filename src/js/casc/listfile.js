@@ -762,6 +762,21 @@ const renderListfile = async (file_data_ids, include_main_index = false) => {
 };
 
 /**
+* Check if a filename exists for a given file data ID without resolving it.
+* @param {number} id
+* @returns {boolean}
+*/
+const existsByID = (id) => {
+	if (legacy_id_lookup.has(id))
+		return true;
+
+	if (is_binary_mode && binary_id_to_offset.has(id))
+		return true;
+
+	return false;
+};
+
+/**
 * Get a filename from a given file data ID.
 * @param {number} id
 * @returns {string|undefined}
@@ -888,6 +903,7 @@ module.exports = {
 	preload,
 	prepareListfile,
 	applyPreload,
+	existsByID,
 	getByID,
 	getByFilename,
 	getFilenamesByExtension,
