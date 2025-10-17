@@ -334,6 +334,15 @@ const listfile_binary_lookup_filename = (filename) => {
 	const target_filename = components[components.length - 1];
 	return listfile_binary_find_file(node_ofs, target_filename);
 };
+
+const binary_read_string_at_offset = (pf_index, offset) => {
+	const data = binary_strings_mmap[pf_index].data;
+	let end = offset;
+	while (end < data.length && data[end] !== 0)
+		end++;
+
+	return Buffer.from(data.subarray(offset, end)).toString('utf8');
+};
 // endregion
 	
 // region legacy
@@ -711,21 +720,6 @@ const getFullListfile = () => {
 		return formatEntries([...binary_id_to_offset.keys()]);
 	
 	return formatEntries([...legacy_id_lookup.keys()]);
-};
-
-/**
-* Read string at offset from memory-mapped binary strings file
-* @param {number} pf_index
-* @param {number} offset
-* @returns {string}
-*/
-const binary_read_string_at_offset = (pf_index, offset) => {
-	const data = binary_strings_mmap[pf_index].data;
-	let end = offset;
-	while (end < data.length && data[end] !== 0)
-		end++;
-
-	return Buffer.from(data.subarray(offset, end)).toString('utf8');
 };
 
 /**
