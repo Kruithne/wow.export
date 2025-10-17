@@ -683,7 +683,7 @@ core.events.once('screen-tab-maps', async () => {
 			listfile.addEntry(entry.WdtFileDataID, wdtPath);
 
 			try {
-				const data = await core.view.casc.getByID(entry.WdtFileDataID);
+				const data = await core.view.casc.getFile(entry.WdtFileDataID);
 				const wdt = selectedWDT = new WDTLoader(data);
 				wdt.load();
 
