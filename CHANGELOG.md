@@ -9,7 +9,7 @@
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
 - Fixed an issue that prevented wow.export from automatically discovering certain file types.
-- Fixed an issue causing float-point precision from data tables to be rounded, making data table exports accurate and solving minor inaccuracies across the application.
+- Fixed an issue causing floating-point precision from data tables to be rounded, making data table exports accurate and solving minor inaccuracies across the application.
 - Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
 - Fixed an issue causing seams to appear on maps imported with the Blender add-on.
 - Internal: update nw.js from 0.69.1 ⇉ 0.104.1
