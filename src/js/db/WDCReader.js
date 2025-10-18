@@ -856,16 +856,6 @@ class WDCReader {
 				}
 			}
 
-			// round floats correctly
-			if (fieldType == FieldType.Float) {
-				if (count > 0) {
-					for (let i = 0; i < count; i++)
-						out[prop][i] = Math.round(out[prop][i] * 100) / 100;
-				} else {
-					out[prop] = Math.round(out[prop] * 100) / 100;
-				}
-			}
-
 			if (!hasIDMap && fieldIndex === this.idFieldIndex) {
 				recordID = out[prop];
 				this.idField = prop;
