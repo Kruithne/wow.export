@@ -7,10 +7,13 @@ const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
 const log = require('../log');
 const core = require('../core');
+const path = require('path');
 const constants = require('../constants');
 const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
 const InstallManifest = require('./install-manifest');
+const BufferWrapper = require('../buffer');
+const mmap = require(path.join(process.cwd(), 'mmap.node'));
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
@@ -170,10 +173,6 @@ class CASC {
 	 * @returns {BufferWrapper} wrapper around memory-mapped file
 	 */
 	async getVirtualFileByID(fileDataID, suppressLog = false) {
-		const path = require('path');
-		const mmap = require(path.join(process.cwd(), 'mmap.node'));
-		const BufferWrapper = require('../buffer');
-
 		const root = this.rootEntries.get(fileDataID);
 		if (root === undefined)
 			throw new Error('fileDataID does not exist in root: ' + fileDataID);
