@@ -71,82 +71,114 @@ class WDCReader {
 	constructor(fileName) {
 		this.fileName = fileName;
 
-		this.rows = new Map();
 		this.copyTable = new Map();
-		this.stringTable = new Map();
 
 		this.schema = new Map();
 
-		this.isInflated = false;
 		this.isLoaded = false;
 		this.idField = null;
 		this.idFieldIndex = null;
-		
+
 		this.relationshipLookup = new Map();
+
+		// lazy-loading metadata
+		this.data = null;
+		this.sections = null;
+		this.fieldInfo = null;
+		this.palletData = null;
+		this.commonData = null;
+		this.castBuffer = null;
+		this.recordCount = 0;
+		this.recordSize = 0;
+		this.flags = 0;
+		this.wdcVersion = 0;
+		this.minID = 0;
+		this.maxID = 0;
+		this.totalRecordCount = 0;
 	}
 
 	/**
 	 * Returns the amount of rows available in the table.
 	 */
 	get size() {
-		return this.rows.size + this.copyTable.size;
+		return this.totalRecordCount + this.copyTable.size;
 	}
 	
 	/**
 	 * Get a row from this table.
 	 * Returns NULL if the row does not exist.
-	 * @param {number} recordID 
+	 * @param {number} recordID
 	 */
 	getRow(recordID) {
-		// The table needs to be loaded before we attempt to access a row.
-		// We could just return a NULL here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
 			throw new Error('Attempted to read a data table row before table was loaded.');
 
-		// Ensure incoming recordID is always an integer
 		recordID = parseInt(recordID);
 
-		// Look this row up as a normal entry.
-		const record = this.rows.get(recordID);
-		if (record !== undefined)
-			return record;
-
-		// Check if the copy table contains a mapping entry.
+		// check copy table first
 		const copyID = this.copyTable.get(recordID);
 		if (copyID !== undefined) {
-			const copy = this.rows.get(copyID);
-			if (copy !== undefined) {
+			const copy = this._readRecord(copyID);
+			if (copy !== null) {
 				let tempCopy = Object.assign({}, copy);
 				tempCopy.ID = recordID;
 				return tempCopy;
 			}
 		}
 
-		// Row does not exist.
-		return null;
+		// read record directly
+		return this._readRecord(recordID);
 	}
 
 	/**
 	 * Returns all available rows in the table.
-	 * Calling this will permanently inflate internal copy data; use wisely.
+	 * Iterates sequentially through all sections for efficient paging with mmap.
 	 */
 	getAllRows() {
-		// The table needs to be loaded before we attempt to access the rows.
-		// We could just return an empty Map here, but throwing an error highlights the mistake.
 		if (!this.isLoaded)
 			throw new Error('Attempted to read a data table rows before table was loaded.');
 
-		const rows = this.rows;
+		const rows = new Map();
 
-		// Inflate all copy table data before returning.
-		if (!this.isInflated) {
-			for (const [destID, srcID] of this.copyTable) {
-				let rowData = Object.assign({}, rows.get(srcID));
+		// iterate through all sections sequentially
+		for (let sectionIndex = 0; sectionIndex < this.sections.length; sectionIndex++) {
+			const section = this.sections[sectionIndex];
+			const header = section.header;
+
+			// skip encrypted sections
+			if (section.isEncrypted)
+				continue;
+
+			const hasIDMap = section.idList.length > 0;
+			const emptyIDMap = hasIDMap && section.idList.every(id => id === 0);
+
+			for (let i = 0; i < header.recordCount; i++) {
+				let recordID;
+
+				if (hasIDMap && emptyIDMap) {
+					recordID = i;
+				} else if (hasIDMap) {
+					recordID = section.idList[i];
+				}
+
+				// if no ID map, recordID will be determined during record parsing from inline ID field
+				const record = this._readRecordFromSection(sectionIndex, i, recordID);
+				if (record !== null) {
+					// use the ID from the record if we didn't have it upfront
+					const finalRecordID = recordID !== undefined ? recordID : record[this.idField];
+					rows.set(finalRecordID, record);
+				}
+			}
+		}
+
+		// inflate copy table
+		for (const [destID, srcID] of this.copyTable) {
+			const src = rows.get(srcID);
+			if (src !== undefined) {
+				let rowData = Object.assign({}, src);
 				rowData.ID = destID;
 				rows.set(destID, rowData);
 			}
-
-			this.isInflated = true;
 		}
 
 		return rows;
@@ -161,24 +193,24 @@ class WDCReader {
 	getRelationRows(foreignKeyValue) {
 		if (!this.isLoaded)
 			throw new Error('Attempted to query relationship data before table was loaded.');
-		
+
 		foreignKeyValue = parseInt(foreignKeyValue);
-		
+
 		const recordIDs = this.relationshipLookup.get(foreignKeyValue);
 		if (!recordIDs || recordIDs.length === 0)
 			return [];
-		
+
 		const results = [];
 		for (const recordID of recordIDs) {
-			const row = this.rows.get(recordID);
-			if (row !== undefined)
+			const row = this._readRecord(recordID);
+			if (row !== null)
 				results.push(row);
 		}
-		
+
 		return results;
 	}
 
-	/**
+/**
 	 * Load the schema for this table.
 	 * @param {string} layoutHash
 	 */
@@ -192,12 +224,12 @@ class WDCReader {
 		let structure = null;
 		log.write('Loading table definitions %s (%s %s)...', dbdName, buildID, layoutHash);
 
-		// First check if a valid DBD exists in cache and contains a definition for this build.
+		// check cached dbd
 		let rawDbd = await casc.cache.getFile(dbdName, constants.CACHE.DIR_DBD);
 		if (rawDbd !== null)
 			structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 
-		// No cached definition, download updated DBD and check again.
+		// download if not cached
 		if (structure === null) {
 			const dbd_url = util.format(core.view.config.dbdURL, tableName);
 			const dbd_url_fallback = util.format(core.view.config.dbdFallbackURL, tableName);
@@ -206,10 +238,8 @@ class WDCReader {
 				log.write(`No cached DBD, downloading new from ${dbd_url}`);
 				rawDbd = await generics.downloadFile([dbd_url, dbd_url_fallback]);
 
-				// Persist the newly download DBD to disk for future loads.
 				await casc.cache.storeFile(dbdName, rawDbd, constants.CACHE.DIR_DBD);
 
-				// Parse the updated DBD and check for definition.
 				structure = new DBDParser(rawDbd).getStructure(buildID, layoutHash);
 			} catch (e) {
 				log.write(e);
@@ -247,15 +277,14 @@ class WDCReader {
 		return this.idFieldIndex;
 	}
 
-	/**
-	 * Parse the data table.
-	 * @param {object} [data] 
-	 */
-	async parse(data) {
+	async parse() {
 		log.write('Loading DB file %s from CASC', this.fileName);
 
-		if (!data)
-			data = await core.view.casc.getFileByName(this.fileName, true, false, true);
+		const data = await core.view.casc.getVirtualFileByName(this.fileName, false);
+		this.data = data;
+
+		// store reference for lazy-loading
+		this.castBuffer = BufferWrapper.alloc(8, true);
 
 		// wdc_magic
 		const magic = data.readUInt32LE();
@@ -274,16 +303,16 @@ class WDCReader {
 		}
 
 		// wdc_db2_header
-		const recordCount = data.readUInt32LE();
+		this.recordCount = data.readUInt32LE();
 		data.move(4); // fieldCount
-		const recordSize = data.readUInt32LE();
+		this.recordSize = data.readUInt32LE();
 		data.move(4); // stringTableSize
 		data.move(4); // tableHash
 		const layoutHash = data.readUInt8(4).reverse().map(e => e.toString(16).padStart(2, '0')).join('').toUpperCase();
-		const minID = data.readUInt32LE();
-		const maxID = data.readUInt32LE();
+		this.minID = data.readUInt32LE();
+		this.maxID = data.readUInt32LE();
 		data.move(4); // locale
-		const flags = data.readUInt16LE();
+		this.flags = data.readUInt16LE();
 		const idIndex = data.readUInt16LE();
 		this.idFieldIndex = idIndex;
 		const totalFieldCount = data.readUInt32LE();
@@ -293,6 +322,8 @@ class WDCReader {
 		const commonDataSize = data.readUInt32LE();
 		const palletDataSize = data.readUInt32LE();
 		const sectionCount = data.readUInt32LE();
+
+		this.wdcVersion = wdcVersion;
 
 		// Load the DBD and parse a schema from it.
 		await this.loadSchema(layoutHash);
@@ -328,9 +359,9 @@ class WDCReader {
 			fields[i] = { size: data.readInt16LE(), position: data.readUInt16LE() };
 
 		// field_info[header.field_storage_info_size / sizeof(field_storage_info)]
-		const fieldInfo = new Array(fieldStorageInfoSize / (4 * 6));
-		for (let i = 0, n = fieldInfo.length; i < n; i++) {
-			fieldInfo[i] = {
+		this.fieldInfo = new Array(fieldStorageInfoSize / (4 * 6));
+		for (let i = 0, n = this.fieldInfo.length; i < n; i++) {
+			this.fieldInfo[i] = {
 				fieldOffsetBits: data.readUInt16LE(),
 				fieldSizeBits: data.readUInt16LE(),
 				additionalDataSize: data.readUInt32LE(),
@@ -342,13 +373,13 @@ class WDCReader {
 		// char pallet_data[header.pallet_data_size];
 		let prevPos = data.offset;
 
-		const palletData = new Array(fieldInfo.length);
-		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
-			const thisFieldInfo = fieldInfo[fieldIndex];
+		this.palletData = new Array(this.fieldInfo.length);
+		for (let fieldIndex = 0, nFields = this.fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
+			const thisFieldInfo = this.fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexed || thisFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
-				palletData[fieldIndex] = new Array();
+				this.palletData[fieldIndex] = new Array();
 				for (let i = 0; i < thisFieldInfo.additionalDataSize / 4; i++)
-					palletData[fieldIndex][i] = data.readUInt32LE();
+					this.palletData[fieldIndex][i] = data.readUInt32LE();
 			}
 		}
 
@@ -358,11 +389,11 @@ class WDCReader {
 		prevPos = data.offset;
 
 		// char common_data[header.common_data_size];
-		const commonData = new Array(fieldInfo.length);
-		for (let fieldIndex = 0, nFields = fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
-			const thisFieldInfo = fieldInfo[fieldIndex];
+		this.commonData = new Array(this.fieldInfo.length);
+		for (let fieldIndex = 0, nFields = this.fieldInfo.length; fieldIndex < nFields; fieldIndex++) {
+			const thisFieldInfo = this.fieldInfo[fieldIndex];
 			if (thisFieldInfo.fieldCompression === CompressionType.CommonData) {
-				const commonDataMap = commonData[fieldIndex] = new Map();
+				const commonDataMap = this.commonData[fieldIndex] = new Map();
 
 				for (let i = 0; i < thisFieldInfo.additionalDataSize / 8; i++)
 					commonDataMap.set(data.readUInt32LE(), data.readUInt32LE());
@@ -381,47 +412,34 @@ class WDCReader {
 		}
 
 		// data_sections[header.section_count];
-		const sections = new Array(sectionCount);
+		this.sections = new Array(sectionCount);
 		const copyTable = this.copyTable;
-		const stringTable = this.stringTable;
 		let previousStringTableSize = 0;
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
 			const header = sectionHeaders[sectionIndex];
-			const isNormal = !(flags & 1);
+			const isNormal = !(this.flags & 1);
 
 			const recordDataOfs = data.offset;
 			const recordsOfs = wdcVersion === 2 ? header.offsetMapOffset : header.offsetRecordsEnd;
-			const recordDataSize = isNormal ? recordSize * header.recordCount : recordsOfs - header.fileOffset;
+			const recordDataSize = isNormal ? this.recordSize * header.recordCount : recordsOfs - header.fileOffset;
 			const stringBlockOfs = recordDataOfs + recordDataSize;
 
 			let offsetMap;
 			if (wdcVersion === 2 && !isNormal) {
 				data.seek(header.offsetMapOffset);
 				// offset_map_entry offset_map[header.max_id - header.min_id + 1];
-				const offsetMapCount = maxID - minID + 1;
+				const offsetMapCount = this.maxID - this.minID + 1;
 				offsetMap = new Array(offsetMapCount);
 				for (let i = 0, n = offsetMapCount; i < n; i++)
-					offsetMap[minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
+					offsetMap[this.minID + i] = { offset: data.readUInt32LE(), size: data.readUInt16LE() };
 			}
 
-			if ((wdcVersion > 2) && isNormal) {
-				data.seek(stringBlockOfs);
-				for (let i = 0; i < header.stringTableSize;)
-				{
-					const oldPos = data.offset;
-					const stringResult = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
+			// store string table offset for lazy access
+			const stringTableOffset = stringBlockOfs;
+			const stringTableOffsetBase = previousStringTableSize;
 
-					if (stringResult != "")
-						stringTable.set(i + previousStringTableSize, stringResult);
-					
-					if (data.offset == oldPos)
-						data.seek(oldPos + 1);
-
-					i += (data.offset - oldPos);
-				}
-
+			if ((wdcVersion > 2) && isNormal)
 				previousStringTableSize += header.stringTableSize;
-			}
 
 			data.seek(stringBlockOfs + header.stringTableSize);
 
@@ -458,6 +476,10 @@ class WDCReader {
 					const foreignID = data.readUInt32LE();
 					const recordIndex = data.readUInt32LE();
 					relationshipMap.set(recordIndex, foreignID);
+
+					// populate relationship lookup
+					if (!this.relationshipLookup.has(foreignID))
+						this.relationshipLookup.set(foreignID, []);
 				}
 
 				// If a section is encrypted it is highly likely we don't read the correct amount of data here. Skip ahead if so.
@@ -467,27 +489,25 @@ class WDCReader {
 
 			// uint32_t offset_map_id_list[section_headers.offset_map_id_count];
 			// Duplicate of id_list for sections with offset records.
-			// TODO: Read
 			if (wdcVersion > 2)
 				data.move(header.offsetMapIDCount * 4);
 
-			sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, idList, offsetMap, relationshipMap };
+			this.sections[sectionIndex] = { header, isNormal, recordDataOfs, recordDataSize, stringBlockOfs, stringTableOffset, stringTableOffsetBase, idList, offsetMap, relationshipMap, isEncrypted: false };
 		}
 
-		const castBuffer = BufferWrapper.alloc(8, true);
-
-		// Parse section records.
+		// detect encrypted sections and count total records
+		this.totalRecordCount = 0;
 		for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
-			const section = sections[sectionIndex];
+			const section = this.sections[sectionIndex];
 			const header = section.header;
 			const offsetMap = section.offsetMap;
 			const isNormal = section.isNormal;
 
-			// Skip parsing entries from encrypted sections.
+			// skip parsing entries from encrypted sections
 			if (header.tactKeyHash !== BigInt(0)) {
 				let isZeroed = true;
 
-				// Check if record data is all zeroes
+				// check if record data is all zeroes
 				data.seek(section.recordDataOfs);
 				for (let i = 0, n = section.recordDataSize; i < n; i++) {
 					if (data.readUInt8() !== 0x0) {
@@ -496,276 +516,373 @@ class WDCReader {
 					}
 				}
 
-				// Check if first integer after string block (from id list or copy table) is non-0
+				// check if first integer after string block (from id list or copy table) is non-0
 				if (isZeroed && (wdcVersion > 2) && isNormal && (header.idListSize > 0 || header.copyTableCount > 0)) {
 					data.seek(section.stringBlockOfs + header.stringTableSize);
 					isZeroed = data.readUInt32LE() === 0;
 				}
 
-				// Check if first entry in offsetMap has size 0
-				if (isZeroed && (wdcVersion > 2) && header.offsetMapIDCount > 0) 
+				// check if first entry in offsetMap has size 0
+				if (isZeroed && (wdcVersion > 2) && header.offsetMapIDCount > 0)
 					isZeroed = offsetMap[0].size === 0;
-				
+
 				if (isZeroed) {
-					log.write("Skipping all-zero encrypted section " + sectionIndex + " in file " + this.fileName);
+					log.write('Skipping all-zero encrypted section ' + sectionIndex + ' in file ' + this.fileName);
+					section.isEncrypted = true;
 					continue;
 				}
 			}
 
-			// Total recordDataSize of all forward sections
-			let outsideDataSize = 0;
-
-			for (let i = 0; i < sectionCount; i++) {
-				if (i < sectionIndex)
-					outsideDataSize += sections[i].recordDataSize;
-			}
-
-			const hasIDMap = section.idList.length > 0;
-			const emptyIDMap = hasIDMap && section.idList.every(id => id === 0); 
-			for (let i = 0, n = header.recordCount; i < n; i++) {
-				let recordID;
-
-				if (hasIDMap)
-					recordID = section.idList[i];
-
-				if(hasIDMap && emptyIDMap)
-					recordID = i;
-
-				const recordOfs = isNormal ? (i * recordSize) : offsetMap[wdcVersion === 2 ? recordID : i].offset;
-
-				const absoluteRecordOffs = recordOfs - (recordCount * recordSize);
-
-				if (!isNormal) 
-					data.seek(recordOfs);
-				else 
-					data.seek(section.recordDataOfs + recordOfs);
-				
-				const out = {};
-				let fieldIndex = 0;
-				for (const [prop, type] of this.schema.entries()) {
-					if (type === FieldType.Relation) {
-						if (section.relationshipMap.has(i)) 
-							out[prop] = section.relationshipMap.get(i);
-						else 
-							out[prop] = 0;
-						
-						continue;
-					}
-
-					if (type === FieldType.NonInlineID) {
-						if (hasIDMap)
-							out[prop] = section.idList[i];
-
-						continue;
-					}
-
-					const recordFieldInfo = fieldInfo[fieldIndex];
-
-					let count;
-					let fieldType = type;
-					if (Array.isArray(type))
-						[fieldType, count] = type;
-
-					const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
-
-					switch (recordFieldInfo.fieldCompression) {
-						case CompressionType.None:
-							switch (fieldType) {
-								case FieldType.String:
-									if (isNormal) {
-										if (count > 0) {
-											out[prop] = new Array(count);
-											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
-												const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
-												const ofs = data.readUInt32LE();
-
-												const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
-
-												if (ofs == 0 || stringTableIndex == 0) {
-													out[prop][stringArrayIndex] = "";
-												} else {
-													if (stringTable.has(stringTableIndex))
-														out[prop][stringArrayIndex] = stringTable.get(stringTableIndex);
-													else
-														throw new Error('Missing stringtable entry');
-												}
-											}
-										} else {
-											const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
-											const ofs = data.readUInt32LE();
-
-											const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
-
-											if (ofs == 0 || stringTableIndex == 0) {
-												out[prop] = "";
-											} else {
-												if (stringTable.has(stringTableIndex))
-													out[prop] = stringTable.get(stringTableIndex);
-												else
-													throw new Error('Missing stringtable entry');
-											}
-										}
-									} else {
-										if (count > 0) {
-											out[prop] = new Array(count);
-											for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
-												out[prop][stringArrayIndex] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-												data.readInt8(); // Read NUL character
-											}
-										} else {
-											out[prop] = data.readString(data.indexOf(0x0) - data.offset, 'utf8');
-											data.readInt8(); // Read NUL character
-										}
-									}
-									break;
-
-								case FieldType.Int8: out[prop] = data.readInt8(count); break;
-								case FieldType.UInt8: out[prop] = data.readUInt8(count); break;
-								case FieldType.Int16: out[prop] = data.readInt16LE(count); break;
-								case FieldType.UInt16: out[prop] = data.readUInt16LE(count); break;
-								case FieldType.Int32: out[prop] = data.readInt32LE(count); break;
-								case FieldType.UInt32: out[prop] = data.readUInt32LE(count); break;
-								case FieldType.Int64: out[prop] = data.readInt64LE(count); break;
-								case FieldType.UInt64: out[prop] = data.readUInt64LE(count); break;
-								case FieldType.Float: out[prop] = data.readFloatLE(count); break;
-							}
-							break;
-							
-						case CompressionType.CommonData:
-							if (commonData[fieldIndex].has(recordID))
-								out[prop] = commonData[fieldIndex].get(recordID);
-							else
-								out[prop] = recordFieldInfo.fieldCompressionPacking[0]; // Default value
-							break;
-
-						case CompressionType.Bitpacked:
-						case CompressionType.BitpackedSigned:
-						case CompressionType.BitpackedIndexed:
-						case CompressionType.BitpackedIndexedArray: {
-							// TODO: All bitpacked stuff requires testing on more DB2s before being able to call it done.
-							data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
-
-							let rawValue;
-							if (data.remainingBytes >= 8) {
-								rawValue = data.readUInt64LE();
-							} else {
-								castBuffer.seek(0);
-								castBuffer.writeBuffer(data);
-
-								castBuffer.seek(0);
-								rawValue = castBuffer.readUInt64LE();
-							}
-
-							// Read bitpacked value, in the case BitpackedIndex(Array) this is an index into palletData.
-
-							// Get the remaining amount of bits that remain (we read to the nearest byte)
-							const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
-							const bitSize = 1n << BigInt(recordFieldInfo.fieldSizeBits);
-							const bitpackedValue = (rawValue >> bitOffset) & (bitSize - BigInt(1));
-
-							if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
-								out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
-								for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
-									out[prop][i] = palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)];
-							} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
-								if (bitpackedValue in palletData[fieldIndex])
-									out[prop] = palletData[fieldIndex][bitpackedValue];
-								else
-									throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
-							} else {
-								out[prop] = bitpackedValue;
-							}
-
-							if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned) 
-								out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
-
-							break;
-						}
-					}
-
-					// Reinterpret field correctly for compression types other than None
-					if (recordFieldInfo.fieldCompression !== CompressionType.None) {
-						if (!Array.isArray(type)) {
-							castBuffer.seek(0);
-							if (out[prop] < 0) 
-								castBuffer.writeBigInt64LE(BigInt(out[prop]));
-							else 
-								castBuffer.writeBigUInt64LE(BigInt(out[prop]));
-							
-							castBuffer.seek(0);
-							switch (fieldType) {
-								case FieldType.String:
-									throw new Error('Compressed string arrays currently not used/supported.');
-
-								case FieldType.Int8: out[prop] = castBuffer.readInt8(); break;
-								case FieldType.UInt8: out[prop] = castBuffer.readUInt8(); break;
-								case FieldType.Int16: out[prop] = castBuffer.readInt16LE(); break;
-								case FieldType.UInt16: out[prop] = castBuffer.readUInt16LE(); break;
-								case FieldType.Int32: out[prop] = castBuffer.readInt32LE(); break;
-								case FieldType.UInt32: out[prop] = castBuffer.readUInt32LE(); break;
-								case FieldType.Int64: out[prop] = castBuffer.readInt64LE(); break;
-								case FieldType.UInt64: out[prop] = castBuffer.readUInt64LE(); break;
-								case FieldType.Float: out[prop] = castBuffer.readFloatLE(); break;
-							}
-						} else {
-							for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
-								castBuffer.seek(0);
-								if (out[prop] < 0) 
-									castBuffer.writeBigInt64LE(BigInt(out[prop][i]));
-								else 
-									castBuffer.writeBigUInt64LE(BigInt(out[prop][i]));
-							
-								castBuffer.seek(0);
-								switch (fieldType) {
-									case FieldType.String:
-										throw new Error('Compressed string arrays currently not used/supported.');
-
-									case FieldType.Int8: out[prop][i] = castBuffer.readInt8(); break;
-									case FieldType.UInt8: out[prop][i] = castBuffer.readUInt8(); break;
-									case FieldType.Int16: out[prop][i] = castBuffer.readInt16LE(); break;
-									case FieldType.UInt16: out[prop][i] = castBuffer.readUInt16LE(); break;
-									case FieldType.Int32: out[prop][i] = castBuffer.readInt32LE(); break;
-									case FieldType.UInt32: out[prop][i] = castBuffer.readUInt32LE(); break;
-									case FieldType.Int64: out[prop][i] = castBuffer.readInt64LE(); break;
-									case FieldType.UInt64: out[prop][i] = castBuffer.readUInt64LE(); break;
-									case FieldType.Float: out[prop][i] = castBuffer.readFloatLE(); break;
-								}
-							}
-						}
-					}
-
-					// Round floats correctly
-					if (fieldType == FieldType.Float) {
-						if (count > 0) {
-							for (let i = 0; i < count; i++)
-								out[prop][i] = Math.round(out[prop][i] * 100) / 100;
-						} else {
-							out[prop] = Math.round(out[prop] * 100) / 100;
-						}
-					}
-
-					if (!hasIDMap && fieldIndex === idIndex) {
-						recordID = out[prop];
-						this.idField = prop;
-					}
-
-					fieldIndex++;
-				}
-
-				this.rows.set(recordID, out);
-				
-				if (section.relationshipMap && section.relationshipMap.has(i)) {
-					const foreignID = section.relationshipMap.get(i);
-					if (!this.relationshipLookup.has(foreignID))
-						this.relationshipLookup.set(foreignID, []);
-					
-					this.relationshipLookup.get(foreignID).push(recordID);
-				}
-			}
+			this.totalRecordCount += header.recordCount;
 		}
 
 		log.write('Parsed %s with %d rows', this.fileName, this.size);
 		this.isLoaded = true;
+	}
+
+	/**
+	 * Lazy-read string from string table by offset
+	 * @param {number} sectionIndex
+	 * @param {number} stringTableIndex
+	 * @returns {string}
+	 */
+	_readString(sectionIndex, stringTableIndex) {
+		const section = this.sections[sectionIndex];
+		const localOffset = stringTableIndex - section.stringTableOffsetBase;
+
+		if (localOffset < 0 || localOffset >= section.header.stringTableSize)
+			throw new Error('String table index out of range');
+
+		this.data.seek(section.stringTableOffset + localOffset);
+		return this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
+	}
+
+	/**
+	 * Find which section contains a record ID
+	 * @param {number} recordID
+	 * @returns {object|null}
+	 */
+	_findSectionForRecord(recordID) {
+		for (let sectionIndex = 0; sectionIndex < this.sections.length; sectionIndex++) {
+			const section = this.sections[sectionIndex];
+			if (section.isEncrypted)
+				continue;
+
+			const hasIDMap = section.idList.length > 0;
+			const emptyIDMap = hasIDMap && section.idList.every(id => id === 0);
+
+			if (hasIDMap && !emptyIDMap) {
+				const recordIndex = section.idList.indexOf(recordID);
+				if (recordIndex !== -1)
+					return { sectionIndex, recordIndex, recordID };
+			} else if (emptyIDMap) {
+				// for empty id maps, recordID equals recordIndex
+				if (recordID < section.header.recordCount)
+					return { sectionIndex, recordIndex: recordID, recordID };
+			} else {
+				// no id map - need to scan records for inline id field
+				for (let recordIndex = 0; recordIndex < section.header.recordCount; recordIndex++) {
+					const record = this._readRecordFromSection(sectionIndex, recordIndex, undefined);
+					if (record !== null && record[this.idField] === recordID)
+						return { sectionIndex, recordIndex, recordID };
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Read a record by ID
+	 * @param {number} recordID
+	 * @returns {object|null}
+	 */
+	_readRecord(recordID) {
+		const location = this._findSectionForRecord(recordID);
+		if (!location)
+			return null;
+
+		return this._readRecordFromSection(location.sectionIndex, location.recordIndex, recordID);
+	}
+
+	/**
+	 * Read a specific record from a section
+	 * @param {number} sectionIndex
+	 * @param {number} recordIndex
+	 * @param {number} recordID
+	 * @returns {object|null}
+	 */
+	_readRecordFromSection(sectionIndex, recordIndex, recordID) {
+		const section = this.sections[sectionIndex];
+		const header = section.header;
+		const offsetMap = section.offsetMap;
+		const isNormal = section.isNormal;
+
+		if (section.isEncrypted)
+			return null;
+
+		// total recordDataSize of all forward sections
+		let outsideDataSize = 0;
+		for (let i = 0; i < sectionIndex; i++)
+			outsideDataSize += this.sections[i].recordDataSize;
+
+		const hasIDMap = section.idList.length > 0;
+		const emptyIDMap = hasIDMap && section.idList.every(id => id === 0);
+
+		if (hasIDMap && emptyIDMap)
+			recordID = recordIndex;
+
+		// for variable-length records, we need recordID to look up offset
+		const recordOfs = isNormal ? (recordIndex * this.recordSize) : offsetMap[this.wdcVersion === 2 ? recordID : recordIndex].offset;
+		const absoluteRecordOffs = recordOfs - (this.recordCount * this.recordSize);
+
+		if (!isNormal)
+			this.data.seek(recordOfs);
+		else
+			this.data.seek(section.recordDataOfs + recordOfs);
+
+		const out = {};
+		let fieldIndex = 0;
+		for (const [prop, type] of this.schema.entries()) {
+			if (type === FieldType.Relation) {
+				if (section.relationshipMap && section.relationshipMap.has(recordIndex))
+					out[prop] = section.relationshipMap.get(recordIndex);
+				else
+					out[prop] = 0;
+
+				continue;
+			}
+
+			if (type === FieldType.NonInlineID) {
+				if (hasIDMap)
+					out[prop] = section.idList[recordIndex];
+
+				continue;
+			}
+
+			const recordFieldInfo = this.fieldInfo[fieldIndex];
+
+			let count;
+			let fieldType = type;
+			if (Array.isArray(type))
+				[fieldType, count] = type;
+
+			const fieldOffsetBytes = Math.floor(recordFieldInfo.fieldOffsetBits / 8);
+
+			switch (recordFieldInfo.fieldCompression) {
+				case CompressionType.None:
+					switch (fieldType) {
+						case FieldType.String:
+							if (isNormal) {
+								// for WDC3+, strings are in string table
+								if (this.wdcVersion > 2) {
+									if (count > 0) {
+										out[prop] = new Array(count);
+										for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+											const dataPos = (recordFieldInfo.fieldOffsetBits + (stringArrayIndex * (recordFieldInfo.fieldSizeBits / count))) >> 3;
+											const ofsPos = this.data.offset;
+											const ofs = this.data.readUInt32LE();
+
+											if (ofs == 0) {
+												out[prop][stringArrayIndex] = '';
+											} else {
+												// string table reference
+												const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+
+												if (stringTableIndex == 0)
+													out[prop][stringArrayIndex] = '';
+												else
+													out[prop][stringArrayIndex] = this._readString(sectionIndex, stringTableIndex);
+											}
+
+											// ensure we're positioned at the next field
+											this.data.seek(ofsPos + 4);
+										}
+									} else {
+										const dataPos = recordFieldInfo.fieldOffsetBits >> 3;
+										const ofsPos = this.data.offset;
+										const ofs = this.data.readUInt32LE();
+
+										if (ofs == 0) {
+											out[prop] = '';
+										} else {
+											// string table reference
+											const stringTableIndex = outsideDataSize + absoluteRecordOffs + dataPos + ofs;
+
+											if (stringTableIndex == 0)
+												out[prop] = '';
+											else
+												out[prop] = this._readString(sectionIndex, stringTableIndex);
+										}
+
+										// ensure we're positioned at the next field
+										this.data.seek(ofsPos + 4);
+									}
+								} else {
+									// for WDC2, strings are inline in record data
+									if (count > 0) {
+										out[prop] = new Array(count);
+										for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+											out[prop][stringArrayIndex] = this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
+											this.data.readInt8(); // read NUL character
+										}
+									} else {
+										out[prop] = this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
+										this.data.readInt8(); // read NUL character
+									}
+								}
+							} else {
+								// sparse/offset records always have inline strings
+								if (count > 0) {
+									out[prop] = new Array(count);
+									for (let stringArrayIndex = 0; stringArrayIndex < count; stringArrayIndex++) {
+										out[prop][stringArrayIndex] = this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
+										this.data.readInt8(); // read NUL character
+									}
+								} else {
+									out[prop] = this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
+									this.data.readInt8(); // read NUL character
+								}
+							}
+							break;
+
+						case FieldType.Int8: out[prop] = this.data.readInt8(count); break;
+						case FieldType.UInt8: out[prop] = this.data.readUInt8(count); break;
+						case FieldType.Int16: out[prop] = this.data.readInt16LE(count); break;
+						case FieldType.UInt16: out[prop] = this.data.readUInt16LE(count); break;
+						case FieldType.Int32: out[prop] = this.data.readInt32LE(count); break;
+						case FieldType.UInt32: out[prop] = this.data.readUInt32LE(count); break;
+						case FieldType.Int64: out[prop] = this.data.readInt64LE(count); break;
+						case FieldType.UInt64: out[prop] = this.data.readUInt64LE(count); break;
+						case FieldType.Float: out[prop] = this.data.readFloatLE(count); break;
+					}
+					break;
+
+				case CompressionType.CommonData:
+					if (this.commonData[fieldIndex].has(recordID))
+						out[prop] = this.commonData[fieldIndex].get(recordID);
+					else
+						out[prop] = recordFieldInfo.fieldCompressionPacking[0]; // default value
+					break;
+
+				case CompressionType.Bitpacked:
+				case CompressionType.BitpackedSigned:
+				case CompressionType.BitpackedIndexed:
+				case CompressionType.BitpackedIndexedArray: {
+					this.data.seek(section.recordDataOfs + recordOfs + fieldOffsetBytes);
+
+					let rawValue;
+					if (this.data.remainingBytes >= 8) {
+						rawValue = this.data.readUInt64LE();
+					} else {
+						this.castBuffer.seek(0);
+						this.castBuffer.writeBuffer(this.data);
+						this.castBuffer.seek(0);
+						rawValue = this.castBuffer.readUInt64LE();
+					}
+
+					const bitOffset = BigInt(recordFieldInfo.fieldOffsetBits & 7);
+					const bitSize = 1n << BigInt(recordFieldInfo.fieldSizeBits);
+					const bitpackedValue = (rawValue >> bitOffset) & (bitSize - BigInt(1));
+
+					if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexedArray) {
+						out[prop] = new Array(recordFieldInfo.fieldCompressionPacking[2]);
+						for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++)
+							out[prop][i] = this.palletData[fieldIndex][(bitpackedValue * BigInt(recordFieldInfo.fieldCompressionPacking[2])) + BigInt(i)];
+					} else if (recordFieldInfo.fieldCompression === CompressionType.BitpackedIndexed) {
+						if (bitpackedValue in this.palletData[fieldIndex])
+							out[prop] = this.palletData[fieldIndex][bitpackedValue];
+						else
+							throw new Error('Encountered missing pallet data entry for key ' + bitpackedValue + ', field ' + fieldIndex);
+					} else {
+						out[prop] = bitpackedValue;
+					}
+
+					if (recordFieldInfo.fieldCompression == CompressionType.BitpackedSigned)
+						out[prop] = BigInt(BigInt.asIntN(recordFieldInfo.fieldSizeBits, bitpackedValue));
+
+					break;
+				}
+			}
+
+			// reinterpret field correctly for compression types other than None
+			if (recordFieldInfo.fieldCompression !== CompressionType.None) {
+				if (!Array.isArray(type)) {
+					this.castBuffer.seek(0);
+					if (out[prop] < 0)
+						this.castBuffer.writeBigInt64LE(BigInt(out[prop]));
+					else
+						this.castBuffer.writeBigUInt64LE(BigInt(out[prop]));
+
+					this.castBuffer.seek(0);
+					switch (fieldType) {
+						case FieldType.String:
+							throw new Error('Compressed string arrays currently not used/supported.');
+
+						case FieldType.Int8: out[prop] = this.castBuffer.readInt8(); break;
+						case FieldType.UInt8: out[prop] = this.castBuffer.readUInt8(); break;
+						case FieldType.Int16: out[prop] = this.castBuffer.readInt16LE(); break;
+						case FieldType.UInt16: out[prop] = this.castBuffer.readUInt16LE(); break;
+						case FieldType.Int32: out[prop] = this.castBuffer.readInt32LE(); break;
+						case FieldType.UInt32: out[prop] = this.castBuffer.readUInt32LE(); break;
+						case FieldType.Int64: out[prop] = this.castBuffer.readInt64LE(); break;
+						case FieldType.UInt64: out[prop] = this.castBuffer.readUInt64LE(); break;
+						case FieldType.Float: out[prop] = this.castBuffer.readFloatLE(); break;
+					}
+				} else {
+					for (let i = 0; i < recordFieldInfo.fieldCompressionPacking[2]; i++) {
+						this.castBuffer.seek(0);
+						if (out[prop] < 0)
+							this.castBuffer.writeBigInt64LE(BigInt(out[prop][i]));
+						else
+							this.castBuffer.writeBigUInt64LE(BigInt(out[prop][i]));
+
+						this.castBuffer.seek(0);
+						switch (fieldType) {
+							case FieldType.String:
+								throw new Error('Compressed string arrays currently not used/supported.');
+
+							case FieldType.Int8: out[prop][i] = this.castBuffer.readInt8(); break;
+							case FieldType.UInt8: out[prop][i] = this.castBuffer.readUInt8(); break;
+							case FieldType.Int16: out[prop][i] = this.castBuffer.readInt16LE(); break;
+							case FieldType.UInt16: out[prop][i] = this.castBuffer.readUInt16LE(); break;
+							case FieldType.Int32: out[prop][i] = this.castBuffer.readInt32LE(); break;
+							case FieldType.UInt32: out[prop][i] = this.castBuffer.readUInt32LE(); break;
+							case FieldType.Int64: out[prop][i] = this.castBuffer.readInt64LE(); break;
+							case FieldType.UInt64: out[prop][i] = this.castBuffer.readUInt64LE(); break;
+							case FieldType.Float: out[prop][i] = this.castBuffer.readFloatLE(); break;
+						}
+					}
+				}
+			}
+
+			// round floats correctly
+			if (fieldType == FieldType.Float) {
+				if (count > 0) {
+					for (let i = 0; i < count; i++)
+						out[prop][i] = Math.round(out[prop][i] * 100) / 100;
+				} else {
+					out[prop] = Math.round(out[prop] * 100) / 100;
+				}
+			}
+
+			if (!hasIDMap && fieldIndex === this.idFieldIndex) {
+				recordID = out[prop];
+				this.idField = prop;
+			}
+
+			fieldIndex++;
+		}
+
+		// populate relationship lookup when first reading
+		if (section.relationshipMap && section.relationshipMap.has(recordIndex)) {
+			const foreignID = section.relationshipMap.get(recordIndex);
+			const lookup = this.relationshipLookup.get(foreignID);
+			if (lookup && !lookup.includes(recordID))
+				lookup.push(recordID);
+		}
+
+		return out;
 	}
 }
 

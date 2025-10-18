@@ -115,6 +115,18 @@ class BufferWrapper {
 	}
 
 	/**
+	 * Create BufferWrapper from mmap instance.
+	 * wraps mmap.data uint8array without copying.
+	 * @param {object} mmapObj mmap instance
+	 * @returns {BufferWrapper}
+	 */
+	static fromMmap(mmapObj) {
+		const wrapper = new BufferWrapper(Buffer.from(mmapObj.data));
+		wrapper._mmap = mmapObj;
+		return wrapper;
+	}
+
+	/**
 	 * Construct a new BufferWrapper.
 	 * @param {Buffer} buf 
 	 */
@@ -1043,6 +1055,16 @@ class BufferWrapper {
 	 */
 	getCRC32() {
 		return crc32(this.raw);
+	}
+
+	/**
+	 * unmap underlying memory-mapped file if present.
+	 */
+	unmapSource() {
+		if (this._mmap) {
+			this._mmap.unmap();
+			this._mmap = null;
+		}
 	}
 
 	/**

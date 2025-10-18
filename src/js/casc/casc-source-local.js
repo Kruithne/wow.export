@@ -365,6 +365,36 @@ class CASCLocal extends CASC {
 	}
 
 	/**
+	 * ensure file is in cache (unwrapped from BLTE) and return path.
+	 * @param {string} encodingKey
+	 * @param {number} fileDataID
+	 * @param {boolean} suppressLog
+	 * @returns {string} path to cached file
+	 */
+	async _ensureFileInCache(encodingKey, fileDataID, suppressLog) {
+		const cacheFileName = encodingKey + '.data';
+		const cachedPath = this.cache.getFilePath(cacheFileName, constants.CACHE.DIR_DATA);
+
+		// check if already in cache
+		const cached = await this.cache.getFile(cacheFileName, constants.CACHE.DIR_DATA);
+		if (cached !== null)
+			return cachedPath;
+
+		// retrieve and unwrap from BLTE
+		if (!suppressLog)
+			log.write('caching file %d (%s) for mmap', fileDataID, listfile.getByID(fileDataID));
+
+		const data = await this.getDataFileWithRemoteFallback(encodingKey);
+		const blte = new BLTEReader(data, encodingKey, true);
+		blte.processAllBlocks();
+
+		// write to cache
+		await this.cache.storeFile(cacheFileName, blte, constants.CACHE.DIR_DATA);
+
+		return cachedPath;
+	}
+
+	/**
 	* Get the current build ID.
 	* @returns {string}
 	*/

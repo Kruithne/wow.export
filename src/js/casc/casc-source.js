@@ -141,7 +141,7 @@ class CASC {
 	/**
 	 * Obtain a file by a filename.
 	 * fileName must exist in the loaded listfile.
-	 * @param {string} fileName 
+	 * @param {string} fileName
 	 * @param {boolean} [partialDecrypt=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -153,13 +153,75 @@ class CASC {
 		// If filename is "unknown/<fdid>", skip listfile lookup
 		if (fileName.startsWith("unknown/") && !fileName.includes('.'))
 			fileDataID = parseInt(fileName.split('/')[1]);
-		else 
+		else
 			fileDataID = listfile.getByFilename(fileName);
 
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
 
 		return await this.getFile(fileDataID, partialDecrypt, suppressLog, supportFallback, forceFallback);
+	}
+
+	/**
+	 * get memory-mapped file by fileDataID.
+	 * ensures file is in cache (unwrapped from BLTE), then returns bufferwrapper wrapping mmap.
+	 * @param {number} fileDataID
+	 * @param {boolean} [suppressLog=false]
+	 * @returns {BufferWrapper} wrapper around memory-mapped file
+	 */
+	async getVirtualFileByID(fileDataID, suppressLog = false) {
+		const path = require('path');
+		const mmap = require(path.join(process.cwd(), 'mmap.node'));
+		const BufferWrapper = require('../buffer');
+
+		const root = this.rootEntries.get(fileDataID);
+		if (root === undefined)
+			throw new Error('fileDataID does not exist in root: ' + fileDataID);
+
+		let contentKey = null;
+		for (const [rootTypeIdx, key] of root.entries()) {
+			const rootType = this.rootTypes[rootTypeIdx];
+
+			if ((rootType.localeFlags & this.locale) && ((rootType.contentFlags & ContentFlag.LowViolence) === 0)) {
+				contentKey = key;
+				break;
+			}
+		}
+
+		if (contentKey === null)
+			throw new Error('no root entry found for locale: ' + this.locale);
+
+		const encodingKey = this.encodingKeys.get(contentKey);
+		if (encodingKey === undefined)
+			throw new Error('no encoding entry found: ' + contentKey);
+
+		const cachedPath = await this._ensureFileInCache(encodingKey, fileDataID, suppressLog);
+
+		const mmap_obj = new mmap.MmapObject();
+		if (!mmap_obj.mapFile(cachedPath, { protection: 'readonly' }))
+			throw new Error('failed to map file: ' + mmap_obj.lastError);
+
+		return BufferWrapper.fromMmap(mmap_obj);
+	}
+
+	/**
+	 * get memory-mapped file by filename.
+	 * @param {string} fileName
+	 * @param {boolean} [suppressLog=false]
+	 * @returns {BufferWrapper} wrapper around memory-mapped file
+	 */
+	async getVirtualFileByName(fileName, suppressLog = false) {
+		let fileDataID;
+
+		if (fileName.startsWith("unknown/") && !fileName.includes('.'))
+			fileDataID = parseInt(fileName.split('/')[1]);
+		else
+			fileDataID = listfile.getByFilename(fileName);
+
+		if (fileDataID === undefined)
+			throw new Error('file not mapping in listfile: ' + fileName);
+
+		return await this.getVirtualFileByID(fileDataID, suppressLog);
 	}
 
 	/**
