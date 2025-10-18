@@ -1,9 +1,19 @@
 ## 0.2.5 (XX-10-2025)
+- This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
+- Added new binary listfile format (enabled by default), reducing memory usage by 400MB.
+- Added new virtual memory backed DB2 support, resulting in significant performance and memory improvements (with scope for further improvements now available in future updates).
 - Added support for new variable layer terrain blending on Midnight maps.
 - Added support (import + export) for variable layer alpha maps on Midnight maps.
 - Added texture height support for alpha maps in Blender add-on.
+- Added optional "legacy listfile" option in settings to use old text-based listfiles.
+- Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
+- Removed 'Show File Data IDs', this is now default behavior.
+- Fixed an issue that prevented wow.export from automatically discovering certain file types.
+- Fixed an issue causing float-point precision from data tables to be rounded, making data table exports accurate and solving minor inaccuracies across the application.
 - Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
 - Fixed an issue causing seams to appear on maps imported with the Blender add-on.
+- Internal: update nw.js from 0.69.1 ⇉ 0.104.1
+- Internal: build process requires C++ compilation tools (node-gyp, python3, etc)
 
 ## 0.2.4 (14-10-2025)
 - Reduced memory usage when exporting heightmaps by ~4000x.
