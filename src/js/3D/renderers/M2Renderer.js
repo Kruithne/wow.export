@@ -369,40 +369,47 @@ class M2Renderer {
 
 		this.animationRoot = new THREE.Group();
 		this.animationRoot.name = 'AnimationRoot';
-		
+
 		for (const bone of this.skeleton.bones) {
 			if (!bone.parent || !this.skeleton.bones.includes(bone.parent))
 				this.animationRoot.add(bone);
 		}
-		
+
 		this.renderGroup.add(this.animationRoot);
 
 		this.animationMixer = new THREE.AnimationMixer(this.animationRoot);
 		this.animationClips.clear();
 
-		const animationList = M2AnimationConverter.getAnimationList(this.m2);
-		for (const animInfo of animationList) {
-			const clip = M2AnimationConverter.convertAnimation(this.m2, animInfo.index);
-			if (clip)
-				this.animationClips.set(animInfo.index, clip);
-		}
+		// note: initial clips are not created here anymore
+		// they're created on-demand in playAnimation() to support lazy .anim loading
 	}
 
 	/**
 	 * Play animation by index
 	 * @param {number} animationIndex - Index of animation to play
 	 */
-	playAnimation(animationIndex) {		
-		if (!this.animationMixer || !this.animationClips.has(animationIndex))
+	async playAnimation(animationIndex) {
+		if (!this.animationMixer)
 			return;
 
+		// stop current animation
 		this.animationMixer.stopAllAction();
-		
+
+		// check if clip already exists
+		if (!this.animationClips.has(animationIndex)) {
+			// convert animation (will load .anim file if needed)
+			const clip = await M2AnimationConverter.convertAnimation(this.m2, animationIndex, true);
+			if (clip)
+				this.animationClips.set(animationIndex, clip);
+			else
+				return;
+		}
+
 		const clip = this.animationClips.get(animationIndex);
 		const action = this.animationMixer.clipAction(clip);
 		action.setLoop(THREE.LoopRepeat);
 		action.play();
-		
+
 		this.currentAnimation = animationIndex;
 	}
 

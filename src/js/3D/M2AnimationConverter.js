@@ -9,11 +9,16 @@ class M2AnimationConverter {
 	 * Convert M2 animation data to Three.js AnimationClip
 	 * @param {Object} m2 - M2Loader instance with animation and bone data
 	 * @param {number} animationIndex - Index of animation to convert
-	 * @returns {THREE.AnimationClip|null} Three.js AnimationClip or null if invalid
+	 * @param {boolean} ensureAnimLoaded - If true, ensure .anim file is loaded before converting
+	 * @returns {Promise<THREE.AnimationClip|null>} Three.js AnimationClip or null if invalid
 	 */
-	static convertAnimation(m2, animationIndex) {
+	static async convertAnimation(m2, animationIndex, ensureAnimLoaded = false) {
 		if (!m2.animations || !m2.bones || animationIndex >= m2.animations.length)
 			return null;
+
+		// load .anim file if requested
+		if (ensureAnimLoaded && m2.loadAnimsForIndex)
+			await m2.loadAnimsForIndex(animationIndex);
 
 		const animation = m2.animations[animationIndex];
 		const tracks = [];

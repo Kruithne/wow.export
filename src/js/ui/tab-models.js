@@ -680,7 +680,7 @@ core.registerLoadFunc(async () => {
 			const animInfo = core.view.modelViewerAnims.find(anim => anim.id == selectedAnimationId);
 			if (animInfo && animInfo.m2Index !== undefined && animInfo.m2Index >= 0) {
 				log.write(`Playing animation ${selectedAnimationId} at M2 index ${animInfo.m2Index}`);
-				activeRenderer.playAnimation(animInfo.m2Index);
+				await activeRenderer.playAnimation(animInfo.m2Index);
 
 				if (core.view.modelViewerAutoAdjust)
 					requestAnimationFrame(() => CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls));

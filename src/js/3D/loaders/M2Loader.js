@@ -109,11 +109,11 @@ class M2Loader {
 						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
 						continue;
 					}
-					
+
 					log.write('Loading .anim file for animation: ' + entry.animID + ' (' + AnimMapper.get_anim_name(entry.animID) + ') - ' + entry.subAnimID);
 
 					let animIsChunked = false;
-					
+
 					if ((this.flags & 0x200000) === 0x200000 || this.skeletonFileID > 0)
 						animIsChunked = true;
 
@@ -135,6 +135,75 @@ class M2Loader {
 		this.data.seek(this.md21Ofs + 44);
 
 		this.parseChunk_MD21_bones(this.md21Ofs, true);
+	}
+
+	/**
+	 * Load .anim file for a specific animation index (lazy loading).
+	 * @param {number} animationIndex
+	 * @returns {Promise<boolean>} true if loaded successfully, false otherwise
+	 */
+	async loadAnimsForIndex(animationIndex) {
+		// check if already loaded
+		if (this.animFiles.has(animationIndex))
+			return true;
+
+		if (!this.animFileIDs || animationIndex >= this.animations.length)
+			return false;
+
+		let animation = this.animations[animationIndex];
+
+		// resolve animation alias
+		if ((animation.flags & 0x40) === 0x40) {
+			while ((animation.flags & 0x40) === 0x40)
+				animation = this.animations[animation.aliasNext];
+		}
+
+		// animation data is in M2 file, not external
+		if ((animation.flags & 0x20) === 0x20) {
+			log.write("Animation " + AnimMapper.get_anim_name(animation.id) + " should be in M2, not loading .anim");
+			return false;
+		}
+
+		// find matching AFID entry
+		for (const entry of this.animFileIDs) {
+			if (entry.animID !== animation.id || entry.subAnimID !== animation.variationIndex)
+				continue;
+
+			const fileDataID = entry.fileDataID;
+			if (fileDataID === 0) {
+				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
+				return false;
+			}
+
+			log.write('Loading .anim file for animation: ' + entry.animID + ' (' + AnimMapper.get_anim_name(entry.animID) + ') - ' + entry.subAnimID);
+
+			let animIsChunked = false;
+			if ((this.flags & 0x200000) === 0x200000 || this.skeletonFileID > 0)
+				animIsChunked = true;
+
+			try {
+				const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
+				await loader.load(animIsChunked);
+
+				// store .anim data
+				if (loader.skeletonBoneData !== undefined)
+					this.animFiles.set(animationIndex, BufferWrapper.from(loader.skeletonBoneData));
+				else
+					this.animFiles.set(animationIndex, BufferWrapper.from(loader.animData));
+
+				// re-parse bones with .anim data
+				this.data.seek(this.md21Ofs + 44);
+				this.parseChunk_MD21_bones(this.md21Ofs, true);
+
+				return true;
+			} catch (e) {
+				log.write("Failed to load .anim file for animation " + animation.id + ": " + e.message);
+				return false;
+			}
+		}
+
+		log.write("No .anim file found for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
+		return false;
 	}
 
 	/**

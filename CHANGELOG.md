@@ -7,6 +7,7 @@
 - Added texture height support for alpha maps in Blender add-on.
 - Added optional "legacy listfile" option in settings to use old text-based listfiles.
 - Added support for custom heightmap resolutions.
+- Added support for "external" animations in the 3D model preview.
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
 - Fixed an issue that caused 3D animation previews to appear horribly disfigured.
