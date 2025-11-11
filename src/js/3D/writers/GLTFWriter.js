@@ -488,11 +488,24 @@ class GLTFWriter {
 						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
 						const animationBuffer = animationBufferMap.get(animName);
 
+						// pair timestamps with values and sort to maintain gltf 2.0 spec compliance
+						const anim_duration = this.animations[i].duration;
+						const paired = [];
+						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
+							const raw_ts = bone.translation.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
+							paired.push({ time, value: bone.translation.values[i][j] });
+						}
+
+						// sort by time to ensure strictly increasing timestamps (required by gltf 2.0 spec)
+						paired.sort((a, b) => a.time - b.time);
+
 						// Add new bufferView for bone timestamps.
 						// note: byteOffset stored here is relative to animation buffer, will be updated later for glb
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.translation.timestamps[i].length * 4,
+							byteLength: paired.length * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'TRANS_TIMESTAMPS_' + bi + '_' + i,
 						});
@@ -505,16 +518,11 @@ class GLTFWriter {
 							}
 						);
 
-						const anim_duration = this.animations[i].duration;
 						let time_min = 0;
 						let time_max = anim_duration / 1000;
 
-						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
-							const raw_ts = bone.translation.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
-							const time = norm_ts / 1000;
-							animationBuffer.writeFloatLE(time);
-						}
+						for (const entry of paired)
+							animationBuffer.writeFloatLE(entry.time);
 
 						// Add new SCALAR accessor for this bone's translation timestamps as floats.
 						root.accessors.push({
@@ -529,42 +537,42 @@ class GLTFWriter {
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
 
-						root.accessors[root.accessors.length - 1].count = bone.translation.timestamps[i].length;
+						root.accessors[root.accessors.length - 1].count = paired.length;
 
 						// VALUES
 						// Add new bufferView for bone timestamps.
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.translation.values[i].length * 3 * 4,
+							byteLength: paired.length * 3 * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'TRANS_VALUES_' + bi + '_' + i,
 						});
 
-						// Write out bone values to buffer.
+						// Write out bone values to buffer in sorted order
 						let min = [9999999, 9999999, 9999999];
 						let max = [-9999999, -9999999, -9999999];
-						for (let j = 0; j < bone.translation.values[i].length; j++) {
-							animationBuffer.writeFloatLE(bone.translation.values[i][j][0]);
-							animationBuffer.writeFloatLE(bone.translation.values[i][j][1]);
-							animationBuffer.writeFloatLE(bone.translation.values[i][j][2]);
+						for (const entry of paired) {
+							animationBuffer.writeFloatLE(entry.value[0]);
+							animationBuffer.writeFloatLE(entry.value[1]);
+							animationBuffer.writeFloatLE(entry.value[2]);
 
-							if (bone.translation.values[i][j][0] < min[0])
-								min[0] = bone.translation.values[i][j][0];
+							if (entry.value[0] < min[0])
+								min[0] = entry.value[0];
 
-							if (bone.translation.values[i][j][1] < min[1])
-								min[1] = bone.translation.values[i][j][1];
+							if (entry.value[1] < min[1])
+								min[1] = entry.value[1];
 
-							if (bone.translation.values[i][j][2] < min[2])
-								min[2] = bone.translation.values[i][j][2];
+							if (entry.value[2] < min[2])
+								min[2] = entry.value[2];
 
-							if (bone.translation.values[i][j][0] > max[0])
-								max[0] = bone.translation.values[i][j][0];
+							if (entry.value[0] > max[0])
+								max[0] = entry.value[0];
 
-							if (bone.translation.values[i][j][1] > max[1])
-								max[1] = bone.translation.values[i][j][1];
+							if (entry.value[1] > max[1])
+								max[1] = entry.value[1];
 
-							if (bone.translation.values[i][j][2] > max[2])
-								max[2] = bone.translation.values[i][j][2];
+							if (entry.value[2] > max[2])
+								max[2] = entry.value[2];
 						}
 
 						// Add new VEC3 accessor for this bone's translation values.
@@ -597,19 +605,31 @@ class GLTFWriter {
 				}
 				
 				if (bone.rotation.interpolation < 2) {
-					// TODO: We might be able to make this generic?
 					// ROTATION
 					for (let i = 0; i < bone.rotation.timestamps.length; i++) {
 						if (bone.rotation.timestamps[i].length == 0)
 							continue;
-					
+
 						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
 						const animationBuffer = animationBufferMap.get(animName);
+
+						// pair timestamps with values and sort to maintain gltf 2.0 spec compliance
+						const anim_duration = this.animations[i].duration;
+						const paired = [];
+						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
+							const raw_ts = bone.rotation.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
+							paired.push({ time, value: bone.rotation.values[i][j] });
+						}
+
+						// sort by time to ensure strictly increasing timestamps (required by gltf 2.0 spec)
+						paired.sort((a, b) => a.time - b.time);
 
 						// Add new bufferView for bone timestamps.
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.rotation.timestamps[i].length * 4,
+							byteLength: paired.length * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'ROT_TIMESTAMPS_' + bi + '_' + i,
 						});
@@ -622,16 +642,11 @@ class GLTFWriter {
 							}
 						);
 
-						const anim_duration = this.animations[i].duration;
 						let time_min = 0;
 						let time_max = anim_duration / 1000;
-						
-						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
-							const raw_ts = bone.rotation.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
-							const time = norm_ts / 1000;
-							animationBuffer.writeFloatLE(time);
-						}
+
+						for (const entry of paired)
+							animationBuffer.writeFloatLE(entry.time);
 
 						// Add new SCALAR accessor for this bone's rotation timestamps as floats.
 						root.accessors.push({
@@ -646,49 +661,49 @@ class GLTFWriter {
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
 
-						root.accessors[root.accessors.length - 1].count = bone.rotation.timestamps[i].length;
+						root.accessors[root.accessors.length - 1].count = paired.length;
 
 						// VALUES
 						// Add new bufferView for bone timestamps.
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.rotation.values[i].length * 4 * 4,
+							byteLength: paired.length * 4 * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'ROT_VALUES_' + bi + '_' + i,
 						});
 
-						// Write out bone values to buffer.
+						// Write out bone values to buffer in sorted order
 						let min = [9999999, 9999999, 9999999, 9999999];
 						let max = [-9999999, -9999999, -9999999, -9999999];
-						for (let j = 0; j < bone.rotation.values[i].length; j++) {
-							animationBuffer.writeFloatLE(bone.rotation.values[i][j][0]);
-							animationBuffer.writeFloatLE(bone.rotation.values[i][j][1]);
-							animationBuffer.writeFloatLE(bone.rotation.values[i][j][2]);
-							animationBuffer.writeFloatLE(bone.rotation.values[i][j][3]);
+						for (const entry of paired) {
+							animationBuffer.writeFloatLE(entry.value[0]);
+							animationBuffer.writeFloatLE(entry.value[1]);
+							animationBuffer.writeFloatLE(entry.value[2]);
+							animationBuffer.writeFloatLE(entry.value[3]);
 
-							if (bone.rotation.values[i][j][0] < min[0])
-								min[0] = bone.rotation.values[i][j][0];
+							if (entry.value[0] < min[0])
+								min[0] = entry.value[0];
 
-							if (bone.rotation.values[i][j][1] < min[1])
-								min[1] = bone.rotation.values[i][j][1];
+							if (entry.value[1] < min[1])
+								min[1] = entry.value[1];
 
-							if (bone.rotation.values[i][j][2] < min[2])
-								min[2] = bone.rotation.values[i][j][2];
+							if (entry.value[2] < min[2])
+								min[2] = entry.value[2];
 
-							if (bone.rotation.values[i][j][3] < min[3])
-								min[3] = bone.rotation.values[i][j][3];
+							if (entry.value[3] < min[3])
+								min[3] = entry.value[3];
 
-							if (bone.rotation.values[i][j][0] > max[0])
-								max[0] = bone.rotation.values[i][j][0];
+							if (entry.value[0] > max[0])
+								max[0] = entry.value[0];
 
-							if (bone.rotation.values[i][j][1] > max[1])
-								max[1] = bone.rotation.values[i][j][1];
+							if (entry.value[1] > max[1])
+								max[1] = entry.value[1];
 
-							if (bone.rotation.values[i][j][2] > max[2])
-								max[2] = bone.rotation.values[i][j][2];
+							if (entry.value[2] > max[2])
+								max[2] = entry.value[2];
 
-							if (bone.rotation.values[i][j][3] > max[3])
-								max[3] = bone.rotation.values[i][j][3];
+							if (entry.value[3] > max[3])
+								max[3] = entry.value[3];
 						}
 
 						// Add new VEC3 accessor for this bone's rotation values.
@@ -725,14 +740,27 @@ class GLTFWriter {
 					for (let i = 0; i < bone.scale.timestamps.length; i++) {
 						if (bone.scale.timestamps[i].length == 0)
 							continue;
-					
+
 						const animName = this.animations[i].id + "-" + this.animations[i].variationIndex;
 						const animationBuffer = animationBufferMap.get(animName);
+
+						// pair timestamps with values and sort to maintain gltf 2.0 spec compliance
+						const anim_duration = this.animations[i].duration;
+						const paired = [];
+						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
+							const raw_ts = bone.scale.timestamps[i][j];
+							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							const time = norm_ts / 1000;
+							paired.push({ time, value: bone.scale.values[i][j] });
+						}
+
+						// sort by time to ensure strictly increasing timestamps (required by gltf 2.0 spec)
+						paired.sort((a, b) => a.time - b.time);
 
 						// Add new bufferView for bone timestamps.
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.scale.timestamps[i].length * 4,
+							byteLength: paired.length * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'SCALE_TIMESTAMPS_' + bi + '_' + i,
 						});
@@ -745,16 +773,11 @@ class GLTFWriter {
 							}
 						);
 
-						const anim_duration = this.animations[i].duration;
 						let time_min = 0;
 						let time_max = anim_duration / 1000;
-						
-						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
-							const raw_ts = bone.scale.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
-							const time = norm_ts / 1000;
-							animationBuffer.writeFloatLE(time);
-						}
+
+						for (const entry of paired)
+							animationBuffer.writeFloatLE(entry.time);
 
 						// Add new SCALAR accessor for this bone's scale timestamps as floats.
 						root.accessors.push({
@@ -769,42 +792,42 @@ class GLTFWriter {
 
 						root.animations[i].samplers[root.animations[i].samplers.length - 1].input = root.accessors.length - 1;
 
-						root.accessors[root.accessors.length - 1].count = bone.scale.timestamps[i].length;
+						root.accessors[root.accessors.length - 1].count = paired.length;
 
 						// VALUES
 						// Add new bufferView for bone timestamps.
 						root.bufferViews.push({
 							buffer: animation_buffer_lookup_map.get(this.animations[i].id + "-" + this.animations[i].variationIndex),
-							byteLength: bone.scale.values[i].length * 3 * 4,
+							byteLength: paired.length * 3 * 4,
 							byteOffset: animationBuffer.offset,
 							name: 'SCALE_VALUES_' + bi + '_' + i,
 						});
 
-						// Write out bone values to buffer.
+						// Write out bone values to buffer in sorted order
 						let min = [9999999, 9999999, 9999999];
 						let max = [-9999999, -9999999, -9999999];
-						for (let j = 0; j < bone.scale.values[i].length; j++) {
-							animationBuffer.writeFloatLE(bone.scale.values[i][j][0]);
-							animationBuffer.writeFloatLE(bone.scale.values[i][j][1]);
-							animationBuffer.writeFloatLE(bone.scale.values[i][j][2]);
+						for (const entry of paired) {
+							animationBuffer.writeFloatLE(entry.value[0]);
+							animationBuffer.writeFloatLE(entry.value[1]);
+							animationBuffer.writeFloatLE(entry.value[2]);
 
-							if (bone.scale.values[i][j][0] < min[0])
-								min[0] = bone.scale.values[i][j][0];
+							if (entry.value[0] < min[0])
+								min[0] = entry.value[0];
 
-							if (bone.scale.values[i][j][1] < min[1])
-								min[1] = bone.scale.values[i][j][1];
+							if (entry.value[1] < min[1])
+								min[1] = entry.value[1];
 
-							if (bone.scale.values[i][j][2] < min[2])
-								min[2] = bone.scale.values[i][j][2];
+							if (entry.value[2] < min[2])
+								min[2] = entry.value[2];
 
-							if (bone.scale.values[i][j][0] > max[0])
-								max[0] = bone.scale.values[i][j][0];
+							if (entry.value[0] > max[0])
+								max[0] = entry.value[0];
 
-							if (bone.scale.values[i][j][1] > max[1])
-								max[1] = bone.scale.values[i][j][1];
+							if (entry.value[1] > max[1])
+								max[1] = entry.value[1];
 
-							if (bone.scale.values[i][j][2] > max[2])
-								max[2] = bone.scale.values[i][j][2];
+							if (entry.value[2] > max[2])
+								max[2] = entry.value[2];
 						}
 
 						// Add new VEC3 accessor for this bone's scale values.

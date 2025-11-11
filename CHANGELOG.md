@@ -8,6 +8,7 @@
 - Added optional "legacy listfile" option in settings to use old text-based listfiles.
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
+- Fixed frame timestamp ordering in GLTF exports which prevented import in spec-compliant engines.
 - Fixed an issue that prevented wow.export from automatically discovering certain file types.
 - Fixed an issue causing floating-point precision from data tables to be rounded, making data table exports accurate and solving minor inaccuracies across the application.
 - Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
