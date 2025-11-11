@@ -247,14 +247,14 @@ class M2Renderer {
 						mat.needsUpdate = true;
 					}
 				});
-				
+
 				const skinnedMesh = new THREE.SkinnedMesh(geometry, this.materials);
-				
+
 				skinnedMesh.bindMatrix.identity();
 				skinnedMesh.bindMatrixInverse.identity();
-				
+
 				skinnedMesh.bind(this.skeleton);
-				
+
 				this.meshGroup.add(skinnedMesh);
 				log.write(`Created SkinnedMesh with ${m2.bones.length} bones, materials with skinning enabled`);
 								
@@ -293,7 +293,7 @@ class M2Renderer {
 	 */
 	createSkeleton() {
 		const m2 = this.m2;
-			
+
 		if (!m2 || !m2.bones || m2.bones.length === 0) {
 			this.skeleton = null;
 			return;
@@ -307,8 +307,9 @@ class M2Renderer {
 			const boneNode = new THREE.Bone();
 
 			boneNode.name = bone.boneID >= 0 ? `bone_${bone.boneID}` : `bone_idx_${i}`;
-			boneNode.position.set(bone.pivot[0], bone.pivot[1], bone.pivot[2]);
-			
+			// transform bone pivot to match vertex coordinate system (Y/Z swap, Z negation)
+			boneNode.position.set(bone.pivot[0], bone.pivot[2], bone.pivot[1] * -1);
+
 			boneNode.rotation.set(0, 0, 0);
 			boneNode.scale.set(1, 1, 1);
 			
@@ -324,13 +325,13 @@ class M2Renderer {
 				const parentNode = boneLookupMap.get(boneData.parentBone);
 				if (parentNode) {
 					parentNode.add(boneNode);
-					
+
 					const parentBoneData = m2.bones[boneData.parentBone];
-					boneNode.position.set(
-						boneData.pivot[0] - parentBoneData.pivot[0],
-						boneData.pivot[1] - parentBoneData.pivot[1], 
-						boneData.pivot[2] - parentBoneData.pivot[2]
-					);
+					// transform relative bone position to match vertex coordinate system (Y/Z swap, Z negation)
+					const dx = boneData.pivot[0] - parentBoneData.pivot[0];
+					const dy = boneData.pivot[1] - parentBoneData.pivot[1];
+					const dz = boneData.pivot[2] - parentBoneData.pivot[2];
+					boneNode.position.set(dx, dz, dy * -1);
 				}
 			}
 
@@ -339,12 +340,15 @@ class M2Renderer {
 		}
 
 		this.skeleton = new THREE.Skeleton(bones);
-		
+
+		// add root bones to meshGroup so they're part of the scene graph
 		for (let i = 0; i < bones.length; i++) {
-			if (!bones[i].parent)
+			if (!bones[i].parent) {
+				this.meshGroup.add(bones[i]);
 				bones[i].updateMatrixWorld(true);
+			}
 		}
-		
+
 		this.skeleton.boneInverses = [];
 		for (let i = 0; i < bones.length; i++) {
 			bones[i].updateMatrixWorld(true);

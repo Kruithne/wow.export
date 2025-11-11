@@ -16,6 +16,7 @@
 - Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
 - Fixed an issue causing seams to appear on maps imported with the Blender add-on.
 - Fixed an issue that would prevent exporting raw WMO group files with Enable Shared Chilren disabled.
+- Fixed an issue that caused doodad sets to not appear correctly in 3D previews.
 - Internal: update nw.js from 0.69.1 ⇉ 0.104.1
 - Internal: build process requires C++ compilation tools (node-gyp, python3, etc)
 
