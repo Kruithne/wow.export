@@ -1135,7 +1135,7 @@ class WMOExporter {
 					if (config.enableSharedChildren)
 						groupFile = ExportHelper.getExportPath(groupName);
 					else
-						groupFile = path.join(out, path.basename(groupName));
+						groupFile = path.join(path.dirname(out), path.basename(groupName));
 	
 					await groupData.writeToFile(groupFile);
 	
