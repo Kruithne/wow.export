@@ -321,7 +321,7 @@ class GLTFWriter {
 			root.skins = [skin];
 
 			const skeleton = add_scene_node({
-				name: this.name,
+				name: this.name + '_skeleton',
 				children: []
 			});
 
