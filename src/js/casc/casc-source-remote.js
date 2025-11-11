@@ -296,7 +296,7 @@ class CASCRemote extends CASC {
 		await generics.queue(archiveKeys, async key => await this.parseArchiveIndex(key), 50);
 
 		// Quick and dirty way to get the total archive size using config.
-		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((x, e) => Number(x) + Number(e));
+		let archiveTotalSize = this.cdnConfig.archivesIndexSize.split(' ').reduce((sum, e) => sum + Number(e), 0);
 		log.timeEnd('Loaded %d archives (%d entries, %s)', archiveCount, this.archives.size, generics.filesize(archiveTotalSize));
 	}
 
