@@ -10,6 +10,9 @@
 // be removed as dead-code during compile.
 BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
 
+// check for --disable-auto-update flag
+const DISABLE_AUTO_UPDATE = nw.App.argv.includes('--disable-auto-update');
+
 /**
  * crash() is used to inform the user that the application has exploded.
  * It is purposely global and primitive as we have no idea what state
@@ -733,7 +736,7 @@ document.addEventListener('click', function(e) {
 	tactKeys.load();
 
 	// Check for updates.
-	if (BUILD_RELEASE) {
+	if (BUILD_RELEASE && !DISABLE_AUTO_UPDATE) {
 		core.view.isBusy++;
 		core.view.showLoadScreen('Checking for updates...');
 
@@ -743,13 +746,13 @@ document.addEventListener('click', function(e) {
 			} else {
 				core.view.isBusy--;
 				core.view.setScreen('source-select');
-				
+
 				// No update available, start checking Blender add-on.
 				blender.checkLocalVersion();
 			}
 		});
 	} else {
-		// Debug mode, go straight to Blender add-on check.
+		// debug mode or auto-update disabled, skip to blender add-on check
 		blender.checkLocalVersion();
 	}
 
