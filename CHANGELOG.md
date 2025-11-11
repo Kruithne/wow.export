@@ -9,6 +9,7 @@
 - Added support for custom heightmap resolutions.
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
+- Fixed an issue that caused 3D animation previews to appear horribly disfigured.
 - Fixed frame timestamp ordering in GLTF exports which prevented import in spec-compliant engines.
 - Fixed an issue that caused duplicate bone names in GLTF exports (bone[1] is now prefixed _skeleton).
 - Fixed an issue that prevented wow.export from automatically discovering certain file types.

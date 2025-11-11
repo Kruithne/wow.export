@@ -17,25 +17,42 @@ class M2AnimationConverter {
 
 		const animation = m2.animations[animationIndex];
 		const tracks = [];
-		
+
 		// Duration in seconds (M2 uses milliseconds)
 		const durationSeconds = animation.duration / 1000;
-		
+
+		// calculate bind positions for each bone (pivot - parent_pivot)
+		const bindPositions = new Array(m2.bones.length);
+		for (let boneIndex = 0; boneIndex < m2.bones.length; boneIndex++) {
+			const bone = m2.bones[boneIndex];
+			let parentPos = [0, 0, 0];
+
+			if (bone.parentBone >= 0 && bone.parentBone < m2.bones.length)
+				parentPos = m2.bones[bone.parentBone].pivot;
+
+			bindPositions[boneIndex] = [
+				bone.pivot[0] - parentPos[0],
+				bone.pivot[1] - parentPos[1],
+				bone.pivot[2] - parentPos[2]
+			];
+		}
+
 		for (let boneIndex = 0; boneIndex < m2.bones.length; boneIndex++) {
 			const bone = m2.bones[boneIndex];
 			const boneName = bone.boneID >= 0 ? `bone_${bone.boneID}` : `bone_idx_${boneIndex}`;
-			
+
 			// position
 			this._convertTrack(
-				bone.translation, 
-				animationIndex, 
+				bone.translation,
+				animationIndex,
 				boneName + '.position',
 				'VectorKeyframeTrack',
 				animation.duration,
 				durationSeconds,
-				tracks
+				tracks,
+				bindPositions[boneIndex]
 			);
-			
+
 			// rotation
 			this._convertTrack(
 				bone.rotation,
@@ -61,7 +78,7 @@ class M2AnimationConverter {
 		
 		if (tracks.length === 0)
 			return null;
-		
+
 		return new THREE.AnimationClip(
 			`animation_${animation.id}_${animation.variationIndex}`,
 			durationSeconds,
@@ -75,12 +92,13 @@ class M2AnimationConverter {
 	 * @param {number} animationIndex - Animation index
 	 * @param {string} name - Track name (boneName.property)
 	 * @param {string} trackType - Three.js track type
-	 * @param {number} animationDurationMs - Animation duration in milliseconds  
+	 * @param {number} animationDurationMs - Animation duration in milliseconds
 	 * @param {number} animationDurationSeconds - Animation duration in seconds
 	 * @param {Array} tracks - Output tracks array
+	 * @param {Array} bindOffset - Optional [x, y, z] offset to add to each value (for translation tracks)
 	 * @private
 	 */
-	static _convertTrack(track, animationIndex, name, trackType, animationDurationMs, animationDurationSeconds, tracks) {
+	static _convertTrack(track, animationIndex, name, trackType, animationDurationMs, animationDurationSeconds, tracks, bindOffset) {
 		if (!track || !track.timestamps || !track.values)
 			return;
 
@@ -89,14 +107,27 @@ class M2AnimationConverter {
 
 		const timestamps = track.timestamps[animationIndex];
 		const values = track.values[animationIndex];
-		
+
 		if (!timestamps || !values || timestamps.length !== values.length || timestamps.length === 0)
 			return;
-		
+
 		const normalizedTimes = timestamps.map(t => (t / animationDurationMs) * animationDurationSeconds);
-		const flatValues = values.flat();
+
+		// for translation tracks, add bind position to each animation offset
+		let flatValues;
+		if (bindOffset && trackType === 'VectorKeyframeTrack' && name.endsWith('.position')) {
+			flatValues = [];
+			for (let i = 0; i < values.length; i++) {
+				flatValues.push(values[i][0] + bindOffset[0]);
+				flatValues.push(values[i][1] + bindOffset[1]);
+				flatValues.push(values[i][2] + bindOffset[2]);
+			}
+		} else {
+			flatValues = values.flat();
+		}
+
 		const interpolation = track.interpolation === 0 ? THREE.InterpolateDiscrete : THREE.InterpolateLinear;
-		
+
 		let keyframeTrack;
 		switch (trackType) {
 			case 'VectorKeyframeTrack':
