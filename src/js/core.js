@@ -195,7 +195,8 @@ const makeNewView = () => {
 			{ label: '512x512', value: 512 },
 			{ label: '1024x1024 (1k)', value: 1024 },
 			{ label: '2048x2048 (2k)', value: 2048 },
-			{ label: '4096x4096 (4k)', value: 4096 }
+			{ label: '4096x4096 (4k)', value: 4096 },
+			{ label: 'Custom', value: -1 }
 		],
 		menuButtonHeightmapBitDepth: [
 			{ label: '8-bit Depth', value: 8 },

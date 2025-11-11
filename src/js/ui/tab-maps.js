@@ -392,10 +392,13 @@ const exportSelectedMapAsPNG = async () => {
 
 const exportSelectedMapAsHeightmaps = async () => {
 	const export_tiles = core.view.mapViewerSelection;
-	const export_resolution = core.view.config.heightmapResolution;
+	let export_resolution = core.view.config.heightmapResolution;
 
 	if (export_tiles.length === 0)
 		return core.setToast('error', 'You haven\'t selected any tiles; hold shift and click on a map tile to select it.', null, -1);
+
+	if (export_resolution === -1)
+		export_resolution = core.view.config.heightmapCustomResolution;
 
 	if (export_resolution <= 0)
 		return core.setToast('error', 'Invalid heightmap resolution selected.', null, -1);

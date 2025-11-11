@@ -6,6 +6,7 @@
 - Added support (import + export) for variable layer alpha maps on Midnight maps.
 - Added texture height support for alpha maps in Blender add-on.
 - Added optional "legacy listfile" option in settings to use old text-based listfiles.
+- Added support for custom heightmap resolutions.
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
 - Fixed frame timestamp ordering in GLTF exports which prevented import in spec-compliant engines.

@@ -620,6 +620,10 @@
 							<span class="header">Heightmaps</span>
 							<menu-button :options="menuButtonHeightmapResolution" :default="config.heightmapResolution" @change="config.heightmapResolution = $event" :disabled="isBusy" :dropdown="true"></menu-button>
 							<menu-button :options="menuButtonHeightmapBitDepth" :default="config.heightmapBitDepth" @change="config.heightmapBitDepth = $event" :disabled="isBusy" :dropdown="true" style="margin-top: 5px"></menu-button>
+							<template v-if="config.heightmapResolution === -1">
+								<span class="header" style="margin-top: 10px">Heightmap Resolution</span>
+								<input type="number" v-model.number="config.heightmapCustomResolution" :disabled="isBusy" min="1" step="1" style="width: 100%; margin: unset; margin-top: 5px; padding: 10px; box-sizing: border-box;">
+							</template>
 						</template>
 					</div>
 				</div>
