@@ -307,8 +307,7 @@ class M2Renderer {
 			const boneNode = new THREE.Bone();
 
 			boneNode.name = bone.boneID >= 0 ? `bone_${bone.boneID}` : `bone_idx_${i}`;
-			// transform bone pivot to match vertex coordinate system (Y/Z swap, Z negation)
-			boneNode.position.set(bone.pivot[0], bone.pivot[2], bone.pivot[1] * -1);
+			boneNode.position.set(bone.pivot[0], bone.pivot[1], bone.pivot[2]);
 
 			boneNode.rotation.set(0, 0, 0);
 			boneNode.scale.set(1, 1, 1);
@@ -327,11 +326,10 @@ class M2Renderer {
 					parentNode.add(boneNode);
 
 					const parentBoneData = m2.bones[boneData.parentBone];
-					// transform relative bone position to match vertex coordinate system (Y/Z swap, Z negation)
 					const dx = boneData.pivot[0] - parentBoneData.pivot[0];
 					const dy = boneData.pivot[1] - parentBoneData.pivot[1];
 					const dz = boneData.pivot[2] - parentBoneData.pivot[2];
-					boneNode.position.set(dx, dz, dy * -1);
+					boneNode.position.set(dx, dy, dz);
 				}
 			}
 
