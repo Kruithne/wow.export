@@ -60,6 +60,36 @@ let preload_models = null;
 let is_preloaded = false;
 let preload_promise = null;
 
+const cleanup_binary_listfile = () => {
+	try {
+		// unmap all pf string files
+		for (let i = 0; i < binary_strings_mmap.length; i++) {
+			if (binary_strings_mmap[i]) {
+				binary_strings_mmap[i].unmap();
+				binary_strings_mmap[i] = null;
+			}
+		}
+		binary_strings_mmap = [];
+
+		// unmap tree nodes
+		if (binary_tree_nodes_mmap) {
+			binary_tree_nodes_mmap.unmap();
+			binary_tree_nodes_mmap = null;
+		}
+
+		// unmap tree index
+		if (binary_tree_index_mmap) {
+			binary_tree_index_mmap.unmap();
+			binary_tree_index_mmap = null;
+		}
+
+		log.write('Binary listfile memory-mapped files released');
+	} catch (e) {
+		// gracefully ignore cleanup errors
+		log.write('Error during listfile cleanup: %s', e.message);
+	}
+};
+
 const listfile_check_cache_expiry = (last_modified) => {
 	if (last_modified > 0) {
 		let ttl = Number(core.view.config.listfileCacheRefresh) || 0;
@@ -895,6 +925,11 @@ const addEntry = (fileDataID, fileName, listfile) => {
 	listfile?.push(`${fileName} [${fileDataID}]`);
 };
 // endregion
+
+// hook into cache clearing to release memory-mapped file handles
+core.events.on('cache-clearing', () => {
+	cleanup_binary_listfile();
+});
 
 module.exports = {
 	loadUnknowns,
