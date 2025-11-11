@@ -26,7 +26,8 @@ const get = async (url) => {
 			'User-Agent': constants.USER_AGENT,
 		},
 
-		redirect: 'follow'
+		redirect: 'follow',
+		signal: AbortSignal.timeout(30000)
 	};
 
 	let index = 1;
@@ -36,9 +37,17 @@ const get = async (url) => {
 
 	while ((res === null || !res.ok) && url_stack.length > 0) {
 		const url = url_stack.shift();
-		res = await fetch(url, fetch_options);
+		log.write(`get -> [${index}/${url_stack.length + index}]: ${url}`);
 
-		log.write(`get -> [${index++}][${res.status}] ${url}`);
+		try {
+			res = await fetch(url, fetch_options);
+			log.write(`get -> [${index++}][${res.status}] ${url}`);
+		} catch (error) {
+			log.write(`fetch failed ${url}: ${error.message}`);
+			index++;
+			if (url_stack.length === 0)
+				throw error;
+		}
 	}
 
 	return res;
@@ -137,10 +146,12 @@ function requestData(url, partialOfs, partialLen) {
 				'User-Agent': constants.USER_AGENT
 			}
 		};
-		
+
 		if (partialOfs > -1 && partialLen > -1)
 			options.headers.Range = `bytes=${partialOfs}-${partialOfs + partialLen - 1}`;
-		
+
+		log.write('Requesting data from %s (offset: %d, length: %d)', url, partialOfs, partialLen);
+
 		const protocol = url.startsWith('https') ? https : http;
 		const req = protocol.get(url, options, res => {
 			if (res.statusCode == 301 || res.statusCode == 302) {
@@ -150,12 +161,33 @@ function requestData(url, partialOfs, partialLen) {
 
 			if (res.statusCode < 200 || res.statusCode > 302)
 				return reject(new Error(`Status Code: ${res.statusCode}`));
-			
+
 			const chunks = [];
-			res.on('data', chunk => chunks.push(chunk));
-			res.on('end', () => resolve(Buffer.concat(chunks)));
+			let downloaded = 0;
+			const totalSize = parseInt(res.headers['content-length'] || '0');
+
+			if (totalSize > 0)
+				log.write('Starting download: %d bytes expected', totalSize);
+
+			res.on('data', chunk => {
+				chunks.push(chunk);
+				downloaded += chunk.length;
+
+				if (totalSize > 1048576 && downloaded % 1048576 < chunk.length)
+					log.write('Download progress: %d/%d bytes (%.1f%%)', downloaded, totalSize, (downloaded / totalSize) * 100);
+			});
+
+			res.on('end', () => {
+				log.write('Download complete: %d bytes received', downloaded);
+				resolve(Buffer.concat(chunks));
+			});
 		});
-		
+
+		req.setTimeout(60000, () => {
+			req.destroy();
+			reject(new Error('Request timeout after 60s'));
+		});
+
 		req.on('error', reject);
 		req.end();
 	});

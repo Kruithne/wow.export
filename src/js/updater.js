@@ -68,6 +68,7 @@ const applyUpdate = async () => {
 		const node = { file, meta };
 
 		try {
+			log.write('Verifying local file: %s', file);
 			const stats = await fsp.stat(localPath);
 
 			// If the file size is different, skip hashing and just mark for update.
@@ -78,12 +79,17 @@ const applyUpdate = async () => {
 			}
 
 			// Verify local sha256 hash with remote one.
+			log.write('Hashing local file %s for verification (size: %d bytes)...', file, stats.size);
 			const localHash = await generics.getFileHash(localPath, 'sha256', 'hex');
+			log.write('Hash calculated for %s: %s', file, localHash);
+
 			if (localHash !== meta.hash) {
 				log.write('Marking %s for update due to hash mismatch (%s != %s)', file, localHash, meta.hash);
 				requiredFiles.push(node);
 				continue;
 			}
+
+			log.write('File %s verified successfully', file);
 		} catch (e) {
 			// Error thrown, likely due to file not existing.
 			log.write('Marking %s for update due to local error: %s', file, e.message);
@@ -121,16 +127,35 @@ const launchUpdater = async () => {
 	const updatedApp = path.join(constants.UPDATE.DIRECTORY, constants.UPDATE.HELPER);
 
 	try {
+		log.write('Checking for updater application at %s', updatedApp);
 		const updaterExists = await generics.fileExists(updatedApp);
-		if (updaterExists)
+		log.write('Updater exists check: %s', updaterExists);
+
+		if (updaterExists) {
+			log.write('Renaming updater from %s to %s', updatedApp, helperApp);
 			await fsp.rename(updatedApp, helperApp);
+			log.write('Updater renamed successfully');
+		}
+
+		log.write('Spawning updater process: %s with parent PID %d', helperApp, process.pid);
 
 		// Launch the updater application.
 		const child = cp.spawn(helperApp, [process.pid], { detached: true, stdio: 'ignore' });
+
+		child.on('error', (err) => {
+			log.write('ERROR: Failed to spawn updater: %s', err.message);
+			throw err;
+		});
+
+		await new Promise(resolve => setTimeout(resolve, 100));
+		log.write('Updater spawned successfully (PID: %d), detaching...', child.pid);
+
 		child.unref();
+		log.write('Exiting main process to allow update...');
 		process.exit();
 	} catch (e) {
 		log.write('Failed to restart for update: %s', e.message);
+		log.write(e);
 	}
 };
 
