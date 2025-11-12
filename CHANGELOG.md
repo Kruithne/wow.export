@@ -1,5 +1,6 @@
 ## 0.2.5 (XX-10-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
+- Character customization has been redesigned with a new interface and controls.
 - Added new binary listfile format (enabled by default), reducing memory usage by 400MB.
 - Added new virtual memory backed DB2 support, resulting in significant performance and memory improvements (with scope for further improvements now available in future updates).
 - Added support for new variable layer terrain blending on Midnight maps.
