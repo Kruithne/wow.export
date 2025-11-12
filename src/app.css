@@ -959,7 +959,7 @@ input[type=button].disabled {
 }
 
 .ui-menu-button {
-	display: inline-block;
+	display: grid;
 	position: relative;
 }
 .ui-menu-button input[type=button] {
