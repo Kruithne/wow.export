@@ -90,7 +90,13 @@ async function uploadRenderOverrideTextures() {
 
 	for (const [chrModelTextureTarget, chrMaterial] of chrMaterials) {
 		await chrMaterial.update();
-		await activeRenderer.overrideTextureTypeWithCanvas(chrModelTextureTarget,  chrMaterial.getCanvas());
+		const pixels = chrMaterial.getRawPixels();
+		await activeRenderer.overrideTextureTypeWithPixels(
+			chrModelTextureTarget,
+			chrMaterial.glCanvas.width,
+			chrMaterial.glCanvas.height,
+			pixels
+		);
 	}
 }
 

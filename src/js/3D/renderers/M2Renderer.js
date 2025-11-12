@@ -463,6 +463,37 @@ class M2Renderer {
 	 * @param {number} type 
 	 * @param {number} fileDataID 
 	 */
+	async overrideTextureTypeWithPixels(type, width, height, pixels) {
+		const textureTypes = this.m2.textureTypes;
+		for (let i = 0, n = textureTypes.length; i < n; i++) {
+			if (textureTypes[i] !== type)
+				continue;
+
+			const tex = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+
+			tex.flipY = true;
+			tex.magFilter = THREE.LinearFilter;
+			tex.minFilter = THREE.LinearFilter;
+
+			if (this.m2.textures[i].flags & 0x1)
+				tex.wrapS = THREE.RepeatWrapping;
+
+			if (this.m2.textures[i].flags & 0x2)
+				tex.wrapT = THREE.RepeatWrapping;
+
+			tex.colorSpace = THREE.SRGBColorSpace;
+			tex.needsUpdate = true;
+
+			this.renderCache.retire(this.materials[i]);
+
+			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			this.renderCache.register(material, tex);
+
+			this.materials[i] = material;
+			this.renderCache.addUser(material);
+		}
+	}
+
 	async overrideTextureTypeWithCanvas(type, canvas) {
 		const textureTypes = this.m2.textureTypes;
 		for (let i = 0, n = textureTypes.length; i < n; i++) {

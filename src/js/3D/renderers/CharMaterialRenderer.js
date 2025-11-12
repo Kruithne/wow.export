@@ -11,6 +11,7 @@ const log = require('../../log');
 const listfile = require('../../casc/listfile');
 const constants = require('../../constants');
 const overlay = require('../../ui/char-texture-overlay');
+const PNGWriter = require('../../png-writer');
 
 const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
 const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
@@ -67,10 +68,41 @@ class CharMaterialRenderer {
 	}
 
 	/**
-	 * Get URI from canvas.
+	 * Get raw pixel data from WebGL framebuffer.
+	 * Returns Uint8Array of RGBA pixels, avoiding canvas alpha premultiplication.
+	 */
+	getRawPixels() {
+		const width = this.glCanvas.width;
+		const height = this.glCanvas.height;
+		const pixels = new Uint8Array(width * height * 4);
+
+		this.gl.readPixels(0, 0, width, height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixels);
+
+		// flip y-axis since gl.readPixels returns bottom-up
+		const flipped = new Uint8Array(width * height * 4);
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const src_idx = (y * width + x) * 4;
+				const dst_idx = ((height - y - 1) * width + x) * 4;
+				flipped[dst_idx] = pixels[src_idx];
+				flipped[dst_idx + 1] = pixels[src_idx + 1];
+				flipped[dst_idx + 2] = pixels[src_idx + 2];
+				flipped[dst_idx + 3] = pixels[src_idx + 3];
+			}
+		}
+
+		return flipped;
+	}
+
+	/**
+	 * Get URI from raw pixels, avoiding canvas alpha premultiplication.
 	 */
 	getURI() {
-		return this.glCanvas.toDataURL();
+		const pixels = this.getRawPixels();
+		const png = new PNGWriter(this.glCanvas.width, this.glCanvas.height, pixels);
+		const buffer = png.write();
+		const base64 = buffer.toString('base64');
+		return 'data:image/png;base64,' + base64;
 	}
 
 	/**
