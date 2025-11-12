@@ -263,22 +263,23 @@ const previewModel = async (fileName) => {
 
 			if (fileNameLower.endsWith('.m2')) {
 				const animList = [];
+				const anim_source = activeRenderer.skelLoader || activeRenderer.m2;
 
-				for (let i = 0; i < activeRenderer.m2.animations.length; i++) {
-					const animation = activeRenderer.m2.animations[i];
-					animList.push({ 
-						id: `${Math.floor(animation.id)}.${animation.variationIndex}`, // unique key
-						animationId: animation.id, // original ID for lookup
-						m2Index: i, // actual M2 animation index
+				for (let i = 0; i < anim_source.animations.length; i++) {
+					const animation = anim_source.animations[i];
+					animList.push({
+						id: `${Math.floor(animation.id)}.${animation.variationIndex}`,
+						animationId: animation.id,
+						m2Index: i,
 						label: AnimMapper.get_anim_name(animation.id) + " (" + Math.floor(animation.id) + "." + animation.variationIndex + ")"
 					});
 				}
-					
+
 				const finalAnimList = [
 					{ id: 'none', label: 'None', m2Index: -1 },
 					...animList
 				];
-				
+
 				core.view.modelViewerAnims = finalAnimList;
 				core.view.modelViewerAnimSelection = 'none';
 			}

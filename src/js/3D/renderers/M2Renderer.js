@@ -8,6 +8,7 @@ const log = require('../../log');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
+const SKELLoader = require('../loaders/SKELLoader');
 const M2AnimationConverter = require('../M2AnimationConverter');
 const GeosetMapper = require('../GeosetMapper');
 const ShaderMapper = require('../ShaderMapper');
@@ -40,6 +41,7 @@ class M2Renderer {
 		this.uv2Data = null; // Store secondary UV data for layer preview
 		this.indicesData = null; // Store triangle indices for UV layer preview
 		this.skeleton = null;
+		this.skelLoader = null;
 		this.animationMixer = null;
 		this.animationClips = new Map();
 		this.currentAnimation = null;
@@ -161,7 +163,7 @@ class M2Renderer {
 		if (!this.reactive || !this.meshGroup || !this.geosetArray)
 			return;
 
-		const meshes = this.meshGroup.children;
+		const meshes = this.meshGroup.children.filter(child => child instanceof THREE.Mesh || child instanceof THREE.SkinnedMesh);
 		for (let i = 0, n = meshes.length; i < n; i++)
 			meshes[i].visible = this.geosetArray[i].checked;
 	}
@@ -205,7 +207,7 @@ class M2Renderer {
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
 
-		this.createSkeleton();
+		await this.createSkeleton();
 
 		for (let i = 0, n = skin.subMeshes.length; i < n; i++) {
 			const geometry = new THREE.BufferGeometry();
@@ -240,7 +242,7 @@ class M2Renderer {
 				// console.log("TexUnit Shaders [" + i + "]", this.shaderMap.get(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]]));
 			}
 	
-			if (this.skeleton && m2.bones.length > 0) {
+			if (this.skeleton) {
 				this.materials.forEach(mat => {
 					if (mat instanceof THREE.MeshPhongMaterial) {
 						mat.skinning = true;
@@ -256,9 +258,10 @@ class M2Renderer {
 				skinnedMesh.bind(this.skeleton);
 
 				this.meshGroup.add(skinnedMesh);
-				log.write(`Created SkinnedMesh with ${m2.bones.length} bones, materials with skinning enabled`);
-								
-				if (!this.animationMixer && M2AnimationConverter.hasAnimations(m2))
+				log.write(`Created SkinnedMesh with ${this.skeleton.bones.length} bones, materials with skinning enabled`);
+
+				const anim_source = this.skelLoader || m2;
+				if (!this.animationMixer && M2AnimationConverter.hasAnimations(anim_source))
 					this.initializeAnimationMixer(skinnedMesh);
 			} else {
 				this.meshGroup.add(new THREE.Mesh(geometry, this.materials));
@@ -291,10 +294,34 @@ class M2Renderer {
 	/**
 	 * Create skeleton from M2 bone data
 	 */
-	createSkeleton() {
+	async createSkeleton() {
 		const m2 = this.m2;
 
-		if (!m2 || !m2.bones || m2.bones.length === 0) {
+		let bone_data = m2.bones;
+
+		if (m2.skeletonFileID) {
+			const skel_file = await core.view.casc.getFile(m2.skeletonFileID);
+			const skel = new SKELLoader(skel_file);
+			await skel.load();
+
+			if (skel.parent_skel_file_id > 0) {
+				const parent_skel_file = await core.view.casc.getFile(skel.parent_skel_file_id);
+				const parent_skel = new SKELLoader(parent_skel_file);
+				await parent_skel.load();
+
+				await parent_skel.loadAnims();
+
+				this.skelLoader = parent_skel;
+				bone_data = parent_skel.bones;
+			} else {
+				await skel.loadAnims();
+
+				this.skelLoader = skel;
+				bone_data = skel.bones;
+			}
+		}
+
+		if (!bone_data || bone_data.length === 0) {
 			this.skeleton = null;
 			return;
 		}
@@ -302,8 +329,8 @@ class M2Renderer {
 		const boneLookupMap = new Map();
 		const bones = [];
 
-		for (let i = 0; i < m2.bones.length; i++) {
-			const bone = m2.bones[i];
+		for (let i = 0; i < bone_data.length; i++) {
+			const bone = bone_data[i];
 			const boneNode = new THREE.Bone();
 
 			boneNode.name = bone.boneID >= 0 ? `bone_${bone.boneID}` : `bone_idx_${i}`;
@@ -311,21 +338,21 @@ class M2Renderer {
 
 			boneNode.rotation.set(0, 0, 0);
 			boneNode.scale.set(1, 1, 1);
-			
+
 			boneLookupMap.set(i, boneNode);
 			bones.push(boneNode);
 		}
 
-		for (let i = 0; i < m2.bones.length; i++) {
-			const boneData = m2.bones[i];
+		for (let i = 0; i < bone_data.length; i++) {
+			const boneData = bone_data[i];
 			const boneNode = boneLookupMap.get(i);
-			
-			if (boneData.parentBone >= 0 && boneData.parentBone < m2.bones.length) {
+
+			if (boneData.parentBone >= 0 && boneData.parentBone < bone_data.length) {
 				const parentNode = boneLookupMap.get(boneData.parentBone);
 				if (parentNode) {
 					parentNode.add(boneNode);
 
-					const parentBoneData = m2.bones[boneData.parentBone];
+					const parentBoneData = bone_data[boneData.parentBone];
 					const dx = boneData.pivot[0] - parentBoneData.pivot[0];
 					const dy = boneData.pivot[1] - parentBoneData.pivot[1];
 					const dz = boneData.pivot[2] - parentBoneData.pivot[2];
@@ -333,7 +360,6 @@ class M2Renderer {
 				}
 			}
 
-			// ensure bone matrix is updated after position setup
 			boneNode.updateMatrix();
 		}
 
@@ -392,13 +418,11 @@ class M2Renderer {
 		if (!this.animationMixer)
 			return;
 
-		// stop current animation
 		this.animationMixer.stopAllAction();
 
-		// check if clip already exists
 		if (!this.animationClips.has(animationIndex)) {
-			// convert animation (will load .anim file if needed)
-			const clip = await M2AnimationConverter.convertAnimation(this.m2, animationIndex, true);
+			const anim_source = this.skelLoader || this.m2;
+			const clip = await M2AnimationConverter.convertAnimation(anim_source, animationIndex, true);
 			if (clip)
 				this.animationClips.set(animationIndex, clip);
 			else
@@ -683,8 +707,10 @@ class M2Renderer {
 			this.renderGroup.remove(this.meshGroup);
 
 			// Dispose of all children.
-			for (const child of this.meshGroup.children)
-				child.geometry.dispose();
+			for (const child of this.meshGroup.children) {
+				if (child.geometry)
+					child.geometry.dispose();
+			}
 
 			// Remove all children from the group for good measure.
 			this.meshGroup.remove(...this.meshGroup.children);
