@@ -10,6 +10,7 @@
 - Added support for custom heightmap resolutions.
 - Added support for "external" animations in the 3D model preview.
 - Added ability to select and export multiple maps from "Zones" at the same time.
+- Added new expansion icons for filtering + listfile views.
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
