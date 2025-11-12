@@ -2256,7 +2256,6 @@ input[type=number]::-webkit-outer-spin-button {
 	background: var(--background-dark);
 	color: var(--font-primary);
 	border: 1px solid var(--border);
-	box-shadow: black 0 0 3px 0px;
 	font-family: inherit;
 	font-size: 14px;
 	cursor: pointer;
