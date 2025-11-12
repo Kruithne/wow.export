@@ -79,6 +79,25 @@
 	display: none !important;
 }
 
+::-webkit-scrollbar {
+	width: 8px;
+	background: transparent;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border: 1px solid var(--border);
+	border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--font-highlight);
+}
+
 a {
 	color: var(--font-primary);
 	text-decoration: none;
@@ -2240,6 +2259,8 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+	overflow-y: scroll;
+	padding-left: 15px;
 }
 #tab-characters .left-panel .model-tab #inline-npc-races {
 	margin: 3px 15px;
@@ -2282,25 +2303,6 @@ input[type=number]::-webkit-outer-spin-button {
 	background: var(--background-dark);
 	color: var(--font-primary);
 	font-weight: bold;
-}
-
-.ui-select::-webkit-scrollbar {
-	width: 8px;
-	background: transparent;
-}
-
-.ui-select::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-.ui-select::-webkit-scrollbar-thumb {
-	background: var(--border);
-	border: 1px solid var(--border);
-	border-radius: 5px;
-}
-
-.ui-select::-webkit-scrollbar-thumb:hover {
-	background: var(--font-highlight);
 }
 
 .ui-select-label {
