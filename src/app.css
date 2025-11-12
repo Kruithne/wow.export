@@ -840,7 +840,7 @@ p.concern {
 
 input[type=button] {
 	padding: 9px 13px;
-	background: var(--form-button-base);
+	background-color: var(--form-button-base);
 	color: var(--font-primary);
 	font-size: 17px;
 	border: 0;
@@ -848,13 +848,13 @@ input[type=button] {
 	cursor: pointer;
 }
 input[type=button]:hover:not(.disabled) {
-	background: var(--form-button-hover);
+	background-color: var(--form-button-hover);
 	color: var(--font-highlight);
 }
 input[type=button].disabled {
 	cursor: default;
 	opacity: 0.5;
-	background: var(--form-button-disabled);
+	background-color: var(--form-button-disabled);
 }
 
 .context-menu {
@@ -2455,29 +2455,25 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .left-panel #listbox-chr-choice {
 	height: 313px;
 }
-/* character bnet button in top-right */
-.character-bnet-button-container {
+/* character import buttons in top-right */
+.character-import-buttons {
 	position: absolute;
 	right: 20px;
 	top: 20px;
-	z-index: 1001;
+	z-index: 5;
 	pointer-events: auto;
 }
 
-.character-bnet-button {
-	background-color: var(--form-button-base);
-	color: var(--font-primary);
-	border: 1px solid var(--border);
-	border-radius: 5px;
-	padding: 8px 16px;
-	cursor: pointer;
-	font-size: 14px;
+.ui-image-button {
+	background-repeat: no-repeat;
+	background-position: 10px center;
+	background-size: 16px 16px;
+	padding-left: 35px !important;
 	font-weight: bold;
-	transition: background-color 0.2s;
 }
 
-.character-bnet-button:hover {
-	background-color: var(--form-button-hover);
+.character-bnet-button {
+	background-image: url(./images/import_battlenet.svg);
 }
 
 .character-bnet-button.active {

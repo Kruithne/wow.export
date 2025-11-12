@@ -845,8 +845,8 @@
 							</option>
 						</select>
 					</div>
-					<div class="character-bnet-button-container">
-						<input type="button" value="Battle.net" class="character-bnet-button" @click="characterImportMode = characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: characterImportMode === 'BNET' }"/>
+					<div class="character-import-buttons">
+						<input type="button" value="Battle.net" class="ui-image-button character-bnet-button" @click="characterImportMode = characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: characterImportMode === 'BNET' }"/>
 					</div>
 					<div v-if="characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
 						<div class="header"><b>Character Import</b></div>
