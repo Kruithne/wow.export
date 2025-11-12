@@ -865,13 +865,50 @@
 								<option v-for="model in chrCustModels" :key="model.id" :value="model.id">{{ model.label }}</option>
 							</select>
 						</label>
-						<label v-for="option in chrCustOptions" :key="option.id" class="ui-select-label">
-							<span class="select-prefix"><span class="prefix-label">{{ option.label }}:</span> <span class="prefix-value">{{ optionToChoices.get(option.id)?.find(c => c.id === chrCustActiveChoices.find(ac => ac.optionID === option.id)?.choiceID)?.label }}</span></span>
-							<select class="ui-select" :value="chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID" @change="updateChoiceForOption(option.id, parseInt($event.target.value))">
-								<option value="" disabled selected style="display:none;"></option>
-								<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
-							</select>
-						</label>
+						<template v-for="option in chrCustOptions" :key="option.id">
+							<label v-if="!option.is_color_swatch" class="ui-select-label">
+								<span class="select-prefix"><span class="prefix-label">{{ option.label }}:</span> <span class="prefix-value">{{ optionToChoices.get(option.id)?.find(c => c.id === chrCustActiveChoices.find(ac => ac.optionID === option.id)?.choiceID)?.label }}</span></span>
+								<select class="ui-select" :value="chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID" @change="updateChoiceForOption(option.id, parseInt($event.target.value))">
+									<option value="" disabled selected style="display:none;"></option>
+									<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
+								</select>
+							</label>
+							<div v-else class="customization-color-container">
+								<div class="customization-color-label" @click="toggleColorPicker(option.id)">
+									<span class="prefix-label">{{ option.label }}:</span>
+									<div class="customization-color-selected">
+										<div v-if="getSelectedChoice(option.id)?.swatch_color_0 === 0 && getSelectedChoice(option.id)?.swatch_color_1 === 0" class="swatch swatch-none">
+											<div class="swatch-none-line"></div>
+										</div>
+										<div v-else-if="getSelectedChoice(option.id)?.swatch_color_1 !== 0" class="swatch swatch-dual">
+											<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
+											<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_1)}"></div>
+										</div>
+										<div v-else class="swatch swatch-single" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
+									</div>
+								</div>
+								<div v-if="colorPickerOpenFor === option.id" class="color-picker-overlay" @click.self="colorPickerOpenFor = null">
+									<div class="color-picker-popup">
+										<div class="color-picker-grid">
+											<div
+												v-for="choice in optionToChoices.get(option.id)"
+												:key="choice.id"
+												:class="['swatch', 'swatch-clickable', {selected: chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID === choice.id}]"
+												@click="selectColorChoice(option.id, choice.id)">
+												<div v-if="choice.swatch_color_0 === 0 && choice.swatch_color_1 === 0" class="swatch-none">
+													<div class="swatch-none-line"></div>
+												</div>
+												<div v-else-if="choice.swatch_color_1 !== 0" class="swatch-dual">
+													<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
+													<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(choice.swatch_color_1)}"></div>
+												</div>
+												<div v-else class="swatch-single" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</template>
 						<label class="ui-select-label">
 							<span class="select-prefix"><span class="prefix-label">Underwear:</span> <span class="prefix-value">{{ config.chrIncludeBaseClothing ? 'Visible' : 'Hidden' }}</span></span>
 							<select class="ui-select" :value="config.chrIncludeBaseClothing" @change="config.chrIncludeBaseClothing = $event.target.value === 'true'">

@@ -2316,6 +2316,148 @@ input[type=number]::-webkit-outer-spin-button {
 	color: transparent;
 }
 
+.customization-color-container {
+	margin-bottom: 3px;
+}
+
+.customization-color-label {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 7px 12px;
+	background: var(--background-dark);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	cursor: pointer;
+	transition: background-color 0.2s;
+	font-size: 14px;
+}
+
+.customization-color-label:hover {
+	background-color: var(--background-alt);
+}
+
+.customization-color-label .prefix-label {
+	color: var(--font-alt);
+	margin-right: 8px;
+}
+
+.customization-color-selected {
+	width: 50px;
+	height: 12px;
+	margin-bottom: 3px;
+}
+
+.customization-color-selected .swatch {
+	width: 100%;
+	height: 100%;
+	margin-bottom: 0;
+}
+
+.swatch {
+	width: 32px;
+	height: 32px;
+	border: 2px solid var(--border);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.2s;
+	overflow: hidden;
+	position: relative;
+	display: block;
+}
+
+.swatch-clickable:hover {
+	border-color: #888;
+	transform: scale(1.1);
+}
+
+.swatch.selected {
+	border-color: #ff8c42;
+	border-width: 3px;
+	box-shadow: 0 0 8px rgba(255, 140, 66, 0.5);
+}
+
+.swatch-none {
+	width: 100%;
+	height: 100%;
+	background: repeating-linear-gradient(
+		45deg,
+		#2a2a2a,
+		#2a2a2a 4px,
+		#1a1a1a 4px,
+		#1a1a1a 8px
+	);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.swatch-none-line {
+	width: 120%;
+	height: 2px;
+	background: #ff4444;
+	transform: rotate(-45deg);
+}
+
+.swatch-single {
+	width: 100%;
+	height: 100%;
+}
+
+.swatch-dual {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+.swatch-color-half-1 {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.swatch-color-half-2 {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.color-picker-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.color-picker-popup {
+	background: var(--background-dark);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 20px 10px;
+	max-width: 400px;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.color-picker-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: center;
+}
+
 #tab-characters .left-panel #listbox-chr-model {
 	height: 52px;
 }

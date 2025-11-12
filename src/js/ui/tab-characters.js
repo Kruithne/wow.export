@@ -827,11 +827,20 @@ core.events.once('screen-tab-characters', async () => {
 					else
 						name = 'Choice ' + chrCustomizationChoiceRow.OrderIndex;
 
-					choiceList.push({ id: chrCustomizationChoiceID, label: name });
+					const [swatch_color_0, swatch_color_1] = chrCustomizationChoiceRow.SwatchColor || [0, 0];
+					choiceList.push({
+						id: chrCustomizationChoiceID,
+						label: name,
+						swatch_color_0,
+						swatch_color_1
+					});
 				}
 			}
 
+			const is_color_swatch = choiceList.some(c => c.swatch_color_0 !== 0 || c.swatch_color_1 !== 0);
 			optionToChoices.set(chrCustomizationOptionID, choiceList);
+			if (is_color_swatch)
+				optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID)[optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).length - 1].is_color_swatch = true;
 
 			if (!(chrCustomizationOptionRow.Flags & 0x20))
 				defaultOptions.push(chrCustomizationOptionID);
@@ -984,6 +993,45 @@ core.registerLoadFunc(async () => {
 
 	// expose updateChoiceForOption for template access
 	core.view.updateChoiceForOption = updateChoiceForOption;
+
+	// color utility functions for template
+	core.view.intToCssColor = (value) => {
+		if (value === 0)
+			return 'transparent';
+
+		const unsigned = value >>> 0;
+		const hex = unsigned.toString(16).padStart(8, '0').toUpperCase();
+
+		const r = parseInt(hex.substring(2, 4), 16);
+		const g = parseInt(hex.substring(4, 6), 16);
+		const b = parseInt(hex.substring(6, 8), 16);
+
+		return `rgb(${r}, ${g}, ${b})`;
+	};
+
+	core.view.getSelectedChoice = (optionID) => {
+		const activeChoice = core.view.chrCustActiveChoices.find(c => c.optionID === optionID);
+		if (!activeChoice)
+			return null;
+
+		const choices = optionToChoices.get(optionID);
+		if (!choices)
+			return null;
+
+		return choices.find(c => c.id === activeChoice.choiceID);
+	};
+
+	core.view.toggleColorPicker = (optionID) => {
+		if (core.view.colorPickerOpenFor === optionID)
+			core.view.colorPickerOpenFor = null;
+		else
+			core.view.colorPickerOpenFor = optionID;
+	};
+
+	core.view.selectColorChoice = (optionID, choiceID) => {
+		updateChoiceForOption(optionID, choiceID);
+		core.view.colorPickerOpenFor = null;
+	};
 
 	// expose loadImportString for debugging
 	window.loadImportString = loadImportString;
