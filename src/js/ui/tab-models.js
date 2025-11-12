@@ -276,7 +276,7 @@ const previewModel = async (fileName) => {
 				}
 
 				const finalAnimList = [
-					{ id: 'none', label: 'None', m2Index: -1 },
+					{ id: 'none', label: 'No Animation', m2Index: -1 },
 					...animList
 				];
 
