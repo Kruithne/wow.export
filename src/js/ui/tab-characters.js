@@ -707,8 +707,13 @@ core.events.once('screen-tab-characters', async () => {
 		const realmList = state.realmList[state.chrImportSelectedRegion].map(realm => ({ label: realm.name, value: realm.slug }));
 		state.chrImportRealms = realmList;
 
-		if (state.chrImportSelectedRealm !== null && !realmList.find(realm => realm.value === state.chrImportSelectedRealm.value))
-			state.chrImportSelectedRealm = null;
+		if (state.chrImportSelectedRealm !== null) {
+			const matching_realm = realmList.find(realm => realm.value === state.chrImportSelectedRealm.value);
+			if (matching_realm)
+				state.chrImportSelectedRealm = matching_realm;
+			else
+				state.chrImportSelectedRealm = null;
+		}
 	});
 
 	state.chrImportRegions = Object.keys(state.realmList);
