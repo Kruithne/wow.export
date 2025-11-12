@@ -36,7 +36,7 @@ const parseZoneEntry = (entry) => {
 };
 
 /**
- * Export the current zone map as PNG.
+ * Export selected zone maps as PNG/WEBP.
  */
 const exportZoneMap = async () => {
 	const userSelection = core.view.selectionZones;
@@ -45,46 +45,53 @@ const exportZoneMap = async () => {
 		return;
 	}
 
-	try {
-		const zone = parseZoneEntry(userSelection[0]);
-		const exportCanvas = document.createElement('canvas');
-		
-		log.write('Exporting zone map: %s (%d)', zone.zoneName, zone.id);
-		
-		const mapInfo = await renderZoneToCanvas(exportCanvas, zone.id, true);
-		
-		if (mapInfo.width === 0 || mapInfo.height === 0) {
-			core.setToast('info', 'No map data available to export for this zone.');
+	const helper = new ExportHelper(userSelection.length, 'zone');
+	helper.start();
+
+	const format = core.view.config.exportTextureFormat;
+	const ext = format === 'WEBP' ? '.webp' : '.png';
+	const mimeType = format === 'WEBP' ? 'image/webp' : 'image/png';
+
+	for (const zoneEntry of userSelection) {
+		if (helper.isCancelled())
 			return;
+
+		try {
+			const zone = parseZoneEntry(zoneEntry);
+			const exportCanvas = document.createElement('canvas');
+
+			log.write('Exporting zone map: %s (%d)', zone.zoneName, zone.id);
+
+			const mapInfo = await renderZoneToCanvas(exportCanvas, zone.id, true);
+
+			if (mapInfo.width === 0 || mapInfo.height === 0) {
+				log.write('No map data available for zone %d, skipping', zone.id);
+				helper.mark(`Zone_${zone.id}`, false, 'No map data available');
+				continue;
+			}
+
+			// normalize filename by removing special characters and replacing spaces with underscores
+			const normalizedZoneName = zone.zoneName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
+			const normalizedAreaName = zone.areaName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
+
+			const filename = `Zone_${zone.id}_${normalizedZoneName}_${normalizedAreaName}${ext}`;
+			const exportPath = ExportHelper.getExportPath(path.join('zones', filename));
+
+			log.write('Exporting zone map at full resolution (%dx%d): %s', mapInfo.width, mapInfo.height, filename);
+
+			const buf = await BufferWrapper.fromCanvas(exportCanvas, mimeType, core.view.config.exportWebPQuality);
+			await buf.writeToFile(exportPath);
+
+			helper.mark(path.join('zones', filename), true);
+
+			log.write('Successfully exported zone map to: %s', exportPath);
+		} catch (e) {
+			log.write('Failed to export zone map: %s', e.message);
+			helper.mark(zoneEntry, false, e.message, e.stack);
 		}
-		
-		// Normalize filename by removing special characters and replacing spaces with underscores
-		const normalizedZoneName = zone.zoneName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
-		const normalizedAreaName = zone.areaName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
-
-		const format = core.view.config.exportTextureFormat;
-		const ext = format === 'WEBP' ? '.webp' : '.png';
-		const mimeType = format === 'WEBP' ? 'image/webp' : 'image/png';
-
-		const filename = `Zone_${zone.id}_${normalizedZoneName}_${normalizedAreaName}${ext}`;
-		const exportPath = ExportHelper.getExportPath(path.join('zones', filename));
-
-		const helper = new ExportHelper(1, 'zone');
-		helper.start();
-
-		log.write('Exporting zone map at full resolution (%dx%d): %s', mapInfo.width, mapInfo.height, filename);
-
-		const buf = await BufferWrapper.fromCanvas(exportCanvas, mimeType, core.view.config.exportWebPQuality);
-		await buf.writeToFile(exportPath);
-
-		helper.mark(path.join('zones', filename), true);
-		helper.finish();
-
-		log.write('Successfully exported zone map to: %s', exportPath);
-	} catch (e) {
-		log.write('Failed to export zone map: %s', e.message);
-		core.setToast('error', 'Failed to export zone map: ' + e.message);
 	}
+
+	helper.finish();
 };
 
 /**
