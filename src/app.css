@@ -2231,8 +2231,7 @@ input[type=number]::-webkit-outer-spin-button {
 	left: 20px;
 	top: 20px;
 	bottom: 20px;
-	width: 315px;
-	min-width: 315px;
+	width: 250px;
 	z-index: 1;
 	pointer-events: auto;
 	display: flex;
@@ -2527,7 +2526,7 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .animation-dropdown-overlay {
 	position: fixed;
 	top: 70px;
-	left: 360px;
+	left: 300px;
 }
 
 #tab-home {
