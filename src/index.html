@@ -865,6 +865,14 @@
 								<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
 							</select>
 						</label>
+						<label class="ui-select-label">
+							<span class="select-prefix"><span class="prefix-label">Underwear:</span> <span class="prefix-value">{{ config.chrIncludeBaseClothing ? 'Visible' : 'Hidden' }}</span></span>
+							<select class="ui-select" :value="config.chrIncludeBaseClothing" @change="config.chrIncludeBaseClothing = $event.target.value === 'true'">
+								<option value="" disabled selected style="display:none;"></option>
+								<option value="true">Visible</option>
+								<option value="false">Hidden</option>
+							</select>
+						</label>
 						<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
 					</div>
 					<div class="char-preview preview-container">
@@ -908,10 +916,6 @@
 						<label class="ui-checkbox" title="Include Animations in Export">
 							<input type="checkbox" v-model="config.modelsExportAnimations"/>
 							<span>Export animations</span>
-						</label>
-						<label class="ui-checkbox" title="Include Base Clothing">
-							<input type="checkbox" v-model="config.chrIncludeBaseClothing"/>
-							<span>Include base clothing</span>
 						</label>
 						<label class="ui-checkbox" title="Show Texture Overlay">
 							<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
