@@ -92,7 +92,7 @@ const load = async () => {
 		throw new Error(`Unable to update tactKeys, HTTP ${res.status}`);
 
 	const data = await res.text();
-	const lines = data.split(/\r\n|\n|\r/);
+	const lines = data.split(/\r?\n/);
 	let remoteAdded = 0;
 	
 	for (const line of lines) {
