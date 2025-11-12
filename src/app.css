@@ -2427,20 +2427,8 @@ input[type=number]::-webkit-outer-spin-button {
 	clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 
-.color-picker-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: rgba(0, 0, 0, 0.5);
-	z-index: 10000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
 .color-picker-popup {
+	position: fixed;
 	background: var(--background-dark);
 	border: 1px solid var(--border);
 	border-radius: 10px;
@@ -2448,6 +2436,7 @@ input[type=number]::-webkit-outer-spin-button {
 	max-width: 400px;
 	max-height: 80vh;
 	overflow-y: auto;
+	z-index: 10000;
 }
 
 .color-picker-grid {
