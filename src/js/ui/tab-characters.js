@@ -347,6 +347,10 @@ async function previewModel(fileDataID) {
 	core.view.modelViewerSkins.splice(0, core.view.modelViewerSkins.length);
 	core.view.modelViewerSkinsSelection.splice(0, core.view.modelViewerSkinsSelection.length);
 
+	// reset animation selection
+	core.view.chrModelViewerAnims = [];
+	core.view.chrModelViewerAnimSelection = null;
+
 	try {
 		// Dispose the currently active renderer.
 		if (activeRenderer) {
@@ -374,6 +378,28 @@ async function previewModel(fileDataID) {
 		applyCameraDebugSettings();
 
 		activeModel = fileDataID;
+
+		// populate animation list
+		const animList = [];
+		const anim_source = activeRenderer.skelLoader || activeRenderer.m2;
+
+		for (let i = 0; i < anim_source.animations.length; i++) {
+			const animation = anim_source.animations[i];
+			animList.push({
+				id: `${Math.floor(animation.id)}.${animation.variationIndex}`,
+				animationId: animation.id,
+				m2Index: i,
+				label: require('../3D/AnimMapper').get_anim_name(animation.id) + " (" + Math.floor(animation.id) + "." + animation.variationIndex + ")"
+			});
+		}
+
+		const finalAnimList = [
+			{ id: 'none', label: 'None', m2Index: -1 },
+			...animList
+		];
+
+		core.view.chrModelViewerAnims = finalAnimList;
+		core.view.chrModelViewerAnimSelection = 'none';
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
@@ -926,6 +952,36 @@ core.registerLoadFunc(async () => {
 		await updateActiveCustomization();
 	}, { deep: true });
 
+	core.view.$watch('chrModelViewerAnimSelection', async selectedAnimationId => {
+		if (!activeRenderer || !activeRenderer.playAnimation || core.view.chrModelViewerAnims.length === 0)
+			return;
+
+		if (selectedAnimationId !== null && selectedAnimationId !== undefined) {
+			if (selectedAnimationId === 'none') {
+				activeRenderer?.stopAnimation?.();
+
+				if (core.view.modelViewerAutoAdjust)
+					requestAnimationFrame(() => CameraBounding.fitCharacterInView(renderGroup, camera, core.view.chrModelViewerContext.controls, {
+						viewHeightPercentage: 0.6,
+						verticalOffsetFactor: 0
+					}));
+				return;
+			}
+
+			const animInfo = core.view.chrModelViewerAnims.find(anim => anim.id == selectedAnimationId);
+			if (animInfo && animInfo.m2Index !== undefined && animInfo.m2Index >= 0) {
+				log.write(`Playing animation ${selectedAnimationId} at M2 index ${animInfo.m2Index}`);
+				await activeRenderer.playAnimation(animInfo.m2Index);
+
+				if (core.view.modelViewerAutoAdjust)
+					requestAnimationFrame(() => CameraBounding.fitCharacterInView(renderGroup, camera, core.view.chrModelViewerContext.controls, {
+						viewHeightPercentage: 0.6,
+						verticalOffsetFactor: 0
+					}));
+			}
+		}
+	});
+
 	// expose updateChoiceForOption for template access
 	core.view.updateChoiceForOption = updateChoiceForOption;
 
@@ -942,3 +998,7 @@ core.registerLoadFunc(async () => {
 		await uploadRenderOverrideTextures();
 	}
 });
+
+module.exports = {
+	getActiveRenderer: () => activeRenderer
+};

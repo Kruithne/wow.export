@@ -6,6 +6,7 @@
 const CameraControls = require('../3D/camera/CameraControls');
 const CharacterCameraControls = require('../3D/camera/CharacterCameraControls');
 const tabModels = require('../ui/tab-models');
+const tabCharacters = require('../ui/tab-characters');
 
 module.exports = {
 	props: ['context'],
@@ -14,7 +15,7 @@ module.exports = {
 		render: function() {
 			if (!this.isRendering)
 				return;
-	
+
 			const currentTime = performance.now() * 0.001;
 			if (this.lastTime === undefined)
 				this.lastTime = currentTime;
@@ -22,7 +23,7 @@ module.exports = {
 			const deltaTime = currentTime - this.lastTime;
 			this.lastTime = currentTime;
 
-			const activeRenderer = tabModels.getActiveRenderer();
+			const activeRenderer = tabModels.getActiveRenderer() || tabCharacters.getActiveRenderer();
 			if (activeRenderer && activeRenderer.updateAnimation)
 				activeRenderer.updateAnimation(deltaTime);
 

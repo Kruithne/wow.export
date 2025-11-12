@@ -838,6 +838,13 @@
 					</div>
 				</div>
 				<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
+					<div v-if="chrModelViewerAnims && chrModelViewerAnims.length > 0" class="animation-dropdown-overlay">
+						<select class="animation-dropdown" v-model="chrModelViewerAnimSelection">
+							<option v-for="animation in chrModelViewerAnims" :key="animation.id" :value="animation.id">
+								{{ animation.label }}
+							</option>
+						</select>
+					</div>
 					<div class="left-panel">
 						<label class="ui-select-label">
 							<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ chrCustRaceSelection[0]?.label }}</span></span>

@@ -137,6 +137,8 @@ const makeNewView = () => {
 		mapViewerSelection: [], // Map viewer tile selection
 		selectedExpansionFilter: -1, // Currently selected expansion filter (-1 = show all)
 		chrModelViewerContext: null, // 3D context for the character-specific model viewer.
+		chrModelViewerAnims: [], // Available character animations.
+		chrModelViewerAnimSelection: null, // Selected character animation.
 		chrCustRaces: [], // Available character races to select from
 		chrCustRaceSelection: [], // Current race ID selected
 		chrCustModels: [], // Available character customization models.
