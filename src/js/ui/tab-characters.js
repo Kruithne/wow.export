@@ -743,16 +743,38 @@ core.events.once('screen-tab-characters', async () => {
 	chrCustOptDB = new WDCReader('DBFilesClient/ChrCustomizationOption.db2');
 	await chrCustOptDB.parse();
 
+	// pre-index options by model id and choices by option id
+	const options_by_model = new Map();
+	const choices_by_option = new Map();
+	const unsupported_choices_set = new Set(unsupportedChoices);
+
+	for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustOptDB.getAllRows()) {
+		const model_id = chrCustomizationOptionRow.ChrModelID;
+		if (!options_by_model.has(model_id))
+			options_by_model.set(model_id, []);
+
+		options_by_model.get(model_id).push([chrCustomizationOptionID, chrCustomizationOptionRow]);
+	}
+
+	for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustChoiceDB.getAllRows()) {
+		const option_id = chrCustomizationChoiceRow.ChrCustomizationOptionID;
+		if (!choices_by_option.has(option_id))
+			choices_by_option.set(option_id, []);
+		
+		choices_by_option.get(option_id).push([chrCustomizationChoiceID, chrCustomizationChoiceRow]);
+	}
+
 	for (const [chrModelID, chrModelRow] of chrModelDB.getAllRows()) {
 		const fileDataID = DBCreatures.getFileDataIDByDisplayID(chrModelRow.DisplayID);
 
 		chrModelIDToFileDataID.set(chrModelID, fileDataID);
 		chrModelIDToTextureLayoutID.set(chrModelID, chrModelRow.CharComponentTextureLayoutID);
 
-		for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of chrCustOptDB.getAllRows()) {
-			if (chrCustomizationOptionRow.ChrModelID != chrModelID)
-				continue;
+		const model_options = options_by_model.get(chrModelID);
+		if (!model_options)
+			continue;
 
+		for (const [chrCustomizationOptionID, chrCustomizationOptionRow] of model_options) {
 			const choiceList = [];
 
 			if (!optionsByChrModel.has(chrCustomizationOptionRow.ChrModelID))
@@ -766,26 +788,24 @@ core.events.once('screen-tab-characters', async () => {
 
 			optionsByChrModel.get(chrCustomizationOptionRow.ChrModelID).push({ id: chrCustomizationOptionID, label: optionName });
 
-			for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of chrCustChoiceDB.getAllRows()) {
-				if (chrCustomizationChoiceRow.ChrCustomizationOptionID != chrCustomizationOptionID)
-					continue;
+			const option_choices = choices_by_option.get(chrCustomizationOptionID);
+			if (option_choices) {
+				for (const [chrCustomizationChoiceID, chrCustomizationChoiceRow] of option_choices) {
+					let name = '';
+					if (chrCustomizationChoiceRow.Name_lang != '')
+						name = chrCustomizationChoiceRow.Name_lang;
+					else
+						name = 'Choice ' + chrCustomizationChoiceRow.OrderIndex;
 
-				// Generate name because Blizz hasn't gotten around to setting it for everything yet.
-				let name = '';
-				if (chrCustomizationChoiceRow.Name_lang != '')
-					name = chrCustomizationChoiceRow.Name_lang;
-				else
-					name = 'Choice ' + chrCustomizationChoiceRow.OrderIndex;
+					if (unsupported_choices_set.has(chrCustomizationChoiceID))
+						name += '*';
 
-				if (unsupportedChoices.includes(chrCustomizationChoiceID))
-					name += '*';
-
-				choiceList.push({ id: chrCustomizationChoiceID, label: name });
+					choiceList.push({ id: chrCustomizationChoiceID, label: name });
+				}
 			}
 
 			optionToChoices.set(chrCustomizationOptionID, choiceList);
 
-			// If option flags does not have 0x20 ("EXCLUDE_FROM_INITIAL_RANDOMIZATION") we can assume it's a default option.
 			if (!(chrCustomizationOptionRow.Flags & 0x20))
 				defaultOptions.push(chrCustomizationOptionID);
 		}

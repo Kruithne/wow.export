@@ -8,6 +8,7 @@
 - Added optional "legacy listfile" option in settings to use old text-based listfiles.
 - Added support for custom heightmap resolutions.
 - Added support for "external" animations in the 3D model preview.
+- Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
 - Fixed an issue that caused 3D animation previews to appear horribly disfigured.
