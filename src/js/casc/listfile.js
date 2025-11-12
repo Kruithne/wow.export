@@ -21,7 +21,6 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const BIN_LF_COMPONENTS = {
 	ID_INDEX: 'listfile-id-index.dat',
 	STRINGS: 'listfile-strings.dat',
-	TREE_INDEX: 'listfile-tree-index.dat',
 	TREE_NODES: 'listfile-tree-nodes.dat',
 	PF_MODELS: 'listfile-pf-models.dat',
 	PF_TEXTURES: 'listfile-pf-textures.dat',
@@ -47,7 +46,6 @@ let binary_id_to_pf_index = new Map();
 
 let binary_strings_mmap = [];
 let binary_tree_nodes_mmap = null;
-let binary_tree_index_mmap = null;
 
 let is_binary_mode = false;
 
@@ -75,12 +73,6 @@ const cleanup_binary_listfile = () => {
 		if (binary_tree_nodes_mmap) {
 			binary_tree_nodes_mmap.unmap();
 			binary_tree_nodes_mmap = null;
-		}
-
-		// unmap tree index
-		if (binary_tree_index_mmap) {
-			binary_tree_index_mmap.unmap();
-			binary_tree_index_mmap = null;
 		}
 
 		log.write('Binary listfile memory-mapped files released');
@@ -235,19 +227,7 @@ const listfile_preload_binary = async () => {
 			log.write('Error mapping tree nodes file: %s', e.message);
 			throw e;
 		}
-		
-		// memory-map tree index file
-		try {
-			binary_tree_index_mmap = new mmap.MmapObject();
-			const tree_index_file = path.join(constants.CACHE.DIR_LISTFILE, BIN_LF_COMPONENTS.TREE_INDEX);
-			log.write('Mapping tree index file: %s', tree_index_file);
-			if (!binary_tree_index_mmap.mapFile(tree_index_file, { protection: 'readonly' }))
-				throw new Error('Failed to map tree index file: ' + binary_tree_index_mmap.lastError);
-		} catch (e) {
-			log.write('Error mapping tree index file: %s', e.message);
-			throw e;
-		}
-		
+
 		log.write('Binary listfile preload complete');
 		is_binary_mode = true;
 		return true;
