@@ -4,6 +4,7 @@
 	License: MIT
  */
 const CameraControls = require('../3D/camera/CameraControls');
+const CharacterCameraControls = require('../3D/camera/CharacterCameraControls');
 const tabModels = require('../ui/tab-models');
 
 module.exports = {
@@ -41,7 +42,10 @@ module.exports = {
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
 
-		this.controls = new CameraControls(this.context.camera, canvas);
+		const use_character_controls = this.context.useCharacterControls || false;
+		this.controls = use_character_controls
+			? new CharacterCameraControls(this.context.camera, canvas, this.context.renderGroup)
+			: new CameraControls(this.context.camera, canvas);
 		this.context.controls = this.controls;
 
 		this.onResize = () => {

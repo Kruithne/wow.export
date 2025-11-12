@@ -2149,7 +2149,9 @@ input[type=number]::-webkit-outer-spin-button {
 
 #tab-characters {
 	display: flex;
-	justify-content: space-between;
+	position: relative;
+	width: 100%;
+	height: 100%;
 }
 #tab-characters .texture-preview-panel {
 	position: absolute;
@@ -2170,9 +2172,21 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 100%;
 }
 #tab-characters .preview-container {
-	width: calc(100% - 40px);
-	height: calc(100% - 40px);
-	margin: 20px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	pointer-events: none;
+}
+#tab-characters .preview-container .preview-background {
+	border: none;
+	background: none;
+	box-shadow: none;
+}
+#tab-characters .preview-container .ui-model-viewer {
+	pointer-events: auto;
 }
 #tab-characters .header {
 	margin: 5px 0;
@@ -2203,9 +2217,16 @@ input[type=number]::-webkit-outer-spin-button {
 	background-color: var(--form-button-hover);
 }
 #tab-characters .left-panel {
-	padding: 20px 0 20px 20px;
+	position: absolute;
+	left: 20px;
+	top: 20px;
+	bottom: 20px;
 	width: 315px;
 	min-width: 315px;
+	z-index: 10;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
 }
 #tab-characters .left-panel .model-tab #inline-npc-races {
 	margin: 3px 15px;
@@ -2226,9 +2247,16 @@ input[type=number]::-webkit-outer-spin-button {
 	height: 313px;
 }
 #tab-characters .right-panel {
-	padding: 20px 20px 20px 0;
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	bottom: 20px;
 	width: 300px;
 	min-width: 300px;
+	z-index: 10;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
 }
 #tab-characters .right-panel #character-import-panel {
 	display: flex;

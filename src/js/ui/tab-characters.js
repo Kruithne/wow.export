@@ -387,7 +387,7 @@ async function previewModel(fileDataID) {
 
 		await activeRenderer.load();
 		//textureShaderMap = activeRenderer.shaderMap;
-		CameraBounding.fitObjectInView(renderGroup, camera, core.view.chrModelViewerContext.controls);
+		applyCameraDebugSettings();
 
 		activeModel = fileDataID;
 
@@ -407,6 +407,23 @@ async function previewModel(fileDataID) {
 	core.view.isBusy--;
 }
 
+
+function applyCameraDebugSettings() {
+	const camera_info = CameraBounding.fitObjectInView(renderGroup, camera, core.view.chrModelViewerContext.controls, {
+		viewDirection: new THREE.Vector3(0, 0.20, 1.0).normalize(),
+		padding: 1.0
+	});
+
+	// offset the target point vertically
+	if (camera_info) {
+		const new_target = camera_info.center.clone();
+		new_target.y -= 0.25;
+
+		camera.lookAt(new_target);
+		if (core.view.chrModelViewerContext.controls)
+			core.view.chrModelViewerContext.controls.target.copy(new_target);
+	}
+}
 
 async function importCharacter() {
 	core.view.isBusy++;
@@ -892,7 +909,7 @@ core.events.once('screen-tab-characters', async () => {
 
 	updateChrRaceList();
 
-	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null });
+	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup, useCharacterControls: true });
 
 	// Show the characters screen.
 	state.loadPct = -1;
