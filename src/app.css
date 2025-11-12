@@ -864,7 +864,6 @@ input[type=button].disabled {
 	border: 1px solid var(--border);
 	box-shadow: black 0 0 3px 0;
 	background: #232323;
-	z-index: 5;
 }
 .context-menu.low {
 	transform: translateY(-100%);
@@ -2460,7 +2459,7 @@ input[type=number]::-webkit-outer-spin-button {
 	position: absolute;
 	right: 20px;
 	top: 20px;
-	z-index: 5;
+	z-index: 1;
 	pointer-events: auto;
 }
 
