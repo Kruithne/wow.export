@@ -2528,7 +2528,6 @@ input[type=number]::-webkit-outer-spin-button {
 	position: fixed;
 	top: 70px;
 	left: 360px;
-	z-index: 1000;
 }
 
 #tab-home {
