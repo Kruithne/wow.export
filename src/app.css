@@ -2238,7 +2238,7 @@ input[type=number]::-webkit-outer-spin-button {
 	flex-direction: column;
 	gap: 10px;
 	overflow-y: scroll;
-	padding-left: 15px;
+	padding-right: 15px;
 }
 #tab-characters .left-panel .model-tab #inline-npc-races {
 	margin: 3px 15px;
@@ -2455,6 +2455,91 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .left-panel #listbox-chr-choice {
 	height: 313px;
 }
+/* character bnet button in top-right */
+.character-bnet-button-container {
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	z-index: 1001;
+	pointer-events: auto;
+}
+
+.character-bnet-button {
+	background-color: var(--form-button-base);
+	color: var(--font-primary);
+	border: 1px solid var(--border);
+	border-radius: 5px;
+	padding: 8px 16px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: bold;
+	transition: background-color 0.2s;
+}
+
+.character-bnet-button:hover {
+	background-color: var(--form-button-hover);
+}
+
+.character-bnet-button.active {
+	background-color: var(--form-button-hover);
+}
+
+/* floating import panel */
+#character-import-panel-floating {
+	position: absolute;
+	right: 20px;
+	top: 60px;
+	width: 280px;
+	background-color: var(--background);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 15px;
+	z-index: 1000;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+#character-import-panel-floating .header {
+	margin: 5px 0;
+	display: block;
+}
+
+#character-import-panel-floating input[type=text] {
+	width: 177px;
+	margin: 2px;
+}
+
+#character-import-panel-floating label {
+	font-size: 12px;
+}
+
+#character-import-panel-floating ul {
+	margin: 5px;
+}
+
+/* export controls at bottom-right */
+.character-export-controls {
+	position: absolute;
+	right: 20px;
+	bottom: 20px;
+	z-index: 1000;
+	pointer-events: auto;
+	background-color: var(--background);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 15px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* old right-panel styles commented out */
+/*
 #tab-characters .right-panel {
 	position: absolute;
 	right: 20px;
@@ -2494,12 +2579,12 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .right-panel #export-char-btn {
 	margin-top: 10px;
 }
+*/
 
 .animation-dropdown-overlay {
 	position: absolute;
 	top: 10px;
 	left: 10px;
-	z-index: 1000;
 }
 
 .animation-dropdown-overlay .animation-dropdown {

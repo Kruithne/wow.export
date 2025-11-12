@@ -845,6 +845,22 @@
 							</option>
 						</select>
 					</div>
+					<div class="character-bnet-button-container">
+						<input type="button" value="Battle.net" class="character-bnet-button" @click="characterImportMode = characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: characterImportMode === 'BNET' }"/>
+					</div>
+					<div v-if="characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
+						<div class="header"><b>Character Import</b></div>
+						<ul class="ui-multi-button">
+							<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
+						</ul>
+						<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
+						<combo-box v-model:value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" maxheight="10"></combo-box>
+						<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
+							<input type="checkbox" v-model="chrImportLoadVisage"/>
+							<span>Load visage model (Dracthyr/Worgen)</span>
+						</label>
+						<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
+					</div>
 					<div class="left-panel">
 						<label class="ui-select-label">
 							<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ chrCustRaceSelection[0]?.label }}</span></span>
@@ -928,25 +944,21 @@
 								<input type="button" value="&lt;" @click="click('chr-prev-overlay', $event)"/>
 							</div>
 						</div>
-					</div>
-					<div class="right-panel">
-						<div class="tab-control">
-							<span @click="chrCustRightTab = 'geosets'" :class="{ selected: chrCustRightTab === 'geosets' }">Geosets</span>
-							<span @click="chrCustRightTab = 'import'" :class="{ selected: chrCustRightTab === 'import' }">Import</span>
-						</div>
-						<div id="character-import-panel" v-if="chrCustRightTab == 'import'">
-							<div class="header"><b>Character Import</b></div>
-							<ul class="ui-multi-button">
-								<li v-for="region of chrImportRegions" :class="{ selected: chrImportSelectedRegion === region }" @click.stop="chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
-							</ul>
-							<input type="text" v-model="chrImportChrName" placeholder="Character Name"/>
-							<combo-box v-model:value="chrImportSelectedRealm" :source="chrImportRealms" placeholder="Character Realm" maxheight="10"></combo-box>
-							<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
-								<input type="checkbox" v-model="chrImportLoadVisage"/>
-								<span>Load visage model (Dracthyr/Worgen)</span>
+						<div class="character-export-controls">
+							<label class="ui-checkbox" title="Include Animations in Export">
+								<input type="checkbox" v-model="config.modelsExportAnimations"/>
+								<span>Export animations</span>
 							</label>
-							<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
+							<label class="ui-checkbox" title="Show Texture Overlay">
+								<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
+								<span>Show texture overlay</span>
+							</label>
+							<menu-button :options="menuButtonCharacterExport" :default="config.exportCharacterFormat" @change="config.exportCharacterFormat = $event" :disabled="isBusy" @click="click('export-character', $event)"></menu-button>
 						</div>
+					</div>
+					<!-- right-panel removed, geosets commented out for now -->
+					<!--
+					<div class="right-panel">
 						<div v-if="chrCustRightTab == 'geosets'">
 							<div class="header"><b>Geosets</b></div>
 							<p>Only touch geosets <b>after</b> customizing the character to prevent conflicts.</p>
@@ -955,16 +967,8 @@
 								<a @click="setAllGeosets(true, chrCustGeosets)">Enable All</a> / <a @click="setAllGeosets(false, chrCustGeosets)">Disable All</a>
 							</div>
 						</div>
-						<label class="ui-checkbox" title="Include Animations in Export">
-							<input type="checkbox" v-model="config.modelsExportAnimations"/>
-							<span>Export animations</span>
-						</label>
-						<label class="ui-checkbox" title="Show Texture Overlay">
-							<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
-							<span>Show texture overlay</span>
-						</label>
-						<menu-button :options="menuButtonCharacterExport" :default="config.exportCharacterFormat" @change="config.exportCharacterFormat = $event" :disabled="isBusy" @click="click('export-character', $event)"></menu-button>
 					</div>
+					-->
 				</div>
 				<div class="tab list-tab" id="tab-install" v-if="screen === 'tab-install'">
 					<div class="list-container">

@@ -399,7 +399,10 @@ async function previewModel(fileDataID) {
 		];
 
 		core.view.chrModelViewerAnims = finalAnimList;
-		core.view.chrModelViewerAnimSelection = 'none';
+
+		// default to stand (0.0) if available, otherwise no animation
+		const stand_anim = animList.find(anim => anim.id === '0.0');
+		core.view.chrModelViewerAnimSelection = stand_anim ? '0.0' : 'none';
 
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
@@ -427,7 +430,8 @@ function applyCameraDebugSettings() {
 
 async function importCharacter() {
 	core.view.isBusy++;
-	core.setToast('progress', 'Importing, please wait..', null, -1, false);
+	core.view.characterImportMode = 'none';
+	core.view.chrModelLoading = true;
 
 	const character_name = core.view.chrImportChrName; // string
 	const selected_realm = core.view.chrImportSelectedRealm; // { label, value }
@@ -435,6 +439,7 @@ async function importCharacter() {
 
 	if (selected_realm === null) {
 		core.setToast('error', 'Please enter a valid realm.', null, 3000);
+		core.view.chrModelLoading = false;
 		core.view.isBusy--;
 		return;
 	}
@@ -447,7 +452,6 @@ async function importCharacter() {
 	if (res.ok) {
 		try {
 			loadImportJSON(await res.json());
-			core.view.hideToast();
 		} catch (e) {
 			log.write('Failed to parse character data: %s', e.message);
 			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
@@ -461,6 +465,7 @@ async function importCharacter() {
 			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
 	}
 
+	core.view.chrModelLoading = false;
 	core.view.isBusy--;
 }
 
@@ -1041,6 +1046,13 @@ core.registerLoadFunc(async () => {
 			const label = event.target.closest('.customization-color-label');
 			if (!popup && !label)
 				core.view.colorPickerOpenFor = null;
+		}
+
+		if (core.view.characterImportMode !== 'none') {
+			const import_panel = event.target.closest('#character-import-panel-floating');
+			const bnet_button = event.target.closest('.character-bnet-button');
+			if (!import_panel && !bnet_button)
+				core.view.characterImportMode = 'none';
 		}
 	});
 
