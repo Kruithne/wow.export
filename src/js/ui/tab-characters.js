@@ -1021,17 +1021,28 @@ core.registerLoadFunc(async () => {
 		return choices.find(c => c.id === activeChoice.choiceID);
 	};
 
-	core.view.toggleColorPicker = (optionID) => {
-		if (core.view.colorPickerOpenFor === optionID)
+	core.view.toggleColorPicker = (optionID, event) => {
+		if (core.view.colorPickerOpenFor === optionID) {
 			core.view.colorPickerOpenFor = null;
-		else
+		} else {
+			core.view.colorPickerPosition = { x: event.clientX, y: event.clientY };
 			core.view.colorPickerOpenFor = optionID;
+		}
 	};
 
 	core.view.selectColorChoice = (optionID, choiceID) => {
 		updateChoiceForOption(optionID, choiceID);
 		core.view.colorPickerOpenFor = null;
 	};
+
+	document.addEventListener('click', (event) => {
+		if (core.view.colorPickerOpenFor !== null) {
+			const popup = event.target.closest('.color-picker-popup');
+			const label = event.target.closest('.customization-color-label');
+			if (!popup && !label)
+				core.view.colorPickerOpenFor = null;
+		}
+	});
 
 	// expose loadImportString for debugging
 	window.loadImportString = loadImportString;

@@ -874,7 +874,7 @@
 								</select>
 							</label>
 							<div v-else class="customization-color-container">
-								<div class="customization-color-label" @click="toggleColorPicker(option.id)">
+								<div class="customization-color-label" @click="toggleColorPicker(option.id, $event)">
 									<span class="prefix-label">{{ option.label }}:</span>
 									<div class="customization-color-selected">
 										<div v-if="getSelectedChoice(option.id)?.swatch_color_0 === 0 && getSelectedChoice(option.id)?.swatch_color_1 === 0" class="swatch swatch-none">
@@ -887,8 +887,7 @@
 										<div v-else class="swatch swatch-single" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
 									</div>
 								</div>
-								<div v-if="colorPickerOpenFor === option.id" class="color-picker-overlay" @click.self="colorPickerOpenFor = null">
-									<div class="color-picker-popup">
+								<div v-if="colorPickerOpenFor === option.id" class="color-picker-popup" :style="{left: colorPickerPosition.x + 'px', top: colorPickerPosition.y + 'px'}" @click.self="colorPickerOpenFor = null">
 										<div class="color-picker-grid">
 											<div
 												v-for="choice in optionToChoices.get(option.id)"
@@ -905,7 +904,6 @@
 												<div v-else class="swatch-single" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
 											</div>
 										</div>
-									</div>
 								</div>
 							</div>
 						</template>

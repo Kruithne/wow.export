@@ -153,6 +153,7 @@ const makeNewView = () => {
 		chrCustRightTab: 'geosets', // Active right tab for character customization.
 		chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
 		colorPickerOpenFor: null, // Currently open color picker option ID.
+		colorPickerPosition: { x: 0, y: 0 }, // Color picker popup position.
 		chrImportChrName: '', // Character import, character name input.
 		chrImportRegions: [],
 		chrImportSelectedRegion: '',
