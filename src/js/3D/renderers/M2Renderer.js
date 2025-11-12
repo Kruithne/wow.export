@@ -309,12 +309,12 @@ class M2Renderer {
 				const parent_skel = new SKELLoader(parent_skel_file);
 				await parent_skel.load();
 
-				await parent_skel.loadAnims();
+				await parent_skel.loadAnims(false);
 
 				this.skelLoader = parent_skel;
 				bone_data = parent_skel.bones;
 			} else {
-				await skel.loadAnims();
+				await skel.loadAnims(false);
 
 				this.skelLoader = skel;
 				bone_data = skel.bones;

@@ -84,7 +84,10 @@ class M2Loader {
 	/**
 	 * Load and apply .anim files to loaded M2 model.
 	 */
-	async loadAnims() {
+	async loadAnims(load_all = true) {
+		if (!load_all)
+			return;
+		
 		for (let i = 0; i < this.animations.length; i++) {
 			let animation = this.animations[i];
 
