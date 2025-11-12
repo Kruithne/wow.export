@@ -839,31 +839,37 @@
 				</div>
 				<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
 					<div class="left-panel">
-						<div class="tab-control">
-							<span @click="chrCustTab = 'models'" :class="{ selected: chrCustTab === 'models' }">Models</span>
-							<span @click="chrCustTab = 'options'" :class="{ selected: chrCustTab === 'options' }">Options</span>
-						</div>
-						<div class="model-tab" v-show="chrCustTab  === 'models'">
-							<span class="header">Character Race 
-								<label class="ui-checkbox" id="inline-npc-races">
-									<input type="checkbox" v-model="config.chrCustShowNPCRaces" />
-									<span>Show NPC races</span>
-								</label>
-							</span>
-							<listboxb id="listbox-chr-race" class="section-end" :items="chrCustRaces" v-model:selection="chrCustRaceSelection" :single="true" :disable="isBusy"></listboxb>
-							<span class="header">Body Type</span>
-							<listboxb id="listbox-chr-model" :items="chrCustModels" v-model:selection="chrCustModelSelection" :single="true"></listboxb>
-						</div>
-						<div class="option-tab" v-show="chrCustTab  === 'options'">
-							<span class="header">Customizations</span>
-							<listboxb id="listbox-chr-option" :items="chrCustOptions" v-model:selection="chrCustOptionSelection" :single="true"></listboxb>
-							<span class="header">Customization Options</span>
-							<listboxb id="listbox-chr-choice" :items="chrCustChoices" v-model:selection="chrCustChoiceSelection" :single="true"></listboxb>
-							<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
-						</div>
+						<label class="ui-select-label">
+							<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ chrCustRaceSelection[0]?.label }}</span></span>
+							<select class="ui-select" id="select-chr-race" :value="chrCustRaceSelection[0]?.id" @change="chrCustRaceSelection = [$event.target.value ? chrCustRaces.find(r => r.id === parseInt($event.target.value)) : chrCustRaces[0]]">
+								<option value="" disabled selected style="display:none;"></option>
+								<optgroup label="Playable Races">
+									<option v-for="race in chrCustRacesPlayable" :key="race.id" :value="race.id">{{ race.label }}</option>
+								</optgroup>
+								<optgroup label="NPC Races">
+									<option v-for="race in chrCustRacesNPC" :key="race.id" :value="race.id">{{ race.label }}</option>
+								</optgroup>
+							</select>
+						</label>
+						<label class="ui-select-label">
+							<span class="select-prefix"><span class="prefix-label">Body:</span> <span class="prefix-value">{{ chrCustModelSelection[0]?.label }}</span></span>
+							<select class="ui-select" id="select-chr-body" :value="chrCustModelSelection[0]?.id" @change="chrCustModelSelection = [$event.target.value ? chrCustModels.find(m => m.id === parseInt($event.target.value)) : chrCustModels[0]]">
+								<option value="" disabled selected style="display:none;"></option>
+								<option v-for="model in chrCustModels" :key="model.id" :value="model.id">{{ model.label }}</option>
+							</select>
+						</label>
+						<label v-for="option in chrCustOptions" :key="option.id" class="ui-select-label">
+							<span class="select-prefix"><span class="prefix-label">{{ option.label }}:</span> <span class="prefix-value">{{ optionToChoices.get(option.id)?.find(c => c.id === chrCustActiveChoices.find(ac => ac.optionID === option.id)?.choiceID)?.label }}</span></span>
+							<select class="ui-select" :value="chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID" @change="updateChoiceForOption(option.id, parseInt($event.target.value))">
+								<option value="" disabled selected style="display:none;"></option>
+								<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
+							</select>
+						</label>
+						<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
 					</div>
 					<div class="char-preview preview-container">
 						<div class="preview-background">
+							<div v-if="chrModelLoading" class="chr-model-loading-spinner"></div>
 							<model-viewer :context="chrModelViewerContext"></model-viewer>
 						</div>
 						<div class="texture-preview-panel" id="chr-texture-preview" v-show="config.chrShowTextureOverlay">

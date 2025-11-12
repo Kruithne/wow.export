@@ -109,6 +109,58 @@ class CameraBounding {
             max: boundingBox.max.clone()
         };
     }
+
+    static fitCharacterInView(object, camera, controls = null, options = {}) {
+        const boundingBox = new THREE.Box3();
+        boundingBox.setFromObject(object);
+
+        if (boundingBox.isEmpty())
+            return null;
+
+        const center = boundingBox.getCenter(new THREE.Vector3());
+        const size = boundingBox.getSize(new THREE.Vector3());
+
+        console.log('bbox center:', center.x.toFixed(2), center.y.toFixed(2), center.z.toFixed(2));
+        console.log('bbox size:', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2));
+        console.log('bbox min:', boundingBox.min.x.toFixed(2), boundingBox.min.y.toFixed(2), boundingBox.min.z.toFixed(2));
+        console.log('bbox max:', boundingBox.max.x.toFixed(2), boundingBox.max.y.toFixed(2), boundingBox.max.z.toFixed(2));
+
+        const view_height_percentage = options.viewHeightPercentage ?? 0.9;
+        const vertical_offset_factor = options.verticalOffsetFactor ?? -0.5;
+
+        const fov_radians = camera.fov * (Math.PI / 180);
+        const distance = (size.y / view_height_percentage) / (2 * Math.tan(fov_radians / 2));
+
+        console.log('calculated distance:', distance.toFixed(2));
+
+        const view_direction = new THREE.Vector3(0, 0.20, 1.0).normalize();
+        camera.position.copy(center).add(view_direction.multiplyScalar(distance));
+
+        console.log('camera pos:', camera.position.x.toFixed(2), camera.position.y.toFixed(2), camera.position.z.toFixed(2));
+
+        const adjusted_target = center.clone();
+        adjusted_target.y += size.y * vertical_offset_factor;
+
+        console.log('look target:', adjusted_target.x.toFixed(2), adjusted_target.y.toFixed(2), adjusted_target.z.toFixed(2));
+
+        camera.lookAt(adjusted_target);
+        camera.updateProjectionMatrix();
+
+        if (controls) {
+            controls.target.copy(adjusted_target);
+
+            if (controls.maxDistance !== undefined)
+                controls.maxDistance = distance * 3;
+
+            if (controls.update)
+                controls.update();
+        }
+
+        return {
+            center: adjusted_target,
+            distance: camera.position.distanceTo(adjusted_target)
+        };
+    }
 }
 
 module.exports = CameraBounding;

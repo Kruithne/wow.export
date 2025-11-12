@@ -26,6 +26,7 @@ const renderGroup = new THREE.Group();
 
 let activeRenderer;
 let activeModel;
+let isModelLoading = false;
 
 // TODO: Need to make these accessible while in the character tab. Not sure how scope works here.
 const chrModelIDToFileDataID = new Map();
@@ -249,71 +250,47 @@ async function updateActiveCustomization() {
 }
 
 async function updateChrRaceList() {
-	// Keep a list of listed models.
-	// Some races are duplicated because of multi-factions,
-	// so we will store races based on unique model IDs.
 	const listedModelIDs = [];
 	const listedRaceIDs = [];
-	
-	// Empty the arrays.
-	core.view.chrCustRaces = [];
 
-	// Build character model list.
+	core.view.chrCustRacesPlayable = [];
+	core.view.chrCustRacesNPC = [];
+
 	for (const [chrRaceID, chrRaceInfo] of chrRaceMap) {
 		if (!chrRaceXChrModelMap.has(chrRaceID))
 			continue;
 
 		const chrModels = chrRaceXChrModelMap.get(chrRaceID);
 		for (const chrModelID of chrModels.values()) {
-			// If we're filtering NPC races, bail out.
-			if (!core.view.config.chrCustShowNPCRaces && chrRaceInfo.isNPCRace)
-				continue;
-
-			// If we've seen this character model before, we don't need to record it again.
 			if (listedModelIDs.includes(chrModelID))
 				continue;
 
 			listedModelIDs.push(chrModelID);
 
-			// Need to do a check here to ensure we didn't already add this race
-			// in the case of them having more than one model type
 			if (listedRaceIDs.includes(chrRaceID))
 				continue;
 
 			listedRaceIDs.push(chrRaceID);
 
-			// By the time we get here, we know we have a genuinly new race to add to the list!
-			// Let's polish it up.
+			const newRace = { id: chrRaceInfo.id, label: chrRaceInfo.name };
 
-			// Build the label for the race data
-			let raceLabel = chrRaceInfo.name;
-
-			// To easily distinguish some weird names, we'll label NPC races.
-			// ie: thin humans are just called "human" and aren't given a unique body type.
-			// In the future, we could show the ClientFileString column if the label is already taken.
 			if (chrRaceInfo.isNPCRace)
-				raceLabel = raceLabel + ' [NPC]';
+				core.view.chrCustRacesNPC.push(newRace);
+			else
+				core.view.chrCustRacesPlayable.push(newRace);
 
-			// It's ready to go:
-			const newRace = {id: chrRaceInfo.id, label: raceLabel }
-			core.view.chrCustRaces.push(newRace);
-
-			// Do a quick check on our selection, if it exists.
-			// Since we just instantiated a new object, we need to ensure the selection is updated.
 			if (core.view.chrCustRaceSelection.length > 0 && newRace.id == core.view.chrCustRaceSelection[0].id)
 				core.view.chrCustRaceSelection = [newRace];
 		}
 	}
 
-	// Sort alphabetically
-	core.view.chrCustRaces.sort((a, b) => {
-		return a.label.localeCompare(b.label);
-	});
+	core.view.chrCustRacesPlayable.sort((a, b) => a.label.localeCompare(b.label));
+	core.view.chrCustRacesNPC.sort((a, b) => a.label.localeCompare(b.label));
 
-	// If we haven't selected a race, OR we selected a race that's not in the current filter,
-	// we'll just select the first one in the list:
+	core.view.chrCustRaces = [...core.view.chrCustRacesPlayable, ...core.view.chrCustRacesNPC];
+
 	if (core.view.chrCustRaceSelection.length == 0 || !listedRaceIDs.includes(core.view.chrCustRaceSelection[0].id))
-		core.view.chrCustRaceSelection = [core.view.chrCustRaces[0]];
+		core.view.chrCustRaceSelection = [core.view.chrCustRacesPlayable[0]];
 }
 
 async function updateChrModelList() {
@@ -362,7 +339,8 @@ async function updateChrModelList() {
 
 async function previewModel(fileDataID) {
 	core.view.isBusy++;
-	core.setToast('progress', 'Loading model, please wait...', null, -1, false);
+	isModelLoading = true;
+	core.view.chrModelLoading = true;
 	log.write('Previewing model %s', fileDataID);
 
 	// Empty the arrays.
@@ -400,8 +378,6 @@ async function previewModel(fileDataID) {
 		// Renderer did not provide any 3D data.
 		if (renderGroup.children.length === 0)
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', fileDataID), null, 4000);
-		else
-			core.view.hideToast();
 
 		await updateActiveCustomization();
 	} catch (e) {
@@ -410,25 +386,17 @@ async function previewModel(fileDataID) {
 		log.write('Failed to open CASC file: %s', e.message);
 	}
 
+	isModelLoading = false;
+	core.view.chrModelLoading = false;
 	core.view.isBusy--;
 }
 
 
 function applyCameraDebugSettings() {
-	const camera_info = CameraBounding.fitObjectInView(renderGroup, camera, core.view.chrModelViewerContext.controls, {
-		viewDirection: new THREE.Vector3(0, 0.20, 1.0).normalize(),
-		padding: 1.0
+	CameraBounding.fitCharacterInView(renderGroup, camera, core.view.chrModelViewerContext.controls, {
+		viewHeightPercentage: 0.6,
+		verticalOffsetFactor: 0
 	});
-
-	// offset the target point vertically
-	if (camera_info) {
-		const new_target = camera_info.center.clone();
-		new_target.y -= 0.25;
-
-		camera.lookAt(new_target);
-		if (core.view.chrModelViewerContext.controls)
-			core.view.chrModelViewerContext.controls.target.copy(new_target);
-	}
 }
 
 async function importCharacter() {
@@ -582,7 +550,7 @@ async function updateModelSelection() {
 	const selected = state.chrCustModelSelection[0];
 	if (selected === undefined)
 		return;
-	
+
 	console.log('Selection changed to ID ' + selected.id + ', label ' + selected.label);
 
 	const availableOptions = optionsByChrModel.get(selected.id);
@@ -591,17 +559,17 @@ async function updateModelSelection() {
 		return;
 	}
 
-	// Empty the arrays.
+	// empty the arrays
 	state.chrCustOptions.splice(0, state.chrCustOptions.length);
 	state.chrCustOptionSelection.splice(0, state.chrCustOptionSelection.length);
 
-	// Reset active choices
+	// reset active choices
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
 	if (state.chrImportChoices.length > 0)
 		state.chrCustActiveChoices.push(...state.chrImportChoices);
 
-	// Add the new options.
+	// add the new options
 	state.chrCustOptions.push(...availableOptions);
 	state.chrCustOptionSelection.push(...availableOptions.slice(0, 1));
 
@@ -610,15 +578,14 @@ async function updateModelSelection() {
 
 	const fileDataID = chrModelIDToFileDataID.get(selected.id);
 
-	// Check if the first file in the selection is "new".
+	// check if the first file in the selection is new
 	if (!core.view.isBusy && fileDataID && activeModel !== fileDataID)
 		previewModel(fileDataID);
 
 	clearMaterials();
-	
+
 	if (state.chrImportChoices.length == 0) {
-		// For each available option we select the first choice ONLY if the option is a 'default' option.
-		// TODO: What do we do if the user doesn't want to select any choice anymore? Are "none" choices guaranteed for these options?
+		// for each available option we select the first choice only if the option is a 'default' option
 		for (const option of availableOptions) {
 			const choices = optionToChoices.get(option.id);
 			if (defaultOptions.includes(option.id))
@@ -627,6 +594,9 @@ async function updateModelSelection() {
 	} else {
 		state.chrImportChoices.splice(0, state.chrImportChoices.length);
 	}
+
+	// expose optionToChoices to view for template access
+	state.optionToChoices = optionToChoices;
 }
 
 function clearMaterials() {
@@ -656,11 +626,11 @@ async function updateCustomizationType() {
 			core.view.chrCustUnsupportedWarning = true;
 	}
 
-	// Empty the arrays.
+	// empty the arrays
 	state.chrCustChoices.splice(0, state.chrCustChoices.length);
 	state.chrCustChoiceSelection.splice(0, state.chrCustChoiceSelection.length);
 
-	// Add the new options.
+	// add the new options
 	state.chrCustChoices.push(...availableChoices);
 }
 
@@ -677,6 +647,17 @@ async function updateCustomizationChoice() {
 	} else {
 		const index = state.chrCustActiveChoices.findIndex((choice) => choice.optionID === state.chrCustOptionSelection[0].id);
 		state.chrCustActiveChoices[index].choiceID = selected.id;
+	}
+}
+
+function updateChoiceForOption(optionID, choiceID) {
+	const state = core.view;
+	const existingChoice = state.chrCustActiveChoices.find((choice) => choice.optionID === optionID);
+
+	if (existingChoice) {
+		existingChoice.choiceID = choiceID;
+	} else {
+		state.chrCustActiveChoices.push({ optionID: optionID, choiceID: choiceID });
 	}
 }
 
@@ -820,9 +801,6 @@ core.events.once('screen-tab-characters', async () => {
 					else
 						name = 'Choice ' + chrCustomizationChoiceRow.OrderIndex;
 
-					if (unsupported_choices_set.has(chrCustomizationChoiceID))
-						name += '*';
-
 					choiceList.push({ id: chrCustomizationChoiceID, label: name });
 				}
 			}
@@ -924,24 +902,21 @@ core.events.once('screen-tab-characters', async () => {
 });
 
 core.registerLoadFunc(async () => {
-	// If NPC race toggle changes, refresh model list.
-	core.view.$watch('config.chrCustShowNPCRaces', () => updateChrRaceList());
-
 	core.view.$watch('config.chrIncludeBaseClothing', () => uploadRenderOverrideTextures());
 
 	core.events.on('click-export-character', () => exportCharModel());
 	core.events.on('click-import-character', () => importCharacter());
 
-	// User has changed the "Race" selection, ie "Human", "Orc", etc.
+	// user has changed the race selection
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());
 
-	// User has changed the "Body Type" selection, ie "Type 1", "Type 2", etc.
+	// user has changed the body type selection
 	core.view.$watch('chrCustModelSelection', () => updateModelSelection(), { deep: true });
 
-	// User has changed the "Customization" selection, ie "Hair Color", "Skin Color", etc.
+	// user has changed the customization selection
 	core.view.$watch('chrCustOptionSelection', () => updateCustomizationType(), { deep: true });
 
-	// User has changed the "Customization Options" selection, ie "Choice 0", "Choice 1", etc.
+	// user has changed the customization options selection
 	core.view.$watch('chrCustChoiceSelection', () => updateCustomizationChoice(), { deep: true });
 
 	core.view.$watch('chrCustActiveChoices', async () => {
@@ -951,10 +926,13 @@ core.registerLoadFunc(async () => {
 		await updateActiveCustomization();
 	}, { deep: true });
 
-	// Expose loadImportString for debugging purposes.
+	// expose updateChoiceForOption for template access
+	core.view.updateChoiceForOption = updateChoiceForOption;
+
+	// expose loadImportString for debugging
 	window.loadImportString = loadImportString;
 
-	// Export shader reset for debugging purposes.
+	// export shader reset for debugging
 	window.reloadShaders = async () => {
 		await CharMaterialRenderer.init();
 
