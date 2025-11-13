@@ -1,7 +1,7 @@
 /*!
-wow.export (https://github.com/Kruithne/wow.export)
-Authors: Kruithne <kruithne@gmail.com>
-License: MIT
+	wow.export (https://github.com/Kruithne/wow.export)
+	Authors: Kruithne <kruithne@gmail.com>
+	License: MIT
 */
 class CameraBounding {
 	static calculateOptimalDistance(boundingBox, camera, options = {}) {
