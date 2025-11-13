@@ -248,20 +248,13 @@ class MPQArchive {
 
 	detectFileSeed(data, expected) {
 		if (data.length < 8)
-			return 0; // need at least 2 uint32 values
+			return 0;
 
-		// plaintext attack
 		const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 		const encrypted0 = view.getUint32(0, true);
 		const encrypted1 = view.getUint32(4, true);
 
-		// seed1 + seed2 = encrypted ^ decrypted
 		const seed_sum = (encrypted0 ^ expected) >>> 0;
-
-		// seed2 = 0xEEEEEEEE + encryptionTable[0x400 + (seed1 & 0xFF)]
-		// seed1 = seedSum - seed2
-		// seedSum = seed1 + 0xEEEEEEEE + encryptionTable[0x400 + (seed1 & 0xFF)]
-		// seed1 = seedSum - 0xEEEEEEEE - encryptionTable[0x400 + lowByte]
 		const temp = (seed_sum - 0xEEEEEEEE) >>> 0;
 
 		for (let low_byte = 0; low_byte < 256; low_byte++) {
@@ -447,7 +440,10 @@ class MPQArchive {
 		let file_data = this.readBytes(file_offset, block_entry.archivedSize);
 
 		let encryption_seed = 0;
+		let is_encrypted = false;
+
 		if (block_entry.flags & MPQ_FILE_ENCRYPTED) {
+			is_encrypted = true;
 			const path_separator_index = filename.lastIndexOf('\\');
 			const file_name_only = path_separator_index >= 0 ? filename.substring(path_separator_index + 1) : filename;
 			encryption_seed = this.hash(file_name_only, HashType.TABLE);
@@ -456,8 +452,13 @@ class MPQArchive {
 				encryption_seed = ((encryption_seed + block_entry.offset) ^ block_entry.size) >>> 0;
 		}
 
-		if (block_entry.flags & MPQ_FILE_SINGLE_UNIT) {
-			if (block_entry.flags & MPQ_FILE_ENCRYPTED)
+		// check if file is actually stored as single unit even without flag
+		// this happens when archivedSize == size and no compression
+		const is_single_unit = (block_entry.flags & MPQ_FILE_SINGLE_UNIT) ||
+		                       (block_entry.archivedSize === block_entry.size && !(block_entry.flags & MPQ_FILE_COMPRESS));
+
+		if (is_single_unit) {
+			if (is_encrypted)
 				file_data = new Uint8Array(this.decrypt(file_data, encryption_seed));
 
 			if (block_entry.flags & MPQ_FILE_COMPRESS) {
@@ -479,16 +480,23 @@ class MPQArchive {
 				positions.push(pos_view.getUint32(i * 4, true));
 
 			const expected_first_pos = (sectors + 1) * 4;
-			const is_position_table_encrypted = block_entry.flags & MPQ_FILE_ENCRYPTED && positions[0] !== expected_first_pos;
+			const is_position_table_encrypted = positions[0] !== expected_first_pos;
 
-			// bruteforce via plaintext attack
 			if (is_position_table_encrypted) {
 				const position_table_data = file_data.slice(0, (sectors + 1) * 4);
 
 				if (encryption_seed === 0) {
 					encryption_seed = this.detectFileSeed(position_table_data, expected_first_pos);
-					if (encryption_seed === 0)
-						throw new Error(`Unable to detect encryption seed for file "${filename}"`);
+					if (encryption_seed === 0) {
+						// plaintext attack failed, compute from filename
+						const path_separator_index = filename.lastIndexOf('\\');
+						const file_name_only = path_separator_index >= 0 ? filename.substring(path_separator_index + 1) : filename;
+						encryption_seed = this.hash(file_name_only, HashType.TABLE);
+
+						if (block_entry.flags & MPQ_FILE_FIX_KEY)
+							encryption_seed = ((encryption_seed + block_entry.offset) ^ block_entry.size) >>> 0;
+					}
+					is_encrypted = true;
 				} else {
 					const detected_seed = this.detectFileSeed(position_table_data, expected_first_pos);
 					if (detected_seed !== 0)
@@ -518,7 +526,7 @@ class MPQArchive {
 			for (let i = 0; i < num_sectors; i++) {
 				let sector = file_data.slice(positions[i], positions[i + 1]);
 
-				if (block_entry.flags & MPQ_FILE_ENCRYPTED && block_entry.size > 3) {
+				if (is_encrypted && block_entry.size > 3) {
 					const sector_seed = (encryption_seed + i) >>> 0;
 					sector = new Uint8Array(this.decrypt(sector, sector_seed));
 				}

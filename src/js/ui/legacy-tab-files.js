@@ -51,7 +51,7 @@ core.registerLoadFunc(async () => {
 				const output_dir = path.dirname(output_path);
 
 				await fsp.mkdir(output_dir, { recursive: true });
-				await fsp.writeFile(output_path, Buffer.from(data));
+				await fsp.writeFile(output_path, new Uint8Array(data));
 
 				last_export_path = output_path;
 				log.write('Exported: %s', display_path);
