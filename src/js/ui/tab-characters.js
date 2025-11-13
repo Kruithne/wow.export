@@ -17,6 +17,7 @@ const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
 const DBCreatures = require('../db/caches/DBCreatures');
 const { wmv_parse } = require('../wmv');
+const { wowhead_parse } = require('../wowhead');
 
 let camera;
 let scene;
@@ -642,6 +643,63 @@ function loadWMVLegacy(wmv_data) {
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
 }
 
+async function importWowheadCharacter() {
+	core.view.isBusy++;
+	core.view.characterImportMode = 'none';
+	core.view.chrModelLoading = true;
+
+	const wowhead_url = core.view.chrImportWowheadURL;
+
+	if (!wowhead_url || !wowhead_url.includes('dressing-room')) {
+		core.setToast('error', 'please enter a valid wowhead dressing room url', null, 3000);
+		core.view.chrModelLoading = false;
+		core.view.isBusy--;
+		return;
+	}
+
+	try {
+		const wowhead_data = wowhead_parse(wowhead_url);
+		loadWowheadData(wowhead_data);
+	} catch (e) {
+		log.write('failed to parse wowhead url: %s', e.message);
+		core.setToast('error', `failed to import wowhead character: ${e.message}`, null, -1);
+	}
+
+	core.view.chrModelLoading = false;
+	core.view.isBusy--;
+}
+
+function loadWowheadData(wowhead_data) {
+	const race_id = wowhead_data.race;
+	const gender_index = wowhead_data.gender;
+
+	const chr_model_id = chrRaceXChrModelMap.get(race_id).get(gender_index);
+	core.view.chrImportChrModelID = chr_model_id;
+
+	const available_options = optionsByChrModel.get(chr_model_id);
+
+	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
+
+	// wowhead customizations are choice ids, map them to option/choice pairs
+	const parsed_choices = [];
+	for (const choice_id of wowhead_data.customizations) {
+		const choice_row = chrCustChoiceDB.getRow(choice_id);
+		if (!choice_row)
+			continue;
+
+		const option_id = choice_row.ChrCustomizationOptionID;
+
+		// verify option is available for this model
+		if (!available_options.find(opt => opt.id === option_id))
+			continue;
+
+		parsed_choices.push({ optionID: option_id, choiceID: choice_id });
+	}
+
+	core.view.chrImportChoices.push(...parsed_choices);
+	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+}
+
 const exportCharModel = async () => {
 	const exportPaths = core.openLastExportStream();
 
@@ -1110,6 +1168,7 @@ core.registerLoadFunc(async () => {
 	core.events.on('click-export-character', () => exportCharModel());
 	core.events.on('click-import-character', () => importCharacter());
 	core.events.on('click-import-wmv', () => importWMVCharacter());
+	core.events.on('click-import-wowhead', () => importWowheadCharacter());
 
 	// user has changed the race selection
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());
@@ -1215,7 +1274,8 @@ core.registerLoadFunc(async () => {
 		if (core.view.characterImportMode !== 'none') {
 			const import_panel = event.target.closest('#character-import-panel-floating');
 			const bnet_button = event.target.closest('.character-bnet-button');
-			if (!import_panel && !bnet_button)
+			const wowhead_button = event.target.closest('.character-wowhead-button');
+			if (!import_panel && !bnet_button && !wowhead_button)
 				core.view.characterImportMode = 'none';
 		}
 	});
