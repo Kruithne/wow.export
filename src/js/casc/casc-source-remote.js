@@ -171,7 +171,10 @@ class CASCRemote extends CASC {
 				continue;
 
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
-			products.push(util.format('%s %s', product.title, entry.VersionsName));
+			const label = util.format('%s %s', product.title, entry.VersionsName);
+			const versionMatch = entry.VersionsName.match(/^(\d+)\./);
+			const expansionId = versionMatch ? Math.min(parseInt(versionMatch[1]) - 1, 12) : 0;
+			products.push({ label, expansionId });
 		}
 
 		return products;

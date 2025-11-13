@@ -43,6 +43,20 @@
 	--expansion-icon-12: url(./images/expansion/icon_tlt.webp);
 }
 
+.expansion-icon-bg-0 { background-image: var(--expansion-icon-0); }
+.expansion-icon-bg-1 { background-image: var(--expansion-icon-1); }
+.expansion-icon-bg-2 { background-image: var(--expansion-icon-2); }
+.expansion-icon-bg-3 { background-image: var(--expansion-icon-3); }
+.expansion-icon-bg-4 { background-image: var(--expansion-icon-4); }
+.expansion-icon-bg-5 { background-image: var(--expansion-icon-5); }
+.expansion-icon-bg-6 { background-image: var(--expansion-icon-6); }
+.expansion-icon-bg-7 { background-image: var(--expansion-icon-7); }
+.expansion-icon-bg-8 { background-image: var(--expansion-icon-8); }
+.expansion-icon-bg-9 { background-image: var(--expansion-icon-9); }
+.expansion-icon-bg-10 { background-image: var(--expansion-icon-10); }
+.expansion-icon-bg-11 { background-image: var(--expansion-icon-11); }
+.expansion-icon-bg-12 { background-image: var(--expansion-icon-12); }
+
 * {
 	margin: 0;
 	padding: 0;
@@ -673,10 +687,26 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	min-width: 300px;
+	min-width: 450px;
 }
 #build-select .build-select-buttons input[type=button] {
 	width: 100%;
+	background-color: transparent;
+	border: 3px dashed var(--font-faded);
+	border-radius: 10px;
+	color: var(--font-highlight);
+	padding: 15px 15px 15px 50px;
+	font-size: 16px;
+	text-align: left;
+	background-position: 10px center;
+	background-repeat: no-repeat;
+	background-size: 32px;
+	transition: all 0.2s;
+}
+#build-select .build-select-buttons input[type=button]:hover {
+	border-color: var(--nav-option-selected);
+	color: var(--nav-option-selected);
+	background-color: rgba(34, 181, 73, 0.1);
 }
 #build-select .build-select-return {
 	margin-top: 10px;

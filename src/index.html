@@ -1147,7 +1147,7 @@
 					<div class="build-select-content">
 						<div class="build-select-title">Select Build</div>
 						<div class="build-select-buttons">
-							<input v-for="(build, i) in (availableLocalBuilds || availableRemoteBuilds)" @click="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
+							<input v-for="(build, i) in (availableLocalBuilds || availableRemoteBuilds)" @click="click('source-build', $event, i)" :class="['expansion-icon-bg-' + build.expansionId, { disabled: isBusy }]" type="button" :value="build.label"/>
 						</div>
 						<span @click="click('return-to-source-select', $event)" class="link build-select-return">Return to Installations</span>
 					</div>
