@@ -758,6 +758,17 @@ document.addEventListener('click', function(e) {
 		blender.checkLocalVersion();
 	}
 
+	// Load what's new HTML on app start
+	(async () => {
+		try {
+			const whats_new_path = BUILD_RELEASE ? './src/whats-new.html' : './src/whats-new.html';
+			const html = await fsp.readFile(whats_new_path, 'utf8');
+			core.view.whatsNewHTML = html;
+		} catch (e) {
+			log.write('failed to load whats-new.html: %o', e);
+		}
+	})();
+
 	// Load the changelog when the user opens the screen.
 	core.events.on('screen-changelog', () => {
 		setImmediate(async () => {

@@ -90,6 +90,7 @@ const makeNewView = () => {
 		availableLocale: Locale, // Available CASC locale.
 		fileDropPrompt: null, // Prompt to display for file drag/drops.
 		changelogText: '', // Markdown content for changelog.
+		whatsNewHTML: '', // HTML content for What's New section.
 		textViewerSelectedText: '', // Active text for the text viewer.
 		soundPlayerSeek: 0, // Current seek of the sound player.
 		soundPlayerState: false, // Playing state of the sound player.
