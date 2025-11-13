@@ -174,6 +174,7 @@ const makeNewView = () => {
 			nodeItem: null, // Context menu node for the items listfile.
 			stateNavExtra: false, // State controller for the extra nav menu.
 			stateModelExport: false, // State controller for the model export menu.
+			stateCDNRegion: false, // State controller for the CDN region selection menu.
 		},
 		menuButtonTextures: [
 			{ label: 'Export as PNG', value: 'PNG' },

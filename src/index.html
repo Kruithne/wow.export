@@ -1116,46 +1116,40 @@
 					</div>
 				</div>
 				<div id="source-select" v-if="screen === 'source-select'">
-					<div id="source-local" :class="{ disabled: !!availableLocalBuilds }" @click="click('source-local', $event)">
-						<template v-if="availableLocalBuilds">
-							<div class="source-builds">
-								<span>Select Build</span>
-								<input v-for="(build, i) in availableLocalBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
-								<span @click.stop="availableLocalBuilds = null" class="link">Cancel</span>
+					<div id="source-local" @click="click('source-local', $event)">
+						<div class="source-icon"></div>
+						<div class="source-content">
+							<div class="source-title">Open Local Installation (Recommended)</div>
+							<div class="source-subtitle">Explore a locally installed World of Warcraft installation on your machine</div>
+							<div v-if="config.recentLocal && config.recentLocal.length > 0" class="source-last-opened">
+								Last Opened: <span class="link" @click.stop="click('source-local-recent', $event, config.recentLocal[0])">{{ config.recentLocal[0].path }} ({{ getProductTag(config.recentLocal[0].product) }})</span>
 							</div>
-						</template>
-						<template v-else>
-							<div class="source-icon"></div>
-							<div class="source-text">
-								Open Local Installation
-								<span>(Recommended)</span>
-								<ul id="source-recent" v-if="config.recentLocal && config.recentLocal.length > 0">
-									<li>Recent</li>
-									<li v-for="entry in config.recentLocal" class="link" @click.stop="click('source-local-recent', $event, entry)">{{ entry.path }} ({{ getProductTag(entry.product) }})</li>
-								</ul>
-							</div>
-						</template>
+						</div>
 					</div>
-					<div id="source-remote" :class="{ disabled: !!availableRemoteBuilds }" @click="click('source-remote', $event)">
-						<template v-if="availableRemoteBuilds">
-							<div class="source-builds">
-								<span>Select Build</span>
-								<input v-for="(build, i) in availableRemoteBuilds" @click.stop="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
-								<span @click.stop="availableRemoteBuilds = null" class="link">Cancel</span>
+					<div id="source-remote" @click="click('source-remote', $event)">
+						<div class="source-icon"></div>
+						<div class="source-content">
+							<div class="source-title">Use Battle.net CDN</div>
+							<div class="source-subtitle">Explore available builds without installation directly from the Battle.net servers</div>
+							<div class="source-cdn-region">
+								Region: {{ selectedCDNRegion.name }} <span class="link" @click.stop="contextMenus.stateCDNRegion = true">(<span>Change</span>)</span>
 							</div>
-						</template>
-						<template v-else>
-							<div class="source-icon"></div>
-							<div class="source-text">
-								Use Blizzard CDN
-								<ul id="source-cdn" class="ui-multi-button">
-									<li v-for="region in cdnRegions" :class="{ selected: selectedCDNRegion === region }" @click.stop="setSelectedCDN(region)">
-										{{ region.tag.toUpperCase() }}
-										<span v-if="region.delay !== null">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
-									</li>
-								</ul>
-							</div>
-						</template>
+							<context-menu @close="contextMenus.stateCDNRegion = false" :node="contextMenus.stateCDNRegion" id="menu-cdn-region">
+								<span v-for="region in cdnRegions" @click.self="setSelectedCDN(region)">
+									{{ region.name }}
+									<span v-if="region.delay !== null" style="opacity: 0.7; font-size: 12px;">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
+								</span>
+							</context-menu>
+						</div>
+					</div>
+				</div>
+				<div id="build-select" v-if="screen === 'build-select'">
+					<div class="build-select-content">
+						<div class="build-select-title">Select Build</div>
+						<div class="build-select-buttons">
+							<input v-for="(build, i) in (availableLocalBuilds || availableRemoteBuilds)" @click="click('source-build', $event, i)" :class="{ disabled: isBusy }" type="button" :value="build"/>
+						</div>
+						<span @click="click('return-to-source-select', $event)" class="link build-select-return">Return to Installations</span>
 					</div>
 				</div>
 			</div>
