@@ -2538,7 +2538,6 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 /* old right-panel styles commented out */
