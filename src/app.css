@@ -2540,49 +2540,6 @@ input[type=number]::-webkit-outer-spin-button {
 	gap: 10px;
 }
 
-/* old right-panel styles commented out */
-/*
-#tab-characters .right-panel {
-	position: absolute;
-	right: 20px;
-	top: 20px;
-	bottom: 20px;
-	width: 300px;
-	min-width: 300px;
-	z-index: 1;
-	pointer-events: auto;
-	display: flex;
-	flex-direction: column;
-}
-#tab-characters .right-panel #character-import-panel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 5px;
-	margin-bottom: 15px;
-}
-#tab-characters .right-panel #character-import-panel input[type=text] {
-	width: 177px;
-	margin: 2px;
-}
-#tab-characters .right-panel #character-import-panel label {
-	font-size: 12px;
-}
-#tab-characters .right-panel #character-import-panel ul {
-	margin: 5px;
-}
-#tab-characters .right-panel #checkbox-geosets {
-	height: 313px;
-	margin-top: 5px;
-}
-#tab-characters .right-panel .list-toggles {
-	margin: 5px 0;
-}
-#tab-characters .right-panel #export-char-btn {
-	margin-top: 10px;
-}
-*/
-
 .animation-dropdown-overlay {
 	position: absolute;
 	top: 10px;
