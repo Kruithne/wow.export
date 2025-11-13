@@ -120,11 +120,6 @@ class CameraBounding {
 		const center = boundingBox.getCenter(new THREE.Vector3());
 		const size = boundingBox.getSize(new THREE.Vector3());
 		
-		console.log('bbox center:', center.x.toFixed(2), center.y.toFixed(2), center.z.toFixed(2));
-		console.log('bbox size:', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2));
-		console.log('bbox min:', boundingBox.min.x.toFixed(2), boundingBox.min.y.toFixed(2), boundingBox.min.z.toFixed(2));
-		console.log('bbox max:', boundingBox.max.x.toFixed(2), boundingBox.max.y.toFixed(2), boundingBox.max.z.toFixed(2));
-		
 		const view_height_percentage = options.viewHeightPercentage ?? 0.9;
 		const vertical_offset_factor = options.verticalOffsetFactor ?? -0.5;
 		
