@@ -14,6 +14,7 @@
 - Added animation support in the 3D model viewer for models with external skeletons.
 - Added character animation previews in the "Characters" tab.
 - Added colour preview/palette selector for colour-based customization options.
+- Added the ability to import 1.0/2.0 .chr files from WoW Model Viewer.
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.

@@ -16,6 +16,7 @@ const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
 const DBCreatures = require('../db/caches/DBCreatures');
+const { wmv_parse } = require('../wmv');
 
 let camera;
 let scene;
@@ -531,6 +532,115 @@ async function loadImportJSON(json) {
 	core.view.chrImportChoices.push(...parsedChoices);
 }
 
+async function importWMVCharacter() {
+	const file_input = document.createElement('input');
+	file_input.setAttribute('type', 'file');
+	file_input.setAttribute('accept', '.chr');
+	file_input.setAttribute('nwworkingdir', core.view.config.lastWMVImportPath || '');
+
+	file_input.addEventListener('change', async () => {
+		if (file_input.files.length === 0)
+			return;
+
+		const file = file_input.files[0];
+		const file_path = file.path;
+
+		if (file_path) {
+			const path = require('path');
+			core.view.config.lastWMVImportPath = path.dirname(file_path);
+		}
+
+		core.view.isBusy++;
+		core.view.chrModelLoading = true;
+
+		try {
+			const file_content = await file.text();
+			const wmv_data = wmv_parse(file_content);
+
+			if (wmv_data.legacy_values)
+				loadWMVLegacy(wmv_data);
+			else
+				loadWMVModern(wmv_data);
+
+		} catch (e) {
+			log.write('failed to load .chr file: %s', e.message);
+			core.setToast('error', `failed to load .chr file: ${e.message}`, null, -1);
+		}
+
+		core.view.chrModelLoading = false;
+		core.view.isBusy--;
+	});
+
+	file_input.click();
+}
+
+function loadWMVModern(wmv_data) {
+	const race_id = wmv_data.race;
+	const gender_index = wmv_data.gender;
+
+	const chr_model_id = chrRaceXChrModelMap.get(race_id).get(gender_index);
+	core.view.chrImportChrModelID = chr_model_id;
+
+	const available_options = optionsByChrModel.get(chr_model_id);
+	const available_options_ids = [];
+	for (const option of available_options)
+		available_options_ids.push(option.id);
+
+	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
+
+	const parsed_choices = [];
+	for (const customization of wmv_data.customizations) {
+		if (!available_options_ids.includes(customization.option_id))
+			continue;
+
+		parsed_choices.push({ optionID: customization.option_id, choiceID: customization.choice_id });
+	}
+
+	core.view.chrImportChoices.push(...parsed_choices);
+	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+}
+
+function loadWMVLegacy(wmv_data) {
+	const race_id = wmv_data.race;
+	const gender_index = wmv_data.gender;
+
+	const chr_model_id = chrRaceXChrModelMap.get(race_id).get(gender_index);
+	core.view.chrImportChrModelID = chr_model_id;
+
+	const available_options = optionsByChrModel.get(chr_model_id);
+
+	core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
+
+	const parsed_choices = [];
+	const legacy = wmv_data.legacy_values;
+
+	const option_map = {
+		'skin': legacy.skin_color,
+		'face': legacy.face_type,
+		'hair color': legacy.hair_color,
+		'hair style': legacy.hair_style,
+		'facial': legacy.facial_hair
+	};
+
+	for (const option of available_options) {
+		const label_lower = option.label.toLowerCase();
+
+		for (const [key, value] of Object.entries(option_map)) {
+			if (label_lower.includes(key)) {
+				const choices = optionToChoices.get(option.id);
+				if (choices && choices[value]) {
+					parsed_choices.push({ optionID: option.id, choiceID: choices[value].id });
+					break;
+				}
+			}
+		}
+	}
+
+	core.view.chrImportChoices.push(...parsed_choices);
+
+	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+}
+
 const exportCharModel = async () => {
 	const exportPaths = core.openLastExportStream();
 
@@ -951,6 +1061,7 @@ core.registerLoadFunc(async () => {
 
 	core.events.on('click-export-character', () => exportCharModel());
 	core.events.on('click-import-character', () => importCharacter());
+	core.events.on('click-import-wmv', () => importWMVCharacter());
 
 	// user has changed the race selection
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());
