@@ -2563,6 +2563,63 @@ input[type=number]::-webkit-outer-spin-button {
 	left: 300px;
 }
 
+.chr-geoset-toggle {
+	color: var(--font-alt);
+	cursor: pointer;
+	font-size: 14px;
+	text-align: center;
+	padding: 8px;
+}
+
+.chr-geoset-toggle:hover {
+	color: var(--font-alt-highlight);
+}
+
+.geoset-control-header {
+	font-size: 18px;
+	font-weight: bold;
+	margin-bottom: 10px;
+	color: var(--font-highlight);
+}
+
+.geoset-checkboxes {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.geoset-checkbox-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 7px 12px;
+	background: var(--background-dark);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	cursor: pointer;
+	transition: background-color 0.2s;
+	font-size: 14px;
+}
+
+.geoset-checkbox-item:hover {
+	background-color: var(--background-alt);
+}
+
+.geoset-checkbox-item .geoset-prefix {
+	color: var(--font-alt);
+}
+
+.geoset-checkbox-item input[type=checkbox] {
+	width: 18px;
+	height: 18px;
+}
+
+.geoset-toggles {
+	font-size: 14px;
+	text-align: center;
+	margin-top: 10px;
+}
+
 #tab-home {
 	display: grid;
 	grid-template-columns: 1fr 1fr;

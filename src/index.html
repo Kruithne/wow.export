@@ -863,76 +863,91 @@
 						<input type="button" value="Import Character" @click="click('import-character', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 					<div class="left-panel">
-						<label class="ui-select-label">
-							<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ chrCustRaceSelection[0]?.label }}</span></span>
-							<select class="ui-select" id="select-chr-race" :value="chrCustRaceSelection[0]?.id" @change="chrCustRaceSelection = [$event.target.value ? chrCustRaces.find(r => r.id === parseInt($event.target.value)) : chrCustRaces[0]]">
-								<option value="" disabled selected style="display:none;"></option>
-								<optgroup label="Playable Races">
-									<option v-for="race in chrCustRacesPlayable" :key="race.id" :value="race.id">{{ race.label }}</option>
-								</optgroup>
-								<optgroup label="NPC Races">
-									<option v-for="race in chrCustRacesNPC" :key="race.id" :value="race.id">{{ race.label }}</option>
-								</optgroup>
-							</select>
-						</label>
-						<label class="ui-select-label">
-							<span class="select-prefix"><span class="prefix-label">Body:</span> <span class="prefix-value">{{ chrCustModelSelection[0]?.label }}</span></span>
-							<select class="ui-select" id="select-chr-body" :value="chrCustModelSelection[0]?.id" @change="chrCustModelSelection = [$event.target.value ? chrCustModels.find(m => m.id === parseInt($event.target.value)) : chrCustModels[0]]">
-								<option value="" disabled selected style="display:none;"></option>
-								<option v-for="model in chrCustModels" :key="model.id" :value="model.id">{{ model.label }}</option>
-							</select>
-						</label>
-						<template v-for="option in chrCustOptions" :key="option.id">
-							<label v-if="!option.is_color_swatch" class="ui-select-label">
-								<span class="select-prefix"><span class="prefix-label">{{ option.label }}:</span> <span class="prefix-value">{{ optionToChoices.get(option.id)?.find(c => c.id === chrCustActiveChoices.find(ac => ac.optionID === option.id)?.choiceID)?.label }}</span></span>
-								<select class="ui-select" :value="chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID" @change="updateChoiceForOption(option.id, parseInt($event.target.value))">
+						<template v-if="!chrShowGeosetControl">
+							<label class="ui-select-label">
+								<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ chrCustRaceSelection[0]?.label }}</span></span>
+								<select class="ui-select" id="select-chr-race" :value="chrCustRaceSelection[0]?.id" @change="chrCustRaceSelection = [$event.target.value ? chrCustRaces.find(r => r.id === parseInt($event.target.value)) : chrCustRaces[0]]">
 									<option value="" disabled selected style="display:none;"></option>
-									<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
+									<optgroup label="Playable Races">
+										<option v-for="race in chrCustRacesPlayable" :key="race.id" :value="race.id">{{ race.label }}</option>
+									</optgroup>
+									<optgroup label="NPC Races">
+										<option v-for="race in chrCustRacesNPC" :key="race.id" :value="race.id">{{ race.label }}</option>
+									</optgroup>
 								</select>
 							</label>
-							<div v-else class="customization-color-container">
-								<div class="customization-color-label" @click="toggleColorPicker(option.id, $event)">
-									<span class="prefix-label">{{ option.label }}:</span>
-									<div class="customization-color-selected">
-										<div v-if="getSelectedChoice(option.id)?.swatch_color_0 === 0 && getSelectedChoice(option.id)?.swatch_color_1 === 0" class="swatch swatch-none">
-											<div class="swatch-none-line"></div>
+							<label class="ui-select-label">
+								<span class="select-prefix"><span class="prefix-label">Body:</span> <span class="prefix-value">{{ chrCustModelSelection[0]?.label }}</span></span>
+								<select class="ui-select" id="select-chr-body" :value="chrCustModelSelection[0]?.id" @change="chrCustModelSelection = [$event.target.value ? chrCustModels.find(m => m.id === parseInt($event.target.value)) : chrCustModels[0]]">
+									<option value="" disabled selected style="display:none;"></option>
+									<option v-for="model in chrCustModels" :key="model.id" :value="model.id">{{ model.label }}</option>
+								</select>
+							</label>
+							<template v-for="option in chrCustOptions" :key="option.id">
+								<label v-if="!option.is_color_swatch" class="ui-select-label">
+									<span class="select-prefix"><span class="prefix-label">{{ option.label }}:</span> <span class="prefix-value">{{ optionToChoices.get(option.id)?.find(c => c.id === chrCustActiveChoices.find(ac => ac.optionID === option.id)?.choiceID)?.label }}</span></span>
+									<select class="ui-select" :value="chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID" @change="updateChoiceForOption(option.id, parseInt($event.target.value))">
+										<option value="" disabled selected style="display:none;"></option>
+										<option v-for="choice in optionToChoices.get(option.id)" :key="choice.id" :value="choice.id">{{ choice.label }}</option>
+									</select>
+								</label>
+								<div v-else class="customization-color-container">
+									<div class="customization-color-label" @click="toggleColorPicker(option.id, $event)">
+										<span class="prefix-label">{{ option.label }}:</span>
+										<div class="customization-color-selected">
+											<div v-if="getSelectedChoice(option.id)?.swatch_color_0 === 0 && getSelectedChoice(option.id)?.swatch_color_1 === 0" class="swatch swatch-none">
+												<div class="swatch-none-line"></div>
+											</div>
+											<div v-else-if="getSelectedChoice(option.id)?.swatch_color_1 !== 0" class="swatch swatch-dual">
+												<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
+												<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_1)}"></div>
+											</div>
+											<div v-else class="swatch swatch-single" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
 										</div>
-										<div v-else-if="getSelectedChoice(option.id)?.swatch_color_1 !== 0" class="swatch swatch-dual">
-											<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
-											<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_1)}"></div>
-										</div>
-										<div v-else class="swatch swatch-single" :style="{backgroundColor: intToCssColor(getSelectedChoice(option.id)?.swatch_color_0)}"></div>
+									</div>
+									<div v-if="colorPickerOpenFor === option.id" class="color-picker-popup" :style="{left: colorPickerPosition.x + 'px', top: colorPickerPosition.y + 'px'}" @click.self="colorPickerOpenFor = null">
+											<div class="color-picker-grid">
+												<div
+													v-for="choice in optionToChoices.get(option.id)"
+													:key="choice.id"
+													:class="['swatch', 'swatch-clickable', {selected: chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID === choice.id}]"
+													@click="selectColorChoice(option.id, choice.id)">
+													<div v-if="choice.swatch_color_0 === 0 && choice.swatch_color_1 === 0" class="swatch-none">
+														<div class="swatch-none-line"></div>
+													</div>
+													<div v-else-if="choice.swatch_color_1 !== 0" class="swatch-dual">
+														<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
+														<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(choice.swatch_color_1)}"></div>
+													</div>
+													<div v-else class="swatch-single" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
+												</div>
+											</div>
 									</div>
 								</div>
-								<div v-if="colorPickerOpenFor === option.id" class="color-picker-popup" :style="{left: colorPickerPosition.x + 'px', top: colorPickerPosition.y + 'px'}" @click.self="colorPickerOpenFor = null">
-										<div class="color-picker-grid">
-											<div
-												v-for="choice in optionToChoices.get(option.id)"
-												:key="choice.id"
-												:class="['swatch', 'swatch-clickable', {selected: chrCustActiveChoices.find(c => c.optionID === option.id)?.choiceID === choice.id}]"
-												@click="selectColorChoice(option.id, choice.id)">
-												<div v-if="choice.swatch_color_0 === 0 && choice.swatch_color_1 === 0" class="swatch-none">
-													<div class="swatch-none-line"></div>
-												</div>
-												<div v-else-if="choice.swatch_color_1 !== 0" class="swatch-dual">
-													<div class="swatch-color-half-1" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
-													<div class="swatch-color-half-2" :style="{backgroundColor: intToCssColor(choice.swatch_color_1)}"></div>
-												</div>
-												<div v-else class="swatch-single" :style="{backgroundColor: intToCssColor(choice.swatch_color_0)}"></div>
-											</div>
-										</div>
-								</div>
-							</div>
+							</template>
+							<label class="ui-select-label">
+								<span class="select-prefix"><span class="prefix-label">Underwear:</span> <span class="prefix-value">{{ config.chrIncludeBaseClothing ? 'Visible' : 'Hidden' }}</span></span>
+								<select class="ui-select" :value="config.chrIncludeBaseClothing" @change="config.chrIncludeBaseClothing = $event.target.value === 'true'">
+									<option value="" disabled selected style="display:none;"></option>
+									<option value="true">Visible</option>
+									<option value="false">Hidden</option>
+								</select>
+							</label>
+							<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
+							<span class="chr-geoset-toggle" @click="chrShowGeosetControl = true">Custom Geoset Control</span>
 						</template>
-						<label class="ui-select-label">
-							<span class="select-prefix"><span class="prefix-label">Underwear:</span> <span class="prefix-value">{{ config.chrIncludeBaseClothing ? 'Visible' : 'Hidden' }}</span></span>
-							<select class="ui-select" :value="config.chrIncludeBaseClothing" @change="config.chrIncludeBaseClothing = $event.target.value === 'true'">
-								<option value="" disabled selected style="display:none;"></option>
-								<option value="true">Visible</option>
-								<option value="false">Hidden</option>
-							</select>
-						</label>
-						<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
+						<template v-else>
+							<div class="geoset-checkboxes">
+								<label v-for="geoset in chrCustGeosets" :key="geoset.id" class="geoset-checkbox-item" v-show="geoset.id !== 0">
+									<span class="geoset-prefix">{{ geoset.label }}:</span>
+									<input type="checkbox" v-model="geoset.checked"/>
+								</label>
+							</div>
+							<div class="geoset-toggles">
+								<a @click="setAllGeosets(true, chrCustGeosets)">Enable All</a> / <a @click="setAllGeosets(false, chrCustGeosets)">Disable All</a>
+							</div>
+							<span class="chr-geoset-toggle" @click="chrShowGeosetControl = false">Return to Customization</span>
+						</template>
 					</div>
 					<div class="char-preview preview-container">
 						<div class="preview-background">
