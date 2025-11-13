@@ -75,19 +75,20 @@ core.registerLoadFunc(async () => {
 
 				core.view.texturePreviewInfo = `${blp.width}x${blp.height} (${info})`;
 			} else if (ext === '.png' || ext === '.jpg') {
-				const blob = new Blob([data], { type: ext === '.png' ? 'image/png' : 'image/jpeg' });
-				const url = URL.createObjectURL(blob);
+				const buffer = Buffer.from(data);
+				const base64 = buffer.toString('base64');
+				const mime_type = ext === '.png' ? 'image/png' : 'image/jpeg';
+				const data_url = `data:${mime_type};base64,${base64}`;
 
 				const img = new Image();
 				img.onload = () => {
 					core.view.texturePreviewWidth = img.width;
 					core.view.texturePreviewHeight = img.height;
-					core.view.texturePreviewInfo = `${img.width}x${img.height} (${ext.slice(1)})`;
-					URL.revokeObjectURL(url);
+					core.view.texturePreviewInfo = `${img.width}x${img.height} (${ext.slice(1).toUpperCase()})`;
 				};
-				img.src = url;
+				img.src = data_url;
 
-				core.view.texturePreviewURL = url;
+				core.view.texturePreviewURL = data_url;
 			}
 		} catch (e) {
 			log.write('failed to preview legacy texture %s: %o', filename, e);
