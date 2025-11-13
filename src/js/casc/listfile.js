@@ -626,26 +626,16 @@ const loadUnknowns = async () => {
 
 const loadIDTable = async (ids, ext) => {
 	let loadCount = 0;
-	
-	if (is_binary_mode) {
-		for (const fileDataID of ids) {
-			if (!binary_id_to_offset.has(fileDataID)) {
-				const fileName = 'unknown/' + fileDataID + ext;
-				// todo: add to binary structures properly
-				log.write('Cannot add unknown files to binary listfile yet: %s', fileName);
-			}
-		}
-	} else {
-		for (const fileDataID of ids) {
-			if (!legacy_id_lookup.has(fileDataID)) {
-				const fileName = 'unknown/' + fileDataID + ext;
-				legacy_id_lookup.set(fileDataID, fileName);
-				legacy_name_lookup.set(fileName, fileDataID);
-				loadCount++;
-			}
+
+	for (const fileDataID of ids) {
+		if (!existsByID(fileDataID)) {
+			const fileName = 'unknown/' + fileDataID + ext;
+			legacy_id_lookup.set(fileDataID, fileName);
+			legacy_name_lookup.set(fileName, fileDataID);
+			loadCount++;
 		}
 	}
-	
+
 	return loadCount;
 };
 
