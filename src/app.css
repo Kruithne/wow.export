@@ -1900,16 +1900,19 @@ input[type=number]::-webkit-outer-spin-button {
 	color: #00ff00;
 }
 
-#tab-textures .preview-container {
+#tab-textures .preview-container,
+#legacy-tab-textures .preview-container {
 	position: relative;
 }
-#tab-textures .preview-container .preview-channels {
+#tab-textures .preview-container .preview-channels,
+#legacy-tab-textures .preview-container .preview-channels {
 	position: absolute;
 	bottom: 35px;
 	left: 0;
 	list-style: none;
 }
-#tab-textures .preview-container .preview-channels li {
+#tab-textures .preview-container .preview-channels li,
+#legacy-tab-textures .preview-container .preview-channels li {
 	width: 20px;
 	height: 20px;
 	background: rgba(0, 0, 0, 0.753);
@@ -1919,11 +1922,15 @@ input[type=number]::-webkit-outer-spin-button {
 	cursor: pointer;
 }
 
-#tab-textures .preview-container .preview-channels li:hover, #tab-textures .preview-container .preview-channels li.selected {
+#tab-textures .preview-container .preview-channels li:hover,
+#tab-textures .preview-container .preview-channels li.selected,
+#legacy-tab-textures .preview-container .preview-channels li:hover,
+#legacy-tab-textures .preview-container .preview-channels li.selected {
 	background: var(--font-alt);
 }
 
-#tab-textures .preview-container .preview-info {
+#tab-textures .preview-container .preview-info,
+#legacy-tab-textures .preview-container .preview-info {
 	position: absolute;
 	left: 0;
 	bottom: 0;

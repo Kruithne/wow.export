@@ -63,17 +63,26 @@ const exportBLPMetadata = async (blp, exportPath, overwriteFiles, manifest, file
  * @param {Array} files - Array of fileDataIDs or file paths
  * @param {boolean} isLocal - Whether files are local
  * @param {number} exportID - Export ID for tracking
+ * @param {boolean} isMPQ - Whether files are from MPQ archives
  */
-const exportFiles = async (files, isLocal = false, exportID = -1) => {
+const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false) => {
 	const format = core.view.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
 		const { fileName, fileDataID } = getFileInfoPair(files[0]);
 
-		const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+		let data;
+		if (isMPQ) {
+			const raw_data = core.view.mpq.getFile(fileName);
+			const buffer = Buffer.from(raw_data);
+			data = new BufferWrapper(buffer);
+		} else {
+			data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+		}
+
 		const blp = new BLPFile(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
-		
+
 		const clipboard = nw.Clipboard.get();
 		clipboard.set(png.toBase64(), 'png', true);
 
@@ -118,14 +127,27 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
-				const data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+				let data;
+				if (isMPQ) {
+					const raw_data = core.view.mpq.getFile(fileName);
+					const buffer = Buffer.from(raw_data);
+					data = new BufferWrapper(buffer);
+				} else {
+					data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
+				}
 
-				if (format === 'BLP') {
-					// Export as raw file with no conversion.
+				const file_ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
+
+				if (file_ext === '.png' || file_ext === '.jpg') {
+					// raw export for png/jpg (no blp conversion)
+					await data.writeToFile(exportPath);
+					await exportPaths?.writeLine(file_ext.slice(1).toUpperCase() + ':' + exportPath);
+				} else if (format === 'BLP') {
+					// export as raw file with no conversion
 					await data.writeToFile(exportPath);
 					await exportPaths?.writeLine('BLP:' + exportPath);
 				} else if (format === 'WEBP') {
-					// Export as WebP.
+					// export as webp
 					const blp = new BLPFile(data);
 					await blp.saveToWebP(exportPath, core.view.config.exportChannelMask, 0, core.view.config.exportWebPQuality);
 					await exportPaths?.writeLine('WEBP:' + exportPath);
@@ -133,7 +155,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1) => {
 					if (exportMeta)
 						await exportBLPMetadata(blp, exportPath, overwriteFiles, manifest, fileDataID);
 				} else {
-					// Export as PNG.
+					// export as png
 					const blp = new BLPFile(data);
 					await blp.saveToPNG(exportPath, core.view.config.exportChannelMask);
 					await exportPaths?.writeLine('PNG:' + exportPath);

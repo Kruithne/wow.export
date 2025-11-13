@@ -331,6 +331,9 @@ core.registerLoadFunc(async () => {
 
 	// Track selection changes on the texture listbox and preview first texture.
 	core.view.$watch('selectionTextures', async selection => {
+		if (core.view.screen !== 'tab-textures')
+			return;
+
 		// Check if the first file in the selection is "new".
 		const first = listfile.stripFileEntry(selection[0]);
 		if (first && !core.view.isBusy) {
