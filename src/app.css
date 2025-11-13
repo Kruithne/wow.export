@@ -2289,7 +2289,7 @@ input[type=number]::-webkit-outer-spin-button {
 .ui-select-label .select-prefix {
 	position: absolute;
 	left: 12px;
-	right: 35px;
+	right: 12px;
 	top: 49%;
 	transform: translateY(-50%);
 	pointer-events: none;
@@ -2298,6 +2298,8 @@ input[type=number]::-webkit-outer-spin-button {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	display: flex;
+	justify-content: space-between;
 }
 
 .ui-select-label .select-prefix .prefix-label {
