@@ -6,6 +6,8 @@
 const core = require('../core');
 const log = require('../log');
 const util = require('util');
+const path = require('path');
+const BufferWrapper = require('../buffer');
 const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
@@ -702,18 +704,55 @@ function loadWowheadData(wowhead_data) {
 
 const exportCharModel = async () => {
 	const exportPaths = core.openLastExportStream();
+	const format = core.view.config.exportCharacterFormat;
+
+	if (format === 'PNG' || format === 'CLIPBOARD') {
+		if (activeModel) {
+			core.setToast('progress', 'saving preview, hold on...', null, -1, false);
+
+			const canvas = document.querySelector('.char-preview canvas');
+			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+
+			if (format === 'PNG') {
+				const fileName = listfile.getByID(activeModel);
+				const exportPath = ExportHelper.getExportPath(fileName);
+				let outFile = ExportHelper.replaceExtension(exportPath, '.png');
+
+				if (core.view.config.modelsExportPngIncrements)
+					outFile = await ExportHelper.getIncrementalFilename(outFile);
+
+				const outDir = path.dirname(outFile);
+
+				await buf.writeToFile(outFile);
+				await exportPaths?.writeLine('PNG:' + outFile);
+
+				log.write('saved 3d preview screenshot to %s', outFile);
+				core.setToast('success', util.format('successfully exported preview to %s', outFile), { 'view in explorer': () => nw.Shell.openItem(outDir) }, -1);
+			} else if (format === 'CLIPBOARD') {
+				const clipboard = nw.Clipboard.get();
+				clipboard.set(buf.toBase64(), 'png', true);
+
+				log.write('copied 3d preview to clipboard (character %s)', activeModel);
+				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
+			}
+		} else {
+			core.setToast('error', 'the selected export option only works for character previews. preview something first!', null, -1);
+		}
+
+		exportPaths?.close();
+		return;
+	}
 
 	const casc = core.view.casc;
 	const helper = new ExportHelper(1, 'model');
 	helper.start();
 
-	// Abort if the export has been cancelled.
 	if (helper.isCancelled())
 		return;
-	
+
 	const fileDataID = activeModel;
 	const fileName = listfile.getByID(fileDataID);
-	
+
 	try {
 		const data = await casc.getFile(fileDataID);
 		const exportPath = ExportHelper.replaceExtension(ExportHelper.getExportPath(fileName), ".gltf");
@@ -722,14 +761,12 @@ const exportCharModel = async () => {
 		for (const [chrModelTextureTarget, chrMaterial] of chrMaterials)
 			exporter.addURITexture(chrModelTextureTarget, chrMaterial.getURI());
 
-		// Respect geoset masking for selected model.
 		exporter.setGeosetMask(core.view.chrCustGeosets);
 
-		const format = core.view.config.exportCharacterFormat.toLowerCase();
-		await exporter.exportAsGLTF(exportPath, helper, format);
-		await exportPaths?.writeLine('M2_' + core.view.config.exportCharacterFormat + ':' + exportPath);
+		const formatLower = format.toLowerCase();
+		await exporter.exportAsGLTF(exportPath, helper, formatLower);
+		await exportPaths?.writeLine('M2_' + format + ':' + exportPath);
 
-		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
 
@@ -738,10 +775,7 @@ const exportCharModel = async () => {
 		helper.mark(fileName, false, e.message, e.stack);
 	}
 
-
 	helper.finish();
-
-	// Write export information.
 	exportPaths?.close();
 };
 
