@@ -135,7 +135,9 @@ require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/tab-characters');
 require('./js/ui/screen-help');
+require('./js/ui/legacy-tab-models');
 require('./js/ui/legacy-tab-textures');
+require('./js/ui/legacy-tab-sounds');
 require('./js/ui/legacy-tab-files');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -245,8 +247,35 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Mark all legacy WMO groups to the given state.
+			 * @param {boolean} state
+			 */
+			setAllLegacyWMOGroups: function(state) {
+				if (this.legacyModelViewerWMOGroups) {
+					for (const node of this.legacyModelViewerWMOGroups)
+						node.checked = state;
+				}
+			},
+
+			/**
+			 * Toggle UV layer for the main model viewer.
+			 * @param {string} layerName
+			 */
+			toggleUVLayer: function(layerName) {
+				core.events.emit('toggle-uv-layer', layerName);
+			},
+
+			/**
+			 * Toggle UV layer for the legacy model viewer.
+			 * @param {string} layerName
+			 */
+			toggleLegacyUVLayer: function(layerName) {
+				core.events.emit('toggle-legacy-uv-layer', layerName);
+			},
+
+			/**
 			 * Mark all geosets to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 * @param {object} geosets
 			 */
 			setAllGeosets: function(state, geosets) {

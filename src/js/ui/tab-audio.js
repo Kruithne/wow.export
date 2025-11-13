@@ -12,10 +12,9 @@ const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const WDCReader = require('../db/WDCReader');
+const audioHelper = require('./audio-helper');
 
-const AUDIO_TYPE_UNKNOWN = Symbol('AudioTypeUnk');
-const AUDIO_TYPE_OGG = Symbol('AudioTypeOgg');
-const AUDIO_TYPE_MP3 = Symbol('AudioTypeMP3');
+const { PLAYBACK_STATE, PlaybackState, AudioSourceManager, AUDIO_TYPE_UNKNOWN, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
 
 let selectedFile = null;
 let isTrackLoaded = false;
@@ -28,143 +27,7 @@ let gainNode = null;
 let animationFrameId = null;
 let data;
 
-const PLAYBACK_STATE = {
-	UNLOADED: 'UNLOADED',
-	LOADING: 'LOADING',
-	LOADED: 'LOADED',
-	PLAYING: 'PLAYING',
-	PAUSED: 'PAUSED',
-	SEEKING: 'SEEKING'
-};
-
-class PlaybackState {
-	constructor() {
-		this.state = PLAYBACK_STATE.UNLOADED;
-		this.playback_started_at = 0;
-		this.position_at_pause = 0;
-		this.pending_seek = null;
-	}
-
-	get_current_position() {
-		if (!audioBuffer)
-			return 0;
-
-		if (this.state === PLAYBACK_STATE.PLAYING) {
-			const elapsed = audioContext.currentTime - this.playback_started_at;
-			const position = this.position_at_pause + elapsed;
-
-			if (core.view.config.soundPlayerLoop)
-				return position % audioBuffer.duration;
-
-			return Math.min(position, audioBuffer.duration);
-		}
-
-		return this.position_at_pause;
-	}
-
-	start_playback(from_position) {
-		this.playback_started_at = audioContext.currentTime;
-		this.position_at_pause = from_position;
-		this.state = PLAYBACK_STATE.PLAYING;
-	}
-
-	pause_playback() {
-		if (this.state === PLAYBACK_STATE.PLAYING) {
-			this.position_at_pause = this.get_current_position();
-			this.state = PLAYBACK_STATE.PAUSED;
-		}
-	}
-
-	seek_to(position) {
-		if (!audioBuffer)
-			return;
-
-		this.position_at_pause = Math.max(0, Math.min(position, audioBuffer.duration));
-
-		if (this.state === PLAYBACK_STATE.PLAYING) {
-			this.pending_seek = this.position_at_pause;
-			this.state = PLAYBACK_STATE.SEEKING;
-		}
-	}
-
-	reset() {
-		this.state = PLAYBACK_STATE.UNLOADED;
-		this.playback_started_at = 0;
-		this.position_at_pause = 0;
-		this.pending_seek = null;
-	}
-
-	mark_loaded() {
-		this.state = PLAYBACK_STATE.LOADED;
-		this.position_at_pause = 0;
-	}
-}
-
 const playback_state = new PlaybackState();
-
-class AudioSourceManager {
-	constructor() {
-		this.source = null;
-		this.is_loop_enabled = false;
-	}
-
-	create_source() {
-		if (!audioBuffer || !audioContext)
-			return null;
-
-		this.destroy_source();
-
-		this.source = audioContext.createBufferSource();
-		this.source.buffer = audioBuffer;
-		this.source.connect(gainNode);
-		this.source.loop = this.is_loop_enabled;
-
-		this.source.onended = () => {
-			if (!this.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
-				playback_state.state = PLAYBACK_STATE.LOADED;
-				playback_state.position_at_pause = 0;
-				stop_animation_loop();
-				core.view.soundPlayerState = false;
-				core.view.soundPlayerSeek = 0;
-			}
-		};
-
-		return this.source;
-	}
-
-	start_source(offset = 0) {
-		if (this.source) {
-			const clamped_offset = Math.max(0, Math.min(offset, audioBuffer.duration));
-			this.source.start(0, clamped_offset);
-		}
-	}
-
-	destroy_source() {
-		if (this.source) {
-			try {
-				this.source.onended = null;
-				this.source.stop();
-				this.source.disconnect();
-			} catch (e) {
-				log.write('[AudioSourceManager] destroy_source: error stopping source: %s', e.message);
-			}
-
-			this.source = null;
-		}
-	}
-
-	set_loop(enabled) {
-		this.is_loop_enabled = enabled;
-
-		if (this.source)
-			this.source.loop = enabled;
-	}
-
-	is_active() {
-		return this.source !== null;
-	}
-}
-
 const source_manager = new AudioSourceManager();
 
 /**
@@ -176,7 +39,7 @@ const updateSeek = () => {
 		return;
 	}
 
-	const current_position = playback_state.get_current_position();
+	const current_position = playback_state.get_current_position(audioBuffer, audioContext, core.view.config.soundPlayerLoop);
 	core.view.soundPlayerSeek = current_position / audioBuffer.duration;
 
 	animationFrameId = requestAnimationFrame(updateSeek);
@@ -195,24 +58,6 @@ const stop_animation_loop = () => {
 };
 
 /**
- * Detect the file type of a given audio container.
- * @param {BufferWrapper} data 
- * @returns 
- */
-const detectFileType = (data) => {
-	if (data.startsWith('OggS')) {
-		// File magic matches Ogg container format.
-		//selectedFile = ExportHelper.replaceExtension(selectedFile, '.ogg');
-		return AUDIO_TYPE_OGG;
-	} else if (data.startsWith(['ID3', '\xFF\xFB', '\xFF\xF3', '\xFF\xF2'])) {
-		// File magic matches MP3 ID3v2/v1 container format.
-		return AUDIO_TYPE_MP3;
-	}
-
-	return AUDIO_TYPE_UNKNOWN;
-};
-
-/**
  * Start playback from current position.
  */
 const start_playback = () => {
@@ -225,10 +70,18 @@ const start_playback = () => {
 	const start_position = playback_state.position_at_pause;
 
 	source_manager.set_loop(core.view.config.soundPlayerLoop);
-	source_manager.create_source();
-	source_manager.start_source(start_position);
+	source_manager.create_source(audioBuffer, audioContext, gainNode, () => {
+		if (!source_manager.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
+			playback_state.state = PLAYBACK_STATE.LOADED;
+			playback_state.position_at_pause = 0;
+			stop_animation_loop();
+			core.view.soundPlayerState = false;
+			core.view.soundPlayerSeek = 0;
+		}
+	});
+	source_manager.start_source(start_position, audioBuffer);
 
-	playback_state.start_playback(start_position);
+	playback_state.start_playback(start_position, audioContext);
 	core.view.soundPlayerState = true;
 	start_animation_loop();
 };
@@ -264,6 +117,8 @@ const pauseSelectedTrack = () => {
 	if (playback_state.state !== PLAYBACK_STATE.PLAYING)
 		return;
 
+	const current_position = playback_state.get_current_position(audioBuffer, audioContext, core.view.config.soundPlayerLoop);
+	playback_state.position_at_pause = current_position;
 	playback_state.pause_playback();
 	source_manager.destroy_source();
 	stop_animation_loop();
@@ -281,16 +136,24 @@ const seek_to_position = (position_seconds) => {
 
 	if (was_playing) {
 		source_manager.destroy_source();
-		playback_state.seek_to(position_seconds);
+		playback_state.seek_to(position_seconds, audioBuffer);
 
 		const start_position = playback_state.pending_seek || playback_state.position_at_pause;
 		playback_state.pending_seek = null;
 
-		source_manager.create_source();
-		source_manager.start_source(start_position);
-		playback_state.start_playback(start_position);
+		source_manager.create_source(audioBuffer, audioContext, gainNode, () => {
+			if (!source_manager.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
+				playback_state.state = PLAYBACK_STATE.LOADED;
+				playback_state.position_at_pause = 0;
+				stop_animation_loop();
+				core.view.soundPlayerState = false;
+				core.view.soundPlayerSeek = 0;
+			}
+		});
+		source_manager.start_source(start_position, audioBuffer);
+		playback_state.start_playback(start_position, audioContext);
 	} else {
-		playback_state.seek_to(position_seconds);
+		playback_state.seek_to(position_seconds, audioBuffer);
 		core.view.soundPlayerSeek = playback_state.position_at_pause / audioBuffer.duration;
 	}
 };

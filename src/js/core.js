@@ -119,6 +119,25 @@ const makeNewView = () => {
 		modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
 		modelTexturePreviewUVOverlay: '', // UV overlay data URL for texture preview.
 		modelViewerUVLayers: [], // Available UV layers for the active model.
+		legacyModelViewerContext: null, // 3D context for the legacy model viewer.
+		legacyModelViewerActiveType: 'none', // Type of legacy model actively selected ('m2', 'wmo', 'none').
+		legacyModelViewerGeosets: [], // Active legacy M2 model geoset control.
+		legacyModelViewerSkins: [], // Active legacy M2 model skins.
+		legacyModelViewerSkinsSelection: [], // Selected legacy M2 model skins.
+		legacyModelViewerAnims: [], // Available legacy animations.
+		legacyModelViewerAnimSelection: null, // Selected legacy M2 model animation (single).
+		legacyModelViewerWMOGroups: [], // Active legacy WMO model group control.
+		legacyModelViewerWMOSets: [], // Active legacy WMO doodad set control.
+		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy models.
+		legacyModelTexturePreviewWidth: 256, // Active width of the texture preview on the legacy model viewer.
+		legacyModelTexturePreviewHeight: 256, // Active height of the texture preview on the legacy model viewer.
+		legacyModelTexturePreviewURL: '', // Active URL of the texture preview image on the legacy model viewer.
+		legacyModelTexturePreviewName: '', // Name of the texture preview image on the legacy model viewer.
+		legacyModelTexturePreviewUVOverlay: '', // UV overlay data URL for legacy texture preview.
+		legacyModelViewerUVLayers: [], // Available UV layers for the active legacy model.
+		userInputFilterLegacyModels: '', // Value of the 'filter' field for legacy models.
+		selectionLegacyModels: [], // Current user selection of legacy models.
+		listfileLegacyModels: [], // Filtered listfile for legacy M2/WMO models.
 		texturePreviewWidth: 256, // Active width of the texture preview.
 		texturePreviewHeight: 256, // Active height of the texture preview.
 		texturePreviewURL: '', // Active URL of the texture preview image.

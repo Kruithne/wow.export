@@ -496,11 +496,15 @@ body {
 	background-repeat: no-repeat;
 }
 
-#nav-models::before {
+.nav-models::before {
 	background-image: url(./fa-icons/cube.svg);
 }
 
-#nav-items::before {
+.nav-characters::before {
+	background-image: url(./fa-icons/person-solid.svg);
+}
+
+.nav-items::before {
 	background-image: url(./fa-icons/cubes.svg);
 }
 
@@ -508,35 +512,31 @@ body {
 	background-image: url(./fa-icons/image.svg);
 }
 
-#nav-sounds::before {
+.nav-sounds::before {
 	background-image: url(./fa-icons/music.svg);
 }
 
-#nav-maps::before {
-	background-image: url(./fa-icons/map.svg);
-}
-
-#nav-zones::before {
-	background-image: url(./fa-icons/mountain-castle.svg);
-}
-
-#nav-videos::before {
+.nav-videos::before {
 	background-image: url(./fa-icons/film.svg);
 }
 
-#nav-text::before {
+.nav-maps::before {
+	background-image: url(./fa-icons/map.svg);
+}
+
+.nav-zones::before {
+	background-image: url(./fa-icons/mountain-castle.svg);
+}
+
+.nav-text::before {
 	background-image: url(./fa-icons/file-lines.svg);
 }
 
-#nav-data::before {
+.nav-data::before {
 	background-image: url(./fa-icons/database.svg);
 }
 
-#nav-characters::before {
-	background-image: url(./fa-icons/person-solid.svg);
-}
-
-#nav-legacy-files::before {
+.nav-files::before {
 	background-image: url(./fa-icons/file-lines.svg);
 }
 
