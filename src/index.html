@@ -9,19 +9,23 @@
 		<div id="logo-background"></div>
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
-				<div id="logo" @click="setScreen('tab-home')" :class="{ active: screen === 'tab-home' }" style="cursor: pointer;">wow.export</div>
+				<div id="logo" @click="setScreen(screen && screen.startsWith('legacy-') ? 'legacy-tab-home' : 'tab-home')" :class="{ active: screen === 'tab-home' || screen === 'legacy-tab-home' }" style="cursor: pointer;">wow.export</div>
 				<div id="nav">
 					<template v-if="!!screen && screen.startsWith('tab-')">
 						<div class="option" id="nav-models" @click="setScreen('tab-models')" :class="{ active: screen === 'tab-models' }">Models</div>
 						<div class="option" id="nav-characters" @click="setScreen('tab-characters')" :class="{ active: screen === 'tab-characters' }">Characters</div>
 						<div class="option" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
-						<div class="option" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
+						<div class="option nav-textures" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<div class="option" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
 						<div class="option" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
 						<div class="option" id="nav-zones" @click="setScreen('tab-zones')" :class="{ active: screen === 'tab-zones' }">Zones</div>
 						<div class="option" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
+					</template>
+					<template v-if="!!screen && screen.startsWith('legacy-')">
+						<div class="option nav-textures" id="nav-legacy-textures" @click="setScreen('legacy-tab-textures')" :class="{ active: screen === 'legacy-tab-textures' }">Textures</div>
+						<div class="option" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
 					</template>
 					<div id="nav-help" v-if="!isBusy" @click="setScreen('help', true)"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
@@ -496,6 +500,28 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="tab" id="legacy-tab-home" v-if="screen === 'legacy-tab-home'">
+					<div id="home-buttons" class="home-button-tray">
+						<div @click="setScreen('legacy-tab-textures')">
+							<b>Textures</b>
+							<span>View and export textures to common formats.</span>
+						</div>
+						<div @click="setScreen('legacy-tab-files')">
+							<b>Files</b>
+							<span>Browse and export all raw files from MPQ archives.</span>
+						</div>
+					</div>
+					<div id="home-changes">
+						<div>
+							<h1>Legacy MPQ Installation</h1>
+							<div id="home-changelog">
+								<p>Exploring legacy MPQ-based installation.</p>
+								<p>Limited features available for legacy formats.</p>
+							</div>
+						</div>
+					</div>
+				</div>
 				
 				<div id="toast" v-if="!toast && screen === 'tab-textures' && overrideTextureList.length > 0" class="progress">
 					Filtering textures for item: {{ overrideTextureName }}
@@ -544,6 +570,53 @@
 						<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
 					</div>
 				</div>
+
+				<div class="tab list-tab" id="legacy-tab-textures" v-if="screen === 'legacy-tab-textures'">
+					<div class="list-container">
+						<listbox v-model:selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
+					</div>
+					<div class="filter">
+						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+						<input type="text" v-model="userInputFilterTextures" placeholder="Filter textures..."/>
+					</div>
+					<div class="preview-container">
+						<div class="preview-info" v-if="config.showTextureInfo && texturePreviewInfo.length > 0">{{ texturePreviewInfo }}</div>
+						<ul class="preview-channels" v-if="texturePreviewURL.length > 0">
+							<li id="channel-red" :class="{ selected: (config.exportChannelMask & 0b1) }" @click.self="config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
+							<li id="channel-green" :class="{ selected: (config.exportChannelMask & 0b10) }" @click.self="config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
+							<li id="channel-blue" :class="{ selected: (config.exportChannelMask & 0b100) }" @click.self="config.exportChannelMask ^= 0b100" title="Toggle blue colour channel.">B</li>
+							<li id="channel-alpha" :class="{ selected: (config.exportChannelMask & 0b1000) }" @click.self="config.exportChannelMask ^= 0b1000" title="Toggle alpha channel.">A</li>
+						</ul>
+						<div class="preview-background" id="texture-preview" :style="{ 'max-width': texturePreviewWidth + 'px', 'max-height': texturePreviewHeight + 'px' }">
+							<div class="image" :style="{ 'background-image': 'url(' + texturePreviewURL + ')' }"></div>
+						</div>
+					</div>
+					<div class="preview-controls">
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="config.showTextureInfo"/>
+							<span>Show Info</span>
+						</label>
+						<label class="ui-checkbox">
+							<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
+							<span>Transparency</span>
+						</label>
+						<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-legacy-texture', $event)"></menu-button>
+					</div>
+				</div>
+
+				<div class="tab list-tab" id="legacy-tab-files" v-if="screen === 'legacy-tab-files'">
+					<div class="list-container">
+						<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></listbox>
+					</div>
+					<div id="tab-legacy-files-tray">
+						<div class="filter">
+							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+							<input type="text" v-model="userInputFilterRaw" placeholder="Filter files..."/>
+						</div>
+						<input type="button" value="Export Selected" @click="click('export-legacy-file', $event)" :class="{ disabled: isBusy || selectionRaw.length === 0 }"/>
+					</div>
+				</div>
+
 				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
 					<div class="map-placeholder">
 						<div class="expansion-buttons">
@@ -1146,6 +1219,16 @@
 									<span v-if="region.delay !== null" style="opacity: 0.7; font-size: 12px;">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
 								</span>
 							</context-menu>
+						</div>
+					</div>
+					<div id="source-legacy" @click="click('source-legacy', $event)">
+						<div class="source-icon"></div>
+						<div class="source-content">
+							<div class="source-title">Open Legacy Installation</div>
+							<div class="source-subtitle">Explore a legacy MPQ-based installation on your machine</div>
+							<div v-if="config.recentLegacy && config.recentLegacy.length > 0" class="source-last-opened">
+								Last Opened: <span class="link" @click.stop="click('source-legacy-recent', $event, config.recentLegacy[0])">{{ config.recentLegacy[0].path }}</span>
+							</div>
 						</div>
 					</div>
 				</div>

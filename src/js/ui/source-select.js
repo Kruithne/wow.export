@@ -13,6 +13,7 @@ const ExternalLinks = require('../external-links');
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
 const cdnResolver = require('../casc/cdn-resolver');
+const { MPQInstall } = require('../mpq/mpq-install');
 
 let cascSource = null;
 
@@ -100,6 +101,11 @@ core.events.once('screen-source-select', async () => {
 	if (!Array.isArray(recentLocal))
 		recentLocal = core.view.config.recentLocal = [];
 
+	// Grab recent legacy installations from config.
+	let recentLegacy = core.view.config.recentLegacy;
+	if (!Array.isArray(recentLegacy))
+		recentLegacy = core.view.config.recentLegacy = [];
+
 	const openInstall = async (installPath, product) => {
 		core.hideToast();
 
@@ -169,6 +175,62 @@ core.events.once('screen-source-select', async () => {
 		core.view.availableRemoteBuilds = null;
 		core.view.setScreen('source-select');
 	});
+
+	// Set-up hooks for legacy installation dialog.
+	const legacySelector = document.createElement('input');
+	legacySelector.setAttribute('type', 'file');
+	legacySelector.setAttribute('nwdirectory', true);
+	legacySelector.setAttribute('nwdirectorydesc', 'Select Legacy MPQ Installation');
+
+	const openLegacyInstall = async (installPath) => {
+		core.hideToast();
+
+		try {
+			core.view.mpq = new MPQInstall(installPath);
+
+			core.view.showLoadScreen('Loading Legacy Installation');
+			core.view.isBusy++;
+
+			const progress = core.createProgress(3);
+			await core.view.mpq.loadInstall(progress);
+
+			await progress.step('Initializing Components');
+			await core.runLoadFuncs();
+
+			const preIndex = core.view.config.recentLegacy.findIndex(e => e.path === installPath);
+			if (preIndex > -1) {
+				if (preIndex > 0)
+					core.view.config.recentLegacy.unshift(core.view.config.recentLegacy.splice(preIndex, 1)[0]);
+			} else {
+				core.view.config.recentLegacy.unshift({ path: installPath });
+			}
+
+			if (core.view.config.recentLegacy.length > constants.MAX_RECENT_LOCAL)
+				core.view.config.recentLegacy.splice(constants.MAX_RECENT_LOCAL, core.view.config.recentLegacy.length - constants.MAX_RECENT_LOCAL);
+
+			core.view.isBusy--;
+			core.view.setScreen('legacy-tab-home');
+		} catch (e) {
+			core.view.isBusy--;
+			core.setToast('error', util.format('Failed to load legacy installation from %s', installPath), null, -1);
+			log.write('Failed to initialize legacy MPQ source: %s', e.message);
+
+			for (let i = core.view.config.recentLegacy.length - 1; i >= 0; i--) {
+				if (core.view.config.recentLegacy[i].path === installPath)
+					core.view.config.recentLegacy.splice(i, 1);
+			}
+
+			core.view.setScreen('source-select');
+		}
+	};
+
+	core.events.on('click-source-legacy', () => {
+		legacySelector.value = '';
+		legacySelector.click();
+	});
+
+	legacySelector.onchange = () => openLegacyInstall(legacySelector.value);
+	core.events.on('click-source-legacy-recent', entry => openLegacyInstall(entry.path));
 
 	// Once all pings are resolved, pick the fastest.
 	Promise.all(pings).then(() => {

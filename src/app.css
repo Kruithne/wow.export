@@ -504,7 +504,7 @@ body {
 	background-image: url(./fa-icons/cubes.svg);
 }
 
-#nav-textures::before {
+.nav-textures::before {
 	background-image: url(./fa-icons/image.svg);
 }
 
@@ -534,6 +534,10 @@ body {
 
 #nav-characters::before {
 	background-image: url(./fa-icons/person-solid.svg);
+}
+
+#nav-legacy-files::before {
+	background-image: url(./fa-icons/file-lines.svg);
 }
 
 #nav-help {
@@ -640,6 +644,9 @@ body {
 }
 #source-select #source-remote .source-icon {
 	background-image: url(./images/import_battlenet.svg);
+}
+#source-select #source-legacy .source-icon {
+	background-image: url(./images/mpq.svg);
 }
 #source-select > div .source-content {
 	display: flex;
@@ -1684,17 +1691,17 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-column: 2;
 }
 
-#tab-video, #tab-raw {
+#tab-video, #tab-raw, #legacy-tab-files {
 	grid-template-columns: unset;
 }
-#tab-video-tray, #tab-raw-tray {
+#tab-video-tray, #tab-raw-tray, #tab-legacy-files-tray {
 	display: flex;
 	margin: 10px;
 }
-#tab-video-tray .filter, #tab-raw-tray .filter {
+#tab-video-tray .filter, #tab-raw-tray .filter, #tab-legacy-files-tray .filter {
 	flex-grow: 1;
 }
-#tab-video-tray input[type=button], #tab-raw-tray input[type=button] {
+#tab-video-tray input[type=button], #tab-raw-tray input[type=button], #tab-legacy-files-tray input[type=button] {
 	margin-right: 5px;
 }
 
