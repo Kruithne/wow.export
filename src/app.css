@@ -894,7 +894,9 @@ input[type=button].disabled {
 	border: 1px solid var(--border);
 	box-shadow: black 0 0 3px 0;
 	background: #232323;
+	z-index: 3;
 }
+
 .context-menu.low {
 	transform: translateY(-100%);
 }
