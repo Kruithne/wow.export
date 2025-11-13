@@ -846,6 +846,12 @@ const getFilteredEntries = (search) => {
 			if (isRegExp ? fileName.match(search) : fileName.includes(search))
 				results.push({ fileDataID, fileName });
 		}
+
+		// include runtime additions from legacy lookups
+		for (const [fileDataID, fileName] of legacy_id_lookup.entries()) {
+			if (isRegExp ? fileName.match(search) : fileName.includes(search))
+				results.push({ fileDataID, fileName });
+		}
 	} else {
 		for (const [fileDataID, fileName] of legacy_id_lookup.entries()) {
 			if (isRegExp ? fileName.match(search) : fileName.includes(search))
