@@ -70,6 +70,7 @@
 	"modelsExportTextures": true,
 	"modelsExportAlpha": true,
 	"modelsExportAnimations": false,
+	"chrRenderShadow": true,
 	"modelsExportWithBonePrefix": true,
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,

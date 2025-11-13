@@ -21,6 +21,7 @@ const { wmv_parse } = require('../wmv');
 let camera;
 let scene;
 let grid;
+let shadow_plane;
 
 const activeSkins = new Map();
 const renderGroup = new THREE.Group();
@@ -1038,6 +1039,39 @@ core.events.once('screen-tab-characters', async () => {
 	scene.add(light);
 	scene.add(renderGroup);
 
+	const shadow_geometry = new THREE.PlaneGeometry(2, 2);
+	const shadow_material = new THREE.ShaderMaterial({
+		transparent: true,
+		depthWrite: false,
+		uniforms: {
+			shadow_radius: { value: 8.0 }
+		},
+		vertexShader: `
+			varying vec2 v_uv;
+			void main() {
+				v_uv = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+		`,
+		fragmentShader: `
+			uniform float shadow_radius;
+			varying vec2 v_uv;
+			void main() {
+				vec2 center = vec2(0.5, 0.5);
+				float dist = distance(v_uv, center) * 2.0;
+				float alpha = smoothstep(1.0, 0.0, dist / (shadow_radius / 10.0));
+				gl_FragColor = vec4(0.0, 0.0, 0.0, alpha * 0.6);
+			}
+		`
+	});
+
+	shadow_plane = new THREE.Mesh(shadow_geometry, shadow_material);
+	shadow_plane.rotation.x = -Math.PI / 2;
+	shadow_plane.position.set(0, 0, 0);
+
+	if (state.config.chrRenderShadow && !state.chrModelLoading)
+		scene.add(shadow_plane);
+
 	grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
 
 	if (state.config.modelViewerShowGrid)
@@ -1056,8 +1090,22 @@ core.events.once('screen-tab-characters', async () => {
 	state.setScreen('tab-characters');
 });
 
+function update_render_shadow() {
+	if (!shadow_plane || !scene)
+		return;
+
+	const should_show = core.view.config.chrRenderShadow && !core.view.chrModelLoading;
+
+	if (should_show && !shadow_plane.parent)
+		scene.add(shadow_plane);
+	else if (!should_show && shadow_plane.parent)
+		scene.remove(shadow_plane);
+}
+
 core.registerLoadFunc(async () => {
 	core.view.$watch('config.chrIncludeBaseClothing', () => uploadRenderOverrideTextures());
+	core.view.$watch('config.chrRenderShadow', () => update_render_shadow());
+	core.view.$watch('chrModelLoading', () => update_render_shadow());
 
 	core.events.on('click-export-character', () => exportCharModel());
 	core.events.on('click-import-character', () => importCharacter());
