@@ -14,6 +14,7 @@ const CDNConfig = require('./cdn-config');
 const BufferWrapper = require('../buffer');
 const BuildCache = require('./build-cache');
 const BLTEReader = require('./blte-reader').BLTEReader;
+const BLTEStreamReader = require('./blte-stream-reader');
 const listfile = require('./listfile');
 const core = require('../core');
 const generics = require('../generics');
@@ -52,7 +53,7 @@ class CASCLocal extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID 
+	 * @param {number} fileDataID
 	 * @param {boolean} [partialDecryption=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -62,10 +63,81 @@ class CASCLocal extends CASC {
 	async getFile(fileDataID, partialDecryption = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
 		if (!suppressLog)
 			log.write('Loading local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
-			
+
 		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
 		const data = supportFallback ? await this.getDataFileWithRemoteFallback(encodingKey, forceFallback) : await this.getDataFile(encodingKey);
 		return new BLTEReader(data, encodingKey, partialDecryption);
+	}
+
+	/**
+	 * Get a streaming reader for a file by its fileDataID.
+	 * @param {number} fileDataID
+	 * @param {boolean} [partialDecrypt=false]
+	 * @param {boolean} [suppressLog=false]
+	 * @param {boolean} [supportFallback=true]
+	 * @param {boolean} [forceFallback=false]
+	 * @param {string} [contentKey=null]
+	 * @returns {BLTEStreamReader}
+	 */
+	async getFileStream(fileDataID, partialDecrypt = false, suppressLog = false, supportFallback = true, forceFallback = false, contentKey = null) {
+		if (!suppressLog)
+			log.write('Creating stream for local CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+
+		// if fallback forced or not supported, use remote streaming
+		if (forceFallback || !supportFallback) {
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			return await this.remote.getFileStream(fileDataID, partialDecrypt, suppressLog, contentKey);
+		}
+
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
+		const entry = this.localIndexes.get(encodingKey.substring(0, 18));
+
+		if (!entry) {
+			// file doesn't exist locally, fallback to remote
+			if (!supportFallback)
+				throw new Error('file does not exist in local data: ' + encodingKey);
+
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			return await this.remote.getFileStream(fileDataID, partialDecrypt, suppressLog, contentKey);
+		}
+
+		// read blte header from local file
+		const headerData = await generics.readFile(
+			this.formatDataPath(entry.index),
+			entry.offset + 0x1e,
+			Math.min(4096, entry.size - 0x1e)
+		);
+
+		// check if valid blte
+		if (!BLTEReader.check(headerData)) {
+			if (!supportFallback)
+				throw new Error('local data file is not a valid BLTE');
+
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			return await this.remote.getFileStream(fileDataID, partialDecrypt, suppressLog, contentKey);
+		}
+
+		const metadata = BLTEReader.parseBLTEHeader(headerData, encodingKey, false);
+
+		// create block fetcher function for local files
+		const blockFetcher = async (blockIndex) => {
+			const block = metadata.blocks[blockIndex];
+			const blockOffset = metadata.dataStart + block.fileOffset;
+
+			return await generics.readFile(
+				this.formatDataPath(entry.index),
+				entry.offset + 0x1e + blockOffset,
+				block.CompSize
+			);
+		};
+
+		return new BLTEStreamReader(encodingKey, metadata, blockFetcher, partialDecrypt);
 	}
 
 	/**

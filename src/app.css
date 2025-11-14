@@ -1691,18 +1691,25 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-column: 2;
 }
 
-#tab-video, #tab-raw, #legacy-tab-files {
+#tab-raw, #legacy-tab-files {
 	grid-template-columns: unset;
 }
-#tab-video-tray, #tab-raw-tray, #tab-legacy-files-tray {
+#tab-raw-tray, #tab-legacy-files-tray {
 	display: flex;
 	margin: 10px;
 }
-#tab-video-tray .filter, #tab-raw-tray .filter, #tab-legacy-files-tray .filter {
+#tab-raw-tray .filter, #tab-legacy-files-tray .filter {
 	flex-grow: 1;
 }
-#tab-video-tray input[type=button], #tab-raw-tray input[type=button], #tab-legacy-files-tray input[type=button] {
+#tab-raw-tray input[type=button], #tab-legacy-files-tray input[type=button] {
 	margin-right: 5px;
+}
+#video-preview {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
 }
 
 .preview-controls, .spaced-preview-controls {

@@ -1289,11 +1289,18 @@
 					<div class="list-container">
 						<listbox v-model:selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video" persistscrollkey="videos"></listbox>
 					</div>
-					<div id="tab-video-tray">
-						<div class="filter">
-							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-							<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
+					<div class="filter">
+						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
+						<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
+					</div>
+					<div class="preview-container">
+						<div class="preview-background" id="video-preview">
+							<canvas id="video-preview-canvas" style="width: 100%; height: 100%; object-fit: contain; background: #000;"></canvas>
 						</div>
+					</div>
+					<div class="preview-controls">
+						<input type="button" value="Preview Selected" @click="click('preview-video', $event)" :class="{ disabled: isBusy }"/>
+						<input type="button" value="Stop Preview" @click="click('stop-video-preview', $event)" :class="{ disabled: isBusy }"/>
 						<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>

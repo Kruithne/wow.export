@@ -34,7 +34,7 @@ class BLTEIntegrityError extends Error {
 class BLTEReader extends BufferWrapper {
 	/**
 	 * Check if the given data is a BLTE file.
-	 * @param {BufferWrapper} data 
+	 * @param {BufferWrapper} data
 	 */
 	static check(data) {
 		if (data.byteLength < 4)
@@ -45,23 +45,22 @@ class BLTEReader extends BufferWrapper {
 
 		return magic === BLTE_MAGIC;
 	}
+
 	/**
-	 * Construct a new BLTEReader instance.
-	 * @param {BufferWrapper} buf 
-	 * @param {string} hash 
-	 * @param {boolean} partialDecrypt
+	 * Parse BLTE header and return metadata without allocating full buffer.
+	 * @param {BufferWrapper} buf
+	 * @param {string} hash
+	 * @param {boolean} verifyHash
+	 * @param {boolean} restoreOffset - if true, restore buffer offset after parsing
+	 * @returns {object} { blocks: [], headerSize: number, dataStart: number, totalSize: number }
 	 */
-	constructor(buf, hash, partialDecrypt = false) {
-		super(null);
-
-		this._blte = buf;
-		this.blockIndex = 0;
-		this.blockWriteIndex = 0;
-		this.partialDecrypt = partialDecrypt;
-
+	static parseBLTEHeader(buf, hash, verifyHash = true, restoreOffset = true) {
 		const size = buf.byteLength;
 		if (size < 8)
 			throw new Error('[BLTE] Not enough data (< 8)');
+
+		const originalOffset = buf.offset;
+		buf.seek(0);
 
 		const magic = buf.readUInt32LE();
 		if (magic !== BLTE_MAGIC)
@@ -70,14 +69,17 @@ class BLTEReader extends BufferWrapper {
 		const headerSize = buf.readInt32BE();
 		const origPos = buf.offset;
 
-		buf.seek(0);
+		if (verifyHash) {
+			buf.seek(0);
+			const hashCheck = headerSize > 0 ? buf.readBuffer(headerSize).calculateHash() : buf.calculateHash();
+			if (hashCheck !== hash)
+				throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
 
-		let hashCheck = headerSize > 0 ? buf.readBuffer(headerSize).calculateHash() : buf.calculateHash();
-		if (hashCheck !== hash)
-			throw new Error(util.format('[BLTE] Invalid MD5 hash, expected %s got %s', hash, hashCheck));
+			buf.seek(origPos);
+		}
 
-		buf.seek(origPos);
 		let numBlocks = 1;
+		let dataStart = 8;
 
 		if (headerSize > 0) {
 			if (size < 12)
@@ -95,10 +97,13 @@ class BLTEReader extends BufferWrapper {
 
 			if (size < frameHeaderSize)
 				throw new Error('[BLTE] Not enough data (frameHeader).');
+
+			dataStart = headerSize;
 		}
 
-		this.blocks = new Array(numBlocks);
-		let allocSize = 0;
+		const blocks = new Array(numBlocks);
+		let fileOffset = 0;
+		let totalDecompSize = 0;
 
 		for (let i = 0; i < numBlocks; i++) {
 			const block = {};
@@ -112,11 +117,36 @@ class BLTEReader extends BufferWrapper {
 				block.Hash = EMPTY_HASH;
 			}
 
-			allocSize += block.DecompSize;
-			this.blocks[i] = block;
+			block.fileOffset = fileOffset;
+			fileOffset += block.CompSize;
+			totalDecompSize += block.DecompSize;
+			blocks[i] = block;
 		}
 
-		this._buf = Buffer.alloc(allocSize);
+		if (restoreOffset)
+			buf.seek(originalOffset);
+
+		return { blocks, headerSize, dataStart, totalSize: totalDecompSize };
+	}
+
+	/**
+	 * Construct a new BLTEReader instance.
+	 * @param {BufferWrapper} buf
+	 * @param {string} hash
+	 * @param {boolean} partialDecrypt
+	 */
+	constructor(buf, hash, partialDecrypt = false) {
+		super(null);
+
+		this._blte = buf;
+		this.blockIndex = 0;
+		this.blockWriteIndex = 0;
+		this.partialDecrypt = partialDecrypt;
+
+		const metadata = BLTEReader.parseBLTEHeader(buf, hash, true, false);
+		this.blocks = metadata.blocks;
+
+		this._buf = Buffer.alloc(metadata.totalSize);
 	}
 
 	/**

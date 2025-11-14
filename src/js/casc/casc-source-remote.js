@@ -14,6 +14,7 @@ const CDNConfig = require('./cdn-config');
 const BuildCache = require('./build-cache');
 const listfile = require('./listfile');
 const BLTEReader = require('./blte-reader').BLTEReader;
+const BLTEStreamReader = require('./blte-stream-reader');
 const cdnResolver = require('./cdn-resolver');
 
 const EMPTY_HASH = '00000000000000000000000000000000';
@@ -119,7 +120,7 @@ class CASCRemote extends CASC {
 
 	/**
 	 * Obtain a file by it's fileDataID.
-	 * @param {number} fileDataID 
+	 * @param {number} fileDataID
 	 * @param {boolean} [partialDecryption=false]
 	 * @param {boolean} [suppressLog=false]
 	 * @param {boolean} [supportFallback=true]
@@ -138,7 +139,7 @@ class CASCRemote extends CASC {
 			const archive = this.archives.get(encodingKey);
 			if (archive !== undefined) {
 				data = await this.getDataFilePartial(this.formatCDNKey(archive.key), archive.offset, archive.size);
-				
+
 				if (!suppressLog)
 					log.write('Downloading CASC file %d from archive %s', fileDataID, archive.key);
 			} else {
@@ -157,6 +158,73 @@ class CASCRemote extends CASC {
 		}
 
 		return new BLTEReader(data, encodingKey, partialDecrypt);
+	}
+
+	/**
+	 * Get a streaming reader for a file by its fileDataID.
+	 * @param {number} fileDataID
+	 * @param {boolean} [partialDecrypt=false]
+	 * @param {boolean} [suppressLog=false]
+	 * @param {string} [contentKey=null]
+	 * @returns {BLTEStreamReader}
+	 */
+	async getFileStream(fileDataID, partialDecrypt = false, suppressLog = false, contentKey = null) {
+		if (!suppressLog)
+			log.write('Creating stream for remote CASC file %d (%s)', fileDataID, listfile.getByID(fileDataID));
+
+		const encodingKey = contentKey !== null ? super.getEncodingKeyForContentKey(contentKey) : await super.getFile(fileDataID);
+		const archive = this.archives.get(encodingKey);
+
+		// download blte header to parse metadata
+		let headerData;
+		let baseOffset = 0;
+
+		if (archive !== undefined) {
+			// archived file - download first 4kb to get header
+			headerData = await this.getDataFilePartial(
+				this.formatCDNKey(archive.key),
+				archive.offset,
+				Math.min(4096, archive.size)
+			);
+			baseOffset = archive.offset;
+
+			if (!suppressLog)
+				log.write('Streaming remote CASC file %d from archive %s', fileDataID, archive.key);
+		} else {
+			// unarchived file
+			headerData = await this.getDataFilePartial(
+				this.formatCDNKey(encodingKey),
+				0,
+				4096
+			);
+
+			if (!suppressLog)
+				log.write('Streaming unarchived remote CASC file %d', fileDataID);
+		}
+
+		const metadata = BLTEReader.parseBLTEHeader(headerData, encodingKey, false);
+
+		// create block fetcher function
+		const blockFetcher = async (blockIndex) => {
+			const block = metadata.blocks[blockIndex];
+			const blockOffset = metadata.dataStart + block.fileOffset;
+
+			if (archive !== undefined) {
+				return await this.getDataFilePartial(
+					this.formatCDNKey(archive.key),
+					baseOffset + blockOffset,
+					block.CompSize
+				);
+			} else {
+				return await this.getDataFilePartial(
+					this.formatCDNKey(encodingKey),
+					blockOffset,
+					block.CompSize
+				);
+			}
+		};
+
+		return new BLTEStreamReader(encodingKey, metadata, blockFetcher, partialDecrypt);
 	}
 
 	/**
