@@ -1,5 +1,6 @@
 ## 0.2.5 (XX-10-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
+- Implemented support for legacy MPQ-based installations (0.X - 3.X).
 - Source/build selection screen has been redesigned with a new interface.
 - Character customization has been redesigned with a new interface and controls.
 - Added new binary listfile format (enabled by default), reducing memory usage by 400MB.
@@ -18,6 +19,7 @@
 - Added the ability to import 1.0/2.0 .chr files from WoW Model Viewer.
 - Added the ability to import Wowhead Dressing Room characters from URL.
 - Added "Export PNG (3D Preview)" and "Copy to Clipboard (3D Preview)" options to character viewer.
+- Added ability to preview cinematics directly in the Videos tab without exporting.
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
