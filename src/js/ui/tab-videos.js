@@ -10,7 +10,6 @@ const ExportHelper = require('../casc/export-helper');
 const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
 const generics = require('../generics');
 const listfile = require('../casc/listfile');
-const { BlobPolyfill, URLPolyfill } = require('../blob');
 const VP9AVIDemuxer = require('../casc/vp9-avi-demuxer');
 
 let currentMediaSource = null;
