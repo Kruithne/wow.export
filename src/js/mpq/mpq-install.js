@@ -20,11 +20,28 @@ class MPQInstall {
 			archive.close();
 	}
 
+	async _scan_mpq_files(dir) {
+		const entries = await fsp.readdir(dir, { withFileTypes: true });
+		const results = [];
+
+		for (const entry of entries) {
+			const full_path = path.join(dir, entry.name);
+
+			if (entry.isDirectory()) {
+				const sub_results = await this._scan_mpq_files(full_path);
+				results.push(...sub_results);
+			} else if (entry.name.toLowerCase().endsWith('.mpq')) {
+				results.push(full_path);
+			}
+		}
+
+		return results.sort();
+	}
+
 	async loadInstall(progress) {
 		await progress.step('Scanning for MPQ Archives');
 
-		const files = await fsp.readdir(this.directory);
-		const mpq_files = files.filter(f => f.toLowerCase().endsWith('.mpq')).sort();
+		const mpq_files = await this._scan_mpq_files(this.directory);
 
 		if (mpq_files.length === 0)
 			throw new Error('No MPQ archives found in directory');
@@ -33,23 +50,23 @@ class MPQInstall {
 
 		await progress.step('Loading MPQ Archives');
 
-		for (const mpq_file of mpq_files) {
-			const mpq_path = path.join(this.directory, mpq_file);
+		for (const mpq_path of mpq_files) {
 			const archive = new MPQArchive(mpq_path);
 			const info = archive.getInfo();
+			const mpq_name = path.relative(this.directory, mpq_path);
 
 			this.archives.push({
-				name: mpq_file,
+				name: mpq_name,
 				archive,
 			});
 
 			log.write('Loaded %s: format v%d, %d files, %d hash entries, %d block entries',
-				mpq_file, info.formatVersion, info.fileCount, info.hashTableEntries, info.blockTableEntries);
+				mpq_name, info.formatVersion, info.fileCount, info.hashTableEntries, info.blockTableEntries);
 
 			for (const filename of archive.files) {
 				this.listfile.set(filename.toLowerCase(), {
 					archive_index: this.archives.length - 1,
-					mpq_name: mpq_file
+					mpq_name: mpq_name
 				});
 			}
 		}
