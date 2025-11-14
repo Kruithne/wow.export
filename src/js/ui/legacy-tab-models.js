@@ -394,7 +394,7 @@ core.events.once('screen-legacy-tab-models', async () => {
 	try {
 		await progress.step('loading models...');
 		const m2_files = core.view.mpq.getFilesByExtension('.m2');
-		const wmo_files = core.view.mpq.getFilesByExtension('.wmo');
+		const wmo_files = core.view.mpq.getFilesByExtension('.wmo').filter(file => !/_[0-9]{3}\.wmo$/i.test(file));
 		core.view.listfileLegacyModels = [...m2_files, ...wmo_files];
 
 		await progress.step('initializing 3D preview...');
