@@ -174,7 +174,7 @@ function requestData(url, partialOfs, partialLen) {
 				downloaded += chunk.length;
 
 				if (totalSize > 1048576 && downloaded % 1048576 < chunk.length)
-					log.write('Download progress: %d/%d bytes (%.1f%%)', downloaded, totalSize, (downloaded / totalSize) * 100);
+					log.write('Download progress: %d/%d bytes (%d%%)', downloaded, totalSize, Math.round((downloaded / totalSize) * 100));
 			});
 
 			res.on('end', () => {
