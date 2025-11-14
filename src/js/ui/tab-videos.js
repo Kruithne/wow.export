@@ -13,7 +13,6 @@ const listfile = require('../casc/listfile');
 const VP9AVIDemuxer = require('../casc/vp9-avi-demuxer');
 
 let currentMediaSource = null;
-let currentSourceBuffer = null;
 let currentVideoDecoder = null;
 
 core.registerLoadFunc(async () => {
@@ -59,7 +58,6 @@ core.registerLoadFunc(async () => {
 					log.write('error ending previous stream: %s', e.message);
 				}
 				currentMediaSource = null;
-				currentSourceBuffer = null;
 			}
 
 			// get streaming reader
@@ -210,7 +208,6 @@ core.registerLoadFunc(async () => {
 				log.write('error ending stream: %s', e.message);
 			}
 			currentMediaSource = null;
-			currentSourceBuffer = null;
 		}
 
 		// clear canvas
