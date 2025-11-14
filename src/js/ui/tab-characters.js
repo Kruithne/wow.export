@@ -109,6 +109,68 @@ async function uploadRenderOverrideTextures() {
 async function updateActiveCustomization() {
 	await resetMaterials();
 
+	// track which texture type has the baked npc texture applied
+	let bakedNPCTextureType = null;
+
+	// check for baked npc texture override
+	if (core.view.chrCustBakedNPCTexture) {
+		const blp = core.view.chrCustBakedNPCTexture;
+
+		console.log('applying baked npc texture, currentCharComponentTextureLayoutID:', currentCharComponentTextureLayoutID);
+
+		// find what texture types are available for this layout
+		const availableTypes = [];
+		for (const [key, value] of chrModelMaterialMap.entries()) {
+			if (key.startsWith(currentCharComponentTextureLayoutID + '-')) {
+				availableTypes.push({ key, type: value.TextureType, material: value });
+			}
+		}
+		console.log('available texture types for layout:', availableTypes);
+
+		// sort by texture type to ensure we get the base skin (typically the lowest type number)
+		availableTypes.sort((a, b) => a.type - b.type);
+
+		// use the first available texture type (should be the base skin)
+		const chrModelMaterial = availableTypes.length > 0 ? availableTypes[0].material : null;
+		const textureType = availableTypes.length > 0 ? availableTypes[0].type : 0;
+
+		console.log('using texture type:', textureType, 'from available:', availableTypes.map(t => t.type));
+		console.log('chrModelMaterial:', chrModelMaterial);
+
+		if (chrModelMaterial) {
+			let chrMaterial;
+
+			if (!chrMaterials.has(textureType)) {
+				chrMaterial = new CharMaterialRenderer(textureType, chrModelMaterial.Width, chrModelMaterial.Height);
+				chrMaterials.set(textureType, chrMaterial);
+				await chrMaterial.init();
+				console.log('created new chrmaterial for type', textureType);
+			} else {
+				chrMaterial = chrMaterials.get(textureType);
+				console.log('reusing existing chrmaterial for type', textureType);
+			}
+
+			console.log('calling settexturetarget with blp:', blp);
+
+			// draw full-sized baked texture (0,0 to width,height)
+			await chrMaterial.setTextureTarget(
+				{ FileDataID: 0, ChrModelTextureTargetID: 0 },
+				{ X: 0, Y: 0, Width: chrModelMaterial.Width, Height: chrModelMaterial.Height },
+				chrModelMaterial,
+				{ BlendMode: 0, TextureType: textureType, ChrModelTextureTargetID: [0, 0] },
+				true,
+				blp
+			);
+
+			console.log('settexturetarget complete, textureTargets count:', chrMaterial.textureTargets.length);
+
+			// mark this texture type as having the baked npc texture
+			bakedNPCTextureType = textureType;
+		} else {
+			console.log('ERROR: chrModelMaterial not found for layout', currentCharComponentTextureLayoutID);
+		}
+	}
+
 	const newSkinnedModels = new Map();
 
 	const selection = core.view.chrCustActiveChoices;
@@ -162,8 +224,14 @@ async function updateActiveCustomization() {
 				if (chrModelMaterial === undefined)
 					console.log("Unable to find ChrModelMaterial for TextureType " + chrModelTextureLayer.TextureType + " and CharComponentTextureLayoutID " + currentCharComponentTextureLayoutID)
 
+				// skip if this texture type has a baked npc texture applied
+				if (bakedNPCTextureType !== null && chrModelMaterial.TextureType === bakedNPCTextureType) {
+					console.log('skipping customization texture for type', chrModelMaterial.TextureType, 'because baked npc texture is applied');
+					continue;
+				}
+
 				let chrMaterial;
-				
+
 				if (!chrMaterials.has(chrModelMaterial.TextureType)) {
 					chrMaterial = new CharMaterialRenderer(chrModelMaterial.TextureType, chrModelMaterial.Width, chrModelMaterial.Height);
 					chrMaterials.set(chrModelMaterial.TextureType, chrMaterial);
@@ -1203,6 +1271,11 @@ core.registerLoadFunc(async () => {
 	core.events.on('click-import-character', () => importCharacter());
 	core.events.on('click-import-wmv', () => importWMVCharacter());
 	core.events.on('click-import-wowhead', () => importWowheadCharacter());
+
+	core.events.on('click-remove-baked-npc-texture', async () => {
+		core.view.chrCustBakedNPCTexture = null;
+		await updateActiveCustomization();
+	});
 
 	// user has changed the race selection
 	core.view.$watch('chrCustRaceSelection', () => updateChrModelList());

@@ -117,16 +117,24 @@ class CharMaterialRenderer {
 	/**
 	 * Loads a specific texture to a target.
 	 */
-	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer, useAlpha = true) {
+	async setTextureTarget(chrCustomizationMaterial, charComponentTextureSection, chrModelMaterial, chrModelTextureLayer, useAlpha = true, blpOverride = null) {
 
 		// CharComponentTextureSection: SectionType, X, Y, Width, Height, OverlapSectionMask
 		// ChrModelTextureLayer: TextureType, Layer, Flags, BlendMode, TextureSectionTypeBitMask, TextureSectionTypeBitMask2, ChrModelTextureTargetID[2]
 		// ChrModelMaterial: TextureType, Width, Height, Flags, Unk
-		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here) 
+		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here)
 
 		// For debug purposes
 		let filename = listfile.getByID(chrCustomizationMaterial.FileDataID);
 		console.log("Loading texture " + filename + " for target " + chrCustomizationMaterial.ChrModelTextureTargetID + " with alpha " + useAlpha);
+
+		let textureID;
+		if (blpOverride) {
+			textureID = await this.loadTextureFromBLP(blpOverride, useAlpha);
+			filename = 'baked npc texture (override)';
+		} else {
+			textureID = await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha);
+		}
 
 		this.textureTargets.push({
 			id: chrCustomizationMaterial.ChrModelTextureTargetID,
@@ -134,7 +142,7 @@ class CharMaterialRenderer {
 			material: chrModelMaterial,
 			textureLayer: chrModelTextureLayer,
 			custMaterial: chrCustomizationMaterial,
-			textureID: await this.loadTexture(chrCustomizationMaterial.FileDataID, useAlpha),
+			textureID: textureID,
 			filename: filename
 		});
 
@@ -173,7 +181,7 @@ class CharMaterialRenderer {
 
 		// For unknown reasons, we have to store blpData as a variable. Inlining it into the
 		// parameter list causes issues, despite it being synchronous.
-		
+
 		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
 		this.gl.activeTexture(this.gl.TEXTURE0);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
@@ -181,6 +189,21 @@ class CharMaterialRenderer {
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+		return texture;
+	}
+
+	async loadTextureFromBLP(blp, useAlpha = true) {
+		console.log('loadtexturefromblp called with blp:', blp, 'width:', blp.width, 'height:', blp.height);
+		const texture = this.gl.createTexture();
+		const blpData = blp.toUInt8Array(0, useAlpha? 0b1111 : 0b0111);
+		console.log('blp data length:', blpData.length, 'expected:', blp.width * blp.height * 4);
+		this.gl.activeTexture(this.gl.TEXTURE0);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, blp.width, blp.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, blpData);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+		console.log('texture created successfully:', texture);
 		return texture;
 	}
 

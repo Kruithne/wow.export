@@ -568,6 +568,7 @@
 							<input type="checkbox" :checked="(config.exportChannelMask & 0b1000)" @change="$event.target.checked ? config.exportChannelMask |= 0b1000 : config.exportChannelMask &= 0b0111"/>
 							<span>Transparency</span>
 						</label>
+						<input v-if="isBakedNPCTexture()" type="button" value="Apply to Character" @click="click('apply-baked-npc-texture', $event)" :class="{ disabled: isBusy }" style="margin-right: 5px"/>
 						<input v-if="config.showTextureAtlas" type="button" value="Export Atlas Regions" @click="click('export-texture-atlas-region', $event)" :class="{ disabled: isBusy }" style="margin-right: 5px"/>
 						<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-texture', $event)"></menu-button>
 					</div>
@@ -1217,6 +1218,9 @@
 						<div class="preview-background">
 							<div v-if="chrModelLoading" class="chr-model-loading-spinner"></div>
 							<model-viewer :context="chrModelViewerContext"></model-viewer>
+							<div v-if="chrCustBakedNPCTexture" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 100;">
+								<input type="button" value="Remove Baked Texture" @click="click('remove-baked-npc-texture', $event)" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer; font-weight: bold;"/>
+							</div>
 						</div>
 						<div class="texture-preview-panel" id="chr-texture-preview" v-show="config.chrShowTextureOverlay">
 							<div id="chr-overlay-btn">

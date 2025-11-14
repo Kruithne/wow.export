@@ -321,6 +321,17 @@ core.registerDropHandler({
 	process: files => textureExporter.exportFiles(files, true)
 });
 
+const isBakedNPCTexture = () => {
+	if (core.view.selectionTextures.length === 0)
+		return false;
+
+	const first = listfile.stripFileEntry(core.view.selectionTextures[0]);
+	if (!first)
+		return false;
+
+	return first.toLowerCase().startsWith('textures/bakednpctextures/');
+};
+
 core.registerLoadFunc(async () => {
 	// Track changes to exportTextureAlpha. If it changes, re-render the
 	// currently displayed texture to ensure we match desired alpha.
@@ -416,6 +427,34 @@ core.registerLoadFunc(async () => {
 		await reloadTextureAtlasData();
 		updateTextureAtlasOverlay();
 	});
+
+	// Track when the user clicks to apply baked NPC texture to character
+	core.events.on('click-apply-baked-npc-texture', async () => {
+		if (!isBakedNPCTexture())
+			return;
+
+		core.view.isBusy++;
+		core.setToast('progress', 'loading baked npc texture...', null, -1, false);
+
+		try {
+			const first = listfile.stripFileEntry(core.view.selectionTextures[0]);
+			const fileDataID = listfile.getByFilename(first);
+			const file = await core.view.casc.getFile(fileDataID);
+			const blp = new BLPFile(file);
+
+			core.view.chrCustBakedNPCTexture = blp;
+			core.setToast('success', 'baked npc texture applied to character', null, 3000);
+			log.write('applied baked npc texture %s to character', first);
+		} catch (e) {
+			core.setToast('error', 'failed to load baked npc texture', { 'view log': () => log.openRuntimeLog() }, -1);
+			log.write('failed to load baked npc texture: %s', e.message);
+		}
+
+		core.view.isBusy--;
+	});
+
+	// expose isBakedNPCTexture for template access
+	core.view.isBakedNPCTexture = isBakedNPCTexture;
 });
 
 module.exports = { previewTextureByID, exportTextureAtlasRegions };
