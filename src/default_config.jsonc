@@ -75,6 +75,7 @@
 	"soundPlayerVolume": 0.7,
 	"soundPlayerAutoPlay": true,
 	"soundPlayerLoop": false,
+	"videoPlayerAutoPlay": true,
 	"mapsShowSidebar": false,
 	"mapsIncludeWMO": true,
 	"mapsIncludeM2": true,

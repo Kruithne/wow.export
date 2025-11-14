@@ -1709,7 +1709,10 @@ input[type=number]::-webkit-outer-spin-button {
 	justify-content: center;
 	align-items: center;
 	width: 100%;
-	height: 100%;
+}
+
+.preview-controls .tray {
+	flex-grow: 1;
 }
 
 .preview-controls, .spaced-preview-controls {

@@ -1295,12 +1295,16 @@
 					</div>
 					<div class="preview-container">
 						<div class="preview-background" id="video-preview">
-							<canvas id="video-preview-canvas" style="width: 100%; height: 100%; object-fit: contain; background: #000;"></canvas>
+							<canvas id="video-preview-canvas" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;"></canvas>
 						</div>
 					</div>
 					<div class="preview-controls">
-						<input type="button" value="Preview Selected" @click="click('preview-video', $event)" :class="{ disabled: isBusy }"/>
-						<input type="button" value="Stop Preview" @click="click('stop-video-preview', $event)" :class="{ disabled: isBusy }"/>
+						<label class="ui-checkbox">
+							<input type="checkbox" v-model="config.videoPlayerAutoPlay"/>
+							<span>Autoplay</span>
+						</label>
+						<input type="button" :value="videoPlayerState ? 'Stop Preview' : 'Preview Selected'" @click="click('preview-video', $event)"/>
+						<div class="tray"></div>
 						<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>

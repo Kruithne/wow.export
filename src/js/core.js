@@ -96,6 +96,7 @@ const makeNewView = () => {
 		soundPlayerState: false, // Playing state of the sound player.
 		soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
 		soundPlayerDuration: 0, // Duration of the currently playing sound track.
+		videoPlayerState: false, // Playing state of the video player.
 		modelViewerContext: null, // 3D context for the model viewer.
 		modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
 		modelViewerGeosets: [], // Active M2 model geoset control.
