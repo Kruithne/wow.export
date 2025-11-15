@@ -264,14 +264,14 @@ const view = null;
  */
 const openLastExportStream = () => {
 	const lastExportFilePath = core.view.lastExportPath;
-	if (fs.existsSync(lastExportFilePath) === false)
-		return null;
 
-	const lastExportFileStat = fs.statSync(lastExportFilePath);
+	if (fs.existsSync(lastExportFilePath)) {
+		const lastExportFileStat = fs.statSync(lastExportFilePath);
 
-	if (lastExportFileStat.isDirectory()) {
-		log.write('ERROR: Last export file has been configured as a directory instead of a file!');
-		return null;
+		if (lastExportFileStat.isDirectory()) {
+			log.write('ERROR: Last export file has been configured as a directory instead of a file!');
+			return null;
+		}
 	}
 
 	return new FileWriter(lastExportFilePath, 'utf8');
