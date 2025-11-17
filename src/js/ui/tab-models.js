@@ -612,7 +612,7 @@ core.events.once('screen-tab-models', async () => {
 		// WoW models are by default facing the wrong way; rotate everything.
 		renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
 
-		core.view.modelViewerContext = Object.seal({ camera, scene, controls: null });
+		core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup });
 
 		// Loading complete, return to models tab
 		core.view.isBusy--;

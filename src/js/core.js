@@ -107,6 +107,7 @@ const makeNewView = () => {
 		modelViewerWMOGroups: [], // Active WMO model group control.
 		modelViewerWMOSets: [], // Active WMO doodad set control.
 		modelViewerAutoAdjust: true, // Automatic camera adjustment.
+		modelViewerRotationSpeed: 0, // Model rotation speed (0 = no rotation).
 		textureRibbonStack: [], // Texture preview stack for model viewer.
 		textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
 		textureRibbonPage: 0, // Active page of texture slots to render.

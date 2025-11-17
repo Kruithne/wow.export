@@ -7,6 +7,7 @@ const CameraControls = require('../3D/camera/CameraControls');
 const CharacterCameraControls = require('../3D/camera/CharacterCameraControls');
 const tabModels = require('../ui/tab-models');
 const tabCharacters = require('../ui/tab-characters');
+const core = require('../core');
 
 module.exports = {
 	props: ['context'],
@@ -26,6 +27,11 @@ module.exports = {
 			const activeRenderer = tabModels.getActiveRenderer() || tabCharacters.getActiveRenderer();
 			if (activeRenderer && activeRenderer.updateAnimation)
 				activeRenderer.updateAnimation(deltaTime);
+
+			// apply model rotation if speed is non-zero
+			const rotation_speed = core.view.modelViewerRotationSpeed;
+			if (rotation_speed !== 0)
+				this.context.renderGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotation_speed * deltaTime);
 
 			this.controls.update();
 			this.renderer.render(this.context.scene, this.context.camera);
