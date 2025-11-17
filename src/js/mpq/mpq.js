@@ -532,8 +532,8 @@ class MPQArchive {
 				}
 
 				if (block_entry.flags & MPQ_FILE_COMPRESS) {
-					if (sector_bytes_left > sector.length) {
-						const expected_sector_size = Math.min(sector_size, sector_bytes_left);
+					const expected_sector_size = Math.min(sector_size, sector_bytes_left);
+					if (sector.length !== expected_sector_size) {
 						sector = new Uint8Array(this.decompress(sector, expected_sector_size));
 					}
 				}
@@ -627,8 +627,8 @@ class MPQArchive {
 				let sector = file_data.slice(positions[i], positions[i + 1]);
 
 				if (block_entry.flags & MPQ_FILE_COMPRESS) {
-					if (sector_bytes_left > sector.length) {
-						const expected_sector_size = Math.min(sector_size, sector_bytes_left);
+					const expected_sector_size = Math.min(sector_size, sector_bytes_left);
+					if (sector.length !== expected_sector_size) {
 						sector = new Uint8Array(this.decompress(sector, expected_sector_size));
 					}
 				}

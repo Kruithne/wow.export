@@ -66,7 +66,8 @@ class MPQInstall {
 			for (const filename of archive.files) {
 				this.listfile.set(filename.toLowerCase(), {
 					archive_index: this.archives.length - 1,
-					mpq_name: mpq_name
+					mpq_name: mpq_name,
+					original_filename: filename
 				});
 			}
 		}
@@ -88,10 +89,24 @@ class MPQInstall {
 	}
 
 	getAllFiles() {
+		const MPQ_FILE_DELETE_MARKER = 0x02000000;
 		const results = [];
 
-		for (const [filename, data] of this.listfile)
+		for (const [filename, data] of this.listfile) {
+			const { archive } = this.archives[data.archive_index];
+			const hash_entry = archive.getHashTableEntry(data.original_filename);
+
+			if (hash_entry) {
+				const block_entry = archive.blockTable[hash_entry.blockTableIndex];
+
+				// Skip files marked as deleted
+				if (block_entry && (block_entry.flags & MPQ_FILE_DELETE_MARKER)) {
+					continue;
+				}
+			}
+
 			results.push(`${data.mpq_name}\\${filename}`);
+		}
 
 		return results;
 	}
@@ -107,11 +122,28 @@ class MPQInstall {
 		const normalized = filename.toLowerCase();
 		const data = this.listfile.get(normalized);
 
-		if (data === undefined)
+		if (data === undefined) {
+			// try stripping more path components if the MPQ name has multiple parts
+			if (display_path.includes('\\')) {
+				const parts = display_path.split('\\');
+				const mpq_parts = data?.mpq_name?.split('\\').length || 0;
+
+				// try looking up with just the filename part (skip MPQ name components)
+				for (let i = 1; i < parts.length; i++) {
+					const test_filename = parts.slice(i).join('\\').toLowerCase();
+					const test_data = this.listfile.get(test_filename);
+					if (test_data !== undefined) {
+						const { archive } = this.archives[test_data.archive_index];
+						return archive.extractFile(test_data.original_filename);
+					}
+				}
+			}
+
 			return null;
+		}
 
 		const { archive } = this.archives[data.archive_index];
-		return archive.extractFile(filename);
+		return archive.extractFile(data.original_filename);
 	}
 
 	getFileCount() {
