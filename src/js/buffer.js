@@ -625,7 +625,7 @@ class BufferWrapper {
 		const str = this.readString(this.remainingBytes, encoding);
 		this.seek(ofs);
 
-		return str.split(/\r\n|\n|\r/);
+		return str.split(/\r?\n/);
 	}
 
 	/**
