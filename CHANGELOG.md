@@ -24,6 +24,7 @@
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.
+- Fixed an issue that would cause map tiles to stop rendering when panning/zooming.
 - Fixed an issue that caused glitched artifacts to appear on character models.
 - Fixed an issue that caused 3D animation previews to appear horribly disfigured.
 - Fixed frame timestamp ordering in GLTF exports which prevented import in spec-compliant engines.

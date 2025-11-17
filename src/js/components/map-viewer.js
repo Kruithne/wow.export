@@ -29,7 +29,8 @@ const state = {
 	needsFinalPass: false, // Track if we need to run the final pass after queue is empty
 	finalPassTimeout: null, // Timeout for delayed final pass execution
 	activeTileRequests: 0, // Track number of tiles currently being loaded
-	maxConcurrentTiles: 4 // Maximum number of tiles to load concurrently
+	maxConcurrentTiles: 4, // Maximum number of tiles to load concurrently
+	renderGeneration: 0
 };
 
 module.exports = {
@@ -155,6 +156,7 @@ module.exports = {
 			state.prevZoomFactor = null;
 			state.needsFinalPass = false;
 			state.activeTileRequests = 0;
+			state.renderGeneration++;
 
 			if (state.finalPassTimeout) {
 				clearTimeout(state.finalPassTimeout);
@@ -357,31 +359,34 @@ module.exports = {
 			state.activeTileRequests++;
 
 			const [x, y, index, tileSize, renderTarget = 'main'] = tile;
-			const currentZoomFactor = state.zoomFactor;
+			const currentGeneration = state.renderGeneration;
 
 			this.loader(x, y, tileSize).then(data => {
-				// Only draw if tile loaded successfully and zoom hasn't changed
-				if (data !== false && data instanceof ImageData && currentZoomFactor === state.zoomFactor) {
-					// Calculate draw position
-					const drawX = (x * tileSize) + state.offsetX;
-					const drawY = (y * tileSize) + state.offsetY;
-					
-					if (renderTarget === 'double-buffer') {
-						// For double-buffer rendering, draw to both the double-buffer and main canvas
-						this.doubleBufferContext.putImageData(data, drawX, drawY);
-						this.context.putImageData(data, drawX, drawY);
-					} else {
-						// For main rendering, draw directly to main canvas
-						this.context.putImageData(data, drawX, drawY);
+				if (currentGeneration === state.renderGeneration) {
+					// Only draw if tile loaded successfully
+					if (data !== false && data instanceof ImageData) {
+						// Calculate draw position
+						const drawX = (x * tileSize) + state.offsetX;
+						const drawY = (y * tileSize) + state.offsetY;
+
+						if (renderTarget === 'double-buffer') {
+							// For double-buffer rendering, draw to both the double-buffer and main canvas
+							this.doubleBufferContext.putImageData(data, drawX, drawY);
+							this.context.putImageData(data, drawX, drawY);
+						} else {
+							// For main rendering, draw directly to main canvas
+							this.context.putImageData(data, drawX, drawY);
+						}
+
+						// Mark this tile as rendered
+						state.rendered.add(index);
 					}
 
-					// Mark this tile as rendered
-					state.rendered.add(index);
+					// Remove from requested set since loading is complete
+					state.requested.delete(index);
+					state.activeTileRequests--;
 				}
 
-				// Remove from requested set since loading is complete
-				state.requested.delete(index);
-				state.activeTileRequests--;
 				this.checkTileQueue();
 			});
 		},
