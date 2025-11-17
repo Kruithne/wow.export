@@ -121,8 +121,9 @@ const ADTChunkHandlers = {
 	},
 
 	// MH2O (Liquids)
-	0x4D48324F: function(data) {
+	0x4D48324F: function(data, chunkSize) {
 		const base = data.offset;
+		const chunkEnd = base + chunkSize;
 		const dataOffsets = new Set();
 
 		const chunkHeaders = new Array(256);
@@ -210,13 +211,12 @@ const ADTChunkHandlers = {
 				instance.bitmap = data.readUInt8(bitmapSize);
 			}
 
-			// Handle special case: if offsetVertexData is 0 and liquidType != 2, use LVF = 2 (height always 0.0)
-			if (instance.offsetVertexData === 0 && instance.liquidType !== 2) {
-				// LVF = 2 case: depth only, height is always 0.0
+			// Handle special case: if offsetVertexData is 0, no vertex data in file
+			if (instance.offsetVertexData === 0) {
 				const vertexCount = (instance.width + 1) * (instance.height + 1);
-				instance.vertexData = {
-					height: new Array(vertexCount).fill(0.0)
-				};
+				// ocean liquid (type 2) with no vertex data: flat surface at sea level or min/max average
+				const waterLevel = instance.minHeightLevel === 0 && instance.maxHeightLevel === 0 ? 0.0 : (instance.minHeightLevel + instance.maxHeightLevel) / 2;
+				instance.vertexData = { height: new Array(vertexCount).fill(waterLevel) };
 			} else if (instance.offsetVertexData > 0) {
 				const vertexCount = (instance.width + 1) * (instance.height + 1);
 				const offsetIndex = sortedOffsets.indexOf(instance.offsetVertexData);
@@ -226,10 +226,8 @@ const ADTChunkHandlers = {
 				if (offsetIndex < sortedOffsets.length - 1) {
 					dataSize = sortedOffsets[offsetIndex + 1] - instance.offsetVertexData;
 				} else {
-					// This is the last data block, we need to determine size differently
-					// For now, estimate based on vertex count and common formats
-					const estimatedSize = vertexCount * 5; // Default to case 0 (height + depth)
-					dataSize = estimatedSize;
+					// last data block: use remaining bytes in chunk
+					dataSize = chunkEnd - (base + instance.offsetVertexData);
 				}
 
 				data.seek(base + instance.offsetVertexData);
@@ -254,6 +252,9 @@ const ADTChunkHandlers = {
 				} else if (bytesPerVertex === 1) {
 					// Case 2: Depth only (1 byte per vertex)
 					vertexData.depth = data.readUInt8(vertexCount);
+					// ocean liquid: height is constant at minHeightLevel (typically 0.0 for sea level)
+					const waterLevel = instance.minHeightLevel === 0 && instance.maxHeightLevel === 0 ? 0.0 : (instance.minHeightLevel + instance.maxHeightLevel) / 2;
+					vertexData.height = new Array(vertexCount).fill(waterLevel);
 				} else if (bytesPerVertex === 9) {
 					// Case 3: Height + UV + Depth (9 bytes per vertex)
 					vertexData.height = data.readFloatLE(vertexCount);
