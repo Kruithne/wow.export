@@ -577,7 +577,7 @@ def createLiquidMaterial(materialName, liquidType):
         principled.location = (0, 400)
         node_tree.links.new(principled.outputs['BSDF'], outNode.inputs['Surface'])
     
-    # Ocean (type 1)
+    # Generic water (type 1)
     if liquidType == 1:
         principled.inputs['Base Color'].default_value = (0.1, 0.3, 0.6, 1.0)
         principled.inputs['Alpha'].default_value = 0.8
@@ -585,16 +585,19 @@ def createLiquidMaterial(materialName, liquidType):
             principled.inputs['Transmission Weight'].default_value = 1.0
         else:
             principled.inputs['Transmission'].default_value = 1.0
-    # Magma (type 2 in newer builds, type 6 in older)
-    elif liquidType == 2 or liquidType == 6:
-        principled.inputs['Base Color'].default_value = (1.0, 0.3, 0.1, 1.0)
-        principled.inputs['Alpha'].default_value = 0.9
-        principled.inputs['Emission Strength' if IS_B40 else 'Emission'].default_value = 0.5
+    # Ocean (type 2)
+    elif liquidType == 2:
+        principled.inputs['Base Color'].default_value = (0.1, 0.4, 0.7, 1.0)
+        principled.inputs['Alpha'].default_value = 0.85
+        if IS_B40:
+            principled.inputs['Transmission Weight'].default_value = 1.0
+        else:
+            principled.inputs['Transmission'].default_value = 1.0
     # Slime (type 3)
     elif liquidType == 3:
         principled.inputs['Base Color'].default_value = (0.3, 0.8, 0.2, 1.0)
         principled.inputs['Alpha'].default_value = 0.8
-    # River (type 4) - clear blue water
+    # River (type 4)
     elif liquidType == 4:
         principled.inputs['Base Color'].default_value = (0.2, 0.5, 0.8, 1.0)
         principled.inputs['Alpha'].default_value = 0.7
@@ -602,6 +605,11 @@ def createLiquidMaterial(materialName, liquidType):
             principled.inputs['Transmission Weight'].default_value = 1.0
         else:
             principled.inputs['Transmission'].default_value = 1.0
+    # Magma/lava (type 6)
+    elif liquidType == 6:
+        principled.inputs['Base Color'].default_value = (1.0, 0.3, 0.1, 1.0)
+        principled.inputs['Alpha'].default_value = 0.9
+        principled.inputs['Emission Strength' if IS_B40 else 'Emission'].default_value = 0.5
     # Default liquid
     else:
         principled.inputs['Base Color'].default_value = (0.3, 0.6, 0.9, 1.0)

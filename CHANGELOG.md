@@ -38,6 +38,7 @@
 - Fixed an issue that would cause "Clear Cache" to hang indefinitely.
 - Fixed an issue that would cause the realm name entered on character import not to persist.
 - Fixed an issue that would cause liquid chunks in exported ADT tiles to appear at incorrect heights.
+- Fixed an issue that would cause ocena liquid to appear orange when imported into Blender.
 - The automatic update feature can now be disabled by passing the --disable-auto-update CLI flag (not recommended).
 - The last_export logfile is now created if it does not exist, rather than requiring manual creation to enable.
 - Internal: update nw.js from 0.69.1 ⇉ 0.104.1
