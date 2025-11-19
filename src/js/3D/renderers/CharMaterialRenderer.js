@@ -99,9 +99,12 @@ class CharMaterialRenderer {
 	 */
 	getURI() {
 		const pixels = this.getRawPixels();
-		const png = new PNGWriter(this.glCanvas.width, this.glCanvas.height, pixels);
+		const png = new PNGWriter(this.glCanvas.width, this.glCanvas.height);
+		const pixel_data = png.getPixelData();
+		pixel_data.set(pixels);
+		
 		const buffer = png.getBuffer();
-		const base64 = buffer.toString('base64');
+		const base64 = buffer.toBase64();
 		return 'data:image/png;base64,' + base64;
 	}
 
