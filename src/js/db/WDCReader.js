@@ -438,7 +438,7 @@ class WDCReader {
 			const stringTableOffset = stringBlockOfs;
 			const stringTableOffsetBase = previousStringTableSize;
 
-			if ((wdcVersion > 2) && isNormal)
+			if (wdcVersion > 2)
 				previousStringTableSize += header.stringTableSize;
 
 			data.seek(stringBlockOfs + header.stringTableSize);
@@ -542,18 +542,26 @@ class WDCReader {
 
 	/**
 	 * Lazy-read string from string table by offset
-	 * @param {number} sectionIndex
 	 * @param {number} stringTableIndex
 	 * @returns {string}
 	 */
-	_readString(sectionIndex, stringTableIndex) {
-		const section = this.sections[sectionIndex];
-		const localOffset = stringTableIndex - section.stringTableOffsetBase;
+	_readString(stringTableIndex) {
+		// find which section contains this string table index
+		let targetSection = null;
+		for (let i = 0; i < this.sections.length; i++) {
+			const sec = this.sections[i];
+			const localOfs = stringTableIndex - sec.stringTableOffsetBase;
+			if (localOfs >= 0 && localOfs < sec.header.stringTableSize) {
+				targetSection = sec;
+				break;
+			}
+		}
 
-		if (localOffset < 0 || localOffset >= section.header.stringTableSize)
+		if (!targetSection)
 			throw new Error('String table index out of range');
 
-		this.data.seek(section.stringTableOffset + localOffset);
+		const localOffset = stringTableIndex - targetSection.stringTableOffsetBase;
+		this.data.seek(targetSection.stringTableOffset + localOffset);
 		return this.data.readString(this.data.indexOf(0x0) - this.data.offset, 'utf8');
 	}
 
@@ -692,7 +700,7 @@ class WDCReader {
 												if (stringTableIndex == 0)
 													out[prop][stringArrayIndex] = '';
 												else
-													out[prop][stringArrayIndex] = this._readString(sectionIndex, stringTableIndex);
+													out[prop][stringArrayIndex] = this._readString(stringTableIndex);
 											}
 
 											// ensure we're positioned at the next field
@@ -712,7 +720,7 @@ class WDCReader {
 											if (stringTableIndex == 0)
 												out[prop] = '';
 											else
-												out[prop] = this._readString(sectionIndex, stringTableIndex);
+												out[prop] = this._readString(stringTableIndex);
 										}
 
 										// ensure we're positioned at the next field
