@@ -2709,6 +2709,19 @@ input[type=number]::-webkit-outer-spin-button {
 	margin-top: 10px;
 }
 
+.chr-geoset-return {
+	color: var(--font-alt);
+	cursor: pointer;
+	font-size: 14px;
+	text-align: center;
+	display: block;
+	margin-top: 10px;
+}
+
+.chr-geoset-return:hover {
+	color: var(--font-alt-highlight);
+}
+
 #tab-home, #legacy-tab-home {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
