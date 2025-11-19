@@ -21,6 +21,7 @@
 - Added "Export PNG (3D Preview)" and "Copy to Clipboard (3D Preview)" options to character viewer.
 - Added ability to preview cinematics directly in the Videos tab without exporting.
 - Added apply to baked NPC textures to characters (Textures -> Apply to Character).
+- Added "Randomize Customization" button to the character viewer.
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
 - Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
 - Removed 'Show File Data IDs', this is now default behavior.

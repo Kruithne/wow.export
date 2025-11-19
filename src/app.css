@@ -2623,16 +2623,33 @@ input[type=number]::-webkit-outer-spin-button {
 	left: 300px;
 }
 
-.chr-geoset-toggle {
+.chr-cust-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.chr-cust-controls > span {
 	color: var(--font-alt);
 	cursor: pointer;
 	font-size: 14px;
 	text-align: center;
-	padding: 8px;
 }
 
-.chr-geoset-toggle:hover {
+.chr-cust-controls > span:hover {
 	color: var(--font-alt-highlight);
+}
+
+.chr-randomize-toggle::before {
+	content: '';
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	background-image: url(./images/ui-grouploot-dice-up.png);
+	background-size: contain;
+	background-repeat: no-repeat;
+	margin-right: 6px;
+	vertical-align: middle;
 }
 
 .geoset-control-header {

@@ -1199,7 +1199,10 @@
 								</select>
 							</label>
 							<p id="chrCustUnsupportedText" v-show="chrCustUnsupportedWarning">Options with * use unsupported features and might not display/export correctly.</p>
-							<span class="chr-geoset-toggle" @click="chrShowGeosetControl = true">Custom Geoset Control</span>
+							<div class="chr-cust-controls">
+								<span class="chr-randomize-toggle" @click="randomizeCustomization">Randomize Customization</span>
+								<span @click="chrShowGeosetControl = true">Custom Geoset Control</span>
+							</div>
 						</template>
 						<template v-else>
 							<div class="geoset-checkboxes">

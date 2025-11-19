@@ -957,6 +957,19 @@ function updateChoiceForOption(optionID, choiceID) {
 	}
 }
 
+function randomizeCustomization() {
+	const state = core.view;
+	const options = state.chrCustOptions;
+
+	for (const option of options) {
+		const choices = optionToChoices.get(option.id);
+		if (choices && choices.length > 0) {
+			const random_choice = choices[Math.floor(Math.random() * choices.length)];
+			updateChoiceForOption(option.id, random_choice.id);
+		}
+	}
+}
+
 core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
@@ -1231,6 +1244,8 @@ core.registerLoadFunc(async () => {
 	core.events.on('click-import-character', () => importCharacter());
 	core.events.on('click-import-wmv', () => importWMVCharacter());
 	core.events.on('click-import-wowhead', () => importWowheadCharacter());
+
+	core.view.randomizeCustomization = randomizeCustomization;
 
 	core.events.on('click-remove-baked-npc-texture', async () => {
 		core.view.chrCustBakedNPCTexture = null;
