@@ -4,7 +4,7 @@
 	License: MIT
  */
 const log = require('../../log');
-const WDCReader = require('../WDCReader');
+const db2 = require('../../casc/db2');
 
 const creatureDisplays = new Map();
 const displayIDToFileDataID = new Map();
@@ -19,18 +19,10 @@ const initializeCreatureData = async () => {
 
 	log.write('Loading creature textures...');
 
-	const creatureDisplayInfo = new WDCReader('DBFilesClient/CreatureDisplayInfo.db2');
-	await creatureDisplayInfo.parse();
-
-	const creatureModelData = new WDCReader('DBFilesClient/CreatureModelData.db2');
-	await creatureModelData.parse();
-
 	const creatureGeosetMap = new Map();
-
-	const creatureDisplayInfoGeosetData = new WDCReader('DBFilesClient/CreatureDisplayInfoGeosetData.db2');
-	await creatureDisplayInfoGeosetData.parse();
+	const creatureDisplayInfoGeosetData = db2.CreatureDisplayInfoGeosetData;
 	// CreatureDisplayInfoID => Array of geosets to enable which should only be used if CreatureModelData.CreatureDisplayInfoGeosetData != 0
-	for (const geosetRow of creatureDisplayInfoGeosetData.getAllRows().values()) {
+	for (const geosetRow of (await creatureDisplayInfoGeosetData.getAllRows()).values()) {
 		if (!creatureGeosetMap.has(geosetRow.CreatureDisplayInfoID))
 			creatureGeosetMap.set(geosetRow.CreatureDisplayInfoID, new Array());
 
@@ -41,7 +33,7 @@ const initializeCreatureData = async () => {
 	const modelIDToDisplayInfoMap = new Map();
 
 	// Map all available texture fileDataIDs to model IDs.
-	for (const [displayID, displayRow] of creatureDisplayInfo.getAllRows()) {
+	for (const [displayID, displayRow] of await db2.CreatureDisplayInfo.getAllRows()) {
 		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
 		
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
@@ -51,7 +43,7 @@ const initializeCreatureData = async () => {
 	}
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
-	for (const [modelID, modelRow] of creatureModelData.getAllRows()) {
+	for (const [modelID, modelRow] of await db2.CreatureModelData.getAllRows()) {
 		if (modelIDToDisplayInfoMap.has(modelID)) {
 			const fileDataID = modelRow.FileDataID;
 			const displayIDs = modelIDToDisplayInfoMap.get(modelID);

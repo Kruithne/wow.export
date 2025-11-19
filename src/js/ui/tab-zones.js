@@ -7,21 +7,13 @@
 const util = require('util');
 const core = require('../core');
 const log = require('../log');
-const WDCReader = require('../db/WDCReader');
+const db2 = require('../casc/db2');
 const BLPFile = require('../casc/blp');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const path = require('path');
 
 let selectedZoneID;
-let uiMapAssignmentTable;
-let uiMapTable;
-let uiMapArtTable;
-let uiMapArtTileTable;
-let uiMapXMapArtTable;
-let uiMapArtStyleLayerTable;
-let worldMapOverlayTable;
-let worldMapOverlayTileTable;
 
 /**
  * Parse a zone entry from the listbox.
@@ -105,10 +97,9 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 	const ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	const assignmentRows = uiMapAssignmentTable.getAllRows();
 	let uiMapID = null;
-	
-	for (const [id, assignment] of assignmentRows) {
+
+	for (const assignment of (await db2.UiMapAssignment.getAllRows()).values()) {
 		if (assignment.AreaID === zoneID) {
 			uiMapID = assignment.UiMapID;
 			break;
@@ -120,7 +111,7 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 		throw new Error('No map data available for this zone');
 	}
 
-	const mapData = uiMapTable.getRow(uiMapID);
+	const mapData = await db2.UiMap.getRow(uiMapID);
 	if (!mapData) {
 		log.write('UiMap entry not found for ID %d', uiMapID);
 		throw new Error('UiMap entry not found');
@@ -129,17 +120,17 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 	const artStyles = [];
 	
 	const linkedArtIDs = [];
-	for (const [id, linkEntry] of uiMapXMapArtTable.getAllRows()) {
+	for (const linkEntry of (await db2.UiMapXMapArt.getAllRows()).values()) {
 		if (linkEntry.UiMapID === uiMapID)
 			linkedArtIDs.push(linkEntry.UiMapArtID);
 	}
 
 	for (const artID of linkedArtIDs) {
-		const artEntry = uiMapArtTable.getRow(artID);
+		const artEntry = await db2.UiMapArt.getRow(artID);
 		if (artEntry) {
 			let styleLayer;
 
-			for (const [id, artStyleLayer] of uiMapArtStyleLayerTable.getAllRows()) {
+			for (const artStyleLayer of (await db2.UiMapArtStyleLayer.getAllRows()).values()) {
 				if (artStyleLayer.UiMapArtStyleID === artEntry.UiMapArtStyleID)
 					styleLayer = artStyleLayer;
 			}
@@ -171,7 +162,7 @@ const renderZoneToCanvas = async (canvas, zoneID, setCanvasSize = true) => {
 	let mapWidth = 0, mapHeight = 0;
 
 	for (const artStyle of artStyles) {
-		const allTiles = uiMapArtTileTable.getRelationRows(artStyle.ID);
+		const allTiles = await db2.UiMapArtTile.getRelationRows(artStyle.ID);
 		if (allTiles.length === 0) {
 			log.write('No tiles found for UiMapArt ID %d', artStyle.ID);
 			continue;
@@ -296,14 +287,14 @@ const renderMapTiles = async (ctx, tiles, artStyle, layerIndex = 0, expectedZone
  * @param {number} expectedZoneID
  */
 const renderWorldMapOverlays = async (ctx, artStyle, expectedZoneID) => {
-	const overlays = worldMapOverlayTable.getRelationRows(artStyle.ID);
+	const overlays = await db2.WorldMapOverlay.getRelationRows(artStyle.ID);
 	if (overlays.length === 0) {
 		log.write('No WorldMapOverlay entries found for UiMapArt ID %d', artStyle.ID);
 		return;
 	}
 
 	for (const overlay of overlays) {
-		const overlayTiles = worldMapOverlayTileTable.getRelationRows(overlay.ID);
+		const overlayTiles = await db2.WorldMapOverlayTile.getRelationRows(overlay.ID);
 		if (overlayTiles.length === 0) {
 			log.write('No tiles found for WorldMapOverlay ID %d', overlay.ID);
 			continue;
@@ -370,74 +361,37 @@ const renderOverlayTiles = async (ctx, tiles, overlay, artStyle, expectedZoneID)
 };
 
 core.events.once('screen-tab-zones', async () => {
-	const progress = core.createProgress(10);
+	const progress = core.createProgress(3);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
 	try {
-		await progress.step('Loading expansion mapping...');
-		const mapTable = new WDCReader('DBFilesClient/Map.db2');
-		await mapTable.parse();
-		
+		// preload tables needed for getRelationRows
+		await progress.step('Loading map tiles...');
+		await db2.preload.UiMapArtTile();
+
+		await progress.step('Loading map overlays...');
+		await db2.preload.WorldMapOverlay();
+		await db2.preload.WorldMapOverlayTile();
+
+		await progress.step('Loading zone data...');
+
 		const expansionMap = new Map();
-		for (const [id, entry] of mapTable.getAllRows())
+		for (const [id, entry] of await db2.Map.getAllRows())
 			expansionMap.set(id, entry.ExpansionID);
 		
 		log.write('Loaded %d maps for expansion mapping', expansionMap.size);
 
-		const availableZones = new Set();
-
-		// Load required tables for map rendering
-		await progress.step('Loading UI map assignments...');
-		uiMapAssignmentTable = new WDCReader('DBFilesClient/UiMapAssignment.db2');
-		await uiMapAssignmentTable.parse();
-		log.write('Loaded UiMapAssignment.db2 with %d entries', uiMapAssignmentTable.getAllRows().size);
-
-		for (const [id, entry] of uiMapAssignmentTable.getAllRows()) {
+		const availableZones = new Set();		
+		for (const entry of (await db2.UiMapAssignment.getAllRows()).values())
 			availableZones.add(entry.AreaID);
-		}
 
-		await progress.step('Loading UI maps...');
-		uiMapTable = new WDCReader('DBFilesClient/UiMap.db2');
-		await uiMapTable.parse();
-		log.write('Loaded UiMap.db2 with %d entries', uiMapTable.getAllRows().size);
+		log.write('Loaded %d zones from UiMapAssignment', availableZones.size);
 
-		await progress.step('Loading map art data...');
-		uiMapArtTable = new WDCReader('DBFilesClient/UiMapArt.db2');
-		await uiMapArtTable.parse();
-		log.write('Loaded UiMapArt.db2 with %d entries', uiMapArtTable.getAllRows().size);
-
-		await progress.step('Loading map art tiles...');
-		uiMapArtTileTable = new WDCReader('DBFilesClient/UiMapArtTile.db2');
-		await uiMapArtTileTable.parse();
-		log.write('Loaded UiMapArtTile.db2 with %d entries', uiMapArtTileTable.getAllRows().size);
-
-		await progress.step('Loading map art mappings...');
-		uiMapXMapArtTable = new WDCReader('DBFilesClient/UiMapXMapArt.db2');
-		await uiMapXMapArtTable.parse();
-		log.write('Loaded UiMapXMapArt.db2 with %d entries', uiMapXMapArtTable.getAllRows().size);
-
-		await progress.step('Loading art style layers...');
-		uiMapArtStyleLayerTable = new WDCReader('DBFilesClient/UiMapArtStyleLayer.db2');
-		await uiMapArtStyleLayerTable.parse();
-		log.write('Loaded UiMapArtStyleLayer.db2 with %d entries', uiMapArtStyleLayerTable.getAllRows().size);
-
-		await progress.step('Loading world map overlays...');
-		worldMapOverlayTable = new WDCReader('DBFilesClient/WorldMapOverlay.db2');
-		await worldMapOverlayTable.parse();
-		log.write('Loaded WorldMapOverlay.db2 with %d entries', worldMapOverlayTable.getAllRows().size);
-
-		await progress.step('Loading overlay tiles...');
-		worldMapOverlayTileTable = new WDCReader('DBFilesClient/WorldMapOverlayTile.db2');
-		await worldMapOverlayTileTable.parse();
-		log.write('Loaded WorldMapOverlayTile.db2 with %d entries', worldMapOverlayTileTable.getAllRows().size);
-
-		await progress.step('Loading zone data...');
-		const table = new WDCReader('DBFilesClient/AreaTable.db2');
-		await table.parse();
+		const table = db2.AreaTable;
 
 		const zones = [];
-		for (const [id, entry] of table.getAllRows()) {
+		for (const [id, entry] of await table.getAllRows()) {
 			const expansionId = expansionMap.get(entry.ContinentID) || 0;
 
 			if (!availableZones.has(id))

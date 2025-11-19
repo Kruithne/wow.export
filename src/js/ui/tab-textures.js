@@ -13,7 +13,7 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const JSONWriter = require('../3D/writers/JSONWriter');
-const WDCReader = require('../db/WDCReader');
+const db2 = require('../casc/db2');
 const textureExporter = require('./texture-exporter');
 
 const textureAtlasEntries = new Map(); // atlasID => { width: number, height: number, regions: [] }
@@ -92,19 +92,9 @@ const previewTextureByID = async (fileDataID, texture = null) => {
  */
 const loadTextureAtlasData = async (progress) => {
 	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas) {
-		// load UiTextureAtlas which maps fileDataID to an atlas ID
-		await progress.step('Loading texture atlases...');
-		const uiTextureAtlasTable = new WDCReader('DBFilesClient/UiTextureAtlas.db2');
-		await uiTextureAtlasTable.parse();
-
-		// load UiTextureAtlasMember which contains individual atlas regions
-		await progress.step('Loading texture atlas regions...');
-		const uiTextureAtlasMemberTable = new WDCReader('DBFilesClient/UiTextureAtlasMember.db2');
-		await uiTextureAtlasMemberTable.parse();
-
 		await progress.step('Parsing texture atlases...');
 
-		for (const [id, row] of uiTextureAtlasTable.getAllRows()) {
+		for (const [id, row] of await db2.UiTextureAtlas.getAllRows()) {
 			textureAtlasMap.set(row.FileDataID, id);
 			textureAtlasEntries.set(id, {
 				width: row.AtlasWidth,
@@ -114,7 +104,7 @@ const loadTextureAtlasData = async (progress) => {
 		}
 
 		let loadedRegions = 0;
-		for (const [id, row] of uiTextureAtlasMemberTable.getAllRows()) {
+		for (const [id, row] of await db2.UiTextureAtlasMember.getAllRows()) {
 			const entry = textureAtlasEntries.get(row.UiTextureAtlasID);
 			if (!entry) {
 				debugger;
@@ -143,7 +133,7 @@ const loadTextureAtlasData = async (progress) => {
  */
 const reloadTextureAtlasData = async () => {
 	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas && !core.view.isBusy) {
-		const progress = core.createProgress(3);
+		const progress = core.createProgress(1);
 		core.view.setScreen('loading');
 		core.view.isBusy++;
 		
@@ -386,7 +376,7 @@ core.registerLoadFunc(async () => {
 				stepCount += 2; // texture file data + unknown textures
 
 			if (needsAtlasData)
-				stepCount += 3; // atlas + regions + parsing
+				stepCount += 1; // atlas
 			
 			const progress = core.createProgress(stepCount);
 			core.view.setScreen('loading');

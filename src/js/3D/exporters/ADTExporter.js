@@ -22,7 +22,7 @@ const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
 const PNGWriter = require('../../png-writer');
 
-const WDCReader = require('../../db/WDCReader');
+const db2 = require('../../casc/db2');
 
 const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('../../3D/exporters/M2Exporter');
@@ -76,11 +76,8 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			dbDoodads = new WDCReader('DBFilesClient/GroundEffectDoodad.db2',);
-			dbTextures = new WDCReader('DBFilesClient/GroundEffectTexture.db2');
-
-			await dbDoodads.parse();
-			await dbTextures.parse();
+			dbDoodads = db2.GroundEffectDoodad;
+			dbTextures = db2.GroundEffectTexture;
 
 			hasLoadedFoliage = true;
 			isFoliageAvailable = true;
@@ -1511,7 +1508,7 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = dbTextures.getRow(layer.effectID);
+					const groundEffectTexture = await dbTextures.getRow(layer.effectID);
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
@@ -1530,7 +1527,7 @@ class ADTExporter {
 						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = dbDoodads.getRow(doodadEntryID);
+						const groundEffectDoodad = await dbDoodads.getRow(doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							doodadModelIDs[doodadEntryID] = { fileDataID: modelID };

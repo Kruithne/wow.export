@@ -11,7 +11,7 @@ const generics = require('../generics');
 const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const WDCReader = require('../db/WDCReader');
+const db2 = require('../casc/db2');
 const audioHelper = require('./audio-helper');
 
 const { PLAYBACK_STATE, PlaybackState, AudioSourceManager, AUDIO_TYPE_UNKNOWN, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
@@ -236,20 +236,15 @@ const loadSelectedTrack = async () => {
 const loadSoundData = async () => {
 	if (!hasSoundDataLoaded && !core.view.isBusy && core.view.config.enableUnknownFiles) {
 		// Show a loading screen
-		const progress = core.createProgress(2);
+		const progress = core.createProgress(1);
 		core.view.setScreen('loading');
 		core.view.isBusy++;
 
 		try {
-			// Load unknown sounds from SoundKitEntry table
-			await progress.step('Loading sound entries...');
-			const soundKitEntries = new WDCReader('DBFilesClient/SoundKitEntry.db2');
-			await soundKitEntries.parse();
-
 			await progress.step('Processing unknown sound files...');
-			
+
 			let unknownCount = 0;
-			for (const entry of soundKitEntries.getAllRows().values()) {
+			for (const entry of (await db2.SoundKitEntry.getAllRows()).values()) {
 				if (!listfile.existsByID(entry.FileDataID)) {
 					// List unknown sound files using the .unk_sound extension. Files will be
 					// dynamically checked upon export and given the correct extension.

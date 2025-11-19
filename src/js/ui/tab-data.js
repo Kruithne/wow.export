@@ -82,7 +82,7 @@ core.registerLoadFunc(async () => {
 				
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();
-				
+
 				const allHeaders = [...db2Reader.schema.keys()];
 				const idIndex = allHeaders.findIndex(header => header.toUpperCase() === 'ID');
 				if (idIndex > 0) {
@@ -93,7 +93,7 @@ core.registerLoadFunc(async () => {
 				core.view.tableBrowserHeaders = allHeaders;
 				core.view.selectionDataTable = [];
 
-				const rows = db2Reader.getAllRows();
+				const rows = await db2Reader.getAllRows();
 				if (rows.size == 0) 
 					core.setToast('info', 'Selected DB2 has no rows.', null);
 				else 

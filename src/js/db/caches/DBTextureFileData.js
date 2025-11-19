@@ -5,7 +5,7 @@
  */
 
 const log = require('../../log');
-const WDCReader = require('../WDCReader');
+const db2 = require('../../casc/db2');
 
 const matResIDToFileDataID = new Map();
 const fileDataIDs = new Set();
@@ -15,11 +15,9 @@ const fileDataIDs = new Set();
  */
 const initializeTextureFileData = async () => {
 	log.write('Loading texture mapping...');
-	const textureFileData = new WDCReader('DBFilesClient/TextureFileData.db2');
-	await textureFileData.parse();
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
-	for (const [textureFileDataID, textureFileDataRow] of textureFileData.getAllRows()) {
+	for (const [textureFileDataID, textureFileDataRow] of await db2.TextureFileData.getAllRows()) {
 		// Keep a list of all FIDs for listfile unknowns.
 		fileDataIDs.add(textureFileDataID);
 

@@ -81,6 +81,9 @@ class WDCReader {
 
 		this.relationshipLookup = new Map();
 
+		// preloaded rows cache (null = not preloaded)
+		this.rows = null;
+
 		// lazy-loading metadata
 		this.data = null;
 		this.sections = null;
@@ -132,11 +135,16 @@ class WDCReader {
 
 	/**
 	 * Returns all available rows in the table.
+	 * If preload() was called, returns cached rows. Otherwise computes fresh.
 	 * Iterates sequentially through all sections for efficient paging with mmap.
 	 */
 	getAllRows() {
 		if (!this.isLoaded)
 			throw new Error('Attempted to read a data table rows before table was loaded.');
+
+		// return preloaded cache if available
+		if (this.rows !== null)
+			return this.rows;
 
 		const rows = new Map();
 
@@ -182,6 +190,21 @@ class WDCReader {
 		}
 
 		return rows;
+	}
+
+	/**
+	 * Preload all rows into memory cache.
+	 * Subsequent calls to getAllRows() will return cached data.
+	 * Required for getRelationRows() to work properly.
+	 */
+	preload() {
+		if (!this.isLoaded)
+			throw new Error('Attempted to preload table before it was loaded.');
+
+		if (this.rows !== null)
+			return;
+
+		this.rows = this.getAllRows();
 	}
 
 	/**

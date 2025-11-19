@@ -10,7 +10,7 @@ const MultiMap = require('../MultiMap');
 const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
 
-const WDCReader = require('../db/WDCReader');
+const db2 = require('../casc/db2');
 const ItemSlot = require('../wow/ItemSlot');
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
@@ -141,7 +141,7 @@ const viewItemTextures = async (item) => {
 
 core.events.once('screen-tab-items', async () => {
 	// Initialize a loading screen.
-	const progress = core.createProgress(6);
+	const progress = core.createProgress(2);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
@@ -149,35 +149,16 @@ core.events.once('screen-tab-items', async () => {
 	await DBModelFileData.initializeModelFileData();
 
 	await progress.step('Loading item data...');
-	const itemSparse = new WDCReader('DBFilesClient/ItemSparse.db2');
-	await itemSparse.parse();
 
-	await progress.step('Loading item display info...');
-	const itemDisplayInfo = new WDCReader('DBFilesClient/ItemDisplayInfo.db2');
-	await itemDisplayInfo.parse();
-
-	await progress.step('Loading item appearances...');
-	const itemModifiedAppearance = new WDCReader('DBFilesClient/ItemModifiedAppearance.db2');
-	await itemModifiedAppearance.parse();
-
-	await progress.step('Loading item materials...');
-	const itemDisplayInfoMaterialRes = new WDCReader('DBFilesClient/ItemDisplayInfoMaterialRes.db2');
-	await itemDisplayInfoMaterialRes.parse();
-
-	const itemAppearance = new WDCReader('DBFilesClient/ItemAppearance.db2');
-	await itemAppearance.parse();
-
-	await progress.step('Building item relationships...');
-
-	const itemSparseRows = itemSparse.getAllRows();
+	const itemSparseRows = await db2.ItemSparse.getAllRows();
 	const items = [];
 
 	const appearanceMap = new Map();
-	for (const row of itemModifiedAppearance.getAllRows().values())
+	for (const row of (await db2.ItemModifiedAppearance.getAllRows()).values())
 		appearanceMap.set(row.ItemID, row.ItemAppearanceID);
 
 	const materialMap = new MultiMap();
-	for (const row of itemDisplayInfoMaterialRes.getAllRows().values())
+	for (const row of (await db2.ItemDisplayInfoMaterialRes.getAllRows()).values())
 		materialMap.set(row.ItemDisplayInfoID, row.MaterialResourcesID);
 
 	for (const [itemID, itemRow] of itemSparseRows) {
@@ -185,7 +166,7 @@ core.events.once('screen-tab-items', async () => {
 			continue;
 
 		const itemAppearanceID = appearanceMap.get(itemID);
-		const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
+		const itemAppearanceRow = await db2.ItemAppearance.getRow(itemAppearanceID);
 
 		let materials = null;
 		let models = null;
@@ -193,7 +174,7 @@ core.events.once('screen-tab-items', async () => {
 			materials = [];
 			models = [];
 
-			const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+			const itemDisplayInfoRow = await db2.ItemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
 			if (itemDisplayInfoRow !== null) {
 				materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
 				models.push(...itemDisplayInfoRow.ModelResourcesID);
@@ -211,10 +192,9 @@ core.events.once('screen-tab-items', async () => {
 	}
 
 	if (core.view.config.itemViewerShowAll) {
-		const itemDB = new WDCReader('DBFilesClient/Item.db2');
-		await itemDB.parse();
+		const itemDB = db2.Item;
 
-		for (const [itemID, itemRow] of itemDB.getAllRows()) {
+		for (const [itemID, itemRow] of await itemDB.getAllRows()) {
 			if (ITEM_SLOTS_IGNORED.includes(itemRow.inventoryType))
 				continue;
 
@@ -222,7 +202,7 @@ core.events.once('screen-tab-items', async () => {
 				continue;
 
 			const itemAppearanceID = appearanceMap.get(itemID);
-			const itemAppearanceRow = itemAppearance.getRow(itemAppearanceID);
+			const itemAppearanceRow = db2.ItemAppearance.getRow(itemAppearanceID);
 	
 			let materials = null;
 			let models = null;
@@ -230,7 +210,7 @@ core.events.once('screen-tab-items', async () => {
 				materials = [];
 				models = [];
 	
-				const itemDisplayInfoRow = itemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+				const itemDisplayInfoRow = db2.ItemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
 				if (itemDisplayInfoRow !== null) {
 					materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
 					models.push(...itemDisplayInfoRow.ModelResourcesID);

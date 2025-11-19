@@ -11,7 +11,7 @@ const path = require('path');
 const listfile = require('../casc/listfile');
 const constants = require('../constants');
 
-const WDCReader = require('../db/WDCReader');
+const db2 = require('../casc/db2');
 const BLPFile = require('../casc/blp');
 const WDTLoader = require('../3D/loaders/WDTLoader');
 const ADTExporter = require('../3D/exporters/ADTExporter');
@@ -131,17 +131,11 @@ const loadMapTile = async (x, y, size) => {
 const collectGameObjects = async (mapID, filter) => {
 	// Load GameObjects.db2/GameObjectDisplayInfo.db2 on-demand.
 	if (gameObjectsDB2 === null) {
-		const objTable = new WDCReader('DBFilesClient/GameObjects.db2');
-		await objTable.parse();
-
-		const idTable = new WDCReader('DBFilesClient/GameObjectDisplayInfo.db2');
-		await idTable.parse();
-
 		// Index all of the rows by the map ID.
 		gameObjectsDB2 = new Map();
-		for (const row of objTable.getAllRows().values()) {
+		for (const row of (await db2.GameObjects.getAllRows()).values()) {
 			// Look-up the fileDataID ahead of time.
-			const fidRow = idTable.getRow(row.DisplayID);
+			const fidRow = await db2.GameObjectDisplayInfo.getRow(row.DisplayID);
 			if (fidRow !== null) {
 				row.FileDataID = fidRow.FileDataID;
 
@@ -671,18 +665,14 @@ const parseMapEntry = (entry) => {
 
 // The first time the user opens up the map tab, initialize map names.
 core.events.once('screen-tab-maps', async () => {
-	const progress = core.createProgress(2);
+	const progress = core.createProgress(1);
 	core.view.setScreen('loading');
 	core.view.isBusy++;
 
 	try {
 		await progress.step('Loading map database...');
-		const table = new WDCReader('DBFilesClient/Map.db2');
-		await table.parse();
-
-		await progress.step('Processing available maps...');
 		const maps = [];
-		for (const [id, entry] of table.getAllRows()) {
+		for (const [id, entry] of await db2.Map.getAllRows()) {
 			const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 
 			if (entry.WdtFileDataID !== 0 && !listfile.existsByID(entry.WdtFileDataID)) {
