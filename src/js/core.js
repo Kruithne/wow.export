@@ -173,7 +173,6 @@ const makeNewView = () => {
 		chrCustGeosets: [], // Character customization model geoset control.
 		chrCustTab: 'models', // Active tab for character customization.
 		chrCustRightTab: 'geosets', // Active right tab for character customization.
-		chrCustUnsupportedWarning: false, // Display warning for unsupported character customizations.
 		chrModelLoading: false,
 		chrShowGeosetControl: false, // Controls whether geoset control view is shown instead of customization.
 		colorPickerOpenFor: null, // Currently open color picker option ID.

@@ -915,13 +915,6 @@ async function updateCustomizationType() {
 	if (availableChoices === undefined)
 		return;
 
-	core.view.chrCustUnsupportedWarning = false;
-
-	for (const choice of availableChoices) {
-		if (unsupportedChoices.includes(choice.id))
-			core.view.chrCustUnsupportedWarning = true;
-	}
-
 	// empty the arrays
 	state.chrCustChoices.splice(0, state.chrCustChoices.length);
 	state.chrCustChoiceSelection.splice(0, state.chrCustChoiceSelection.length);
