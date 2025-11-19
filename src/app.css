@@ -2515,7 +2515,7 @@ input[type=number]::-webkit-outer-spin-button {
 /* character import buttons in top-right */
 .character-import-buttons {
 	position: absolute;
-	right: 20px;
+	right: 30px;
 	top: 20px;
 	z-index: 1;
 	pointer-events: auto;
@@ -2533,18 +2533,30 @@ input[type=number]::-webkit-outer-spin-button {
 
 .character-bnet-button {
 	background-image: url(./images/import_battlenet.svg);
+	background-color: #148eff !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
 }
 
 .character-bnet-button.active {
-	background-color: var(--form-button-hover);
+	background-color: var(--form-button-hover) !important;
 }
 
 .character-wmv-button {
 	background-image: url(./images/import_wmv.svg);
+	background-color: #d22c1e !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
 }
 
 .character-wowhead-button {
 	background-image: url(./images/import_wowhead.svg);
+	background-color: #e02020 !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
 }
 
 /* floating import panel */

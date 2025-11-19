@@ -1105,9 +1105,9 @@
 						</select>
 					</div>
 					<div class="character-import-buttons">
-						<input type="button" value="Battle.net" class="ui-image-button character-bnet-button" @click="characterImportMode = characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: characterImportMode === 'BNET' }"/>
-						<input type="button" value="Wowhead" class="ui-image-button character-wowhead-button" @click="characterImportMode = characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: characterImportMode === 'WHEAD' }"/>
-						<input type="button" value="WoW Model Viewer" class="ui-image-button character-wmv-button" @click="click('import-wmv', $event)"/>
+						<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="characterImportMode = characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: characterImportMode === 'BNET' }"/>
+						<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="characterImportMode = characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: characterImportMode === 'WHEAD' }"/>
+						<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="click('import-wmv', $event)"/>
 					</div>
 					<div v-if="characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
 						<div class="header"><b>Character Import</b></div>
