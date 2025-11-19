@@ -24,7 +24,7 @@
 						<div class="option nav-data" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 					</template>
 					<template v-if="!!screen && screen.startsWith('legacy-')">
-						<div class="option nav-models" id="nav-legacy-models" @click="setScreen('legacy-tab-models')" :class="{ active: screen === 'legacy-tab-models' }">Models</div>
+						<!--<div class="option nav-models" id="nav-legacy-models" @click="setScreen('legacy-tab-models')" :class="{ active: screen === 'legacy-tab-models' }">Models</div>-->
 						<div class="option nav-textures" id="nav-legacy-textures" @click="setScreen('legacy-tab-textures')" :class="{ active: screen === 'legacy-tab-textures' }">Textures</div>
 						<div class="option nav-sounds" id="nav-legacy-sounds" @click="setScreen('legacy-tab-sounds')" :class="{ active: screen === 'legacy-tab-sounds' }">Sounds</div>
 						<div class="option nav-files" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
@@ -489,10 +489,10 @@
 
 				<div class="tab" id="legacy-tab-home" v-if="screen === 'legacy-tab-home'">
 					<div id="home-buttons" class="home-button-tray">
-						<div @click="setScreen('legacy-tab-models')">
+						<!--<div @click="setScreen('legacy-tab-models')">
 							<b>Models</b>
 							<span>View and export 3D models to common formats.</span>
-						</div>
+						</div>-->
 						<div @click="setScreen('legacy-tab-textures')">
 							<b>Textures</b>
 							<span>View and export textures to common formats.</span>
