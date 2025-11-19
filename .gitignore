@@ -11,3 +11,6 @@
 
 # Runtime directory for tests.
 /tests/user_data
+
+# python cache folders
+__pycache__
