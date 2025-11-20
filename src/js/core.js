@@ -175,6 +175,7 @@ const makeNewView = () => {
 		chrCustRightTab: 'geosets', // Active right tab for character customization.
 		chrModelLoading: false,
 		chrShowGeosetControl: false, // Controls whether geoset control view is shown instead of customization.
+		chrExportMenu: 'export', // Active menu in character export section ('export', 'textures', 'settings').
 		colorPickerOpenFor: null, // Currently open color picker option ID.
 		colorPickerPosition: { x: 0, y: 0 }, // Color picker popup position.
 		chrImportChrName: '', // Character import, character name input.

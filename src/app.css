@@ -2207,23 +2207,14 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 100%;
 	height: 100%;
 }
-#tab-characters .texture-preview-panel {
-	position: absolute;
-	width: 392px;
-	bottom: 5px;
-	right: 10px;
-}
-#tab-characters .texture-preview-panel #chr-overlay-btn {
-	display: flex;
-	justify-content: space-between;
-	flex-direction: row-reverse;
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: -43px;
-}
-#tab-characters .texture-preview-panel canvas {
+.character-export-menu .texture-preview-panel {
+	position: relative;
 	width: 100%;
+	max-width: 392px;
+}
+.character-export-menu .texture-preview-panel canvas {
+	width: 100%;
+	display: block;
 }
 #tab-characters .preview-container {
 	position: absolute;
@@ -2559,6 +2550,20 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 35px;
 }
 
+.texture-prev-button {
+	background-image: url(./fa-icons/arrow-left.svg);
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
+}
+
+.texture-next-button {
+	background-image: url(./fa-icons/arrow-right.svg);
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
+}
+
 /* floating import panel */
 #character-import-panel-floating {
 	position: absolute;
@@ -2597,12 +2602,18 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 /* export controls at bottom-right */
-.character-export-controls {
+.character-export-container {
 	position: absolute;
 	right: 20px;
 	bottom: 20px;
 	z-index: 1000;
 	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.character-export-controls {
 	background-color: var(--background);
 	border: 1px solid var(--border);
 	border-radius: 10px;
@@ -2610,6 +2621,25 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+}
+
+.character-export-tabs {
+	align-self: flex-end;
+}
+
+.character-export-menu {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.character-export-menu menu-button {
+	margin-top: 5px;
+}
+
+.texture-menu-controls {
+	display: flex;
+	justify-content: space-between;
 }
 
 .animation-dropdown-overlay {

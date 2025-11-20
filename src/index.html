@@ -1224,26 +1224,35 @@
 								<input type="button" value="Remove Baked Texture" @click="click('remove-baked-npc-texture', $event)" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer; font-weight: bold;"/>
 							</div>
 						</div>
-						<div class="texture-preview-panel" id="chr-texture-preview" v-show="config.chrShowTextureOverlay">
-							<div id="chr-overlay-btn">
-								<input type="button" value="&gt;" @click="click('chr-next-overlay', $event)"/>
-								<input type="button" value="&lt;" @click="click('chr-prev-overlay', $event)"/>
+						<div class="character-export-container">
+							<div class="character-export-controls">
+								<div class="character-export-menu" v-show="chrExportMenu == 'export'">
+									<label class="ui-checkbox" title="Include Animations in Export">
+										<input type="checkbox" v-model="config.modelsExportAnimations"/>
+										<span>Export animations</span>
+									</label>
+									<menu-button :options="menuButtonCharacterExport" :default="config.exportCharacterFormat" @change="config.exportCharacterFormat = $event" :disabled="isBusy" @click="click('export-character', $event)"></menu-button>
+								</div>
+								<div class="character-export-menu" v-show="chrExportMenu == 'textures'">
+									<div class="texture-preview-panel" id="chr-texture-preview">
+									</div>
+									<div class="texture-menu-controls">
+										<input type="button" value="" class="ui-image-button texture-prev-button" @click="click('chr-prev-overlay', $event)"/>
+										<input type="button" value="" class="ui-image-button texture-next-button" @click="click('chr-next-overlay', $event)"/>
+									</div>
+								</div>
+								<div class="character-export-menu" v-show="chrExportMenu == 'settings'">
+									<label class="ui-checkbox" title="Render Shadow">
+										<input type="checkbox" v-model="config.chrRenderShadow"/>
+										<span>Render shadow</span>
+									</label>
+								</div>
 							</div>
-						</div>
-						<div class="character-export-controls">
-							<label class="ui-checkbox" title="Include Animations in Export">
-								<input type="checkbox" v-model="config.modelsExportAnimations"/>
-								<span>Export animations</span>
-							</label>
-							<label class="ui-checkbox" title="Render Shadow">
-								<input type="checkbox" v-model="config.chrRenderShadow"/>
-								<span>Render shadow</span>
-							</label>
-							<label class="ui-checkbox" title="Show Texture Overlay">
-								<input type="checkbox" v-model="config.chrShowTextureOverlay"/>
-								<span>Show texture overlay</span>
-							</label>
-							<menu-button :options="menuButtonCharacterExport" :default="config.exportCharacterFormat" @change="config.exportCharacterFormat = $event" :disabled="isBusy" @click="click('export-character', $event)"></menu-button>
+							<ul class="ui-multi-button character-export-tabs">
+								<li :class="{ selected: chrExportMenu == 'export' }" @click.stop="chrExportMenu = 'export'">Export</li>
+								<li :class="{ selected: chrExportMenu == 'textures' }" @click.stop="chrExportMenu = 'textures'">Textures</li>
+								<li :class="{ selected: chrExportMenu == 'settings' }" @click.stop="chrExportMenu = 'settings'">Settings</li>
+							</ul>
 						</div>
 					</div>
 					<!-- right-panel removed, geosets commented out for now -->
