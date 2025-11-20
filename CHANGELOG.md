@@ -22,9 +22,11 @@
 - Added ability to preview cinematics directly in the Videos tab without exporting.
 - Added ability to apply baked NPC textures to characters (Textures -> Apply to Character).
 - Added "Randomize Customization" button to the character viewer.
+- Added support for WoW Classic Titan Reforged in China.
 - Reduced load time of characters tab from approximately 50s to 219ms (230x faster).
 - 'Show M2/M3/WMO' checkboxes have been replaced with a new quick filter under the models list.
 - Removed 'Show File Data IDs', this is now the default behavior.
+- Fixed patch service URL for Chinese region.
 - Fixed an issue that would cause map tiles to stop rendering when panning/zooming.
 - Fixed an issue that caused glitched artifacts to appear on character models.
 - Fixed an issue that caused 3D animation previews to appear horribly disfigured.
