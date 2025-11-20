@@ -63,6 +63,7 @@ const makeNewView = () => {
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
+		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
 		selectionTextures: [], // Current user selection of texture files.
 		selectionModels: [], // Current user selection of models.
 		selectionSounds: [], // Current user selection of sounds.

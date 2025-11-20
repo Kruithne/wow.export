@@ -35,9 +35,10 @@ module.exports = {
 	 * override: If provided, used as an override listfile.
 	 * disable: If provided, used as reactive disable flag.
 	 * persistscrollkey: If provided, enables scroll position persistence with this key.
+	 * quickfilters: Array of file extensions for quick filter links (e.g., ['m2', 'wmo']).
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey'],
-	emits: ['update:selection'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey', 'quickfilters'],
+	emits: ['update:selection', 'update:filter'],
 
 	/**
 	 * Reactive instance data.
@@ -381,13 +382,13 @@ module.exports = {
 
 		/**
 		 * Invoked when a user selects an item in the list.
-		 * @param {string} item 
+		 * @param {string} item
 		 * @param {MouseEvent} e
 		 */
 		selectItem: function(item, event) {
 			if (this.disable)
 				return;
-			
+
 			const checkIndex = this.selection.indexOf(item);
 			const newSelection = this.selection.slice();
 
@@ -420,7 +421,7 @@ module.exports = {
 							if (newSelection.indexOf(select) === -1)
 								newSelection.push(select);
 						}
-					}				
+					}
 				} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 					// Normal click, replace entire selection.
 					newSelection.splice(0);
@@ -431,6 +432,25 @@ module.exports = {
 			}
 
 			this.$emit('update:selection', newSelection);
+		},
+
+		/**
+		 * Invoked when a quick filter link is clicked.
+		 * @param {string} ext - File extension (e.g., 'm2', 'wmo')
+		 */
+		applyQuickFilter: function(ext) {
+			if (!this.filter && this.filter !== '')
+				return;
+
+			const pattern = `.*\\.${ext.toLowerCase()}(\\s\\[\\d+\\])?$`;
+			let new_filter = this.filter || '';
+
+			if (new_filter.length > 0)
+				new_filter = new_filter + ' ' + pattern;
+			else
+				new_filter = pattern;
+
+			this.$emit('update:filter', new_filter);
 		}
 	},
 
@@ -443,5 +463,10 @@ module.exports = {
 			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
 		</div>
 	</div>
-	<div class="list-status" v-if="unittype">{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</div></div>`
+	<div class="list-status" v-if="unittype" :class="{ 'with-quick-filters': quickfilters && quickfilters.length > 0 }">
+		<span>{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</span>
+		<span v-if="quickfilters && quickfilters.length > 0" class="quick-filters">
+			Quick filter: <template v-for="(ext, index) in quickfilters" :key="ext"><a @click="applyQuickFilter(ext)">{{ ext.toUpperCase() }}</a><span v-if="index < quickfilters.length - 1"> / </span></template>
+		</span>
+	</div></div>`
 };

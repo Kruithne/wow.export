@@ -609,7 +609,7 @@
 
 				<div class="tab list-tab" id="legacy-tab-models" v-if="screen === 'legacy-tab-models'">
 					<div class="list-container">
-						<listbox v-model:selection="selectionLegacyModels" :items="listfileLegacyModels" :filter="userInputFilterLegacyModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="legacy_models"></listbox>
+						<listbox v-model:selection="selectionLegacyModels" v-model:filter="userInputFilterLegacyModels" :items="listfileLegacyModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="legacy_models" :quickfilters="modelQuickFilters"></listbox>
 					</div>
 					<div class="filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
@@ -949,7 +949,7 @@
 				</div>
 				<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
 					<div class="list-container">
-						<listbox v-model:selection="selectionModels" :items="listfileModels" :override="overrideModelList" :filter="userInputFilterModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models"></listbox>
+						<listbox v-model:selection="selectionModels" v-model:filter="userInputFilterModels" :items="listfileModels" :override="overrideModelList" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="modelQuickFilters"></listbox>
 					</div>
 					<div class="filter">
 						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>

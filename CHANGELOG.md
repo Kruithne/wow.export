@@ -23,7 +23,7 @@
 - Added apply to baked NPC textures to characters (Textures -> Apply to Character).
 - Added "Randomize Customization" button to the character viewer.
 - Reduced load time of characters tab from 50s to 219ms (230x faster).
-- Removed redundant 'Show M2', 'Show M3', and 'Show WMO' options.
+- 'Show M2/M3/WMO' checkboxes have been replaced with a new quick filter under the models list.
 - Removed 'Show File Data IDs', this is now default behavior.
 - Fixed an issue that would cause map tiles to stop rendering when panning/zooming.
 - Fixed an issue that caused glitched artifacts to appear on character models.
