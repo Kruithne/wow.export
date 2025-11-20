@@ -192,7 +192,7 @@ const makeNewView = () => {
 		exportCancelled: false, // Export cancellation state.
 		isXmas: (new Date().getMonth() === 11),
 		chrCustBakedNPCTexture: null, // BLP texture for baked NPC skins (from textures tab)
-		regexTooltip: '(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
+		regexTooltip: '.* - Matches anything\n(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
 		contextMenus: {
 			nodeTextureRibbon: null, // Context menu node for the texture ribbon.
 			nodeItem: null, // Context menu node for the items listfile.
