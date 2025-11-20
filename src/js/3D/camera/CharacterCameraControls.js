@@ -5,6 +5,7 @@
  */
 
 const ROTATE_SPEED = 0.005;
+const PAN_SPEED = 0.002;
 const ZOOM_SCALE = 0.95;
 const MIN_DISTANCE = 0.5;
 const MAX_DISTANCE = 100;
@@ -17,7 +18,9 @@ class CharacterCameraControls {
 
 		this.target = new THREE.Vector3(0, 0, 0);
 		this.is_rotating = false;
+		this.is_panning = false;
 		this.prev_mouse_x = 0;
+		this.prev_mouse_y = 0;
 
 		this.mouse_down_handler = e => this.on_mouse_down(e);
 		this.mouse_move_handler = e => this.on_mouse_move(e);
@@ -26,12 +29,22 @@ class CharacterCameraControls {
 
 		this.dom_element.addEventListener('mousedown', this.mouse_down_handler);
 		this.dom_element.addEventListener('wheel', this.mouse_wheel_handler);
+		this.dom_element.addEventListener('contextmenu', e => e.preventDefault());
 	}
 
 	on_mouse_down(e) {
 		if (e.button === 0) {
 			this.is_rotating = true;
 			this.prev_mouse_x = e.clientX;
+
+			document.addEventListener('mousemove', this.mouse_move_handler);
+			document.addEventListener('mouseup', this.mouse_up_handler);
+
+			e.preventDefault();
+		} else if (e.button === 2) {
+			this.is_panning = true;
+			this.prev_mouse_x = e.clientX;
+			this.prev_mouse_y = e.clientY;
 
 			document.addEventListener('mousemove', this.mouse_move_handler);
 			document.addEventListener('mouseup', this.mouse_up_handler);
@@ -49,12 +62,42 @@ class CharacterCameraControls {
 			this.render_group.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotation_delta);
 
 			e.preventDefault();
+		} else if (this.is_panning) {
+			const delta_x = e.clientX - this.prev_mouse_x;
+			const delta_y = e.clientY - this.prev_mouse_y;
+			this.prev_mouse_x = e.clientX;
+			this.prev_mouse_y = e.clientY;
+
+			const camera_right = new THREE.Vector3();
+			const camera_up = new THREE.Vector3();
+			const camera_dir = new THREE.Vector3();
+
+			this.camera.getWorldDirection(camera_dir);
+			camera_right.crossVectors(camera_dir, this.camera.up).normalize();
+			camera_up.crossVectors(camera_right, camera_dir).normalize();
+
+			const distance = this.camera.position.distanceTo(this.target);
+			const pan_scale = distance * PAN_SPEED;
+
+			const pan_offset = new THREE.Vector3();
+			pan_offset.addScaledVector(camera_right, -delta_x * pan_scale);
+			pan_offset.addScaledVector(camera_up, delta_y * pan_scale);
+
+			this.camera.position.add(pan_offset);
+			this.target.add(pan_offset);
+
+			e.preventDefault();
 		}
 	}
 
 	on_mouse_up(e) {
 		if (e.button === 0) {
 			this.is_rotating = false;
+
+			document.removeEventListener('mousemove', this.mouse_move_handler);
+			document.removeEventListener('mouseup', this.mouse_up_handler);
+		} else if (e.button === 2) {
+			this.is_panning = false;
 
 			document.removeEventListener('mousemove', this.mouse_move_handler);
 			document.removeEventListener('mouseup', this.mouse_up_handler);
