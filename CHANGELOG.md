@@ -20,11 +20,11 @@
 - Added the ability to import Wowhead Dressing Room characters from URL.
 - Added "Export PNG (3D Preview)" and "Copy to Clipboard (3D Preview)" options to character viewer.
 - Added ability to preview cinematics directly in the Videos tab without exporting.
-- Added apply to baked NPC textures to characters (Textures -> Apply to Character).
+- Added ability to apply baked NPC textures to characters (Textures -> Apply to Character).
 - Added "Randomize Customization" button to the character viewer.
-- Reduced load time of characters tab from 50s to 219ms (230x faster).
+- Reduced load time of characters tab from approximately 50s to 219ms (230x faster).
 - 'Show M2/M3/WMO' checkboxes have been replaced with a new quick filter under the models list.
-- Removed 'Show File Data IDs', this is now default behavior.
+- Removed 'Show File Data IDs', this is now the default behavior.
 - Fixed an issue that would cause map tiles to stop rendering when panning/zooming.
 - Fixed an issue that caused glitched artifacts to appear on character models.
 - Fixed an issue that caused 3D animation previews to appear horribly disfigured.
@@ -34,12 +34,12 @@
 - Fixed an issue causing floating-point precision from data tables to be rounded, making data table exports accurate and solving minor inaccuracies across the application.
 - Fixed an issue with alpha premultiplication causing inaccurate alpha map exports.
 - Fixed an issue causing seams to appear on maps imported with the Blender add-on.
-- Fixed an issue that would prevent exporting raw WMO group files with Enable Shared Chilren disabled.
+- Fixed an issue that would prevent exporting raw WMO group files with Enable Shared Children disabled.
 - Fixed an issue that caused doodad sets to not appear correctly in 3D previews.
 - Fixed an issue that would cause "Clear Cache" to hang indefinitely.
 - Fixed an issue that would cause the realm name entered on character import not to persist.
 - Fixed an issue that would cause liquid chunks in exported ADT tiles to appear at incorrect heights.
-- Fixed an issue that would cause ocena liquid to appear orange when imported into Blender.
+- Fixed an issue that would cause ocean liquid to appear orange when imported into Blender.
 - Fixed an issue that would prevent character customization working in 12.X (Midnight).
 - The automatic update feature can now be disabled by passing the --disable-auto-update CLI flag (not recommended).
 - The last_export logfile is now created if it does not exist, rather than requiring manual creation to enable.
