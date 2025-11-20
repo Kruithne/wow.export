@@ -176,6 +176,7 @@ module.exports = {
 		{ id: 8, name: 'Shadowlands', shortName: 'SL' },
 		{ id: 9, name: 'Dragonflight', shortName: 'DF' },
 		{ id: 10, name: 'The War Within', shortName: 'TWW' },
-		{ id: 11, name: 'Midnight', shortName: 'Midnight' }
+		{ id: 11, name: 'Midnight', shortName: 'Midnight' },
+		{ id: 12, name: 'The Last Titan', shortName: 'TLT' }
 	]
 };
