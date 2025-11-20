@@ -123,6 +123,7 @@ module.exports = {
 		],
 		DEFAULT_REGION: 'us', // Region which is selected by default.
 		HOST: 'https://%s.version.battle.net/', // Blizzard patch server host.
+		HOST_CHINA: 'https://cn.version.battlenet.com.cn/', // Blizzard China patch server host.
 		SERVER_CONFIG: '/cdns', // CDN config file on patch server.
 		VERSION_CONFIG: '/versions' // Versions config file on patch server.
 	},

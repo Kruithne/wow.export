@@ -140,7 +140,10 @@ class CDNResolver {
 	 */
 	async _resolveRegionProduct(region, product) {
 		try {
-			const host = util.format(constants.PATCH.HOST, region);
+			let host = util.format(constants.PATCH.HOST, region);
+			if(region === 'cn')
+				host = constants.PATCH.HOST_CHINA;
+
 			const url = host + product + constants.PATCH.SERVER_CONFIG;
 			const res = await generics.get(url);
 

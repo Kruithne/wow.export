@@ -37,6 +37,9 @@ class CASCRemote extends CASC {
 	async init() {
 		log.write('Initializing remote CASC source (%s)', this.region);
 		this.host = util.format(constants.PATCH.HOST, this.region);
+		if(this.region === 'cn')
+			this.host = constants.PATCH.HOST_CHINA;
+
 		this.builds = [];
 
 		// Collect version configs for all products.
