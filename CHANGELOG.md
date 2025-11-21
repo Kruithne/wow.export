@@ -5,6 +5,7 @@
 - Fixed an issue that caused some settings options to appear oversized.
 - Fixed an issue that caused the download size for updates to appear double what it is.
 - Fixed an issue with WMO LOD/group files appearing in models tab on legacy listfile mode.
+- Fixed an issue that caused wow.export to crash toggling Show Grid/Show Background.
 
 ## 0.2.5 (21-11-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
