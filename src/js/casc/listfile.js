@@ -444,7 +444,7 @@ const listfile_preload_legacy = async () => {
 		preload_sounds = await getFileDataIDsByExtension(['.ogg', '.mp3', '.unk_sound'], 'filtering sounds');
 		preload_videos = await getFileDataIDsByExtension('.avi', 'filtering videos');
 		preload_text = await getFileDataIDsByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], 'filtering text files');
-		preload_models = await getFileDataIDsByExtension(['.m2', '.wmo', '.m3']);
+		preload_models = await getFileDataIDsByExtension(['.m2', '.wmo', '.m3'], 'filtering models');
 		
 		is_preloaded = true;
 		log.write('Preloaded %d listfile entries and filtered by extensions', preloadedIdLookup.size);
