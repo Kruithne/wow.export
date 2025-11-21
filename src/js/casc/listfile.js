@@ -521,17 +521,11 @@ const applyPreload = (rootEntries) => {
 				}
 			}
 
-			const filterAndFormat = (fileDataIDs) => {
-				const result = formatEntries(fileDataIDs);
-				fileDataIDs.length = 0;
-				return result;
-			};
-
-			core.view.listfileTextures = filterAndFormat(preload_textures);
-			core.view.listfileSounds = filterAndFormat(preload_sounds);
-			core.view.listfileVideos = filterAndFormat(preload_videos);
-			core.view.listfileText = filterAndFormat(preload_text);
-			core.view.listfileModels = filterAndFormat(preload_models);
+			core.view.listfileTextures = formatEntries(preload_textures);
+			core.view.listfileSounds = formatEntries(preload_sounds);
+			core.view.listfileVideos = formatEntries(preload_videos);
+			core.view.listfileText = formatEntries(preload_text);
+			core.view.listfileModels = formatEntries(preload_models);
 		} else {
 			// binary mode: filter maps and convert to arrays
 			for (const id of binary_id_to_offset.keys()) {
@@ -678,9 +672,9 @@ const formatEntries = (file_data_ids) => {
 
 	// If sorting by name, sort now that the filenames have been added.
 	if (!core.view.config.listfileSortByID)
-		file_data_ids.sort();
+		entries.sort();
 
-	return file_data_ids;
+	return entries;
 };
 
 const ingestIdentifiedFiles = (entries) => {	
