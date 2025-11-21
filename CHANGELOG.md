@@ -1,4 +1,4 @@
-## 0.2.5 (21-10-2025)
+## 0.2.5 (21-11-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
 - Implemented support for legacy MPQ-based installations (0.X - 3.X).
 - Source/build selection screen has been redesigned with a new interface.
