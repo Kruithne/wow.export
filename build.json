@@ -76,7 +76,7 @@
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
-				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
+				"node_addons/mmap/build/Release/mmap.node": "mmap.node"
 			},
 			"remap": {
 				"nw.exe": "wow.export.exe",
@@ -129,7 +129,7 @@
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
-				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
+				"node_addons/mmap/build/Release/mmap.node": "mmap.node"
 			},
 			"remap": {
 				"nw": "wow.export",
@@ -183,7 +183,7 @@
 				"CHANGELOG.md": "./wow.export.app/Contents/Resources/app.nw/src/CHANGELOG.md",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "./wow.export.app/Contents/Resources/app.nw/src/webp_node_enc.wasm",
-				"node_addons/mmap/build/Release/mmap.node": "src/mmap.node"
+				"node_addons/mmap/build/Release/mmap.node": "mmap.node"
 			},
 			"remap": {
 				"nwjs.app": "wow.export.app",
