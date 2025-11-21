@@ -102,7 +102,7 @@ function stringDecode(buf) {
 	while (i < end) {
 		const firstByte = buf[i];
 		let codePoint = null;
-		const bytesPerSequence = (firstByte > 0xEF) ? 4 :
+		let bytesPerSequence = (firstByte > 0xEF) ? 4 :
 			(firstByte > 0xDF) ? 3 :
 			(firstByte > 0xBF) ? 2 : 1;
 
@@ -269,7 +269,7 @@ class BlobPolyfill {
 	}
 
 	stream() {
-		const position = 0;
+		let position = 0;
 		const blob = this;
 
 		return new ReadableStream({

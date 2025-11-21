@@ -322,13 +322,6 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				}
 			});
 
-			if (!out_build.success) {
-				for (const log_entry of out_build.logs)
-					console.error(log_entry);
-
-				throw new AggregateError(out_build.logs, 'Bundle failed');
-			}
-
 			for (const output of out_build.outputs)
 				log.success('Created bundle *%s*', output.hash);
 		}
