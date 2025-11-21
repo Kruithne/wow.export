@@ -1,3 +1,10 @@
+## 0.2.5 (Hotfix)
+- Fixed an issue that prevent the "Clear Cache" option from working.
+- Fixed an issue with "Quick Filter" only working with regular expressions enabled.
+- Fixed an issue that caused the legacy listfile option to not function correctly.
+- Fixed an issue that caused some settings options to appear oversized.
+- Fixed an issue that caused the download size for updates to appear double what it is.
+
 ## 0.2.5 (21-11-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
 - Implemented support for legacy MPQ-based installations (0.X - 3.X).
