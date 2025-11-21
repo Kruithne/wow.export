@@ -36,7 +36,8 @@ async function download_headers() {
 		if (!response.ok)
 			throw new Error(`failed to download headers: ${response.statusText}`);
 
-		await Bun.write(headers_path, response);
+		const data = await response.arrayBuffer();
+		await Bun.write(headers_path, data);
 		log.success('Headers downloaded');
 	} else {
 		log.info('Headers already cached');
@@ -58,7 +59,8 @@ async function patch_delay_load_hook() {
 	if (!response.ok)
 		throw new Error(`failed to download delay hook: ${response.statusText}`);
 
-	await Bun.write(hook_path, response);
+	const data = await response.arrayBuffer();
+	await Bun.write(hook_path, data);
 	log.success('Delay load hook patched');
 }
 
