@@ -128,7 +128,7 @@
 				"resources/icon.png": "res/icon.png",
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
-				"node_addons/mmap/prebuilt/linux-64-mmap.node": "mmap.node"
+				"node_addons/mmap/prebuilt/linux-x64-mmap.node": "mmap.node"
 			},
 			"remap": {
 				"nw": "wow.export",
