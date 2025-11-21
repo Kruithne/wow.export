@@ -71,7 +71,7 @@ core.events.once('screen-source-select', async () => {
 	// Iterate CDN regions and create data nodes.
 	for (const region of constants.PATCH.REGIONS) {
 		let cdnURL = util.format(constants.PATCH.HOST, region.tag);
-		if(region === 'cn')
+		if(region.tag === 'cn')
 			cdnURL = constants.PATCH.HOST_CHINA;
 
 		const node = { tag: region.tag, name: region.name, url: cdnURL, delay: null };
