@@ -28,21 +28,20 @@
         ["OS=='mac'", {
           "cflags_cc": [
             "-std=c++17"
-          ]
+          ],
+          "xcode_settings": {
+            "OTHER_LDFLAGS!": [
+              "-fuse-ld=lld"
+            ],
+            "OTHER_LDFLAGS": [
+              "-Wl,-search_paths_first"
+            ]
+          }
         }],
         ["OS=='linux'", {
           "cflags_cc": [
             "-std=c++17"
           ]
-        }]
-      ],
-      "target_conditions": [
-        ["OS=='mac'", {
-          "xcode_settings": {
-            "OTHER_LDFLAGS": [
-              "-Wl,-search_paths_first"
-            ]
-          }
         }]
       ]
     }
