@@ -210,7 +210,7 @@ core.events.once('screen-tab-items', async () => {
 				materials = [];
 				models = [];
 	
-				const itemDisplayInfoRow = db2.ItemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
+				const itemDisplayInfoRow = await db2.ItemDisplayInfo.getRow(itemAppearanceRow.ItemDisplayInfoID);
 				if (itemDisplayInfoRow !== null) {
 					materials.push(...itemDisplayInfoRow.ModelMaterialResourcesID);
 					models.push(...itemDisplayInfoRow.ModelResourcesID);
