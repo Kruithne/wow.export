@@ -97,7 +97,7 @@ const applyUpdate = async () => {
 		}
 	}
 
-	const downloadSize = generics.filesize(requiredFiles.map(e => e.meta.size).reduce((total, val) => total + val));
+	const downloadSize = generics.filesize(requiredFiles.map(e => e.meta.compSize).reduce((total, val) => total + val));
 	log.write('%d files (%s) marked for download.', requiredFiles.length, downloadSize);
 
 	progress = core.createProgress(requiredFiles.length);
