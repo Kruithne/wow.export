@@ -116,15 +116,23 @@ async function patch_common_gypi() {
 		return;
 	}
 
-	log.info('Patching common.gypi for macOS compatibility...');
+	log.info('Patching common.gypi for linker compatibility...');
 
 	let content = await Bun.file(common_gypi_path).text();
 
-	// remove -fuse-ld=lld from macOS xcode_settings
-	content = content.replace(
-		"'-fuse-ld=lld -Wl,-search_paths_first'",
-		"'-Wl,-search_paths_first'"
-	);
+	if (process.platform === 'darwin') {
+		// remove -fuse-ld=lld from macOS xcode_settings
+		content = content.replace(
+			"'-fuse-ld=lld -Wl,-search_paths_first'",
+			"'-Wl,-search_paths_first'"
+		);
+	} else if (process.platform === 'linux') {
+		// remove -fuse-ld=lld from linux ldflags
+		content = content.replace(
+			"'ldflags': [ '-pthread', '-fuse-ld=lld' ],",
+			"'ldflags': [ '-pthread' ],"
+		);
+	}
 
 	await Bun.write(common_gypi_path, content);
 	log.success('common.gypi patched');
@@ -195,7 +203,7 @@ async function main() {
 
 		await extract_headers();
 
-		if (process.platform === 'darwin')
+		if (process.platform !== 'win32')
 			await patch_common_gypi();
 
 		if (process.platform === 'win32')
