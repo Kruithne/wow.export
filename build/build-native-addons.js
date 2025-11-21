@@ -45,11 +45,37 @@ async function download_headers() {
 }
 
 async function patch_delay_load_hook() {
-	const node_gyp_path = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
-	const hook_path = resolve(node_gyp_path, 'node-gyp/src/win_delay_load_hook.cc');
+	const search_paths = [];
 
-	if (!existsSync(hook_path)) {
-		log.warn('node-gyp delay hook not found at *%s*', hook_path);
+	try {
+		const npm_root = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
+		search_paths.push(resolve(npm_root, 'node-gyp/src/win_delay_load_hook.cc'));
+	} catch {}
+
+	try {
+		const npm_prefix = execFileSync('npm', ['prefix', '-g'], { encoding: 'utf8' }).trim();
+		search_paths.push(resolve(npm_prefix, 'node_modules/node-gyp/src/win_delay_load_hook.cc'));
+	} catch {}
+
+	if (process.env.APPDATA)
+		search_paths.push(resolve(process.env.APPDATA, 'npm/node_modules/node-gyp/src/win_delay_load_hook.cc'));
+
+	try {
+		const bun_global = execFileSync('bun', ['pm', 'bin', '-g'], { encoding: 'utf8' }).trim();
+		const bun_modules = resolve(bun_global, '../install/global/node_modules');
+		search_paths.push(resolve(bun_modules, 'node-gyp/src/win_delay_load_hook.cc'));
+	} catch {}
+
+	let hook_path = null;
+	for (const path of search_paths) {
+		if (existsSync(path)) {
+			hook_path = path;
+			break;
+		}
+	}
+
+	if (!hook_path) {
+		log.warn('node-gyp installation not found, cannot patch delay hook');
 		return;
 	}
 
