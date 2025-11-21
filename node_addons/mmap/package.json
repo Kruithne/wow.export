@@ -4,6 +4,9 @@
 	"author": "Kruithne <kruithne@gmail.com>",
 	"description": "mmap n-api",
 	"main": "index.js",
+	"scripts": {
+		"install": "echo 'Skipping automatic native build - use build script instead'"
+	},
 	"dependencies": {
 		"node-addon-api": "^8.5.0"
 	}
