@@ -13,7 +13,7 @@ const LocaleFlag = require('./locale-flags').flags;
 const ContentFlag = require('./content-flags');
 const InstallManifest = require('./install-manifest');
 const BufferWrapper = require('../buffer');
-const mmap = require(path.join(process.cwd(), 'mmap.node'));
+const mmap = require('../mmap');
 
 const ENC_MAGIC = 0x4E45;
 const ROOT_MAGIC = 0x4D465354;
@@ -196,7 +196,7 @@ class CASC {
 
 		const cachedPath = await this._ensureFileInCache(encodingKey, fileDataID, suppressLog);
 
-		const mmap_obj = new mmap.MmapObject();
+		const mmap_obj = mmap.create_virtual_file();
 		if (!mmap_obj.mapFile(cachedPath, { protection: 'readonly' }))
 			throw new Error('failed to map file: ' + mmap_obj.lastError);
 

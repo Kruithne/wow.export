@@ -12,7 +12,7 @@ const core = require('../core');
 const log = require('../log');
 const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
-const mmap = require(path.join(process.cwd(), 'mmap.node'));
+const mmap = require('../mmap');
 const hash_xxhash64 = require('../hashing/xxhash64');
 
 const DBTextureFileData = require('../db/caches/DBTextureFileData');
@@ -58,29 +58,6 @@ let preload_models = null;
 let is_preloaded = false;
 let preload_promise = null;
 
-const cleanup_binary_listfile = () => {
-	try {
-		// unmap all pf string files
-		for (let i = 0; i < binary_strings_mmap.length; i++) {
-			if (binary_strings_mmap[i]) {
-				binary_strings_mmap[i].unmap();
-				binary_strings_mmap[i] = null;
-			}
-		}
-		binary_strings_mmap = [];
-
-		// unmap tree nodes
-		if (binary_tree_nodes_mmap) {
-			binary_tree_nodes_mmap.unmap();
-			binary_tree_nodes_mmap = null;
-		}
-
-		log.write('Binary listfile memory-mapped files released');
-	} catch (e) {
-		// gracefully ignore cleanup errors
-		log.write('Error during listfile cleanup: %s', e.message);
-	}
-};
 
 const listfile_check_cache_expiry = (last_modified) => {
 	if (last_modified > 0) {
@@ -184,7 +161,7 @@ const listfile_preload_binary = async () => {
 
 		for (let i = 0; i < pf_files.length; i++) {
 			try {
-				const mmap_obj = new mmap.MmapObject();
+				const mmap_obj = mmap.create_virtual_file();
 				const file_path = path.join(constants.CACHE.DIR_LISTFILE, pf_files[i]);
 				log.write('Mapping pf file %d: %s', i, file_path);
 				if (!mmap_obj.mapFile(file_path, { protection: 'readonly' }))
@@ -218,7 +195,7 @@ const listfile_preload_binary = async () => {
 		
 		// memory-map tree nodes file
 		try {
-			binary_tree_nodes_mmap = new mmap.MmapObject();
+			binary_tree_nodes_mmap = mmap.create_virtual_file();
 			const tree_nodes_file = path.join(constants.CACHE.DIR_LISTFILE, BIN_LF_COMPONENTS.TREE_NODES);
 			log.write('Mapping tree nodes file: %s', tree_nodes_file);
 			if (!binary_tree_nodes_mmap.mapFile(tree_nodes_file, { protection: 'readonly' }))
@@ -902,10 +879,6 @@ const addEntry = (fileDataID, fileName, listfile) => {
 };
 // endregion
 
-// hook into cache clearing to release memory-mapped file handles
-core.events.on('cache-clearing', () => {
-	cleanup_binary_listfile();
-});
 
 module.exports = {
 	loadUnknowns,

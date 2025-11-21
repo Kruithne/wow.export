@@ -11,6 +11,7 @@ const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
 const BufferWrapper = require('../buffer');
+const mmap = require('../mmap');
 
 let cacheIntegrity;
 
@@ -176,8 +177,7 @@ core.events.on('click-cache-clear', async () => {
 	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
 
 	try {
-		// emit event to allow modules to release file handles before deletion
-		core.events.emit('cache-clearing');
+		mmap.release_virtual_files();
 
 		await fsp.rm(constants.CACHE.DIR, { recursive: true, force: true });
 		await fsp.mkdir(constants.CACHE.DIR);
