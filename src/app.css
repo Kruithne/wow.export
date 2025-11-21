@@ -2131,6 +2131,10 @@ input[type=number]::-webkit-outer-spin-button {
 .list-container .list-status .quick-filters a:hover {
 	text-decoration: underline;
 }
+.list-container .list-status .quick-filters a.active {
+	color: #ffffff;
+	font-weight: bold;
+}
 .list-container .ui-listbox {
 	position: absolute;
 	top: 0;

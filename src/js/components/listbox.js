@@ -52,7 +52,8 @@ module.exports = {
 			lastSelectItem: null,
 			debouncedFilter: null,
 			filterTimeout: null,
-			scrollPositionRestored: false
+			scrollPositionRestored: false,
+			activeQuickFilter: null
 		}
 	},
 
@@ -174,23 +175,28 @@ module.exports = {
 		 * Uses debounced filter to prevent UI stuttering on large datasets.
 		 */
 		filteredItems: function() {
-			// Skip filtering if no filter is set.
-			if (!this.debouncedFilter)
-				return this.itemList;
-
 			let res = this.itemList;
 
-			if (this.regex) {
-				try {
-					const filter = new RegExp(this.debouncedFilter.trim(), 'i');
-					res = res.filter(e => e.match(filter));
-				} catch (e) {
-					// Regular expression did not compile, skip filtering.
+			// apply text filter
+			if (this.debouncedFilter) {
+				if (this.regex) {
+					try {
+						const filter = new RegExp(this.debouncedFilter.trim(), 'i');
+						res = res.filter(e => e.match(filter));
+					} catch (e) {
+						// Regular expression did not compile, skip filtering.
+					}
+				} else {
+					const filter = this.debouncedFilter.trim().toLowerCase();
+					if (filter.length > 0)
+						res = res.filter(e => e.toLowerCase().includes(filter));
 				}
-			} else {
-				const filter = this.debouncedFilter.trim().toLowerCase();
-				if (filter.length > 0)
-					res = res.filter(e => e.toLowerCase().includes(filter));
+			}
+
+			// apply quick filter
+			if (this.activeQuickFilter) {
+				const pattern = new RegExp(`\\.${this.activeQuickFilter.toLowerCase()}(\\s\\[\\d+\\])?$`, 'i');
+				res = res.filter(e => e.match(pattern));
 			}
 
 			let hasChanges = false;
@@ -439,18 +445,10 @@ module.exports = {
 		 * @param {string} ext - File extension (e.g., 'm2', 'wmo')
 		 */
 		applyQuickFilter: function(ext) {
-			if (!this.filter && this.filter !== '')
-				return;
-
-			const pattern = `.*\\.${ext.toLowerCase()}(\\s\\[\\d+\\])?$`;
-			let new_filter = this.filter || '';
-
-			if (new_filter.length > 0)
-				new_filter = new_filter + ' ' + pattern;
+			if (this.activeQuickFilter === ext)
+				this.activeQuickFilter = null;
 			else
-				new_filter = pattern;
-
-			this.$emit('update:filter', new_filter);
+				this.activeQuickFilter = ext;
 		}
 	},
 
@@ -466,7 +464,7 @@ module.exports = {
 	<div class="list-status" v-if="unittype" :class="{ 'with-quick-filters': quickfilters && quickfilters.length > 0 }">
 		<span>{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</span>
 		<span v-if="quickfilters && quickfilters.length > 0" class="quick-filters">
-			Quick filter: <template v-for="(ext, index) in quickfilters" :key="ext"><a @click="applyQuickFilter(ext)">{{ ext.toUpperCase() }}</a><span v-if="index < quickfilters.length - 1"> / </span></template>
+			Quick filter: <template v-for="(ext, index) in quickfilters" :key="ext"><a @click="applyQuickFilter(ext)" :class="{ active: activeQuickFilter === ext }">{{ ext.toUpperCase() }}</a><span v-if="index < quickfilters.length - 1"> / </span></template>
 		</span>
 	</div></div>`
 };
