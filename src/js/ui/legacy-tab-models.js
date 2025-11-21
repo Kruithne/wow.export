@@ -412,6 +412,10 @@ core.events.once('screen-legacy-tab-models', async () => {
 
 		core.view.legacyModelViewerContext = Object.seal({ camera, scene, controls: null });
 
+		// set up watchers after scene initialization
+		modelHelpers.setup_grid_watcher(scene, grid);
+		modelHelpers.setup_background_watchers(scene);
+
 		core.view.isBusy--;
 		core.view.setScreen('legacy-tab-models');
 	} catch (error) {
@@ -463,9 +467,6 @@ core.registerLoadFunc(async () => {
 			}
 		}
 	});
-
-	modelHelpers.setup_grid_watcher(scene, grid);
-	modelHelpers.setup_background_watchers(scene);
 
 	core.view.$watch('selectionLegacyModels', async selection => {
 		if (!core.view.config.modelsAutoPreview)

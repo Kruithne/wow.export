@@ -32,6 +32,7 @@ const textureExporter = require('./texture-exporter');
 const uvDrawer = require('./uv-drawer');
 const AnimMapper = require('../3D/AnimMapper');
 const CameraBounding = require('../3D/camera/CameraBounding');
+const modelHelpers = require('./model-viewer-helpers');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
 const MODEL_TYPE_M2 = Symbol('modelM2');
@@ -614,6 +615,10 @@ core.events.once('screen-tab-models', async () => {
 
 		core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup });
 
+		// set up watchers after scene initialization
+		modelHelpers.setup_grid_watcher(scene, grid);
+		modelHelpers.setup_background_watchers(scene);
+
 		// Loading complete, return to models tab
 		core.view.isBusy--;
 		core.view.setScreen('tab-models');
@@ -687,25 +692,6 @@ core.registerLoadFunc(async () => {
 					requestAnimationFrame(() => CameraBounding.fitObjectInView(renderGroup, camera, core.view.modelViewerContext.controls));
 			}
 		}
-	});
-
-	core.view.$watch('config.modelViewerShowGrid', () => {
-		if (core.view.config.modelViewerShowGrid)
-			scene.add(grid);
-		else
-			scene.remove(grid);
-	});
-
-	core.view.$watch('config.modelViewerShowBackground', () => {
-		if (core.view.config.modelViewerShowBackground)
-			scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
-		else
-			scene.background = null;
-	});
-
-	core.view.$watch('config.modelViewerBackgroundColor', () => {
-		if (core.view.config.modelViewerShowBackground)
-			scene.background = new THREE.Color(core.view.config.modelViewerBackgroundColor);
 	});
 
 	// Track selection changes on the model listbox and preview first model.
