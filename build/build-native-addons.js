@@ -151,7 +151,6 @@ function rebuild_addon(addon_dir) {
 	const addon_name = join(addon_dir).split(/[/\\]/).pop();
 	log.info('Building addon *%s*...', addon_name);
 
-	const gyp_cmd = process.platform === 'win32' ? 'node-gyp.cmd' : 'node-gyp';
 	const args = [
 		'rebuild',
 		`--target=${node_version}`,
@@ -163,7 +162,7 @@ function rebuild_addon(addon_dir) {
 		args.push('--', `-Dnw_lib_file=${node_lib_for_gyp}`);
 	}
 
-	execFileSync(gyp_cmd, args, {
+	execFileSync('npx', ['node-gyp', ...args], {
 		cwd: addon_dir,
 		stdio: 'inherit'
 	});
