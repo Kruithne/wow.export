@@ -30,9 +30,6 @@
             "-std=c++17"
           ],
           "xcode_settings": {
-            "OTHER_LDFLAGS!": [
-              "-fuse-ld=lld"
-            ],
             "OTHER_LDFLAGS": [
               "-Wl,-search_paths_first"
             ]

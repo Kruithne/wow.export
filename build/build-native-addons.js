@@ -108,6 +108,28 @@ async function extract_headers() {
 	log.success('Headers extracted');
 }
 
+async function patch_common_gypi() {
+	const common_gypi_path = resolve(node_dir, 'common.gypi');
+
+	if (!existsSync(common_gypi_path)) {
+		log.warn('common.gypi not found, skipping patch');
+		return;
+	}
+
+	log.info('Patching common.gypi for macOS compatibility...');
+
+	let content = await Bun.file(common_gypi_path).text();
+
+	// remove -fuse-ld=lld from macOS xcode_settings
+	content = content.replace(
+		"'-fuse-ld=lld -Wl,-search_paths_first'",
+		"'-Wl,-search_paths_first'"
+	);
+
+	await Bun.write(common_gypi_path, content);
+	log.success('common.gypi patched');
+}
+
 function install_deps(addon_dir) {
 	const addon_name = join(addon_dir).split(/[/\\]/).pop();
 	log.info('Installing dependencies for *%s*...', addon_name);
@@ -172,6 +194,9 @@ async function main() {
 			await download_node_lib();
 
 		await extract_headers();
+
+		if (process.platform === 'darwin')
+			await patch_common_gypi();
 
 		if (process.platform === 'win32')
 			copy_libs();
