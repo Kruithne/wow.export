@@ -1489,6 +1489,7 @@
 				<div class="form-tray">
 					<input type="button" value="Report Issue" data-external="::ISSUE_TRACKER"/>
 					<input type="button" value="Get Help on Discord" data-external="::DISCORD"/>
+					<input type="button" value="Copy Log to Clipboard" onclick="nw.Clipboard.get().set(document.querySelector('#crash-screen-log').value, 'text')"/>
 					<input type="button" value="Restart Application" onclick="chrome.runtime.reload()"/>
 				</div>
 				<textarea id="crash-screen-log">No runtime log available.</textarea>

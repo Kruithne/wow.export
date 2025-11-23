@@ -1,3 +1,6 @@
+## 0.2.6 (TBD)
+- Added 'Copy Log to Clipboard' button to the crash screen.
+
 ## 0.2.5 (Hotfixes)
 - 21/10 Fixed an issue that prevent the "Clear Cache" option from working.
 - 21/10 Fixed an issue with "Quick Filter" only working with regular expressions enabled.
