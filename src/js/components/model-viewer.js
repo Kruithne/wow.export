@@ -24,7 +24,7 @@ module.exports = {
 			const deltaTime = currentTime - this.lastTime;
 			this.lastTime = currentTime;
 
-			const activeRenderer = tabModels.getActiveRenderer() || tabCharacters.getActiveRenderer();
+			const activeRenderer = this.context.useCharacterControls ? tabCharacters.getActiveRenderer() : tabModels.getActiveRenderer();
 			if (activeRenderer && activeRenderer.updateAnimation)
 				activeRenderer.updateAnimation(deltaTime);
 

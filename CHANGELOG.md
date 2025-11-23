@@ -8,6 +8,7 @@
 - Fixed an issue that caused wow.export to crash toggling Show Grid/Show Background.
 - Fixed an issue that caused a crash when loading the item tab with "Show unknown items" enabled.
 - Fixed an issue that caused some maps to not be listed in Classic versions of WoW.
+- Fixed an issue that caused character animations to break when switching to Models tab and back.
 
 ## 0.2.5 (21-11-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
