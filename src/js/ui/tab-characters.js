@@ -512,7 +512,7 @@ async function importCharacter() {
 	}
 
 	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm.label);
-	const url = util.format(core.view.config.armoryURL, selected_region, selected_realm.value, encodeURIComponent(character_name.toLowerCase()));
+	const url = util.format(core.view.config.armoryURL, encodeURIComponent(selected_region), encodeURIComponent(selected_realm.value), encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
 	const res = await generics.get(url);
