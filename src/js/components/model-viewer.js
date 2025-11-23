@@ -13,6 +13,21 @@ module.exports = {
 	props: ['context'],
 
 	methods: {
+		recreate_controls: function() {
+			const canvas = this.renderer.domElement;
+
+			if (this.controls) {
+				this.controls.dispose();
+				this.controls = null;
+			}
+
+			const use_character_controls = this.context.useCharacterControls && !core.view.config.chrUse3DCamera;
+			this.controls = use_character_controls
+				? new CharacterCameraControls(this.context.camera, canvas, this.context.renderGroup)
+				: new CameraControls(this.context.camera, canvas);
+			this.context.controls = this.controls;
+		},
+
 		render: function() {
 			if (!this.isRendering)
 				return;
@@ -49,11 +64,13 @@ module.exports = {
 		const canvas = this.renderer.domElement;
 		container.appendChild(canvas);
 
-		const use_character_controls = this.context.useCharacterControls || false;
-		this.controls = use_character_controls
-			? new CharacterCameraControls(this.context.camera, canvas, this.context.renderGroup)
-			: new CameraControls(this.context.camera, canvas);
-		this.context.controls = this.controls;
+		this.recreate_controls();
+
+		if (this.context.useCharacterControls) {
+			this.chr_camera_watcher = core.view.$watch('config.chrUse3DCamera', () => {
+				this.recreate_controls();
+			});
+		}
 
 		this.onResize = () => {
 			// We need to remove the canvas from the container so that the layout updates
@@ -83,6 +100,9 @@ module.exports = {
 		this.controls.dispose();
 		this.renderer.dispose();
 		window.removeEventListener('resize', this.onResize);
+
+		if (this.chr_camera_watcher)
+			this.chr_camera_watcher();
 	},
 
 	/**
