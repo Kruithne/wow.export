@@ -1,5 +1,7 @@
 ## 0.2.6 (TBD)
 - Added 'Copy Log to Clipboard' button to the crash screen.
+- Improved DB2 table loading performance by utilizing DBD manifest for direct lookups.
+- wow.export will remain functional with most features even if listfile fails to load.
 
 ## 0.2.5 (Hotfixes)
 - 21/10 Fixed an issue that prevent the "Clear Cache" option from working.

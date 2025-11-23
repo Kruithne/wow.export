@@ -5,6 +5,7 @@
  */
 const BLTEReader = require('./blte-reader').BLTEReader;
 const listfile = require('./listfile');
+const dbd_manifest = require('./dbd-manifest');
 const log = require('../log');
 const core = require('../core');
 const path = require('path');
@@ -154,10 +155,19 @@ class CASC {
 		let fileDataID;
 
 		// If filename is "unknown/<fdid>", skip listfile lookup
-		if (fileName.startsWith("unknown/") && !fileName.includes('.'))
+		if (fileName.startsWith("unknown/") && !fileName.includes('.')) {
 			fileDataID = parseInt(fileName.split('/')[1]);
-		else
-			fileDataID = listfile.getByFilename(fileName);
+		} else {
+			// try dbd manifest first for db2 files
+			if (fileName.startsWith('DBFilesClient/') && fileName.endsWith('.db2')) {
+				const table_name = fileName.substring(14, fileName.length - 4);
+				fileDataID = dbd_manifest.getByTableName(table_name);
+			}
+
+			// fallback to listfile
+			if (fileDataID === undefined)
+				fileDataID = listfile.getByFilename(fileName);
+		}
 
 		if (fileDataID === undefined)
 			throw new Error('File not mapping in listfile: ' + fileName);
@@ -212,10 +222,19 @@ class CASC {
 	async getVirtualFileByName(fileName, suppressLog = false) {
 		let fileDataID;
 
-		if (fileName.startsWith("unknown/") && !fileName.includes('.'))
+		if (fileName.startsWith("unknown/") && !fileName.includes('.')) {
 			fileDataID = parseInt(fileName.split('/')[1]);
-		else
-			fileDataID = listfile.getByFilename(fileName);
+		} else {
+			// try dbd manifest first for db2 files
+			if (fileName.startsWith('DBFilesClient/') && fileName.endsWith('.db2')) {
+				const table_name = fileName.substring(14, fileName.length - 4);
+				fileDataID = dbd_manifest.getByTableName(table_name);
+			}
+
+			// fallback to listfile
+			if (fileDataID === undefined)
+				fileDataID = listfile.getByFilename(fileName);
+		}
 
 		if (fileDataID === undefined)
 			throw new Error('file not mapping in listfile: ' + fileName);
@@ -230,6 +249,15 @@ class CASC {
 	async prepareListfile() {
 		await this.progress.step('Preparing listfiles...');
 		await listfile.prepareListfile();
+	}
+
+	/**
+	 * prepare dbd manifest before loading.
+	 * ensures preloading is complete.
+	 */
+	async prepareDBDManifest() {
+		await this.progress.step('Loading DBD manifest...');
+		await dbd_manifest.prepareManifest();
 	}
 
 	/**

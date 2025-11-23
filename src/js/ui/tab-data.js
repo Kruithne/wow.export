@@ -6,15 +6,14 @@
 const core = require('../core');
 const log = require('../log');
 const WDCReader = require('../db/WDCReader');
-const generics = require('../generics');
+const dbd_manifest = require('../casc/dbd-manifest');
 const dataExporter = require('./data-exporter');
 
 let selectedFile = null;
 let selectedFileDataID = null;
-let manifestLookup = new Map();
 
 /**
- * Initialize the available table names by fetching the DBD manifest.
+ * initialize the available table names from the dbd manifest.
  * @returns {Promise<void>}
  */
 async function initializeAvailableTables() {
@@ -23,26 +22,10 @@ async function initializeAvailableTables() {
 		return;
 
 	try {
-		const dbdFilenameURL = core.view.config.dbdFilenameURL;
-		const dbdFilenameFallbackURL = core.view.config.dbdFilenameFallbackURL;
-		
-		const raw = await generics.downloadFile([dbdFilenameURL, dbdFilenameFallbackURL]);
-		const manifestData = raw.readJSON();
-
-		for (const entry of manifestData) {
-			if (entry.tableName && entry.db2FileDataID) {
-				if (!core.view.casc.fileExists(entry.db2FileDataID))
-					continue;
-				
-				manifest.push(entry.tableName);
-				manifestLookup.set(entry.tableName, entry.db2FileDataID);
-			}
-		}
-
-		manifest.sort();
-		log.write('Initialized %d available DB2 tables from DBD manifest', manifest.length);
+		await dbd_manifest.prepareManifest();
+		log.write('initialized available db2 tables from dbd manifest');
 	} catch (e) {
-		log.write('Failed to initialize available DB2 tables: %s', e.message);
+		log.write('failed to initialize available db2 tables: %s', e.message);
 	}
 }
 
@@ -76,9 +59,9 @@ core.registerLoadFunc(async () => {
 			try {
 				// Use the table name directly (already in proper case from DBD repository)
 				const tableName = first;
-				
-				// Get the fileDataID for this table from our lookup
-				selectedFileDataID = manifestLookup.get(tableName) || null;
+
+				// Get the fileDataID for this table from dbd manifest
+				selectedFileDataID = dbd_manifest.getByTableName(tableName) || null;
 				
 				const db2Reader = new WDCReader('DBFilesClient/' + tableName + '.db2');
 				await db2Reader.parse();

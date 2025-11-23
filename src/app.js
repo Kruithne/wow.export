@@ -85,6 +85,7 @@ const generics = require('./js/generics');
 const updater = require('./js/updater');
 const core = require('./js/core');
 const listfile = require('./js/casc/listfile');
+const dbd_manifest = require('./js/casc/dbd-manifest');
 const cdnResolver = require('./js/casc/cdn-resolver');
 const log = require('./js/log');
 const config = require('./js/config');
@@ -666,6 +667,7 @@ document.addEventListener('click', function(e) {
 	}
 
 	listfile.preload();
+	dbd_manifest.preload();
 
 	// Set-up proper drag/drop handlers.
 	let dropStack = 0;
