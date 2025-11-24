@@ -25,12 +25,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential python3-dev
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.9.0'
       - name: Set up bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install node-gyp
-        run: bun install -g node-gyp
+      - name: Install nw-gyp
+        run: npm install -g nw-gyp
       - name: bun install
         run: bun install
       - name: Compile wow.export ${{ matrix.platform }}

@@ -113,6 +113,10 @@ function copy_libs() {
 	const node_lib_dest = resolve(release_dir, 'node.lib');
 	copyFileSync(node_lib_path, node_lib_dest);
 	log.success('Copied node.lib to *%s*', node_lib_dest);
+
+	const nw_lib_dest = resolve(release_dir, 'nw.lib');
+	copyFileSync(node_lib_path, nw_lib_dest);
+	log.success('Copied nw.lib to *%s*', nw_lib_dest);
 }
 
 async function extract_headers() {
@@ -179,16 +183,11 @@ function rebuild_addon(addon_dir) {
 
 	const args = [
 		'rebuild',
-		`--target=${node_version}`,
+		`--target=${nw_version}`,
 		`--nodedir=${node_dir}`
 	];
 
-	if (process.platform === 'win32') {
-		const node_lib_for_gyp = resolve(node_dir, 'Release/node.lib');
-		args.push('--', `-Dnw_lib_file=${node_lib_for_gyp}`);
-	}
-
-	execFileSync('npx', ['node-gyp', ...args], {
+	execFileSync('npx', ['nw-gyp', ...args], {
 		cwd: addon_dir,
 		stdio: 'inherit'
 	});
