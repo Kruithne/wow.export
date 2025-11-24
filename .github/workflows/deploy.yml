@@ -25,11 +25,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python2 python2-dev
-      - name: Set up Python (macOS/Windows)
-        if: matrix.os != 'ubuntu-20.04'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '2.7'
+      - name: Install Python 2 (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install python2 -y
+      - name: Install Python 2 (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install pyenv
+          pyenv install 2.7.18
+          echo "PYTHON=/Users/runner/.pyenv/versions/2.7.18/bin/python" >> $GITHUB_ENV
       - name: Install node-gyp dependencies (Linux)
         if: matrix.os == 'ubuntu-20.04'
         run: |
