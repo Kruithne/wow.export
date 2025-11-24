@@ -293,6 +293,8 @@ class CASCRemote extends CASC {
 		await this.loadListfile(this.build.BuildConfig);
 
 		await this.initializeComponents();
+
+		core.hideLoadingScreen();
 	}
 
 	/**
