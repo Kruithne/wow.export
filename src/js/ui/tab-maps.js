@@ -666,55 +666,24 @@ const parseMapEntry = (entry) => {
 // The first time the user opens up the map tab, initialize map names.
 core.events.once('screen-tab-maps', async () => {
 	try {
-		const map_rows = await db2.Map.getAllRows();
-		core.showLoadingScreen(map_rows.size);
+		core.showLoadingScreen(2);
+		await core.progressLoadingScreen('Loading maps...');
 
 		const maps = [];
-		let processed = 0;
-		for (const [id, entry] of map_rows) {
-			await core.progressLoadingScreen(util.format('Loading maps (%d / %d)...', ++processed, map_rows.size));
+		for (const [id, entry] of await db2.Map.getAllRows()) {
+			const wdtPath = `world/maps/${entry.Directory}/${entry.Directory}.wdt`;
 
-			const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
+			if (entry.WdtFileDataID) {
+				if (!listfile.existsByID(entry.WdtFileDataID))
+					listfile.addEntry(entry.WdtFileDataID, wdtPath);
 
-			if (entry.WdtFileDataID !== undefined && entry.WdtFileDataID !== 0 && !listfile.existsByID(entry.WdtFileDataID)) {
-				log.write('Adding files to listfile for map %s (%d)', entry.MapName_lang, entry.WdtFileDataID);
-				listfile.addEntry(entry.WdtFileDataID, wdtPath);
-
-				try {
-					const data = await core.view.casc.getFile(entry.WdtFileDataID);
-					const wdt = selectedWDT = new WDTLoader(data);
-					wdt.load();
-
-					for (let x = 0; x < 64; x++) {
-						for (let y = 0; y < 64; y++) {
-							const tile = wdt.entries[x * 64 + y];
-							if (tile.rootADT != 0) {
-								const tileBasePath = util.format('world/maps/%s/map%s_%s_%s', entry.Directory, entry.Directory, x, y);
-								listfile.addEntry(tile.rootADT, tileBasePath + ".adt");
-								listfile.addEntry(tile.obj0ADT, tileBasePath + "_obj0.adt");
-								listfile.addEntry(tile.obj1ADT, tileBasePath + "_obj1.adt");
-								listfile.addEntry(tile.tex0ADT, tileBasePath + "_tex0.adt");
-								listfile.addEntry(tile.lodADT, tileBasePath + "_lod.adt");
-
-								const paddedX = x.toString().padStart(2, '0');
-								const paddedY = y.toString().padStart(2, '0');
-								listfile.addEntry(tile.minimapTexture, util.format('world/minimaps/%s/map%s_%s.blp', entry.Directory, paddedX, paddedY));
-								listfile.addEntry(tile.mapTexture, util.format('world/maptextures/%s/%s_%s_%s.blp', entry.Directory, entry.Directory, paddedX, paddedY));
-								listfile.addEntry(tile.mapTextureN, util.format('world/maptextures/%s/%s_%s_%s_n.blp', entry.Directory, entry.Directory, paddedX, paddedY));
-							}
-						}
-					}
-				} catch (e) {
-					log.write('Failed to add files to listfile for WDT %s', wdtPath);
-				}
-			}
-
-			if (listfile.getByFilename(wdtPath))
 				maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+			} else if (listfile.getByFilename(wdtPath)) {
+				maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+			}
 		}
 
 		core.view.mapViewerMaps = maps;
-
 		core.hideLoadingScreen('tab-maps');
 	} catch (e) {
 		log.write('Failed to load map data: %s', e.message);

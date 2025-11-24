@@ -1,3 +1,6 @@
+## 0.2.7 (TBD)
+- Optimized "Maps" tab to load 33x (97%) faster.
+
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
 - Added 'Use 3D Camera' to character viewer settings for legacy camera control.
