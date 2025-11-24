@@ -516,10 +516,6 @@ body {
 	background-image: url(./fa-icons/music.svg);
 }
 
-.nav-videos::before {
-	background-image: url(./fa-icons/film.svg);
-}
-
 .nav-module::before {
 	background-image: var(--nav-icon);
 }

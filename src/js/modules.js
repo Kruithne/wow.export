@@ -8,7 +8,8 @@ const MODULES = {
 	tab_maps: require('./modules/tab_maps'),
 	tab_zones: require('./modules/tab_zones'),
 	tab_data: require('./modules/tab_data'),
-	tab_text: require('./modules/tab_text')
+	tab_text: require('./modules/tab_text'),
+	tab_videos: require('./modules/tab_videos')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';

@@ -17,7 +17,6 @@
 						<div class="option nav-items" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
 						<div class="option nav-textures" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<div class="option nav-sounds" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
-						<div class="option nav-videos" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 						</template>
@@ -1191,27 +1190,6 @@
 						</div>
 						<input type="button" value="Auto-Detect Selected" @click="click('detect-raw', $event)" :class="{ disabled: isBusy }"/>
 						<input type="button" value="Export Selected" @click="click('export-raw', $event)" :class="{ disabled: isBusy }"/>
-					</div>
-				</div>
-				<div class="tab list-tab" id="tab-video" v-else-if="screen === 'tab-video'">
-					<div class="list-container">
-						<listbox v-model:selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video" persistscrollkey="videos"></listbox>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterVideos" placeholder="Filter videos..."/>
-					</div>
-					<div class="preview-container">
-						<canvas id="video-preview-canvas" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;"></canvas>
-					</div>
-					<div class="preview-controls">
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.videoPlayerAutoPlay"/>
-							<span>Autoplay</span>
-						</label>
-						<input type="button" :value="videoPlayerState ? 'Stop Preview' : 'Preview Selected'" @click="click('preview-video', $event)"/>
-						<div class="tray"></div>
-						<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
 				<div class="tab list-tab" id="tab-sounds" v-else-if="screen === 'tab-sounds'">
