@@ -28,8 +28,18 @@ bool MmapWrapper::mapFile(const std::string& filename, MmapProtection protection
 		DWORD access = (protection == MmapProtection::READONLY) ? GENERIC_READ : (GENERIC_READ | GENERIC_WRITE);
 		DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE;
 		DWORD creation = OPEN_EXISTING;
-		
-		file_handle_ = CreateFileA(filename.c_str(), access, share, NULL, creation, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		// convert UTF-8 to wide string for Unicode support
+		int wchars_needed = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, NULL, 0);
+		if (wchars_needed == 0) {
+			setError("Failed to convert filename to wide string");
+			return false;
+		}
+
+		std::wstring wide_filename(wchars_needed, 0);
+		MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, &wide_filename[0], wchars_needed);
+
+		file_handle_ = CreateFileW(wide_filename.c_str(), access, share, NULL, creation, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (file_handle_ == INVALID_HANDLE_VALUE) {
 			setError("Failed to open file: " + filename);
 			return false;
@@ -47,7 +57,7 @@ bool MmapWrapper::mapFile(const std::string& filename, MmapProtection protection
 		}
 		
 		DWORD protect = (protection == MmapProtection::READONLY) ? PAGE_READONLY : PAGE_READWRITE;
-		map_handle_ = CreateFileMappingA(file_handle_, NULL, protect, 0, 0, NULL);
+		map_handle_ = CreateFileMappingW(file_handle_, NULL, protect, 0, 0, NULL);
 		if (map_handle_ == NULL) {
 			setError("Failed to create file mapping");
 			return false;
@@ -101,7 +111,7 @@ bool MmapWrapper::mapAnonymous(size_t length, MmapProtection protection, MmapFla
 	
 	#ifdef _WIN32
 		DWORD protect = (protection == MmapProtection::READONLY) ? PAGE_READONLY : PAGE_READWRITE;
-		map_handle_ = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, protect, static_cast<DWORD>(length >> 32), static_cast<DWORD>(length & 0xFFFFFFFF), NULL);
+		map_handle_ = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, protect, static_cast<DWORD>(length >> 32), static_cast<DWORD>(length & 0xFFFFFFFF), NULL);
 		if (map_handle_ == NULL) {
 			setError("Failed to create anonymous mapping");
 			return false;
