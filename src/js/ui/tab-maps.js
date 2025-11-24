@@ -665,12 +665,15 @@ const parseMapEntry = (entry) => {
 
 // The first time the user opens up the map tab, initialize map names.
 core.events.once('screen-tab-maps', async () => {
-	core.showLoadingScreen(1);
-
 	try {
-		await core.progressLoadingScreen('Loading map database...');
+		const map_rows = await db2.Map.getAllRows();
+		core.showLoadingScreen(map_rows.size);
+
 		const maps = [];
-		for (const [id, entry] of await db2.Map.getAllRows()) {
+		let processed = 0;
+		for (const [id, entry] of map_rows) {
+			await core.progressLoadingScreen(util.format('Loading maps (%d / %d)...', ++processed, map_rows.size));
+
 			const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
 
 			if (entry.WdtFileDataID !== undefined && entry.WdtFileDataID !== 0 && !listfile.existsByID(entry.WdtFileDataID)) {
