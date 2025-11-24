@@ -520,10 +520,6 @@ body {
 	background-image: url(./fa-icons/film.svg);
 }
 
-.nav-text::before {
-	background-image: url(./fa-icons/file-lines.svg);
-}
-
 .nav-module::before {
 	background-image: var(--nav-icon);
 }

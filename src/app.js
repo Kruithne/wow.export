@@ -125,7 +125,6 @@ const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
 require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
-require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
 require('./js/ui/tab-items');
 require('./js/ui/tab-raw');
