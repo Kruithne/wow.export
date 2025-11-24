@@ -13,22 +13,27 @@ jobs:
           - platform: win-x64
             os: windows-latest
           - platform: linux-x64
-            os: ubuntu-latest
+            os: ubuntu-20.04
           - platform: osx-x64
             os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python
+      - name: Install Python 2 (Linux)
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python2 python2-dev
+      - name: Set up Python (macOS/Windows)
+        if: matrix.os != 'ubuntu-20.04'
         uses: actions/setup-python@v5
         with:
           python-version: '2.7'
       - name: Install node-gyp dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3-dev
+          sudo apt-get install -y build-essential
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
