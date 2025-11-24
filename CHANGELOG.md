@@ -1,7 +1,8 @@
-## 0.2.6 (TBD)
+## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
 - Added 'Use 3D Camera' to character viewer settings for legacy camera control.
 - Fixed an issue that prevented Battle.net armour lookups with special characters.
+- Fixed an issue that prevented wow.export from working on machines with a UTF8 usernames.
 - Improved DB2 table loading performance by utilizing DBD manifest for direct lookups.
 - wow.export will remain functional with most features even if listfile fails to load.
 
