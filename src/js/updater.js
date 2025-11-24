@@ -48,21 +48,17 @@ const checkForUpdates = async () => {
  * Apply an outstanding update.
  */
 const applyUpdate = async () => {
-	core.view.isBusy++;
-	core.view.showLoadScreen('Updating, please wait...');
+	const entries = Object.entries(updateManifest.contents);
+	core.showLoadingScreen(entries.length, 'Verifying local files...');
 
 	log.write('Starting update to %s...', updateManifest.guid);
 
 	const requiredFiles = [];
-	const entries = Object.entries(updateManifest.contents);
-
-	let progress = core.createProgress(entries.length);
-	core.view.loadingTitle = 'Verifying local files...';
 
 	for (let i = 0, n = entries.length; i < n; i++) {
 		const [file, meta] = entries[i];
 
-		await progress.step((i + 1) + ' / ' + n);
+		await core.progressLoadingScreen((i + 1) + ' / ' + n);
 
 		const localPath = path.join(constants.INSTALL_PATH, file);
 		const node = { file, meta };
@@ -100,16 +96,15 @@ const applyUpdate = async () => {
 	const downloadSize = generics.filesize(requiredFiles.map(e => e.meta.compSize).reduce((total, val) => total + val));
 	log.write('%d files (%s) marked for download.', requiredFiles.length, downloadSize);
 
-	progress = core.createProgress(requiredFiles.length);
-	core.view.loadingTitle = 'Downloading updates...';
-	
+	core.showLoadingScreen(requiredFiles.length, 'Downloading updates...');
+
 	const remoteEndpoint = util.format(core.view.config.updateURL, nw.App.manifest.flavour) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
-		const node = requiredFiles[i];		
+		const node = requiredFiles[i];
 		const localFile = path.join(constants.UPDATE.DIRECTORY, node.file);
 		log.write('Downloading %s to %s', node.file, localFile);
 
-		await progress.step(util.format('%d / %d (%s)', i + 1, n, downloadSize));
+		await core.progressLoadingScreen(util.format('%d / %d (%s)', i + 1, n, downloadSize));
 		await generics.downloadFile(remoteEndpoint, localFile, node.meta.ofs, node.meta.compSize, true);
 	}
 

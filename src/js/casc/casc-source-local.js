@@ -168,7 +168,8 @@ class CASCLocal extends CASC {
 		this.cache = new BuildCache(this.build.BuildKey);
 		await this.cache.init();
 
-		this.progress = core.createProgress(9);
+		core.showLoadingScreen(8);
+
 		await this.loadConfigs();
 		await this.loadIndexes();
 		await this.loadEncoding();
@@ -188,7 +189,7 @@ class CASCLocal extends CASC {
 	 */
 	async loadConfigs() {
 		// Load and parse configs from disk with CDN fallback.
-		await this.progress.step('Fetching build configurations');
+		await core.progressLoadingScreen('Fetching build configurations');
 
 		if (await generics.fileExists("fakebuildconfig")) {
 			this.buildConfig = CDNConfig(await fsp.readFile("fakebuildconfig", 'utf8'));
@@ -233,7 +234,7 @@ class CASCLocal extends CASC {
 	 */
 	async loadIndexes() {
 		log.timeLog();
-		await this.progress.step('Loading indexes');
+		await core.progressLoadingScreen('Loading indexes');
 
 		let indexCount = 0;
 
@@ -292,7 +293,7 @@ class CASCLocal extends CASC {
 		log.timeLog();
 		const encKeys = this.buildConfig.encoding.split(' ');
 
-		await this.progress.step('Loading encoding table');
+		await core.progressLoadingScreen('Loading encoding table');
 		const encRaw = await this.getDataFileWithRemoteFallback(encKeys[1]);
 		await this.parseEncodingFile(encRaw, encKeys[1]);
 		log.timeEnd('Parsed encoding table (%d entries)', this.encodingKeys.size);
@@ -309,7 +310,7 @@ class CASCLocal extends CASC {
 
 		// Parse root file.
 		log.timeLog();
-		await this.progress.step('Loading root file');
+		await core.progressLoadingScreen('Loading root file');
 		const root = await this.getDataFileWithRemoteFallback(rootKey);
 		const rootEntryCount = await this.parseRootFile(root, rootKey);
 		log.timeEnd('Parsed root file (%d entries, %d types)', rootEntryCount, this.rootTypes.length);

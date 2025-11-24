@@ -38,8 +38,9 @@ class MPQInstall {
 		return results.sort();
 	}
 
-	async loadInstall(progress) {
-		await progress.step('Scanning for MPQ Archives');
+	async loadInstall() {
+		const core = require('../core');
+		await core.progressLoadingScreen('Scanning for MPQ Archives');
 
 		const mpq_files = await this._scan_mpq_files(this.directory);
 
@@ -48,7 +49,7 @@ class MPQInstall {
 
 		log.write('Found %d MPQ archives in %s', mpq_files.length, this.directory);
 
-		await progress.step('Loading MPQ Archives');
+		await core.progressLoadingScreen('Loading MPQ Archives');
 
 		for (const mpq_path of mpq_files) {
 			const archive = new MPQArchive(mpq_path);
@@ -72,7 +73,7 @@ class MPQInstall {
 			}
 		}
 
-		await progress.step('MPQ Archives Loaded');
+		await core.progressLoadingScreen('MPQ Archives Loaded');
 		log.write('Total files in listfile: %d', this.listfile.size);
 	}
 

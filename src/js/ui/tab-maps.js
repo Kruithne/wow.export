@@ -665,12 +665,10 @@ const parseMapEntry = (entry) => {
 
 // The first time the user opens up the map tab, initialize map names.
 core.events.once('screen-tab-maps', async () => {
-	const progress = core.createProgress(1);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	core.showLoadingScreen(1);
 
 	try {
-		await progress.step('Loading map database...');
+		await core.progressLoadingScreen('Loading map database...');
 		const maps = [];
 		for (const [id, entry] of await db2.Map.getAllRows()) {
 			const wdtPath = util.format('world/maps/%s/%s.wdt', entry.Directory, entry.Directory);
@@ -714,15 +712,11 @@ core.events.once('screen-tab-maps', async () => {
 
 		core.view.mapViewerMaps = maps;
 
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-maps');
+		core.hideLoadingScreen('tab-maps');
 	} catch (e) {
 		log.write('Failed to load map data: %s', e.message);
 		core.setToast('error', 'Failed to load map data. Check the log for details.');
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-maps');
+		core.hideLoadingScreen('tab-maps');
 	}
 });
 

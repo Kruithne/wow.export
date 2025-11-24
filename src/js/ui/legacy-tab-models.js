@@ -387,17 +387,15 @@ const export_files = async (files) => {
 };
 
 core.events.once('screen-legacy-tab-models', async () => {
-	const progress = core.createProgress(2);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	core.showLoadingScreen(2);
 
 	try {
-		await progress.step('loading models...');
+		await core.progressLoadingScreen('loading models...');
 		const m2_files = core.view.mpq.getFilesByExtension('.m2');
 		const wmo_files = core.view.mpq.getFilesByExtension('.wmo').filter(file => !/_[0-9]{3}\.wmo$/i.test(file));
 		core.view.listfileLegacyModels = [...m2_files, ...wmo_files];
 
-		await progress.step('initializing 3D preview...');
+		await core.progressLoadingScreen('initializing 3D preview...');
 		const scene_data = modelHelpers.init_3d_scene(
 			core.view.config.modelViewerShowBackground,
 			core.view.config.modelViewerBackgroundColor,
@@ -416,11 +414,9 @@ core.events.once('screen-legacy-tab-models', async () => {
 		modelHelpers.setup_grid_watcher(scene, grid);
 		modelHelpers.setup_background_watchers(scene);
 
-		core.view.isBusy--;
-		core.view.setScreen('legacy-tab-models');
+		core.hideLoadingScreen('legacy-tab-models');
 	} catch (error) {
-		core.view.isBusy--;
-		core.view.setScreen('legacy-tab-models');
+		core.hideLoadingScreen('legacy-tab-models');
 		log.write('failed to initialize legacy models tab: %o', error);
 		core.setToast('error', 'failed to initialize models tab. check the log for details.');
 	}

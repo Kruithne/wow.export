@@ -361,28 +361,26 @@ const renderOverlayTiles = async (ctx, tiles, overlay, artStyle, expectedZoneID)
 };
 
 core.events.once('screen-tab-zones', async () => {
-	const progress = core.createProgress(3);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	core.showLoadingScreen(3);
 
 	try {
 		// preload tables needed for getRelationRows
-		await progress.step('Loading map tiles...');
+		await core.progressLoadingScreen('Loading map tiles...');
 		await db2.preload.UiMapArtTile();
 
-		await progress.step('Loading map overlays...');
+		await core.progressLoadingScreen('Loading map overlays...');
 		await db2.preload.WorldMapOverlay();
 		await db2.preload.WorldMapOverlayTile();
 
-		await progress.step('Loading zone data...');
+		await core.progressLoadingScreen('Loading zone data...');
 
 		const expansionMap = new Map();
 		for (const [id, entry] of await db2.Map.getAllRows())
 			expansionMap.set(id, entry.ExpansionID);
-		
+
 		log.write('Loaded %d maps for expansion mapping', expansionMap.size);
 
-		const availableZones = new Set();		
+		const availableZones = new Set();
 		for (const entry of (await db2.UiMapAssignment.getAllRows()).values())
 			availableZones.add(entry.AreaID);
 
@@ -396,7 +394,7 @@ core.events.once('screen-tab-zones', async () => {
 
 			if (!availableZones.has(id))
 				continue;
-			
+
 			// Format: ExpansionID\x19[ID]\x19ZoneName\x19(AreaName_lang)
 			zones.push(
 				util.format('%d\x19[%d]\x19%s\x19(%s)',
@@ -406,17 +404,13 @@ core.events.once('screen-tab-zones', async () => {
 
 		core.view.zoneViewerZones = zones;
 		log.write('Loaded %d zones from AreaTable', zones.length);
-		
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-zones');
+
+		core.hideLoadingScreen('tab-zones');
 	} catch (e) {
 		core.setToast('error', 'Failed to load zone data: ' + e.message, { 'View Log': () => log.openRuntimeLog() }, -1);
 		log.write('Failed to load AreaTable.db2: %s', e.message);
-		
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-zones');
+
+		core.hideLoadingScreen('tab-zones');
 	}
 });
 

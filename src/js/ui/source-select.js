@@ -191,13 +191,10 @@ core.events.once('screen-source-select', async () => {
 		try {
 			core.view.mpq = new MPQInstall(installPath);
 
-			core.view.showLoadScreen('Loading Legacy Installation');
-			core.view.isBusy++;
+			core.showLoadingScreen(3, 'Loading Legacy Installation');
+			await core.view.mpq.loadInstall();
 
-			const progress = core.createProgress(3);
-			await core.view.mpq.loadInstall(progress);
-
-			await progress.step('Initializing Components');
+			await core.progressLoadingScreen('Initializing Components');
 			await core.runLoadFuncs();
 
 			const preIndex = core.view.config.recentLegacy.findIndex(e => e.path === installPath);
@@ -211,10 +208,9 @@ core.events.once('screen-source-select', async () => {
 			if (core.view.config.recentLegacy.length > constants.MAX_RECENT_LOCAL)
 				core.view.config.recentLegacy.splice(constants.MAX_RECENT_LOCAL, core.view.config.recentLegacy.length - constants.MAX_RECENT_LOCAL);
 
-			core.view.isBusy--;
-			core.view.setScreen('legacy-tab-home');
+			core.hideLoadingScreen('legacy-tab-home');
 		} catch (e) {
-			core.view.isBusy--;
+			core.hideLoadingScreen();
 			core.setToast('error', util.format('Failed to load legacy installation from %s', installPath), null, -1);
 			log.write('Failed to initialize legacy MPQ source: %s', e.message);
 

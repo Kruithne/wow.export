@@ -140,15 +140,12 @@ const viewItemTextures = async (item) => {
 };
 
 core.events.once('screen-tab-items', async () => {
-	// Initialize a loading screen.
-	const progress = core.createProgress(2);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+	core.showLoadingScreen(2);
 
-	await progress.step('Loading model file data...');
+	await core.progressLoadingScreen('Loading model file data...');
 	await DBModelFileData.initializeModelFileData();
 
-	await progress.step('Loading item data...');
+	await core.progressLoadingScreen('Loading item data...');
 
 	const itemSparseRows = await db2.ItemSparse.getAllRows();
 	const items = [];
@@ -228,10 +225,7 @@ core.events.once('screen-tab-items', async () => {
 		}
 	}
 
-	// Show the item viewer screen.
-	core.view.loadPct = -1;
-	core.view.isBusy--;
-	core.view.setScreen('tab-items');
+	core.hideLoadingScreen('tab-items');
 
 	// Load initial configuration for the type control from config.
 	const enabledTypes = core.view.config.itemViewerEnabledTypes;

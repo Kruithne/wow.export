@@ -235,13 +235,10 @@ const loadSelectedTrack = async () => {
  */
 const loadSoundData = async () => {
 	if (!hasSoundDataLoaded && !core.view.isBusy && core.view.config.enableUnknownFiles) {
-		// Show a loading screen
-		const progress = core.createProgress(1);
-		core.view.setScreen('loading');
-		core.view.isBusy++;
+		core.showLoadingScreen(1);
 
 		try {
-			await progress.step('Processing unknown sound files...');
+			await core.progressLoadingScreen('Processing unknown sound files...');
 
 			let unknownCount = 0;
 			for (const entry of (await db2.SoundKitEntry.getAllRows()).values()) {
@@ -261,10 +258,7 @@ const loadSoundData = async () => {
 			core.setToast('error', 'Failed to load sound data', { 'View Log': () => log.openRuntimeLog() }, -1);
 		}
 
-		// Hide the loading screen
-		core.view.loadPct = -1;
-		core.view.isBusy--;
-		core.view.setScreen('tab-sounds');
+		core.hideLoadingScreen('tab-sounds');
 	}
 };
 

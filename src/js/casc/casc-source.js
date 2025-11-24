@@ -247,7 +247,7 @@ class CASC {
 	 * Ensures preloading is complete to avoid race conditions.
 	 */
 	async prepareListfile() {
-		await this.progress.step('Preparing listfiles...');
+		await core.progressLoadingScreen('Preparing listfiles...');
 		await listfile.prepareListfile();
 	}
 
@@ -256,16 +256,16 @@ class CASC {
 	 * ensures preloading is complete.
 	 */
 	async prepareDBDManifest() {
-		await this.progress.step('Loading DBD manifest...');
+		await core.progressLoadingScreen('Loading DBD manifest...');
 		await dbd_manifest.prepareManifest();
 	}
 
 	/**
 	 * Load the listfile for selected build.
-	 * @param {string} buildKey 
+	 * @param {string} buildKey
 	 */
 	async loadListfile(buildKey) {
-		await this.progress.step('Loading listfiles');
+		await core.progressLoadingScreen('Loading listfiles');
 		listfile.applyPreload(this.rootEntries);
 	}
 
@@ -293,7 +293,7 @@ class CASC {
 	 * This allows us to do it seamlessly under the cover of the same loading screen.
 	 */
 	async initializeComponents() {
-		await this.progress.step('Initializing components');
+		await core.progressLoadingScreen('Initializing components');
 		await core.runLoadFuncs();
 	}
 

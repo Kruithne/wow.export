@@ -966,12 +966,9 @@ function randomizeCustomization() {
 core.events.once('screen-tab-characters', async () => {
 	const state = core.view;
 
-	// Initialize a loading screen.
-	const progress = core.createProgress(13);
-	state.setScreen('loading');
-	state.isBusy++;
+	core.showLoadingScreen(13);
 
-	await progress.step('Retrieving realmlist...');
+	await core.progressLoadingScreen('Retrieving realmlist...');
 	await realmlist.load();
 
 	core.view.$watch('chrImportSelectedRegion', () => {
@@ -990,7 +987,7 @@ core.events.once('screen-tab-characters', async () => {
 	state.chrImportRegions = Object.keys(state.realmList);
 	state.chrImportSelectedRegion = state.chrImportRegions[0];
 
-	await progress.step('Loading texture mapping...');
+	await core.progressLoadingScreen('Loading texture mapping...');
 	const tfdMap = new Map();
 	for (const tfdRow of (await db2.TextureFileData.getAllRows()).values()) {
 		// Skip specular (1) and emissive (2)
@@ -999,10 +996,10 @@ core.events.once('screen-tab-characters', async () => {
 		tfdMap.set(tfdRow.MaterialResourcesID, tfdRow.FileDataID);
 	}
 
-	await progress.step('Loading creature data...');
+	await core.progressLoadingScreen('Loading creature data...');
 	await DBCreatures.initializeCreatureData();
 
-	await progress.step('Loading character customization elements...');
+	await core.progressLoadingScreen('Loading character customization elements...');
 	for (const chrCustomizationElementRow of (await db2.ChrCustomizationElement.getAllRows()).values()) {
 		if (chrCustomizationElementRow.ChrCustomizationGeosetID != 0)
 			choiceToGeoset.set(chrCustomizationElementRow.ChrCustomizationChoiceID, chrCustomizationElementRow.ChrCustomizationGeosetID);
@@ -1033,7 +1030,7 @@ core.events.once('screen-tab-characters', async () => {
 		}
 	}
 
-	await progress.step('Loading character customization options...');
+	await core.progressLoadingScreen('Loading character customization options...');
 
 	// pre-index options by model id and choices by option id
 	const options_by_model = new Map();
@@ -1109,13 +1106,13 @@ core.events.once('screen-tab-characters', async () => {
 		}
 	}
 
-	await progress.step('Loading character races..');
+	await core.progressLoadingScreen('Loading character races..');
 	for (const [chrRaceID, chrRaceRow] of await db2.ChrRaces.getAllRows()) {
 		const flags = chrRaceRow.Flags;
 		chrRaceMap.set(chrRaceID, { id: chrRaceID, name: chrRaceRow.Name_lang, isNPCRace: ((flags & 1) == 1 && chrRaceID != 23 && chrRaceID != 75) });
 	}
 
-	await progress.step('Loading character race models..');
+	await core.progressLoadingScreen('Loading character race models..');
 	for (const chrRaceXChrModelRow of (await db2.ChrRaceXChrModel.getAllRows()).values()) {
 		if (!chrRaceXChrModelMap.has(chrRaceXChrModelRow.ChrRacesID))
 			chrRaceXChrModelMap.set(chrRaceXChrModelRow.ChrRacesID, new Map());
@@ -1123,12 +1120,12 @@ core.events.once('screen-tab-characters', async () => {
 		chrRaceXChrModelMap.get(chrRaceXChrModelRow.ChrRacesID).set(chrRaceXChrModelRow.Sex, chrRaceXChrModelRow.ChrModelID);
 	}
 
-	await progress.step('Loading character model materials..');
+	await core.progressLoadingScreen('Loading character model materials..');
 	for (const chrModelMaterialRow of (await db2.ChrModelMaterial.getAllRows()).values())
 		chrModelMaterialMap.set(chrModelMaterialRow.CharComponentTextureLayoutsID + "-" + chrModelMaterialRow.TextureType, chrModelMaterialRow);
 
 	// load charComponentTextureSection
-	await progress.step('Loading character component texture sections...');
+	await core.progressLoadingScreen('Loading character component texture sections...');
 	const charComponentTextureSectionDB = db2.CharComponentTextureSections;
 	for (const charComponentTextureSectionRow of (await charComponentTextureSectionDB.getAllRows()).values()) {
 		if (!charComponentTextureSectionMap.has(charComponentTextureSectionRow.CharComponentTextureLayoutID))
@@ -1137,24 +1134,24 @@ core.events.once('screen-tab-characters', async () => {
 		charComponentTextureSectionMap.get(charComponentTextureSectionRow.CharComponentTextureLayoutID).push(charComponentTextureSectionRow);
 	}
 
-	await progress.step('Loading character model texture layers...');
+	await core.progressLoadingScreen('Loading character model texture layers...');
 	const chrModelTextureLayerDB = db2.ChrModelTextureLayer;
 	for (const chrModelTextureLayerRow of (await chrModelTextureLayerDB.getAllRows()).values())
 		chrModelTextureLayerMap.set(chrModelTextureLayerRow.CharComponentTextureLayoutsID + "-" + chrModelTextureLayerRow.ChrModelTextureTargetID[0], chrModelTextureLayerRow);
 
-	await progress.step('Loading character customization geosets...');
+	await core.progressLoadingScreen('Loading character customization geosets...');
 	for (const [chrCustomizationGeosetID, chrCustomizationGeosetRow] of await db2.ChrCustomizationGeoset.getAllRows()) {
 		const geoset = chrCustomizationGeosetRow.GeosetType.toString().padStart(2, '0') + chrCustomizationGeosetRow.GeosetID.toString().padStart(2, '0');
 		geosetMap.set(chrCustomizationGeosetID, Number(geoset));
 	}
 
-	await progress.step('Loading character customization skinned models...');
+	await core.progressLoadingScreen('Loading character customization skinned models...');
 
 	const chrCustSkinnedModelDB = db2.ChrCustomizationSkinnedModel;
 	for (const [chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow] of await chrCustSkinnedModelDB.getAllRows())
 		chrCustSkinnedModelMap.set(chrCustomizationSkinnedModelID, chrCustomizationSkinnedModelRow);
 
-	await progress.step('Loading character shaders...');
+	await core.progressLoadingScreen('Loading character shaders...');
 	await CharMaterialRenderer.init();
 
 	// Initialize model viewer.
@@ -1210,10 +1207,7 @@ core.events.once('screen-tab-characters', async () => {
 
 	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup, useCharacterControls: true });
 
-	// Show the characters screen.
-	state.loadPct = -1;
-	state.isBusy--;
-	state.setScreen('tab-characters');
+	core.hideLoadingScreen('tab-characters');
 });
 
 function update_render_shadow() {

@@ -290,26 +290,48 @@ const block = async (func) => {
 	core.view.isBusy--;
 };
 
+// internal progress state for loading screen api
+let loading_progress_segments = 1;
+let loading_progress_value = 0;
+
 /**
- * Create a progress interface for easy status reporting.
- * @param {number} segments 
- * @returns {Progress}
+ * show loading screen with specified number of progress steps.
+ * @param {number} segments
+ * @param {string} title
  */
-const createProgress = (segments = 1) => {
+const showLoadingScreen = (segments = 1, title = 'Loading, please wait...') => {
+	loading_progress_segments = segments;
+	loading_progress_value = 0;
 	core.view.loadPct = 0;
-	return {
-		segWeight: 1 / segments,
-		value: 0,
-		step: async function(text) {
-			this.value++;
-			core.view.loadPct = Math.min(this.value * this.segWeight, 1);
+	core.view.loadingTitle = title;
+	core.view.setScreen('loading');
+	core.view.isBusy++;
+};
 
-			if (text)
-				core.view.loadingProgress = text;
+/**
+ * advance loading screen progress by one step.
+ * @param {string} text
+ */
+const progressLoadingScreen = async (text) => {
+	loading_progress_value++;
+	core.view.loadPct = Math.min(loading_progress_value / loading_progress_segments, 1);
 
-			await generics.redraw();
-		}
-	};
+	if (text)
+		core.view.loadingProgress = text;
+
+	await generics.redraw();
+};
+
+/**
+ * hide loading screen and return to specified screen or previous screen.
+ * @param {string} screen
+ */
+const hideLoadingScreen = (screen = null) => {
+	core.view.loadPct = -1;
+	core.view.isBusy--;
+
+	if (screen)
+		core.view.setScreen(screen);
 };
 
 /**
@@ -428,14 +450,16 @@ const getScrollPosition = (key) => {
 	return scrollPositions[key];
 };
 
-const core = { 
+const core = {
 	events,
 	view,
 	makeNewView,
 	block,
-	createProgress,
+	showLoadingScreen,
+	progressLoadingScreen,
+	hideLoadingScreen,
 	setToast,
-	hideToast,	
+	hideToast,
 	openExportDirectory,
 	registerDropHandler,
 	getDropHandler,

@@ -90,9 +90,9 @@ const previewTextureByID = async (fileDataID, texture = null) => {
  * This function should only be called as part of the main texture tab loading screen.
  * @param {object} progress - Progress object for reporting steps
  */
-const loadTextureAtlasData = async (progress) => {
+const loadTextureAtlasData = async () => {
 	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas) {
-		await progress.step('Parsing texture atlases...');
+		await core.progressLoadingScreen('Parsing texture atlases...');
 
 		for (const [id, row] of await db2.UiTextureAtlas.getAllRows()) {
 			textureAtlasMap.set(row.FileDataID, id);
@@ -133,17 +133,13 @@ const loadTextureAtlasData = async (progress) => {
  */
 const reloadTextureAtlasData = async () => {
 	if (!hasLoadedAtlasTable && core.view.config.showTextureAtlas && !core.view.isBusy) {
-		const progress = core.createProgress(1);
-		core.view.setScreen('loading');
-		core.view.isBusy++;
-		
+		core.showLoadingScreen(1);
+
 		try {
-			await loadTextureAtlasData(progress);
-			core.view.isBusy--;
-			core.view.setScreen('tab-textures');
+			await loadTextureAtlasData();
+			core.hideLoadingScreen('tab-textures');
 		} catch (error) {
-			core.view.isBusy--;
-			core.view.setScreen('tab-textures');
+			core.hideLoadingScreen('tab-textures');
 			log.write('Failed to load texture atlas data: %o', error);
 			core.setToast('error', 'Failed to load texture atlas data. Check the log for details.');
 		}
@@ -369,7 +365,7 @@ core.registerLoadFunc(async () => {
 	core.events.on('screen-tab-textures', async () => {
 		const needsUnknownTextures = core.view.config.enableUnknownFiles && !hasLoadedUnknownTextures;
 		const needsAtlasData = !hasLoadedAtlasTable && core.view.config.showTextureAtlas;
-		
+
 		if ((needsUnknownTextures || needsAtlasData) && !core.view.isBusy) {
 			let stepCount = 0;
 			if (needsUnknownTextures)
@@ -377,33 +373,29 @@ core.registerLoadFunc(async () => {
 
 			if (needsAtlasData)
 				stepCount += 1; // atlas
-			
-			const progress = core.createProgress(stepCount);
-			core.view.setScreen('loading');
-			core.view.isBusy++;
-			
+
+			core.showLoadingScreen(stepCount);
+
 			try {
 				if (needsUnknownTextures) {
-					await progress.step('Loading texture file data...');
-					await progress.step('Loading unknown textures...');
+					await core.progressLoadingScreen('Loading texture file data...');
+					await core.progressLoadingScreen('Loading unknown textures...');
 					await listfile.loadUnknownTextures();
 					hasLoadedUnknownTextures = true;
 				}
-				
+
 				if (needsAtlasData)
-					await loadTextureAtlasData(progress);
-				
-				core.view.isBusy--;
-				core.view.setScreen('tab-textures');
-				
+					await loadTextureAtlasData();
+
+				core.hideLoadingScreen('tab-textures');
+
 			} catch (error) {
-				core.view.isBusy--;
-				core.view.setScreen('tab-textures');
+				core.hideLoadingScreen('tab-textures');
 				log.write('Failed to initialize textures tab: %o', error);
 				core.setToast('error', 'Failed to load texture data. Check the log for details.');
 			}
 		}
-		
+
 		attachOverlayListener();
 	});
 

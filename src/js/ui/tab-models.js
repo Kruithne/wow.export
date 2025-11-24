@@ -567,34 +567,31 @@ core.events.once('screen-tab-models', async () => {
 	let stepCount = 2; // Base: model file data + 3D initialization
 	if (core.view.config.enableUnknownFiles) stepCount++;
 	if (core.view.config.enableM2Skins) stepCount += 2; // Item displays + creature data
-	
-	// Show loading screen
-	const progress = core.createProgress(stepCount);
-	core.view.setScreen('loading');
-	core.view.isBusy++;
+
+	core.showLoadingScreen(stepCount);
 
 	try {
 		// Load model file data
-		await progress.step('Loading model file data...');
+		await core.progressLoadingScreen('Loading model file data...');
 		await DBModelFileData.initializeModelFileData();
 
 		// Load unknown model files if enabled
 		if (core.view.config.enableUnknownFiles) {
-			await progress.step('Loading unknown models...');
+			await core.progressLoadingScreen('Loading unknown models...');
 			await listfile.loadUnknownModels();
 		}
 
 		// Load M2 skins data if enabled
 		if (core.view.config.enableM2Skins) {
-			await progress.step('Loading item displays...');
+			await core.progressLoadingScreen('Loading item displays...');
 			await DBItemDisplays.initializeItemDisplays();
 
-			await progress.step('Loading creature data...');
+			await core.progressLoadingScreen('Loading creature data...');
 			await DBCreatures.initializeCreatureData();
 		}
 
 		// Initialize 3D preview
-		await progress.step('Initializing 3D preview...');
+		await core.progressLoadingScreen('Initializing 3D preview...');
 		camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
 
 		scene = new THREE.Scene();
@@ -619,13 +616,10 @@ core.events.once('screen-tab-models', async () => {
 		modelHelpers.setup_grid_watcher(scene, grid);
 		modelHelpers.setup_background_watchers(scene);
 
-		// Loading complete, return to models tab
-		core.view.isBusy--;
-		core.view.setScreen('tab-models');
-		
+		core.hideLoadingScreen('tab-models');
+
 	} catch (error) {
-		core.view.isBusy--;
-		core.view.setScreen('tab-models');
+		core.hideLoadingScreen('tab-models');
 		log.write('Failed to initialize models tab: %o', error);
 		core.setToast('error', 'Failed to initialize models tab. Check the log for details.');
 	}

@@ -15,12 +15,10 @@ const load_help_docs = async () => {
 	if (help_loaded)
 		return;
 
-	const progress = core.createProgress(1);
-	core.view.setScreen('loading', true);
-	core.view.isBusy++;
+	core.showLoadingScreen(1);
 
 	try {
-		await progress.step('loading help documents...');
+		await core.progressLoadingScreen('loading help documents...');
 
 		const help_dir = './src/help_docs';
 		log.write('loading help docs from: %s', help_dir);
@@ -60,11 +58,11 @@ const load_help_docs = async () => {
 
 		log.write('loaded %d help articles total', help_articles.length);
 		help_loaded = true;
-		core.view.isBusy--;
+		core.hideLoadingScreen();
 		core.view.showPreviousScreen();
 	} catch (e) {
 		log.write('failed to load help documents: %s', e.message);
-		core.view.isBusy--;
+		core.hideLoadingScreen();
 		core.view.showPreviousScreen();
 		core.setToast('error', 'failed to load help documents');
 	}
