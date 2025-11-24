@@ -128,8 +128,6 @@ require('./js/ui/tab-audio');
 require('./js/ui/tab-videos');
 require('./js/ui/tab-text.js');
 require('./js/ui/tab-models');
-require('./js/ui/tab-maps');
-require('./js/ui/tab-zones');
 require('./js/ui/tab-items');
 require('./js/ui/tab-data');
 require('./js/ui/tab-raw');
@@ -140,6 +138,8 @@ require('./js/ui/legacy-tab-models');
 require('./js/ui/legacy-tab-textures');
 require('./js/ui/legacy-tab-sounds');
 require('./js/ui/legacy-tab-files');
+
+const modules = require('./js/modules');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
 win.on('close', () => process.exit()); // Ensure we exit when window is closed.
@@ -214,6 +214,20 @@ document.addEventListener('click', function(e) {
 				const sheets = document.querySelectorAll('link[rel="stylesheet"]');
 				for (const sheet of sheets)
 					sheet.href = sheet.getAttribute('data-href') + '?v=' + Date.now();
+			},
+
+			/**
+			 * Reload the currently active module.
+			 */
+			reloadActiveModule() {
+				modules.reloadActiveModule();
+			},
+
+			/**
+			 * Reload all loaded modules.
+			 */
+			reloadAllModules() {
+				modules.reloadAllModules();
 			},
 
 			/**
@@ -322,13 +336,17 @@ document.addEventListener('click', function(e) {
 					else if (value !== false)
 						contextMenus[key] = null;
 				}
-				
+
 				if (preserve) {
 					if (this.screenStack[0] !== screenID)
 						this.screenStack.unshift(screenID);
 				} else {
 					this.screenStack[0] = screenID;
 				}
+			},
+
+			setActiveModule: function(module_name) {
+				modules.setActive(module_name);
 			},
 
 			/**
@@ -649,6 +667,19 @@ document.addEventListener('click', function(e) {
 	app.component('ContextMenu', ContextMenu);
 	app.component('MarkdownContent', MarkdownContent);
 	app.mount('#container');
+
+	await modules.initialize(core);
+
+	// watch activeModule and close context menus when it changes
+	core.view.$watch('activeModule', () => {
+		const contextMenus = core.view.contextMenus;
+		for (const [key, value] of Object.entries(contextMenus)) {
+			if (value === true)
+				contextMenus[key] = false;
+			else if (value !== false)
+				contextMenus[key] = null;
+		}
+	});
 
 	// Log some basic information for potential diagnostics.
 	const manifest = nw.App.manifest;

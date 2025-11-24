@@ -536,6 +536,10 @@ body {
 	background-image: url(./fa-icons/database.svg);
 }
 
+.nav-module::before {
+	background-image: var(--nav-icon);
+}
+
 .nav-files::before {
 	background-image: url(./fa-icons/file-lines.svg);
 }
@@ -598,6 +602,14 @@ body {
 
 #menu-extra-style {
 	background-image: url(./fa-icons/palette.svg);
+}
+
+#menu-extra-reload-active {
+	background-image: url(./fa-icons/gear.svg);
+}
+
+#menu-extra-reload-all {
+	background-image: url(./fa-icons/gear.svg);
 }
 
 #menu-extra-help {

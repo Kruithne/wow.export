@@ -85,7 +85,7 @@ module.exports = {
 		if (this.persistscrollkey) {
 			this.$nextTick(() => {
 				const saved_state = core.getScrollPosition(this.persistscrollkey);
-				if (saved_state && this.filteredItems.length > 0) {
+				if (saved_state && this.filteredItems.length > 0 && this.$refs.root && this.$refs.scroller) {
 					this.scrollRel = saved_state.scrollRel || 0;
 					this.scroll = (this.$refs.root.clientHeight - (this.$refs.scroller.clientHeight)) * this.scrollRel;
 					this.recalculateBounds();

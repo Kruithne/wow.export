@@ -35,6 +35,7 @@ const makeNewView = () => {
 		screenStack: [], // Controls the currently active interface screen.
 		isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
 		isDev: !BUILD_RELEASE, // True if in development environment.
+		isLoading: false, // Controls whether the loading overlay is visible.
 		loadingProgress: '', // Sets the progress text for the loading screen.
 		loadingTitle: '', // Sets the title text for the loading screen.
 		loadPct: -1, // Controls active loading bar percentage.
@@ -62,6 +63,8 @@ const makeNewView = () => {
 		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
+		activeModule: null, // Active module component instance.
+		modNavButtons: [], // Module-registered navigation buttons.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
 		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
 		selectionTextures: [], // Current user selection of texture files.
@@ -304,7 +307,7 @@ const showLoadingScreen = (segments = 1, title = 'Loading, please wait...') => {
 	loading_progress_value = 0;
 	core.view.loadPct = 0;
 	core.view.loadingTitle = title;
-	core.view.setScreen('loading');
+	core.view.isLoading = true;
 	core.view.isBusy++;
 };
 
@@ -328,6 +331,7 @@ const progressLoadingScreen = async (text) => {
  */
 const hideLoadingScreen = (screen = null) => {
 	core.view.loadPct = -1;
+	core.view.isLoading = false;
 	core.view.isBusy--;
 
 	if (screen)

@@ -11,23 +11,27 @@
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo" @click="setScreen(screen && screen.startsWith('legacy-') ? 'legacy-tab-home' : 'tab-home')" :class="{ active: screen === 'tab-home' || screen === 'legacy-tab-home' }" style="cursor: pointer;">wow.export</div>
 				<div id="nav">
-					<template v-if="!!screen && screen.startsWith('tab-')">
+					<template v-if="activeModule || (!!screen && screen.startsWith('tab-'))">
 						<div class="option nav-models" id="nav-models" @click="setScreen('tab-models')" :class="{ active: screen === 'tab-models' }">Models</div>
 						<div class="option nav-characters" id="nav-characters" @click="setScreen('tab-characters')" :class="{ active: screen === 'tab-characters' }">Characters</div>
 						<div class="option nav-items" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
 						<div class="option nav-textures" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<div class="option nav-sounds" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
 						<div class="option nav-videos" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
-						<div class="option nav-maps" id="nav-maps" @click="setScreen('tab-maps')" :class="{ active: screen === 'tab-maps' }">Maps</div>
-						<div class="option nav-zones" id="nav-zones" @click="setScreen('tab-zones')" :class="{ active: screen === 'tab-zones' }">Zones</div>
 						<div class="option nav-text" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
 						<div class="option nav-data" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
+						<template v-for="btn in modNavButtons" :key="btn.module">
+							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
+						</template>
 					</template>
 					<template v-if="!!screen && screen.startsWith('legacy-')">
 						<!--<div class="option nav-models" id="nav-legacy-models" @click="setScreen('legacy-tab-models')" :class="{ active: screen === 'legacy-tab-models' }">Models</div>-->
 						<div class="option nav-textures" id="nav-legacy-textures" @click="setScreen('legacy-tab-textures')" :class="{ active: screen === 'legacy-tab-textures' }">Textures</div>
 						<div class="option nav-sounds" id="nav-legacy-sounds" @click="setScreen('legacy-tab-sounds')" :class="{ active: screen === 'legacy-tab-sounds' }">Sounds</div>
 						<div class="option nav-files" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
+						<template v-for="btn in modNavButtons" :key="btn.module">
+							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
+						</template>
 					</template>
 					<div id="nav-help" v-if="!isBusy" @click="setScreen('help', true)"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
@@ -41,6 +45,8 @@
 						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
 						<span v-if="isDev" @click.self="runIntegrationTests" id="menu-extra-tests">Run Integration Tests</span>
 						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
+						<span v-if="isDev" @click.self="reloadActiveModule" id="menu-extra-reload-active">Reload Active Module</span>
+						<span v-if="isDev" @click.self="reloadAllModules" id="menu-extra-reload-all">Reload All Modules</span>
 						<span @click.self="setScreen('help', true)" id="menu-extra-help">Help</span>
 					</context-menu>
 				</div>
@@ -50,7 +56,7 @@
 				<div id="drop-overlay-text">» {{ fileDropPrompt }} «</div>
 			</div>
 			<div id="content">
-				<div id="loading" v-if="screen === 'loading'">
+				<div id="loading" v-if="isLoading">
 					<div id="loading-background" :class="{ xmas: isXmas }"></div>
 					<div id="loading-icon"></div>
 					<span id="loading-title">{{ loadingTitle }}</span>
@@ -59,12 +65,17 @@
 						<div :style="{ width: (loadPct * 100) + '%' }"></div>
 					</div>
 				</div>
-				<div id="changelog" v-if="screen === 'changelog'">
+				<div id="module-container" v-if="activeModule">
+					<keep-alive>
+						<component :is="activeModule"></component>
+					</keep-alive>
+				</div>
+				<div id="changelog" v-else-if="screen === 'changelog'">
 					<h1>Changelog</h1>
 					<markdown-content id="changelog-text" :content="changelogText"></markdown-content>
 					<input type="button" value="Go Back" @click="showPreviousScreen"/>
 				</div>
-				<div id="blender-info" v-if="screen === 'blender'">
+				<div id="blender-info" v-else-if="screen === 'blender'">
 					<div id="blender-info-header">
 						<h1>Installing the wow.export Add-on for Blender 2.8+</h1>
 						<p>Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.</p>
@@ -75,7 +86,7 @@
 						<input type="button" value="Go Back" @click="showPreviousScreen"/>
 					</div>
 				</div>
-				<div id="help-screen" v-if="screen === 'help'">
+				<div id="help-screen" v-else-if="screen === 'help'">
 					<div class="help-list-container">
 						<h1>Help</h1>
 						<div class="filter">
@@ -97,7 +108,7 @@
 					</div>
 					<input type="button" value="Go Back" @click="showPreviousScreen"/>
 				</div>
-				<div id="config" v-if="screen === 'config'" :class="{ toastgap: toast !== null }">
+				<div id="config" v-else-if="screen === 'config'" :class="{ toastgap: toast !== null }">
 					<div>
 						<h1>Export Directory</h1>
 						<p>Local directory where files will be exported to.</p>
@@ -427,7 +438,7 @@
 				</div>
 				
 				<!-- Home Tab -->
-				<div class="tab" id="tab-home" v-if="screen === 'tab-home'">
+				<div class="tab" id="tab-home" v-else-if="screen === 'tab-home'">
 					<div id="home-buttons" class="home-button-tray">
 						<div @click="setScreen('tab-models')">
 							<b>3D Models</b>
@@ -489,7 +500,7 @@
 					</div>
 				</div>
 
-				<div class="tab" id="legacy-tab-home" v-if="screen === 'legacy-tab-home'">
+				<div class="tab" id="legacy-tab-home" v-else-if="screen === 'legacy-tab-home'">
 					<div id="home-buttons" class="home-button-tray">
 						<!--<div @click="setScreen('legacy-tab-models')">
 							<b>Models</b>
@@ -532,7 +543,7 @@
 					<span @click="removeOverrideTextures">Remove</span>
 					<div class="close" @click="removeOverrideTextures"></div>
 				</div>
-				<div class="tab list-tab" id="tab-textures" v-if="screen === 'tab-textures'">
+				<div class="tab list-tab" id="tab-textures" v-else-if="screen === 'tab-textures'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionTextures" :items="listfileTextures" :override="overrideTextureList" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
 					</div>
@@ -576,7 +587,7 @@
 					</div>
 				</div>
 
-				<div class="tab list-tab" id="legacy-tab-textures" v-if="screen === 'legacy-tab-textures'">
+				<div class="tab list-tab" id="legacy-tab-textures" v-else-if="screen === 'legacy-tab-textures'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionTextures" :items="listfileTextures" :filter="userInputFilterTextures" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
 					</div>
@@ -609,7 +620,7 @@
 					</div>
 				</div>
 
-				<div class="tab list-tab" id="legacy-tab-models" v-if="screen === 'legacy-tab-models'">
+				<div class="tab list-tab" id="legacy-tab-models" v-else-if="screen === 'legacy-tab-models'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionLegacyModels" v-model:filter="userInputFilterLegacyModels" :items="listfileLegacyModels" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="legacy_models" :quickfilters="modelQuickFilters"></listbox>
 					</div>
@@ -756,7 +767,7 @@
 					</div>
 				</div>
 
-				<div class="tab list-tab" id="legacy-tab-sounds" v-if="screen === 'legacy-tab-sounds'">
+				<div class="tab list-tab" id="legacy-tab-sounds" v-else-if="screen === 'legacy-tab-sounds'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds"></listbox>
 					</div>
@@ -792,7 +803,7 @@
 					</div>
 				</div>
 
-				<div class="tab list-tab" id="legacy-tab-files" v-if="screen === 'legacy-tab-files'">
+				<div class="tab list-tab" id="legacy-tab-files" v-else-if="screen === 'legacy-tab-files'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></listbox>
 					</div>
@@ -805,128 +816,7 @@
 					</div>
 				</div>
 
-				<div class="tab list-tab" id="tab-maps" v-if="screen === 'tab-maps'">
-					<div class="map-placeholder">
-						<div class="expansion-buttons">
-							<button class="expansion-button show-all"
-									title="Show All"
-									:class="{ active: selectedExpansionFilter === -1 }"
-									@click="selectedExpansionFilter = -1">
-							</button>
-							<button v-for="expansion in constants.EXPANSIONS" 
-									:key="expansion.id"
-									class="expansion-button"
-									:title="expansion.name"
-									:class="{ active: selectedExpansionFilter === expansion.id }"
-									@click="selectedExpansionFilter = expansion.id"
-									:style="'background-image: var(--expansion-icon-' + expansion.id + ')'">
-							</button>
-						</div>
-					</div>
-					<div class="list-container" id="maps-list-container">
-						<listbox-maps id="listbox-maps" class="listbox-icons" v-model:selection="selectionMaps" :items="mapViewerMaps" :filter="userInputFilterMaps" :expansion-filter="selectedExpansionFilter" :keyinput="true" :single="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterMaps" placeholder="Filter maps..."/>
-					</div>
-					<map-viewer :map="mapViewerSelectedMap" :loader="mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="mapViewerChunkMask" v-model:selection="mapViewerSelection"></map-viewer>
-					<div class="spaced-preview-controls">
-						<input type="button" value="Export Global WMO" @click="click('export-map-wmo', $event)" :class="{ disabled: isBusy || !mapViewerHasWorldModel }"/>
-						<menu-button :options="menuButtonMapExport" :default="config.exportMapFormat" @change="config.exportMapFormat = $event" :disabled="isBusy || mapViewerSelection.length === 0" @click="click('export-map', $event)"></menu-button>
-					</div>
-
-					<div id="maps-sidebar" class="sidebar">
-						<span class="header">Export Options</span>
-						<label class="ui-checkbox" title="Include WMO objects (large objects such as buildings)">
-							<input type="checkbox" v-model="config.mapsIncludeWMO"/>
-							<span>Export WMO</span>
-						</label>
-						<label class="ui-checkbox" v-if="config.mapsIncludeWMO" title="Include objects inside WMOs (interior decorations)">
-							<input type="checkbox" v-model="config.mapsIncludeWMOSets"/>
-							<span>Export WMO Sets</span>
-						</label>
-						<label class="ui-checkbox" title="Export M2 objects on this tile (smaller objects such as trees)">
-							<input type="checkbox" v-model="config.mapsIncludeM2"/>
-							<span>Export M2</span>
-						</label>
-						<label class="ui-checkbox" title="Export foliage used on this tile (grass, etc)">
-							<input type="checkbox" v-model="config.mapsIncludeFoliage"/>
-							<span>Export Foliage</span>
-						</label>
-						<label v-if="!config.mapsExportRaw" class="ui-checkbox" title="Export raw liquid data (water, lava, etc)">
-							<input type="checkbox" v-model="config.mapsIncludeLiquid"/>
-							<span>Export Liquids</span>
-						</label>
-						<label class="ui-checkbox" title="Export client-side interactable objects (signs, banners, etc)">
-							<input type="checkbox" v-model="config.mapsIncludeGameObjects"/>
-							<span>Export G-Objects</span>
-						</label>
-						<label v-if="!config.mapsExportRaw" class="ui-checkbox" title="Include terrain holes for WMOs">
-							<input type="checkbox" v-model="config.mapsIncludeHoles"/>
-							<span>Include Holes</span>
-						</label>
-						<span class="header">Model Textures</span>
-						<label class="ui-checkbox" title="Include textures when exporting models">
-							<input type="checkbox" v-model="config.modelsExportTextures"/>
-							<span>Textures</span>
-						</label>
-						<label v-if="config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
-							<input type="checkbox" v-model="config.modelsExportAlpha"/>
-							<span>Texture Alpha</span>
-						</label>
-						<template v-if="!config.mapsExportRaw">
-							<span class="header">Terrain Texture Quality</span>
-							<menu-button :options="menuButtonTextureQuality" :default="config.exportMapQuality" @change="config.exportMapQuality = $event" :disabled="isBusy" :dropdown="true"></menu-button>
-							<span class="header">Heightmaps</span>
-							<menu-button :options="menuButtonHeightmapResolution" :default="config.heightmapResolution" @change="config.heightmapResolution = $event" :disabled="isBusy" :dropdown="true"></menu-button>
-							<menu-button :options="menuButtonHeightmapBitDepth" :default="config.heightmapBitDepth" @change="config.heightmapBitDepth = $event" :disabled="isBusy" :dropdown="true" style="margin-top: 5px"></menu-button>
-							<template v-if="config.heightmapResolution === -1">
-								<span class="header" style="margin-top: 10px">Heightmap Resolution</span>
-								<input type="number" v-model.number="config.heightmapCustomResolution" :disabled="isBusy" min="1" step="1" style="width: 100%; margin: unset; margin-top: 5px; padding: 10px; box-sizing: border-box;">
-							</template>
-						</template>
-					</div>
-				</div>
-				<div class="tab list-tab" id="tab-zones" v-if="screen === 'tab-zones'">
-					<div class="zone-placeholder">
-						<div class="expansion-buttons">
-							<button class="expansion-button show-all"
-									title="Show All"
-									:class="{ active: selectedZoneExpansionFilter === -1 }"
-									@click="selectedZoneExpansionFilter = -1">
-							</button>
-							<button v-for="expansion in constants.EXPANSIONS" 
-									:key="expansion.id"
-									class="expansion-button"
-									:title="expansion.name"
-									:class="{ active: selectedZoneExpansionFilter === expansion.id }"
-									@click="selectedZoneExpansionFilter = expansion.id"
-									:style="'background-image: var(--expansion-icon-' + expansion.id + ')'">
-							</button>
-						</div>
-					</div>
-					<div class="list-container">
-						<listbox-zones id="listbox-zones" class="listbox-icons" v-model:selection="selectionZones" :items="zoneViewerZones" :filter="userInputFilterZones" :expansion-filter="selectedZoneExpansionFilter" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></listbox-zones>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterZones" placeholder="Filter zones..."/>
-					</div>
-					<div class="zone-export-controls">
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.showZoneOverlays"/>
-							<span>Show Overlays</span>
-						</label>
-						<input type="button" value="Export Map" @click="click('export-zone', $event)" :class="{ disabled: isBusy || !selectionZones || selectionZones.length === 0 }"/>
-					</div>
-					<div class="zone-viewer-container preview-container">
-						<div class="preview-background">
-							<canvas id="zone-canvas"></canvas>
-						</div>
-					</div>
-				</div>
-				<div class="tab" id="tab-items" v-if="screen === 'tab-items'">
+				<div class="tab" id="tab-items" v-else-if="screen === 'tab-items'">
 					<div class="list-container">
 						<itemlistbox id="listbox-items" v-model:selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextMenus.nodeItem = $event"></itemlistbox>
 						<context-menu :node="contextMenus.nodeItem" v-slot:default="context" @close="contextMenus.nodeItem = null">
@@ -949,7 +839,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-models" v-if="screen === 'tab-models'">
+				<div class="tab list-tab" id="tab-models" v-else-if="screen === 'tab-models'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionModels" v-model:filter="userInputFilterModels" :items="listfileModels" :override="overrideModelList" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="modelQuickFilters"></listbox>
 					</div>
@@ -1098,7 +988,7 @@
 						</template>
 					</div>
 				</div>
-				<div class="tab" id="tab-characters" v-if="screen === 'tab-characters'">
+				<div class="tab" id="tab-characters" v-else-if="screen === 'tab-characters'">
 					<div v-if="chrModelViewerAnims && chrModelViewerAnims.length > 0" class="animation-dropdown-overlay">
 						<select class="animation-dropdown" v-model="chrModelViewerAnimSelection">
 							<option v-for="animation in chrModelViewerAnims" :key="animation.id" :value="animation.id">
@@ -1275,7 +1165,7 @@
 					</div>
 					-->
 				</div>
-				<div class="tab list-tab" id="tab-install" v-if="screen === 'tab-install'">
+				<div class="tab list-tab" id="tab-install" v-else-if="screen === 'tab-install'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionInstall" :items="listfileInstall" :filter="userInputFilterInstall" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="install file" persistscrollkey="install"></listbox>
 					</div>
@@ -1293,7 +1183,7 @@
 						</label>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-raw" v-if="screen === 'tab-raw'">
+				<div class="tab list-tab" id="tab-raw" v-else-if="screen === 'tab-raw'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="raw"></listbox>
 					</div>
@@ -1306,7 +1196,7 @@
 						<input type="button" value="Export Selected" @click="click('export-raw', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-video" v-if="screen === 'tab-video'">
+				<div class="tab list-tab" id="tab-video" v-else-if="screen === 'tab-video'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionVideos" :items="listfileVideos" :filter="userInputFilterVideos" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="video" persistscrollkey="videos"></listbox>
 					</div>
@@ -1327,7 +1217,7 @@
 						<input type="button" value="Export Selected" @click="click('export-video', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-text" v-if="screen === 'tab-text'">
+				<div class="tab list-tab" id="tab-text" v-else-if="screen === 'tab-text'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionText" :items="listfileText" :filter="userInputFilterText" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="text file" persistscrollkey="text"></listbox>
 					</div>
@@ -1345,7 +1235,7 @@
 						<input type="button" value="Export Selected" @click="click('export-text', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-sounds" v-if="screen === 'tab-sounds'">
+				<div class="tab list-tab" id="tab-sounds" v-else-if="screen === 'tab-sounds'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds"></listbox>
 					</div>
@@ -1380,7 +1270,7 @@
 						<input type="button" value="Export Selected" @click="click('export-sound', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
-				<div class="tab list-tab" id="tab-data" v-if="screen === 'tab-data'">
+				<div class="tab list-tab" id="tab-data" v-else-if="screen === 'tab-data'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionDB2s" :items="dbdManifest" :filter="userInputFilterDB2s" :keyinput="true"
 							:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"
@@ -1409,7 +1299,7 @@
 						</div>
 					</div>
 				</div>
-				<div id="source-select" v-if="screen === 'source-select'">
+				<div id="source-select" v-else-if="screen === 'source-select'">
 					<div id="source-local" @click="click('source-local', $event)">
 						<div class="source-icon"></div>
 						<div class="source-content">
@@ -1447,7 +1337,7 @@
 						</div>
 					</div>
 				</div>
-				<div id="build-select" v-if="screen === 'build-select'">
+				<div id="build-select" v-else-if="screen === 'build-select'">
 					<div class="build-select-content">
 						<div class="build-select-title">Select Build</div>
 						<div class="build-select-buttons">
