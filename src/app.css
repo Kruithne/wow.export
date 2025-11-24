@@ -520,20 +520,8 @@ body {
 	background-image: url(./fa-icons/film.svg);
 }
 
-.nav-maps::before {
-	background-image: url(./fa-icons/map.svg);
-}
-
-.nav-zones::before {
-	background-image: url(./fa-icons/mountain-castle.svg);
-}
-
 .nav-text::before {
 	background-image: url(./fa-icons/file-lines.svg);
-}
-
-.nav-data::before {
-	background-image: url(./fa-icons/database.svg);
 }
 
 .nav-module::before {

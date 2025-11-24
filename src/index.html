@@ -19,7 +19,6 @@
 						<div class="option nav-sounds" id="nav-sounds" @click="setScreen('tab-sounds')" :class="{ active: screen === 'tab-sounds' }">Audio</div>
 						<div class="option nav-videos" id="nav-videos" @click="setScreen('tab-video')" :class="{ active: screen === 'tab-video' }">Videos</div>
 						<div class="option nav-text" id="nav-text" @click="setScreen('tab-text')" :class="{ active: screen === 'tab-text' }">Text</div>
-						<div class="option nav-data" id="nav-data" @click="setScreen('tab-data')" :class="{ active: screen === 'tab-data' }">Data</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 						</template>
@@ -1267,35 +1266,6 @@
 							<span>Autoplay</span>
 						</label>
 						<input type="button" value="Export Selected" @click="click('export-sound', $event)" :class="{ disabled: isBusy }"/>
-					</div>
-				</div>
-				<div class="tab list-tab" id="tab-data" v-else-if="screen === 'tab-data'">
-					<div class="list-container">
-						<listbox v-model:selection="selectionDB2s" :items="dbdManifest" :filter="userInputFilterDB2s" :keyinput="true"
-							:regex="config.regexFilters" :copydir="config.copyFileDirectories" :pasteselection="config.pasteSelection"
-							:copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></listbox>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterDB2s" placeholder="Filter DB2s.." />
-					</div>
-					<div class="list-container">
-						<data-table :headers="tableBrowserHeaders" :rows="tableBrowserRows" :filter="userInputFilterDataTable" :regex="config.regexFilters" :selection="selectionDataTable" @update:filter="userInputFilterDataTable = $event" @update:selection="selectionDataTable = $event"></data-table>
-					</div>
-					<div class="filter data-table-filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" id="data-table-filter-input" v-model="userInputFilterDataTable" placeholder="Filter data table rows..." />
-					</div>
-					<div class="right-panel">
-						<span class="header">Export</span>
-						<label class="ui-checkbox" title="Export all rows">
-							<input type="checkbox" v-model="config.dataExportAll"/>
-							<span>Export all rows</span>
-						</label>
-						<div class="right-panel-buttons">
-							<input type="button" value="Export as CSV" @click="click('export-data-csv', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
-							<input type="button" value="Export DB2" @click="click('export-db2-raw', $event)" :class="{ disabled: isBusy || !tableBrowserHeaders || tableBrowserHeaders.length === 0 }"/>
-						</div>
 					</div>
 				</div>
 				<div id="source-select" v-else-if="screen === 'source-select'">
