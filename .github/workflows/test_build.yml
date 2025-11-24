@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '2.7'
       - name: Install node-gyp dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -37,7 +37,7 @@ jobs:
         with:
           bun-version: latest
       - name: Install nw-gyp
-        run: npm install -g nw-gyp
+        run: npm install -g nw-gyp@latest
       - name: bun install
         run: bun install
       - name: Compile wow.export ${{ matrix.platform }}
