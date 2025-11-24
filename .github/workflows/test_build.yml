@@ -1,0 +1,48 @@
+name: Test Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test build
+    strategy:
+      matrix:
+        include:
+          - platform: win-x64
+            os: windows-latest
+          - platform: linux-x64
+            os: ubuntu-latest
+          - platform: osx-x64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install node-gyp dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3-dev
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.9.0'
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install nw-gyp
+        run: npm install -g nw-gyp
+      - name: bun install
+        run: bun install
+      - name: Compile wow.export ${{ matrix.platform }}
+        run: bun build.js ${{ matrix.platform }}
+      - name: Publish
+        run: bun publish.js ${{ matrix.platform }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wow-export-${{ matrix.platform }}
+          path: publish/${{ matrix.platform }}/*
+          retention-days: 7
