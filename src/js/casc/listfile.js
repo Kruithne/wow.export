@@ -552,7 +552,12 @@ const applyPreload = (rootEntries) => {
 
 			const filter_and_format = (preload_map) => {
 				const filtered_ids = filterMapToIds(preload_map);
-				const formatted_array = formatEntries(filtered_ids);
+				const formatted_array = new Array(filtered_ids.length);
+				for (let i = 0; i < filtered_ids.length; i++) {
+					const fid = filtered_ids[i];
+					const filename = preload_map.get(fid);
+					formatted_array[i] = `${filename} [${fid}]`;
+				}
 				preload_map.clear();
 				return formatted_array;
 			};
