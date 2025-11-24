@@ -73,4 +73,12 @@ function getByTableName(table_name) {
 	return table_to_id.get(table_name);
 }
 
-module.exports = { preload, prepareManifest, getByID, getByTableName };
+/**
+ * get all table names
+ * @returns {string[]}
+ */
+function getAllTableNames() {
+	return Array.from(table_to_id.keys()).sort();
+}
+
+module.exports = { preload, prepareManifest, getByID, getByTableName, getAllTableNames };

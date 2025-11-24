@@ -23,6 +23,8 @@ async function initializeAvailableTables() {
 
 	try {
 		await dbd_manifest.prepareManifest();
+		const table_names = dbd_manifest.getAllTableNames();
+		manifest.push(...table_names);
 		log.write('initialized available db2 tables from dbd manifest');
 	} catch (e) {
 		log.write('failed to initialize available db2 tables: %s', e.message);
