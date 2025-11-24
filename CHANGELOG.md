@@ -6,16 +6,16 @@
 - wow.export will remain functional with most features even if listfile fails to load.
 
 ## 0.2.5 (Hotfixes)
-- 21/10 Fixed an issue that prevent the "Clear Cache" option from working.
-- 21/10 Fixed an issue with "Quick Filter" only working with regular expressions enabled.
-- 21/10 Fixed an issue that caused the legacy listfile option to not function correctly.
-- 21/10 Fixed an issue that caused some settings options to appear oversized.
-- 21/10 Fixed an issue that caused the download size for updates to appear double what it is.
-- 21/10 Fixed an issue with WMO LOD/group files appearing in models tab on legacy listfile mode.
-- 21/10 Fixed an issue that caused wow.export to crash toggling Show Grid/Show Background.
-- 22/10 Fixed an issue that caused a crash when loading the item tab with "Show unknown items" enabled.
-- 22/10 Fixed an issue that caused some maps to not be listed in Classic versions of WoW.
-- 23/10 Fixed an issue that caused character animations to break when switching to Models tab and back.
+- 21/11 Fixed an issue that prevent the "Clear Cache" option from working.
+- 21/11 Fixed an issue with "Quick Filter" only working with regular expressions enabled.
+- 21/11 Fixed an issue that caused the legacy listfile option to not function correctly.
+- 21/11 Fixed an issue that caused some settings options to appear oversized.
+- 21/11 Fixed an issue that caused the download size for updates to appear double what it is.
+- 21/11 Fixed an issue with WMO LOD/group files appearing in models tab on legacy listfile mode.
+- 21/11 Fixed an issue that caused wow.export to crash toggling Show Grid/Show Background.
+- 22/11 Fixed an issue that caused a crash when loading the item tab with "Show unknown items" enabled.
+- 22/11 Fixed an issue that caused some maps to not be listed in Classic versions of WoW.
+- 23/11 Fixed an issue that caused character animations to break when switching to Models tab and back.
 
 ## 0.2.5 (21-11-2025)
 - This update contains significant internal refactors that reduce wow.exports memory usage by over 1GB and introduces major performance improvements across the whole application, from loading to model previews. This may introduce unexpected bugs or instability, please report them to us.
