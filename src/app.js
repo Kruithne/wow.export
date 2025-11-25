@@ -121,7 +121,6 @@ const ContextMenu = require('./js/components/context-menu');
 const MarkdownContent = require('./js/components/markdown-content');
 
 require('./js/ui/source-select');
-require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/legacy-tab-files');
 

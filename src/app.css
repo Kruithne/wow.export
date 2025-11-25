@@ -535,10 +535,6 @@ body {
 	background-size: 18px;
 }
 
-#menu-extra-raw {
-	background-image: url(./fa-icons/fish.svg);
-}
-
 #menu-extra-install {
 	background-image: url(./fa-icons/clipboard-list.svg);
 }
