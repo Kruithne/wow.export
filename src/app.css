@@ -507,9 +507,6 @@ body {
 	background-image: var(--nav-icon);
 }
 
-.nav-files::before {
-	background-image: url(./fa-icons/file-lines.svg);
-}
 
 #nav-help {
 	width: 20px;

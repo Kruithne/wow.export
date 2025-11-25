@@ -24,7 +24,8 @@ const MODULES = {
 	tab_changelog: require('./modules/tab_changelog'),
 	legacy_tab_home: require('./modules/legacy_tab_home'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
-	legacy_tab_textures: require('./modules/legacy_tab_textures')
+	legacy_tab_textures: require('./modules/legacy_tab_textures'),
+	legacy_tab_files: require('./modules/legacy_tab_files')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';

@@ -10,7 +10,7 @@ module.exports = {
 					<b>Sounds</b>
 					<span>Play and export in-game sound effects, music and dialog.</span>
 				</div>
-				<div @click="navigate_screen('legacy-tab-files')">
+				<div @click="navigate('legacy_tab_files')">
 					<b>Files</b>
 					<span>Browse and export all raw files from MPQ archives.</span>
 				</div>
@@ -38,10 +38,6 @@ module.exports = {
 	methods: {
 		navigate(module_name) {
 			this.$modules[module_name].setActive();
-		},
-
-		navigate_screen(screen_id) {
-			this.$core.view.setScreen(screen_id);
 		}
 	}
 };

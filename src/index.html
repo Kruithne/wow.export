@@ -17,7 +17,6 @@
 						</template>
 					</template>
 					<template v-if="(activeModule && activeModule.__name.startsWith('legacy_')) || (!!screen && screen.startsWith('legacy-'))">
-						<div class="option nav-files" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 						</template>
@@ -380,18 +379,6 @@
 				</div>
 				
 					
-				<div class="tab list-tab" id="legacy-tab-files" v-else-if="screen === 'legacy-tab-files'">
-					<div class="list-container">
-						<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></listbox>
-					</div>
-					<div id="tab-legacy-files-tray">
-						<div class="filter">
-							<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-							<input type="text" v-model="userInputFilterRaw" placeholder="Filter files..."/>
-						</div>
-						<input type="button" value="Export Selected" @click="click('export-legacy-file', $event)" :class="{ disabled: isBusy || selectionRaw.length === 0 }"/>
-					</div>
-				</div>
 				<div id="source-select" v-else-if="screen === 'source-select'">
 					<div id="source-local" @click="click('source-local', $event)">
 						<div class="source-icon"></div>
