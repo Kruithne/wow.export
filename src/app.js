@@ -123,14 +123,12 @@ const MarkdownContent = require('./js/components/markdown-content');
 const TabTextures = require('./js/ui/tab-textures');
 const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
-require('./js/ui/tab-audio');
 require('./js/ui/tab-items');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/tab-characters');
 require('./js/ui/screen-help');
 require('./js/ui/legacy-tab-textures');
-require('./js/ui/legacy-tab-sounds');
 require('./js/ui/legacy-tab-files');
 
 const modules = require('./js/modules');

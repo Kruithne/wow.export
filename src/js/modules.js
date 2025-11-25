@@ -11,7 +11,8 @@ const MODULES = {
 	tab_text: require('./modules/tab_text'),
 	tab_videos: require('./modules/tab_videos'),
 	tab_models: require('./modules/tab_models'),
-	tab_audio: require('./modules/tab_audio')
+	tab_audio: require('./modules/tab_audio'),
+	legacy_tab_audio: require('./modules/legacy_tab_audio')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';

@@ -21,7 +21,6 @@
 					</template>
 					<template v-if="!!screen && screen.startsWith('legacy-')">
 						<div class="option nav-textures" id="nav-legacy-textures" @click="setScreen('legacy-tab-textures')" :class="{ active: screen === 'legacy-tab-textures' }">Textures</div>
-						<div class="option nav-sounds" id="nav-legacy-sounds" @click="setScreen('legacy-tab-sounds')" :class="{ active: screen === 'legacy-tab-sounds' }">Sounds</div>
 						<div class="option nav-files" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
@@ -610,42 +609,6 @@
 							<span>Transparency</span>
 						</label>
 						<menu-button :options="menuButtonTextures" :default="config.exportTextureFormat" @change="config.exportTextureFormat = $event" :disabled="isBusy" @click="click('export-legacy-texture', $event)"></menu-button>
-					</div>
-				</div>
-
-				<div class="tab list-tab" id="legacy-tab-sounds" v-else-if="screen === 'legacy-tab-sounds'">
-					<div class="list-container">
-						<listbox v-model:selection="selectionSounds" :items="listfileSounds" :filter="userInputFilterSounds" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds"></listbox>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterSounds" placeholder="Filter sound files..."/>
-					</div>
-					<div id="sound-player">
-						<div id="sound-player-anim" :style="{ 'animation-play-state': soundPlayerState ? 'running' : 'paused' }"></div>
-						<div id="sound-player-controls">
-							<div id="sound-player-info">
-								<span>{{ soundPlayerSeekFormatted }}</span>
-								<span class="title">{{ soundPlayerTitle }}</span>
-								<span>{{ soundPlayerDurationFormatted }}</span>
-							</div>
-							<slider id="slider-seek" v-model="soundPlayerSeek" @update:model-value="emit('click-sound-seek', $event)"></slider>
-							<div class="buttons">
-								<input type="button" :class="{ isPlaying: !soundPlayerState }" @click="click('sound-toggle', $event)"/>
-								<slider id="slider-volume" v-model="config.soundPlayerVolume"></slider>
-							</div>
-						</div>
-					</div>
-					<div class="preview-controls">
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.soundPlayerLoop"/>
-							<span>Loop</span>
-						</label>
-						<label class="ui-checkbox">
-							<input type="checkbox" v-model="config.soundPlayerAutoPlay"/>
-							<span>Autoplay</span>
-						</label>
-						<input type="button" value="Export Selected" @click="click('export-legacy-sound', $event)" :class="{ disabled: isBusy }"/>
 					</div>
 				</div>
 
