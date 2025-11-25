@@ -10,6 +10,7 @@ const MODULES = {
 	tab_zones: require('./modules/tab_zones'),
 	tab_data: require('./modules/tab_data'),
 	tab_raw: require('./modules/tab_raw'),
+	tab_install: require('./modules/tab_install'),
 	tab_text: require('./modules/tab_text'),
 	tab_videos: require('./modules/tab_videos'),
 	tab_models: require('./modules/tab_models'),

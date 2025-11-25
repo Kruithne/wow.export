@@ -535,10 +535,6 @@ body {
 	background-size: 18px;
 }
 
-#menu-extra-install {
-	background-image: url(./fa-icons/clipboard-list.svg);
-}
-
 #menu-extra-settings {
 	background-image: url(./fa-icons/gear.svg);
 }
