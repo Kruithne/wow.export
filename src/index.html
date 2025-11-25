@@ -25,8 +25,6 @@
 					<div id="nav-help" v-if="!isBusy" @click="setActiveModule('tab_help')"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
-						<span @click.self="setScreen('blender', true)" id="menu-extra-blender">Install Blender Add-on</span>
-						<span @click.self="setScreen('changelog', true)" id="menu-extra-changes">View Recent Changes</span>
 						<span @click.self="openRuntimeLog" id="menu-extra-log">Open Runtime Log</span>
 						<span v-if="casc !== null" @click.self="setScreen('tab-raw')" id="menu-extra-raw">Browse Raw Client Files</span>
 						<span v-if="casc !== null" @click.self="setScreen('tab-install')" id="menu-extra-install">Browse Install Manifest</span>
@@ -57,22 +55,6 @@
 					<keep-alive>
 						<component :is="activeModule"></component>
 					</keep-alive>
-				</div>
-				<div id="changelog" v-else-if="screen === 'changelog'">
-					<h1>Changelog</h1>
-					<markdown-content id="changelog-text" :content="changelogText"></markdown-content>
-					<input type="button" value="Go Back" @click="showPreviousScreen"/>
-				</div>
-				<div id="blender-info" v-else-if="screen === 'blender'">
-					<div id="blender-info-header">
-						<h1>Installing the wow.export Add-on for Blender 2.8+</h1>
-						<p>Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.</p>
-					</div>
-					<div id="blender-info-buttons">
-						<input type="button" value="Install Automatically (Recommended)" @click="installBlenderAddon" :class="{ disabled: isBusy }"/>
-						<input type="button" value="Install Manually (Advanced)" @click="openBlenderAddonFolder"/>
-						<input type="button" value="Go Back" @click="showPreviousScreen"/>
-					</div>
 				</div>
 				<div id="config" v-else-if="screen === 'config'" :class="{ toastgap: toast !== null }">
 					<div>

@@ -173,20 +173,6 @@ document.addEventListener('click', function(e) {
 		},
 		methods: {
 			/**
-			 * Invoked when the user chooses to manually install the Blender add-on.
-			 */
-			openBlenderAddonFolder: function() {
-				blender.openAddonDirectory();
-			},
-
-			/**
-			 * Invoked when the user chooses to automatically install the Blender add-on.
-			 */
-			installBlenderAddon: function() {
-				blender.startAutomaticInstall();
-			},
-
-			/**
 			 * Opens the runtime application log from the application data directory.
 			 */
 			openRuntimeLog() {
@@ -761,19 +747,6 @@ document.addEventListener('click', function(e) {
 			log.write('failed to load whats-new.html: %o', e);
 		}
 	})();
-
-	// Load the changelog when the user opens the screen.
-	core.events.on('screen-changelog', () => {
-		setImmediate(async () => {
-			try {
-				const changelog_path = BUILD_RELEASE ? './src/CHANGELOG.md' : '../../CHANGELOG.md';
-				const text = await fsp.readFile(changelog_path, 'utf8');
-				core.view.changelogText = text;
-			} catch (e) {
-				core.view.changelogText = 'Error loading changelog';
-			}
-		});
-	});
 
 	// Set source select as the currently active interface screen.
 	core.view.setScreen('source-select');

@@ -17,6 +17,8 @@ const MODULES = {
 	tab_characters: require('./modules/tab_characters'),
 	tab_textures: require('./modules/tab_textures'),
 	tab_help: require('./modules/tab_help'),
+	tab_blender: require('./modules/tab_blender'),
+	tab_changelog: require('./modules/tab_changelog'),
 	legacy_tab_home: require('./modules/legacy_tab_home'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
 	legacy_tab_textures: require('./modules/legacy_tab_textures')
