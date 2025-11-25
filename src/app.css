@@ -508,10 +508,6 @@ body {
 	background-image: url(./fa-icons/image.svg);
 }
 
-.nav-sounds::before {
-	background-image: url(./fa-icons/music.svg);
-}
-
 .nav-module::before {
 	background-image: var(--nav-icon);
 }
