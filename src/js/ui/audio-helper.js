@@ -4,106 +4,89 @@
 	License: MIT
 */
 
-const PLAYBACK_STATE = {
-	UNLOADED: 'UNLOADED',
-	LOADING: 'LOADING',
-	LOADED: 'LOADED',
-	PLAYING: 'PLAYING',
-	PAUSED: 'PAUSED',
-	SEEKING: 'SEEKING'
-};
-
-class PlaybackState {
+class AudioPlayer {
 	constructor() {
-		this.state = PLAYBACK_STATE.UNLOADED;
-		this.playback_started_at = 0;
-		this.position_at_pause = 0;
-		this.pending_seek = null;
+		this.context = null;
+		this.gain = null;
+		this.buffer = null;
+		this.source = null;
+
+		this.is_playing = false;
+		this.start_time = 0;
+		this.start_offset = 0;
+
+		this.loop = false;
+		this.on_ended = null;
 	}
 
-	get_current_position(audioBuffer, audioContext, loopEnabled) {
-		if (!audioBuffer)
-			return 0;
-
-		if (this.state === PLAYBACK_STATE.PLAYING) {
-			const elapsed = audioContext.currentTime - this.playback_started_at;
-			const position = this.position_at_pause + elapsed;
-
-			if (loopEnabled)
-				return position % audioBuffer.duration;
-
-			return Math.min(position, audioBuffer.duration);
-		}
-
-		return this.position_at_pause;
-	}
-
-	start_playback(from_position, audioContext) {
-		this.playback_started_at = audioContext.currentTime;
-		this.position_at_pause = from_position;
-		this.state = PLAYBACK_STATE.PLAYING;
-	}
-
-	pause_playback() {
-		if (this.state === PLAYBACK_STATE.PLAYING)
-			this.state = PLAYBACK_STATE.PAUSED;
-	}
-
-	seek_to(position, audioBuffer) {
-		if (!audioBuffer)
+	init() {
+		if (this.context)
 			return;
 
-		this.position_at_pause = Math.max(0, Math.min(position, audioBuffer.duration));
-
-		if (this.state === PLAYBACK_STATE.PLAYING) {
-			this.pending_seek = this.position_at_pause;
-			this.state = PLAYBACK_STATE.SEEKING;
-		}
+		this.context = new (window.AudioContext || window.webkitAudioContext)();
+		this.gain = this.context.createGain();
+		this.gain.connect(this.context.destination);
 	}
 
-	reset() {
-		this.state = PLAYBACK_STATE.UNLOADED;
-		this.playback_started_at = 0;
-		this.position_at_pause = 0;
-		this.pending_seek = null;
+	async load(array_buffer) {
+		this.stop();
+		this.buffer = await this.context.decodeAudioData(array_buffer);
+		return this.buffer;
 	}
 
-	mark_loaded() {
-		this.state = PLAYBACK_STATE.LOADED;
-		this.position_at_pause = 0;
-	}
-}
-
-class AudioSourceManager {
-	constructor() {
-		this.source = null;
-		this.is_loop_enabled = false;
+	unload() {
+		this.stop();
+		this.buffer = null;
+		this.start_offset = 0;
 	}
 
-	create_source(audioBuffer, audioContext, gainNode, onEndedCallback) {
-		if (!audioBuffer || !audioContext)
-			return null;
+	play(from_offset) {
+		if (!this.buffer)
+			return;
 
-		this.destroy_source();
+		this.stop_source();
 
-		this.source = audioContext.createBufferSource();
-		this.source.buffer = audioBuffer;
-		this.source.connect(gainNode);
-		this.source.loop = this.is_loop_enabled;
+		if (from_offset !== undefined)
+			this.start_offset = Math.max(0, Math.min(from_offset, this.buffer.duration));
 
-		this.source.onended = onEndedCallback;
+		this.source = this.context.createBufferSource();
+		this.source.buffer = this.buffer;
+		this.source.loop = this.loop;
+		this.source.connect(this.gain);
 
-		return this.source;
+		this.source.onended = () => {
+			// only handle natural completion (not stopped programmatically)
+			if (this.is_playing && !this.loop) {
+				this.is_playing = false;
+				this.start_offset = 0;
+				this.source = null;
+
+				if (this.on_ended)
+					this.on_ended();
+			}
+		};
+
+		this.source.start(0, this.start_offset);
+		this.start_time = this.context.currentTime;
+		this.is_playing = true;
 	}
 
-	start_source(offset, audioBuffer) {
-		if (this.source) {
-			const clamped_offset = Math.max(0, Math.min(offset, audioBuffer.duration));
-			this.source.start(0, clamped_offset);
-		}
+	pause() {
+		if (!this.is_playing)
+			return;
+
+		this.start_offset = this.get_position();
+		this.stop_source();
+		this.is_playing = false;
 	}
 
-	destroy_source() {
+	stop() {
+		this.stop_source();
+		this.is_playing = false;
+		this.start_offset = 0;
+	}
+
+	stop_source() {
 		if (this.source) {
 			try {
 				this.source.onended = null;
@@ -117,15 +100,59 @@ class AudioSourceManager {
 		}
 	}
 
+	seek(position) {
+		if (!this.buffer)
+			return;
+
+		const clamped = Math.max(0, Math.min(position, this.buffer.duration));
+
+		if (this.is_playing)
+			this.play(clamped);
+		else
+			this.start_offset = clamped;
+	}
+
+	get_position() {
+		if (!this.buffer)
+			return 0;
+
+		if (this.is_playing) {
+			const elapsed = this.context.currentTime - this.start_time;
+			const position = this.start_offset + elapsed;
+
+			if (this.loop)
+				return position % this.buffer.duration;
+
+			return Math.min(position, this.buffer.duration);
+		}
+
+		return this.start_offset;
+	}
+
+	get_duration() {
+		return this.buffer?.duration ?? 0;
+	}
+
+	set_volume(value) {
+		if (this.gain)
+			this.gain.gain.value = value;
+	}
+
 	set_loop(enabled) {
-		this.is_loop_enabled = enabled;
+		this.loop = enabled;
 
 		if (this.source)
 			this.source.loop = enabled;
 	}
 
-	is_active() {
-		return this.source !== null;
+	destroy() {
+		this.unload();
+
+		if (this.context) {
+			this.context.close();
+			this.context = null;
+			this.gain = null;
+		}
 	}
 }
 
@@ -143,9 +170,7 @@ const detectFileType = (data) => {
 };
 
 module.exports = {
-	PLAYBACK_STATE,
-	PlaybackState,
-	AudioSourceManager,
+	AudioPlayer,
 	AUDIO_TYPE_UNKNOWN,
 	AUDIO_TYPE_OGG,
 	AUDIO_TYPE_MP3,

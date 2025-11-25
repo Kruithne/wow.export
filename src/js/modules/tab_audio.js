@@ -9,97 +9,43 @@ const db2 = require('../casc/db2');
 const audioHelper = require('../ui/audio-helper');
 const InstallType = require('../install-type');
 
-const { PLAYBACK_STATE, PlaybackState, AudioSourceManager, AUDIO_TYPE_UNKNOWN, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
+const { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
 
 let selected_file = null;
-let is_track_loaded = false;
 let has_sound_data_loaded = false;
-
-let audio_context = null;
-let audio_buffer = null;
-let gain_node = null;
 let animation_frame_id = null;
-let data;
+let file_data = null;
 
-const playback_state = new PlaybackState();
-const source_manager = new AudioSourceManager();
+const player = new AudioPlayer();
 
 const update_seek = (core) => {
-	if (!audio_buffer || playback_state.state !== PLAYBACK_STATE.PLAYING) {
+	if (!player.is_playing) {
 		animation_frame_id = null;
 		return;
 	}
 
-	const current_position = playback_state.get_current_position(audio_buffer, audio_context, core.view.config.soundPlayerLoop);
-	core.view.soundPlayerSeek = current_position / audio_buffer.duration;
+	const duration = player.get_duration();
+	if (duration > 0)
+		core.view.soundPlayerSeek = player.get_position() / duration;
 
 	animation_frame_id = requestAnimationFrame(() => update_seek(core));
 };
 
-const start_animation_loop = (core) => {
+const start_seek_loop = (core) => {
 	if (animation_frame_id === null)
 		update_seek(core);
 };
 
-const stop_animation_loop = () => {
+const stop_seek_loop = () => {
 	if (animation_frame_id !== null) {
 		cancelAnimationFrame(animation_frame_id);
 		animation_frame_id = null;
 	}
 };
 
-const start_playback = (core) => {
-	if (!is_track_loaded || !audio_buffer)
-		return;
-
-	if (playback_state.state === PLAYBACK_STATE.PLAYING)
-		return;
-
-	const start_position = playback_state.position_at_pause;
-
-	source_manager.set_loop(core.view.config.soundPlayerLoop);
-	source_manager.create_source(audio_buffer, audio_context, gain_node, () => {
-		if (!source_manager.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
-			playback_state.state = PLAYBACK_STATE.LOADED;
-			playback_state.position_at_pause = 0;
-			stop_animation_loop();
-			core.view.soundPlayerState = false;
-			core.view.soundPlayerSeek = 0;
-		}
-	});
-	source_manager.start_source(start_position, audio_buffer);
-
-	playback_state.start_playback(start_position, audio_context);
-	core.view.soundPlayerState = true;
-	start_animation_loop(core);
-};
-
-const stop_playback = (core) => {
-	source_manager.destroy_source();
-	playback_state.pause_playback();
-	playback_state.position_at_pause = 0;
-	stop_animation_loop();
-	core.view.soundPlayerState = false;
-	core.view.soundPlayerSeek = 0;
-};
-
-const unload_selected_track = (core) => {
-	source_manager.destroy_source();
-	stop_animation_loop();
-
-	is_track_loaded = false;
-	core.view.soundPlayerState = false;
-	core.view.soundPlayerDuration = 0;
-	core.view.soundPlayerSeek = 0;
-	audio_buffer = null;
-	playback_state.reset();
-
-	data?.revokeDataURL();
-};
-
-const load_selected_track = async (core) => {
+const load_track = async (core) => {
 	if (selected_file === null)
-		return core.setToast('info', 'You need to select an audio track first!', null, -1, true);
+		return false;
 
 	core.view.isBusy++;
 	core.setToast('progress', util.format('Loading %s, please wait...', selected_file), null, -1, false);
@@ -107,29 +53,28 @@ const load_selected_track = async (core) => {
 
 	try {
 		const file_data_id = listfile.getByFilename(selected_file);
-		data = await core.view.casc.getFile(file_data_id);
+		file_data = await core.view.casc.getFile(file_data_id);
 
 		if (selected_file.endsWith('.unk_sound')) {
-			const file_type = detectFileType(data);
+			const file_type = detectFileType(file_data);
 			if (file_type === AUDIO_TYPE_OGG)
 				core.view.soundPlayerTitle += ' (OGG Auto Detected)';
 			else if (file_type === AUDIO_TYPE_MP3)
 				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
-		log.write('audio decode: buffer length=%d, byteOffset=%d, byteLength=%d', data.raw.buffer.byteLength, data.raw.byteOffset, data.raw.byteLength);
-		log.write('audio decode: first 16 bytes: %s', data.readHexString(16));
-		data.seek(0);
+		log.write('audio decode: buffer length=%d, byteOffset=%d, byteLength=%d', file_data.raw.buffer.byteLength, file_data.raw.byteOffset, file_data.raw.byteLength);
+		log.write('audio decode: first 16 bytes: %s', file_data.readHexString(16));
+		file_data.seek(0);
 
-		const array_buffer = data.raw.buffer.slice(data.raw.byteOffset, data.raw.byteOffset + data.raw.byteLength);
+		const array_buffer = file_data.raw.buffer.slice(file_data.raw.byteOffset, file_data.raw.byteOffset + file_data.raw.byteLength);
 		log.write('audio decode: sliced array_buffer length=%d', array_buffer.byteLength);
 
-		audio_buffer = await audio_context.decodeAudioData(array_buffer);
-		core.view.soundPlayerDuration = audio_buffer.duration;
-
-		is_track_loaded = true;
-		playback_state.mark_loaded();
+		await player.load(array_buffer);
+		core.view.soundPlayerDuration = player.get_duration();
 		core.hideToast();
+		core.view.isBusy--;
+		return true;
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selected_file, e.key), null, -1);
@@ -138,59 +83,45 @@ const load_selected_track = async (core) => {
 			core.setToast('error', 'Unable to preview audio ' + selected_file, { 'View Log': () => log.openRuntimeLog() }, -1);
 			log.write('Failed to open CASC file: %s', e.message);
 		}
+
+		core.view.isBusy--;
+		return false;
 	}
-
-	core.view.isBusy--;
 };
 
-const play_selected_track = async (core) => {
-	if (!is_track_loaded)
-		await load_selected_track(core);
+const unload_track = (core) => {
+	stop_seek_loop();
+	player.unload();
 
-	if (is_track_loaded)
-		start_playback(core);
-};
-
-const pause_selected_track = (core) => {
-	if (playback_state.state !== PLAYBACK_STATE.PLAYING)
-		return;
-
-	const current_position = playback_state.get_current_position(audio_buffer, audio_context, core.view.config.soundPlayerLoop);
-	playback_state.position_at_pause = current_position;
-	playback_state.pause_playback();
-	source_manager.destroy_source();
-	stop_animation_loop();
 	core.view.soundPlayerState = false;
+	core.view.soundPlayerDuration = 0;
+	core.view.soundPlayerSeek = 0;
+
+	file_data?.revokeDataURL();
+	file_data = null;
 };
 
-const seek_to_position = (core, position_seconds) => {
-	if (!is_track_loaded || !audio_buffer)
-		return;
+const play_track = async (core) => {
+	if (!player.buffer) {
+		if (selected_file === null) {
+			core.setToast('info', 'You need to select an audio track first!', null, -1, true);
+			return;
+		}
 
-	const was_playing = playback_state.state === PLAYBACK_STATE.PLAYING;
-
-	if (was_playing) {
-		source_manager.destroy_source();
-		playback_state.seek_to(position_seconds, audio_buffer);
-
-		const start_position = playback_state.pending_seek || playback_state.position_at_pause;
-		playback_state.pending_seek = null;
-
-		source_manager.create_source(audio_buffer, audio_context, gain_node, () => {
-			if (!source_manager.is_loop_enabled && playback_state.state === PLAYBACK_STATE.PLAYING) {
-				playback_state.state = PLAYBACK_STATE.LOADED;
-				playback_state.position_at_pause = 0;
-				stop_animation_loop();
-				core.view.soundPlayerState = false;
-				core.view.soundPlayerSeek = 0;
-			}
-		});
-		source_manager.start_source(start_position, audio_buffer);
-		playback_state.start_playback(start_position, audio_context);
-	} else {
-		playback_state.seek_to(position_seconds, audio_buffer);
-		core.view.soundPlayerSeek = playback_state.position_at_pause / audio_buffer.duration;
+		const loaded = await load_track(core);
+		if (!loaded)
+			return;
 	}
+
+	player.play();
+	core.view.soundPlayerState = true;
+	start_seek_loop(core);
+};
+
+const pause_track = (core) => {
+	player.pause();
+	stop_seek_loop();
+	core.view.soundPlayerState = false;
 };
 
 const load_sound_data = async (core) => {
@@ -235,12 +166,12 @@ const export_sounds = async (core) => {
 		if (helper.isCancelled())
 			return;
 
-		let file_data;
+		let export_data;
 		file_name = listfile.stripFileEntry(file_name);
 
 		if (file_name.endsWith('.unk_sound')) {
-			file_data = await core.view.casc.getFileByName(file_name);
-			const file_type = detectFileType(file_data);
+			export_data = await core.view.casc.getFileByName(file_name);
+			const file_type = detectFileType(export_data);
 
 			if (file_type === AUDIO_TYPE_OGG)
 				file_name = ExportHelper.replaceExtension(file_name, '.ogg');
@@ -263,10 +194,10 @@ const export_sounds = async (core) => {
 		try {
 			const export_path = ExportHelper.getExportPath(export_file_name);
 			if (overwrite_files || !await generics.fileExists(export_path)) {
-				if (!file_data)
-					file_data = await core.view.casc.getFileByName(file_name);
+				if (!export_data)
+					export_data = await core.view.casc.getFileByName(file_name);
 
-				await file_data.writeToFile(export_path);
+				await export_data.writeToFile(export_path);
 			} else {
 				log.write('Skipping audio export %s (file exists, overwrite disabled)', export_path);
 			}
@@ -326,16 +257,15 @@ module.exports = {
 	methods: {
 		toggle_playback() {
 			if (this.$core.view.soundPlayerState)
-				pause_selected_track(this.$core);
+				pause_track(this.$core);
 			else
-				play_selected_track(this.$core);
+				play_track(this.$core);
 		},
 
 		handle_seek(seek) {
-			if (audio_buffer && is_track_loaded) {
-				const position_seconds = audio_buffer.duration * seek;
-				seek_to_position(this.$core, position_seconds);
-			}
+			const duration = player.get_duration();
+			if (duration > 0)
+				player.seek(duration * seek);
 		},
 
 		async export_selected() {
@@ -344,17 +274,22 @@ module.exports = {
 	},
 
 	async mounted() {
-		audio_context = new (window.AudioContext || window.webkitAudioContext)();
-		gain_node = audio_context.createGain();
-		gain_node.connect(audio_context.destination);
-		gain_node.gain.value = this.$core.view.config.soundPlayerVolume;
+		player.init();
+		player.set_volume(this.$core.view.config.soundPlayerVolume);
+		player.set_loop(this.$core.view.config.soundPlayerLoop);
+
+		player.on_ended = () => {
+			stop_seek_loop();
+			this.$core.view.soundPlayerState = false;
+			this.$core.view.soundPlayerSeek = 0;
+		};
 
 		this.$core.view.$watch('config.soundPlayerVolume', value => {
-			gain_node.gain.value = value;
+			player.set_volume(value);
 		});
 
 		this.$core.view.$watch('config.soundPlayerLoop', value => {
-			source_manager.set_loop(value);
+			player.set_loop(value);
 		});
 
 		this.$core.view.$watch('selectionSounds', async selection => {
@@ -363,20 +298,16 @@ module.exports = {
 				this.$core.view.soundPlayerTitle = path.basename(first);
 
 				selected_file = first;
-				unload_selected_track(this.$core);
+				unload_track(this.$core);
 
 				if (this.$core.view.config.soundPlayerAutoPlay)
-					play_selected_track(this.$core);
+					play_track(this.$core);
 			}
 		});
 
 		this.$core.events.on('crash', () => {
-			unload_selected_track(this.$core);
-
-			if (audio_context) {
-				audio_context.close();
-				audio_context = null;
-			}
+			unload_track(this.$core);
+			player.destroy();
 		});
 
 		await load_sound_data(this.$core);
