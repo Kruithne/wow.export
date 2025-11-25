@@ -22,9 +22,6 @@ events.setMaxListeners(666);
 // Each item is an object defining .ext, .prompt() and .process().
 const dropHandlers = [];
 
-// loaders is an array of promises which need to be resolved as a 
-// step in the loading process, allowing components to initialize.
-let loaders = [];
 
 // scrollPositions stores persistent scroll positions for listbox components
 // keyed by persistScrollKey (e.g., "models", "textures", etc.)
@@ -32,7 +29,7 @@ const scrollPositions = {};
 
 const makeNewView = () => {
 	return {
-		screenStack: [], // Controls the currently active interface screen.
+		installType: 0, // Active install type (MPQ or CASC).
 		isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
 		isDev: !BUILD_RELEASE, // True if in development environment.
 		isLoading: false, // Controls whether the loading overlay is visible.
@@ -308,16 +305,12 @@ const progressLoadingScreen = async (text) => {
 };
 
 /**
- * hide loading screen and return to specified screen or previous screen.
- * @param {string} screen
+ * hide loading screen.
  */
-const hideLoadingScreen = (screen = null) => {
+const hideLoadingScreen = () => {
 	core.view.loadPct = -1;
 	core.view.isLoading = false;
 	core.view.isBusy--;
-
-	if (screen)
-		core.view.setScreen(screen);
 };
 
 /**
@@ -390,23 +383,6 @@ const getDropHandler = (file) => {
 	return null;
 };
 
-/**
- * Register a promise to be resolved during the last loading step.
- * @param {function} func 
- */
-const registerLoadFunc = (func) => {
-	loaders.push(func);
-};
-
-/**
- * Resolve all registered loader functions.
- */
-const runLoadFuncs = async () => {
-	while (loaders.length > 0)
-		await loaders.shift()();
-		
-	loaders = undefined;
-};
 
 /**
  * Save scroll position for a listbox with the given key.
@@ -449,8 +425,6 @@ const core = {
 	openExportDirectory,
 	registerDropHandler,
 	getDropHandler,
-	registerLoadFunc,
-	runLoadFuncs,
 	openLastExportStream,
 	saveScrollPosition,
 	getScrollPosition

@@ -3,6 +3,7 @@ const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
 const ExternalLinks = require('../external-links');
+const InstallType = require('../install-type');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
@@ -83,7 +84,7 @@ module.exports = {
 
 		load_install(index) {
 			this.$core.block(async () => {
-				this.$core.view.showLoadScreen();
+				this.$core.showLoadingScreen();
 
 				this.$core.view.availableLocalBuilds = null;
 				this.$core.view.availableRemoteBuilds = null;
@@ -107,6 +108,7 @@ module.exports = {
 
 				try {
 					await casc_source.load(index);
+					this.$core.view.installType = InstallType.CASC;
 					this.$modules.tab_home.setActive();
 				} catch (e) {
 					log.write('Failed to load CASC: %o', e);
@@ -152,11 +154,8 @@ module.exports = {
 			try {
 				this.$core.view.mpq = new MPQInstall(install_path);
 
-				this.$core.showLoadingScreen(3, 'Loading Legacy Installation');
+				this.$core.showLoadingScreen(2, 'Loading Legacy Installation');
 				await this.$core.view.mpq.loadInstall();
-
-				await this.$core.progressLoadingScreen('Initializing Components');
-				await this.$core.runLoadFuncs();
 
 				const pre_index = this.$core.view.config.recentLegacy.findIndex(e => e.path === install_path);
 				if (pre_index > -1) {
@@ -169,6 +168,7 @@ module.exports = {
 				if (this.$core.view.config.recentLegacy.length > constants.MAX_RECENT_LOCAL)
 					this.$core.view.config.recentLegacy.splice(constants.MAX_RECENT_LOCAL, this.$core.view.config.recentLegacy.length - constants.MAX_RECENT_LOCAL);
 
+				this.$core.view.installType = InstallType.MPQ;
 				this.$modules.legacy_tab_home.setActive();
 				this.$core.hideLoadingScreen();
 			} catch (e) {

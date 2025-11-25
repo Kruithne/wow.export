@@ -147,7 +147,7 @@ const load_sound_data = async (core) => {
 			core.setToast('error', 'Failed to load sound data', { 'View Log': () => log.openRuntimeLog() }, -1);
 		}
 
-		core.hideLoadingScreen('tab-sounds');
+		core.hideLoadingScreen();
 	}
 };
 

@@ -1546,7 +1546,7 @@ module.exports = {
 		// trigger initial race/model load (watchers now set up to handle cascade)
 		update_chr_race_list(this.$core);
 
-		this.$core.hideLoadingScreen('tab-characters');
+		this.$core.hideLoadingScreen();
 
 		// document click handler for closing popups
 		const doc_click_handler = (event) => {

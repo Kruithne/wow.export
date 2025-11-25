@@ -66,8 +66,8 @@ class Item {
 
 let items = [];
 
-const view_item_models = (core, item) => {
-	core.view.setScreen('tab-models');
+const view_item_models = (core, modules, item) => {
+	modules.tab_models.setActive();
 
 	const list = new Set();
 
@@ -241,7 +241,7 @@ module.exports = {
 
 	methods: {
 		view_models(item) {
-			view_item_models(this.$core, item);
+			view_item_models(this.$core, this.$modules, item);
 		},
 
 		view_textures(item) {
@@ -266,7 +266,7 @@ module.exports = {
 
 		try {
 			await initialize_items(this.$core);
-			this.$core.hideLoadingScreen('tab-items');
+			this.$core.hideLoadingScreen();
 
 			const enabled_types = this.$core.view.config.itemViewerEnabledTypes;
 			const mask = [];
@@ -280,7 +280,7 @@ module.exports = {
 
 			this.$core.view.itemViewerTypeMask = mask;
 		} catch (error) {
-			this.$core.hideLoadingScreen('tab-items');
+			this.$core.hideLoadingScreen();
 			log.write('Failed to initialize items tab: %o', error);
 			this.$core.setToast('error', 'Failed to load items. Check the log for details.');
 		}

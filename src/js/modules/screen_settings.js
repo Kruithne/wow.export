@@ -1,6 +1,7 @@
 const generics = require('../generics');
 const constants = require('../constants');
 const tactKeys = require('../casc/tact-keys');
+const InstallType = require('../install-type');
 
 let default_config = null;
 
@@ -391,7 +392,7 @@ module.exports = {
 		},
 
 		go_home() {
-			const home_module = this.$core.view.mpq ? 'legacy_tab_home' : 'tab_home';
+			const home_module = this.$core.view.installType === InstallType.MPQ ? 'legacy_tab_home' : 'tab_home';
 			this.$modules.setActive(home_module);
 		},
 

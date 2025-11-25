@@ -9,17 +9,10 @@
 		<div id="logo-background"></div>
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
-				<div id="logo" @click="setActiveModule(mpq ? 'legacy_tab_home' : 'tab_home')" :class="{ active: activeModule && (activeModule.__name === 'tab_home' || activeModule.__name === 'legacy_tab_home') }" style="cursor: pointer;">wow.export</div>
+				<div id="logo" @click="setActiveModule(installType === 1 ? 'legacy_tab_home' : 'tab_home')" :class="{ active: activeModule && (activeModule.__name === 'tab_home' || activeModule.__name === 'legacy_tab_home') }" style="cursor: pointer;">wow.export</div>
 				<div id="nav">
-					<template v-if="(activeModule && !activeModule.__name.startsWith('legacy_')) || (!!screen && screen.startsWith('tab-'))">
-						<template v-for="btn in modNavButtons" :key="btn.module">
-							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
-						</template>
-					</template>
-					<template v-if="(activeModule && activeModule.__name.startsWith('legacy_')) || (!!screen && screen.startsWith('legacy-'))">
-						<template v-for="btn in modNavButtons" :key="btn.module">
-							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
-						</template>
+					<template v-for="btn in modNavButtons" :key="btn.module">
+						<div v-if="btn.installTypes & installType" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 					</template>
 					<div id="nav-help" v-if="!isBusy" @click="setActiveModule('tab_help')"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
@@ -54,7 +47,7 @@
 					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
 					<div class="close" v-if="toast.closable" @click="hideToast(true)"></div>
 				</div>
-				<div id="toast" v-if="!toast && screen === 'tab-models' && overrideModelList.length > 0" class="progress">
+				<div id="toast" v-if="!toast && activeModule && activeModule.__name === 'tab_models' && overrideModelList.length > 0" class="progress">
 					Filtering models for item: {{ overrideModelName }}
 					<span @click="removeOverrideModels">Remove</span>
 					<div class="close" @click="removeOverrideModels"></div>

@@ -179,7 +179,6 @@ function set_active(module_key) {
 	if (module_key && modules[module_key]) {
 		active_module = modules[module_key];
 		core.view.activeModule = active_module;
-		core.view.screenStack[0] = null;
 		log.write('set active module: %s', module_key);
 	}
 }

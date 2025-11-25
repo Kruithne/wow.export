@@ -109,9 +109,9 @@ const reload_texture_atlas_data = async (core) => {
 
 		try {
 			await load_texture_atlas_data(core);
-			core.hideLoadingScreen('tab-textures');
+			core.hideLoadingScreen();
 		} catch (error) {
-			core.hideLoadingScreen('tab-textures');
+			core.hideLoadingScreen();
 			log.write('Failed to load texture atlas data: %o', error);
 			core.setToast('error', 'Failed to load texture atlas data. Check the log for details.');
 		}
@@ -410,9 +410,9 @@ module.exports = {
 				if (needs_atlas_data)
 					await load_texture_atlas_data(this.$core);
 
-				this.$core.hideLoadingScreen('tab-textures');
+				this.$core.hideLoadingScreen();
 			} catch (error) {
-				this.$core.hideLoadingScreen('tab-textures');
+				this.$core.hideLoadingScreen();
 				log.write('Failed to initialize textures tab: %o', error);
 				this.$core.setToast('error', 'Failed to load texture data. Check the log for details.');
 			}

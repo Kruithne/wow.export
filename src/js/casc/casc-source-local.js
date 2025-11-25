@@ -181,8 +181,6 @@ class CASCLocal extends CASC {
 		await this.prepareDBDManifest();
 		await this.loadListfile(this.build.BuildKey);
 
-		await this.initializeComponents();
-
 		core.hideLoadingScreen();
 	}
 

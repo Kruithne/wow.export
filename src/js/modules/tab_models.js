@@ -729,10 +729,10 @@ module.exports = {
 
 			this.$core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup: render_group, getActiveRenderer: () => active_renderer });
 
-			this.$core.hideLoadingScreen('tab-models');
+			this.$core.hideLoadingScreen();
 
 		} catch (error) {
-			this.$core.hideLoadingScreen('tab-models');
+			this.$core.hideLoadingScreen();
 			log.write('Failed to initialize models tab: %o', error);
 			this.$core.setToast('error', 'Failed to initialize models tab. Check the log for details.');
 		}

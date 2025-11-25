@@ -151,9 +151,9 @@ module.exports = {
 			await this.$core.progressLoadingScreen('Loading data table manifest...');
 			await initialize_available_tables(this.$core);
 
-			this.$core.hideLoadingScreen('tab-data');
+			this.$core.hideLoadingScreen();
 		} catch (error) {
-			this.$core.hideLoadingScreen('tab-data');
+			this.$core.hideLoadingScreen();
 			log.write('Failed to initialize data tab: %o', error);
 			this.$core.setToast('error', 'Failed to load data table manifest. Check the log for details.');
 		}

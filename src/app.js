@@ -90,7 +90,6 @@ const cdnResolver = require('./js/casc/cdn-resolver');
 const log = require('./js/log');
 const config = require('./js/config');
 const tactKeys = require('./js/casc/tact-keys');
-const blender = require('./js/blender');
 const fsp = require('fs').promises;
 const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
@@ -246,33 +245,6 @@ document.addEventListener('click', function(e) {
 				return entry ? entry.tag : 'Unknown';
 			},
 
-			/**
-			 * Set the currently active screen.
-			 * If `preserve` is true, the current screen ID will be pushed further onto the stack.
-			 * showPreviousScreen() can be used to return to it. If false, overwrites screenStack[0].
-			 * @param {string} screenID 
-			 * @param {boolean} preserve
-			 */
-			setScreen: function(screenID, preserve = false) {
-				this.loadPct = -1; // Ensure we reset if coming from a loading screen.
-
-				// Ensure that all context menus are absorbed by screen changes.
-				const contextMenus = core.view.contextMenus;
-				for (const [key, value] of Object.entries(contextMenus)) {
-					if (value === true)
-						contextMenus[key] = false;
-					else if (value !== false)
-						contextMenus[key] = null;
-				}
-
-				if (preserve) {
-					if (this.screenStack[0] !== screenID)
-						this.screenStack.unshift(screenID);
-				} else {
-					this.screenStack[0] = screenID;
-				}
-			},
-
 			setActiveModule: function(module_name) {
 				modules.setActive(module_name);
 			},
@@ -282,24 +254,6 @@ document.addEventListener('click', function(e) {
 					opt.action.handler();
 				else
 					modules.setActive(opt.id);
-			},
-
-			/**
-			 * Show the loading screen with a given message.
-			 * @param {string} text Defaults to 'Loading, please wait'
-			 */
-			showLoadScreen: function(text) {
-				this.setScreen('loading');
-				this.loadingTitle = text || 'Loading, please wait...';
-			},
-
-			/**
-			 * Remove the active screen from the screen stack, effectively returning to the
-			 * 'previous' screen. Has no effect if there are no more screens in the stack.
-			 */
-			showPreviousScreen: function() {
-				if (this.screenStack.length > 1)
-					this.screenStack.shift();
 			},
 
 			/**
@@ -452,13 +406,6 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
-			 * Returns the currently 'active' screen, which is first on the stack.
-			 */
-			screen: function() {
-				return this.screenStack[0];
-			},
-
-			/**
 			 * Return the formatted duration of the selected track on the sound player.
 			 */
 			soundPlayerDurationFormatted: function() {
@@ -492,16 +439,8 @@ document.addEventListener('click', function(e) {
 
 		watch: {
 			/**
-			 * Invoked when the active 'screen' is changed.
-			 * @param {string} val 
-			 */
-			screen: function(val) {
-				core.events.emit('screen-' + val);
-			},
-
-			/**
 			 * Invoked when the active loading percentage is changed.
-			 * @param {float} val 
+			 * @param {float} val
 			 */
 			loadPct: function(val) {
 				win.setProgressBar(val);
@@ -677,23 +616,22 @@ document.addEventListener('click', function(e) {
 
 	// Check for updates.
 	if (BUILD_RELEASE && !DISABLE_AUTO_UPDATE) {
-		core.view.isBusy++;
-		core.view.showLoadScreen('Checking for updates...');
+		core.showLoadingScreen(1, 'Checking for updates...');
 
 		updater.checkForUpdates().then(updateAvailable => {
 			if (updateAvailable) {
 				updater.applyUpdate();
 			} else {
-				core.view.isBusy--;
+				core.hideLoadingScreen();
 				modules.source_select.setActive();
 
 				// No update available, start checking Blender add-on.
-				blender.checkLocalVersion();
+				modules.tab_blender.checkLocalVersion();
 			}
 		});
 	} else {
 		// debug mode or auto-update disabled, skip to blender add-on check
-		blender.checkLocalVersion();
+		modules.tab_blender.checkLocalVersion();
 	}
 
 	// Load what's new HTML on app start
