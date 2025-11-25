@@ -58,11 +58,11 @@ function update_nav_buttons() {
 	core.view.modNavButtons = Array.from(module_nav_buttons.values());
 }
 
-function register_context_menu_option(module_name, label, id = null) {
+function register_context_menu_option(module_name, label, icon) {
 	const option = {
 		module: module_name,
 		label,
-		id: id ?? 'menu-mod-' + module_name
+		icon
 	};
 
 	module_context_menu_options.set(module_name, option);
@@ -93,7 +93,7 @@ function wrap_module(module_name, module_def) {
 	if (typeof module_def.register === 'function') {
 		const register_context = {
 			registerNavButton: (label, icon, install_types) => register_nav_button(module_name, label, icon, install_types),
-			registerContextMenuOption: (label, id) => register_context_menu_option(module_name, label, id)
+			registerContextMenuOption: (label, icon) => register_context_menu_option(module_name, label, icon)
 		};
 		module_def.register.call(register_context);
 	}

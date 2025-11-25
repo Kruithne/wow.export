@@ -24,7 +24,7 @@ const load_changelog = async () => {
 
 module.exports = {
 	register() {
-		this.registerContextMenuOption('View Recent Changes', 'menu-extra-changes');
+		this.registerContextMenuOption('View Recent Changes', 'list.svg');
 	},
 
 	template: `

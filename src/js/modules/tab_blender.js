@@ -2,7 +2,7 @@ const blender = require('../blender');
 
 module.exports = {
 	register() {
-		this.registerContextMenuOption('Install Blender Add-on', 'menu-extra-blender');
+		this.registerContextMenuOption('Install Blender Add-on', '../images/blender.png');
 	},
 
 	template: `

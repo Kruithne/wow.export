@@ -94,7 +94,7 @@ let filter_timeout = null;
 
 module.exports = {
 	register() {
-		this.registerContextMenuOption('Help', 'menu-extra-help');
+		this.registerContextMenuOption('Help', 'help.svg');
 	},
 
 	template: `

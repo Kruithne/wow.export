@@ -33,7 +33,7 @@
 						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
 						<span v-if="isDev" @click.self="reloadActiveModule" id="menu-extra-reload-active">Reload Active Module</span>
 						<span v-if="isDev" @click.self="reloadAllModules" id="menu-extra-reload-all">Reload All Modules</span>
-						<span v-for="opt in modContextMenuOptions" :key="opt.module" @click.self="setActiveModule(opt.module)" :id="opt.id">{{ opt.label }}</span>
+						<span v-for="opt in modContextMenuOptions" :key="opt.module" @click.self="setActiveModule(opt.module)" :style="'background-image: url(./fa-icons/' + opt.icon + ')'">{{ opt.label }}</span>
 					</context-menu>
 				</div>
 			</div>

@@ -535,10 +535,6 @@ body {
 	background-size: 18px;
 }
 
-#menu-extra-blender {
-	background-image: url(./images/blender.png);
-}
-
 #menu-extra-raw {
 	background-image: url(./fa-icons/fish.svg);
 }
@@ -549,10 +545,6 @@ body {
 
 #menu-extra-settings {
 	background-image: url(./fa-icons/gear.svg);
-}
-
-#menu-extra-changes {
-	background-image: url(./fa-icons/list.svg);
 }
 
 #menu-extra-restart {
@@ -577,10 +569,6 @@ body {
 
 #menu-extra-reload-all {
 	background-image: url(./fa-icons/gear.svg);
-}
-
-#menu-extra-help {
-	background-image: url(./fa-icons/help.svg);
 }
 
 #menu-extra-characters {
