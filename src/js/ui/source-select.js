@@ -9,6 +9,7 @@ const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
 const ExternalLinks = require('../external-links');
+const modules = require('../modules');
 
 const CASCLocal = require('../casc/casc-source-local');
 const CASCRemote = require('../casc/casc-source-remote');
@@ -47,7 +48,7 @@ const loadInstall = (index) => {
 
 		try {
 			await cascSource.load(index);
-			core.view.setScreen('tab-home');
+			modules.setActive('tab_home');
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
 			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
@@ -208,7 +209,8 @@ core.events.once('screen-source-select', async () => {
 			if (core.view.config.recentLegacy.length > constants.MAX_RECENT_LOCAL)
 				core.view.config.recentLegacy.splice(constants.MAX_RECENT_LOCAL, core.view.config.recentLegacy.length - constants.MAX_RECENT_LOCAL);
 
-			core.hideLoadingScreen('legacy-tab-home');
+			modules.setActive('legacy_tab_home');
+			core.hideLoadingScreen();
 		} catch (e) {
 			core.hideLoadingScreen();
 			core.setToast('error', util.format('Failed to load legacy installation from %s', installPath), null, -1);

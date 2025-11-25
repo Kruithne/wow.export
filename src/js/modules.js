@@ -5,6 +5,7 @@ const InstallType = require('./install-type');
 const MODULES = {
 	module_test_a: require('./modules/module_test_a'),
 	module_test_b: require('./modules/module_test_b'),
+	tab_home: require('./modules/tab_home'),
 	tab_maps: require('./modules/tab_maps'),
 	tab_zones: require('./modules/tab_zones'),
 	tab_data: require('./modules/tab_data'),
@@ -15,6 +16,7 @@ const MODULES = {
 	tab_items: require('./modules/tab_items'),
 	tab_characters: require('./modules/tab_characters'),
 	tab_textures: require('./modules/tab_textures'),
+	legacy_tab_home: require('./modules/legacy_tab_home'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
 	legacy_tab_textures: require('./modules/legacy_tab_textures')
 };

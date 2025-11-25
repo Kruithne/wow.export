@@ -9,14 +9,14 @@
 		<div id="logo-background"></div>
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
-				<div id="logo" @click="setScreen(screen && screen.startsWith('legacy-') ? 'legacy-tab-home' : 'tab-home')" :class="{ active: screen === 'tab-home' || screen === 'legacy-tab-home' }" style="cursor: pointer;">wow.export</div>
+				<div id="logo" @click="setActiveModule(mpq ? 'legacy_tab_home' : 'tab_home')" :class="{ active: activeModule && (activeModule.__name === 'tab_home' || activeModule.__name === 'legacy_tab_home') }" style="cursor: pointer;">wow.export</div>
 				<div id="nav">
-					<template v-if="activeModule || (!!screen && screen.startsWith('tab-'))">
+					<template v-if="(activeModule && !activeModule.__name.startsWith('legacy_')) || (!!screen && screen.startsWith('tab-'))">
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 						</template>
 					</template>
-					<template v-if="!!screen && screen.startsWith('legacy-')">
+					<template v-if="(activeModule && activeModule.__name.startsWith('legacy_')) || (!!screen && screen.startsWith('legacy-'))">
 						<div class="option nav-files" id="nav-legacy-files" @click="setScreen('legacy-tab-files')" :class="{ active: screen === 'legacy-tab-files' }">Files</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
@@ -425,107 +425,7 @@
 					<div class="close" @click="removeOverrideModels"></div>
 				</div>
 				
-				<!-- Home Tab -->
-				<div class="tab" id="tab-home" v-else-if="screen === 'tab-home'">
-					<div id="home-buttons" class="home-button-tray">
-						<div @click="setScreen('tab-models')">
-							<b>3D Models</b>
-							<span>View and export 3D models to common formats.</span>
-						</div>
-						<div @click="setScreen('tab-characters')">
-							<b>Characters</b>
-							<span>Customize and export playable characters.</span>
-						</div>
-						<div @click="setScreen('tab-items')">
-							<b>Items</b>
-							<span>Browse in-game items and find associated models/textures.</span>
-						</div>
-						<div @click="setActiveModule('tab_textures')">
-							<b>Textures</b>
-							<span>View and export textures to common formats.</span>
-						</div>
-						<div @click="setScreen('tab-sounds')">
-							<b>Audio</b>
-							<span>Play and export in-game sound effects, music and dialog.</span>
-						</div>
-						<div @click="setScreen('tab-video')">
-							<b>Videos</b>
-							<span>Export pre-rendered cinematics.</span>
-						</div>
-						<div @click="setScreen('tab-maps')">
-							<b>Maps</b>
-							<span>Explore and export terrain with buildings, foliage, liquid and more.</span>
-						</div>
-						<div @click="setScreen('tab-zones')">
-							<b>Zones</b>
-							<span>Search and export in-game maps for all available zones.</span>
-						</div>
-						<div @click="setScreen('tab-text')">
-							<b>Text</b>
-							<span>Inspect text tables, scripts, XML and more.</span>
-						</div>
-						<div @click="setScreen('tab-data')">
-							<b>Data</b>
-							<span>Search and export records across all known data tables.</span>
-						</div>
-					</div>
-					<div id="home-changes">
-						<div v-html="whatsNewHTML"></div>
-					</div>
-					<div id="home-help-buttons">
-						<div data-external="::DISCORD">
-							<b>Stuck? Need Help?</b>
-							<span>Join our Discord community for support!</span>
-						</div>
-						<div data-external="::GITHUB">
-							<b>Gnomish Heritage?</b>
-							<span>wow.export is open-source, tinkerers are welcome!</span>
-						</div>
-						<div data-external="::PATREON">
-							<b>Support Us!</b>
-							<span>Support development of wow.export through Patreon!</span>
-						</div>
-					</div>
-				</div>
-
-				<div class="tab" id="legacy-tab-home" v-else-if="screen === 'legacy-tab-home'">
-					<div id="home-buttons" class="home-button-tray">
-						<!--<div @click="setScreen('legacy-tab-models')">
-							<b>Models</b>
-							<span>View and export 3D models to common formats.</span>
-						</div>-->
-						<div @click="setActiveModule('legacy_tab_textures')">
-							<b>Textures</b>
-							<span>View and export textures to common formats.</span>
-						</div>
-						<div @click="setScreen('legacy-tab-sounds')">
-							<b>Sounds</b>
-							<span>Play and export in-game sound effects, music and dialog.</span>
-						</div>
-						<div @click="setScreen('legacy-tab-files')">
-							<b>Files</b>
-							<span>Browse and export all raw files from MPQ archives.</span>
-						</div>
-					</div>
-					<div id="home-changes">
-						<div v-html="whatsNewHTML"></div>
-					</div>
-					<div id="home-help-buttons">
-						<div data-external="::DISCORD">
-							<b>Stuck? Need Help?</b>
-							<span>Join our Discord community for support!</span>
-						</div>
-						<div data-external="::GITHUB">
-							<b>Gnomish Heritage?</b>
-							<span>wow.export is open-source, tinkerers are welcome!</span>
-						</div>
-						<div data-external="::PATREON">
-							<b>Support Us!</b>
-							<span>Support development of wow.export through Patreon!</span>
-						</div>
-					</div>
-				</div>
-				
+					
 				<div class="tab list-tab" id="legacy-tab-files" v-else-if="screen === 'legacy-tab-files'">
 					<div class="list-container">
 						<listbox v-model:selection="selectionRaw" :items="listfileRaw" :filter="userInputFilterRaw" :keyinput="true" :regex="config.regexFilters" :copymode="config.copyMode" :pasteselection="config.pasteSelection" :copytrimwhitespace="config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></listbox>
