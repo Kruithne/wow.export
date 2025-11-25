@@ -89,7 +89,7 @@ const view_item_models = (core, item) => {
 };
 
 const view_item_textures = async (core, modules, item) => {
-	modules.setActive('tab_textures');
+	modules.tab_textures.setActive();
 	await DBTextureFileData.ensureInitialized();
 
 	const list = new Set();

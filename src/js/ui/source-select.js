@@ -48,7 +48,7 @@ const loadInstall = (index) => {
 
 		try {
 			await cascSource.load(index);
-			modules.setActive('tab_home');
+			modules.tab_home.setActive();
 		} catch (e) {
 			log.write('Failed to load CASC: %o', e);
 			core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
@@ -209,7 +209,7 @@ core.events.once('screen-source-select', async () => {
 			if (core.view.config.recentLegacy.length > constants.MAX_RECENT_LOCAL)
 				core.view.config.recentLegacy.splice(constants.MAX_RECENT_LOCAL, core.view.config.recentLegacy.length - constants.MAX_RECENT_LOCAL);
 
-			modules.setActive('legacy_tab_home');
+			modules.legacy_tab_home.setActive();
 			core.hideLoadingScreen();
 		} catch (e) {
 			core.hideLoadingScreen();

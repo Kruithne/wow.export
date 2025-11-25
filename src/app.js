@@ -410,7 +410,7 @@ document.addEventListener('click', function(e) {
 			 */
 			goToTexture: function(fileDataID) {
 				const view = core.view;
-				modules.setActive('tab_textures');
+				modules.tab_textures.setActive();
 
 				// Directly preview the requested file, even if it's not in the listfile.
 				modules.tab_textures.previewTextureByID(core, fileDataID);
