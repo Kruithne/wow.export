@@ -132,7 +132,7 @@ module.exports = {
 
 	methods: {
 		go_back() {
-			this.$modules.tab_home.setActive();
+			this.$modules.go_to_landing();
 		},
 
 		debounced_filter(search) {

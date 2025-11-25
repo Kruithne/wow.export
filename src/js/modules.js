@@ -187,6 +187,15 @@ function setActive(module_key) {
 	set_active(module_key);
 }
 
+function go_to_landing() {
+	if (core.view.installType === 0)
+		set_active('source_select');
+	else if (core.view.installType === InstallType.MPQ)
+		set_active('legacy_tab_home');
+	else
+		set_active('tab_home');
+}
+
 function reload_module(module_key) {
 	if (IS_BUNDLED) {
 		log.write('cannot reload module %s: not available in production', module_key);
@@ -268,7 +277,7 @@ function reload_all_modules() {
 		set_active(active_module_key);
 }
 
-module.exports = new Proxy({ initialize, set_active, setActive, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, registerContextMenuOption: register_static_context_menu_option, InstallType }, {
+module.exports = new Proxy({ initialize, set_active, setActive, go_to_landing, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, registerContextMenuOption: register_static_context_menu_option, InstallType }, {
 	get(target, prop) {
 		if (prop in target)
 			return target[prop];
