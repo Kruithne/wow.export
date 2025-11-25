@@ -332,6 +332,10 @@ module.exports = {
 		</div>
 	`,
 
+	previewTextureByID(core, file_data_id, texture = null) {
+		return preview_texture_by_id(core, file_data_id, texture);
+	},
+
 	methods: {
 		is_baked_npc_texture() {
 			return is_baked_npc_texture(this.$core);
@@ -448,6 +452,3 @@ module.exports = {
 		});
 	}
 };
-
-module.exports.previewTextureByID = preview_texture_by_id;
-module.exports.exportTextureAtlasRegions = export_texture_atlas_regions;
