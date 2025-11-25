@@ -1205,7 +1205,7 @@ core.events.once('screen-tab-characters', async () => {
 
 	updateChrRaceList();
 
-	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup, useCharacterControls: true });
+	state.chrModelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup, useCharacterControls: true, getActiveRenderer: () => activeRenderer });
 
 	core.hideLoadingScreen('tab-characters');
 });

@@ -496,10 +496,6 @@ body {
 	background-repeat: no-repeat;
 }
 
-.nav-models::before {
-	background-image: url(./fa-icons/cube.svg);
-}
-
 .nav-characters::before {
 	background-image: url(./fa-icons/person-solid.svg);
 }

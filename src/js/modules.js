@@ -9,7 +9,8 @@ const MODULES = {
 	tab_zones: require('./modules/tab_zones'),
 	tab_data: require('./modules/tab_data'),
 	tab_text: require('./modules/tab_text'),
-	tab_videos: require('./modules/tab_videos')
+	tab_videos: require('./modules/tab_videos'),
+	tab_models: require('./modules/tab_models')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';
