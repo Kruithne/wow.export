@@ -493,7 +493,13 @@ class GLTFWriter {
 						const paired = [];
 						for (let j = 0; j < bone.translation.timestamps[i].length; j++) {
 							const raw_ts = bone.translation.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							let norm_ts = raw_ts;
+							if (anim_duration > 0) {
+								norm_ts = raw_ts % anim_duration;
+								// preserve end-of-loop keyframe instead of wrapping to 0
+								if (norm_ts === 0 && raw_ts > 0)
+									norm_ts = anim_duration;
+							}
 							const time = norm_ts / 1000;
 							paired.push({ time, value: bone.translation.values[i][j] });
 						}
@@ -618,7 +624,13 @@ class GLTFWriter {
 						const paired = [];
 						for (let j = 0; j < bone.rotation.timestamps[i].length; j++) {
 							const raw_ts = bone.rotation.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							let norm_ts = raw_ts;
+							if (anim_duration > 0) {
+								norm_ts = raw_ts % anim_duration;
+								// preserve end-of-loop keyframe instead of wrapping to 0
+								if (norm_ts === 0 && raw_ts > 0)
+									norm_ts = anim_duration;
+							}
 							const time = norm_ts / 1000;
 							paired.push({ time, value: bone.rotation.values[i][j] });
 						}
@@ -749,7 +761,13 @@ class GLTFWriter {
 						const paired = [];
 						for (let j = 0; j < bone.scale.timestamps[i].length; j++) {
 							const raw_ts = bone.scale.timestamps[i][j];
-							const norm_ts = anim_duration > 0 ? (raw_ts % anim_duration) : raw_ts;
+							let norm_ts = raw_ts;
+							if (anim_duration > 0) {
+								norm_ts = raw_ts % anim_duration;
+								// preserve end-of-loop keyframe instead of wrapping to 0
+								if (norm_ts === 0 && raw_ts > 0)
+									norm_ts = anim_duration;
+							}
 							const time = norm_ts / 1000;
 							paired.push({ time, value: bone.scale.values[i][j] });
 						}
