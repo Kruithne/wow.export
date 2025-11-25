@@ -121,9 +121,7 @@ const ContextMenu = require('./js/components/context-menu');
 const MarkdownContent = require('./js/components/markdown-content');
 
 const TabTextures = require('./js/ui/tab-textures');
-const TabItems = require('./js/ui/tab-items');
 require('./js/ui/source-select');
-require('./js/ui/tab-items');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/tab-characters');
@@ -454,22 +452,6 @@ document.addEventListener('click', function(e) {
 			 */
 			getExternalLink: function() {
 				return ExternalLinks;
-			},
-
-			/**
-			 * Invoked when the user selects the models button on an item.
-			 * @param {object} item 
-			 */
-			viewModels: function(item) {
-				TabItems.viewItemModels(item);
-			},
-
-			/**
-			 * Invoked when the user selects the textures button on an item.
-			 * @param {object} item 
-			 */
-			viewTextures: async function(item) {
-				await TabItems.viewItemTextures(item);
 			}
 		},
 

@@ -12,6 +12,7 @@ const MODULES = {
 	tab_videos: require('./modules/tab_videos'),
 	tab_models: require('./modules/tab_models'),
 	tab_audio: require('./modules/tab_audio'),
+	tab_items: require('./modules/tab_items'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio')
 };
 

@@ -500,10 +500,6 @@ body {
 	background-image: url(./fa-icons/person-solid.svg);
 }
 
-.nav-items::before {
-	background-image: url(./fa-icons/cubes.svg);
-}
-
 .nav-textures::before {
 	background-image: url(./fa-icons/image.svg);
 }

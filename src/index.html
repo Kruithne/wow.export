@@ -13,7 +13,6 @@
 				<div id="nav">
 					<template v-if="activeModule || (!!screen && screen.startsWith('tab-'))">
 						<div class="option nav-characters" id="nav-characters" @click="setScreen('tab-characters')" :class="{ active: screen === 'tab-characters' }">Characters</div>
-						<div class="option nav-items" id="nav-items" @click="setScreen('tab-items')" :class="{ active: screen === 'tab-items' }">Items</div>
 						<div class="option nav-textures" id="nav-textures" @click="setScreen('tab-textures')" :class="{ active: screen === 'tab-textures' }">Textures</div>
 						<template v-for="btn in modNavButtons" :key="btn.module">
 							<div v-if="btn.installTypes & 2" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
@@ -625,29 +624,6 @@
 					</div>
 				</div>
 
-				<div class="tab" id="tab-items" v-else-if="screen === 'tab-items'">
-					<div class="list-container">
-						<itemlistbox id="listbox-items" v-model:selection="selectionItems" :items="listfileItems" :filter="userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="contextMenus.nodeItem = $event"></itemlistbox>
-						<context-menu :node="contextMenus.nodeItem" v-slot:default="context" @close="contextMenus.nodeItem = null">
-							<span v-if="context.node.modelCount > 0" @click.self="viewModels(context.node)">View related models ({{ context.node.modelCount }})</span>
-							<span v-if="context.node.textureCount > 0" @click.self="viewTextures(context.node)">View related textures ({{ context.node.textureCount }})</span>
-							<span @click.self="copyToClipboard(context.node.name)">Copy item name to clipboard</span>
-							<span @click.self="copyToClipboard(context.node.id)">Copy item ID to clipboard</span>
-							<span @click.self="getExternalLink().wowHead_viewItem(context.node.id)">View item on Wowhead (web)</span>
-						</context-menu>
-					</div>
-					<div class="filter">
-						<div class="regex-info" v-if="config.regexFilters" :title="regexTooltip">Regex Enabled</div>
-						<input type="text" v-model="userInputFilterItems" placeholder="Filter items..."/>
-					</div>
-					<div id="items-sidebar" class="sidebar">
-						<span class="header">Item Types</span>
-						<checkboxlist :items="itemViewerTypeMask"></checkboxlist>
-						<div class="list-toggles">
-							<a @click="setAllItemTypes(true)">Enable All</a> / <a @click="setAllItemTypes(false)">Disable All</a>
-						</div>
-					</div>
-				</div>
 				<div class="tab" id="tab-characters" v-else-if="screen === 'tab-characters'">
 					<div v-if="chrModelViewerAnims && chrModelViewerAnims.length > 0" class="animation-dropdown-overlay">
 						<select class="animation-dropdown" v-model="chrModelViewerAnimSelection">
