@@ -16,6 +16,7 @@ const MODULES = {
 	tab_items: require('./modules/tab_items'),
 	tab_characters: require('./modules/tab_characters'),
 	tab_textures: require('./modules/tab_textures'),
+	tab_help: require('./modules/tab_help'),
 	legacy_tab_home: require('./modules/legacy_tab_home'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
 	legacy_tab_textures: require('./modules/legacy_tab_textures')
@@ -25,6 +26,7 @@ const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';
 
 const modules = {}
 const module_nav_buttons = new Map();
+const module_context_menu_options = new Map();
 
 let active_module = null;
 let core = null;
@@ -54,6 +56,29 @@ function update_nav_buttons() {
 	core.view.modNavButtons = Array.from(module_nav_buttons.values());
 }
 
+function register_context_menu_option(module_name, label, id = null) {
+	const option = {
+		module: module_name,
+		label,
+		id: id ?? 'menu-mod-' + module_name
+	};
+
+	module_context_menu_options.set(module_name, option);
+	update_context_menu_options();
+	log.write('registered context menu option for module: %s', module_name);
+}
+
+function unregister_context_menu_option(module_name) {
+	if (module_context_menu_options.delete(module_name)) {
+		update_context_menu_options();
+		log.write('unregistered context menu option for module: %s', module_name);
+	}
+}
+
+function update_context_menu_options() {
+	core.view.modContextMenuOptions = Array.from(module_context_menu_options.values());
+}
+
 function wrap_module(module_name, module_def) {
 	// inject $modules and $core into component
 	if (!module_def.computed)
@@ -65,7 +90,8 @@ function wrap_module(module_name, module_def) {
 	// call register function if it exists
 	if (typeof module_def.register === 'function') {
 		const register_context = {
-			registerNavButton: (label, icon, install_types) => register_nav_button(module_name, label, icon, install_types)
+			registerNavButton: (label, icon, install_types) => register_nav_button(module_name, label, icon, install_types),
+			registerContextMenuOption: (label, id) => register_context_menu_option(module_name, label, id)
 		};
 		module_def.register.call(register_context);
 	}
@@ -135,6 +161,7 @@ function reload_module(module_key) {
 	}
 
 	unregister_nav_button(module_key);
+	unregister_context_menu_option(module_key);
 	delete modules[module_key];
 
 	const module_path = require.resolve('./modules/' + module_key);
@@ -178,6 +205,7 @@ function reload_all_modules() {
 	const module_keys = Object.keys(modules);
 	for (const module_key of module_keys) {
 		unregister_nav_button(module_key);
+		unregister_context_menu_option(module_key);
 		delete modules[module_key];
 	}
 

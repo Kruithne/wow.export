@@ -65,6 +65,7 @@ const makeNewView = () => {
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		activeModule: null, // Active module component instance.
 		modNavButtons: [], // Module-registered navigation buttons.
+		modContextMenuOptions: [], // Module-registered context menu options.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
 		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
 		selectionTextures: [], // Current user selection of texture files.

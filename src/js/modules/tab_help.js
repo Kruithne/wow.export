@@ -1,9 +1,3 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const core = require('../core');
 const fsp = require('fs').promises;
 const path = require('path');
 const log = require('../log');
@@ -11,7 +5,7 @@ const log = require('../log');
 const help_articles = [];
 let help_loaded = false;
 
-const load_help_docs = async () => {
+const load_help_docs = async (core) => {
 	if (help_loaded)
 		return;
 
@@ -59,11 +53,9 @@ const load_help_docs = async () => {
 		log.write('loaded %d help articles total', help_articles.length);
 		help_loaded = true;
 		core.hideLoadingScreen();
-		core.view.showPreviousScreen();
 	} catch (e) {
 		log.write('failed to load help documents: %s', e.message);
 		core.hideLoadingScreen();
-		core.view.showPreviousScreen();
 		core.setToast('error', 'failed to load help documents');
 	}
 };
@@ -78,13 +70,11 @@ const filter_articles = (search) => {
 		let score = 0;
 
 		for (const kw of keywords) {
-			// check kb_id
 			if (article.kb_id && article.kb_id.toLowerCase() === kw)
 				score += 3;
 			else if (article.kb_id && article.kb_id.toLowerCase().includes(kw))
 				score += 2;
 
-			// check tags
 			for (const tag of article.tags) {
 				if (tag === kw)
 					score += 2;
@@ -101,22 +91,70 @@ const filter_articles = (search) => {
 };
 
 let filter_timeout = null;
-const debounced_filter = (search) => {
-	clearTimeout(filter_timeout);
-	filter_timeout = setTimeout(() => {
-		core.view.helpFilteredArticles = filter_articles(search);
-	}, 300);
+
+module.exports = {
+	register() {
+		this.registerContextMenuOption('Help', 'menu-extra-help');
+	},
+
+	template: `
+		<div id="help-screen">
+			<div class="help-list-container">
+				<h1>Help</h1>
+				<div class="filter">
+					<input type="text" v-model="search_query" placeholder="Search help articles..."/>
+				</div>
+				<div id="help-articles">
+					<div v-for="article in filtered_articles" @click="selected_article = article" class="help-article-item" :class="{ selected: selected_article === article }">
+						<div class="help-article-title">{{ article.title }}</div>
+						<div class="help-article-tags">
+							<span v-if="article.kb_id" class="help-kb-id">{{ article.kb_id }}</span>
+							<span>{{ article.tags.join(', ') }}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="help-article-container">
+				<markdown-content v-if="selected_article" :content="selected_article.body"></markdown-content>
+				<div v-else class="help-placeholder">Select an article to view</div>
+			</div>
+			<input type="button" value="Go Back" @click="go_back"/>
+		</div>
+	`,
+
+	data() {
+		return {
+			search_query: '',
+			filtered_articles: [],
+			selected_article: null
+		};
+	},
+
+	methods: {
+		go_back() {
+			this.$modules.tab_home.setActive();
+		},
+
+		debounced_filter(search) {
+			clearTimeout(filter_timeout);
+			filter_timeout = setTimeout(() => {
+				this.filtered_articles = filter_articles(search);
+			}, 300);
+		}
+	},
+
+	watch: {
+		search_query(value) {
+			this.debounced_filter(value);
+		}
+	},
+
+	async mounted() {
+		await load_help_docs(this.$core);
+
+		this.filtered_articles = help_articles;
+
+		const kb002 = help_articles.find(a => a.kb_id === 'KB002');
+		this.selected_article = kb002 || null;
+	}
 };
-
-core.events.once('screen-help', async () => {
-	core.view.$watch('helpSearchQuery', search => {
-		debounced_filter(search);
-	});
-
-	await load_help_docs();
-	core.view.helpArticles = help_articles;
-	core.view.helpFilteredArticles = help_articles;
-
-	const kb002 = help_articles.find(a => a.kb_id === 'KB002');
-	core.view.helpSelectedArticle = kb002 || null;
-});

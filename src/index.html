@@ -22,7 +22,7 @@
 							<div v-if="btn.installTypes & 1" class="option nav-module" @click="setActiveModule(btn.module)" :class="{ active: activeModule && activeModule.__name === btn.module }" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'">{{ btn.label }}</div>
 						</template>
 					</template>
-					<div id="nav-help" v-if="!isBusy" @click="setScreen('help', true)"></div>
+					<div id="nav-help" v-if="!isBusy" @click="setActiveModule('tab_help')"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
 						<span @click.self="setScreen('blender', true)" id="menu-extra-blender">Install Blender Add-on</span>
@@ -35,7 +35,7 @@
 						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
 						<span v-if="isDev" @click.self="reloadActiveModule" id="menu-extra-reload-active">Reload Active Module</span>
 						<span v-if="isDev" @click.self="reloadAllModules" id="menu-extra-reload-all">Reload All Modules</span>
-						<span @click.self="setScreen('help', true)" id="menu-extra-help">Help</span>
+						<span v-for="opt in modContextMenuOptions" :key="opt.module" @click.self="setActiveModule(opt.module)" :id="opt.id">{{ opt.label }}</span>
 					</context-menu>
 				</div>
 			</div>
@@ -73,28 +73,6 @@
 						<input type="button" value="Install Manually (Advanced)" @click="openBlenderAddonFolder"/>
 						<input type="button" value="Go Back" @click="showPreviousScreen"/>
 					</div>
-				</div>
-				<div id="help-screen" v-else-if="screen === 'help'">
-					<div class="help-list-container">
-						<h1>Help</h1>
-						<div class="filter">
-							<input type="text" v-model="helpSearchQuery" placeholder="Search help articles..."/>
-						</div>
-						<div id="help-articles">
-							<div v-for="article in helpFilteredArticles" @click="helpSelectedArticle = article" class="help-article-item" :class="{ selected: helpSelectedArticle === article }">
-								<div class="help-article-title">{{ article.title }}</div>
-								<div class="help-article-tags">
-									<span v-if="article.kb_id" class="help-kb-id">{{ article.kb_id }}</span>
-									<span>{{ article.tags.join(', ') }}</span>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="help-article-container">
-						<markdown-content v-if="helpSelectedArticle" :content="helpSelectedArticle.body"></markdown-content>
-						<div v-else class="help-placeholder">Select an article to view</div>
-					</div>
-					<input type="button" value="Go Back" @click="showPreviousScreen"/>
 				</div>
 				<div id="config" v-else-if="screen === 'config'" :class="{ toastgap: toast !== null }">
 					<div>
