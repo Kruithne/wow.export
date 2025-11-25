@@ -171,6 +171,13 @@ body {
 #container #content {
 	position: relative;
 }
+#module-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
 #container #header {
 	border-bottom: 1px solid var(--border);
 	background: var(--background-dark);
@@ -496,10 +503,6 @@ body {
 	background-repeat: no-repeat;
 }
 
-.nav-characters::before {
-	background-image: url(./fa-icons/person-solid.svg);
-}
-
 .nav-textures::before {
 	background-image: url(./fa-icons/image.svg);
 }
@@ -765,7 +768,7 @@ body {
 	align-items: center;
 	justify-content: center;
 	background: var(--background);
-	z-index: 90;
+	z-index: 9999;
 }
 #loading-background {
 	position: absolute;

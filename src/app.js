@@ -124,7 +124,6 @@ const TabTextures = require('./js/ui/tab-textures');
 require('./js/ui/source-select');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
-require('./js/ui/tab-characters');
 require('./js/ui/screen-help');
 require('./js/ui/legacy-tab-textures');
 require('./js/ui/legacy-tab-files');

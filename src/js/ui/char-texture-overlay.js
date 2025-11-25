@@ -58,7 +58,7 @@ function remove(canvas) {
 	update_button_visibility();
 }
 
-core.events.on('screen-tab-characters', () => {
+function ensure_active_layer_attached() {
 	process.nextTick(() => {
 		if (active_layer !== null) {
 			const element = get_element();
@@ -66,7 +66,10 @@ core.events.on('screen-tab-characters', () => {
 				element.appendChild(active_layer);
 		}
 	});
-});
+}
+
+// legacy event for non-module usage
+core.events.on('screen-tab-characters', ensure_active_layer_attached);
 
 core.events.on('click-chr-next-overlay', () => {
 	// Move to the next (or first) layer.
@@ -102,5 +105,6 @@ core.events.on('click-chr-prev-overlay', () => {
 
 module.exports = {
 	add,
-	remove
+	remove,
+	ensureActiveLayerAttached: ensure_active_layer_attached
 };

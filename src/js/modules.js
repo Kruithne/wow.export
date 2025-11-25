@@ -13,6 +13,7 @@ const MODULES = {
 	tab_models: require('./modules/tab_models'),
 	tab_audio: require('./modules/tab_audio'),
 	tab_items: require('./modules/tab_items'),
+	tab_characters: require('./modules/tab_characters'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio')
 };
 
