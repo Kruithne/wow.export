@@ -9,7 +9,7 @@ const load_files = async (core) => {
 	if (files_loaded || core.view.isBusy)
 		return;
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 
 	try {
 		const files = core.view.mpq.getAllFiles();
@@ -18,8 +18,6 @@ const load_files = async (core) => {
 	} catch (e) {
 		log.write('failed to load legacy files: %o', e);
 	}
-
-	core.view.isBusy--;
 };
 
 const export_files = async (core) => {
@@ -27,7 +25,7 @@ const export_files = async (core) => {
 	if (selection.length === 0)
 		return;
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 
 	try {
 		const export_dir = core.view.config.exportDirectory;
@@ -63,8 +61,6 @@ const export_files = async (core) => {
 		log.write('failed to export legacy files: %o', e);
 		core.setToast('error', 'Failed to export files');
 	}
-
-	core.view.isBusy--;
 };
 
 module.exports = {

@@ -128,7 +128,7 @@ module.exports = {
 	},
 
 	async startAutomaticInstall() {
-		core.view.isBusy++;
+		using _lock = core.create_busy_lock();
 		core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
 		log.write('Starting automatic installation of Blender add-on...');
 
@@ -170,7 +170,5 @@ module.exports = {
 			log.write('Installation failed due to exception: %s', e.message);
 			core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 		}
-
-		core.view.isBusy--;
 	}
 };

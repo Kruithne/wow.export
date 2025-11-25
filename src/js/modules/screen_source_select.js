@@ -82,43 +82,39 @@ module.exports = {
 			cdnResolver.startPreResolution(region.tag);
 		},
 
-		load_install(index) {
-			this.$core.block(async () => {
-				this.$core.showLoadingScreen();
+		async load_install(index) {
+			this.$core.view.availableLocalBuilds = null;
+			this.$core.view.availableRemoteBuilds = null;
 
-				this.$core.view.availableLocalBuilds = null;
-				this.$core.view.availableRemoteBuilds = null;
+			if (casc_source instanceof CASCLocal) {
+				const recent_local = this.$core.view.config.recentLocal;
+				const install_path = casc_source.dir;
+				const build = casc_source.builds[index];
+				const pre_index = recent_local.findIndex(e => e.path === install_path && e.product === build.Product);
 
-				if (casc_source instanceof CASCLocal) {
-					const recent_local = this.$core.view.config.recentLocal;
-					const install_path = casc_source.dir;
-					const build = casc_source.builds[index];
-					const pre_index = recent_local.findIndex(e => e.path === install_path && e.product === build.Product);
-
-					if (pre_index > -1) {
-						if (pre_index > 0)
-							recent_local.unshift(recent_local.splice(pre_index, 1)[0]);
-					} else {
-						recent_local.unshift({ path: install_path, product: build.Product });
-					}
-
-					if (recent_local.length > constants.MAX_RECENT_LOCAL)
-						recent_local.splice(constants.MAX_RECENT_LOCAL, recent_local.length - constants.MAX_RECENT_LOCAL);
+				if (pre_index > -1) {
+					if (pre_index > 0)
+						recent_local.unshift(recent_local.splice(pre_index, 1)[0]);
+				} else {
+					recent_local.unshift({ path: install_path, product: build.Product });
 				}
 
-				try {
-					await casc_source.load(index);
-					this.$core.view.installType = InstallType.CASC;
-					this.$modules.tab_home.setActive();
-				} catch (e) {
-					log.write('Failed to load CASC: %o', e);
-					this.$core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
-						'View Log': () => log.openRuntimeLog(),
-						'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
-					}, -1);
-					this.$modules.source_select.setActive();
-				}
-			});
+				if (recent_local.length > constants.MAX_RECENT_LOCAL)
+					recent_local.splice(constants.MAX_RECENT_LOCAL, recent_local.length - constants.MAX_RECENT_LOCAL);
+			}
+
+			try {
+				await casc_source.load(index);
+				this.$core.view.installType = InstallType.CASC;
+				this.$modules.tab_home.setActive();
+			} catch (e) {
+				log.write('Failed to load CASC: %o', e);
+				this.$core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
+					'View Log': () => log.openRuntimeLog(),
+					'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
+				}, -1);
+				this.$modules.source_select.setActive();
+			}
 		},
 
 		async open_local_install(install_path, product) {
@@ -246,27 +242,26 @@ module.exports = {
 			this.open_local_install(entry.path, entry.product);
 		},
 
-		click_source_remote() {
+		async click_source_remote() {
 			if (this.$core.view.isBusy)
 				return;
 
-			this.$core.block(async () => {
-				const tag = this.$core.view.selectedCDNRegion.tag;
+			using _lock = this.$core.create_busy_lock();
+			const tag = this.$core.view.selectedCDNRegion.tag;
 
-				try {
-					casc_source = new CASCRemote(tag);
-					await casc_source.init();
+			try {
+				casc_source = new CASCRemote(tag);
+				await casc_source.init();
 
-					if (casc_source.builds.length === 0)
-						throw new Error('No builds available.');
+				if (casc_source.builds.length === 0)
+					throw new Error('No builds available.');
 
-					this.$core.view.availableRemoteBuilds = casc_source.getProductList();
-					this.$core.view.sourceSelectShowBuildSelect = true;
-				} catch (e) {
-					this.$core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
-					log.write('Failed to initialize remote CASC source: %s', e.message);
-				}
-			});
+				this.$core.view.availableRemoteBuilds = casc_source.getProductList();
+				this.$core.view.sourceSelectShowBuildSelect = true;
+			} catch (e) {
+				this.$core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
+				log.write('Failed to initialize remote CASC source: %s', e.message);
+			}
 		},
 
 		click_source_legacy() {

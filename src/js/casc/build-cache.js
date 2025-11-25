@@ -172,7 +172,7 @@ class BuildCache {
 
 // Invoked when the user requests a cache purge.
 core.events.on('click-cache-clear', async () => {
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
 	log.write('Manual cache purge requested by user! (Cache size: %s)', generics.filesize(core.view.cacheSize));
 
@@ -190,7 +190,6 @@ core.events.on('click-cache-clear', async () => {
 	} catch (e) {
 		log.write('Error clearing cache: %s', e.message);
 		core.setToast('error', 'Failed to clear cache: ' + e.message, null, -1, false);
-		core.view.isBusy--;
 	}
 });
 

@@ -48,7 +48,7 @@ const detect_raw_files = async (core) => {
 		return;
 	}
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 
 	const extension_map = new Map();
 	let current_index = 1;
@@ -85,8 +85,6 @@ const detect_raw_files = async (core) => {
 	} else {
 		core.setToast('info', 'Unable to identify any of the selected files.');
 	}
-
-	core.view.isBusy--;
 };
 
 const export_raw_files = async (core) => {

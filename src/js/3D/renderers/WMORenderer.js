@@ -217,7 +217,7 @@ class WMORenderer {
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
 
-		core.view.isBusy++;
+		using _lock = core.create_busy_lock();
 		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, count), null, -1, false);
 
 		for (let i = 0; i < count; i++) {
@@ -279,7 +279,6 @@ class WMORenderer {
 		this.doodadSets[index] = renderGroup;
 
 		core.hideToast();
-		core.view.isBusy--;
 	}
 
 	/**

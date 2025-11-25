@@ -423,7 +423,7 @@ async function update_chr_model_list(core) {
 }
 
 async function preview_model(core, file_data_id) {
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	is_model_loading = true;
 	core.view.chrModelLoading = true;
 	log.write('Previewing model %s', file_data_id);
@@ -496,7 +496,6 @@ async function preview_model(core, file_data_id) {
 
 	is_model_loading = false;
 	core.view.chrModelLoading = false;
-	core.view.isBusy--;
 }
 
 function apply_camera_debug_settings(core) {
@@ -507,7 +506,7 @@ function apply_camera_debug_settings(core) {
 }
 
 async function import_character(core) {
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.view.characterImportMode = 'none';
 	core.view.chrModelLoading = true;
 
@@ -518,7 +517,6 @@ async function import_character(core) {
 	if (selected_realm === null) {
 		core.setToast('error', 'Please enter a valid realm.', null, 3000);
 		core.view.chrModelLoading = false;
-		core.view.isBusy--;
 		return;
 	}
 
@@ -544,7 +542,6 @@ async function import_character(core) {
 	}
 
 	core.view.chrModelLoading = false;
-	core.view.isBusy--;
 }
 
 async function load_import_string(core, import_string) {
@@ -623,7 +620,7 @@ async function import_wmv_character(core) {
 			core.view.config.lastWMVImportPath = path.dirname(file_path);
 		}
 
-		core.view.isBusy++;
+		using _lock = core.create_busy_lock();
 		core.view.chrModelLoading = true;
 
 		try {
@@ -641,7 +638,6 @@ async function import_wmv_character(core) {
 		}
 
 		core.view.chrModelLoading = false;
-		core.view.isBusy--;
 	});
 
 	file_input.click();
@@ -715,7 +711,7 @@ function load_wmv_legacy(core, wmv_data) {
 }
 
 async function import_wowhead_character(core) {
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.view.characterImportMode = 'none';
 	core.view.chrModelLoading = true;
 
@@ -724,7 +720,6 @@ async function import_wowhead_character(core) {
 	if (!wowhead_url || !wowhead_url.includes('dressing-room')) {
 		core.setToast('error', 'please enter a valid wowhead dressing room url', null, 3000);
 		core.view.chrModelLoading = false;
-		core.view.isBusy--;
 		return;
 	}
 
@@ -737,7 +732,6 @@ async function import_wowhead_character(core) {
 	}
 
 	core.view.chrModelLoading = false;
-	core.view.isBusy--;
 }
 
 function load_wowhead_data(core, wowhead_data) {

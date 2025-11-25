@@ -101,7 +101,7 @@ const toggle_uv_layer = (core, layer_name) => {
 const preview_texture_by_id = async (core, file_data_id, name) => {
 	const texture = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
@@ -128,12 +128,10 @@ const preview_texture_by_id = async (core, file_data_id, name) => {
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
-
-	core.view.isBusy--;
 };
 
 const preview_model = async (core, file_name) => {
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
 	log.write('Previewing model %s', file_name);
 
@@ -260,8 +258,6 @@ const preview_model = async (core, file_name) => {
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
-
-	core.view.isBusy--;
 };
 
 const get_variant_texture_ids = (file_name) => {

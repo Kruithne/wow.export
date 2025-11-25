@@ -44,7 +44,7 @@ const load_track = async (core) => {
 	if (selected_file === null)
 		return false;
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', selected_file), null, -1, false);
 	log.write('Previewing sound file %s', selected_file);
 
@@ -53,7 +53,6 @@ const load_track = async (core) => {
 		if (!raw_data) {
 			log.write('Failed to load audio: %s', selected_file);
 			core.setToast('error', 'Failed to load audio file ' + selected_file, null, -1);
-			core.view.isBusy--;
 			return false;
 		}
 
@@ -80,12 +79,10 @@ const load_track = async (core) => {
 		await player.load(array_buffer);
 		core.view.soundPlayerDuration = player.get_duration();
 		core.hideToast();
-		core.view.isBusy--;
 		return true;
 	} catch (e) {
 		core.setToast('error', 'Unable to preview audio ' + selected_file, { 'View Log': () => log.openRuntimeLog() }, -1);
 		log.write('Failed to load MPQ audio file: %s', e.message);
-		core.view.isBusy--;
 		return false;
 	}
 };
@@ -124,7 +121,7 @@ const pause_track = (core) => {
 
 const load_sound_list = async (core) => {
 	if (core.view.listfileSounds.length === 0 && !core.view.isBusy) {
-		core.view.isBusy++;
+		using _lock = core.create_busy_lock();
 
 		try {
 			const ogg_files = core.view.mpq.getFilesByExtension('.ogg');
@@ -136,8 +133,6 @@ const load_sound_list = async (core) => {
 		} catch (e) {
 			log.write('failed to load legacy sounds: %o', e);
 		}
-
-		core.view.isBusy--;
 	}
 };
 

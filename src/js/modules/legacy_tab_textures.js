@@ -9,14 +9,13 @@ let selected_file = null;
 const preview_texture = async (core, filename) => {
 	const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	log.write('previewing texture file %s', filename);
 
 	try {
 		const data = core.view.mpq.getFile(filename);
 		if (!data) {
 			log.write('failed to load texture: %s', filename);
-			core.view.isBusy--;
 			return;
 		}
 
@@ -67,8 +66,6 @@ const preview_texture = async (core, filename) => {
 		log.write('failed to preview legacy texture %s: %o', filename, e);
 		core.setToast('error', 'unable to preview texture ' + filename, { 'view log': () => log.openRuntimeLog() }, -1);
 	}
-
-	core.view.isBusy--;
 };
 
 const refresh_blp_preview = (core) => {
@@ -94,7 +91,7 @@ const refresh_blp_preview = (core) => {
 
 const load_texture_list = async (core) => {
 	if (core.view.listfileTextures.length === 0 && !core.view.isBusy) {
-		core.view.isBusy++;
+		using _lock = core.create_busy_lock();
 
 		try {
 			const blp_files = core.view.mpq.getFilesByExtension('.blp');
@@ -105,8 +102,6 @@ const load_texture_list = async (core) => {
 		} catch (e) {
 			log.write('failed to load legacy textures: %o', e);
 		}
-
-		core.view.isBusy--;
 	}
 };
 

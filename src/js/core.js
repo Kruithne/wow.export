@@ -262,14 +262,13 @@ const openLastExportStream = () => {
 };
 
 /**
- * Run an async function while preventing the user from starting others.
- * This is heavily used in UI to disable components during big tasks.
- * @param {function} func 
+ * Creates a disposable lock that increments isBusy on creation and
+ * decrements on disposal. Use with the `using` keyword.
+ * @returns {Disposable}
  */
-const block = async (func) => {
+const create_busy_lock = () => {
 	core.view.isBusy++;
-	await func();
-	core.view.isBusy--;
+	return { [Symbol.dispose]: () => core.view.isBusy-- };
 };
 
 // internal progress state for loading screen api
@@ -416,7 +415,7 @@ const core = {
 	events,
 	view,
 	makeNewView,
-	block,
+	create_busy_lock,
 	showLoadingScreen,
 	progressLoadingScreen,
 	hideLoadingScreen,

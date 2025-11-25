@@ -22,7 +22,7 @@ let resize_observer = null;
 const preview_texture_by_id = async (core, file_data_id, texture = null) => {
 	texture = texture ?? listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
 
-	core.view.isBusy++;
+	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
@@ -63,8 +63,6 @@ const preview_texture_by_id = async (core, file_data_id, texture = null) => {
 			log.write('Failed to open CASC file: %s', e.message);
 		}
 	}
-
-	core.view.isBusy--;
 };
 
 const load_texture_atlas_data = async (core) => {
@@ -364,7 +362,7 @@ module.exports = {
 			if (!is_baked_npc_texture(this.$core))
 				return;
 
-			this.$core.view.isBusy++;
+			using _lock = this.$core.create_busy_lock();
 			this.$core.setToast('progress', 'loading baked npc texture...', null, -1, false);
 
 			try {
@@ -380,8 +378,6 @@ module.exports = {
 				this.$core.setToast('error', 'failed to load baked npc texture', { 'view log': () => log.openRuntimeLog() }, -1);
 				log.write('failed to load baked npc texture: %s', e.message);
 			}
-
-			this.$core.view.isBusy--;
 		}
 	},
 
