@@ -25,13 +25,9 @@
 					<div id="nav-help" v-if="!isBusy" @click="setActiveModule('tab_help')"></div>
 					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
 					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
-						<span @click.self="openRuntimeLog" id="menu-extra-log">Open Runtime Log</span>
-						<span @click.self="setScreen('config', true)" id="menu-extra-settings">Manage Settings</span>
-						<span @click.self="restartApplication" id="menu-extra-restart">Restart wow.export</span>
-						<span v-if="isDev" @click.self="reloadStylesheet" id="menu-extra-style">Reload Styling</span>
-						<span v-if="isDev" @click.self="reloadActiveModule" id="menu-extra-reload-active">Reload Active Module</span>
-						<span v-if="isDev" @click.self="reloadAllModules" id="menu-extra-reload-all">Reload All Modules</span>
-						<span v-for="opt in modContextMenuOptions" :key="opt.module" @click.self="setActiveModule(opt.module)" :style="'background-image: url(./fa-icons/' + opt.icon + ')'">{{ opt.label }}</span>
+						<template v-for="opt in modContextMenuOptions" :key="opt.id">
+							<span v-if="!opt.action?.dev_only || isDev" @click.self="handleContextMenuClick(opt)" :style="opt.icon ? 'background-image: url(./fa-icons/' + opt.icon + ')' : ''">{{ opt.label }}</span>
+						</template>
 					</context-menu>
 				</div>
 			</div>

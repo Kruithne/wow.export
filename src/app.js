@@ -280,6 +280,13 @@ document.addEventListener('click', function(e) {
 				modules.setActive(module_name);
 			},
 
+			handleContextMenuClick: function(opt) {
+				if (opt.action?.handler)
+					opt.action.handler();
+				else
+					modules.setActive(opt.id);
+			},
+
 			/**
 			 * Show the loading screen with a given message.
 			 * @param {string} text Defaults to 'Loading, please wait'
@@ -584,6 +591,14 @@ document.addEventListener('click', function(e) {
 	app.mount('#container');
 
 	await modules.initialize(core);
+
+	// register static context menu options
+	modules.registerContextMenuOption('runtime-log', 'Open Runtime Log', 'timeline.svg', () => log.openRuntimeLog());
+	modules.registerContextMenuOption('settings', 'Manage Settings', 'gear.svg', () => core.view.setScreen('config', true));
+	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => chrome.runtime.reload());
+	modules.registerContextMenuOption('reload-style', 'Reload Styling', 'palette.svg', () => core.view.reloadStylesheet(), true);
+	modules.registerContextMenuOption('reload-active', 'Reload Active Module', 'gear.svg', () => modules.reloadActiveModule(), true);
+	modules.registerContextMenuOption('reload-all', 'Reload All Modules', 'gear.svg', () => modules.reloadAllModules(), true);
 
 	// watch activeModule and close context menus when it changes
 	core.view.$watch('activeModule', () => {

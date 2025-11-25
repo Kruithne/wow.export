@@ -1,6 +1,7 @@
 const Vue = require('vue/dist/vue.cjs.js');
 const log = require('./log');
 const InstallType = require('./install-type');
+const constants = require('./constants');
 
 const MODULES = {
 	module_test_a: require('./modules/module_test_a'),
@@ -60,27 +61,42 @@ function update_nav_buttons() {
 	core.view.modNavButtons = Array.from(module_nav_buttons.values());
 }
 
-function register_context_menu_option(module_name, label, icon) {
-	const option = {
-		module: module_name,
-		label,
-		icon
-	};
-
-	module_context_menu_options.set(module_name, option);
+function register_context_menu_option(id, label, icon, action = null) {
+	const option = { id, label, icon, action };
+	module_context_menu_options.set(id, option);
 	update_context_menu_options();
-	log.write('registered context menu option for module: %s', module_name);
+	log.write('registered context menu option: %s', id);
 }
 
-function unregister_context_menu_option(module_name) {
-	if (module_context_menu_options.delete(module_name)) {
+function unregister_context_menu_option(id) {
+	if (module_context_menu_options.delete(id)) {
 		update_context_menu_options();
-		log.write('unregistered context menu option for module: %s', module_name);
+		log.write('unregistered context menu option: %s', id);
 	}
 }
 
 function update_context_menu_options() {
-	core.view.modContextMenuOptions = Array.from(module_context_menu_options.values());
+	const order = constants.CONTEXT_MENU_ORDER;
+	const options = Array.from(module_context_menu_options.values());
+
+	options.sort((a, b) => {
+		const idx_a = order.indexOf(a.id);
+		const idx_b = order.indexOf(b.id);
+
+		// items not in order go to end
+		if (idx_a === -1 && idx_b === -1)
+			return 0;
+
+		if (idx_a === -1)
+			return 1;
+
+		if (idx_b === -1)
+			return -1;
+
+		return idx_a - idx_b;
+	});
+
+	core.view.modContextMenuOptions = options;
 }
 
 function wrap_module(module_name, module_def) {
@@ -126,6 +142,10 @@ async function initialize(core_instance) {
 		modules[name] = wrap_module(name, Vue.markRaw(module_def));
 
 	log.write('modules loaded: %s', Object.keys(modules).join(', '));
+}
+
+function register_static_context_menu_option(id, label, icon, action, dev_only = false) {
+	register_context_menu_option(id, label, icon, { handler: action, dev_only });
 }
 
 function set_active(module_key) {
@@ -227,7 +247,7 @@ function reload_all_modules() {
 		set_active(active_module_key);
 }
 
-module.exports = new Proxy({ initialize, set_active, setActive, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, InstallType }, {
+module.exports = new Proxy({ initialize, set_active, setActive, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, registerContextMenuOption: register_static_context_menu_option, InstallType }, {
 	get(target, prop) {
 		if (prop in target)
 			return target[prop];

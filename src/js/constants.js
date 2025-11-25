@@ -163,7 +163,21 @@ module.exports = {
 		{ match: 'WDC4', ext: '.db2' }
 	],
 
-	// WoW expansion definitions matching data-item IDs used in expansion icons
+	// context menu item order (module names or static option IDs)
+	CONTEXT_MENU_ORDER: [
+		'tab_blender',
+		'tab_changelog',
+		'runtime-log',
+		'tab_raw',
+		'tab_install',
+		'settings',
+		'restart',
+		'reload-style',
+		'reload-active',
+		'reload-all',
+		'tab_help'
+	],
+
 	EXPANSIONS: [
 		{ id: 0, name: 'Classic', shortName: 'Classic' },
 		{ id: 1, name: 'The Burning Crusade', shortName: 'TBC' },
