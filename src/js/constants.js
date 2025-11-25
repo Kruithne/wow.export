@@ -163,6 +163,23 @@ module.exports = {
 		{ match: 'WDC4', ext: '.db2' }
 	],
 
+	// nav button order (module names)
+	NAV_BUTTON_ORDER: [
+		'tab_models',
+		'tab_characters',
+		'tab_items',
+		'tab_textures',
+		'tab_audio',
+		'tab_videos',
+		'tab_maps',
+		'tab_zones',
+		'tab_text',
+		'tab_data',
+		'legacy_tab_textures',
+		'legacy_tab_audio',
+		'legacy_tab_files'
+	],
+
 	// context menu item order (module names or static option IDs)
 	CONTEXT_MENU_ORDER: [
 		'tab_blender',

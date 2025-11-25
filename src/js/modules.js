@@ -59,7 +59,26 @@ function unregister_nav_button(module_name) {
 }
 
 function update_nav_buttons() {
-	core.view.modNavButtons = Array.from(module_nav_buttons.values());
+	const order = constants.NAV_BUTTON_ORDER;
+	const buttons = Array.from(module_nav_buttons.values());
+
+	buttons.sort((a, b) => {
+		const idx_a = order.indexOf(a.module);
+		const idx_b = order.indexOf(b.module);
+
+		if (idx_a === -1 && idx_b === -1)
+			return 0;
+
+		if (idx_a === -1)
+			return 1;
+
+		if (idx_b === -1)
+			return -1;
+
+		return idx_a - idx_b;
+	});
+
+	core.view.modNavButtons = buttons;
 }
 
 function register_context_menu_option(id, label, icon, action = null) {
