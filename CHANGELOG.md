@@ -1,5 +1,6 @@
 ## 0.2.7 (TBD)
 - Optimized "Maps" tab to load 33x (97%) faster.
+- Fixed numerous playback issues in the "Audio" tabs (MPQ & CASC).
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
