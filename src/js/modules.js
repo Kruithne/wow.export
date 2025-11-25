@@ -14,7 +14,9 @@ const MODULES = {
 	tab_audio: require('./modules/tab_audio'),
 	tab_items: require('./modules/tab_items'),
 	tab_characters: require('./modules/tab_characters'),
-	legacy_tab_audio: require('./modules/legacy_tab_audio')
+	tab_textures: require('./modules/tab_textures'),
+	legacy_tab_audio: require('./modules/legacy_tab_audio'),
+	legacy_tab_textures: require('./modules/legacy_tab_textures')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';

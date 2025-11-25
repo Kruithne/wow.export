@@ -503,10 +503,6 @@ body {
 	background-repeat: no-repeat;
 }
 
-.nav-textures::before {
-	background-image: url(./fa-icons/image.svg);
-}
-
 .nav-module::before {
 	background-image: var(--nav-icon);
 }

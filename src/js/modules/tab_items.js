@@ -88,8 +88,8 @@ const view_item_models = (core, item) => {
 	core.view.overrideModelName = item.name;
 };
 
-const view_item_textures = async (core, item) => {
-	core.view.setScreen('tab-textures');
+const view_item_textures = async (core, modules, item) => {
+	modules.setActive('tab_textures');
 	await DBTextureFileData.ensureInitialized();
 
 	const list = new Set();
@@ -245,7 +245,7 @@ module.exports = {
 		},
 
 		view_textures(item) {
-			view_item_textures(this.$core, item);
+			view_item_textures(this.$core, this.$modules, item);
 		},
 
 		copy_to_clipboard(value) {

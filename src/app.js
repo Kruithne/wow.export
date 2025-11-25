@@ -120,12 +120,10 @@ const ResizeLayer = require('./js/components/resize-layer');
 const ContextMenu = require('./js/components/context-menu');
 const MarkdownContent = require('./js/components/markdown-content');
 
-const TabTextures = require('./js/ui/tab-textures');
 require('./js/ui/source-select');
 require('./js/ui/tab-raw');
 require('./js/ui/tab-install');
 require('./js/ui/screen-help');
-require('./js/ui/legacy-tab-textures');
 require('./js/ui/legacy-tab-files');
 
 const modules = require('./js/modules');
@@ -408,14 +406,14 @@ document.addEventListener('click', function(e) {
 			
 			/**
 			 * Switches to the textures tab and filters for the given file.
-			 * @param {number} fileDataID 
+			 * @param {number} fileDataID
 			 */
 			goToTexture: function(fileDataID) {
 				const view = core.view;
-				view.setScreen('tab-textures');
+				modules.setActive('tab_textures');
 
 				// Directly preview the requested file, even if it's not in the listfile.
-				TabTextures.previewTextureByID(fileDataID);
+				modules.tab_textures.previewTextureByID(core, fileDataID);
 
 				// Since we're doing a direct preview, we need to reset the users current
 				// selection, so if they hit export, they get the expected result.
