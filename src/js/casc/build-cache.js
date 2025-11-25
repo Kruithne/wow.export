@@ -174,7 +174,7 @@ class BuildCache {
 core.events.on('click-cache-clear', async () => {
 	core.view.isBusy++;
 	core.setToast('progress', 'Clearing cache, please wait...', null, -1, false);
-	log.write('Manual cache purge requested by user! (Cache size: %s)', core.view.cacheSizeFormatted);
+	log.write('Manual cache purge requested by user! (Cache size: %s)', generics.filesize(core.view.cacheSize));
 
 	try {
 		mmap.release_virtual_files();

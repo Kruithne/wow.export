@@ -1347,7 +1347,7 @@ input[type=number]::-webkit-outer-spin-button {
 	cursor: pointer;
 }
 
-#config {
+#config-wrapper {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -1355,8 +1355,13 @@ input[type=number]::-webkit-outer-spin-button {
 	bottom: 0;
 	display: flex;
 	flex-direction: column;
+}
+
+#config {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
 	overflow-y: auto;
-	padding-bottom: 20px;
 }
 #config.toastgap {
 	margin-top: 20px;
@@ -1388,6 +1393,9 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	width: 100%;
 	flex-direction: row-reverse;
+	padding: 15px 0;
+	border-top: 1px solid var(--border);
+	background: var(--background);
 }
 #config-buttons input {
 	margin-right: 20px;

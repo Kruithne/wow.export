@@ -7,6 +7,7 @@ const MODULES = {
 	module_test_a: require('./modules/module_test_a'),
 	module_test_b: require('./modules/module_test_b'),
 	source_select: require('./modules/screen_source_select'),
+	settings: require('./modules/screen_settings'),
 	tab_home: require('./modules/tab_home'),
 	tab_maps: require('./modules/tab_maps'),
 	tab_zones: require('./modules/tab_zones'),

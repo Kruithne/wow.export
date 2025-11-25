@@ -441,22 +441,6 @@ document.addEventListener('click', function(e) {
 
 		computed: {
 			/**
-			 * Returns true if the export directory contains spaces.
-			 * @returns {boolean}
-			 */
-			isExportPathConcerning: function() {
-				return !!this.config?.exportDirectory?.match(/\s/g);
-			},
-
-			/**
-			 * Returns true if the editing config directory contains spaces.
-			 * @returns {boolean}
-			 */
-			isEditExportPathConcerning: function() {
-				return !!this.configEdit?.exportDirectory?.match(/\s/g);
-			},
-
-			/**
 			 * Returns the location of the last export manifest.
 			 * @returns {string}
 			 */
@@ -468,44 +452,10 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
-			 * Returns the default location of the last export manifest.
-			 * @returns {string}}
-			 */
-			lastExportPathDefault: function() {
-				return constants.LAST_EXPORT;
-			},
-
-			/**
 			 * Returns the currently 'active' screen, which is first on the stack.
 			 */
 			screen: function() {
 				return this.screenStack[0];
-			},
-
-			/**
-			 * Returns the cache size formatted as a file size.
-			 */
-			cacheSizeFormatted: function() {
-				return generics.filesize(this.cacheSize);
-			},
-
-			/**
-			 * Returns an Array of available locale keys.
-			 */
-			availableLocaleKeys: function() {
-				return Object.keys(this.availableLocale.flags).map(e => { return { value: e }});
-			},
-
-			/**
-			 * Return the locale key for the configured CASC locale.
-			 */
-			selectedLocaleKey: function() {
-				for (const [key, flag] of Object.entries(this.availableLocale.flags)) {
-					if (flag === this.config.cascLocale)
-						return key;
-				}
-
-				return 'unUN';
 			},
 
 			/**
@@ -591,7 +541,6 @@ document.addEventListener('click', function(e) {
 
 	// register static context menu options
 	modules.registerContextMenuOption('runtime-log', 'Open Runtime Log', 'timeline.svg', () => log.openRuntimeLog());
-	modules.registerContextMenuOption('settings', 'Manage Settings', 'gear.svg', () => core.view.setScreen('config', true));
 	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => chrome.runtime.reload());
 	modules.registerContextMenuOption('reload-style', 'Reload Styling', 'palette.svg', () => core.view.reloadStylesheet(), true);
 	modules.registerContextMenuOption('reload-active', 'Reload Active Module', 'gear.svg', () => modules.reloadActiveModule(), true);
