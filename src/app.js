@@ -236,30 +236,11 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
-			 * Mark all legacy WMO groups to the given state.
-			 * @param {boolean} state
-			 */
-			setAllLegacyWMOGroups: function(state) {
-				if (this.legacyModelViewerWMOGroups) {
-					for (const node of this.legacyModelViewerWMOGroups)
-						node.checked = state;
-				}
-			},
-
-			/**
 			 * Toggle UV layer for the main model viewer.
 			 * @param {string} layerName
 			 */
 			toggleUVLayer: function(layerName) {
 				core.events.emit('toggle-uv-layer', layerName);
-			},
-
-			/**
-			 * Toggle UV layer for the legacy model viewer.
-			 * @param {string} layerName
-			 */
-			toggleLegacyUVLayer: function(layerName) {
-				core.events.emit('toggle-legacy-uv-layer', layerName);
 			},
 
 			/**
