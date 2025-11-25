@@ -377,55 +377,6 @@
 					<span @click="removeOverrideModels">Remove</span>
 					<div class="close" @click="removeOverrideModels"></div>
 				</div>
-				
-					
-				<div id="source-select" v-else-if="screen === 'source-select'">
-					<div id="source-local" @click="click('source-local', $event)">
-						<div class="source-icon"></div>
-						<div class="source-content">
-							<div class="source-title">Open Local Installation (Recommended)</div>
-							<div class="source-subtitle">Explore a locally installed World of Warcraft installation on your machine</div>
-							<div v-if="config.recentLocal && config.recentLocal.length > 0" class="source-last-opened">
-								Last Opened: <span class="link" @click.stop="click('source-local-recent', $event, config.recentLocal[0])">{{ config.recentLocal[0].path }} ({{ getProductTag(config.recentLocal[0].product) }})</span>
-							</div>
-						</div>
-					</div>
-					<div id="source-remote" @click="click('source-remote', $event)">
-						<div class="source-icon"></div>
-						<div class="source-content">
-							<div class="source-title">Use Battle.net CDN</div>
-							<div class="source-subtitle">Explore available builds without installation directly from the Battle.net servers</div>
-							<div class="source-cdn-region">
-								Region: {{ selectedCDNRegion.name }} <span class="link" @click.stop="contextMenus.stateCDNRegion = true">(<span>Change</span>)</span>
-							</div>
-							<context-menu @close="contextMenus.stateCDNRegion = false" :node="contextMenus.stateCDNRegion" id="menu-cdn-region">
-								<span v-for="region in cdnRegions" @click.self="setSelectedCDN(region)">
-									{{ region.name }}
-									<span v-if="region.delay !== null" style="opacity: 0.7; font-size: 12px;">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
-								</span>
-							</context-menu>
-						</div>
-					</div>
-					<div id="source-legacy" @click="click('source-legacy', $event)">
-						<div class="source-icon"></div>
-						<div class="source-content">
-							<div class="source-title">Open Legacy Installation</div>
-							<div class="source-subtitle">Explore a legacy MPQ-based installation on your machine</div>
-							<div v-if="config.recentLegacy && config.recentLegacy.length > 0" class="source-last-opened">
-								Last Opened: <span class="link" @click.stop="click('source-legacy-recent', $event, config.recentLegacy[0])">{{ config.recentLegacy[0].path }}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div id="build-select" v-else-if="screen === 'build-select'">
-					<div class="build-select-content">
-						<div class="build-select-title">Select Build</div>
-						<div class="build-select-buttons">
-							<input v-for="(build, i) in (availableLocalBuilds || availableRemoteBuilds)" @click="click('source-build', $event, i)" :class="['expansion-icon-bg-' + build.expansionId, { disabled: isBusy }]" type="button" :value="build.label"/>
-						</div>
-						<span @click="click('return-to-source-select', $event)" class="link build-select-return">Return to Installations</span>
-					</div>
-				</div>
 			</div>
 			<div id="footer">
 				<template v-if="screen === 'config'">

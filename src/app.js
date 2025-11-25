@@ -120,8 +120,6 @@ const ResizeLayer = require('./js/components/resize-layer');
 const ContextMenu = require('./js/components/context-menu');
 const MarkdownContent = require('./js/components/markdown-content');
 
-require('./js/ui/source-select');
-
 const modules = require('./js/modules');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -738,7 +736,7 @@ document.addEventListener('click', function(e) {
 				updater.applyUpdate();
 			} else {
 				core.view.isBusy--;
-				core.view.setScreen('source-select');
+				modules.source_select.setActive();
 
 				// No update available, start checking Blender add-on.
 				blender.checkLocalVersion();
@@ -761,5 +759,5 @@ document.addEventListener('click', function(e) {
 	})();
 
 	// Set source select as the currently active interface screen.
-	core.view.setScreen('source-select');
+	modules.source_select.setActive();
 })();

@@ -48,6 +48,7 @@ const makeNewView = () => {
 		constants: constants, // Application constants including expansion definitions.
 		availableLocalBuilds: null, // Array containing local builds to display during source select.
 		availableRemoteBuilds: null, // Array containing remote builds to display during source select.
+		sourceSelectShowBuildSelect: false, // Controls whether build select is shown in source select module.
 		casc: null, // Active CASC instance.
 		cacheSize: 0, // Active size of the user cache.
 		userInputTactKey: '', // Value of manual tact key field.
