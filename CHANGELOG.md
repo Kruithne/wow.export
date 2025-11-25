@@ -5,6 +5,7 @@
 - Fixed an issue that prevented wow.export from working on machines with a UTF8 usernames.
 - Improved DB2 table loading performance by utilizing DBD manifest for direct lookups.
 - wow.export will remain functional with most features even if listfile fails to load.
+- Fixed an issue that would cause wow.export to get stuck in a "Busy" state.
 
 ## 0.2.5 (Hotfixes)
 - 21/11 Fixed an issue that prevent the "Clear Cache" option from working.

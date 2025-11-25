@@ -268,8 +268,6 @@ class CASCRemote extends CASC {
 			await this.cache.init();
 		}
 
-		core.showLoadingScreen(12);
-
 		await this.loadServerConfig();
 		await this.resolveCDNHost();
 		await this.loadConfigs();
@@ -281,6 +279,7 @@ class CASCRemote extends CASC {
 	 * @param {number} buildIndex
 	 */
 	async load(buildIndex) {
+		core.showLoadingScreen(12);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
