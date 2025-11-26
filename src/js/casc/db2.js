@@ -35,6 +35,8 @@ const preload_proxy = new Proxy({}, {
 });
 
 const create_wrapper = (reader) => {
+	let parse_promise = null;
+
 	return new Proxy(reader, {
 		get(reader_target, prop) {
 			const value = reader_target[prop];
@@ -54,8 +56,12 @@ const create_wrapper = (reader) => {
 				}
 
 				return async function(...args) {
-					if (!reader_target.isLoaded)
-						await reader_target.parse();
+					if (!reader_target.isLoaded) {
+						if (parse_promise === null)
+							parse_promise = reader_target.parse();
+
+						await parse_promise;
+					}
 
 					return value.apply(reader_target, args);
 				};
