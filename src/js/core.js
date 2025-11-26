@@ -133,6 +133,8 @@ const makeNewView = () => {
 		overrideTextureName: '', // Override texture name.
 		mapViewerMaps: [], // Available maps for the map viewer.
 		zoneViewerZones: [], // Available zones for the zone viewer.
+		zonePhases: [], // Available phases for the selected zone.
+		zonePhaseSelection: null, // Currently selected zone phase.
 		selectedZoneExpansionFilter: -1, // Currently selected zone expansion filter (-1 = show all)
 		mapViewerHasWorldModel: false, // Does selected map have a world model?
 		mapViewerTileLoader: null, // Tile loader for active map viewer map.

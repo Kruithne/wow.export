@@ -198,8 +198,8 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 
 				const height = sample_chunk_height(chunk, local_x, local_y);
 
-				// rotate 90° CCW to align with terrain mesh coordinate system
-				const height_idx = px * resolution + (resolution - 1 - py);
+				// rotate 90° CW to align with terrain mesh coordinate system
+				const height_idx = (resolution - 1 - px) * resolution + py;
 				heights[height_idx] = height;
 			}
 		}

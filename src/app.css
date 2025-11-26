@@ -2626,14 +2626,14 @@ input[type=number]::-webkit-outer-spin-button {
 	justify-content: space-between;
 }
 
-.animation-dropdown-overlay {
+.preview-dropdown-overlay {
 	position: absolute;
 	top: 10px;
 	left: 10px;
 	z-index: 1;
 }
 
-.animation-dropdown-overlay .animation-dropdown {
+.preview-dropdown-overlay select {
 	background-color: var(--background);
 	color: var(--font-primary);
 	border: 1px solid var(--border);
@@ -2643,7 +2643,7 @@ input[type=number]::-webkit-outer-spin-button {
 	min-width: 150px;
 }
 
-#tab-characters .animation-dropdown-overlay {
+#tab-characters .preview-dropdown-overlay {
 	position: fixed;
 	top: 70px;
 	left: 300px;

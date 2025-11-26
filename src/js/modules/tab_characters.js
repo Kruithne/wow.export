@@ -999,8 +999,8 @@ module.exports = {
 
 	template: `
 		<div class="tab" id="tab-characters">
-			<div v-if="$core.view.chrModelViewerAnims && $core.view.chrModelViewerAnims.length > 0" class="animation-dropdown-overlay">
-				<select class="animation-dropdown" v-model="$core.view.chrModelViewerAnimSelection">
+			<div v-if="$core.view.chrModelViewerAnims && $core.view.chrModelViewerAnims.length > 0" class="preview-dropdown-overlay">
+				<select v-model="$core.view.chrModelViewerAnimSelection">
 					<option v-for="animation in $core.view.chrModelViewerAnims" :key="animation.id" :value="animation.id">
 						{{ animation.label }}
 					</option>

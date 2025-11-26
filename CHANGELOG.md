@@ -1,6 +1,7 @@
 ## 0.2.7 (TBD)
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.
+- Added dropdown menu to select phase on zones map viewer.
 - Heightmaps are now rotated by 90° CW when exported to better align with other software.
 - Fixed numerous playback issues in the "Audio" tabs (MPQ & CASC).
 - Fixed an issue that caused GLTF animations to be missing a frame.

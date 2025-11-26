@@ -10,6 +10,7 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 
 let selected_zone_id = null;
+let selected_phase_id = null;
 
 const parse_zone_entry = (entry) => {
 	const match = entry.match(/\[(\d+)\]\31([^\31]+)\31\(([^)]+)\)/);
@@ -19,19 +20,45 @@ const parse_zone_entry = (entry) => {
 	return { id: parseInt(match[1]), zone_name: match[2], area_name: match[3] };
 };
 
-const render_zone_to_canvas = async (canvas, zone_id, set_canvas_size = true) => {
-	const ctx = canvas.getContext('2d');
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-	let ui_map_id = null;
-
+const get_zone_ui_map_id = async (zone_id) => {
 	for (const assignment of (await db2.UiMapAssignment.getAllRows()).values()) {
-		if (assignment.AreaID === zone_id) {
-			ui_map_id = assignment.UiMapID;
-			break;
+		if (assignment.AreaID === zone_id)
+			return assignment.UiMapID;
+	}
+
+	return null;
+};
+
+const get_zone_phases = async (zone_id) => {
+	const ui_map_id = await get_zone_ui_map_id(zone_id);
+	if (!ui_map_id)
+		return [];
+
+	const phases = [];
+	const seen_phases = new Set();
+
+	for (const link_entry of (await db2.UiMapXMapArt.getAllRows()).values()) {
+		if (link_entry.UiMapID === ui_map_id) {
+			const phase_id = link_entry.PhaseID ?? 0;
+			if (!seen_phases.has(phase_id)) {
+				seen_phases.add(phase_id);
+				phases.push({
+					id: phase_id,
+					label: phase_id === 0 ? 'Default' : `Phase ${phase_id}`
+				});
+			}
 		}
 	}
 
+	phases.sort((a, b) => a.id - b.id);
+	return phases;
+};
+
+const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canvas_size = true) => {
+	const ctx = canvas.getContext('2d');
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	const ui_map_id = await get_zone_ui_map_id(zone_id);
 	if (!ui_map_id) {
 		log.write('no UiMap found for zone ID %d', zone_id);
 		throw new Error('no map data available for this zone');
@@ -47,8 +74,10 @@ const render_zone_to_canvas = async (canvas, zone_id, set_canvas_size = true) =>
 
 	const linked_art_ids = [];
 	for (const link_entry of (await db2.UiMapXMapArt.getAllRows()).values()) {
-		if (link_entry.UiMapID === ui_map_id)
-			linked_art_ids.push(link_entry.UiMapArtID);
+		if (link_entry.UiMapID === ui_map_id) {
+			if (phase_id === null || link_entry.PhaseID === phase_id)
+				linked_art_ids.push(link_entry.UiMapArtID);
+		}
 	}
 
 	for (const art_id of linked_art_ids) {
@@ -78,11 +107,11 @@ const render_zone_to_canvas = async (canvas, zone_id, set_canvas_size = true) =>
 	}
 
 	if (art_styles.length === 0) {
-		log.write('no art styles found for UiMap ID %d', ui_map_id);
+		log.write('no art styles found for UiMap ID %d (phase %s)', ui_map_id, phase_id);
 		throw new Error('no art styles found for map');
 	}
 
-	log.write('found %d art styles for UiMap ID %d', art_styles.length, ui_map_id);
+	log.write('found %d art styles for UiMap ID %d (phase %s)', art_styles.length, ui_map_id, phase_id);
 	art_styles.sort((a, b) => (a.LayerIndex || 0) - (b.LayerIndex || 0));
 
 	let map_width = 0, map_height = 0;
@@ -241,7 +270,7 @@ const render_overlay_tiles = async (ctx, tiles, overlay, art_style, expected_zon
 	log.write('rendered %d/%d overlay tiles successfully', successful, tiles.length);
 };
 
-const load_zone_map = async (zone_id) => {
+const load_zone_map = async (zone_id, phase_id = null) => {
 	const canvas = document.getElementById('zone-canvas');
 	if (!canvas) {
 		log.write('zone canvas not found');
@@ -249,7 +278,7 @@ const load_zone_map = async (zone_id) => {
 	}
 
 	try {
-		await render_zone_to_canvas(canvas, zone_id, true);
+		await render_zone_to_canvas(canvas, zone_id, phase_id, true);
 	} catch (e) {
 		log.write('failed to render zone map: %s', e.message);
 		core.setToast('error', 'Failed to load map data: ' + e.message);
@@ -296,6 +325,13 @@ module.exports = {
 			</div>
 			<div class="zone-viewer-container preview-container">
 				<div class="preview-background">
+					<div v-if="$core.view.zonePhases && $core.view.zonePhases.length > 1" class="preview-dropdown-overlay">
+						<select v-model="$core.view.zonePhaseSelection">
+							<option v-for="phase in $core.view.zonePhases" :key="phase.id" :value="phase.id">
+								{{ phase.label }}
+							</option>
+						</select>
+					</div>
 					<canvas id="zone-canvas"></canvas>
 				</div>
 			</div>
@@ -324,10 +360,11 @@ module.exports = {
 				try {
 					const zone = parse_zone_entry(zone_entry);
 					const export_canvas = document.createElement('canvas');
+					const phase_id = selected_phase_id;
 
-					log.write('exporting zone map: %s (%d)', zone.zone_name, zone.id);
+					log.write('exporting zone map: %s (%d) phase %s', zone.zone_name, zone.id, phase_id);
 
-					const map_info = await render_zone_to_canvas(export_canvas, zone.id, true);
+					const map_info = await render_zone_to_canvas(export_canvas, zone.id, phase_id, true);
 
 					if (map_info.width === 0 || map_info.height === 0) {
 						log.write('no map data available for zone %d, skipping', zone.id);
@@ -338,7 +375,8 @@ module.exports = {
 					const normalized_zone_name = zone.zone_name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
 					const normalized_area_name = zone.area_name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
 
-					const filename = `Zone_${zone.id}_${normalized_zone_name}_${normalized_area_name}${ext}`;
+					const phase_suffix = phase_id !== null && phase_id !== 0 ? `_Phase${phase_id}` : '';
+					const filename = `Zone_${zone.id}_${normalized_zone_name}_${normalized_area_name}${phase_suffix}${ext}`;
 					const export_path = ExportHelper.getExportPath(path.join('zones', filename));
 
 					log.write('exporting zone map at full resolution (%dx%d): %s', map_info.width, map_info.height, filename);
@@ -368,15 +406,35 @@ module.exports = {
 				if (selected_zone_id !== zone.id) {
 					selected_zone_id = zone.id;
 					log.write('selected zone: %s (%d)', zone.zone_name, zone.id);
-					await load_zone_map(zone.id);
+
+					const phases = await get_zone_phases(zone.id);
+					this.$core.view.zonePhases = phases;
+
+					if (phases.length > 0) {
+						selected_phase_id = phases[0].id;
+						this.$core.view.zonePhaseSelection = phases[0].id;
+					} else {
+						selected_phase_id = null;
+						this.$core.view.zonePhaseSelection = null;
+					}
+
+					await load_zone_map(zone.id, selected_phase_id);
 				}
+			}
+		});
+
+		this.$core.view.$watch('zonePhaseSelection', async (new_value, old_value) => {
+			if (new_value !== old_value && selected_zone_id && !this.$core.view.isBusy) {
+				selected_phase_id = new_value;
+				log.write('zone phase changed to %s, reloading zone %d', new_value, selected_zone_id);
+				await load_zone_map(selected_zone_id, selected_phase_id);
 			}
 		});
 
 		this.$core.view.$watch('config.showZoneOverlays', async (new_value, old_value) => {
 			if (new_value !== old_value && selected_zone_id && !this.$core.view.isBusy) {
 				log.write('zone overlay setting changed, reloading zone %d', selected_zone_id);
-				await load_zone_map(selected_zone_id);
+				await load_zone_map(selected_zone_id, selected_phase_id);
 			}
 		});
 

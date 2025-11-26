@@ -526,8 +526,8 @@ module.exports = {
 				<div class="preview-background" id="model-preview">
 					<input v-if="$core.view.config.modelViewerShowBackground" type="color" id="background-color-input" v-model="$core.view.config.modelViewerBackgroundColor" title="Click to change background color"/>
 					<component :is="$components.ModelViewer" v-if="$core.view.modelViewerContext" :context="$core.view.modelViewerContext"></component>
-					<div v-if="$core.view.modelViewerAnims && $core.view.modelViewerAnims.length > 0 && !$core.view.modelTexturePreviewURL" class="animation-dropdown-overlay">
-						<select class="animation-dropdown" v-model="$core.view.modelViewerAnimSelection">
+					<div v-if="$core.view.modelViewerAnims && $core.view.modelViewerAnims.length > 0 && !$core.view.modelTexturePreviewURL" class="preview-dropdown-overlay">
+						<select v-model="$core.view.modelViewerAnimSelection">
 							<option v-for="animation in $core.view.modelViewerAnims" :key="animation.id" :value="animation.id">
 								{{ animation.label }}
 							</option>
