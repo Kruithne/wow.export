@@ -2,6 +2,7 @@
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Fixed numerous playback issues in the "Audio" tabs (MPQ & CASC).
 - Fixed an issue that caused GLTF animations to be missing a frame.
+- Fixed an issue that would cause wow.export to close immediately after updating.
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.

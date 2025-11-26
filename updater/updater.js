@@ -171,7 +171,10 @@ async function is_file_locked(file) {
 		const binary = process.platform === 'win32' ? 'wow.export.exe' : 'wow.export';
 		log('Re-launching main process %s (%s)', binary, process.platform);
 		if (binary) {
-			const child = Bun.spawn([path.join(install_dir, binary)]);
+			const child = Bun.spawn([path.join(install_dir, binary)], {
+				detached: true,
+				stdio: ['ignore', 'ignore', 'ignore']
+			});
 			child.unref();
 			log('wow.export has been updated, have fun!');
 			await Bun.sleep(5000);
