@@ -392,30 +392,31 @@ module.exports = {
 		},
 
 		/**
-		 * Set the map to a sensible default position. For most maps this will be centered
-		 * on 0, 0. For maps without a chunk at 0, 0 it will center on the first chunk that
-		 * is activated in the mask (providing one is set).
+		 * Set the map to a sensible default position. Centers on the tile closest
+		 * to 0,0 (tile 32,32) that is available in the mask.
 		 */
 		setToDefaultPosition: function() {
 			let posX = 0, posY = 0;
 
-			// We can only search for a chunk if we have a mask set.
 			if (this.mask) {
-				// Check if we have a center chunk, if so we can leave the default as 0,0.
-				const center = Math.floor(MAP_COORD_BASE / TILE_SIZE);
-				const centerIndex = this.mask[(center * MAP_SIZE) + center];
-				
-				// No center chunk, find first chunk available.
-				if (centerIndex !== 1) {
-					const index = this.mask.findIndex(e => e === 1);
+				const center = 32;
+				let min_dist = Infinity;
 
-					if (index > -1) {
-						// Translate the index into chunk co-ordinates, expand those to in-game co-ordinates
-						// and then offset by half a chunk so that we are centered on the chunk.
-						const chunkX = index % MAP_SIZE;
-						const chunkY = Math.floor(index / MAP_SIZE);
-						posX = ((chunkX - 32) * TILE_SIZE) * -1;
-						posY = ((chunkY - 32) * TILE_SIZE) * -1;
+				for (let i = 0; i < this.mask.length; i++) {
+					if (this.mask[i] !== 1)
+						continue;
+
+					const x = Math.floor(i / MAP_SIZE);
+					const y = i % MAP_SIZE;
+					const dist = Math.abs(x - center) + Math.abs(y - center);
+
+					if (dist < min_dist) {
+						min_dist = dist;
+						posX = ((x - 32) * TILE_SIZE) * -1;
+						posY = ((y - 32) * TILE_SIZE) * -1;
+
+						if (dist === 0)
+							break;
 					}
 				}
 			}

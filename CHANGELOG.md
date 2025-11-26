@@ -1,8 +1,11 @@
 ## 0.2.7 (TBD)
 - Optimized "Maps" tab to load 33x (97%) faster.
+- Optimized map viewer to load initial tiles must faster.
 - Fixed numerous playback issues in the "Audio" tabs (MPQ & CASC).
 - Fixed an issue that caused GLTF animations to be missing a frame.
 - Fixed an issue that would cause wow.export to close immediately after updating.
+- Fixed an issue that caused the map viewer to not auto-center on available tiles on a map.
+- Fixed an issue that caused map tiles to not immediately render when opening a map.
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.

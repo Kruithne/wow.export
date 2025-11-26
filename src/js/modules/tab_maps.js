@@ -317,6 +317,7 @@ module.exports = {
 
 			selected_wdt = null;
 			this.$core.view.mapViewerHasWorldModel = false;
+			this.$core.view.mapViewerSelection.splice(0);
 
 			const wdt_path = util.format('world/maps/%s/%s.wdt', map_dir_lower, map_dir_lower);
 			log.write('loading map preview for %s (%d)', map_dir_lower, mapID);
@@ -328,7 +329,10 @@ module.exports = {
 				if (wdt.worldModelPlacement)
 					this.$core.view.mapViewerHasWorldModel = true;
 
+				// set mask before map so map-viewer has tile data for positioning
 				this.$core.view.mapViewerChunkMask = wdt.tiles;
+				this.$core.view.mapViewerSelectedMap = mapID;
+				this.$core.view.mapViewerSelectedDir = mapDir;
 
 				const has_terrain = wdt.tiles && wdt.tiles.some(tile => tile === 1);
 				const has_global_wmo = wdt.worldModelPlacement !== undefined;
@@ -338,11 +342,9 @@ module.exports = {
 			}).catch(e => {
 				log.write('cannot load %s, defaulting to all chunks enabled', wdt_path);
 				this.$core.view.mapViewerChunkMask = null;
+				this.$core.view.mapViewerSelectedMap = mapID;
+				this.$core.view.mapViewerSelectedDir = mapDir;
 			});
-
-			this.$core.view.mapViewerSelection.splice(0);
-			this.$core.view.mapViewerSelectedMap = mapID;
-			this.$core.view.mapViewerSelectedDir = mapDir;
 		},
 
 		async export_map_wmo() {
