@@ -2946,3 +2946,59 @@ input[type=number]::-webkit-outer-spin-button {
 #home-changelog p {
 	font-size: 1.2em;
 }
+
+@media (max-height: 899px) {
+	#home-help-buttons {
+		display: none;
+	}
+}
+
+@media (max-height: 799px) {
+	#source-select {
+		gap: 15px;
+	}
+
+	#source-select > div {
+		min-height: 60px;
+		padding: 15px 20px;
+		gap: 15px;
+	}
+
+	#source-select > div .source-icon {
+		width: 50px;
+		height: 50px;
+	}
+
+	#source-select > div .source-content {
+		gap: 4px;
+	}
+
+	#source-select > div .source-title {
+		font-size: 18px;
+	}
+
+	#source-select > div .source-subtitle {
+		font-size: 14px;
+	}
+
+	#source-select > div .source-last-opened,
+	#source-select > div .source-cdn-region {
+		font-size: 13px;
+		margin-top: 2px;
+	}
+}
+
+@media (max-height: 849px) {
+	#build-select .build-select-buttons {
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 10px;
+		min-width: unset;
+		max-width: 1020px;
+	}
+
+	#build-select .build-select-buttons input[type=button] {
+		width: 500px;
+	}
+}

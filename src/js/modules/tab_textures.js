@@ -294,7 +294,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterTextures" placeholder="Filter textures..."/>
 			</div>
 			<div class="preview-container">
-				<div class="preview-info" v-if="$core.view.config.showTextureInfo && $core.view.texturePreviewInfo.length > 0">{{ $core.view.texturePreviewInfo }}</div>
+				<div class="preview-info" v-if="$core.view.texturePreviewInfo.length > 0">{{ $core.view.texturePreviewInfo }}</div>
 				<ul class="preview-channels" v-if="$core.view.texturePreviewURL.length > 0">
 					<li id="channel-red" :class="{ selected: ($core.view.config.exportChannelMask & 0b1) }" @click.self="$core.view.config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
 					<li id="channel-green" :class="{ selected: ($core.view.config.exportChannelMask & 0b10) }" @click.self="$core.view.config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
@@ -313,15 +313,7 @@ module.exports = {
 			<div class="preview-controls">
 				<label class="ui-checkbox">
 					<input type="checkbox" v-model="$core.view.config.showTextureAtlas"/>
-					<span>Show Atlas Regions</span>
-				</label>
-				<label class="ui-checkbox">
-					<input type="checkbox" v-model="$core.view.config.showTextureInfo"/>
-					<span>Show Info</span>
-				</label>
-				<label class="ui-checkbox">
-					<input type="checkbox" :checked="($core.view.config.exportChannelMask & 0b1000)" @change="$event.target.checked ? $core.view.config.exportChannelMask |= 0b1000 : $core.view.config.exportChannelMask &= 0b0111"/>
-					<span>Transparency</span>
+					<span>Atlas Regions</span>
 				</label>
 				<input v-if="is_baked_npc_texture()" type="button" value="Apply to Character" @click="apply_baked_npc_texture" :class="{ disabled: $core.view.isBusy }" style="margin-right: 5px"/>
 				<input v-if="$core.view.config.showTextureAtlas" type="button" value="Export Atlas Regions" @click="export_atlas_regions" :class="{ disabled: $core.view.isBusy }" style="margin-right: 5px"/>

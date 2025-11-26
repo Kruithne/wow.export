@@ -120,7 +120,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterTextures" placeholder="Filter textures..."/>
 			</div>
 			<div class="preview-container">
-				<div class="preview-info" v-if="$core.view.config.showTextureInfo && $core.view.texturePreviewInfo.length > 0">{{ $core.view.texturePreviewInfo }}</div>
+				<div class="preview-info" v-if="$core.view.texturePreviewInfo.length > 0">{{ $core.view.texturePreviewInfo }}</div>
 				<ul class="preview-channels" v-if="$core.view.texturePreviewURL.length > 0">
 					<li id="channel-red" :class="{ selected: ($core.view.config.exportChannelMask & 0b1) }" @click.self="$core.view.config.exportChannelMask ^= 0b1" title="Toggle red colour channel.">R</li>
 					<li id="channel-green" :class="{ selected: ($core.view.config.exportChannelMask & 0b10) }" @click.self="$core.view.config.exportChannelMask ^= 0b10" title="Toggle green colour channel.">G</li>
@@ -132,14 +132,6 @@ module.exports = {
 				</div>
 			</div>
 			<div class="preview-controls">
-				<label class="ui-checkbox">
-					<input type="checkbox" v-model="$core.view.config.showTextureInfo"/>
-					<span>Show Info</span>
-				</label>
-				<label class="ui-checkbox">
-					<input type="checkbox" :checked="($core.view.config.exportChannelMask & 0b1000)" @change="$event.target.checked ? $core.view.config.exportChannelMask |= 0b1000 : $core.view.config.exportChannelMask &= 0b0111"/>
-					<span>Transparency</span>
-				</label>
 				<component :is="$components.MenuButton" :options="$core.view.menuButtonTextures" :default="$core.view.config.exportTextureFormat" @change="$core.view.config.exportTextureFormat = $event" :disabled="$core.view.isBusy" @click="export_textures"></component>
 			</div>
 		</div>

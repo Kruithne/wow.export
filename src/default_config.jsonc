@@ -40,7 +40,6 @@
 	"exportTextureFormat": "PNG",
 	"exportWebPQuality": 90,
 	"exportChannelMask": 15,
-	"showTextureInfo": true,
 	"showTextureAtlas": false,
 	"exportModelFormat": "OBJ",
 	"exportCharacterFormat": "GLTF",
