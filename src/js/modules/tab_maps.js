@@ -242,16 +242,16 @@ module.exports = {
 				</div>
 			</div>
 			<div class="list-container" id="maps-list-container">
-				<listbox-maps id="listbox-maps" class="listbox-icons" v-model:selection="$core.view.selectionMaps" :items="$core.view.mapViewerMaps" :filter="$core.view.userInputFilterMaps" :expansion-filter="$core.view.selectedExpansionFilter" :keyinput="true" :single="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></listbox-maps>
+				<component :is="$components.ListboxMaps" id="listbox-maps" class="listbox-icons" v-model:selection="$core.view.selectionMaps" :items="$core.view.mapViewerMaps" :filter="$core.view.userInputFilterMaps" :expansion-filter="$core.view.selectedExpansionFilter" :keyinput="true" :single="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterMaps" placeholder="Filter maps..."/>
 			</div>
-			<map-viewer :map="$core.view.mapViewerSelectedMap" :loader="$core.view.mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="$core.view.mapViewerChunkMask" v-model:selection="$core.view.mapViewerSelection"></map-viewer>
+			<component :is="$components.MapViewer" :map="$core.view.mapViewerSelectedMap" :loader="$core.view.mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="$core.view.mapViewerChunkMask" v-model:selection="$core.view.mapViewerSelection"></component>
 			<div class="spaced-preview-controls">
 				<input type="button" value="Export Global WMO" @click="export_map_wmo" :class="{ disabled: $core.view.isBusy || !$core.view.mapViewerHasWorldModel }"/>
-				<menu-button :options="$core.view.menuButtonMapExport" :default="$core.view.config.exportMapFormat" @change="$core.view.config.exportMapFormat = $event" :disabled="$core.view.isBusy || $core.view.mapViewerSelection.length === 0" @click="export_map"></menu-button>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonMapExport" :default="$core.view.config.exportMapFormat" @change="$core.view.config.exportMapFormat = $event" :disabled="$core.view.isBusy || $core.view.mapViewerSelection.length === 0" @click="export_map"></component>
 			</div>
 
 			<div id="maps-sidebar" class="sidebar">
@@ -295,10 +295,10 @@ module.exports = {
 				</label>
 				<template v-if="!$core.view.config.mapsExportRaw">
 					<span class="header">Terrain Texture Quality</span>
-					<menu-button :options="$core.view.menuButtonTextureQuality" :default="$core.view.config.exportMapQuality" @change="$core.view.config.exportMapQuality = $event" :disabled="$core.view.isBusy" :dropdown="true"></menu-button>
+					<component :is="$components.MenuButton" :options="$core.view.menuButtonTextureQuality" :default="$core.view.config.exportMapQuality" @change="$core.view.config.exportMapQuality = $event" :disabled="$core.view.isBusy" :dropdown="true"></component>
 					<span class="header">Heightmaps</span>
-					<menu-button :options="$core.view.menuButtonHeightmapResolution" :default="$core.view.config.heightmapResolution" @change="$core.view.config.heightmapResolution = $event" :disabled="$core.view.isBusy" :dropdown="true"></menu-button>
-					<menu-button :options="$core.view.menuButtonHeightmapBitDepth" :default="$core.view.config.heightmapBitDepth" @change="$core.view.config.heightmapBitDepth = $event" :disabled="$core.view.isBusy" :dropdown="true" style="margin-top: 5px"></menu-button>
+					<component :is="$components.MenuButton" :options="$core.view.menuButtonHeightmapResolution" :default="$core.view.config.heightmapResolution" @change="$core.view.config.heightmapResolution = $event" :disabled="$core.view.isBusy" :dropdown="true"></component>
+					<component :is="$components.MenuButton" :options="$core.view.menuButtonHeightmapBitDepth" :default="$core.view.config.heightmapBitDepth" @change="$core.view.config.heightmapBitDepth = $event" :disabled="$core.view.isBusy" :dropdown="true" style="margin-top: 5px"></component>
 					<template v-if="$core.view.config.heightmapResolution === -1">
 						<span class="header" style="margin-top: 10px">Heightmap Resolution</span>
 						<input type="number" v-model.number="$core.view.config.heightmapCustomResolution" :disabled="$core.view.isBusy" min="1" step="1" style="width: 100%; margin: unset; margin-top: 5px; padding: 10px; box-sizing: border-box;">

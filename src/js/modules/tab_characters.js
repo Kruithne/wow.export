@@ -1017,7 +1017,7 @@ module.exports = {
 					<li v-for="region of $core.view.chrImportRegions" :class="{ selected: $core.view.chrImportSelectedRegion === region }" @click.stop="$core.view.chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
 				</ul>
 				<input type="text" v-model="$core.view.chrImportChrName" placeholder="Character Name"/>
-				<combo-box v-model:value="$core.view.chrImportSelectedRealm" :source="$core.view.chrImportRealms" placeholder="Character Realm" maxheight="10"></combo-box>
+				<component :is="$components.ComboBox" v-model:value="$core.view.chrImportSelectedRealm" :source="$core.view.chrImportRealms" placeholder="Character Realm" maxheight="10"></component>
 				<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
 					<input type="checkbox" v-model="$core.view.chrImportLoadVisage"/>
 					<span>Load visage model (Dracthyr/Worgen)</span>
@@ -1121,7 +1121,7 @@ module.exports = {
 			<div class="char-preview preview-container">
 				<div class="preview-background">
 					<div v-if="$core.view.chrModelLoading" class="chr-model-loading-spinner"></div>
-					<model-viewer v-if="$core.view.chrModelViewerContext" :context="$core.view.chrModelViewerContext"></model-viewer>
+					<component :is="$components.ModelViewer" v-if="$core.view.chrModelViewerContext" :context="$core.view.chrModelViewerContext"></component>
 					<div v-if="$core.view.chrCustBakedNPCTexture" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 100;">
 						<input type="button" value="Remove Baked Texture" @click="remove_baked_npc_texture" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer; font-weight: bold;"/>
 					</div>
@@ -1133,7 +1133,7 @@ module.exports = {
 								<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 								<span>Export animations</span>
 							</label>
-							<menu-button :options="$core.view.menuButtonCharacterExport" :default="$core.view.config.exportCharacterFormat" @change="$core.view.config.exportCharacterFormat = $event" :disabled="$core.view.isBusy" @click="export_character"></menu-button>
+							<component :is="$components.MenuButton" :options="$core.view.menuButtonCharacterExport" :default="$core.view.config.exportCharacterFormat" @change="$core.view.config.exportCharacterFormat = $event" :disabled="$core.view.isBusy" @click="export_character"></component>
 						</div>
 						<div class="character-export-menu" v-show="$core.view.chrExportMenu == 'textures'">
 							<div class="texture-preview-panel" id="chr-texture-preview">

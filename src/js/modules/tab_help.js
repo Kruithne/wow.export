@@ -115,7 +115,7 @@ module.exports = {
 				</div>
 			</div>
 			<div class="help-article-container">
-				<markdown-content v-if="selected_article" :content="selected_article.body"></markdown-content>
+				<component :is="$components.MarkdownContent" v-if="selected_article" :content="selected_article.body"></component>
 				<div v-else class="help-placeholder">Select an article to view</div>
 			</div>
 			<input type="button" value="Go Back" @click="go_back"/>

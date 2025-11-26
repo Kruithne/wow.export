@@ -102,23 +102,6 @@ const THREE = require('three');
 window.THREE = THREE;
 THREE.ColorManagement.enabled = true;
 
-const Listbox = require('./js/components/listbox');
-const ListboxMaps = require('./js/components/listbox-maps');
-const ListboxZones = require('./js/components/listbox-zones');
-const Listboxb = require('./js/components/listboxb');
-const Itemlistbox = require('./js/components/itemlistbox');
-const Checkboxlist = require('./js/components/checkboxlist');
-const MenuButton = require('./js/components/menu-button');
-const FileField = require('./js/components/file-field');
-const ComboBox = require('./js/components/combobox');
-const Slider = require('./js/components/slider');
-const ModelViewer = require('./js/components/model-viewer');
-const MapViewer = require('./js/components/map-viewer');
-const DataTable = require('./js/components/data-table');
-const ResizeLayer = require('./js/components/resize-layer');
-const ContextMenu = require('./js/components/context-menu');
-const MarkdownContent = require('./js/components/markdown-content');
-
 const modules = require('./js/modules');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
@@ -458,22 +441,7 @@ document.addEventListener('click', function(e) {
 	// Interlink error handling for Vue.
 	app.config.errorHandler = err => crash('ERR_VUE', err.message);
 
-	app.component('Listbox', Listbox);
-	app.component('ListboxMaps', ListboxMaps);
-	app.component('ListboxZones', ListboxZones);
-	app.component('Listboxb', Listboxb);
-	app.component('Itemlistbox', Itemlistbox);
-	app.component('Checkboxlist', Checkboxlist);
-	app.component('MenuButton', MenuButton);
-	app.component('FileField', FileField);
-	app.component('ComboBox', ComboBox);
-	app.component('Slider', Slider);
-	app.component('ModelViewer', ModelViewer);
-	app.component('MapViewer', MapViewer);
-	app.component('DataTable', DataTable);
-	app.component('ResizeLayer', ResizeLayer);
-	app.component('ContextMenu', ContextMenu);
-	app.component('MarkdownContent', MarkdownContent);
+	modules.register_components(app);
 	app.mount('#container');
 
 	await modules.initialize(core);

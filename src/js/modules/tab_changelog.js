@@ -30,7 +30,7 @@ module.exports = {
 	template: `
 		<div id="changelog">
 			<h1>Changelog</h1>
-			<markdown-content id="changelog-text" :content="content"></markdown-content>
+			<component :is="$components.MarkdownContent" id="changelog-text" :content="content"></component>
 			<input type="button" value="Go Back" @click="go_back"/>
 		</div>
 	`,

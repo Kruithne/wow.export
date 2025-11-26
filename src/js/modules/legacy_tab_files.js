@@ -71,7 +71,7 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="legacy-tab-files">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionRaw" :items="$core.view.listfileRaw" :filter="$core.view.userInputFilterRaw" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></listbox>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionRaw" :items="$core.view.listfileRaw" :filter="$core.view.userInputFilterRaw" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></component>
 			</div>
 			<div id="tab-legacy-files-tray">
 				<div class="filter">

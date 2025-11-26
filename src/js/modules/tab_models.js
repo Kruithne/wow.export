@@ -484,18 +484,18 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-models">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionModels" v-model:filter="$core.view.userInputFilterModels" :items="$core.view.listfileModels" :override="$core.view.overrideModelList" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="$core.view.modelQuickFilters"></listbox>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionModels" v-model:filter="$core.view.userInputFilterModels" :items="$core.view.listfileModels" :override="$core.view.overrideModelList" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="$core.view.modelQuickFilters"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterModels" placeholder="Filter models..."/>
 			</div>
 			<div class="preview-container">
-				<resize-layer @resize="$core.view.onTextureRibbonResize" id="texture-ribbon" v-if="$core.view.config.modelViewerShowTextures && $core.view.textureRibbonStack.length > 0">
+				<component :is="$components.ResizeLayer" @resize="$core.view.onTextureRibbonResize" id="texture-ribbon" v-if="$core.view.config.modelViewerShowTextures && $core.view.textureRibbonStack.length > 0">
 					<div id="texture-ribbon-prev" v-if="$core.view.textureRibbonPage > 0" @click.self="$core.view.textureRibbonPage--"></div>
 					<div v-for="slot in $core.view.textureRibbonDisplay" :title="slot.displayName" :style="{ backgroundImage: 'url(' + slot.src + ')' }" class="slot" @click="$core.view.contextMenus.nodeTextureRibbon = slot"></div>
 					<div id="texture-ribbon-next" v-if="$core.view.textureRibbonPage < $core.view.textureRibbonMaxPages - 1" @click.self="$core.view.textureRibbonPage++"></div>
-					<context-menu :node="$core.view.contextMenus.nodeTextureRibbon" v-slot:default="context" @close="$core.view.contextMenus.nodeTextureRibbon = null">
+					<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeTextureRibbon" v-slot:default="context" @close="$core.view.contextMenus.nodeTextureRibbon = null">
 						<span @click.self="preview_texture(context.node.fileDataID, context.node.displayName)">Preview {{ context.node.displayName }}</span>
 						<span @click.self="export_ribbon_texture(context.node.fileDataID, context.node.displayName)">Export {{ context.node.displayName }}</span>
 						<span @click.self="$core.view.goToTexture(context.node.fileDataID)">Go to {{ context.node.displayName }}</span>
@@ -503,8 +503,8 @@ module.exports = {
 						<span @click.self="$core.view.copyToClipboard(context.node.displayName)">Copy texture name to clipboard</span>
 						<span @click.self="$core.view.copyToClipboard(context.node.fileName)">Copy file path to clipboard</span>
 						<span @click.self="$core.view.copyToClipboard($core.view.getExportPath(context.node.fileName))">Copy export path to clipboard</span>
-					</context-menu>
-				</resize-layer>
+					</component>
+				</component>
 				<div id="model-texture-preview" v-if="$core.view.modelTexturePreviewURL.length > 0" class="preview-background">
 					<div id="model-texture-preview-toast" @click="$core.view.modelTexturePreviewURL = ''">Close Preview</div>
 					<div class="image" :style="{ 'max-width': $core.view.modelTexturePreviewWidth + 'px', 'max-height': $core.view.modelTexturePreviewHeight + 'px' }">
@@ -525,7 +525,7 @@ module.exports = {
 				</div>
 				<div class="preview-background" id="model-preview">
 					<input v-if="$core.view.config.modelViewerShowBackground" type="color" id="background-color-input" v-model="$core.view.config.modelViewerBackgroundColor" title="Click to change background color"/>
-					<model-viewer v-if="$core.view.modelViewerContext" :context="$core.view.modelViewerContext"></model-viewer>
+					<component :is="$components.ModelViewer" v-if="$core.view.modelViewerContext" :context="$core.view.modelViewerContext"></component>
 					<div v-if="$core.view.modelViewerAnims && $core.view.modelViewerAnims.length > 0 && !$core.view.modelTexturePreviewURL" class="animation-dropdown-overlay">
 						<select class="animation-dropdown" v-model="$core.view.modelViewerAnimSelection">
 							<option v-for="animation in $core.view.modelViewerAnims" :key="animation.id" :value="animation.id">
@@ -536,7 +536,7 @@ module.exports = {
 				</div>
 			</div>
 			<div class="preview-controls">
-				<menu-button :options="$core.view.menuButtonModels" :default="$core.view.config.exportModelFormat" @change="$core.view.config.exportModelFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_model"></menu-button>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonModels" :default="$core.view.config.exportModelFormat" @change="$core.view.config.exportModelFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_model"></component>
 			</div>
 			<div id="model-sidebar" class="sidebar">
 				<span class="header">Preview</span>
@@ -611,23 +611,23 @@ module.exports = {
 				</template>
 				<template v-if="$core.view.modelViewerActiveType === 'm2'">
 					<span class="header">Geosets</span>
-					<checkboxlist :items="$core.view.modelViewerGeosets"></checkboxlist>
+					<component :is="$components.Checkboxlist" :items="$core.view.modelViewerGeosets"></component>
 					<div class="list-toggles">
 						<a @click="$core.view.setAllGeosets(true, $core.view.modelViewerGeosets)">Enable All</a> / <a @click="$core.view.setAllGeosets(false, $core.view.modelViewerGeosets)">Disable All</a>
 					</div>
 					<template v-if="$core.view.config.modelsExportTextures">
 						<span class="header">Skins</span>
-						<listboxb :items="$core.view.modelViewerSkins" v-model:selection="$core.view.modelViewerSkinsSelection" :single="true"></listboxb>
+						<component :is="$components.Listboxb" :items="$core.view.modelViewerSkins" v-model:selection="$core.view.modelViewerSkinsSelection" :single="true"></component>
 					</template>
 				</template>
 				<template v-if="$core.view.modelViewerActiveType === 'wmo'">
 					<span class="header">WMO Groups</span>
-					<checkboxlist :items="$core.view.modelViewerWMOGroups"></checkboxlist>
+					<component :is="$components.Checkboxlist" :items="$core.view.modelViewerWMOGroups"></component>
 					<div class="list-toggles">
 						<a @click="$core.view.setAllWMOGroups(true)">Enable All</a> / <a @click="$core.view.setAllWMOGroups(false)">Disable All</a>
 					</div>
 					<span class="header">Doodad Sets</span>
-					<checkboxlist :items="$core.view.modelViewerWMOSets"></checkboxlist>
+					<component :is="$components.Checkboxlist" :items="$core.view.modelViewerWMOSets"></component>
 				</template>
 			</div>
 		</div>

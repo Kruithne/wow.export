@@ -287,7 +287,7 @@ module.exports = {
 		</div>
 		<div class="tab list-tab" id="tab-textures">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionTextures" :items="$core.view.listfileTextures" :override="$core.view.overrideTextureList" :filter="$core.view.userInputFilterTextures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionTextures" :items="$core.view.listfileTextures" :override="$core.view.overrideTextureList" :filter="$core.view.userInputFilterTextures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -325,7 +325,7 @@ module.exports = {
 				</label>
 				<input v-if="is_baked_npc_texture()" type="button" value="Apply to Character" @click="apply_baked_npc_texture" :class="{ disabled: $core.view.isBusy }" style="margin-right: 5px"/>
 				<input v-if="$core.view.config.showTextureAtlas" type="button" value="Export Atlas Regions" @click="export_atlas_regions" :class="{ disabled: $core.view.isBusy }" style="margin-right: 5px"/>
-				<menu-button :options="$core.view.menuButtonTextures" :default="$core.view.config.exportTextureFormat" @change="$core.view.config.exportTextureFormat = $event" :disabled="$core.view.isBusy" @click="export_textures"></menu-button>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonTextures" :default="$core.view.config.exportTextureFormat" @change="$core.view.config.exportTextureFormat = $event" :disabled="$core.view.isBusy" @click="export_textures"></component>
 			</div>
 		</div>
 	`,

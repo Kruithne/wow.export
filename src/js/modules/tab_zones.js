@@ -281,7 +281,7 @@ module.exports = {
 				</div>
 			</div>
 			<div class="list-container">
-				<listbox-zones id="listbox-zones" class="listbox-icons" v-model:selection="$core.view.selectionZones" :items="$core.view.zoneViewerZones" :filter="$core.view.userInputFilterZones" :expansion-filter="$core.view.selectedZoneExpansionFilter" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></listbox-zones>
+				<component :is="$components.ListboxZones" id="listbox-zones" class="listbox-icons" v-model:selection="$core.view.selectionZones" :items="$core.view.zoneViewerZones" :filter="$core.view.userInputFilterZones" :expansion-filter="$core.view.selectedZoneExpansionFilter" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>

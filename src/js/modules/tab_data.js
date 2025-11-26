@@ -74,16 +74,16 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-data">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionDB2s" :items="$core.view.dbdManifest" :filter="$core.view.userInputFilterDB2s" :keyinput="true"
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionDB2s" :items="$core.view.dbdManifest" :filter="$core.view.userInputFilterDB2s" :keyinput="true"
 					:regex="$core.view.config.regexFilters" :copydir="$core.view.config.copyFileDirectories" :pasteselection="$core.view.config.pasteSelection"
-					:copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></listbox>
+					:copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterDB2s" placeholder="Filter DB2s.." />
 			</div>
 			<div class="list-container">
-				<data-table :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event"></data-table>
+				<component :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event"></component>
 			</div>
 			<div class="filter data-table-filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>

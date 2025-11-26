@@ -35,12 +35,12 @@ module.exports = {
 					<div class="source-cdn-region" v-if="$core.view.selectedCDNRegion">
 						Region: {{ $core.view.selectedCDNRegion.name }} <span class="link" @click.stop="$core.view.contextMenus.stateCDNRegion = true">(<span>Change</span>)</span>
 					</div>
-					<context-menu @close="$core.view.contextMenus.stateCDNRegion = false" :node="$core.view.contextMenus.stateCDNRegion" id="menu-cdn-region">
+					<component :is="$components.ContextMenu" @close="$core.view.contextMenus.stateCDNRegion = false" :node="$core.view.contextMenus.stateCDNRegion" id="menu-cdn-region">
 						<span v-for="region in $core.view.cdnRegions" @click.self="set_selected_cdn(region)">
 							{{ region.name }}
 							<span v-if="region.delay !== null" style="opacity: 0.7; font-size: 12px;">{{ region.delay < 0 ? 'N/A' : region.delay + 'ms' }}</span>
 						</span>
-					</context-menu>
+					</component>
 				</div>
 			</div>
 			<div id="source-legacy" @click="click_source_legacy">

@@ -61,7 +61,7 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-install">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionInstall" :items="$core.view.listfileInstall" :filter="$core.view.userInputFilterInstall" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="install file" persistscrollkey="install"></listbox>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionInstall" :items="$core.view.listfileInstall" :filter="$core.view.userInputFilterInstall" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="install file" persistscrollkey="install"></component>
 			</div>
 			<div id="tab-install-tray">
 				<div class="filter">

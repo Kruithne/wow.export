@@ -99,7 +99,7 @@ module.exports = {
 	/**
 	 * Invoked when this component is about to be destroyed.
 	 */
-	beforeDestory: function() {
+	beforeUnmount: function() {
 		// Unregister window resize listener.
 		window.removeEventListener('resize', this.onResize);
 

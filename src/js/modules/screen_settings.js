@@ -23,7 +23,7 @@ module.exports = {
 				<h1>Export Directory</h1>
 				<p>Local directory where files will be exported to.</p>
 				<p v-if="is_edit_export_path_concerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
-				<file-field v-model="$core.view.configEdit.exportDirectory" :class="{ concern: is_edit_export_path_concerning }"></file-field>
+				<component :is="$components.FileField" v-model="$core.view.configEdit.exportDirectory" :class="{ concern: is_edit_export_path_concerning }"></component>
 			</div>
 			<div>
 				<h1>Scroll Speed</h1>
@@ -141,7 +141,7 @@ module.exports = {
 				<p>Which locale to use for file reading. This only affects game files.</p>
 				<p>This should match the locale of your client when using local installations.</p>
 				<div style="width: 150px">
-					<menu-button class="spaced" :dropdown="true" :options="available_locale_keys" :default="selected_locale_key" @change="$core.view.configEdit.cascLocale = $core.view.availableLocale.flags[$event]"></menu-button>
+					<component :is="$components.MenuButton" class="spaced" :dropdown="true" :options="available_locale_keys" :default="selected_locale_key" @change="$core.view.configEdit.cascLocale = $core.view.availableLocale.flags[$event]"></component>
 				</div>
 			</div>
 			<div>

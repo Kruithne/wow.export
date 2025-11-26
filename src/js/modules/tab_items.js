@@ -216,14 +216,14 @@ module.exports = {
 	template: `
 		<div class="tab" id="tab-items">
 			<div class="list-container">
-				<itemlistbox id="listbox-items" v-model:selection="$core.view.selectionItems" :items="$core.view.listfileItems" :filter="$core.view.userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="$core.view.contextMenus.nodeItem = $event"></itemlistbox>
-				<context-menu :node="$core.view.contextMenus.nodeItem" v-slot:default="context" @close="$core.view.contextMenus.nodeItem = null">
+				<component :is="$components.Itemlistbox" id="listbox-items" v-model:selection="$core.view.selectionItems" :items="$core.view.listfileItems" :filter="$core.view.userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="$core.view.contextMenus.nodeItem = $event"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeItem" v-slot:default="context" @close="$core.view.contextMenus.nodeItem = null">
 					<span v-if="context.node.modelCount > 0" @click.self="view_models(context.node)">View related models ({{ context.node.modelCount }})</span>
 					<span v-if="context.node.textureCount > 0" @click.self="view_textures(context.node)">View related textures ({{ context.node.textureCount }})</span>
 					<span @click.self="copy_to_clipboard(context.node.name)">Copy item name to clipboard</span>
 					<span @click.self="copy_to_clipboard(context.node.id)">Copy item ID to clipboard</span>
 					<span @click.self="view_on_wowhead(context.node.id)">View item on Wowhead (web)</span>
-				</context-menu>
+				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -231,7 +231,7 @@ module.exports = {
 			</div>
 			<div id="items-sidebar" class="sidebar">
 				<span class="header">Item Types</span>
-				<checkboxlist :items="$core.view.itemViewerTypeMask"></checkboxlist>
+				<component :is="$components.Checkboxlist" :items="$core.view.itemViewerTypeMask"></component>
 				<div class="list-toggles">
 					<a @click="set_all_item_types(true)">Enable All</a> / <a @click="set_all_item_types(false)">Disable All</a>
 				</div>

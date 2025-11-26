@@ -113,7 +113,7 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="legacy-tab-textures">
 			<div class="list-container">
-				<listbox v-model:selection="$core.view.selectionTextures" :items="$core.view.listfileTextures" :filter="$core.view.userInputFilterTextures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></listbox>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionTextures" :items="$core.view.listfileTextures" :filter="$core.view.userInputFilterTextures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="texture" persistscrollkey="textures"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -140,7 +140,7 @@ module.exports = {
 					<input type="checkbox" :checked="($core.view.config.exportChannelMask & 0b1000)" @change="$event.target.checked ? $core.view.config.exportChannelMask |= 0b1000 : $core.view.config.exportChannelMask &= 0b0111"/>
 					<span>Transparency</span>
 				</label>
-				<menu-button :options="$core.view.menuButtonTextures" :default="$core.view.config.exportTextureFormat" @change="$core.view.config.exportTextureFormat = $event" :disabled="$core.view.isBusy" @click="export_textures"></menu-button>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonTextures" :default="$core.view.config.exportTextureFormat" @change="$core.view.config.exportTextureFormat = $event" :disabled="$core.view.isBusy" @click="export_textures"></component>
 			</div>
 		</div>
 	`,

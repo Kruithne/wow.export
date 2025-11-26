@@ -3,6 +3,25 @@ const log = require('./log');
 const InstallType = require('./install-type');
 const constants = require('./constants');
 
+const COMPONENTS = {
+	Listbox: require('./components/listbox'),
+	ListboxMaps: require('./components/listbox-maps'),
+	ListboxZones: require('./components/listbox-zones'),
+	Listboxb: require('./components/listboxb'),
+	Itemlistbox: require('./components/itemlistbox'),
+	Checkboxlist: require('./components/checkboxlist'),
+	MenuButton: require('./components/menu-button'),
+	FileField: require('./components/file-field'),
+	ComboBox: require('./components/combobox'),
+	Slider: require('./components/slider'),
+	ModelViewer: require('./components/model-viewer'),
+	MapViewer: require('./components/map-viewer'),
+	DataTable: require('./components/data-table'),
+	ResizeLayer: require('./components/resize-layer'),
+	ContextMenu: require('./components/context-menu'),
+	MarkdownContent: require('./components/markdown-content')
+};
+
 const MODULES = {
 	module_test_a: require('./modules/module_test_a'),
 	module_test_b: require('./modules/module_test_b'),
@@ -31,6 +50,54 @@ const MODULES = {
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';
+
+const COMPONENT_PATH_MAP = {
+	Listbox: 'listbox',
+	ListboxMaps: 'listbox-maps',
+	ListboxZones: 'listbox-zones',
+	Listboxb: 'listboxb',
+	Itemlistbox: 'itemlistbox',
+	Checkboxlist: 'checkboxlist',
+	MenuButton: 'menu-button',
+	FileField: 'file-field',
+	ComboBox: 'combobox',
+	Slider: 'slider',
+	ModelViewer: 'model-viewer',
+	MapViewer: 'map-viewer',
+	DataTable: 'data-table',
+	ResizeLayer: 'resize-layer',
+	ContextMenu: 'context-menu',
+	MarkdownContent: 'markdown-content'
+};
+
+let component_cache = {};
+
+// components that should not be reloaded. in an ideal world we would support hot-reloading
+// these but it was too much effort at the time, so c'est la vie
+const EXCLUDE_FROM_RELOAD = new Set(['ModelViewer', 'MapViewer']);
+
+const component_registry = new Proxy({}, {
+	get(target, name) {
+		if (IS_BUNDLED)
+			return COMPONENTS[name];
+
+		if (!component_cache[name]) {
+			const file_name = COMPONENT_PATH_MAP[name];
+			if (!file_name) {
+				log.write('component not found in registry: %s', name);
+				return undefined;
+			}
+
+			const path = require.resolve('./components/' + file_name);
+			delete require.cache[path];
+
+			log.write('hot-reloading component: %s', name);
+			component_cache[name] = require('./components/' + file_name);
+		}
+
+		return component_cache[name];
+	}
+});
 
 const modules = {}
 const module_nav_buttons = new Map();
@@ -122,12 +189,13 @@ function update_context_menu_options() {
 }
 
 function wrap_module(module_name, module_def) {
-	// inject $modules and $core into component
+	// inject $modules, $core, and $components into component
 	if (!module_def.computed)
 		module_def.computed = {};
 
 	module_def.computed.$modules = () => manager;
 	module_def.computed.$core = () => core;
+	module_def.computed.$components = () => component_registry;
 
 	// call register function if it exists
 	if (typeof module_def.register === 'function') {
@@ -152,6 +220,13 @@ function wrap_module(module_name, module_def) {
 			return target[prop];
 		}
 	});
+}
+
+function register_components(app) {
+	for (const [name, def] of Object.entries(COMPONENTS))
+		app.component(name, def);
+
+	log.write('components loaded: %s', Object.keys(COMPONENTS).join(', '));
 }
 
 async function initialize(core_instance) {
@@ -213,6 +288,15 @@ function reload_module(module_key) {
 		core.view.activeModule = null;
 		active_module = null;
 	}
+
+	// invalidate component cache so they're re-required on next access
+	// preserve excluded components (stateful 3D viewers)
+	const preserved = {};
+	for (const name of EXCLUDE_FROM_RELOAD) {
+		if (component_cache[name])
+			preserved[name] = component_cache[name];
+	}
+	component_cache = preserved;
 
 	unregister_nav_button(module_key);
 	unregister_context_menu_option(module_key);
@@ -277,7 +361,7 @@ function reload_all_modules() {
 		set_active(active_module_key);
 }
 
-module.exports = new Proxy({ initialize, set_active, setActive, go_to_landing, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, registerContextMenuOption: register_static_context_menu_option, InstallType }, {
+module.exports = new Proxy({ register_components, initialize, set_active, setActive, go_to_landing, reload_module, reloadActiveModule: reload_active_module, reloadAllModules: reload_all_modules, registerContextMenuOption: register_static_context_menu_option, InstallType }, {
 	get(target, prop) {
 		if (prop in target)
 			return target[prop];
