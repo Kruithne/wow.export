@@ -167,6 +167,7 @@ body {
 	bottom: 0;
 	display: grid;
 	grid-template-rows: 53px 1fr 73px;
+	transform-origin: 0 0;
 }
 #container #content {
 	position: relative;

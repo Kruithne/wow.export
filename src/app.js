@@ -444,6 +444,32 @@ document.addEventListener('click', function(e) {
 	modules.register_components(app);
 	app.mount('#container');
 
+	// dynamic interface scaling for smaller displays
+	const SCALE_THRESHOLD_W = 1120;
+	const SCALE_THRESHOLD_H = 700;
+
+	const update_container_scale = () => {
+		const container = document.getElementById('container');
+		const win_w = window.innerWidth;
+		const win_h = window.innerHeight;
+
+		const scale_w = win_w < SCALE_THRESHOLD_W ? win_w / SCALE_THRESHOLD_W : 1;
+		const scale_h = win_h < SCALE_THRESHOLD_H ? win_h / SCALE_THRESHOLD_H : 1;
+
+		if (scale_w < 1 || scale_h < 1) {
+			container.style.transform = `scale(${scale_w}, ${scale_h})`;
+			container.style.width = scale_w < 1 ? `${SCALE_THRESHOLD_W}px` : '';
+			container.style.height = scale_h < 1 ? `${SCALE_THRESHOLD_H}px` : '';
+		} else {
+			container.style.transform = '';
+			container.style.width = '';
+			container.style.height = '';
+		}
+	};
+
+	window.addEventListener('resize', update_container_scale);
+	update_container_scale();
+
 	await modules.initialize(core);
 
 	// register static context menu options

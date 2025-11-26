@@ -14,9 +14,7 @@
 			"id": "wow-export-main",
 			"icon": "./res/icon.png",
 			"width": 1370,
-			"height": 988,
-			"min_width": 1115,
-			"min_height": 988
+			"height": 988
 		}
 	},
 	"updaterScript": "./updater/updater.js",
