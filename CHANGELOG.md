@@ -8,6 +8,7 @@
 - Fixed an issue that caused map tiles to not immediately render when opening a map.
 - Fixed an issue that would cause context menus to appear behind other UI elements.
 - Fixed an issue that caused exported map tiles from Classic builds to be completely black.
+- Fixed an issue that caused WMOs to export with the wrong textures.
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
