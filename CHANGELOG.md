@@ -6,6 +6,7 @@
 - Fixed an issue that would cause wow.export to close immediately after updating.
 - Fixed an issue that caused the map viewer to not auto-center on available tiles on a map.
 - Fixed an issue that caused map tiles to not immediately render when opening a map.
+- Fixed an issue that would cause context menus to appear behind other UI elements.
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
