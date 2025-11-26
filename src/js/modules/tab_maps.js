@@ -180,7 +180,6 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 		}
 
 		const heights = new Float32Array(resolution * resolution);
-		const px_per_row = resolution;
 		for (let py = 0; py < resolution; py++) {
 			for (let px = 0; px < resolution; px++) {
 				const chunk_x = Math.floor(px * 16 / resolution);
@@ -199,7 +198,8 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 
 				const height = sample_chunk_height(chunk, local_x, local_y);
 
-				const height_idx = py * px_per_row + px;
+				// rotate 90° CCW to align with terrain mesh coordinate system
+				const height_idx = px * resolution + (resolution - 1 - py);
 				heights[height_idx] = height;
 			}
 		}
