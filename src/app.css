@@ -479,32 +479,47 @@ body {
 	width: 100%;
 }
 #nav .option {
-	margin-left: 40px;
-	background-repeat: no-repeat;
-	background-size: contain;
-	background-position: 0 center;
+	display: flex;
+	align-items: center;
 	position: relative;
 }
-#nav .option:hover {
+
+#nav .option .nav-icon {
+	width: 45px;
+	height: 52px;
 	cursor: pointer;
-	color: var(--font-highlight);
-}
-#nav .option.active {
-	color: var(--nav-option-selected);
-}
-
-#nav .option::before {
-	content: " ";
-	width: 25px;
-	height: 100%;
-	position: absolute;
-	left: -30px;
-	background-position: right;
-	background-repeat: no-repeat;
-}
-
-.nav-module::before {
 	background-image: var(--nav-icon);
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: auto 22px;
+}
+#nav .option .nav-icon:hover {
+	filter: brightness(2);
+}
+#nav .option.active .nav-icon {
+	filter: brightness(0) saturate(100%) invert(58%) sepia(68%) saturate(481%) hue-rotate(83deg) brightness(93%) contrast(93%);
+}
+
+#nav .option .nav-label {
+	position: absolute;
+	left: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-left: 8px;
+	padding: 0 10px 0 5px;
+	white-space: nowrap;
+	pointer-events: none;
+	visibility: hidden;
+	color: var(--font-primary);
+	background: var(--background-dark);
+	z-index: 10;
+	height: 52px;
+	display: flex;
+	align-items: center;
+}
+
+#nav .option .nav-icon:hover + .nav-label {
+	visibility: visible;
 }
 
 

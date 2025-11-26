@@ -4,6 +4,7 @@
 - Optimized map viewer to load initial tiles must faster.
 - Added dropdown menu to select phase on zones map viewer.
 - Heightmaps are now rotated by 90° CW when exported to better align with other software.
+- Navigation bar has been redesigned because we've added too many features.
 - Fixed numerous playback issues in the "Audio" tabs (MPQ & CASC).
 - Fixed an issue that caused GLTF animations to be missing a frame.
 - Fixed an issue that would cause wow.export to close immediately after updating.
