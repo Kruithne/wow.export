@@ -231,6 +231,7 @@ const makeNewView = () => {
 		menuButtonCharacterExport: [
 			{ label: 'Export glTF', value: 'GLTF' },
 			{ label: 'Export GLB', value: 'GLB' },
+			{ label: 'Export OBJ (Posed)', value: 'OBJ' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],

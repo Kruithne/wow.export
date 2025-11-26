@@ -1,4 +1,5 @@
 ## 0.2.7 (TBD)
+- Character models can now be exported (posed) as OBJ.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.
 - Added dropdown menu to select phase on zones map viewer.

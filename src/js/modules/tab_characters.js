@@ -11,6 +11,7 @@ const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
+const ViewerOBJExporter = require('../3D/exporters/ViewerOBJExporter');
 const CameraBounding = require('../3D/camera/CameraBounding');
 const db2 = require('../casc/db2');
 const ExportHelper = require('../casc/export-helper');
@@ -804,7 +805,6 @@ const export_char_model = async (core) => {
 		return;
 	}
 
-	const casc = core.view.casc;
 	const helper = new ExportHelper(1, 'model');
 	helper.start();
 
@@ -815,23 +815,45 @@ const export_char_model = async (core) => {
 	const file_name = listfile.getByID(file_data_id);
 
 	try {
-		const data = await casc.getFile(file_data_id);
-		const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.gltf');
-		const exporter = new M2Exporter(data, [], file_data_id);
+		if (format === 'OBJ') {
+			// export from viewer with baked pose
+			if (!active_renderer || !active_renderer.meshGroup) {
+				core.setToast('error', 'no character model loaded to export', null, -1);
+				export_paths?.close();
+				return;
+			}
 
-		for (const [chr_model_texture_target, chr_material] of chr_materials)
-			exporter.addURITexture(chr_model_texture_target, chr_material.getURI());
+			const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.obj');
+			const exporter = new ViewerOBJExporter(active_renderer, chr_materials, core.view.chrCustGeosets);
 
-		exporter.setGeosetMask(core.view.chrCustGeosets);
+			await exporter.export(export_path, helper);
+			await export_paths?.writeLine('M2_OBJ:' + export_path);
 
-		const format_lower = format.toLowerCase();
-		await exporter.exportAsGLTF(export_path, helper, format_lower);
-		await export_paths?.writeLine('M2_' + format + ':' + export_path);
+			if (helper.isCancelled())
+				return;
 
-		if (helper.isCancelled())
-			return;
+			helper.mark(file_name, true);
+		} else {
+			// gltf/glb export from m2 data
+			const casc = core.view.casc;
+			const data = await casc.getFile(file_data_id);
+			const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.gltf');
+			const exporter = new M2Exporter(data, [], file_data_id);
 
-		helper.mark(file_name, true);
+			for (const [chr_model_texture_target, chr_material] of chr_materials)
+				exporter.addURITexture(chr_model_texture_target, chr_material.getURI());
+
+			exporter.setGeosetMask(core.view.chrCustGeosets);
+
+			const format_lower = format.toLowerCase();
+			await exporter.exportAsGLTF(export_path, helper, format_lower);
+			await export_paths?.writeLine('M2_' + format + ':' + export_path);
+
+			if (helper.isCancelled())
+				return;
+
+			helper.mark(file_name, true);
+		}
 	} catch (e) {
 		helper.mark(file_name, false, e.message, e.stack);
 	}
