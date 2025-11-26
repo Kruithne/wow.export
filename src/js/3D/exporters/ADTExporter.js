@@ -367,7 +367,6 @@ class ADTExporter {
 			}
 		}
 
-		console.log(wdt);
 		const tilePrefix = prefix + '_' + this.tileID;
 
 		const maid = wdt.entries[this.tileIndex];
@@ -923,9 +922,6 @@ class ADTExporter {
 						const unique_diffuse_ids = [...new Set(materialIDs.filter(id => id !== 0))];
 						const unique_height_ids = [...new Set(heightIDs.filter(id => id !== 0))];
 
-						log.write('[DEBUG] unique_diffuse_ids: [%s]', unique_diffuse_ids.join(', '));
-						log.write('[DEBUG] unique_height_ids: [%s]', unique_height_ids.join(', '));
-
 						const diffuse_array = await build_texture_array(unique_diffuse_ids, false);
 						const height_array = await build_texture_array(unique_height_ids.length > 0 ? unique_height_ids : unique_diffuse_ids, true);
 
@@ -938,12 +934,9 @@ class ADTExporter {
 
 						// build material metadata
 						const materials = new Array(materialIDs.length);
-						log.write('[DEBUG] building materials, count=%d', materialIDs.length);
 						for (let i = 0, n = materials.length; i < n; i++) {
-							if (materialIDs[i] === 0) {
-								log.write('[DEBUG] mat[%d] skipped, id=0', i);
+							if (materialIDs[i] === 0)
 								continue;
-							}
 
 							const mat = materials[i] = {
 								scale: 1,
@@ -953,9 +946,6 @@ class ADTExporter {
 								heightIndex: heightIDs[i] ? height_id_to_index.get(heightIDs[i]) : diffuse_id_to_index.get(materialIDs[i])
 							};
 
-							log.write('[DEBUG] mat[%d]: diffuseID=%d, heightID=%d, diffuseIdx=%d, heightIdx=%d',
-								i, materialIDs[i], heightIDs[i] || 0, mat.diffuseIndex, mat.heightIndex);
-
 							if (texParams && texParams[i]) {
 								const params = texParams[i];
 								mat.scale = Math.pow(2, (params.flags & 0xF0) >> 4);
@@ -964,8 +954,6 @@ class ADTExporter {
 									mat.heightScale = params.height;
 									mat.heightOffset = params.offset;
 								}
-								log.write('[DEBUG] mat[%d]: scale=%f, heightScale=%f, heightOffset=%f',
-									i, mat.scale, mat.heightScale, mat.heightOffset);
 							}
 						}
 
@@ -1052,14 +1040,6 @@ class ADTExporter {
 								const chunk_layer_count = Math.min(texLayers.length, 8);
 								gl.uniform1i(uLayerCount, chunk_layer_count);
 
-								if (chunkID === 0) {
-									log.write('[DEBUG] chunk[%d]: layer_count=%d', chunkIndex, chunk_layer_count);
-									for (let i = 0; i < chunk_layer_count; i++) {
-										log.write('[DEBUG]   layer[%d]: textureId=%d, flags=0x%s',
-											i, texLayers[i].textureId, texLayers[i].flags.toString(16));
-									}
-								}
-
 								// clear all texture bindings before setting up new ones
 								unbindAllTextures();
 
@@ -1076,14 +1056,6 @@ class ADTExporter {
 								const alphaLayers = texChunk.alphaLayers || [];
 								const alphaTextures = new Array(8);
 
-								if (chunkID === 0) {
-									log.write('[DEBUG] chunk[%d]: alphaLayers.length=%d', chunkIndex, alphaLayers.length);
-									if (alphaLayers.length > 0) {
-										const layer0_sample = alphaLayers[0].slice(0, 8);
-										log.write('[DEBUG]   alphaLayer[0] first 8: [%s]', layer0_sample.join(', '));
-									}
-								}
-
 								for (let i = 1; i < Math.min(alphaLayers.length, 8); i++) {
 									gl.activeTexture(gl.TEXTURE0 + 2 + (i - 1));
 									const alphaTex = bindAlphaLayer(alphaLayers[i]);
@@ -1091,11 +1063,6 @@ class ADTExporter {
 									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 									gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 									alphaTextures[i - 1] = alphaTex;
-
-									if (chunkID === 0) {
-										const layer_sample = alphaLayers[i].slice(0, 8);
-										log.write('[DEBUG]   alphaLayer[%d] first 8: [%s]', i, layer_sample.join(', '));
-									}
 								}
 
 								// set alpha blend uniforms for all 7 possible layers
@@ -1111,23 +1078,14 @@ class ADTExporter {
 
 								for (let i = 0; i < chunk_layer_count; i++) {
 									const mat = materials[texLayers[i].textureId];
-									if (mat === undefined) {
-										log.write('[DEBUG] chunk[%d] layer[%d]: mat is undefined for textureId=%d',
-											chunkIndex, i, texLayers[i].textureId);
+									if (mat === undefined)
 										continue;
-									}
 
 									layer_scales[i] = mat.scale;
 									height_scales[i] = mat.heightScale;
 									height_offsets[i] = mat.heightOffset;
 									diffuse_indices[i] = mat.diffuseIndex;
 									height_indices[i] = mat.heightIndex;
-
-									if (chunkID === 0) {
-										log.write('[DEBUG] chunk[%d] layer[%d]: scale=%f, hScale=%f, hOffset=%f, diffIdx=%d, hIdx=%d',
-											chunkIndex, i, mat.scale, mat.heightScale, mat.heightOffset,
-											mat.diffuseIndex, mat.heightIndex);
-									}
 								}
 
 								for (let i = 0; i < 8; i++) {
