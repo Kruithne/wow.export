@@ -312,6 +312,8 @@ module.exports = {
 		load_map(mapID, mapDir) {
 			const map_dir_lower = mapDir.toLowerCase();
 
+			this.$core.hideToast();
+
 			selected_map_id = mapID;
 			selected_map_dir = map_dir_lower;
 
