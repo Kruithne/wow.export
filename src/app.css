@@ -2810,7 +2810,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #home-buttons > div:nth-child(3)::before {
-	background-image: url(./fa-icons/cubes.svg);
+	background-image: url(./fa-icons/sword.svg);
 }
 
 #home-buttons > div:nth-child(4)::before {

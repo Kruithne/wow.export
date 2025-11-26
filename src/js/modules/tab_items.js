@@ -210,7 +210,7 @@ const apply_type_filter = (core) => {
 
 module.exports = {
 	register() {
-		this.registerNavButton('Items', 'cubes.svg', InstallType.CASC);
+		this.registerNavButton('Items', 'sword.svg', InstallType.CASC);
 	},
 
 	template: `
