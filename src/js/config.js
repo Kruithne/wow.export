@@ -36,7 +36,18 @@ const copyConfig = (src, target) => {
  */
 const load = async () => {
 	defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
-	const userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
+
+	let userConfig = {};
+	try {
+		userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
+	} catch (e) {
+		if (e.code === 'EPERM') {
+			log.write('Failed to load user config due to restricted permissions (EPERM)');
+			core.setToast('info', 'Restricted permissions detected. Restart wow.export using "Run as Administrator".', null, -1, true);
+		} else {
+			throw e;
+		}
+	}
 
 	log.write('Loaded config defaults: %o', defaultConfig);
 	log.write('Loaded user config: %o', userConfig);

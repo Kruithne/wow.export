@@ -135,6 +135,9 @@ const readJSON = async (file, ignoreComments = false) => {
 
 		return JSON.parse(raw);
 	} catch (e) {
+		if (e.code === 'EPERM')
+			throw e;
+
 		return null;
 	}
 };
