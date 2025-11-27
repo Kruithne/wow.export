@@ -35,6 +35,7 @@ class M2Renderer {
 		this.syncID = -1;
 		this.useRibbon = useRibbon;
 		this.shaderMap = new Map();
+		this.materialProps = new Map(); // stores { blendMode, flags } per texture index
 		this.defaultMaterial = new THREE.MeshPhongMaterial({ name: 'default', color: DEFAULT_MODEL_COLOR, side: THREE.DoubleSide });
 		this.geosetKey = 'modelViewerGeosets';
 		this.uvData = null; // Store UV data for layer preview
@@ -81,6 +82,80 @@ class M2Renderer {
 			material.wireframe = renderWireframe;
 			material.needsUpdate = true;
 		}
+	}
+
+	/**
+	 * Apply M2 material properties to a THREE.js material.
+	 * @param {THREE.Material} material
+	 * @param {number} blendMode - M2 blending mode (0-7)
+	 * @param {number} flags - M2 material flags
+	 */
+	applyM2Material(material, blendMode, flags = 0) {
+		// apply material flags
+		// 0x04: two-sided (disable backface culling)
+		// 0x08: disable depth test
+		// 0x10: disable depth write
+		if (flags & 0x04)
+			material.side = THREE.DoubleSide;
+
+		if (flags & 0x08)
+			material.depthTest = false;
+
+		const disableDepthWrite = (flags & 0x10) !== 0;
+
+		// apply blend mode
+		switch (blendMode) {
+			case 0: // Opaque
+				material.transparent = false;
+				material.blending = THREE.NormalBlending;
+				material.depthWrite = !disableDepthWrite;
+				break;
+
+			case 1: // AlphaKey - hard cutoff (the ONLY mode that uses alphaTest)
+				material.transparent = true;
+				material.alphaTest = 0.501960814; // match WoW's exact threshold
+				material.blending = THREE.NormalBlending;
+				material.depthWrite = !disableDepthWrite;
+				break;
+
+			case 2: // Alpha - smooth blending
+				material.transparent = true;
+				material.alphaTest = 0;
+				material.blending = THREE.NormalBlending;
+				material.depthWrite = false;
+				break;
+
+			case 3: // NoAlphaAdd
+			case 4: // Add
+				material.transparent = true;
+				material.alphaTest = 0;
+				material.blending = THREE.AdditiveBlending;
+				material.depthWrite = false;
+				break;
+
+			case 5: // Mod
+				material.transparent = true;
+				material.alphaTest = 0;
+				material.blending = THREE.MultiplyBlending;
+				material.depthWrite = false;
+				break;
+
+			case 6: // Mod2x
+				material.transparent = true;
+				material.alphaTest = 0;
+				material.blending = THREE.MultiplyBlending;
+				material.depthWrite = false;
+				break;
+
+			case 7: // BlendAdd
+				material.transparent = true;
+				material.alphaTest = 0;
+				material.blending = THREE.AdditiveBlending;
+				material.depthWrite = false;
+				break;
+		}
+
+		material.needsUpdate = true;
 	}
 
 	/**
@@ -226,20 +301,24 @@ class M2Renderer {
 
 			const skinMesh = skin.subMeshes[i];
 			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === i);
-			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null);
+			const texIndex = texUnit ? m2.textureCombos[texUnit.textureComboIndex] : null;
+
+			geometry.addGroup(skinMesh.triangleStart, skinMesh.triangleCount, texIndex);
 
 			if (texUnit) {
-				this.shaderMap.set(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]], 
+				this.shaderMap.set(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]],
 					{
-						"VS": ShaderMapper.getVertexShader(texUnit.textureCount, texUnit.shaderID), 
+						"VS": ShaderMapper.getVertexShader(texUnit.textureCount, texUnit.shaderID),
 						"PS": ShaderMapper.getPixelShader(texUnit.textureCount, texUnit.shaderID),
 						"DS": ShaderMapper.getDomainShader(texUnit.textureCount, texUnit.shaderID),
 						"HS": ShaderMapper.getHullShader(texUnit.textureCount, texUnit.shaderID)
 					}
 				);
 
-				// console.log("TexUnit [" + i + "] Unit for geo " + skinMesh.submeshID + " material index " + texUnit.materialIndex + " has " + texUnit.textureCount + " textures", skinMesh, texUnit, m2.materials[texUnit.materialIndex]);
-				// console.log("TexUnit Shaders [" + i + "]", this.shaderMap.get(m2.textureTypes[m2.textureCombos[texUnit.textureComboIndex]]));
+				// store material properties for this texture index
+				const m2Mat = m2.materials[texUnit.materialIndex];
+				if (m2Mat && texIndex !== null)
+					this.materialProps.set(texIndex, { blendMode: m2Mat.blendingMode, flags: m2Mat.flags });
 			}
 	
 			if (this.skeleton) {
@@ -286,6 +365,13 @@ class M2Renderer {
 
 		// Add mesh group to the render group.
 		this.renderGroup.add(this.meshGroup);
+
+		// Apply material properties to materials that have already loaded.
+		for (const [texIndex, props] of this.materialProps) {
+			const material = this.materials[texIndex];
+			if (material && material !== this.defaultMaterial)
+				this.applyM2Material(material, props.blendMode, props.flags);
+		}
 
 		// Update geosets once (so defaults are applied correctly).
 		this.updateGeosets();
@@ -510,8 +596,13 @@ class M2Renderer {
 
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			const material = new THREE.MeshPhongMaterial({ name: 'URITexture', map: tex, side: THREE.DoubleSide });
 			this.renderCache.register(material, tex);
+
+			if (this.materialProps.has(i)) {
+				const props = this.materialProps.get(i);
+				this.applyM2Material(material, props.blendMode, props.flags);
+			}
 
 			this.materials[i] = material;
 			this.renderCache.addUser(material);
@@ -547,8 +638,13 @@ class M2Renderer {
 
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: "URITexture", map: tex, side: THREE.DoubleSide });
+			const material = new THREE.MeshPhongMaterial({ name: 'URITexture', map: tex, side: THREE.DoubleSide });
 			this.renderCache.register(material, tex);
+
+			if (this.materialProps.has(i)) {
+				const props = this.materialProps.get(i);
+				this.applyM2Material(material, props.blendMode, props.flags);
+			}
 
 			this.materials[i] = material;
 			this.renderCache.addUser(material);
@@ -556,9 +652,8 @@ class M2Renderer {
 	}
 
 	/**
-	 * 
-	 * @param {number} type 
-	 * @param {number} fileDataID 
+	 * @param {number} type
+	 * @param {number} fileDataID
 	 */
 	async overrideTextureType(type, fileDataID) {
 		const textureTypes = this.m2.textureTypes;
@@ -607,7 +702,7 @@ class M2Renderer {
 			// 	tex = compressedTexture;
 			// }
 
-			const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+			const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b1111), blp.width, blp.height, THREE.RGBAFormat);
 			tex.flipY = true;
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;
@@ -622,12 +717,20 @@ class M2Renderer {
 
 			tex.needsUpdate = true;
 
-			//TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
-
 			this.renderCache.retire(this.materials[i]);
 
-			const material = new THREE.MeshPhongMaterial({ name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe });
+			const material_opts = { name: fileDataID, map: tex, side: THREE.DoubleSide, wireframe: renderWireframe };
+
+			if (blp.alphaDepth > 0)
+				material_opts.transparent = true;
+
+			const material = new THREE.MeshPhongMaterial(material_opts);
 			this.renderCache.register(material, tex);
+
+			if (this.materialProps.has(i)) {
+				const props = this.materialProps.get(i);
+				this.applyM2Material(material, props.blendMode, props.flags);
+			}
 
 			this.materials[i] = material;
 			this.renderCache.addUser(material);
@@ -658,7 +761,7 @@ class M2Renderer {
 
 				texture.getTextureFile().then(data => {
 					const blp = new BLPFile(data);
-					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b0111), blp.width, blp.height, THREE.RGBAFormat);
+					const tex = new THREE.DataTexture(blp.toUInt8Array(0, 0b1111), blp.width, blp.height, THREE.RGBAFormat);
 					tex.magFilter = THREE.LinearFilter;
 					tex.minFilter = THREE.LinearFilter;
 					tex.flipY = true;
@@ -676,10 +779,22 @@ class M2Renderer {
 					tex.colorSpace = THREE.SRGBColorSpace;
 
 					// TODO: Use m2.materials[texUnit.materialIndex].flags & 0x4 to determine if it's double sided
-					
-					const material = new THREE.MeshPhongMaterial({ name: texture.fileDataID, map: tex, side: THREE.DoubleSide });
+
+					const material_opts = { name: texture.fileDataID, map: tex, side: THREE.DoubleSide };
+
+					// enable transparency if texture has alpha (smooth blending, no hard cutoff)
+					if (blp.alphaDepth > 0)
+						material_opts.transparent = true;
+
+					const material = new THREE.MeshPhongMaterial(material_opts);
 					this.renderCache.register(material, tex);
-	
+
+					// apply material properties if set for this texture index
+					if (this.materialProps.has(i)) {
+						const props = this.materialProps.get(i);
+						this.applyM2Material(material, props.blendMode, props.flags);
+					}
+
 					this.materials[i] = material;
 					this.renderCache.addUser(material);
 				}).catch(e => {
