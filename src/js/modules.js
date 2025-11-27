@@ -34,6 +34,7 @@ const MODULES = {
 	tab_raw: require('./modules/tab_raw'),
 	tab_install: require('./modules/tab_install'),
 	tab_text: require('./modules/tab_text'),
+	tab_fonts: require('./modules/tab_fonts'),
 	tab_videos: require('./modules/tab_videos'),
 	tab_models: require('./modules/tab_models'),
 	tab_audio: require('./modules/tab_audio'),
@@ -46,6 +47,7 @@ const MODULES = {
 	legacy_tab_home: require('./modules/legacy_tab_home'),
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
 	legacy_tab_textures: require('./modules/legacy_tab_textures'),
+	legacy_tab_fonts: require('./modules/legacy_tab_fonts'),
 	legacy_tab_files: require('./modules/legacy_tab_files')
 };
 

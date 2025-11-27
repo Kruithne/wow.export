@@ -174,9 +174,11 @@ module.exports = {
 		'tab_maps',
 		'tab_zones',
 		'tab_text',
+		'tab_fonts',
 		'tab_data',
 		'legacy_tab_textures',
 		'legacy_tab_audio',
+		'legacy_tab_fonts',
 		'legacy_tab_files'
 	],
 

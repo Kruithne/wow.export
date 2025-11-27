@@ -26,7 +26,8 @@ const BIN_LF_COMPONENTS = {
 	PF_TEXTURES: 'listfile-pf-textures.dat',
 	PF_SOUNDS: 'listfile-pf-sounds.dat',
 	PF_VIDEOS: 'listfile-pf-videos.dat',
-	PF_TEXT: 'listfile-pf-text.dat'
+	PF_TEXT: 'listfile-pf-text.dat',
+	PF_FONTS: 'listfile-pf-fonts.dat'
 };
 
 // these are populated by the legacy text-based listfile format
@@ -53,6 +54,7 @@ let preload_textures = null;
 let preload_sounds = null;
 let preload_videos = null;
 let preload_text = null;
+let preload_fonts = null;
 let preload_models = null;
 
 let is_preloaded = false;
@@ -137,6 +139,7 @@ const listfile_preload_binary = async () => {
 		preload_sounds = new Map();
 		preload_videos = new Map();
 		preload_text = new Map();
+		preload_fonts = new Map();
 
 		const pf_preload_map = [
 			null,
@@ -144,7 +147,8 @@ const listfile_preload_binary = async () => {
 			preload_textures,
 			preload_sounds,
 			preload_videos,
-			preload_text
+			preload_text,
+			preload_fonts
 		];
 
 		const pf_files = [
@@ -153,11 +157,12 @@ const listfile_preload_binary = async () => {
 			BIN_LF_COMPONENTS.PF_TEXTURES,
 			BIN_LF_COMPONENTS.PF_SOUNDS,
 			BIN_LF_COMPONENTS.PF_VIDEOS,
-			BIN_LF_COMPONENTS.PF_TEXT
+			BIN_LF_COMPONENTS.PF_TEXT,
+			BIN_LF_COMPONENTS.PF_FONTS
 		];
 
 		// memory-map strings files
-		binary_strings_mmap = new Array(6);
+		binary_strings_mmap = new Array(7);
 
 		for (let i = 0; i < pf_files.length; i++) {
 			try {
@@ -421,6 +426,7 @@ const listfile_preload_legacy = async () => {
 		preload_sounds = await getFileDataIDsByExtension(['.ogg', '.mp3', '.unk_sound'], 'filtering sounds');
 		preload_videos = await getFileDataIDsByExtension('.avi', 'filtering videos');
 		preload_text = await getFileDataIDsByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], 'filtering text files');
+		preload_fonts = await getFileDataIDsByExtension('.ttf', 'filtering fonts');
 
 		// model filtering with wmo exclusion filter
 		const model_exts = ['.m2', '.m3'];
@@ -529,6 +535,7 @@ const applyPreload = (rootEntries) => {
 			core.view.listfileSounds = formatEntries(preload_sounds);
 			core.view.listfileVideos = formatEntries(preload_videos);
 			core.view.listfileText = formatEntries(preload_text);
+			core.view.listfileFonts = formatEntries(preload_fonts);
 			core.view.listfileModels = formatEntries(preload_models);
 		} else {
 			// binary mode: filter maps and convert to arrays
@@ -566,6 +573,7 @@ const applyPreload = (rootEntries) => {
 			core.view.listfileSounds = filter_and_format(preload_sounds);
 			core.view.listfileVideos = filter_and_format(preload_videos);
 			core.view.listfileText = filter_and_format(preload_text);
+			core.view.listfileFonts = filter_and_format(preload_fonts);
 			core.view.listfileModels = filter_and_format(preload_models);
 		}
 
@@ -698,7 +706,8 @@ const renderListfile = async (file_data_ids, include_main_index = false) => {
 			BIN_LF_COMPONENTS.PF_TEXTURES,
 			BIN_LF_COMPONENTS.PF_SOUNDS,
 			BIN_LF_COMPONENTS.PF_VIDEOS,
-			BIN_LF_COMPONENTS.PF_TEXT
+			BIN_LF_COMPONENTS.PF_TEXT,
+			BIN_LF_COMPONENTS.PF_FONTS
 		];
 
 		const start_index = include_main_index ? 0 : 1;

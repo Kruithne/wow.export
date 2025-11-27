@@ -54,6 +54,7 @@ const makeNewView = () => {
 		userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
 		userInputFilterVideos: '', // Value of the 'filter' field for video files.
 		userInputFilterText: '', // Value of the 'filter' field for text files.
+		userInputFilterFonts: '', // Value of the 'filter' field for font files.
 		userInputFilterModels: '', // Value of the 'filter' field for models.
 		userInputFilterMaps: '', // Value of the 'filter' field for maps.
 		userInputFilterZones: '', // Value of the 'filter' field for zones.
@@ -71,6 +72,7 @@ const makeNewView = () => {
 		selectionSounds: [], // Current user selection of sounds.
 		selectionVideos: [],  // Current user selection of videos.
 		selectionText: [], // Current user selection of text files.
+		selectionFonts: [], // Current user selection of font files.
 		selectionMaps: [], // Current user selection of maps.
 		selectionZones: [], // Current user selection of zones.
 		selectionItems: [], // Current user selection of items.
@@ -82,6 +84,7 @@ const makeNewView = () => {
 		listfileSounds: [], // Filtered listfile for sound files.
 		listfileVideos: [], // Filtered listfile for video files.
 		listfileText: [], // Filtered listfile for text files.
+		listfileFonts: [], // Filtered listfile for font files.
 		listfileModels: [], // Filtered listfile for M2/WMO models.
 		listfileItems: [], // Filtered item entries.
 		listfileRaw: [], // Full raw file listfile.
