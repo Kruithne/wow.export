@@ -208,7 +208,9 @@ module.exports = {
 		'Light be with you.',
 		'Stay away from da voodoo.',
 		'My magic will tear you apart!',
-		'All I ever wanted to do was study!'
+		'All I ever wanted to do was study!',
+		'Put your faith in the light...',
+		'Storm, earth, and fire! Heed my call!'
 	],
 
 	EXPANSIONS: [
