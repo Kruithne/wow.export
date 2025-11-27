@@ -197,6 +197,20 @@ module.exports = {
 		'tab_help'
 	],
 
+	FONT_PREVIEW_QUOTES: [
+		'You take no candle!',
+		'Keep your feet on the ground.',
+		'Me not that kind of orc!',
+		'Time is money, friend.',
+		'Something need doing?',
+		'For the Horde!',
+		'For the Alliance!',
+		'Light be with you.',
+		'Stay away from da voodoo.',
+		'My magic will tear you apart!',
+		'All I ever wanted to do was study!'
+	],
+
 	EXPANSIONS: [
 		{ id: 0, name: 'Classic', shortName: 'Classic' },
 		{ id: 1, name: 'The Burning Crusade', shortName: 'TBC' },

@@ -23,7 +23,7 @@
 	--form-button-menu: #389451;
 	--form-button-menu-hover: #3e6bb9;
 	--form-button-disabled: #696969;
-	--form-field-shadow: inset black 0 0 9px 0px;
+	--form-field-shadow: inset #00000042 0 0 10px 0px;
 	--progress-bar: linear-gradient(180deg, #57afe2, #35759a);
 	--trans-check-a: #303030;
 	--trans-check-b: #272727;
@@ -1999,6 +1999,59 @@ input[type=number]::-webkit-outer-spin-button {
 	right: 0;
 	bottom: 0;
 	user-select: text;
+}
+
+#tab-fonts .font-preview,
+#legacy-tab-fonts .font-preview {
+	display: flex;
+	flex-direction: column;
+}
+
+#tab-fonts .font-preview-grid,
+#legacy-tab-fonts .font-preview-grid {
+	display: grid;
+	grid-template-rows: 1fr auto;
+	width: 100%;
+	height: 100%;
+	gap: 10px;
+}
+
+#tab-fonts .font-character-grid,
+#legacy-tab-fonts .font-character-grid {
+	border: 1px solid var(--border);
+	background: var(--background-dark);
+	min-height: 100px;
+}
+
+#tab-fonts .font-preview-input-container,
+#legacy-tab-fonts .font-preview-input-container {
+	min-height: 120px;
+	max-height: 200px;
+}
+
+#tab-fonts .font-preview-input,
+#legacy-tab-fonts .font-preview-input {
+	width: 100%;
+	height: 100%;
+	min-height: 120px;
+	padding: 15px;
+	font-size: 32px;
+	background: var(--background-dark);
+	border: 1px solid var(--border);
+	color: var(--text);
+	resize: none;
+	box-sizing: border-box;
+}
+
+#tab-fonts .font-preview-input:focus,
+#legacy-tab-fonts .font-preview-input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+#tab-fonts .font-preview-input::placeholder,
+#legacy-tab-fonts .font-preview-input::placeholder {
+	color: #888;
 }
 
 #tab-data {

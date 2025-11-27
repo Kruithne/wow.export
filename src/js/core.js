@@ -97,6 +97,9 @@ const makeNewView = () => {
 		fileDropPrompt: null, // Prompt to display for file drag/drops.
 		whatsNewHTML: '', // HTML content for What's New section.
 		textViewerSelectedText: '', // Active text for the text viewer.
+		fontPreviewPlaceholder: '', // Placeholder text for font preview.
+		fontPreviewText: '', // User input text for font preview.
+		fontPreviewFontFamily: '', // CSS font family for font preview.
 		soundPlayerSeek: 0, // Current seek of the sound player.
 		soundPlayerState: false, // Playing state of the sound player.
 		soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.

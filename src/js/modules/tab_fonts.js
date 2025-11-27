@@ -4,6 +4,60 @@ const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const generics = require('../generics');
 const InstallType = require('../install-type');
+const constants = require('../constants');
+const { BlobPolyfill, URLPolyfill } = require('../blob');
+
+const loaded_fonts = new Map();
+
+const get_random_quote = () => {
+	const quotes = constants.FONT_PREVIEW_QUOTES;
+	return quotes[Math.floor(Math.random() * quotes.length)];
+};
+
+const get_font_id = (file_data_id) => {
+	return 'font_id_' + file_data_id;
+};
+
+const load_font = async (core, file_name) => {
+	const file_data_id = listfile.getByFilename(file_name);
+	if (!file_data_id)
+		return null;
+
+	const font_id = get_font_id(file_data_id);
+
+	if (loaded_fonts.has(font_id))
+		return font_id;
+
+	try {
+		const data = await core.view.casc.getFileByName(file_name);
+		data.processAllBlocks();
+
+		const blob = new BlobPolyfill([data.raw], { type: 'font/ttf' });
+		const url = URLPolyfill.createObjectURL(blob);
+
+		const style = document.createElement('style');
+		style.id = 'font-style-' + font_id;
+		style.textContent = `@font-face { font-family: '${font_id}'; src: url('${url}'); }`;
+		document.head.appendChild(style);
+
+		// verify font loaded correctly
+		await document.fonts.load('16px "' + font_id + '"');
+		const loaded = document.fonts.check('16px "' + font_id + '"');
+		if (!loaded) {
+			document.head.removeChild(style);
+			throw new Error('font failed to decode');
+		}
+
+		loaded_fonts.set(font_id, url);
+		log.write('loaded font %s as %s', file_name, font_id);
+
+		return font_id;
+	} catch (e) {
+		log.write('failed to load font %s: %s', file_name, e.message);
+		core.setToast('error', 'Failed to load font: ' + e.message);
+		return null;
+	}
+};
 
 module.exports = {
 	register() {
@@ -18,6 +72,14 @@ module.exports = {
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterFonts" placeholder="Filter fonts..."/>
+			</div>
+			<div class="preview-container font-preview">
+				<div class="font-preview-grid">
+					<div class="font-character-grid"></div>
+					<div class="font-preview-input-container">
+						<textarea class="font-preview-input" :style="{ fontFamily: $core.view.fontPreviewFontFamily }" :placeholder="$core.view.fontPreviewPlaceholder" v-model="$core.view.fontPreviewText"></textarea>
+					</div>
+				</div>
 			</div>
 			<div class="preview-controls">
 				<input type="button" value="Export Selected" @click="export_fonts" :class="{ disabled: $core.view.isBusy }"/>
@@ -71,5 +133,20 @@ module.exports = {
 
 			helper.finish();
 		}
+	},
+
+	mounted() {
+		this.$core.view.fontPreviewPlaceholder = get_random_quote();
+		this.$core.view.fontPreviewText = '';
+		this.$core.view.fontPreviewFontFamily = '';
+
+		this.$core.view.$watch('selectionFonts', async selection => {
+			const first = listfile.stripFileEntry(selection[0]);
+			if (first && !this.$core.view.isBusy) {
+				const font_id = await load_font(this.$core, first);
+				if (font_id)
+					this.$core.view.fontPreviewFontFamily = font_id;
+			}
+		});
 	}
 };
