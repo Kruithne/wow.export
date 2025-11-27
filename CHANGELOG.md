@@ -1,10 +1,10 @@
 ## 0.2.7 (TBD)
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
 - Added keyboard shortcut to deselect all tiles on the map viewer.
-- Character models can now be exported (posed) as OBJ.
+- Added option to export character models as OBJ (posed).
+- Added dropdown menu to select phase on zones map viewer.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.
-- Added dropdown menu to select phase on zones map viewer.
 - Heightmaps are now rotated by 90° CW when exported to better align with other software.
 - Navigation bar has been redesigned because we've added too many features.
 - Removed minimum width/height restrictions on the wow.export window.
