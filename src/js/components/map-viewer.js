@@ -139,6 +139,13 @@ module.exports = {
 		 */
 		hoverTile: function() {
 			this.renderOverlay();
+		},
+
+		/**
+		 * Invoked when the selection changes.
+		 */
+		selection: function() {
+			this.renderOverlay();
 		}
 	},
 
@@ -712,7 +719,7 @@ module.exports = {
 				}
 
 				const newSelection = [];
-				
+
 				// Iterate over all available tiles in the mask and select them.
 				for (let i = 0, n = this.mask.length; i < n; i++) {
 					if (this.mask[i] === 1)
@@ -723,8 +730,14 @@ module.exports = {
 
 				// Trigger an overlay re-render to show the new selection.
 				this.renderOverlay();
-				
+
 				// Absorb this event preventing further action.
+				event.preventDefault();
+				event.stopPropagation();
+			} else if (event.key === 'd' || event.key === 'D') {
+				this.$emit('update:selection', []);
+				this.renderOverlay();
+
 				event.preventDefault();
 				event.stopPropagation();
 			}
@@ -942,6 +955,7 @@ module.exports = {
 			<span>Select Tile: Shift + Click</span>
 			<span>Zoom: Mouse Wheel</span>
 			<span>Select All: Control + A</span>
+			<span>Deselect All: D</span>
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>

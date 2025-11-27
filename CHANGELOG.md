@@ -1,5 +1,6 @@
 ## 0.2.7 (TBD)
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
+- Added keyboard shortcut to deselect all tiles on the map viewer.
 - Character models can now be exported (posed) as OBJ.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.
