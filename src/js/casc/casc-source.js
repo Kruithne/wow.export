@@ -129,7 +129,7 @@ class CASC {
 	}
 
 	/**
-	 * @param {string} contentKey 
+	 * @param {string} contentKey
 	 * @returns {string}
 	 */
 	getEncodingKeyForContentKey(contentKey) {
@@ -140,6 +140,21 @@ class CASC {
 		// This underlying implementation returns the encoding key rather than a
 		// data file, allowing CASCLocal and CASCRemote to implement readers.
 		return encodingKey;
+	}
+
+	/**
+	 * Get encoding info for a file by fileDataID for CDN streaming.
+	 * Returns { enc: string, arc?: { key: string, ofs: number, len: number } }
+	 * @param {number} fileDataID
+	 * @returns {Promise<{enc: string, arc?: {key: string, ofs: number, len: number}}|null>}
+	 */
+	async getFileEncodingInfo(fileDataID) {
+		try {
+			const encodingKey = await this.getFile(fileDataID);
+			return { enc: encodingKey };
+		} catch {
+			return null;
+		}
 	}
 
 	/**

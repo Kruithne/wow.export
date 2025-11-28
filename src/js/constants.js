@@ -134,6 +134,11 @@ module.exports = {
 		DAY: 86400000 // Milliseconds in a day.
 	},
 
+	KINO: {
+		API_URL: 'https://kruithne.net/wow.export/v2/get_video',
+		POLL_INTERVAL: 20000
+	},
+
 	MAGIC: {
 		M3DT: 0x5444334D, // M3 model magic.
 		MD21: 0x3132444D, // M2 model magic.

@@ -4,217 +4,244 @@ const ExportHelper = require('../casc/export-helper');
 const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
 const generics = require('../generics');
 const listfile = require('../casc/listfile');
-const VP9AVIDemuxer = require('../casc/vp9-avi-demuxer');
+const db2 = require('../casc/db2');
 const InstallType = require('../install-type');
+const constants = require('../constants');
+const core = require('../core');
 
-let current_media_source = null;
-let current_video_decoder = null;
+let movie_variation_map = null;
 let selected_file = null;
-let should_stop = false;
-let is_playing = false;
-let pending_frames = [];
+let current_video_element = null;
+let is_streaming = false;
+let poll_timer = null;
+let poll_cancelled = false;
 
-const stop_video = async (core) => {
-	should_stop = true;
-	core.view.videoPlayerState = false;
+const stop_video = async (core_ref) => {
+	poll_cancelled = true;
 
-	for (const frame of pending_frames) {
-		try {
-			frame.close();
-		} catch (e) {
-			// ignore if already closed
-		}
-	}
-	pending_frames = [];
-
-	let attempts = 0;
-	while (is_playing && attempts < 50) {
-		await new Promise(resolve => setTimeout(resolve, 100));
-		attempts++;
+	if (poll_timer) {
+		clearTimeout(poll_timer);
+		poll_timer = null;
 	}
 
-	if (current_video_decoder) {
-		try {
-			if (current_video_decoder.state !== 'closed')
-				current_video_decoder.close();
-		} catch (e) {
-			log.write('error closing decoder: %s', e.message);
-		}
-		current_video_decoder = null;
+	if (current_video_element) {
+		current_video_element.pause();
+		current_video_element.src = '';
+		current_video_element.load();
+		current_video_element = null;
 	}
 
-	if (current_media_source) {
-		try {
-			if (current_media_source.readyState === 'open')
-				current_media_source.endOfStream();
-		} catch (e) {
-			log.write('error ending stream: %s', e.message);
-		}
-		current_media_source = null;
-	}
-
-	const canvas = document.getElementById('video-preview-canvas');
-	if (canvas) {
-		const ctx = canvas.getContext('2d');
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-	}
-
-	log.write('video stopped, is_playing: %s', is_playing);
+	is_streaming = false;
+	core_ref.view.videoPlayerState = false;
+	log.write('video stopped');
 };
 
-const play_video = async (core, file_name) => {
+const build_payload = async (core_ref, file_data_id) => {
+	const casc = core_ref.view.casc;
+
+	// get video encoding info
+	const vid_info = await casc.getFileEncodingInfo(file_data_id);
+	if (!vid_info) {
+		log.write('failed to get encoding info for video file %d', file_data_id);
+		return null;
+	}
+
+	const payload = { vid: vid_info };
+
+	// check if we have movie mapping
+	if (movie_variation_map) {
+		const movie_id = movie_variation_map.get(file_data_id);
+		if (movie_id) {
+			try {
+				const movie_row = await db2.Movie.getRow(movie_id);
+				if (movie_row) {
+					// get audio file encoding info
+					if (movie_row.AudioFileDataID && movie_row.AudioFileDataID !== 0) {
+						const aud_info = await casc.getFileEncodingInfo(movie_row.AudioFileDataID);
+						if (aud_info)
+							payload.aud = aud_info;
+					}
+
+					// get subtitle file encoding info
+					if (movie_row.SubtitleFileDataID && movie_row.SubtitleFileDataID !== 0) {
+						const srt_info = await casc.getFileEncodingInfo(movie_row.SubtitleFileDataID);
+						if (srt_info) {
+							payload.srt = srt_info;
+							payload.srt.type = movie_row.SubtitleFileFormat || 0;
+						}
+					}
+				}
+			} catch (e) {
+				log.write('failed to lookup movie data for movie_id %d: %s', movie_id, e.message);
+			}
+		}
+	}
+
+	return payload;
+};
+
+const stream_video = async (core_ref, file_name) => {
 	const file_data_id = listfile.getByFilename(file_name);
 
 	if (!file_data_id) {
-		core.setToast('error', 'unable to find file in listfile');
+		core_ref.setToast('error', 'unable to find file in listfile');
 		return;
 	}
 
-	log.write('play_video called for: %s, is_playing: %s, should_stop: %s', file_name, is_playing, should_stop);
+	log.write('stream_video called for: %s (fdid: %d)', file_name, file_data_id);
 
 	try {
-		await stop_video(core);
-		should_stop = false;
-		is_playing = true;
+		await stop_video(core_ref);
+		poll_cancelled = false;
+		is_streaming = true;
+		core_ref.view.videoPlayerState = true;
 
-		log.write('starting playback for: %s', file_name);
-
-		const stream_reader = await core.view.casc.getFileStream(file_data_id);
-
-		log.write('streaming video %s (%d blocks, %s total)',
-			file_name,
-			stream_reader.getBlockCount(),
-			generics.filesize(stream_reader.getTotalSize())
-		);
-
-		log.write('initializing vp9 decoder...');
-		const demuxer = new VP9AVIDemuxer(stream_reader);
-		const config = await demuxer.parse_header();
-
-		if (!config)
-			throw new Error('failed to parse avi header');
-
-		log.write('video config: %dx%d @ %d fps, codec: %s',
-			config.codedWidth,
-			config.codedHeight,
-			demuxer.frame_rate,
-			config.codec
-		);
-
-		const support = await VideoDecoder.isConfigSupported(config);
-		if (!support.supported)
-			throw new Error(`vp9 codec not supported: ${config.codec}`);
-
-		const canvas = document.getElementById('video-preview-canvas');
-		if (!canvas)
-			throw new Error('video-preview-canvas element not found');
-
-		const ctx = canvas.getContext('2d', { alpha: false });
-
-		const frame_duration_ms = 1000 / demuxer.frame_rate;
-		pending_frames = [];
-		let playback_start_time = null;
-		let frames_rendered = 0;
-
-		const decoder = new VideoDecoder({
-			output(frame) {
-				pending_frames.push(frame);
-				if (pending_frames.length === 1 && !should_stop)
-					requestAnimationFrame(render_next_frame);
-			},
-			error(e) {
-				log.write('decoder error: %s', e.message);
-				core.setToast('error', 'video decode error: ' + e.message);
-			}
-		});
-
-		const render_next_frame = () => {
-			if (pending_frames.length === 0 || should_stop)
-				return;
-
-			if (playback_start_time === null)
-				playback_start_time = performance.now();
-
-			const frame = pending_frames.shift();
-			const elapsed_time = performance.now() - playback_start_time;
-			const expected_time = frames_rendered * frame_duration_ms;
-			const delay = expected_time - elapsed_time;
-
-			const do_render = () => {
-				if (should_stop) {
-					frame.close();
-					return;
-				}
-
-				canvas.width = frame.displayWidth;
-				canvas.height = frame.displayHeight;
-				ctx.drawImage(frame, 0, 0);
-				frame.close();
-				frames_rendered++;
-
-				if (pending_frames.length > 0 && !should_stop)
-					requestAnimationFrame(render_next_frame);
-			};
-
-			if (delay > 0)
-				setTimeout(do_render, delay);
-			else
-				do_render();
-		};
-
-		decoder.configure(config);
-		current_video_decoder = decoder;
-		core.view.videoPlayerState = true;
-
-		log.write('streaming vp9 frames at %d fps...', demuxer.frame_rate);
-
-		let frame_count = 0;
-
-		for await (const frame_info of demuxer.extract_frames()) {
-			if (should_stop) {
-				log.write('breaking out of frame loop, should_stop is true');
-				break;
-			}
-
-			if (!frame_info.data || frame_info.data.length === 0) {
-				log.write('skipping empty frame at timestamp %d', frame_info.timestamp);
-				continue;
-			}
-
-			const chunk = new EncodedVideoChunk(frame_info);
-
-			if (decoder.state !== 'closed')
-				decoder.decode(chunk);
-			else
-				break;
-
-			frame_count++;
-		}
-
-		log.write('frame loop exited, frame_count: %d, should_stop: %s', frame_count, should_stop);
-
-		is_playing = false;
-		log.write('is_playing set to false');
-
-		if (!should_stop) {
-			await decoder.flush();
-			core.view.videoPlayerState = false;
-			log.write('video playback complete (%d frames)', frame_count);
-		} else {
-			log.write('video playback stopped (%d frames processed)', frame_count);
-		}
-	} catch (e) {
-		is_playing = false;
-		core.view.videoPlayerState = false;
-
-		if (e.message && e.message.includes('Aborted due to close()')) {
-			log.write('video playback aborted: %s', file_name);
+		const payload = await build_payload(core_ref, file_data_id);
+		if (!payload) {
+			core_ref.setToast('error', 'failed to get video encoding info');
+			is_streaming = false;
+			core_ref.view.videoPlayerState = false;
 			return;
 		}
 
+		log.write('sending kino request: %o', payload);
+
+		const send_request = async () => {
+			const res = await fetch(constants.KINO.API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'User-Agent': constants.USER_AGENT
+				},
+				body: JSON.stringify(payload)
+			});
+
+			return res;
+		};
+
+		const handle_response = async (res) => {
+			if (poll_cancelled)
+				return;
+
+			if (res.status === 200) {
+				const data = await res.json();
+				if (data.url) {
+					log.write('received video url: %s', data.url);
+					core_ref.hideToast();
+					play_streaming_video(core_ref, data.url);
+				} else {
+					throw new Error('server returned 200 but no url');
+				}
+			} else if (res.status === 202) {
+				log.write('video is queued for processing, polling in %dms', constants.KINO.POLL_INTERVAL);
+
+				core_ref.setToast('progress', 'video is being processed, please wait...', null, -1, true);
+
+				// listen for toast cancellation
+				const cancel_handler = () => {
+					poll_cancelled = true;
+					if (poll_timer) {
+						clearTimeout(poll_timer);
+						poll_timer = null;
+					}
+					is_streaming = false;
+					core_ref.view.videoPlayerState = false;
+					log.write('video processing cancelled by user');
+				};
+
+				core_ref.events.once('toast-cancelled', cancel_handler);
+
+				poll_timer = setTimeout(async () => {
+					if (poll_cancelled) {
+						core_ref.events.off('toast-cancelled', cancel_handler);
+						return;
+					}
+
+					try {
+						const poll_res = await send_request();
+						core_ref.events.off('toast-cancelled', cancel_handler);
+						await handle_response(poll_res);
+					} catch (e) {
+						core_ref.events.off('toast-cancelled', cancel_handler);
+						if (!poll_cancelled) {
+							log.write('poll request failed: %s', e.message);
+							core_ref.setToast('error', 'failed to check video status: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
+							is_streaming = false;
+							core_ref.view.videoPlayerState = false;
+						}
+					}
+				}, constants.KINO.POLL_INTERVAL);
+			} else {
+				const error_text = await res.text().catch(() => 'unknown error');
+				throw new Error(`server returned ${res.status}: ${error_text}`);
+			}
+		};
+
+		const res = await send_request();
+		await handle_response(res);
+
+	} catch (e) {
+		is_streaming = false;
+		core_ref.view.videoPlayerState = false;
+
 		log.write('failed to stream video %s: %s', file_name, e.message);
 		log.write(e.stack);
-		core.setToast('error', 'failed to load video: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
+		core_ref.setToast('error', 'failed to stream video: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
+	}
+};
+
+const play_streaming_video = (core_ref, url) => {
+	const video = document.getElementById('video-preview-player');
+	if (!video) {
+		log.write('video element not found');
+		core_ref.setToast('error', 'video player element not found');
+		is_streaming = false;
+		core_ref.view.videoPlayerState = false;
+		return;
+	}
+
+	current_video_element = video;
+	video.src = url;
+	video.load();
+	video.play().catch(e => {
+		log.write('video play failed: %s', e.message);
+		core_ref.setToast('error', 'failed to play video: ' + e.message);
+		is_streaming = false;
+		core_ref.view.videoPlayerState = false;
+	});
+
+	video.onended = () => {
+		is_streaming = false;
+		core_ref.view.videoPlayerState = false;
+		log.write('video playback complete');
+	};
+
+	video.onerror = () => {
+		const error = video.error;
+		log.write('video error: %s', error ? error.message : 'unknown');
+		core_ref.setToast('error', 'video playback error');
+		is_streaming = false;
+		core_ref.view.videoPlayerState = false;
+	};
+};
+
+const load_movie_variation_map = async () => {
+	try {
+		log.write('loading MovieVariation table...');
+		const movie_variation = await db2.preload.MovieVariation();
+
+		movie_variation_map = new Map();
+		const rows = await movie_variation.getAllRows();
+
+		for (const [id, row] of rows) {
+			if (row.FileDataID && row.MovieID)
+				movie_variation_map.set(row.FileDataID, row.MovieID);
+		}
+
+		log.write('loaded %d movie variation mappings', movie_variation_map.size);
+	} catch (e) {
+		log.write('failed to load MovieVariation table: %s', e.message);
+		movie_variation_map = null;
 	}
 };
 
@@ -233,7 +260,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterVideos" placeholder="Filter videos..."/>
 			</div>
 			<div class="preview-container">
-				<canvas id="video-preview-canvas" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;"></canvas>
+				<video id="video-preview-player" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;" controls></video>
 			</div>
 			<div class="preview-controls">
 				<label class="ui-checkbox">
@@ -262,7 +289,7 @@ module.exports = {
 
 			const file_name = listfile.stripFileEntry(selection[0]);
 			selected_file = file_name;
-			await play_video(this.$core, file_name);
+			await stream_video(this.$core, file_name);
 		},
 
 		async export_video() {
@@ -331,17 +358,35 @@ module.exports = {
 		}
 	},
 
-	mounted() {
+	async mounted() {
+		this.$core.showLoadingScreen(1);
+
+		try {
+			await core.progressLoadingScreen('Loading video metadata...');
+			await load_movie_variation_map();
+			this.$core.hideLoadingScreen();
+		} catch (e) {
+			this.$core.hideLoadingScreen();
+			log.write('failed to initialize videos tab: %s', e.message);
+		}
+
 		this.$core.view.$watch('selectionVideos', async selection => {
 			if (selection.length === 0)
 				return;
 
 			const file_name = listfile.stripFileEntry(selection[0]);
 			if (!this.$core.view.isBusy && file_name && selected_file !== file_name) {
+				// cancel any pending polls when selection changes
+				poll_cancelled = true;
+				if (poll_timer) {
+					clearTimeout(poll_timer);
+					poll_timer = null;
+				}
+
 				selected_file = file_name;
 
 				if (this.$core.view.config.videoPlayerAutoPlay)
-					await play_video(this.$core, file_name);
+					await stream_video(this.$core, file_name);
 			}
 		});
 	}

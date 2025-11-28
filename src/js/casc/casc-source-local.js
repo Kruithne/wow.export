@@ -472,6 +472,31 @@ class CASCLocal extends CASC {
 	}
 
 	/**
+	 * Get encoding info for a file by fileDataID for CDN streaming.
+	 * Returns { enc: string, arc?: { key: string, ofs: number, len: number } }
+	 * Initializes remote CASC if needed to get archive info for the server.
+	 * @param {number} fileDataID
+	 * @returns {Promise<{enc: string, arc?: {key: string, ofs: number, len: number}}|null>}
+	 */
+	async getFileEncodingInfo(fileDataID) {
+		try {
+			const encodingKey = await super.getFile(fileDataID);
+
+			// initialize remote if not already done
+			if (!this.remote)
+				await this.initializeRemoteCASC();
+
+			const archive = this.remote.archives.get(encodingKey);
+			if (archive !== undefined)
+				return { enc: encodingKey, arc: { key: archive.key, ofs: archive.offset, len: archive.size } };
+
+			return { enc: encodingKey };
+		} catch {
+			return null;
+		}
+	}
+
+	/**
 	* Get the current build ID.
 	* @returns {string}
 	*/
