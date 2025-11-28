@@ -143,10 +143,12 @@ const makeNewView = () => {
 		zonePhaseSelection: null, // Currently selected zone phase.
 		selectedZoneExpansionFilter: -1, // Currently selected zone expansion filter (-1 = show all)
 		mapViewerHasWorldModel: false, // Does selected map have a world model?
+		mapViewerIsWMOMinimap: false, // Is the map viewer showing a WMO minimap?
 		mapViewerTileLoader: null, // Tile loader for active map viewer map.
 		mapViewerSelectedMap: null, // Currently selected map.
 		mapViewerSelectedDir: null,
 		mapViewerChunkMask: null, // Map viewer chunk mask.
+		mapViewerGridSize: null, // Map viewer grid size (null = default 64).
 		mapViewerSelection: [], // Map viewer tile selection
 		selectedExpansionFilter: -1, // Currently selected expansion filter (-1 = show all)
 		chrModelViewerContext: null, // 3D context for the character-specific model viewer.

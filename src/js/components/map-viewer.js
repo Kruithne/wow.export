@@ -39,10 +39,12 @@ module.exports = {
 	 * tileSize: Base size of tiles (before zoom).
 	 * map: ID of the current map. We use this to listen for map changes.
 	 * zoom: Maxium zoom-out factor allowed.
-	 * mask: Chunk mask. Expected MAP_SIZE ^ 2 array.
+	 * mask: Chunk mask. Expected gridSize ^ 2 array.
 	 * selection: Array defining selected tiles.
+	 * selectable: Whether tile selection is enabled (default true).
+	 * gridSize: Size of the tile grid (default MAP_SIZE, 64).
 	 */
-	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection'],
+	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection', 'selectable', 'gridSize'],
 	emits: ['update:selection'],
 
 	data: function() {
@@ -53,6 +55,15 @@ module.exports = {
 			isPanning: false,
 			isSelecting: false,
 			selectState: true
+		}
+	},
+
+	computed: {
+		/**
+		 * Returns the effective grid size, defaulting to MAP_SIZE if not specified.
+		 */
+		effectiveGridSize: function() {
+			return this.gridSize ?? MAP_SIZE;
 		}
 	},
 
@@ -218,17 +229,18 @@ module.exports = {
 			const bufferY = (canvas.height - viewport.clientHeight) / 2;
 			
 			// Calculate visible tile range
+			const grid_size = this.effectiveGridSize;
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
-			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
-			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+			const endX = Math.min(grid_size, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(grid_size, startY + Math.ceil(canvas.height / tileSize) + 1);
 
 			const tilesNeedingRerender = [];
 
 			// Check each visible tile for transparency issues
 			for (let x = startX; x < endX; x++) {
 				for (let y = startY; y < endY; y++) {
-					const index = (x * MAP_SIZE) + y;
+					const index = (x * grid_size) + y;
 					
 					// Skip if not masked or not supposedly rendered
 					if (this.mask && this.mask[index] !== 1)
@@ -399,36 +411,50 @@ module.exports = {
 		},
 
 		/**
-		 * Set the map to a sensible default position. Centers on the tile closest
-		 * to 0,0 (tile 32,32) that is available in the mask.
+		 * Set the map to a sensible default position. Centers the view on the
+		 * middle of available tiles in the mask.
 		 */
 		setToDefaultPosition: function() {
-			let posX = 0, posY = 0;
+			const grid_size = this.effectiveGridSize;
+			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
+			const viewport = this.$el;
+			const maxTileSize = this.tileSize;
 
 			if (this.mask) {
-				const center = 32;
-				let min_dist = Infinity;
+				// find bounding box of enabled tiles
+				let min_x = Infinity, max_x = -Infinity;
+				let min_y = Infinity, max_y = -Infinity;
 
 				for (let i = 0; i < this.mask.length; i++) {
 					if (this.mask[i] !== 1)
 						continue;
 
-					const x = Math.floor(i / MAP_SIZE);
-					const y = i % MAP_SIZE;
-					const dist = Math.abs(x - center) + Math.abs(y - center);
+					const x = Math.floor(i / grid_size);
+					const y = i % grid_size;
 
-					if (dist < min_dist) {
-						min_dist = dist;
-						posX = ((x - 32) * TILE_SIZE) * -1;
-						posY = ((y - 32) * TILE_SIZE) * -1;
+					if (x < min_x) min_x = x;
+					if (x > max_x) max_x = x;
+					if (y < min_y) min_y = y;
+					if (y > max_y) max_y = y;
+				}
 
-						if (dist === 0)
-							break;
-					}
+				if (min_x !== Infinity) {
+					// center on the middle of the bounding box
+					const center_x = (min_x + max_x + 1) / 2;
+					const center_y = (min_y + max_y + 1) / 2;
+
+					state.offsetX = (viewport.clientWidth / 2) + maxTileSize - (center_x * tileSize);
+					state.offsetY = (viewport.clientHeight / 2) + maxTileSize - (center_y * tileSize);
+					this.render();
+					return;
 				}
 			}
 
-			this.setMapPosition(posX, posY);
+			// fallback: center on grid center
+			const center = grid_size / 2;
+			state.offsetX = (viewport.clientWidth / 2) + maxTileSize - (center * tileSize);
+			state.offsetY = (viewport.clientHeight / 2) + maxTileSize - (center * tileSize);
+			this.render();
 		},
 
 
@@ -524,7 +550,8 @@ module.exports = {
 		renderWithDoubleBuffer: function(canvas, canvasSize, tileSize) {
 			const ctx = this.context;
 			const doubleCtx = this.doubleBufferContext;
-			
+			const grid_size = this.effectiveGridSize;
+
 			// Calculate the offset delta from last render
 			const deltaX = state.offsetX - state.prevOffsetX;
 			const deltaY = state.offsetY - state.prevOffsetY;
@@ -540,8 +567,8 @@ module.exports = {
 			// Calculate which tiles should be visible in the current view
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
-			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
-			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+			const endX = Math.min(grid_size, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(grid_size, startY + Math.ceil(canvas.height / tileSize) + 1);
 
 			// Track tiles that should be visible but aren't rendered
 			const missingTiles = [];
@@ -550,7 +577,7 @@ module.exports = {
 			// Check all tiles in the visible range
 			for (let x = startX; x < endX; x++) {
 				for (let y = startY; y < endY; y++) {
-					const index = (x * MAP_SIZE) + y;
+					const index = (x * grid_size) + y;
 
 					// Skip if this tile is masked out
 					if (this.mask && this.mask[index] !== 1)
@@ -558,7 +585,7 @@ module.exports = {
 
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
-					
+
 					// Check if this tile should be visible in viewport
 					const isInViewport = !(drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
 											drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight);
@@ -577,15 +604,15 @@ module.exports = {
 			// Clean up tiles that are no longer visible anywhere on canvas
 			const tilesToRemove = [];
 			for (const index of state.rendered) {
-				const x = Math.floor(index / MAP_SIZE);
-				const y = index % MAP_SIZE;
+				const x = Math.floor(index / grid_size);
+				const y = index % grid_size;
 				const drawX = (x * tileSize) + state.offsetX;
 				const drawY = (y * tileSize) + state.offsetY;
-				
+
 				if (drawX + tileSize <= 0 || drawX >= canvas.width || drawY + tileSize <= 0 || drawY >= canvas.height)
 					tilesToRemove.push(index);
 			}
-			
+
 			for (let i = 0; i < tilesToRemove.length; i++)
 				state.rendered.delete(tilesToRemove[i]);
 
@@ -600,6 +627,10 @@ module.exports = {
 		 */
 		renderFullRedraw: function(canvas, canvasSize, tileSize) {
 			const ctx = this.context;
+			const grid_size = this.effectiveGridSize;
+
+			console.log('[map-viewer] renderFullRedraw grid_size=%d tileSize=%d offset=(%d,%d)', grid_size, tileSize, state.offsetX, state.offsetY);
+			console.log('[map-viewer] mask length=%d', this.mask?.length);
 
 			// Clear the entire canvas and rendered set
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -608,24 +639,27 @@ module.exports = {
 			// Calculate which tiles are visible
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
-			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
-			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+			const endX = Math.min(grid_size, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(grid_size, startY + Math.ceil(canvas.height / tileSize) + 1);
+
+			console.log('[map-viewer] tile range x=[%d,%d) y=[%d,%d)', startX, endX, startY, endY);
 
 			const viewport = this.$el;
 			const bufferX = (canvas.width - viewport.clientWidth) / 2;
 			const bufferY = (canvas.height - viewport.clientHeight) / 2;
 
+			let queued = 0;
 			// Queue all visible tiles for loading
 			for (let x = startX; x < endX; x++) {
 				for (let y = startY; y < endY; y++) {
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
-					
+
 					if (drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
 						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
 						continue;
 
-					const index = (x * MAP_SIZE) + y;
+					const index = (x * grid_size) + y;
 
 					// Skip if this tile is masked out
 					if (this.mask && this.mask[index] !== 1)
@@ -633,8 +667,10 @@ module.exports = {
 
 					// Queue tile for loading
 					this.queueTile(x, y, index, tileSize);
+					queued++;
 				}
 			}
+			console.log('[map-viewer] queued %d tiles', queued);
 		},
 
 		/**
@@ -660,12 +696,13 @@ module.exports = {
 			// Calculate current tile size based on zoom factor
 			const tileSize = Math.floor(this.tileSize / state.zoomFactor);
 			const canvas = this.$refs.canvas;
+			const grid_size = this.effectiveGridSize;
 
 			// Calculate which tiles might be visible
 			const startX = Math.max(0, Math.floor(-state.offsetX / tileSize));
 			const startY = Math.max(0, Math.floor(-state.offsetY / tileSize));
-			const endX = Math.min(MAP_SIZE, startX + Math.ceil(canvas.width / tileSize) + 1);
-			const endY = Math.min(MAP_SIZE, startY + Math.ceil(canvas.height / tileSize) + 1);
+			const endX = Math.min(grid_size, startX + Math.ceil(canvas.width / tileSize) + 1);
+			const endY = Math.min(grid_size, startY + Math.ceil(canvas.height / tileSize) + 1);
 
 			const viewport = this.$el;
 			const bufferX = (canvas.width - viewport.clientWidth) / 2;
@@ -676,12 +713,12 @@ module.exports = {
 				for (let y = startY; y < endY; y++) {
 					const drawX = (x * tileSize) + state.offsetX;
 					const drawY = (y * tileSize) + state.offsetY;
-					
+
 					if (drawX + tileSize <= bufferX || drawX >= bufferX + viewport.clientWidth ||
 						drawY + tileSize <= bufferY || drawY >= bufferY + viewport.clientHeight)
 						continue;
 
-					const index = (x * MAP_SIZE) + y;
+					const index = (x * grid_size) + y;
 
 					// This chunk is masked out, so skip rendering it.
 					if (this.mask && this.mask[index] !== 1)
@@ -704,11 +741,15 @@ module.exports = {
 
 		/**
 		 * Invoked when a key press event is fired on the document.
-		 * @param {KeyboardEvent} event 
+		 * @param {KeyboardEvent} event
 		 */
 		handleKeyPress: function(event) {
 			// Check if the user cursor is over the map viewer.
 			if (this.isHovering === false)
+				return;
+
+			// Skip selection shortcuts if selection is disabled
+			if (this.selectable === false)
 				return;
 
 			if (event.ctrlKey === true && event.key === 'a') {
@@ -744,13 +785,13 @@ module.exports = {
 		},
 
 		/**
-		 * @param {MouseEvent} event 
-		 * @returns 
+		 * @param {MouseEvent} event
+		 * @returns
 		 */
 		handleTileInteraction: function(event, isFirst = false) {
 			// Calculate which chunk we shift-clicked on.
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
-			const index = (point.tileX * MAP_SIZE) + point.tileY;
+			const index = (point.tileX * this.effectiveGridSize) + point.tileY;
 
 			// Prevent toggling a tile that we've already touched during this selection.
 			if (state.selectCache.has(index))
@@ -816,7 +857,7 @@ module.exports = {
 		 * @param {MouseEvent} event
 		 */
 		handleMouseDown: function(event) {
-			if (event.shiftKey) {
+			if (event.shiftKey && this.selectable !== false) {
 				this.handleTileInteraction(event, true);
 				this.isSelecting = true;
 			} else if (!this.isPanning) {
@@ -899,7 +940,7 @@ module.exports = {
 
 		/**
 		 * Invoked when the mouse is moved over the component.
-		 * @param {MouseEvent} event 
+		 * @param {MouseEvent} event
 		 */
 		handleMouseOver: function(event) {
 			this.isHovering = true;
@@ -909,7 +950,7 @@ module.exports = {
 
 			// If we're not panning, highlight the current tile.
 			if (!this.isPanning)
-				this.hoverTile = (point.tileX * MAP_SIZE) + point.tileY;
+				this.hoverTile = (point.tileX * this.effectiveGridSize) + point.tileY;
 		},
 
 		/**

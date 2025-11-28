@@ -648,7 +648,7 @@ class WMOExporter {
 			json.addProperty('portalInfo', wmo.portalInfo);
 			json.addProperty('portalMapObjectRef', wmo.mopr);
 			json.addProperty('ambientColor', wmo.ambientColor);
-			json.addProperty('areaTableID', wmo.areaTableID);
+			json.addProperty('wmoID', wmo.wmoID);
 			json.addProperty('boundingBox1', wmo.boundingBox1);
 			json.addProperty('boundingBox2', wmo.boundingBox2);
 			json.addProperty('fog', wmo.fogs);
@@ -988,7 +988,7 @@ class WMOExporter {
 			json.addProperty('portalInfo', wmo.portalInfo);
 			json.addProperty('portalMapObjectRef', wmo.mopr);
 			json.addProperty('ambientColor', wmo.ambientColor);
-			json.addProperty('areaTableID', wmo.areaTableID);
+			json.addProperty('wmoID', wmo.wmoID);
 			json.addProperty('boundingBox1', wmo.boundingBox1);
 			json.addProperty('boundingBox2', wmo.boundingBox2);
 			json.addProperty('fog', wmo.fogs);

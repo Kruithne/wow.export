@@ -63,6 +63,7 @@ class TiledPNGWriter {
 
 	/**
 	 * Write a tile's data to the pixel buffer at the correct position.
+	 * Uses alpha blending for proper compositing of overlapping tiles.
 	 * @param {Object} tile - Tile object with position and data
 	 * @param {Buffer} pixelData - Target pixel buffer
 	 * @private
@@ -70,26 +71,47 @@ class TiledPNGWriter {
 	_writeTileToPixelData(tile, pixelData) {
 		const pixelX = tile.x * this.tileSize;
 		const pixelY = tile.y * this.tileSize;
-		
+
 		const tileData = tile.data.data;
 		const tileWidth = tile.actualWidth;
 		const tileHeight = tile.actualHeight;
-		
+
 		for (let y = 0; y < tileHeight; y++) {
 			for (let x = 0; x < tileWidth; x++) {
 				const targetX = pixelX + x;
 				const targetY = pixelY + y;
-				
+
 				if (targetX >= this.width || targetY >= this.height)
 					continue;
-				
+
 				const sourceIndex = (y * tileWidth + x) * 4;
 				const targetIndex = (targetY * this.width + targetX) * 4;
-				
-				pixelData[targetIndex] = tileData[sourceIndex]; // R
-				pixelData[targetIndex + 1] = tileData[sourceIndex + 1]; // G
-				pixelData[targetIndex + 2] = tileData[sourceIndex + 2]; // B
-				pixelData[targetIndex + 3] = tileData[sourceIndex + 3]; // A
+
+				const srcA = tileData[sourceIndex + 3] / 255;
+
+				// fully transparent source pixel, skip
+				if (srcA === 0)
+					continue;
+
+				// fully opaque source pixel, overwrite
+				if (srcA === 1) {
+					pixelData[targetIndex] = tileData[sourceIndex];
+					pixelData[targetIndex + 1] = tileData[sourceIndex + 1];
+					pixelData[targetIndex + 2] = tileData[sourceIndex + 2];
+					pixelData[targetIndex + 3] = 255;
+					continue;
+				}
+
+				// alpha blend (Porter-Duff "over" operation)
+				const dstA = pixelData[targetIndex + 3] / 255;
+				const outA = srcA + dstA * (1 - srcA);
+
+				if (outA > 0) {
+					pixelData[targetIndex] = (tileData[sourceIndex] * srcA + pixelData[targetIndex] * dstA * (1 - srcA)) / outA;
+					pixelData[targetIndex + 1] = (tileData[sourceIndex + 1] * srcA + pixelData[targetIndex + 1] * dstA * (1 - srcA)) / outA;
+					pixelData[targetIndex + 2] = (tileData[sourceIndex + 2] * srcA + pixelData[targetIndex + 2] * dstA * (1 - srcA)) / outA;
+					pixelData[targetIndex + 3] = outA * 255;
+				}
 			}
 		}
 	}

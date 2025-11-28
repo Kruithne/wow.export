@@ -14,6 +14,7 @@ const ADTExporter = require('../3D/exporters/ADTExporter');
 const ADTLoader = require('../3D/loaders/ADTLoader');
 const ExportHelper = require('../casc/export-helper');
 const WMOExporter = require('../3D/exporters/WMOExporter');
+const WMOLoader = require('../3D/loaders/WMOLoader');
 const TiledPNGWriter = require('../tiled-png-writer');
 const PNGWriter = require('../png-writer');
 
@@ -24,6 +25,8 @@ let selected_map_id = null;
 let selected_map_dir = null;
 let selected_wdt = null;
 let game_objects_db2 = null;
+let wmo_minimap_textures = null;
+let current_wmo_minimap = null;
 
 /**
  * Parse a map entry from the listbox.
@@ -64,6 +67,49 @@ const load_map_tile = async (x, y, size) => {
 		const ctx = scaled.getContext('2d');
 		ctx.scale(scale, scale);
 		ctx.drawImage(canvas, 0, 0);
+
+		return ctx.getImageData(0, 0, size, size);
+	} catch (e) {
+		return false;
+	}
+};
+
+/**
+ * Load a WMO minimap tile.
+ * Composites multiple tiles at the same position using alpha blending.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} size
+ */
+const load_wmo_minimap_tile = async (x, y, size) => {
+	if (!current_wmo_minimap)
+		return false;
+
+	const key = `${x},${y}`;
+	const tile_list = current_wmo_minimap.tiles_by_coord.get(key);
+
+	if (!tile_list || tile_list.length === 0)
+		return false;
+
+	try {
+		const composite = document.createElement('canvas');
+		composite.width = size;
+		composite.height = size;
+
+		const ctx = composite.getContext('2d');
+
+		for (const tile of tile_list) {
+			const data = await core.view.casc.getFile(tile.fileDataID);
+			const blp = new BLPFile(data);
+			const canvas = blp.toCanvas(0b1111);
+
+			// scale proportionally to target size while maintaining aspect ratio
+			const scale = size / 256;
+			const draw_width = canvas.width * scale;
+			const draw_height = canvas.height * scale;
+
+			ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, draw_width, draw_height);
+		}
 
 		return ctx.getImageData(0, 0, size, size);
 	} catch (e) {
@@ -248,10 +294,11 @@ module.exports = {
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterMaps" placeholder="Filter maps..."/>
 			</div>
-			<component :is="$components.MapViewer" :map="$core.view.mapViewerSelectedMap" :loader="$core.view.mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="$core.view.mapViewerChunkMask" v-model:selection="$core.view.mapViewerSelection"></component>
+			<component :is="$components.MapViewer" :map="$core.view.mapViewerSelectedMap" :loader="$core.view.mapViewerTileLoader" :tile-size="512" :zoom="12" :mask="$core.view.mapViewerChunkMask" :grid-size="$core.view.mapViewerGridSize" v-model:selection="$core.view.mapViewerSelection" :selectable="!$core.view.mapViewerIsWMOMinimap"></component>
 			<div class="spaced-preview-controls">
-				<input type="button" value="Export Global WMO" @click="export_map_wmo" :class="{ disabled: $core.view.isBusy || !$core.view.mapViewerHasWorldModel }"/>
-				<component :is="$components.MenuButton" :options="$core.view.menuButtonMapExport" :default="$core.view.config.exportMapFormat" @change="$core.view.config.exportMapFormat = $event" :disabled="$core.view.isBusy || $core.view.mapViewerSelection.length === 0" @click="export_map"></component>
+				<input v-if="$core.view.mapViewerHasWorldModel" type="button" value="Export Global WMO" @click="export_map_wmo" :class="{ disabled: $core.view.isBusy }"/>
+				<input v-if="$core.view.mapViewerHasWorldModel" type="button" value="Export WMO Minimap" @click="export_map_wmo_minimap" :class="{ disabled: $core.view.isBusy }"/>
+				<component v-if="!$core.view.mapViewerIsWMOMinimap" :is="$components.MenuButton" :options="$core.view.menuButtonMapExport" :default="$core.view.config.exportMapFormat" @change="$core.view.config.exportMapFormat = $event" :disabled="$core.view.isBusy || $core.view.mapViewerSelection.length === 0" @click="export_map"></component>
 			</div>
 
 			<div id="maps-sidebar" class="sidebar">
@@ -309,7 +356,7 @@ module.exports = {
 	`,
 
 	methods: {
-		load_map(mapID, mapDir) {
+		async load_map(mapID, mapDir) {
 			const map_dir_lower = mapDir.toLowerCase();
 
 			this.$core.hideToast();
@@ -318,35 +365,177 @@ module.exports = {
 			selected_map_dir = map_dir_lower;
 
 			selected_wdt = null;
+			current_wmo_minimap = null;
 			this.$core.view.mapViewerHasWorldModel = false;
+			this.$core.view.mapViewerIsWMOMinimap = false;
+			this.$core.view.mapViewerGridSize = null;
 			this.$core.view.mapViewerSelection.splice(0);
 
 			const wdt_path = util.format('world/maps/%s/%s.wdt', map_dir_lower, map_dir_lower);
 			log.write('loading map preview for %s (%d)', map_dir_lower, mapID);
 
-			this.$core.view.casc.getFileByName(wdt_path).then(data => {
+			try {
+				const data = await this.$core.view.casc.getFileByName(wdt_path);
 				const wdt = selected_wdt = new WDTLoader(data);
 				wdt.load();
 
 				if (wdt.worldModelPlacement)
 					this.$core.view.mapViewerHasWorldModel = true;
 
-				// set mask before map so map-viewer has tile data for positioning
-				this.$core.view.mapViewerChunkMask = wdt.tiles;
-				this.$core.view.mapViewerSelectedMap = mapID;
-				this.$core.view.mapViewerSelectedDir = mapDir;
-
 				const has_terrain = wdt.tiles && wdt.tiles.some(tile => tile === 1);
 				const has_global_wmo = wdt.worldModelPlacement !== undefined;
 
-				if (!has_terrain && has_global_wmo)
+				if (!has_terrain && has_global_wmo) {
+					// try to load WMO minimap
+					await this.setup_wmo_minimap(wdt);
+
+					if (current_wmo_minimap) {
+						this.$core.view.mapViewerTileLoader = load_wmo_minimap_tile;
+						this.$core.view.mapViewerChunkMask = current_wmo_minimap.mask;
+						this.$core.view.mapViewerGridSize = current_wmo_minimap.grid_size;
+						this.$core.view.mapViewerIsWMOMinimap = true;
+						this.$core.view.mapViewerSelectedMap = mapID;
+						this.$core.view.mapViewerSelectedDir = mapDir;
+						this.$core.setToast('info', 'Showing WMO minimap. Use "Export Global WMO" to export the world model.', null, 6000);
+						return;
+					}
+
 					this.$core.setToast('info', 'This map has no terrain tiles. Use "Export Global WMO" to export the world model.', null, 6000);
-			}).catch(e => {
+				}
+
+				// use terrain minimap loader
+				this.$core.view.mapViewerTileLoader = load_map_tile;
+				this.$core.view.mapViewerChunkMask = wdt.tiles;
+				this.$core.view.mapViewerSelectedMap = mapID;
+				this.$core.view.mapViewerSelectedDir = mapDir;
+			} catch (e) {
 				log.write('cannot load %s, defaulting to all chunks enabled', wdt_path);
+				this.$core.view.mapViewerTileLoader = load_map_tile;
 				this.$core.view.mapViewerChunkMask = null;
 				this.$core.view.mapViewerSelectedMap = mapID;
 				this.$core.view.mapViewerSelectedDir = mapDir;
-			});
+			}
+		},
+
+		async setup_wmo_minimap(wdt) {
+			try {
+				const placement = wdt.worldModelPlacement;
+				let file_data_id = 0;
+
+				if (wdt.worldModel) {
+					file_data_id = listfile.getByFilename(wdt.worldModel);
+					if (!file_data_id)
+						return;
+				} else {
+					if (!placement.id)
+						return;
+
+					file_data_id = placement.id;
+				}
+
+				const wmo_data = await this.$core.view.casc.getFile(file_data_id);
+				const wmo = new WMOLoader(wmo_data, file_data_id);
+				await wmo.load();
+
+				const wmo_id = wmo.wmoID;
+				if (!wmo_id)
+					return;
+
+				const tiles = wmo_minimap_textures.get(wmo_id);
+				if (!tiles || tiles.length === 0)
+					return;
+
+				const group_info = wmo.groupInfo;
+				if (!group_info || group_info.length === 0)
+					return;
+
+				// wmo minimap tiles are 256x256 pixels representing a fixed world size
+				// each tile covers approximately 8.5 yards (256 pixels / 30 pixels per yard)
+				// we use the group bounding boxes to position each group's tiles in world space
+				const MINIMAP_TILE_SIZE = 256 / 3; // ~85.33 yards per tile
+
+				// calculate world position for each tile based on group bounding box
+				const world_tiles = [];
+				for (const tile of tiles) {
+					const group_idx = tile.groupNum;
+					if (group_idx >= group_info.length)
+						continue;
+
+					const group = group_info[group_idx];
+					// bounding box is [x, y, z] - use x and y for minimap positioning
+					// group position is the center of the bounding box
+					const group_min_x = group.boundingBox1[0];
+					const group_min_y = group.boundingBox1[1];
+
+					// calculate world position of this tile
+					// blockX/blockY are offsets within the group's minimap area
+					const world_x = group_min_x + (tile.blockX * MINIMAP_TILE_SIZE);
+					const world_y = group_min_y + (tile.blockY * MINIMAP_TILE_SIZE);
+
+					world_tiles.push({
+						...tile,
+						worldX: world_x,
+						worldY: world_y
+					});
+				}
+
+				if (world_tiles.length === 0)
+					return;
+
+				// calculate bounds in world space
+				let min_x = Infinity, max_x = -Infinity;
+				let min_y = Infinity, max_y = -Infinity;
+
+				for (const tile of world_tiles) {
+					if (tile.worldX < min_x) min_x = tile.worldX;
+					if (tile.worldX > max_x) max_x = tile.worldX;
+					if (tile.worldY < min_y) min_y = tile.worldY;
+					if (tile.worldY > max_y) max_y = tile.worldY;
+				}
+
+				// convert world coords to grid coords
+				const tiles_wide = Math.ceil((max_x - min_x) / MINIMAP_TILE_SIZE) + 1;
+				const tiles_high = Math.ceil((max_y - min_y) / MINIMAP_TILE_SIZE) + 1;
+				const grid_size = Math.max(tiles_wide, tiles_high);
+				const mask = new Array(grid_size * grid_size).fill(0);
+				const tiles_by_coord = new Map();
+
+				for (const tile of world_tiles) {
+					const grid_x = Math.floor((tile.worldX - min_x) / MINIMAP_TILE_SIZE);
+					const grid_y = Math.floor((max_y - tile.worldY) / MINIMAP_TILE_SIZE); // Y inverted
+					const index = (grid_x * grid_size) + grid_y;
+
+					if (grid_x >= 0 && grid_x < grid_size && grid_y >= 0 && grid_y < grid_size)
+						mask[index] = 1;
+
+					const key = `${grid_x},${grid_y}`;
+					if (!tiles_by_coord.has(key))
+						tiles_by_coord.set(key, []);
+
+					tiles_by_coord.get(key).push(tile);
+				}
+
+				current_wmo_minimap = {
+					wmo_id,
+					tiles: world_tiles,
+					min_x,
+					max_x,
+					min_y,
+					max_y,
+					tiles_wide,
+					tiles_high,
+					grid_size,
+					mask,
+					tiles_by_coord
+				};
+
+				log.write('loaded WMO minimap: %d tiles, %dx%d grid (grid_size=%d)', world_tiles.length, tiles_wide, tiles_high, grid_size);
+				log.write('WMO minimap world bounds: x=[%.1f,%.1f] y=[%.1f,%.1f]', min_x, max_x, min_y, max_y);
+				log.write('WMO minimap unique positions: %d', tiles_by_coord.size);
+			} catch (e) {
+				log.write('failed to setup WMO minimap: %s', e.message);
+				current_wmo_minimap = null;
+			}
 		},
 
 		async export_map_wmo() {
@@ -392,6 +581,83 @@ module.exports = {
 			}
 
 			WMOExporter.clearCache();
+			helper.finish();
+		},
+
+		async export_map_wmo_minimap() {
+			const helper = new ExportHelper(1, 'minimap');
+			helper.start();
+
+			try {
+				// use cached minimap data if available, otherwise load it
+				let minimap_data = current_wmo_minimap;
+
+				if (!minimap_data) {
+					if (!selected_wdt || !selected_wdt.worldModelPlacement)
+						throw new Error('map does not contain a world model.');
+
+					await this.setup_wmo_minimap(selected_wdt);
+					minimap_data = current_wmo_minimap;
+
+					if (!minimap_data)
+						throw new Error('no minimap textures found for this WMO.');
+				}
+
+				const { tiles_by_coord, min_x, max_x, min_y, max_y, tiles_wide, tiles_high } = minimap_data;
+				const tile_size = 256;
+				const final_width = tiles_wide * tile_size;
+				const final_height = tiles_high * tile_size;
+
+				log.write('WMO minimap export: %d tile positions, %dx%d pixels', tiles_by_coord.size, final_width, final_height);
+
+				const writer = new TiledPNGWriter(final_width, final_height, tile_size);
+
+				for (const [key, tile_list] of tiles_by_coord) {
+					if (helper.isCancelled())
+						break;
+
+					try {
+						const composite = document.createElement('canvas');
+						composite.width = tile_size;
+						composite.height = tile_size;
+
+						const ctx = composite.getContext('2d');
+
+						for (const tile of tile_list) {
+							const blp_data = await this.$core.view.casc.getFile(tile.fileDataID);
+							const blp = new BLPFile(blp_data);
+							const canvas = blp.toCanvas(0b1111);
+
+							// draw at native size, not stretched to tile_size
+							ctx.drawImage(canvas, 0, 0);
+						}
+
+						const image_data = ctx.getImageData(0, 0, tile_size, tile_size);
+
+						const [rel_x, rel_y] = key.split(',').map(Number);
+						writer.addTile(rel_x, rel_y, image_data);
+					} catch (e) {
+						log.write('failed to load WMO minimap tile at %s: %s', key, e.message);
+					}
+				}
+
+				const filename = `${selected_map_dir}_wmo_minimap.png`;
+				const relative_path = path.join('maps', selected_map_dir, filename);
+				const out_path = ExportHelper.getExportPath(relative_path);
+
+				await writer.write(out_path);
+
+				const export_paths = this.$core.openLastExportStream();
+				await export_paths?.writeLine('png:' + out_path);
+				export_paths?.close();
+
+				helper.mark(relative_path, true);
+				log.write('WMO minimap exported: %s', out_path);
+
+			} catch (e) {
+				helper.mark('WMO minimap', false, e.message, e.stack);
+			}
+
 			helper.finish();
 		},
 
@@ -734,7 +1000,27 @@ module.exports = {
 		});
 
 		try {
-			this.$core.showLoadingScreen(2);
+			this.$core.showLoadingScreen(3);
+			await this.$core.progressLoadingScreen('Loading WMO minimap textures...');
+
+			wmo_minimap_textures = new Map();
+			for (const row of (await db2.WMOMinimapTexture.getAllRows()).values()) {
+				let tiles = wmo_minimap_textures.get(row.WMOID);
+				if (tiles === undefined) {
+					tiles = [];
+					wmo_minimap_textures.set(row.WMOID, tiles);
+				}
+
+				tiles.push({
+					groupNum: row.GroupNum,
+					blockX: row.BlockX,
+					blockY: row.BlockY,
+					fileDataID: row.FileDataID
+				});
+			}
+
+			log.write('loaded %d WMO minimap entries', wmo_minimap_textures.size);
+
 			await this.$core.progressLoadingScreen('Loading maps...');
 
 			const maps = [];
