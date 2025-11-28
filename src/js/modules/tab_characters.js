@@ -427,6 +427,11 @@ async function preview_model(core, file_data_id) {
 		await active_renderer.load();
 		fit_camera(core);
 
+		// apply initial character rotation
+		const controls = core.view.chrModelViewerContext.controls;
+		if (controls?.on_model_rotate)
+			controls.on_model_rotate(controls.model_rotation_y);
+
 		active_model = file_data_id;
 
 		// populate animation list
