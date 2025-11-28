@@ -7,7 +7,9 @@
 const core = require('../core');
 const GLContext = require('../3D/gl/GLContext');
 const CameraControlsGL = require('../3D/camera/CameraControlsGL');
+const CharacterCameraControlsGL = require('../3D/camera/CharacterCameraControlsGL');
 const GridRenderer = require('../3D/renderers/GridRenderer');
+const ShadowPlaneRenderer = require('../3D/renderers/ShadowPlaneRenderer');
 
 const parse_hex_color = (hex) => {
 	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -21,6 +23,7 @@ const parse_hex_color = (hex) => {
 	];
 };
 
+// general model camera fit constants
 const CAMERA_FIT_DIAGONAL_ANGLE = 45;
 const CAMERA_FIT_DISTANCE_MULTIPLIER = 2;
 const CAMERA_FIT_ELEVATION_FACTOR = 0.3;
@@ -174,6 +177,32 @@ function fit_camera_to_bounding_box(bounding_box, camera, controls) {
 	}
 }
 
+/**
+ * Fit camera for character view - fixed position tuned for humanoid models
+ * @param {PerspectiveCamera} camera
+ * @param {CameraControlsGL|CharacterCameraControlsGL} controls
+ */
+function fit_camera_for_character(bounding_box, camera, controls) {
+	camera.position[0] = 0;
+	camera.position[1] = 1.609;
+	camera.position[2] = 2.347;
+
+	const target_x = 0;
+	const target_y = 1.247;
+	const target_z = 0.537;
+
+	camera.lookAt(target_x, target_y, target_z);
+
+	if (controls) {
+		controls.target[0] = target_x;
+		controls.target[1] = target_y;
+		controls.target[2] = target_z;
+
+		if (controls.update)
+			controls.update();
+	}
+}
+
 module.exports = {
 	props: ['context'],
 
@@ -194,9 +223,9 @@ module.exports = {
 			if (activeRenderer && activeRenderer.updateAnimation)
 				activeRenderer.updateAnimation(deltaTime);
 
-			// apply model rotation if speed is non-zero
+			// apply model rotation if speed is non-zero (non-character mode)
 			const rotation_speed = core.view.modelViewerRotationSpeed;
-			if (rotation_speed !== 0 && activeRenderer && activeRenderer.setTransform) {
+			if (rotation_speed !== 0 && activeRenderer && activeRenderer.setTransform && !this.use_character_controls) {
 				this.model_rotation_y += rotation_speed * deltaTime;
 				activeRenderer.setTransform(
 					[0, 0, 0],
@@ -217,8 +246,12 @@ module.exports = {
 			}
 			this.gl_context.clear(true, true);
 
-			// render grid
-			if (core.view.config.modelViewerShowGrid && this.grid_renderer)
+			// render shadow plane (before model, for character mode)
+			if (this.shadow_renderer && this.shadow_renderer.visible)
+				this.shadow_renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
+
+			// render grid (not in character mode)
+			if (core.view.config.modelViewerShowGrid && this.grid_renderer && !this.context.useCharacterControls)
 				this.grid_renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
 			// render model
@@ -226,6 +259,46 @@ module.exports = {
 				activeRenderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
 			requestAnimationFrame(() => this.render());
+		},
+
+		recreate_controls: function() {
+			if (this.controls) {
+				this.controls.dispose();
+				this.controls = null;
+			}
+
+			const use_3d_camera = this.context.useCharacterControls ? core.view.config.chrUse3DCamera : true;
+
+			if (this.context.useCharacterControls && !use_3d_camera) {
+				this.controls = new CharacterCameraControlsGL(this.camera, this.canvas);
+				this.controls.on_model_rotate = (rotation_y) => {
+					const active_renderer = this.context.getActiveRenderer?.();
+					if (active_renderer && active_renderer.setTransform)
+						active_renderer.setTransform([0, 0, 0], [0, rotation_y, 0], [1, 1, 1]);
+				};
+
+				// initial 90 degree clockwise rotation
+				this.controls.model_rotation_y = -Math.PI / 2;
+				this.controls.on_model_rotate(this.controls.model_rotation_y);
+
+				this.use_character_controls = true;
+			} else {
+				this.controls = new CameraControlsGL(this.camera, this.canvas);
+				this.use_character_controls = false;
+			}
+
+			this.context.controls = this.controls;
+		},
+
+		update_shadow_visibility: function() {
+			if (!this.shadow_renderer)
+				return;
+
+			const should_show = this.context.useCharacterControls &&
+				core.view.config.chrRenderShadow &&
+				!core.view.chrModelLoading;
+
+			this.shadow_renderer.visible = should_show;
 		},
 
 		fit_camera: function() {
@@ -237,7 +310,10 @@ module.exports = {
 			if (!bounding_box)
 				return;
 
-			fit_camera_to_bounding_box(bounding_box, this.camera, this.controls);
+			if (this.context.useCharacterControls)
+				fit_camera_for_character(bounding_box, this.camera, this.controls);
+			else
+				fit_camera_to_bounding_box(bounding_box, this.camera, this.controls);
 		}
 	},
 
@@ -263,20 +339,44 @@ module.exports = {
 		// create camera
 		this.camera = new PerspectiveCamera(70, 1, 0.01, 2000);
 
-		// create controls
-		this.controls = new CameraControlsGL(this.camera, canvas);
+		// model rotation
+		this.model_rotation_y = 0;
+		this.use_character_controls = false;
 
-		// expose controls on context
-		this.context.controls = this.controls;
+		// create controls
+		this.recreate_controls();
 
 		// expose fit_camera on context
 		this.context.fitCamera = () => this.fit_camera();
 
-		// model rotation
-		this.model_rotation_y = 0;
+		// debug: expose camera state for tuning
+		window.dumpCamera = () => {
+			const pos = this.camera.position;
+			const tgt = this.controls.target;
+			console.log('Camera position:', pos[0], pos[1], pos[2]);
+			console.log('Camera target:', tgt[0], tgt[1], tgt[2]);
+			console.log('Camera FOV:', this.camera.fov);
+			return { position: [...pos], target: [...tgt], fov: this.camera.fov };
+		};
 
 		// create grid renderer
 		this.grid_renderer = new GridRenderer(this.gl_context, 100, 100);
+
+		// create shadow renderer (for character mode)
+		this.shadow_renderer = new ShadowPlaneRenderer(this.gl_context, 2);
+		this.shadow_renderer.visible = false;
+		this.update_shadow_visibility();
+
+		// watchers for character mode
+		this.watchers = [];
+
+		if (this.context.useCharacterControls) {
+			this.watchers.push(
+				core.view.$watch('config.chrUse3DCamera', () => this.recreate_controls()),
+				core.view.$watch('config.chrRenderShadow', () => this.update_shadow_visibility()),
+				core.view.$watch('chrModelLoading', () => this.update_shadow_visibility())
+			);
+		}
 
 		// resize handler
 		this.onResize = () => {
@@ -307,8 +407,14 @@ module.exports = {
 		this.isRendering = false;
 		this.controls.dispose();
 		this.grid_renderer.dispose();
+		this.shadow_renderer?.dispose();
 		this.gl_context.dispose();
 		window.removeEventListener('resize', this.onResize);
+
+		for (const watcher of this.watchers)
+			watcher();
+
+		this.watchers = [];
 	},
 
 	template: `<div class="image ui-model-viewer"></div>`

@@ -9,10 +9,8 @@ const path = require('path');
 const BufferWrapper = require('../buffer');
 const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
-const M2Renderer = require('../3D/renderers/M2Renderer');
+const M2RendererGL = require('../3D/renderers/M2RendererGL');
 const M2Exporter = require('../3D/exporters/M2Exporter');
-const ViewerOBJExporter = require('../3D/exporters/ViewerOBJExporter');
-const CameraBounding = require('../3D/camera/CameraBounding');
 const db2 = require('../casc/db2');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
@@ -23,13 +21,8 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 
-let camera;
-let scene;
-let grid;
-let shadow_plane;
-
 const active_skins = new Map();
-let render_group = new THREE.Group();
+let gl_context = null;
 
 let active_renderer;
 let active_model;
@@ -89,29 +82,13 @@ function reset_module_state() {
 	chr_materials.clear();
 	current_char_component_texture_layout_id = 0;
 
-	// dispose active renderer BEFORE clearing render group
-	// (dispose removes meshGroup from renderGroup)
+	// dispose active renderer
 	if (active_renderer) {
 		active_renderer.dispose();
 		active_renderer = undefined;
 	}
 	active_model = undefined;
 	is_model_loading = false;
-
-	// clear render group children (belt and suspenders)
-	while (render_group.children.length > 0) {
-		const child = render_group.children[0];
-		render_group.remove(child);
-		// also dispose geometry/material if present
-		if (child.geometry)
-			child.geometry.dispose();
-		if (child.material) {
-			if (Array.isArray(child.material))
-				child.material.forEach(m => m.dispose());
-			else
-				child.material.dispose();
-		}
-	}
 
 	// cleanup watchers
 	for (const cleanup of watcher_cleanup_funcs)
@@ -133,10 +110,6 @@ function dispose_skinned_models() {
 	}
 
 	skinned_model_renderers.clear();
-
-	for (const mesh of skinned_model_meshes)
-		render_group.remove(mesh);
-
 	skinned_model_meshes.clear();
 }
 
@@ -318,7 +291,7 @@ async function update_active_customization(core) {
 	for (const [file_data_id, skinned_model_row] of new_skinned_models) {
 		console.log('Loading skinned model ' + file_data_id);
 
-		const skinned_model_renderer = new M2Renderer(await core.view.casc.getFile(file_data_id), render_group, false);
+		const skinned_model_renderer = new M2RendererGL(await core.view.casc.getFile(file_data_id), gl_context, false, false);
 		skinned_model_renderer.geosetKey = 'chrCustGeosets';
 		await skinned_model_renderer.load();
 
@@ -338,11 +311,6 @@ async function update_active_customization(core) {
 
 		skinned_model_renderer.updateGeosets();
 		skinned_model_renderers.set(file_data_id, skinned_model_renderer);
-
-		const mesh = skinned_model_renderers.get(file_data_id).meshGroup.clone(true);
-		render_group.add(mesh);
-
-		skinned_model_meshes.add(mesh);
 	}
 
 	await upload_render_override_textures();
@@ -453,11 +421,11 @@ async function preview_model(core, file_data_id) {
 
 		const file = await core.view.casc.getFile(file_data_id);
 
-		active_renderer = new M2Renderer(file, render_group, true);
+		active_renderer = new M2RendererGL(file, gl_context, true, false);
 		active_renderer.geosetKey = 'chrCustGeosets';
 
 		await active_renderer.load();
-		apply_camera_debug_settings(core);
+		fit_camera(core);
 
 		active_model = file_data_id;
 
@@ -486,7 +454,8 @@ async function preview_model(core, file_data_id) {
 		const stand_anim = anim_list.find(anim => anim.id === '0.0');
 		core.view.chrModelViewerAnimSelection = stand_anim ? '0.0' : 'none';
 
-		if (render_group.children.length === 0)
+		const has_content = active_renderer.draw_calls?.length > 0;
+		if (!has_content)
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_data_id), null, 4000);
 
 		await update_active_customization(core);
@@ -499,11 +468,9 @@ async function preview_model(core, file_data_id) {
 	core.view.chrModelLoading = false;
 }
 
-function apply_camera_debug_settings(core) {
-	CameraBounding.fitCharacterInView(render_group, camera, core.view.chrModelViewerContext.controls, {
-		viewHeightPercentage: 0.6,
-		verticalOffsetFactor: 0
-	});
+function fit_camera(core) {
+	if (core.view.chrModelViewerContext?.fitCamera)
+		core.view.chrModelViewerContext.fitCamera();
 }
 
 async function import_character(core) {
@@ -817,16 +784,25 @@ const export_char_model = async (core) => {
 	try {
 		if (format === 'OBJ') {
 			// export from viewer with baked pose
-			if (!active_renderer || !active_renderer.meshGroup) {
+			if (!active_renderer || !active_renderer.m2) {
 				core.setToast('error', 'no character model loaded to export', null, -1);
 				export_paths?.close();
 				return;
 			}
 
 			const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.obj');
-			const exporter = new ViewerOBJExporter(active_renderer, chr_materials, core.view.chrCustGeosets);
 
-			await exporter.export(export_path, helper);
+			// for GL renderer, use M2Exporter directly
+			const casc = core.view.casc;
+			const data = await casc.getFile(file_data_id);
+			const exporter = new M2Exporter(data, [], file_data_id);
+
+			for (const [chr_model_texture_target, chr_material] of chr_materials)
+				exporter.addURITexture(chr_model_texture_target, chr_material.getURI());
+
+			exporter.setGeosetMask(core.view.chrCustGeosets);
+
+			await exporter.exportAsOBJ(export_path, false, helper, []);
 			await export_paths?.writeLine('M2_OBJ:' + export_path);
 
 			if (helper.isCancelled())
@@ -976,17 +952,6 @@ function randomize_customization(core) {
 	}
 }
 
-function update_render_shadow(core) {
-	if (!shadow_plane || !scene)
-		return;
-
-	const should_show = core.view.config.chrRenderShadow && !core.view.chrModelLoading;
-
-	if (should_show && !shadow_plane.parent)
-		scene.add(shadow_plane);
-	else if (!should_show && shadow_plane.parent)
-		scene.remove(shadow_plane);
-}
 
 function int_to_css_color(value) {
 	if (value === 0)
@@ -1143,7 +1108,7 @@ module.exports = {
 			<div class="char-preview preview-container">
 				<div class="preview-background">
 					<div v-if="$core.view.chrModelLoading" class="chr-model-loading-spinner"></div>
-					<component :is="$components.ModelViewer" v-if="$core.view.chrModelViewerContext" :context="$core.view.chrModelViewerContext"></component>
+					<component :is="$components.ModelViewerGL" v-if="$core.view.chrModelViewerContext" :context="$core.view.chrModelViewerContext"></component>
 					<div v-if="$core.view.chrCustBakedNPCTexture" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 100;">
 						<input type="button" value="Remove Baked Texture" @click="remove_baked_npc_texture" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer; font-weight: bold;"/>
 					</div>
@@ -1444,77 +1409,26 @@ module.exports = {
 		await this.$core.progressLoadingScreen('Loading character shaders...');
 		await CharMaterialRenderer.init();
 
-		// initialize model viewer (reuse existing context if available)
-		const existing_context = state.chrModelViewerContext;
-		if (existing_context) {
-			camera = existing_context.camera;
-			scene = existing_context.scene;
-			render_group = existing_context.renderGroup;
+		// initialize model viewer context (gl_context is populated by ModelViewerGL on mount)
+		state.chrModelViewerContext = {
+			gl_context: null,
+			controls: null,
+			useCharacterControls: true,
+			fitCamera: null,
+			getActiveRenderer: () => active_renderer
+		};
 
-			// find existing objects in scene
-			grid = scene.children.find(c => c instanceof THREE.GridHelper);
-			shadow_plane = scene.children.find(c => c.geometry instanceof THREE.PlaneGeometry);
-
-			// clear any leftover children from previous session
-			while (render_group.children.length > 0)
-				render_group.remove(render_group.children[0]);
-		} else {
-			camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
-
-			scene = new THREE.Scene();
-			const light = new THREE.HemisphereLight(0xffffff, 0x080820, 3);
-			scene.add(light);
-			scene.add(render_group);
-
-			const shadow_geometry = new THREE.PlaneGeometry(2, 2);
-			const shadow_material = new THREE.ShaderMaterial({
-				transparent: true,
-				depthWrite: false,
-				uniforms: {
-					shadow_radius: { value: 8.0 }
-				},
-				vertexShader: `
-					varying vec2 v_uv;
-					void main() {
-						v_uv = uv;
-						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-					}
-				`,
-				fragmentShader: `
-					uniform float shadow_radius;
-					varying vec2 v_uv;
-					void main() {
-						vec2 center = vec2(0.5, 0.5);
-						float dist = distance(v_uv, center) * 2.0;
-						float alpha = smoothstep(1.0, 0.0, dist / (shadow_radius / 10.0));
-						gl_FragColor = vec4(0.0, 0.0, 0.0, alpha * 0.6);
-					}
-				`
-			});
-
-			shadow_plane = new THREE.Mesh(shadow_geometry, shadow_material);
-			shadow_plane.rotation.x = -Math.PI / 2;
-			shadow_plane.position.set(0, 0, 0);
-
-			if (state.config.chrRenderShadow && !state.chrModelLoading)
-				scene.add(shadow_plane);
-
-			grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
-
-			if (state.config.modelViewerShowGrid)
-				scene.add(grid);
-
-			// rotate for WoW model orientation
-			render_group.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
-		}
-
-		state.chrModelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup: render_group, useCharacterControls: true, getActiveRenderer: () => active_renderer });
+		// watch for gl_context to be set by ModelViewerGL
+		const ctx_watcher = state.$watch('chrModelViewerContext.gl_context', (new_ctx) => {
+			if (new_ctx) {
+				gl_context = new_ctx;
+				ctx_watcher();
+			}
+		});
 
 		// setup watchers BEFORE triggering initial load (store cleanup functions)
 		watcher_cleanup_funcs.push(
 			this.$core.view.$watch('config.chrIncludeBaseClothing', () => upload_render_override_textures()),
-			this.$core.view.$watch('config.chrRenderShadow', () => update_render_shadow(this.$core)),
-			this.$core.view.$watch('chrModelLoading', () => update_render_shadow(this.$core)),
 			this.$core.view.$watch('chrCustRaceSelection', () => update_chr_model_list(this.$core)),
 			this.$core.view.$watch('chrCustModelSelection', () => update_model_selection(this.$core), { deep: true }),
 			this.$core.view.$watch('chrCustOptionSelection', () => update_customization_type(this.$core), { deep: true }),
@@ -1534,10 +1448,8 @@ module.exports = {
 						active_renderer?.stopAnimation?.();
 
 						if (this.$core.view.modelViewerAutoAdjust)
-							requestAnimationFrame(() => CameraBounding.fitCharacterInView(render_group, camera, this.$core.view.chrModelViewerContext.controls, {
-								viewHeightPercentage: 0.6,
-								verticalOffsetFactor: 0
-							}));
+							requestAnimationFrame(() => fit_camera(this.$core));
+
 						return;
 					}
 
@@ -1547,10 +1459,7 @@ module.exports = {
 						await active_renderer.playAnimation(anim_info.m2Index);
 
 						if (this.$core.view.modelViewerAutoAdjust)
-							requestAnimationFrame(() => CameraBounding.fitCharacterInView(render_group, camera, this.$core.view.chrModelViewerContext.controls, {
-								viewHeightPercentage: 0.6,
-								verticalOffsetFactor: 0
-							}));
+							requestAnimationFrame(() => fit_camera(this.$core));
 					}
 				}
 			})

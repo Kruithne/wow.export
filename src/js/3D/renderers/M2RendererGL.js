@@ -26,6 +26,7 @@ const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MODEL_COLOR = [0.34, 0.68, 0.89]; // 0x57afe2
 
+
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -551,7 +552,7 @@ class M2RendererGL {
 		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
 
 		// lighting - transform light direction to view space
-		const lx = 0.5, ly = -0.7, lz = 0.5;
+		const lx = 3, ly = -0.7, lz = -2;
 		const light_view_x = view_matrix[0] * lx + view_matrix[4] * ly + view_matrix[8] * lz;
 		const light_view_y = view_matrix[1] * lx + view_matrix[5] * ly + view_matrix[9] * lz;
 		const light_view_z = view_matrix[2] * lx + view_matrix[6] * ly + view_matrix[10] * lz;
