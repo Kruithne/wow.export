@@ -7,6 +7,19 @@
 const core = require('../core');
 const GLContext = require('../3D/gl/GLContext');
 const CameraControlsGL = require('../3D/camera/CameraControlsGL');
+const GridRenderer = require('../3D/renderers/GridRenderer');
+
+const parse_hex_color = (hex) => {
+	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	if (!result)
+		return [0, 0, 0];
+
+	return [
+		parseInt(result[1], 16) / 255,
+		parseInt(result[2], 16) / 255,
+		parseInt(result[3], 16) / 255
+	];
+};
 
 const CAMERA_FIT_DIAGONAL_ANGLE = 45;
 const CAMERA_FIT_DISTANCE_MULTIPLIER = 2;
@@ -195,9 +208,18 @@ module.exports = {
 			// update controls
 			this.controls.update();
 
-			// clear
-			this.gl_context.set_clear_color(0.1, 0.1, 0.1, 1);
+			// clear with appropriate background
+			if (core.view.config.modelViewerShowBackground) {
+				const [r, g, b] = parse_hex_color(core.view.config.modelViewerBackgroundColor);
+				this.gl_context.set_clear_color(r, g, b, 1);
+			} else {
+				this.gl_context.set_clear_color(0, 0, 0, 0);
+			}
 			this.gl_context.clear(true, true);
+
+			// render grid
+			if (core.view.config.modelViewerShowGrid && this.grid_renderer)
+				this.grid_renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
 			// render model
 			if (activeRenderer && activeRenderer.render)
@@ -253,6 +275,9 @@ module.exports = {
 		// model rotation
 		this.model_rotation_y = 0;
 
+		// create grid renderer
+		this.grid_renderer = new GridRenderer(this.gl_context, 100, 100);
+
 		// resize handler
 		this.onResize = () => {
 			const rect = container.getBoundingClientRect();
@@ -281,6 +306,7 @@ module.exports = {
 	beforeUnmount: function() {
 		this.isRendering = false;
 		this.controls.dispose();
+		this.grid_renderer.dispose();
 		this.gl_context.dispose();
 		window.removeEventListener('resize', this.onResize);
 	},
