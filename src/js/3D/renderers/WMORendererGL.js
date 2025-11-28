@@ -164,7 +164,7 @@ class WMORendererGL {
 					const wrap_s = (material.flags & 0x40) ? this.gl.CLAMP_TO_EDGE : this.gl.REPEAT;
 					const wrap_t = (material.flags & 0x80) ? this.gl.CLAMP_TO_EDGE : this.gl.REPEAT;
 
-					const pixels = blp.toUInt8Array(0, 0b0111);
+					const pixels = blp.toUInt8Array(0, 0b1111);
 					gl_tex.set_rgba(pixels, blp.width, blp.height, {
 						wrap_s: wrap_s,
 						wrap_t: wrap_t,
