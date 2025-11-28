@@ -15,7 +15,6 @@ const M2Loader = require('../loaders/M2Loader');
 const SKELLoader = require('../loaders/SKELLoader');
 const GeosetMapper = require('../GeosetMapper');
 const ShaderMapper = require('../ShaderMapper');
-const M2AnimationConverter = require('../M2AnimationConverter');
 
 const GLContext = require('../gl/GLContext');
 const ShaderProgram = require('../gl/ShaderProgram');
@@ -34,6 +33,167 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 1, 0,
 	0, 0, 0, 1
 ]);
+
+// temp matrix for calculations
+const TEMP_MAT4 = new Float32Array(16);
+
+/**
+ * multiply two 4x4 matrices (column-major): out = a * b
+ * @param {Float32Array} out
+ * @param {Float32Array} a
+ * @param {Float32Array} b
+ */
+function mat4_multiply(out, a, b) {
+	const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+	const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+	const a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+	const a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+	let b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+	out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[3] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+
+	b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+	out[4] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[5] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[6] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[7] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+
+	b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+	out[8] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[9] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[10] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[11] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+
+	b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+	out[12] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[13] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[14] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+}
+
+/**
+ * set matrix to translation
+ * @param {Float32Array} out
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
+function mat4_from_translation(out, x, y, z) {
+	out[0] = 1; out[1] = 0; out[2] = 0; out[3] = 0;
+	out[4] = 0; out[5] = 1; out[6] = 0; out[7] = 0;
+	out[8] = 0; out[9] = 0; out[10] = 1; out[11] = 0;
+	out[12] = x; out[13] = y; out[14] = z; out[15] = 1;
+}
+
+/**
+ * set matrix from quaternion (x, y, z, w)
+ * @param {Float32Array} out
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @param {number} w
+ */
+function mat4_from_quat(out, x, y, z, w) {
+	const x2 = x + x, y2 = y + y, z2 = z + z;
+	const xx = x * x2, xy = x * y2, xz = x * z2;
+	const yy = y * y2, yz = y * z2, zz = z * z2;
+	const wx = w * x2, wy = w * y2, wz = w * z2;
+
+	out[0] = 1 - (yy + zz);
+	out[1] = xy + wz;
+	out[2] = xz - wy;
+	out[3] = 0;
+
+	out[4] = xy - wz;
+	out[5] = 1 - (xx + zz);
+	out[6] = yz + wx;
+	out[7] = 0;
+
+	out[8] = xz + wy;
+	out[9] = yz - wx;
+	out[10] = 1 - (xx + yy);
+	out[11] = 0;
+
+	out[12] = 0;
+	out[13] = 0;
+	out[14] = 0;
+	out[15] = 1;
+}
+
+/**
+ * set matrix to scale
+ * @param {Float32Array} out
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
+function mat4_from_scale(out, x, y, z) {
+	out[0] = x; out[1] = 0; out[2] = 0; out[3] = 0;
+	out[4] = 0; out[5] = y; out[6] = 0; out[7] = 0;
+	out[8] = 0; out[9] = 0; out[10] = z; out[11] = 0;
+	out[12] = 0; out[13] = 0; out[14] = 0; out[15] = 1;
+}
+
+/**
+ * copy matrix
+ * @param {Float32Array} out
+ * @param {Float32Array} src
+ */
+function mat4_copy(out, src) {
+	out.set(src);
+}
+
+/**
+ * linear interpolate between two values
+ * @param {number} a
+ * @param {number} b
+ * @param {number} t
+ * @returns {number}
+ */
+function lerp(a, b, t) {
+	return a + (b - a) * t;
+}
+
+/**
+ * spherical linear interpolation for quaternions
+ * @param {number[]} out - [x, y, z, w]
+ * @param {number} ax
+ * @param {number} ay
+ * @param {number} az
+ * @param {number} aw
+ * @param {number} bx
+ * @param {number} by
+ * @param {number} bz
+ * @param {number} bw
+ * @param {number} t
+ */
+function quat_slerp(out, ax, ay, az, aw, bx, by, bz, bw, t) {
+	let cosom = ax * bx + ay * by + az * bz + aw * bw;
+
+	if (cosom < 0) {
+		cosom = -cosom;
+		bx = -bx; by = -by; bz = -bz; bw = -bw;
+	}
+
+	let scale0, scale1;
+	if (1 - cosom > 0.000001) {
+		const omega = Math.acos(cosom);
+		const sinom = Math.sin(omega);
+		scale0 = Math.sin((1 - t) * omega) / sinom;
+		scale1 = Math.sin(t * omega) / sinom;
+	} else {
+		scale0 = 1 - t;
+		scale1 = t;
+	}
+
+	out[0] = scale0 * ax + scale1 * bx;
+	out[1] = scale0 * ay + scale1 * by;
+	out[2] = scale0 * az + scale1 * bz;
+	out[3] = scale0 * aw + scale1 * bw;
+}
 
 class M2RendererGL {
 	/**
@@ -63,7 +223,6 @@ class M2RendererGL {
 		// animation state
 		this.bones = null;
 		this.bone_matrices = null;
-		this.animation_clips = new Map();
 		this.current_animation = null;
 		this.animation_time = 0;
 
@@ -359,18 +518,11 @@ class M2RendererGL {
 	 * @param {number} index
 	 */
 	async playAnimation(index) {
-		// load animation if not cached
-		if (!this.animation_clips.has(index)) {
-			const anim_source = this.skelLoader || this.m2;
-			const clip = await M2AnimationConverter.convertAnimation(anim_source, index, true);
+		const anim_source = this.skelLoader || this.m2;
 
-			if (clip) {
-				this.animation_clips.set(index, clip);
-			} else {
-				log.write('Failed to convert animation %d', index);
-				return;
-			}
-		}
+		// ensure animation data is loaded
+		if (anim_source.loadAnimsForIndex)
+			await anim_source.loadAnimsForIndex(index);
 
 		this.current_animation = index;
 		this.animation_time = 0;
@@ -394,58 +546,200 @@ class M2RendererGL {
 		if (this.current_animation === null || !this.bones)
 			return;
 
-		const clip = this.animation_clips.get(this.current_animation);
-		if (!clip)
+		const anim_source = this.skelLoader || this.m2;
+		const anim = anim_source.animations?.[this.current_animation];
+		if (!anim)
 			return;
 
 		this.animation_time += delta_time;
 
-		// wrap animation
-		if (clip.duration > 0)
-			this.animation_time = this.animation_time % clip.duration;
+		// wrap animation (duration is in milliseconds)
+		const duration_sec = anim.duration / 1000;
+		if (duration_sec > 0)
+			this.animation_time = this.animation_time % duration_sec;
 
-		// update bone matrices from animation tracks
-		this._update_bone_matrices(clip);
+		// update bone matrices
+		this._update_bone_matrices();
 	}
 
-	_update_bone_matrices(clip) {
-		// simple implementation - evaluate each bone track
-		const time = this.animation_time;
+	_update_bone_matrices() {
+		const time_ms = this.animation_time * 1000; // convert to milliseconds for raw tracks
+		const bones = this.bones;
+		const bone_count = bones.length;
+		const anim_idx = this.current_animation;
 
-		for (const track of clip.tracks) {
-			// extract bone index from track name
-			const match = track.name.match(/bone_(?:idx_)?(\d+)/);
-			if (!match)
-				continue;
+		// temp matrices for bone calculation
+		const local_mat = new Float32Array(16);
+		const trans_mat = new Float32Array(16);
+		const rot_mat = new Float32Array(16);
+		const scale_mat = new Float32Array(16);
+		const pivot_mat = new Float32Array(16);
+		const neg_pivot_mat = new Float32Array(16);
+		const temp_result = new Float32Array(16);
 
-			const bone_idx = parseInt(match[1]);
-			if (bone_idx >= this.bones.length)
-				continue;
+		// track which bones have been calculated
+		const calculated = new Array(bone_count).fill(false);
 
-			// find keyframe
-			const times = track.times;
-			const values = track.values;
-			let frame = 0;
+		// recursive bone calculation using raw M2 bone data
+		// applies: T(pivot) * T(anim) * R(anim) * S(anim) * T(-pivot)
+		const calc_bone = (idx) => {
+			if (calculated[idx])
+				return;
 
-			for (let i = 0; i < times.length - 1; i++) {
-				if (time >= times[i] && time < times[i + 1]) {
-					frame = i;
-					break;
+			const bone = bones[idx];
+			const parent_idx = bone.parentBone;
+
+			// calculate parent first
+			if (parent_idx >= 0 && parent_idx < bone_count)
+				calc_bone(parent_idx);
+
+			// get pivot point
+			const pivot = bone.pivot;
+			const px = pivot[0], py = pivot[1], pz = pivot[2];
+
+			// check if bone has any animation data for this animation
+			const has_trans = bone.translation?.timestamps?.[anim_idx]?.length > 0;
+			const has_rot = bone.rotation?.timestamps?.[anim_idx]?.length > 0;
+			const has_scale = bone.scale?.timestamps?.[anim_idx]?.length > 0;
+			const has_animation = has_trans || has_rot || has_scale;
+
+			// start with identity
+			mat4_copy(local_mat, IDENTITY_MAT4);
+
+			if (has_animation) {
+				// translate to pivot
+				mat4_from_translation(pivot_mat, px, py, pz);
+				mat4_multiply(temp_result, local_mat, pivot_mat);
+				mat4_copy(local_mat, temp_result);
+
+				// apply translation (raw animation offset from M2 data)
+				if (has_trans) {
+					const ts = bone.translation.timestamps[anim_idx];
+					const vals = bone.translation.values[anim_idx];
+					const [tx, ty, tz] = this._sample_raw_vec3(ts, vals, time_ms);
+
+					mat4_from_translation(trans_mat, tx, ty, tz);
+					mat4_multiply(temp_result, local_mat, trans_mat);
+					mat4_copy(local_mat, temp_result);
 				}
+
+				// apply rotation
+				if (has_rot) {
+					const ts = bone.rotation.timestamps[anim_idx];
+					const vals = bone.rotation.values[anim_idx];
+					const [qx, qy, qz, qw] = this._sample_raw_quat(ts, vals, time_ms);
+
+					mat4_from_quat(rot_mat, qx, qy, qz, qw);
+					mat4_multiply(temp_result, local_mat, rot_mat);
+					mat4_copy(local_mat, temp_result);
+				}
+
+				// apply scale
+				if (has_scale) {
+					const ts = bone.scale.timestamps[anim_idx];
+					const vals = bone.scale.values[anim_idx];
+					const [sx, sy, sz] = this._sample_raw_vec3(ts, vals, time_ms);
+
+					mat4_from_scale(scale_mat, sx, sy, sz);
+					mat4_multiply(temp_result, local_mat, scale_mat);
+					mat4_copy(local_mat, temp_result);
+				}
+
+				// translate back from pivot
+				mat4_from_translation(neg_pivot_mat, -px, -py, -pz);
+				mat4_multiply(temp_result, local_mat, neg_pivot_mat);
+				mat4_copy(local_mat, temp_result);
+			}
+			// if no animation, local_mat stays identity
+
+			// multiply with parent matrix
+			const offset = idx * 16;
+			if (parent_idx >= 0 && parent_idx < bone_count) {
+				const parent_offset = parent_idx * 16;
+				const parent_mat = this.bone_matrices.subarray(parent_offset, parent_offset + 16);
+				mat4_multiply(this.bone_matrices.subarray(offset, offset + 16), parent_mat, local_mat);
+			} else {
+				this.bone_matrices.set(local_mat, offset);
 			}
 
-			// for now, just snap to keyframe
-			// todo: interpolation
-			const offset = bone_idx * 16;
+			calculated[idx] = true;
+		};
 
-			if (track.name.endsWith('.position')) {
-				const v_idx = frame * 3;
-				// translation goes into column 3
-				this.bone_matrices[offset + 12] = values[v_idx];
-				this.bone_matrices[offset + 13] = values[v_idx + 1];
-				this.bone_matrices[offset + 14] = values[v_idx + 2];
+		// calculate all bones
+		for (let i = 0; i < bone_count; i++)
+			calc_bone(i);
+	}
+
+	_sample_raw_vec3(timestamps, values, time_ms) {
+		if (!timestamps || timestamps.length === 0)
+			return [0, 0, 0];
+
+		if (timestamps.length === 1 || time_ms <= timestamps[0]) {
+			const v = values[0];
+			return [v[0], v[1], v[2]];
+		}
+
+		if (time_ms >= timestamps[timestamps.length - 1]) {
+			const v = values[values.length - 1];
+			return [v[0], v[1], v[2]];
+		}
+
+		// find keyframe
+		let frame = 0;
+		for (let i = 0; i < timestamps.length - 1; i++) {
+			if (time_ms >= timestamps[i] && time_ms < timestamps[i + 1]) {
+				frame = i;
+				break;
 			}
 		}
+
+		const t0 = timestamps[frame];
+		const t1 = timestamps[frame + 1];
+		const alpha = (time_ms - t0) / (t1 - t0);
+
+		const v0 = values[frame];
+		const v1 = values[frame + 1];
+
+		return [
+			lerp(v0[0], v1[0], alpha),
+			lerp(v0[1], v1[1], alpha),
+			lerp(v0[2], v1[2], alpha)
+		];
+	}
+
+	_sample_raw_quat(timestamps, values, time_ms) {
+		if (!timestamps || timestamps.length === 0)
+			return [0, 0, 0, 1];
+
+		if (timestamps.length === 1 || time_ms <= timestamps[0]) {
+			const v = values[0];
+			return [v[0], v[1], v[2], v[3]];
+		}
+
+		if (time_ms >= timestamps[timestamps.length - 1]) {
+			const v = values[values.length - 1];
+			return [v[0], v[1], v[2], v[3]];
+		}
+
+		// find keyframe
+		let frame = 0;
+		for (let i = 0; i < timestamps.length - 1; i++) {
+			if (time_ms >= timestamps[i] && time_ms < timestamps[i + 1]) {
+				frame = i;
+				break;
+			}
+		}
+
+		const t0 = timestamps[frame];
+		const t1 = timestamps[frame + 1];
+		const alpha = (time_ms - t0) / (t1 - t0);
+
+		const q0 = values[frame];
+		const q1 = values[frame + 1];
+
+		const out = [0, 0, 0, 1];
+		quat_slerp(out, q0[0], q0[1], q0[2], q0[3], q1[0], q1[1], q1[2], q1[3], alpha);
+		return out;
 	}
 
 	updateGeosets() {
@@ -808,8 +1102,6 @@ class M2RendererGL {
 			this.default_texture.dispose();
 			this.default_texture = null;
 		}
-
-		this.animation_clips.clear();
 	}
 }
 
