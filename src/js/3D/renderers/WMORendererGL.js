@@ -16,6 +16,7 @@ const Texture = require('../Texture');
 const WMOLoader = require('../loaders/WMOLoader');
 const M2RendererGL = require('./M2RendererGL');
 const listfile = require('../../casc/listfile');
+const WMOShaderMapper = require('../WMOShaderMapper');
 
 const GLContext = require('../gl/GLContext');
 const ShaderProgram = require('../gl/ShaderProgram');
@@ -516,7 +517,8 @@ class WMORendererGL {
 
 			for (const dc of group.draw_calls) {
 				// set shader mode
-				shader.set_uniform_1i('u_pixel_shader', dc.shader);
+				const wmoShader = WMOShaderMapper.WMOShaderMap[dc.shader];
+				shader.set_uniform_1i('u_pixel_shader', wmoShader.PixelShader);
 
 				// bind texture
 				const texture = this.textures.get(dc.material_id) || this.default_texture;
