@@ -14,18 +14,19 @@ const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
 
 const M2Renderer = require('../3D/renderers/M2Renderer');
+const M2RendererGL = require('../3D/renderers/M2RendererGL');
 const M3Renderer = require('../3D/renderers/M3Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 const M3Exporter = require('../3D/exporters/M3Exporter');
 
 const WMORenderer = require('../3D/renderers/WMORenderer');
+const WMORendererGL = require('../3D/renderers/WMORendererGL');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
 const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
 const uvDrawer = require('../ui/uv-drawer');
 const AnimMapper = require('../3D/AnimMapper');
-const CameraBounding = require('../3D/camera/CameraBounding');
 const modelHelpers = require('../ui/model-viewer-helpers');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
@@ -160,9 +161,11 @@ const preview_model = async (core, file_name) => {
 		let is_m3 = false;
 
 		const file_name_lower = file_name.toLowerCase();
+		const gl_context = core.view.modelViewerContext?.gl_context;
+
 		if (file_name_lower.endsWith('.m2')) {
 			core.view.modelViewerActiveType = 'm2';
-			active_renderer = new M2Renderer(file, render_group, true, core.view.config.modelViewerShowTextures);
+			active_renderer = new M2RendererGL(file, gl_context, true, core.view.config.modelViewerShowTextures);
 			is_m2 = true;
 		} else if (file_name_lower.endsWith('.m3')) {
 			core.view.modelViewerActiveType = 'm3';
@@ -170,7 +173,7 @@ const preview_model = async (core, file_name) => {
 			is_m3 = true;
 		} else if (file_name_lower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
-			active_renderer = new WMORenderer(file, file_name, render_group, core.view.config.modelViewerShowTextures);
+			active_renderer = new WMORendererGL(file, file_name, gl_context, core.view.config.modelViewerShowTextures);
 		} else {
 			throw new Error('Unknown model extension: %s', file_name);
 		}
@@ -241,14 +244,20 @@ const preview_model = async (core, file_name) => {
 			}
 		}
 
-		CameraBounding.fitObjectInView(render_group, camera, core.view.modelViewerContext.controls);
-
 		active_path = file_name;
 
-		if (render_group.children.length === 0)
+		// check for empty model
+		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
+
+		if (!has_content) {
 			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_name), null, 4000);
-		else
+		} else {
 			core.hideToast();
+
+			// fit camera to model if auto-adjust is enabled
+			if (core.view.modelViewerAutoAdjust)
+				requestAnimationFrame(() => core.view.modelViewerContext?.fitCamera?.());
+		}
 	} catch (e) {
 		if (e instanceof EncryptionError) {
 			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', file_name, e.key), null, -1);
@@ -525,7 +534,7 @@ module.exports = {
 				</div>
 				<div class="preview-background" id="model-preview">
 					<input v-if="$core.view.config.modelViewerShowBackground" type="color" id="background-color-input" v-model="$core.view.config.modelViewerBackgroundColor" title="Click to change background color"/>
-					<component :is="$components.ModelViewer" v-if="$core.view.modelViewerContext" :context="$core.view.modelViewerContext"></component>
+					<component :is="$components.ModelViewerGL" v-if="$core.view.modelViewerContext" :context="$core.view.modelViewerContext"></component>
 					<div v-if="$core.view.modelViewerAnims && $core.view.modelViewerAnims.length > 0 && !$core.view.modelTexturePreviewURL" class="preview-dropdown-overlay">
 						<select v-model="$core.view.modelViewerAnimSelection">
 							<option v-for="animation in $core.view.modelViewerAnims" :key="animation.id" :value="animation.id">
@@ -723,7 +732,7 @@ module.exports = {
 				modelHelpers.setup_background_watchers(scene);
 			}
 
-			this.$core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup: render_group, getActiveRenderer: () => active_renderer });
+			this.$core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup: render_group, getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
 
 			this.$core.hideLoadingScreen();
 
@@ -777,7 +786,7 @@ module.exports = {
 					active_renderer?.stopAnimation?.();
 
 					if (this.$core.view.modelViewerAutoAdjust)
-						requestAnimationFrame(() => CameraBounding.fitObjectInView(render_group, camera, this.$core.view.modelViewerContext.controls));
+						requestAnimationFrame(() => this.$core.view.modelViewerContext?.fitCamera?.());
 					return;
 				}
 
@@ -787,7 +796,7 @@ module.exports = {
 					await active_renderer.playAnimation(anim_info.m2Index);
 
 					if (this.$core.view.modelViewerAutoAdjust)
-						requestAnimationFrame(() => CameraBounding.fitObjectInView(render_group, camera, this.$core.view.modelViewerContext.controls));
+						requestAnimationFrame(() => this.$core.view.modelViewerContext?.fitCamera?.());
 				}
 			}
 		});
