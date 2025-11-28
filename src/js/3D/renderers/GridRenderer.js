@@ -125,14 +125,8 @@ class GridRenderer {
 		this.shader.set_uniform_mat4('u_view_matrix', false, view_matrix);
 		this.shader.set_uniform_mat4('u_projection_matrix', false, projection_matrix);
 
-		// disable depth write but keep depth test for proper layering
-		this.ctx.set_depth_write(false);
-
 		this.ctx.bind_vao(this.vao);
 		gl.drawArrays(gl.LINES, 0, this.vertex_count);
-
-		// restore depth write
-		this.ctx.set_depth_write(true);
 	}
 
 	dispose() {
