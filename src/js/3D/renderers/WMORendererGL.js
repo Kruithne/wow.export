@@ -31,8 +31,6 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 0, 1
 ]);
 
-let _shader_cache = null;
-
 class WMORendererGL {
 	/**
 	 * @param {BufferWrapper} data
@@ -72,22 +70,20 @@ class WMORendererGL {
 	}
 
 	/**
-	 * Load shader program (cached)
+	 * Load shader program (cached per context)
 	 */
 	static async load_shaders(ctx) {
-		if (_shader_cache)
-			return _shader_cache;
+		return ctx.get_cached_shader('wmo', (ctx) => {
+			const shader_path = constants.SHADER_PATH;
+			const vert_source = fs.readFileSync(path.join(shader_path, 'wmo.vertex.shader'), 'utf8');
+			const frag_source = fs.readFileSync(path.join(shader_path, 'wmo.fragment.shader'), 'utf8');
 
-		const shader_path = constants.SHADER_PATH;
-		const vert_source = fs.readFileSync(path.join(shader_path, 'wmo.vertex.shader'), 'utf8');
-		const frag_source = fs.readFileSync(path.join(shader_path, 'wmo.fragment.shader'), 'utf8');
+			const program = new ShaderProgram(ctx, vert_source, frag_source);
+			if (!program.is_valid())
+				throw new Error('Failed to compile WMO shader');
 
-		const program = new ShaderProgram(ctx, vert_source, frag_source);
-		if (!program.is_valid())
-			throw new Error('Failed to compile WMO shader');
-
-		_shader_cache = program;
-		return program;
+			return program;
+		});
 	}
 
 	async load() {
