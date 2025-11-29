@@ -52,6 +52,7 @@ class WMORendererGL {
 		// rendering state
 		this.groups = [];
 		this.textures = new Map();
+		this.materialTextures = new Map();
 		this.default_texture = null;
 		this.buffers = [];
 
@@ -136,21 +137,45 @@ class WMORendererGL {
 
 		for (let i = 0; i < materials.length; i++) {
 			const material = materials[i];
-			const texture = new Texture(material.flags);
 
-			if (isClassic) {
-				texture.setFileName(wmo.textureNames[material.texture1]);
-			} else {
-				if (material.shader === 23)
-					texture.fileDataID = material.texture2;
-				else
-					texture.fileDataID = material.texture1;
+			const pixelShader = WMOShaderMapper.WMOShaderMap[material.shader].PixelShader;
+			let textureFileDataIDs = [];
+
+			if(isClassic){
+				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture1]) || 0);
+				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture2]) || 0);
+				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture3]) || 0);
+			}else{
+				textureFileDataIDs.push(material.texture1);
+				textureFileDataIDs.push(material.texture2);
+				textureFileDataIDs.push(material.texture3);
+			}
+	
+			if(pixelShader == 19) // MapObjParallax
+			{
+				textureFileDataIDs.push(material.color2);
+				textureFileDataIDs.push(material.flags3);
+				textureFileDataIDs.push(material.runtimeData[0]);
+			} 
+			else if(pixelShader == 20)
+			{
+				textureFileDataIDs.push(material.color3);
+				for (const rtdTexture of material.runtimeData)
+					textureFileDataIDs.push(rtdTexture);
 			}
 
-			if (texture.fileDataID > 0) {
+			this.materialTextures.set(i, textureFileDataIDs);
+
+			for (const textureFileDataID of textureFileDataIDs) {
+				if(textureFileDataID == 0)
+					continue;
+
+				const texture = new Texture(material.flags);
+				texture.fileDataID = textureFileDataID;
+
 				const ribbonSlot = this.useRibbon ? textureRibbon.addSlot() : null;
 				if (ribbonSlot !== null)
-					textureRibbon.setSlotFile(ribbonSlot, texture.fileDataID, this.syncID);
+					textureRibbon.setSlotFile(ribbonSlot, textureFileDataID, this.syncID);
 
 				try {
 					const data = await texture.getTextureFile();
@@ -169,46 +194,13 @@ class WMORendererGL {
 						generate_mipmaps: true
 					});
 
-					this.textures.set(i, gl_tex);
+					this.textures.set(textureFileDataID, gl_tex);
 
 					if (ribbonSlot !== null)
 						textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(0b0111), this.syncID);
 				} catch (e) {
-					log.write('Failed to load WMO texture %d: %s', texture.fileDataID, e.message);
+					log.write('Failed to load WMO texture %d: %s', textureFileDataID, e.message);
 				}
-			}
-
-			// load auxiliary textures for ribbon
-			if (this.useRibbon) {
-				this._load_auxiliary_texture(material.texture2, wmo);
-				this._load_auxiliary_texture(material.texture3, wmo);
-
-				if (material.shader === 23) {
-					this._load_auxiliary_texture(material.color3, wmo);
-					for (const rt of material.runtimeData)
-						this._load_auxiliary_texture(rt, wmo);
-				}
-			}
-		}
-	}
-
-	async _load_auxiliary_texture(textureID, wmo) {
-		if (!this.useRibbon)
-			return;
-
-		if (wmo.textureNames)
-			textureID = listfile.getByFilename(textureID) || 0;
-
-		if (textureID > 0) {
-			const ribbonSlot = textureRibbon.addSlot();
-			textureRibbon.setSlotFile(ribbonSlot, textureID, this.syncID);
-
-			try {
-				const data = await core.view.casc.getFile(textureID);
-				const blp = new BLPFile(data);
-				textureRibbon.setSlotSrc(ribbonSlot, blp.getDataURL(), this.syncID);
-			} catch (e) {
-				log.write('Failed to load auxiliary texture %d: %s', textureID, e.message);
 			}
 		}
 	}
@@ -242,11 +234,37 @@ class WMORendererGL {
 
 				// UV buffer
 				let uvo = null;
-				if (group.uvs && group.uvs[0]) {
-					uvo = gl.createBuffer();
-					gl.bindBuffer(gl.ARRAY_BUFFER, uvo);
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(group.uvs[0]), gl.STATIC_DRAW);
-					this.buffers.push(uvo);
+				let uv2o = null;
+				let uv3o = null;
+				let uv4o = null;
+				if (group.uvs) {
+					if(group.uvs[0]) {
+						uvo = gl.createBuffer();
+						gl.bindBuffer(gl.ARRAY_BUFFER, uvo);
+						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(group.uvs[0]), gl.STATIC_DRAW);
+						this.buffers.push(uvo);
+					}
+
+					if(group.uvs[1]) {
+						uv2o = gl.createBuffer();
+						gl.bindBuffer(gl.ARRAY_BUFFER, uv2o);
+						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(group.uvs[1]), gl.STATIC_DRAW);
+						this.buffers.push(uv2o);
+					}
+
+					if(group.uvs[2]) {
+						uv3o = gl.createBuffer();
+						gl.bindBuffer(gl.ARRAY_BUFFER, uv3o);
+						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(group.uvs[2]), gl.STATIC_DRAW);
+						this.buffers.push(uv3o);
+					}	
+
+					if(group.uvs[3]) {
+						uv4o = gl.createBuffer();
+						gl.bindBuffer(gl.ARRAY_BUFFER, uv4o);
+						gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(group.uvs[3]), gl.STATIC_DRAW);
+						this.buffers.push(uv4o);
+					}
 				}
 
 				// index buffer (managed by vao.dispose())
@@ -256,7 +274,7 @@ class WMORendererGL {
 				vao.ebo = ebo;
 
 				// set up vertex attributes
-				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, null);
+				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, null, uv2o, uv3o, uv4o);
 
 				// build draw calls for each batch
 				const draw_calls = [];
@@ -266,8 +284,9 @@ class WMORendererGL {
 					draw_calls.push({
 						start: batch.firstFace,
 						count: batch.numFaces,
+						blendMode: wmo.materials[matID]?.blendMode ?? 0,
 						material_id: matID,
-						shader: wmo.materials[matID]?.shader ?? 0
+						shader: WMOShaderMapper.WMOShaderMap[wmo.materials[matID]?.shader ?? 0]
 					});
 				}
 
@@ -501,6 +520,13 @@ class WMORendererGL {
 		// texture samplers
 		shader.set_uniform_1i('u_texture1', 0);
 		shader.set_uniform_1i('u_texture2', 1);
+		shader.set_uniform_1i('u_texture3', 2);
+		shader.set_uniform_1i('u_texture4', 3);
+		shader.set_uniform_1i('u_texture5', 4);
+		shader.set_uniform_1i('u_texture6', 5);
+		shader.set_uniform_1i('u_texture7', 6);
+		shader.set_uniform_1i('u_texture8', 7);
+		shader.set_uniform_1i('u_texture9', 8);
 
 		// render state
 		ctx.set_depth_test(true);
@@ -517,13 +543,19 @@ class WMORendererGL {
 
 			for (const dc of group.draw_calls) {
 				// set shader mode
-				const wmoShader = WMOShaderMapper.WMOShaderMap[dc.shader];
-				shader.set_uniform_1i('u_pixel_shader', wmoShader.PixelShader);
+				shader.set_uniform_1i('u_vertex_shader', dc.shader.VertexShader);
+				shader.set_uniform_1i('u_pixel_shader', dc.shader.PixelShader);
+
+				// set blend mode
+				shader.set_uniform_1i('u_blend_mode', dc.blendMode);
 
 				// bind texture
-				const texture = this.textures.get(dc.material_id) || this.default_texture;
-				texture.bind(0);
-				this.default_texture.bind(1);
+				const textureFileDataIDs = this.materialTextures.get(dc.material_id);
+				for(let i = 0; i < 9; i++) {
+					const textureFileDataID = textureFileDataIDs[i] || 0;
+					const texture = this.textures.get(textureFileDataID) || this.default_texture;
+					texture.bind(i);
+				}
 
 				// draw
 				gl.drawElements(

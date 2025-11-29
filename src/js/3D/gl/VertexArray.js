@@ -13,7 +13,9 @@ const AttributeLocation = {
 	TEXCOORD: 4,
 	TEXCOORD2: 5,
 	COLOR: 6,
-	COLOR2: 7
+	COLOR2: 7,
+	TEXCOORD3: 8,
+	TEXCOORD4: 9
 };
 
 class VertexArray {
@@ -194,7 +196,7 @@ class VertexArray {
 	 * Set up WMO vertex format
 	 * layout: position(3f) + normal(3f) + uv1(2f) + uv2(2f) + color(4ub) + color2(4ub)
 	 */
-	setup_wmo_separate_buffers(pos_buffer, norm_buffer, uv_buffer, color_buffer) {
+	setup_wmo_separate_buffers(pos_buffer, norm_buffer, uv_buffer, color_buffer, uv2_buffer, uv3_buffer, uv4_buffer) {
 		const gl = this.gl;
 
 		this.bind();
@@ -226,6 +228,33 @@ class VertexArray {
 			gl.vertexAttribPointer(AttributeLocation.COLOR, 4, gl.UNSIGNED_BYTE, true, 0, 0);
 		} else {
 			gl.disableVertexAttribArray(AttributeLocation.COLOR);
+		}
+
+		// uv2 (optional)
+		if (uv2_buffer) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, uv2_buffer);
+			gl.enableVertexAttribArray(AttributeLocation.TEXCOORD2);
+			gl.vertexAttribPointer(AttributeLocation.TEXCOORD2, 2, gl.FLOAT, false, 0, 0);
+		} else {
+			gl.disableVertexAttribArray(AttributeLocation.TEXCOORD2);
+		}
+
+		// uv3 (optional)
+		if (uv3_buffer) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, uv3_buffer);
+			gl.enableVertexAttribArray(AttributeLocation.TEXCOORD3);
+			gl.vertexAttribPointer(AttributeLocation.TEXCOORD3, 2, gl.FLOAT, false, 0, 0);
+		} else {
+			gl.disableVertexAttribArray(AttributeLocation.TEXCOORD3);
+		}
+
+		// uv4 (optional)
+		if (uv4_buffer) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, uv4_buffer);
+			gl.enableVertexAttribArray(AttributeLocation.TEXCOORD4);
+			gl.vertexAttribPointer(AttributeLocation.TEXCOORD4, 2, gl.FLOAT, false, 0, 0);
+		} else {
+			gl.disableVertexAttribArray(AttributeLocation.TEXCOORD4);
 		}
 	}
 
