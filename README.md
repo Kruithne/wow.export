@@ -4,14 +4,20 @@ wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [W
 ## Features
 - Supports both Retail and Classic game clients.
 - Complete online support allowing streaming of all files without a client.
+- Supports legacy MPQ-based installations for local browsing.
 - Full 3D preview of both M2 and WMO (doodads included) game models.
-- Export into a variety of formats (with more coming soon).
+- Export models as OBJ, GLTF and more.
 - Overhead map viewer with easy exporting of terrain, textures and objects.
 - Includes Blender add-on for advanced map/model importing.
 - Preview and export all sound files from the game client.
-- Export all video files (cinematics) from the game client.
+- Preview and export all video files (cinematics) from the game client.
 - Locale support for all 13 languages supported by the client.
 - Convert local M2/BLP files by drag-dropping them onto the application.
+- View and export all in-game zone maps.
+- Explore game data using DB2 database viewer.
+- View all in-game text, interface and scripts.
+- Preview and export all in-game font files.
+- And much much more!
 
 ## Installing
 To install wow.export, navigate to the [site](https://www.kruithne.net/wow.export/) and download the latest version. That's it!
