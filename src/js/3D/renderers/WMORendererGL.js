@@ -300,7 +300,7 @@ class WMORendererGL {
 
 				// set up vertex attributes
 				// TODO: MOCVx2 + MOC2 in color buffers
-				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, null, uv2o, uv3o, uv4o);
+				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, cbo2, uv2o, uv3o, uv4o);
 
 				// build draw calls for each batch
 				const draw_calls = [];
