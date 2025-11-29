@@ -10,6 +10,8 @@ Development of wow.export is actively discussed in [#wow-export-dev](https://dis
 
 If you plan to make a large contribution, it is expected that you would open a self-assigned tracking issue and co-ordinate with the active maintainers before starting.
 
+Open-isuses that have an assignee and are not listed as "Backlog" on the roadmap are currently championed by a maintainer. Contributors should not target these issues.
+
 ## Roadmap
 
 The developers maintain a [public roadmap](https://github.com/users/Kruithne/projects/1/views/9) to help give insight and organization to the development process. Before contributing, it's recommended to consult this.
