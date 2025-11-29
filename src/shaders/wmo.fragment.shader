@@ -183,7 +183,7 @@ void main() {
 			// vec4 tex7 = texture(u_texture7, v_texcoord2);
 			// vec4 tex8 = texture(u_texture8, v_texcoord3);
 			// vec4 tex9 = texture(u_texture9, v_texcoord4);
-			mat_diffuse = v_texcoord2.rgb;
+			mat_diffuse = tex2.rgb;
 			alpha = 1.0; // wrong but for now
 			break;
 

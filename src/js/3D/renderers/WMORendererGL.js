@@ -170,6 +170,9 @@ class WMORendererGL {
 				if(textureFileDataID == 0)
 					continue;
 
+				if (this.textures.has(textureFileDataID))
+					continue;
+				
 				const texture = new Texture(material.flags);
 				texture.fileDataID = textureFileDataID;
 
