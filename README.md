@@ -1,7 +1,10 @@
-# 📦 wow.export ![Build Status](https://travis-ci.org/Kruithne/wow.export.svg?branch=master)
-wow.export is a node-webkit port of [Marlamin's](https://github.com/Marlamin) [WoW Export Tools](https://github.com/Marlamin/WoWExportTools/) which provides tools for extracting and converting files from the World of Warcraft game client or public CDN servers.
+<p align="center"><img width="150" src="src\images\logo.png"></p>
 
-## Features
+# wow.export
+
+wow.export is the number one export toolkit for World of Warcraft, providing tools for extracting and converting files from the game client or public CDN servers.
+
+## Main Features
 - Supports both Retail and Classic game clients.
 - Complete online support allowing streaming of all files without a client.
 - Supports legacy MPQ-based installations for local browsing.
@@ -25,26 +28,12 @@ To install wow.export, navigate to the [site](https://www.kruithne.net/wow.expor
 ## Updating
 When an update to wow.export is available, you will be prompted in the application to update. This process is done entirely automatically once you accept the update!
 
-## Building (Developers Only)
-- 🔨 Building wow.export **requires** Bun 1.2 or above.
+## Changes
 
-```
-git fetch https://github.com/Kruithne/wow.export.git
-bun install
+A full historical changelog of every major release can be found in [CHANGELOG.md](CHANGELOG.md) in this repository or in wow.export by choosing "View Recent Changes" from the top-right context menu.
 
-# This will list available builds.
-bun ./build.js
+## Roadmap
 
-# This will compile -all- available builds.
-bun ./build.js *
+A public roadmap of planned changes and the progress of upcoming releases can be found [here](https://github.com/users/Kruithne/projects/1/views/9).
 
-# Substitute <BUILD> for the build(s) you wish to compile, space-delimitated.
-bun ./build.js <BUILD1> <BUILD2> ...
-```
-
-## Debugging (Developers Only)
-> **Note**: Debugging is currently only supported on Windows.
-
-To debug wow.export, compile a `win-x64-debug` build using the build script. This will produce a bare-bones build using the SDK framework and without any production polish. Upon starting the debug version, DevTools will be automatically launched alongside the application.
-
-For the debug build, source code will not be compiled, rather a symlink is created. This means changes to the source code are instantly reflected in the application, simply run `chrome.runtime.reload()` in DevTools console to refresh sources (pressing F5 does not drop references and will lead to memory leaks).
+It is important to note that this roadmap is constantly changing with no fixed timeline and features are not guaranteed to be implemented until they're marked as complete.
