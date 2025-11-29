@@ -136,32 +136,33 @@ void main() {
 			specular = tex2.rgb * tex1.a;
 			break;
 
-		case 15: // MapObjTwoLayerEnvMetalEmissive
+		case 15: // MapObjTwoLayerDiffuseMod2x
 			mat_diffuse = mix(tex1.rgb, tex2.rgb, tex2.a);
 			specular = tex1.rgb * tex1.a + tex2.rgb * tex2.a;
 			alpha = 1.0;
 			break;
 
-		case 16: // MapObjTwoLayerDiffuseMod2x
+		case 16: // MapObjTwoLayerDiffuseMod2xNA
 			mat_diffuse = mix(tex1.rgb, tex2.rgb * 2.0, tex2.a);
 			break;
 
-		case 17: // MapObjTwoLayerDiffuseMod2xNA
+		case 17: // MapObjTwoLayerDiffuseAlpha
 			mat_diffuse = mix(tex1.rgb, tex2.rgb * 2.0, tex2.a);
 			alpha = 1.0;
 			break;
 
-		case 18: // MapObjTwoLayerDiffuseAlpha
+		case 18: // MapObjLod
 			mat_diffuse = mix(tex1.rgb, tex2.rgb, v_color.a);
 			alpha = tex1.a;
 			break;
 
-		case 19: // MapObjLod
+		case 19: // MapObjParallax
 			mat_diffuse = tex1.rgb;
 			break;
 
-		case 20: // MapObjParallax
+		case 20: // MapObjUnkShader
 			mat_diffuse = tex1.rgb;
+			alpha = 1.0; // wrong but for now
 			break;
 
 		default:
