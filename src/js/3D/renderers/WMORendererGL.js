@@ -139,6 +139,11 @@ class WMORendererGL {
 			const material = materials[i];
 
 			const pixelShader = WMOShaderMapper.WMOShaderMap[material.shader].PixelShader;
+
+			// Don't load LOD textures
+			if(pixelShader == 18) 
+				continue;
+
 			let textureFileDataIDs = [];
 
 			if(isClassic){
