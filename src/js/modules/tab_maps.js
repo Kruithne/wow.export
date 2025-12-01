@@ -564,7 +564,8 @@ module.exports = {
 					file_name = listfile.getByID(file_data_id) || 'unknown_' + file_data_id + '.wmo';
 				}
 
-				const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.obj');
+				const mark_file_name = ExportHelper.replaceExtension(file_name, '.obj');
+				const export_path = ExportHelper.getExportPath(mark_file_name);
 
 				const data = await this.$core.view.casc.getFile(file_data_id);
 				const wmo = new WMOExporter(data, file_data_id);
@@ -575,7 +576,7 @@ module.exports = {
 				if (helper.isCancelled())
 					return;
 
-				helper.mark(file_name, true);
+				helper.mark(mark_file_name, true);
 			} catch (e) {
 				helper.mark('world model', false, e.message, e.stack);
 			}

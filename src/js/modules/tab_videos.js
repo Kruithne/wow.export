@@ -446,7 +446,7 @@ module.exports = {
 				const export_path = ExportHelper.getExportPath(export_file_name);
 
 				if (!overwrite_files && await generics.fileExists(export_path)) {
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 					log.write('Skipping MP4 export %s (file exists, overwrite disabled)', export_path);
 					continue;
 				}
@@ -454,7 +454,7 @@ module.exports = {
 				try {
 					const build_result = await build_payload(this.$core, file_data_id);
 					if (!build_result) {
-						helper.mark(file_name, false, 'Failed to get encoding info');
+						helper.mark(export_file_name, false, 'Failed to get encoding info');
 						continue;
 					}
 
@@ -462,7 +462,7 @@ module.exports = {
 					const mp4_url = await get_mp4_url(payload);
 
 					if (!mp4_url) {
-						helper.mark(file_name, false, 'Failed to get MP4 URL from server');
+						helper.mark(export_file_name, false, 'Failed to get MP4 URL from server');
 						continue;
 					}
 
@@ -471,7 +471,7 @@ module.exports = {
 					});
 
 					if (!response.ok) {
-						helper.mark(file_name, false, 'Failed to download MP4: ' + response.status);
+						helper.mark(export_file_name, false, 'Failed to download MP4: ' + response.status);
 						continue;
 					}
 
@@ -479,9 +479,9 @@ module.exports = {
 					await fsp.mkdir(path.dirname(export_path), { recursive: true });
 					await fsp.writeFile(export_path, Buffer.from(buffer));
 
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 				} catch (e) {
-					helper.mark(file_name, false, e.message, e.stack);
+					helper.mark(export_file_name, false, e.message, e.stack);
 				}
 			}
 
@@ -524,12 +524,12 @@ module.exports = {
 						const data = await this.$core.view.casc.getFileByName(file_name);
 						await data.writeToFile(export_path);
 
-						helper.mark(file_name, true);
+						helper.mark(export_file_name, true);
 					} catch (e) {
 						if (e instanceof BLTEIntegrityError)
 							is_corrupted = true;
 						else
-							helper.mark(file_name, false, e.message, e.stack);
+							helper.mark(export_file_name, false, e.message, e.stack);
 					}
 
 					if (is_corrupted) {
@@ -539,13 +539,13 @@ module.exports = {
 							const data = await this.$core.view.casc.getFileByName(file_name, false, false, true, true);
 							await data.writeToFile(export_path);
 
-							helper.mark(file_name, true);
+							helper.mark(export_file_name, true);
 						} catch (e) {
-							helper.mark(file_name, false, e.message, e.stack);
+							helper.mark(export_file_name, false, e.message, e.stack);
 						}
 					}
 				} else {
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 					log.write('Skipping video export %s (file exists, overwrite disabled)', export_path);
 				}
 			}
@@ -592,7 +592,7 @@ module.exports = {
 				const export_path = ExportHelper.getExportPath(export_file_name);
 
 				if (!overwrite_files && await generics.fileExists(export_path)) {
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 					log.write('Skipping audio export %s (file exists, overwrite disabled)', export_path);
 					continue;
 				}
@@ -600,9 +600,9 @@ module.exports = {
 				try {
 					const data = await this.$core.view.casc.getFile(movie_data.AudioFileDataID);
 					await data.writeToFile(export_path);
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 				} catch (e) {
-					helper.mark(file_name, false, e.message, e.stack);
+					helper.mark(export_file_name, false, e.message, e.stack);
 				}
 			}
 
@@ -651,7 +651,7 @@ module.exports = {
 				const export_path = ExportHelper.getExportPath(export_file_name);
 
 				if (!overwrite_files && await generics.fileExists(export_path)) {
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 					log.write('Skipping subtitle export %s (file exists, overwrite disabled)', export_path);
 					continue;
 				}
@@ -659,9 +659,9 @@ module.exports = {
 				try {
 					const data = await this.$core.view.casc.getFile(movie_data.SubtitleFileDataID);
 					await data.writeToFile(export_path);
-					helper.mark(file_name, true);
+					helper.mark(export_file_name, true);
 				} catch (e) {
-					helper.mark(file_name, false, e.message, e.stack);
+					helper.mark(export_file_name, false, e.message, e.stack);
 				}
 			}
 

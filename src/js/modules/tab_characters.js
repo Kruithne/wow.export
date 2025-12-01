@@ -795,7 +795,8 @@ const export_char_model = async (core) => {
 				return;
 			}
 
-			const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.obj');
+			const mark_file_name = ExportHelper.replaceExtension(file_name, '.obj');
+			const export_path = ExportHelper.getExportPath(mark_file_name);
 
 			// for GL renderer, use M2Exporter directly
 			const casc = core.view.casc;
@@ -813,12 +814,13 @@ const export_char_model = async (core) => {
 			if (helper.isCancelled())
 				return;
 
-			helper.mark(file_name, true);
+			helper.mark(mark_file_name, true);
 		} else {
 			// gltf/glb export from m2 data
 			const casc = core.view.casc;
 			const data = await casc.getFile(file_data_id);
-			const export_path = ExportHelper.replaceExtension(ExportHelper.getExportPath(file_name), '.gltf');
+			const mark_file_name = ExportHelper.replaceExtension(file_name, '.gltf');
+			const export_path = ExportHelper.getExportPath(mark_file_name);
 			const exporter = new M2Exporter(data, [], file_data_id);
 
 			for (const [chr_model_texture_target, chr_material] of chr_materials)
@@ -833,7 +835,7 @@ const export_char_model = async (core) => {
 			if (helper.isCancelled())
 				return;
 
-			helper.mark(file_name, true);
+			helper.mark(mark_file_name, true);
 		}
 	} catch (e) {
 		helper.mark(file_name, false, e.message, e.stack);

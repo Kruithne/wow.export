@@ -121,10 +121,14 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 			}
 			
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(exportFileName);
-			if (format === 'WEBP')
+			let markFileName = exportFileName;
+			if (format === 'WEBP') {
 				exportPath = ExportHelper.replaceExtension(exportPath, '.webp');
-			else if (format !== 'BLP')
+				markFileName = ExportHelper.replaceExtension(exportFileName, '.webp');
+			} else if (format !== 'BLP') {
 				exportPath = ExportHelper.replaceExtension(exportPath, '.png');
+				markFileName = ExportHelper.replaceExtension(exportFileName, '.png');
+			}
 
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
 				let data;
@@ -167,10 +171,10 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 				log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
 			}
 
-			helper.mark(fileName, true);
+			helper.mark(markFileName, true);
 			manifest.succeeded.push({ type: format, fileDataID, file: exportPath });
 		} catch (e) {
-			helper.mark(fileName, false, e.message, e.stack);
+			helper.mark(markFileName, false, e.message, e.stack);
 			manifest.failed.push({ type: format, fileDataID });
 		}
 	}

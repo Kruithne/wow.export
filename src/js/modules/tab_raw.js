@@ -122,12 +122,12 @@ const export_raw_files = async (core) => {
 				const data = await core.view.casc.getFileByName(file_name, true);
 				await data.writeToFile(export_path);
 
-				helper.mark(file_name, true);
+				helper.mark(export_file_name, true);
 			} catch (e) {
-				helper.mark(file_name, false, e.message, e.stack);
+				helper.mark(export_file_name, false, e.message, e.stack);
 			}
 		} else {
-			helper.mark(file_name, true);
+			helper.mark(export_file_name, true);
 			log.write('Skipping file export %s (file exists, overwrite disabled)', export_path);
 		}
 	}

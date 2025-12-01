@@ -371,6 +371,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 					throw new Error('Unknown model file type for %d', file_data_id);
 
 				let export_path;
+				let mark_file_name = file_name;
 				if (is_local) {
 					export_path = file_name;
 				} else if (file_type === MODEL_TYPE_M2 && selected_skin_name !== null && file_name === active_path && format !== 'RAW') {
@@ -383,6 +384,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 						skinned_name = ExportHelper.replaceBaseName(file_name, base_file_name + '_' + selected_skin_name);
 
 					export_path = ExportHelper.getExportPath(skinned_name);
+					mark_file_name = skinned_name;
 				} else {
 					export_path = ExportHelper.getExportPath(file_name);
 				}
@@ -408,6 +410,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 					case 'GLTF':
 					case 'GLB':
 						export_path = ExportHelper.replaceExtension(export_path, export_extensions[format]);
+						mark_file_name = ExportHelper.replaceExtension(mark_file_name, export_extensions[format]);
 
 						if (file_type === MODEL_TYPE_M2) {
 							const exporter = new M2Exporter(data, get_variant_texture_ids(file_name), file_data_id);
@@ -471,10 +474,10 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 						throw new Error('Unexpected model export format: ' + format);
 				}
 
-				helper.mark(file_name, true);
+				helper.mark(mark_file_name, true);
 				manifest.succeeded.push({ fileDataID: file_data_id, files: file_manifest });
 			} catch (e) {
-				helper.mark(file_name, false, e.message, e.stack);
+				helper.mark(mark_file_name, false, e.message, e.stack);
 				manifest.failed.push({ fileDataID: file_data_id });
 			}
 		}

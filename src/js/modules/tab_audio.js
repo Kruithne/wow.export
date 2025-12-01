@@ -200,9 +200,9 @@ const export_sounds = async (core) => {
 				log.write('Skipping audio export %s (file exists, overwrite disabled)', export_path);
 			}
 
-			helper.mark(file_name, true);
+			helper.mark(export_file_name, true);
 		} catch (e) {
-			helper.mark(file_name, false, e.message, e.stack);
+			helper.mark(export_file_name, false, e.message, e.stack);
 		}
 	}
 

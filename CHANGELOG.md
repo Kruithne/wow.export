@@ -21,6 +21,7 @@
 - Fixed an issue that caused exported map tiles from Classic builds to be completely black.
 - Fixed an issue that caused WMOs to export with the wrong textures.
 - Fixed an issue that caused characters/models to appear with white eyes.
+- Fixed an issue that caused the wrong paths to appear in the toast after exporting.
 
 ## 0.2.6 (24-11-2025)
 - Added 'Copy Log to Clipboard' button to the crash screen.
