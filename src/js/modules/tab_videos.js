@@ -84,7 +84,7 @@ const stream_video = async (core_ref, file_name) => {
 	const file_data_id = listfile.getByFilename(file_name);
 
 	if (!file_data_id) {
-		core_ref.setToast('error', 'unable to find file in listfile');
+		core_ref.setToast('error', 'Unable to find file in listfile');
 		return;
 	}
 
@@ -98,7 +98,7 @@ const stream_video = async (core_ref, file_name) => {
 
 		const payload = await build_payload(core_ref, file_data_id);
 		if (!payload) {
-			core_ref.setToast('error', 'failed to get video encoding info');
+			core_ref.setToast('error', 'Failed to get video encoding info');
 			is_streaming = false;
 			core_ref.view.videoPlayerState = false;
 			return;
@@ -135,7 +135,7 @@ const stream_video = async (core_ref, file_name) => {
 			} else if (res.status === 202) {
 				log.write('video is queued for processing, polling in %dms', constants.KINO.POLL_INTERVAL);
 
-				core_ref.setToast('progress', 'video is being processed, please wait...', null, -1, true);
+				core_ref.setToast('progress', 'Video is being processed, please wait...', null, -1, true);
 
 				// listen for toast cancellation
 				const cancel_handler = () => {
@@ -165,15 +165,14 @@ const stream_video = async (core_ref, file_name) => {
 						core_ref.events.off('toast-cancelled', cancel_handler);
 						if (!poll_cancelled) {
 							log.write('poll request failed: %s', e.message);
-							core_ref.setToast('error', 'failed to check video status: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
+							core_ref.setToast('error', 'Failed to check video status: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
 							is_streaming = false;
 							core_ref.view.videoPlayerState = false;
 						}
 					}
 				}, constants.KINO.POLL_INTERVAL);
 			} else {
-				const error_text = await res.text().catch(() => 'unknown error');
-				throw new Error(`server returned ${res.status}: ${error_text}`);
+				throw new Error(`server returned ${res.status}`);
 			}
 		};
 
@@ -186,7 +185,7 @@ const stream_video = async (core_ref, file_name) => {
 
 		log.write('failed to stream video %s: %s', file_name, e.message);
 		log.write(e.stack);
-		core_ref.setToast('error', 'failed to stream video: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
+		core_ref.setToast('error', 'Failed to stream video: ' + e.message, { 'view log': () => log.openRuntimeLog() }, -1);
 	}
 };
 
@@ -194,7 +193,7 @@ const play_streaming_video = (core_ref, url) => {
 	const video = document.getElementById('video-preview-player');
 	if (!video) {
 		log.write('video element not found');
-		core_ref.setToast('error', 'video player element not found');
+		core_ref.setToast('error', 'Video player element not found');
 		is_streaming = false;
 		core_ref.view.videoPlayerState = false;
 		return;
@@ -205,7 +204,7 @@ const play_streaming_video = (core_ref, url) => {
 	video.load();
 	video.play().catch(e => {
 		log.write('video play failed: %s', e.message);
-		core_ref.setToast('error', 'failed to play video: ' + e.message);
+		core_ref.setToast('error', 'Failed to play video: ' + e.message);
 		is_streaming = false;
 		core_ref.view.videoPlayerState = false;
 	});
@@ -219,7 +218,7 @@ const play_streaming_video = (core_ref, url) => {
 	video.onerror = () => {
 		const error = video.error;
 		log.write('video error: %s', error ? error.message : 'unknown');
-		core_ref.setToast('error', 'video playback error');
+		core_ref.setToast('error', 'Video playback error');
 		is_streaming = false;
 		core_ref.view.videoPlayerState = false;
 	};
@@ -283,7 +282,7 @@ module.exports = {
 
 			const selection = this.$core.view.selectionVideos;
 			if (selection.length === 0) {
-				this.$core.setToast('info', 'select a video file first');
+				this.$core.setToast('info', 'Select a video file first');
 				return;
 			}
 
