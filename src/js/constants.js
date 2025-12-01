@@ -135,7 +135,7 @@ module.exports = {
 	},
 
 	KINO: {
-		API_URL: 'https://kruithne.net/wow.export/v2/get_video',
+		API_URL: 'https://www.kruithne.net/wow.export/v2/get_video',
 		POLL_INTERVAL: 20000
 	},
 
