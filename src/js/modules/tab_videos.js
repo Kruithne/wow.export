@@ -8,10 +8,14 @@ const db2 = require('../casc/db2');
 const InstallType = require('../install-type');
 const constants = require('../constants');
 const core = require('../core');
+const subtitles = require('../subtitles');
+const { BlobPolyfill, URLPolyfill } = require('../blob');
 
 let movie_variation_map = null;
 let selected_file = null;
 let current_video_element = null;
+let current_subtitle_track = null;
+let current_subtitle_blob_url = null;
 let is_streaming = false;
 let poll_timer = null;
 let poll_cancelled = false;
@@ -29,8 +33,19 @@ const stop_video = async (core_ref) => {
 		current_video_element.onerror = null;
 		current_video_element.onended = null;
 		current_video_element.src = '';
+
+		if (current_subtitle_track) {
+			current_video_element.removeChild(current_subtitle_track);
+			current_subtitle_track = null;
+		}
+
 		current_video_element.load();
 		current_video_element = null;
+	}
+
+	if (current_subtitle_blob_url) {
+		URLPolyfill.revokeObjectURL(current_subtitle_blob_url);
+		current_subtitle_blob_url = null;
 	}
 
 	is_streaming = false;
@@ -48,6 +63,7 @@ const build_payload = async (core_ref, file_data_id) => {
 	}
 
 	const payload = { vid: vid_info };
+	const result = { payload, subtitle: null };
 
 	// check if we have movie mapping
 	if (movie_variation_map) {
@@ -63,13 +79,18 @@ const build_payload = async (core_ref, file_data_id) => {
 							payload.aud = aud_info;
 					}
 
-					// get subtitle file encoding info
+					// get subtitle file encoding info for server + store for local loading
 					if (movie_row.SubtitleFileDataID && movie_row.SubtitleFileDataID !== 0) {
 						const srt_info = await casc.getFileEncodingInfo(movie_row.SubtitleFileDataID);
 						if (srt_info) {
 							payload.srt = srt_info;
 							payload.srt.type = movie_row.SubtitleFileFormat || 0;
 						}
+
+						result.subtitle = {
+							file_data_id: movie_row.SubtitleFileDataID,
+							format: movie_row.SubtitleFileFormat || 0
+						};
 					}
 				}
 			} catch (e) {
@@ -78,7 +99,7 @@ const build_payload = async (core_ref, file_data_id) => {
 		}
 	}
 
-	return payload;
+	return result;
 };
 
 const stream_video = async (core_ref, file_name, video) => {
@@ -97,14 +118,15 @@ const stream_video = async (core_ref, file_name, video) => {
 		is_streaming = true;
 		core_ref.view.videoPlayerState = true;
 
-		const payload = await build_payload(core_ref, file_data_id);
-		if (!payload) {
+		const build_result = await build_payload(core_ref, file_data_id);
+		if (!build_result) {
 			core_ref.setToast('error', 'Failed to get video encoding info');
 			is_streaming = false;
 			core_ref.view.videoPlayerState = false;
 			return;
 		}
 
+		const { payload, subtitle } = build_result;
 		log.write('sending kino request: %o', payload);
 
 		const send_request = async () => {
@@ -129,7 +151,7 @@ const stream_video = async (core_ref, file_name, video) => {
 				if (data.url) {
 					log.write('received video url: %s', data.url);
 					core_ref.hideToast();
-					play_streaming_video(core_ref, data.url, video);
+					await play_streaming_video(core_ref, data.url, video, subtitle);
 				} else {
 					throw new Error('server returned 200 but no url');
 				}
@@ -190,9 +212,38 @@ const stream_video = async (core_ref, file_name, video) => {
 	}
 };
 
-const play_streaming_video = (core_ref, url, video) => {
+const play_streaming_video = async (core_ref, url, video, subtitle_info) => {
 	current_video_element = video;
 	video.src = url;
+
+	// load subtitles if enabled and available
+	if (core_ref.view.config.videoPlayerShowSubtitles && subtitle_info) {
+		try {
+			const vtt = await subtitles.get_subtitles_vtt(
+				core_ref.view.casc,
+				subtitle_info.file_data_id,
+				subtitle_info.format
+			);
+
+			const blob = new BlobPolyfill([vtt], { type: 'text/vtt' });
+			current_subtitle_blob_url = URLPolyfill.createObjectURL(blob);
+
+			const track = document.createElement('track');
+			track.kind = 'subtitles';
+			track.label = 'Subtitles';
+			track.srclang = 'en';
+			track.src = current_subtitle_blob_url;
+			track.default = true;
+
+			video.appendChild(track);
+			current_subtitle_track = track;
+
+			log.write('loaded subtitles for video (fdid: %d, format: %d)', subtitle_info.file_data_id, subtitle_info.format);
+		} catch (e) {
+			log.write('failed to load subtitles: %s', e.message);
+		}
+	}
+
 	video.load();
 	video.play().catch(e => {
 		log.write('video play failed: %s', e.message);
@@ -257,6 +308,10 @@ module.exports = {
 				<label class="ui-checkbox">
 					<input type="checkbox" v-model="$core.view.config.videoPlayerAutoPlay"/>
 					<span>Autoplay</span>
+				</label>
+				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.config.videoPlayerShowSubtitles"/>
+					<span>Show Subtitles</span>
 				</label>
 				<input type="button" :value="$core.view.videoPlayerState ? 'Stop Preview' : 'Preview Selected'" @click="preview_video"/>
 				<div class="tray"></div>
