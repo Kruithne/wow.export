@@ -313,7 +313,6 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.videoPlayerShowSubtitles"/>
 					<span>Show Subtitles</span>
 				</label>
-				<input type="button" :value="$core.view.videoPlayerState ? 'Stop Preview' : 'Preview Selected'" @click="preview_video"/>
 				<div class="tray"></div>
 				<input type="button" value="Export Selected" @click="export_video" :class="{ disabled: $core.view.isBusy }"/>
 			</div>
