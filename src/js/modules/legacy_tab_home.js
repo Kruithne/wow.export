@@ -1,20 +1,7 @@
 module.exports = {
 	template: `
 		<div class="tab" id="legacy-tab-home">
-			<div id="home-buttons" class="home-button-tray">
-				<div @click="navigate('legacy_tab_textures')">
-					<b>Textures</b>
-					<span>View and export textures to common formats.</span>
-				</div>
-				<div @click="navigate('legacy_tab_audio')">
-					<b>Sounds</b>
-					<span>Play and export in-game sound effects, music and dialog.</span>
-				</div>
-				<div @click="navigate('legacy_tab_files')">
-					<b>Files</b>
-					<span>Browse and export all raw files from MPQ archives.</span>
-				</div>
-			</div>
+			<HomeShowcase />
 			<div id="home-changes">
 				<div v-html="$core.view.whatsNewHTML"></div>
 			</div>

@@ -118,6 +118,10 @@ a:hover {
 	font-weight: bold;
 	src: local("Segoe UI Bold"), url("fonts/selawkb.woff2") format("woff2");
 }
+@font-face {
+	font-family: "Gambler";
+	src: url("fonts/gmblr.woff2") format("woff2");
+}
 body {
 	background: var(--background);
 	color: var(--font-primary);
@@ -2836,90 +2840,64 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-home, #legacy-tab-home {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 1fr auto;
+	grid-template-rows: auto 1fr auto auto;
+	padding: 50px;
+	gap: 0 50px;
 }
 
-.home-button-tray {
-	display: grid;
-	grid-template-columns: auto auto;
-	align-items: center;
-	justify-content: center;
-	align-content: center;
-	gap: 20px;
+#home-showcase-header {
+	grid-column: 1;
+	grid-row: 1;
+	margin-bottom: 10px;
 }
 
-.home-button-tray > div {
-	width: 300px;
-	border: 1px solid white;
-	border-radius: 10px;
-	padding: 20px;
-	display: flex;
-	flex-direction: column;
-	height: 65px;
-	justify-content: center;
-	cursor: pointer;
+#home-showcase {
+	grid-column: 1;
+	grid-row: 2;
+	display: block;
 	position: relative;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	cursor: pointer;
 	overflow: hidden;
-	background-repeat: no-repeat;
-	background-position: right center;
-	background-size: 120px;
-	background-color: #00000014;
-	transition: all 0.3s ease;
 }
 
-.home-button-tray > div::before {
-	content: "";
+#home-showcase > video {
 	position: absolute;
-	top: 50%;
-	right: -20px;
-	transform: translateY(-50%) rotate(20deg);
-	width: 120px;
-	height: 120px;
-	background-repeat: no-repeat;
-	background-position: center;
-	background-size: contain;
-	opacity: 0.2;
-	transition: transform 0.3s ease;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	z-index: -1;
 }
 
-#home-buttons > div:nth-child(1)::before {
-	background-image: url(./fa-icons/cube.svg);
+.showcase-title {
+	position: absolute;
+	top: 15px;
+	left: 20px;
+	font-family: "Gambler", sans-serif;
+	font-size: 40px;
+	color: white;
 }
 
-#home-buttons > div:nth-child(2)::before {
-	background-image: url(./fa-icons/person-solid.svg);
+#home-showcase-links {
+	grid-column: 1;
+	grid-row: 3;
+	display: flex;
+	gap: 15px;
+	margin-top: 8px;
+	margin-left: 20px;
 }
 
-#home-buttons > div:nth-child(3)::before {
-	background-image: url(./fa-icons/sword.svg);
+#home-showcase-links > a {
+	font-size: 12px;
+	color: #888;
+	cursor: pointer;
 }
 
-#home-buttons > div:nth-child(4)::before {
-	background-image: url(./fa-icons/image.svg);
-}
-
-#home-buttons > div:nth-child(5)::before {
-	background-image: url(./fa-icons/music.svg);
-}
-
-#home-buttons > div:nth-child(6)::before {
-	background-image: url(./fa-icons/film.svg);
-}
-
-#home-buttons > div:nth-child(7)::before {
-	background-image: url(./fa-icons/map.svg);
-}
-
-#home-buttons > div:nth-child(8)::before {
-	background-image: url(./fa-icons/mountain-castle.svg);
-}
-
-#home-buttons > div:nth-child(9)::before {
-	background-image: url(./fa-icons/file-lines.svg);
-}
-
-#home-buttons > div:nth-child(10)::before {
-	background-image: url(./fa-icons/database.svg);
+#home-showcase-links > a:hover {
+	color: #fff;
 }
 
 #home-help-buttons > div:nth-child(1)::before {
@@ -2949,12 +2927,11 @@ input[type=number]::-webkit-outer-spin-button {
 	justify-content: center;
 	align-items: center;
 	gap: 20px;
-	padding-bottom: 40px;
 }
 
 #home-help-buttons > div {
 	width: 300px;
-	border: 1px solid white;
+	border: 1px solid var(--border);
 	border-radius: 10px;
 	padding: 20px;
 	display: flex;
@@ -2996,36 +2973,32 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #home-changes {
-	padding: 50px;
+	grid-column: 2;
+	grid-row: 2;
+	padding: 0 50px;
 	display: flex;
 	flex-direction: column;
 	align-content: center;
 	justify-content: center;
-}
-
-@media (max-width: 1349px) {
-	#home-changes {
-		display: none;
-	}
-	
-	#home-buttons {
-		grid-column: 1 / -1;
-		justify-content: center;
-	}
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: #0000002e url(./images/home-background.webp) no-repeat center / cover;
+	container-type: size;
 }
 
 #home-changes h1 {
-	margin-bottom: 15px;
+	font-size: clamp(16px, 4cqi, 28px);
+	margin-bottom: 1cqi;
 }
 
 #home-changelog {
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
+	gap: 0.5cqi;
 }
 
 #home-changelog p {
-	font-size: 1.2em;
+	font-size: clamp(12px, 3cqi, 20px);
 }
 
 @media (max-height: 899px) {

@@ -118,9 +118,7 @@ document.addEventListener('click', function(e) {
 	if (kbElement) {
 		e.preventDefault();
 		const kb_id = kbElement.getAttribute('data-kb-link');
-		const article = core.view.helpArticles.find(a => a.kb_id === kb_id);
-		if (article)
-			core.view.helpSelectedArticle = article;
+		modules.tab_help.open_article(kb_id);
 		return;
 	}
 
