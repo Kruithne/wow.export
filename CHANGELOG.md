@@ -3,6 +3,10 @@
 - Added keyboard shortcut to deselect all tiles on the map viewer.
 - Added option to export character models as OBJ (posed).
 - Added dropdown menu to select phase on zones map viewer.
+- Added option to export videos as MP4 (video + audio) from videos tab.
+- Added option to export subtitles from cinematics in the videos tab.
+- Added option to export audio as MP3 from cinematics in the videos tab.
+- Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.
 - Heightmaps are now rotated by 90° CW when exported to better align with other software.
