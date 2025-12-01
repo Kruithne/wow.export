@@ -243,6 +243,12 @@ const makeNewView = () => {
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],
+		menuButtonVideos: [
+			{ label: 'Export MP4 (Video + Audio)', value: 'MP4' },
+			{ label: 'Export AVI (Video Only)', value: 'AVI' },
+			{ label: 'Export MP3 (Audio Only)', value: 'MP3' },
+			{ label: 'Export Subtitles', value: 'SUBTITLES' }
+		],
 		helpArticles: [],
 		helpFilteredArticles: [],
 		helpSelectedArticle: null,

@@ -1,4 +1,6 @@
 const path = require('path');
+const fs = require('fs');
+const fsp = fs.promises;
 const log = require('../log');
 const ExportHelper = require('../casc/export-helper');
 const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
@@ -291,6 +293,61 @@ const load_movie_variation_map = async () => {
 	}
 };
 
+const get_movie_data = async (file_data_id) => {
+	if (!movie_variation_map)
+		return null;
+
+	const movie_id = movie_variation_map.get(file_data_id);
+	if (!movie_id)
+		return null;
+
+	try {
+		const movie_row = await db2.Movie.getRow(movie_id);
+		if (!movie_row)
+			return null;
+
+		return {
+			AudioFileDataID: movie_row.AudioFileDataID || 0,
+			SubtitleFileDataID: movie_row.SubtitleFileDataID || 0,
+			SubtitleFileFormat: movie_row.SubtitleFileFormat || 0
+		};
+	} catch (e) {
+		log.write('failed to get movie data for fdid %d: %s', file_data_id, e.message);
+		return null;
+	}
+};
+
+const get_mp4_url = async (payload) => {
+	const send_request = async () => {
+		const res = await fetch(constants.KINO.API_URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'User-Agent': constants.USER_AGENT
+			},
+			body: JSON.stringify(payload)
+		});
+		return res;
+	};
+
+	const poll_for_url = async () => {
+		const res = await send_request();
+
+		if (res.status === 200) {
+			const data = await res.json();
+			return data.url || null;
+		} else if (res.status === 202) {
+			// video queued, wait and retry
+			await new Promise(resolve => setTimeout(resolve, constants.KINO.POLL_INTERVAL));
+			return poll_for_url();
+		}
+
+		return null;
+	};
+
+	return poll_for_url();
+};
+
 module.exports = {
 	register() {
 		this.registerNavButton('Videos', 'film.svg', InstallType.CASC);
@@ -318,7 +375,7 @@ module.exports = {
 					<span>Show Subtitles</span>
 				</label>
 				<div class="tray"></div>
-				<input type="button" value="Export Selected" @click="export_video" :class="{ disabled: $core.view.isBusy }"/>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonVideos" :default="$core.view.config.exportVideoFormat" @change="$core.view.config.exportVideoFormat = $event" :disabled="$core.view.isBusy" @click="export_selected"></component>
 			</div>
 		</div>
 	`,
@@ -341,7 +398,97 @@ module.exports = {
 			await stream_video(this.$core, file_name, this.$refs.video_player);
 		},
 
-		async export_video() {
+		async export_selected() {
+			const format = this.$core.view.config.exportVideoFormat;
+
+			switch (format) {
+				case 'MP4':
+					return this.export_mp4();
+				case 'AVI':
+					return this.export_avi();
+				case 'MP3':
+					return this.export_mp3();
+				case 'SUBTITLES':
+					return this.export_subtitles();
+			}
+		},
+
+		async export_mp4() {
+			const user_selection = this.$core.view.selectionVideos;
+			if (user_selection.length === 0) {
+				this.$core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+				return;
+			}
+
+			const helper = new ExportHelper(user_selection.length, 'video');
+			helper.start();
+
+			const overwrite_files = this.$core.view.config.overwriteFiles;
+			for (let file_name of user_selection) {
+				if (helper.isCancelled())
+					return;
+
+				file_name = listfile.stripFileEntry(file_name);
+				const file_data_id = listfile.getByFilename(file_name);
+
+				if (!file_data_id) {
+					helper.mark(file_name, false, 'File not found in listfile');
+					continue;
+				}
+
+				let export_file_name = ExportHelper.replaceExtension(file_name, '.mp4');
+				if (!this.$core.view.config.exportNamedFiles) {
+					const dir = path.dirname(file_name);
+					const file_data_id_name = file_data_id + '.mp4';
+					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+				}
+
+				const export_path = ExportHelper.getExportPath(export_file_name);
+
+				if (!overwrite_files && await generics.fileExists(export_path)) {
+					helper.mark(file_name, true);
+					log.write('Skipping MP4 export %s (file exists, overwrite disabled)', export_path);
+					continue;
+				}
+
+				try {
+					const build_result = await build_payload(this.$core, file_data_id);
+					if (!build_result) {
+						helper.mark(file_name, false, 'Failed to get encoding info');
+						continue;
+					}
+
+					const { payload } = build_result;
+					const mp4_url = await get_mp4_url(payload);
+
+					if (!mp4_url) {
+						helper.mark(file_name, false, 'Failed to get MP4 URL from server');
+						continue;
+					}
+
+					const response = await fetch(mp4_url, {
+						headers: { 'User-Agent': constants.USER_AGENT }
+					});
+
+					if (!response.ok) {
+						helper.mark(file_name, false, 'Failed to download MP4: ' + response.status);
+						continue;
+					}
+
+					const buffer = await response.arrayBuffer();
+					await fsp.mkdir(path.dirname(export_path), { recursive: true });
+					await fsp.writeFile(export_path, Buffer.from(buffer));
+
+					helper.mark(file_name, true);
+				} catch (e) {
+					helper.mark(file_name, false, e.message, e.stack);
+				}
+			}
+
+			helper.finish();
+		},
+
+		async export_avi() {
 			const user_selection = this.$core.view.selectionVideos;
 			if (user_selection.length === 0) {
 				this.$core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
@@ -400,6 +547,121 @@ module.exports = {
 				} else {
 					helper.mark(file_name, true);
 					log.write('Skipping video export %s (file exists, overwrite disabled)', export_path);
+				}
+			}
+
+			helper.finish();
+		},
+
+		async export_mp3() {
+			const user_selection = this.$core.view.selectionVideos;
+			if (user_selection.length === 0) {
+				this.$core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+				return;
+			}
+
+			const helper = new ExportHelper(user_selection.length, 'audio track');
+			helper.start();
+
+			const overwrite_files = this.$core.view.config.overwriteFiles;
+			for (let file_name of user_selection) {
+				if (helper.isCancelled())
+					return;
+
+				file_name = listfile.stripFileEntry(file_name);
+				const file_data_id = listfile.getByFilename(file_name);
+
+				if (!file_data_id) {
+					helper.mark(file_name, false, 'File not found in listfile');
+					continue;
+				}
+
+				const movie_data = await get_movie_data(file_data_id);
+				if (!movie_data || !movie_data.AudioFileDataID) {
+					helper.mark(file_name, false, 'No audio track available for this video');
+					continue;
+				}
+
+				let export_file_name = ExportHelper.replaceExtension(file_name, '.mp3');
+				if (!this.$core.view.config.exportNamedFiles) {
+					const dir = path.dirname(file_name);
+					const file_data_id_name = movie_data.AudioFileDataID + '.mp3';
+					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+				}
+
+				const export_path = ExportHelper.getExportPath(export_file_name);
+
+				if (!overwrite_files && await generics.fileExists(export_path)) {
+					helper.mark(file_name, true);
+					log.write('Skipping audio export %s (file exists, overwrite disabled)', export_path);
+					continue;
+				}
+
+				try {
+					const data = await this.$core.view.casc.getFile(movie_data.AudioFileDataID);
+					await data.writeToFile(export_path);
+					helper.mark(file_name, true);
+				} catch (e) {
+					helper.mark(file_name, false, e.message, e.stack);
+				}
+			}
+
+			helper.finish();
+		},
+
+		async export_subtitles() {
+			const user_selection = this.$core.view.selectionVideos;
+			if (user_selection.length === 0) {
+				this.$core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+				return;
+			}
+
+			const helper = new ExportHelper(user_selection.length, 'subtitle');
+			helper.start();
+
+			const overwrite_files = this.$core.view.config.overwriteFiles;
+			for (let file_name of user_selection) {
+				if (helper.isCancelled())
+					return;
+
+				file_name = listfile.stripFileEntry(file_name);
+				const file_data_id = listfile.getByFilename(file_name);
+
+				if (!file_data_id) {
+					helper.mark(file_name, false, 'File not found in listfile');
+					continue;
+				}
+
+				const movie_data = await get_movie_data(file_data_id);
+				if (!movie_data || !movie_data.SubtitleFileDataID) {
+					helper.mark(file_name, false, 'No subtitles available for this video');
+					continue;
+				}
+
+				// determine extension based on subtitle format
+				const ext = movie_data.SubtitleFileFormat === subtitles.SUBTITLE_FORMAT.SBT ? '.sbt' : '.srt';
+
+				let export_file_name = ExportHelper.replaceExtension(file_name, ext);
+				if (!this.$core.view.config.exportNamedFiles) {
+					const dir = path.dirname(file_name);
+					const file_data_id_name = movie_data.SubtitleFileDataID + ext;
+					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+				}
+
+				const export_path = ExportHelper.getExportPath(export_file_name);
+
+				if (!overwrite_files && await generics.fileExists(export_path)) {
+					helper.mark(file_name, true);
+					log.write('Skipping subtitle export %s (file exists, overwrite disabled)', export_path);
+					continue;
+				}
+
+				try {
+					const data = await this.$core.view.casc.getFile(movie_data.SubtitleFileDataID);
+					await data.writeToFile(export_path);
+					helper.mark(file_name, true);
+				} catch (e) {
+					helper.mark(file_name, false, e.message, e.stack);
 				}
 			}
 

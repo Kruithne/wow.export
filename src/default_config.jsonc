@@ -77,6 +77,7 @@
 	"soundPlayerLoop": false,
 	"videoPlayerAutoPlay": true,
 	"videoPlayerShowSubtitles": true,
+	"exportVideoFormat": "MP4",
 	"mapsShowSidebar": false,
 	"mapsIncludeWMO": true,
 	"mapsIncludeM2": true,
