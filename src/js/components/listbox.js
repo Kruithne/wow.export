@@ -69,12 +69,8 @@ module.exports = {
 		document.addEventListener('mousemove', this.onMouseMove);
 		document.addEventListener('mouseup', this.onMouseUp);
 
-		document.addEventListener('paste', this.onPaste);
-
-		if (this.keyinput) {
+		if (this.keyinput)
 			this.onKeyDown = e => this.handleKey(e);
-			document.addEventListener('keydown', this.onKeyDown);
-		}
 
 		// Register observer for layout changes.
 		this.observer = new ResizeObserver(() => this.resize());
@@ -95,19 +91,39 @@ module.exports = {
 	},
 
 	/**
+	 * Invoked when the component is activated (keep-alive).
+	 * Registers keyboard and paste listeners.
+	 */
+	activated: function() {
+		document.addEventListener('paste', this.onPaste);
+
+		if (this.keyinput)
+			document.addEventListener('keydown', this.onKeyDown);
+	},
+
+	/**
+	 * Invoked when the component is deactivated (keep-alive).
+	 * Unregisters keyboard and paste listeners.
+	 */
+	deactivated: function() {
+		document.removeEventListener('paste', this.onPaste);
+
+		if (this.keyinput)
+			document.removeEventListener('keydown', this.onKeyDown);
+	},
+
+	/**
 	 * Invoked when the component is destroyed.
 	 * Used to unregister global mouse listeners and resize observer.
 	 */
 	beforeUnmount: function() {
 		// Save final scroll position if persistence is enabled
-		if (this.persistscrollkey) 
+		if (this.persistscrollkey)
 			core.saveScrollPosition(this.persistscrollkey, this.scrollRel, this.scrollIndex);
-		
 
 		// Unregister global mouse/keyboard listeners.
 		document.removeEventListener('mousemove', this.onMouseMove);
 		document.removeEventListener('mouseup', this.onMouseUp);
-
 		document.removeEventListener('paste', this.onPaste);
 
 		if (this.keyinput)
