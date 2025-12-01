@@ -216,8 +216,8 @@ const play_streaming_video = async (core_ref, url, video, subtitle_info) => {
 	current_video_element = video;
 	video.src = url;
 
-	// load subtitles if enabled and available
-	if (core_ref.view.config.videoPlayerShowSubtitles && subtitle_info) {
+	// always load subtitles if available, toggle visibility based on config
+	if (subtitle_info) {
 		try {
 			const vtt = await subtitles.get_subtitles_vtt(
 				core_ref.view.casc,
@@ -233,10 +233,14 @@ const play_streaming_video = async (core_ref, url, video, subtitle_info) => {
 			track.label = 'Subtitles';
 			track.srclang = 'en';
 			track.src = current_subtitle_blob_url;
-			track.default = true;
 
 			video.appendChild(track);
 			current_subtitle_track = track;
+
+			// set initial visibility after track loads
+			track.addEventListener('load', () => {
+				track.track.mode = core_ref.view.config.videoPlayerShowSubtitles ? 'showing' : 'hidden';
+			});
 
 			log.write('loaded subtitles for video (fdid: %d, format: %d)', subtitle_info.file_data_id, subtitle_info.format);
 		} catch (e) {
@@ -433,6 +437,11 @@ module.exports = {
 				if (this.$core.view.config.videoPlayerAutoPlay)
 					await stream_video(this.$core, file_name, this.$refs.video_player);
 			}
+		});
+
+		this.$core.view.$watch('config.videoPlayerShowSubtitles', show => {
+			if (current_subtitle_track && current_subtitle_track.track)
+				current_subtitle_track.track.mode = show ? 'showing' : 'hidden';
 		});
 	}
 };
