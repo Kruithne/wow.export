@@ -81,7 +81,7 @@ const build_payload = async (core_ref, file_data_id) => {
 	return payload;
 };
 
-const stream_video = async (core_ref, file_name) => {
+const stream_video = async (core_ref, file_name, video) => {
 	const file_data_id = listfile.getByFilename(file_name);
 
 	if (!file_data_id) {
@@ -129,7 +129,7 @@ const stream_video = async (core_ref, file_name) => {
 				if (data.url) {
 					log.write('received video url: %s', data.url);
 					core_ref.hideToast();
-					play_streaming_video(core_ref, data.url);
+					play_streaming_video(core_ref, data.url, video);
 				} else {
 					throw new Error('server returned 200 but no url');
 				}
@@ -190,16 +190,7 @@ const stream_video = async (core_ref, file_name) => {
 	}
 };
 
-const play_streaming_video = (core_ref, url) => {
-	const video = document.getElementById('video-preview-player');
-	if (!video) {
-		log.write('video element not found');
-		core_ref.setToast('error', 'Video player element not found');
-		is_streaming = false;
-		core_ref.view.videoPlayerState = false;
-		return;
-	}
-
+const play_streaming_video = (core_ref, url, video) => {
 	current_video_element = video;
 	video.src = url;
 	video.load();
@@ -260,7 +251,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterVideos" placeholder="Filter videos..."/>
 			</div>
 			<div class="preview-container">
-				<video id="video-preview-player" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;" controls></video>
+				<video ref="video_player" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;" controls></video>
 			</div>
 			<div class="preview-controls">
 				<label class="ui-checkbox">
@@ -289,7 +280,7 @@ module.exports = {
 
 			const file_name = listfile.stripFileEntry(selection[0]);
 			selected_file = file_name;
-			await stream_video(this.$core, file_name);
+			await stream_video(this.$core, file_name, this.$refs.video_player);
 		},
 
 		async export_video() {
@@ -386,7 +377,7 @@ module.exports = {
 				selected_file = file_name;
 
 				if (this.$core.view.config.videoPlayerAutoPlay)
-					await stream_video(this.$core, file_name);
+					await stream_video(this.$core, file_name, this.$refs.video_player);
 			}
 		});
 	}
