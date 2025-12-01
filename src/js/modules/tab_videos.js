@@ -26,6 +26,8 @@ const stop_video = async (core_ref) => {
 
 	if (current_video_element) {
 		current_video_element.pause();
+		current_video_element.onerror = null;
+		current_video_element.onended = null;
 		current_video_element.src = '';
 		current_video_element.load();
 		current_video_element = null;
@@ -33,7 +35,6 @@ const stop_video = async (core_ref) => {
 
 	is_streaming = false;
 	core_ref.view.videoPlayerState = false;
-	log.write('video stopped');
 };
 
 const build_payload = async (core_ref, file_data_id) => {
