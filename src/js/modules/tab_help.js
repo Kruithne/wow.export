@@ -92,9 +92,16 @@ const filter_articles = (search) => {
 
 let filter_timeout = null;
 
+let pending_kb_id = null;
+
 module.exports = {
 	register() {
 		this.registerContextMenuOption('Help', 'help.svg');
+	},
+
+	open_article(kb_id) {
+		pending_kb_id = kb_id;
+		this.setActive();
 	},
 
 	template: `
@@ -154,7 +161,14 @@ module.exports = {
 
 		this.filtered_articles = help_articles;
 
-		const kb002 = help_articles.find(a => a.kb_id === 'KB002');
-		this.selected_article = kb002 || null;
+		if (pending_kb_id) {
+			this.selected_article = help_articles.find(a => a.kb_id === pending_kb_id) ?? null;
+			pending_kb_id = null;
+		}
+
+		if (!this.selected_article) {
+			const kb002 = help_articles.find(a => a.kb_id === 'KB002');
+			this.selected_article = kb002 ?? null;
+		}
 	}
 };
