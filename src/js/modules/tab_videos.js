@@ -302,7 +302,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterVideos" placeholder="Filter videos..."/>
 			</div>
 			<div class="preview-container">
-				<video ref="video_player" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;" controls></video>
+				<video ref="video_player" class="preview-background" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: #000;" controls controlsList="nodownload noplaybackrate" disablePictureInPicture></video>
 			</div>
 			<div class="preview-controls">
 				<label class="ui-checkbox">
