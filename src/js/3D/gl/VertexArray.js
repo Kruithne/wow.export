@@ -15,7 +15,8 @@ const AttributeLocation = {
 	COLOR: 6,
 	COLOR2: 7,
 	TEXCOORD3: 8,
-	TEXCOORD4: 9
+	TEXCOORD4: 9,
+	COLOR3: 10 // Reserved for WMO MOC2 when we properly implement WMO MOCV chunk appearing twice and going into COLOR2. 
 };
 
 class VertexArray {
@@ -194,9 +195,9 @@ class VertexArray {
 
 	/**
 	 * Set up WMO vertex format
-	 * layout: position(3f) + normal(3f) + uv1(2f) + uv2(2f) + color(4ub) + color2(4ub)
+	 * layout: position(3f) + normal(3f) + uv1(2f) + color(4ub) + color2(4ub) + uv2(2f) + uv3(2f) + uv4(2f)
 	 */
-	setup_wmo_separate_buffers(pos_buffer, norm_buffer, uv_buffer, color_buffer, uv2_buffer, uv3_buffer, uv4_buffer) {
+	setup_wmo_separate_buffers(pos_buffer, norm_buffer, uv_buffer, color_buffer, color2_buffer, uv2_buffer, uv3_buffer, uv4_buffer) {
 		const gl = this.gl;
 
 		this.bind();
@@ -219,7 +220,6 @@ class VertexArray {
 		// disable unused
 		gl.disableVertexAttribArray(AttributeLocation.BONE_INDICES);
 		gl.disableVertexAttribArray(AttributeLocation.BONE_WEIGHTS);
-		gl.disableVertexAttribArray(AttributeLocation.TEXCOORD2);
 
 		// vertex color (optional)
 		if (color_buffer) {
@@ -228,6 +228,15 @@ class VertexArray {
 			gl.vertexAttribPointer(AttributeLocation.COLOR, 4, gl.UNSIGNED_BYTE, true, 0, 0);
 		} else {
 			gl.disableVertexAttribArray(AttributeLocation.COLOR);
+		}
+
+		// color 2 (optional)
+		if (color2_buffer) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, color2_buffer);
+			gl.enableVertexAttribArray(AttributeLocation.COLOR2);
+			gl.vertexAttribPointer(AttributeLocation.COLOR2, 4, gl.UNSIGNED_BYTE, true, 0, 0);
+		} else {
+			gl.disableVertexAttribArray(AttributeLocation.COLOR2);
 		}
 
 		// uv2 (optional)

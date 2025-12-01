@@ -8,6 +8,7 @@ layout(location = 1) in vec3 a_normal;
 layout(location = 4) in vec2 a_texcoord;
 layout(location = 5) in vec2 a_texcoord2;
 layout(location = 6) in vec4 a_color;
+layout(location = 7) in vec4 a_color2;
 layout(location = 8) in vec2 a_texcoord3;
 layout(location = 9) in vec2 a_texcoord4;
 
@@ -25,6 +26,7 @@ out vec2 v_texcoord4;
 out vec3 v_normal;
 out vec3 v_position_view;
 out vec4 v_color;
+out vec4 v_color2;
 
 void main() {
 	vec4 world_pos = u_model_matrix * vec4(a_position, 1.0);
@@ -38,6 +40,7 @@ void main() {
 
 	v_position_view = view_pos.xyz;
 	v_color = a_color;
+	v_color2 = a_color2;
 
 	// WMO vertex shader modes
 	switch (u_vertex_shader) {

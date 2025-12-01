@@ -338,11 +338,12 @@ const WMOChunkHandlers = {
 	},
 
 	// MOCV (Vertex Colouring) [WMO Group]
+	// TODO: If MOGP flag 0x1000000	is set, this chunk can appear twice similar to MOTV.
 	0x4D4F4356: function(data, chunkSize) {
 		if (!this.vertexColours)
 			this.vertexColours = [];
 
-		this.vertexColours.push(data.readUInt32LE(chunkSize / 4));
+		this.vertexColours.push(data.readUInt8(chunkSize));
 	},
 
 	// MDAL (Ambient Color) [WMO Group]
@@ -462,6 +463,10 @@ const WMOChunkHandlers = {
 			materialInfo[i] = { flags: data.readUInt8(), materialID: data.readUInt8() };
 	},
 
+	// MOC2 (Colors 2) [WMO Group]
+	0x4D4F4332: function(data, chunkSize) {
+		this.colors2 = data.readUInt8(chunkSize)
+	},
 };
 
 module.exports = WMOLoader;

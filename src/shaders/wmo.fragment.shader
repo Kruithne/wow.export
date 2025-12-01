@@ -10,6 +10,7 @@ in vec2 v_texcoord4;
 in vec3 v_normal;
 in vec3 v_position_view;
 in vec4 v_color;
+in vec4 v_color2;
 
 // textures
 uniform sampler2D u_texture1;
@@ -67,9 +68,11 @@ void main() {
 	vec3 specular = vec3(0.0);
 
 	// todo: use blend_mode uniform
-	float alpha = tex1.a;
+	// set alpha to 1.0 for now
+	float alpha = 1.0;
 
 	// WMO pixel shader modes
+	// Logic based on Deamon's work: https://github.com/Deamon87/WebWowViewerCpp/blob/master/wowViewerLib/shaders/glsl/common/commonWMOMaterial.glsl
 	switch (u_pixel_shader) {
 		case 0: // MapObjDiffuse
 			mat_diffuse = tex1.rgb;
@@ -174,17 +177,38 @@ void main() {
 			break;
 
 		case 20: // MapObjUnkShader
-			// vec4 tex1 = texture(u_texture1, vec2(0.0));
+			vec4 tex1 = texture(u_texture1, vec2(0.0));
 			vec4 tex2 = texture(u_texture2, v_texcoord);
-			// vec4 tex3 = texture(u_texture3, v_texcoord2);
-			// vec4 tex4 = texture(u_texture4, v_texcoord3);
-			// vec4 tex5 = texture(u_texture5, v_texcoord4);
-			// vec4 tex6 = texture(u_texture6, v_texcoord);
-			// vec4 tex7 = texture(u_texture7, v_texcoord2);
-			// vec4 tex8 = texture(u_texture8, v_texcoord3);
-			// vec4 tex9 = texture(u_texture9, v_texcoord4);
+			vec4 tex3 = texture(u_texture3, v_texcoord2);
+			vec4 tex4 = texture(u_texture4, v_texcoord3);
+			vec4 tex5 = texture(u_texture5, v_texcoord4);
+			vec4 tex6 = texture(u_texture6, v_texcoord);
+			vec4 tex7 = texture(u_texture7, v_texcoord2);
+			vec4 tex8 = texture(u_texture8, v_texcoord3);
+			vec4 tex9 = texture(u_texture9, v_texcoord4);
+
+			// #L261-L279 from commonWMOMaterial.glsl
+			float vColor2Sum = dot(v_color2.bgr, vec3(1.0));
+			
+			vec4 weights = vec4(v_color2.bgr, 1.0 - clamp(vColor2Sum, 0.0, 1.0));
+			vec4 heights = max(vec4(tex6.a, tex7.a, tex8.a, tex9.a), 0.004);
+			
+			vec4 alphaVec =  weights * heights;
+			float weightsMax = max(alphaVec.r, max(alphaVec.g, max(alphaVec.r, alphaVec.a)));
+			vec4 alphaVec2 = (1.0 - clamp(vec4(weightsMax) - alphaVec, 0.0, 1.0));
+			alphaVec2 = alphaVec2 * alphaVec;
+
+			vec4 alphaVec2Normalized = alphaVec2 * (1.0 / dot(alphaVec2, vec4(1.0)));
+
+			vec4 texMixed = tex2 * alphaVec2Normalized.r +
+							tex3 * alphaVec2Normalized.g +
+							tex4 * alphaVec2Normalized.b +
+							tex5 * alphaVec2Normalized.a;
+
+			// emissive = (texMixed.w * tex1.rgb) * texMixed.rgb; // TODO: use
+			vec3 ambientOcclusionColor = vec3(0,0,0);
+			// mat_diffuse = mix(texMixed.rgb, ambientOcclusionColor, v_color2.a);
 			mat_diffuse = tex2.rgb;
-			alpha = 1.0; // wrong but for now
 			break;
 
 		default:
@@ -200,7 +224,7 @@ void main() {
 	vec3 lit_color = calc_lighting(mat_diffuse, v_normal);
 
 	// add specular
-	lit_color += specular;
+	//lit_color += specular;
 
 	frag_color = vec4(lit_color, alpha);
 }
