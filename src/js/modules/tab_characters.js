@@ -809,9 +809,11 @@ const export_char_model = async (core) => {
 			exporter.setGeosetMask(core.view.chrCustGeosets);
 
 			// apply posed geometry from current animation frame
-			const baked = active_renderer.getBakedGeometry();
-			if (baked)
-				exporter.setPosedGeometry(baked.vertices, baked.normals);
+			if (core.view.config.chrExportApplyPose) {
+				const baked = active_renderer.getBakedGeometry();
+				if (baked)
+					exporter.setPosedGeometry(baked.vertices, baked.normals);
+			}
 
 			await exporter.exportAsOBJ(export_path, false, helper, []);
 			await export_paths?.writeLine('M2_OBJ:' + export_path);
@@ -1128,9 +1130,13 @@ module.exports = {
 				<div class="character-export-container">
 					<div class="character-export-controls">
 						<div class="character-export-menu" v-show="$core.view.chrExportMenu == 'export'">
-							<label class="ui-checkbox" title="Include Animations in Export">
+							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'GLTF' || $core.view.config.exportCharacterFormat === 'GLB'" title="Include Animations in Export">
 								<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 								<span>Export animations</span>
+							</label>
+							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'OBJ'" title="Apply current animation pose to exported geometry">
+								<input type="checkbox" v-model="$core.view.config.chrExportApplyPose"/>
+								<span>Apply pose</span>
 							</label>
 							<component :is="$components.MenuButton" :options="$core.view.menuButtonCharacterExport" :default="$core.view.config.exportCharacterFormat" @change="$core.view.config.exportCharacterFormat = $event" :disabled="$core.view.isBusy" @click="export_character"></component>
 						</div>
