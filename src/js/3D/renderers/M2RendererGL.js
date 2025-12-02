@@ -962,14 +962,12 @@ class M2RendererGL {
 			else
 				ctx.set_depth_test(true);
 
-			// bind texture
-			const texture = this.textures.get(dc.tex_index) || this.default_texture;
-			texture.bind(0);
-
-			// bind additional textures (for multi-texture shaders)
-			this.default_texture.bind(1);
-			this.default_texture.bind(2);
-			this.default_texture.bind(3);
+			// bind textures (up to 4 for multi-texture shaders)
+			for (let t = 0; t < 4; t++) {
+				const tex_idx = dc.tex_indices[t];
+				const texture = (tex_idx !== null) ? (this.textures.get(tex_idx) || this.default_texture) : this.default_texture;
+				texture.bind(t);
+			}
 
 			// draw
 			dc.vao.bind();
