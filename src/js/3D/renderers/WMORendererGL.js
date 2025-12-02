@@ -5,11 +5,8 @@
 */
 
 const util = require('util');
-const fs = require('fs');
-const path = require('path');
 const core = require('../../core');
 const log = require('../../log');
-const constants = require('../../constants');
 
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
@@ -17,9 +14,9 @@ const WMOLoader = require('../loaders/WMOLoader');
 const M2RendererGL = require('./M2RendererGL');
 const listfile = require('../../casc/listfile');
 const WMOShaderMapper = require('../WMOShaderMapper');
+const Shaders = require('../Shaders');
 
 const GLContext = require('../gl/GLContext');
-const ShaderProgram = require('../gl/ShaderProgram');
 const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
@@ -72,20 +69,10 @@ class WMORendererGL {
 	}
 
 	/**
-	 * Load shader program (cached per context)
+	 * Load shader program
 	 */
-	static async load_shaders(ctx) {
-		return ctx.get_cached_shader('wmo', (ctx) => {
-			const shader_path = constants.SHADER_PATH;
-			const vert_source = fs.readFileSync(path.join(shader_path, 'wmo.vertex.shader'), 'utf8');
-			const frag_source = fs.readFileSync(path.join(shader_path, 'wmo.fragment.shader'), 'utf8');
-
-			const program = new ShaderProgram(ctx, vert_source, frag_source);
-			if (!program.is_valid())
-				throw new Error('Failed to compile WMO shader');
-
-			return program;
-		});
+	static load_shaders(ctx) {
+		return Shaders.create_program(ctx, 'wmo');
 	}
 
 	async load() {
@@ -94,7 +81,7 @@ class WMORendererGL {
 		await this.wmo.load();
 
 		// load shader program
-		this.shader = await WMORendererGL.load_shaders(this.ctx);
+		this.shader = WMORendererGL.load_shaders(this.ctx);
 
 		// create default texture
 		this._create_default_texture();

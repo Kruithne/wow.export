@@ -1425,7 +1425,6 @@ module.exports = {
 			chr_cust_skinned_model_map.set(chr_customization_skinned_model_id, chr_customization_skinned_model_row);
 
 		await this.$core.progressLoadingScreen('Loading character shaders...');
-		await CharMaterialRenderer.init();
 
 		// initialize model viewer context (gl_context is populated by ModelViewerGL on mount)
 		state.chrModelViewerContext = {
@@ -1514,9 +1513,7 @@ module.exports = {
 		// expose for debugging
 		window.loadImportString = (str) => load_import_string(this.$core, str);
 
-		window.reloadShaders = async () => {
-			await CharMaterialRenderer.init();
-
+		window.reloadCharShaders = async () => {
 			for (const material of chr_materials.values())
 				await material.compileShaders();
 

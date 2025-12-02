@@ -4,20 +4,17 @@
 	License: MIT
 */
 
-const fs = require('fs');
-const path = require('path');
 const core = require('../../core');
 const log = require('../../log');
-const constants = require('../../constants');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
 const SKELLoader = require('../loaders/SKELLoader');
 const GeosetMapper = require('../GeosetMapper');
 const ShaderMapper = require('../ShaderMapper');
+const Shaders = require('../Shaders');
 
 const GLContext = require('../gl/GLContext');
-const ShaderProgram = require('../gl/ShaderProgram');
 const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
@@ -326,20 +323,10 @@ class M2RendererGL {
 	}
 
 	/**
-	 * Load shader program (cached per context)
+	 * Load shader program
 	 */
-	static async load_shaders(ctx) {
-		return ctx.get_cached_shader('m2', (ctx) => {
-			const shader_path = constants.SHADER_PATH;
-			const vert_source = fs.readFileSync(path.join(shader_path, 'm2.vertex.shader'), 'utf8');
-			const frag_source = fs.readFileSync(path.join(shader_path, 'm2.fragment.shader'), 'utf8');
-
-			const program = new ShaderProgram(ctx, vert_source, frag_source);
-			if (!program.is_valid())
-				throw new Error('Failed to compile M2 shader');
-
-			return program;
-		});
+	static load_shaders(ctx) {
+		return Shaders.create_program(ctx, 'm2');
 	}
 
 	async load() {
@@ -348,7 +335,7 @@ class M2RendererGL {
 		await this.m2.load();
 
 		// load shader program
-		this.shader = await M2RendererGL.load_shaders(this.ctx);
+		this.shader = M2RendererGL.load_shaders(this.ctx);
 
 		// create default texture
 		this._create_default_texture();

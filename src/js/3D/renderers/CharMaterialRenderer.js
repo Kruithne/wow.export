@@ -3,21 +3,13 @@ wow.export (https://github.com/Kruithne/wow.export)
 Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 License: MIT
 */
-const path = require('path');
-const fsp = require('fs').promises;
 const BLPFile = require('../../casc/blp');
 const core = require('../../core');
 const log = require('../../log');
 const listfile = require('../../casc/listfile');
-const constants = require('../../constants');
 const overlay = require('../../ui/char-texture-overlay');
 const PNGWriter = require('../../png-writer');
-
-const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.fragment.shader');
-const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'char.vertex.shader');
-
-let VERT_SHADER_TEXT = '';
-let FRAG_SHADER_TEXT = '';
+const Shaders = require('../Shaders');
 
 const UV_BUFFER_DATA = new Float32Array([
 	0, 1,
@@ -29,10 +21,6 @@ const UV_BUFFER_DATA = new Float32Array([
 ]);
 
 class CharMaterialRenderer {
-	static async init() {
-		VERT_SHADER_TEXT = await fsp.readFile(VERT_SHADER_SRC, 'utf8');
-		FRAG_SHADER_TEXT = await fsp.readFile(FRAG_SHADER_SRC, 'utf8');
-	}
 
 	/**
 	 * Construct a new CharMaterialRenderer instance.
@@ -235,11 +223,13 @@ class CharMaterialRenderer {
 	 * Will be attached to the current GL context.
 	 */
 	async compileShaders() {
+		const sources = Shaders.get_source('char');
+
 		this.glShaderProg = this.gl.createProgram();
 
 		// Compile vertex shader.
 		const vertShader = this.gl.createShader(this.gl.VERTEX_SHADER);
-		this.gl.shaderSource(vertShader, VERT_SHADER_TEXT);
+		this.gl.shaderSource(vertShader, sources.vert);
 		this.gl.compileShader(vertShader);
 
 		if (!this.gl.getShaderParameter(vertShader, this.gl.COMPILE_STATUS)) {
@@ -249,7 +239,7 @@ class CharMaterialRenderer {
 
 		// Compile fragment shader.
 		const fragShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		this.gl.shaderSource(fragShader, FRAG_SHADER_TEXT);
+		this.gl.shaderSource(fragShader, sources.frag);
 		this.gl.compileShader(fragShader);
 
 		if (!this.gl.getShaderParameter(fragShader, this.gl.COMPILE_STATUS)) {

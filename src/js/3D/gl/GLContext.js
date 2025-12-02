@@ -408,25 +408,4 @@ class GLContext {
 
 GLContext.BlendMode = BlendMode;
 
-// shader cache storage - keyed by shader name
-GLContext.prototype.shader_cache = null;
-
-/**
- * Get or create a cached shader for this context
- * @param {string} name
- * @param {Function} create_fn - async function that creates the shader
- * @returns {Promise<ShaderProgram>}
- */
-GLContext.prototype.get_cached_shader = async function(name, create_fn) {
-	if (!this.shader_cache)
-		this.shader_cache = new Map();
-
-	if (this.shader_cache.has(name))
-		return this.shader_cache.get(name);
-
-	const shader = await create_fn(this);
-	this.shader_cache.set(name, shader);
-	return shader;
-};
-
 module.exports = GLContext;

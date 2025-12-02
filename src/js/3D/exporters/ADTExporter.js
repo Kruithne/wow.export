@@ -5,8 +5,6 @@
  */
 const util = require('util');
 const core = require('../../core');
-const path = require('path');
-const fsp = require('fs').promises;
 const constants = require('../../constants');
 const generics = require('../../generics');
 const listfile = require('../../casc/listfile');
@@ -17,6 +15,7 @@ const BLPFile = require('../../casc/blp');
 
 const WDTLoader = require('../loaders/WDTLoader');
 const ADTLoader = require('../loaders/ADTLoader');
+const Shaders = require('../Shaders');
 
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
@@ -37,10 +36,6 @@ const UNIT_SIZE = CHUNK_SIZE / 8;
 const UNIT_SIZE_HALF = UNIT_SIZE / 2;
 
 const wdtCache = new Map();
-
-const FRAG_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.shader');
-const FRAG_SHADER_OLD_SRC = path.join(constants.SHADER_PATH, 'adt.fragment.old.shader');
-const VERT_SHADER_SRC = path.join(constants.SHADER_PATH, 'adt.vertex.shader');
 
 let isFoliageAvailable = false;
 let hasLoadedFoliage = false;
@@ -198,12 +193,15 @@ const calculateRequiredImages = (layerCount) => {
  * Compile the vertex and fragment shaders used for baking.
  * Will be attached to the current GL context.
  */
-const compileShaders = async (useOld = false) => {
+const compileShaders = (useOld = false) => {
+	const shader_name = useOld ? 'adt_old' : 'adt';
+	const sources = Shaders.get_source(shader_name);
+
 	glShaderProg = gl.createProgram();
 
 	// Compile fragment shader.
 	const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-	gl.shaderSource(fragShader, await fsp.readFile(useOld ? FRAG_SHADER_OLD_SRC : FRAG_SHADER_SRC, 'utf8'));
+	gl.shaderSource(fragShader, sources.frag);
 	gl.compileShader(fragShader);
 
 	if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
@@ -213,7 +211,7 @@ const compileShaders = async (useOld = false) => {
 
 	// Compile vertex shader.
 	const vertShader = gl.createShader(gl.VERTEX_SHADER);
-	gl.shaderSource(vertShader, await fsp.readFile(VERT_SHADER_SRC, 'utf8'));
+	gl.shaderSource(vertShader, sources.vert);
 	gl.compileShader(vertShader);
 
 	if (!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
@@ -908,7 +906,7 @@ class ADTExporter {
 							if (!gl)
 								throw new Error('WebGL2 not supported');
 
-							await compileShaders(!hasHeightTexturing);
+							compileShaders(!hasHeightTexturing);
 						}
 
 						// Materials

@@ -94,6 +94,7 @@ const fsp = require('fs').promises;
 const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
+const Shaders = require('./js/3D/Shaders');
 
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
@@ -474,6 +475,7 @@ document.addEventListener('click', function(e) {
 	modules.registerContextMenuOption('runtime-log', 'Open Runtime Log', 'timeline.svg', () => log.openRuntimeLog());
 	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => chrome.runtime.reload());
 	modules.registerContextMenuOption('reload-style', 'Reload Styling', 'palette.svg', () => core.view.reloadStylesheet(), true);
+	modules.registerContextMenuOption('reload-shaders', 'Reload Shaders', 'cube.svg', () => Shaders.reload_all(), true);
 	modules.registerContextMenuOption('reload-active', 'Reload Active Module', 'gear.svg', () => modules.reloadActiveModule(), true);
 	modules.registerContextMenuOption('reload-all', 'Reload All Modules', 'gear.svg', () => modules.reloadAllModules(), true);
 

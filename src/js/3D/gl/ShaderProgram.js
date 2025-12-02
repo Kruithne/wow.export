@@ -233,7 +233,64 @@ class ShaderProgram {
 			this.gl.uniformMatrix4fv(loc, transpose, value);
 	}
 
+	/**
+	 * Recompile shader with new source (hot-reload)
+	 * @param {string} vert_source
+	 * @param {string} frag_source
+	 * @returns {boolean}
+	 */
+	recompile(vert_source, frag_source) {
+		const gl = this.gl;
+
+		const vert_shader = this._compile_shader(gl.VERTEX_SHADER, vert_source);
+		const frag_shader = this._compile_shader(gl.FRAGMENT_SHADER, frag_source);
+
+		if (!vert_shader || !frag_shader) {
+			if (vert_shader)
+				gl.deleteShader(vert_shader);
+
+			if (frag_shader)
+				gl.deleteShader(frag_shader);
+
+			return false;
+		}
+
+		const new_program = gl.createProgram();
+		gl.attachShader(new_program, vert_shader);
+		gl.attachShader(new_program, frag_shader);
+		gl.linkProgram(new_program);
+
+		gl.deleteShader(vert_shader);
+		gl.deleteShader(frag_shader);
+
+		if (!gl.getProgramParameter(new_program, gl.LINK_STATUS)) {
+			const info = gl.getProgramInfoLog(new_program);
+			const log = require('../../log');
+			log.write('Shader program link error on recompile: %s', info);
+			gl.deleteProgram(new_program);
+			return false;
+		}
+
+		// delete old program and swap in new one
+		if (this.program)
+			gl.deleteProgram(this.program);
+
+		this.program = new_program;
+
+		// clear uniform caches since locations change
+		this.uniform_locations.clear();
+		this.uniform_block_indices.clear();
+
+		return true;
+	}
+
 	dispose() {
+		// unregister from Shaders module if tracked
+		if (this._shader_name) {
+			const Shaders = require('../Shaders');
+			Shaders.unregister(this);
+		}
+
 		if (this.program) {
 			this.gl.deleteProgram(this.program);
 			this.program = null;
