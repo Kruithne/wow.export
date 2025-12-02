@@ -25,6 +25,46 @@ const textureRibbon = require('../../ui/texture-ribbon');
 
 const DEFAULT_MODEL_COLOR = [0.34, 0.68, 0.89]; // 0x57afe2
 
+// pixel shader name to ID mapping (matches fragment shader switch cases)
+const PIXEL_SHADER_IDS = {
+	'Combiners_Opaque': 0,
+	'Combiners_Mod': 1,
+	'Combiners_Opaque_Mod': 2,
+	'Combiners_Opaque_Mod2x': 3,
+	'Combiners_Opaque_Mod2xNA': 4,
+	'Combiners_Opaque_Opaque': 5,
+	'Combiners_Mod_Mod': 6,
+	'Combiners_Mod_Mod2x': 7,
+	'Combiners_Mod_Add': 8,
+	'Combiners_Mod_Mod2xNA': 9,
+	'Combiners_Mod_AddNA': 10,
+	'Combiners_Mod_Opaque': 11,
+	'Combiners_Opaque_Mod2xNA_Alpha': 12,
+	'Combiners_Opaque_AddAlpha': 13,
+	'Combiners_Opaque_AddAlpha_Alpha': 14,
+	'Combiners_Opaque_Mod2xNA_Alpha_Add': 15,
+	'Combiners_Mod_AddAlpha': 16,
+	'Combiners_Mod_AddAlpha_Alpha': 17,
+	'Combiners_Opaque_Alpha_Alpha': 18,
+	'Combiners_Opaque_Mod2xNA_Alpha_3s': 19,
+	'Combiners_Opaque_AddAlpha_Wgt': 20,
+	'Combiners_Mod_Add_Alpha': 21,
+	'Combiners_Opaque_ModNA_Alpha': 22,
+	'Combiners_Mod_AddAlpha_Wgt': 23,
+	'Combiners_Opaque_Mod_Add_Wgt': 24,
+	'Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha': 25,
+	'Combiners_Mod_Dual_Crossfade': 26,
+	'Combiners_Opaque_Mod2xNA_Alpha_Alpha': 27,
+	'Combiners_Mod_Masked_Dual_Crossfade': 28,
+	'Combiners_Opaque_Alpha': 29,
+	'Guild': 30,
+	'Guild_NoBorder': 31,
+	'Guild_Opaque': 32,
+	'Combiners_Mod_Depth': 33,
+	'Illum': 34,
+	'Combiners_Mod_Mod_Mod_Const': 35,
+	'Combiners_Mod_Mod_Depth': 36
+};
 
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
@@ -458,25 +498,35 @@ class M2RendererGL {
 			const submesh = skin.subMeshes[i];
 			const tex_unit = skin.textureUnits.find(tu => tu.skinSectionIndex === i);
 
-			let tex_index = null;
+			let tex_indices = [null, null, null, null];
 			let vertex_shader = 0;
 			let pixel_shader = 0;
 			let blend_mode = 0;
 			let flags = 0;
+			let texture_count = 1;
 
 			if (tex_unit) {
-				tex_index = m2.textureCombos[tex_unit.textureComboIndex];
+				texture_count = tex_unit.textureCount;
+
+				// get all texture indices for multi-texture shaders
+				for (let j = 0; j < Math.min(texture_count, 4); j++) {
+					const combo_idx = tex_unit.textureComboIndex + j;
+					if (combo_idx < m2.textureCombos.length)
+						tex_indices[j] = m2.textureCombos[combo_idx];
+				}
 
 				const shaders = ShaderMapper.getVertexShader(tex_unit.textureCount, tex_unit.shaderID);
 				vertex_shader = typeof shaders === 'object' ? 0 : shaders;
-				pixel_shader = ShaderMapper.getPixelShader(tex_unit.textureCount, tex_unit.shaderID);
+
+				const pixel_shader_name = ShaderMapper.getPixelShader(tex_unit.textureCount, tex_unit.shaderID);
+				pixel_shader = PIXEL_SHADER_IDS[pixel_shader_name] ?? 0;
 
 				const mat = m2.materials[tex_unit.materialIndex];
 				if (mat) {
 					blend_mode = mat.blendingMode;
 					flags = mat.flags;
 
-					this.material_props.set(tex_index, { blendMode: blend_mode, flags: flags });
+					this.material_props.set(tex_indices[0], { blendMode: blend_mode, flags: flags });
 				}
 			}
 
@@ -484,7 +534,8 @@ class M2RendererGL {
 				vao: vao,
 				start: submesh.triangleStart,
 				count: submesh.triangleCount,
-				tex_index: tex_index,
+				tex_indices: tex_indices,
+				texture_count: texture_count,
 				vertex_shader: vertex_shader,
 				pixel_shader: pixel_shader,
 				blend_mode: blend_mode,
@@ -503,6 +554,7 @@ class M2RendererGL {
 				this.geosetArray[i] = { label: 'Geoset ' + i, checked: is_default, id: submesh.submeshID };
 				draw_call.visible = is_default;
 			}
+
 		}
 
 		if (this.reactive) {
