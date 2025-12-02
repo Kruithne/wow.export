@@ -1107,6 +1107,97 @@ class M2RendererGL {
 	}
 
 	/**
+	 * Get posed geometry with current bone transforms applied
+	 * @returns {{ vertices: Float32Array, normals: Float32Array } | null}
+	 */
+	getBakedGeometry() {
+		if (!this.m2)
+			return null;
+
+		const m2 = this.m2;
+		const src_verts = m2.vertices;
+		const src_normals = m2.normals;
+		const bone_indices = m2.boneIndices;
+		const bone_weights = m2.boneWeights;
+
+		const vertex_count = src_verts.length / 3;
+		const out_verts = new Float32Array(vertex_count * 3);
+		const out_normals = new Float32Array(vertex_count * 3);
+
+		// no bones or no animation - return original geometry
+		if (!this.bones || !this.bone_matrices || this.current_animation === null) {
+			out_verts.set(src_verts);
+			out_normals.set(src_normals);
+			return { vertices: out_verts, normals: out_normals };
+		}
+
+		// apply bone transforms to each vertex
+		for (let i = 0; i < vertex_count; i++) {
+			const v_idx = i * 3;
+			const b_idx = i * 4;
+
+			const vx = src_verts[v_idx];
+			const vy = src_verts[v_idx + 1];
+			const vz = src_verts[v_idx + 2];
+
+			const nx = src_normals[v_idx];
+			const ny = src_normals[v_idx + 1];
+			const nz = src_normals[v_idx + 2];
+
+			let out_x = 0, out_y = 0, out_z = 0;
+			let out_nx = 0, out_ny = 0, out_nz = 0;
+
+			// blend up to 4 bone influences
+			for (let j = 0; j < 4; j++) {
+				const bone_idx = bone_indices[b_idx + j];
+				const weight = bone_weights[b_idx + j] / 255;
+
+				if (weight === 0)
+					continue;
+
+				const mat_offset = bone_idx * 16;
+				const m = this.bone_matrices;
+
+				// transform position: out = mat * vec4(v, 1)
+				const tx = m[mat_offset + 0] * vx + m[mat_offset + 4] * vy + m[mat_offset + 8] * vz + m[mat_offset + 12];
+				const ty = m[mat_offset + 1] * vx + m[mat_offset + 5] * vy + m[mat_offset + 9] * vz + m[mat_offset + 13];
+				const tz = m[mat_offset + 2] * vx + m[mat_offset + 6] * vy + m[mat_offset + 10] * vz + m[mat_offset + 14];
+
+				out_x += tx * weight;
+				out_y += ty * weight;
+				out_z += tz * weight;
+
+				// transform normal: out = mat3(mat) * normal (no translation)
+				const tnx = m[mat_offset + 0] * nx + m[mat_offset + 4] * ny + m[mat_offset + 8] * nz;
+				const tny = m[mat_offset + 1] * nx + m[mat_offset + 5] * ny + m[mat_offset + 9] * nz;
+				const tnz = m[mat_offset + 2] * nx + m[mat_offset + 6] * ny + m[mat_offset + 10] * nz;
+
+				out_nx += tnx * weight;
+				out_ny += tny * weight;
+				out_nz += tnz * weight;
+			}
+
+			// normalize the blended normal
+			const len = Math.sqrt(out_nx * out_nx + out_ny * out_ny + out_nz * out_nz);
+			if (len > 0.0001) {
+				out_nx /= len;
+				out_ny /= len;
+				out_nz /= len;
+			}
+
+			out_verts[v_idx] = out_x;
+			out_verts[v_idx + 1] = out_y;
+			out_verts[v_idx + 2] = out_z;
+
+			out_normals[v_idx] = out_nx;
+			out_normals[v_idx + 1] = out_ny;
+			out_normals[v_idx + 2] = out_nz;
+		}
+
+		return { vertices: out_verts, normals: out_normals };
+	}
+
+	/**
 	 * Get model bounding box (converted from WoW Z-up to WebGL Y-up)
 	 * @returns {{ min: number[], max: number[] } | null}
 	 */

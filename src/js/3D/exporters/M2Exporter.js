@@ -36,10 +36,20 @@ class M2Exporter {
 
 	/**
 	 * Set the mask array used for geoset control.
-	 * @param {Array} mask 
+	 * @param {Array} mask
 	 */
 	setGeosetMask(mask) {
 		this.geosetMask = mask;
+	}
+
+	/**
+	 * Set posed geometry to use instead of bind pose
+	 * @param {Float32Array} vertices
+	 * @param {Float32Array} normals
+	 */
+	setPosedGeometry(vertices, normals) {
+		this.posedVertices = vertices;
+		this.posedNormals = normals;
 	}
 
 	/**
@@ -394,9 +404,9 @@ class M2Exporter {
 
 		log.write('Exporting M2 model %s as OBJ: %s', model_name, out);
 
-		// Verts, normals, UVs
-		obj.setVertArray(this.m2.vertices);
-		obj.setNormalArray(this.m2.normals);
+		// verts, normals, UVs - use posed geometry if available
+		obj.setVertArray(this.posedVertices ?? this.m2.vertices);
+		obj.setNormalArray(this.posedNormals ?? this.m2.normals);
 		obj.addUVArray(this.m2.uv);
 
 		if (core.view.config.modelsExportUV2)

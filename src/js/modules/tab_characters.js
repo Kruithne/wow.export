@@ -808,6 +808,11 @@ const export_char_model = async (core) => {
 
 			exporter.setGeosetMask(core.view.chrCustGeosets);
 
+			// apply posed geometry from current animation frame
+			const baked = active_renderer.getBakedGeometry();
+			if (baked)
+				exporter.setPosedGeometry(baked.vertices, baked.normals);
+
 			await exporter.exportAsOBJ(export_path, false, helper, []);
 			await export_paths?.writeLine('M2_OBJ:' + export_path);
 
