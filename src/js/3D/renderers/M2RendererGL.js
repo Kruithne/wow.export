@@ -147,6 +147,50 @@ function mat4_copy(out, src) {
 }
 
 /**
+ * build model matrix from position, quaternion rotation, and scale (TRS order)
+ * quaternion format: [x, y, z, w]
+ * @param {Float32Array} out
+ * @param {number[]} position - [x, y, z]
+ * @param {number[]} quat - [x, y, z, w]
+ * @param {number[]} scale - [x, y, z]
+ */
+function mat4_from_quat_trs(out, position, quat, scale) {
+	const [px, py, pz] = position;
+	const [qx, qy, qz, qw] = quat;
+	const [sx, sy, sz] = scale;
+
+	// rotation from quaternion
+	const x2 = qx + qx, y2 = qy + qy, z2 = qz + qz;
+	const xx = qx * x2, xy = qx * y2, xz = qx * z2;
+	const yy = qy * y2, yz = qy * z2, zz = qz * z2;
+	const wx = qw * x2, wy = qw * y2, wz = qw * z2;
+
+	// column 0 (scaled)
+	out[0] = (1 - (yy + zz)) * sx;
+	out[1] = (xy + wz) * sx;
+	out[2] = (xz - wy) * sx;
+	out[3] = 0;
+
+	// column 1 (scaled)
+	out[4] = (xy - wz) * sy;
+	out[5] = (1 - (xx + zz)) * sy;
+	out[6] = (yz + wx) * sy;
+	out[7] = 0;
+
+	// column 2 (scaled)
+	out[8] = (xz + wy) * sz;
+	out[9] = (yz - wx) * sz;
+	out[10] = (1 - (xx + yy)) * sz;
+	out[11] = 0;
+
+	// column 3 (translation)
+	out[12] = px;
+	out[13] = py;
+	out[14] = pz;
+	out[15] = 1;
+}
+
+/**
  * linear interpolate between two values
  * @param {number} a
  * @param {number} b
@@ -765,6 +809,16 @@ class M2RendererGL {
 		this.rotation = rotation;
 		this.scale = scale;
 		this._update_model_matrix();
+	}
+
+	/**
+	 * Set model transformation using quaternion rotation
+	 * @param {number[]} position - [x, y, z]
+	 * @param {number[]} quat - [x, y, z, w]
+	 * @param {number[]} scale - [x, y, z]
+	 */
+	setTransformQuat(position, quat, scale) {
+		mat4_from_quat_trs(this.model_matrix, position, quat, scale);
 	}
 
 	_update_model_matrix() {

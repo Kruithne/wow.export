@@ -400,7 +400,7 @@ class WMORendererGL {
 					}
 
 					if (renderer) {
-						// apply doodad transform
+						// apply doodad transform (convert WoW coords to WebGL)
 						const pos = doodad.position;
 						const rot = doodad.rotation;
 						const scale = doodad.scale;
@@ -408,7 +408,7 @@ class WMORendererGL {
 						renderers.push({
 							renderer: renderer,
 							position: [pos[0], pos[2], pos[1] * -1],
-							rotation: rot,
+							rotation: [rot[0], rot[2], rot[1] * -1, rot[3]],
 							scale: [scale, scale, scale]
 						});
 					}
@@ -599,7 +599,7 @@ class WMORendererGL {
 				continue;
 
 			for (const doodad of set.renderers) {
-				// todo: apply doodad transform properly
+				doodad.renderer.setTransformQuat(doodad.position, doodad.rotation, doodad.scale);
 				doodad.renderer.render(view_matrix, projection_matrix);
 			}
 		}
