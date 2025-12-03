@@ -236,6 +236,7 @@ const makeNewView = () => {
 		],
 		menuButtonModels: [
 			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export STL', value: 'STL' },
 			{ label: 'Export glTF', value: 'GLTF' },
 			{ label: 'Export GLB', value: 'GLB' },
 			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
@@ -246,6 +247,7 @@ const makeNewView = () => {
 			{ label: 'Export glTF', value: 'GLTF' },
 			{ label: 'Export GLB', value: 'GLB' },
 			{ label: 'Export OBJ (Posed)', value: 'OBJ' },
+			{ label: 'Export STL (Posed)', value: 'STL' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],
