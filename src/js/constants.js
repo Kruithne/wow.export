@@ -193,6 +193,7 @@ module.exports = {
 		'tab_install',
 		'settings',
 		'restart',
+		'reload-shaders',
 		'reload-style',
 		'reload-active',
 		'reload-all',
