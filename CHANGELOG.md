@@ -9,6 +9,7 @@
 - Added option to export audio as MP3 from cinematics in the videos tab.
 - Added global WMO minimap preview to terrainless maps in the map viewer.
 - Added "Export WMO Minimap" option to export global WMO minimap as PNG.
+- Added option to export individual character textures from the character viewer.
 - Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.

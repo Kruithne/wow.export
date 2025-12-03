@@ -2725,6 +2725,12 @@ input[type=number]::-webkit-outer-spin-button {
 .texture-menu-controls {
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
+}
+
+.texture-export-button {
+	flex: 1;
+	margin: 0 5px;
 }
 
 .preview-dropdown-overlay {

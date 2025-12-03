@@ -103,8 +103,13 @@ core.events.on('click-chr-prev-overlay', () => {
 	}
 });
 
+function get_active_layer() {
+	return active_layer;
+}
+
 module.exports = {
 	add,
 	remove,
-	ensureActiveLayerAttached: ensure_active_layer_attached
+	ensureActiveLayerAttached: ensure_active_layer_attached,
+	getActiveLayer: get_active_layer
 };

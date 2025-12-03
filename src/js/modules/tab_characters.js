@@ -20,6 +20,7 @@ const { wmv_parse } = require('../wmv');
 const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
+const PNGWriter = require('../png-writer');
 
 const active_skins = new Map();
 let gl_context = null;
@@ -852,6 +853,61 @@ const export_char_model = async (core) => {
 	export_paths?.close();
 };
 
+const export_chr_texture = async (core) => {
+	const active_canvas = charTextureOverlay.getActiveLayer();
+	if (!active_canvas) {
+		core.setToast('error', 'no texture is currently being previewed', null, -1);
+		return;
+	}
+
+	const export_paths = core.openLastExportStream();
+
+	core.setToast('progress', 'exporting texture, hold on...', null, -1, false);
+
+	// find the chr_material that owns this canvas
+	let texture_type = null;
+	let chr_material = null;
+	for (const [type, material] of chr_materials) {
+		if (material.getCanvas() === active_canvas) {
+			texture_type = type;
+			chr_material = material;
+			break;
+		}
+	}
+
+	if (!chr_material) {
+		core.setToast('error', 'unable to find material for active texture', null, -1);
+		export_paths?.close();
+		return;
+	}
+
+	// build export path based on character model file
+	const file_name = listfile.getByID(active_model);
+	const base_name = path.basename(file_name, path.extname(file_name));
+	const dir_name = path.dirname(file_name);
+	const texture_file_name = path.join(dir_name, base_name + '_texture_' + texture_type + '.png');
+	const export_path = ExportHelper.getExportPath(texture_file_name);
+	const out_dir = path.dirname(export_path);
+
+	// export using raw pixels to avoid alpha premultiplication
+	const pixels = chr_material.getRawPixels();
+	const width = active_canvas.width;
+	const height = active_canvas.height;
+
+	const png = new PNGWriter(width, height);
+	const pixel_data = png.getPixelData();
+	pixel_data.set(pixels);
+
+	const buffer = png.getBuffer();
+	await buffer.writeToFile(export_path);
+	await export_paths?.writeLine('PNG:' + export_path);
+
+	log.write('exported character texture to %s', export_path);
+	core.setToast('success', util.format('exported texture to %s', export_path), { 'view in explorer': () => nw.Shell.openItem(out_dir) }, -1);
+
+	export_paths?.close();
+};
+
 async function update_model_selection(core) {
 	const state = core.view;
 	const selected = state.chrCustModelSelection[0];
@@ -1145,6 +1201,7 @@ module.exports = {
 							</div>
 							<div class="texture-menu-controls">
 								<input type="button" value="" class="ui-image-button texture-prev-button" @click="chr_prev_overlay"/>
+								<input type="button" value="Export Texture" class="ui-button texture-export-button" @click="chr_export_overlay"/>
 								<input type="button" value="" class="ui-image-button texture-next-button" @click="chr_next_overlay"/>
 							</div>
 						</div>
@@ -1231,6 +1288,10 @@ module.exports = {
 
 		chr_next_overlay() {
 			this.$core.events.emit('click-chr-next-overlay');
+		},
+
+		chr_export_overlay() {
+			export_chr_texture(this.$core);
 		}
 	},
 
