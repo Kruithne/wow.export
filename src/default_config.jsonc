@@ -91,6 +91,7 @@
 	"mapsIncludeHoles": true,
 	"mapsExportRaw": false,
 	"dataExportAll": true,
+	"dataCopyHeader": false,
 	"regexFilters": false,
 	"exportMapFormat": "OBJ",
 	"exportMapQuality": 4096,

@@ -83,7 +83,7 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterDB2s" placeholder="Filter DB2s.." />
 			</div>
 			<div class="list-container">
-				<component ref="dataTable" :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event" @contextmenu="handle_context_menu" @copy="copy_rows_csv"></component>
+				<component ref="dataTable" :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" :copyheader="$core.view.config.dataCopyHeader" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event" @contextmenu="handle_context_menu" @copy="copy_rows_csv"></component>
 				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeDataTable" v-slot:default="context" @close="$core.view.contextMenus.nodeDataTable = null">
 					<span @click.self="copy_rows_csv">Copy {{ context.node.selectedCount }} row{{ context.node.selectedCount !== 1 ? 's' : '' }} as CSV</span>
 					<span @click.self="copy_cell(context.node.cellValue)">Copy cell contents</span>
@@ -94,6 +94,12 @@ module.exports = {
 				<input type="text" id="data-table-filter-input" v-model="$core.view.userInputFilterDataTable" placeholder="Filter data table rows..." />
 			</div>
 			<div class="right-panel">
+				<span class="header">Copy</span>
+				<label class="ui-checkbox" title="Include header row when copying">
+					<input type="checkbox" v-model="$core.view.config.dataCopyHeader"/>
+					<span>Copy Header</span>
+				</label>
+
 				<span class="header">Export</span>
 				<label class="ui-checkbox" title="Export all rows">
 					<input type="checkbox" v-model="$core.view.config.dataExportAll"/>

@@ -7,7 +7,7 @@ module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
-	props: ['headers', 'rows', 'filter', 'regex', 'selection'],
+	props: ['headers', 'rows', 'filter', 'regex', 'selection', 'copyheader'],
 	emits: ['update:selection', 'contextmenu', 'copy'],
 
 	data: function() {
@@ -914,9 +914,14 @@ module.exports = {
 				return str;
 			};
 
-			const data_lines = rows.map(row => row.map(escape_csv).join(','));
+			const lines = [];
 
-			return data_lines.join('\n');
+			if (this.copyheader)
+				lines.push(this.headers.map(escape_csv).join(','));
+
+			lines.push(...rows.map(row => row.map(escape_csv).join(',')));
+
+			return lines.join('\n');
 		},
 	},
 
