@@ -97,18 +97,19 @@ const load_wmo_minimap_tile = async (x, y, size) => {
 		composite.height = size;
 
 		const ctx = composite.getContext('2d');
+		const output_scale = size / current_wmo_minimap.output_tile_size;
 
 		for (const tile of tile_list) {
 			const data = await core.view.casc.getFile(tile.fileDataID);
 			const blp = new BLPFile(data);
 			const canvas = blp.toCanvas(0b1111);
 
-			// scale proportionally to target size while maintaining aspect ratio
-			const scale = size / 256;
-			const draw_width = canvas.width * scale;
-			const draw_height = canvas.height * scale;
+			const draw_x = tile.drawX * output_scale;
+			const draw_y = tile.drawY * output_scale;
+			const draw_width = canvas.width * tile.scaleX * output_scale;
+			const draw_height = canvas.height * tile.scaleY * output_scale;
 
-			ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, draw_width, draw_height);
+			ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, draw_x, draw_y, draw_width, draw_height);
 		}
 
 		return ctx.getImageData(0, 0, size, size);
@@ -449,89 +450,132 @@ module.exports = {
 				if (!group_info || group_info.length === 0)
 					return;
 
-				// wmo minimap tiles are 256x256 pixels representing a fixed world size
-				// each tile covers approximately 8.5 yards (256 pixels / 30 pixels per yard)
-				// we use the group bounding boxes to position each group's tiles in world space
-				const MINIMAP_TILE_SIZE = 256 / 3; // ~85.33 yards per tile
-
-				// calculate world position for each tile based on group bounding box
-				const world_tiles = [];
+				// group tiles by groupNum
+				const groups_tiles = new Map();
 				for (const tile of tiles) {
-					const group_idx = tile.groupNum;
-					if (group_idx >= group_info.length)
-						continue;
+					if (!groups_tiles.has(tile.groupNum))
+						groups_tiles.set(tile.groupNum, []);
 
-					const group = group_info[group_idx];
-					// bounding box is [x, y, z] - use x and y for minimap positioning
-					// group position is the center of the bounding box
-					const group_min_x = group.boundingBox1[0];
-					const group_min_y = group.boundingBox1[1];
-
-					// calculate world position of this tile
-					// blockX/blockY are offsets within the group's minimap area
-					const world_x = group_min_x + (tile.blockX * MINIMAP_TILE_SIZE);
-					const world_y = group_min_y + (tile.blockY * MINIMAP_TILE_SIZE);
-
-					world_tiles.push({
-						...tile,
-						worldX: world_x,
-						worldY: world_y
-					});
+					groups_tiles.get(tile.groupNum).push(tile);
 				}
 
-				if (world_tiles.length === 0)
-					return;
+				// calculate absolute pixel position for each tile
+				// tile position = (bbox_min * 2) + (block * 256)
+				const tile_positions = [];
+				for (const [group_num, group_tiles] of groups_tiles) {
+					if (group_num >= group_info.length)
+						continue;
 
-				// calculate bounds in world space
+					const group = group_info[group_num];
+					const g_min_x = Math.min(group.boundingBox1[0], group.boundingBox2[0]) * 2;
+					const g_min_y = Math.min(group.boundingBox1[1], group.boundingBox2[1]) * 2;
+					const g_min_z = Math.min(group.boundingBox1[2], group.boundingBox2[2]);
+
+					for (const tile of group_tiles) {
+						tile_positions.push({
+							...tile,
+							absX: g_min_x + (tile.blockX * 256),
+							absY: g_min_y + (tile.blockY * 256),
+							zOrder: g_min_z
+						});
+					}
+				}
+
+				// find bounds of all tiles
 				let min_x = Infinity, max_x = -Infinity;
 				let min_y = Infinity, max_y = -Infinity;
 
-				for (const tile of world_tiles) {
-					if (tile.worldX < min_x) min_x = tile.worldX;
-					if (tile.worldX > max_x) max_x = tile.worldX;
-					if (tile.worldY < min_y) min_y = tile.worldY;
-					if (tile.worldY > max_y) max_y = tile.worldY;
+				for (const tile of tile_positions) {
+					min_x = Math.min(min_x, tile.absX);
+					max_x = Math.max(max_x, tile.absX + 256);
+					min_y = Math.min(min_y, tile.absY);
+					max_y = Math.max(max_y, tile.absY + 256);
 				}
 
-				// convert world coords to grid coords
-				const tiles_wide = Math.ceil((max_x - min_x) / MINIMAP_TILE_SIZE) + 1;
-				const tiles_high = Math.ceil((max_y - min_y) / MINIMAP_TILE_SIZE) + 1;
-				const grid_size = Math.max(tiles_wide, tiles_high);
+				// calculate canvas size and convert to canvas coords
+				const canvas_width = Math.ceil(max_x - min_x);
+				const canvas_height = Math.ceil(max_y - min_y);
+
+				const positioned_tiles = [];
+				for (const tile of tile_positions) {
+					// convert to canvas coords (0,0 at top-left, Y flipped)
+					const canvas_x = tile.absX - min_x;
+					const canvas_y = (max_y - 256) - tile.absY; // flip Y for canvas
+
+					positioned_tiles.push({
+						...tile,
+						pixelX: canvas_x,
+						pixelY: canvas_y,
+						scaleX: 1,
+						scaleY: 1,
+						srcWidth: 256,
+						srcHeight: 256
+					});
+				}
+
+				if (positioned_tiles.length === 0)
+					return;
+
+				// use 256px output tile size, calculate grid
+				const OUTPUT_TILE_SIZE = 256;
+				const grid_width = Math.ceil(canvas_width / OUTPUT_TILE_SIZE);
+				const grid_height = Math.ceil(canvas_height / OUTPUT_TILE_SIZE);
+				const grid_size = Math.max(grid_width, grid_height);
 				const mask = new Array(grid_size * grid_size).fill(0);
 				const tiles_by_coord = new Map();
 
-				for (const tile of world_tiles) {
-					const grid_x = Math.floor((tile.worldX - min_x) / MINIMAP_TILE_SIZE);
-					const grid_y = Math.floor((max_y - tile.worldY) / MINIMAP_TILE_SIZE); // Y inverted
-					const index = (grid_x * grid_size) + grid_y;
+				// assign tiles to grid cells based on their pixel position
+				for (const tile of positioned_tiles) {
+					const grid_x = Math.floor(tile.pixelX / OUTPUT_TILE_SIZE);
+					const grid_y = Math.floor(tile.pixelY / OUTPUT_TILE_SIZE);
 
-					if (grid_x >= 0 && grid_x < grid_size && grid_y >= 0 && grid_y < grid_size)
-						mask[index] = 1;
+					// tile might span multiple grid cells due to scaling
+					const tile_width = tile.srcWidth * tile.scaleX;
+					const tile_height = tile.srcHeight * tile.scaleY;
+					const end_grid_x = Math.floor((tile.pixelX + tile_width - 1) / OUTPUT_TILE_SIZE);
+					const end_grid_y = Math.floor((tile.pixelY + tile_height - 1) / OUTPUT_TILE_SIZE);
 
-					const key = `${grid_x},${grid_y}`;
-					if (!tiles_by_coord.has(key))
-						tiles_by_coord.set(key, []);
+					for (let gx = grid_x; gx <= end_grid_x; gx++) {
+						for (let gy = grid_y; gy <= end_grid_y; gy++) {
+							if (gx < 0 || gx >= grid_size || gy < 0 || gy >= grid_size)
+								continue;
 
-					tiles_by_coord.get(key).push(tile);
+							const index = (gx * grid_size) + gy;
+							mask[index] = 1;
+
+							const key = `${gx},${gy}`;
+							if (!tiles_by_coord.has(key))
+								tiles_by_coord.set(key, []);
+
+							tiles_by_coord.get(key).push({
+								...tile,
+								// offset within this grid cell
+								drawX: tile.pixelX - (gx * OUTPUT_TILE_SIZE),
+								drawY: tile.pixelY - (gy * OUTPUT_TILE_SIZE)
+							});
+						}
+					}
 				}
+
+				// sort tiles in each grid cell by Z order (lower Z drawn first, higher Z on top)
+				for (const tile_list of tiles_by_coord.values())
+					tile_list.sort((a, b) => a.zOrder - b.zOrder);
 
 				current_wmo_minimap = {
 					wmo_id,
-					tiles: world_tiles,
-					min_x,
-					max_x,
-					min_y,
-					max_y,
-					tiles_wide,
-					tiles_high,
+					tiles: positioned_tiles,
+					canvas_width,
+					canvas_height,
+					grid_width,
+					grid_height,
 					grid_size,
 					mask,
-					tiles_by_coord
+					tiles_by_coord,
+					output_tile_size: OUTPUT_TILE_SIZE
 				};
 
-				log.write('loaded WMO minimap: %d tiles, %dx%d grid (grid_size=%d)', world_tiles.length, tiles_wide, tiles_high, grid_size);
-				log.write('WMO minimap world bounds: x=[%.1f,%.1f] y=[%.1f,%.1f]', min_x, max_x, min_y, max_y);
-				log.write('WMO minimap unique positions: %d', tiles_by_coord.size);
+				log.write('loaded WMO minimap: %d tiles, %dx%d canvas, %dx%d grid', positioned_tiles.length, canvas_width, canvas_height, grid_width, grid_height);
+				log.write('WMO minimap unique grid cells: %d', tiles_by_coord.size);
 			} catch (e) {
 				log.write('failed to setup WMO minimap: %s', e.message);
 				current_wmo_minimap = null;
@@ -604,14 +648,11 @@ module.exports = {
 						throw new Error('no minimap textures found for this WMO.');
 				}
 
-				const { tiles_by_coord, min_x, max_x, min_y, max_y, tiles_wide, tiles_high } = minimap_data;
-				const tile_size = 256;
-				const final_width = tiles_wide * tile_size;
-				const final_height = tiles_high * tile_size;
+				const { tiles_by_coord, canvas_width, canvas_height, output_tile_size } = minimap_data;
 
-				log.write('WMO minimap export: %d tile positions, %dx%d pixels', tiles_by_coord.size, final_width, final_height);
+				log.write('WMO minimap export: %d tile positions, %dx%d pixels', tiles_by_coord.size, canvas_width, canvas_height);
 
-				const writer = new TiledPNGWriter(final_width, final_height, tile_size);
+				const writer = new TiledPNGWriter(canvas_width, canvas_height, output_tile_size);
 
 				for (const [key, tile_list] of tiles_by_coord) {
 					if (helper.isCancelled())
@@ -619,8 +660,8 @@ module.exports = {
 
 					try {
 						const composite = document.createElement('canvas');
-						composite.width = tile_size;
-						composite.height = tile_size;
+						composite.width = output_tile_size;
+						composite.height = output_tile_size;
 
 						const ctx = composite.getContext('2d');
 
@@ -629,11 +670,15 @@ module.exports = {
 							const blp = new BLPFile(blp_data);
 							const canvas = blp.toCanvas(0b1111);
 
-							// draw at native size, not stretched to tile_size
-							ctx.drawImage(canvas, 0, 0);
+							const draw_x = tile.drawX;
+							const draw_y = tile.drawY;
+							const draw_width = canvas.width * tile.scaleX;
+							const draw_height = canvas.height * tile.scaleY;
+
+							ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, draw_x, draw_y, draw_width, draw_height);
 						}
 
-						const image_data = ctx.getImageData(0, 0, tile_size, tile_size);
+						const image_data = ctx.getImageData(0, 0, output_tile_size, output_tile_size);
 
 						const [rel_x, rel_y] = key.split(',').map(Number);
 						writer.addTile(rel_x, rel_y, image_data);
