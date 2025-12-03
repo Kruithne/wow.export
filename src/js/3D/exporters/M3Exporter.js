@@ -14,6 +14,7 @@ const M3Loader= require('../loaders/M3Loader');
 const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
+const STLWriter = require('../writers/STLWriter');
 const JSONWriter = require('../writers/JSONWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
 const GeosetMapper = require('../GeosetMapper');
@@ -181,6 +182,50 @@ class M3Exporter {
 			// await phys.write(config.overwriteFiles);
 			// fileManifest?.push({ type: 'PHYS_OBJ', fileDataID: this.fileDataID, file: phys.out });
 		}
+	}
+
+	/**
+	 * Export the M3 model as an STL file.
+	 * @param {string} out
+	 * @param {boolean} exportCollision
+	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
+	 */
+	async exportAsSTL(out, exportCollision = false, helper, fileManifest) {
+		await this.m3.load();
+
+		const config = core.view.config;
+
+		const stl = new STLWriter(out);
+		const model_name = path.basename(out, '.stl');
+		stl.setName(model_name);
+
+		log.write('Exporting M3 model %s as STL: %s', model_name, out);
+
+		// verts, normals
+		stl.setVertArray(this.m3.vertices);
+		stl.setNormalArray(this.m3.normals);
+
+		// abort if the export has been cancelled
+		if (helper.isCancelled())
+			return;
+
+		const index = 0;
+		for (let lodIndex = 0; lodIndex < this.m3.lodLevels.length; lodIndex++) {
+			if (lodIndex != index)
+				continue;
+
+			for (let geosetIndex = this.m3.geosetCountPerLOD * lodIndex; geosetIndex < (this.m3.geosetCountPerLOD * (lodIndex + 1)); geosetIndex++) {
+				const geoset = this.m3.geosets[geosetIndex];
+				const geosetName = this.m3.stringBlock.slice(geoset.nameCharStart, geoset.nameCharStart + geoset.nameCharCount);
+				log.write('Exporting geoset ' + geosetIndex + ' (' + geosetName + ')');
+
+				stl.addMesh(geosetName, this.m3.indices.slice(geoset.indexStart, geoset.indexStart + geoset.indexCount));
+			}
+		}
+
+		await stl.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'STL', fileDataID: this.fileDataID, file: stl.out });
 	}
 
 	/**

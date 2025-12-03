@@ -14,6 +14,7 @@ const M2Loader= require('../loaders/M2Loader');
 const SKELLoader = require('../loaders/SKELLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
+const STLWriter = require('../writers/STLWriter');
 const JSONWriter = require('../writers/JSONWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
 const GeosetMapper = require('../GeosetMapper');
@@ -549,6 +550,61 @@ class M2Exporter {
 
 			await phys.write(config.overwriteFiles);
 			fileManifest?.push({ type: 'PHYS_OBJ', fileDataID: this.fileDataID, file: phys.out });
+		}
+	}
+
+	/**
+	 * Export the M2 model as an STL file.
+	 * @param {string} out
+	 * @param {boolean} exportCollision
+	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
+	 */
+	async exportAsSTL(out, exportCollision = false, helper, fileManifest) {
+		await this.m2.load();
+		const skin = await this.m2.getSkin(0);
+
+		const config = core.view.config;
+
+		const stl = new STLWriter(out);
+		const model_name = path.basename(out, '.stl');
+		stl.setName(model_name);
+
+		log.write('Exporting M2 model %s as STL: %s', model_name, out);
+
+		// verts, normals - use posed geometry if available
+		stl.setVertArray(this.posedVertices ?? this.m2.vertices);
+		stl.setNormalArray(this.posedNormals ?? this.m2.normals);
+
+		// abort if the export has been cancelled
+		if (helper.isCancelled())
+			return;
+
+		// faces
+		for (let mI = 0, mC = skin.subMeshes.length; mI < mC; mI++) {
+			// skip geosets that are not enabled
+			if (this.geosetMask && !this.geosetMask[mI].checked)
+				continue;
+
+			const mesh = skin.subMeshes[mI];
+			const verts = new Array(mesh.triangleCount);
+			for (let vI = 0; vI < mesh.triangleCount; vI++)
+				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
+
+			stl.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts);
+		}
+
+		await stl.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'STL', fileDataID: this.fileDataID, file: stl.out });
+
+		if (exportCollision) {
+			const phys = new STLWriter(ExportHelper.replaceExtension(out, '.phys.stl'));
+			phys.setVertArray(this.m2.collisionPositions);
+			phys.setNormalArray(this.m2.collisionNormals);
+			phys.addMesh('Collision', this.m2.collisionIndices);
+
+			await phys.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'PHYS_STL', fileDataID: this.fileDataID, file: phys.out });
 		}
 	}
 

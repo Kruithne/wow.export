@@ -32,6 +32,7 @@ const MODEL_TYPE_WMO = Symbol('modelWMO');
 
 const export_extensions = {
 	'OBJ': '.obj',
+	'STL': '.stl',
 	'GLTF': '.gltf',
 	'GLB': '.glb'
 };
@@ -402,6 +403,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 						break;
 					}
 					case 'OBJ':
+					case 'STL':
 					case 'GLTF':
 					case 'GLB':
 						export_path = ExportHelper.replaceExtension(export_path, export_extensions[format]);
@@ -416,6 +418,9 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
 								await export_paths?.writeLine('M2_OBJ:' + export_path);
+							} else if (format === 'STL') {
+								await exporter.exportAsSTL(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
+								await export_paths?.writeLine('M2_STL:' + export_path);
 							} else if (format === 'GLTF' || format === 'GLB') {
 								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
 								await export_paths?.writeLine('M2_' + format + ':' + export_path);
@@ -429,6 +434,9 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
 								await export_paths?.writeLine('M3_OBJ:' + export_path);
+							} else if (format === 'STL') {
+								await exporter.exportAsSTL(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
+								await export_paths?.writeLine('M3_STL:' + export_path);
 							} else if (format === 'GLTF' || format === 'GLB') {
 								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
 								await export_paths?.writeLine('M3_' + format + ':' + export_path);
@@ -450,6 +458,9 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 							if (format === 'OBJ') {
 								await exporter.exportAsOBJ(export_path, helper, file_manifest);
 								await export_paths?.writeLine('WMO_OBJ:' + export_path);
+							} else if (format === 'STL') {
+								await exporter.exportAsSTL(export_path, helper, file_manifest);
+								await export_paths?.writeLine('WMO_STL:' + export_path);
 							} else if (format === 'GLTF' || format === 'GLB') {
 								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
 								await export_paths?.writeLine('WMO_' + format + ':' + export_path);

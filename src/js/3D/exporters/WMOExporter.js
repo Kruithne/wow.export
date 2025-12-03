@@ -13,6 +13,7 @@ const BLPFile = require('../../casc/blp');
 const WMOLoader = require('../loaders/WMOLoader');
 const OBJWriter = require('../writers/OBJWriter');
 const MTLWriter = require('../writers/MTLWriter');
+const STLWriter = require('../writers/STLWriter');
 const CSVWriter = require('../writers/CSVWriter');
 const GLTFWriter = require('../writers/GLTFWriter');
 const JSONWriter = require('../writers/JSONWriter');
@@ -724,6 +725,108 @@ class WMOExporter {
 			await json.write(config.overwriteFiles);
 			fileManifest?.push({ type: 'META', fileDataID: this.wmo.fileDataID, file: json.out });
 		}
+	}
+
+	/**
+	 * Export the WMO model as an STL file.
+	 * @param {string} out
+	 * @param {ExportHelper} helper
+	 * @param {Array} fileManifest
+	 */
+	async exportAsSTL(out, helper, fileManifest) {
+		const config = core.view.config;
+		const stl = new STLWriter(out);
+
+		const groupMask = this.groupMask;
+
+		const wmoName = path.basename(out, '.stl');
+		stl.setName(wmoName);
+
+		log.write('Exporting WMO model %s as STL: %s', wmoName, out);
+
+		const wmo = this.wmo;
+		await wmo.load();
+
+		const groups = [];
+		let nInd = 0;
+
+		let mask;
+
+		// map our user-facing group mask to a wmo mask
+		if (groupMask) {
+			mask = new Set();
+			for (const group of groupMask) {
+				if (group.checked)
+					mask.add(group.groupIndex);
+			}
+		}
+
+		helper.setCurrentTaskName(wmoName + ' groups');
+		helper.setCurrentTaskMax(wmo.groupCount);
+
+		// iterate over the groups once to calculate the total size
+		for (let i = 0, n = wmo.groupCount; i < n; i++) {
+			if (helper.isCancelled())
+				return;
+
+			helper.setCurrentTaskValue(i);
+
+			const group = await wmo.getGroup(i);
+
+			// skip empty groups
+			if (!group.renderBatches || group.renderBatches.length === 0)
+				continue;
+
+			// skip masked groups
+			if (mask && !mask.has(i))
+				continue;
+
+			// 3 verts per indices
+			nInd += group.vertices.length / 3;
+
+			// store the valid groups for quicker iteration later
+			groups.push(group);
+		}
+
+		const vertsArray = new Array(nInd * 3);
+		const normalsArray = new Array(nInd * 3);
+
+		// iterate over groups again and fill the allocated arrays
+		let indOfs = 0;
+		for (const group of groups) {
+			const indCount = group.vertices.length / 3;
+
+			const vertOfs = indOfs * 3;
+			const groupVerts = group.vertices;
+			for (let i = 0, n = groupVerts.length; i < n; i++)
+				vertsArray[vertOfs + i] = groupVerts[i];
+
+			// normals and vertices should match, so re-use vertOfs here
+			const groupNormals = group.normals;
+			for (let i = 0, n = groupNormals.length; i < n; i++)
+				normalsArray[vertOfs + i] = groupNormals[i];
+
+			const groupName = wmo.groupNames[group.nameOfs];
+
+			// load all render batches into the mesh
+			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
+				const batch = group.renderBatches[bI];
+				const indices = new Array(batch.numFaces);
+
+				for (let i = 0; i < batch.numFaces; i++)
+					indices[i] = group.indices[batch.firstFace + i] + indOfs;
+
+				stl.addMesh(groupName + bI, indices);
+			}
+
+			indOfs += indCount;
+		}
+
+		stl.setVertArray(vertsArray);
+		stl.setNormalArray(normalsArray);
+
+		await stl.write(config.overwriteFiles);
+		fileManifest?.push({ type: 'STL', fileDataID: this.wmo.fileDataID, file: stl.out });
 	}
 
 	/**

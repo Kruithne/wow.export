@@ -788,7 +788,7 @@ const export_char_model = async (core) => {
 	const file_name = listfile.getByID(file_data_id);
 
 	try {
-		if (format === 'OBJ') {
+		if (format === 'OBJ' || format === 'STL') {
 			// export from viewer with baked pose
 			if (!active_renderer || !active_renderer.m2) {
 				core.setToast('error', 'no character model loaded to export', null, -1);
@@ -796,7 +796,8 @@ const export_char_model = async (core) => {
 				return;
 			}
 
-			const mark_file_name = ExportHelper.replaceExtension(file_name, '.obj');
+			const ext = format === 'STL' ? '.stl' : '.obj';
+			const mark_file_name = ExportHelper.replaceExtension(file_name, ext);
 			const export_path = ExportHelper.getExportPath(mark_file_name);
 
 			// for GL renderer, use M2Exporter directly
@@ -816,8 +817,13 @@ const export_char_model = async (core) => {
 					exporter.setPosedGeometry(baked.vertices, baked.normals);
 			}
 
-			await exporter.exportAsOBJ(export_path, false, helper, []);
-			await export_paths?.writeLine('M2_OBJ:' + export_path);
+			if (format === 'STL') {
+				await exporter.exportAsSTL(export_path, false, helper, []);
+				await export_paths?.writeLine('M2_STL:' + export_path);
+			} else {
+				await exporter.exportAsOBJ(export_path, false, helper, []);
+				await export_paths?.writeLine('M2_OBJ:' + export_path);
+			}
 
 			if (helper.isCancelled())
 				return;
