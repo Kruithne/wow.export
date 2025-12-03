@@ -8,7 +8,7 @@ module.exports = {
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
 	props: ['headers', 'rows', 'filter', 'regex', 'selection'],
-	emits: ['update:selection'],
+	emits: ['update:selection', 'contextmenu', 'copy'],
 
 	data: function() {
 		return {
@@ -770,7 +770,7 @@ module.exports = {
 
 		/**
 		 * Invoked when a keydown event is fired.
-		 * @param {KeyboardEvent} e 
+		 * @param {KeyboardEvent} e
 		 */
 		handleKey: function(e) {
 			// If document.activeElement is the document body, then we can safely assume
@@ -781,6 +781,12 @@ module.exports = {
 			// User hasn't selected anything in the table yet.
 			if (this.lastSelectItem === null)
 				return;
+
+			// CTRL+C to copy selection as CSV.
+			if (e.key === 'c' && e.ctrlKey) {
+				this.$emit('copy');
+				return;
+			}
 
 			// Arrow keys.
 			const isArrowUp = e.key === 'ArrowUp';
@@ -855,6 +861,63 @@ module.exports = {
 			this.lastSelectItem = rowIndex;
 			this.$emit('update:selection', newSelection);
 		},
+
+		/**
+		 * Invoked when a user right-clicks on a row in the table.
+		 * @param {number} rowIndex - Index of the row in sortedItems
+		 * @param {number} columnIndex - Index of the column
+		 * @param {MouseEvent} event
+		 */
+		handleContextMenu: function(rowIndex, columnIndex, event) {
+			event.preventDefault();
+
+			// if the row is not already selected, select it
+			if (!this.selection.includes(rowIndex)) {
+				this.lastSelectItem = rowIndex;
+				this.$emit('update:selection', [rowIndex]);
+			}
+
+			const row = this.sortedItems[rowIndex];
+			const cellValue = row ? row[columnIndex] : null;
+
+			this.$emit('contextmenu', {
+				rowIndex,
+				columnIndex,
+				cellValue,
+				selectedCount: Math.max(1, this.selection.length),
+				event
+			});
+		},
+
+		/**
+		 * Get selected rows as CSV string.
+		 * @returns {string} CSV formatted string
+		 */
+		getSelectedRowsAsCSV: function() {
+			if (!this.selection || this.selection.length === 0 || !this.headers)
+				return '';
+
+			const rows = this.selection
+				.slice()
+				.sort((a, b) => a - b)
+				.map(idx => this.sortedItems[idx])
+				.filter(row => row !== undefined);
+
+			if (rows.length === 0)
+				return '';
+
+			const escape_csv = (val) => {
+				const str = String(val ?? '');
+				if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r'))
+					return '"' + str.replace(/"/g, '""') + '"';
+
+				return str;
+			};
+
+			const data_lines = rows.map(row => row.map(escape_csv).join(','));
+
+			return data_lines.join('\n');
+		},
 	},
 
 	/**
@@ -897,7 +960,7 @@ module.exports = {
 					<tr v-for="(row, rowIndex) in displayItems" 
 						@click="selectRow(scrollIndex + rowIndex, $event)"
 						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
-						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}">{{field}}</td>
+						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}" @contextmenu="handleContextMenu(scrollIndex + rowIndex, index, $event)">{{field}}</td>
 					</tr>
 				</tbody>
 			</table>

@@ -76,14 +76,18 @@ module.exports = {
 			<div class="list-container">
 				<component :is="$components.Listbox" v-model:selection="$core.view.selectionDB2s" :items="$core.view.dbdManifest" :filter="$core.view.userInputFilterDB2s" :keyinput="true"
 					:regex="$core.view.config.regexFilters" :copydir="$core.view.config.copyFileDirectories" :pasteselection="$core.view.config.pasteSelection"
-					:copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true"></component>
+					:copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="false" unittype="db2 file" :single="true" :nocopy="true"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 				<input type="text" v-model="$core.view.userInputFilterDB2s" placeholder="Filter DB2s.." />
 			</div>
 			<div class="list-container">
-				<component :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event"></component>
+				<component ref="dataTable" :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event" @contextmenu="handle_context_menu" @copy="copy_rows_csv"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeDataTable" v-slot:default="context" @close="$core.view.contextMenus.nodeDataTable = null">
+					<span @click.self="copy_rows_csv">Copy {{ context.node.selectedCount }} row{{ context.node.selectedCount !== 1 ? 's' : '' }} as CSV</span>
+					<span @click.self="copy_cell(context.node.cellValue)">Copy cell contents</span>
+				</component>
 			</div>
 			<div class="filter data-table-filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -104,6 +108,32 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_context_menu(data) {
+			this.$core.view.contextMenus.nodeDataTable = data;
+		},
+
+		copy_rows_csv() {
+			const data_table = this.$refs.dataTable;
+			if (!data_table)
+				return;
+
+			const csv = data_table.getSelectedRowsAsCSV();
+			if (!csv)
+				return;
+
+			nw.Clipboard.get().set(csv, 'text');
+
+			const count = this.$core.view.selectionDataTable.length;
+			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' to the clipboard', null, 2000);
+		},
+
+		copy_cell(value) {
+			if (value === null || value === undefined)
+				return;
+
+			nw.Clipboard.get().set(String(value), 'text');
+		},
+
 		async export_csv() {
 			const headers = this.$core.view.tableBrowserHeaders;
 			const all_rows = this.$core.view.tableBrowserRows;

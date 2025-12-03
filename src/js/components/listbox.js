@@ -37,7 +37,7 @@ module.exports = {
 	 * persistscrollkey: If provided, enables scroll position persistence with this key.
 	 * quickfilters: Array of file extensions for quick filter links (e.g., ['m2', 'wmo']).
 	 */
-	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey', 'quickfilters'],
+	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey', 'quickfilters', 'nocopy'],
 	emits: ['update:selection', 'update:filter'],
 
 	/**
@@ -351,6 +351,9 @@ module.exports = {
 				return;
 
 			if (e.key === 'c' && e.ctrlKey) {
+				if (this.nocopy)
+					return;
+
 				// Copy selection to clipboard.
 				let entries = this.selection.slice();
 				if (this.copymode == 'DIR')
