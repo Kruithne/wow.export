@@ -12,6 +12,17 @@ const InstallType = require('../install-type');
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
+const ITEM_QUALITIES = [
+	{ id: 0, label: 'Poor' },
+	{ id: 1, label: 'Common' },
+	{ id: 2, label: 'Uncommon' },
+	{ id: 3, label: 'Rare' },
+	{ id: 4, label: 'Epic' },
+	{ id: 5, label: 'Legendary' },
+	{ id: 6, label: 'Artifact' },
+	{ id: 7, label: 'Heirloom' }
+];
+
 const ITEM_SLOTS_MERGED = {
 	'Head': [1],
 	'Neck': [2],
@@ -197,15 +208,18 @@ const initialize_items = async (core) => {
 	}
 };
 
-const apply_type_filter = (core) => {
-	const filter = core.view.itemViewerTypeMask.filter(e => e.checked);
-	const mask = [];
+const apply_filters = (core) => {
+	const type_filter = core.view.itemViewerTypeMask.filter(e => e.checked);
+	const type_mask = [];
+	type_filter.forEach(e => type_mask.push(...ITEM_SLOTS_MERGED[e.label]));
 
-	filter.forEach(e => mask.push(...ITEM_SLOTS_MERGED[e.label]));
-	const filtered = items.filter(item => mask.includes(item.inventoryType));
+	const quality_mask = core.view.itemViewerQualityMask.filter(e => e.checked).map(e => e.id);
+
+	const filtered = items.filter(item => type_mask.includes(item.inventoryType) && quality_mask.includes(item.quality));
 	core.view.listfileItems = filtered;
 
-	core.view.config.itemViewerEnabledTypes = core.view.itemViewerTypeMask.map(e => e.label);
+	core.view.config.itemViewerEnabledTypes = core.view.itemViewerTypeMask.filter(e => e.checked).map(e => e.label);
+	core.view.config.itemViewerEnabledQualities = quality_mask;
 };
 
 module.exports = {
@@ -231,9 +245,24 @@ module.exports = {
 			</div>
 			<div id="items-sidebar" class="sidebar">
 				<span class="header">Item Types</span>
-				<component :is="$components.Checkboxlist" :items="$core.view.itemViewerTypeMask"></component>
+				<div class="sidebar-checklist">
+					<div v-for="item in $core.view.itemViewerTypeMask" class="sidebar-checklist-item" :class="{ selected: item.checked }" @click="toggle_checklist_item(item)">
+						<input type="checkbox" v-model="item.checked" @click.stop/>
+						<span>{{ item.label }}</span>
+					</div>
+				</div>
 				<div class="list-toggles">
-					<a @click="set_all_item_types(true)">Enable All</a> / <a @click="set_all_item_types(false)">Disable All</a>
+					<a @click="$core.view.setAllItemTypes(true)">Enable All</a> / <a @click="$core.view.setAllItemTypes(false)">Disable All</a>
+				</div>
+				<span class="header">Quality</span>
+				<div class="sidebar-checklist">
+					<div v-for="item in $core.view.itemViewerQualityMask" class="sidebar-checklist-item" :class="{ selected: item.checked }" @click="toggle_checklist_item(item)">
+						<input type="checkbox" v-model="item.checked" :class="'quality-' + item.id" @click.stop/>
+						<span>{{ item.label }}</span>
+					</div>
+				</div>
+				<div class="list-toggles">
+					<a @click="$core.view.setAllItemQualities(true)">Enable All</a> / <a @click="$core.view.setAllItemQualities(false)">Disable All</a>
 				</div>
 			</div>
 		</div>
@@ -256,8 +285,8 @@ module.exports = {
 			ExternalLinks.wowHead_viewItem(item_id);
 		},
 
-		set_all_item_types(state) {
-			this.$core.view.setAllItemTypes(state);
+		toggle_checklist_item(item) {
+			item.checked = !item.checked;
 		}
 	},
 
@@ -269,16 +298,22 @@ module.exports = {
 			this.$core.hideLoadingScreen();
 
 			const enabled_types = this.$core.view.config.itemViewerEnabledTypes;
-			const mask = [];
-
+			const type_mask = [];
 			for (const label of Object.keys(ITEM_SLOTS_MERGED))
-				mask.push({ label, checked: enabled_types.includes(label) });
+				type_mask.push({ label, checked: enabled_types.includes(label) });
 
-			this.$core.view.$watch('itemViewerTypeMask', () => {
-				apply_type_filter(this.$core);
-			}, { deep: true });
+			const enabled_qualities = this.$core.view.config.itemViewerEnabledQualities;
+			const quality_mask = ITEM_QUALITIES.map(q => ({
+				id: q.id,
+				label: q.label,
+				checked: enabled_qualities === undefined || enabled_qualities.includes(q.id)
+			}));
 
-			this.$core.view.itemViewerTypeMask = mask;
+			this.$core.view.$watch('itemViewerTypeMask', () => apply_filters(this.$core), { deep: true });
+			this.$core.view.$watch('itemViewerQualityMask', () => apply_filters(this.$core), { deep: true });
+
+			this.$core.view.itemViewerQualityMask = quality_mask;
+			this.$core.view.itemViewerTypeMask = type_mask;
 		} catch (error) {
 			this.$core.hideLoadingScreen();
 			log.write('Failed to initialize items tab: %o', error);

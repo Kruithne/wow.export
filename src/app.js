@@ -209,10 +209,19 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all item types to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 */
 			setAllItemTypes: function(state) {
 				for (const entry of this.itemViewerTypeMask)
+					entry.checked = state;
+			},
+
+			/**
+			 * Mark all item qualities to the given state.
+			 * @param {boolean} state
+			 */
+			setAllItemQualities: function(state) {
+				for (const entry of this.itemViewerQualityMask)
 					entry.checked = state;
 			},
 

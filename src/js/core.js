@@ -94,6 +94,8 @@ const makeNewView = () => {
 		listfileFonts: [], // Filtered listfile for font files.
 		listfileModels: [], // Filtered listfile for M2/WMO models.
 		listfileItems: [], // Filtered item entries.
+		itemViewerTypeMask: [], // Item type filter mask.
+		itemViewerQualityMask: [], // Item quality filter mask.
 		listfileRaw: [], // Full raw file listfile.
 		listfileInstall: [], // Filtered listfile for install files.
 		dbdManifest: [], // DB2 entires from DBD manifest.

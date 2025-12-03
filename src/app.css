@@ -1474,8 +1474,45 @@ input[type=number]::-webkit-outer-spin-button {
 	grid-template-rows: 1fr 70px;
 	grid-template-columns: 1fr auto;
 }
-#tab-items .ui-checkboxlist {
-	height: 156px;
+.sidebar-checklist {
+	margin: 10px 0;
+	padding: 0 10px;
+}
+.sidebar-checklist-item {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+}
+.sidebar-checklist-item span {
+	margin-left: 5px;
+}
+.sidebar-checklist-item.selected {
+	color: var(--font-highlight);
+}
+.sidebar-checklist-item input[type="checkbox"].quality-0 {
+	accent-color: #9d9d9d;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-1 {
+	accent-color: #ffffff;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-2 {
+	accent-color: #1eff00;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-3 {
+	accent-color: #0070dd;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-4 {
+	accent-color: #a335ee;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-5 {
+	accent-color: #ff8000;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-6 {
+	accent-color: #e6cc80;
+}
+.sidebar-checklist-item input[type="checkbox"].quality-7,
+.sidebar-checklist-item input[type="checkbox"].quality-8 {
+	accent-color: #00ccff;
 }
 #tab-items .filter {
 	height: 70px;
