@@ -54,7 +54,11 @@ module.exports = {
 			isHovering: false,
 			isPanning: false,
 			isSelecting: false,
-			selectState: true
+			selectState: true,
+			isBoxSelectMode: false,
+			isBoxSelecting: false,
+			boxSelectStart: null,
+			boxSelectEnd: null
 		}
 	},
 
@@ -708,6 +712,17 @@ module.exports = {
 			const bufferX = (canvas.width - viewport.clientWidth) / 2;
 			const bufferY = (canvas.height - viewport.clientHeight) / 2;
 
+			// calculate box selection tile range for highlighting
+			let boxMinTileX = -1, boxMaxTileX = -1, boxMinTileY = -1, boxMaxTileY = -1;
+			if (this.isBoxSelecting && this.boxSelectStart && this.boxSelectEnd) {
+				const startPoint = this.mapPositionFromClientPoint(this.boxSelectStart.x, this.boxSelectStart.y);
+				const endPoint = this.mapPositionFromClientPoint(this.boxSelectEnd.x, this.boxSelectEnd.y);
+				boxMinTileX = Math.min(startPoint.tileX, endPoint.tileX);
+				boxMaxTileX = Math.max(startPoint.tileX, endPoint.tileX);
+				boxMinTileY = Math.min(startPoint.tileY, endPoint.tileY);
+				boxMaxTileY = Math.max(startPoint.tileY, endPoint.tileY);
+			}
+
 			// Render overlays for visible tiles
 			for (let x = startX; x < endX; x++) {
 				for (let y = startY; y < endY; y++) {
@@ -727,15 +742,42 @@ module.exports = {
 					// Draw the selection overlay if this tile is selected.
 					if (this.selection.includes(index)) {
 						overlayCtx.fillStyle = 'rgba(159, 241, 161, 0.5)';
-						overlayCtx.fillRect(drawX, drawY, tileSize, tileSize);	
+						overlayCtx.fillRect(drawX, drawY, tileSize, tileSize);
 					}
 
-					// Draw the hover overlay if this tile is hovered over.
-					if (this.hoverTile === index) {
+					// Draw box selection preview highlight
+					if (this.isBoxSelecting && x >= boxMinTileX && x <= boxMaxTileX && y >= boxMinTileY && y <= boxMaxTileY) {
+						overlayCtx.fillStyle = 'rgba(87, 175, 226, 0.5)';
+						overlayCtx.fillRect(drawX, drawY, tileSize, tileSize);
+					} else if (!this.isBoxSelectMode && this.hoverTile === index) {
+						// Draw the hover overlay only when not in box select mode
 						overlayCtx.fillStyle = 'rgba(87, 175, 226, 0.5)';
 						overlayCtx.fillRect(drawX, drawY, tileSize, tileSize);
 					}
 				}
+			}
+
+			// draw box selection rectangle outline
+			if (this.isBoxSelecting && this.boxSelectStart && this.boxSelectEnd) {
+				const viewportRect = viewport.getBoundingClientRect();
+				const canvasOffsetX = (viewportRect.width - canvas.width) / 2;
+				const canvasOffsetY = (viewportRect.height - canvas.height) / 2;
+
+				const startCanvasX = this.boxSelectStart.x - viewportRect.x - canvasOffsetX;
+				const startCanvasY = this.boxSelectStart.y - viewportRect.y - canvasOffsetY;
+				const endCanvasX = this.boxSelectEnd.x - viewportRect.x - canvasOffsetX;
+				const endCanvasY = this.boxSelectEnd.y - viewportRect.y - canvasOffsetY;
+
+				const rectX = Math.min(startCanvasX, endCanvasX);
+				const rectY = Math.min(startCanvasY, endCanvasY);
+				const rectW = Math.abs(endCanvasX - startCanvasX);
+				const rectH = Math.abs(endCanvasY - startCanvasY);
+
+				overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+				overlayCtx.lineWidth = 2;
+				overlayCtx.setLineDash([5, 5]);
+				overlayCtx.strokeRect(rectX, rectY, rectW, rectH);
+				overlayCtx.setLineDash([]);
 			}
 		},
 
@@ -781,6 +823,19 @@ module.exports = {
 
 				event.preventDefault();
 				event.stopPropagation();
+			} else if (event.key === 'b' || event.key === 'B') {
+				this.isBoxSelectMode = !this.isBoxSelectMode;
+
+				// clear any in-progress box selection when toggling off
+				if (!this.isBoxSelectMode) {
+					this.isBoxSelecting = false;
+					this.boxSelectStart = null;
+					this.boxSelectEnd = null;
+					this.renderOverlay();
+				}
+
+				event.preventDefault();
+				event.stopPropagation();
 			}
 		},
 
@@ -823,7 +878,10 @@ module.exports = {
 		 * @param {MouseEvent} event
 		 */
 		handleMouseMove: function(event) {
-			if (this.isSelecting) {
+			if (this.isBoxSelecting) {
+				this.boxSelectEnd = { x: event.clientX, y: event.clientY };
+				this.renderOverlay();
+			} else if (this.isSelecting) {
 				this.handleTileInteraction(event, false);
 			} else if (this.isPanning) {
 				// Calculate the distance from our mousedown event.
@@ -843,6 +901,14 @@ module.exports = {
 		 * Invoked on mouseup events captured on the document.
 		 */
 		handleMouseUp: function() {
+			if (this.isBoxSelecting) {
+				this.finalizeBoxSelection();
+				this.isBoxSelecting = false;
+				this.boxSelectStart = null;
+				this.boxSelectEnd = null;
+				this.renderOverlay();
+			}
+
 			if (this.isPanning)
 				this.isPanning = false;
 
@@ -853,11 +919,53 @@ module.exports = {
 		},
 
 		/**
+		 * Finalize box selection by selecting all tiles within the box.
+		 */
+		finalizeBoxSelection: function() {
+			if (!this.boxSelectStart || !this.boxSelectEnd)
+				return;
+
+			const startPoint = this.mapPositionFromClientPoint(this.boxSelectStart.x, this.boxSelectStart.y);
+			const endPoint = this.mapPositionFromClientPoint(this.boxSelectEnd.x, this.boxSelectEnd.y);
+
+			const minTileX = Math.min(startPoint.tileX, endPoint.tileX);
+			const maxTileX = Math.max(startPoint.tileX, endPoint.tileX);
+			const minTileY = Math.min(startPoint.tileY, endPoint.tileY);
+			const maxTileY = Math.max(startPoint.tileY, endPoint.tileY);
+
+			const grid_size = this.effectiveGridSize;
+			const newSelection = [...this.selection];
+
+			for (let x = minTileX; x <= maxTileX; x++) {
+				for (let y = minTileY; y <= maxTileY; y++) {
+					if (x < 0 || x >= grid_size || y < 0 || y >= grid_size)
+						continue;
+
+					const index = (x * grid_size) + y;
+
+					// skip masked tiles
+					if (this.mask && this.mask[index] !== 1)
+						continue;
+
+					// add to selection if not already selected
+					if (!newSelection.includes(index))
+						newSelection.push(index);
+				}
+			}
+
+			this.$emit('update:selection', newSelection);
+		},
+
+		/**
 		 * Invoked on mousedown events captured on the container element.
 		 * @param {MouseEvent} event
 		 */
 		handleMouseDown: function(event) {
-			if (event.shiftKey && this.selectable !== false) {
+			if (this.isBoxSelectMode && this.selectable !== false) {
+				this.isBoxSelecting = true;
+				this.boxSelectStart = { x: event.clientX, y: event.clientY };
+				this.boxSelectEnd = { x: event.clientX, y: event.clientY };
+			} else if (event.shiftKey && this.selectable !== false) {
 				this.handleTileInteraction(event, true);
 				this.isSelecting = true;
 			} else if (!this.isPanning) {
@@ -990,13 +1098,14 @@ module.exports = {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<div class="ui-map-viewer" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver" @mouseout="handleMouseOut">
+	template: `<div class="ui-map-viewer" :class="{ 'box-select-mode': isBoxSelectMode }" @mousedown="handleMouseDown" @wheel="handleMouseWheel" @mousemove="handleMouseOver" @mouseout="handleMouseOut">
 		<div class="info">
 			<span>Navigate: Click + Drag</span>
 			<span>Select Tile: Shift + Click</span>
 			<span>Zoom: Mouse Wheel</span>
 			<span>Select All: Control + A</span>
 			<span>Deselect All: D</span>
+			<span :class="{ active: isBoxSelectMode }">Box Select: B</span>
 		</div>
 		<div class="hover-info">{{ hoverInfo }}</div>
 		<canvas ref="canvas"></canvas>

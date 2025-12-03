@@ -1345,6 +1345,12 @@ input[type=number]::-webkit-outer-spin-button {
 .ui-map-viewer .info span {
 	margin: 0 10px;
 }
+.ui-map-viewer .info span.active {
+	color: #5fdb65;
+}
+.ui-map-viewer.box-select-mode {
+	cursor: crosshair;
+}
 
 .ui-combobox {
 	position: relative;
