@@ -211,7 +211,7 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-sounds">
 			<div class="list-container">
-				<component :is="$components.Listbox" v-model:selection="$core.view.selectionSounds" :items="$core.view.listfileSounds" :filter="$core.view.userInputFilterSounds" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds"></component>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionSounds" :items="$core.view.listfileSounds" :filter="$core.view.userInputFilterSounds" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="sound file" persistscrollkey="sounds" :quickfilters="$core.view.audioQuickFilters"></component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>

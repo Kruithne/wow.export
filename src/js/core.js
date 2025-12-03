@@ -67,6 +67,8 @@ const makeNewView = () => {
 		modContextMenuOptions: [], // Module-registered context menu options.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
 		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
+		audioQuickFilters: ['ogg', 'mp3', 'unk'], // Quick filter configuration for audio tab.
+		textQuickFilters: ['lua', 'xml', 'txt', 'sbt', 'wtf', 'htm', 'toc', 'xsd', 'srt'], // Quick filter configuration for text tab.
 		selectionTextures: [], // Current user selection of texture files.
 		selectionModels: [], // Current user selection of models.
 		selectionSounds: [], // Current user selection of sounds.

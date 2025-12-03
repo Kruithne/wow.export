@@ -13,6 +13,8 @@
 - Added option to export individual character textures from the character viewer.
 - Added option to export models and characters (posed) in STL format (for 3D printing).
 - Added ability to copy rows/fields from the data table viewer (CTRL+C or right-click).
+- Added quick filters for OGG, MP3 and UNK to the audio tab.
+- Added quick filters for LUA, XML, TXT, SBT, WTF, HTM, TOC, XSD and SRT to the text tab.
 - Unknown cinematics are now immediately available in the cinematics tab.
 - Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.
