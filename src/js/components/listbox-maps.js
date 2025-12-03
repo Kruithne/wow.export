@@ -14,7 +14,7 @@ module.exports = {
 	 * expansionFilter: Reactive value for filtering by expansion ID (-1 for all, 0+ for specific expansion)
 	 */
 	props: [...listboxComponent.props, 'expansionFilter'],
-	emits: [...listboxComponent.emits],
+	emits: listboxComponent.emits,
 
 	data: listboxComponent.data,
 

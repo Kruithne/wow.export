@@ -8,6 +8,7 @@ const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const BLPFile = require('../casc/blp');
 const InstallType = require('../install-type');
+const listboxContext = require('../ui/listbox-context');
 
 const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
@@ -502,7 +503,14 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-models">
 			<div class="list-container">
-				<component :is="$components.Listbox" v-model:selection="$core.view.selectionModels" v-model:filter="$core.view.userInputFilterModels" :items="$core.view.listfileModels" :override="$core.view.overrideModelList" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="$core.view.modelQuickFilters"></component>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionModels" v-model:filter="$core.view.userInputFilterModels" :items="$core.view.listfileModels" :override="$core.view.overrideModelList" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="$core.view.modelQuickFilters" @contextmenu="handle_listbox_context"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
+					<span @click.self="copy_file_paths(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span v-if="context.node.hasFileDataIDs" @click.self="copy_listfile_format(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }} (listfile format)</span>
+					<span v-if="context.node.hasFileDataIDs" @click.self="copy_file_data_ids(context.node.selection)">Copy file data ID{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_export_paths(context.node.selection)">Copy export path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="open_export_directory(context.node.selection)">Open export directory</span>
+				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -661,6 +669,30 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_listbox_context(data) {
+			listboxContext.handle_context_menu(data);
+		},
+
+		copy_file_paths(selection) {
+			listboxContext.copy_file_paths(selection);
+		},
+
+		copy_listfile_format(selection) {
+			listboxContext.copy_listfile_format(selection);
+		},
+
+		copy_file_data_ids(selection) {
+			listboxContext.copy_file_data_ids(selection);
+		},
+
+		copy_export_paths(selection) {
+			listboxContext.copy_export_paths(selection);
+		},
+
+		open_export_directory(selection) {
+			listboxContext.open_export_directory(selection);
+		},
+
 		async preview_texture(file_data_id, display_name) {
 			await preview_texture_by_id(this.$core, file_data_id, display_name);
 		},

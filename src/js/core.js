@@ -203,6 +203,9 @@ const makeNewView = () => {
 			nodeTextureRibbon: null, // Context menu node for the texture ribbon.
 			nodeItem: null, // Context menu node for the items listfile.
 			nodeDataTable: null, // Context menu node for the data table.
+			nodeListbox: null, // Context menu node for generic listbox (textures, models, audio, etc.).
+			nodeMap: null, // Context menu node for maps listbox.
+			nodeZone: null, // Context menu node for zones listbox.
 			stateNavExtra: false, // State controller for the extra nav menu.
 			stateModelExport: false, // State controller for the model export menu.
 			stateCDNRegion: false, // State controller for the CDN region selection menu.

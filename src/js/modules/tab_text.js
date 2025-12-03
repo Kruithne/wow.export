@@ -5,6 +5,7 @@ const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const generics = require('../generics');
+const listboxContext = require('../ui/listbox-context');
 const InstallType = require('../install-type');
 
 let selected_file = null;
@@ -17,7 +18,14 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="tab-text">
 			<div class="list-container">
-				<component :is="$components.Listbox" v-model:selection="$core.view.selectionText" :items="$core.view.listfileText" :filter="$core.view.userInputFilterText" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="text file" persistscrollkey="text" :quickfilters="$core.view.textQuickFilters"></component>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionText" :items="$core.view.listfileText" :filter="$core.view.userInputFilterText" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="text file" persistscrollkey="text" :quickfilters="$core.view.textQuickFilters" @contextmenu="handle_listbox_context"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
+					<span @click.self="copy_file_paths(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span v-if="context.node.hasFileDataIDs" @click.self="copy_listfile_format(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }} (listfile format)</span>
+					<span v-if="context.node.hasFileDataIDs" @click.self="copy_file_data_ids(context.node.selection)">Copy file data ID{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_export_paths(context.node.selection)">Copy export path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="open_export_directory(context.node.selection)">Open export directory</span>
+				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -36,6 +44,30 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_listbox_context(data) {
+			listboxContext.handle_context_menu(data);
+		},
+
+		copy_file_paths(selection) {
+			listboxContext.copy_file_paths(selection);
+		},
+
+		copy_listfile_format(selection) {
+			listboxContext.copy_listfile_format(selection);
+		},
+
+		copy_file_data_ids(selection) {
+			listboxContext.copy_file_data_ids(selection);
+		},
+
+		copy_export_paths(selection) {
+			listboxContext.copy_export_paths(selection);
+		},
+
+		open_export_directory(selection) {
+			listboxContext.open_export_directory(selection);
+		},
+
 		copy_text() {
 			const clipboard = nw.Clipboard.get();
 			clipboard.set(this.$core.view.textViewerSelectedText, 'text');

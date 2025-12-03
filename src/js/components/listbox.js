@@ -38,7 +38,7 @@ module.exports = {
 	 * quickfilters: Array of file extensions for quick filter links (e.g., ['m2', 'wmo']).
 	 */
 	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'copymode', 'pasteselection', 'copytrimwhitespace', 'includefilecount', 'unittype', 'override', 'disable', 'persistscrollkey', 'quickfilters', 'nocopy'],
-	emits: ['update:selection', 'update:filter'],
+	emits: ['update:selection', 'update:filter', 'contextmenu'],
 
 	/**
 	 * Reactive instance data.
@@ -468,6 +468,33 @@ module.exports = {
 				this.activeQuickFilter = null;
 			else
 				this.activeQuickFilter = ext;
+		},
+
+		/**
+		 * Invoked when a user right-clicks an item in the list.
+		 * @param {string} item
+		 * @param {MouseEvent} event
+		 */
+		handleContextMenu: function(item, event) {
+			event.preventDefault();
+
+			if (this.disable)
+				return;
+
+			// select item if not already in selection
+			if (!this.selection.includes(item)) {
+				const newSelection = this.selection.slice();
+				newSelection.splice(0);
+				newSelection.push(item);
+				this.lastSelectItem = item;
+				this.$emit('update:selection', newSelection);
+			}
+
+			this.$emit('contextmenu', {
+				item,
+				selection: this.selection.includes(item) ? this.selection : [item],
+				event
+			});
 		}
 	},
 
@@ -476,7 +503,7 @@ module.exports = {
 	 */
 	template: `<div><div ref="root" class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" :class="{ selected: selection.includes(item) }">
+		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" @contextmenu="handleContextMenu(item, $event)" :class="{ selected: selection.includes(item) }">
 			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
 		</div>
 	</div>

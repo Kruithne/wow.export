@@ -310,7 +310,14 @@ module.exports = {
 				</div>
 			</div>
 			<div class="list-container">
-				<component :is="$components.ListboxZones" id="listbox-zones" class="listbox-icons" v-model:selection="$core.view.selectionZones" :items="$core.view.zoneViewerZones" :filter="$core.view.userInputFilterZones" :expansion-filter="$core.view.selectedZoneExpansionFilter" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones"></component>
+				<component :is="$components.ListboxZones" id="listbox-zones" class="listbox-icons" v-model:selection="$core.view.selectionZones" :items="$core.view.zoneViewerZones" :filter="$core.view.userInputFilterZones" :expansion-filter="$core.view.selectedZoneExpansionFilter" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="zone" persistscrollkey="zones" @contextmenu="handle_zone_context"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeZone" v-slot:default="context" @close="$core.view.contextMenus.nodeZone = null">
+					<span @click.self="copy_zone_names(context.node.selection)">Copy zone name{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_area_names(context.node.selection)">Copy area name{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_zone_ids(context.node.selection)">Copy zone ID{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_zone_export_path()">Copy export path</span>
+					<span @click.self="open_zone_export_directory()">Open export directory</span>
+				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -339,6 +346,47 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_zone_context(data) {
+			this.$core.view.contextMenus.nodeZone = {
+				selection: data.selection,
+				count: data.selection.length
+			};
+		},
+
+		copy_zone_names(selection) {
+			const names = selection.map(entry => {
+				const zone = parse_zone_entry(entry);
+				return zone.zone_name;
+			});
+			nw.Clipboard.get().set(names.join('\n'), 'text');
+		},
+
+		copy_area_names(selection) {
+			const names = selection.map(entry => {
+				const zone = parse_zone_entry(entry);
+				return zone.area_name;
+			});
+			nw.Clipboard.get().set(names.join('\n'), 'text');
+		},
+
+		copy_zone_ids(selection) {
+			const ids = selection.map(entry => {
+				const zone = parse_zone_entry(entry);
+				return zone.id;
+			});
+			nw.Clipboard.get().set(ids.join('\n'), 'text');
+		},
+
+		copy_zone_export_path() {
+			const dir = ExportHelper.getExportPath('zones');
+			nw.Clipboard.get().set(dir, 'text');
+		},
+
+		open_zone_export_directory() {
+			const dir = ExportHelper.getExportPath('zones');
+			nw.Shell.openItem(dir);
+		},
+
 		async export_zone_map() {
 			const user_selection = this.$core.view.selectionZones;
 			if (!user_selection || user_selection.length === 0) {

@@ -18,6 +18,7 @@
 - Added ability to view raw binary strings from the install manifest tab.
 - Added ability to choose custom coloured backgrounds on the character viewer.
 - Added "box select" mode to the map viewer, making large tile selections easier.
+- Added right-click context menus to most file lists, allowing numerous new actions.
 - Unknown cinematics are now immediately available in the cinematics tab.
 - Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.

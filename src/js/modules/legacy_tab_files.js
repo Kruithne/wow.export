@@ -1,6 +1,7 @@
 const path = require('path');
 const fsp = require('fs').promises;
 const log = require('../log');
+const listboxContext = require('../ui/listbox-context');
 const InstallType = require('../install-type');
 
 let files_loaded = false;
@@ -71,7 +72,12 @@ module.exports = {
 	template: `
 		<div class="tab list-tab" id="legacy-tab-files">
 			<div class="list-container">
-				<component :is="$components.Listbox" v-model:selection="$core.view.selectionRaw" :items="$core.view.listfileRaw" :filter="$core.view.userInputFilterRaw" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files"></component>
+				<component :is="$components.Listbox" v-model:selection="$core.view.selectionRaw" :items="$core.view.listfileRaw" :filter="$core.view.userInputFilterRaw" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="file" persistscrollkey="legacy-files" @contextmenu="handle_listbox_context"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
+					<span @click.self="copy_file_paths(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_export_paths(context.node.selection)">Copy export path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="open_export_directory(context.node.selection)">Open export directory</span>
+				</component>
 			</div>
 			<div id="tab-legacy-files-tray">
 				<div class="filter">
@@ -84,6 +90,22 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_listbox_context(data) {
+			listboxContext.handle_context_menu(data, true);
+		},
+
+		copy_file_paths(selection) {
+			listboxContext.copy_file_paths(selection);
+		},
+
+		copy_export_paths(selection) {
+			listboxContext.copy_export_paths(selection);
+		},
+
+		open_export_directory(selection) {
+			listboxContext.open_export_directory(selection);
+		},
+
 		async export_selected() {
 			await export_files(this.$core);
 		}

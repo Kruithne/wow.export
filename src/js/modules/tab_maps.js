@@ -289,7 +289,14 @@ module.exports = {
 				</div>
 			</div>
 			<div class="list-container" id="maps-list-container">
-				<component :is="$components.ListboxMaps" id="listbox-maps" class="listbox-icons" v-model:selection="$core.view.selectionMaps" :items="$core.view.mapViewerMaps" :filter="$core.view.userInputFilterMaps" :expansion-filter="$core.view.selectedExpansionFilter" :keyinput="true" :single="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps"></component>
+				<component :is="$components.ListboxMaps" id="listbox-maps" class="listbox-icons" v-model:selection="$core.view.selectionMaps" :items="$core.view.mapViewerMaps" :filter="$core.view.userInputFilterMaps" :expansion-filter="$core.view.selectedExpansionFilter" :keyinput="true" :single="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="map" persistscrollkey="maps" @contextmenu="handle_map_context"></component>
+				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeMap" v-slot:default="context" @close="$core.view.contextMenus.nodeMap = null">
+					<span @click.self="copy_map_names(context.node.selection)">Copy map name{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_map_internal_names(context.node.selection)">Copy internal name{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_map_ids(context.node.selection)">Copy map ID{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="copy_map_export_paths(context.node.selection)">Copy export path{{ context.node.count > 1 ? 's' : '' }}</span>
+					<span @click.self="open_map_export_directory(context.node.selection)">Open export directory</span>
+				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
@@ -357,6 +364,54 @@ module.exports = {
 	`,
 
 	methods: {
+		handle_map_context(data) {
+			this.$core.view.contextMenus.nodeMap = {
+				selection: data.selection,
+				count: data.selection.length
+			};
+		},
+
+		copy_map_names(selection) {
+			const names = selection.map(entry => {
+				const map = parse_map_entry(entry);
+				return map.name;
+			});
+			nw.Clipboard.get().set(names.join('\n'), 'text');
+		},
+
+		copy_map_internal_names(selection) {
+			const names = selection.map(entry => {
+				const map = parse_map_entry(entry);
+				return map.dir;
+			});
+			nw.Clipboard.get().set(names.join('\n'), 'text');
+		},
+
+		copy_map_ids(selection) {
+			const ids = selection.map(entry => {
+				const map = parse_map_entry(entry);
+				return map.id;
+			});
+			nw.Clipboard.get().set(ids.join('\n'), 'text');
+		},
+
+		copy_map_export_paths(selection) {
+			const paths = selection.map(entry => {
+				const map = parse_map_entry(entry);
+				return ExportHelper.getExportPath(path.join('maps', map.dir));
+			});
+			nw.Clipboard.get().set(paths.join('\n'), 'text');
+		},
+
+		open_map_export_directory(selection) {
+			if (selection.length === 0)
+				return;
+
+			const map = parse_map_entry(selection[0]);
+			const dir = ExportHelper.getExportPath(path.join('maps', map.dir));
+			nw.Shell.openItem(dir);
+		},
+
 		async load_map(mapID, mapDir) {
 			const map_dir_lower = mapDir.toLowerCase();
 
