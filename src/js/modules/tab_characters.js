@@ -1068,6 +1068,15 @@ module.exports = {
 						{{ animation.label }}
 					</option>
 				</select>
+				<div v-if="$core.view.chrModelViewerAnimSelection !== 'none'" class="anim-controls">
+					<button class="anim-btn anim-step-left" :class="{ disabled: !$core.view.chrModelViewerAnimPaused }" @click="step_animation(-1)" title="Previous frame"></button>
+					<button class="anim-btn" :class="$core.view.chrModelViewerAnimPaused ? 'anim-play' : 'anim-pause'" @click="toggle_animation_pause()" :title="$core.view.chrModelViewerAnimPaused ? 'Play' : 'Pause'"></button>
+					<button class="anim-btn anim-step-right" :class="{ disabled: !$core.view.chrModelViewerAnimPaused }" @click="step_animation(1)" title="Next frame"></button>
+					<div class="anim-scrubber" @mousedown="start_scrub" @mouseup="end_scrub">
+						<input type="range" min="0" :max="$core.view.chrModelViewerAnimFrameCount - 1" :value="$core.view.chrModelViewerAnimFrame" @input="seek_animation($event.target.value)" />
+						<div class="anim-frame-display">{{ $core.view.chrModelViewerAnimFrame }}</div>
+					</div>
+				</div>
 			</div>
 			<div class="character-import-buttons">
 				<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
@@ -1196,7 +1205,7 @@ module.exports = {
 								<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 								<span>Export animations</span>
 							</label>
-							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'OBJ'" title="Apply current animation pose to exported geometry">
+							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'OBJ' || $core.view.config.exportCharacterFormat === 'STL'" title="Apply current animation pose to exported geometry">
 								<input type="checkbox" v-model="$core.view.config.chrExportApplyPose"/>
 								<span>Apply pose</span>
 							</label>
@@ -1239,6 +1248,49 @@ module.exports = {
 
 		import_character() {
 			import_character(this.$core);
+		},
+
+		toggle_animation_pause() {
+			if (!active_renderer)
+				return;
+
+			const paused = !this.$core.view.chrModelViewerAnimPaused;
+			this.$core.view.chrModelViewerAnimPaused = paused;
+			active_renderer.set_animation_paused(paused);
+		},
+
+		step_animation(delta) {
+			if (!this.$core.view.chrModelViewerAnimPaused)
+				return;
+
+			if (!active_renderer)
+				return;
+
+			active_renderer.step_animation_frame(delta);
+			this.$core.view.chrModelViewerAnimFrame = active_renderer.get_animation_frame();
+		},
+
+		seek_animation(frame) {
+			if (!active_renderer)
+				return;
+
+			active_renderer.set_animation_frame(parseInt(frame));
+			this.$core.view.chrModelViewerAnimFrame = parseInt(frame);
+		},
+
+		start_scrub() {
+			this._was_paused_before_scrub = this.$core.view.chrModelViewerAnimPaused;
+			if (!this._was_paused_before_scrub) {
+				this.$core.view.chrModelViewerAnimPaused = true;
+				active_renderer?.set_animation_paused?.(true);
+			}
+		},
+
+		end_scrub() {
+			if (!this._was_paused_before_scrub) {
+				this.$core.view.chrModelViewerAnimPaused = false;
+				active_renderer?.set_animation_paused?.(false);
+			}
 		},
 
 		import_wowhead() {
@@ -1527,6 +1579,11 @@ module.exports = {
 				if (!active_renderer || !active_renderer.playAnimation || this.$core.view.chrModelViewerAnims.length === 0)
 					return;
 
+				// reset animation state
+				this.$core.view.chrModelViewerAnimPaused = false;
+				this.$core.view.chrModelViewerAnimFrame = 0;
+				this.$core.view.chrModelViewerAnimFrameCount = 0;
+
 				if (selected_animation_id !== null && selected_animation_id !== undefined) {
 					if (selected_animation_id === 'none') {
 						active_renderer?.stopAnimation?.();
@@ -1541,6 +1598,9 @@ module.exports = {
 					if (anim_info && anim_info.m2Index !== undefined && anim_info.m2Index >= 0) {
 						log.write(`Playing animation ${selected_animation_id} at M2 index ${anim_info.m2Index}`);
 						await active_renderer.playAnimation(anim_info.m2Index);
+
+						// set frame count after animation is loaded
+						this.$core.view.chrModelViewerAnimFrameCount = active_renderer.get_animation_frame_count();
 
 						if (this.$core.view.modelViewerAutoAdjust)
 							requestAnimationFrame(() => fit_camera(this.$core));

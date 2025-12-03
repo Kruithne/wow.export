@@ -112,6 +112,9 @@ const makeNewView = () => {
 		modelViewerSkinsSelection: [], // Selected M2 model skins.
 		modelViewerAnims: [], // Available animations.
 		modelViewerAnimSelection: null, // Selected M2 model animation (single).
+		modelViewerAnimPaused: false, // Animation playback paused state.
+		modelViewerAnimFrame: 0, // Current animation frame.
+		modelViewerAnimFrameCount: 0, // Total frames in current animation.
 		modelViewerWMOGroups: [], // Active WMO model group control.
 		modelViewerWMOSets: [], // Active WMO doodad set control.
 		modelViewerAutoAdjust: true, // Automatic camera adjustment.
@@ -154,6 +157,9 @@ const makeNewView = () => {
 		chrModelViewerContext: null, // 3D context for the character-specific model viewer.
 		chrModelViewerAnims: [], // Available character animations.
 		chrModelViewerAnimSelection: null, // Selected character animation.
+		chrModelViewerAnimPaused: false, // Character animation playback paused state.
+		chrModelViewerAnimFrame: 0, // Current character animation frame.
+		chrModelViewerAnimFrameCount: 0, // Total frames in current character animation.
 		chrCustRaces: [], // Available character races to select from
 		chrCustRaceSelection: [], // Current race ID selected
 		chrCustModels: [], // Available character customization models.

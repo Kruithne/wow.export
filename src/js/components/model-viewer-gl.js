@@ -220,8 +220,19 @@ module.exports = {
 
 			// update animation
 			const activeRenderer = this.context.getActiveRenderer?.();
-			if (activeRenderer && activeRenderer.updateAnimation)
+			if (activeRenderer && activeRenderer.updateAnimation) {
 				activeRenderer.updateAnimation(deltaTime);
+
+				// update frame counter in view (throttled to ~15fps for UI updates)
+				if (activeRenderer.get_animation_frame && !activeRenderer.animation_paused) {
+					this.frameUpdateCounter = (this.frameUpdateCounter || 0) + 1;
+					if (this.frameUpdateCounter >= 4) {
+						this.frameUpdateCounter = 0;
+						const frame_key = this.context.useCharacterControls ? 'chrModelViewerAnimFrame' : 'modelViewerAnimFrame';
+						core.view[frame_key] = activeRenderer.get_animation_frame();
+					}
+				}
+			}
 
 			// apply model rotation if speed is non-zero (non-character mode)
 			const rotation_speed = core.view.modelViewerRotationSpeed;

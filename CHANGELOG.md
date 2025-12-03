@@ -1,6 +1,7 @@
 ## 0.2.7 (TBD)
 - Rewrote the 3D modelviewer in WebGL2 for faster and more accurate previews.
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
+- Added animation playback controls to model and character viewers.
 - Added keyboard shortcut to deselect all tiles on the map viewer.
 - Added option to export character models as OBJ (posed).
 - Added dropdown menu to select phase on zones map viewer.

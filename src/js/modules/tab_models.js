@@ -550,6 +550,15 @@ module.exports = {
 								{{ animation.label }}
 							</option>
 						</select>
+						<div v-if="$core.view.modelViewerAnimSelection !== 'none'" class="anim-controls">
+							<button class="anim-btn anim-step-left" :class="{ disabled: !$core.view.modelViewerAnimPaused }" @click="step_animation(-1)" title="Previous frame"></button>
+							<button class="anim-btn" :class="$core.view.modelViewerAnimPaused ? 'anim-play' : 'anim-pause'" @click="toggle_animation_pause()" :title="$core.view.modelViewerAnimPaused ? 'Play' : 'Pause'"></button>
+							<button class="anim-btn anim-step-right" :class="{ disabled: !$core.view.modelViewerAnimPaused }" @click="step_animation(1)" title="Next frame"></button>
+							<div class="anim-scrubber" @mousedown="start_scrub" @mouseup="end_scrub">
+								<input type="range" min="0" :max="$core.view.modelViewerAnimFrameCount - 1" :value="$core.view.modelViewerAnimFrame" @input="seek_animation($event.target.value)" />
+								<div class="anim-frame-display">{{ $core.view.modelViewerAnimFrame }}</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -672,6 +681,52 @@ module.exports = {
 			}
 
 			await export_files(this.$core, user_selection, false);
+		},
+
+		toggle_animation_pause() {
+			const renderer = active_renderer;
+			if (!renderer)
+				return;
+
+			const paused = !this.$core.view.modelViewerAnimPaused;
+			this.$core.view.modelViewerAnimPaused = paused;
+			renderer.set_animation_paused(paused);
+		},
+
+		step_animation(delta) {
+			if (!this.$core.view.modelViewerAnimPaused)
+				return;
+
+			const renderer = active_renderer;
+			if (!renderer)
+				return;
+
+			renderer.step_animation_frame(delta);
+			this.$core.view.modelViewerAnimFrame = renderer.get_animation_frame();
+		},
+
+		seek_animation(frame) {
+			const renderer = active_renderer;
+			if (!renderer)
+				return;
+
+			renderer.set_animation_frame(parseInt(frame));
+			this.$core.view.modelViewerAnimFrame = parseInt(frame);
+		},
+
+		start_scrub() {
+			this._was_paused_before_scrub = this.$core.view.modelViewerAnimPaused;
+			if (!this._was_paused_before_scrub) {
+				this.$core.view.modelViewerAnimPaused = true;
+				active_renderer?.set_animation_paused?.(true);
+			}
+		},
+
+		end_scrub() {
+			if (!this._was_paused_before_scrub) {
+				this.$core.view.modelViewerAnimPaused = false;
+				active_renderer?.set_animation_paused?.(false);
+			}
 		}
 	},
 
@@ -759,6 +814,11 @@ module.exports = {
 			if (!active_renderer || !active_renderer.playAnimation || this.$core.view.modelViewerAnims.length === 0)
 				return;
 
+			// reset animation state
+			this.$core.view.modelViewerAnimPaused = false;
+			this.$core.view.modelViewerAnimFrame = 0;
+			this.$core.view.modelViewerAnimFrameCount = 0;
+
 			if (selected_animation_id !== null && selected_animation_id !== undefined) {
 				if (selected_animation_id === 'none') {
 					active_renderer?.stopAnimation?.();
@@ -772,6 +832,9 @@ module.exports = {
 				if (anim_info && anim_info.m2Index !== undefined && anim_info.m2Index >= 0) {
 					log.write(`Playing animation ${selected_animation_id} at M2 index ${anim_info.m2Index}`);
 					await active_renderer.playAnimation(anim_info.m2Index);
+
+					// set frame count after animation is loaded
+					this.$core.view.modelViewerAnimFrameCount = active_renderer.get_animation_frame_count();
 
 					if (this.$core.view.modelViewerAutoAdjust)
 						requestAnimationFrame(() => this.$core.view.modelViewerContext?.fitCamera?.());

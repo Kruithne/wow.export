@@ -301,6 +301,7 @@ class M2RendererGL {
 		this.bone_matrices = null;
 		this.current_animation = null;
 		this.animation_time = 0;
+		this.animation_paused = false;
 
 		// reactive state
 		this.geosetKey = 'modelViewerGeosets';
@@ -609,6 +610,7 @@ class M2RendererGL {
 	stopAnimation() {
 		this.current_animation = null;
 		this.animation_time = 0;
+		this.animation_paused = false;
 
 		// reset bone matrices
 		if (this.bones) {
@@ -629,7 +631,8 @@ class M2RendererGL {
 		if (!anim)
 			return;
 
-		this.animation_time += delta_time;
+		if (!this.animation_paused)
+			this.animation_time += delta_time;
 
 		// wrap animation (duration is in milliseconds)
 		const duration_sec = anim.duration / 1000;
@@ -638,6 +641,56 @@ class M2RendererGL {
 
 		// update bone matrices
 		this._update_bone_matrices();
+	}
+
+	get_animation_duration() {
+		if (this.current_animation === null)
+			return 0;
+
+		const anim_source = this.skelLoader || this.m2;
+		const anim = anim_source.animations?.[this.current_animation];
+		return anim ? anim.duration / 1000 : 0;
+	}
+
+	get_animation_frame_count() {
+		const duration = this.get_animation_duration();
+		// 60 fps
+		return Math.max(1, Math.floor(duration * 60));
+	}
+
+	get_animation_frame() {
+		const duration = this.get_animation_duration();
+		if (duration <= 0)
+			return 0;
+
+		return Math.floor((this.animation_time / duration) * this.get_animation_frame_count());
+	}
+
+	set_animation_frame(frame) {
+		const frame_count = this.get_animation_frame_count();
+		if (frame_count <= 0)
+			return;
+
+		const duration = this.get_animation_duration();
+		this.animation_time = (frame / frame_count) * duration;
+		this._update_bone_matrices();
+	}
+
+	set_animation_paused(paused) {
+		this.animation_paused = paused;
+	}
+
+	step_animation_frame(delta) {
+		const frame = this.get_animation_frame();
+		const frame_count = this.get_animation_frame_count();
+		let new_frame = frame + delta;
+
+		if (new_frame < 0)
+			new_frame = frame_count - 1;
+		else if (new_frame >= frame_count)
+			new_frame = 0;
+
+		this.set_animation_frame(new_frame);
 	}
 
 	_update_bone_matrices() {

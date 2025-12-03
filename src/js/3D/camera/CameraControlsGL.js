@@ -255,6 +255,9 @@ class CameraControlsGL {
 	}
 
 	on_mouse_move(event) {
+		if (this.state === STATE_NONE)
+			return;
+
 		event.preventDefault();
 
 		if (this.state === STATE_ROTATING) {
