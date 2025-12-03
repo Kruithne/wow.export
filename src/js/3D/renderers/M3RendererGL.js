@@ -5,7 +5,6 @@
 */
 
 const core = require('../../core');
-const log = require('../../log');
 
 const M3Loader = require('../loaders/M3Loader');
 const Shaders = require('../Shaders');
@@ -80,10 +79,10 @@ class M3RendererGL {
 		const m3 = this.m3;
 		const gl = this.gl;
 
-		// build interleaved vertex buffer
-		// format: position(3f) + normal(3f) + uv(2f) = 32 bytes (no bones for M3)
+		// build interleaved vertex buffer matching M2 format
+		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) = 40 bytes
 		const vertex_count = m3.vertices.length / 3;
-		const stride = 32;
+		const stride = 40;
 		const vertex_data = new ArrayBuffer(vertex_count * stride);
 		const vertex_view = new DataView(vertex_data);
 
@@ -102,9 +101,21 @@ class M3RendererGL {
 			vertex_view.setFloat32(offset + 16, m3.normals ? m3.normals[v_idx + 1] : 1, true);
 			vertex_view.setFloat32(offset + 20, m3.normals ? m3.normals[v_idx + 2] : 0, true);
 
+			// bone indices (all zero - no skinning)
+			vertex_view.setUint8(offset + 24, 0);
+			vertex_view.setUint8(offset + 25, 0);
+			vertex_view.setUint8(offset + 26, 0);
+			vertex_view.setUint8(offset + 27, 0);
+
+			// bone weights (first weight = 255, rest = 0 for identity transform)
+			vertex_view.setUint8(offset + 28, 255);
+			vertex_view.setUint8(offset + 29, 0);
+			vertex_view.setUint8(offset + 30, 0);
+			vertex_view.setUint8(offset + 31, 0);
+
 			// texcoord
-			vertex_view.setFloat32(offset + 24, m3.uv ? m3.uv[uv_idx] : 0, true);
-			vertex_view.setFloat32(offset + 28, m3.uv ? m3.uv[uv_idx + 1] : 0, true);
+			vertex_view.setFloat32(offset + 32, m3.uv ? m3.uv[uv_idx] : 0, true);
+			vertex_view.setFloat32(offset + 36, m3.uv ? m3.uv[uv_idx + 1] : 0, true);
 		}
 
 		// create VAO
@@ -117,57 +128,33 @@ class M3RendererGL {
 		this.buffers.push(vbo);
 		vao.vbo = vbo;
 
-		// setup vertex attributes (simplified - no bone data)
-		// a_position: location 0, 3 floats
-		gl.enableVertexAttribArray(0);
-		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, 0);
-
-		// a_normal: location 1, 3 floats
-		gl.enableVertexAttribArray(1);
-		gl.vertexAttribPointer(1, 3, gl.FLOAT, false, stride, 12);
-
-		// a_bone_indices: location 2, 4 ubytes (dummy - all zeros)
-		gl.enableVertexAttribArray(2);
-		gl.vertexAttribPointer(2, 4, gl.UNSIGNED_BYTE, false, stride, 0); // point to position as dummy
-		gl.vertexAttrib4f(2, 0, 0, 0, 0);
-		gl.disableVertexAttribArray(2);
-
-		// a_bone_weights: location 3, 4 ubytes (dummy - all zeros)
-		gl.enableVertexAttribArray(3);
-		gl.vertexAttribPointer(3, 4, gl.UNSIGNED_BYTE, true, stride, 0);
-		gl.vertexAttrib4f(3, 0, 0, 0, 0);
-		gl.disableVertexAttribArray(3);
-
-		// a_texcoord: location 4, 2 floats
-		gl.enableVertexAttribArray(4);
-		gl.vertexAttribPointer(4, 2, gl.FLOAT, false, stride, 24);
+		// use same vertex format as M2
+		vao.setup_m2_vertex_format();
 
 		this.vaos.push(vao);
 
-		// build draw calls per geoset for specified LOD
+		// build draw calls for LOD 0 geosets
 		this.draw_calls = [];
 
-		for (let lod_idx = 0; lod_idx < m3.lodLevels.length; lod_idx++) {
-			if (lod_idx !== index)
-				continue;
+		const geosets_per_lod = m3.geosetCountPerLOD || m3.geosets.length;
+		const start_geo = index * geosets_per_lod;
+		const end_geo = Math.min(start_geo + geosets_per_lod, m3.geosets.length);
 
-			for (let geo_idx = m3.geosetCountPerLOD * lod_idx; geo_idx < m3.geosetCountPerLOD * (lod_idx + 1); geo_idx++) {
-				const geoset = m3.geosets[geo_idx];
+		for (let geo_idx = start_geo; geo_idx < end_geo; geo_idx++) {
+			const geoset = m3.geosets[geo_idx];
 
-				// create index buffer for this geoset
-				const indices = new Uint16Array(m3.indices.slice(geoset.indexStart, geoset.indexStart + geoset.indexCount));
-				const ebo = gl.createBuffer();
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-				this.buffers.push(ebo);
+			const indices = new Uint16Array(m3.indices.slice(geoset.indexStart, geoset.indexStart + geoset.indexCount));
+			const ebo = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+			this.buffers.push(ebo);
 
-				this.draw_calls.push({
-					vao: vao,
-					ebo: ebo,
-					count: geoset.indexCount,
-					visible: true
-				});
-			}
+			this.draw_calls.push({
+				vao: vao,
+				ebo: ebo,
+				count: geoset.indexCount,
+				visible: true
+			});
 		}
 	}
 
@@ -226,8 +213,11 @@ class M3RendererGL {
 		shader.set_uniform_3f('u_view_up', 0, 1, 0);
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
-		// no bones
-		shader.set_uniform_1i('u_bone_count', 0);
+		// set identity bone matrix for bone 0 (M3 has no skeleton)
+		shader.set_uniform_1i('u_bone_count', 1);
+		const loc = shader.get_uniform_location('u_bone_matrices');
+		if (loc !== null)
+			gl.uniformMatrix4fv(loc, false, IDENTITY_MAT4);
 
 		// texture matrix defaults
 		shader.set_uniform_1i('u_has_tex_matrix1', 0);

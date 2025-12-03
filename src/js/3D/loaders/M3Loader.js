@@ -72,12 +72,13 @@ class M3Loader {
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();
 			const chunkSize = this.data.readUInt32LE();
-			const nextChunkPos = this.data.offset + chunkSize + 8;
-			
-			log.write('M3Loader: Processing chunk %s (%d bytes)', this.fourCCToString(chunkID), chunkSize);
-
 			const propertyA = this.data.readUInt32LE();
 			const propertyB = this.data.readUInt32LE();
+
+			// chunkSize is data size after 16-byte header (id + size + propA + propB)
+			const nextChunkPos = this.data.offset + chunkSize;
+
+			log.write('M3Loader: Processing chunk %s (%d bytes)', this.fourCCToString(chunkID), chunkSize);
 
 			switch (chunkID) {
 				case CHUNK_M3DT: this.parseChunk_M3DT(chunkSize); break;
@@ -85,7 +86,7 @@ class M3Loader {
 				case CHUNK_MES3: this.parseChunk_MES3(chunkSize); break;
 				case CHUNK_M3CL: this.parseChunk_M3CL(chunkSize); break;
 			}
-	
+
 			// Ensure that we start at the next chunk exactly.
 			if (this.data.offset !== nextChunkPos)
 				log.write('M3Loader: Warning, chunk %s did not end at expected position (%d != %d)', this.fourCCToString(chunkID), this.data.offset, nextChunkPos);
@@ -191,12 +192,15 @@ class M3Loader {
 				break;
 			}
 			case CHUNK_VUV0:
+			case CHUNK_VUV1:
 			case CHUNK_VUV2:
 			case CHUNK_VUV3:
 			case CHUNK_VUV4:
+			case CHUNK_VUV5:
 			{
-				if (format != "2F32")
+				if (format != '2F32')
 					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
+
 				const floatArray = this.ReadBufferAsFormat(format, chunkSize);
 				const fixedUVs = new Float32Array(floatArray.length);
 				for (let i = 0; i < floatArray.length; i += 2) {
@@ -206,7 +210,7 @@ class M3Loader {
 
 				if (chunkID == CHUNK_VUV0)
 					this.uv = fixedUVs;
-				else if (chunkID == CHUNK_VUV2)
+				else if (chunkID == CHUNK_VUV1)
 					this.uv1 = fixedUVs;
 				else if (chunkID == CHUNK_VUV2)
 					this.uv2 = fixedUVs;
@@ -214,6 +218,9 @@ class M3Loader {
 					this.uv3 = fixedUVs;
 				else if (chunkID == CHUNK_VUV4)
 					this.uv4 = fixedUVs;
+				else if (chunkID == CHUNK_VUV5)
+					this.uv5 = fixedUVs;
+
 				break;
 			}
 
@@ -301,7 +308,7 @@ class M3Loader {
 		}
 	}
 
-	/** 
+	/**
 	 * Parse RBAT sub-chunk.
 	 * @param {number} numBatches Number of batches.
 	 */
