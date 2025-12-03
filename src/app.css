@@ -1839,8 +1839,39 @@ input[type=number]::-webkit-outer-spin-button {
 	border-radius: 2px;
 }
 
-#background-color-input:hover {
+#background-color-input:hover,
+#chr-background-color-input:hover {
 	border-color: var(--accent);
+}
+
+#chr-background-color-input {
+	width: 20px;
+	height: 20px;
+	margin-right: 3px;
+	border: 2px solid var(--border);
+	border-radius: 4px;
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	padding: 0;
+}
+
+#chr-background-color-input::-webkit-color-swatch-wrapper {
+	padding: 0;
+	border: none;
+	border-radius: 2px;
+}
+
+#chr-background-color-input::-webkit-color-swatch {
+	border: none;
+	border-radius: 2px;
+}
+
+#chr-background-color-input::-moz-color-swatch {
+	border: none;
+	border-radius: 2px;
 }
 
 #model-texture-preview {

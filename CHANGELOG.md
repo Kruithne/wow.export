@@ -16,6 +16,7 @@
 - Added quick filters for OGG, MP3 and UNK to the audio tab.
 - Added quick filters for LUA, XML, TXT, SBT, WTF, HTM, TOC, XSD and SRT to the text tab.
 - Added ability to view raw binary strings from the install manifest tab.
+- Added ability to choose custom coloured backgrounds on the character viewer.
 - Unknown cinematics are now immediately available in the cinematics tab.
 - Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.

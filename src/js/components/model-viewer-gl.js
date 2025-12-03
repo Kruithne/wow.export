@@ -249,8 +249,12 @@ module.exports = {
 			this.controls.update();
 
 			// clear with appropriate background
-			if (core.view.config.modelViewerShowBackground) {
-				const [r, g, b] = parse_hex_color(core.view.config.modelViewerBackgroundColor);
+			const is_chr = this.context.useCharacterControls;
+			const show_bg = is_chr ? core.view.config.chrShowBackground : core.view.config.modelViewerShowBackground;
+			const bg_color = is_chr ? core.view.config.chrBackgroundColor : core.view.config.modelViewerBackgroundColor;
+
+			if (show_bg) {
+				const [r, g, b] = parse_hex_color(bg_color);
 				this.gl_context.set_clear_color(r, g, b, 1);
 			} else {
 				this.gl_context.set_clear_color(0, 0, 0, 0);

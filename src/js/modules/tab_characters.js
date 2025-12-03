@@ -1229,6 +1229,14 @@ module.exports = {
 								<input type="checkbox" v-model="$core.view.config.chrUse3DCamera"/>
 								<span>Use 3D camera</span>
 							</label>
+							<label class="ui-checkbox" title="Show a background color in the 3D viewport">
+								<input type="checkbox" v-model="$core.view.config.chrShowBackground"/>
+								<span>Show background</span>
+							</label>
+							<label v-if="$core.view.config.chrShowBackground" class="ui-checkbox" title="Click to change background color">
+								<input type="color" id="chr-background-color-input" v-model="$core.view.config.chrBackgroundColor"/>
+								<span>Background color</span>
+							</label>
 						</div>
 					</div>
 					<ul class="ui-multi-button character-export-tabs">
