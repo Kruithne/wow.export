@@ -20,8 +20,6 @@ const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
 
-const DEFAULT_MODEL_COLOR = [0.34, 0.68, 0.89]; // 0x57afe2
-
 // pixel shader name to ID mapping (matches fragment shader switch cases)
 const PIXEL_SHADER_IDS = {
 	'Combiners_Opaque': 0,
@@ -70,9 +68,6 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 1, 0,
 	0, 0, 0, 1
 ]);
-
-// temp matrix for calculations
-const TEMP_MAT4 = new Float32Array(16);
 
 /**
  * multiply two 4x4 matrices (column-major): out = a * b
