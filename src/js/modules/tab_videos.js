@@ -381,6 +381,99 @@ const get_mp4_url = async (payload) => {
 	return poll_for_url();
 };
 
+let kino_processing_cancelled = false;
+
+const trigger_kino_processing = async () => {
+	if (!video_file_data_ids || video_file_data_ids.length === 0) {
+		log.write('kino_processing: no video file data ids loaded');
+		core.setToast('error', 'Videos not loaded. Open the Videos tab first.');
+		return;
+	}
+
+	kino_processing_cancelled = false;
+	const total = video_file_data_ids.length;
+	let processed = 0;
+	let errors = 0;
+
+	log.write('kino_processing: starting processing of %d videos', total);
+
+	const update_toast = () => {
+		if (kino_processing_cancelled)
+			return;
+
+		const msg = `Processing videos: ${processed}/${total} (${errors} errors)`;
+		core.setToast('progress', msg, { 'Cancel': cancel_processing }, -1, true);
+	};
+
+	const cancel_processing = () => {
+		kino_processing_cancelled = true;
+		log.write('kino_processing: cancelled by user at %d/%d', processed, total);
+		core.setToast('info', `Video processing cancelled. Processed ${processed}/${total} videos.`);
+	};
+
+	core.events.once('toast-cancelled', cancel_processing);
+
+	update_toast();
+
+	for (const file_data_id of video_file_data_ids) {
+		if (kino_processing_cancelled)
+			break;
+
+		try {
+			const build_result = await build_payload(core, file_data_id);
+			if (!build_result) {
+				log.write('kino_processing: failed to build payload for fdid %d', file_data_id);
+				errors++;
+				processed++;
+				update_toast();
+				continue;
+			}
+
+			const { payload } = build_result;
+
+			// poll until we get 200 or error
+			let done = false;
+			while (!done && !kino_processing_cancelled) {
+				const res = await fetch(constants.KINO.API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'User-Agent': constants.USER_AGENT
+					},
+					body: JSON.stringify(payload)
+				});
+
+				if (res.status === 200) {
+					done = true;
+				} else if (res.status === 202) {
+					await new Promise(resolve => setTimeout(resolve, constants.KINO.POLL_INTERVAL));
+				} else {
+					log.write('kino_processing: unexpected status %d for fdid %d', res.status, file_data_id);
+					errors++;
+					done = true;
+				}
+			}
+		} catch (e) {
+			log.write('kino_processing: error processing fdid %d: %s', file_data_id, e.message);
+			errors++;
+		}
+
+		processed++;
+		update_toast();
+	}
+
+	core.events.off('toast-cancelled', cancel_processing);
+
+	if (!kino_processing_cancelled) {
+		log.write('kino_processing: completed %d/%d videos with %d errors', processed, total, errors);
+		core.setToast('success', `Video processing complete. ${processed}/${total} videos, ${errors} errors.`);
+	}
+};
+
+// expose to window in dev mode
+if (!BUILD_RELEASE)
+	window.trigger_kino_processing = trigger_kino_processing;
+
 module.exports = {
 	register() {
 		this.registerNavButton('Videos', 'film.svg', InstallType.CASC);
