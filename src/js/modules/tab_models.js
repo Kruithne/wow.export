@@ -14,7 +14,7 @@ const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
 
 const M2RendererGL = require('../3D/renderers/M2RendererGL');
-const M3Renderer = require('../3D/renderers/M3Renderer');
+const M3RendererGL = require('../3D/renderers/M3RendererGL');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 const M3Exporter = require('../3D/exporters/M3Exporter');
 
@@ -25,7 +25,6 @@ const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
 const uvDrawer = require('../ui/uv-drawer');
 const AnimMapper = require('../3D/AnimMapper');
-const modelHelpers = require('../ui/model-viewer-helpers');
 
 const MODEL_TYPE_M3 = Symbol('modelM3');
 const MODEL_TYPE_M2 = Symbol('modelM2');
@@ -40,8 +39,6 @@ const export_extensions = {
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();
 let selected_skin_name = null;
-
-let camera, scene, grid, render_group;
 
 let active_renderer;
 let active_path;
@@ -167,7 +164,7 @@ const preview_model = async (core, file_name) => {
 			is_m2 = true;
 		} else if (file_name_lower.endsWith('.m3')) {
 			core.view.modelViewerActiveType = 'm3';
-			active_renderer = new M3Renderer(file, render_group, true, core.view.config.modelViewerShowTextures);
+			active_renderer = new M3RendererGL(file, gl_context, true, core.view.config.modelViewerShowTextures);
 			is_m3 = true;
 		} else if (file_name_lower.endsWith('.wmo')) {
 			core.view.modelViewerActiveType = 'wmo';
@@ -700,40 +697,9 @@ module.exports = {
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 
-			const existing_context = this.$core.view.modelViewerContext;
-			if (existing_context) {
-				// reuse existing 3D objects from previous module load
-				camera = existing_context.camera;
-				scene = existing_context.scene;
-				render_group = existing_context.renderGroup;
-
-				// find grid in scene
-				grid = scene.children.find(c => c instanceof THREE.GridHelper);
-			} else {
-				// first time initialization
-				camera = new THREE.PerspectiveCamera(70, undefined, 0.01, 2000);
-				render_group = new THREE.Group();
-
-				scene = new THREE.Scene();
-				const light = new THREE.HemisphereLight(0xffffff, 0x080820, 3);
-				scene.add(light);
-				scene.add(render_group);
-
-				if (this.$core.view.config.modelViewerShowBackground)
-					scene.background = new THREE.Color(this.$core.view.config.modelViewerBackgroundColor);
-
-				grid = new THREE.GridHelper(100, 100, 0x57afe2, 0x808080);
-
-				if (this.$core.view.config.modelViewerShowGrid)
-					scene.add(grid);
-
-				render_group.rotateOnAxis(new THREE.Vector3(0, 1, 0), -90 * (Math.PI / 180));
-
-				modelHelpers.setup_grid_watcher(scene, grid);
-				modelHelpers.setup_background_watchers(scene);
-			}
-
-			this.$core.view.modelViewerContext = Object.seal({ camera, scene, controls: null, renderGroup: render_group, getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+			// initialize model viewer context if not already present (gl_context populated by ModelViewerGL on mount)
+			if (!this.$core.view.modelViewerContext)
+				this.$core.view.modelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
 
 			this.$core.hideLoadingScreen();
 

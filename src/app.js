@@ -99,10 +99,6 @@ const Shaders = require('./js/3D/Shaders');
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
 
-const THREE = require('three');
-window.THREE = THREE;
-THREE.ColorManagement.enabled = true;
-
 const modules = require('./js/modules');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.

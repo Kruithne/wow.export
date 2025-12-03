@@ -14,7 +14,6 @@ const COMPONENTS = {
 	FileField: require('./components/file-field'),
 	ComboBox: require('./components/combobox'),
 	Slider: require('./components/slider'),
-	ModelViewer: require('./components/model-viewer'),
 	ModelViewerGL: require('./components/model-viewer-gl'),
 	MapViewer: require('./components/map-viewer'),
 	DataTable: require('./components/data-table'),
@@ -66,7 +65,6 @@ const COMPONENT_PATH_MAP = {
 	FileField: 'file-field',
 	ComboBox: 'combobox',
 	Slider: 'slider',
-	ModelViewer: 'model-viewer',
 	ModelViewerGL: 'model-viewer-gl',
 	MapViewer: 'map-viewer',
 	DataTable: 'data-table',
@@ -80,7 +78,7 @@ let component_cache = {};
 
 // components that should not be reloaded. in an ideal world we would support hot-reloading
 // these but it was too much effort at the time, so c'est la vie
-const EXCLUDE_FROM_RELOAD = new Set(['ModelViewer', 'ModelViewerGL', 'MapViewer']);
+const EXCLUDE_FROM_RELOAD = new Set(['ModelViewerGL', 'MapViewer']);
 
 const component_registry = new Proxy({}, {
 	get(target, name) {
