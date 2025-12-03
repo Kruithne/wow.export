@@ -63,14 +63,8 @@ const load_track = async (core) => {
 				core.view.soundPlayerTitle += ' (MP3 Auto Detected)';
 		}
 
-		log.write('audio decode: buffer length=%d, byteOffset=%d, byteLength=%d', file_data.raw.buffer.byteLength, file_data.raw.byteOffset, file_data.raw.byteLength);
-		log.write('audio decode: first 16 bytes: %s', file_data.readHexString(16));
-		file_data.seek(0);
-
-		const array_buffer = file_data.raw.buffer.slice(file_data.raw.byteOffset, file_data.raw.byteOffset + file_data.raw.byteLength);
-		log.write('audio decode: sliced array_buffer length=%d', array_buffer.byteLength);
-
-		await player.load(array_buffer);
+		player.stop();
+		player.buffer = await file_data.decodeAudio(player.context);
 		core.view.soundPlayerDuration = player.get_duration();
 		core.hideToast();
 		return true;
