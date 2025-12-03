@@ -89,26 +89,23 @@ module.exports = {
 					<span @click.self="copy_cell(context.node.cellValue)">Copy cell contents</span>
 				</component>
 			</div>
-			<div class="filter data-table-filter">
-				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
-				<input type="text" id="data-table-filter-input" v-model="$core.view.userInputFilterDataTable" placeholder="Filter data table rows..." />
-			</div>
-			<div class="right-panel">
-				<span class="header">Copy</span>
+			<div id="tab-data-options">
 				<label class="ui-checkbox" title="Include header row when copying">
 					<input type="checkbox" v-model="$core.view.config.dataCopyHeader"/>
 					<span>Copy Header</span>
 				</label>
-
-				<span class="header">Export</span>
 				<label class="ui-checkbox" title="Export all rows">
 					<input type="checkbox" v-model="$core.view.config.dataExportAll"/>
 					<span>Export all rows</span>
 				</label>
-				<div class="right-panel-buttons">
-					<input type="button" value="Export as CSV" @click="export_csv" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
-					<input type="button" value="Export DB2" @click="export_db2" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
+			</div>
+			<div id="tab-data-tray">
+				<div class="filter">
+					<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
+					<input type="text" id="data-table-filter-input" v-model="$core.view.userInputFilterDataTable" placeholder="Filter data table rows..." />
 				</div>
+				<input type="button" value="Export as CSV" @click="export_csv" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
+				<input type="button" value="Export DB2" @click="export_db2" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
 			</div>
 		</div>
 	`,

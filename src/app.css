@@ -2140,27 +2140,51 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #tab-data {
-	grid-template-columns: 1fr 6fr 1fr;
+	grid-template-columns: 1fr 6fr;
+	grid-template-rows: 1fr auto 60px;
 }
 
-#tab-data .right-panel {
-	padding: 20px 20px 20px 0;
+#tab-data > .list-container:first-child {
+	grid-column: 1;
+	grid-row: 1 / span 2;
 }
 
-#tab-data .right-panel-buttons {
-	display: flex;
-	flex-direction: column;
-	margin-top: 10px;
-	gap: 10px;
-	padding: 10px;
+#tab-data > .filter:nth-child(2) {
+	grid-column: 1;
+	grid-row: 3;
+}
+
+#tab-data > .list-container:nth-child(3) {
+	grid-column: 2;
+	grid-row: 1;
 }
 
 #tab-data .list-container {
 	min-width: 20vw;
 }
 
-#tab-data .data-table-filter {
+#tab-data-options {
 	grid-column: 2;
+	grid-row: 2;
+	display: flex;
+	padding: 10px 10px 0 10px;
+	justify-content: flex-end;
+}
+
+#tab-data-tray {
+	grid-column: 2;
+	grid-row: 3;
+	display: flex;
+	margin: 10px;
+}
+
+#tab-data-tray .filter {
+	flex-grow: 1;
+	grid-row: unset;
+}
+
+#tab-data-tray input[type=button] {
+	margin-left: 5px;
 }
 
 .filter {
