@@ -384,17 +384,6 @@ document.addEventListener('click', function(e) {
 
 		computed: {
 			/**
-			 * Returns the location of the last export manifest.
-			 * @returns {string}
-			 */
-			lastExportPath: function() {
-				if (this.config.lastExportFile.length > 0)
-					return this.config.lastExportFile;
-
-				return constants.LAST_EXPORT;
-			},
-
-			/**
 			 * Return the formatted duration of the selected track on the sound player.
 			 */
 			soundPlayerDurationFormatted: function() {

@@ -330,11 +330,6 @@ module.exports = {
 				<p>Primary <input type="text" class="long" v-model.trim="$core.view.configEdit.dbdFilenameURL"/></p>
 				<p>Fallback <input type="text" class="long" v-model.trim="$core.view.configEdit.dbdFilenameFallbackURL" /></p>
 			</div>
-			<div>
-				<h1>Last Export File Location</h1>
-				<p>Override the text file location which export manifest entries are written to.</p>
-				<input type="text" v-model.trim="$core.view.configEdit.lastExportFile" :placeholder="last_export_path_default" class="long"/>
-			</div>
 		</div>
 		<div id="config-buttons">
 			<input type="button" value="Discard" :class="{ disabled: $core.view.isBusy }" @click="handle_discard"/>
@@ -353,10 +348,6 @@ module.exports = {
 	computed: {
 		is_edit_export_path_concerning() {
 			return !!this.$core.view.configEdit?.exportDirectory?.match(/\s/g);
-		},
-
-		last_export_path_default() {
-			return constants.LAST_EXPORT;
 		},
 
 		cache_size_formatted() {

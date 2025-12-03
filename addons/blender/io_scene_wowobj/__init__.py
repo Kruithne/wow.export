@@ -21,9 +21,9 @@
 bl_info = {
     'name': 'Import WoW OBJ files with doodads',
     'author': 'Marlamin, Kruithne',
-    'version': (0, 3, 15),
-    'blender': (2, 93, 0),
-    'location': 'File > Import-Export > WoW M2/WMO/ADT (.obj)',
+    'version': (0, 3, 16),
+    'blender': (5, 0, 0),
+    'location': 'File > Import-Export > Import WoW Object (.obj)',
     'description': 'Import OBJ files exported by wow.export with WMOs and doodads',
     'warning': '',
     'wiki_url': '',
@@ -36,9 +36,24 @@ if 'bpy' in locals():
         importlib.reload(import_wowobj)
 
 import bpy
+import bpy.utils.previews
 import os
+import sys
 
 from bpy_extras.io_utils import (ImportHelper, orientation_helper)
+
+preview_collections = {}
+
+
+def get_last_export_path():
+    """Get the platform-specific path to the last_export file (nw.js data path)."""
+    if sys.platform == 'win32':
+        base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+        return os.path.join(base, 'wow.export', 'User Data', 'Default', 'last_export')
+    elif sys.platform == 'darwin':
+        return os.path.expanduser('~/Library/Application Support/wow.export/User Data/Default/last_export')
+    else:
+        return os.path.expanduser('~/.config/wow.export/User Data/Default/last_export')
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 
@@ -145,18 +160,155 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, 'importLiquid')
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW M2/WMO/ADT (.obj)')
+    self.layout.operator(ImportWoWOBJ.bl_idname, text='WoW Object (.obj)')
+
+
+class WOWEXPORT_OT_import_dialog(bpy.types.Operator):
+    """Open the WoW Object import dialog"""
+    bl_idname = 'wowexport.import_dialog'
+    bl_label = 'Import WoW OBJ'
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        bpy.ops.import_scene.wowobj('INVOKE_DEFAULT')
+        return {'FINISHED'}
+
+
+class WOWEXPORT_OT_import_last_export(bpy.types.Operator):
+    """Import models from the last wow.export session"""
+    bl_idname = 'wowexport.import_last_export'
+    bl_label = 'Import Last Export'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        export_file = get_last_export_path()
+
+        if not os.path.exists(export_file):
+            self.report({'ERROR'}, f'Export file not found: {export_file}')
+            return {'CANCELLED'}
+
+        # prefixes mapped to import handlers
+        obj_prefixes = ('M2_OBJ:', 'M3_OBJ:', 'WMO_OBJ:', 'ADT_OBJ:')
+        gltf_prefixes = ('M2_GLTF:', 'M2_GLB:', 'M3_GLTF:', 'M3_GLB:', 'WMO_GLTF:', 'WMO_GLB:')
+        stl_prefixes = ('M2_STL:', 'M3_STL:', 'WMO_STL:')
+
+        imported_count = 0
+
+        try:
+            with open(export_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    matched = False
+
+                    # obj imports using our custom importer
+                    for prefix in obj_prefixes:
+                        if line.startswith(prefix):
+                            file_path = line[len(prefix):]
+                            if os.path.exists(file_path):
+                                bpy.ops.import_scene.wowobj(filepath=file_path)
+                                imported_count += 1
+                            else:
+                                self.report({'WARNING'}, f'File not found: {file_path}')
+                            matched = True
+                            break
+
+                    if matched:
+                        continue
+
+                    # gltf imports using blender's importer
+                    for prefix in gltf_prefixes:
+                        if line.startswith(prefix):
+                            file_path = line[len(prefix):]
+                            if os.path.exists(file_path):
+                                bpy.ops.import_scene.gltf(filepath=file_path)
+                                imported_count += 1
+                            else:
+                                self.report({'WARNING'}, f'File not found: {file_path}')
+                            matched = True
+                            break
+
+                    if matched:
+                        continue
+
+                    # stl imports using blender's importer
+                    for prefix in stl_prefixes:
+                        if line.startswith(prefix):
+                            file_path = line[len(prefix):]
+                            if os.path.exists(file_path):
+                                bpy.ops.import_mesh.stl(filepath=file_path)
+                                imported_count += 1
+                            else:
+                                self.report({'WARNING'}, f'File not found: {file_path}')
+                            break
+
+            if imported_count > 0:
+                self.report({'INFO'}, f'Imported {imported_count} object(s)')
+            else:
+                self.report({'WARNING'}, 'No importable objects found in last export')
+
+            return {'FINISHED'}
+
+        except Exception as e:
+            self.report({'ERROR'}, f'Error importing: {str(e)}')
+            return {'CANCELLED'}
+
+
+class WOWEXPORT_PT_sidebar_panel(bpy.types.Panel):
+    """wow.export tools panel in the 3D viewport sidebar"""
+    bl_label = 'wow.export'
+    bl_idname = 'WOWEXPORT_PT_sidebar_panel'
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'wow.export'
+
+    def draw(self, context):
+        layout = self.layout
+
+        pcoll = preview_collections.get('main')
+        if pcoll and 'logo' in pcoll:
+            row = layout.row()
+            row.alignment = 'CENTER'
+            row.template_icon(icon_value=pcoll['logo'].icon_id, scale=2.5)
+            layout.separator(factor=0.75)
+
+        layout.operator('wowexport.import_dialog')
+        layout.operator('wowexport.import_last_export')
+
+
+classes = (
+    ImportWoWOBJ,
+    WOWEXPORT_OT_import_dialog,
+    WOWEXPORT_OT_import_last_export,
+    WOWEXPORT_PT_sidebar_panel,
+)
+
 
 def register():
     from bpy.utils import register_class
-    register_class(ImportWoWOBJ)
+    for cls in classes:
+        register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+
+    pcoll = bpy.utils.previews.new()
+    logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
+    if os.path.exists(logo_path):
+        pcoll.load('logo', logo_path, 'IMAGE')
+    preview_collections['main'] = pcoll
 
 
 def unregister():
     from bpy.utils import unregister_class
-    unregister_class(ImportWoWOBJ)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    for cls in reversed(classes):
+        unregister_class(cls)
+
+    for pcoll in preview_collections.values():
+        bpy.utils.previews.remove(pcoll)
+    preview_collections.clear()
+
 
 if __name__ == '__main__':
     register()
