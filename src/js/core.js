@@ -82,6 +82,11 @@ const makeNewView = () => {
 		selectionDataTable: [], // Current user selection of data table rows.
 		selectionRaw: [], // Current user selection of raw files.
 		selectionInstall: [], // Current user selection of install files.
+		installStringsView: false, // Whether to show strings view instead of manifest.
+		installStrings: [], // Extracted strings from binary file.
+		installStringsFileName: '', // Name of file strings were extracted from.
+		selectionInstallStrings: [], // Current user selection of strings.
+		userInputFilterInstallStrings: '', // Filter field for strings.
 		listfileTextures: [], // Filtered listfile for texture files.
 		listfileSounds: [], // Filtered listfile for sound files.
 		listfileVideos: [], // Filtered listfile for video files.
