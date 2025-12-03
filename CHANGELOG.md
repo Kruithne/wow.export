@@ -12,7 +12,8 @@
 - Added "Export WMO Minimap" option to export global WMO minimap as PNG.
 - Added option to export individual character textures from the character viewer.
 - Added option to export models and characters (posed) in STL format (for 3D printing).
-- Added ability to copy rows/fields from the data table viewer (CTRL + C or right-click).
+- Added ability to copy rows/fields from the data table viewer (CTRL+C or right-click).
+- Unknown cinematics are now immediately available in the cinematics tab.
 - Cinematic playback in videos tab now includes audio and subtitles.
 - Optimized "Maps" tab to load 33x (97%) faster.
 - Optimized map viewer to load initial tiles must faster.

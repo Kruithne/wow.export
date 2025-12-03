@@ -52,7 +52,6 @@ let is_binary_mode = false;
 
 let preload_textures = null;
 let preload_sounds = null;
-let preload_videos = null;
 let preload_text = null;
 let preload_fonts = null;
 let preload_models = null;
@@ -137,16 +136,17 @@ const listfile_preload_binary = async () => {
 		preload_models = new Map();
 		preload_textures = new Map();
 		preload_sounds = new Map();
-		preload_videos = new Map();
 		preload_text = new Map();
 		preload_fonts = new Map();
 
+		// pf_preload_map indices must match pf_files indices
+		// null = skip preloading (videos loaded dynamically from MovieVariation)
 		const pf_preload_map = [
 			null,
 			preload_models,
 			preload_textures,
 			preload_sounds,
-			preload_videos,
+			null,
 			preload_text,
 			preload_fonts
 		];
@@ -179,15 +179,17 @@ const listfile_preload_binary = async () => {
 			}
 		}
 
-		// preload pre-filtered files (1-5, skip 0 which is main)
+		// preload pre-filtered files (skip 0 which is main strings, skip null entries)
 		for (let i = 1; i < pf_files.length; i++) {
+			const preload_map = pf_preload_map[i];
+			if (preload_map === null)
+				continue;
+
 			const file_path = path.join(constants.CACHE.DIR_LISTFILE, pf_files[i]);
 			log.write('Preloading pf file %d: %s', i, file_path);
 
 			const file_buffer = await BufferWrapper.readFile(file_path);
 			const entry_count = file_buffer.readUInt32BE();
-
-			const preload_map = pf_preload_map[i];
 
 			for (let j = 0; j < entry_count; j++) {
 				const file_data_id = file_buffer.readUInt32BE();
@@ -424,7 +426,6 @@ const listfile_preload_legacy = async () => {
 		// Pre-filter into different extension types (unformatted fileDataID arrays)
 		preload_textures = await getFileDataIDsByExtension('.blp', 'filtering textures');
 		preload_sounds = await getFileDataIDsByExtension(['.ogg', '.mp3', '.unk_sound'], 'filtering sounds');
-		preload_videos = await getFileDataIDsByExtension('.avi', 'filtering videos');
 		preload_text = await getFileDataIDsByExtension(['.txt', '.lua', '.xml', '.sbt', '.wtf', '.htm', '.toc', '.xsd'], 'filtering text files');
 		preload_fonts = await getFileDataIDsByExtension('.ttf', 'filtering fonts');
 
@@ -533,7 +534,6 @@ const applyPreload = (rootEntries) => {
 
 			core.view.listfileTextures = formatEntries(preload_textures);
 			core.view.listfileSounds = formatEntries(preload_sounds);
-			core.view.listfileVideos = formatEntries(preload_videos);
 			core.view.listfileText = formatEntries(preload_text);
 			core.view.listfileFonts = formatEntries(preload_fonts);
 			core.view.listfileModels = formatEntries(preload_models);
@@ -571,7 +571,6 @@ const applyPreload = (rootEntries) => {
 
 			core.view.listfileTextures = filter_and_format(preload_textures);
 			core.view.listfileSounds = filter_and_format(preload_sounds);
-			core.view.listfileVideos = filter_and_format(preload_videos);
 			core.view.listfileText = filter_and_format(preload_text);
 			core.view.listfileFonts = filter_and_format(preload_fonts);
 			core.view.listfileModels = filter_and_format(preload_models);
