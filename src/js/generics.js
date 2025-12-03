@@ -167,6 +167,7 @@ function requestData(url, partialOfs, partialLen) {
 
 			const chunks = [];
 			let downloaded = 0;
+			let last_logged_pct = 0;
 			const totalSize = parseInt(res.headers['content-length'] || '0');
 
 			if (totalSize > 0)
@@ -176,8 +177,15 @@ function requestData(url, partialOfs, partialLen) {
 				chunks.push(chunk);
 				downloaded += chunk.length;
 
-				if (totalSize > 1048576 && downloaded % 1048576 < chunk.length)
-					log.write('Download progress: %d/%d bytes (%d%%)', downloaded, totalSize, Math.round((downloaded / totalSize) * 100));
+				if (totalSize > 0) {
+					const pct = Math.floor((downloaded / totalSize) * 100);
+					const pct_threshold = Math.floor(pct / 25) * 25;
+
+					if (pct_threshold > last_logged_pct && pct_threshold < 100) {
+						log.write('Download progress: %d/%d bytes (%d%%)', downloaded, totalSize, pct);
+						last_logged_pct = pct_threshold;
+					}
+				}
 			});
 
 			res.on('end', () => {
