@@ -13,13 +13,11 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
 
-const M2Renderer = require('../3D/renderers/M2Renderer');
 const M2RendererGL = require('../3D/renderers/M2RendererGL');
 const M3Renderer = require('../3D/renderers/M3Renderer');
 const M2Exporter = require('../3D/exporters/M2Exporter');
 const M3Exporter = require('../3D/exporters/M3Exporter');
 
-const WMORenderer = require('../3D/renderers/WMORenderer');
 const WMORendererGL = require('../3D/renderers/WMORendererGL');
 const WMOExporter = require('../3D/exporters/WMOExporter');
 
