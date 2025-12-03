@@ -102,7 +102,9 @@ window.Vue = Vue;
 const modules = require('./js/modules');
 
 win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
-win.on('close', () => process.exit()); // Ensure we exit when window is closed.
+// ensure clean exit when window is closed (skip in dev to avoid nw.js devtools bug)
+if (BUILD_RELEASE)
+	win.on('close', () => process.exit());
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
