@@ -1527,12 +1527,12 @@ input[type=number]::-webkit-outer-spin-button {
 	list-style: none;
 	margin-left: auto;
 	margin-right: 15px;
+	display: flex;
+	gap: 15px;
 }
 #tab-items #listbox-items .item-buttons li {
-	margin-left: 5px;
 	font-weight: bold;
 	cursor: pointer;
-	display: inline;
 }
 #tab-items #listbox-items .item-icon {
 	width: 32px;
@@ -2702,11 +2702,80 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .left-panel #listbox-chr-choice {
 	height: 313px;
 }
-/* character import buttons in top-right */
+#tab-characters .right-panel {
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	bottom: 200px;
+	width: 250px;
+	z-index: 1;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow-y: auto;
+	padding-left: 15px;
+}
+#tab-characters .right-panel .equipment-slot {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 12px;
+	background: var(--background-dark);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	font-size: 13px;
+	white-space: nowrap;
+	overflow: hidden;
+	cursor: pointer;
+}
+#tab-characters .right-panel .equipment-slot:hover {
+	background-color: var(--background-alt);
+}
+#tab-characters .right-panel .slot-label {
+	color: var(--font-alt);
+	flex-shrink: 0;
+	margin-right: 8px;
+}
+#tab-characters .right-panel .slot-item {
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+#tab-characters .right-panel .slot-empty {
+	color: var(--font-disabled);
+	font-style: italic;
+}
+#tab-characters .right-panel .item-quality-0 {
+	color: #9d9d9d;
+}
+#tab-characters .right-panel .item-quality-1 {
+	color: #ffffff;
+}
+#tab-characters .right-panel .item-quality-2 {
+	color: #1eff00;
+}
+#tab-characters .right-panel .item-quality-3 {
+	color: #0070dd;
+}
+#tab-characters .right-panel .item-quality-4 {
+	color: #a335ee;
+}
+#tab-characters .right-panel .item-quality-5 {
+	color: #ff8000;
+}
+#tab-characters .right-panel .item-quality-6 {
+	color: #e6cc80;
+}
+#tab-characters .right-panel .item-quality-7,
+#tab-characters .right-panel .item-quality-8 {
+	color: #00ccff;
+}
+/* character import buttons at bottom center */
 .character-import-buttons {
 	position: absolute;
-	right: 15px;
-	top: 20px;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
 	z-index: 1;
 	pointer-events: auto;
 	display: flex;

@@ -196,6 +196,8 @@ const makeNewView = () => {
 		chrImportChoices: [], // Temporary storage for character import choices.
 		chrImportWowheadURL: '', // Wowhead dressing room url
 		characterImportMode: 'none', // Controls visibility of character import interface ('none', 'BNET', 'WHEAD')
+		chrEquippedItems: {}, // Equipped items by slot name (e.g., { Head: item, Chest: item })
+		chrEquipmentSlotContext: null, // Context menu node for equipment slot right-click
 		realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
 		exportCancelled: false, // Export cancellation state.
 		isXmas: (new Date().getMonth() === 11),

@@ -21,6 +21,8 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
+const { EQUIPMENT_SLOTS } = require('../wow/EquipmentSlots');
+const DBItems = require('../db/caches/DBItems');
 
 const active_skins = new Map();
 let gl_context = null;
@@ -1246,8 +1248,24 @@ module.exports = {
 					</ul>
 				</div>
 			</div>
+			<div class="right-panel">
+				<div v-for="slot in equipment_slots" :key="slot" class="equipment-slot" @click="open_slot_context($event, slot)" @contextmenu.prevent="open_slot_context($event, slot)">
+					<span class="slot-label">{{ slot }}:</span>
+					<span v-if="get_equipped_item(slot)" :class="'slot-item item-quality-' + get_equipped_item(slot).quality">{{ get_equipped_item(slot).name }}</span>
+					<span v-else class="slot-empty">Empty</span>
+				</div>
+				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
+					<span @click.self="unequip_slot(context.node)">Remove Item</span>
+				</component>
+			</div>
 		</div>
 	`,
+
+	data() {
+		return {
+			equipment_slots: EQUIPMENT_SLOTS
+		};
+	},
 
 	methods: {
 		import_wmv() {
@@ -1358,6 +1376,27 @@ module.exports = {
 
 		chr_export_overlay() {
 			export_chr_texture(this.$core);
+		},
+
+		get_equipped_item(slot) {
+			const item_id = this.$core.view.chrEquippedItems[slot];
+			if (!item_id)
+				return null;
+
+			return DBItems.getItemById(item_id);
+		},
+
+		open_slot_context(event, slot) {
+			const item_id = this.$core.view.chrEquippedItems[slot];
+			if (!item_id)
+				return;
+
+			this.$core.view.chrEquipmentSlotContext = slot;
+		},
+
+		unequip_slot(slot) {
+			delete this.$core.view.chrEquippedItems[slot];
+			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
 		}
 	},
 
@@ -1400,6 +1439,9 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading creature data...');
 		await DBCreatures.initializeCreatureData();
+
+		await this.$core.progressLoadingScreen('Loading item data...');
+		await DBItems.ensureInitialized();
 
 		await this.$core.progressLoadingScreen('Loading character customization elements...');
 		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {

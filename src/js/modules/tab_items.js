@@ -9,6 +9,7 @@ const DBTextureFileData = require('../db/caches/DBTextureFileData');
 const db2 = require('../casc/db2');
 const ItemSlot = require('../wow/ItemSlot');
 const InstallType = require('../install-type');
+const DBItems = require('../db/caches/DBItems');
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -129,6 +130,7 @@ const initialize_items = async (core) => {
 	await DBModelFileData.initializeModelFileData();
 
 	await core.progressLoadingScreen('Loading item data...');
+	await DBItems.ensureInitialized();
 
 	const item_sparse_rows = await db2.ItemSparse.getAllRows();
 
@@ -230,7 +232,7 @@ module.exports = {
 	template: `
 		<div class="tab" id="tab-items">
 			<div class="list-container">
-				<component :is="$components.Itemlistbox" id="listbox-items" v-model:selection="$core.view.selectionItems" :items="$core.view.listfileItems" :filter="$core.view.userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="$core.view.contextMenus.nodeItem = $event"></component>
+				<component :is="$components.Itemlistbox" id="listbox-items" v-model:selection="$core.view.selectionItems" :items="$core.view.listfileItems" :filter="$core.view.userInputFilterItems" :keyinput="true" :includefilecount="true" unittype="item" @options="$core.view.contextMenus.nodeItem = $event" @equip="equip_item"></component>
 				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeItem" v-slot:default="context" @close="$core.view.contextMenus.nodeItem = null">
 					<span v-if="context.node.modelCount > 0" @click.self="view_models(context.node)">View related models ({{ context.node.modelCount }})</span>
 					<span v-if="context.node.textureCount > 0" @click.self="view_textures(context.node)">View related textures ({{ context.node.textureCount }})</span>
@@ -287,6 +289,18 @@ module.exports = {
 
 		toggle_checklist_item(item) {
 			item.checked = !item.checked;
+		},
+
+		equip_item(item) {
+			const slot = DBItems.getItemSlot(item.id);
+			if (!slot) {
+				this.$core.setToast('info', 'This item cannot be equipped.', null, 2000);
+				return;
+			}
+
+			this.$core.view.chrEquippedItems[slot] = item.id;
+			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
+			this.$core.setToast('success', `Equipped ${item.name} to ${slot} slot.`, null, 2000);
 		}
 	},
 

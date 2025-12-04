@@ -17,7 +17,7 @@ module.exports = {
 	 * unittype: Unit name for what the listbox contains. Used with includefilecount.
 	 */
 	props: ['items', 'filter', 'selection', 'single', 'keyinput', 'regex', 'includefilecount', 'unittype'],
-	emits: ['update:selection'],
+	emits: ['update:selection', 'equip'],
 
 	/**
 	 * Reactive instance data.
@@ -334,6 +334,7 @@ module.exports = {
 			<div :class="['item-icon', 'icon-' + item.icon ]"></div>
 			<div :class="['item-name', 'item-quality-' + item.quality]">{{ item.name }} <span class="item-id">({{ item.id }})</span></div>
 			<ul class="item-buttons">
+				<li @click.self="$emit('equip', item)">Equip</li>
 				<li @click.self="$emit('options', item)">Options</li>
 			</ul>
 		</div>
