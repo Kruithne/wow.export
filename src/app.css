@@ -2835,8 +2835,9 @@ input[type=number]::-webkit-outer-spin-button {
 /* floating import panel */
 #character-import-panel-floating {
 	position: absolute;
-	right: 20px;
-	top: 60px;
+	left: 50%;
+	bottom: 70px;
+	transform: translateX(-50%);
 	width: 280px;
 	background-color: var(--background);
 	border: 1px solid var(--border);
