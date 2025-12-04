@@ -81,13 +81,15 @@ function wowhead_parse_hash(hash) {
 function parse_v15(segments, version) {
 	const race = decode(segments[0]);
 
-	const combined = segments[2] || '';
+	// segment 1 is: gender (char 0) + class (char 1) + spec (char 2) + level (rest)
+	const combined = segments[1] || '';
 	const gender = charset.indexOf(combined[0] || '0');
 	const clazz = charset.indexOf(combined[1] || '0');
 	const spec = charset.indexOf(combined[2] || '0');
 	const level = decode(combined.substring(3));
 
-	const opts = segments[4] || '';
+	// segment 2 is: npcOptions (char 0) + pepe (char 1) + mount (rest)
+	const opts = segments[2] || '';
 	const npc_options = charset.indexOf(opts[0] || '0');
 	const pepe = charset.indexOf(opts[1] || '0');
 	const mount = decode(opts.substring(2));

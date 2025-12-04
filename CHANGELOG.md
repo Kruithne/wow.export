@@ -40,6 +40,7 @@
 - Fixed an issue that caused characters/models to appear with white eyes.
 - Fixed an issue that caused the wrong paths to appear in the toast after exporting.
 - Fixed an issue that caused audio playback to stop after 13~ seconds.
+- Fixed an issue that caused Wowhead character imports to use the wrong body type.
 - Internal: Fixed long-standing double-close bug in development builds.
 
 ## 0.2.6 (24-11-2025)
