@@ -1322,6 +1322,9 @@ module.exports = {
 				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
 					<span @click.self="unequip_slot(context.node)">Remove Item</span>
 				</component>
+				<div class="chr-cust-controls">
+					<span @click="clear_all_equipment">Clear All Equipment</span>
+				</div>
 			</div>
 		</div>
 	`,
@@ -1462,6 +1465,10 @@ module.exports = {
 		unequip_slot(slot_id) {
 			delete this.$core.view.chrEquippedItems[slot_id];
 			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
+		},
+
+		clear_all_equipment() {
+			this.$core.view.chrEquippedItems = {};
 		}
 	},
 
