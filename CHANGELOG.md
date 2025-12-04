@@ -22,6 +22,7 @@
 - Added right-click context menus to most file lists, allowing numerous new actions.
 - Added an item quality filter to the items tab.
 - Added the option to import characters from Classic realms.
+- Added "Data" tab to legacy MPQ installations allowing viewing/exporting of DBC tables.
 - Blender: Added a wow.export tab to the View3D toolbar, providing quick access to importing.
 - Blender: Added an "Import Last Export" button to automatically import the last export.
 - Unknown cinematics are now immediately available in the cinematics tab.

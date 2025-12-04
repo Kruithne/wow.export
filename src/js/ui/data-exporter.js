@@ -173,4 +173,52 @@ const exportDataTableSQL = async (headers, rows, tableName, schema, createTable)
 	helper.finish();
 };
 
-module.exports = { exportDataTable, exportDataTableSQL, exportRawDB2 };
+/**
+ * Export raw DBC file from MPQ archive.
+ * @param {string} tableName - Name of the table being exported
+ * @param {string} filePath - Full path to the file in MPQ (including MPQ name prefix)
+ * @param {MPQInstall} mpq - MPQ install instance
+ */
+const exportRawDBC = async (tableName, filePath, mpq) => {
+	if (!tableName || !filePath || !mpq) {
+		core.setToast('info', 'No DBC file information available to export.');
+		return;
+	}
+
+	const helper = new ExportHelper(1, 'dbc');
+	helper.start();
+
+	const exportPaths = core.openLastExportStream();
+
+	try {
+		const fileName = `${tableName}.dbc`;
+		const exportPath = ExportHelper.getExportPath(fileName);
+
+		const overwriteFiles = core.view.config.overwriteFiles;
+		if (!overwriteFiles && await generics.fileExists(exportPath)) {
+			log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
+			helper.mark(fileName, true);
+		} else {
+			const raw_data = mpq.getFile(filePath);
+
+			if (!raw_data)
+				throw new Error('Failed to retrieve DBC file from MPQ');
+
+			await fsp.mkdir(require('path').dirname(exportPath), { recursive: true });
+			await fsp.writeFile(exportPath, Buffer.from(raw_data));
+			await exportPaths?.writeLine('DBC:' + exportPath);
+
+			helper.mark(fileName, true);
+			log.write('Successfully exported raw DBC file to %s', exportPath);
+		}
+	} catch (e) {
+		const fileName = `${tableName}.dbc`;
+		helper.mark(fileName, false, e.message, e.stack);
+		log.write('Failed to export raw DBC file: %s', e.message);
+	}
+
+	exportPaths?.close();
+	helper.finish();
+};
+
+module.exports = { exportDataTable, exportDataTableSQL, exportRawDB2, exportRawDBC };

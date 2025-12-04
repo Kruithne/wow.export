@@ -49,7 +49,8 @@ const MODULES = {
 	legacy_tab_audio: require('./modules/legacy_tab_audio'),
 	legacy_tab_textures: require('./modules/legacy_tab_textures'),
 	legacy_tab_fonts: require('./modules/legacy_tab_fonts'),
-	legacy_tab_files: require('./modules/legacy_tab_files')
+	legacy_tab_files: require('./modules/legacy_tab_files'),
+	legacy_tab_data: require('./modules/legacy_tab_data')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';

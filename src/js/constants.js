@@ -181,6 +181,7 @@ module.exports = {
 		'legacy_tab_textures',
 		'legacy_tab_audio',
 		'legacy_tab_fonts',
+		'legacy_tab_data',
 		'legacy_tab_files'
 	],
 
