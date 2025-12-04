@@ -4,55 +4,66 @@
 	License: MIT
  */
 
-// equipment slots displayed on the character tab
+// equipment slots with numeric IDs and display names
 const EQUIPMENT_SLOTS = [
-	'Head',
-	'Neck',
-	'Shoulder',
-	'Back',
-	'Chest',
-	'Shirt',
-	'Tabard',
-	'Wrist',
-	'Hands',
-	'Waist',
-	'Legs',
-	'Feet',
-	'Main-hand',
-	'Off-hand'
+	{ id: 1, name: 'Head' },
+	{ id: 2, name: 'Neck' },
+	{ id: 3, name: 'Shoulder' },
+	{ id: 15, name: 'Back' },
+	{ id: 5, name: 'Chest' },
+	{ id: 4, name: 'Shirt' },
+	{ id: 19, name: 'Tabard' },
+	{ id: 9, name: 'Wrist' },
+	{ id: 10, name: 'Hands' },
+	{ id: 6, name: 'Waist' },
+	{ id: 7, name: 'Legs' },
+	{ id: 8, name: 'Feet' },
+	{ id: 16, name: 'Main-hand' },
+	{ id: 17, name: 'Off-hand' }
 ];
 
-// maps inventory type id to equipment slot name
-const INVENTORY_TYPE_TO_SLOT = {
-	1: 'Head',
-	2: 'Neck',
-	3: 'Shoulder',
-	4: 'Shirt',
-	5: 'Chest',
-	6: 'Waist',
-	7: 'Legs',
-	8: 'Feet',
-	9: 'Wrist',
-	10: 'Hands',
-	13: 'Main-hand',
-	14: 'Off-hand',
-	15: 'Main-hand',
-	16: 'Back',
-	17: 'Main-hand',
-	19: 'Tabard',
-	20: 'Chest',
-	21: 'Main-hand',
-	22: 'Off-hand',
-	23: 'Off-hand',
-	26: 'Main-hand'
+// maps slot ID to display name
+const SLOT_ID_TO_NAME = {};
+for (const slot of EQUIPMENT_SLOTS)
+	SLOT_ID_TO_NAME[slot.id] = slot.name;
+
+// maps inventory type id to slot id
+const INVENTORY_TYPE_TO_SLOT_ID = {
+	1: 1,   // head
+	2: 2,   // neck
+	3: 3,   // shoulder
+	4: 4,   // shirt
+	5: 5,   // chest
+	6: 6,   // waist
+	7: 7,   // legs
+	8: 8,   // feet
+	9: 9,   // wrist
+	10: 10, // hands
+	13: 16, // one-hand -> main-hand
+	14: 17, // shield -> off-hand
+	15: 16, // ranged -> main-hand
+	16: 15, // back
+	17: 16, // two-hand -> main-hand
+	19: 19, // tabard
+	20: 5,  // robe -> chest
+	21: 16, // main-hand
+	22: 17, // off-hand weapon
+	23: 17, // holdable -> off-hand
+	26: 16  // ranged right -> main-hand
 };
 
-const get_slot_for_inventory_type = (inventory_type) => {
-	return INVENTORY_TYPE_TO_SLOT[inventory_type] ?? null;
+const get_slot_id_for_inventory_type = (inventory_type) => {
+	return INVENTORY_TYPE_TO_SLOT_ID[inventory_type] ?? null;
+};
+
+const get_slot_name = (slot_id) => {
+	return SLOT_ID_TO_NAME[slot_id] ?? null;
 };
 
 module.exports = {
 	EQUIPMENT_SLOTS,
-	INVENTORY_TYPE_TO_SLOT,
-	get_slot_for_inventory_type
+	SLOT_ID_TO_NAME,
+	INVENTORY_TYPE_TO_SLOT_ID,
+	get_slot_id_for_inventory_type,
+	get_slot_name
 };

@@ -10,6 +10,7 @@ const db2 = require('../casc/db2');
 const ItemSlot = require('../wow/ItemSlot');
 const InstallType = require('../install-type');
 const DBItems = require('../db/caches/DBItems');
+const { get_slot_name } = require('../wow/EquipmentSlots');
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -292,15 +293,17 @@ module.exports = {
 		},
 
 		equip_item(item) {
-			const slot = DBItems.getItemSlot(item.id);
-			if (!slot) {
+			const slot_id = DBItems.getItemSlotId(item.id);
+			if (!slot_id) {
 				this.$core.setToast('info', 'This item cannot be equipped.', null, 2000);
 				return;
 			}
 
-			this.$core.view.chrEquippedItems[slot] = item.id;
+			this.$core.view.chrEquippedItems[slot_id] = item.id;
 			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
-			this.$core.setToast('success', `Equipped ${item.name} to ${slot} slot.`, null, 2000);
+
+			const slot_name = get_slot_name(slot_id);
+			this.$core.setToast('success', `Equipped ${item.name} to ${slot_name} slot.`, null, 2000);
 		}
 	},
 

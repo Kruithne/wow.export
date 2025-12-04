@@ -5,7 +5,7 @@
  */
 const log = require('../../log');
 const db2 = require('../../casc/db2');
-const { get_slot_for_inventory_type } = require('../../wow/EquipmentSlots');
+const { get_slot_id_for_inventory_type } = require('../../wow/EquipmentSlots');
 
 const items_by_id = new Map();
 let is_initialized = false;
@@ -49,12 +49,12 @@ const get_item_by_id = (item_id) => {
 	return items_by_id.get(item_id) ?? null;
 };
 
-const get_item_slot = (item_id) => {
+const get_item_slot_id = (item_id) => {
 	const item = items_by_id.get(item_id);
 	if (!item)
 		return null;
 
-	return get_slot_for_inventory_type(item.inventoryType);
+	return get_slot_id_for_inventory_type(item.inventoryType);
 };
 
 const is_cache_initialized = () => {
@@ -65,6 +65,6 @@ module.exports = {
 	initialize: initialize_items,
 	ensureInitialized: ensure_initialized,
 	getItemById: get_item_by_id,
-	getItemSlot: get_item_slot,
+	getItemSlotId: get_item_slot_id,
 	isInitialized: is_cache_initialized
 };
