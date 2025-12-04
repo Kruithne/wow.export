@@ -13,6 +13,7 @@
 - Added option to export individual character textures from the character viewer.
 - Added option to export models and characters (posed) in STL format (for 3D printing).
 - Added ability to copy rows/fields from the data table viewer (CTRL+C or right-click).
+- Added option to export DB2 tables as SQL (with optional table creation).
 - Added quick filters for OGG, MP3 and UNK to the audio tab.
 - Added quick filters for LUA, XML, TXT, SBT, WTF, HTM, TOC, XSD and SRT to the text tab.
 - Added ability to view raw binary strings from the install manifest tab.

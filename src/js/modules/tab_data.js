@@ -6,6 +6,7 @@ const InstallType = require('../install-type');
 
 let selected_file = null;
 let selected_file_data_id = null;
+let selected_file_schema = null;
 
 const initialize_available_tables = async (core) => {
 	const manifest = core.view.dbdManifest;
@@ -60,6 +61,7 @@ const load_table = async (core, table_name) => {
 
 		core.view.tableBrowserRows = parsed;
 		selected_file = table_name;
+		selected_file_schema = db2_reader.schema;
 	} catch (e) {
 		core.setToast('error', 'Unable to open DB2 file ' + table_name, { 'View Log': () => log.openRuntimeLog() }, -1);
 		log.write('Failed to open CASC file: %s', e.message);
@@ -83,16 +85,21 @@ module.exports = {
 				<input type="text" v-model="$core.view.userInputFilterDB2s" placeholder="Filter DB2s.." />
 			</div>
 			<div class="list-container">
-				<component ref="dataTable" :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" :copyheader="$core.view.config.dataCopyHeader" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event" @contextmenu="handle_context_menu" @copy="copy_rows_csv"></component>
+				<component ref="dataTable" :is="$components.DataTable" :headers="$core.view.tableBrowserHeaders" :rows="$core.view.tableBrowserRows" :filter="$core.view.userInputFilterDataTable" :regex="$core.view.config.regexFilters" :selection="$core.view.selectionDataTable" :copyheader="$core.view.config.dataCopyHeader" :tablename="$core.view.selectionDB2s[0]" @update:filter="$core.view.userInputFilterDataTable = $event" @update:selection="$core.view.selectionDataTable = $event" @contextmenu="handle_context_menu" @copy="copy_rows_csv"></component>
 				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeDataTable" v-slot:default="context" @close="$core.view.contextMenus.nodeDataTable = null">
 					<span @click.self="copy_rows_csv">Copy {{ context.node.selectedCount }} row{{ context.node.selectedCount !== 1 ? 's' : '' }} as CSV</span>
+					<span @click.self="copy_rows_sql">Copy {{ context.node.selectedCount }} row{{ context.node.selectedCount !== 1 ? 's' : '' }} as SQL</span>
 					<span @click.self="copy_cell(context.node.cellValue)">Copy cell contents</span>
 				</component>
 			</div>
 			<div id="tab-data-options">
-				<label class="ui-checkbox" title="Include header row when copying">
+				<label class="ui-checkbox" title="Include header row when copying" v-if="$core.view.config.exportDataFormat === 'CSV'">
 					<input type="checkbox" v-model="$core.view.config.dataCopyHeader"/>
 					<span>Copy Header</span>
+				</label>
+				<label class="ui-checkbox" title="Include DROP/CREATE TABLE statements" v-if="$core.view.config.exportDataFormat === 'SQL'">
+					<input type="checkbox" v-model="$core.view.config.dataSQLCreateTable"/>
+					<span>Create Table</span>
 				</label>
 				<label class="ui-checkbox" title="Export all rows">
 					<input type="checkbox" v-model="$core.view.config.dataExportAll"/>
@@ -126,7 +133,22 @@ module.exports = {
 			nw.Clipboard.get().set(csv, 'text');
 
 			const count = this.$core.view.selectionDataTable.length;
-			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' to the clipboard', null, 2000);
+			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as CSV to the clipboard', null, 2000);
+		},
+
+		copy_rows_sql() {
+			const data_table = this.$refs.dataTable;
+			if (!data_table)
+				return;
+
+			const sql = data_table.getSelectedRowsAsSQL();
+			if (!sql)
+				return;
+
+			nw.Clipboard.get().set(sql, 'text');
+
+			const count = this.$core.view.selectionDataTable.length;
+			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as SQL to the clipboard', null, 2000);
 		},
 
 		copy_cell(value) {
@@ -141,6 +163,8 @@ module.exports = {
 
 			if (format === 'CSV')
 				await this.export_csv();
+			else if (format === 'SQL')
+				await this.export_sql();
 			else if (format === 'DB2')
 				await this.export_db2();
 		},
@@ -173,6 +197,37 @@ module.exports = {
 			}
 
 			await dataExporter.exportDataTable(headers, rows_to_export, selected_file || 'unknown_table');
+		},
+
+		async export_sql() {
+			const headers = this.$core.view.tableBrowserHeaders;
+			const all_rows = this.$core.view.tableBrowserRows;
+			const selection = this.$core.view.selectionDataTable;
+			const export_all = this.$core.view.config.dataExportAll;
+
+			if (!headers || !all_rows || headers.length === 0 || all_rows.length === 0) {
+				this.$core.setToast('info', 'No data table loaded to export.');
+				return;
+			}
+
+			let rows_to_export;
+			if (export_all) {
+				rows_to_export = all_rows;
+			} else {
+				if (!selection || selection.length === 0) {
+					this.$core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
+					return;
+				}
+
+				rows_to_export = selection.map(row_index => all_rows[row_index]).filter(row => row !== undefined);
+				if (rows_to_export.length === 0) {
+					this.$core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
+					return;
+				}
+			}
+
+			const create_table = this.$core.view.config.dataSQLCreateTable;
+			await dataExporter.exportDataTableSQL(headers, rows_to_export, selected_file || 'unknown_table', selected_file_schema, create_table);
 		},
 
 		async export_db2() {

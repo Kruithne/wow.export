@@ -275,6 +275,7 @@ const makeNewView = () => {
 		],
 		menuButtonData: [
 			{ label: 'Export as CSV', value: 'CSV' },
+			{ label: 'Export as SQL', value: 'SQL' },
 			{ label: 'Export DB2 (Raw)', value: 'DB2' }
 		],
 		helpArticles: [],

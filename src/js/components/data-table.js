@@ -7,7 +7,7 @@ module.exports = {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */
-	props: ['headers', 'rows', 'filter', 'regex', 'selection', 'copyheader'],
+	props: ['headers', 'rows', 'filter', 'regex', 'selection', 'copyheader', 'tablename'],
 	emits: ['update:selection', 'contextmenu', 'copy'],
 
 	data: function() {
@@ -920,6 +920,51 @@ module.exports = {
 				lines.push(this.headers.map(escape_csv).join(','));
 
 			lines.push(...rows.map(row => row.map(escape_csv).join(',')));
+
+			return lines.join('\n');
+		},
+
+		/**
+		 * Get selected rows as SQL INSERT statements.
+		 * @returns {string} SQL formatted string
+		 */
+		getSelectedRowsAsSQL: function() {
+			if (!this.selection || this.selection.length === 0 || !this.headers)
+				return '';
+
+			const rows = this.selection
+				.slice()
+				.sort((a, b) => a - b)
+				.map(idx => this.sortedItems[idx])
+				.filter(row => row !== undefined);
+
+			if (rows.length === 0)
+				return '';
+
+			const table_name = this.tablename || 'unknown_table';
+
+			const escape_identifier = (name) => {
+				return '`' + name.replace(/`/g, '``') + '`';
+			};
+
+			const escape_value = (val) => {
+				if (val === null || val === undefined)
+					return 'NULL';
+
+				const str = String(val);
+				if (!isNaN(val) && str.trim() !== '')
+					return str;
+
+				return '\'' + str.replace(/'/g, '\'\'') + '\'';
+			};
+
+			const escaped_table = escape_identifier(table_name);
+			const escaped_fields = this.headers.map(escape_identifier).join(', ');
+
+			const lines = rows.map(row => {
+				const values = row.map(escape_value).join(', ');
+				return `INSERT INTO ${escaped_table} (${escaped_fields}) VALUES (${values});`;
+			});
 
 			return lines.join('\n');
 		},

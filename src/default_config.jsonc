@@ -92,6 +92,7 @@
 	"mapsExportRaw": false,
 	"dataExportAll": true,
 	"dataCopyHeader": false,
+	"dataSQLCreateTable": true,
 	"exportDataFormat": "CSV",
 	"regexFilters": false,
 	"exportMapFormat": "OBJ",
