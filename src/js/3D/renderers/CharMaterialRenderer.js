@@ -38,6 +38,9 @@ class CharMaterialRenderer {
 
 		this.gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
 		this.glCanvas = canvas;
+
+		if (!this.gl)
+			log.write('Failed to create WebGL context for CharMaterialRenderer layer %d', textureLayer);
 	}
 
 	/**
@@ -213,6 +216,9 @@ class CharMaterialRenderer {
 	 * Clear the canvas, resetting it to black.
 	 */
 	clearCanvas() {
+		if (!this.gl)
+			return;
+
 		this.gl.viewport(0, 0, this.glCanvas.width, this.glCanvas.height);
 		this.gl.clearColor(0, 0, 0, 1);
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -223,6 +229,9 @@ class CharMaterialRenderer {
 	 * Will be attached to the current GL context.
 	 */
 	async compileShaders() {
+		if (!this.gl)
+			return;
+
 		const sources = Shaders.get_source('char');
 
 		this.glShaderProg = this.gl.createProgram();
@@ -271,8 +280,11 @@ class CharMaterialRenderer {
 	 * Update 3D data.
 	 */
 	async update() {
+		if (!this.gl)
+			return;
+
 		this.clearCanvas();
-		
+
 		this.gl.clearColor(0.5, 0.5, 0.5, 1);
 		this.gl.disable(this.gl.DEPTH_TEST);
 

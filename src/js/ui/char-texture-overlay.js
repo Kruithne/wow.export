@@ -35,7 +35,9 @@ function add(canvas) {
 
 	if (active_layer === null) {
 		active_layer = canvas;
-		get_element().appendChild(canvas);
+		const element = get_element();
+		if (element)
+			element.appendChild(canvas);
 	}
 
 	update_button_visibility();
@@ -62,7 +64,7 @@ function ensure_active_layer_attached() {
 	process.nextTick(() => {
 		if (active_layer !== null) {
 			const element = get_element();
-			if (active_layer.parentNode !== element)
+			if (element && active_layer.parentNode !== element)
 				element.appendChild(active_layer);
 		}
 	});

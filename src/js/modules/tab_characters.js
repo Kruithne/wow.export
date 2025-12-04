@@ -23,6 +23,7 @@ const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
 const { EQUIPMENT_SLOTS, get_slot_name } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
+const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 
 const active_skins = new Map();
 let gl_context = null;
@@ -132,7 +133,112 @@ async function upload_render_override_textures() {
 	}
 }
 
+async function apply_equipped_item_textures(core) {
+	// don't apply textures if model isn't loaded yet
+	if (!active_renderer || is_model_loading)
+		return;
+
+	const equipped_items = core.view.chrEquippedItems;
+	if (!equipped_items || Object.keys(equipped_items).length === 0)
+		return;
+
+	const sections = char_component_texture_section_map.get(current_char_component_texture_layout_id);
+	if (!sections)
+		return;
+
+	// build section lookup by SectionType
+	const section_by_type = new Map();
+	for (const section of sections)
+		section_by_type.set(section.SectionType, section);
+
+	// find texture layers that can be used for items
+	// first find the base layer (TextureSectionTypeBitMask = -1) as fallback
+	let base_layer = null;
+	for (const [key, layer] of chr_model_texture_layer_map) {
+		if (!key.startsWith(current_char_component_texture_layout_id + '-'))
+			continue;
+
+		if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1) {
+			base_layer = layer;
+			break;
+		}
+	}
+
+	// build section-specific layers, falling back to base layer
+	const layers_by_section = new Map();
+	for (const [key, layer] of chr_model_texture_layer_map) {
+		if (!key.startsWith(current_char_component_texture_layout_id + '-'))
+			continue;
+
+		if (layer.TextureSectionTypeBitMask === -1)
+			continue;
+
+		// find which section types this layer covers
+		for (let section_type = 0; section_type < 9; section_type++) {
+			if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
+				if (!layers_by_section.has(section_type))
+					layers_by_section.set(section_type, layer);
+			}
+		}
+	}
+
+	// fill in missing sections with base layer
+	if (base_layer) {
+		for (let section_type = 0; section_type < 9; section_type++) {
+			if (!layers_by_section.has(section_type))
+				layers_by_section.set(section_type, base_layer);
+		}
+	}
+
+	// process each equipped item
+	for (const [slot_id, item_id] of Object.entries(equipped_items)) {
+		const item_textures = DBItemCharTextures.getItemTextures(item_id);
+		if (!item_textures)
+			continue;
+
+		for (const texture of item_textures) {
+			const section = section_by_type.get(texture.section);
+			if (!section)
+				continue;
+
+			const layer = layers_by_section.get(texture.section);
+			if (!layer) {
+				console.log('No texture layer found for section type ' + texture.section);
+				continue;
+			}
+
+			// get or create chr_material for this texture type
+			const chr_model_material = chr_model_material_map.get(current_char_component_texture_layout_id + '-' + layer.TextureType);
+			if (!chr_model_material)
+				continue;
+
+			let chr_material;
+			if (!chr_materials.has(chr_model_material.TextureType)) {
+				chr_material = new CharMaterialRenderer(chr_model_material.TextureType, chr_model_material.Width, chr_model_material.Height);
+				chr_materials.set(chr_model_material.TextureType, chr_material);
+				await chr_material.init();
+			} else {
+				chr_material = chr_materials.get(chr_model_material.TextureType);
+			}
+
+			// create material info for the item texture
+			const item_material = {
+				ChrModelTextureTargetID: 100 + texture.section, // use high IDs to avoid conflict with customization targets
+				FileDataID: texture.fileDataID
+			};
+
+			console.log('[Item] Applying texture ' + texture.fileDataID + ' to section ' + texture.section + ' (' + section.X + ',' + section.Y + ' ' + section.Width + 'x' + section.Height + ')');
+
+			await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+		}
+	}
+}
+
 async function update_active_customization(core) {
+	// don't update if renderer isn't ready
+	if (!active_renderer)
+		return;
+
 	await reset_materials();
 
 	// track which texture type has the baked npc texture applied
@@ -315,6 +421,9 @@ async function update_active_customization(core) {
 		skinned_model_renderer.updateGeosets();
 		skinned_model_renderers.set(file_data_id, skinned_model_renderer);
 	}
+
+	// apply equipped item textures
+	await apply_equipped_item_textures(core);
 
 	await upload_render_override_textures();
 }
@@ -1427,7 +1536,7 @@ module.exports = {
 		// reset module state for clean reload
 		reset_module_state();
 
-		this.$core.showLoadingScreen(13);
+		this.$core.showLoadingScreen(14);
 
 		await this.$core.progressLoadingScreen('Retrieving realmlist...');
 		await realmlist.load();
@@ -1463,6 +1572,9 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading item data...');
 		await DBItems.ensureInitialized();
+
+		await this.$core.progressLoadingScreen('Loading item character textures...');
+		await DBItemCharTextures.ensureInitialized();
 
 		await this.$core.progressLoadingScreen('Loading character customization elements...');
 		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
@@ -1641,6 +1753,12 @@ module.exports = {
 			this.$core.view.$watch('chrCustOptionSelection', () => update_customization_type(this.$core), { deep: true }),
 			this.$core.view.$watch('chrCustChoiceSelection', () => update_customization_choice(this.$core), { deep: true }),
 			this.$core.view.$watch('chrCustActiveChoices', async () => {
+				if (this.$core.view.isBusy)
+					return;
+
+				await update_active_customization(this.$core);
+			}, { deep: true }),
+			this.$core.view.$watch('chrEquippedItems', async () => {
 				if (this.$core.view.isBusy)
 					return;
 
