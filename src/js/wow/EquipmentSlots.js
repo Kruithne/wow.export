@@ -52,8 +52,29 @@ const INVENTORY_TYPE_TO_SLOT_ID = {
 	26: 16  // ranged right -> main-hand
 };
 
+// maps WoWModelViewer CharSlots to our slot IDs
+const WMV_SLOT_TO_SLOT_ID = {
+	0: 1,   // CS_HEAD -> head
+	1: 3,   // CS_SHOULDER -> shoulder
+	2: 8,   // CS_BOOTS -> feet
+	3: 6,   // CS_BELT -> waist
+	4: 4,   // CS_SHIRT -> shirt
+	5: 7,   // CS_PANTS -> legs
+	6: 5,   // CS_CHEST -> chest
+	7: 9,   // CS_BRACERS -> wrist
+	8: 10,  // CS_GLOVES -> hands
+	9: 16,  // CS_HAND_RIGHT -> main-hand
+	10: 17, // CS_HAND_LEFT -> off-hand
+	11: 15, // CS_CAPE -> back
+	12: 19  // CS_TABARD -> tabard
+};
+
 const get_slot_id_for_inventory_type = (inventory_type) => {
 	return INVENTORY_TYPE_TO_SLOT_ID[inventory_type] ?? null;
+};
+
+const get_slot_id_for_wmv_slot = (wmv_slot) => {
+	return WMV_SLOT_TO_SLOT_ID[wmv_slot] ?? null;
 };
 
 const get_slot_name = (slot_id) => {
@@ -64,6 +85,8 @@ module.exports = {
 	EQUIPMENT_SLOTS,
 	SLOT_ID_TO_NAME,
 	INVENTORY_TYPE_TO_SLOT_ID,
+	WMV_SLOT_TO_SLOT_ID,
 	get_slot_id_for_inventory_type,
+	get_slot_id_for_wmv_slot,
 	get_slot_name
 };

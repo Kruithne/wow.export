@@ -653,6 +653,10 @@ function load_wmv_modern(core, wmv_data) {
 
 	core.view.chrImportChoices.push(...parsed_choices);
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+
+	// load equipped items
+	if (wmv_data.equipment)
+		core.view.chrEquippedItems = { ...wmv_data.equipment };
 }
 
 function load_wmv_legacy(core, wmv_data) {
@@ -692,8 +696,11 @@ function load_wmv_legacy(core, wmv_data) {
 	}
 
 	core.view.chrImportChoices.push(...parsed_choices);
-
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+
+	// load equipped items
+	if (wmv_data.equipment)
+		core.view.chrEquippedItems = { ...wmv_data.equipment };
 }
 
 async function import_wowhead_character(core) {

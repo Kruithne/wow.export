@@ -4,6 +4,7 @@
 	License: MIT
  */
 const { parse_xml } = require('./xml');
+const { get_slot_id_for_wmv_slot } = require('./wow/EquipmentSlots');
 
 const wmv_parse = (xml_str) => {
 	const parsed = parse_xml(xml_str);
@@ -45,10 +46,31 @@ const wmv_parse_v2 = (data) => {
 		}
 	}
 
+	// parse equipment
+	const equipment = {};
+	if (data.equipment?.item) {
+		const items = Array.isArray(data.equipment.item)
+			? data.equipment.item
+			: [data.equipment.item];
+
+		for (const item of items) {
+			const wmv_slot = parseInt(item.slot?.['@_value']);
+			const item_id = parseInt(item.id?.['@_value']);
+
+			if (isNaN(wmv_slot) || isNaN(item_id) || item_id === 0)
+				continue;
+
+			const slot_id = get_slot_id_for_wmv_slot(wmv_slot);
+			if (slot_id)
+				equipment[slot_id] = item_id;
+		}
+	}
+
 	return {
 		race,
 		gender,
 		customizations,
+		equipment,
 		model_path
 	};
 };
@@ -69,10 +91,31 @@ const wmv_parse_v1 = (data) => {
 		facial_hair: parseInt(char_details?.facialHair?.['@_value'] ?? '0')
 	};
 
+	// parse equipment (v1 also has equipment node)
+	const equipment = {};
+	if (data.equipment?.item) {
+		const items = Array.isArray(data.equipment.item)
+			? data.equipment.item
+			: [data.equipment.item];
+
+		for (const item of items) {
+			const wmv_slot = parseInt(item.slot?.['@_value']);
+			const item_id = parseInt(item.id?.['@_value']);
+
+			if (isNaN(wmv_slot) || isNaN(item_id) || item_id === 0)
+				continue;
+
+			const slot_id = get_slot_id_for_wmv_slot(wmv_slot);
+			if (slot_id)
+				equipment[slot_id] = item_id;
+		}
+	}
+
 	return {
 		race,
 		gender,
 		legacy_values,
+		equipment,
 		model_path
 	};
 };
