@@ -7,6 +7,7 @@
 const charset = '0zMcmVokRsaqbdrfwihuGINALpTjnyxtgevElBCDFHJKOPQSUWXYZ123456';
 
 // wowhead paperdoll slot index -> our slot id
+// wowhead order: head, shoulder, back, chest, shirt, tabard, wrist, hands, waist, legs, feet, main, off
 const WOWHEAD_SLOT_TO_SLOT_ID = {
 	1: 1,   // head
 	2: 3,   // shoulders
@@ -59,14 +60,6 @@ function extract_hash_from_url(url) {
 	return match ? match[1] : null;
 }
 
-function strip_7_prefix(seg) {
-	// equipment segments can have 7X prefix where X is slot indicator
-	if (seg && seg.startsWith('7') && seg.length > 2)
-		return seg.substring(2);
-
-	return seg;
-}
-
 function wowhead_parse_hash(hash) {
 	const version = charset.indexOf(hash[0]);
 	const decompressed = decompress_zeros(hash.substring(1));
@@ -113,53 +106,62 @@ function parse_v15(segments, version) {
 		}
 	}
 
-	// parse equipment - process segment by segment
-	// 7X prefix marks slot (X is charset index), high values (>=14) mark equipment start
-	// format: itemId, bonus pairs; weapons (slots 12-13) also have enchant
-	// markers can appear in bonus position when slots are skipped
+	// parse equipment
+	// v15 format: 7X marks equipment start, items follow sequentially
+	// 7<slot> markers indicate slot jumps when slots are skipped
+	// format: 7X<item>8<bonus>8<item>8<bonus>...87<slot><item>8<bonus>...
 	const equipment = {};
 
 	if (equip_start > 0) {
+		let seg_idx = equip_start;
 		let wh_slot = 1;
 
-		for (let seg_idx = equip_start; seg_idx < segments.length && wh_slot <= 13; seg_idx++) {
-			const seg = segments[seg_idx] || '';
+		while (seg_idx < segments.length && wh_slot <= 13) {
+			let seg = segments[seg_idx] || '';
 
-			// check for 7X slot marker
+			// handle 7X prefix (equipment start or slot marker)
 			if (seg.startsWith('7') && seg.length >= 2) {
-				const slot_char = seg[1];
-				const marked_slot = charset.indexOf(slot_char);
+				const marker_char = seg[1];
+				const marker_val = charset.indexOf(marker_char);
 
-				// valid slot marker (1-13) means set to that slot
-				if (marked_slot >= 1 && marked_slot <= 13)
-					wh_slot = marked_slot;
+				// slot markers are 0-indexed, so marker_val 7 = slot 8
+				// valid range: 0-12 maps to slots 1-13
+				if (marker_val >= 0 && marker_val <= 12) {
+					wh_slot = marker_val + 1;
+					seg = seg.substring(2);
+				} else {
+					// invalid slot (like X=50): this is equipment section start marker
+					// strip 7X prefix and continue with slot 1
+					seg = seg.substring(2);
+				}
 			}
 
-			if (wh_slot > 13)
-				break;
+			// empty segment after stripping, skip
+			if (!seg) {
+				seg_idx++;
+				continue;
+			}
 
-			const item_str = strip_7_prefix(seg);
-			const item_id = decode(item_str);
+			// decode item
+			const item_id = decode(seg);
 
-			if (item_id > 0) {
+			if (item_id > 0 && wh_slot <= 13) {
 				const slot_id = WOWHEAD_SLOT_TO_SLOT_ID[wh_slot];
 				if (slot_id)
 					equipment[slot_id] = item_id;
-
-				// skip bonus segment only if next segment is not a marker
-				const next_seg = segments[seg_idx + 1] || '';
-				if (!next_seg.startsWith('7')) {
-					seg_idx += 1;
-					// weapons (slots 12-13) also have enchant
-					if (wh_slot >= 12) {
-						const enchant_seg = segments[seg_idx + 1] || '';
-						if (!enchant_seg.startsWith('7'))
-							seg_idx += 1;
-					}
-				}
-
-				wh_slot++;
 			}
+
+			seg_idx++;
+
+			// skip bonus segment if it doesn't have 7 prefix
+			if (seg_idx < segments.length && !segments[seg_idx].startsWith('7'))
+				seg_idx++;
+
+			// weapons (slots 12-13) also have enchant segment
+			if (wh_slot >= 12 && seg_idx < segments.length && !segments[seg_idx].startsWith('7'))
+				seg_idx++;
+
+			wh_slot++;
 		}
 	}
 
