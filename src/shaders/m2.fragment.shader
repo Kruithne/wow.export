@@ -341,8 +341,8 @@ void main() {
 	// apply lighting
 	vec3 lit_color = calc_lighting(mat_diffuse, v_normal);
 
-	// add specular
-	lit_color += specular * mesh_color;
+	// add specular (disabled for debugging)
+	// lit_color += specular;
 
 	frag_color = vec4(lit_color, final_opacity);
 }
