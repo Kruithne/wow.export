@@ -754,6 +754,10 @@ function load_wowhead_data(core, wowhead_data) {
 
 	core.view.chrImportChoices.push(...parsed_choices);
 	core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
+
+	// load equipped items
+	if (wowhead_data.equipment)
+		core.view.chrEquippedItems = { ...wowhead_data.equipment };
 }
 
 const export_char_model = async (core) => {
