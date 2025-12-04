@@ -20,6 +20,29 @@ const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
 
+// vertex shader name to ID mapping (matches vertex shader switch cases)
+const VERTEX_SHADER_IDS = {
+	'Diffuse_T1': 0,
+	'Diffuse_Env': 1,
+	'Diffuse_T1_T2': 2,
+	'Diffuse_T1_Env': 3,
+	'Diffuse_Env_T1': 4,
+	'Diffuse_Env_Env': 5,
+	'Diffuse_T1_Env_T1': 6,
+	'Diffuse_T1_T1': 7,
+	'Diffuse_T1_T1_T1': 8,
+	'Diffuse_EdgeFade_T1': 9,
+	'Diffuse_T2': 10,
+	'Diffuse_T1_Env_T2': 11,
+	'Diffuse_EdgeFade_T1_T2': 12,
+	'Diffuse_EdgeFade_Env': 13,
+	'Diffuse_T1_T2_T1': 14,
+	'Diffuse_T1_T2_T3': 15,
+	'Color_T1_T2_T3': 16,
+	'BW_Diffuse_T1': 17,
+	'BW_Diffuse_T1_T2': 18
+};
+
 // pixel shader name to ID mapping (matches fragment shader switch cases)
 const PIXEL_SHADER_IDS = {
 	'Combiners_Opaque': 0,
@@ -498,8 +521,8 @@ class M2RendererGL {
 						tex_indices[j] = m2.textureCombos[combo_idx];
 				}
 
-				const shaders = ShaderMapper.getVertexShader(tex_unit.textureCount, tex_unit.shaderID);
-				vertex_shader = typeof shaders === 'object' ? 0 : shaders;
+				const vertex_shader_name = ShaderMapper.getVertexShader(tex_unit.textureCount, tex_unit.shaderID);
+				vertex_shader = VERTEX_SHADER_IDS[vertex_shader_name] ?? 0;
 
 				const pixel_shader_name = ShaderMapper.getPixelShader(tex_unit.textureCount, tex_unit.shaderID);
 				pixel_shader = PIXEL_SHADER_IDS[pixel_shader_name] ?? 0;
