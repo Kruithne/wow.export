@@ -104,8 +104,7 @@ module.exports = {
 					<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
 					<input type="text" id="data-table-filter-input" v-model="$core.view.userInputFilterDataTable" placeholder="Filter data table rows..." />
 				</div>
-				<input type="button" value="Export as CSV" @click="export_csv" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
-				<input type="button" value="Export DB2" @click="export_db2" :class="{ disabled: $core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0 }"/>
+				<component :is="$components.MenuButton" :options="$core.view.menuButtonData" :default="$core.view.config.exportDataFormat" @change="$core.view.config.exportDataFormat = $event" class="upward" :disabled="$core.view.isBusy || !$core.view.tableBrowserHeaders || $core.view.tableBrowserHeaders.length === 0" @click="export_data"></component>
 			</div>
 		</div>
 	`,
@@ -135,6 +134,15 @@ module.exports = {
 				return;
 
 			nw.Clipboard.get().set(String(value), 'text');
+		},
+
+		async export_data() {
+			const format = this.$core.view.config.exportDataFormat;
+
+			if (format === 'CSV')
+				await this.export_csv();
+			else if (format === 'DB2')
+				await this.export_db2();
 		},
 
 		async export_csv() {

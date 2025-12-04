@@ -273,6 +273,10 @@ const makeNewView = () => {
 			{ label: 'Export MP3 (Audio Only)', value: 'MP3' },
 			{ label: 'Export Subtitles', value: 'SUBTITLES' }
 		],
+		menuButtonData: [
+			{ label: 'Export as CSV', value: 'CSV' },
+			{ label: 'Export DB2 (Raw)', value: 'DB2' }
+		],
 		helpArticles: [],
 		helpFilteredArticles: [],
 		helpSelectedArticle: null,
