@@ -651,7 +651,8 @@ async function import_character(core) {
 
 	const character_name = core.view.chrImportChrName;
 	const selected_realm = core.view.chrImportSelectedRealm;
-	const selected_region = core.view.chrImportSelectedRegion;
+	const base_region = core.view.chrImportSelectedRegion;
+	const effective_region = core.view.chrImportClassicRealms ? 'classic-' + base_region : base_region;
 
 	if (selected_realm === null) {
 		core.setToast('error', 'Please enter a valid realm.', null, 3000);
@@ -659,8 +660,8 @@ async function import_character(core) {
 		return;
 	}
 
-	const character_label = util.format('%s (%s-%s)', character_name, selected_region, selected_realm.label);
-	const url = util.format(core.view.config.armoryURL, encodeURIComponent(selected_region), encodeURIComponent(selected_realm.value), encodeURIComponent(character_name.toLowerCase()));
+	const character_label = util.format('%s (%s-%s)', character_name, effective_region, selected_realm.label);
+	const url = util.format(core.view.config.armoryURL, encodeURIComponent(effective_region), encodeURIComponent(selected_realm.value), encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
 	const res = await generics.get(url);
@@ -1153,8 +1154,12 @@ module.exports = {
 			<div v-if="$core.view.characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
 				<div class="header"><b>Character Import</b></div>
 				<ul class="ui-multi-button">
-					<li v-for="region of $core.view.chrImportRegions" :class="{ selected: $core.view.chrImportSelectedRegion === region }" @click.stop="$core.view.chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
+					<li v-for="region of base_regions" :class="{ selected: $core.view.chrImportSelectedRegion === region }" @click.stop="$core.view.chrImportSelectedRegion = region">{{ region.toUpperCase() }}</li>
 				</ul>
+				<label class="ui-checkbox" title="Use Classic realms">
+					<input type="checkbox" v-model="$core.view.chrImportClassicRealms"/>
+					<span>Classic Realms</span>
+				</label>
 				<input type="text" v-model="$core.view.chrImportChrName" placeholder="Character Name"/>
 				<component :is="$components.ComboBox" v-model:value="$core.view.chrImportSelectedRealm" :source="$core.view.chrImportRealms" placeholder="Character Realm" maxheight="10"></component>
 				<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
@@ -1316,7 +1321,7 @@ module.exports = {
 			<div class="right-panel">
 				<div v-for="slot in equipment_slots" :key="slot.id" class="equipment-slot" @click="open_slot_context($event, slot.id)" @contextmenu.prevent="open_slot_context($event, slot.id)">
 					<span class="slot-label">{{ slot.name }}:</span>
-					<span v-if="get_equipped_item(slot.id)" :class="'slot-item item-quality-' + get_equipped_item(slot.id).quality">{{ get_equipped_item(slot.id).name }}</span>
+					<span v-if="get_equipped_item(slot.id)" :class="'slot-item item-quality-' + get_equipped_item(slot.id).quality" :title="get_equipped_item(slot.id).name + ' (' + get_equipped_item(slot.id).id + ')'">{{ get_equipped_item(slot.id).name }}</span>
 					<span v-else class="slot-empty">Empty</span>
 				</div>
 				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
@@ -1331,7 +1336,8 @@ module.exports = {
 
 	data() {
 		return {
-			equipment_slots: EQUIPMENT_SLOTS
+			equipment_slots: EQUIPMENT_SLOTS,
+			base_regions: ['us', 'eu', 'kr', 'tw']
 		};
 	},
 
@@ -1482,23 +1488,32 @@ module.exports = {
 		await this.$core.progressLoadingScreen('Retrieving realmlist...');
 		await realmlist.load();
 
-		watcher_cleanup_funcs.push(
-			this.$core.view.$watch('chrImportSelectedRegion', () => {
-				const realm_list = state.realmList[state.chrImportSelectedRegion].map(realm => ({ label: realm.name, value: realm.slug }));
-				state.chrImportRealms = realm_list;
+		const update_realm_list = () => {
+			const base_region = state.chrImportSelectedRegion;
+			const effective_region = state.chrImportClassicRealms ? 'classic-' + base_region : base_region;
 
-				if (state.chrImportSelectedRealm !== null) {
-					const matching_realm = realm_list.find(realm => realm.value === state.chrImportSelectedRealm.value);
-					if (matching_realm)
-						state.chrImportSelectedRealm = matching_realm;
-					else
-						state.chrImportSelectedRealm = null;
-				}
-			})
+			if (!state.realmList[effective_region])
+				return;
+
+			const realm_list = state.realmList[effective_region].map(realm => ({ label: realm.name, value: realm.slug }));
+			state.chrImportRealms = realm_list;
+
+			if (state.chrImportSelectedRealm !== null) {
+				const matching_realm = realm_list.find(realm => realm.value === state.chrImportSelectedRealm.value);
+				if (matching_realm)
+					state.chrImportSelectedRealm = matching_realm;
+				else
+					state.chrImportSelectedRealm = null;
+			}
+		};
+
+		watcher_cleanup_funcs.push(
+			this.$core.view.$watch('chrImportSelectedRegion', update_realm_list),
+			this.$core.view.$watch('chrImportClassicRealms', update_realm_list)
 		);
 
 		state.chrImportRegions = Object.keys(state.realmList);
-		state.chrImportSelectedRegion = state.chrImportRegions[0];
+		state.chrImportSelectedRegion = 'us';
 
 		await this.$core.progressLoadingScreen('Loading texture mapping...');
 		const tfd_map = new Map();

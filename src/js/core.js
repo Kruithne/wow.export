@@ -192,6 +192,7 @@ const makeNewView = () => {
 		chrImportRealms: [],
 		chrImportSelectedRealm: null,
 		chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
+		chrImportClassicRealms: false, // Whether to use classic realms instead of retail
 		chrImportChrModelID: 0, // Temporary storage for target character model ID.
 		chrImportChoices: [], // Temporary storage for character import choices.
 		chrImportWowheadURL: '', // Wowhead dressing room url
