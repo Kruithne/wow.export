@@ -24,6 +24,7 @@ const PNGWriter = require('../png-writer');
 const { EQUIPMENT_SLOTS, get_slot_name } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
+const DBItemGeosets = require('../db/caches/DBItemGeosets');
 
 const active_skins = new Map();
 let gl_context = null;
@@ -234,6 +235,56 @@ async function apply_equipped_item_textures(core) {
 	}
 }
 
+function apply_equipment_geosets(core) {
+	if (!active_renderer)
+		return;
+
+	const equipped_items = core.view.chrEquippedItems;
+	if (!equipped_items)
+		return;
+
+	const geosets = core.view.chrCustGeosets;
+	if (!geosets || geosets.length === 0)
+		return;
+
+	// calculate which geosets should be shown based on equipment
+	// returns map of char_geoset (CG enum) -> value
+	const equipment_geosets = DBItemGeosets.calculateEquipmentGeosets(equipped_items);
+
+	// get affected char_geoset groups
+	const affected_groups = DBItemGeosets.getAffectedCharGeosets(equipped_items);
+
+	// for each affected group, hide all geosets in that range then show the correct one
+	for (const char_geoset of affected_groups) {
+		const base = char_geoset * 100;
+		const range_start = base + 1;
+		const range_end = base + 99;
+
+		// hide all geosets in this group's range
+		for (const geoset of geosets) {
+			if (geoset.id >= range_start && geoset.id <= range_end) {
+				if (geoset.checked) {
+					geoset.checked = false;
+					console.log('[Equipment] Hiding geoset ' + geoset.id + ' (group ' + char_geoset + ')');
+				}
+			}
+		}
+
+		// show the specific geoset for this group if we have a value
+		const value = equipment_geosets.get(char_geoset);
+		if (value !== undefined) {
+			const target_geoset_id = base + value;
+
+			for (const geoset of geosets) {
+				if (geoset.id === target_geoset_id && !geoset.checked) {
+					geoset.checked = true;
+					console.log('[Equipment] Showing geoset ' + target_geoset_id + ' (group ' + char_geoset + ', value ' + value + ')');
+				}
+			}
+		}
+	}
+}
+
 async function update_active_customization(core) {
 	// don't update if renderer isn't ready
 	if (!active_renderer)
@@ -422,8 +473,9 @@ async function update_active_customization(core) {
 		skinned_model_renderers.set(file_data_id, skinned_model_renderer);
 	}
 
-	// apply equipped item textures
+	// apply equipped item textures and geosets
 	await apply_equipped_item_textures(core);
+	apply_equipment_geosets(core);
 
 	await upload_render_override_textures();
 }
@@ -1536,7 +1588,7 @@ module.exports = {
 		// reset module state for clean reload
 		reset_module_state();
 
-		this.$core.showLoadingScreen(14);
+		this.$core.showLoadingScreen(15);
 
 		await this.$core.progressLoadingScreen('Retrieving realmlist...');
 		await realmlist.load();
@@ -1575,6 +1627,9 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading item character textures...');
 		await DBItemCharTextures.ensureInitialized();
+
+		await this.$core.progressLoadingScreen('Loading item geosets...');
+		await DBItemGeosets.ensureInitialized();
 
 		await this.$core.progressLoadingScreen('Loading character customization elements...');
 		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
