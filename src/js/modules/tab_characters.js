@@ -134,8 +134,8 @@ async function upload_render_override_textures() {
 }
 
 async function apply_equipped_item_textures(core) {
-	// don't apply textures if model isn't loaded yet
-	if (!active_renderer || is_model_loading)
+	// don't apply textures if renderer isn't ready
+	if (!active_renderer)
 		return;
 
 	const equipped_items = core.view.chrEquippedItems;
@@ -1076,7 +1076,7 @@ async function update_model_selection(core) {
 
 	const file_data_id = chr_model_id_to_file_data_id.get(selected.id);
 
-	if (!core.view.isBusy && file_data_id && active_model !== file_data_id)
+	if (file_data_id && active_model !== file_data_id)
 		preview_model(core, file_data_id);
 
 	clear_materials();
