@@ -7,7 +7,7 @@
 const ROTATE_SPEED = 0.005;
 const PAN_SPEED = 0.002;
 const ZOOM_SCALE = 0.95;
-const MIN_DISTANCE = 0.5;
+const MIN_DISTANCE = 0.1;
 const MAX_DISTANCE = 100;
 
 class CharacterCameraControlsGL {
