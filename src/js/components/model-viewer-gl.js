@@ -273,12 +273,26 @@ module.exports = {
 			if (activeRenderer && activeRenderer.render)
 				activeRenderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
-			// render equipment models (character mode only)
+			// render equipment models at attachment points (character mode only)
 			const equipment_renderers = this.context.getEquipmentRenderers?.();
-			if (equipment_renderers) {
-				for (const renderer of equipment_renderers.values()) {
-					if (renderer && renderer.render)
+			if (equipment_renderers && activeRenderer) {
+				for (const slot_entry of equipment_renderers.values()) {
+					if (!slot_entry?.renderers)
+						continue;
+
+					for (const { renderer, attachment_id } of slot_entry.renderers) {
+						if (!renderer?.render)
+							continue;
+
+						// get attachment transform from character model
+						if (attachment_id !== undefined) {
+							const attach_transform = activeRenderer.getAttachmentTransform?.(attachment_id);
+							if (attach_transform)
+								renderer.setTransformMatrix(attach_transform);
+						}
+
 						renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
+					}
 				}
 			}
 

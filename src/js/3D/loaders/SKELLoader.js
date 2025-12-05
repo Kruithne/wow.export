@@ -7,6 +7,7 @@
 const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
 const CHUNK_SKS1 = 0x31534B53;
+const CHUNK_SKA1 = 0x31414B53; // attachments
 const CHUNK_AFID = 0x44494641;
 const CHUNK_BFID = 0x44494642;
 
@@ -46,6 +47,7 @@ class SKELLoader {
 				case CHUNK_SKB1: this.parse_chunk_skb1(); break;
 				case CHUNK_SKPD: this.parse_chunk_skpd(); break;
 				case CHUNK_SKS1: this.parse_chunk_sks1(); break;
+				case CHUNK_SKA1: this.parse_chunk_ska1(); break;
 				case CHUNK_AFID: this.parse_chunk_afid(chunkSize); break;
 				case CHUNK_BFID: this.parse_chunk_bfid(chunkSize); break;
 			}
@@ -205,6 +207,62 @@ class SKELLoader {
 
 		// Unused spot (for now)
 		this.data.move(8);
+	}
+
+	/**
+	 * Parse SKA1 chunk for attachments.
+	 */
+	parse_chunk_ska1() {
+		const chunk_ofs = this.data.offset;
+
+		// attachments array
+		const attachmentCount = this.data.readUInt32LE();
+		const attachmentOfs = this.data.readUInt32LE();
+
+		// attachment lookup array
+		const attachmentLookupCount = this.data.readUInt32LE();
+		const attachmentLookupOfs = this.data.readUInt32LE();
+
+		// parse attachments
+		let prevPos = this.data.offset;
+		this.data.seek(attachmentOfs + chunk_ofs);
+
+		this.attachments = new Array(attachmentCount);
+		for (let i = 0; i < attachmentCount; i++) {
+			this.attachments[i] = {
+				id: this.data.readUInt32LE(),
+				bone: this.data.readUInt16LE(),
+				unknown: this.data.readUInt16LE(),
+				position: this.data.readFloatLE(3),
+				animateAttached: M2Generics.read_m2_track(this.data, chunk_ofs, 'uint8')
+			};
+		}
+
+		this.data.seek(prevPos);
+
+		// parse attachment lookup
+		prevPos = this.data.offset;
+		this.data.seek(attachmentLookupOfs + chunk_ofs);
+
+		this.attachmentLookup = this.data.readInt16LE(attachmentLookupCount);
+
+		this.data.seek(prevPos);
+	}
+
+	/**
+	 * Get attachment by attachment ID (e.g., 11 for helmet).
+	 * @param {number} attachmentId
+	 * @returns {object|null}
+	 */
+	getAttachmentById(attachmentId) {
+		if (!this.attachmentLookup || attachmentId >= this.attachmentLookup.length)
+			return null;
+
+		const index = this.attachmentLookup[attachmentId];
+		if (index < 0 || index >= this.attachments.length)
+			return null;
+
+		return this.attachments[index];
 	}
 
 	/**

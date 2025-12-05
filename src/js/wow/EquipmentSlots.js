@@ -69,6 +69,39 @@ const WMV_SLOT_TO_SLOT_ID = {
 	12: 19  // CS_TABARD -> tabard
 };
 
+// M2 attachment IDs (GEOCOMPONENTLINKS from wowdev.wiki/MDX)
+const ATTACHMENT_ID = {
+	SHIELD: 0,
+	HAND_RIGHT: 1,
+	HAND_LEFT: 2,
+	ELBOW_RIGHT: 3,
+	ELBOW_LEFT: 4,
+	SHOULDER_RIGHT: 5,
+	SHOULDER_LEFT: 6,
+	KNEE_RIGHT: 7,
+	KNEE_LEFT: 8,
+	HIP_RIGHT: 9,
+	HIP_LEFT: 10,
+	HELMET: 11,
+	BACK: 12,
+	SHOULDER_FLAP_RIGHT: 13,
+	SHOULDER_FLAP_LEFT: 14,
+	SHEATH_MAIN_HAND: 26,
+	SHEATH_OFF_HAND: 27,
+	SHEATH_SHIELD: 28
+};
+
+// maps equipment slot ID to M2 attachment ID(s)
+// some slots have multiple attachments (e.g., shoulders have left and right)
+// order matches ItemDisplayInfo.ModelResourcesID order
+const SLOT_TO_ATTACHMENT = {
+	1: [ATTACHMENT_ID.HELMET],                                      // head
+	3: [ATTACHMENT_ID.SHOULDER_LEFT, ATTACHMENT_ID.SHOULDER_RIGHT], // shoulder (left first, then right)
+	15: [ATTACHMENT_ID.BACK],                                       // back/cape
+	16: [ATTACHMENT_ID.HAND_RIGHT],                                 // main-hand weapon
+	17: [ATTACHMENT_ID.HAND_LEFT, ATTACHMENT_ID.SHIELD]             // off-hand (weapon or shield)
+};
+
 const get_slot_id_for_inventory_type = (inventory_type) => {
 	return INVENTORY_TYPE_TO_SLOT_ID[inventory_type] ?? null;
 };
@@ -81,12 +114,19 @@ const get_slot_name = (slot_id) => {
 	return SLOT_ID_TO_NAME[slot_id] ?? null;
 };
 
+const get_attachment_ids_for_slot = (slot_id) => {
+	return SLOT_TO_ATTACHMENT[slot_id] ?? null;
+};
+
 module.exports = {
 	EQUIPMENT_SLOTS,
 	SLOT_ID_TO_NAME,
 	INVENTORY_TYPE_TO_SLOT_ID,
 	WMV_SLOT_TO_SLOT_ID,
+	ATTACHMENT_ID,
+	SLOT_TO_ATTACHMENT,
 	get_slot_id_for_inventory_type,
 	get_slot_id_for_wmv_slot,
-	get_slot_name
+	get_slot_name,
+	get_attachment_ids_for_slot
 };

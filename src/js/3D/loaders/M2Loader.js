@@ -304,7 +304,7 @@ class M2Loader {
 		this.parseChunk_MD21_textureTransformLookup(ofs);
 		this.parseChunk_MD21_collision(ofs);
 		this.parseChunk_MD21_attachments(ofs);
-		// this.data.move(8); // attachmentIndicesByID / attachment_lookup_table
+		this.parseChunk_MD21_attachmentLookup(ofs);
 		// this.data.move(8); // events
 		// this.data.move(8); // lights
 		// this.data.move(8); // cameras
@@ -480,8 +480,41 @@ class M2Loader {
 	}
 
 	/**
+	 * Parse attachment lookup table from an MD21 chunk.
+	 * Maps attachment IDs to indices in the attachments array.
+	 * @param {number} ofs
+	 */
+	parseChunk_MD21_attachmentLookup(ofs) {
+		const lookupCount = this.data.readUInt32LE();
+		const lookupOfs = this.data.readUInt32LE();
+
+		const base = this.data.offset;
+		this.data.seek(lookupOfs + ofs);
+
+		this.attachmentLookup = this.data.readInt16LE(lookupCount);
+
+		this.data.seek(base);
+	}
+
+	/**
+	 * Get attachment by attachment ID (e.g., 11 for helmet).
+	 * @param {number} attachmentId
+	 * @returns {object|null}
+	 */
+	getAttachmentById(attachmentId) {
+		if (!this.attachmentLookup || attachmentId >= this.attachmentLookup.length)
+			return null;
+
+		const index = this.attachmentLookup[attachmentId];
+		if (index < 0 || index >= this.attachments.length)
+			return null;
+
+		return this.attachments[index];
+	}
+
+	/**
 	 * Parse replaceable texture lookups from an MD21 chunk.
-	 * @param {number} ofs 
+	 * @param {number} ofs
 	 */
 	parseChunk_MD21_replaceableTextureLookup(ofs) {
 		const lookupCount = this.data.readUInt32LE();

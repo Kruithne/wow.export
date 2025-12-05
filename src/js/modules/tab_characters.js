@@ -21,7 +21,7 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
-const { EQUIPMENT_SLOTS, get_slot_name } = require('../wow/EquipmentSlots');
+const { EQUIPMENT_SLOTS, get_slot_name, get_attachment_ids_for_slot } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
@@ -60,7 +60,7 @@ const skinned_model_meshes = new Set();
 
 const chr_materials = new Map();
 
-// equipment model renderers (slot_id -> M2RendererGL)
+// equipment model renderers (slot_id -> { renderers: [{renderer, attachment_id}], item_id })
 const equipment_model_renderers = new Map();
 
 let current_char_component_texture_layout_id = 0;
@@ -421,10 +421,12 @@ async function update_equipment_models(core) {
 	// dispose models for slots that are no longer equipped
 	for (const slot_id of rendered_slots) {
 		if (!current_slots.has(slot_id)) {
-			const renderer = equipment_model_renderers.get(slot_id);
-			renderer.dispose();
+			const entry = equipment_model_renderers.get(slot_id);
+			for (const { renderer } of entry.renderers)
+				renderer.dispose();
+
 			equipment_model_renderers.delete(slot_id);
-			log.write('Disposed equipment model for slot %d', slot_id);
+			log.write('Disposed equipment models for slot %d', slot_id);
 		}
 	}
 
@@ -432,43 +434,59 @@ async function update_equipment_models(core) {
 	for (const [slot_id_str, item_id] of Object.entries(equipped_items)) {
 		const slot_id = Number(slot_id_str);
 
-		// check if we already have a renderer for this slot with same item
+		// check if we already have renderers for this slot with same item
 		const existing = equipment_model_renderers.get(slot_id);
-		if (existing && existing._item_id === item_id)
+		if (existing && existing.item_id === item_id)
 			continue;
 
-		// dispose old renderer if item changed
+		// dispose old renderers if item changed
 		if (existing) {
-			existing.dispose();
+			for (const { renderer } of existing.renderers)
+				renderer.dispose();
+
 			equipment_model_renderers.delete(slot_id);
 		}
+
+		// get attachment IDs for this slot
+		const attachment_ids = get_attachment_ids_for_slot(slot_id);
+		if (!attachment_ids || attachment_ids.length === 0)
+			continue;
 
 		// get display data for this item (models and textures)
 		const display = DBItemModels.getItemDisplay(item_id);
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 
-		// load first model
-		const file_data_id = display.models[0];
-		try {
-			const file = await core.view.casc.getFile(file_data_id);
-			const renderer = new M2RendererGL(file, gl_context, false, false);
-			await renderer.load();
+		// load models - pair each model with corresponding attachment
+		// e.g., shoulders have 2 models (left/right) and 2 attachment points
+		const renderers = [];
+		const model_count = Math.min(display.models.length, attachment_ids.length);
 
-			// apply item textures
-			if (display.textures && display.textures.length > 0)
-				await renderer.applyReplaceableTextures(display);
+		for (let i = 0; i < model_count; i++) {
+			const file_data_id = display.models[i];
+			const attachment_id = attachment_ids[i];
 
-			// position at origin (0, 0, 0)
-			renderer.setTransform([0, 0, 0], [0, 0, 0], [1, 1, 1]);
+			try {
+				const file = await core.view.casc.getFile(file_data_id);
+				const renderer = new M2RendererGL(file, gl_context, false, false);
+				await renderer.load();
 
-			// store item_id for change detection
-			renderer._item_id = item_id;
+				// apply item textures
+				if (display.textures && display.textures.length > i)
+					await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
 
-			equipment_model_renderers.set(slot_id, renderer);
-			log.write('Loaded equipment model %d for slot %d (item %d)', file_data_id, slot_id, item_id);
-		} catch (e) {
-			log.write('Failed to load equipment model %d: %s', file_data_id, e.message);
+				renderers.push({ renderer, attachment_id });
+				log.write('Loaded equipment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
+			} catch (e) {
+				log.write('Failed to load equipment model %d: %s', file_data_id, e.message);
+			}
+		}
+
+		if (renderers.length > 0) {
+			equipment_model_renderers.set(slot_id, {
+				renderers,
+				item_id
+			});
 		}
 	}
 }
@@ -560,8 +578,10 @@ function dispose_skinned_models() {
 }
 
 function dispose_equipment_models() {
-	for (const renderer of equipment_model_renderers.values())
-		renderer.dispose();
+	for (const entry of equipment_model_renderers.values()) {
+		for (const { renderer } of entry.renderers)
+			renderer.dispose();
+	}
 
 	equipment_model_renderers.clear();
 }

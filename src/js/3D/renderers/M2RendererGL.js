@@ -931,6 +931,14 @@ class M2RendererGL {
 		mat4_from_quat_trs(this.model_matrix, position, quat, scale);
 	}
 
+	/**
+	 * Set model transformation using a pre-computed matrix
+	 * @param {Float32Array} matrix - 4x4 column-major transform matrix
+	 */
+	setTransformMatrix(matrix) {
+		this.model_matrix.set(matrix);
+	}
+
 	_update_model_matrix() {
 		// build model matrix from position/rotation/scale (TRS order)
 		const m = this.model_matrix;
@@ -1303,6 +1311,57 @@ class M2RendererGL {
 		}
 
 		return { vertices: out_verts, normals: out_normals };
+	}
+
+	/**
+	 * Get world transform matrix for an attachment point.
+	 * Combines bone transform with attachment local offset.
+	 * @param {number} attachmentId - attachment ID (e.g., 11 for helmet)
+	 * @returns {Float32Array|null} - 4x4 transform matrix or null if not found
+	 */
+	getAttachmentTransform(attachmentId) {
+		if (!this.m2)
+			return null;
+
+		// try m2 first, then skelLoader (modern character models use .skel files)
+		let attachment = this.m2.getAttachmentById(attachmentId);
+		if (!attachment && this.skelLoader?.getAttachmentById)
+			attachment = this.skelLoader.getAttachmentById(attachmentId);
+
+		if (!attachment)
+			return null;
+
+		const bone_idx = attachment.bone;
+		if (bone_idx < 0 || !this.bone_matrices)
+			return null;
+
+		// get bone world matrix (includes rotation from animation)
+		const bone_offset = bone_idx * 16;
+		const bone_mat = this.bone_matrices.subarray(bone_offset, bone_offset + 16);
+
+		// attachment position is in WoW coords (X=right, Y=forward, Z=up)
+		// convert to WebGL coords (X=right, Y=up, Z=-forward)
+		const pos = attachment.position;
+		const att_x = pos[0];
+		const att_y = pos[2];  // WoW Z -> WebGL Y
+		const att_z = -pos[1]; // WoW Y -> WebGL -Z
+
+		// create attachment local transform (translation only)
+		const att_mat = new Float32Array([
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			att_x, att_y, att_z, 1
+		]);
+
+		// combine: world = bone_world * attachment_local
+		const result = new Float32Array(16);
+		mat4_multiply(result, bone_mat, att_mat);
+
+		// apply character model's transform (rotation from camera controls)
+		mat4_multiply(result, this.model_matrix, result);
+
+		return result;
 	}
 
 	/**
