@@ -51,6 +51,8 @@
 	"exportFoliageMeta": false,
 	"exportNamedFiles": true,
 	"modelsAutoPreview": true,
+	"legacyModelsAutoPreview": true,
+	"exportLegacyModelFormat": "RAW",
 	"modelViewerShowGrid": true,
 	"modelViewerShowBackground": false,
 	"modelViewerBackgroundColor": "#000000",

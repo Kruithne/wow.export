@@ -62,11 +62,13 @@ const makeNewView = () => {
 		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
+		userInputFilterLegacyModels: '', // Value of the 'filter' field for legacy models.
 		activeModule: null, // Active module component instance.
 		modNavButtons: [], // Module-registered navigation buttons.
 		modContextMenuOptions: [], // Module-registered context menu options.
 		userInputFilterInstall: '', // Value of the 'filter' field for install files.
 		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
+		legacyModelQuickFilters: ['m2', 'mdx', 'wmo'], // Quick filter configuration for legacy models tab.
 		audioQuickFilters: ['ogg', 'mp3', 'unk'], // Quick filter configuration for audio tab.
 		textQuickFilters: ['lua', 'xml', 'txt', 'sbt', 'wtf', 'htm', 'toc', 'xsd', 'srt'], // Quick filter configuration for text tab.
 		selectionTextures: [], // Current user selection of texture files.
@@ -82,6 +84,7 @@ const makeNewView = () => {
 		selectionDataTable: [], // Current user selection of data table rows.
 		selectionRaw: [], // Current user selection of raw files.
 		selectionInstall: [], // Current user selection of install files.
+		selectionLegacyModels: [], // Current user selection of legacy models.
 		installStringsView: false, // Whether to show strings view instead of manifest.
 		installStrings: [], // Extracted strings from binary file.
 		installStringsFileName: '', // Name of file strings were extracted from.
@@ -98,6 +101,7 @@ const makeNewView = () => {
 		itemViewerQualityMask: [], // Item quality filter mask.
 		listfileRaw: [], // Full raw file listfile.
 		listfileInstall: [], // Filtered listfile for install files.
+		listfileLegacyModels: [], // Filtered listfile for legacy models from MPQ.
 		dbdManifest: [], // DB2 entires from DBD manifest.
 		installTags: [], // Install manifest tags.
 		tableBrowserHeaders: [], // DB2 headers
@@ -127,6 +131,15 @@ const makeNewView = () => {
 		modelViewerWMOGroups: [], // Active WMO model group control.
 		modelViewerWMOSets: [], // Active WMO doodad set control.
 		modelViewerAutoAdjust: true, // Automatic camera adjustment.
+		legacyModelViewerContext: null, // 3D context for the legacy model viewer.
+		legacyModelViewerActiveType: 'none', // Type of legacy model actively selected ('m2', 'mdx', 'wmo', 'none').
+		legacyModelViewerAnims: [], // Available legacy animations.
+		legacyModelViewerAnimSelection: null, // Selected legacy model animation.
+		legacyModelViewerAnimPaused: false, // Legacy animation playback paused state.
+		legacyModelViewerAnimFrame: 0, // Current legacy animation frame.
+		legacyModelViewerAnimFrameCount: 0, // Total frames in current legacy animation.
+		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
+		legacyModelTexturePreviewURL: '', // Active URL of the texture preview for legacy model viewer.
 		modelViewerRotationSpeed: 0, // Model rotation speed (0 = no rotation).
 		textureRibbonStack: [], // Texture preview stack for model viewer.
 		textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
@@ -256,6 +269,11 @@ const makeNewView = () => {
 			{ label: 'Export glTF', value: 'GLTF' },
 			{ label: 'Export GLB', value: 'GLB' },
 			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
+			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
+			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
+		],
+		menuButtonLegacyModels: [
+			{ label: 'Export Raw', value: 'RAW' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],

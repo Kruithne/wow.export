@@ -50,7 +50,8 @@ const MODULES = {
 	legacy_tab_textures: require('./modules/legacy_tab_textures'),
 	legacy_tab_fonts: require('./modules/legacy_tab_fonts'),
 	legacy_tab_files: require('./modules/legacy_tab_files'),
-	legacy_tab_data: require('./modules/legacy_tab_data')
+	legacy_tab_data: require('./modules/legacy_tab_data'),
+	tab_models_legacy: require('./modules/tab_models_legacy')
 };
 
 const IS_BUNDLED = typeof process.env.BUILD_RELEASE !== 'undefined';
