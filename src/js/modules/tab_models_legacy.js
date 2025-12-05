@@ -17,6 +17,9 @@ const M2LegacyRendererGL = require('../3D/renderers/M2LegacyRendererGL');
 const WMOLegacyRendererGL = require('../3D/renderers/WMOLegacyRendererGL');
 const MDXRendererGL = require('../3D/renderers/MDXRendererGL');
 
+const M2LegacyExporter = require('../3D/exporters/M2LegacyExporter');
+const WMOLegacyExporter = require('../3D/exporters/WMOLegacyExporter');
+
 const textureRibbon = require('../ui/texture-ribbon');
 const AnimMapper = require('../3D/AnimMapper');
 const DBCreaturesLegacy = require('../db/caches/DBCreaturesLegacy');
@@ -242,10 +245,34 @@ const export_files = async (core, files, export_id = -1) => {
 				const export_path = ExportHelper.getExportPath(file_name);
 				await export_paths?.writeLine(export_path);
 
-				// extract raw file
-				const buf = new BufferWrapper(Buffer.from(file_data));
-				await buf.writeToFile(export_path);
-				file_manifest.push(export_path);
+				const data = new BufferWrapper(Buffer.from(file_data));
+				const file_name_lower = file_name.toLowerCase();
+
+				if (file_name_lower.endsWith('.wmo')) {
+					// wmo export with groups and textures
+					const exporter = new WMOLegacyExporter(data, file_name, mpq);
+					await exporter.exportRaw(export_path, helper, file_manifest);
+				} else if (file_name_lower.endsWith('.m2')) {
+					// m2 export with textures
+					const exporter = new M2LegacyExporter(data, file_name, mpq);
+
+					// get selected skin textures if this is the active model
+					if (file_name === active_path) {
+						const skin_selection = core.view.legacyModelViewerSkinsSelection;
+						if (skin_selection && skin_selection.length > 0) {
+							const selected_skin = skin_selection[0];
+							const display = active_skins.get(selected_skin.id);
+							if (display && display.textures)
+								exporter.setSkinTextures(display.textures);
+						}
+					}
+
+					await exporter.exportRaw(export_path, helper, file_manifest);
+				} else {
+					// mdx or unknown - just export raw file
+					await data.writeToFile(export_path);
+					file_manifest.push({ type: 'RAW', file: export_path });
+				}
 
 				helper.mark(file_name, true);
 				manifest.succeeded.push({ file: file_name, files: file_manifest });
