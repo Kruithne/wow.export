@@ -270,7 +270,7 @@ class WMOLegacyRendererGL {
 	async loadDoodadSet(index) {
 		const wmo = this.wmo;
 		const set = wmo.doodadSets[index];
-		const casc = core.view.casc;
+		const mpq = core.view.mpq;
 
 		if (!set)
 			throw new Error('Invalid doodad set: ' + index);
@@ -286,49 +286,51 @@ class WMOLegacyRendererGL {
 
 		for (let i = 0; i < count; i++) {
 			const doodad = wmo.doodads[firstIndex + i];
-			let fileDataID = 0;
 
-			// legacy: resolve doodad name to fileDataID
-			if (wmo.doodadNames) {
-				const doodadName = wmo.doodadNames[doodad.offset];
-				if (doodadName)
-					fileDataID = listfile.getByFilename(doodadName) || 0;
-			}
+			if (!wmo.doodadNames)
+				continue;
 
-			if (fileDataID > 0) {
-				try {
-					let renderer;
+			const doodadName = wmo.doodadNames[doodad.offset];
+			if (!doodadName)
+				continue;
 
-					if (this.m2_renderers.has(fileDataID)) {
-						renderer = this.m2_renderers.get(fileDataID);
-					} else {
-						const data = await casc.getFile(fileDataID);
-						const magic = data.readUInt32LE();
-						data.seek(0);
+			try {
+				let renderer;
 
-						// legacy M2 uses MD20 magic directly
-						if (magic === 0x3032444D) { // 'MD20'
-							renderer = new M2LegacyRendererGL(data, this.ctx, false, false);
-							await renderer.load();
-							this.m2_renderers.set(fileDataID, renderer);
-						}
+				if (this.m2_renderers.has(doodadName)) {
+					renderer = this.m2_renderers.get(doodadName);
+				} else {
+					const fileData = mpq.getFile(doodadName);
+					if (!fileData)
+						continue;
+
+					const BufferWrapper = require('../../buffer');
+					const data = new BufferWrapper(Buffer.from(fileData));
+					const magic = data.readUInt32LE();
+					data.seek(0);
+
+					// legacy M2 uses MD20 magic directly
+					if (magic === 0x3032444D) { // 'MD20'
+						renderer = new M2LegacyRendererGL(data, this.ctx, false, false);
+						await renderer.load();
+						this.m2_renderers.set(doodadName, renderer);
 					}
-
-					if (renderer) {
-						const pos = doodad.position;
-						const rot = doodad.rotation;
-						const scale = doodad.scale;
-
-						renderers.push({
-							renderer: renderer,
-							position: [pos[0], pos[2], pos[1] * -1],
-							rotation: [rot[0], rot[2], rot[1] * -1, rot[3]],
-							scale: [scale, scale, scale]
-						});
-					}
-				} catch (e) {
-					log.write('Failed to load legacy doodad %d: %s', fileDataID, e.message);
 				}
+
+				if (renderer) {
+					const pos = doodad.position;
+					const rot = doodad.rotation;
+					const scale = doodad.scale;
+
+					renderers.push({
+						renderer: renderer,
+						position: [pos[0], pos[2], pos[1] * -1],
+						rotation: [rot[0], rot[2], rot[1] * -1, rot[3]],
+						scale: [scale, scale, scale]
+					});
+				}
+			} catch (e) {
+				log.write('Failed to load legacy doodad %s: %s', doodadName, e.message);
 			}
 		}
 
