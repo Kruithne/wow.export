@@ -275,6 +275,12 @@ class M2LegacyRendererGL {
 							gl_tex.set_blp(blp, { flags: this.m2.textures[i].flags });
 							this.textures.set(i, gl_tex);
 
+							// update texture ribbon
+							if (this.useRibbon) {
+								textureRibbon.setSlotFileLegacy(i, texture_path, this.syncID);
+								textureRibbon.setSlotSrc(i, blp.getDataURL(0b0111), this.syncID);
+							}
+
 							log.write('Applied creature skin texture %d: %s', i, texture_path);
 						}
 					} catch (e) {

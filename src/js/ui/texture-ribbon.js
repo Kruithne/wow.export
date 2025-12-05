@@ -35,8 +35,8 @@ const reset = () => {
 
 /**
  * Set the file displayed in a given ribbon slot.
- * @param {number} slotIndex 
- * @param {number} fileDataID 
+ * @param {number} slotIndex
+ * @param {number} fileDataID
  * @param {number} syncID
  */
 const setSlotFile = (slotIndex, fileDataID, syncID) => {
@@ -51,6 +51,24 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 		const fileName = listfile.getByID(fileDataID) ?? fileDataID.toString();
 		slot.fileName = fileName;
 		slot.displayName = path.basename(fileName, path.extname(fileName));
+	}
+};
+
+/**
+ * Set the file displayed in a given ribbon slot (legacy - uses file path instead of fileDataID).
+ * @param {number} slotIndex
+ * @param {string} filePath
+ * @param {number} syncID
+ */
+const setSlotFileLegacy = (slotIndex, filePath, syncID) => {
+	if (syncID !== _syncID)
+		return;
+
+	const slot = core.view.textureRibbonStack[slotIndex];
+	if (slot) {
+		slot.fileDataID = 0;
+		slot.fileName = filePath;
+		slot.displayName = path.basename(filePath, path.extname(filePath));
 	}
 };
 
@@ -85,6 +103,7 @@ const addSlot = () => {
 module.exports = {
 	reset,
 	setSlotFile,
+	setSlotFileLegacy,
 	setSlotSrc,
 	onResize,
 	addSlot
