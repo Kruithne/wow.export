@@ -273,6 +273,15 @@ module.exports = {
 			if (activeRenderer && activeRenderer.render)
 				activeRenderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
+			// render equipment models (character mode only)
+			const equipment_renderers = this.context.getEquipmentRenderers?.();
+			if (equipment_renderers) {
+				for (const renderer of equipment_renderers.values()) {
+					if (renderer && renderer.render)
+						renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
+				}
+			}
+
 			requestAnimationFrame(() => this.render());
 		},
 

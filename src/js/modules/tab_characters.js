@@ -25,6 +25,7 @@ const { EQUIPMENT_SLOTS, get_slot_name } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
+const DBItemModels = require('../db/caches/DBItemModels');
 
 //region state
 const active_skins = new Map();
@@ -59,6 +60,9 @@ const skinned_model_meshes = new Set();
 
 const chr_materials = new Map();
 
+// equipment model renderers (slot_id -> M2RendererGL)
+const equipment_model_renderers = new Map();
+
 let current_char_component_texture_layout_id = 0;
 let watcher_cleanup_funcs = [];
 let is_importing = false;
@@ -85,6 +89,7 @@ function reset_module_state() {
 	skinned_model_renderers.clear();
 	skinned_model_meshes.clear();
 	chr_materials.clear();
+	dispose_equipment_models();
 	current_char_component_texture_layout_id = 0;
 
 	if (active_renderer) {
@@ -109,6 +114,7 @@ async function refresh_character_appearance(core) {
 
 	update_geosets(core);
 	await update_textures(core);
+	await update_equipment_models(core);
 
 	log.write('Character appearance refresh complete');
 }
@@ -400,6 +406,69 @@ async function update_textures(core) {
 	}
 }
 
+/**
+ * Updates equipment model renderers based on equipped items.
+ * Loads models for newly equipped items, disposes models for unequipped items.
+ */
+async function update_equipment_models(core) {
+	if (!gl_context)
+		return;
+
+	const equipped_items = core.view.chrEquippedItems;
+	const current_slots = new Set(Object.keys(equipped_items).map(Number));
+	const rendered_slots = new Set(equipment_model_renderers.keys());
+
+	// dispose models for slots that are no longer equipped
+	for (const slot_id of rendered_slots) {
+		if (!current_slots.has(slot_id)) {
+			const renderer = equipment_model_renderers.get(slot_id);
+			renderer.dispose();
+			equipment_model_renderers.delete(slot_id);
+			log.write('Disposed equipment model for slot %d', slot_id);
+		}
+	}
+
+	// load models for newly equipped items
+	for (const [slot_id_str, item_id] of Object.entries(equipped_items)) {
+		const slot_id = Number(slot_id_str);
+
+		// check if we already have a renderer for this slot with same item
+		const existing = equipment_model_renderers.get(slot_id);
+		if (existing && existing._item_id === item_id)
+			continue;
+
+		// dispose old renderer if item changed
+		if (existing) {
+			existing.dispose();
+			equipment_model_renderers.delete(slot_id);
+		}
+
+		// get model file data IDs for this item
+		const model_file_data_ids = DBItemModels.getItemModels(item_id);
+		if (!model_file_data_ids || model_file_data_ids.length === 0)
+			continue;
+
+		// load first model
+		const file_data_id = model_file_data_ids[0];
+		try {
+			const file = await core.view.casc.getFile(file_data_id);
+			const renderer = new M2RendererGL(file, gl_context, false, false);
+			await renderer.load();
+
+			// position at origin (0, 0, 0)
+			renderer.setTransform([0, 0, 0], [0, 0, 0], [1, 1, 1]);
+
+			// store item_id for change detection
+			renderer._item_id = item_id;
+
+			equipment_model_renderers.set(slot_id, renderer);
+			log.write('Loaded equipment model %d for slot %d (item %d)', file_data_id, slot_id, item_id);
+		} catch (e) {
+			log.write('Failed to load equipment model %d: %s', file_data_id, e.message);
+		}
+	}
+}
+
 //endregion
 
 //region models
@@ -425,6 +494,7 @@ async function load_character_model(core, file_data_id) {
 
 		active_skins.clear();
 		dispose_skinned_models();
+		dispose_equipment_models();
 
 		const file = await core.view.casc.getFile(file_data_id);
 
@@ -483,6 +553,13 @@ function dispose_skinned_models() {
 
 	skinned_model_renderers.clear();
 	skinned_model_meshes.clear();
+}
+
+function dispose_equipment_models() {
+	for (const renderer of equipment_model_renderers.values())
+		renderer.dispose();
+
+	equipment_model_renderers.clear();
 }
 
 function clear_materials() {
@@ -1535,6 +1612,9 @@ module.exports = {
 		await this.$core.progressLoadingScreen('Loading item geosets...');
 		await DBItemGeosets.ensureInitialized();
 
+		await this.$core.progressLoadingScreen('Loading item models...');
+		await DBItemModels.ensureInitialized();
+
 		await this.$core.progressLoadingScreen('Loading character customization elements...');
 		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
 			if (chr_customization_element_row.ChrCustomizationGeosetID != 0)
@@ -1692,7 +1772,8 @@ module.exports = {
 			controls: null,
 			useCharacterControls: true,
 			fitCamera: null,
-			getActiveRenderer: () => active_renderer
+			getActiveRenderer: () => active_renderer,
+			getEquipmentRenderers: () => equipment_model_renderers
 		};
 
 		const ctx_watcher = state.$watch('chrModelViewerContext.gl_context', (new_ctx) => {
