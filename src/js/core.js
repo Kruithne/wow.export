@@ -139,6 +139,8 @@ const makeNewView = () => {
 		legacyModelViewerAnimFrame: 0, // Current legacy animation frame.
 		legacyModelViewerAnimFrameCount: 0, // Total frames in current legacy animation.
 		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
+		legacyModelViewerSkins: [], // Available legacy M2 model skins.
+		legacyModelViewerSkinsSelection: [], // Selected legacy M2 model skin.
 		legacyModelTexturePreviewURL: '', // Active URL of the texture preview for legacy model viewer.
 		modelViewerRotationSpeed: 0, // Model rotation speed (0 = no rotation).
 		textureRibbonStack: [], // Texture preview stack for model viewer.

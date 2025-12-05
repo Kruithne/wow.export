@@ -220,12 +220,14 @@ class M2LegacyRendererGL {
 
 			// legacy textures use fileName property set by loader
 			const fileName = texture.fileName;
+
 			if (fileName && fileName.length > 0) {
 				if (ribbonSlot !== null)
 					textureRibbon.setSlotFile(ribbonSlot, fileName, this.syncID);
 
 				try {
 					const data = mpq.getFile(fileName);
+
 					if (data) {
 						const BufferWrapper = require('../../buffer');
 						const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
@@ -238,6 +240,46 @@ class M2LegacyRendererGL {
 					}
 				} catch (e) {
 					log.write('Failed to load legacy texture %s: %s', fileName, e.message);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Apply creature skin textures (replaceable textures from CreatureDisplayInfo)
+	 * @param {string[]} texture_paths - Array of texture file paths
+	 */
+	async applyCreatureSkin(texture_paths) {
+		const mpq = core.view.mpq;
+		const textureTypes = this.m2.textureTypes;
+
+		// creature skins map to textureType 11, 12, 13 (Monster1, Monster2, Monster3)
+		const MONSTER_TEX_START = 11;
+
+		for (let i = 0; i < textureTypes.length; i++) {
+			const textureType = textureTypes[i];
+
+			// check if this is a monster replaceable texture slot
+			if (textureType >= MONSTER_TEX_START && textureType < MONSTER_TEX_START + 3) {
+				const skin_index = textureType - MONSTER_TEX_START;
+
+				if (skin_index < texture_paths.length) {
+					const texture_path = texture_paths[skin_index];
+
+					try {
+						const data = mpq.getFile(texture_path);
+						if (data) {
+							const BufferWrapper = require('../../buffer');
+							const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
+							const gl_tex = new GLTexture(this.ctx);
+							gl_tex.set_blp(blp, { flags: this.m2.textures[i].flags });
+							this.textures.set(i, gl_tex);
+
+							log.write('Applied creature skin texture %d: %s', i, texture_path);
+						}
+					} catch (e) {
+						log.write('Failed to apply creature skin texture %s: %s', texture_path, e.message);
+					}
 				}
 			}
 		}

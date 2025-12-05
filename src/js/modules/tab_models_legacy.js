@@ -18,6 +18,7 @@ const MDXRendererGL = require('../3D/renderers/MDXRendererGL');
 
 const textureRibbon = require('../ui/texture-ribbon');
 const AnimMapper = require('../3D/AnimMapper');
+const DBCreaturesLegacy = require('../db/caches/DBCreaturesLegacy');
 
 const MAGIC_MD20 = 0x3032444D; // 'MD20'
 const MAGIC_MDLX = 0x584C444D; // 'MDLX'
@@ -28,6 +29,7 @@ const MODEL_TYPE_WMO = Symbol('modelWMO');
 
 let active_renderer;
 let active_path;
+const active_skins = new Map(); // skin_id -> display info
 
 const clear_texture_preview = (core) => {
 	core.view.legacyModelTexturePreviewURL = '';
@@ -43,6 +45,9 @@ const preview_model = async (core, file_name) => {
 
 	core.view.legacyModelViewerAnims = [];
 	core.view.legacyModelViewerAnimSelection = null;
+	core.view.legacyModelViewerSkins = [];
+	core.view.legacyModelViewerSkinsSelection = [];
+	active_skins.clear();
 
 	try {
 		if (active_renderer) {
@@ -115,6 +120,47 @@ const preview_model = async (core, file_name) => {
 
 			core.view.legacyModelViewerAnims = final_anim_list;
 			core.view.legacyModelViewerAnimSelection = 'none';
+		}
+
+		// setup skins for m2 creatures
+		if (core.view.legacyModelViewerActiveType === 'm2') {
+			const displays = DBCreaturesLegacy.getCreatureDisplaysByPath(file_name);
+
+			if (displays && displays.length > 0) {
+				const skin_list = [];
+				const model_name = path.basename(file_name, '.m2').toLowerCase();
+
+				for (const display of displays) {
+					if (display.textures.length === 0)
+						continue;
+
+					// use first texture as skin identifier
+					const first_texture = display.textures[0];
+					let skin_name = path.basename(first_texture, '.blp').toLowerCase();
+
+					// remove model name prefix if present
+					if (skin_name.startsWith(model_name))
+						skin_name = skin_name.substring(model_name.length);
+
+					// clean up skin name
+					if (skin_name.length === 0 || skin_name === 'skin')
+						skin_name = 'base';
+
+					const skin_id = display.id.toString();
+					const label = skin_name + ' (' + display.id + ')';
+
+					if (active_skins.has(skin_id))
+						continue;
+
+					skin_list.push({ id: skin_id, label: label });
+					active_skins.set(skin_id, display);
+				}
+
+				if (skin_list.length > 0) {
+					core.view.legacyModelViewerSkins = skin_list;
+					core.view.legacyModelViewerSkinsSelection = skin_list.slice(0, 1);
+				}
+			}
 		}
 
 		active_path = file_name;
@@ -291,6 +337,10 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelViewerShowBackground"/>
 					<span>Show Background</span>
 				</label>
+				<template v-if="$core.view.legacyModelViewerActiveType === 'm2' && $core.view.legacyModelViewerSkins && $core.view.legacyModelViewerSkins.length > 0">
+					<span class="header">Skins</span>
+					<component :is="$components.Listboxb" :items="$core.view.legacyModelViewerSkins" v-model:selection="$core.view.legacyModelViewerSkinsSelection" :single="true"></component>
+				</template>
 				<template v-if="$core.view.legacyModelViewerActiveType === 'm2' || $core.view.legacyModelViewerActiveType === 'mdx'">
 					<span class="header">Geosets</span>
 					<component :is="$components.Checkboxlist" :items="$core.view.modelViewerGeosets"></component>
@@ -386,7 +436,7 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(2);
+		this.$core.showLoadingScreen(3);
 
 		try {
 			await this.$core.progressLoadingScreen('Building legacy model list...');
@@ -401,6 +451,12 @@ module.exports = {
 			});
 
 			this.$core.view.listfileLegacyModels = model_files.sort();
+
+			await this.$core.progressLoadingScreen('Loading creature skin data...');
+
+			// initialize creature display data for skin variations
+			const build_id = '1.12.1.5875'; // todo: detect from mpq
+			await DBCreaturesLegacy.initializeCreatureData(mpq, build_id);
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 
@@ -454,6 +510,21 @@ module.exports = {
 			const first = selection[0];
 			if (!this.$core.view.isBusy && first && active_path !== first)
 				preview_model(this.$core, first);
+		});
+
+		this.$core.view.$watch('legacyModelViewerSkinsSelection', async selection => {
+			if (!active_renderer || !active_renderer.applyCreatureSkin || active_skins.size === 0)
+				return;
+
+			const selected = selection[0];
+			if (!selected)
+				return;
+
+			const display = active_skins.get(selected.id);
+			if (display) {
+				log.write('Applying creature skin %s with textures: %o', selected.id, display.textures);
+				await active_renderer.applyCreatureSkin(display.textures);
+			}
 		});
 	},
 

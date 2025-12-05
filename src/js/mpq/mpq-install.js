@@ -113,38 +113,34 @@ class MPQInstall {
 	}
 
 	getFile(display_path) {
-		let filename = display_path;
+		// normalize path separators (some files use forward slashes)
+		const normalized_path = display_path.replace(/\//g, '\\');
 
-		if (display_path.includes('\\')) {
-			const parts = display_path.split('\\');
-			filename = parts.slice(1).join('\\');
+		// first try direct lookup (for paths without mpq prefix like texture references)
+		const direct_normalized = normalized_path.toLowerCase();
+		const direct_data = this.listfile.get(direct_normalized);
+
+		if (direct_data !== undefined) {
+			const { archive } = this.archives[direct_data.archive_index];
+			return archive.extractFile(direct_data.original_filename);
 		}
 
-		const normalized = filename.toLowerCase();
-		const data = this.listfile.get(normalized);
+		// try stripping mpq name prefix (for display paths like "patch.mpq\Creature\...")
+		if (normalized_path.includes('\\')) {
+			const parts = normalized_path.split('\\');
 
-		if (data === undefined) {
-			// try stripping more path components if the MPQ name has multiple parts
-			if (display_path.includes('\\')) {
-				const parts = display_path.split('\\');
-				const mpq_parts = data?.mpq_name?.split('\\').length || 0;
-
-				// try looking up with just the filename part (skip MPQ name components)
-				for (let i = 1; i < parts.length; i++) {
-					const test_filename = parts.slice(i).join('\\').toLowerCase();
-					const test_data = this.listfile.get(test_filename);
-					if (test_data !== undefined) {
-						const { archive } = this.archives[test_data.archive_index];
-						return archive.extractFile(test_data.original_filename);
-					}
+			// try progressively stripping path components
+			for (let i = 1; i < parts.length; i++) {
+				const test_filename = parts.slice(i).join('\\').toLowerCase();
+				const test_data = this.listfile.get(test_filename);
+				if (test_data !== undefined) {
+					const { archive } = this.archives[test_data.archive_index];
+					return archive.extractFile(test_data.original_filename);
 				}
 			}
-
-			return null;
 		}
 
-		const { archive } = this.archives[data.archive_index];
-		return archive.extractFile(data.original_filename);
+		return null;
 	}
 
 	getFileCount() {

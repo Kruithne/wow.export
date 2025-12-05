@@ -1585,6 +1585,15 @@ input[type=number]::-webkit-outer-spin-button {
 	margin-top: 5px;
 }
 
+#tab-models-legacy #model-sidebar .ui-checkboxlist, #tab-models-legacy #model-sidebar .ui-listbox {
+	height: 156px;
+}
+#tab-models-legacy #model-sidebar .list-toggles {
+	font-size: 14px;
+	text-align: center;
+	margin-top: 5px;
+}
+
 #tab-maps {
 	grid-template-rows: auto 1fr 60px;
 }
