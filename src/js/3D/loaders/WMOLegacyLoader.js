@@ -117,7 +117,8 @@ class WMOLegacyLoader {
 		if (!this.groups)
 			throw new Error('Attempted to obtain group from a root WMO.');
 
-		const casc = core.view.casc;
+		const mpq = core.view.mpq;
+		const BufferWrapper = require('../../buffer');
 
 		let group = this.groups[index];
 		if (group)
@@ -134,11 +135,13 @@ class WMOLegacyLoader {
 			throw new Error('Alpha inline group parsing not yet implemented');
 		}
 
-		let data;
-		if (this.groupIDs)
-			data = await casc.getFile(this.groupIDs[index]);
-		else
-			data = await casc.getFileByName(this.fileName.replace('.wmo', '_' + index.toString().padStart(3, '0') + '.wmo'));
+		const groupFileName = this.fileName.replace('.wmo', '_' + index.toString().padStart(3, '0') + '.wmo');
+		const fileData = mpq.getFile(groupFileName);
+
+		if (!fileData)
+			throw new Error('Group file not found: ' + groupFileName);
+
+		const data = new BufferWrapper(Buffer.from(fileData));
 
 		group = this.groups[index] = new WMOLegacyLoader(data, undefined, this.renderingOnly);
 		group.version = this.version;
