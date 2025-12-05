@@ -389,6 +389,10 @@ class M2LegacyRendererGL {
 					blend_mode = mat.blendingMode;
 					flags = mat.flags;
 					this.material_props.set(tex_indices[0], { blendMode: blend_mode, flags: flags });
+
+					// use Combiners_Mod (1) for alpha-using blend modes
+					if (blend_mode > 0)
+						pixel_shader = 1;
 				}
 			}
 
