@@ -11,6 +11,7 @@ const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const InstallType = require('../install-type');
 const listboxContext = require('../ui/listbox-context');
+const constants = require('../constants');
 
 const M2LegacyRendererGL = require('../3D/renderers/M2LegacyRendererGL');
 const WMOLegacyRendererGL = require('../3D/renderers/WMOLegacyRendererGL');
@@ -447,7 +448,14 @@ module.exports = {
 
 			const model_files = all_files.filter(f => {
 				const lower = f.toLowerCase();
-				return lower.endsWith('.m2') || lower.endsWith('.mdx') || lower.endsWith('.wmo');
+				if (lower.endsWith('.m2') || lower.endsWith('.mdx'))
+					return true;
+
+				// filter wmo group files
+				if (lower.endsWith('.wmo'))
+					return !constants.LISTFILE_MODEL_FILTER.test(lower);
+
+				return false;
 			});
 
 			this.$core.view.listfileLegacyModels = model_files.sort();
