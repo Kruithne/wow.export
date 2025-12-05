@@ -443,17 +443,21 @@ async function update_equipment_models(core) {
 			equipment_model_renderers.delete(slot_id);
 		}
 
-		// get model file data IDs for this item
-		const model_file_data_ids = DBItemModels.getItemModels(item_id);
-		if (!model_file_data_ids || model_file_data_ids.length === 0)
+		// get display data for this item (models and textures)
+		const display = DBItemModels.getItemDisplay(item_id);
+		if (!display || !display.models || display.models.length === 0)
 			continue;
 
 		// load first model
-		const file_data_id = model_file_data_ids[0];
+		const file_data_id = display.models[0];
 		try {
 			const file = await core.view.casc.getFile(file_data_id);
 			const renderer = new M2RendererGL(file, gl_context, false, false);
 			await renderer.load();
+
+			// apply item textures
+			if (display.textures && display.textures.length > 0)
+				await renderer.applyReplaceableTextures(display);
 
 			// position at origin (0, 0, 0)
 			renderer.setTransform([0, 0, 0], [0, 0, 0], [1, 1, 1]);
