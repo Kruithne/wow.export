@@ -65,8 +65,8 @@ const load_table = async (core, table_name) => {
 
 		const data = new BufferWrapper(Buffer.from(raw_data));
 
-		// detect build version from known files or use fallback
-		const build_id = detect_build_version(core);
+		// get build version from mpq install
+		const build_id = get_build_version(core);
 
 		const dbc_reader = new DBCReader(table_name + '.dbc', build_id);
 		await dbc_reader.parse(data);
@@ -114,11 +114,8 @@ const load_table = async (core, table_name) => {
 	}
 };
 
-const detect_build_version = (core) => {
-	// try to detect build from common patterns
-	// for now use a default vanilla build
-	// todo: implement proper detection from .wtf files or realmlist
-	return '1.12.1.5875';
+const get_build_version = (core) => {
+	return core.view.mpq?.build_id ?? '1.12.1.5875';
 };
 
 module.exports = {

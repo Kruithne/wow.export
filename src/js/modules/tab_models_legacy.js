@@ -455,8 +455,7 @@ module.exports = {
 			await this.$core.progressLoadingScreen('Loading creature skin data...');
 
 			// initialize creature display data for skin variations
-			const build_id = '1.12.1.5875'; // todo: detect from mpq
-			await DBCreaturesLegacy.initializeCreatureData(mpq, build_id);
+			await DBCreaturesLegacy.initializeCreatureData(mpq, mpq.build_id);
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 

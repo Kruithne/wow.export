@@ -6,6 +6,7 @@
 const path = require('path');
 const fsp = require('fs').promises;
 const { MPQArchive } = require('./mpq');
+const { detect_build_version } = require('./build-version');
 const log = require('../log');
 
 class MPQInstall {
@@ -13,6 +14,7 @@ class MPQInstall {
 		this.directory = directory;
 		this.archives = [];
 		this.listfile = new Map(); // filename -> { archive_index, mpq_name }
+		this.build_id = null;
 	}
 
 	close() {
@@ -75,6 +77,11 @@ class MPQInstall {
 
 		await core.progressLoadingScreen('MPQ Archives Loaded');
 		log.write('Total files in listfile: %d', this.listfile.size);
+
+		// detect build version
+		const mpq_names = this.archives.map(a => a.name);
+		this.build_id = detect_build_version(this.directory, mpq_names);
+		log.write('Using build version: %s', this.build_id);
 	}
 
 	getFilesByExtension(extension) {
