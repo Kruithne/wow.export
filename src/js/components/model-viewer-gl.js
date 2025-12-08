@@ -387,16 +387,6 @@ module.exports = {
 		// expose fit_camera on context
 		this.context.fitCamera = () => this.fit_camera();
 
-		// debug: expose camera state for tuning
-		window.dumpCamera = () => {
-			const pos = this.camera.position;
-			const tgt = this.controls.target;
-			console.log('Camera position:', pos[0], pos[1], pos[2]);
-			console.log('Camera target:', tgt[0], tgt[1], tgt[2]);
-			console.log('Camera FOV:', this.camera.fov);
-			return { position: [...pos], target: [...tgt], fov: this.camera.fov };
-		};
-
 		// create grid renderer
 		this.grid_renderer = new GridRenderer(this.gl_context, 100, 100);
 
