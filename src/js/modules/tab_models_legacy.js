@@ -318,6 +318,7 @@ module.exports = {
 				<div class="preview-background" id="legacy-model-preview">
 					<input v-if="$core.view.config.modelViewerShowBackground" type="color" id="background-color-input" v-model="$core.view.config.modelViewerBackgroundColor" title="Click to change background color"/>
 					<component :is="$components.ModelViewerGL" v-if="$core.view.legacyModelViewerContext" :context="$core.view.legacyModelViewerContext"></component>
+					<!-- legacy animation support disabled - needs fixing
 					<div v-if="$core.view.legacyModelViewerAnims && $core.view.legacyModelViewerAnims.length > 0" class="preview-dropdown-overlay">
 						<select v-model="$core.view.legacyModelViewerAnimSelection">
 							<option v-for="animation in $core.view.legacyModelViewerAnims" :key="animation.id" :value="animation.id">
@@ -334,6 +335,7 @@ module.exports = {
 							</div>
 						</div>
 					</div>
+					-->
 				</div>
 			</div>
 			<div class="preview-controls">
