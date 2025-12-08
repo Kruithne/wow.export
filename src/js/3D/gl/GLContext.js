@@ -255,10 +255,10 @@ class GLContext {
 				break;
 
 			case BlendMode.ALPHA_KEY:
-				// alpha test handled in shader, but still need blending for soft edges
+				// alpha test handled in shader, depth write enabled since discarded pixels don't write depth
 				this.set_blend(true);
 				this.set_blend_func(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-				this.set_depth_write(false);
+				this.set_depth_write(true);
 				break;
 
 			case BlendMode.ALPHA:
