@@ -330,6 +330,12 @@ void main() {
 	} else if (u_blend_mode == 0) {
 		// opaque
 		final_opacity = mesh_opacity;
+	} else if (u_blend_mode == 4 || u_blend_mode == 5) {
+		// MOD and MOD2X blend modes: discard low alpha pixels to prevent holdout
+		// these modes multiply destination by source, so low alpha = black = destroys destination
+		final_opacity = discard_alpha * mesh_opacity;
+		if (can_discard && discard_alpha < u_alpha_test)
+			do_discard = true;
 	} else {
 		// other blend modes
 		final_opacity = discard_alpha * mesh_opacity;
