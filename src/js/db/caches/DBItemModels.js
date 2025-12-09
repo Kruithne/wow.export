@@ -8,11 +8,12 @@ const log = require('../../log');
 const db2 = require('../../casc/db2');
 const DBModelFileData = require('./DBModelFileData');
 const DBTextureFileData = require('./DBTextureFileData');
+const DBComponentModelFileData = require('./DBComponentModelFileData');
 
 // maps ItemID -> ItemDisplayInfoID
 const item_to_display_id = new Map();
 
-// maps ItemDisplayInfoID -> { models: [fileDataID, ...], textures: [fileDataID, ...] }
+// maps ItemDisplayInfoID -> { modelOptions: [[fdid, ...], ...], textures: [fdid, ...], geosetGroup: [...], attachmentGeosetGroup: [...] }
 const display_to_data = new Map();
 
 let is_initialized = false;
@@ -30,6 +31,7 @@ const initialize = async () => {
 
 		await DBModelFileData.initializeModelFileData();
 		await DBTextureFileData.ensureInitialized();
+		await DBComponentModelFileData.initialize();
 
 		// build item -> appearance -> display chain
 		const appearance_map = new Map();
@@ -53,14 +55,17 @@ const initialize = async () => {
 			if (model_res_ids.length === 0)
 				continue;
 
-			const model_file_data_ids = [];
+			// store ALL file data IDs per model resource (filter by race/gender at query time)
+			const model_options = [];
 			for (const model_res_id of model_res_ids) {
 				const file_data_ids = DBModelFileData.getModelFileDataID(model_res_id);
-				if (file_data_ids)
-					model_file_data_ids.push(...file_data_ids);
+				if (file_data_ids && file_data_ids.length > 0)
+					model_options.push(file_data_ids);
+				else
+					model_options.push([]);
 			}
 
-			if (model_file_data_ids.length === 0)
+			if (model_options.every(arr => arr.length === 0))
 				continue;
 
 			// get texture file data IDs from material resources
@@ -72,9 +77,15 @@ const initialize = async () => {
 					texture_file_data_ids.push(tex_fdids[0]);
 			}
 
+			// geoset groups for character model and attachment/collection models
+			const geoset_group = row.GeosetGroup || [];
+			const attachment_geoset_group = row.AttachmentGeosetGroup || [];
+
 			display_to_data.set(display_id, {
-				models: model_file_data_ids,
-				textures: texture_file_data_ids
+				modelOptions: model_options,
+				textures: texture_file_data_ids,
+				geosetGroup: geoset_group,
+				attachmentGeosetGroup: attachment_geoset_group
 			});
 		}
 
@@ -92,7 +103,7 @@ const ensure_initialized = async () => {
 };
 
 /**
- * Get model file data IDs for an item.
+ * Get model file data IDs for an item (first option per model resource).
  * @param {number} item_id
  * @returns {Array<number>|null}
  */
@@ -102,16 +113,23 @@ const get_item_models = (item_id) => {
 		return null;
 
 	const data = display_to_data.get(display_id);
-	return data?.models?.length > 0 ? data.models : null;
+	if (!data?.modelOptions)
+		return null;
+
+	// return first option for each model resource
+	const models = data.modelOptions.map(opts => opts[0]).filter(Boolean);
+	return models.length > 0 ? models : null;
 };
 
 /**
  * Get display data for an item (models and textures).
- * Returns object compatible with M2RendererGL.applyReplaceableTextures()
+ * Filters models by race/gender if provided.
  * @param {number} item_id
- * @returns {{ID: number, textures: number[], models: number[]}|null}
+ * @param {number} [race_id] - character race ID for filtering
+ * @param {number} [gender_index] - 0=male, 1=female for filtering
+ * @returns {{ID: number, textures: number[], models: number[], geosetGroup: number[], attachmentGeosetGroup: number[]}|null}
  */
-const get_item_display = (item_id) => {
+const get_item_display = (item_id, race_id, gender_index) => {
 	const display_id = item_to_display_id.get(item_id);
 	if (display_id === undefined)
 		return null;
@@ -120,10 +138,28 @@ const get_item_display = (item_id) => {
 	if (!data)
 		return null;
 
+	// filter models by race/gender
+	const models = [];
+	for (const options of data.modelOptions) {
+		if (options.length === 0)
+			continue;
+
+		if (race_id !== undefined && gender_index !== undefined) {
+			const best = DBComponentModelFileData.getModelForRaceGender(options, race_id, gender_index);
+			if (best)
+				models.push(best);
+		} else {
+			// no race/gender specified, use first option
+			models.push(options[0]);
+		}
+	}
+
 	return {
 		ID: display_id,
-		models: data.models,
-		textures: data.textures
+		models: models,
+		textures: data.textures,
+		geosetGroup: data.geosetGroup,
+		attachmentGeosetGroup: data.attachmentGeosetGroup
 	};
 };
 

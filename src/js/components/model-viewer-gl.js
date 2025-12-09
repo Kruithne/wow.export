@@ -296,6 +296,33 @@ module.exports = {
 				}
 			}
 
+			// render collection models with remapped bone matrices
+			const collection_renderers = this.context.getCollectionRenderers?.();
+			if (collection_renderers && activeRenderer) {
+				const char_bone_matrices = activeRenderer.bone_matrices;
+				const char_model_matrix = activeRenderer.model_matrix;
+
+				for (const slot_entry of collection_renderers.values()) {
+					if (!slot_entry?.renderers)
+						continue;
+
+					for (const renderer of slot_entry.renderers) {
+						if (!renderer?.render)
+							continue;
+
+						// apply remapped bone matrices for proper rigging
+						if (char_bone_matrices && renderer.applyExternalBoneMatrices)
+							renderer.applyExternalBoneMatrices(char_bone_matrices);
+
+						// use character's model transform (rotation from controls)
+						if (char_model_matrix)
+							renderer.setTransformMatrix(char_model_matrix);
+
+						renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
+					}
+				}
+			}
+
 			requestAnimationFrame(() => this.render());
 		},
 

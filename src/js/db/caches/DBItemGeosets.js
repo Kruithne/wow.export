@@ -35,44 +35,63 @@ const CG = {
 	TROUSERS: 13,
 	DH_LOINCLOTH: 14,
 	CLOAK: 15,
+	FACIAL_JEWELRY: 16,
 	EYEGLOW: 17,
 	BELT: 18,
 	BONE: 19,
 	FEET: 20,
-	GEOSET2100: 21,
+	SKULL: 21,
 	TORSO: 22,
 	HAND_ATTACHMENT: 23,
 	HEAD_ATTACHMENT: 24,
 	DH_BLINDFOLDS: 25,
-	GEOSET2600: 26,
-	GEOSET2700: 27,
-	GEOSET2800: 28
+	SHOULDERS: 26,
+	HELM: 27,
+	ARM_UPPER: 28,
+	MECHAGNOME_ARMS: 29,
+	MECHAGNOME_LEGS: 30,
+	MECHAGNOME_FEET: 31,
+	HEAD_SWAP: 32,
+	EYES: 33,
+	EYEBROWS: 34,
+	PIERCINGS: 35,
+	NECKLACE: 36,
+	HEADDRESS: 37,
+	TAILS: 38,
+	MISC_ACCESSORY: 39,
+	MISC_FEATURE: 40,
+	NOSES: 41,
+	HAIR_DECO_A: 42,
+	HORN_DECO: 43,
+	BODY_SIZE: 44,
+	DRACTHYR: 46,
+	EYE_GLOW_B: 51
 };
 
 // slot id to geoset group mapping per WoWItem.cpp
 // each entry: { group_index: index in GeosetGroup array, char_geoset: CG enum value }
 const SLOT_GEOSET_MAPPING = {
-	// Head: geosetGroup[0] = CG_GEOSET2700, geosetGroup[1] = CG_GEOSET2100
+	// Head: geosetGroup[0] = HELM, geosetGroup[1] = SKULL
 	1: [
-		{ group_index: 0, char_geoset: CG.GEOSET2700 },
-		{ group_index: 1, char_geoset: CG.GEOSET2100 }
+		{ group_index: 0, char_geoset: CG.HELM },
+		{ group_index: 1, char_geoset: CG.SKULL }
 	],
-	// Shoulder: geosetGroup[0] = CG_GEOSET2600
+	// Shoulder: geosetGroup[0] = SHOULDERS
 	3: [
-		{ group_index: 0, char_geoset: CG.GEOSET2600 }
+		{ group_index: 0, char_geoset: CG.SHOULDERS }
 	],
 	// Shirt: geosetGroup[0] = CG_SLEEVES, geosetGroup[1] = CG_CHEST
 	4: [
 		{ group_index: 0, char_geoset: CG.SLEEVES },
 		{ group_index: 1, char_geoset: CG.CHEST }
 	],
-	// Chest: geosetGroup[0] = CG_SLEEVES, geosetGroup[1] = CG_CHEST, geosetGroup[2] = CG_TROUSERS, geosetGroup[3] = CG_TORSO, geosetGroup[4] = CG_GEOSET2800
+	// Chest: geosetGroup[0] = CG_SLEEVES, geosetGroup[1] = CG_CHEST, geosetGroup[2] = CG_TROUSERS, geosetGroup[3] = CG_TORSO, geosetGroup[4] = ARM_UPPER
 	5: [
 		{ group_index: 0, char_geoset: CG.SLEEVES },
 		{ group_index: 1, char_geoset: CG.CHEST },
 		{ group_index: 2, char_geoset: CG.TROUSERS },
 		{ group_index: 3, char_geoset: CG.TORSO },
-		{ group_index: 4, char_geoset: CG.GEOSET2800 }
+		{ group_index: 4, char_geoset: CG.ARM_UPPER }
 	],
 	// Waist/Belt: geosetGroup[0] = CG_BELT
 	6: [
@@ -119,10 +138,10 @@ const GEOSET_PRIORITY = {
 	[CG.FEET]: [8],                // boots only
 	[CG.TORSO]: [5],               // chest only
 	[CG.HAND_ATTACHMENT]: [10],    // gloves only
-	[CG.GEOSET2700]: [1],          // head only
-	[CG.GEOSET2800]: [5],          // chest only
-	[CG.GEOSET2100]: [1],          // head only
-	[CG.GEOSET2600]: [3],          // shoulder only
+	[CG.HELM]: [1],                // head only
+	[CG.ARM_UPPER]: [5],           // chest only
+	[CG.SKULL]: [1],               // head only
+	[CG.SHOULDERS]: [3],           // shoulder only
 	[CG.BOOTS]: [8],               // boots only
 	[CG.GLOVES]: [10],             // gloves only
 	[CG.PANTS]: [7],               // pants only

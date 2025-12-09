@@ -27,6 +27,71 @@ const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
 
+
+// geoset group constants (CG enum from DBItemGeosets)
+const CG = {
+	SLEEVES: 8,
+	KNEEPADS: 9,
+	CHEST: 10,
+	PANTS: 11,
+	TABARD: 12,
+	TROUSERS: 13,
+	CLOAK: 15,
+	BELT: 18,
+	FEET: 20,
+	TORSO: 22,
+	HAND_ATTACHMENT: 23,
+	SHOULDERS: 26,
+	HELM: 27,
+	ARM_UPPER: 28,
+	BOOTS: 5,
+	GLOVES: 4,
+	SKULL: 21
+};
+
+// slot id to geoset group mapping for collection models
+const SLOT_TO_GEOSET_GROUPS = {
+	1: [{ group_index: 0, char_geoset: CG.HELM }, { group_index: 1, char_geoset: CG.SKULL }],
+	5: [{ group_index: 0, char_geoset: CG.SLEEVES }, { group_index: 1, char_geoset: CG.CHEST }, { group_index: 2, char_geoset: CG.TROUSERS }, { group_index: 3, char_geoset: CG.TORSO }, { group_index: 4, char_geoset: CG.ARM_UPPER }],
+	6: [{ group_index: 0, char_geoset: CG.BELT }],
+	7: [{ group_index: 0, char_geoset: CG.PANTS }, { group_index: 1, char_geoset: CG.KNEEPADS }, { group_index: 2, char_geoset: CG.TROUSERS }],
+	8: [{ group_index: 0, char_geoset: CG.BOOTS }, { group_index: 1, char_geoset: CG.FEET }],
+	10: [{ group_index: 0, char_geoset: CG.GLOVES }, { group_index: 1, char_geoset: CG.HAND_ATTACHMENT }],
+	16: [{ group_index: 0, char_geoset: CG.CLOAK }]
+};
+
+function get_slot_geoset_mapping(slot_id) {
+	return SLOT_TO_GEOSET_GROUPS[slot_id] || null;
+}
+
+/**
+ * Get current character race ID and gender index from view state
+ * @param {object} core
+ * @returns {{ raceID: number, genderIndex: number }|null}
+ */
+function get_current_race_gender(core) {
+	const race_selection = core.view.chrCustRaceSelection?.[0];
+	const model_selection = core.view.chrCustModelSelection?.[0];
+
+	if (!race_selection || !model_selection)
+		return null;
+
+	const race_id = race_selection.id;
+	const models_for_race = chr_race_x_chr_model_map.get(race_id);
+
+	if (!models_for_race)
+		return null;
+
+	// find the sex that matches the selected model ID
+	for (const [sex, model_id] of models_for_race) {
+		if (model_id === model_selection.id)
+			return { raceID: race_id, genderIndex: sex };
+	}
+
+	return null;
+}
+
+
 //region state
 const active_skins = new Map();
 let gl_context = null;
@@ -63,6 +128,10 @@ const chr_materials = new Map();
 // equipment model renderers (slot_id -> { renderers: [{renderer, attachment_id}], item_id })
 const equipment_model_renderers = new Map();
 
+// collection model renderers (slot_id -> { renderers: [renderer, ...], item_id })
+// collection models render at origin with shared bone matrices from character
+const collection_model_renderers = new Map();
+
 let current_char_component_texture_layout_id = 0;
 let watcher_cleanup_funcs = [];
 let is_importing = false;
@@ -90,6 +159,7 @@ function reset_module_state() {
 	skinned_model_meshes.clear();
 	chr_materials.clear();
 	dispose_equipment_models();
+	dispose_collection_models();
 	current_char_component_texture_layout_id = 0;
 
 	if (active_renderer) {
@@ -409,6 +479,10 @@ async function update_textures(core) {
 /**
  * Updates equipment model renderers based on equipped items.
  * Loads models for newly equipped items, disposes models for unequipped items.
+ *
+ * Models are split into two categories:
+ * - Attachment models: rendered at M2 attachment points (weapons, shoulders, helmets, capes)
+ * - Collection models: rendered at origin with shared bone matrices (chest extras, belt buckles, etc.)
  */
 async function update_equipment_models(core) {
 	if (!gl_context)
@@ -416,10 +490,9 @@ async function update_equipment_models(core) {
 
 	const equipped_items = core.view.chrEquippedItems;
 	const current_slots = new Set(Object.keys(equipped_items).map(Number));
-	const rendered_slots = new Set(equipment_model_renderers.keys());
 
-	// dispose models for slots that are no longer equipped
-	for (const slot_id of rendered_slots) {
+	// dispose attachment models for slots no longer equipped
+	for (const slot_id of equipment_model_renderers.keys()) {
 		if (!current_slots.has(slot_id)) {
 			const entry = equipment_model_renderers.get(slot_id);
 			for (const { renderer } of entry.renderers)
@@ -430,63 +503,126 @@ async function update_equipment_models(core) {
 		}
 	}
 
-	// load models for newly equipped items
+	// dispose collection models for slots no longer equipped
+	for (const slot_id of collection_model_renderers.keys()) {
+		if (!current_slots.has(slot_id)) {
+			const entry = collection_model_renderers.get(slot_id);
+			for (const renderer of entry.renderers)
+				renderer.dispose();
+
+			collection_model_renderers.delete(slot_id);
+			log.write('Disposed collection models for slot %d', slot_id);
+		}
+	}
+
+	// load models for equipped items
 	for (const [slot_id_str, item_id] of Object.entries(equipped_items)) {
 		const slot_id = Number(slot_id_str);
 
 		// check if we already have renderers for this slot with same item
-		const existing = equipment_model_renderers.get(slot_id);
-		if (existing && existing.item_id === item_id)
+		const existing_equipment = equipment_model_renderers.get(slot_id);
+		const existing_collection = collection_model_renderers.get(slot_id);
+		if ((existing_equipment?.item_id === item_id) && (existing_collection?.item_id === item_id || !existing_collection))
 			continue;
 
 		// dispose old renderers if item changed
-		if (existing) {
-			for (const { renderer } of existing.renderers)
+		if (existing_equipment) {
+			for (const { renderer } of existing_equipment.renderers)
 				renderer.dispose();
 
 			equipment_model_renderers.delete(slot_id);
 		}
 
-		// get attachment IDs for this slot
-		const attachment_ids = get_attachment_ids_for_slot(slot_id);
-		if (!attachment_ids || attachment_ids.length === 0)
-			continue;
+		if (existing_collection) {
+			for (const renderer of existing_collection.renderers)
+				renderer.dispose();
 
-		// get display data for this item (models and textures)
-		const display = DBItemModels.getItemDisplay(item_id);
+			collection_model_renderers.delete(slot_id);
+		}
+
+		// get race/gender for model filtering
+		const char_info = get_current_race_gender(core);
+
+		// get display data for this item (models and textures, filtered by race/gender)
+		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex);
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 
-		// load models - pair each model with corresponding attachment
-		// e.g., shoulders have 2 models (left/right) and 2 attachment points
-		const renderers = [];
-		const model_count = Math.min(display.models.length, attachment_ids.length);
+		// get attachment IDs for this slot (may be empty for body slots)
+		const attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
 
-		for (let i = 0; i < model_count; i++) {
-			const file_data_id = display.models[i];
-			const attachment_id = attachment_ids[i];
+		// split models into attachment vs collection
+		// attachment models: up to attachment_ids.length models get attached
+		// collection models: remaining models render at origin with shared bones
+		const attachment_model_count = Math.min(display.models.length, attachment_ids.length);
+		const collection_start_index = attachment_model_count;
 
-			try {
-				const file = await core.view.casc.getFile(file_data_id);
-				const renderer = new M2RendererGL(file, gl_context, false, false);
-				await renderer.load();
+		// load attachment models
+		if (attachment_model_count > 0) {
+			const renderers = [];
+			for (let i = 0; i < attachment_model_count; i++) {
+				const file_data_id = display.models[i];
+				const attachment_id = attachment_ids[i];
 
-				// apply item textures
-				if (display.textures && display.textures.length > i)
-					await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
+				try {
+					const file = await core.view.casc.getFile(file_data_id);
+					const renderer = new M2RendererGL(file, gl_context, false, false);
+					await renderer.load();
 
-				renderers.push({ renderer, attachment_id });
-				log.write('Loaded equipment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
-			} catch (e) {
-				log.write('Failed to load equipment model %d: %s', file_data_id, e.message);
+					if (display.textures && display.textures.length > i)
+						await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
+
+					renderers.push({ renderer, attachment_id });
+					log.write('Loaded attachment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
+				} catch (e) {
+					log.write('Failed to load attachment model %d: %s', file_data_id, e.message);
+				}
 			}
+
+			if (renderers.length > 0)
+				equipment_model_renderers.set(slot_id, { renderers, item_id });
 		}
 
-		if (renderers.length > 0) {
-			equipment_model_renderers.set(slot_id, {
-				renderers,
-				item_id
-			});
+		// load collection models (models beyond attachment count, or all models if no attachments)
+		if (display.models.length > collection_start_index) {
+			const renderers = [];
+			for (let i = collection_start_index; i < display.models.length; i++) {
+				const file_data_id = display.models[i];
+
+				try {
+					const file = await core.view.casc.getFile(file_data_id);
+					// collection models use character skeleton, reactive=false
+					const renderer = new M2RendererGL(file, gl_context, false, false);
+					await renderer.load();
+
+					// build bone remap table from character bones
+					if (active_renderer?.bones)
+						renderer.buildBoneRemapTable(active_renderer.bones);
+
+					// apply geoset visibility using attachmentGeosetGroup
+					const slot_geosets = get_slot_geoset_mapping(slot_id);
+					if (slot_geosets && display.attachmentGeosetGroup) {
+						renderer.hideAllGeosets();
+						for (const mapping of slot_geosets) {
+							const value = display.attachmentGeosetGroup[mapping.group_index];
+							if (value !== undefined)
+								renderer.setGeosetGroupDisplay(mapping.char_geoset, 1 + value);
+						}
+					}
+
+					// use first texture for collection models
+					if (display.textures && display.textures.length > 0)
+						await renderer.applyReplaceableTextures({ textures: [display.textures[0]] });
+
+					renderers.push(renderer);
+					log.write('Loaded collection model %d for slot %d (item %d)', file_data_id, slot_id, item_id);
+				} catch (e) {
+					log.write('Failed to load collection model %d: %s', file_data_id, e.message);
+				}
+			}
+
+			if (renderers.length > 0)
+				collection_model_renderers.set(slot_id, { renderers, item_id });
 		}
 	}
 }
@@ -517,6 +653,7 @@ async function load_character_model(core, file_data_id) {
 		active_skins.clear();
 		dispose_skinned_models();
 		dispose_equipment_models();
+		dispose_collection_models();
 
 		const file = await core.view.casc.getFile(file_data_id);
 
@@ -584,6 +721,15 @@ function dispose_equipment_models() {
 	}
 
 	equipment_model_renderers.clear();
+}
+
+function dispose_collection_models() {
+	for (const entry of collection_model_renderers.values()) {
+		for (const renderer of entry.renderers)
+			renderer.dispose();
+	}
+
+	collection_model_renderers.clear();
 }
 
 function clear_materials() {
@@ -1797,7 +1943,8 @@ module.exports = {
 			useCharacterControls: true,
 			fitCamera: null,
 			getActiveRenderer: () => active_renderer,
-			getEquipmentRenderers: () => equipment_model_renderers
+			getEquipmentRenderers: () => equipment_model_renderers,
+			getCollectionRenderers: () => collection_model_renderers
 		};
 
 		const ctx_watcher = state.$watch('chrModelViewerContext.gl_context', (new_ctx) => {

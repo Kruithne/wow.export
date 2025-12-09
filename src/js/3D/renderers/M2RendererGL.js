@@ -326,6 +326,10 @@ class M2RendererGL {
 		this.animation_time = 0;
 		this.animation_paused = false;
 
+		// collection model support
+		this.bone_remap_table = null;
+		this.use_external_bones = false;
+
 		// reactive state
 		this.geosetKey = 'modelViewerGeosets';
 		this.geosetArray = null;
@@ -898,6 +902,120 @@ class M2RendererGL {
 		const out = [0, 0, 0, 1];
 		quat_slerp(out, q0[0], q0[1], q0[2], q0[3], q1[0], q1[1], q1[2], q1[3], alpha);
 		return out;
+	}
+
+
+	/**
+	 * Build bone correspondence table by matching pivot positions and boneNameCRC
+	 * @param {Array} char_bones - character model bone data
+	 */
+	buildBoneRemapTable(char_bones) {
+		if (!this.bones || !char_bones) {
+			this.bone_remap_table = null;
+			return;
+		}
+
+		const epsilon = 0.0001;
+		const remap = new Int16Array(this.bones.length);
+
+		for (let i = 0; i < this.bones.length; i++) {
+			const coll_bone = this.bones[i];
+			const coll_pivot = coll_bone.pivot;
+			let found = -1;
+
+			// match by pivot position AND boneNameCRC (like wowmodelviewer)
+			// boneNameCRC distinguishes left/right bones with similar pivots
+			for (let j = 0; j < char_bones.length; j++) {
+				const char_bone = char_bones[j];
+				const char_pivot = char_bone.pivot;
+
+				const dx = Math.abs(coll_pivot[0] - char_pivot[0]);
+				const dy = Math.abs(coll_pivot[1] - char_pivot[1]);
+				const dz = Math.abs(coll_pivot[2] - char_pivot[2]);
+
+				if (dx < epsilon && dy < epsilon && dz < epsilon &&
+					coll_bone.boneNameCRC === char_bone.boneNameCRC) {
+					found = j;
+					break;
+				}
+			}
+
+			// fallback: match by pivot only if boneNameCRC match failed
+			if (found < 0) {
+				for (let j = 0; j < char_bones.length; j++) {
+					const char_bone = char_bones[j];
+					const char_pivot = char_bone.pivot;
+
+					const dx = Math.abs(coll_pivot[0] - char_pivot[0]);
+					const dy = Math.abs(coll_pivot[1] - char_pivot[1]);
+					const dz = Math.abs(coll_pivot[2] - char_pivot[2]);
+
+					if (dx < epsilon && dy < epsilon && dz < epsilon) {
+						found = j;
+						break;
+					}
+				}
+			}
+
+			remap[i] = found >= 0 ? found : i;
+		}
+
+		this.bone_remap_table = remap;
+		this.use_external_bones = true;
+	}
+
+	/**
+	 * Apply external bone matrices using the remap table
+	 * @param {Float32Array} char_bone_matrices - character's bone matrices
+	 */
+	applyExternalBoneMatrices(char_bone_matrices) {
+		if (!this.bone_remap_table || !this.bone_matrices || !char_bone_matrices)
+			return;
+
+		for (let i = 0; i < this.bone_remap_table.length; i++) {
+			const char_idx = this.bone_remap_table[i];
+			const char_offset = char_idx * 16;
+			const local_offset = i * 16;
+
+			if (char_offset + 16 <= char_bone_matrices.length)
+				this.bone_matrices.set(char_bone_matrices.subarray(char_offset, char_offset + 16), local_offset);
+		}
+	}
+
+	/**
+	 * Set geoset visibility by group using attachmentGeosetGroup values
+	 * Shows only geosets matching group*100 + value, hides others in range
+	 * @param {number} group - geoset group (e.g., 18 for belt = 1800-1899)
+	 * @param {number} value - specific geoset value (1 + attachmentGeosetGroup[n])
+	 */
+	setGeosetGroupDisplay(group, value) {
+		if (!this.draw_calls || this.draw_calls.length === 0)
+			return;
+
+		const range_min = group * 100;
+		const range_max = (group + 1) * 100;
+		const target_id = range_min + value;
+
+		// get skin submeshes to check geoset IDs
+		const skin = this.m2?.skins?.[0];
+		if (!skin?.subMeshes)
+			return;
+
+		for (let i = 0; i < this.draw_calls.length && i < skin.subMeshes.length; i++) {
+			const submesh_id = skin.subMeshes[i].submeshID;
+
+			// check if this submesh is in the geoset group range
+			if (submesh_id > range_min && submesh_id < range_max)
+				this.draw_calls[i].visible = (submesh_id === target_id);
+		}
+	}
+
+	/**
+	 * Hide all geosets (used before selectively showing collection geosets)
+	 */
+	hideAllGeosets() {
+		for (const dc of this.draw_calls)
+			dc.visible = false;
 	}
 
 	updateGeosets() {
