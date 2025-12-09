@@ -57,7 +57,7 @@ const SLOT_TO_GEOSET_GROUPS = {
 	7: [{ group_index: 0, char_geoset: CG.PANTS }, { group_index: 1, char_geoset: CG.KNEEPADS }, { group_index: 2, char_geoset: CG.TROUSERS }],
 	8: [{ group_index: 0, char_geoset: CG.BOOTS }, { group_index: 1, char_geoset: CG.FEET }],
 	10: [{ group_index: 0, char_geoset: CG.GLOVES }, { group_index: 1, char_geoset: CG.HAND_ATTACHMENT }],
-	16: [{ group_index: 0, char_geoset: CG.CLOAK }]
+	15: [{ group_index: 0, char_geoset: CG.CLOAK }]
 };
 
 function get_slot_geoset_mapping(slot_id) {
@@ -569,11 +569,32 @@ async function update_equipment_models(core) {
 					const renderer = new M2RendererGL(file, gl_context, false, false);
 					await renderer.load();
 
+
+					// check if this is a collection-style model (has bones to remap)
+					const is_collection_style = active_renderer?.bones && renderer.bones?.length > 0;
+
+					if (is_collection_style) {
+						// build bone remap table for models that have bones (e.g. backpacks)
+						renderer.buildBoneRemapTable(active_renderer.bones);
+
+						// apply geoset visibility using attachmentGeosetGroup
+						const slot_geosets = get_slot_geoset_mapping(slot_id);
+						if (slot_geosets && display.attachmentGeosetGroup) {
+							renderer.hideAllGeosets();
+							for (const mapping of slot_geosets) {
+								const value = display.attachmentGeosetGroup[mapping.group_index];
+								if (value !== undefined)
+									renderer.setGeosetGroupDisplay(mapping.char_geoset, 1 + value);
+							}
+						}
+					}
+
+					// apply textures
 					if (display.textures && display.textures.length > i)
 						await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
 
-					renderers.push({ renderer, attachment_id });
-					log.write('Loaded attachment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
+					renderers.push({ renderer, attachment_id, is_collection_style });
+					log.write('Loaded attachment model %d for slot %d attachment %d (item %d) collection_style=%s', file_data_id, slot_id, attachment_id, item_id, is_collection_style);
 				} catch (e) {
 					log.write('Failed to load attachment model %d: %s', file_data_id, e.message);
 				}
@@ -589,6 +610,7 @@ async function update_equipment_models(core) {
 			for (let i = collection_start_index; i < display.models.length; i++) {
 				const file_data_id = display.models[i];
 
+
 				try {
 					const file = await core.view.casc.getFile(file_data_id);
 					// collection models use character skeleton, reactive=false
@@ -601,6 +623,7 @@ async function update_equipment_models(core) {
 
 					// apply geoset visibility using attachmentGeosetGroup
 					const slot_geosets = get_slot_geoset_mapping(slot_id);
+
 					if (slot_geosets && display.attachmentGeosetGroup) {
 						renderer.hideAllGeosets();
 						for (const mapping of slot_geosets) {
@@ -610,9 +633,12 @@ async function update_equipment_models(core) {
 						}
 					}
 
-					// use first texture for collection models
-					if (display.textures && display.textures.length > 0)
-						await renderer.applyReplaceableTextures({ textures: [display.textures[0]] });
+					// use matching texture for this model index
+					const texture_idx = i < display.textures?.length ? i : 0;
+					const texture_fdid = display.textures?.[texture_idx];
+
+					if (texture_fdid)
+						await renderer.applyReplaceableTextures({ textures: [texture_fdid] });
 
 					renderers.push(renderer);
 					log.write('Loaded collection model %d for slot %d (item %d)', file_data_id, slot_id, item_id);

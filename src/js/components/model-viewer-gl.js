@@ -276,16 +276,26 @@ module.exports = {
 			// render equipment models at attachment points (character mode only)
 			const equipment_renderers = this.context.getEquipmentRenderers?.();
 			if (equipment_renderers && activeRenderer) {
+				const char_bone_matrices = activeRenderer.bone_matrices;
+				const char_model_matrix = activeRenderer.model_matrix;
+
 				for (const slot_entry of equipment_renderers.values()) {
 					if (!slot_entry?.renderers)
 						continue;
 
-					for (const { renderer, attachment_id } of slot_entry.renderers) {
+					for (const { renderer, attachment_id, is_collection_style } of slot_entry.renderers) {
 						if (!renderer?.render)
 							continue;
 
-						// get attachment transform from character model
-						if (attachment_id !== undefined) {
+						// collection-style models (e.g. backpacks) need bone matrix remapping
+						if (is_collection_style) {
+							if (char_bone_matrices && renderer.applyExternalBoneMatrices)
+								renderer.applyExternalBoneMatrices(char_bone_matrices);
+
+							if (char_model_matrix)
+								renderer.setTransformMatrix(char_model_matrix);
+						} else if (attachment_id !== undefined) {
+							// regular attachment models use attachment transform
 							const attach_transform = activeRenderer.getAttachmentTransform?.(attachment_id);
 							if (attach_transform)
 								renderer.setTransformMatrix(attach_transform);
