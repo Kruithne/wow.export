@@ -458,13 +458,14 @@ class M2LegacyRendererGL {
 	}
 
 	stopAnimation() {
-		this.current_animation = null;
 		this.animation_time = 0;
 		this.animation_paused = false;
 
+		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
-			for (let i = 0; i < this.bones.length; i++)
-				this.bone_matrices.set(IDENTITY_MAT4, i * 16);
+			this.current_animation = 0;
+			this._update_bone_matrices();
+			this.current_animation = null;
 		}
 	}
 
@@ -573,7 +574,7 @@ class M2LegacyRendererGL {
 			const px = pivot[0], py = pivot[1], pz = pivot[2];
 
 			// check for animation data
-			let has_trans, has_rot, has_scale;
+			let has_trans, has_rot, has_scale, has_scale_fallback = false;
 
 			if (m2.version < M2_VER_WOTLK) {
 				// legacy single-timeline
@@ -585,9 +586,10 @@ class M2LegacyRendererGL {
 				has_trans = bone.translation?.timestamps?.[anim_idx]?.length > 0;
 				has_rot = bone.rotation?.timestamps?.[anim_idx]?.length > 0;
 				has_scale = bone.scale?.timestamps?.[anim_idx]?.length > 0;
+				has_scale_fallback = !has_scale && anim_idx !== 0 && bone.scale?.timestamps?.[0]?.length > 0;
 			}
 
-			const has_animation = has_trans || has_rot || has_scale;
+			const has_animation = has_trans || has_rot || has_scale || has_scale_fallback;
 
 			mat4_copy(local_mat, IDENTITY_MAT4);
 
@@ -626,14 +628,17 @@ class M2LegacyRendererGL {
 					mat4_copy(local_mat, temp_result);
 				}
 
-				if (has_scale) {
+				// apply scale (fallback to animation 0 if current animation lacks scale data)
+				if (has_scale || has_scale_fallback) {
 					let sx, sy, sz;
 					if (m2.version < M2_VER_WOTLK) {
-						[sx, sy, sz] = this._sample_legacy_vec3(bone.scale, time_ms, anim_start, anim_end);
+						[sx, sy, sz] = this._sample_legacy_vec3(bone.scale, time_ms, anim_start, anim_end, [1, 1, 1]);
 					} else {
-						const ts = bone.scale.timestamps[anim_idx];
-						const vals = bone.scale.values[anim_idx];
-						[sx, sy, sz] = this._sample_vec3(ts, vals, time_ms);
+						const scale_anim_idx = has_scale ? anim_idx : 0;
+						const ts = bone.scale.timestamps[scale_anim_idx];
+						const vals = bone.scale.values[scale_anim_idx];
+						const scale_time = has_scale ? time_ms : 0;
+						[sx, sy, sz] = this._sample_vec3(ts, vals, scale_time, [1, 1, 1]);
 					}
 
 					mat4_from_scale(scale_mat, sx, sy, sz);
@@ -663,13 +668,13 @@ class M2LegacyRendererGL {
 	}
 
 	// legacy single-timeline sampling: uses ranges array to find keyframes within animation bounds
-	_sample_legacy_vec3(track, time_ms, anim_start, anim_end) {
+	_sample_legacy_vec3(track, time_ms, anim_start, anim_end, default_value = [0, 0, 0]) {
 		const timestamps = track.timestamps;
 		const values = track.values;
 		const ranges = track.ranges;
 
 		if (!timestamps || timestamps.length === 0)
-			return [0, 0, 0];
+			return default_value;
 
 		// absolute time in global timeline
 		const abs_time = anim_start + time_ms;
@@ -758,9 +763,9 @@ class M2LegacyRendererGL {
 	}
 
 	// per-animation timeline sampling (wotlk)
-	_sample_vec3(timestamps, values, time_ms) {
+	_sample_vec3(timestamps, values, time_ms, default_value = [0, 0, 0]) {
 		if (!timestamps || timestamps.length === 0)
-			return [0, 0, 0];
+			return default_value;
 
 		if (timestamps.length === 1 || time_ms <= timestamps[0]) {
 			const v = values[0];

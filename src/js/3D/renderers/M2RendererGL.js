@@ -631,14 +631,15 @@ class M2RendererGL {
 	}
 
 	stopAnimation() {
-		this.current_animation = null;
 		this.animation_time = 0;
 		this.animation_paused = false;
 
-		// reset bone matrices
+		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
-			for (let i = 0; i < this.bones.length; i++)
-				this.bone_matrices.set(IDENTITY_MAT4, i * 16);
+			const prev_anim = this.current_animation;
+			this.current_animation = 0;
+			this._update_bone_matrices();
+			this.current_animation = null;
 		}
 	}
 
@@ -755,7 +756,8 @@ class M2RendererGL {
 			const has_trans = bone.translation?.timestamps?.[anim_idx]?.length > 0;
 			const has_rot = bone.rotation?.timestamps?.[anim_idx]?.length > 0;
 			const has_scale = bone.scale?.timestamps?.[anim_idx]?.length > 0;
-			const has_animation = has_trans || has_rot || has_scale;
+			const has_scale_fallback = !has_scale && anim_idx !== 0 && bone.scale?.timestamps?.[0]?.length > 0;
+			const has_animation = has_trans || has_rot || has_scale || has_scale_fallback;
 
 			// start with identity
 			mat4_copy(local_mat, IDENTITY_MAT4);
@@ -788,11 +790,13 @@ class M2RendererGL {
 					mat4_copy(local_mat, temp_result);
 				}
 
-				// apply scale
-				if (has_scale) {
-					const ts = bone.scale.timestamps[anim_idx];
-					const vals = bone.scale.values[anim_idx];
-					const [sx, sy, sz] = this._sample_raw_vec3(ts, vals, time_ms);
+				// apply scale (fallback to animation 0 if current animation lacks scale data)
+				if (has_scale || has_scale_fallback) {
+					const scale_anim_idx = has_scale ? anim_idx : 0;
+					const ts = bone.scale.timestamps[scale_anim_idx];
+					const vals = bone.scale.values[scale_anim_idx];
+					const scale_time = has_scale ? time_ms : 0;
+					const [sx, sy, sz] = this._sample_raw_vec3(ts, vals, scale_time, [1, 1, 1]);
 
 					mat4_from_scale(scale_mat, sx, sy, sz);
 					mat4_multiply(temp_result, local_mat, scale_mat);
@@ -824,9 +828,9 @@ class M2RendererGL {
 			calc_bone(i);
 	}
 
-	_sample_raw_vec3(timestamps, values, time_ms) {
+	_sample_raw_vec3(timestamps, values, time_ms, default_value = [0, 0, 0]) {
 		if (!timestamps || timestamps.length === 0)
-			return [0, 0, 0];
+			return default_value;
 
 		if (timestamps.length === 1 || time_ms <= timestamps[0]) {
 			const v = values[0];
