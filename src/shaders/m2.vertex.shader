@@ -54,17 +54,19 @@ float calc_edge_fade(vec3 pos_view, vec3 normal_view) {
 }
 
 void main() {
-	// apply bone skinning
-	mat4 bone_transform = mat4(0.0);
-	float total_weight = dot(a_bone_weights, vec4(1.0));
+	// bone skinning
+	mat4 bone_transform = mat4(1.0);
 
-	if (total_weight > 0.0) {
-		bone_transform += a_bone_weights.x * u_bone_matrices[a_bone_indices.x];
-		bone_transform += a_bone_weights.y * u_bone_matrices[a_bone_indices.y];
-		bone_transform += a_bone_weights.z * u_bone_matrices[a_bone_indices.z];
-		bone_transform += a_bone_weights.w * u_bone_matrices[a_bone_indices.w];
-	} else {
-		bone_transform = mat4(1.0);
+	// note: legacy m2 bone skinning disabled until animation system is fixed
+	if (u_bone_count > 0) {
+		float total_weight = dot(a_bone_weights, vec4(1.0));
+		if (total_weight > 0.0) {
+			bone_transform = mat4(0.0);
+			bone_transform += a_bone_weights.x * u_bone_matrices[a_bone_indices.x];
+			bone_transform += a_bone_weights.y * u_bone_matrices[a_bone_indices.y];
+			bone_transform += a_bone_weights.z * u_bone_matrices[a_bone_indices.z];
+			bone_transform += a_bone_weights.w * u_bone_matrices[a_bone_indices.w];
+		}
 	}
 
 	// transform position

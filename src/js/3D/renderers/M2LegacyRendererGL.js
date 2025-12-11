@@ -925,12 +925,8 @@ class M2LegacyRendererGL {
 		shader.set_uniform_3f('u_view_up', 0, 1, 0);
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
-		shader.set_uniform_1i('u_bone_count', this.bones ? this.bones.length : 0);
-		if (this.bones && this.bone_matrices) {
-			const loc = shader.get_uniform_location('u_bone_matrices');
-			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.bone_matrices);
-		}
+		// bone skinning disabled for legacy models until animation system is fixed
+		shader.set_uniform_1i('u_bone_count', 0);
 
 		shader.set_uniform_1i('u_has_tex_matrix1', 0);
 		shader.set_uniform_1i('u_has_tex_matrix2', 0);
