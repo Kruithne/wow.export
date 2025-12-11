@@ -225,10 +225,13 @@ const export_files = async (core, files, export_id = -1) => {
 		} else {
 			core.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
-	} else if (format === 'RAW') {
+	} else if (format === 'OBJ' || format === 'STL' || format === 'RAW') {
 		const mpq = core.view.mpq;
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
+
+		// clear doodad cache at start of export batch
+		WMOLegacyExporter.clearCache();
 
 		for (const file_entry of files) {
 			if (helper.isCancelled())
@@ -242,18 +245,32 @@ const export_files = async (core, files, export_id = -1) => {
 				if (!file_data)
 					throw new Error('File not found in MPQ');
 
-				const export_path = ExportHelper.getExportPath(file_name);
-				await export_paths?.writeLine(export_path);
-
+				let export_path = ExportHelper.getExportPath(file_name);
 				const data = new BufferWrapper(Buffer.from(file_data));
 				const file_name_lower = file_name.toLowerCase();
 
 				if (file_name_lower.endsWith('.wmo')) {
-					// wmo export with groups and textures
 					const exporter = new WMOLegacyExporter(data, file_name, mpq);
-					await exporter.exportRaw(export_path, helper, file_manifest);
+
+					// pass group and doodad set masks if this is the active model
+					if (file_name === active_path) {
+						exporter.setGroupMask(core.view.modelViewerWMOGroups);
+						exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
+					}
+
+					if (format === 'OBJ') {
+						export_path = ExportHelper.replaceExtension(export_path, '.obj');
+						await exporter.exportAsOBJ(export_path, helper, file_manifest);
+						await export_paths?.writeLine('WMO_OBJ:' + export_path);
+					} else if (format === 'STL') {
+						export_path = ExportHelper.replaceExtension(export_path, '.stl');
+						await exporter.exportAsSTL(export_path, helper, file_manifest);
+						await export_paths?.writeLine('WMO_STL:' + export_path);
+					} else {
+						await exporter.exportRaw(export_path, helper, file_manifest);
+						await export_paths?.writeLine('WMO_RAW:' + export_path);
+					}
 				} else if (file_name_lower.endsWith('.m2')) {
-					// m2 export with textures
 					const exporter = new M2LegacyExporter(data, file_name, mpq);
 
 					// get selected skin textures if this is the active model
@@ -265,13 +282,27 @@ const export_files = async (core, files, export_id = -1) => {
 							if (display && display.textures)
 								exporter.setSkinTextures(display.textures);
 						}
+
+						exporter.setGeosetMask(core.view.modelViewerGeosets);
 					}
 
-					await exporter.exportRaw(export_path, helper, file_manifest);
+					if (format === 'OBJ') {
+						export_path = ExportHelper.replaceExtension(export_path, '.obj');
+						await exporter.exportAsOBJ(export_path, helper, file_manifest);
+						await export_paths?.writeLine('M2_OBJ:' + export_path);
+					} else if (format === 'STL') {
+						export_path = ExportHelper.replaceExtension(export_path, '.stl');
+						await exporter.exportAsSTL(export_path, helper, file_manifest);
+						await export_paths?.writeLine('M2_STL:' + export_path);
+					} else {
+						await exporter.exportRaw(export_path, helper, file_manifest);
+						await export_paths?.writeLine('M2_RAW:' + export_path);
+					}
 				} else {
 					// mdx or unknown - just export raw file
 					await data.writeToFile(export_path);
 					file_manifest.push({ type: 'RAW', file: export_path });
+					await export_paths?.writeLine('RAW:' + export_path);
 				}
 
 				helper.mark(file_name, true);

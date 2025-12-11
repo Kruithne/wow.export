@@ -275,6 +275,8 @@ const makeNewView = () => {
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],
 		menuButtonLegacyModels: [
+			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export STL', value: 'STL' },
 			{ label: 'Export Raw', value: 'RAW' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
