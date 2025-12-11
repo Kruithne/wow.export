@@ -164,14 +164,25 @@ class M2LegacyExporter {
 			for (let vI = 0; vI < mesh.triangleCount; vI++)
 				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
 
-			let texture = null;
-			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
-			if (texUnit)
-				texture = this.m2.textures[this.m2.textureCombos[texUnit.textureComboIndex]];
-
 			let matName;
-			if (texture?.fileName && validTextures.has(texture.fileName.toLowerCase()))
-				matName = validTextures.get(texture.fileName.toLowerCase()).matName;
+			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
+			if (texUnit) {
+				const texIndex = this.m2.textureCombos[texUnit.textureComboIndex];
+				const texture = this.m2.textures[texIndex];
+				const textureType = this.m2.textureTypes[texIndex];
+
+				// resolve texture path same as exportTextures
+				let texturePath = texture?.fileName;
+				if (textureType > 0 && this.skinTextures) {
+					if (textureType >= 11 && textureType < 14)
+						texturePath = this.skinTextures[textureType - 11];
+					else if (textureType > 1 && textureType < 5)
+						texturePath = this.skinTextures[textureType - 2];
+				}
+
+				if (texturePath && validTextures.has(texturePath.toLowerCase()))
+					matName = validTextures.get(texturePath.toLowerCase()).matName;
+			}
 
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
@@ -184,6 +195,68 @@ class M2LegacyExporter {
 
 		await mtl.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'MTL', file: mtl.out });
+
+		if (config.exportM2Meta) {
+			helper?.clearCurrentTask?.();
+			helper?.setCurrentTaskName?.(modelName + ', writing meta data');
+
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+
+			// clone submesh array with enabled property
+			const subMeshes = Array(skin.subMeshes.length);
+			for (let i = 0, n = subMeshes.length; i < n; i++) {
+				const subMeshEnabled = !this.geosetMask || this.geosetMask[i]?.checked;
+				subMeshes[i] = Object.assign({ enabled: subMeshEnabled }, skin.subMeshes[i]);
+			}
+
+			// clone textures array with expanded info
+			const textures = new Array(this.m2.textures.length);
+			for (let i = 0, n = textures.length; i < n; i++) {
+				const texture = this.m2.textures[i];
+				const textureType = this.m2.textureTypes[i];
+
+				// resolve texture path same as exportTextures
+				let texturePath = texture.fileName;
+				if (textureType > 0 && this.skinTextures) {
+					if (textureType >= 11 && textureType < 14)
+						texturePath = this.skinTextures[textureType - 11];
+					else if (textureType > 1 && textureType < 5)
+						texturePath = this.skinTextures[textureType - 2];
+				}
+
+				const textureEntry = validTextures.get(texturePath?.toLowerCase());
+
+				textures[i] = {
+					fileName: texturePath,
+					fileNameExternal: textureEntry?.matPathRelative,
+					mtlName: textureEntry?.matName,
+					type: textureType
+				};
+			}
+
+			json.addProperty('fileType', 'm2');
+			json.addProperty('filePath', this.filePath);
+			json.addProperty('internalName', this.m2.name);
+			json.addProperty('version', this.m2.version);
+			json.addProperty('flags', this.m2.flags);
+			json.addProperty('textures', textures);
+			json.addProperty('textureTypes', this.m2.textureTypes);
+			json.addProperty('materials', this.m2.materials);
+			json.addProperty('textureCombos', this.m2.textureCombos);
+			json.addProperty('transparencyLookup', this.m2.transparencyLookup);
+			json.addProperty('textureTransformsLookup', this.m2.textureTransformsLookup);
+			json.addProperty('boundingBox', this.m2.boundingBox);
+			json.addProperty('boundingSphereRadius', this.m2.boundingSphereRadius);
+			json.addProperty('collisionBox', this.m2.collisionBox);
+			json.addProperty('collisionSphereRadius', this.m2.collisionSphereRadius);
+			json.addProperty('skin', {
+				subMeshes: subMeshes,
+				textureUnits: skin.textureUnits
+			});
+
+			await json.write(config.overwriteFiles);
+			fileManifest?.push({ type: 'META', file: json.out });
+		}
 	}
 
 	async exportAsSTL(out, helper, fileManifest) {
