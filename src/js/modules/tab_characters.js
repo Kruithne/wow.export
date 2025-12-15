@@ -11,6 +11,7 @@ const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 const M2RendererGL = require('../3D/renderers/M2RendererGL');
 const M2Exporter = require('../3D/exporters/M2Exporter');
+const CharacterExporter = require('../3D/exporters/CharacterExporter');
 const db2 = require('../casc/db2');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
@@ -1265,10 +1266,43 @@ const export_char_model = async (core) => {
 
 			exporter.setGeosetMask(core.view.chrCustGeosets);
 
-			if (core.view.config.chrExportApplyPose) {
+			const apply_pose = core.view.config.chrExportApplyPose;
+			if (apply_pose) {
 				const baked = active_renderer.getBakedGeometry();
 				if (baked)
 					exporter.setPosedGeometry(baked.vertices, baked.normals);
+			}
+
+			// collect equipment models for export
+			const char_exporter = new CharacterExporter(
+				active_renderer,
+				equipment_model_renderers,
+				collection_model_renderers
+			);
+
+			if (char_exporter.has_equipment()) {
+				const char_info = get_current_race_gender(core);
+				const equipment_data = [];
+
+				for (const geom of char_exporter.get_equipment_geometry(apply_pose)) {
+					// get textures from display info
+					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
+					const textures = display?.textures || [];
+
+					equipment_data.push({
+						slot_id: geom.slot_id,
+						item_id: geom.item_id,
+						renderer: geom.renderer,
+						vertices: geom.vertices,
+						normals: geom.normals,
+						uv: geom.uv,
+						uv2: geom.uv2,
+						textures
+					});
+				}
+
+				exporter.setEquipmentModels(equipment_data);
+				log.write('Exporting character with %d equipment models', equipment_data.length);
 			}
 
 			if (format === 'STL') {

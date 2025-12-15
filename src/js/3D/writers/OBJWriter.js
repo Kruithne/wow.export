@@ -22,6 +22,9 @@ class OBJWriter {
 
 		this.meshes = [];
 		this.name = 'Mesh';
+
+		// track vertex offsets for appending additional models
+		this.vertex_offset = 0;
 	}
 	
 	/**
@@ -67,11 +70,56 @@ class OBJWriter {
 	/**
 	 * Add a mesh to this writer.
 	 * @param {string} name
-	 * @param {Array} triangles 
+	 * @param {Array} triangles
 	 * @param {string} matName
 	 */
 	addMesh(name, triangles, matName) {
-		this.meshes.push({ name, triangles, matName });
+		this.meshes.push({ name, triangles, matName, vertexOffset: this.vertex_offset });
+	}
+
+	/**
+	 * Append additional geometry from another model.
+	 * Call this after setting base model data and adding its meshes.
+	 * @param {Float32Array|Array} verts - vertex array (x,y,z triplets)
+	 * @param {Float32Array|Array} normals - normal array (x,y,z triplets)
+	 * @param {Array<Float32Array|Array>} uvArrays - array of UV arrays
+	 */
+	appendGeometry(verts, normals, uvArrays) {
+		// calculate current vertex count before appending
+		const current_vertex_count = this.verts.length / 3;
+		this.vertex_offset = current_vertex_count;
+
+		// append vertices
+		if (verts) {
+			if (Array.isArray(this.verts))
+				this.verts = [...this.verts, ...verts];
+			else
+				this.verts = Float32Array.from([...this.verts, ...verts]);
+		}
+
+		// append normals
+		if (normals) {
+			if (Array.isArray(this.normals))
+				this.normals = [...this.normals, ...normals];
+			else
+				this.normals = Float32Array.from([...this.normals, ...normals]);
+		}
+
+		// append uvs (match layer count)
+		if (uvArrays) {
+			for (let i = 0; i < uvArrays.length; i++) {
+				if (i >= this.uvs.length)
+					this.uvs.push([]);
+
+				const uv = uvArrays[i];
+				if (uv) {
+					if (Array.isArray(this.uvs[i]))
+						this.uvs[i] = [...this.uvs[i], ...uv];
+					else
+						this.uvs[i] = Float32Array.from([...this.uvs[i], ...uv]);
+				}
+			}
+		}
 	}
 
 	/**
@@ -94,8 +142,12 @@ class OBJWriter {
 		if (this.mtl)
 			await writer.writeLine('mtllib ' + this.mtl);
 
+		// collect used indices (accounting for vertex offsets from appended geometry)
 		const usedIndices = new Set();
-		this.meshes.forEach(mesh => mesh.triangles.forEach(index => usedIndices.add(index)));
+		this.meshes.forEach(mesh => {
+			const offset = mesh.vertexOffset || 0;
+			mesh.triangles.forEach(index => usedIndices.add(index + offset));
+		});
 
 		const vertMap = new Map();
 		const normalMap = new Map();
@@ -154,11 +206,16 @@ class OBJWriter {
 				await writer.writeLine('usemtl ' + mesh.matName);
 
 			const triangles = mesh.triangles;
+			const offset = mesh.vertexOffset || 0;
 
 			for (let i = 0, n = triangles.length; i < n; i += 3) {
-				const pointA = (vertMap.get(triangles[i]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i]) + 1 : '') + '/' + (normalMap.get(triangles[i]) + 1);
-				const pointB = (vertMap.get(triangles[i + 1]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 1]) + 1 : '') + '/' + (normalMap.get(triangles[i + 1]) + 1);
-				const pointC = (vertMap.get(triangles[i + 2]) + 1) + '/' + (hasUV ? uvMap.get(triangles[i + 2]) + 1 : '') + '/' + (normalMap.get(triangles[i + 2]) + 1);
+				const idxA = triangles[i] + offset;
+				const idxB = triangles[i + 1] + offset;
+				const idxC = triangles[i + 2] + offset;
+
+				const pointA = (vertMap.get(idxA) + 1) + '/' + (hasUV ? uvMap.get(idxA) + 1 : '') + '/' + (normalMap.get(idxA) + 1);
+				const pointB = (vertMap.get(idxB) + 1) + '/' + (hasUV ? uvMap.get(idxB) + 1 : '') + '/' + (normalMap.get(idxB) + 1);
+				const pointC = (vertMap.get(idxC) + 1) + '/' + (hasUV ? uvMap.get(idxC) + 1 : '') + '/' + (normalMap.get(idxC) + 1);
 
 				await writer.writeLine('f ' + pointA + ' ' + pointB + ' ' + pointC);
 			}

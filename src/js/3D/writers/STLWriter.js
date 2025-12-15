@@ -20,6 +20,9 @@ class STLWriter {
 		this.normals = [];
 		this.meshes = [];
 		this.name = 'Mesh';
+
+		// track vertex offsets for appending additional models
+		this.vertex_offset = 0;
 	}
 
 	/**
@@ -52,7 +55,34 @@ class STLWriter {
 	 * @param {Array} triangles
 	 */
 	addMesh(name, triangles) {
-		this.meshes.push({ name, triangles });
+		this.meshes.push({ name, triangles, vertexOffset: this.vertex_offset });
+	}
+
+	/**
+	 * Append additional geometry from another model.
+	 * @param {Float32Array|Array} verts - vertex array (x,y,z triplets)
+	 * @param {Float32Array|Array} normals - normal array (x,y,z triplets)
+	 */
+	appendGeometry(verts, normals) {
+		// calculate current vertex count before appending
+		const current_vertex_count = this.verts.length / 3;
+		this.vertex_offset = current_vertex_count;
+
+		// append vertices
+		if (verts) {
+			if (Array.isArray(this.verts))
+				this.verts = [...this.verts, ...verts];
+			else
+				this.verts = Float32Array.from([...this.verts, ...verts]);
+		}
+
+		// append normals
+		if (normals) {
+			if (Array.isArray(this.normals))
+				this.normals = [...this.normals, ...normals];
+			else
+				this.normals = Float32Array.from([...this.normals, ...normals]);
+		}
 	}
 
 	/**
@@ -134,11 +164,12 @@ class STLWriter {
 		// swap Y and Z components for both vertices and normals
 		for (const mesh of this.meshes) {
 			const triangles = mesh.triangles;
+			const offset = mesh.vertexOffset || 0;
 
 			for (let i = 0, n = triangles.length; i < n; i += 3) {
-				const i0 = triangles[i];
-				const i1 = triangles[i + 1];
-				const i2 = triangles[i + 2];
+				const i0 = triangles[i] + offset;
+				const i1 = triangles[i + 1] + offset;
+				const i2 = triangles[i + 2] + offset;
 
 				// vertex positions (swap y/z for coordinate system conversion)
 				const v0_idx = i0 * 3;

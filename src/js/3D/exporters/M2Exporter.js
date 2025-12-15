@@ -61,6 +61,14 @@ class M2Exporter {
 	}
 
 	/**
+	 * Set equipment models to export alongside the main model.
+	 * @param {Array<{slot_id, item_id, renderer, vertices, normals, uv, uv2, textures}>} equipment
+	 */
+	setEquipmentModels(equipment) {
+		this.equipmentModels = equipment;
+	}
+
+	/**
 	 * Export the textures for this M2 model (for GLB mode, returns buffers instead of writing).
 	 * @param {string} out
 	 * @param {boolean} raw
@@ -380,6 +388,174 @@ class M2Exporter {
 	}
 
 	/**
+	 * Export equipment model geometry and textures to OBJ/MTL.
+	 * @private
+	 */
+	async _exportEquipmentToOBJ(obj, mtl, outDir, equip, validTextures, helper, fileManifest) {
+		const config = core.view.config;
+		const useAlpha = config.modelsExportAlpha;
+		const usePosix = config.pathFormat === 'posix';
+		const { slot_id, item_id, renderer, vertices, normals, uv, uv2, textures } = equip;
+
+		if (!renderer?.m2)
+			return;
+
+		const m2 = renderer.m2;
+		await m2.load();
+
+		const skin = await m2.getSkin(0);
+		if (!skin)
+			return;
+
+		// build UV arrays
+		const uvArrays = [];
+		if (uv)
+			uvArrays.push(uv);
+
+		if (config.modelsExportUV2 && uv2)
+			uvArrays.push(uv2);
+
+		// append geometry to OBJ
+		obj.appendGeometry(vertices, normals, uvArrays);
+
+		// export equipment textures and build material map
+		const equipTextures = new Map();
+		if (config.modelsExportTextures && textures) {
+			for (let i = 0; i < textures.length; i++) {
+				const texFileDataID = textures[i];
+				if (!texFileDataID || texFileDataID <= 0)
+					continue;
+
+				// skip if already exported
+				if (validTextures.has(texFileDataID)) {
+					equipTextures.set(i, validTextures.get(texFileDataID));
+					continue;
+				}
+
+				try {
+					let texFile = texFileDataID + '.png';
+					let texPath = path.join(outDir, texFile);
+					let matName = 'mat_equip_' + texFileDataID;
+
+					const fileName = listfile.getByID(texFileDataID);
+					if (fileName !== undefined) {
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						if (config.removePathSpaces)
+							matName = matName.replace(/\s/g, '');
+					}
+
+					if (config.enableSharedTextures && fileName !== undefined) {
+						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
+						texPath = ExportHelper.getExportPath(sharedFileName);
+						texFile = path.relative(outDir, texPath);
+					}
+
+					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+						const data = await core.view.casc.getFile(texFileDataID);
+						const blp = new BLPFile(data);
+						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
+						log.write('Exported equipment texture %d -> %s', texFileDataID, texPath);
+					}
+
+					if (usePosix)
+						texFile = ExportHelper.win32ToPosix(texFile);
+
+					mtl.addMaterial(matName, texFile);
+					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
+					validTextures.set(texFileDataID, texInfo);
+					equipTextures.set(i, texInfo);
+					fileManifest?.push({ type: 'PNG', fileDataID: texFileDataID, file: texPath });
+				} catch (e) {
+					log.write('Failed to export equipment texture %d: %s', texFileDataID, e.message);
+				}
+			}
+		}
+
+		// add equipment meshes
+		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+		let mesh_idx = 0;
+
+		for (let mI = 0; mI < skin.subMeshes.length; mI++) {
+			// check visibility via draw_calls if available
+			if (renderer.draw_calls && renderer.draw_calls[mI] && !renderer.draw_calls[mI].visible)
+				continue;
+
+			const mesh = skin.subMeshes[mI];
+			const verts = new Array(mesh.triangleCount);
+			for (let vI = 0; vI < mesh.triangleCount; vI++)
+				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
+
+			// find texture for this submesh
+			let matName = null;
+			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
+			if (texUnit) {
+				const textureIdx = m2.textureCombos[texUnit.textureComboIndex];
+				const texture = m2.textures[textureIdx];
+				const textureType = m2.textureTypes[textureIdx];
+
+				// check for replaceable texture
+				if (textureType >= 11 && textureType < 14) {
+					const texInfo = equipTextures.get(textureType - 11);
+					if (texInfo)
+						matName = texInfo.matName;
+				} else if (textureType > 1 && textureType < 5) {
+					const texInfo = equipTextures.get(textureType - 2);
+					if (texInfo)
+						matName = texInfo.matName;
+				} else if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID)) {
+					matName = validTextures.get(texture.fileDataID).matName;
+				}
+			}
+
+			const meshName = `${slot_name}_Item${item_id}_${mesh_idx++}`;
+			obj.addMesh(meshName, verts, matName);
+		}
+
+		log.write('Added equipment meshes for slot %d (item %d)', slot_id, item_id);
+	}
+
+	/**
+	 * Export equipment model geometry to STL.
+	 * @private
+	 */
+	async _exportEquipmentToSTL(stl, equip, helper) {
+		const { slot_id, item_id, renderer, vertices, normals } = equip;
+
+		if (!renderer?.m2)
+			return;
+
+		const m2 = renderer.m2;
+		await m2.load();
+
+		const skin = await m2.getSkin(0);
+		if (!skin)
+			return;
+
+		// append geometry to STL
+		stl.appendGeometry(vertices, normals);
+
+		// add equipment meshes
+		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+		let mesh_idx = 0;
+
+		for (let mI = 0; mI < skin.subMeshes.length; mI++) {
+			// check visibility via draw_calls if available
+			if (renderer.draw_calls && renderer.draw_calls[mI] && !renderer.draw_calls[mI].visible)
+				continue;
+
+			const mesh = skin.subMeshes[mI];
+			const verts = new Array(mesh.triangleCount);
+			for (let vI = 0; vI < mesh.triangleCount; vI++)
+				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
+
+			const meshName = `${slot_name}_Item${item_id}_${mesh_idx++}`;
+			stl.addMesh(meshName, verts);
+		}
+
+		log.write('Added equipment STL meshes for slot %d (item %d)', slot_id, item_id);
+	}
+
+	/**
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
@@ -539,6 +715,16 @@ class M2Exporter {
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
 
+		// export equipment models if present
+		if (this.equipmentModels && this.equipmentModels.length > 0) {
+			for (const equip of this.equipmentModels) {
+				if (helper.isCancelled())
+					return;
+
+				await this._exportEquipmentToOBJ(obj, mtl, outDir, equip, validTextures, helper, fileManifest);
+			}
+		}
+
 		if (!mtl.isEmpty)
 			obj.setMaterialLibrary(path.basename(mtl.out));
 
@@ -598,6 +784,16 @@ class M2Exporter {
 				verts[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
 
 			stl.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts);
+		}
+
+		// export equipment models if present
+		if (this.equipmentModels && this.equipmentModels.length > 0) {
+			for (const equip of this.equipmentModels) {
+				if (helper.isCancelled())
+					return;
+
+				await this._exportEquipmentToSTL(stl, equip, helper);
+			}
 		}
 
 		await stl.write(config.overwriteFiles);
