@@ -1786,10 +1786,28 @@ module.exports = {
 
 		open_slot_context(event, slot_id) {
 			const item_id = this.$core.view.chrEquippedItems[slot_id];
-			if (!item_id)
+			if (!item_id) {
+				this.navigate_to_items_for_slot(slot_id);
 				return;
+			}
 
 			this.$core.view.chrEquipmentSlotContext = slot_id;
+		},
+
+		navigate_to_items_for_slot(slot_id) {
+			const slot = EQUIPMENT_SLOTS.find(s => s.id === slot_id);
+			if (!slot)
+				return;
+
+			const type_mask = this.$core.view.itemViewerTypeMask;
+			if (type_mask && type_mask.length > 0) {
+				for (const item of type_mask)
+					item.checked = item.label === slot.name;
+			} else {
+				this.$core.view.pendingItemSlotFilter = slot.name;
+			}
+
+			this.$modules.tab_items.setActive();
 		},
 
 		unequip_slot(slot_id) {

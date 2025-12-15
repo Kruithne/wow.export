@@ -315,9 +315,17 @@ module.exports = {
 			this.$core.hideLoadingScreen();
 
 			const enabled_types = this.$core.view.config.itemViewerEnabledTypes;
+			const pending_slot = this.$core.view.pendingItemSlotFilter;
 			const type_mask = [];
-			for (const label of Object.keys(ITEM_SLOTS_MERGED))
-				type_mask.push({ label, checked: enabled_types.includes(label) });
+
+			for (const label of Object.keys(ITEM_SLOTS_MERGED)) {
+				if (pending_slot)
+					type_mask.push({ label, checked: label === pending_slot });
+				else
+					type_mask.push({ label, checked: enabled_types.includes(label) });
+			}
+
+			this.$core.view.pendingItemSlotFilter = null;
 
 			const enabled_qualities = this.$core.view.config.itemViewerEnabledQualities;
 			const quality_mask = ITEM_QUALITIES.map(q => ({
