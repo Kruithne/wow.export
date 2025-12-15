@@ -59,6 +59,7 @@ const makeNewView = () => {
 		userInputFilterMaps: '', // Value of the 'filter' field for maps.
 		userInputFilterZones: '', // Value of the 'filter' field for zones.
 		userInputFilterItems: '', // Value of the 'filter' field of items.
+		userInputFilterItemSets: '', // Value of the 'filter' field of item sets.
 		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
@@ -80,6 +81,7 @@ const makeNewView = () => {
 		selectionMaps: [], // Current user selection of maps.
 		selectionZones: [], // Current user selection of zones.
 		selectionItems: [], // Current user selection of items.
+		selectionItemSets: [], // Current user selection of item sets.
 		selectionDB2s: [], // Current user selection of DB2s.
 		selectionDataTable: [], // Current user selection of data table rows.
 		selectionRaw: [], // Current user selection of raw files.
@@ -97,6 +99,7 @@ const makeNewView = () => {
 		listfileFonts: [], // Filtered listfile for font files.
 		listfileModels: [], // Filtered listfile for M2/WMO models.
 		listfileItems: [], // Filtered item entries.
+		listfileItemSets: [], // Filtered item set entries.
 		itemViewerTypeMask: [], // Item type filter mask.
 		itemViewerQualityMask: [], // Item quality filter mask.
 		listfileRaw: [], // Full raw file listfile.

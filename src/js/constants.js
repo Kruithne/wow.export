@@ -170,6 +170,7 @@ module.exports = {
 		'tab_models',
 		'tab_characters',
 		'tab_items',
+		'tab_item_sets',
 		'tab_textures',
 		'tab_audio',
 		'tab_videos',

@@ -1,6 +1,7 @@
 ## 0.2.7 - The Christmas Miracle (TBD)
 - Rewrote the 3D modelviewer in WebGL2 for faster and more accurate previews.
 - Equipment can now be previewed and exported on characters!
+- Added new "Item Sets" tab, allowing browsing and equipping of full item sets.
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
 - Added animation playback controls to model and character viewers.
 - Added keyboard shortcut to deselect all tiles on the map viewer.
