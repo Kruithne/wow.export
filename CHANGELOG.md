@@ -1,5 +1,6 @@
 ## 0.2.7 (TBD)
 - Rewrote the 3D modelviewer in WebGL2 for faster and more accurate previews.
+- Added ability to equip/import items onto character models!
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
 - Added animation playback controls to model and character viewers.
 - Added keyboard shortcut to deselect all tiles on the map viewer.
@@ -23,6 +24,7 @@
 - Added an item quality filter to the items tab.
 - Added the option to import characters from Classic realms.
 - Added "Data" tab to legacy MPQ installations allowing viewing/exporting of DBC tables.
+- Added option to preview and export M2 and WMO models from legacy MPQ installations.
 - Blender: Added a wow.export tab to the View3D toolbar, providing quick access to importing.
 - Blender: Added an "Import Last Export" button to automatically import the last export.
 - Unknown cinematics are now immediately available in the cinematics tab.
