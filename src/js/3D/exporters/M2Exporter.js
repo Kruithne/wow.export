@@ -530,6 +530,12 @@ class M2Exporter {
 			if (texture?.fileDataID > 0 && validTextures.has(texture.fileDataID))
 				matName = validTextures.get(texture.fileDataID).matName;
 
+			if (texUnit && this.dataTextures.has(this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]])) {
+				const dataTextureKey = 'data-' + this.m2.textureTypes[this.m2.textureCombos[texUnit.textureComboIndex]];
+				if (validTextures.has(dataTextureKey))
+					matName = validTextures.get(dataTextureKey).matName;
+			}
+
 			obj.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), verts, matName);
 		}
 
