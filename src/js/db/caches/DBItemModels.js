@@ -140,17 +140,38 @@ const get_item_display = (item_id, race_id, gender_index) => {
 
 	// filter models by race/gender
 	const models = [];
-	for (const options of data.modelOptions) {
-		if (options.length === 0)
-			continue;
 
-		if (race_id !== undefined && gender_index !== undefined) {
-			const best = DBComponentModelFileData.getModelForRaceGender(options, race_id, gender_index);
-			if (best)
-				models.push(best);
-		} else {
-			// no race/gender specified, use first option
-			models.push(options[0]);
+	// check if this is a shoulder-type item (2 model options with identical content)
+	// shoulders share the same model pool but use PositionIndex to distinguish left/right
+	const is_shoulder_style = data.modelOptions.length === 2 &&
+		data.modelOptions[0].length > 0 &&
+		data.modelOptions[1].length > 0 &&
+		data.modelOptions[0].length === data.modelOptions[1].length &&
+		data.modelOptions[0].every((v, i) => v === data.modelOptions[1][i]);
+
+	if (is_shoulder_style && race_id !== undefined && gender_index !== undefined) {
+		// for shoulders, select two models with different PositionIndex values
+		const options = data.modelOptions[0];
+		const candidates = DBComponentModelFileData.getModelsForRaceGenderByPosition(options, race_id, gender_index);
+
+		if (candidates.left)
+			models.push(candidates.left);
+
+		if (candidates.right)
+			models.push(candidates.right);
+	} else {
+		// standard logic for non-shoulder items
+		for (const options of data.modelOptions) {
+			if (options.length === 0)
+				continue;
+
+			if (race_id !== undefined && gender_index !== undefined) {
+				const best = DBComponentModelFileData.getModelForRaceGender(options, race_id, gender_index);
+				if (best)
+					models.push(best);
+			} else {
+				models.push(options[0]);
+			}
 		}
 	}
 

@@ -93,6 +93,61 @@ const getModelForRaceGender = (file_data_ids, race_id, gender_index, fallback_ra
 };
 
 /**
+ * Get two models for left/right shoulders based on PositionIndex.
+ * Filters by race/gender and returns models with PositionIndex 0 (left) and 1 (right).
+ * @param {number[]} file_data_ids - list of candidate FileDataIDs
+ * @param {number} race_id - character race ID
+ * @param {number} gender_index - 0=male, 1=female
+ * @returns {{left: number|null, right: number|null}}
+ */
+const getModelsForRaceGenderByPosition = (file_data_ids, race_id, gender_index) => {
+	const result = { left: null, right: null };
+
+	if (!file_data_ids || file_data_ids.length === 0)
+		return result;
+
+	// group candidates by positionIndex, filtering by race/gender
+	const by_position = { 0: [], 1: [] };
+
+	for (const fdid of file_data_ids) {
+		const info = file_data_to_info.get(fdid);
+		if (!info || (info.positionIndex !== 0 && info.positionIndex !== 1))
+			continue;
+
+		by_position[info.positionIndex].push({ fdid, info });
+	}
+
+	// helper to find best match from a list of candidates
+	const find_best = (candidates) => {
+		// exact race + gender
+		for (const c of candidates) {
+			if (c.info.raceID === race_id && c.info.genderIndex === gender_index)
+				return c.fdid;
+		}
+
+		// race + any gender
+		for (const c of candidates) {
+			if (c.info.raceID === race_id && c.info.genderIndex === GENDER_ANY)
+				return c.fdid;
+		}
+
+		// any race
+		for (const c of candidates) {
+			if (c.info.raceID === 0)
+				return c.fdid;
+		}
+
+		// fallback to first
+		return candidates.length > 0 ? candidates[0].fdid : null;
+	};
+
+	result.left = find_best(by_position[0]);
+	result.right = find_best(by_position[1]);
+
+	return result;
+};
+
+/**
  * Check if a FileDataID has ComponentModelFileData entry
  * @param {number} file_data_id
  * @returns {boolean}
@@ -113,6 +168,7 @@ const getInfo = (file_data_id) => {
 module.exports = {
 	initialize,
 	getModelForRaceGender,
+	getModelsForRaceGenderByPosition,
 	hasEntry,
 	getInfo
 };
