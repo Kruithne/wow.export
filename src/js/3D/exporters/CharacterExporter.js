@@ -121,6 +121,23 @@ function bake_geometry_with_bones(m2, bone_matrices) {
 }
 
 /**
+ * Remap bone indices from equipment model to character skeleton
+ */
+function remap_bone_indices(bone_indices, remap_table) {
+	const remapped = new Uint8Array(bone_indices.length);
+
+	for (let i = 0; i < bone_indices.length; i++) {
+		const original_idx = bone_indices[i];
+		if (original_idx < remap_table.length)
+			remapped[i] = remap_table[original_idx];
+		else
+			remapped[i] = original_idx;
+	}
+
+	return remapped;
+}
+
+/**
  * Apply a transform matrix to all vertices and normals
  */
 function apply_transform_to_geometry(vertices, normals, transform) {
@@ -246,6 +263,8 @@ class CharacterExporter {
 			return null;
 
 		let vertices, normals;
+		let boneIndices = null;
+		let boneWeights = null;
 
 		if (is_collection_style && apply_pose && char_bone_matrices) {
 			// collection-style models use character's bone matrices via remapping
@@ -261,6 +280,12 @@ class CharacterExporter {
 			} else {
 				vertices = new Float32Array(m2.vertices);
 				normals = new Float32Array(m2.normals);
+			}
+
+			// for GLTF export, we need remapped bone indices
+			if (renderer.bone_remap_table && m2.boneIndices) {
+				boneIndices = remap_bone_indices(m2.boneIndices, renderer.bone_remap_table);
+				boneWeights = m2.boneWeights;
 			}
 		} else if (!is_collection_style && attachment_id !== undefined && apply_pose) {
 			// attachment models need the attachment transform applied
@@ -278,13 +303,21 @@ class CharacterExporter {
 			// no pose - use original geometry
 			vertices = new Float32Array(m2.vertices);
 			normals = new Float32Array(m2.normals);
+
+			// still provide remapped bone indices for non-posed GLTF export
+			if (is_collection_style && renderer.bone_remap_table && m2.boneIndices) {
+				boneIndices = remap_bone_indices(m2.boneIndices, renderer.bone_remap_table);
+				boneWeights = m2.boneWeights;
+			}
 		}
 
 		return {
 			vertices,
 			normals,
 			uv: m2.uv,
-			uv2: m2.uv2
+			uv2: m2.uv2,
+			boneIndices,
+			boneWeights
 		};
 	}
 

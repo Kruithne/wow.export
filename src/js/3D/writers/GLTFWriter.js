@@ -67,8 +67,8 @@ function vec3_to_mat4x4(v) {
 class GLTFWriter {
 	/**
 	 * Construct a new GLTF writer instance.
-	 * @param {string} out 
-	 * @param {string} name 
+	 * @param {string} out
+	 * @param {string} name
 	 */
 	constructor(out, name) {
 		this.out = out;
@@ -86,6 +86,9 @@ class GLTFWriter {
 		this.textures = new Map();
 		this.texture_buffers = new Map();
 		this.meshes = [];
+
+		// equipment models to append
+		this.equipment_models = [];
 	}
 
 	/**
@@ -162,12 +165,30 @@ class GLTFWriter {
 
 	/**
 	 * Add a mesh to this writer.
-	 * @param {string} name 
+	 * @param {string} name
 	 * @param {Array} triangles
-	 * @param {string} matName 
+	 * @param {string} matName
 	 */
 	addMesh(name, triangles, matName) {
 		this.meshes.push({ name, triangles, matName });
+	}
+
+	/**
+	 * Add an equipment model to be exported alongside the main model.
+	 * Equipment shares the main model's skeleton via bone index remapping.
+	 * @param {object} equip - Equipment data
+	 * @param {string} equip.name - Equipment name for mesh naming
+	 * @param {Float32Array} equip.vertices - Vertex positions
+	 * @param {Float32Array} equip.normals - Vertex normals
+	 * @param {Float32Array} equip.uv - UV coordinates
+	 * @param {Float32Array} equip.uv2 - Secondary UV coordinates (optional)
+	 * @param {Uint8Array} equip.boneIndices - Bone indices (remapped to char skeleton)
+	 * @param {Uint8Array} equip.boneWeights - Bone weights
+	 * @param {Array} equip.meshes - Array of {name, triangles, matName}
+	 * @param {number} [equip.attachment_bone] - Bone index for attachment (non-skinned equipment)
+	 */
+	addEquipmentModel(equip) {
+		this.equipment_models.push(equip);
 	}
 
 	async write(overwrite = true, format = 'gltf') {
@@ -1103,6 +1124,303 @@ class GLTFWriter {
 
 			add_scene_node(node);
 			bins.push(buffer);
+		}
+
+		// export equipment models
+		for (let eqIdx = 0; eqIdx < this.equipment_models.length; eqIdx++) {
+			const equip = this.equipment_models[eqIdx];
+
+			// create accessors for equipment geometry
+			const eq_vert_accessor = root.accessors.length;
+			const eq_vert_bufview = root.bufferViews.length;
+			root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: GLTF_ARRAY_BUFFER
+			});
+			root.accessors.push({
+				name: 'EQ_POSITION_' + eqIdx,
+				bufferView: eq_vert_bufview,
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: 0,
+				type: 'VEC3'
+			});
+
+			const eq_norm_accessor = root.accessors.length;
+			const eq_norm_bufview = root.bufferViews.length;
+			root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: GLTF_ARRAY_BUFFER
+			});
+			root.accessors.push({
+				name: 'EQ_NORMAL_' + eqIdx,
+				bufferView: eq_norm_bufview,
+				byteOffset: 0,
+				componentType: GLTF_FLOAT,
+				count: 0,
+				type: 'VEC3'
+			});
+
+			// equipment primitive attributes
+			const eq_prim_attribs = {
+				POSITION: eq_vert_accessor,
+				NORMAL: eq_norm_accessor
+			};
+
+			// write equipment vertices
+			{
+				const component_size = 4;
+				const misalignment = bin_ofs % component_size;
+				const padding = misalignment > 0 ? component_size - misalignment : 0;
+				bin_ofs += padding;
+
+				root.bufferViews[eq_vert_bufview].byteOffset = bin_ofs;
+				const buffer_length = equip.vertices.length * component_size;
+				root.bufferViews[eq_vert_bufview].byteLength = buffer_length;
+				bin_ofs += buffer_length;
+
+				root.accessors[eq_vert_accessor].count = equip.vertices.length / 3;
+				calculate_min_max(equip.vertices, 3, root.accessors[eq_vert_accessor]);
+
+				const buffer = BufferWrapper.alloc(buffer_length + padding, true);
+				if (padding > 0)
+					buffer.fill(0, padding);
+
+				for (const v of equip.vertices)
+					buffer.writeFloatLE(v);
+
+				bins.push(buffer);
+			}
+
+			// write equipment normals
+			{
+				const component_size = 4;
+				const misalignment = bin_ofs % component_size;
+				const padding = misalignment > 0 ? component_size - misalignment : 0;
+				bin_ofs += padding;
+
+				root.bufferViews[eq_norm_bufview].byteOffset = bin_ofs;
+				const buffer_length = equip.normals.length * component_size;
+				root.bufferViews[eq_norm_bufview].byteLength = buffer_length;
+				bin_ofs += buffer_length;
+
+				root.accessors[eq_norm_accessor].count = equip.normals.length / 3;
+				calculate_min_max(equip.normals, 3, root.accessors[eq_norm_accessor]);
+
+				const buffer = BufferWrapper.alloc(buffer_length + padding, true);
+				if (padding > 0)
+					buffer.fill(0, padding);
+
+				for (const n of equip.normals)
+					buffer.writeFloatLE(n);
+
+				bins.push(buffer);
+			}
+
+			// write equipment UVs
+			if (equip.uv && equip.uv.length > 0) {
+				// flip UVs on Y axis
+				const flipped_uv = new Float32Array(equip.uv.length);
+				for (let i = 0; i < equip.uv.length; i += 2) {
+					flipped_uv[i] = equip.uv[i];
+					flipped_uv[i + 1] = (equip.uv[i + 1] - 1) * -1;
+				}
+
+				const eq_uv_accessor = root.accessors.length;
+				const eq_uv_bufview = root.bufferViews.length;
+				eq_prim_attribs['TEXCOORD_0'] = eq_uv_accessor;
+
+				root.bufferViews.push({
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+					target: GLTF_ARRAY_BUFFER
+				});
+				root.accessors.push({
+					name: 'EQ_TEXCOORD_0_' + eqIdx,
+					bufferView: eq_uv_bufview,
+					byteOffset: 0,
+					componentType: GLTF_FLOAT,
+					count: flipped_uv.length / 2,
+					type: 'VEC2'
+				});
+
+				const component_size = 4;
+				const misalignment = bin_ofs % component_size;
+				const padding = misalignment > 0 ? component_size - misalignment : 0;
+				bin_ofs += padding;
+
+				root.bufferViews[eq_uv_bufview].byteOffset = bin_ofs;
+				const buffer_length = flipped_uv.length * component_size;
+				root.bufferViews[eq_uv_bufview].byteLength = buffer_length;
+				bin_ofs += buffer_length;
+
+				const buffer = BufferWrapper.alloc(buffer_length + padding, true);
+				if (padding > 0)
+					buffer.fill(0, padding);
+
+				for (const uv of flipped_uv)
+					buffer.writeFloatLE(uv);
+
+				bins.push(buffer);
+			}
+
+			// write equipment bone indices (for skinned equipment)
+			let eq_has_skin = false;
+			if (equip.boneIndices && equip.boneIndices.length > 0 && bones.length > 0) {
+				eq_has_skin = true;
+
+				const eq_joints_accessor = root.accessors.length;
+				const eq_joints_bufview = root.bufferViews.length;
+				eq_prim_attribs['JOINTS_0'] = eq_joints_accessor;
+
+				root.bufferViews.push({
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+					target: GLTF_ARRAY_BUFFER
+				});
+				root.accessors.push({
+					name: 'EQ_JOINTS_0_' + eqIdx,
+					bufferView: eq_joints_bufview,
+					byteOffset: 0,
+					componentType: GLTF_UNSIGNED_BYTE,
+					count: equip.boneIndices.length / 4,
+					type: 'VEC4'
+				});
+
+				const misalignment = bin_ofs % 1;
+				const padding = 0;
+				bin_ofs += padding;
+
+				root.bufferViews[eq_joints_bufview].byteOffset = bin_ofs;
+				const buffer_length = equip.boneIndices.length;
+				root.bufferViews[eq_joints_bufview].byteLength = buffer_length;
+				bin_ofs += buffer_length;
+
+				const buffer = BufferWrapper.alloc(buffer_length, true);
+				for (const idx of equip.boneIndices)
+					buffer.writeUInt8(idx);
+
+				bins.push(buffer);
+
+				// write equipment bone weights
+				const eq_weights_accessor = root.accessors.length;
+				const eq_weights_bufview = root.bufferViews.length;
+				eq_prim_attribs['WEIGHTS_0'] = eq_weights_accessor;
+
+				root.bufferViews.push({
+					buffer: 0,
+					byteLength: 0,
+					byteOffset: 0,
+					target: GLTF_ARRAY_BUFFER
+				});
+				root.accessors.push({
+					name: 'EQ_WEIGHTS_0_' + eqIdx,
+					bufferView: eq_weights_bufview,
+					byteOffset: 0,
+					componentType: GLTF_UNSIGNED_BYTE,
+					normalized: true,
+					count: equip.boneWeights.length / 4,
+					type: 'VEC4'
+				});
+
+				root.bufferViews[eq_weights_bufview].byteOffset = bin_ofs;
+				const weights_buffer_length = equip.boneWeights.length;
+				root.bufferViews[eq_weights_bufview].byteLength = weights_buffer_length;
+				bin_ofs += weights_buffer_length;
+
+				const weights_buffer = BufferWrapper.alloc(weights_buffer_length, true);
+				for (const w of equip.boneWeights)
+					weights_buffer.writeUInt8(w);
+
+				bins.push(weights_buffer);
+			}
+
+			// write equipment meshes
+			for (let mI = 0; mI < equip.meshes.length; mI++) {
+				const mesh = equip.meshes[mI];
+
+				// determine component type for indices
+				let component_type = GLTF_UNSIGNED_BYTE;
+				let component_sizeof = 1;
+				for (const idx of mesh.triangles) {
+					if (idx > 255 && component_type === GLTF_UNSIGNED_BYTE) {
+						component_type = GLTF_UNSIGNED_SHORT;
+						component_sizeof = 2;
+					} else if (idx > 65535 && component_type === GLTF_UNSIGNED_SHORT) {
+						component_type = GLTF_UNSIGNED_INT;
+						component_sizeof = 4;
+						break;
+					}
+				}
+
+				const byte_length = mesh.triangles.length * component_sizeof;
+				const bufferViewIndex = root.bufferViews.length;
+				const accessorIndex = root.accessors.length;
+
+				const component_size = component_sizeof;
+				const misalignment = bin_ofs % component_size;
+				const padding = misalignment > 0 ? component_size - misalignment : 0;
+				bin_ofs += padding;
+
+				root.bufferViews.push({
+					buffer: 0,
+					byteLength: byte_length,
+					byteOffset: bin_ofs,
+					target: GLTF_ELEMENT_ARRAY_BUFFER
+				});
+
+				bin_ofs += byte_length;
+
+				const buffer = BufferWrapper.alloc(byte_length + padding, true);
+				if (padding > 0)
+					buffer.fill(0, padding);
+
+				root.accessors.push({
+					bufferView: bufferViewIndex,
+					byteOffset: 0,
+					componentType: component_type,
+					count: mesh.triangles.length,
+					type: 'SCALAR'
+				});
+
+				if (component_type === GLTF_UNSIGNED_BYTE) {
+					for (const idx of mesh.triangles)
+						buffer.writeUInt8(idx);
+				} else if (component_type === GLTF_UNSIGNED_SHORT) {
+					for (const idx of mesh.triangles)
+						buffer.writeUInt16LE(idx);
+				} else if (component_type === GLTF_UNSIGNED_INT) {
+					for (const idx of mesh.triangles)
+						buffer.writeUInt32LE(idx);
+				}
+
+				const meshIndex = root.meshes.length;
+				root.meshes.push({
+					primitives: [{
+						attributes: eq_prim_attribs,
+						indices: accessorIndex,
+						mode: GLTF_TRIANGLES,
+						material: materialMap.get(mesh.matName)
+					}]
+				});
+
+				const node = { name: `${equip.name}_${mesh.name}`, mesh: meshIndex };
+
+				// apply skin or parent to attachment bone
+				if (eq_has_skin)
+					node.skin = 0;
+				else if (equip.attachment_bone !== undefined && equip.attachment_bone >= 0)
+					node.parent_bone = equip.attachment_bone;
+
+				add_scene_node(node);
+				bins.push(buffer);
+			}
 		}
 
 		// pack texture buffers into binary for glb mode

@@ -1329,6 +1329,41 @@ const export_char_model = async (core) => {
 
 			exporter.setGeosetMask(core.view.chrCustGeosets);
 
+			// collect equipment models for GLTF export (with bone data for rigging)
+			const char_exporter = new CharacterExporter(
+				active_renderer,
+				equipment_model_renderers,
+				collection_model_renderers
+			);
+
+			if (char_exporter.has_equipment()) {
+				const char_info = get_current_race_gender(core);
+				const equipment_data = [];
+
+				// for GLTF, don't apply pose - let the armature handle it
+				for (const geom of char_exporter.get_equipment_geometry(false)) {
+					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
+					const textures = display?.textures || [];
+
+					equipment_data.push({
+						slot_id: geom.slot_id,
+						item_id: geom.item_id,
+						renderer: geom.renderer,
+						vertices: geom.vertices,
+						normals: geom.normals,
+						uv: geom.uv,
+						uv2: geom.uv2,
+						boneIndices: geom.boneIndices,
+						boneWeights: geom.boneWeights,
+						textures,
+						is_collection_style: geom.is_collection_style
+					});
+				}
+
+				exporter.setEquipmentModelsGLTF(equipment_data);
+				log.write('Exporting GLTF character with %d equipment models', equipment_data.length);
+			}
+
 			const format_lower = format.toLowerCase();
 			await exporter.exportAsGLTF(export_path, helper, format_lower);
 			await export_paths?.writeLine('M2_' + format + ':' + export_path);

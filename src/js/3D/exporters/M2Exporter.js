@@ -61,11 +61,19 @@ class M2Exporter {
 	}
 
 	/**
-	 * Set equipment models to export alongside the main model.
+	 * Set equipment models to export alongside the main model (for OBJ/STL).
 	 * @param {Array<{slot_id, item_id, renderer, vertices, normals, uv, uv2, textures}>} equipment
 	 */
 	setEquipmentModels(equipment) {
 		this.equipmentModels = equipment;
+	}
+
+	/**
+	 * Set equipment models for GLTF export (with bone data for rigging).
+	 * @param {Array<{slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style}>} equipment
+	 */
+	setEquipmentModelsGLTF(equipment) {
+		this.equipmentModelsGLTF = equipment;
 	}
 
 	/**
@@ -384,7 +392,151 @@ class M2Exporter {
 			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
 		}
 
+		// add equipment models for GLTF export
+		if (this.equipmentModelsGLTF && this.equipmentModelsGLTF.length > 0) {
+			for (const equip of this.equipmentModelsGLTF) {
+				await this._addEquipmentToGLTF(gltf, equip, textureMap, outDir, format, helper);
+			}
+		}
+
 		await gltf.write(core.view.config.overwriteFiles, format);
+	}
+
+	/**
+	 * Add equipment model to GLTF writer.
+	 * @private
+	 */
+	async _addEquipmentToGLTF(gltf, equip, textureMap, outDir, format, helper) {
+		const { slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style } = equip;
+
+		if (!renderer?.m2)
+			return;
+
+		const m2 = renderer.m2;
+		await m2.load();
+
+		const skin = await m2.getSkin(0);
+		if (!skin)
+			return;
+
+		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+
+		// export equipment textures and build material map
+		const config = core.view.config;
+		const equipTextures = new Map();
+
+		if (config.modelsExportTextures && textures) {
+			for (let i = 0; i < textures.length; i++) {
+				const texFileDataID = textures[i];
+				if (!texFileDataID || texFileDataID <= 0)
+					continue;
+
+				// use existing texture if already exported
+				if (textureMap.has(texFileDataID)) {
+					equipTextures.set(i, textureMap.get(texFileDataID));
+					continue;
+				}
+
+				try {
+					const fileName = listfile.getByID(texFileDataID);
+					let matName = 'mat_equip_' + texFileDataID;
+					let texFile = texFileDataID + '.png';
+					let texPath = path.join(outDir, texFile);
+
+					if (fileName !== undefined) {
+						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						if (config.removePathSpaces)
+							matName = matName.replace(/\s/g, '');
+					}
+
+					if (config.enableSharedTextures && fileName !== undefined) {
+						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
+						texPath = ExportHelper.getExportPath(sharedFileName);
+						texFile = path.relative(outDir, texPath);
+					}
+
+					// for glb mode, we need to get the texture buffer
+					if (format === 'glb') {
+						const data = await core.view.casc.getFile(texFileDataID);
+						const blp = new BLPFile(data);
+						const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
+
+						gltf.texture_buffers.set(texFileDataID, png_buffer);
+					} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+						const data = await core.view.casc.getFile(texFileDataID);
+						const blp = new BLPFile(data);
+						await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
+					}
+
+					const usePosix = config.pathFormat === 'posix';
+					if (usePosix)
+						texFile = ExportHelper.win32ToPosix(texFile);
+
+					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
+					textureMap.set(texFileDataID, texInfo);
+					equipTextures.set(i, texInfo);
+				} catch (e) {
+					log.write('Failed to export equipment GLTF texture %d: %s', texFileDataID, e.message);
+				}
+			}
+		}
+
+		// build meshes for this equipment
+		const meshes = [];
+		let mesh_idx = 0;
+
+		for (let mI = 0; mI < skin.subMeshes.length; mI++) {
+			// check visibility via draw_calls if available
+			if (renderer.draw_calls && renderer.draw_calls[mI] && !renderer.draw_calls[mI].visible)
+				continue;
+
+			const mesh = skin.subMeshes[mI];
+			const triangles = new Array(mesh.triangleCount);
+			for (let vI = 0; vI < mesh.triangleCount; vI++)
+				triangles[vI] = skin.indices[skin.triangles[mesh.triangleStart + vI]];
+
+			// find texture for this submesh
+			let matName = null;
+			const texUnit = skin.textureUnits.find(tex => tex.skinSectionIndex === mI);
+			if (texUnit) {
+				const textureIdx = m2.textureCombos[texUnit.textureComboIndex];
+				const texture = m2.textures[textureIdx];
+				const textureType = m2.textureTypes[textureIdx];
+
+				// check for replaceable texture
+				if (textureType >= 11 && textureType < 14) {
+					const texInfo = equipTextures.get(textureType - 11);
+					if (texInfo)
+						matName = texInfo.matName;
+				} else if (textureType > 1 && textureType < 5) {
+					const texInfo = equipTextures.get(textureType - 2);
+					if (texInfo)
+						matName = texInfo.matName;
+				} else if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID)) {
+					matName = textureMap.get(texture.fileDataID).matName;
+				}
+			}
+
+			meshes.push({
+				name: `${mesh_idx++}`,
+				triangles,
+				matName
+			});
+		}
+
+		// add equipment to GLTF
+		gltf.addEquipmentModel({
+			name: `${slot_name}_Item${item_id}`,
+			vertices: vertices,
+			normals: normals,
+			uv: uv,
+			uv2: uv2,
+			boneIndices: is_collection_style ? boneIndices : null,
+			boneWeights: is_collection_style ? boneWeights : null,
+			meshes
+		});
+
+		log.write('Added equipment GLTF meshes for slot %d (item %d)', slot_id, item_id);
 	}
 
 	/**
