@@ -889,7 +889,7 @@ def has_advanced_m2_data(json_info):
             'skin' in json_info and 
             'textureUnits' in json_info['skin'])
 
-def createAdvancedM2Material(material_name, texture_unit, materials, textures, texture_combos, settings, base_dir, texture_transforms=None, texture_transforms_lookup=None):
+def createAdvancedM2Material(material_name, texture_unit, materials, textures, texture_combos, settings, base_dir, texture_transforms=None, texture_transforms_lookup=None, fallback_texture=None):
     shader_id = texture_unit['shaderID']
     texture_count = texture_unit['textureCount']
     material_index = texture_unit['materialIndex']
@@ -994,6 +994,17 @@ def createAdvancedM2Material(material_name, texture_unit, materials, textures, t
                 print(f"Failed to load texture {texture_filename}: {e}")
                 continue
     
+    # fallback to mtl texture if no textures resolved from json
+    if not texture_nodes and fallback_texture:
+        try:
+            image_node = nodes.new('ShaderNodeTexImage')
+            image_node.location = (tex_x_offset, 200)
+            image_node.image = loadImage(fallback_texture)
+            image_node.image.alpha_mode = 'CHANNEL_PACKED'
+            texture_nodes.append(image_node)
+        except Exception as e:
+            print(f'Failed to load fallback texture {fallback_texture}: {e}')
+
     if not texture_nodes:
         return material
     
@@ -1532,7 +1543,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                             json_texture_combos = json_info.get('textureCombos', [])
                             json_texture_transforms = json_info.get('textureTransforms', [])
                             json_texture_transforms_lookup = json_info.get('textureTransformsLookup', [])
-                            material = createAdvancedM2Material(materialName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup)
+                            material = createAdvancedM2Material(materialName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup, textureLocation)
                         else:
                             material = createStandardMaterial(materialName, textureLocation, -1, False, textureExtensionMode)
                     else:
@@ -1551,14 +1562,14 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                                     if skin_section_idx in json_info.get('skinTexUnits', {}):
                                         texture_unit_found = json_info['skinTexUnits'][skin_section_idx]
                                         break
-                            
+
                             if texture_unit_found:
                                 json_materials = json_info.get('materials', [])
                                 json_textures = json_info.get('textures', [])
                                 json_texture_combos = json_info.get('textureCombos', [])
                                 json_texture_transforms = json_info.get('textureTransforms', [])
                                 json_texture_transforms_lookup = json_info.get('textureTransformsLookup', [])
-                                materialB[bm] = (materialBName, createAdvancedM2Material(materialBName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup))
+                                materialB[bm] = (materialBName, createAdvancedM2Material(materialBName, texture_unit_found, json_materials, json_textures, json_texture_combos, settings, baseDir, json_texture_transforms, json_texture_transforms_lookup, textureLocation))
                             else:
                                 materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
                         else:
