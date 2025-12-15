@@ -570,25 +570,7 @@ async function update_equipment_models(core) {
 					const renderer = new M2RendererGL(file, gl_context, false, false);
 					await renderer.load();
 
-
-					// check if this is a collection-style model (has bones to remap)
-					const is_collection_style = active_renderer?.bones && renderer.bones?.length > 0;
-
-					if (is_collection_style) {
-						// build bone remap table for models that have bones (e.g. backpacks)
-						renderer.buildBoneRemapTable(active_renderer.bones);
-
-						// apply geoset visibility using attachmentGeosetGroup
-						const slot_geosets = get_slot_geoset_mapping(slot_id);
-						if (slot_geosets && display.attachmentGeosetGroup) {
-							renderer.hideAllGeosets();
-							for (const mapping of slot_geosets) {
-								const value = display.attachmentGeosetGroup[mapping.group_index];
-								if (value !== undefined)
-									renderer.setGeosetGroupDisplay(mapping.char_geoset, 1 + value);
-							}
-						}
-					}
+					const is_collection_style = false;
 
 					// apply textures
 					if (display.textures && display.textures.length > i)
