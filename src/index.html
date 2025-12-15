@@ -10,7 +10,7 @@
 		<div id="container" v-cloak>
 			<div id="header" :class="{ shadowed: toast !== null }">
 				<div id="logo" @click="setActiveModule(installType === 1 ? 'legacy_tab_home' : 'tab_home')" :class="{ active: activeModule && (activeModule.__name === 'tab_home' || activeModule.__name === 'legacy_tab_home') }" style="cursor: pointer;">wow.export</div>
-				<div id="nav">
+				<div id="nav" v-if="!isLoading">
 					<template v-for="btn in modNavButtons" :key="btn.module">
 						<div v-if="btn.installTypes & installType" class="option nav-module" :class="{ active: activeModule && activeModule.__name === btn.module }"><span class="nav-icon" @click="setActiveModule(btn.module)" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'"></span><span class="nav-label">{{ btn.label }}</span></div>
 					</template>
