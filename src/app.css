@@ -2903,6 +2903,14 @@ input[type=number]::-webkit-outer-spin-button {
 	width: auto;
 }
 
+.character-quick-save-button {
+	background-image: url(./fa-icons/save.svg);
+	background-color: #5cb85c !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
+}
+
 .character-import-json-button {
 	background-image: url(./fa-icons/file-lines.svg);
 	background-color: var(--form-button-base) !important;
