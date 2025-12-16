@@ -289,7 +289,7 @@ function reset_module_state() {
 	chr_cust_skinned_model_map.clear();
 	skinned_model_renderers.clear();
 	skinned_model_meshes.clear();
-	chr_materials.clear();
+	clear_materials();
 	dispose_equipment_models();
 	dispose_collection_models();
 	current_char_component_texture_layout_id = 0;
