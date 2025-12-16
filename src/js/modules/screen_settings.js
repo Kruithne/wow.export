@@ -1,6 +1,7 @@
 const generics = require('../generics');
 const constants = require('../constants');
 const tactKeys = require('../casc/tact-keys');
+const tab_characters = require('./tab_characters');
 
 let default_config = null;
 
@@ -24,6 +25,11 @@ module.exports = {
 				<p>Local directory where files will be exported to.</p>
 				<p v-if="is_edit_export_path_concerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
 				<component :is="$components.FileField" v-model="$core.view.configEdit.exportDirectory" :class="{ concern: is_edit_export_path_concerning }"></component>
+			</div>
+			<div>
+				<h1>Character Save Directory</h1>
+				<p>Local directory where saved characters are stored. Leave empty to use the default location.</p>
+				<component :is="$components.FileField" v-model="$core.view.configEdit.characterExportPath" :placeholder="default_character_path"></component>
 			</div>
 			<div>
 				<h1>Scroll Speed</h1>
@@ -348,6 +354,10 @@ module.exports = {
 	computed: {
 		is_edit_export_path_concerning() {
 			return !!this.$core.view.configEdit?.exportDirectory?.match(/\s/g);
+		},
+
+		default_character_path() {
+			return tab_characters.get_default_characters_dir();
 		},
 
 		cache_size_formatted() {

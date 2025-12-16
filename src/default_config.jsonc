@@ -26,6 +26,7 @@
 	"realmListURL": "https://marlam.in/we/cached-realms.json",
 	"armoryURL": "https://marlam.in/we/api.php?region=%s&realm=%s&character=%s",
 	"exportDirectory": "",
+	"characterExportPath": "",
 	"copyMode": "FULL",
 	"pasteSelection": false,
 	"enableUnknownFiles": true,

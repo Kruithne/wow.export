@@ -1263,8 +1263,16 @@ async function apply_import_data(core, data, source) {
 //endregion
 
 //region saved characters
-function get_saved_characters_dir() {
+function get_default_characters_dir() {
 	return path.join(os.homedir(), 'wow.export', 'My Characters');
+}
+
+function get_saved_characters_dir(core) {
+	const custom_path = core.view.config.characterExportPath;
+	if (custom_path && custom_path.trim().length > 0)
+		return custom_path.trim();
+
+	return get_default_characters_dir();
 }
 
 function generate_character_id() {
@@ -1272,7 +1280,7 @@ function generate_character_id() {
 }
 
 async function load_saved_characters(core) {
-	const dir = get_saved_characters_dir();
+	const dir = get_saved_characters_dir(core);
 	core.view.chrSavedCharacters = [];
 
 	try {
@@ -1312,7 +1320,7 @@ async function load_saved_characters(core) {
 }
 
 async function save_character(core, name, thumb_data) {
-	const dir = get_saved_characters_dir();
+	const dir = get_saved_characters_dir(core);
 	await generics.createDirectory(dir);
 
 	// generate unique id
@@ -1345,7 +1353,7 @@ async function save_character(core, name, thumb_data) {
 }
 
 async function delete_character(core, character) {
-	const dir = get_saved_characters_dir();
+	const dir = get_saved_characters_dir(core);
 	const json_path = path.join(dir, character.file_name);
 	const thumb_path = path.join(dir, `${character.name}-${character.id}.png`);
 
@@ -1369,7 +1377,7 @@ async function delete_character(core, character) {
 }
 
 async function load_character(core, character) {
-	const dir = get_saved_characters_dir();
+	const dir = get_saved_characters_dir(core);
 	const json_path = path.join(dir, character.file_name);
 
 	try {
@@ -1815,6 +1823,8 @@ function get_selected_choice(core, option_id) {
 
 //region template
 module.exports = {
+	get_default_characters_dir,
+
 	register() {
 		this.registerNavButton('Characters', 'person-solid.svg', InstallType.CASC);
 	},

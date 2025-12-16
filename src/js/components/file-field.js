@@ -4,7 +4,7 @@
 	License: MIT
  */
 module.exports = {
-	props: ['modelValue'],
+	props: ['modelValue', 'placeholder'],
 	emits: ['update:modelValue'],
 
 	/**
@@ -43,5 +43,5 @@ module.exports = {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `<input type="text" :value="modelValue" @focus="openDialog" @input="$emit('update:modelValue', $event.target.value)"/>`
+	template: `<input type="text" :value="modelValue" :placeholder="placeholder" @focus="openDialog" @input="$emit('update:modelValue', $event.target.value)"/>`
 };
