@@ -950,10 +950,11 @@ async function update_model_selection(core) {
 	state.chrCustOptionSelection.splice(0, state.chrCustOptionSelection.length);
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
-	// use imported choices if available, otherwise use defaults
-	if (state.chrImportChoices.length > 0) {
+	// use imported choices if available and we're loading the target model, otherwise use defaults
+	if (state.chrImportChoices.length > 0 && state.chrImportTargetModelID === selected.id) {
 		state.chrCustActiveChoices.push(...state.chrImportChoices);
 		state.chrImportChoices.splice(0, state.chrImportChoices.length);
+		state.chrImportTargetModelID = 0;
 	} else {
 		for (const option of available_options) {
 			const choices = option_to_choices.get(option.id);
@@ -1249,6 +1250,7 @@ async function apply_import_data(core, data, source) {
 
 		const chr_model_id = chr_race_x_chr_model_map.get(race_id).get(gender_index);
 		core.view.chrImportChrModelID = chr_model_id;
+		core.view.chrImportTargetModelID = chr_model_id;
 
 		core.view.chrCustRaceSelection = [core.view.chrCustRaces.find(e => e.id === race_id)];
 
@@ -1384,6 +1386,7 @@ async function load_character(core, character) {
 		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 		core.view.chrImportChoices.push(...(data.choices || []));
 		core.view.chrImportChrModelID = data.model_id;
+		core.view.chrImportTargetModelID = data.model_id;
 
 		// apply race selection
 		const race = core.view.chrCustRaces.find(r => r.id === data.race_id);
