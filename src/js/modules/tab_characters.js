@@ -1359,7 +1359,10 @@ async function delete_character(core, character) {
 		// thumbnail may not exist
 	}
 
-	await load_saved_characters(core);
+	const index = core.view.chrSavedCharacters.findIndex(c => c.id === character.id);
+	if (index !== -1)
+		core.view.chrSavedCharacters.splice(index, 1);
+
 	core.setToast('success', `Character "${character.name}" deleted.`, null, 3000);
 }
 
