@@ -6,6 +6,8 @@
 const log = require('../log');
 const util = require('util');
 const path = require('path');
+const os = require('os');
+const fsp = require('fs').promises;
 const BufferWrapper = require('../buffer');
 const generics = require('../generics');
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
@@ -136,6 +138,135 @@ const collection_model_renderers = new Map();
 let current_char_component_texture_layout_id = 0;
 let watcher_cleanup_funcs = [];
 let is_importing = false;
+
+// thumbnail camera presets by race_id, then gender (0=male, 1=female)
+// format: [cam_x, cam_y, cam_z, tgt_x, tgt_y, tgt_z, rot]
+const THUMBNAIL_PRESETS = {
+	1: { // human
+		0: [0.008, 1.787, 0.813, 0.008, 1.714, 0.444, -1.711],
+		1: [-0.014, 1.664, 0.736, -0.014, 1.610, 0.464, -1.711]
+	},
+	2: { // orc
+		0: [-0.008, 1.797, 1.293, -0.008, 1.630, 0.460, -1.666],
+		1: [0.036, 1.869, 0.550, 0.036, 1.842, 0.418, -1.836]
+	},
+	3: { // dwarf
+		0: [0.032, 1.297, 0.757, 0.032, 1.253, 0.536, -1.641],
+		1: [0, 1.285, 0.726, 0, 1.247, 0.537, -1.836]
+	},
+	4: { // night elf
+		0: [0.025, 2.152, 0.852, 0.025, 2.057, 0.375, -1.581],
+		1: [0.014, 2.051, 0.741, 0.014, 1.981, 0.390, -1.671]
+	},
+	5: { // undead
+		0: [0.008, 1.570, 0.767, 0.008, 1.513, 0.484, -1.646],
+		1: [-0.010, 1.643, 0.861, -0.010, 1.565, 0.473, -1.791]
+	},
+	6: { // tauren
+		0: [-0.048, 2.186, 1.806, -0.048, 1.906, 0.405, -1.686],
+		1: [-0.034, 2.389, 1.135, -0.034, 2.230, 0.340, -1.771]
+	},
+	7: { // gnome
+		0: [0.037, 0.897, 0.893, 0.037, 0.842, 0.618, -1.761],
+		1: [0.046, 0.864, 0.766, 0.046, 0.835, 0.619, -1.761]
+	},
+	8: { // troll
+		0: [-0.014, 1.964, 1.222, -0.014, 1.805, 0.425, -1.771],
+		1: [-0.043, 2.114, 0.728, -0.043, 2.044, 0.378, -1.771]
+	},
+	9: { // goblin
+		0: [0.007, 1.081, 0.767, 0.007, 1.044, 0.578, -1.391],
+		1: [0.051, 1.133, 0.666, 0.051, 1.112, 0.564, -1.761]
+	},
+	10: { // blood elf
+		0: [-0.068, 1.930, 0.583, -0.068, 1.895, 0.407, -1.526],
+		1: [0.015, 1.749, 0.543, 0.015, 1.728, 0.441, -1.496]
+	},
+	11: { // draenei
+		0: [-0.047, 2.227, 1.112, -0.047, 2.079, 0.371, -1.611],
+		1: [0.035, 2.118, 0.744, 0.035, 2.045, 0.377, -1.836]
+	},
+	22: { // worgen
+		0: [-0.001, 1.885, 1.327, -0.001, 1.708, 0.445, -1.736],
+		1: [-0.005, 2.161, 0.904, -0.005, 2.055, 0.375, -1.736]
+	},
+	23: { // goblin
+		0: [0.025, 1.824, 0.734, 0.025, 1.764, 0.434, -1.726],
+		1: [0.004, 1.703, 0.701, 0.004, 1.654, 0.456, -1.726]
+	},
+	24: { // pandaren
+		0: [-0.026, 2.060, 0.704, -0.026, 1.997, 0.387, -1.856],
+		1: [0.015, 1.903, 0.984, 0.015, 1.792, 0.428, -1.731]
+	},
+	27: { // nightborne
+		0: [0.034, 2.124, 0.833, 0.034, 2.034, 0.380, -1.671],
+		1: [0.015, 2.047, 0.706, 0.015, 1.983, 0.390, -1.671]
+	},
+	28: { // highmountain tauren
+		0: [-0.002, 2.227, 1.927, -0.002, 1.922, 0.402, -1.541],
+		1: [-0.026, 2.295, 1.345, -0.026, 2.099, 0.367, -1.541]
+	},
+	29: { // void elf
+		0: [-0.074, 1.833, 0.784, -0.074, 1.763, 0.434, -1.666],
+		1: [0.019, 1.717, 0.650, 0.019, 1.677, 0.451, -1.711]
+	},
+	30: { // lightforged draenei
+		0: [-0.078, 2.224, 1.129, -0.078, 2.072, 0.372, -1.861],
+		1: [0.050, 2.121, 0.690, 0.050, 2.058, 0.375, -1.726]
+	},
+	31: { // zandalari troll
+		0: [-0.030, 2.455, 1.124, -0.030, 2.296, 0.327, -1.536],
+		1: [-0.058, 2.430, 0.909, -0.058, 2.313, 0.324, -1.536]
+	},
+	32: { // kul tiran
+		0: [0.037, 2.220, 1.090, 0.037, 2.076, 0.371, -1.521],
+		1: [0.013, 2.148, 0.782, 0.013, 2.067, 0.373, -1.726]
+	},
+	34: { // dark iron dwarf
+		0: [0.021, 1.312, 0.681, 0.021, 1.282, 0.530, -1.491],
+		1: [0.009, 1.366, 0.620, 0.009, 1.345, 0.517, -1.491]
+	},
+	35: { // vulpera
+		0: [0.009, 1.075, 0.801, 0.009, 1.031, 0.580, -1.736],
+		1: [0.015, 1.039, 0.847, 0.015, 0.987, 0.589, -1.711]
+	},
+	36: { // mag'har orc
+		0: [-0.022, 1.742, 1.356, -0.022, 1.565, 0.473, -1.701],
+		1: [0.032, 1.831, 0.617, 0.032, 1.793, 0.428, -1.841]
+	},
+	37: { // mechagnome
+		0: [0.028, 0.829, 0.965, 0.028, 0.763, 0.634, -1.806],
+		1: [0.051, 0.823, 0.890, 0.051, 0.771, 0.632, -1.831]
+	},
+	52: { // dracthyr (alliance)
+		0: [-0.018, 2.501, 0.863, -0.018, 2.390, 0.308, -1.326],
+		1: [-0.018, 2.501, 0.863, -0.018, 2.390, 0.308, -1.326]
+	},
+	70: { // dracthyr (horde)
+		0: [-0.018, 2.501, 0.863, -0.018, 2.390, 0.308, -1.326],
+		1: [-0.018, 2.501, 0.863, -0.018, 2.390, 0.308, -1.326]
+	},
+	75: { // dracthyr visage (alliance)
+		0: [-0.043, 1.839, 0.716, -0.043, 1.782, 0.430, -1.666],
+		1: [0.009, 1.725, 0.553, 0.009, 1.704, 0.446, -1.746]
+	},
+	76: { // dracthyr visage (horde)
+		0: [-0.043, 1.839, 0.716, -0.043, 1.782, 0.430, -1.666],
+		1: [0.009, 1.725, 0.553, 0.009, 1.704, 0.446, -1.746]
+	},
+	84: { // earthen (horde)
+		0: [0.058, 1.434, 1.022, 0.058, 1.333, 0.520, -1.746],
+		1: [0.027, 1.473, 0.760, 0.027, 1.422, 0.502, -1.746]
+	},
+	85: { // earthen (alliance)
+		0: [0.058, 1.434, 1.022, 0.058, 1.333, 0.520, -1.746],
+		1: [0.027, 1.473, 0.760, 0.027, 1.422, 0.502, -1.746]
+	},
+	86: { // harronir
+		0: [0.003, 2.222, 0.639, 0.003, 2.165, 0.353, -1.571],
+		1: [0.006, 2.078, 0.637, 0.006, 2.027, 0.381, -1.571]
+	}
+};
 
 function reset_module_state() {
 	active_skins.clear();
@@ -1129,6 +1260,236 @@ async function apply_import_data(core, data, source) {
 
 //endregion
 
+//region saved characters
+function get_saved_characters_dir() {
+	return path.join(os.homedir(), 'wow.export', 'My Characters');
+}
+
+function generate_character_id() {
+	return Math.floor(10000 + Math.random() * 90000).toString();
+}
+
+async function load_saved_characters(core) {
+	const dir = get_saved_characters_dir();
+	core.view.chrSavedCharacters = [];
+
+	try {
+		await fsp.access(dir);
+	} catch {
+		return;
+	}
+
+	const files = await fsp.readdir(dir);
+	const characters = [];
+
+	for (const file of files) {
+		if (!file.endsWith('.json'))
+			continue;
+
+		const match = file.match(/^(.+)-(\d{5})\.json$/);
+		if (!match)
+			continue;
+
+		const name = match[1];
+		const id = match[2];
+		const thumb_path = path.join(dir, `${name}-${id}.png`);
+
+		let thumb_data = null;
+		try {
+			await fsp.access(thumb_path);
+			const thumb_buffer = await fsp.readFile(thumb_path);
+			thumb_data = 'data:image/png;base64,' + thumb_buffer.toString('base64');
+		} catch {
+			// no thumbnail
+		}
+
+		characters.push({ name, id, thumb: thumb_data, file_name: file });
+	}
+
+	core.view.chrSavedCharacters = characters;
+}
+
+async function save_character(core, name, thumb_data) {
+	const dir = get_saved_characters_dir();
+	await generics.createDirectory(dir);
+
+	// generate unique id
+	let id = generate_character_id();
+	const existing_ids = core.view.chrSavedCharacters.map(c => c.id);
+	while (existing_ids.includes(id))
+		id = generate_character_id();
+
+	// gather character data
+	const data = {
+		race_id: core.view.chrCustRaceSelection[0]?.id,
+		model_id: core.view.chrCustModelSelection[0]?.id,
+		choices: [...core.view.chrCustActiveChoices],
+		equipment: { ...core.view.chrEquippedItems }
+	};
+
+	const json_path = path.join(dir, `${name}-${id}.json`);
+	await fsp.writeFile(json_path, JSON.stringify(data, null, '\t'));
+
+	// save thumbnail if provided
+	if (thumb_data) {
+		const thumb_path = path.join(dir, `${name}-${id}.png`);
+		const base64 = thumb_data.split(',')[1];
+		const buffer = Buffer.from(base64, 'base64');
+		await fsp.writeFile(thumb_path, buffer);
+	}
+
+	await load_saved_characters(core);
+	core.setToast('success', `Character "${name}" saved.`, null, 3000);
+}
+
+async function delete_character(core, character) {
+	const dir = get_saved_characters_dir();
+	const json_path = path.join(dir, character.file_name);
+	const thumb_path = path.join(dir, `${character.name}-${character.id}.png`);
+
+	try {
+		await fsp.unlink(json_path);
+	} catch (e) {
+		log.write('failed to delete character json: %s', e.message);
+	}
+
+	try {
+		await fsp.unlink(thumb_path);
+	} catch {
+		// thumbnail may not exist
+	}
+
+	await load_saved_characters(core);
+	core.setToast('success', `Character "${character.name}" deleted.`, null, 3000);
+}
+
+async function load_character(core, character) {
+	const dir = get_saved_characters_dir();
+	const json_path = path.join(dir, character.file_name);
+
+	try {
+		const content = await fsp.readFile(json_path, 'utf8');
+		const data = JSON.parse(content);
+
+		core.view.chrModelLoading = true;
+		core.view.chrSavedCharactersScreen = false;
+
+		// apply equipment
+		core.view.chrEquippedItems = data.equipment || {};
+
+		// apply customization
+		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
+		core.view.chrImportChoices.push(...(data.choices || []));
+		core.view.chrImportChrModelID = data.model_id;
+
+		// apply race selection
+		const race = core.view.chrCustRaces.find(r => r.id === data.race_id);
+		if (race)
+			core.view.chrCustRaceSelection = [race];
+
+		core.view.chrModelLoading = false;
+	} catch (e) {
+		log.write('failed to load character: %s', e.message);
+		core.setToast('error', `Failed to load character: ${e.message}`, null, -1);
+	}
+}
+
+async function capture_character_thumbnail(core) {
+	const context = core.view.chrModelViewerContext;
+	if (!context || !context.controls || !active_renderer)
+		return null;
+
+	const controls = context.controls;
+	const camera = controls.camera;
+
+	// store current state
+	const saved_cam_pos = [...camera.position];
+	const saved_target = [...controls.target];
+	const saved_rotation = controls.model_rotation_y;
+	const saved_anim = active_renderer.current_animation_index;
+	const saved_frame = active_renderer.animation_time;
+
+	// get race/gender preset
+	const race_gender = get_current_race_gender(core);
+	let preset = null;
+
+	if (race_gender) {
+		const race_presets = THUMBNAIL_PRESETS[race_gender.raceID];
+		if (race_presets)
+			preset = race_presets[race_gender.genderIndex];
+	}
+
+	// apply thumbnail camera settings
+	if (preset) {
+		camera.position[0] = preset[0];
+		camera.position[1] = preset[1];
+		camera.position[2] = preset[2];
+		controls.target[0] = preset[3];
+		controls.target[1] = preset[4];
+		controls.target[2] = preset[5];
+		controls.model_rotation_y = preset[6];
+
+		camera.lookAt(controls.target[0], controls.target[1], controls.target[2]);
+		if (controls.on_model_rotate)
+			controls.on_model_rotate(controls.model_rotation_y);
+	}
+
+	// set to stand animation frame 0
+	if (active_renderer.setAnimation)
+		active_renderer.setAnimation(0);
+
+	active_renderer.animation_time = 0;
+	if (active_renderer.updateAnimation)
+		active_renderer.updateAnimation(0);
+
+	// wait for render
+	await new Promise(r => requestAnimationFrame(r));
+	await new Promise(r => requestAnimationFrame(r));
+
+	// capture from canvas
+	const canvas = context.gl_context?.canvas;
+	if (!canvas)
+		return null;
+
+	// get canvas dimensions and calculate 1:1 crop
+	const width = canvas.width;
+	const height = canvas.height;
+	const size = Math.min(width, height);
+	const offset_x = Math.floor((width - size) / 2);
+	const offset_y = Math.floor((height - size) / 2);
+
+	// create offscreen canvas for cropping
+	const crop_canvas = document.createElement('canvas');
+	crop_canvas.width = size;
+	crop_canvas.height = size;
+	const crop_ctx = crop_canvas.getContext('2d');
+	crop_ctx.drawImage(canvas, offset_x, offset_y, size, size, 0, 0, size, size);
+
+	const data_url = crop_canvas.toDataURL('image/png');
+
+	// restore previous state
+	camera.position[0] = saved_cam_pos[0];
+	camera.position[1] = saved_cam_pos[1];
+	camera.position[2] = saved_cam_pos[2];
+	controls.target[0] = saved_target[0];
+	controls.target[1] = saved_target[1];
+	controls.target[2] = saved_target[2];
+	controls.model_rotation_y = saved_rotation;
+
+	camera.lookAt(controls.target[0], controls.target[1], controls.target[2]);
+	if (controls.on_model_rotate)
+		controls.on_model_rotate(controls.model_rotation_y);
+
+	if (active_renderer.setAnimation && saved_anim !== undefined)
+		active_renderer.setAnimation(saved_anim);
+
+	active_renderer.animation_time = saved_frame || 0;
+
+	return data_url;
+}
+
+//endregion
+
 //region race
 function update_chr_race_list(core) {
 	const listed_model_ids = [];
@@ -1454,6 +1815,35 @@ module.exports = {
 
 	template: `
 		<div class="tab" id="tab-characters">
+			<div v-show="$core.view.chrSavedCharactersScreen" class="saved-characters-screen">
+				<div class="saved-characters-header">My Characters</div>
+				<div class="saved-characters-grid">
+					<div v-for="character in $core.view.chrSavedCharacters" :key="character.id" class="saved-character-card" @click="on_load_character(character)">
+						<div class="saved-character-thumb" :style="{ backgroundImage: character.thumb ? 'url(' + character.thumb + ')' : 'none' }">
+							<div class="saved-character-actions">
+								<input type="button" value="" title="Export Character" class="ui-image-button saved-char-export-btn" @click.stop="on_export_character(character)"/>
+								<input type="button" value="" title="Delete Character" class="ui-image-button saved-char-delete-btn" @click.stop="on_delete_character(character)"/>
+							</div>
+						</div>
+						<div class="saved-character-name">{{ character.name }}</div>
+					</div>
+				</div>
+				<div class="saved-characters-gutter">
+					<div class="saved-characters-gutter-left">
+						<input type="button" value="New Character" class="ui-button" @click="open_save_prompt"/>
+						<input type="button" value="Import JSON" class="ui-button" @click="import_json"/>
+					</div>
+					<input type="button" value="Back" class="ui-button" @click="$core.view.chrSavedCharactersScreen = false"/>
+				</div>
+			</div>
+			<div v-if="$core.view.chrSaveCharacterPrompt" class="chr-save-prompt-overlay" @click.self="$core.view.chrSaveCharacterPrompt = false">
+				<div class="chr-save-prompt">
+					<div class="header"><b>Save Character</b></div>
+					<input type="text" v-model="$core.view.chrSaveCharacterName" placeholder="Character Name" @keyup.enter="confirm_save_character"/>
+					<input type="button" value="Save" @click="confirm_save_character"/>
+				</div>
+			</div>
+			<div v-show="!$core.view.chrSavedCharactersScreen" class="character-viewer-content">
 			<div v-if="$core.view.chrModelViewerAnims && $core.view.chrModelViewerAnims.length > 0" class="preview-dropdown-overlay">
 				<select v-model="$core.view.chrModelViewerAnimSelection">
 					<option v-for="animation in $core.view.chrModelViewerAnims" :key="animation.id" :value="animation.id">
@@ -1471,6 +1861,8 @@ module.exports = {
 				</div>
 			</div>
 			<div class="character-import-buttons">
+				<input type="button" value="My Characters" title="My Characters" class="ui-image-button character-save-button" @click="open_saved_characters"/>
+				<input type="button" value="" title="Import JSON" class="ui-image-button character-import-json-button" @click="import_json"/>
 				<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
 				<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: $core.view.characterImportMode === 'WHEAD' }"/>
 				<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="import_wmv"/>
@@ -1655,6 +2047,7 @@ module.exports = {
 					<span @click="clear_all_equipment">Clear All Equipment</span>
 				</div>
 			</div>
+			</div>
 		</div>
 	`,
 
@@ -1762,6 +2155,47 @@ module.exports = {
 		async remove_baked_npc_texture() {
 			this.$core.view.chrCustBakedNPCTexture = null;
 			await refresh_character_appearance(this.$core);
+		},
+
+		async open_saved_characters() {
+			await load_saved_characters(this.$core);
+			this.$core.view.chrSavedCharactersScreen = true;
+		},
+
+		async open_save_prompt() {
+			// capture thumbnail while still viewing the character
+			this.$core.view.chrPendingThumbnail = await capture_character_thumbnail(this.$core);
+			this.$core.view.chrSaveCharacterName = '';
+			this.$core.view.chrSaveCharacterPrompt = true;
+		},
+
+		async confirm_save_character() {
+			const name = this.$core.view.chrSaveCharacterName.trim();
+			if (!name) {
+				this.$core.setToast('error', 'Please enter a character name.', null, 3000);
+				return;
+			}
+
+			this.$core.view.chrSaveCharacterPrompt = false;
+			await save_character(this.$core, name, this.$core.view.chrPendingThumbnail);
+		},
+
+		async on_load_character(character) {
+			await load_character(this.$core, character);
+		},
+
+		async on_delete_character(character) {
+			await delete_character(this.$core, character);
+		},
+
+		on_export_character(character) {
+			// placeholder for export functionality
+			this.$core.setToast('info', 'Export functionality coming soon.', null, 3000);
+		},
+
+		import_json() {
+			// placeholder for JSON import functionality
+			this.$core.setToast('info', 'JSON import functionality coming soon.', null, 3000);
 		},
 
 		chr_prev_overlay() {
