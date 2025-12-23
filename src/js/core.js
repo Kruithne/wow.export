@@ -64,6 +64,7 @@ const makeNewView = () => {
 		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		userInputFilterLegacyModels: '', // Value of the 'filter' field for legacy models.
+		userInputFilterDecor: '', // Value of the 'filter' field for decor items.
 		activeModule: null, // Active module component instance.
 		modNavButtons: [], // Module-registered navigation buttons.
 		modContextMenuOptions: [], // Module-registered context menu options.
@@ -87,6 +88,7 @@ const makeNewView = () => {
 		selectionRaw: [], // Current user selection of raw files.
 		selectionInstall: [], // Current user selection of install files.
 		selectionLegacyModels: [], // Current user selection of legacy models.
+		selectionDecor: [], // Current user selection of decor items.
 		installStringsView: false, // Whether to show strings view instead of manifest.
 		installStrings: [], // Extracted strings from binary file.
 		installStringsFileName: '', // Name of file strings were extracted from.
@@ -105,6 +107,7 @@ const makeNewView = () => {
 		listfileRaw: [], // Full raw file listfile.
 		listfileInstall: [], // Filtered listfile for install files.
 		listfileLegacyModels: [], // Filtered listfile for legacy models from MPQ.
+		listfileDecor: [], // Filtered listfile for decor items.
 		dbdManifest: [], // DB2 entires from DBD manifest.
 		installTags: [], // Install manifest tags.
 		tableBrowserHeaders: [], // DB2 headers
@@ -142,6 +145,23 @@ const makeNewView = () => {
 		legacyModelViewerAnimFrame: 0, // Current legacy animation frame.
 		legacyModelViewerAnimFrameCount: 0, // Total frames in current legacy animation.
 		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
+		decorViewerContext: null, // 3D context for the decor viewer.
+		decorViewerActiveType: 'none', // Type of decor model actively selected ('m2', 'wmo', 'none').
+		decorViewerGeosets: [], // Active decor M2 geoset control.
+		decorViewerWMOGroups: [], // Active decor WMO group control.
+		decorViewerWMOSets: [], // Active decor WMO doodad set control.
+		decorViewerAutoAdjust: true, // Automatic camera adjustment for decor viewer.
+		decorViewerAnims: [], // Available decor animations.
+		decorViewerAnimSelection: null, // Selected decor animation.
+		decorViewerAnimPaused: false, // Decor animation playback paused state.
+		decorViewerAnimFrame: 0, // Current decor animation frame.
+		decorViewerAnimFrameCount: 0, // Total frames in current decor animation.
+		decorViewerUVLayers: [], // Available UV layers for the active decor model.
+		decorTexturePreviewURL: '', // Active URL of the texture preview for decor viewer.
+		decorTexturePreviewUVOverlay: '', // UV overlay data URL for decor texture preview.
+		decorTexturePreviewWidth: 256, // Width of decor texture preview.
+		decorTexturePreviewHeight: 256, // Height of decor texture preview.
+		decorTexturePreviewName: '', // Name of the decor texture preview.
 		legacyModelViewerSkins: [], // Available legacy M2 model skins.
 		legacyModelViewerSkinsSelection: [], // Selected legacy M2 model skin.
 		legacyModelTexturePreviewURL: '', // Active URL of the texture preview for legacy model viewer.
@@ -287,6 +307,15 @@ const makeNewView = () => {
 			{ label: 'Export OBJ', value: 'OBJ' },
 			{ label: 'Export STL', value: 'STL' },
 			{ label: 'Export Raw', value: 'RAW' },
+			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
+			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
+		],
+		menuButtonDecor: [
+			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export STL', value: 'STL' },
+			{ label: 'Export glTF', value: 'GLTF' },
+			{ label: 'Export GLB', value: 'GLB' },
+			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
 			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],

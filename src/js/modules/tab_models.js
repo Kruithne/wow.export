@@ -1,12 +1,9 @@
 const log = require('../log');
 const util = require('util');
 const path = require('path');
-const BufferWrapper = require('../buffer');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
-const constants = require('../constants');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const BLPFile = require('../casc/blp');
 const InstallType = require('../install-type');
 const listboxContext = require('../ui/listbox-context');
 
@@ -14,29 +11,9 @@ const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBItemDisplays = require('../db/caches/DBItemDisplays');
 const DBCreatures = require('../db/caches/DBCreatures');
 
-const M2RendererGL = require('../3D/renderers/M2RendererGL');
-const M3RendererGL = require('../3D/renderers/M3RendererGL');
-const M2Exporter = require('../3D/exporters/M2Exporter');
-const M3Exporter = require('../3D/exporters/M3Exporter');
-
-const WMORendererGL = require('../3D/renderers/WMORendererGL');
-const WMOExporter = require('../3D/exporters/WMOExporter');
-
 const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
-const uvDrawer = require('../ui/uv-drawer');
-const AnimMapper = require('../3D/AnimMapper');
-
-const MODEL_TYPE_M3 = Symbol('modelM3');
-const MODEL_TYPE_M2 = Symbol('modelM2');
-const MODEL_TYPE_WMO = Symbol('modelWMO');
-
-const export_extensions = {
-	'OBJ': '.obj',
-	'STL': '.stl',
-	'GLTF': '.gltf',
-	'GLB': '.glb'
-};
+const modelViewerUtils = require('../ui/model-viewer-utils');
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();
@@ -44,6 +21,33 @@ let selected_skin_name = null;
 
 let active_renderer;
 let active_path;
+
+const get_view_state = (core) => ({
+	get texturePreviewURL() { return core.view.modelTexturePreviewURL; },
+	set texturePreviewURL(v) { core.view.modelTexturePreviewURL = v; },
+	get texturePreviewUVOverlay() { return core.view.modelTexturePreviewUVOverlay; },
+	set texturePreviewUVOverlay(v) { core.view.modelTexturePreviewUVOverlay = v; },
+	get texturePreviewWidth() { return core.view.modelTexturePreviewWidth; },
+	set texturePreviewWidth(v) { core.view.modelTexturePreviewWidth = v; },
+	get texturePreviewHeight() { return core.view.modelTexturePreviewHeight; },
+	set texturePreviewHeight(v) { core.view.modelTexturePreviewHeight = v; },
+	get texturePreviewName() { return core.view.modelTexturePreviewName; },
+	set texturePreviewName(v) { core.view.modelTexturePreviewName = v; },
+	get uvLayers() { return core.view.modelViewerUVLayers; },
+	set uvLayers(v) { core.view.modelViewerUVLayers = v; },
+	get anims() { return core.view.modelViewerAnims; },
+	set anims(v) { core.view.modelViewerAnims = v; },
+	get animSelection() { return core.view.modelViewerAnimSelection; },
+	set animSelection(v) { core.view.modelViewerAnimSelection = v; },
+	get animPaused() { return core.view.modelViewerAnimPaused; },
+	set animPaused(v) { core.view.modelViewerAnimPaused = v; },
+	get animFrame() { return core.view.modelViewerAnimFrame; },
+	set animFrame(v) { core.view.modelViewerAnimFrame = v; },
+	get animFrameCount() { return core.view.modelViewerAnimFrameCount; },
+	set animFrameCount(v) { core.view.modelViewerAnimFrameCount = v; },
+	get autoAdjust() { return core.view.modelViewerAutoAdjust; },
+	set autoAdjust(v) { core.view.modelViewerAutoAdjust = v; }
+});
 
 const get_model_displays = (file_data_id) => {
 	let displays = DBCreatures.getCreatureDisplaysByFileDataID(file_data_id);
@@ -54,87 +58,14 @@ const get_model_displays = (file_data_id) => {
 	return displays ?? [];
 };
 
-const clear_texture_preview = (core) => {
-	core.view.modelTexturePreviewURL = '';
-	core.view.modelTexturePreviewUVOverlay = '';
-	core.view.modelViewerUVLayers = [];
-};
-
-const initialize_uv_layers = (core) => {
-	if (!active_renderer || !active_renderer.getUVLayers) {
-		core.view.modelViewerUVLayers = [];
-		return;
-	}
-
-	const uv_layer_data = active_renderer.getUVLayers();
-	core.view.modelViewerUVLayers = [
-		{ name: 'UV Off', data: null, active: true },
-		...uv_layer_data.layers
-	];
-};
-
-const toggle_uv_layer = (core, layer_name) => {
-	const layer = core.view.modelViewerUVLayers.find(l => l.name === layer_name);
-	if (!layer)
-		return;
-
-	core.view.modelViewerUVLayers.forEach(l => {
-		l.active = (l === layer);
-	});
-
-	if (layer_name === 'UV Off' || !layer.data) {
-		core.view.modelTexturePreviewUVOverlay = '';
-	} else if (active_renderer && active_renderer.getUVLayers) {
-		const uv_layer_data = active_renderer.getUVLayers();
-		const overlay_data_url = uvDrawer.generateUVLayerDataURL(
-			layer.data,
-			core.view.modelTexturePreviewWidth,
-			core.view.modelTexturePreviewHeight,
-			uv_layer_data.indices
-		);
-		core.view.modelTexturePreviewUVOverlay = overlay_data_url;
-	}
-};
-
-const preview_texture_by_id = async (core, file_data_id, name) => {
-	const texture = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
-
-	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
-	log.write('Previewing texture file %s', texture);
-
-	try {
-		const view = core.view;
-		const file = await core.view.casc.getFile(file_data_id);
-
-		const blp = new BLPFile(file);
-
-		view.modelTexturePreviewURL = blp.getDataURL(view.config.exportChannelMask);
-		view.modelTexturePreviewWidth = blp.width;
-		view.modelTexturePreviewHeight = blp.height;
-		view.modelTexturePreviewName = name;
-
-		initialize_uv_layers(core);
-
-		core.hideToast();
-	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
-			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
-		} else {
-			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
-			log.write('Failed to open CASC file: %s', e.message);
-		}
-	}
-};
-
 const preview_model = async (core, file_name) => {
 	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
 	log.write('Previewing model %s', file_name);
 
+	const state = get_view_state(core);
 	textureRibbon.reset();
-	clear_texture_preview(core);
+	modelViewerUtils.clear_texture_preview(state);
 
 	core.view.modelViewerSkins = [];
 	core.view.modelViewerSkinsSelection = [];
@@ -154,30 +85,21 @@ const preview_model = async (core, file_name) => {
 
 		const file_data_id = listfile.getByFilename(file_name);
 		const file = await core.view.casc.getFile(file_data_id);
-		let is_m2 = false;
-		let is_m3 = false;
-
-		const file_name_lower = file_name.toLowerCase();
 		const gl_context = core.view.modelViewerContext?.gl_context;
 
-		if (file_name_lower.endsWith('.m2')) {
-			core.view.modelViewerActiveType = 'm2';
-			active_renderer = new M2RendererGL(file, gl_context, true, core.view.config.modelViewerShowTextures);
-			is_m2 = true;
-		} else if (file_name_lower.endsWith('.m3')) {
-			core.view.modelViewerActiveType = 'm3';
-			active_renderer = new M3RendererGL(file, gl_context, true, core.view.config.modelViewerShowTextures);
-			is_m3 = true;
-		} else if (file_name_lower.endsWith('.wmo')) {
-			core.view.modelViewerActiveType = 'wmo';
-			active_renderer = new WMORendererGL(file, file_name, gl_context, core.view.config.modelViewerShowTextures);
-		} else {
-			throw new Error('Unknown model extension: %s', file_name);
-		}
+		const model_type = modelViewerUtils.detect_model_type_by_name(file_name) ?? modelViewerUtils.detect_model_type(file);
 
+		if (model_type === modelViewerUtils.MODEL_TYPE_M2)
+			core.view.modelViewerActiveType = 'm2';
+		else if (model_type === modelViewerUtils.MODEL_TYPE_M3)
+			core.view.modelViewerActiveType = 'm3';
+		else
+			core.view.modelViewerActiveType = 'wmo';
+
+		active_renderer = modelViewerUtils.create_renderer(file, model_type, gl_context, core.view.config.modelViewerShowTextures, file_name);
 		await active_renderer.load();
 
-		if (is_m2) {
+		if (model_type === modelViewerUtils.MODEL_TYPE_M2) {
 			const displays = get_model_displays(file_data_id);
 
 			const skin_list = [];
@@ -217,33 +139,12 @@ const preview_model = async (core, file_name) => {
 			core.view.modelViewerSkins = skin_list;
 			core.view.modelViewerSkinsSelection = skin_list.slice(0, 1);
 
-			if (file_name_lower.endsWith('.m2')) {
-				const anim_list = [];
-				const anim_source = active_renderer.skelLoader || active_renderer.m2;
-
-				for (let i = 0; i < anim_source.animations.length; i++) {
-					const animation = anim_source.animations[i];
-					anim_list.push({
-						id: `${Math.floor(animation.id)}.${animation.variationIndex}`,
-						animationId: animation.id,
-						m2Index: i,
-						label: AnimMapper.get_anim_name(animation.id) + ' (' + Math.floor(animation.id) + '.' + animation.variationIndex + ')'
-					});
-				}
-
-				const final_anim_list = [
-					{ id: 'none', label: 'No Animation', m2Index: -1 },
-					...anim_list
-				];
-
-				core.view.modelViewerAnims = final_anim_list;
-				core.view.modelViewerAnimSelection = 'none';
-			}
+			core.view.modelViewerAnims = modelViewerUtils.extract_animations(active_renderer);
+			core.view.modelViewerAnimSelection = 'none';
 		}
 
 		active_path = file_name;
 
-		// check for empty model
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
 
 		if (!has_content) {
@@ -251,7 +152,6 @@ const preview_model = async (core, file_name) => {
 		} else {
 			core.hideToast();
 
-			// fit camera to model if auto-adjust is enabled
 			if (core.view.modelViewerAutoAdjust)
 				requestAnimationFrame(() => core.view.modelViewerContext?.fitCamera?.());
 		}
@@ -285,213 +185,93 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 
 	if (format === 'PNG' || format === 'CLIPBOARD') {
 		if (active_path) {
-			core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
-
 			const canvas = document.getElementById('model-preview').querySelector('canvas');
-			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
-
-			if (format === 'PNG') {
-				const export_path = ExportHelper.getExportPath(active_path);
-				let out_file = ExportHelper.replaceExtension(export_path, '.png');
-
-				if (core.view.config.modelsExportPngIncrements)
-					out_file = await ExportHelper.getIncrementalFilename(out_file);
-
-				const out_dir = path.dirname(out_file);
-
-				await buf.writeToFile(out_file);
-				await export_paths?.writeLine('PNG:' + out_file);
-
-				log.write('Saved 3D preview screenshot to %s', out_file);
-				core.setToast('success', util.format('Successfully exported preview to %s', out_file), { 'View in Explorer': () => nw.Shell.openItem(out_dir) }, -1);
-			} else if (format === 'CLIPBOARD') {
-				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toBase64(), 'png', true);
-
-				log.write('Copied 3D preview to clipboard (%s)', active_path);
-				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
-			}
+			await modelViewerUtils.export_preview(core, format, canvas, active_path);
 		} else {
 			core.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
 		}
-	} else {
-		const casc = core.view.casc;
-		const helper = new ExportHelper(files.length, 'model');
-		helper.start();
 
-		for (const file_entry of files) {
-			if (helper.isCancelled())
-				return;
-
-			let file_name;
-			let file_data_id;
-
-			if (typeof file_entry === 'number') {
-				file_data_id = file_entry;
-				file_name = listfile.getByID(file_data_id);
-			} else {
-				file_name = listfile.stripFileEntry(file_entry);
-				file_data_id = listfile.getByFilename(file_name);
-			}
-
-			const file_manifest = [];
-
-			try {
-				let file_type;
-				const data = await (is_local ? BufferWrapper.readFile(file_name) : casc.getFile(file_data_id));
-
-				if (file_name === undefined) {
-					const magic = data.readUInt32LE();
-					data.seek(0);
-
-					if (magic == constants.MAGIC.M3DT) {
-						file_type = MODEL_TYPE_M3;
-						file_name = listfile.formatUnknownFile(file_data_id, '.m3');
-					} else if (magic === constants.MAGIC.MD20 || magic === constants.MAGIC.MD21) {
-						file_type = MODEL_TYPE_M2;
-						file_name = listfile.formatUnknownFile(file_data_id, '.m2');
-					} else {
-						file_type = MODEL_TYPE_WMO;
-						file_name = listfile.formatUnknownFile(file_data_id, '.wmo');
-					}
-				} else {
-					const file_name_lower = file_name.toLowerCase();
-					if (file_name_lower.endsWith('.m3') === true)
-						file_type = MODEL_TYPE_M3;
-					else if (file_name_lower.endsWith('.m2') === true)
-						file_type = MODEL_TYPE_M2;
-					else if (file_name_lower.endsWith('.wmo') === true)
-						file_type = MODEL_TYPE_WMO;
-				}
-
-				if (!file_type)
-					throw new Error('Unknown model file type for %d', file_data_id);
-
-				let export_path;
-				let mark_file_name = file_name;
-				if (is_local) {
-					export_path = file_name;
-				} else if (file_type === MODEL_TYPE_M2 && selected_skin_name !== null && file_name === active_path && format !== 'RAW') {
-					const base_file_name = path.basename(file_name, path.extname(file_name));
-					let skinned_name;
-
-					if (selected_skin_name.startsWith(base_file_name))
-						skinned_name = ExportHelper.replaceBaseName(file_name, selected_skin_name);
-					else
-						skinned_name = ExportHelper.replaceBaseName(file_name, base_file_name + '_' + selected_skin_name);
-
-					export_path = ExportHelper.getExportPath(skinned_name);
-					mark_file_name = skinned_name;
-				} else {
-					export_path = ExportHelper.getExportPath(file_name);
-				}
-
-				switch (format) {
-					case 'RAW': {
-						await export_paths?.writeLine(export_path);
-
-						let exporter;
-						if (file_type === MODEL_TYPE_M2)
-							exporter = new M2Exporter(data, get_variant_texture_ids(file_name), file_data_id);
-						else if (file_type === MODEL_TYPE_M3)
-							exporter = new M3Exporter(data, get_variant_texture_ids(file_name), file_data_id);
-						else if (file_type === MODEL_TYPE_WMO)
-							exporter = new WMOExporter(data, file_data_id);
-
-						await exporter.exportRaw(export_path, helper, file_manifest);
-						if (file_type === MODEL_TYPE_WMO)
-							WMOExporter.clearCache();
-						break;
-					}
-					case 'OBJ':
-					case 'STL':
-					case 'GLTF':
-					case 'GLB':
-						export_path = ExportHelper.replaceExtension(export_path, export_extensions[format]);
-						mark_file_name = ExportHelper.replaceExtension(mark_file_name, export_extensions[format]);
-
-						if (file_type === MODEL_TYPE_M2) {
-							const exporter = new M2Exporter(data, get_variant_texture_ids(file_name), file_data_id);
-
-							if (file_name == active_path)
-								exporter.setGeosetMask(core.view.modelViewerGeosets);
-
-							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
-								await export_paths?.writeLine('M2_OBJ:' + export_path);
-							} else if (format === 'STL') {
-								await exporter.exportAsSTL(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
-								await export_paths?.writeLine('M2_STL:' + export_path);
-							} else if (format === 'GLTF' || format === 'GLB') {
-								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
-								await export_paths?.writeLine('M2_' + format + ':' + export_path);
-							}
-
-							if (helper.isCancelled())
-								return;
-						} else if (file_type === MODEL_TYPE_M3) {
-							const exporter = new M3Exporter(data, get_variant_texture_ids(file_name), file_data_id);
-
-							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
-								await export_paths?.writeLine('M3_OBJ:' + export_path);
-							} else if (format === 'STL') {
-								await exporter.exportAsSTL(export_path, core.view.config.modelsExportCollision, helper, file_manifest);
-								await export_paths?.writeLine('M3_STL:' + export_path);
-							} else if (format === 'GLTF' || format === 'GLB') {
-								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
-								await export_paths?.writeLine('M3_' + format + ':' + export_path);
-							}
-
-							if (helper.isCancelled())
-								return;
-						} else if (file_type === MODEL_TYPE_WMO) {
-							if (is_local)
-								throw new Error('Converting local WMO objects is currently not supported.');
-
-							const exporter = new WMOExporter(data, file_name);
-
-							if (file_name === active_path) {
-								exporter.setGroupMask(core.view.modelViewerWMOGroups);
-								exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
-							}
-
-							if (format === 'OBJ') {
-								await exporter.exportAsOBJ(export_path, helper, file_manifest);
-								await export_paths?.writeLine('WMO_OBJ:' + export_path);
-							} else if (format === 'STL') {
-								await exporter.exportAsSTL(export_path, helper, file_manifest);
-								await export_paths?.writeLine('WMO_STL:' + export_path);
-							} else if (format === 'GLTF' || format === 'GLB') {
-								await exporter.exportAsGLTF(export_path, helper, format.toLowerCase());
-								await export_paths?.writeLine('WMO_' + format + ':' + export_path);
-							}
-
-							WMOExporter.clearCache();
-
-							if (helper.isCancelled())
-								return;
-						} else {
-							throw new Error('Unexpected model format: ' + file_name);
-						}
-
-						break;
-
-					default:
-						throw new Error('Unexpected model export format: ' + format);
-				}
-
-				helper.mark(mark_file_name, true);
-				manifest.succeeded.push({ fileDataID: file_data_id, files: file_manifest });
-			} catch (e) {
-				helper.mark(mark_file_name, false, e.message, e.stack);
-				manifest.failed.push({ fileDataID: file_data_id });
-			}
-		}
-
-		helper.finish();
+		export_paths?.close();
+		return;
 	}
 
+	const casc = core.view.casc;
+	const helper = new ExportHelper(files.length, 'model');
+	helper.start();
+
+	for (const file_entry of files) {
+		if (helper.isCancelled())
+			break;
+
+		let file_name;
+		let file_data_id;
+
+		if (typeof file_entry === 'number') {
+			file_data_id = file_entry;
+			file_name = listfile.getByID(file_data_id);
+		} else {
+			file_name = listfile.stripFileEntry(file_entry);
+			file_data_id = listfile.getByFilename(file_name);
+		}
+
+		const file_manifest = [];
+
+		try {
+			const data = await (is_local ? require('../buffer').readFile(file_name) : casc.getFile(file_data_id));
+
+			if (file_name === undefined) {
+				const model_type = modelViewerUtils.detect_model_type(data);
+				file_name = listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
+			}
+
+			let export_path;
+			let mark_file_name = file_name;
+
+			const is_active = file_name === active_path;
+			const model_type = modelViewerUtils.detect_model_type_by_name(file_name) ?? modelViewerUtils.detect_model_type(data);
+
+			if (is_local) {
+				export_path = file_name;
+			} else if (model_type === modelViewerUtils.MODEL_TYPE_M2 && selected_skin_name !== null && is_active && format !== 'RAW') {
+				const base_file_name = path.basename(file_name, path.extname(file_name));
+				let skinned_name;
+
+				if (selected_skin_name.startsWith(base_file_name))
+					skinned_name = ExportHelper.replaceBaseName(file_name, selected_skin_name);
+				else
+					skinned_name = ExportHelper.replaceBaseName(file_name, base_file_name + '_' + selected_skin_name);
+
+				export_path = ExportHelper.getExportPath(skinned_name);
+				mark_file_name = skinned_name;
+			} else {
+				export_path = ExportHelper.getExportPath(file_name);
+			}
+
+			const mark_name = await modelViewerUtils.export_model({
+				core,
+				data,
+				file_data_id,
+				file_name,
+				format,
+				export_path,
+				helper,
+				file_manifest,
+				variant_textures: get_variant_texture_ids(file_name),
+				geoset_mask: is_active ? core.view.modelViewerGeosets : null,
+				wmo_group_mask: is_active ? core.view.modelViewerWMOGroups : null,
+				wmo_set_mask: is_active ? core.view.modelViewerWMOSets : null,
+				export_paths
+			});
+
+			helper.mark(mark_name, true);
+			manifest.succeeded.push({ fileDataID: file_data_id, files: file_manifest });
+		} catch (e) {
+			helper.mark(mark_file_name, false, e.message, e.stack);
+			manifest.failed.push({ fileDataID: file_data_id });
+		}
+	}
+
+	helper.finish();
 	export_paths?.close();
 };
 
@@ -694,7 +474,8 @@ module.exports = {
 		},
 
 		async preview_texture(file_data_id, display_name) {
-			await preview_texture_by_id(this.$core, file_data_id, display_name);
+			const state = get_view_state(this.$core);
+			await modelViewerUtils.preview_texture_by_id(this.$core, state, active_renderer, file_data_id, display_name);
 		},
 
 		async export_ribbon_texture(file_data_id, display_name) {
@@ -702,7 +483,8 @@ module.exports = {
 		},
 
 		toggle_uv_layer(layer_name) {
-			toggle_uv_layer(this.$core, layer_name);
+			const state = get_view_state(this.$core);
+			modelViewerUtils.toggle_uv_layer(state, active_renderer, layer_name);
 		},
 
 		async export_model() {
@@ -715,51 +497,10 @@ module.exports = {
 			await export_files(this.$core, user_selection, false);
 		},
 
-		toggle_animation_pause() {
-			const renderer = active_renderer;
-			if (!renderer)
-				return;
-
-			const paused = !this.$core.view.modelViewerAnimPaused;
-			this.$core.view.modelViewerAnimPaused = paused;
-			renderer.set_animation_paused(paused);
-		},
-
-		step_animation(delta) {
-			if (!this.$core.view.modelViewerAnimPaused)
-				return;
-
-			const renderer = active_renderer;
-			if (!renderer)
-				return;
-
-			renderer.step_animation_frame(delta);
-			this.$core.view.modelViewerAnimFrame = renderer.get_animation_frame();
-		},
-
-		seek_animation(frame) {
-			const renderer = active_renderer;
-			if (!renderer)
-				return;
-
-			renderer.set_animation_frame(parseInt(frame));
-			this.$core.view.modelViewerAnimFrame = parseInt(frame);
-		},
-
-		start_scrub() {
-			this._was_paused_before_scrub = this.$core.view.modelViewerAnimPaused;
-			if (!this._was_paused_before_scrub) {
-				this.$core.view.modelViewerAnimPaused = true;
-				active_renderer?.set_animation_paused?.(true);
-			}
-		},
-
-		end_scrub() {
-			if (!this._was_paused_before_scrub) {
-				this.$core.view.modelViewerAnimPaused = false;
-				active_renderer?.set_animation_paused?.(false);
-			}
-		}
+		...modelViewerUtils.create_animation_methods(
+			() => active_renderer,
+			() => get_view_state(this.$core)
+		)
 	},
 
 	async mounted() {
@@ -795,7 +536,6 @@ module.exports = {
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 
-			// initialize model viewer context if not already present (gl_context populated by ModelViewerGL on mount)
 			if (!this.$core.view.modelViewerContext)
 				this.$core.view.modelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
 
@@ -842,36 +582,18 @@ module.exports = {
 			active_renderer.applyReplaceableTextures(display);
 		});
 
+		const state = get_view_state(this.$core);
+
 		this.$core.view.$watch('modelViewerAnimSelection', async selected_animation_id => {
-			if (!active_renderer || !active_renderer.playAnimation || this.$core.view.modelViewerAnims.length === 0)
+			if (this.$core.view.modelViewerAnims.length === 0)
 				return;
 
-			// reset animation state
-			this.$core.view.modelViewerAnimPaused = false;
-			this.$core.view.modelViewerAnimFrame = 0;
-			this.$core.view.modelViewerAnimFrameCount = 0;
-
-			if (selected_animation_id !== null && selected_animation_id !== undefined) {
-				if (selected_animation_id === 'none') {
-					active_renderer?.stopAnimation?.();
-
-					if (this.$core.view.modelViewerAutoAdjust)
-						requestAnimationFrame(() => this.$core.view.modelViewerContext?.fitCamera?.());
-					return;
-				}
-
-				const anim_info = this.$core.view.modelViewerAnims.find(anim => anim.id == selected_animation_id);
-				if (anim_info && anim_info.m2Index !== undefined && anim_info.m2Index >= 0) {
-					log.write(`Playing animation ${selected_animation_id} at M2 index ${anim_info.m2Index}`);
-					await active_renderer.playAnimation(anim_info.m2Index);
-
-					// set frame count after animation is loaded
-					this.$core.view.modelViewerAnimFrameCount = active_renderer.get_animation_frame_count();
-
-					if (this.$core.view.modelViewerAutoAdjust)
-						requestAnimationFrame(() => this.$core.view.modelViewerContext?.fitCamera?.());
-				}
-			}
+			await modelViewerUtils.handle_animation_change(
+				active_renderer,
+				state,
+				selected_animation_id,
+				() => this.$core.view.modelViewerContext?.fitCamera?.()
+			);
 		});
 
 		this.$core.view.$watch('selectionModels', async selection => {
@@ -884,7 +606,8 @@ module.exports = {
 		});
 
 		this.$core.events.on('toggle-uv-layer', (layer_name) => {
-			toggle_uv_layer(this.$core, layer_name);
+			const state = get_view_state(this.$core);
+			modelViewerUtils.toggle_uv_layer(state, active_renderer, layer_name);
 		});
 	},
 

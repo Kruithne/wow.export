@@ -60,6 +60,8 @@ class WMORendererGL {
 		// reactive state
 		this.groupArray = [];
 		this.setArray = [];
+		this.wmoGroupKey = 'modelViewerWMOGroups';
+		this.wmoSetKey = 'modelViewerWMOSets';
 
 		// transforms
 		this.model_matrix = new Float32Array(IDENTITY_MAT4);
@@ -97,10 +99,10 @@ class WMORendererGL {
 
 		// setup reactive controls
 		const view = core.view;
-		view.modelViewerWMOGroups = this.groupArray;
-		view.modelViewerWMOSets = this.setArray;
-		this.groupWatcher = view.$watch('modelViewerWMOGroups', () => this.updateGroups(), { deep: true });
-		this.setWatcher = view.$watch('modelViewerWMOSets', () => this.updateSets(), { deep: true });
+		view[this.wmoGroupKey] = this.groupArray;
+		view[this.wmoSetKey] = this.setArray;
+		this.groupWatcher = view.$watch(this.wmoGroupKey, () => this.updateGroups(), { deep: true });
+		this.setWatcher = view.$watch(this.wmoSetKey, () => this.updateSets(), { deep: true });
 		this.wireframeWatcher = view.$watch('config.modelViewerWireframe', () => {}, { deep: true });
 
 		// drop reference to raw data

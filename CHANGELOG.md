@@ -3,6 +3,7 @@
 - Equipment can now be previewed and exported on characters!
 - Added ability to save/load characters in the characters tab.
 - Added "Character Save Directory" setting to customize character save location.
+- Added new "Decor" tab, allowing browsing and exporting of all housing decor.
 - Added new "Item Sets" tab, allowing browsing and equipping of full item sets.
 - Added new "Fonts" tab for CASC + MPQ installations, allowing preview/export of game fonts.
 - Added animation playback controls to model and character viewers.

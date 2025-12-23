@@ -178,11 +178,33 @@ document.addEventListener('click', function(e) {
 
 			/**
 			 * Mark all WMO groups to the given state.
-			 * @param {boolean} state 
+			 * @param {boolean} state
 			 */
 			setAllWMOGroups: function(state) {
 				if (this.modelViewerWMOGroups) {
 					for (const node of this.modelViewerWMOGroups)
+						node.checked = state;
+				}
+			},
+
+			/**
+			 * Mark all decor geosets to the given state.
+			 * @param {boolean} state
+			 */
+			setAllDecorGeosets: function(state) {
+				if (this.decorViewerGeosets) {
+					for (const node of this.decorViewerGeosets)
+						node.checked = state;
+				}
+			},
+
+			/**
+			 * Mark all decor WMO groups to the given state.
+			 * @param {boolean} state
+			 */
+			setAllDecorWMOGroups: function(state) {
+				if (this.decorViewerWMOGroups) {
+					for (const node of this.decorViewerWMOGroups)
 						node.checked = state;
 				}
 			},

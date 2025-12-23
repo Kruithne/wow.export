@@ -53,6 +53,8 @@
 	"exportNamedFiles": true,
 	"modelsAutoPreview": true,
 	"legacyModelsAutoPreview": true,
+	"decorAutoPreview": true,
+	"exportDecorFormat": "OBJ",
 	"exportLegacyModelFormat": "RAW",
 	"modelViewerShowGrid": true,
 	"modelViewerShowBackground": false,

@@ -71,13 +71,22 @@ class ExportHelper {
 
 	/**
 	 * Converts a win32 compatible path to a POSIX compatible path.
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {string}
 	 */
 	static win32ToPosix(str) {
 		// path module does not expose any decent conversion API, so simply
 		// convert slashes like a cave-person and call it a day.
 		return str.replaceAll('\\', '/');
+	}
+
+	/**
+	 * Sanitize a string for use as a file name by removing invalid characters.
+	 * @param {string} str
+	 * @returns {string}
+	 */
+	static sanitizeFilename(str) {
+		return str.replace(/[\\/:*?"<>|]/g, '');
 	}
 
 	/**
