@@ -1,4 +1,4 @@
-## 0.2.7 - The Christmas Miracle (TBD)
+## 0.2.7 - The Christmas Miracle (23-12-2025)
 - Rewrote the 3D modelviewer in WebGL2 for faster and more accurate previews.
 - Equipment can now be previewed and exported on characters!
 - Added ability to save/load characters in the characters tab.
