@@ -2046,13 +2046,19 @@ module.exports = {
 				</div>
 			</div>
 			<div class="character-import-buttons">
-				<input type="button" value="My Characters" title="My Characters" class="ui-image-button character-save-button" @click="open_saved_characters"/>
-				<input type="button" value="" title="Save Character" class="ui-image-button character-quick-save-button" @click="open_save_prompt"/>
-				<input type="button" value="" title="Import JSON" class="ui-image-button character-import-json-button" @click="import_json"/>
-				<input type="button" value="" title="Export JSON" class="ui-image-button character-export-json-button" @click="export_json"/>
-				<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
-				<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: $core.view.characterImportMode === 'WHEAD' }"/>
-				<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="import_wmv"/>
+				<div class="character-button-group">
+					<input type="button" value="My Characters" title="My Characters" class="ui-image-button character-save-button" @click="open_saved_characters"/>
+					<input type="button" value="" title="Save Character" class="ui-image-button character-quick-save-button" @click="open_save_prompt"/>
+				</div>
+				<div class="character-button-group">
+					<input type="button" value="" title="Import JSON" class="ui-image-button character-import-json-button" @click="import_json"/>
+					<input type="button" value="" title="Export JSON" class="ui-image-button character-export-json-button" @click="export_json"/>
+				</div>
+				<div class="character-button-group">
+					<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
+					<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: $core.view.characterImportMode === 'WHEAD' }"/>
+					<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="import_wmv"/>
+				</div>
 			</div>
 			<div v-if="$core.view.characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
 				<div class="header"><b>Character Import</b></div>

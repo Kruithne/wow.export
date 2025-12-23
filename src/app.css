@@ -2893,7 +2893,19 @@ input[type=number]::-webkit-outer-spin-button {
 	z-index: 1;
 	pointer-events: auto;
 	display: flex;
+	gap: 10px;
+}
+
+.character-button-group {
+	display: flex;
 	gap: 5px;
+	padding-right: 10px;
+	border-right: 1px solid var(--border);
+}
+
+.character-button-group:last-child {
+	padding-right: 0;
+	border-right: none;
 }
 
 .ui-image-button {
@@ -2943,22 +2955,22 @@ input[type=number]::-webkit-outer-spin-button {
 
 .character-quick-save-button {
 	background-image: url(./fa-icons/save.svg);
-	background-color: #5cb85c !important;
-	padding-left: 0 !important;
-	background-position: center;
-	width: 35px;
-}
-
-.character-import-json-button {
-	background-image: url(./fa-icons/file-lines.svg);
 	background-color: var(--form-button-base) !important;
 	padding-left: 0 !important;
 	background-position: center;
 	width: 35px;
 }
 
+.character-import-json-button {
+	background-image: url(./fa-icons/import.svg);
+	background-color: #e67e22 !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
+}
+
 .character-export-json-button {
-	background-image: url(./fa-icons/file-export.svg);
+	background-image: url(./fa-icons/export.svg);
 	background-color: var(--form-button-base) !important;
 	padding-left: 0 !important;
 	background-position: center;
