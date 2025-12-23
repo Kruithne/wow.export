@@ -1502,6 +1502,158 @@ async function capture_character_thumbnail(core) {
 	return data_url;
 }
 
+function get_current_character_data(core) {
+	return {
+		race_id: core.view.chrCustRaceSelection[0]?.id,
+		model_id: core.view.chrCustModelSelection[0]?.id,
+		choices: [...core.view.chrCustActiveChoices],
+		equipment: { ...core.view.chrEquippedItems }
+	};
+}
+
+async function export_json_character(core) {
+	const data = get_current_character_data(core);
+
+	if (!data.race_id || !data.model_id) {
+		core.setToast('error', 'No character loaded to export.', null, 3000);
+		return;
+	}
+
+	const file_input = document.createElement('input');
+	file_input.setAttribute('nwsaveas', 'character.json');
+	file_input.setAttribute('accept', '.json');
+	file_input.type = 'file';
+
+	file_input.onchange = async () => {
+		const file_path = file_input.value;
+		if (!file_path)
+			return;
+
+		try {
+			await fsp.writeFile(file_path, JSON.stringify(data, null, '\t'));
+			core.setToast('success', 'Character exported successfully.', null, 3000);
+		} catch (e) {
+			log.write('failed to export character: %s', e.message);
+			core.setToast('error', `Failed to export character: ${e.message}`, null, -1);
+		}
+	};
+
+	file_input.click();
+}
+
+async function export_saved_character(core, character) {
+	const dir = get_saved_characters_dir(core);
+	const json_path = path.join(dir, character.file_name);
+
+	let data;
+	try {
+		const content = await fsp.readFile(json_path, 'utf8');
+		data = JSON.parse(content);
+		data.name = character.name;
+	} catch (e) {
+		log.write('failed to read character for export: %s', e.message);
+		core.setToast('error', `Failed to read character: ${e.message}`, null, -1);
+		return;
+	}
+
+	const file_input = document.createElement('input');
+	file_input.setAttribute('nwsaveas', character.name + '.json');
+	file_input.setAttribute('accept', '.json');
+	file_input.type = 'file';
+
+	file_input.onchange = async () => {
+		const file_path = file_input.value;
+		if (!file_path)
+			return;
+
+		try {
+			await fsp.writeFile(file_path, JSON.stringify(data, null, '\t'));
+			core.setToast('success', `Character "${character.name}" exported successfully.`, null, 3000);
+		} catch (e) {
+			log.write('failed to export character: %s', e.message);
+			core.setToast('error', `Failed to export character: ${e.message}`, null, -1);
+		}
+	};
+
+	file_input.click();
+}
+
+async function import_json_character(core, save_to_my_characters) {
+	const file_input = document.createElement('input');
+	file_input.setAttribute('accept', '.json');
+	file_input.type = 'file';
+
+	file_input.onchange = async () => {
+		const file_path = file_input.value;
+		if (!file_path)
+			return;
+
+		try {
+			const content = await fsp.readFile(file_path, 'utf8');
+			const data = JSON.parse(content);
+
+			if (!data.race_id || !data.model_id) {
+				core.setToast('error', 'Invalid character file: missing race_id or model_id.', null, -1);
+				return;
+			}
+
+			if (save_to_my_characters) {
+				// import into My Characters
+				let name = data.name;
+				if (!name) {
+					// use filename without extension
+					name = path.basename(file_path, '.json');
+				}
+
+				const dir = get_saved_characters_dir(core);
+				await generics.createDirectory(dir);
+
+				let id = generate_character_id();
+				const existing_ids = core.view.chrSavedCharacters.map(c => c.id);
+				while (existing_ids.includes(id))
+					id = generate_character_id();
+
+				// remove name from data before saving (it's stored in filename)
+				const save_data = {
+					race_id: data.race_id,
+					model_id: data.model_id,
+					choices: data.choices || [],
+					equipment: data.equipment || {}
+				};
+
+				const save_path = path.join(dir, `${name}-${id}.json`);
+				await fsp.writeFile(save_path, JSON.stringify(save_data, null, '\t'));
+
+				await load_saved_characters(core);
+				core.setToast('success', `Character "${name}" imported.`, null, 3000);
+			} else {
+				// load directly into viewer
+				core.view.chrModelLoading = true;
+				core.view.chrSavedCharactersScreen = false;
+
+				core.view.chrEquippedItems = data.equipment || {};
+
+				core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
+				core.view.chrImportChoices.push(...(data.choices || []));
+				core.view.chrImportChrModelID = data.model_id;
+				core.view.chrImportTargetModelID = data.model_id;
+
+				const race = core.view.chrCustRaces.find(r => r.id === data.race_id);
+				if (race)
+					core.view.chrCustRaceSelection = [race];
+
+				core.view.chrModelLoading = false;
+				core.setToast('success', 'Character loaded.', null, 3000);
+			}
+		} catch (e) {
+			log.write('failed to import character: %s', e.message);
+			core.setToast('error', `Failed to import character: ${e.message}`, null, -1);
+		}
+	};
+
+	file_input.click();
+}
+
 //endregion
 
 //region race
@@ -1847,7 +1999,7 @@ module.exports = {
 				<div class="saved-characters-gutter">
 					<div class="saved-characters-gutter-left">
 						<input type="button" value="Save Character" class="ui-button" @click="open_save_prompt"/>
-						<input type="button" value="Import Character" class="ui-button" @click="import_json"/>
+						<input type="button" value="Import Character" class="ui-button" @click="import_json_to_saved"/>
 					</div>
 					<input type="button" value="Back" class="ui-button" @click="$core.view.chrSavedCharactersScreen = false"/>
 				</div>
@@ -1880,6 +2032,7 @@ module.exports = {
 				<input type="button" value="My Characters" title="My Characters" class="ui-image-button character-save-button" @click="open_saved_characters"/>
 				<input type="button" value="" title="Save Character" class="ui-image-button character-quick-save-button" @click="open_save_prompt"/>
 				<input type="button" value="" title="Import JSON" class="ui-image-button character-import-json-button" @click="import_json"/>
+				<input type="button" value="" title="Export JSON" class="ui-image-button character-export-json-button" @click="export_json"/>
 				<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
 				<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: $core.view.characterImportMode === 'WHEAD' }"/>
 				<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="import_wmv"/>
@@ -2206,13 +2359,19 @@ module.exports = {
 		},
 
 		on_export_character(character) {
-			// placeholder for export functionality
-			this.$core.setToast('info', 'Export functionality coming soon.', null, 3000);
+			export_saved_character(this.$core, character);
 		},
 
 		import_json() {
-			// placeholder for JSON import functionality
-			this.$core.setToast('info', 'JSON import functionality coming soon.', null, 3000);
+			import_json_character(this.$core, false);
+		},
+
+		import_json_to_saved() {
+			import_json_character(this.$core, true);
+		},
+
+		export_json() {
+			export_json_character(this.$core);
 		},
 
 		chr_prev_overlay() {
