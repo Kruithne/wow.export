@@ -1519,6 +1519,11 @@ async function export_json_character(core) {
 		return;
 	}
 
+	// capture thumbnail
+	const thumb_data = await capture_character_thumbnail(core);
+	if (thumb_data)
+		data.thumb = thumb_data;
+
 	const file_input = document.createElement('input');
 	file_input.setAttribute('nwsaveas', 'character.json');
 	file_input.setAttribute('accept', '.json');
@@ -1550,6 +1555,10 @@ async function export_saved_character(core, character) {
 		const content = await fsp.readFile(json_path, 'utf8');
 		data = JSON.parse(content);
 		data.name = character.name;
+
+		// include existing thumbnail if available
+		if (character.thumb)
+			data.thumb = character.thumb;
 	} catch (e) {
 		log.write('failed to read character for export: %s', e.message);
 		core.setToast('error', `Failed to read character: ${e.message}`, null, -1);
@@ -1613,7 +1622,7 @@ async function import_json_character(core, save_to_my_characters) {
 				while (existing_ids.includes(id))
 					id = generate_character_id();
 
-				// remove name from data before saving (it's stored in filename)
+				// remove name/thumb from data before saving (stored separately)
 				const save_data = {
 					race_id: data.race_id,
 					model_id: data.model_id,
@@ -1623,6 +1632,14 @@ async function import_json_character(core, save_to_my_characters) {
 
 				const save_path = path.join(dir, `${name}-${id}.json`);
 				await fsp.writeFile(save_path, JSON.stringify(save_data, null, '\t'));
+
+				// save thumbnail if provided
+				if (data.thumb) {
+					const thumb_path = path.join(dir, `${name}-${id}.png`);
+					const base64 = data.thumb.split(',')[1];
+					const buffer = Buffer.from(base64, 'base64');
+					await fsp.writeFile(thumb_path, buffer);
+				}
 
 				await load_saved_characters(core);
 				core.setToast('success', `Character "${name}" imported.`, null, 3000);
