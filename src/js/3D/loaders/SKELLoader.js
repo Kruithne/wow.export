@@ -65,7 +65,7 @@ class SKELLoader {
 		this.data.move(4) // _0x0c[4]
 	}
 
-	parse_chunk_skb1(useAnims = false) {
+	parse_chunk_skb1() {
 		const data = this.data;
 		const chunk_ofs = data.offset;
 		this.boneOffset = data.offset;
@@ -76,6 +76,7 @@ class SKELLoader {
 		const base_ofs = data.offset;
 		data.seek(chunk_ofs + bone_ofs);
 
+		// store offsets for lazy .anim patching
 		const bones = this.bones = Array(bone_count);
 		for (let i = 0; i < bone_count; i++) {
 			const bone = {
@@ -84,9 +85,9 @@ class SKELLoader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, chunk_ofs, "float3", useAnims, this.animFiles),
-				rotation: M2Generics.read_m2_track(data, chunk_ofs, "compquat", useAnims, this.animFiles),
-				scale: M2Generics.read_m2_track(data, chunk_ofs, "float3", useAnims, this.animFiles),
+				translation: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, 'compquat', false, this.animFiles, true),
+				scale: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -322,13 +323,71 @@ class SKELLoader {
 			else
 				this.animFiles.set(animation_index, BufferWrapper.from(loader.animData));
 
-			this.data.seek(this.boneOffset);
-			this.parse_chunk_skb1(true);
+			// patch animation data into existing bones
+			this._patch_bone_animation(animation_index);
 
 			return true;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Patch bone animation data for a specific animation index.
+	 * @param {number} animIndex
+	 */
+	_patch_bone_animation(animIndex) {
+		const animBuffer = this.animFiles.get(animIndex);
+		if (!animBuffer || !this.bones)
+			return;
+
+		for (const bone of this.bones) {
+			M2Generics.patch_track_animation(bone.translation, animIndex, animBuffer, 'float3');
+			M2Generics.patch_track_animation(bone.rotation, animIndex, animBuffer, 'compquat');
+			M2Generics.patch_track_animation(bone.scale, animIndex, animBuffer, 'float3');
+
+			// apply coordinate system conversion to patched data
+			const translations = bone.translation.values[animIndex];
+			if (translations) {
+				for (let j = 0; j < translations.length; j++) {
+					const dx = translations[j][0];
+					const dy = translations[j][1];
+					const dz = translations[j][2];
+
+					translations[j][0] = dx;
+					translations[j][2] = dy * -1;
+					translations[j][1] = dz;
+				}
+			}
+
+			const rotations = bone.rotation.values[animIndex];
+			if (rotations) {
+				for (let j = 0; j < rotations.length; j++) {
+					const dx = rotations[j][0];
+					const dy = rotations[j][1];
+					const dz = rotations[j][2];
+					const dw = rotations[j][3];
+
+					rotations[j][0] = dx;
+					rotations[j][2] = dy * -1;
+					rotations[j][1] = dz;
+					rotations[j][3] = dw;
+				}
+			}
+
+			const scale = bone.scale.values[animIndex];
+			if (scale) {
+				for (let j = 0; j < scale.length; j++) {
+					const dx = scale[j][0];
+					const dy = scale[j][1];
+					const dz = scale[j][2];
+
+					scale[j][0] = dx;
+					scale[j][2] = dy;
+					scale[j][1] = dz;
+				}
+			}
+		}
 	}
 
 	async loadAnims(load_all = true) {
@@ -338,14 +397,14 @@ class SKELLoader {
 		for (let i = 0; i < this.animations.length; i++) {
 			let animation = this.animations[i];
 
-			// If animation is an alias, resolve it.
+			// if animation is an alias, resolve it
 			if ((animation.flags & 0x40) === 0x40) {
 				while ((animation.flags & 0x40) === 0x40)
 					animation = this.animations[animation.aliasNext];
 			}
 
 			if ((animation.flags & 0x20) === 0x20) {
-				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in SKEL");
+				log.write('Skipping .anim loading for ' + AnimMapper.get_anim_name(animation.id) + ' because it should be in SKEL');
 				continue;
 			}
 
@@ -356,7 +415,7 @@ class SKELLoader {
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
 					if (fileDataID === 0) {
-						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
+						log.write('Skipping .anim loading for ' + AnimMapper.get_anim_name(entry.animID) + ' because it has no fileDataID');
 						continue;
 					}
 
@@ -365,21 +424,19 @@ class SKELLoader {
 					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
 					await loader.load(true);
 
-					// If the .anim file is chunked, we need to load the skeletonBoneData.
 					if (loader.skeletonBoneData !== undefined)
 						this.animFiles.set(i, BufferWrapper.from(loader.skeletonBoneData));
 					else
 						this.animFiles.set(i, BufferWrapper.from(loader.animData));
+
+					// patch this animation into bones
+					this._patch_bone_animation(i);
 				}
 			}
 
 			if (!this.animFiles.has(i))
-				log.write("Failed to load .anim file for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
+				log.write('Failed to load .anim file for animation: ' + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
 		}
-
-		this.data.seek(this.boneOffset);
-
-		this.parse_chunk_skb1(true);
 	}
 }
 

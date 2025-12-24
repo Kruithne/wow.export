@@ -87,18 +87,18 @@ class M2Loader {
 	async loadAnims(load_all = true) {
 		if (!load_all)
 			return;
-		
+
 		for (let i = 0; i < this.animations.length; i++) {
 			let animation = this.animations[i];
 
-			// If animation is an alias, resolve it.
+			// if animation is an alias, resolve it
 			if ((animation.flags & 0x40) === 0x40) {
 				while ((animation.flags & 0x40) === 0x40)
 					animation = this.animations[animation.aliasNext];
 			}
 
 			if ((animation.flags & 0x20) === 0x20) {
-				log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(animation.id) + " because it should be in M2");
+				log.write('Skipping .anim loading for ' + AnimMapper.get_anim_name(animation.id) + ' because it should be in M2');
 				continue;
 			}
 
@@ -109,7 +109,7 @@ class M2Loader {
 				const fileDataID = entry.fileDataID;
 				if (!this.animFiles.has(i)) {
 					if (fileDataID === 0) {
-						log.write("Skipping .anim loading for " + AnimMapper.get_anim_name(entry.animID) + " because it has no fileDataID");
+						log.write('Skipping .anim loading for ' + AnimMapper.get_anim_name(entry.animID) + ' because it has no fileDataID');
 						continue;
 					}
 
@@ -123,21 +123,19 @@ class M2Loader {
 					const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
 					await loader.load(animIsChunked);
 
-					// If the .anim file is chunked, we need to load the skeletonBoneData.
 					if (loader.skeletonBoneData !== undefined)
 						this.animFiles.set(i, BufferWrapper.from(loader.skeletonBoneData));
 					else
 						this.animFiles.set(i, BufferWrapper.from(loader.animData));
+
+					// patch this animation into bones
+					this._patch_bone_animation(i);
 				}
 			}
 
 			if (!this.animFiles.has(i))
-				log.write("Failed to load .anim file for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
+				log.write('Failed to load .anim file for animation: ' + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
 		}
-
-		this.data.seek(this.md21Ofs + 44);
-
-		this.parseChunk_MD21_bones(this.md21Ofs, true);
 	}
 
 	/**
@@ -194,9 +192,8 @@ class M2Loader {
 				else
 					this.animFiles.set(animationIndex, BufferWrapper.from(loader.animData));
 
-				// re-parse bones with .anim data
-				this.data.seek(this.md21Ofs + 44);
-				this.parseChunk_MD21_bones(this.md21Ofs, true);
+				// patch animation data into existing bones
+				this._patch_bone_animation(animationIndex);
 
 				return true;
 			} catch (e) {
@@ -207,6 +204,64 @@ class M2Loader {
 
 		log.write("No .anim file found for animation: " + animation.id + ' (' + AnimMapper.get_anim_name(animation.id) + ') - ' + animation.variationIndex);
 		return false;
+	}
+
+	/**
+	 * Patch bone animation data for a specific animation index.
+	 * @param {number} animIndex
+	 */
+	_patch_bone_animation(animIndex) {
+		const animBuffer = this.animFiles.get(animIndex);
+		if (!animBuffer || !this.bones)
+			return;
+
+		for (const bone of this.bones) {
+			M2Generics.patch_track_animation(bone.translation, animIndex, animBuffer, 'float3');
+			M2Generics.patch_track_animation(bone.rotation, animIndex, animBuffer, 'compquat');
+			M2Generics.patch_track_animation(bone.scale, animIndex, animBuffer, 'float3');
+
+			// apply coordinate system conversion to patched data
+			const translations = bone.translation.values[animIndex];
+			if (translations) {
+				for (let j = 0; j < translations.length; j++) {
+					const dx = translations[j][0];
+					const dy = translations[j][1];
+					const dz = translations[j][2];
+
+					translations[j][0] = dx;
+					translations[j][2] = dy * -1;
+					translations[j][1] = dz;
+				}
+			}
+
+			const rotations = bone.rotation.values[animIndex];
+			if (rotations) {
+				for (let j = 0; j < rotations.length; j++) {
+					const dx = rotations[j][0];
+					const dy = rotations[j][1];
+					const dz = rotations[j][2];
+					const dw = rotations[j][3];
+
+					rotations[j][0] = dx;
+					rotations[j][2] = dy * -1;
+					rotations[j][1] = dz;
+					rotations[j][3] = dw;
+				}
+			}
+
+			const scale = bone.scale.values[animIndex];
+			if (scale) {
+				for (let j = 0; j < scale.length; j++) {
+					const dx = scale[j][0];
+					const dy = scale[j][1];
+					const dz = scale[j][2];
+
+					scale[j][0] = dx;
+					scale[j][2] = dy;
+					scale[j][1] = dz;
+				}
+			}
+		}
 	}
 
 	/**
@@ -318,7 +373,7 @@ class M2Loader {
 
 	}
 
-	parseChunk_MD21_bones(ofs, useAnims = false) {
+	parseChunk_MD21_bones(ofs) {
 		const data = this.data;
 		const boneCount = data.readUInt32LE();
 		const boneOfs = data.readUInt32LE();
@@ -328,8 +383,7 @@ class M2Loader {
 
 		this.md21Ofs = ofs;
 
-		// TODO: We have to use data from .anim instead if useAnims is true. We can only do this after M2 is fully loaded because of the way we parse chunks.
-
+		// store offsets for lazy .anim patching
 		const bones = this.bones = Array(boneCount);
 		for (let i = 0; i < boneCount; i++) {
 			const bone = {
@@ -338,9 +392,9 @@ class M2Loader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
-				rotation: M2Generics.read_m2_track(data, ofs, "compquat", useAnims, this.animFiles),
-				scale: M2Generics.read_m2_track(data, ofs, "float3", useAnims, this.animFiles),
+				translation: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true),
+				rotation: M2Generics.read_m2_track(data, ofs, 'compquat', false, this.animFiles, true),
+				scale: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true),
 				pivot: data.readFloatLE(3)
 			};
 
