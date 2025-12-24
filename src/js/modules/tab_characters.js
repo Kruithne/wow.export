@@ -2234,6 +2234,7 @@ module.exports = {
 					<span v-else class="slot-empty">Empty</span>
 				</div>
 				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
+					<span @click.self="replace_slot_item(context.node)">Replace Item</span>
 					<span @click.self="unequip_slot(context.node)">Remove Item</span>
 				</component>
 				<div class="chr-cust-controls">
@@ -2446,6 +2447,11 @@ module.exports = {
 		unequip_slot(slot_id) {
 			delete this.$core.view.chrEquippedItems[slot_id];
 			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
+		},
+
+		replace_slot_item(slot_id) {
+			this.$core.view.chrEquipmentSlotContext = null;
+			this.navigate_to_items_for_slot(slot_id);
 		},
 
 		clear_all_equipment() {

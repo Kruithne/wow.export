@@ -1,4 +1,5 @@
 ## 0.2.8
+- Added a "Replace Item" option to the context menu when clicking an equipment slot.
 - Fixed an issue that caused wow.export to crash when pausing an animation.
 - Fixed an issue that would cause setting "Underwear" to "Hidden" to hide clothes.
 - Fixed a regression that prevented WMO doodads from being previewed.
