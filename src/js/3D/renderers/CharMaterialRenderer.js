@@ -292,8 +292,8 @@ class CharMaterialRenderer {
 		this.textureTargets.sort((a, b) => a.id - b.id);
 		
 		for (const layer of this.textureTargets) {
-			// Hide underwear based on settings
-			if (!core.view.config.chrIncludeBaseClothing && (layer.textureLayer.ChrModelTextureTargetID[0] == 13 || layer.textureLayer.ChrModelTextureTargetID[0] == 14))
+			// hide underwear based on settings (target IDs 13/14 are upper/lower body base clothing)
+			if (!core.view.config.chrIncludeBaseClothing && (layer.id == 13 || layer.id == 14))
 				continue;
 
 			const materialMiddleX = layer.material.Width / 2;
