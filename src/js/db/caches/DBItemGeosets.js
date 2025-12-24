@@ -290,17 +290,23 @@ const calculate_equipment_geosets = (equipped_items) => {
 
 /**
  * Get the set of char_geosets (CG enum values) that are affected by equipped items.
+ * Only includes geosets for items that have display data (excludes hidden items).
  * @param {Object} equipped_items - Map of slot_id -> item_id
  * @returns {Set<number>}
  */
 const get_affected_char_geosets = (equipped_items) => {
 	const affected = new Set();
 
-	for (const [slot_id_str] of Object.entries(equipped_items)) {
+	for (const [slot_id_str, item_id] of Object.entries(equipped_items)) {
 		const slot_id = parseInt(slot_id_str);
 		const mapping = SLOT_GEOSET_MAPPING[slot_id];
 
 		if (!mapping)
+			continue;
+
+		// skip items without display data (hidden items)
+		const geoset_data = get_item_geoset_data(item_id);
+		if (!geoset_data)
 			continue;
 
 		for (const entry of mapping)
