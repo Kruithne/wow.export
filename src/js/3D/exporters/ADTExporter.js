@@ -4,6 +4,7 @@
 	License: MIT
  */
 const util = require('util');
+const path = require('path');
 const core = require('../../core');
 const constants = require('../../constants');
 const generics = require('../../generics');
