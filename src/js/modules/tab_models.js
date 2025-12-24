@@ -497,10 +497,50 @@ module.exports = {
 			await export_files(this.$core, user_selection, false);
 		},
 
-		...modelViewerUtils.create_animation_methods(
-			() => active_renderer,
-			() => get_view_state(this.$core)
-		)
+		toggle_animation_pause() {
+			if (!active_renderer)
+				return;
+
+			const state = get_view_state(this.$core);
+			const paused = !state.animPaused;
+			state.animPaused = paused;
+			active_renderer.set_animation_paused(paused);
+		},
+
+		step_animation(delta) {
+			const state = get_view_state(this.$core);
+			if (!state.animPaused || !active_renderer)
+				return;
+
+			active_renderer.step_animation_frame(delta);
+			state.animFrame = active_renderer.get_animation_frame();
+		},
+
+		seek_animation(frame) {
+			const state = get_view_state(this.$core);
+			if (!active_renderer)
+				return;
+
+			active_renderer.set_animation_frame(parseInt(frame));
+			state.animFrame = parseInt(frame);
+		},
+
+		start_scrub() {
+			const state = get_view_state(this.$core);
+			this._was_paused_before_scrub = state.animPaused;
+			if (!this._was_paused_before_scrub) {
+				state.animPaused = true;
+				active_renderer?.set_animation_paused?.(true);
+			}
+		},
+
+		end_scrub() {
+			const state = get_view_state(this.$core);
+			if (!this._was_paused_before_scrub) {
+				state.animPaused = false;
+				active_renderer?.set_animation_paused?.(false);
+			}
+		}
 	},
 
 	async mounted() {

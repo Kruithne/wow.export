@@ -1,4 +1,5 @@
 ## 0.2.8
+- Fixed an issue that caused wow.export to crash when pausing an animation.
 - Fixed a regression that prevented WMO doodads from being previewed.
 - Fixed a regression that prevented map tiles from being exported as OBJ.
 - Fixed a regression that prevented automatic blender add-on install from working.
