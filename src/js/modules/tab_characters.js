@@ -2236,6 +2236,8 @@ module.exports = {
 				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
 					<span @click.self="replace_slot_item(context.node)">Replace Item</span>
 					<span @click.self="unequip_slot(context.node)">Remove Item</span>
+					<span @click.self="copy_item_id(context.node)">Copy Item ID ({{ get_equipped_item(context.node)?.id }})</span>
+					<span @click.self="copy_item_name(context.node)">Copy Item Name</span>
 				</component>
 				<div class="chr-cust-controls">
 					<span @click="clear_all_equipment">Clear All Equipment</span>
@@ -2452,6 +2454,22 @@ module.exports = {
 		replace_slot_item(slot_id) {
 			this.$core.view.chrEquipmentSlotContext = null;
 			this.navigate_to_items_for_slot(slot_id);
+		},
+
+		copy_item_id(slot_id) {
+			const item = this.get_equipped_item(slot_id);
+			if (item)
+				navigator.clipboard.writeText(String(item.id));
+
+			this.$core.view.chrEquipmentSlotContext = null;
+		},
+
+		copy_item_name(slot_id) {
+			const item = this.get_equipped_item(slot_id);
+			if (item)
+				navigator.clipboard.writeText(item.name);
+
+			this.$core.view.chrEquipmentSlotContext = null;
 		},
 
 		clear_all_equipment() {
