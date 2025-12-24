@@ -98,6 +98,18 @@ const applyUpdate = async () => {
 
 	core.showLoadingScreen(requiredFiles.length, 'Downloading updates...');
 
+	// Create .update directory here and then check if it exists and is writeable. If not, we can't continue.
+	try{
+		await generics.createDirectory(constants.UPDATE.DIRECTORY);
+		if(!await generics.directoryIsWritable(constants.UPDATE.DIRECTORY)) {
+			throw new Error('.update directory does not exist or is not writable');
+		}
+	}catch(e){
+		log.write('Failed to create directory for update files: %s', e.message);
+		core.view.loadingTitle = 'wow.export couldn\'t create the update directory. Ensure it has write permissions to its folder and restart the app, or update manually.';
+		return;
+	}
+
 	const remoteEndpoint = util.format(core.view.config.updateURL, nw.App.manifest.flavour) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
 		const node = requiredFiles[i];

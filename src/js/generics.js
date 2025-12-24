@@ -350,6 +350,19 @@ const fileExists = async (file) => {
 };
 
 /**
+ * Check if a directory exists and is writable.
+ * @param {string} dir
+ */
+const directoryIsWritable = async (dir) => {
+	try {
+		await fsp.access(dir, fs.constants.W_OK);
+		return true;
+	} catch (e) {
+		return false;
+	}
+};
+
+/**
  * Read a portion of a file.
  * @param {string} file Path of the file.
  * @param {number} offset Offset to start reading from
@@ -481,6 +494,7 @@ module.exports = {
 	queue,
 	redraw,
 	fileExists,
+	directoryIsWritable,
 	readFile,
 	deleteDirectory,
 	formatPlaybackSeconds,
