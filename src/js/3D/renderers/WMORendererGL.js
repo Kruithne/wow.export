@@ -7,6 +7,7 @@
 const util = require('util');
 const core = require('../../core');
 const log = require('../../log');
+const constants = require('../../constants');
 
 const BLPFile = require('../../casc/blp');
 const Texture = require('../Texture');
