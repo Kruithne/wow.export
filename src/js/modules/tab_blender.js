@@ -72,11 +72,11 @@ module.exports = {
 
 	methods: {
 		install_auto() {
-			this.startAutomaticInstall();
+			module_ref.startAutomaticInstall();
 		},
 
 		install_manual() {
-			this.openAddonDirectory();
+			module_ref.openAddonDirectory();
 		},
 
 		go_back() {

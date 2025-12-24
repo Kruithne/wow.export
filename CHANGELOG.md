@@ -1,6 +1,7 @@
 ## 0.2.8
 - Fixed a regression that prevented WMO doodads from being previewed.
 - Fixed a regression that prevented map tiles from being exported as OBJ.
+- Fixed a regression that prevented automatic blender add-on install from working.
 
 ## 0.2.7 - The Christmas Miracle (23-12-2025)
 - Rewrote the 3D modelviewer in WebGL2 for faster and more accurate previews.
