@@ -13,6 +13,9 @@ const item_to_display_id = new Map();
 // maps ItemDisplayInfoID -> geoset data
 const display_to_geosets = new Map();
 
+// maps HelmetGeosetVisDataID -> Map<RaceID, number[]>
+const helmet_hide_map = new Map();
+
 let is_initialized = false;
 let init_promise = null;
 
@@ -187,7 +190,23 @@ const initialize = async () => {
 			}
 		}
 
-		log.write('Loaded geosets for %d item displays', display_to_geosets.size);
+		// load helmet hide data from HelmetGeosetData
+		for (const row of (await db2.HelmetGeosetData.getAllRows()).values()) {
+			const vis_id = row.HelmetGeosetVisDataID;
+			const race_id = row.RaceID;
+			const hide_group = row.HideGeosetGroup;
+
+			if (!helmet_hide_map.has(vis_id))
+				helmet_hide_map.set(vis_id, new Map());
+
+			const race_map = helmet_hide_map.get(vis_id);
+			if (!race_map.has(race_id))
+				race_map.set(race_id, []);
+
+			race_map.get(race_id).push(hide_group);
+		}
+
+		log.write('Loaded geosets for %d item displays, %d helmet visibility rules', display_to_geosets.size, helmet_hide_map.size);
 		is_initialized = true;
 		init_promise = null;
 	})();
@@ -289,6 +308,29 @@ const calculate_equipment_geosets = (equipped_items) => {
 };
 
 /**
+ * Get geoset groups that should be hidden when a helmet is equipped.
+ * @param {number} item_id - The helmet item ID
+ * @param {number} race_id - Character's race ID
+ * @param {number} gender_index - 0 for male, 1 for female
+ * @returns {number[]} Array of CG enum values to hide
+ */
+const get_helmet_hide_geosets = (item_id, race_id, gender_index) => {
+	const geoset_data = get_item_geoset_data(item_id);
+	if (!geoset_data?.helmetGeosetVis)
+		return [];
+
+	const vis_id = geoset_data.helmetGeosetVis[gender_index];
+	if (!vis_id)
+		return [];
+
+	const race_map = helmet_hide_map.get(vis_id);
+	if (!race_map)
+		return [];
+
+	return race_map.get(race_id) || [];
+};
+
+/**
  * Get the set of char_geosets (CG enum values) that are affected by equipped items.
  * Only includes geosets for items that have display data (excludes hidden items).
  * @param {Object} equipped_items - Map of slot_id -> item_id
@@ -323,6 +365,7 @@ module.exports = {
 	getDisplayId: get_display_id,
 	calculateEquipmentGeosets: calculate_equipment_geosets,
 	getAffectedCharGeosets: get_affected_char_geosets,
+	getHelmetHideGeosets: get_helmet_hide_geosets,
 	SLOT_GEOSET_MAPPING,
 	GEOSET_PRIORITY,
 	CG

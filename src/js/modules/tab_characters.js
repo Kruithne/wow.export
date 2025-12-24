@@ -395,6 +395,25 @@ function update_geosets(core) {
 				}
 			}
 		}
+
+		// apply helmet hide geosets (hair, ears, etc.)
+		const head_item = equipped_items[1];
+		if (head_item) {
+			const char_info = get_current_race_gender(core);
+			if (char_info) {
+				const hide_groups = DBItemGeosets.getHelmetHideGeosets(head_item, char_info.raceID, char_info.genderIndex);
+				for (const char_geoset of hide_groups) {
+					const base = char_geoset * 100;
+					const range_start = base + 1;
+					const range_end = base + 99;
+
+					for (const geoset of geosets) {
+						if (geoset.id >= range_start && geoset.id <= range_end)
+							geoset.checked = false;
+					}
+				}
+			}
+		}
 	}
 
 	// step 4: sync to renderer
