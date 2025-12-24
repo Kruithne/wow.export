@@ -973,8 +973,7 @@ module.exports = {
 	/**
 	 * HTML mark-up to render for this component.
 	 */
-	template: `
-		<div ref="root" class="ui-datatable" @wheel="wheelMouse">
+	template: `<div><div ref="root" class="ui-datatable" @wheel="wheelMouse">
 			<div class="scroller" ref="dtscroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }">
 				<div>
 				</div>
@@ -986,18 +985,18 @@ module.exports = {
 			<table ref="table" :style="{ transform: tableHorizontalOffset }">
 				<thead ref="datatableheader" @mousemove="headerMouseMove" @mousedown="headerMouseDown" :style="headerCursorStyle">
 					<tr>
-						<th v-for="(header, index) in headers" 
+						<th v-for="(header, index) in headers"
 							:style="columnStyles['col-' + index] || {}">
 							<span class="header-content">
 								{{header}}
 								<div class="header-icons">
-									<span 
-										class="filter-icon" 
+									<span
+										class="filter-icon"
 										@click="handleFilterIconClick(index, $event)"
 										title="Filter this column">
 									</span>
-									<span 
-										:class="'sort-icon ' + getSortIconName(index)" 
+									<span
+										:class="'sort-icon ' + getSortIconName(index)"
 										@click="toggleSort(index)"
 										title="Sort this column">
 									</span>
@@ -1007,7 +1006,7 @@ module.exports = {
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(row, rowIndex) in displayItems" 
+					<tr v-for="(row, rowIndex) in displayItems"
 						@click="selectRow(scrollIndex + rowIndex, $event)"
 						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
 						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}" @contextmenu="handleContextMenu(scrollIndex + rowIndex, index, $event)">{{field}}</td>
@@ -1015,5 +1014,8 @@ module.exports = {
 				</tbody>
 			</table>
 		</div>
-	`
+		<div class="list-status" v-if="rows && rows.length > 0">
+			<span v-if="filteredItems.length !== rows.length">Showing {{ filteredItems.length.toLocaleString() }} of {{ rows.length.toLocaleString() }} rows</span>
+			<span v-else>{{ rows.length.toLocaleString() }} rows</span>
+		</div></div>`
 };

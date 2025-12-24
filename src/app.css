@@ -2440,7 +2440,13 @@ input[type=number]::-webkit-outer-spin-button {
 	top: 0;
 	left: 0;
 	right: 0;
-	bottom: 0px;
+	bottom: 25px;
+}
+.ui-datatable + .list-status {
+	width: 50%;
+	right: auto;
+	top: auto;
+	bottom: -33px;
 }
 
 @keyframes sound-audiobox-anim {
