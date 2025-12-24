@@ -2,6 +2,7 @@
 - Added a "Replace Item" option to the context menu when clicking an equipment slot.
 - Added a "Copy Item ID" and "Copy Item Name" option to equipment context menus.
 - Added a status bar to the DB2 viewer to show total table row count.
+- Adjusted customization controls (randomize, geosets, etc) to always be visible.
 - Fixed an issue that caused "Hidden" transmog items to hide parts of the character's body.
 - Fixed an issue that caused wow.export to crash when pausing an animation.
 - Fixed an issue that would cause setting "Underwear" to "Hidden" to hide clothes.

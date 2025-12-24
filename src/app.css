@@ -2602,8 +2602,14 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	overflow-y: scroll;
 	padding-right: 15px;
+}
+#tab-characters .left-panel-scroll {
+	flex: 1;
+	overflow-y: scroll;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 #tab-characters .left-panel .model-tab #inline-npc-races {
 	margin: 3px 15px;
@@ -3435,7 +3441,6 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 14px;
 	text-align: center;
 	display: block;
-	margin-top: 10px;
 }
 
 .chr-geoset-return:hover {

@@ -2083,8 +2083,9 @@ module.exports = {
 				<input type="button" value="Import Character" @click="import_wowhead" :class="{ disabled: $core.view.chrModelLoading }"/>
 			</div>
 			<div class="left-panel">
-				<template v-if="!$core.view.chrShowGeosetControl">
-					<label class="ui-select-label">
+				<div class="left-panel-scroll">
+					<template v-if="!$core.view.chrShowGeosetControl">
+						<label class="ui-select-label">
 						<span class="select-prefix"><span class="prefix-label">Race:</span> <span class="prefix-value">{{ $core.view.chrCustRaceSelection[0]?.label }}</span></span>
 						<select class="ui-select" id="select-chr-race" :value="$core.view.chrCustRaceSelection[0]?.id" @change="$core.view.chrCustRaceSelection = [$event.target.value ? $core.view.chrCustRaces.find(r => r.id === parseInt($event.target.value)) : $core.view.chrCustRaces[0]]">
 							<option value="" disabled selected style="display:none;"></option>
@@ -2153,23 +2154,26 @@ module.exports = {
 							<option value="false">Hidden</option>
 						</select>
 					</label>
-					<div class="chr-cust-controls">
+					</template>
+					<template v-else>
+						<div class="geoset-checkboxes">
+							<label v-for="geoset in $core.view.chrCustGeosets" :key="geoset.id" class="geoset-checkbox-item" v-show="geoset.id !== 0">
+								<span class="geoset-prefix">{{ geoset.label }}:</span>
+								<input type="checkbox" v-model="geoset.checked"/>
+							</label>
+						</div>
+						<div class="geoset-toggles">
+							<a @click="set_all_geosets(true)">Enable All</a> / <a @click="set_all_geosets(false)">Disable All</a>
+						</div>
+					</template>
+				</div>
+				<div class="chr-cust-controls">
+					<template v-if="!$core.view.chrShowGeosetControl">
 						<span class="chr-randomize-toggle" @click="randomize_customization">Randomize Customization</span>
 						<span @click="$core.view.chrShowGeosetControl = true">Custom Geoset Control</span>
-					</div>
-				</template>
-				<template v-else>
-					<div class="geoset-checkboxes">
-						<label v-for="geoset in $core.view.chrCustGeosets" :key="geoset.id" class="geoset-checkbox-item" v-show="geoset.id !== 0">
-							<span class="geoset-prefix">{{ geoset.label }}:</span>
-							<input type="checkbox" v-model="geoset.checked"/>
-						</label>
-					</div>
-					<div class="geoset-toggles">
-						<a @click="set_all_geosets(true)">Enable All</a> / <a @click="set_all_geosets(false)">Disable All</a>
-					</div>
-					<span class="chr-geoset-return" @click="$core.view.chrShowGeosetControl = false">Return to Customization</span>
-				</template>
+					</template>
+					<span v-else class="chr-geoset-return" @click="$core.view.chrShowGeosetControl = false">Return to Customization</span>
+				</div>
 			</div>
 			<div class="char-preview preview-container">
 				<div class="preview-background">
