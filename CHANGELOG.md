@@ -4,6 +4,7 @@
 - Added a status bar to the DB2 viewer to show total table row count.
 - Improved automatic geoset visibility for helmets (ears, hair, etc).
 - Adjusted customization controls (randomize, geosets, etc) to always be visible.
+- Fixed an issue that caused the Battle.net realm to reset after every import.
 - Fixed an issue that caused external animations (such as emotes) to be broken.
 - Fixed an issue that caused "Hidden" transmog items to hide parts of the character's body.
 - Fixed an issue that caused wow.export to crash when pausing an animation.

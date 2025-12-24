@@ -2535,7 +2535,12 @@ module.exports = {
 		);
 
 		state.chrImportRegions = Object.keys(state.realmList);
-		state.chrImportSelectedRegion = 'us';
+
+		// preserve region/realm selection across module reloads
+		if (!state.chrImportSelectedRegion)
+			state.chrImportSelectedRegion = 'us';
+		else
+			update_realm_list();
 
 		await this.$core.progressLoadingScreen('Loading texture mapping...');
 		const tfd_map = new Map();
