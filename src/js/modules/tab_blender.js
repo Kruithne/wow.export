@@ -6,6 +6,7 @@ const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
 const log = require('../log');
+const modules = require('../modules');
 
 const PATTERN_ADDON_VER = /'version': \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
@@ -51,12 +52,9 @@ const get_blender_installations = async () => {
 	return installs;
 };
 
-let module_ref = null;
-
 module.exports = {
 	register() {
 		this.registerContextMenuOption('Install Blender Add-on', '../images/blender.png');
-		module_ref = this;
 	},
 
 	template: `
@@ -66,29 +64,66 @@ module.exports = {
 				<p>Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.</p>
 			</div>
 			<div id="blender-info-buttons">
-				<input type="button" value="Install Automatically (Recommended)" @click="install_auto" :class="{ disabled: $core.view.isBusy }"/>
-				<input type="button" value="Install Manually (Advanced)" @click="install_manual"/>
+				<input type="button" value="Install Automatically (Recommended)" @click="start_automatic_install" :class="{ disabled: $core.view.isBusy }"/>
+				<input type="button" value="Install Manually (Advanced)" @click="open_addon_directory"/>
 				<input type="button" value="Go Back" @click="go_back"/>
 			</div>
 		</div>
 	`,
 
 	methods: {
-		install_auto() {
-			module_ref.startAutomaticInstall();
-		},
-
-		install_manual() {
-			module_ref.openAddonDirectory();
+		open_addon_directory() {
+			nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
 		},
 
 		go_back() {
 			this.$modules.go_to_landing();
-		}
-	},
+		},
 
-	openAddonDirectory() {
-		nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
+		async start_automatic_install() {
+			using _lock = core.create_busy_lock();
+			core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
+			log.write('Starting automatic installation of Blender add-on...');
+
+			try {
+				const versions = await get_blender_installations();
+				let installed = false;
+
+				for (const version of versions) {
+					if (version >= constants.BLENDER.MIN_VER) {
+						const addon_path = path.join(constants.BLENDER.DIR, version, constants.BLENDER.ADDON_DIR);
+						log.write('Targeting Blender version %s (%s)', version, addon_path);
+
+						await generics.deleteDirectory(addon_path);
+						await generics.createDirectory(addon_path);
+
+						const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
+						for (const file of files) {
+							if (file.isDirectory())
+								continue;
+
+							const src_path = path.join(constants.BLENDER.LOCAL_DIR, file.name);
+							const dest_path = path.join(addon_path, file.name);
+
+							log.write('%s -> %s', src_path, dest_path);
+							await fsp.copyFile(src_path, dest_path);
+						}
+
+						installed = true;
+					}
+				}
+
+				if (installed)
+					core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
+				else {
+					log.write('No valid Blender installation found, add-on install failed.');
+					core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
+				}
+			} catch (e) {
+				log.write('Installation failed due to exception: %s', e.message);
+				core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
+			}
+		}
 	},
 
 	async checkLocalVersion() {
@@ -130,54 +165,9 @@ module.exports = {
 		if (latest_addon_version > blender_addon_version) {
 			log.write('Prompting user for Blender add-on update...');
 			core.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-				'Install': () => module_ref.setActive(),
+				'Install': () => modules.setActive('tab_blender'),
 				'Maybe Later': () => false
 			}, -1, false);
-		}
-	},
-
-	async startAutomaticInstall() {
-		using _lock = core.create_busy_lock();
-		core.setToast('progress', 'Installing Blender add-on, please wait...', null, -1, false);
-		log.write('Starting automatic installation of Blender add-on...');
-
-		try {
-			const versions = await get_blender_installations();
-			let installed = false;
-
-			for (const version of versions) {
-				if (version >= constants.BLENDER.MIN_VER) {
-					const addon_path = path.join(constants.BLENDER.DIR, version, constants.BLENDER.ADDON_DIR);
-					log.write('Targeting Blender version %s (%s)', version, addon_path);
-
-					await generics.deleteDirectory(addon_path);
-					await generics.createDirectory(addon_path);
-
-					const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
-					for (const file of files) {
-						if (file.isDirectory())
-							continue;
-
-						const src_path = path.join(constants.BLENDER.LOCAL_DIR, file.name);
-						const dest_path = path.join(addon_path, file.name);
-
-						log.write('%s -> %s', src_path, dest_path);
-						await fsp.copyFile(src_path, dest_path);
-					}
-
-					installed = true;
-				}
-			}
-
-			if (installed)
-				core.setToast('success', 'The latest add-on version has been installed! (You will need to restart Blender)');
-			else {
-				log.write('No valid Blender installation found, add-on install failed.');
-				core.setToast('error', 'Sorry, a valid Blender 2.8+ installation was not be detected on your system.', null, -1);
-			}
-		} catch (e) {
-			log.write('Installation failed due to exception: %s', e.message);
-			core.setToast('error', 'Sorry, an unexpected error occurred trying to install the add-on.', null, -1);
 		}
 	}
 };
