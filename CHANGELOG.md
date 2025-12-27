@@ -1,4 +1,5 @@
 ## 0.2.9
+- Fixed an issue that would cause equipment to render on characters in the wrong order.
 - Fixed a regression that prevented automatic blender add-on install from working (again).
 
 ## 0.2.8

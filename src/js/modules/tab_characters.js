@@ -24,7 +24,7 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
-const { EQUIPMENT_SLOTS, get_slot_name, get_attachment_ids_for_slot } = require('../wow/EquipmentSlots');
+const { EQUIPMENT_SLOTS, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
@@ -603,8 +603,9 @@ async function update_textures(core) {
 						chr_material = chr_materials.get(chr_model_material.TextureType);
 					}
 
+					const slot_layer = get_slot_layer(Number(slot_id));
 					const item_material = {
-						ChrModelTextureTargetID: 100 + texture.section,
+						ChrModelTextureTargetID: (slot_layer * 100) + texture.section,
 						FileDataID: texture.fileDataID
 					};
 

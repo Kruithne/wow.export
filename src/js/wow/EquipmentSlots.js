@@ -119,6 +119,24 @@ const ATTACHMENT_ID = {
 	HEAD_TOP: 55
 };
 
+// texture layer priority per slot
+// lower values render first, higher values render on top
+const SLOT_LAYER = {
+	4: 10,   // shirt
+	7: 10,   // legs/pants
+	1: 11,   // head
+	8: 11,   // feet/boots
+	3: 13,   // shoulder
+	5: 13,   // chest
+	19: 17,  // tabard
+	6: 18,   // waist/belt
+	9: 19,   // wrist/bracers
+	10: 20,  // hands/gloves
+	16: 21,  // main-hand
+	17: 22,  // off-hand
+	15: 23   // back/cape
+};
+
 // maps equipment slot ID to M2 attachment ID(s)
 // some slots have multiple attachments (e.g., shoulders have left and right)
 // order matches ItemDisplayInfo.ModelResourcesID order
@@ -146,6 +164,10 @@ const get_attachment_ids_for_slot = (slot_id) => {
 	return SLOT_TO_ATTACHMENT[slot_id] ?? null;
 };
 
+const get_slot_layer = (slot_id) => {
+	return SLOT_LAYER[slot_id] ?? 10;
+};
+
 module.exports = {
 	EQUIPMENT_SLOTS,
 	SLOT_ID_TO_NAME,
@@ -153,8 +175,10 @@ module.exports = {
 	WMV_SLOT_TO_SLOT_ID,
 	ATTACHMENT_ID,
 	SLOT_TO_ATTACHMENT,
+	SLOT_LAYER,
 	get_slot_id_for_inventory_type,
 	get_slot_id_for_wmv_slot,
 	get_slot_name,
-	get_attachment_ids_for_slot
+	get_attachment_ids_for_slot,
+	get_slot_layer
 };
