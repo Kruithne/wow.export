@@ -18,6 +18,7 @@
 		}
 	},
 	"updaterScript": "./updater/updater.js",
+	"installerScript": "./installer/installer.js",
 	"nativeAddonScript": "./build/build-native-addons.js",
 	"manifestInherit": ["name", "description", "license", "version", "contributors"],
 	"builds": [
@@ -59,6 +60,17 @@
 					"title": "wow.export updater",
 					"publisher": "Tamara's Workbench",
 					"description": "Updater for wow.export",
+					"copyright": "Marlamin, Kruithne © {{year}}",
+					"icon": "./resources/icon.ico"
+				}
+			},
+			"installer": {
+				"target": "bun-windows-x64",
+				"out": "installer.exe",
+				"metadata": {
+					"title": "wow.export installer",
+					"publisher": "Tamara's Workbench",
+					"description": "Installer for wow.export",
 					"copyright": "Marlamin, Kruithne © {{year}}",
 					"icon": "./resources/icon.ico"
 				}
@@ -116,6 +128,10 @@
 				"target": "bun-linux-x64",
 				"out": "updater"
 			},
+			"installer": {
+				"target": "bun-linux-x64",
+				"out": "installer"
+			},
 			"updateBundle": {
 				"bundle": "update",
 				"manifest": "update.json"
@@ -168,6 +184,10 @@
 			"updater": {
 				"target": "bun-darwin-x64",
 				"out": "updater"
+			},
+			"installer": {
+				"target": "bun-darwin-x64",
+				"out": "installer"
 			},
 			"updateBundle": {
 				"bundle": "update",

@@ -419,6 +419,58 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);
 		}
 
+		// Compile installer application (output to separate directory for publish).
+		if (build.installer) {
+			const installerStart = Date.now();
+			const installerDir = path.join(outDir, build.name + '-installer');
+			await fs.mkdir(installerDir, { recursive: true });
+			const installerOutput = path.join(installerDir, build.installer.out);
+
+			log.info('Compiling installer application (*%s*)...', build.installer.target);
+
+			const bunArgs = [
+				'build',
+				config.installerScript,
+				'--compile',
+				'--target=' + build.installer.target,
+				'--outfile',
+				installerOutput
+			];
+
+			if (build.installer.metadata) {
+				const metadata = build.installer.metadata;
+				const placeholders = { year: new Date().getFullYear() };
+
+				if (build.installer.target.includes('windows')) {
+					if (metadata.title)
+						bunArgs.push('--windows-title=' + applyPlaceholders(metadata.title, placeholders));
+
+					if (metadata.publisher)
+						bunArgs.push('--windows-publisher=' + applyPlaceholders(metadata.publisher, placeholders));
+
+					if (metadata.description)
+						bunArgs.push('--windows-description=' + applyPlaceholders(metadata.description, placeholders));
+
+					if (metadata.copyright)
+						bunArgs.push('--windows-copyright=' + applyPlaceholders(metadata.copyright, placeholders));
+
+					if (metadata.icon)
+						bunArgs.push('--windows-icon=' + path.resolve(metadata.icon));
+
+					bunArgs.push('--windows-version=' + meta.version);
+				}
+
+				log.info('Applied installer metadata: *%s*', metadata.title || 'unknown');
+			}
+
+			const result = Bun.spawnSync({ cmd: ['bun', ...bunArgs], stdio: ['inherit', 'inherit', 'inherit'] });
+			if (result.exitCode !== 0)
+				throw new Error(`Bun installer build failed with code ${result.exitCode}`);
+
+			const installerElapsed = (Date.now() - installerStart) / 1000;
+			log.success('Installer application compiled in *%ds* -> *%s*', installerElapsed, installerOutput);
+		}
+
 		// Build a manifest (package.json) file for the build.
 		const manifest = {};
 
