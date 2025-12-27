@@ -1,3 +1,6 @@
+## 0.2.9
+- Fixed a regression that prevented automatic blender add-on install from working (again).
+
 ## 0.2.8
 - Added a "Replace Item" option to the context menu when clicking an equipment slot.
 - Added a "Copy Item ID" and "Copy Item Name" option to equipment context menus.
