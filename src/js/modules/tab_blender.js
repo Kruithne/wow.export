@@ -17,11 +17,14 @@ const parse_manifest_version = async (file) => {
 
 		if (match)
 			return util.format('%d.%d.%d', match[1], match[2], match[3]);
-	} catch {
-		// file does not exist or cannot be opened
-	}
 
-	return null;
+		return { error: 'version_pattern_mismatch' };
+	} catch (err) {
+		if (err.code === 'ENOENT')
+			return { error: 'file_not_found' };
+
+		return { error: 'read_error', message: err.message };
+	}
 };
 
 const get_blender_installations = async () => {
@@ -108,8 +111,14 @@ module.exports = {
 		const latest_manifest = path.join(constants.BLENDER.LOCAL_DIR, constants.BLENDER.ADDON_ENTRY);
 		const latest_addon_version = await parse_manifest_version(latest_manifest);
 
-		if (latest_addon_version === null) {
-			log.write('Error: Installation is missing Blender add-on source files?');
+		if (typeof latest_addon_version === 'object') {
+			if (latest_addon_version.error === 'file_not_found')
+				log.write('Error: Add-on entry file not found: %s', latest_manifest);
+			else if (latest_addon_version.error === 'version_pattern_mismatch')
+				log.write('Error: Add-on entry file does not contain valid version pattern: %s', latest_manifest);
+			else
+				log.write('Error: Failed to read add-on entry file (%s): %s', latest_manifest, latest_addon_version.message);
+
 			return;
 		}
 
