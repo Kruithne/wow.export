@@ -7,7 +7,7 @@ const generics = require('../generics');
 const core = require('../core');
 const log = require('../log');
 
-const PATTERN_ADDON_VER = /"version": \((\d+), (\d+), (\d+)\),/;
+const PATTERN_ADDON_VER = /'version': \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
 
 const parse_manifest_version = async (file) => {
