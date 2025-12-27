@@ -95,6 +95,7 @@ const ExportHelper = require('./js/casc/export-helper');
 const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 const Shaders = require('./js/3D/Shaders');
+const gpuInfo = require('./js/gpu-info');
 
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
@@ -514,6 +515,9 @@ document.addEventListener('click', function(e) {
 	log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
 	log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));
 	log.write('INSTALL_PATH %s DATA_PATH %s', constants.INSTALL_PATH, constants.DATA_PATH);
+
+	// log gpu info async to avoid blocking startup
+	gpuInfo.log_gpu_info();
 
 	// Load configuration.
 	await config.load();
