@@ -268,18 +268,26 @@ class WMORendererGL {
 				// Color buffer
 				let cbo = null;
 				let cbo2 = null;
+				let cbo3 = null;
 				if (group.vertexColours) {
 					cbo = gl.createBuffer();
 					gl.bindBuffer(gl.ARRAY_BUFFER, cbo);
-					gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(group.vertexColours), gl.STATIC_DRAW);
+					gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(group.vertexColours[0]), gl.STATIC_DRAW);
 					this.buffers.push(cbo);
+
+					if(group.vertexColours[1]){
+						cbo2 = gl.createBuffer();
+						gl.bindBuffer(gl.ARRAY_BUFFER, cbo2);
+						gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(group.vertexColours[1]), gl.STATIC_DRAW);
+						this.buffers.push(cbo2);
+					}
 				}
 
 				if(group.colors2){
-					cbo2 = gl.createBuffer();
-					gl.bindBuffer(gl.ARRAY_BUFFER, cbo2);
+					cbo3 = gl.createBuffer();
+					gl.bindBuffer(gl.ARRAY_BUFFER, cbo3);
 					gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(group.colors2), gl.STATIC_DRAW);
-					this.buffers.push(cbo2);
+					this.buffers.push(cbo3);
 				}
 
 				// index buffer (managed by vao.dispose())
@@ -289,8 +297,7 @@ class WMORendererGL {
 				vao.ebo = ebo;
 
 				// set up vertex attributes
-				// TODO: MOCVx2 + MOC2 in color buffers
-				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, cbo2, uv2o, uv3o, uv4o);
+				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, cbo2, cbo3, uv2o, uv3o, uv4o);
 
 				// build draw calls for each batch
 				const draw_calls = [];

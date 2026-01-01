@@ -215,7 +215,7 @@ class WMOLegacyRendererGL {
 				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(group.indices), gl.STATIC_DRAW);
 				vao.ebo = ebo;
 
-				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, null, null, null, null);
+				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, null, null, null, null, null);
 
 				// build draw calls
 				const draw_calls = [];
