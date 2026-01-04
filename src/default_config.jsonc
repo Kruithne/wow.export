@@ -113,5 +113,6 @@
 	"chrShowTextureOverlay": false,
 	"itemViewerShowAll": false,
 	"pathFormat": "win32",
+	"showZoneBaseMap": true,
 	"showZoneOverlays": true
 }
