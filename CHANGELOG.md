@@ -1,5 +1,6 @@
 ## 0.2.9
 - Added character hand-grip posing when holding weapons.
+- Fixed an animation loading priority bug for races with inherited animations.
 - Fixed an issue that preventing exporting multiple maps from the zones tab at the same time.
 - Fixed an issue that caused characters to wield bows in the wrong hand.
 - Fixed an issue that would prevent the realm from persisting on the Battle.net import window.

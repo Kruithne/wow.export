@@ -302,7 +302,7 @@ class SKELLoader {
 				animation = this.animations[animation.aliasNext];
 		}
 
-		if ((animation.flags & 0x20) === 0x20)
+		if (!this.animFileIDs)
 			return false;
 
 		for (const entry of this.animFileIDs) {
@@ -313,7 +313,7 @@ class SKELLoader {
 			if (fileDataID === 0)
 				return false;
 
-			log.write('lazy load .anim for ' + entry.animID + ' (' + AnimMapper.get_anim_name(entry.animID) + ') - ' + entry.subAnimID);
+			log.write('lazy load .anim for %d (%s) sub=%d fileDataID=%d', entry.animID, AnimMapper.get_anim_name(entry.animID), entry.subAnimID, fileDataID);
 
 			const loader = new ANIMLoader(await core.view.casc.getFile(fileDataID));
 			await loader.load(true);

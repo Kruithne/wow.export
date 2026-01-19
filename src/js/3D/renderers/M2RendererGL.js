@@ -596,11 +596,25 @@ class M2RendererGL {
 					const parent_file = await core.view.casc.getFile(skel.parent_skel_file_id);
 					const parent_skel = new SKELLoader(parent_file);
 					await parent_skel.load();
-					await parent_skel.loadAnims(false);
+
+					// merge animation file IDs: child overrides parent when fileDataID > 0
+					if (skel.animFileIDs && parent_skel.animFileIDs) {
+						const merged = new Map();
+
+						for (const entry of parent_skel.animFileIDs)
+							merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
+
+						for (const entry of skel.animFileIDs) {
+							if (entry.fileDataID > 0)
+								merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
+						}
+
+						parent_skel.animFileIDs = Array.from(merged.values());
+					}
+
 					this.skelLoader = parent_skel;
 					bone_data = parent_skel.bones;
 				} else {
-					await skel.loadAnims(false);
 					this.skelLoader = skel;
 					bone_data = skel.bones;
 				}
