@@ -54,7 +54,7 @@ const get_zone_phases = async (zone_id) => {
 	return phases;
 };
 
-const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canvas_size = true) => {
+const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canvas_size = true, skip_zone_check = false) => {
 	const ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -147,11 +147,11 @@ const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canva
 			const layer_num = parseInt(layer_index);
 
 			log.write('rendering layer %d with %d tiles', layer_num, layer_tiles.length);
-			await render_map_tiles(ctx, layer_tiles, art_style, layer_num, zone_id);
+			await render_map_tiles(ctx, layer_tiles, art_style, layer_num, zone_id, skip_zone_check);
 		}
 
 		if (core.view.config.showZoneOverlays)
-			await render_world_map_overlays(ctx, art_style, zone_id);
+			await render_world_map_overlays(ctx, art_style, zone_id, skip_zone_check);
 	}
 
 	log.write('successfully rendered zone map for zone ID %d (UiMap ID %d)', zone_id, ui_map_id);
@@ -163,7 +163,7 @@ const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canva
 	};
 };
 
-const render_map_tiles = async (ctx, tiles, art_style, layer_index = 0, expected_zone_id) => {
+const render_map_tiles = async (ctx, tiles, art_style, layer_index = 0, expected_zone_id, skip_zone_check = false) => {
 	tiles.sort((a, b) => {
 		if (a.RowIndex !== b.RowIndex)
 			return a.RowIndex - b.RowIndex;
@@ -185,7 +185,7 @@ const render_map_tiles = async (ctx, tiles, art_style, layer_index = 0, expected
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
 
-			if (selected_zone_id !== expected_zone_id) {
+			if (!skip_zone_check && selected_zone_id !== expected_zone_id) {
 				log.write('skipping tile render - zone changed from %d to %d', expected_zone_id, selected_zone_id);
 				return { success: false, tile: tile, skipped: true };
 			}
@@ -205,7 +205,7 @@ const render_map_tiles = async (ctx, tiles, art_style, layer_index = 0, expected
 	log.write('rendered %d/%d tiles successfully', successful, tiles.length);
 };
 
-const render_world_map_overlays = async (ctx, art_style, expected_zone_id) => {
+const render_world_map_overlays = async (ctx, art_style, expected_zone_id, skip_zone_check = false) => {
 	const overlays = await db2.WorldMapOverlay.getRelationRows(art_style.ID);
 	if (overlays.length === 0) {
 		log.write('no WorldMapOverlay entries found for UiMapArt ID %d', art_style.ID);
@@ -222,11 +222,11 @@ const render_world_map_overlays = async (ctx, art_style, expected_zone_id) => {
 		log.write('rendering WorldMapOverlay ID %d with %d tiles at offset (%d,%d)',
 			overlay.ID, overlay_tiles.length, overlay.OffsetX, overlay.OffsetY);
 
-		await render_overlay_tiles(ctx, overlay_tiles, overlay, art_style, expected_zone_id);
+		await render_overlay_tiles(ctx, overlay_tiles, overlay, art_style, expected_zone_id, skip_zone_check);
 	}
 };
 
-const render_overlay_tiles = async (ctx, tiles, overlay, art_style, expected_zone_id) => {
+const render_overlay_tiles = async (ctx, tiles, overlay, art_style, expected_zone_id, skip_zone_check = false) => {
 	tiles.sort((a, b) => {
 		if (a.RowIndex !== b.RowIndex)
 			return a.RowIndex - b.RowIndex;
@@ -245,12 +245,12 @@ const render_overlay_tiles = async (ctx, tiles, overlay, art_style, expected_zon
 			const data = await core.view.casc.getFile(tile.FileDataID);
 			const blp = new BLPFile(data);
 
-			if (selected_zone_id !== expected_zone_id) {
+			if (!skip_zone_check && selected_zone_id !== expected_zone_id) {
 				log.write('skipping overlay tile render - zone changed from %d to %d', expected_zone_id, selected_zone_id);
 				return { success: false, tile: tile, skipped: true };
 			}
 
-			if (!core.view.config.showZoneOverlays) {
+			if (!skip_zone_check && !core.view.config.showZoneOverlays) {
 				log.write('skipping overlay tile render - overlays disabled while loading');
 				return { success: false, tile: tile, skipped: true };
 			}
@@ -412,7 +412,7 @@ module.exports = {
 
 					log.write('exporting zone map: %s (%d) phase %s', zone.zone_name, zone.id, phase_id);
 
-					const map_info = await render_zone_to_canvas(export_canvas, zone.id, phase_id, true);
+					const map_info = await render_zone_to_canvas(export_canvas, zone.id, phase_id, true, true);
 
 					if (map_info.width === 0 || map_info.height === 0) {
 						log.write('no map data available for zone %d, skipping', zone.id);
