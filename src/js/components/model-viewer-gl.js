@@ -10,6 +10,7 @@ const CameraControlsGL = require('../3D/camera/CameraControlsGL');
 const CharacterCameraControlsGL = require('../3D/camera/CharacterCameraControlsGL');
 const GridRenderer = require('../3D/renderers/GridRenderer');
 const ShadowPlaneRenderer = require('../3D/renderers/ShadowPlaneRenderer');
+const { ATTACHMENT_ID } = require('../wow/EquipmentSlots');
 
 const parse_hex_color = (hex) => {
 	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -269,12 +270,35 @@ module.exports = {
 			if (core.view.config.modelViewerShowGrid && this.grid_renderer && !this.context.useCharacterControls)
 				this.grid_renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
+			// render equipment models at attachment points (character mode only)
+			const equipment_renderers = this.context.getEquipmentRenderers?.();
+
+			// determine hand grip state based on equipped weapons
+			if (activeRenderer && equipment_renderers && activeRenderer.setHandGrip) {
+				let close_right = false;
+				let close_left = false;
+
+				// check main-hand (slot 16) and off-hand (slot 17)
+				const mainhand = equipment_renderers.get(16);
+				const offhand = equipment_renderers.get(17);
+
+				if (mainhand?.renderers?.length > 0)
+					close_right = true;
+
+				if (offhand?.renderers?.length > 0) {
+					// shields don't require grip (attached to wrist)
+					const has_shield = offhand.renderers.some(r => r.attachment_id === ATTACHMENT_ID.SHIELD);
+					if (!has_shield)
+						close_left = true;
+				}
+
+				activeRenderer.setHandGrip(close_right, close_left);
+			}
+
 			// render model
 			if (activeRenderer && activeRenderer.render)
 				activeRenderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 
-			// render equipment models at attachment points (character mode only)
-			const equipment_renderers = this.context.getEquipmentRenderers?.();
 			if (equipment_renderers && activeRenderer) {
 				const char_bone_matrices = activeRenderer.bone_matrices;
 				const char_model_matrix = activeRenderer.model_matrix;

@@ -728,7 +728,7 @@ async function update_equipment_models(core) {
 						await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
 
 					renderers.push({ renderer, attachment_id, is_collection_style });
-					log.write('Loaded attachment model %d for slot %d attachment %d (item %d) collection_style=%s', file_data_id, slot_id, attachment_id, item_id, is_collection_style);
+					log.write('Loaded attachment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
 				} catch (e) {
 					log.write('Failed to load attachment model %d: %s', file_data_id, e.message);
 				}

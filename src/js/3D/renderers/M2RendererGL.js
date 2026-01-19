@@ -326,6 +326,12 @@ class M2RendererGL {
 		this.animation_time = 0;
 		this.animation_paused = false;
 
+		// hand grip state for weapon attachment
+		// when true, finger bones use HandsClosed animation (ID 15)
+		this.close_right_hand = false;
+		this.close_left_hand = false;
+		this.hands_closed_anim_idx = null;
+
 		// collection model support
 		this.bone_remap_table = null;
 		this.use_external_bones = false;
@@ -617,6 +623,17 @@ class M2RendererGL {
 			const offset = i * 16;
 			this.bone_matrices.set(IDENTITY_MAT4, offset);
 		}
+
+		// find HandsClosed animation (ID 15) for hand grip
+		const anim_source = this.skelLoader || this.m2;
+		if (anim_source.animations) {
+			for (let i = 0; i < anim_source.animations.length; i++) {
+				if (anim_source.animations[i].id === 15) {
+					this.hands_closed_anim_idx = i;
+					break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -727,6 +744,11 @@ class M2RendererGL {
 		const bone_count = bones.length;
 		const anim_idx = this.current_animation;
 
+		// hand grip: use HandsClosed animation for finger bones
+		const hands_closed_idx = this.hands_closed_anim_idx;
+		const close_r = this.close_right_hand && hands_closed_idx !== null;
+		const close_l = this.close_left_hand && hands_closed_idx !== null;
+
 		// temp matrices for bone calculation
 		const local_mat = new Float32Array(16);
 		const trans_mat = new Float32Array(16);
@@ -756,11 +778,21 @@ class M2RendererGL {
 			const pivot = bone.pivot;
 			const px = pivot[0], py = pivot[1], pz = pivot[2];
 
+			// determine which animation to use for this bone
+			// finger bones use HandsClosed animation when hand grip is active
+			// right finger bone IDs: 8-12, left finger bone IDs: 13-17
+			const bone_id = bone.boneID;
+			const is_right_finger = bone_id >= 8 && bone_id <= 12;
+			const is_left_finger = bone_id >= 13 && bone_id <= 17;
+			const use_closed_hand = (is_right_finger && close_r) || (is_left_finger && close_l);
+			const effective_anim_idx = use_closed_hand ? hands_closed_idx : anim_idx;
+			const effective_time_ms = use_closed_hand ? 0 : time_ms; // use frame 0 for HandsClosed
+
 			// check if bone has any animation data for this animation
-			const has_trans = bone.translation?.timestamps?.[anim_idx]?.length > 0;
-			const has_rot = bone.rotation?.timestamps?.[anim_idx]?.length > 0;
-			const has_scale = bone.scale?.timestamps?.[anim_idx]?.length > 0;
-			const has_scale_fallback = !has_scale && anim_idx !== 0 && bone.scale?.timestamps?.[0]?.length > 0;
+			const has_trans = bone.translation?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_rot = bone.rotation?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_scale = bone.scale?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_scale_fallback = !has_scale && effective_anim_idx !== 0 && bone.scale?.timestamps?.[0]?.length > 0;
 			const has_animation = has_trans || has_rot || has_scale || has_scale_fallback;
 
 			// start with identity
@@ -774,9 +806,9 @@ class M2RendererGL {
 
 				// apply translation (raw animation offset from M2 data)
 				if (has_trans) {
-					const ts = bone.translation.timestamps[anim_idx];
-					const vals = bone.translation.values[anim_idx];
-					const [tx, ty, tz] = this._sample_raw_vec3(ts, vals, time_ms);
+					const ts = bone.translation.timestamps[effective_anim_idx];
+					const vals = bone.translation.values[effective_anim_idx];
+					const [tx, ty, tz] = this._sample_raw_vec3(ts, vals, effective_time_ms);
 
 					mat4_from_translation(trans_mat, tx, ty, tz);
 					mat4_multiply(temp_result, local_mat, trans_mat);
@@ -785,9 +817,9 @@ class M2RendererGL {
 
 				// apply rotation
 				if (has_rot) {
-					const ts = bone.rotation.timestamps[anim_idx];
-					const vals = bone.rotation.values[anim_idx];
-					const [qx, qy, qz, qw] = this._sample_raw_quat(ts, vals, time_ms);
+					const ts = bone.rotation.timestamps[effective_anim_idx];
+					const vals = bone.rotation.values[effective_anim_idx];
+					const [qx, qy, qz, qw] = this._sample_raw_quat(ts, vals, effective_time_ms);
 
 					mat4_from_quat(rot_mat, qx, qy, qz, qw);
 					mat4_multiply(temp_result, local_mat, rot_mat);
@@ -796,10 +828,10 @@ class M2RendererGL {
 
 				// apply scale (fallback to animation 0 if current animation lacks scale data)
 				if (has_scale || has_scale_fallback) {
-					const scale_anim_idx = has_scale ? anim_idx : 0;
+					const scale_anim_idx = has_scale ? effective_anim_idx : 0;
 					const ts = bone.scale.timestamps[scale_anim_idx];
 					const vals = bone.scale.values[scale_anim_idx];
-					const scale_time = has_scale ? time_ms : 0;
+					const scale_time = has_scale ? effective_time_ms : 0;
 					const [sx, sy, sz] = this._sample_raw_vec3(ts, vals, scale_time, [1, 1, 1]);
 
 					mat4_from_scale(scale_mat, sx, sy, sz);
@@ -1059,6 +1091,17 @@ class M2RendererGL {
 	 */
 	setTransformMatrix(matrix) {
 		this.model_matrix.set(matrix);
+	}
+
+	/**
+	 * Set hand grip state for weapon attachment
+	 * When closed, finger bones use HandsClosed animation
+	 * @param {boolean} close_right - close right hand
+	 * @param {boolean} close_left - close left hand
+	 */
+	setHandGrip(close_right, close_left) {
+		this.close_right_hand = close_right;
+		this.close_left_hand = close_left;
 	}
 
 	_update_model_matrix() {
