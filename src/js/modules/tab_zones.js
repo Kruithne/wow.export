@@ -141,14 +141,15 @@ const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canva
 			}
 		}
 
-		if(core.view.config.showZoneBaseMap){
+		if (core.view.config.showZoneBaseMap) {
 			const layer_indices = Object.keys(tiles_by_layer).sort((a, b) => parseInt(a) - parseInt(b));
 			for (const layer_index of layer_indices) {
 				const layer_tiles = tiles_by_layer[layer_index];
 				const layer_num = parseInt(layer_index);
 
-			log.write('rendering layer %d with %d tiles', layer_num, layer_tiles.length);
-			await render_map_tiles(ctx, layer_tiles, art_style, layer_num, zone_id, skip_zone_check);
+				log.write('rendering layer %d with %d tiles', layer_num, layer_tiles.length);
+				await render_map_tiles(ctx, layer_tiles, art_style, layer_num, zone_id, skip_zone_check);
+			}
 		}
 
 		if (core.view.config.showZoneOverlays)

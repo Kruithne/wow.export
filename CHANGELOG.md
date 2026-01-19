@@ -1,5 +1,6 @@
 ## 0.2.9
 - Added character hand-grip posing when holding weapons.
+- Added a "Show Base Map" option to zone map exports to allow for overlay-only exports. 
 - Fixed an animation loading priority bug for races with inherited animations.
 - Fixed an issue that preventing exporting multiple maps from the zones tab at the same time.
 - Fixed an issue that caused characters to wield bows in the wrong hand.
