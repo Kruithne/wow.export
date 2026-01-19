@@ -26,7 +26,7 @@ module.exports = {
 
 	mounted: function() {
 		if (this.value !== null)
-			this.selectOption(this.source.find(item => item.value === this.value));
+			this.selectOption(this.source.find(item => item.value === this.value.value));
 		else
 			this.currentText = '';
 	},
