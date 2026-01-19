@@ -282,8 +282,14 @@ module.exports = {
 				const mainhand = equipment_renderers.get(16);
 				const offhand = equipment_renderers.get(17);
 
-				if (mainhand?.renderers?.length > 0)
-					close_right = true;
+				if (mainhand?.renderers?.length > 0) {
+					// bows use left-hand attachment despite being main-hand items
+					const uses_left_hand = mainhand.renderers.some(r => r.attachment_id === ATTACHMENT_ID.HAND_LEFT);
+					if (uses_left_hand)
+						close_left = true;
+					else
+						close_right = true;
+				}
 
 				if (offhand?.renderers?.length > 0) {
 					// shields don't require grip (attached to wrist)

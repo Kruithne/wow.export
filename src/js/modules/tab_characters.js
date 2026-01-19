@@ -24,7 +24,7 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
-const { EQUIPMENT_SLOTS, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
+const { EQUIPMENT_SLOTS, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
@@ -701,7 +701,10 @@ async function update_equipment_models(core) {
 			continue;
 
 		// get attachment IDs for this slot (may be empty for body slots)
-		const attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
+		// bows are held in the left hand despite being main-hand items
+		let attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
+		if (slot_id === 16 && DBItems.isItemBow(item_id))
+			attachment_ids = [ATTACHMENT_ID.HAND_LEFT];
 
 		// split models into attachment vs collection
 		// attachment models: up to attachment_ids.length models get attached
