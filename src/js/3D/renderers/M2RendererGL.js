@@ -597,21 +597,24 @@ class M2RendererGL {
 					const parent_skel = new SKELLoader(parent_file);
 					await parent_skel.load();
 
-					// merge animation file IDs: child overrides parent when fileDataID > 0
-					if (skel.animFileIDs && parent_skel.animFileIDs) {
-						const merged = new Map();
-
-						for (const entry of parent_skel.animFileIDs)
-							merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
-
+					// track which animations come from child vs parent
+					// child skeleton's .anim files have different data layouts than parent's bone offsets expect
+					const child_anim_keys = new Set();
+					if (skel.animFileIDs) {
 						for (const entry of skel.animFileIDs) {
 							if (entry.fileDataID > 0)
-								merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
+								child_anim_keys.add(`${entry.animID}-${entry.subAnimID}`);
 						}
-
-						parent_skel.animFileIDs = Array.from(merged.values());
 					}
 
+					// store child skeleton for animations that need it
+					if (child_anim_keys.size > 0) {
+						this.childSkelLoader = skel;
+						this.childAnimKeys = child_anim_keys;
+					}
+
+					// don't merge child AFIDs into parent - they use incompatible bone offsets
+					// parent skeleton handles its own animations, child handles its own
 					this.skelLoader = parent_skel;
 					bone_data = parent_skel.bones;
 				} else {
@@ -655,12 +658,35 @@ class M2RendererGL {
 	 * @param {number} index
 	 */
 	async playAnimation(index) {
-		const anim_source = this.skelLoader || this.m2;
+		let anim_source = this.skelLoader || this.m2;
+		let anim_index = index;
+
+		// check if this animation should come from child skeleton
+		if (this.childSkelLoader && this.childAnimKeys && anim_source.animations?.[index]) {
+			const anim = anim_source.animations[index];
+			const key = `${anim.id}-${anim.variationIndex}`;
+			if (this.childAnimKeys.has(key)) {
+				// find the matching animation index in child skeleton
+				const child_anims = this.childSkelLoader.animations;
+				if (child_anims) {
+					for (let i = 0; i < child_anims.length; i++) {
+						if (child_anims[i].id === anim.id && child_anims[i].variationIndex === anim.variationIndex) {
+							anim_source = this.childSkelLoader;
+							anim_index = i;
+							break;
+						}
+					}
+				}
+			}
+		}
 
 		// ensure animation data is loaded
 		if (anim_source.loadAnimsForIndex)
-			await anim_source.loadAnimsForIndex(index);
+			await anim_source.loadAnimsForIndex(anim_index);
 
+		// store which skeleton is being used for this animation
+		this.current_anim_source = anim_source;
+		this.current_anim_index = anim_index;
 		this.current_animation = index;
 		this.animation_time = 0;
 	}
@@ -672,9 +698,17 @@ class M2RendererGL {
 		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
 			const prev_anim = this.current_animation;
+			const prev_anim_idx = this.current_anim_index;
+			const prev_source = this.current_anim_source;
+
 			this.current_animation = 0;
+			this.current_anim_index = 0;
+			this.current_anim_source = this.skelLoader || this.m2;
 			this._update_bone_matrices();
+
 			this.current_animation = null;
+			this.current_anim_index = null;
+			this.current_anim_source = null;
 		}
 	}
 
@@ -685,8 +719,9 @@ class M2RendererGL {
 		if (this.current_animation === null || !this.bones)
 			return;
 
-		const anim_source = this.skelLoader || this.m2;
-		const anim = anim_source.animations?.[this.current_animation];
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
 		if (!anim)
 			return;
 
@@ -706,8 +741,9 @@ class M2RendererGL {
 		if (this.current_animation === null)
 			return 0;
 
-		const anim_source = this.skelLoader || this.m2;
-		const anim = anim_source.animations?.[this.current_animation];
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
 		return anim ? anim.duration / 1000 : 0;
 	}
 
@@ -754,9 +790,14 @@ class M2RendererGL {
 
 	_update_bone_matrices() {
 		const time_ms = this.animation_time * 1000; // convert to milliseconds for raw tracks
-		const bones = this.bones;
+
+		// use the correct skeleton's bones for animation data
+		// child animations need child's bones which have correct offsets
+		const anim_bones = this.current_anim_source?.bones || this.bones;
+		const bones = this.bones; // structural bones for hierarchy/pivots
 		const bone_count = bones.length;
-		const anim_idx = this.current_animation;
+		// use the correct animation index for the skeleton we're reading from
+		const anim_idx = this.current_anim_index ?? this.current_animation;
 
 		// hand grip: use HandsClosed animation for finger bones
 		const hands_closed_idx = this.hands_closed_anim_idx;
@@ -782,13 +823,14 @@ class M2RendererGL {
 				return;
 
 			const bone = bones[idx];
+			const anim_bone = anim_bones[idx]; // animation data may come from different skeleton
 			const parent_idx = bone.parentBone;
 
 			// calculate parent first
 			if (parent_idx >= 0 && parent_idx < bone_count)
 				calc_bone(parent_idx);
 
-			// get pivot point
+			// get pivot point (from structural bone)
 			const pivot = bone.pivot;
 			const px = pivot[0], py = pivot[1], pz = pivot[2];
 
@@ -802,11 +844,11 @@ class M2RendererGL {
 			const effective_anim_idx = use_closed_hand ? hands_closed_idx : anim_idx;
 			const effective_time_ms = use_closed_hand ? 0 : time_ms; // use frame 0 for HandsClosed
 
-			// check if bone has any animation data for this animation
-			const has_trans = bone.translation?.timestamps?.[effective_anim_idx]?.length > 0;
-			const has_rot = bone.rotation?.timestamps?.[effective_anim_idx]?.length > 0;
-			const has_scale = bone.scale?.timestamps?.[effective_anim_idx]?.length > 0;
-			const has_scale_fallback = !has_scale && effective_anim_idx !== 0 && bone.scale?.timestamps?.[0]?.length > 0;
+			// check if bone has any animation data for this animation (from anim_bone)
+			const has_trans = anim_bone?.translation?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_rot = anim_bone?.rotation?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_scale = anim_bone?.scale?.timestamps?.[effective_anim_idx]?.length > 0;
+			const has_scale_fallback = !has_scale && effective_anim_idx !== 0 && anim_bone?.scale?.timestamps?.[0]?.length > 0;
 			const has_animation = has_trans || has_rot || has_scale || has_scale_fallback;
 
 			// start with identity
@@ -818,10 +860,10 @@ class M2RendererGL {
 				mat4_multiply(temp_result, local_mat, pivot_mat);
 				mat4_copy(local_mat, temp_result);
 
-				// apply translation (raw animation offset from M2 data)
+				// apply translation (raw animation offset from anim_bone data)
 				if (has_trans) {
-					const ts = bone.translation.timestamps[effective_anim_idx];
-					const vals = bone.translation.values[effective_anim_idx];
+					const ts = anim_bone.translation.timestamps[effective_anim_idx];
+					const vals = anim_bone.translation.values[effective_anim_idx];
 					const [tx, ty, tz] = this._sample_raw_vec3(ts, vals, effective_time_ms);
 
 					mat4_from_translation(trans_mat, tx, ty, tz);
@@ -831,8 +873,8 @@ class M2RendererGL {
 
 				// apply rotation
 				if (has_rot) {
-					const ts = bone.rotation.timestamps[effective_anim_idx];
-					const vals = bone.rotation.values[effective_anim_idx];
+					const ts = anim_bone.rotation.timestamps[effective_anim_idx];
+					const vals = anim_bone.rotation.values[effective_anim_idx];
 					const [qx, qy, qz, qw] = this._sample_raw_quat(ts, vals, effective_time_ms);
 
 					mat4_from_quat(rot_mat, qx, qy, qz, qw);
@@ -843,8 +885,8 @@ class M2RendererGL {
 				// apply scale (fallback to animation 0 if current animation lacks scale data)
 				if (has_scale || has_scale_fallback) {
 					const scale_anim_idx = has_scale ? effective_anim_idx : 0;
-					const ts = bone.scale.timestamps[scale_anim_idx];
-					const vals = bone.scale.values[scale_anim_idx];
+					const ts = anim_bone.scale.timestamps[scale_anim_idx];
+					const vals = anim_bone.scale.values[scale_anim_idx];
 					const scale_time = has_scale ? effective_time_ms : 0;
 					const [sx, sy, sz] = this._sample_raw_vec3(ts, vals, scale_time, [1, 1, 1]);
 

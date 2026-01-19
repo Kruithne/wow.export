@@ -61,7 +61,7 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 						break;
 					case 'compquat':
 						animFiles.get(i).seek(subArrOfs + (j * 8));
-						arr[i][j] = animFiles.get(i).readUInt16LE(4).map(e => (e < 0 ? e + 32768 : e - 32767) / 32767);
+						arr[i][j] = animFiles.get(i).readUInt16LE(4).map(e => (e - 32767) / 32768);
 						break;
 					case 'uint8':
 						animFiles.get(i).seek(subArrOfs + j);
@@ -85,7 +85,7 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 						arr[i][j] = data.readFloatLE(4);
 						break;
 					case 'compquat':
-						arr[i][j] = data.readUInt16LE(4).map(e => (e < 0 ? e + 32768 : e - 32767) / 32767);
+						arr[i][j] = data.readUInt16LE(4).map(e => (e - 32767) / 32768);
 						break;
 					case 'uint8':
 						arr[i][j] = data.readUInt8();
@@ -169,7 +169,7 @@ function patch_track_animation(track, animIndex, animBuffer, valueType) {
 				break;
 			case 'compquat':
 				animBuffer.seek(valInfo.offset + (j * 8));
-				values[j] = animBuffer.readUInt16LE(4).map(e => (e < 0 ? e + 32768 : e - 32767) / 32767);
+				values[j] = animBuffer.readUInt16LE(4).map(e => (e - 32767) / 32768);
 				break;
 			case 'float4':
 				animBuffer.seek(valInfo.offset + (j * 16));
@@ -189,6 +189,7 @@ function patch_track_animation(track, animIndex, animBuffer, valueType) {
 				break;
 		}
 	}
+
 	track.values[animIndex] = values;
 }
 

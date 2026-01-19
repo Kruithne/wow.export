@@ -29,7 +29,7 @@ class ANIMLoader {
 
 		if (!isChunked) {
 			this.animData = this.data.readUInt8(this.data.remainingBytes);
-			this.isLoaded === true
+			this.isLoaded = true;
 			return;
 		}
 
