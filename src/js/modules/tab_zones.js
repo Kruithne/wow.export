@@ -141,10 +141,11 @@ const render_zone_to_canvas = async (canvas, zone_id, phase_id = null, set_canva
 			}
 		}
 
-		const layer_indices = Object.keys(tiles_by_layer).sort((a, b) => parseInt(a) - parseInt(b));
-		for (const layer_index of layer_indices) {
-			const layer_tiles = tiles_by_layer[layer_index];
-			const layer_num = parseInt(layer_index);
+		if(core.view.config.showZoneBaseMap){
+			const layer_indices = Object.keys(tiles_by_layer).sort((a, b) => parseInt(a) - parseInt(b));
+			for (const layer_index of layer_indices) {
+				const layer_tiles = tiles_by_layer[layer_index];
+				const layer_num = parseInt(layer_index);
 
 			log.write('rendering layer %d with %d tiles', layer_num, layer_tiles.length);
 			await render_map_tiles(ctx, layer_tiles, art_style, layer_num, zone_id, skip_zone_check);
@@ -325,6 +326,10 @@ module.exports = {
 			</div>
 			<div class="zone-export-controls">
 				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.config.showZoneBaseMap"/>
+					<span>Show Base Map</span>
+				</label>
+				<label class="ui-checkbox">
 					<input type="checkbox" v-model="$core.view.config.showZoneOverlays"/>
 					<span>Show Overlays</span>
 				</label>
@@ -475,6 +480,13 @@ module.exports = {
 			if (new_value !== old_value && selected_zone_id && !this.$core.view.isBusy) {
 				selected_phase_id = new_value;
 				log.write('zone phase changed to %s, reloading zone %d', new_value, selected_zone_id);
+				await load_zone_map(selected_zone_id, selected_phase_id);
+			}
+		});
+		
+		this.$core.view.$watch('config.showZoneBaseMap', async (new_value, old_value) => {
+			if (new_value !== old_value && selected_zone_id && !this.$core.view.isBusy) {
+				log.write('zone base map setting changed, reloading zone %d', selected_zone_id);
 				await load_zone_map(selected_zone_id, selected_phase_id);
 			}
 		});

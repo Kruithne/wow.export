@@ -11,6 +11,7 @@ in vec3 v_normal;
 in vec3 v_position_view;
 in vec4 v_color;
 in vec4 v_color2;
+in vec4 v_color3;
 
 // textures
 uniform sampler2D u_texture1;
@@ -195,8 +196,8 @@ void main() {
 			vec4 tex8_20 = texture(u_texture8, v_texcoord3);
 			vec4 tex9_20 = texture(u_texture9, v_texcoord4);
 
-			float second_color_sum = dot(v_color2.bgr, vec3(1.0));
-			vec4 weights = vec4(v_color2.bgr, 1.0 - clamp(second_color_sum, 0.0, 1.0));
+			float second_color_sum = dot(v_color3.bgr, vec3(1.0));
+			vec4 weights = vec4(v_color3.bgr, 1.0 - clamp(second_color_sum, 0.0, 1.0));
 			vec4 heights = max(vec4(tex6_20.a, tex7_20.a, tex8_20.a, tex9_20.a), 0.004);
 			vec4 alpha_vec = weights * heights;
 			float weights_max = max(alpha_vec.r, max(alpha_vec.g, max(alpha_vec.b, alpha_vec.a)));
@@ -210,7 +211,7 @@ void main() {
 
 			// env texture would use posToTexCoord - simplified here
 			emissive = (tex_mixed.a * tex1.rgb) * tex_mixed.rgb;
-			mat_diffuse = mix(tex_mixed.rgb, vec3(0.0), v_color2.a);
+			mat_diffuse = mix(tex_mixed.rgb, vec3(0.0), v_color3.a);
 			break;
 		}
 
