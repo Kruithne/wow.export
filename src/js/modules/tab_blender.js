@@ -6,8 +6,6 @@ const constants = require('../constants');
 const generics = require('../generics');
 const core = require('../core');
 const log = require('../log');
-const modules = require('../modules');
-
 const PATTERN_ADDON_VER = /'version': \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
 
@@ -165,7 +163,7 @@ module.exports = {
 		if (latest_addon_version > blender_addon_version) {
 			log.write('Prompting user for Blender add-on update...');
 			core.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-				'Install': () => modules.setActive('tab_blender'),
+				'Install': () => require('../modules').setActive('tab_blender'),
 				'Maybe Later': () => false
 			}, -1, false);
 		}
