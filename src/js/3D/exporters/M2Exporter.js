@@ -93,7 +93,7 @@ class M2Exporter {
 		const files_to_cleanup = [];
 
 		if (!config.modelsExportTextures)
-			return { validTextures, texture_buffers, files_to_cleanup };
+			return glbMode ? { validTextures, texture_buffers, files_to_cleanup } : validTextures;
 
 		await this.m2.load();
 
