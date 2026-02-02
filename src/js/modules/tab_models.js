@@ -266,7 +266,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 			helper.mark(mark_name, true);
 			manifest.succeeded.push({ fileDataID: file_data_id, files: file_manifest });
 		} catch (e) {
-			helper.mark(mark_file_name, false, e.message, e.stack);
+			helper.mark(file_name, false, e.message, e.stack);
 			manifest.failed.push({ fileDataID: file_data_id });
 		}
 	}
