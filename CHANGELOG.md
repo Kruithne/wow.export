@@ -1,4 +1,8 @@
-## 0.2.9
+## 0.2.10
+- Added support for the new WoW Classic: TBC Anniversary product.
+- Fixed a crash updating the Blender addon from the "update available" notification.
+
+## 0.2.9 (31-01-2026)
 - Added character hand-grip posing when holding weapons.
 - Added a "Show Base Map" option to zone map exports to allow for overlay-only exports. 
 - Fixed an animation loading priority bug for races with inherited animations.
