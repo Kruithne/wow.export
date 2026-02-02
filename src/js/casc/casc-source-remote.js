@@ -236,7 +236,9 @@ class CASCRemote extends CASC {
 	 */
 	getProductList() {
 		const products = [];
-		for (const entry of this.builds) {
+		for (let i = 0; i < this.builds.length; i++) {
+			const entry = this.builds[i];
+
 			// This check exists because some regions (e.g. China) may not have all products.
 			if (entry === undefined)
 				continue;
@@ -245,7 +247,7 @@ class CASCRemote extends CASC {
 			const label = util.format('%s %s', product.title, entry.VersionsName);
 			const versionMatch = entry.VersionsName.match(/^(\d+)\./);
 			const expansionId = versionMatch ? Math.min(parseInt(versionMatch[1]) - 1, 12) : 0;
-			products.push({ label, expansionId });
+			products.push({ label, expansionId, buildIndex: i });
 		}
 
 		return products;

@@ -146,12 +146,13 @@ class CASCLocal extends CASC {
 	 */
 	getProductList() {
 		const products = [];
-		for (const entry of this.builds) {
+		for (let i = 0; i < this.builds.length; i++) {
+			const entry = this.builds[i];
 			const product = constants.PRODUCTS.find(e => e.product === entry.Product);
 			const label = util.format('%s (%s) %s', product.title, entry.Branch.toUpperCase(), entry.Version);
 			const versionMatch = entry.Version.match(/^(\d+)\./);
 			const expansionId = versionMatch ? Math.min(parseInt(versionMatch[1]) - 1, 12) : 0;
-			products.push({ label, expansionId });
+			products.push({ label, expansionId, buildIndex: i });
 		}
 
 		return products;

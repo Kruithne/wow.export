@@ -58,7 +58,7 @@ module.exports = {
 			<div class="build-select-content">
 				<div class="build-select-title">Select Build</div>
 				<div class="build-select-buttons">
-					<input v-for="(build, i) in ($core.view.availableLocalBuilds || $core.view.availableRemoteBuilds)" @click="click_source_build(i)" :class="['expansion-icon-bg-' + build.expansionId, { disabled: $core.view.isBusy }]" type="button" :value="build.label"/>
+					<input v-for="(build, i) in ($core.view.availableLocalBuilds || $core.view.availableRemoteBuilds)" @click="click_source_build(build.buildIndex)" :class="['expansion-icon-bg-' + build.expansionId, { disabled: $core.view.isBusy }]" type="button" :value="build.label"/>
 				</div>
 				<span @click="click_return_to_source_select" class="link build-select-return">Return to Installations</span>
 			</div>
