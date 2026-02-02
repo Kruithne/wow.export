@@ -1,4 +1,4 @@
-## 0.2.10
+## 0.2.10 (02-02-2026)
 - Added support for the new WoW Classic: TBC Anniversary product.
 - Fixed a crash updating the Blender addon from the "update available" notification.
 
