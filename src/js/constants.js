@@ -107,7 +107,8 @@ module.exports = {
 		{ product: 'wow_classic_ptr', title: 'PTR: World of Warcraft Classic', tag: 'Classic PTR' },
 		{ product: 'wow_classic_era', title: 'World of Warcraft Classic Era', tag: 'Classic Era' },
 		{ product: 'wow_classic_era_ptr', title: 'PTR: World of Warcraft Classic Era', tag: 'Classic Era PTR' },
-		{ product: 'wow_classic_titan', title: 'World of Warcraft Classic Titan Reforged', tag: 'Classic Titan' }
+		{ product: 'wow_classic_titan', title: 'World of Warcraft Classic Titan Reforged', tag: 'Classic Titan' },
+		{ product: 'wow_anniversary', title: 'World of Warcraft Classic Anniversary', tag: 'Classic Anniversary' }
 	],
 
 	PATCH: {
