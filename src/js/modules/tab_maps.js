@@ -935,6 +935,48 @@ module.exports = {
 			helper.finish();
 		},
 
+		async initialize() {
+			this.$core.showLoadingScreen(3);
+			await this.$core.progressLoadingScreen('Loading WMO minimap textures...');
+
+			wmo_minimap_textures = new Map();
+			for (const row of (await db2.WMOMinimapTexture.getAllRows()).values()) {
+				let tiles = wmo_minimap_textures.get(row.WMOID);
+				if (tiles === undefined) {
+					tiles = [];
+					wmo_minimap_textures.set(row.WMOID, tiles);
+				}
+
+				tiles.push({
+					groupNum: row.GroupNum,
+					blockX: row.BlockX,
+					blockY: row.BlockY,
+					fileDataID: row.FileDataID
+				});
+			}
+
+			log.write('loaded %d WMO minimap entries', wmo_minimap_textures.size);
+
+			await this.$core.progressLoadingScreen('Loading maps...');
+
+			const maps = [];
+			for (const [id, entry] of await db2.Map.getAllRows()) {
+				const wdt_path = `world/maps/${entry.Directory}/${entry.Directory}.wdt`;
+
+				if (entry.WdtFileDataID) {
+					if (!listfile.existsByID(entry.WdtFileDataID))
+						listfile.addEntry(entry.WdtFileDataID, wdt_path);
+
+					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+				} else if (listfile.getByFilename(wdt_path)) {
+					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+				}
+			}
+
+			this.$core.view.mapViewerMaps = maps;
+			this.$core.hideLoadingScreen();
+		},
+
 		async export_selected_map_as_heightmaps() {
 			const export_tiles = this.$core.view.mapViewerSelection;
 			let export_resolution = this.$core.view.config.heightmapResolution;
@@ -1100,50 +1142,6 @@ module.exports = {
 			}
 		});
 
-		try {
-			this.$core.showLoadingScreen(3);
-			await this.$core.progressLoadingScreen('Loading WMO minimap textures...');
-
-			wmo_minimap_textures = new Map();
-			for (const row of (await db2.WMOMinimapTexture.getAllRows()).values()) {
-				let tiles = wmo_minimap_textures.get(row.WMOID);
-				if (tiles === undefined) {
-					tiles = [];
-					wmo_minimap_textures.set(row.WMOID, tiles);
-				}
-
-				tiles.push({
-					groupNum: row.GroupNum,
-					blockX: row.BlockX,
-					blockY: row.BlockY,
-					fileDataID: row.FileDataID
-				});
-			}
-
-			log.write('loaded %d WMO minimap entries', wmo_minimap_textures.size);
-
-			await this.$core.progressLoadingScreen('Loading maps...');
-
-			const maps = [];
-			for (const [id, entry] of await db2.Map.getAllRows()) {
-				const wdt_path = `world/maps/${entry.Directory}/${entry.Directory}.wdt`;
-
-				if (entry.WdtFileDataID) {
-					if (!listfile.existsByID(entry.WdtFileDataID))
-						listfile.addEntry(entry.WdtFileDataID, wdt_path);
-
-					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
-				} else if (listfile.getByFilename(wdt_path)) {
-					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
-				}
-			}
-
-			this.$core.view.mapViewerMaps = maps;
-			this.$core.hideLoadingScreen();
-		} catch (e) {
-			log.write('failed to load map data: %s', e.message);
-			this.$core.setToast('error', 'Failed to load map data. Check the log for details.');
-			this.$core.hideLoadingScreen();
-		}
+		await this.initialize();
 	}
 };

@@ -21,6 +21,8 @@ class ItemSet {
 let item_sets = [];
 
 const initialize_item_sets = async (core) => {
+	item_sets.length = 0;
+
 	await core.progressLoadingScreen('Loading item data...');
 	await DBItems.ensureInitialized();
 
@@ -84,6 +86,13 @@ module.exports = {
 	`,
 
 	methods: {
+		async initialize() {
+			this.$core.showLoadingScreen(3);
+			await initialize_item_sets(this.$core);
+			this.$core.hideLoadingScreen();
+			apply_filter(this.$core);
+		},
+
 		equip_set(set) {
 			let equipped_count = 0;
 
@@ -105,17 +114,6 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(3);
-
-		try {
-			await initialize_item_sets(this.$core);
-			this.$core.hideLoadingScreen();
-
-			apply_filter(this.$core);
-		} catch (error) {
-			this.$core.hideLoadingScreen();
-			log.write('Failed to initialize item sets tab: %o', error);
-			this.$core.setToast('error', 'Failed to load item sets. Check the log for details.');
-		}
+		await this.initialize();
 	}
 };

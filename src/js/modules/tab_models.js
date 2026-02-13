@@ -21,7 +21,6 @@ let selected_skin_name = null;
 
 let active_renderer;
 let active_path;
-let tab_initialized = false;
 
 const get_view_state = (core) => ({
 	get texturePreviewURL() { return core.view.modelTexturePreviewURL; },
@@ -60,9 +59,6 @@ const get_model_displays = (file_data_id) => {
 };
 
 const preview_model = async (core, file_name) => {
-	if (!tab_initialized)
-		return;
-
 	using _lock = core.create_busy_lock();
 	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
 	log.write('Previewing model %s', file_name);
@@ -553,37 +549,28 @@ module.exports = {
 
 			this.$core.showLoadingScreen(step_count);
 
-			try {
-				await this.$core.progressLoadingScreen('Loading model file data...');
-				await DBModelFileData.initializeModelFileData();
+			await this.$core.progressLoadingScreen('Loading model file data...');
+			await DBModelFileData.initializeModelFileData();
 
-				if (this.$core.view.config.enableUnknownFiles) {
-					await this.$core.progressLoadingScreen('Loading unknown models...');
-					await listfile.loadUnknownModels();
-				}
-
-				if (this.$core.view.config.enableM2Skins) {
-					await this.$core.progressLoadingScreen('Loading item displays...');
-					await DBItemDisplays.initializeItemDisplays();
-
-					await this.$core.progressLoadingScreen('Loading creature data...');
-					await DBCreatures.initializeCreatureData();
-				}
-
-				await this.$core.progressLoadingScreen('Initializing 3D preview...');
-
-				if (!this.$core.view.modelViewerContext)
-					this.$core.view.modelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
-
-				this.$core.hideLoadingScreen();
-				tab_initialized = true;
-			} catch (error) {
-				this.$core.hideLoadingScreen();
-				log.write('Failed to initialize models tab: %o', error);
-				this.$core.setToast('error', 'Failed to initialize models tab. Check the log for details.');
-				this.$core.view.modelViewerContext = null;
-				this.$modules.go_to_landing();
+			if (this.$core.view.config.enableUnknownFiles) {
+				await this.$core.progressLoadingScreen('Loading unknown models...');
+				await listfile.loadUnknownModels();
 			}
+
+			if (this.$core.view.config.enableM2Skins) {
+				await this.$core.progressLoadingScreen('Loading item displays...');
+				await DBItemDisplays.initializeItemDisplays();
+
+				await this.$core.progressLoadingScreen('Loading creature data...');
+				await DBCreatures.initializeCreatureData();
+			}
+
+			await this.$core.progressLoadingScreen('Initializing 3D preview...');
+
+			if (!this.$core.view.modelViewerContext)
+				this.$core.view.modelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+
+			this.$core.hideLoadingScreen();
 		}
 	},
 
@@ -646,6 +633,9 @@ module.exports = {
 		});
 
 		this.$core.view.$watch('selectionModels', async selection => {
+			if (!this._tab_initialized)
+				return;
+
 			if (!this.$core.view.config.modelsAutoPreview)
 				return;
 
@@ -658,11 +648,6 @@ module.exports = {
 			const state = get_view_state(this.$core);
 			modelViewerUtils.toggle_uv_layer(state, active_renderer, layer_name);
 		});
-	},
-
-	activated() {
-		if (!tab_initialized)
-			this.initialize();
 	},
 
 	getActiveRenderer: () => active_renderer

@@ -276,55 +276,48 @@ const play_streaming_video = async (core_ref, url, video, subtitle_info) => {
 };
 
 const load_video_listfile = async () => {
-	try {
-		log.write('loading MovieVariation table...');
-		const movie_variation = await db2.preload.MovieVariation();
+	log.write('loading MovieVariation table...');
+	const movie_variation = await db2.preload.MovieVariation();
 
-		movie_variation_map = new Map();
-		const seen_ids = new Set();
-		video_file_data_ids = [];
+	movie_variation_map = new Map();
+	const seen_ids = new Set();
+	video_file_data_ids = [];
 
-		const rows = await movie_variation.getAllRows();
+	const rows = await movie_variation.getAllRows();
 
-		for (const [id, row] of rows) {
-			if (row.FileDataID && row.MovieID) {
-				movie_variation_map.set(row.FileDataID, row.MovieID);
+	for (const [id, row] of rows) {
+		if (row.FileDataID && row.MovieID) {
+			movie_variation_map.set(row.FileDataID, row.MovieID);
 
-				if (!seen_ids.has(row.FileDataID)) {
-					seen_ids.add(row.FileDataID);
-					video_file_data_ids.push(row.FileDataID);
-				}
+			if (!seen_ids.has(row.FileDataID)) {
+				seen_ids.add(row.FileDataID);
+				video_file_data_ids.push(row.FileDataID);
 			}
 		}
-
-		log.write('loaded %d movie variation mappings', movie_variation_map.size);
-
-		// build the listfile from FileDataIDs
-		const entries = new Array(video_file_data_ids.length);
-		for (let i = 0; i < video_file_data_ids.length; i++) {
-			const fid = video_file_data_ids[i];
-			let filename = listfile.getByID(fid);
-
-			if (!filename) {
-				filename = 'interface/cinematics/unk_' + fid + '.avi';
-				listfile.addEntry(fid, filename);
-			}
-
-			entries[i] = `${filename} [${fid}]`;
-		}
-
-		if (core.view.config.listfileSortByID)
-			entries.sort((a, b) => listfile.getByFilename(listfile.stripFileEntry(a)) - listfile.getByFilename(listfile.stripFileEntry(b)));
-		else
-			entries.sort();
-
-		core.view.listfileVideos = entries;
-		log.write('built video listfile with %d entries', entries.length);
-	} catch (e) {
-		log.write('failed to load MovieVariation table: %s', e.message);
-		movie_variation_map = null;
-		video_file_data_ids = null;
 	}
+
+	log.write('loaded %d movie variation mappings', movie_variation_map.size);
+
+	const entries = new Array(video_file_data_ids.length);
+	for (let i = 0; i < video_file_data_ids.length; i++) {
+		const fid = video_file_data_ids[i];
+		let filename = listfile.getByID(fid);
+
+		if (!filename) {
+			filename = 'interface/cinematics/unk_' + fid + '.avi';
+			listfile.addEntry(fid, filename);
+		}
+
+		entries[i] = `${filename} [${fid}]`;
+	}
+
+	if (core.view.config.listfileSortByID)
+		entries.sort((a, b) => listfile.getByFilename(listfile.stripFileEntry(a)) - listfile.getByFilename(listfile.stripFileEntry(b)));
+	else
+		entries.sort();
+
+	core.view.listfileVideos = entries;
+	log.write('built video listfile with %d entries', entries.length);
 };
 
 const get_movie_data = async (file_data_id) => {
@@ -537,6 +530,13 @@ module.exports = {
 
 		open_export_directory(selection) {
 			listboxContext.open_export_directory(selection);
+		},
+
+		async initialize() {
+			this.$core.showLoadingScreen(1);
+			await core.progressLoadingScreen('Loading video metadata...');
+			await load_video_listfile();
+			this.$core.hideLoadingScreen();
 		},
 
 		async preview_video() {
@@ -828,16 +828,7 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(1);
-
-		try {
-			await core.progressLoadingScreen('Loading video metadata...');
-			await load_video_listfile();
-			this.$core.hideLoadingScreen();
-		} catch (e) {
-			this.$core.hideLoadingScreen();
-			log.write('failed to initialize videos tab: %s', e.message);
-		}
+		await this.initialize();
 
 		this.$core.view.$watch('selectionVideos', async selection => {
 			if (selection.length === 0)

@@ -13,14 +13,10 @@ const initialize_available_tables = async (core) => {
 	if (manifest.length > 0)
 		return;
 
-	try {
-		await dbd_manifest.prepareManifest();
-		const table_names = dbd_manifest.getAllTableNames();
-		manifest.push(...table_names);
-		log.write('initialized available db2 tables from dbd manifest');
-	} catch (e) {
-		log.write('failed to initialize available db2 tables: %s', e.message);
-	}
+	await dbd_manifest.prepareManifest();
+	const table_names = dbd_manifest.getAllTableNames();
+	manifest.push(...table_names);
+	log.write('initialized available db2 tables from dbd manifest');
 };
 
 const load_table = async (core, table_name) => {
@@ -158,6 +154,13 @@ module.exports = {
 			nw.Clipboard.get().set(String(value), 'text');
 		},
 
+		async initialize() {
+			this.$core.showLoadingScreen(1);
+			await this.$core.progressLoadingScreen('Loading data table manifest...');
+			await initialize_available_tables(this.$core);
+			this.$core.hideLoadingScreen();
+		},
+
 		async export_data() {
 			const format = this.$core.view.config.exportDataFormat;
 
@@ -241,18 +244,7 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(1);
-
-		try {
-			await this.$core.progressLoadingScreen('Loading data table manifest...');
-			await initialize_available_tables(this.$core);
-
-			this.$core.hideLoadingScreen();
-		} catch (error) {
-			this.$core.hideLoadingScreen();
-			log.write('Failed to initialize data tab: %o', error);
-			this.$core.setToast('error', 'Failed to load data table manifest. Check the log for details.');
-		}
+		await this.initialize();
 
 		this.$core.view.$watch('selectionDB2s', async selection => {
 			const first = selection[0];

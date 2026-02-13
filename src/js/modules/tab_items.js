@@ -127,6 +127,8 @@ const view_item_textures = async (core, modules, item) => {
 };
 
 const initialize_items = async (core) => {
+	items.length = 0;
+
 	await core.progressLoadingScreen('Loading model file data...');
 	await DBModelFileData.initializeModelFileData();
 
@@ -272,6 +274,39 @@ module.exports = {
 	`,
 
 	methods: {
+		async initialize() {
+			this.$core.showLoadingScreen(2);
+
+			await initialize_items(this.$core);
+			this.$core.hideLoadingScreen();
+
+			const enabled_types = this.$core.view.config.itemViewerEnabledTypes;
+			const pending_slot = this.$core.view.pendingItemSlotFilter;
+			const type_mask = [];
+
+			for (const label of Object.keys(ITEM_SLOTS_MERGED)) {
+				if (pending_slot)
+					type_mask.push({ label, checked: label === pending_slot });
+				else
+					type_mask.push({ label, checked: enabled_types.includes(label) });
+			}
+
+			this.$core.view.pendingItemSlotFilter = null;
+
+			const enabled_qualities = this.$core.view.config.itemViewerEnabledQualities;
+			const quality_mask = ITEM_QUALITIES.map(q => ({
+				id: q.id,
+				label: q.label,
+				checked: enabled_qualities === undefined || enabled_qualities.includes(q.id)
+			}));
+
+			this.$core.view.$watch('itemViewerTypeMask', () => apply_filters(this.$core), { deep: true });
+			this.$core.view.$watch('itemViewerQualityMask', () => apply_filters(this.$core), { deep: true });
+
+			this.$core.view.itemViewerQualityMask = quality_mask;
+			this.$core.view.itemViewerTypeMask = type_mask;
+		},
+
 		view_models(item) {
 			view_item_models(this.$core, this.$modules, item);
 		},
@@ -308,41 +343,6 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(2);
-
-		try {
-			await initialize_items(this.$core);
-			this.$core.hideLoadingScreen();
-
-			const enabled_types = this.$core.view.config.itemViewerEnabledTypes;
-			const pending_slot = this.$core.view.pendingItemSlotFilter;
-			const type_mask = [];
-
-			for (const label of Object.keys(ITEM_SLOTS_MERGED)) {
-				if (pending_slot)
-					type_mask.push({ label, checked: label === pending_slot });
-				else
-					type_mask.push({ label, checked: enabled_types.includes(label) });
-			}
-
-			this.$core.view.pendingItemSlotFilter = null;
-
-			const enabled_qualities = this.$core.view.config.itemViewerEnabledQualities;
-			const quality_mask = ITEM_QUALITIES.map(q => ({
-				id: q.id,
-				label: q.label,
-				checked: enabled_qualities === undefined || enabled_qualities.includes(q.id)
-			}));
-
-			this.$core.view.$watch('itemViewerTypeMask', () => apply_filters(this.$core), { deep: true });
-			this.$core.view.$watch('itemViewerQualityMask', () => apply_filters(this.$core), { deep: true });
-
-			this.$core.view.itemViewerQualityMask = quality_mask;
-			this.$core.view.itemViewerTypeMask = type_mask;
-		} catch (error) {
-			this.$core.hideLoadingScreen();
-			log.write('Failed to initialize items tab: %o', error);
-			this.$core.setToast('error', 'Failed to load items. Check the log for details.');
-		}
+		await this.initialize();
 	}
 };

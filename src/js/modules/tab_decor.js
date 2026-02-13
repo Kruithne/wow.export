@@ -317,6 +317,35 @@ module.exports = {
 	`,
 
 	methods: {
+		async initialize() {
+			this.$core.showLoadingScreen(2);
+
+			await this.$core.progressLoadingScreen('Loading model file data...');
+			await DBModelFileData.initializeModelFileData();
+
+			await this.$core.progressLoadingScreen('Loading house decor data...');
+			await DBDecor.initializeDecorData();
+
+			const decor_items = DBDecor.getAllDecorItems();
+			const listfile_entries = [];
+
+			for (const [id, item] of decor_items)
+				listfile_entries.push(`${item.name} [${id}]`);
+
+			listfile_entries.sort((a, b) => {
+				const name_a = a.replace(/\s+\[\d+\]$/, '').toLowerCase();
+				const name_b = b.replace(/\s+\[\d+\]$/, '').toLowerCase();
+				return name_a.localeCompare(name_b);
+			});
+
+			this.$core.view.listfileDecor = listfile_entries;
+
+			if (!this.$core.view.decorViewerContext)
+				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+
+			this.$core.hideLoadingScreen();
+		},
+
 		handle_listbox_context(data) {
 			listboxContext.handle_context_menu(data);
 		},
@@ -423,38 +452,7 @@ module.exports = {
 	},
 
 	async mounted() {
-		this.$core.showLoadingScreen(2);
-
-		try {
-			await this.$core.progressLoadingScreen('Loading model file data...');
-			await DBModelFileData.initializeModelFileData();
-
-			await this.$core.progressLoadingScreen('Loading house decor data...');
-			await DBDecor.initializeDecorData();
-
-			const decor_items = DBDecor.getAllDecorItems();
-			const listfile_entries = [];
-
-			for (const [id, item] of decor_items)
-				listfile_entries.push(`${item.name} [${id}]`);
-
-			listfile_entries.sort((a, b) => {
-				const name_a = a.replace(/\s+\[\d+\]$/, '').toLowerCase();
-				const name_b = b.replace(/\s+\[\d+\]$/, '').toLowerCase();
-				return name_a.localeCompare(name_b);
-			});
-
-			this.$core.view.listfileDecor = listfile_entries;
-
-			if (!this.$core.view.decorViewerContext)
-				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
-
-			this.$core.hideLoadingScreen();
-		} catch (error) {
-			this.$core.hideLoadingScreen();
-			log.write('Failed to initialize decor tab: %o', error);
-			this.$core.setToast('error', 'Failed to initialize decor tab. Check the log for details.');
-		}
+		await this.initialize();
 
 		const state = get_view_state(this.$core);
 

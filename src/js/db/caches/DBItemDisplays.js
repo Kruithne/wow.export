@@ -10,11 +10,15 @@ const DBModelFileData = require('./DBModelFileData');
 const DBTextureFileData = require('./DBTextureFileData');
 
 const itemDisplays = new Map();
+let initialized = false;
 
 /**
  * Initialize item displays from ItemDisplayInfo.db2
  */
 const initializeItemDisplays = async () => {
+	if (initialized)
+		return;
+
 	await DBTextureFileData.ensureInitialized();
 
 	log.write('Loading item textures...');
@@ -45,6 +49,7 @@ const initializeItemDisplays = async () => {
 	}
 
 	log.write('Loaded textures for %d items', itemDisplays.size);
+	initialized = true;
 };
 
 /**

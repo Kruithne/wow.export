@@ -382,6 +382,34 @@ module.exports = {
 			await export_texture_atlas_regions(this.$core, selected_file_data_id);
 		},
 
+		async initialize() {
+			const needs_unknown_textures = this.$core.view.config.enableUnknownFiles && !has_loaded_unknown_textures;
+			const needs_atlas_data = !has_loaded_atlas_table && this.$core.view.config.showTextureAtlas;
+
+			if (needs_unknown_textures || needs_atlas_data) {
+				let step_count = 0;
+				if (needs_unknown_textures)
+					step_count += 2;
+
+				if (needs_atlas_data)
+					step_count += 1;
+
+				this.$core.showLoadingScreen(step_count);
+
+				if (needs_unknown_textures) {
+					await this.$core.progressLoadingScreen('Loading texture file data...');
+					await this.$core.progressLoadingScreen('Loading unknown textures...');
+					await listfile.loadUnknownTextures();
+					has_loaded_unknown_textures = true;
+				}
+
+				if (needs_atlas_data)
+					await load_texture_atlas_data(this.$core);
+
+				this.$core.hideLoadingScreen();
+			}
+		},
+
 		async apply_baked_npc_texture() {
 			if (!is_baked_npc_texture(this.$core))
 				return;
@@ -406,37 +434,7 @@ module.exports = {
 	},
 
 	async mounted() {
-		const needs_unknown_textures = this.$core.view.config.enableUnknownFiles && !has_loaded_unknown_textures;
-		const needs_atlas_data = !has_loaded_atlas_table && this.$core.view.config.showTextureAtlas;
-
-		if (needs_unknown_textures || needs_atlas_data) {
-			let step_count = 0;
-			if (needs_unknown_textures)
-				step_count += 2;
-
-			if (needs_atlas_data)
-				step_count += 1;
-
-			this.$core.showLoadingScreen(step_count);
-
-			try {
-				if (needs_unknown_textures) {
-					await this.$core.progressLoadingScreen('Loading texture file data...');
-					await this.$core.progressLoadingScreen('Loading unknown textures...');
-					await listfile.loadUnknownTextures();
-					has_loaded_unknown_textures = true;
-				}
-
-				if (needs_atlas_data)
-					await load_texture_atlas_data(this.$core);
-
-				this.$core.hideLoadingScreen();
-			} catch (error) {
-				this.$core.hideLoadingScreen();
-				log.write('Failed to initialize textures tab: %o', error);
-				this.$core.setToast('error', 'Failed to load texture data. Check the log for details.');
-			}
-		}
+		await this.initialize();
 
 		attach_overlay_listener(this.$core);
 

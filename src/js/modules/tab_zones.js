@@ -393,6 +393,51 @@ module.exports = {
 			nw.Shell.openItem(dir);
 		},
 
+		async initialize() {
+			this.$core.showLoadingScreen(3);
+
+			await this.$core.progressLoadingScreen('Loading map tiles...');
+			await db2.preload.UiMapArtTile();
+
+			await this.$core.progressLoadingScreen('Loading map overlays...');
+			await db2.preload.WorldMapOverlay();
+			await db2.preload.WorldMapOverlayTile();
+
+			await this.$core.progressLoadingScreen('Loading zone data...');
+
+			const expansion_map = new Map();
+			for (const [id, entry] of await db2.Map.getAllRows())
+				expansion_map.set(id, entry.ExpansionID);
+
+			log.write('loaded %d maps for expansion mapping', expansion_map.size);
+
+			const available_zones = new Set();
+			for (const entry of (await db2.UiMapAssignment.getAllRows()).values())
+				available_zones.add(entry.AreaID);
+
+			log.write('loaded %d zones from UiMapAssignment', available_zones.size);
+
+			const table = db2.AreaTable;
+
+			const zones = [];
+			for (const [id, entry] of await table.getAllRows()) {
+				const expansion_id = expansion_map.get(entry.ContinentID) || 0;
+
+				if (!available_zones.has(id))
+					continue;
+
+				zones.push(
+					util.format('%d\x19[%d]\x19%s\x19(%s)',
+					expansion_id, id, entry.AreaName_lang, entry.ZoneName)
+				);
+			}
+
+			this.$core.view.zoneViewerZones = zones;
+			log.write('loaded %d zones from AreaTable', zones.length);
+
+			this.$core.hideLoadingScreen();
+		},
+
 		async export_zone_map() {
 			const user_selection = this.$core.view.selectionZones;
 			if (!user_selection || user_selection.length === 0) {
@@ -484,7 +529,7 @@ module.exports = {
 				await load_zone_map(selected_zone_id, selected_phase_id);
 			}
 		});
-		
+
 		this.$core.view.$watch('config.showZoneBaseMap', async (new_value, old_value) => {
 			if (new_value !== old_value && selected_zone_id && !this.$core.view.isBusy) {
 				log.write('zone base map setting changed, reloading zone %d', selected_zone_id);
@@ -499,54 +544,6 @@ module.exports = {
 			}
 		});
 
-		try {
-			this.$core.showLoadingScreen(3);
-
-			await this.$core.progressLoadingScreen('Loading map tiles...');
-			await db2.preload.UiMapArtTile();
-
-			await this.$core.progressLoadingScreen('Loading map overlays...');
-			await db2.preload.WorldMapOverlay();
-			await db2.preload.WorldMapOverlayTile();
-
-			await this.$core.progressLoadingScreen('Loading zone data...');
-
-			const expansion_map = new Map();
-			for (const [id, entry] of await db2.Map.getAllRows())
-				expansion_map.set(id, entry.ExpansionID);
-
-			log.write('loaded %d maps for expansion mapping', expansion_map.size);
-
-			const available_zones = new Set();
-			for (const entry of (await db2.UiMapAssignment.getAllRows()).values())
-				available_zones.add(entry.AreaID);
-
-			log.write('loaded %d zones from UiMapAssignment', available_zones.size);
-
-			const table = db2.AreaTable;
-
-			const zones = [];
-			for (const [id, entry] of await table.getAllRows()) {
-				const expansion_id = expansion_map.get(entry.ContinentID) || 0;
-
-				if (!available_zones.has(id))
-					continue;
-
-				zones.push(
-					util.format('%d\x19[%d]\x19%s\x19(%s)',
-					expansion_id, id, entry.AreaName_lang, entry.ZoneName)
-				);
-			}
-
-			this.$core.view.zoneViewerZones = zones;
-			log.write('loaded %d zones from AreaTable', zones.length);
-
-			this.$core.hideLoadingScreen();
-		} catch (e) {
-			this.$core.setToast('error', 'Failed to load zone data: ' + e.message, { 'View Log': () => log.openRuntimeLog() }, -1);
-			log.write('failed to load AreaTable.db2: %s', e.message);
-
-			this.$core.hideLoadingScreen();
-		}
+		await this.initialize();
 	}
 };
