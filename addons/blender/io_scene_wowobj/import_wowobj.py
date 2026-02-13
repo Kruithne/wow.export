@@ -20,9 +20,58 @@ MAP_SIZE = MAX_SIZE * 2
 ADT_SIZE = MAP_SIZE / 64
 CHUNK_SIZE = 33.33333
 TILE_SIZE = 533.33333
+PLACEMENT_ISSUE_LOG_LIMIT = 25
 
 def importWoWOBJAddon(objectFile, settings):
+    fileName = os.path.basename(objectFile)
+    if settings and fileName.startswith('adt_') and not getattr(settings, '_import_cache_cleared', False):
+        if 'importedModelIDs' in bpy.context.scene:
+            del bpy.context.scene['importedModelIDs']
+            print('[WoWOBJ] Cleared stale importedModelIDs cache at start of ADT import session.')
+        settings._import_cache_cleared = True
+
     importWoWOBJ(objectFile, None, settings)
+
+def _new_placement_stats(tileName):
+    return {
+        'tile': tileName,
+        'rows_total': 0,
+        'rows_m2': 0,
+        'rows_wmo': 0,
+        'rows_gobj': 0,
+        'rows_other': 0,
+        'imported_m2': 0,
+        'imported_wmo': 0,
+        'imported_gobj': 0,
+        'skipped_duplicates': 0,
+        'skipped_disabled_or_unknown': 0,
+        'missing_files': 0,
+        'failed_rows': 0,
+        'issue_logs': 0
+    }
+
+
+def _log_placement_issue(stats, message):
+    if stats['issue_logs'] < PLACEMENT_ISSUE_LOG_LIMIT:
+        print(message)
+    elif stats['issue_logs'] == PLACEMENT_ISSUE_LOG_LIMIT:
+        print(f"[WoWOBJ][{stats['tile']}] Additional placement import issues suppressed for this tile.")
+
+    stats['issue_logs'] += 1
+
+
+def _print_placement_summary(stats):
+    print(
+        f"[WoWOBJ][{stats['tile']}] Placement summary: "
+        f"rows={stats['rows_total']} "
+        f"(m2={stats['rows_m2']}, wmo={stats['rows_wmo']}, gobj={stats['rows_gobj']}, other={stats['rows_other']}), "
+        f"imported(m2={stats['imported_m2']}, wmo={stats['imported_wmo']}, gobj={stats['imported_gobj']}), "
+        f"skipped_duplicates={stats['skipped_duplicates']}, "
+        f"skipped_disabled_or_unknown={stats['skipped_disabled_or_unknown']}, "
+        f"missing_files={stats['missing_files']}, "
+        f"failed_rows={stats['failed_rows']}"
+    )
+
 
 def getFirstNodeOfType(nodes, nodeType):
     for node in nodes:
@@ -1667,7 +1716,10 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     use_csv = settings.importWMO or settings.importM2 or settings.importWMOSets or settings.importGOBJ
 
     if use_csv and os.path.exists(csvPath):
-        with open(csvPath) as csvFile:
+        placementStats = _new_placement_stats(fileName)
+        print(f"[WoWOBJ][{fileName}] Importing placement CSV: {csvPath}")
+
+        with open(csvPath, newline='', encoding='utf-8') as csvFile:
             reader = csv.DictReader(csvFile, delimiter=';')
             if 'Type' in reader.fieldnames:
                 importType = 'ADT'
@@ -1709,130 +1761,207 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                         givenParent.rotation_euler = [0, 0, 0]
                         givenParent.rotation_euler.x = radians(-90)
                         collection.link(givenParent)
-            for row in reader:
+
+            for rowIndex, row in enumerate(reader, start=2):
+                placementStats['rows_total'] += 1
+
                 if importType == 'ADT':
-                    if 'importedModelIDs' in bpy.context.scene:
-                        tempModelIDList = bpy.context.scene['importedModelIDs']
+                    rowType = (row.get('Type') or '').strip().lower()
+                    if rowType == 'm2':
+                        placementStats['rows_m2'] += 1
+                    elif rowType == 'wmo':
+                        placementStats['rows_wmo'] += 1
+                    elif rowType == 'gobj':
+                        placementStats['rows_gobj'] += 1
                     else:
-                        tempModelIDList = []
-                    if row['ModelId'] in tempModelIDList:
-                        if not settings.allowDuplicates:
-                            print('Skipping already imported model ' + row['ModelId'])
+                        placementStats['rows_other'] += 1
+
+                    tempModelIDList = bpy.context.scene.get('importedModelIDs', [])
+                    modelID = row.get('ModelId')
+                    if modelID:
+                        if modelID in tempModelIDList and not settings.allowDuplicates:
+                            placementStats['skipped_duplicates'] += 1
+                            print('Skipping already imported model ' + modelID)
                             continue
-                    else:
-                        tempModelIDList.append(row['ModelId'])
 
-                    # ADT CSV
-                    if row['Type'] == 'wmo' and settings.importWMO:
-                        print('ADT WMO import: ' + row['ModelFile'])
+                        if modelID not in tempModelIDList:
+                            tempModelIDList.append(modelID)
+                            bpy.context.scene['importedModelIDs'] = tempModelIDList
 
-                        # Make WMO parent that holds WMO and doodads
-                        parent = bpy.data.objects.new(os.path.basename(row['ModelFile']) + ' parent', None)
-                        parent.parent = wmoparent
-                        parent.location = (MAX_SIZE - float(row['PositionX']), (MAX_SIZE - float(row['PositionZ'])) * -1, float(row['PositionY']))
-                        parent.rotation_euler = [0, 0, 0]
-                        parent.rotation_euler.x += radians(float(row['RotationZ']))
-                        parent.rotation_euler.y += radians(float(row['RotationX']))
-                        parent.rotation_euler.z = radians((90 + float(row['RotationY'])))
+                    modelFile = row.get('ModelFile', '')
+                    modelName = os.path.basename(modelFile)
+                    modelPath = os.path.normpath(os.path.join(baseDir, modelFile))
 
-                        if row['ScaleFactor']:
-                            parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                    try:
+                        if rowType == 'wmo':
+                            if not settings.importWMO:
+                                placementStats['skipped_disabled_or_unknown'] += 1
+                                continue
 
-                        collection.link(parent)
+                            print('ADT WMO import: ' + modelFile)
 
-                        ## Only import OBJ if model is not yet in scene, otherwise copy existing
-                        if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, settings)
-                        else:
-                            ## Don't copy WMOs with doodads!
-                            if os.path.exists(os.path.join(baseDir, row['ModelFile'].replace('.obj', '_ModelPlacementInformation.csv'))):
-                                importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), parent, settings)
+                            # Make WMO parent that holds WMO and doodads
+                            parent = bpy.data.objects.new(modelName + ' parent', None)
+                            parent.parent = wmoparent
+                            parent.location = (MAX_SIZE - float(row['PositionX']), (MAX_SIZE - float(row['PositionZ'])) * -1, float(row['PositionY']))
+                            parent.rotation_euler = [0, 0, 0]
+                            parent.rotation_euler.x += radians(float(row['RotationZ']))
+                            parent.rotation_euler.y += radians(float(row['RotationX']))
+                            parent.rotation_euler.z = radians((90 + float(row['RotationY'])))
+
+                            if row['ScaleFactor']:
+                                parent.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+
+                            collection.link(parent)
+
+                            ## Only import OBJ if model is not yet in scene, otherwise copy existing
+                            if modelName not in bpy.data.objects:
+                                if not os.path.exists(modelPath):
+                                    placementStats['missing_files'] += 1
+                                    bpy.data.objects.remove(parent, do_unlink=True)
+                                    _log_placement_issue(placementStats, f"[WoWOBJ][{fileName}] Missing WMO model (line {rowIndex}): {modelPath}")
+                                    continue
+                                importedFile = importWoWOBJ(modelPath, parent, settings)
                             else:
-                                originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
+                                ## Don't copy WMOs with doodads!
+                                modelPlacementPath = os.path.splitext(modelPath)[0] + '_ModelPlacementInformation.csv'
+                                if os.path.exists(modelPlacementPath):
+                                    if not os.path.exists(modelPath):
+                                        placementStats['missing_files'] += 1
+                                        bpy.data.objects.remove(parent, do_unlink=True)
+                                        _log_placement_issue(placementStats, f"[WoWOBJ][{fileName}] Missing WMO model with placements (line {rowIndex}): {modelPath}")
+                                        continue
+                                    importedFile = importWoWOBJ(modelPath, parent, settings)
+                                else:
+                                    originalObject = bpy.data.objects[modelName]
+                                    importedFile = originalObject.copy()
+                                    importedFile.data = originalObject.data.copy()
+                                    collection.link(importedFile)
+
+                            importedFile.parent = parent
+                            placementStats['imported_wmo'] += 1
+                        elif rowType == 'm2':
+                            if not settings.importM2:
+                                placementStats['skipped_disabled_or_unknown'] += 1
+                                continue
+
+                            print('ADT M2 import: ' + modelFile)
+
+                            ## Only import OBJ if model is not yet in scene, otherwise copy existing
+                            if modelName not in bpy.data.objects:
+                                if not os.path.exists(modelPath):
+                                    placementStats['missing_files'] += 1
+                                    _log_placement_issue(placementStats, f"[WoWOBJ][{fileName}] Missing M2 model (line {rowIndex}): {modelPath}")
+                                    continue
+                                importedFile = importWoWOBJ(modelPath, None, settings)
+                            else:
+                                originalObject = bpy.data.objects[modelName]
                                 importedFile = originalObject.copy()
-                                importedFile.data = originalObject.data.copy()
+                                importedFile.rotation_euler = [0, 0, 0]
+                                importedFile.rotation_euler.x = radians(90)
                                 collection.link(importedFile)
 
-                        importedFile.parent = parent
-                    elif row['Type'] == 'm2' and settings.importM2:
-                        print('ADT M2 import: ' + row['ModelFile'])
+                            importedFile.parent = doodadparent
+                            importedFile.location.x = (MAX_SIZE - float(row['PositionX']))
+                            importedFile.location.y = (MAX_SIZE - float(row['PositionZ'])) * -1
+                            importedFile.location.z = float(row['PositionY'])
+                            importedFile.rotation_euler.x += radians(float(row['RotationZ']))
+                            importedFile.rotation_euler.y += radians(float(row['RotationX']))
+                            importedFile.rotation_euler.z = radians(90 + float(row['RotationY']))
+                            if row['ScaleFactor']:
+                                importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                            placementStats['imported_m2'] += 1
+                        elif rowType == 'gobj':
+                            if not settings.importGOBJ:
+                                placementStats['skipped_disabled_or_unknown'] += 1
+                                continue
 
-                        ## Only import OBJ if model is not yet in scene, otherwise copy existing
-                        if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, settings)
+                            if modelName not in bpy.data.objects:
+                                if not os.path.exists(modelPath):
+                                    placementStats['missing_files'] += 1
+                                    _log_placement_issue(placementStats, f"[WoWOBJ][{fileName}] Missing GOBJ model (line {rowIndex}): {modelPath}")
+                                    continue
+                                importedFile = importWoWOBJ(modelPath, None, settings)
+                            else:
+                                originalObject = bpy.data.objects[modelName]
+                                importedFile = originalObject.copy()
+                                importedFile.rotation_euler = [0, 0, 0]
+                                importedFile.rotation_euler.x = radians(90)
+                                collection.link(importedFile)
+
+                            importedFile.parent = gobjparent
+                            importedFile.location = (float(row['PositionY']), -float(row['PositionX']), float(row['PositionZ']))
+                            rotQuat = Quaternion((float(row['RotationX']), float(row['RotationY']), -float(row['RotationZ']), float(row['RotationW'])))
+                            rotEul = rotQuat.to_euler()
+                            importedFile.rotation_euler = rotEul
+                            if row['ScaleFactor']:
+                                importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                            placementStats['imported_gobj'] += 1
                         else:
-                            originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
-                            importedFile = originalObject.copy()
-                            importedFile.rotation_euler = [0, 0, 0]
-                            importedFile.rotation_euler.x = radians(90)
-                            collection.link(importedFile)
-
-                        importedFile.parent = doodadparent
-
-                        importedFile.location.x = (MAX_SIZE - float(row['PositionX']))
-                        importedFile.location.y = (MAX_SIZE - float(row['PositionZ'])) * -1
-                        importedFile.location.z = float(row['PositionY'])
-                        importedFile.rotation_euler.x += radians(float(row['RotationZ']))
-                        importedFile.rotation_euler.y += radians(float(row['RotationX']))
-                        importedFile.rotation_euler.z = radians(90 + float(row['RotationY']))
-                        if row['ScaleFactor']:
-                            importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
-                    elif row['Type'] == 'gobj' and settings.importGOBJ:
-                        if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                            importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, settings)
-                        else:
-                            originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
-                            importedFile = originalObject.copy()
-                            importedFile.rotation_euler = [0, 0, 0]
-                            importedFile.rotation_euler.x = radians(90)
-                            collection.link(importedFile)
-
-                        importedFile.parent = gobjparent
-                        importedFile.location = (float(row['PositionY']), -float(row['PositionX']), float(row['PositionZ']))
-                        rotQuat = Quaternion((float(row['RotationX']), float(row['RotationY']), -float(row['RotationZ']), float(row['RotationW'])))
-                        rotEul = rotQuat.to_euler()
-                        importedFile.rotation_euler = rotEul
-                        if row['ScaleFactor']:
-                            importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
-                    bpy.context.scene['importedModelIDs'] = tempModelIDList
+                            placementStats['skipped_disabled_or_unknown'] += 1
+                    except Exception as ex:
+                        placementStats['failed_rows'] += 1
+                        _log_placement_issue(
+                            placementStats,
+                            f"[WoWOBJ][{fileName}] Failed to import ADT row {rowIndex} ({rowType} {modelFile}): {ex}"
+                        )
                 elif settings.importWMOSets:
                     # WMO CSV
-                    print('WMO M2 import: ' + row['ModelFile'])
-                    if os.path.basename(row['ModelFile']) not in bpy.data.objects:
-                        importedFile = importWoWOBJ(os.path.join(baseDir, row['ModelFile']), None, settings)
-                    else:
-                        originalObject = bpy.data.objects[os.path.basename(row['ModelFile'])]
-                        importedFile = originalObject.copy()
-                        if not settings.createDoodadSetCollections:
-                            collection.link(importedFile)
+                    modelFile = row.get('ModelFile', '')
+                    modelName = os.path.basename(modelFile)
+                    modelPath = os.path.normpath(os.path.join(baseDir, modelFile))
+                    print('WMO M2 import: ' + modelFile)
 
-                    importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
+                    try:
+                        if modelName not in bpy.data.objects:
+                            if not os.path.exists(modelPath):
+                                placementStats['missing_files'] += 1
+                                _log_placement_issue(placementStats, f"[WoWOBJ][{fileName}] Missing WMO set model (line {rowIndex}): {modelPath}")
+                                continue
+                            importedFile = importWoWOBJ(modelPath, None, settings)
+                        else:
+                            originalObject = bpy.data.objects[modelName]
+                            importedFile = originalObject.copy()
+                            if not settings.createDoodadSetCollections:
+                                collection.link(importedFile)
 
-                    importedFile.rotation_euler = [0, 0, 0]
-                    rotQuat = Quaternion((float(row['RotationW']), float(row['RotationX']), float(row['RotationY']), float(row['RotationZ'])))
-                    rotEul = rotQuat.to_euler()
-                    rotEul.x += radians(90)
-                    importedFile.rotation_euler = rotEul
-                    importedFile.parent = givenParent or obj
-                    if row['ScaleFactor']:
-                        importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
+                        importedFile.location = (float(row['PositionX']), float(row['PositionY']), float(row['PositionZ']))
 
-                    if settings.createDoodadSetCollections:
-                        if row['DoodadSet']:
-                            print("Valid DoodadSet found: " + row['DoodadSet'])
-                            collectionName = row['DoodadSet']
-                            collection = bpy.data.collections.get(collectionName)
-                            
-                            if collection is None:
-                                print("Collection for " + collectionName + " does not exist. Creating collection..")
-                                collection = bpy.data.collections.new(collectionName)
-                                bpy.context.scene.collection.children.link(collection)
-                            
-                            if collection.name not in bpy.context.scene.collection.children:
-                                print("Collection " + collectionName + " isn't linked to scene. Linking collection..")
-                                bpy.context.scene.collection.children.link(collection)
+                        importedFile.rotation_euler = [0, 0, 0]
+                        rotQuat = Quaternion((float(row['RotationW']), float(row['RotationX']), float(row['RotationY']), float(row['RotationZ'])))
+                        rotEul = rotQuat.to_euler()
+                        rotEul.x += radians(90)
+                        importedFile.rotation_euler = rotEul
+                        importedFile.parent = givenParent or obj
+                        if row['ScaleFactor']:
+                            importedFile.scale = (float(row['ScaleFactor']), float(row['ScaleFactor']), float(row['ScaleFactor']))
 
-                            if collection:
-                                print("Valid collection present. Linking " + importedFile.name)
-                                collection.objects.link(importedFile)
+                        if settings.createDoodadSetCollections:
+                            if row['DoodadSet']:
+                                print("Valid DoodadSet found: " + row['DoodadSet'])
+                                collectionName = row['DoodadSet']
+                                collection = bpy.data.collections.get(collectionName)
+
+                                if collection is None:
+                                    print("Collection for " + collectionName + " does not exist. Creating collection..")
+                                    collection = bpy.data.collections.new(collectionName)
+                                    bpy.context.scene.collection.children.link(collection)
+
+                                if collection.name not in bpy.context.scene.collection.children:
+                                    print("Collection " + collectionName + " isn't linked to scene. Linking collection..")
+                                    bpy.context.scene.collection.children.link(collection)
+
+                                if collection:
+                                    print("Valid collection present. Linking " + importedFile.name)
+                                    collection.objects.link(importedFile)
+                    except Exception as ex:
+                        placementStats['failed_rows'] += 1
+                        _log_placement_issue(
+                            placementStats,
+                            f"[WoWOBJ][{fileName}] Failed to import WMO set row {rowIndex} ({modelFile}): {ex}"
+                        )
+
+        _print_placement_summary(placementStats)
+    elif use_csv:
+        print(f"[WoWOBJ][{fileName}] Placement CSV not found: {csvPath}")
     return obj
