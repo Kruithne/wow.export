@@ -7,6 +7,7 @@ const util = require('util');
 const constants = require('../constants');
 const generics = require('../generics');
 const log = require('../log');
+const core = require('../core');
 const VersionConfig = require('./version-config');
 
 /**
@@ -130,7 +131,8 @@ class CDNResolver {
 	 * @returns {string} Cache key
 	 */
 	_getCacheKey(region, hosts) {
-		return region + '|' + hosts;
+		const fallback = core.view?.config?.cdnFallbackHosts ?? '';
+		return region + '|' + hosts + '|' + fallback;
 	}
 
 	/**
@@ -174,6 +176,18 @@ class CDNResolver {
 		log.write('Resolving best host for %s: %s', region, serverConfig.Hosts);
 
 		const hosts = serverConfig.Hosts.split(' ').map(e => 'https://' + e + '/');
+
+		const fallback_raw = core.view?.config?.cdnFallbackHosts ?? '';
+		const fallback_hosts = fallback_raw.split(',')
+			.map(h => h.trim())
+			.filter(h => h.length > 0)
+			.map(h => 'https://' + h + '/');
+
+		for (const fh of fallback_hosts) {
+			if (!hosts.includes(fh))
+				hosts.push(fh);
+		}
+
 		const validHosts = [];
 		const hostPings = [];
 

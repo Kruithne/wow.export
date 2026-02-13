@@ -273,6 +273,12 @@ module.exports = {
 				<input type="number" v-model.number="$core.view.configEdit.cacheExpiry"/>
 			</div>
 			<div>
+				<h1>CDN Fallback Hosts</h1>
+				<p>Comma-separated list of additional CDN hostnames to try when official CDN servers are unavailable or slow.</p>
+				<p>These are pinged alongside official servers and used based on speed and availability.</p>
+				<p><input type="text" class="long" v-model.trim="$core.view.configEdit.cdnFallbackHosts"/></p>
+			</div>
+			<div>
 				<h1>Manually Clear Cache (Requires Restart)</h1>
 				<p>While housekeeping on the cache is mostly automatic, sometimes clearing manually can resolve issues.</p>
 				<input type="button" class="spaced" :value="'Clear Cache (' + cache_size_formatted + ')'" @click="handle_cache_clear" :class="{ disabled: $core.view.isBusy }"/>

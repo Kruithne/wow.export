@@ -1,3 +1,7 @@
+## 0.2.12
+- Added cdn.blizzard.com and casc.wago.tools as CDN fallbacks.
+- Added user-setting option to configure CDN fallback hosts.
+
 ## 0.2.11
 - Fixed an issue that would cause an error when exporting models with "Textures" disabled.
 
