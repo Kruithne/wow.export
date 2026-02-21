@@ -296,6 +296,10 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelsExportAlpha"/>
 					<span>Texture Alpha</span>
 				</label>
+				<label v-if="$core.view.config.exportDecorFormat === 'GLTF' && $core.view.decorViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
+					<span>Export animations</span>
+				</label>
 				<template v-if="$core.view.decorViewerActiveType === 'm2'">
 					<span class="header">Geosets</span>
 					<component :is="$components.Checkboxlist" :items="$core.view.decorViewerGeosets"></component>
