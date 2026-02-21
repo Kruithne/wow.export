@@ -862,7 +862,7 @@ async function load_character_model(core, file_data_id) {
 		await refresh_character_appearance(core);
 
 	} catch (e) {
-		core.setToast('error', 'Unable to load model ' + file_data_id, { 'View log': () => log.openRuntimelog() }, -1);
+		core.setToast('error', 'Unable to load model ' + file_data_id, { 'View log': () => log.openRuntimeLog() }, -1);
 		log.write('Failed to load character model: %s', e.message);
 	}
 
