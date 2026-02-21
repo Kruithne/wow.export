@@ -2856,14 +2856,21 @@ input[type=number]::-webkit-outer-spin-button {
 	right: 20px;
 	top: 20px;
 	bottom: 200px;
-	width: 250px;
 	z-index: 1;
 	pointer-events: auto;
 	display: flex;
+	flex-direction: row;
+	gap: 10px;
+	align-items: flex-start;
+	padding-left: 15px;
+}
+#tab-characters .right-panel .equipment-list {
+	display: flex;
 	flex-direction: column;
 	gap: 10px;
+	width: 250px;
 	overflow-y: auto;
-	padding-left: 15px;
+	max-height: 100%;
 }
 #tab-characters .right-panel .equipment-slot {
 	display: flex;
@@ -2918,6 +2925,60 @@ input[type=number]::-webkit-outer-spin-button {
 #tab-characters .right-panel .item-quality-7,
 #tab-characters .right-panel .item-quality-8 {
 	color: #00ccff;
+}
+#tab-characters .right-panel .guild-tabard-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 250px;
+}
+#tab-characters .right-panel .guild-tabard-panel .customization-color-container {
+	margin-bottom: 0;
+}
+#tab-characters .right-panel .guild-tabard-panel .customization-color-label {
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 13px;
+}
+#tab-characters .right-panel .guild-tabard-header {
+	font-size: 13px;
+	color: var(--font-alt);
+	text-align: center;
+}
+#tab-characters .right-panel .tabard-control {
+	cursor: default;
+	padding: 0 12px;
+}
+#tab-characters .right-panel .tabard-control:hover {
+	background-color: var(--background-alt);
+}
+#tab-characters .right-panel .tabard-option-control {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+#tab-characters .right-panel .tabard-arrow {
+	cursor: pointer;
+	color: var(--font-alt);
+	user-select: none;
+	padding: 0 2px;
+	line-height: 1;
+}
+#tab-characters .right-panel .tabard-arrow:hover {
+	color: var(--font);
+}
+#tab-characters .right-panel .tabard-value {
+	width: 30px;
+	text-align: center;
+	background: none;
+	border: none;
+	color: var(--font);
+	font-size: 13px;
+	font-family: inherit;
+	padding: 0;
+	outline: none;
+	line-height: 1;
+	height: 13px;
 }
 /* character import buttons at bottom center */
 .character-import-buttons {

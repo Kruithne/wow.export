@@ -29,6 +29,7 @@ const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
+const DBGuildTabard = require('../db/caches/DBGuildTabard');
 
 
 // geoset group constants (CG enum from DBItemGeosets)
@@ -577,6 +578,10 @@ async function update_textures(core) {
 			}
 
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
+				// guild tabards use custom composition pipeline
+				if (DBGuildTabard.isGuildTabard(item_id))
+					continue;
+
 				const item_textures = DBItemCharTextures.getItemTextures(item_id);
 				if (!item_textures)
 					continue;
@@ -610,6 +615,64 @@ async function update_textures(core) {
 					};
 
 					await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+				}
+			}
+
+			// guild tabard texture composition
+			const tabard_item_id = equipped_items[19];
+			if (tabard_item_id && DBGuildTabard.isGuildTabard(tabard_item_id)) {
+				const tier = DBGuildTabard.getTabardTier(tabard_item_id);
+				const config = core.view.chrGuildTabardConfig;
+				const TABARD_LAYER = get_slot_layer(19);
+
+				// component 3 = TORSO_UPPER, component 4 = TORSO_LOWER
+				const components = [3, 4];
+
+				const tabard_layers = [];
+				for (const comp of components) {
+					const bg_fdid = DBGuildTabard.getBackgroundFDID(tier, comp, config.background);
+					if (bg_fdid)
+						tabard_layers.push({ fdid: bg_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + comp, blend_mode: 1 });
+
+					const emblem_fdid = DBGuildTabard.getEmblemFDID(comp, config.emblem_design, config.emblem_color);
+					if (emblem_fdid)
+						tabard_layers.push({ fdid: emblem_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + 10 + comp, blend_mode: 1 });
+
+					const border_fdid = DBGuildTabard.getBorderFDID(tier, comp, config.border_style, config.border_color);
+					if (border_fdid)
+						tabard_layers.push({ fdid: border_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + 20 + comp, blend_mode: 1 });
+				}
+
+				for (const tl of tabard_layers) {
+					const section = section_by_type.get(tl.section_type);
+					if (!section)
+						continue;
+
+					const layer = layers_by_section.get(tl.section_type);
+					if (!layer)
+						continue;
+
+					const chr_model_material = chr_model_material_map.get(current_char_component_texture_layout_id + '-' + layer.TextureType);
+					if (!chr_model_material)
+						continue;
+
+					let chr_material;
+					if (!chr_materials.has(chr_model_material.TextureType)) {
+						chr_material = new CharMaterialRenderer(chr_model_material.TextureType, chr_model_material.Width, chr_model_material.Height);
+						chr_materials.set(chr_model_material.TextureType, chr_material);
+						await chr_material.init();
+					} else {
+						chr_material = chr_materials.get(chr_model_material.TextureType);
+					}
+
+					const item_material = {
+						ChrModelTextureTargetID: tl.target_id,
+						FileDataID: tl.fdid
+					};
+
+					// override BlendMode on the layer for guild tabard composition
+					const tabard_texture_layer = { ...layer, BlendMode: tl.blend_mode };
+					await chr_material.setTextureTarget(item_material, section, chr_model_material, tabard_texture_layer, true);
 				}
 			}
 		}
@@ -1357,7 +1420,8 @@ async function save_character(core, name, thumb_data) {
 		race_id: core.view.chrCustRaceSelection[0]?.id,
 		model_id: core.view.chrCustModelSelection[0]?.id,
 		choices: [...core.view.chrCustActiveChoices],
-		equipment: { ...core.view.chrEquippedItems }
+		equipment: { ...core.view.chrEquippedItems },
+		guild_tabard: { ...core.view.chrGuildTabardConfig }
 	};
 
 	const json_path = path.join(dir, `${name}-${id}.json`);
@@ -1412,6 +1476,10 @@ async function load_character(core, character) {
 
 		// apply equipment
 		core.view.chrEquippedItems = data.equipment || {};
+
+		// apply guild tabard config
+		if (data.guild_tabard)
+			core.view.chrGuildTabardConfig = { background: 0, border_style: 0, border_color: 0, emblem_design: 0, emblem_color: 0, ...data.guild_tabard };
 
 		// apply customization
 		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
@@ -1530,7 +1598,8 @@ function get_current_character_data(core) {
 		race_id: core.view.chrCustRaceSelection[0]?.id,
 		model_id: core.view.chrCustModelSelection[0]?.id,
 		choices: [...core.view.chrCustActiveChoices],
-		equipment: { ...core.view.chrEquippedItems }
+		equipment: { ...core.view.chrEquippedItems },
+		guild_tabard: { ...core.view.chrGuildTabardConfig }
 	};
 }
 
@@ -2255,19 +2324,53 @@ module.exports = {
 				</div>
 			</div>
 			<div class="right-panel">
-				<div v-for="slot in equipment_slots" :key="slot.id" class="equipment-slot" @click="open_slot_context($event, slot.id)" @contextmenu.prevent="open_slot_context($event, slot.id)">
-					<span class="slot-label">{{ slot.name }}:</span>
-					<span v-if="get_equipped_item(slot.id)" :class="'slot-item item-quality-' + get_equipped_item(slot.id).quality" :title="get_equipped_item(slot.id).name + ' (' + get_equipped_item(slot.id).id + ')'">{{ get_equipped_item(slot.id).name }}</span>
-					<span v-else class="slot-empty">Empty</span>
+				<div v-if="is_guild_tabard_equipped()" class="guild-tabard-panel">
+					<div class="guild-tabard-header">Guild Tabard</div>
+					<template v-for="opt in tabard_options" :key="opt.key">
+						<div v-if="opt.type === 'value'" class="equipment-slot tabard-control">
+							<span class="slot-label">{{ opt.label }}:</span>
+							<div class="tabard-option-control">
+								<span class="tabard-arrow" @click="adjust_tabard_config(opt.key, -1)">&lt;</span>
+								<input type="text" class="tabard-value" :value="$core.view.chrGuildTabardConfig[opt.key]" @change="set_tabard_config(opt.key, $event.target.value)">
+								<span class="tabard-arrow" @click="adjust_tabard_config(opt.key, 1)">&gt;</span>
+							</div>
+						</div>
+						<div v-else class="customization-color-container">
+							<div class="customization-color-label" @click="toggle_tabard_color_picker(opt.key, $event)">
+								<span class="prefix-label">{{ opt.label }}:</span>
+								<div class="customization-color-selected">
+									<div class="swatch swatch-single" :style="{backgroundColor: get_tabard_color_css(opt.key)}"></div>
+								</div>
+							</div>
+							<div v-if="$core.view.colorPickerOpenFor === 'tabard_' + opt.key" class="color-picker-popup" :style="{left: $core.view.colorPickerPosition.x + 'px', top: $core.view.colorPickerPosition.y + 'px'}" @click.self="$core.view.colorPickerOpenFor = null">
+								<div class="color-picker-grid">
+									<div
+										v-for="[color_id, color] in get_tabard_color_list(opt.colors)"
+										:key="color_id"
+										:class="['swatch', 'swatch-clickable', {selected: $core.view.chrGuildTabardConfig[opt.key] === color_id}]"
+										@click="select_tabard_color(opt.key, color_id)">
+										<div class="swatch-single" :style="{backgroundColor: 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')'}"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</template>
 				</div>
-				<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
-					<span @click.self="replace_slot_item(context.node)">Replace Item</span>
-					<span @click.self="unequip_slot(context.node)">Remove Item</span>
-					<span @click.self="copy_item_id(context.node)">Copy Item ID ({{ get_equipped_item(context.node)?.id }})</span>
-					<span @click.self="copy_item_name(context.node)">Copy Item Name</span>
-				</component>
-				<div class="chr-cust-controls">
-					<span @click="clear_all_equipment">Clear All Equipment</span>
+				<div class="equipment-list">
+					<div v-for="slot in equipment_slots" :key="slot.id" class="equipment-slot" @click="open_slot_context($event, slot.id)" @contextmenu.prevent="open_slot_context($event, slot.id)">
+						<span class="slot-label">{{ slot.name }}:</span>
+						<span v-if="get_equipped_item(slot.id)" :class="'slot-item item-quality-' + get_equipped_item(slot.id).quality" :title="get_equipped_item(slot.id).name + ' (' + get_equipped_item(slot.id).id + ')'">{{ get_equipped_item(slot.id).name }}</span>
+						<span v-else class="slot-empty">Empty</span>
+					</div>
+					<component :is="$components.ContextMenu" :node="$core.view.chrEquipmentSlotContext" v-slot:default="context" @close="$core.view.chrEquipmentSlotContext = null">
+						<span @click.self="replace_slot_item(context.node)">Replace Item</span>
+						<span @click.self="unequip_slot(context.node)">Remove Item</span>
+						<span @click.self="copy_item_id(context.node)">Copy Item ID ({{ get_equipped_item(context.node)?.id }})</span>
+						<span @click.self="copy_item_name(context.node)">Copy Item Name</span>
+					</component>
+					<div class="chr-cust-controls">
+						<span @click="clear_all_equipment">Clear All Equipment</span>
+					</div>
 				</div>
 			</div>
 			</div>
@@ -2277,7 +2380,14 @@ module.exports = {
 	data() {
 		return {
 			equipment_slots: EQUIPMENT_SLOTS,
-			base_regions: ['us', 'eu', 'kr', 'tw']
+			base_regions: ['us', 'eu', 'kr', 'tw'],
+			tabard_options: [
+				{ key: 'background', label: 'Background', type: 'color', colors: 'getBackgroundColors' },
+				{ key: 'border_style', label: 'Border', type: 'value' },
+				{ key: 'border_color', label: 'Border Color', type: 'color', colors: 'getBorderColors' },
+				{ key: 'emblem_design', label: 'Emblem', type: 'value' },
+				{ key: 'emblem_color', label: 'Emblem Color', type: 'color', colors: 'getEmblemColors' }
+			]
 		};
 	},
 
@@ -2501,6 +2611,99 @@ module.exports = {
 
 		clear_all_equipment() {
 			this.$core.view.chrEquippedItems = {};
+		},
+
+		is_guild_tabard_equipped() {
+			const item_id = this.$core.view.chrEquippedItems[19];
+			return item_id && DBGuildTabard.isGuildTabard(item_id);
+		},
+
+		get_tabard_tier() {
+			const item_id = this.$core.view.chrEquippedItems[19];
+			if (!item_id)
+				return -1;
+
+			return DBGuildTabard.getTabardTier(item_id);
+		},
+
+		get_tabard_max(key) {
+			switch (key) {
+				case 'background': return DBGuildTabard.getBackgroundColorCount();
+				case 'border_style': return DBGuildTabard.getBorderStyleCount(this.get_tabard_tier());
+				case 'border_color': return DBGuildTabard.getBorderColorCount();
+				case 'emblem_design': return DBGuildTabard.getEmblemDesignCount();
+				case 'emblem_color': return DBGuildTabard.getEmblemColorCount();
+				default: return 0;
+			}
+		},
+
+		set_tabard_config(key, value) {
+			const max = this.get_tabard_max(key);
+			value = parseInt(value) || 0;
+
+			if (max > 0)
+				value = Math.max(0, Math.min(value, max - 1));
+
+			this.$core.view.chrGuildTabardConfig = {
+				...this.$core.view.chrGuildTabardConfig,
+				[key]: value
+			};
+		},
+
+		adjust_tabard_config(key, delta) {
+			const max = this.get_tabard_max(key);
+			if (max <= 0)
+				return;
+
+			let value = (this.$core.view.chrGuildTabardConfig[key] + delta) % max;
+			if (value < 0)
+				value += max;
+
+			this.$core.view.chrGuildTabardConfig = {
+				...this.$core.view.chrGuildTabardConfig,
+				[key]: value
+			};
+		},
+
+		toggle_tabard_color_picker(key, event) {
+			const picker_key = 'tabard_' + key;
+			if (this.$core.view.colorPickerOpenFor === picker_key) {
+				this.$core.view.colorPickerOpenFor = null;
+			} else {
+				this.$core.view.colorPickerPosition = { x: event.clientX, y: event.clientY };
+				this.$core.view.colorPickerOpenFor = picker_key;
+			}
+		},
+
+		select_tabard_color(key, color_id) {
+			this.$core.view.chrGuildTabardConfig = {
+				...this.$core.view.chrGuildTabardConfig,
+				[key]: color_id
+			};
+			this.$core.view.colorPickerOpenFor = null;
+		},
+
+		get_tabard_color_css(key) {
+			const color_id = this.$core.view.chrGuildTabardConfig[key];
+			const color_map = this.get_tabard_color_list_for_key(key);
+			const color = color_map?.get(color_id);
+			if (!color)
+				return 'transparent';
+
+			return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+		},
+
+		get_tabard_color_list(method_name) {
+			return DBGuildTabard[method_name]();
+		},
+
+		get_tabard_color_list_for_key(key) {
+			switch (key) {
+				case 'background': return DBGuildTabard.getBackgroundColors();
+				case 'border_color': return DBGuildTabard.getBorderColors();
+				case 'emblem_color': return DBGuildTabard.getEmblemColors();
+				default: return null;
+			}
 		}
 	},
 
@@ -2568,6 +2771,9 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading item models...');
 		await DBItemModels.ensureInitialized();
+
+		await this.$core.progressLoadingScreen('Loading guild tabard data...');
+		await DBGuildTabard.ensureInitialized();
 
 		await this.$core.progressLoadingScreen('Loading character customization elements...');
 		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
@@ -2747,6 +2953,7 @@ module.exports = {
 			this.$core.view.$watch('chrCustChoiceSelection', () => update_customization_choice(this.$core), { deep: true }),
 			this.$core.view.$watch('chrCustActiveChoices', () => refresh_character_appearance(this.$core), { deep: true }),
 			this.$core.view.$watch('chrEquippedItems', () => refresh_character_appearance(this.$core), { deep: true }),
+			this.$core.view.$watch('chrGuildTabardConfig', () => refresh_character_appearance(this.$core), { deep: true }),
 			this.$core.view.$watch('chrModelViewerAnimSelection', async selected_animation_id => {
 				if (!active_renderer || !active_renderer.playAnimation || this.$core.view.chrModelViewerAnims.length === 0)
 					return;

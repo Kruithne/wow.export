@@ -239,6 +239,7 @@ const makeNewView = () => {
 		chrImportWowheadURL: '', // Wowhead dressing room url
 		characterImportMode: 'none', // Controls visibility of character import interface ('none', 'BNET', 'WHEAD')
 		chrEquippedItems: {}, // Equipped items by slot name (e.g., { Head: item, Chest: item })
+		chrGuildTabardConfig: { background: 0, border_style: 0, border_color: 0, emblem_design: 0, emblem_color: 0 },
 		chrEquipmentSlotContext: null, // Context menu node for equipment slot right-click
 		chrSavedCharactersScreen: false, // Controls visibility of saved characters screen
 		chrSavedCharacters: [], // List of saved characters loaded from disk
