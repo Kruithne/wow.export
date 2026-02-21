@@ -19,7 +19,7 @@ class M2Track {
 }
 
 // See https://wowdev.wiki/M2#Standard_animation_block
-function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = new Map(), storeOffsets = false) {
+function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = new Map(), storeOffsets = false, sequences = null) {
 	const arrCount = data.readUInt32LE();
 	const arrOfs = data.readUInt32LE();
 
@@ -36,6 +36,13 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 
 		if (storeOffsets)
 			offsets[i] = { count: subArrCount, offset: subArrOfs };
+
+		// data lives in external .anim file, skip reading from M2 buffer
+		if (sequences && i < sequences.length && (sequences[i].flags & 0x20) === 0) {
+			arr[i] = [];
+			data.seek(subBase);
+			continue;
+		}
 
 		data.seek(ofs + subArrOfs);
 
@@ -108,7 +115,7 @@ function read_m2_array_array(data, ofs, dataType, useAnims = false, animFiles = 
 }
 
 // See https://wowdev.wiki/M2#Standard_animation_block
-function read_m2_track(data, ofs, dataType, useAnims = false, animFiles = new Map(), storeOffsets = false) {
+function read_m2_track(data, ofs, dataType, useAnims = false, animFiles = new Map(), storeOffsets = false, sequences = null) {
 	const interpolation = data.readUInt16LE();
 	const globalSeq = data.readUInt16LE();
 
@@ -116,19 +123,19 @@ function read_m2_track(data, ofs, dataType, useAnims = false, animFiles = new Ma
 	let timestampOffsets = null, valueOffsets = null;
 
 	if (useAnims) {
-		timestamps = read_m2_array_array(data, ofs, 'uint32', useAnims, animFiles);
-		values = read_m2_array_array(data, ofs, dataType, useAnims, animFiles);
+		timestamps = read_m2_array_array(data, ofs, 'uint32', useAnims, animFiles, false, sequences);
+		values = read_m2_array_array(data, ofs, dataType, useAnims, animFiles, false, sequences);
 	} else if (storeOffsets) {
-		const tsResult = read_m2_array_array(data, ofs, 'uint32', false, animFiles, true);
+		const tsResult = read_m2_array_array(data, ofs, 'uint32', false, animFiles, true, sequences);
 		timestamps = tsResult.arr;
 		timestampOffsets = tsResult.offsets;
 
-		const valResult = read_m2_array_array(data, ofs, dataType, false, animFiles, true);
+		const valResult = read_m2_array_array(data, ofs, dataType, false, animFiles, true, sequences);
 		values = valResult.arr;
 		valueOffsets = valResult.offsets;
 	} else {
-		timestamps = read_m2_array_array(data, ofs, 'uint32');
-		values = read_m2_array_array(data, ofs, dataType);
+		timestamps = read_m2_array_array(data, ofs, 'uint32', false, new Map(), false, sequences);
+		values = read_m2_array_array(data, ofs, dataType, false, new Map(), false, sequences);
 	}
 
 	return new M2Track(globalSeq, interpolation, timestamps, values, timestampOffsets, valueOffsets);

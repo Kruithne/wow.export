@@ -392,9 +392,9 @@ class M2Loader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true),
-				rotation: M2Generics.read_m2_track(data, ofs, 'compquat', false, this.animFiles, true),
-				scale: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true),
+				translation: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true, this.animations),
+				rotation: M2Generics.read_m2_track(data, ofs, 'compquat', false, this.animFiles, true, this.animations),
+				scale: M2Generics.read_m2_track(data, ofs, 'float3', false, this.animFiles, true, this.animations),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -526,7 +526,7 @@ class M2Loader {
 				bone: this.data.readUInt16LE(),
 				unknown: this.data.readUInt16LE(),
 				position: this.data.readFloatLE(3),
-				animateAttached: M2Generics.read_m2_track(this.data, this.md21Ofs, "uint8"),
+				animateAttached: M2Generics.read_m2_track(this.data, this.md21Ofs, 'uint8', false, new Map(), false, this.animations),
 			};
 		}
 
@@ -676,9 +676,9 @@ class M2Loader {
 		const transforms = this.textureTransforms = new Array(transformCount);
 		for (let i = 0; i < transformCount; i++) {
 			transforms[i] = {
-				translation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
-				rotation: M2Generics.read_m2_track(this.data, this.md21Ofs, "float4"),
-				scaling: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3")
+				translation: M2Generics.read_m2_track(this.data, this.md21Ofs, 'float3', false, new Map(), false, this.animations),
+				rotation: M2Generics.read_m2_track(this.data, this.md21Ofs, 'float4', false, new Map(), false, this.animations),
+				scaling: M2Generics.read_m2_track(this.data, this.md21Ofs, 'float3', false, new Map(), false, this.animations)
 			};
 		}
 
@@ -734,7 +734,7 @@ class M2Loader {
 
 		const weights = this.textureWeights = new Array(weightCount);
 		for (let i = 0; i < weightCount; i++)
-			weights[i] = M2Generics.read_m2_track(this.data, this.md21Ofs, "int16");
+			weights[i] = M2Generics.read_m2_track(this.data, this.md21Ofs, 'int16', false, new Map(), false, this.animations);
 
 		this.data.seek(base);
 	}
@@ -753,8 +753,8 @@ class M2Loader {
 		const colors = this.colors = new Array(colorsCount);
 		for (let i = 0; i < colorsCount; i++) {
 			colors[i] = {
-				color: M2Generics.read_m2_track(this.data, this.md21Ofs, "float3"),
-				alpha: M2Generics.read_m2_track(this.data, this.md21Ofs, "int16")
+				color: M2Generics.read_m2_track(this.data, this.md21Ofs, 'float3', false, new Map(), false, this.animations),
+				alpha: M2Generics.read_m2_track(this.data, this.md21Ofs, 'int16', false, new Map(), false, this.animations)
 			}
 		}
 
