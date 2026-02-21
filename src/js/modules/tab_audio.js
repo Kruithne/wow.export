@@ -52,8 +52,7 @@ const load_track = async (core) => {
 	log.write('Previewing sound file %s', selected_file);
 
 	try {
-		const file_data_id = listfile.getByFilename(selected_file);
-		file_data = await core.view.casc.getFile(file_data_id);
+		file_data = await core.view.casc.getFileByName(selected_file);
 
 		if (selected_file.endsWith('.unk_sound')) {
 			const file_type = detectFileType(file_data);
