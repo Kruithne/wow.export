@@ -8,6 +8,7 @@
 - Fixed a bug that would cause the installer to hang under certain conditions.
 - Fixed a bug that results in a partially-corrupt listfile state on network issues.
 - Fixed house decor tab showing decor that doesn't exist in the game files.
+- Fixed various issues with macOS builds (thanks schlumpf!)
 - Blender add-on will no longer stop dead when importing if it encounters an error with one object (thanks BrettMCoding!).
 - Removed casc.wago.tools as CDN fallback due to it missing files and replaced it with archive.wow.tools for now.
 - Added a warning to the installer when trying to execute out of a ZIP archive.
