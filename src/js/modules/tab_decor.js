@@ -333,8 +333,12 @@ module.exports = {
 			const decor_items = DBDecor.getAllDecorItems();
 			const listfile_entries = [];
 
-			for (const [id, item] of decor_items)
+			for (const [id, item] of decor_items){
+				if(!this.$core.view.casc.fileExists(item.modelFileDataID))
+					continue;
+
 				listfile_entries.push(`${item.name} [${id}]`);
+			}
 
 			listfile_entries.sort((a, b) => {
 				const name_a = a.replace(/\s+\[\d+\]$/, '').toLowerCase();
