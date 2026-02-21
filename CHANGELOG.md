@@ -1,6 +1,8 @@
 ## 0.2.13 (21-02-2026)
 - Fixed a regression that caused WMO exports to error.
 - Fixed a crash when opening the runtime log from the popup on the character tab.
+- Fixed "Export Animations" checkbox missing on house decor tab.
+- Fixed house decor tab showing decor that doesn't exist in the game files.
 - Removed casc.wago.tools as CDN fallback due to it missing files and replaced it with archive.wow.tools for now.
 
 ## 0.2.12 (19-02-2026)
