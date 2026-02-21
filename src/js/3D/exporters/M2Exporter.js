@@ -276,23 +276,54 @@ class M2Exporter {
 				const parent_skel = new SKELLoader(parent_skel_file);
 				await parent_skel.load();
 
-				// merge animation file IDs: child overrides parent when fileDataID > 0
-				if (skel.animFileIDs && parent_skel.animFileIDs) {
-					const merged = new Map();
+				if (core.view.config.modelsExportAnimations) {
+					// load each skeleton's .anim files independently
+					// each skeleton's bone offsets match its own .anim data
+					await parent_skel.loadAnims();
+					await skel.loadAnims();
 
-					for (const entry of parent_skel.animFileIDs)
-						merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
-
-					for (const entry of skel.animFileIDs) {
-						if (entry.fileDataID > 0)
-							merged.set(`${entry.animID}-${entry.subAnimID}`, entry);
+					// identify which animations come from the child skeleton
+					const child_anim_keys = new Set();
+					if (skel.animFileIDs) {
+						for (const entry of skel.animFileIDs) {
+							if (entry.fileDataID > 0)
+								child_anim_keys.add(`${entry.animID}-${entry.subAnimID}`);
+						}
 					}
 
-					parent_skel.animFileIDs = Array.from(merged.values());
-				}
+					// copy child bone animation data into parent bones for child-specific animations
+					const bone_count = Math.min(parent_skel.bones.length, skel.bones.length);
+					for (let i = 0; i < parent_skel.animations.length; i++) {
+						const anim = parent_skel.animations[i];
+						if (!child_anim_keys.has(`${anim.id}-${anim.variationIndex}`))
+							continue;
 
-				if (core.view.config.modelsExportAnimations) {
-					await parent_skel.loadAnims();
+						// find matching animation index in child skeleton
+						let child_idx = -1;
+						for (let j = 0; j < skel.animations.length; j++) {
+							if (skel.animations[j].id === anim.id && skel.animations[j].variationIndex === anim.variationIndex) {
+								child_idx = j;
+								break;
+							}
+						}
+
+						if (child_idx < 0)
+							continue;
+
+						// copy decoded keyframe data from child bones into parent bones
+						for (let bi = 0; bi < bone_count; bi++) {
+							const pb = parent_skel.bones[bi];
+							const cb = skel.bones[bi];
+
+							for (const track of ['translation', 'rotation', 'scale']) {
+								if (cb[track].timestamps[child_idx]?.length > 0) {
+									pb[track].timestamps[i] = cb[track].timestamps[child_idx];
+									pb[track].values[i] = cb[track].values[child_idx];
+								}
+							}
+						}
+					}
+
 					gltf.setAnimations(parent_skel.animations);
 				}
 

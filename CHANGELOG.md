@@ -1,4 +1,5 @@
 ## 0.2.13 (21-02-2026)
+- Fixed an issue that prevented certain animations from exporting correctly.
 - Fixed an issue that would prevent certain models from loading/exporting.
 - Fixed a regression that caused WMO exports to error.
 - Fixed a crash when opening the runtime log from the popup on the character tab.
