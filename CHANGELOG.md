@@ -1,5 +1,6 @@
 ## 0.2.13 (21-02-2026)
 - Fixed a regression that caused WMO exports to error.
+- Removed casc.wago.tools as CDN fallback due to it missing files and replaced it with archive.wow.tools for now.
 
 ## 0.2.12 (19-02-2026)
 - Added cdn.blizzard.com and casc.wago.tools as CDN fallbacks.
