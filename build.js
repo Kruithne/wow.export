@@ -195,7 +195,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					const entryDir = path.join(buildDir, path.dirname(entryPath));
 	
 					await fs.mkdir(entryDir, { recursive: true });
-					zip.extractEntryTo(entryName, entryDir, false, true);
+					zip.extractEntryTo(entry, entryDir, false, true, true);
 					extractCount++;
 				} else {
 					filterCount++;

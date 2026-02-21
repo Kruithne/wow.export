@@ -19,7 +19,7 @@
 		"bun": ">=1.2.0"
 	},
 	"dependencies": {
-		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
+		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#1c7860ff5005cd30bf5dc6e557c9b312fedc0a66",
 		"rcedit": "^2.0.0",
 		"vue": "^3.5.21",
 		"webp-wasm": "^1.0.6"
