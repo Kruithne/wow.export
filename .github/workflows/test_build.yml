@@ -45,7 +45,7 @@ jobs:
       - name: Set up bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: '1.3.5'
       - name: Install nw-gyp
         run: npm install -g nw-gyp@latest
       - name: bun install
