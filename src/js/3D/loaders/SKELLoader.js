@@ -38,22 +38,36 @@ class SKELLoader {
 		if (this.isLoaded === true)
 			return;
 
+		// defer SKB1/SKA1 parsing until after SKS1 so this.animations is available
+		let skb1Ofs = -1;
+		let ska1Ofs = -1;
+
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();
 			const chunkSize = this.data.readUInt32LE();
 			const nextChunkPos = this.data.offset + chunkSize;
-	
+
 			switch (chunkID) {
-				case CHUNK_SKB1: this.parse_chunk_skb1(); break;
+				case CHUNK_SKB1: skb1Ofs = this.data.offset; break;
+				case CHUNK_SKA1: ska1Ofs = this.data.offset; break;
 				case CHUNK_SKPD: this.parse_chunk_skpd(); break;
 				case CHUNK_SKS1: this.parse_chunk_sks1(); break;
-				case CHUNK_SKA1: this.parse_chunk_ska1(); break;
 				case CHUNK_AFID: this.parse_chunk_afid(chunkSize); break;
 				case CHUNK_BFID: this.parse_chunk_bfid(chunkSize); break;
 			}
-	
-			// Ensure that we start at the next chunk exactly.
+
 			this.data.seek(nextChunkPos);
+		}
+
+		// parse bones/attachments after animations are available
+		if (skb1Ofs >= 0) {
+			this.data.seek(skb1Ofs);
+			this.parse_chunk_skb1();
+		}
+
+		if (ska1Ofs >= 0) {
+			this.data.seek(ska1Ofs);
+			this.parse_chunk_ska1();
 		}
 
 		this.isLoaded = true;
@@ -85,9 +99,9 @@ class SKELLoader {
 				parentBone: data.readInt16LE(),
 				subMeshID: data.readUInt16LE(),
 				boneNameCRC: data.readUInt32LE(),
-				translation: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true),
-				rotation: M2Generics.read_m2_track(data, chunk_ofs, 'compquat', false, this.animFiles, true),
-				scale: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true),
+				translation: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true, this.animations),
+				rotation: M2Generics.read_m2_track(data, chunk_ofs, 'compquat', false, this.animFiles, true, this.animations),
+				scale: M2Generics.read_m2_track(data, chunk_ofs, 'float3', false, this.animFiles, true, this.animations),
 				pivot: data.readFloatLE(3)
 			};
 
@@ -235,7 +249,7 @@ class SKELLoader {
 				bone: this.data.readUInt16LE(),
 				unknown: this.data.readUInt16LE(),
 				position: this.data.readFloatLE(3),
-				animateAttached: M2Generics.read_m2_track(this.data, chunk_ofs, 'uint8')
+				animateAttached: M2Generics.read_m2_track(this.data, chunk_ofs, 'uint8', false, new Map(), false, this.animations)
 			};
 		}
 

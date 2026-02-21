@@ -158,6 +158,15 @@ function patch_track_animation(track, animIndex, animBuffer, valueType) {
 	const tsInfo = track.timestampOffsets[animIndex];
 	const valInfo = track.valueOffsets[animIndex];
 
+	// bounds check: ensure offsets fit within the .anim buffer
+	const VALUE_SIZES = { uint32: 4, int16: 2, float3: 12, float4: 16, compquat: 8, uint8: 1 };
+	const valElemSize = VALUE_SIZES[valueType] ?? 0;
+	const tsEnd = tsInfo.offset + tsInfo.count * 4;
+	const valEnd = valInfo.offset + valInfo.count * valElemSize;
+
+	if (tsEnd > animBuffer.byteLength || valEnd > animBuffer.byteLength)
+		return;
+
 	// read timestamps from .anim buffer
 	const timestamps = Array(tsInfo.count);
 	for (let j = 0; j < tsInfo.count; j++) {
