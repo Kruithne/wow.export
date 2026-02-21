@@ -1,4 +1,4 @@
-## 0.2.13
+## 0.2.13 (21-02-2026)
 - Fixed a regression that caused WMO exports to error.
 
 ## 0.2.12
