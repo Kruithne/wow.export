@@ -136,8 +136,26 @@ Categories=Utility;Game;
 	console.log('Created desktop entry: %s', desktop_file);
 }
 
+function get_installer_dir() {
+	return path.dirname(path.resolve(process.execPath));
+}
+
+function validate_data_pak() {
+	const installer_dir = get_installer_dir();
+	const manifest_path = path.join(installer_dir, 'data.pak.json');
+	const data_path = path.join(installer_dir, 'data.pak');
+
+	if (!fs.existsSync(manifest_path) || !fs.existsSync(data_path)) {
+		throw new Error(
+			'Could not find data.pak and data.pak.json next to the installer.\n\n'
+			+ 'Please extract the entire archive before running the installer.\n'
+			+ 'Expected location: ' + installer_dir
+		);
+	}
+}
+
 async function extract_data_pak(install_path) {
-	const installer_dir = path.dirname(path.resolve(process.execPath));
+	const installer_dir = get_installer_dir();
 	const manifest_path = path.join(installer_dir, 'data.pak.json');
 	const data_path = path.join(installer_dir, 'data.pak');
 
@@ -185,6 +203,8 @@ async function extract_data_pak(install_path) {
 
 (async () => {
 	try {
+		validate_data_pak();
+
 		console.log('');
 		console.log('                                                  _   ');
 		console.log(' __      _______      _______  ___ __   ___  _ __| |_ ');
