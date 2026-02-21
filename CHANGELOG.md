@@ -1,13 +1,13 @@
 ## 0.2.13 (21-02-2026)
 - Fixed a regression that caused WMO exports to error.
 
-## 0.2.12
+## 0.2.12 (19-02-2026)
 - Added cdn.blizzard.com and casc.wago.tools as CDN fallbacks.
 - Added user-setting option to configure CDN fallback hosts.
 - Fixed an issue that would cause functionality to fail after network errors.
 - Fixed an issue that caused WMOs to incorrectly split by group on ADT exports.
 
-## 0.2.11
+## 0.2.11 (19-02-2026)
 - Fixed an issue that would cause an error when exporting models with "Textures" disabled.
 
 ## 0.2.10 (02-02-2026)
