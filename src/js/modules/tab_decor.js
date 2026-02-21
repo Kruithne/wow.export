@@ -296,6 +296,10 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelsExportAlpha"/>
 					<span>Texture Alpha</span>
 				</label>
+				<label v-if="$core.view.config.exportDecorFormat === 'GLTF' && $core.view.decorViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
+					<span>Export animations</span>
+				</label>
 				<template v-if="$core.view.decorViewerActiveType === 'm2'">
 					<span class="header">Geosets</span>
 					<component :is="$components.Checkboxlist" :items="$core.view.decorViewerGeosets"></component>
@@ -329,8 +333,12 @@ module.exports = {
 			const decor_items = DBDecor.getAllDecorItems();
 			const listfile_entries = [];
 
-			for (const [id, item] of decor_items)
+			for (const [id, item] of decor_items){
+				if(!this.$core.view.casc.fileExists(item.modelFileDataID))
+					continue;
+
 				listfile_entries.push(`${item.name} [${id}]`);
+			}
 
 			listfile_entries.sort((a, b) => {
 				const name_a = a.replace(/\s+\[\d+\]$/, '').toLowerCase();
