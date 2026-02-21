@@ -362,6 +362,7 @@ class WMOExporter {
 			return;
 		}
 
+		const config = core.view.config;
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
