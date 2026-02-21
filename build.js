@@ -293,6 +293,91 @@ const deflateBuffer = util.promisify(zlib.deflate);
 			}
 		}
 
+		// macOS app bundle rebranding: rename binaries, update Info.plist files
+		if (build.macos) {
+			const macos_app_name = build.macos.appName;
+			const macos_bundle_id = build.macos.bundleIdentifier;
+			const appDir = path.join(buildDir, macos_app_name + '.app');
+
+			log.info('Rebranding macOS app bundle (*%s*)...', macos_app_name);
+
+			const rebrand_plist = async (plist_path) => {
+				let content = await fs.readFile(plist_path, 'utf8');
+
+				for (const key of ['CFBundleDisplayName', 'CFBundleExecutable', 'CFBundleName']) {
+					const regex = new RegExp(`(<key>${key}</key>\\s*<string>)nwjs([^<]*</string>)`);
+					content = content.replace(regex, `$1${macos_app_name}$2`);
+				}
+
+				content = content.replace(/io\.nwjs\.nwjs/g, macos_bundle_id);
+				await fs.writeFile(plist_path, content, 'utf8');
+			};
+
+			// rename main binary
+			await fs.rename(
+				path.join(appDir, 'Contents', 'MacOS', 'nwjs'),
+				path.join(appDir, 'Contents', 'MacOS', macos_app_name)
+			);
+
+			// update main Info.plist
+			await rebrand_plist(path.join(appDir, 'Contents', 'Info.plist'));
+			log.success('Rebranded main app bundle');
+
+			// update localized strings
+			try {
+				const strings_path = path.join(appDir, 'Contents', 'Resources', 'en.lproj', 'InfoPlist.strings');
+				let strings = await fs.readFile(strings_path, 'utf8');
+				strings = strings.replace(/nwjs/g, macos_app_name);
+				await fs.writeFile(strings_path, strings, 'utf8');
+				log.success('Updated InfoPlist.strings');
+			} catch {
+				// localization file may not exist in all nwjs versions
+			}
+
+			// find framework version directory for helper/framework plist updates
+			const versions_dir = path.join(appDir, 'Contents', 'Frameworks', 'nwjs Framework.framework', 'Versions');
+			const versions = await fs.readdir(versions_dir);
+			const version_name = versions.find(v => v !== 'Current');
+
+			if (version_name) {
+				const version_dir = path.join(versions_dir, version_name);
+
+				// update framework Info.plist
+				try {
+					await rebrand_plist(path.join(version_dir, 'Resources', 'Info.plist'));
+					log.success('Updated framework Info.plist');
+				} catch {
+					// framework plist may not exist
+				}
+
+				// rename and rebrand helper apps
+				const helpers_dir = path.join(version_dir, 'Helpers');
+				const helper_suffixes = ['', ' (GPU)', ' (Renderer)', ' (Plugin)', ' (Alerts)'];
+
+				for (const suffix of helper_suffixes) {
+					const old_name = 'nwjs Helper' + suffix;
+					const new_name = macos_app_name + ' Helper' + suffix;
+					const old_app_path = path.join(helpers_dir, old_name + '.app');
+
+					try {
+						await fs.access(old_app_path);
+					} catch {
+						continue;
+					}
+
+					await rebrand_plist(path.join(old_app_path, 'Contents', 'Info.plist'));
+
+					await fs.rename(
+						path.join(old_app_path, 'Contents', 'MacOS', old_name),
+						path.join(old_app_path, 'Contents', 'MacOS', new_name)
+					);
+
+					await fs.rename(old_app_path, path.join(helpers_dir, new_name + '.app'));
+					log.success('Rebranded helper: *%s*', new_name);
+				}
+			}
+		}
+
 		// Clone or link sources (depending on build-specific flag).
 		const sourceType = build.sourceMethod.toUpperCase();
 		const sourceDirectory = path.resolve(config.sourceDirectory);

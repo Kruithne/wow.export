@@ -205,8 +205,11 @@
 			},
 			"remap": {
 				"nwjs.app": "wow.export.app",
-				"./wow.export.app/Contents/MacOS/nwjs": "wow.export.app/Contents/MacOS/wow.export",
 				"credits.html": "./wow.export.app/License/nwjs.html"
+			},
+			"macos": {
+				"appName": "wow.export",
+				"bundleIdentifier": "net.kruithne.wow-export"
 			},
 			"filter": {
 				"blacklist": [
