@@ -1,3 +1,6 @@
+## 0.2.13
+- Fixed a regression that caused WMO exports to error.
+
 ## 0.2.12
 - Added cdn.blizzard.com and casc.wago.tools as CDN fallbacks.
 - Added user-setting option to configure CDN fallback hosts.
