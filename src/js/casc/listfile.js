@@ -852,8 +852,15 @@ const getFilteredEntries = (search) => {
 const stripFileEntry = (entry) => {
 	if (typeof entry === 'string' && entry.includes(' ['))
 		return entry.substring(0, entry.lastIndexOf(' ['));
-	
+
 	return entry;
+};
+
+const parseFileEntry = (entry) => {
+	const file_path = stripFileEntry(entry);
+	const fid_match = typeof entry === 'string' ? entry.match(/\[(\d+)\]$/) : null;
+	const file_data_id = fid_match ? parseInt(fid_match[1], 10) : undefined;
+	return { file_path, file_data_id };
 };
 
 /**
@@ -899,6 +906,7 @@ module.exports = {
 	getFilteredEntries,
 	getByIDOrUnknown,
 	stripFileEntry,
+	parseFileEntry,
 	formatEntries,
 	formatUnknownFile,
 	ingestIdentifiedFiles,

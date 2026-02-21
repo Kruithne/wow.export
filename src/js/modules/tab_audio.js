@@ -13,6 +13,7 @@ const InstallType = require('../install-type');
 const { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
 
 let selected_file = null;
+let selected_file_data_id = null;
 let animation_frame_id = null;
 let file_data = null;
 
@@ -52,7 +53,10 @@ const load_track = async (core) => {
 	log.write('Previewing sound file %s', selected_file);
 
 	try {
-		file_data = await core.view.casc.getFileByName(selected_file);
+		if (selected_file_data_id !== null)
+			file_data = await core.view.casc.getFile(selected_file_data_id);
+		else
+			file_data = await core.view.casc.getFileByName(selected_file);
 
 		if (selected_file.endsWith('.unk_sound')) {
 			const file_type = detectFileType(file_data);
@@ -309,11 +313,12 @@ module.exports = {
 		});
 
 		this.$core.view.$watch('selectionSounds', async selection => {
-			const first = listfile.stripFileEntry(selection[0]);
-			if (!this.$core.view.isBusy && first && selected_file !== first) {
-				this.$core.view.soundPlayerTitle = path.basename(first);
+			const entry = listfile.parseFileEntry(selection[0]);
+			if (!this.$core.view.isBusy && entry.file_path && selected_file !== entry.file_path) {
+				this.$core.view.soundPlayerTitle = path.basename(entry.file_path);
 
-				selected_file = first;
+				selected_file = entry.file_path;
+				selected_file_data_id = entry.file_data_id ?? null;
 				unload_track(this.$core);
 
 				if (this.$core.view.config.soundPlayerAutoPlay)
