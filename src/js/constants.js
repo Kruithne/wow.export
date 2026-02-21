@@ -8,7 +8,11 @@
 const path = require('path');
 const os = require('os');
 
-const INSTALL_PATH = path.dirname(process.execPath);
+// on macOS, process.execPath points to the renderer helper binary deep inside
+// the framework, not the app root. use __dirname (app.nw/src/) instead.
+const INSTALL_PATH = process.platform === 'darwin'
+	? path.resolve(path.join(__dirname, '..'))
+	: path.dirname(process.execPath);
 const DATA_PATH = nw.App.dataPath;
 
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
