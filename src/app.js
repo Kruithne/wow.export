@@ -231,6 +231,27 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Mark all decor category subcategories to the given state.
+			 * @param {boolean} state
+			 */
+			setAllDecorCategories: function(state) {
+				for (const entry of this.decorCategoryMask)
+					entry.checked = state;
+			},
+
+			/**
+			 * Mark all subcategories within a category group to the given state.
+			 * @param {number} category_id
+			 * @param {boolean} state
+			 */
+			setDecorCategoryGroup: function(category_id, state) {
+				for (const entry of this.decorCategoryMask) {
+					if (entry.categoryID === category_id)
+						entry.checked = state;
+				}
+			},
+
+			/**
 			 * Mark all item types to the given state.
 			 * @param {boolean} state
 			 */

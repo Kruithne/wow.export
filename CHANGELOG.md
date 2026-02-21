@@ -1,4 +1,5 @@
 ## 0.2.13 (21-02-2026)
+- Added housing decor categories to quickly filter decor models.
 - Fixed an issue that prevented certain animations from exporting correctly.
 - Fixed an issue that would prevent certain models from loading/exporting.
 - Fixed a regression that caused WMO exports to error.

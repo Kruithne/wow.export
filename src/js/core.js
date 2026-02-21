@@ -108,6 +108,8 @@ const makeNewView = () => {
 		listfileInstall: [], // Filtered listfile for install files.
 		listfileLegacyModels: [], // Filtered listfile for legacy models from MPQ.
 		listfileDecor: [], // Filtered listfile for decor items.
+		decorCategoryMask: [], // Flat array of subcategory checkbox objects for watcher.
+		decorCategoryGroups: [], // Grouped category structure for template rendering.
 		dbdManifest: [], // DB2 entires from DBD manifest.
 		installTags: [], // Install manifest tags.
 		tableBrowserHeaders: [], // DB2 headers

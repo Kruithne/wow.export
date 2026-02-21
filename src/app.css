@@ -1673,6 +1673,29 @@ input[type=number]::-webkit-outer-spin-button {
 	margin-top: 5px;
 }
 
+.decor-category-list {
+	max-height: 200px;
+	overflow-y: auto;
+	margin: 5px 0;
+}
+
+.sidebar-checklist-category {
+	font-weight: bold;
+	cursor: pointer;
+	padding: 2px 0;
+	font-size: 14px;
+	color: var(--font-highlight);
+}
+
+.sidebar-checklist-category:hover {
+	text-decoration: underline;
+}
+
+.decor-category-list .sidebar-checklist {
+	padding-left: 10px;
+	margin: 0;
+}
+
 #tab-maps {
 	grid-template-rows: auto 1fr 60px;
 }

@@ -8,14 +8,18 @@ const listboxContext = require('../ui/listbox-context');
 
 const DBDecor = require('../db/caches/DBDecor');
 const DBModelFileData = require('../db/caches/DBModelFileData');
+const DBDecorCategories = require('../db/caches/DBDecorCategories');
 
 const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
 const modelViewerUtils = require('../ui/model-viewer-utils');
 
+const UNCATEGORIZED_ID = -1;
+
 let active_renderer;
 let active_file_data_id;
 let active_decor_item;
+let all_decor_entries = [];
 
 const get_view_state = (core) => ({
 	get texturePreviewURL() { return core.view.decorTexturePreviewURL; },
@@ -185,6 +189,39 @@ const export_files = async (core, entries, export_id = -1) => {
 	export_paths?.close();
 };
 
+const apply_filters = (core) => {
+	const checked_subs = new Set();
+	let uncategorized_checked = false;
+
+	for (const entry of core.view.decorCategoryMask) {
+		if (!entry.checked)
+			continue;
+
+		if (entry.subcategoryID === UNCATEGORIZED_ID)
+			uncategorized_checked = true;
+		else
+			checked_subs.add(entry.subcategoryID);
+	}
+
+	const filtered = [];
+	for (const entry of all_decor_entries) {
+		const subs = DBDecorCategories.get_subcategories_for_decor(entry.decor_id);
+		if (!subs) {
+			if (uncategorized_checked)
+				filtered.push(entry.display);
+		} else {
+			for (const sub_id of subs) {
+				if (checked_subs.has(sub_id)) {
+					filtered.push(entry.display);
+					break;
+				}
+			}
+		}
+	}
+
+	core.view.listfileDecor = filtered;
+};
+
 module.exports = {
 	register() {
 		this.registerNavButton('Decor', 'house.svg', InstallType.CASC);
@@ -258,6 +295,21 @@ module.exports = {
 				<component :is="$components.MenuButton" :options="$core.view.menuButtonDecor" :default="$core.view.config.exportDecorFormat" @change="$core.view.config.exportDecorFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_decor"></component>
 			</div>
 			<div id="decor-sidebar" class="sidebar">
+				<span class="header">Categories</span>
+				<div class="decor-category-list">
+					<div v-for="group in $core.view.decorCategoryGroups" :key="group.id">
+						<div class="sidebar-checklist-category" @click="toggle_category_group(group)">{{ group.name }}</div>
+						<div class="sidebar-checklist">
+							<div v-for="sub in group.subcategories" :key="sub.subcategoryID" class="sidebar-checklist-item" :class="{ selected: sub.checked }" @click="toggle_checklist_item(sub)">
+								<input type="checkbox" v-model="sub.checked" @click.stop/>
+								<span>{{ sub.label }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="list-toggles">
+					<a @click="$core.view.setAllDecorCategories(true)">Enable All</a> / <a @click="$core.view.setAllDecorCategories(false)">Disable All</a>
+				</div>
 				<span class="header">Preview</span>
 				<label class="ui-checkbox" title="Automatically preview a decor item when selecting it">
 					<input type="checkbox" v-model="$core.view.config.decorAutoPreview"/>
@@ -322,7 +374,7 @@ module.exports = {
 
 	methods: {
 		async initialize() {
-			this.$core.showLoadingScreen(2);
+			this.$core.showLoadingScreen(3);
 
 			await this.$core.progressLoadingScreen('Loading model file data...');
 			await DBModelFileData.initializeModelFileData();
@@ -330,23 +382,64 @@ module.exports = {
 			await this.$core.progressLoadingScreen('Loading house decor data...');
 			await DBDecor.initializeDecorData();
 
-			const decor_items = DBDecor.getAllDecorItems();
-			const listfile_entries = [];
+			await this.$core.progressLoadingScreen('Loading decor categories...');
+			await DBDecorCategories.initialize_categories();
 
-			for (const [id, item] of decor_items){
-				if(!this.$core.view.casc.fileExists(item.modelFileDataID))
+			const decor_items = DBDecor.getAllDecorItems();
+			all_decor_entries = [];
+
+			for (const [id, item] of decor_items) {
+				if (!this.$core.view.casc.fileExists(item.modelFileDataID))
 					continue;
 
-				listfile_entries.push(`${item.name} [${id}]`);
+				all_decor_entries.push({
+					display: `${item.name} [${id}]`,
+					decor_id: id
+				});
 			}
 
-			listfile_entries.sort((a, b) => {
-				const name_a = a.replace(/\s+\[\d+\]$/, '').toLowerCase();
-				const name_b = b.replace(/\s+\[\d+\]$/, '').toLowerCase();
+			all_decor_entries.sort((a, b) => {
+				const name_a = a.display.replace(/\s+\[\d+\]$/, '').toLowerCase();
+				const name_b = b.display.replace(/\s+\[\d+\]$/, '').toLowerCase();
 				return name_a.localeCompare(name_b);
 			});
 
-			this.$core.view.listfileDecor = listfile_entries;
+			// build category groups and mask
+			const categories = DBDecorCategories.get_all_categories();
+			const subcategories = DBDecorCategories.get_all_subcategories();
+
+			const sorted_categories = [...categories.values()].sort((a, b) => a.orderIndex - b.orderIndex);
+
+			const mask = [];
+			const groups = [];
+
+			for (const cat of sorted_categories) {
+				const subs = [...subcategories.values()]
+					.filter(s => s.categoryID === cat.id)
+					.sort((a, b) => a.orderIndex - b.orderIndex);
+
+				if (subs.length === 0)
+					continue;
+
+				const group_subs = [];
+				for (const sub of subs) {
+					const entry = { label: sub.name, checked: true, categoryID: cat.id, categoryName: cat.name, subcategoryID: sub.id };
+					mask.push(entry);
+					group_subs.push(entry);
+				}
+
+				groups.push({ id: cat.id, name: cat.name, subcategories: group_subs });
+			}
+
+			// synthetic uncategorized entry
+			const uncategorized = { label: 'Uncategorized', checked: true, categoryID: UNCATEGORIZED_ID, categoryName: 'Uncategorized', subcategoryID: UNCATEGORIZED_ID };
+			mask.push(uncategorized);
+			groups.push({ id: UNCATEGORIZED_ID, name: 'Uncategorized', subcategories: [uncategorized] });
+
+			this.$core.view.decorCategoryMask = mask;
+			this.$core.view.decorCategoryGroups = groups;
+
+			apply_filters(this.$core);
 
 			if (!this.$core.view.decorViewerContext)
 				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
@@ -413,6 +506,15 @@ module.exports = {
 			await export_files(this.$core, decor_items);
 		},
 
+		toggle_checklist_item(item) {
+			item.checked = !item.checked;
+		},
+
+		toggle_category_group(group) {
+			const all_checked = group.subcategories.every(s => s.checked);
+			this.$core.view.setDecorCategoryGroup(group.id, !all_checked);
+		},
+
 		toggle_animation_pause() {
 			if (!active_renderer)
 				return;
@@ -463,6 +565,8 @@ module.exports = {
 		await this.initialize();
 
 		const state = get_view_state(this.$core);
+
+		this.$core.view.$watch('decorCategoryMask', () => apply_filters(this.$core), { deep: true });
 
 		this.$core.view.$watch('decorViewerAnimSelection', async selected_animation_id => {
 			if (this.$core.view.decorViewerAnims.length === 0)
