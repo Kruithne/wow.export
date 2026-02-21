@@ -8,10 +8,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 import zlib from 'node:zlib';
+import readline from 'node:readline';
 import os from 'node:os';
 
 const fsp = fs.promises;
 const inflate_buffer = util.promisify(zlib.inflate);
+
+async function wait_for_exit() {
+	process.stdout.write('');
+	process.stderr.write('');
+
+	const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+	return new Promise(resolve => {
+		rl.question('Press ENTER to exit...', () => {
+			rl.close();
+			resolve();
+		});
+	});
+}
 
 const PLATFORM = process.platform;
 
@@ -234,20 +248,13 @@ async function extract_data_pak(install_path) {
 		console.log('You can now launch wow.export from your desktop.');
 		console.log('');
 
-		await Bun.sleep(3000);
+		await wait_for_exit();
 	} catch (e) {
 		console.error('');
 		console.error('Installation failed: %s', e.message);
 		console.error('');
-		console.error('Press any key to exit...');
 
-		// wait for input before closing
-		await new Promise(resolve => {
-			process.stdin.setRawMode?.(true);
-			process.stdin.resume();
-			process.stdin.once('data', resolve);
-		});
-
+		await wait_for_exit();
 		process.exit(1);
 	}
 })();
