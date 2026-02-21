@@ -222,8 +222,10 @@ function wrap_module(module_name, module_def) {
 		const original_initialize = module_def.methods.initialize;
 
 		module_def.methods.initialize = async function() {
-			if (this._tab_initialized)
+			if (this._tab_initialized || this._tab_initializing)
 				return;
+
+			this._tab_initializing = true;
 
 			try {
 				await original_initialize.call(this);
@@ -233,12 +235,14 @@ function wrap_module(module_name, module_def) {
 				log.write('Failed to initialize %s tab: %o', display_label, error);
 				this.$core.setToast('error', 'Failed to initialize ' + display_label + ' tab. Check the log for details.', { 'View Log': () => log.openRuntimeLog() }, -1);
 				this.$modules.go_to_landing();
+			} finally {
+				this._tab_initializing = false;
 			}
 		};
 
 		const original_activated = module_def.activated;
 		module_def.activated = function() {
-			if (!this._tab_initialized)
+			if (!this._tab_initialized && !this._tab_initializing)
 				this.initialize();
 
 			if (original_activated)
