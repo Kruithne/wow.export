@@ -128,6 +128,7 @@ class ImportWoWOBJ(bpy.types.Operator, ImportHelper):
             importLiquid = self.importLiquid,
             importUVAnimations = self.importUVAnimations
         )
+        settings._import_cache_cleared = False
 
         from . import import_wowobj
         if self.files:
