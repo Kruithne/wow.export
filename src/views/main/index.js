@@ -1,19 +1,20 @@
-import { Electroview } from 'electrobun/view';
+import { electrobun, app, on } from './rpc.js';
+import { MSG } from '../../rpc/schema.js';
 
-const rpc = Electroview.defineRPC({
-	maxRequestTime: 5000,
-	handlers: {
-		requests: {},
-		messages: {},
-	},
-});
-
-const electrobun = new Electroview({ rpc });
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 	const version_el = document.getElementById('version');
-	version_el.textContent = 'v0.2.14';
-
 	const info_el = document.getElementById('runtime-info');
-	info_el.textContent = 'Renderer: CEF | View protocol: views://main/';
+
+	try {
+		const info = await app.get_info();
+		version_el.textContent = 'v' + info.version;
+		info_el.textContent = `Renderer: CEF | Flavour: ${info.flavour}`;
+	} catch {
+		version_el.textContent = 'v0.2.14';
+		info_el.textContent = 'Renderer: CEF | RPC: pending';
+	}
+
+	on(MSG.TOAST, ({ message, type }) => {
+		console.log(`[toast:${type ?? 'info'}] ${message}`);
+	});
 });
