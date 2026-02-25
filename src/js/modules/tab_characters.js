@@ -372,6 +372,7 @@ async function update_textures(core) {
 	// step 4: apply equipment textures
 	const equipped_items = core.view.chrEquippedItems;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
+		const char_info = get_current_race_gender(core);
 		const sections = DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
 		if (sections) {
 			const section_by_type = new Map();
@@ -418,7 +419,7 @@ async function update_textures(core) {
 				if (DBGuildTabard.isGuildTabard(item_id))
 					continue;
 
-				const item_textures = DBItemCharTextures.getItemTextures(item_id);
+				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex);
 				if (!item_textures)
 					continue;
 
@@ -636,7 +637,6 @@ async function update_equipment_models(core) {
 			const renderers = [];
 			for (let i = collection_start_index; i < display.models.length; i++) {
 				const file_data_id = display.models[i];
-
 
 				try {
 					const file = await core.view.casc.getFile(file_data_id);

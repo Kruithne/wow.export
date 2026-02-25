@@ -1,12 +1,13 @@
 /*!
 	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
+	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
 
 const log = require('../../log');
 const db2 = require('../../casc/db2');
 const DBTextureFileData = require('./DBTextureFileData');
+const DBComponentTextureFileData = require('./DBComponentTextureFileData');
 
 // maps ItemID -> ItemDisplayInfoID
 const item_to_display_id = new Map();
@@ -41,6 +42,7 @@ const initialize = async () => {
 		log.write('Loading item character textures...');
 
 		await DBTextureFileData.ensureInitialized();
+		await DBComponentTextureFileData.initialize();
 
 		// build item -> appearance -> display chain
 		const appearance_map = new Map();
@@ -89,29 +91,16 @@ const ensure_initialized = async () => {
  * Get character texture components for an item.
  * Returns array of { section, fileDataID } for each body part the item covers.
  * @param {number} item_id
+ * @param {number} [race_id] - character race ID for filtering
+ * @param {number} [gender_index] - 0=male, 1=female for filtering
  * @returns {Array<{section: number, fileDataID: number}>|null}
  */
-const get_item_textures = (item_id) => {
+const get_item_textures = (item_id, race_id = null, gender_index = null) => {
 	const display_id = item_to_display_id.get(item_id);
 	if (display_id === undefined)
 		return null;
 
-	const components = display_to_component_textures.get(display_id);
-	if (components === undefined)
-		return null;
-
-	const result = [];
-	for (const component of components) {
-		const file_data_ids = DBTextureFileData.getTextureFDIDsByMatID(component.materialResourcesID);
-		if (file_data_ids && file_data_ids.length > 0) {
-			result.push({
-				section: component.section,
-				fileDataID: file_data_ids[0]
-			});
-		}
-	}
-
-	return result.length > 0 ? result : null;
+	return get_textures_by_display_id(display_id, race_id, gender_index);
 };
 
 /**
@@ -126,9 +115,11 @@ const get_display_id = (item_id) => {
 /**
  * Get character texture components directly by ItemDisplayInfoID.
  * @param {number} display_id
+ * @param {number} [race_id] - character race ID for filtering
+ * @param {number} [gender_index] - 0=male, 1=female for filtering
  * @returns {Array<{section: number, fileDataID: number}>|null}
  */
-const get_textures_by_display_id = (display_id) => {
+const get_textures_by_display_id = (display_id, race_id = null, gender_index = null) => {
 	const components = display_to_component_textures.get(display_id);
 	if (components === undefined)
 		return null;
@@ -137,9 +128,10 @@ const get_textures_by_display_id = (display_id) => {
 	for (const component of components) {
 		const file_data_ids = DBTextureFileData.getTextureFDIDsByMatID(component.materialResourcesID);
 		if (file_data_ids && file_data_ids.length > 0) {
+			const bestFileDataID = DBComponentTextureFileData.getTextureForRaceGender(file_data_ids, race_id, gender_index);
 			result.push({
 				section: component.section,
-				fileDataID: file_data_ids[0]
+				fileDataID: bestFileDataID
 			});
 		}
 	}
