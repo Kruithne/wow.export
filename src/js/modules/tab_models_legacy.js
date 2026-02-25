@@ -550,9 +550,6 @@ module.exports = {
 			if (selected_animation_id !== null && selected_animation_id !== undefined) {
 				if (selected_animation_id === 'none') {
 					active_renderer?.stopAnimation?.();
-
-					if (this.$core.view.legacyModelViewerAutoAdjust)
-						requestAnimationFrame(() => this.$core.view.legacyModelViewerContext?.fitCamera?.());
 					return;
 				}
 
@@ -563,9 +560,6 @@ module.exports = {
 
 					// set frame count after animation is loaded
 					this.$core.view.legacyModelViewerAnimFrameCount = active_renderer.get_animation_frame_count?.() || 0;
-
-					if (this.$core.view.legacyModelViewerAutoAdjust)
-						requestAnimationFrame(() => this.$core.view.legacyModelViewerContext?.fitCamera?.());
 				}
 			}
 		});

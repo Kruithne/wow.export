@@ -233,9 +233,8 @@ const extract_animations = (renderer) => {
  * @param {object} renderer - Active renderer
  * @param {object} state - View state with animation properties
  * @param {string} selected_animation_id - Selected animation ID
- * @param {function} fit_camera - Camera fit function
  */
-const handle_animation_change = async (renderer, state, selected_animation_id, fit_camera) => {
+const handle_animation_change = async (renderer, state, selected_animation_id) => {
 	if (!renderer || !renderer.playAnimation)
 		return;
 
@@ -249,10 +248,6 @@ const handle_animation_change = async (renderer, state, selected_animation_id, f
 
 	if (selected_animation_id === 'none') {
 		renderer?.stopAnimation?.();
-
-		if (state.autoAdjust && fit_camera)
-			requestAnimationFrame(() => fit_camera());
-
 		return;
 	}
 
@@ -262,9 +257,6 @@ const handle_animation_change = async (renderer, state, selected_animation_id, f
 		await renderer.playAnimation(anim_info.m2Index);
 
 		state.animFrameCount = renderer.get_animation_frame_count();
-
-		if (state.autoAdjust && fit_camera)
-			requestAnimationFrame(() => fit_camera());
 	}
 };
 
