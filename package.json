@@ -18,8 +18,15 @@
 	"engines": {
 		"bun": ">=1.2.0"
 	},
+	"scripts": {
+		"dev": "electrobun dev",
+		"dev:watch": "electrobun dev --watch",
+		"build:stable": "electrobun build --env=stable",
+		"build:canary": "electrobun build --env=canary"
+	},
 	"dependencies": {
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#1c7860ff5005cd30bf5dc6e557c9b312fedc0a66",
+		"electrobun": "latest",
 		"rcedit": "^2.0.0",
 		"vue": "^3.5.21",
 		"webp-wasm": "^1.0.6"
