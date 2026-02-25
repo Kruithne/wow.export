@@ -1,4 +1,5 @@
 const log = require('../log');
+const platform = require('../platform');
 const util = require('util');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
@@ -459,7 +460,7 @@ module.exports = {
 				}
 				return entry.name || entry;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_file_data_ids(selection) {
@@ -470,7 +471,7 @@ module.exports = {
 				}
 				return entry.modelFileDataID?.toString() || '';
 			}).filter(id => id);
-			nw.Clipboard.get().set(ids.join('\n'), 'text');
+			platform.clipboard_write_text(ids.join('\n'));
 		},
 
 		async preview_texture(file_data_id, display_name) {

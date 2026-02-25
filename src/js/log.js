@@ -6,6 +6,7 @@
 const fs = require('fs');
 const util = require('util');
 const constants = require('./constants');
+const platform = require('./platform');
 
 const MAX_LOG_POOL = 10000; // 1-2MB~
 const MAX_DRAIN_PER_TICK = 50;
@@ -69,7 +70,7 @@ const timeEnd = (label, ...params) => {
  * Open the runtime log in the users external editor.
  */
 const openRuntimeLog = () => {
-	nw.Shell.openItem(constants.RUNTIME_LOG);
+	platform.open_path(constants.RUNTIME_LOG);
 };
 
 /**

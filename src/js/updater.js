@@ -9,6 +9,7 @@ const assert = require('assert').strict;
 const fsp = require('fs').promises;
 const cp = require('child_process');
 const constants = require('./constants');
+const platform = require('./platform');
 const generics = require('./generics');
 const core = require('./core');
 const log = require('./log');
@@ -21,7 +22,7 @@ let updateManifest;
  */
 const checkForUpdates = async () => {
 	try {
-		const localManifest = nw.App.manifest;
+		const localManifest = platform.get_manifest();
 		const manifestURL = util.format(core.view.config.updateURL, localManifest.flavour) + 'update.json';
 		log.write('Checking for updates (%s)...', manifestURL);
 
@@ -110,7 +111,7 @@ const applyUpdate = async () => {
 		return;
 	}
 
-	const remoteEndpoint = util.format(core.view.config.updateURL, nw.App.manifest.flavour) + 'update';
+	const remoteEndpoint = util.format(core.view.config.updateURL, platform.get_flavour()) + 'update';
 	for (let i = 0, n = requiredFiles.length; i < n; i++) {
 		const node = requiredFiles[i];
 		const localFile = path.join(constants.UPDATE.DIRECTORY, node.file);

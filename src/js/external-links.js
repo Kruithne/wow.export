@@ -4,6 +4,7 @@
 	License: MIT
  */
 const util = require('util');
+const platform = require('./platform');
 
 /**
  * Defines static links which can be referenced via the data-external HTML attribute.
@@ -32,7 +33,7 @@ module.exports = class ExternalLinks {
 		if (link.startsWith('::'))
 			link = STATIC_LINKS[link];
 
-		nw.Shell.openExternal(link);
+		platform.open_url(link);
 	}
 
 	/**

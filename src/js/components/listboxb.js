@@ -3,6 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const platform = require('../platform');
+
 module.exports = {
 	/**
 	 * items: Item entries displayed in the list.
@@ -178,7 +180,7 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.join('\n'), 'text');
+				platform.clipboard_write_text(this.selection.join('\n'));
 			} else {
 				if (this.disable)
 					return;

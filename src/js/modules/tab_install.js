@@ -1,4 +1,5 @@
 const log = require('../log');
+const platform = require('../platform');
 const path = require('path');
 const ExportHelper = require('../casc/export-helper');
 const generics = require('../generics');
@@ -137,7 +138,7 @@ const export_strings = async (core) => {
 		await generics.writeFile(export_path, strings.join('\n'), 'utf8');
 
 		const dir_path = path.dirname(export_path);
-		core.setToast('success', 'Exported ' + strings.length + ' strings.', { 'View in Explorer': () => nw.Shell.openItem(dir_path) });
+		core.setToast('success', 'Exported ' + strings.length + ' strings.', { 'View in Explorer': () => platform.open_path(dir_path) });
 		log.write('Exported %d strings to %s', strings.length, export_path);
 	} catch (e) {
 		core.setToast('error', 'Failed to export strings: ' + e.message);

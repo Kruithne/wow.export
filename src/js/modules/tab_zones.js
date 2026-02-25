@@ -1,5 +1,6 @@
 const util = require('util');
 const core = require('../core');
+const platform = require('../platform');
 const log = require('../log');
 const path = require('path');
 const InstallType = require('../install-type');
@@ -364,7 +365,7 @@ module.exports = {
 				const zone = parse_zone_entry(entry);
 				return zone.zone_name;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_area_names(selection) {
@@ -372,7 +373,7 @@ module.exports = {
 				const zone = parse_zone_entry(entry);
 				return zone.area_name;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_zone_ids(selection) {
@@ -380,17 +381,17 @@ module.exports = {
 				const zone = parse_zone_entry(entry);
 				return zone.id;
 			});
-			nw.Clipboard.get().set(ids.join('\n'), 'text');
+			platform.clipboard_write_text(ids.join('\n'));
 		},
 
 		copy_zone_export_path() {
 			const dir = ExportHelper.getExportPath('zones');
-			nw.Clipboard.get().set(dir, 'text');
+			platform.clipboard_write_text(dir);
 		},
 
 		open_zone_export_directory() {
 			const dir = ExportHelper.getExportPath('zones');
-			nw.Shell.openItem(dir);
+			platform.open_path(dir);
 		},
 
 		async initialize() {

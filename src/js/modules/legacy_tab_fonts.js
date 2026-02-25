@@ -1,6 +1,7 @@
 const path = require('path');
 const fsp = require('fs').promises;
 const log = require('../log');
+const platform = require('../platform');
 const listboxContext = require('../ui/listbox-context');
 const InstallType = require('../install-type');
 const { detect_glyphs_async, get_random_quote, inject_font_face } = require('./font_helpers');
@@ -139,7 +140,7 @@ module.exports = {
 				this.$core.setToast('error', `Exported ${exported} fonts with ${failed} failures.`);
 			} else if (last_export_path) {
 				const dir = path.dirname(last_export_path);
-				const toast_opt = { 'View in Explorer': () => nw.Shell.openItem(dir) };
+				const toast_opt = { 'View in Explorer': () => platform.open_path(dir) };
 
 				if (selected.length > 1)
 					this.$core.setToast('success', `Successfully exported ${exported} fonts.`, toast_opt, -1);

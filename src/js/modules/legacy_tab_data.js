@@ -1,4 +1,5 @@
 const log = require('../log');
+const platform = require('../platform');
 const path = require('path');
 const fsp = require('fs').promises;
 const DBCReader = require('../db/DBCReader');
@@ -191,7 +192,7 @@ module.exports = {
 			if (!csv)
 				return;
 
-			nw.Clipboard.get().set(csv, 'text');
+			platform.clipboard_write_text(csv);
 
 			const count = this.$core.view.selectionDataTable.length;
 			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as CSV to the clipboard', null, 2000);
@@ -206,7 +207,7 @@ module.exports = {
 			if (!sql)
 				return;
 
-			nw.Clipboard.get().set(sql, 'text');
+			platform.clipboard_write_text(sql);
 
 			const count = this.$core.view.selectionDataTable.length;
 			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as SQL to the clipboard', null, 2000);
@@ -216,7 +217,7 @@ module.exports = {
 			if (value === null || value === undefined)
 				return;
 
-			nw.Clipboard.get().set(String(value), 'text');
+			platform.clipboard_write_text(String(value));
 		},
 
 		async export_data() {

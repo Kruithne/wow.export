@@ -4,6 +4,7 @@
 	License: MIT
  */
 const core = require('../core');
+const platform = require('../platform');
 const log = require('../log');
 const util = require('util');
 const generics = require('../generics');
@@ -83,8 +84,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 		const blp = new BLPFile(data);
 		const png = blp.toPNG(core.view.config.exportChannelMask);
 
-		const clipboard = nw.Clipboard.get();
-		clipboard.set(png.toBase64(), 'png', true);
+		platform.clipboard_write_image(png.toBase64());
 
 		log.write('Copied texture to clipboard (%s)', fileName);
 		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);

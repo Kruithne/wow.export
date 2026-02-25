@@ -3,6 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
+const platform = require('../platform');
 const IconRender = require('../icon-render');
 
 module.exports = {
@@ -225,7 +226,7 @@ module.exports = {
 
 			if (e.key === 'c' && e.ctrlKey) {
 				// Copy selection to clipboard.
-				nw.Clipboard.get().set(this.selection.map(e => e.displayName).join('\n'), 'text');
+				platform.clipboard_write_text(this.selection.map(e => e.displayName).join('\n'));
 			} else {
 				// Arrow keys.
 				const isArrowUp = e.key === 'ArrowUp';

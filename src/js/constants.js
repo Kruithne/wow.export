@@ -7,13 +7,14 @@
 // This file defines constants used throughout the application.
 const path = require('path');
 const os = require('os');
+const platform = require('./platform');
 
 // on macOS, process.execPath points to the renderer helper binary deep inside
 // the framework, not the app root. use __dirname (app.nw/src/) instead.
 const INSTALL_PATH = process.platform === 'darwin'
 	? path.resolve(path.join(__dirname, '..'))
 	: path.dirname(process.execPath);
-const DATA_PATH = nw.App.dataPath;
+const DATA_PATH = platform.get_data_path();
 
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
@@ -43,13 +44,13 @@ module.exports = {
 	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
 
 	// Current version of wow.export
-	VERSION: nw.App.manifest.version,
+	VERSION: platform.get_version(),
 
 	// Filter used to filter out WMO LOD files.
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
 
 	// User-agent used for HTTP/HTTPs requests.
-	USER_AGENT: 'wow.export (' + (nw.App.manifest.version) + ')',
+	USER_AGENT: 'wow.export (' + platform.get_version() + ')',
 
 	// Defines Blender constants.
 	BLENDER: {

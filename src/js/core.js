@@ -7,6 +7,7 @@ const EventEmitter = require('events');
 const generics = require('./generics');
 const Locale = require('./casc/locale-flags');
 const constants = require('./constants');
+const platform = require('./platform');
 const log = require('./log');
 const fs = require('fs');
 const FileWriter = require('./file-writer');
@@ -482,7 +483,7 @@ const setToast = (toastType, message, options = null, ttl = 10000, closable = tr
  * Open user-configured export directory with OS default.
  */
 const openExportDirectory = () => {
-	nw.Shell.openItem(core.view.config.exportDirectory)
+	platform.open_path(core.view.config.exportDirectory)
 };
 
 /**

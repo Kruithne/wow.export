@@ -7,6 +7,7 @@ const util = require('util');
 const fsp = require('fs').promises;
 const path = require('path');
 const core = require('../../core');
+const platform = require('../../platform');
 const generics = require('../../generics');
 const ExportHelper = require('../../casc/export-helper');
 const BufferWrapper = require('../../buffer');
@@ -205,7 +206,7 @@ class GLTFWriter {
 		if (!overwrite && format === 'gltf' && await generics.fileExists(outBIN))
 			return;
 
-		const manifest = nw.App.manifest;
+		const manifest = platform.get_manifest();
 		const root = {
 			asset: {
 				version: '2.0',

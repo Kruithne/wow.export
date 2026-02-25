@@ -1,6 +1,7 @@
 const path = require('path');
 const util = require('util');
 const log = require('../log');
+const platform = require('../platform');
 const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
@@ -69,8 +70,7 @@ module.exports = {
 		},
 
 		copy_text() {
-			const clipboard = nw.Clipboard.get();
-			clipboard.set(this.$core.view.textViewerSelectedText, 'text');
+			platform.clipboard_write_text(this.$core.view.textViewerSelectedText);
 			this.$core.setToast('success', util.format('Copied contents of %s to the clipboard.', selected_file), null, -1, true);
 		},
 

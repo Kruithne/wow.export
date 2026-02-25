@@ -1,4 +1,5 @@
 const log = require('../log');
+const platform = require('../platform');
 const WDCReader = require('../db/WDCReader');
 const dbd_manifest = require('../casc/dbd-manifest');
 const dataExporter = require('../ui/data-exporter');
@@ -137,7 +138,7 @@ module.exports = {
 			if (!csv)
 				return;
 
-			nw.Clipboard.get().set(csv, 'text');
+			platform.clipboard_write_text(csv);
 
 			const count = this.$core.view.selectionDataTable.length;
 			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as CSV to the clipboard', null, 2000);
@@ -152,7 +153,7 @@ module.exports = {
 			if (!sql)
 				return;
 
-			nw.Clipboard.get().set(sql, 'text');
+			platform.clipboard_write_text(sql);
 
 			const count = this.$core.view.selectionDataTable.length;
 			this.$core.setToast('success', 'Copied ' + count + ' row' + (count !== 1 ? 's' : '') + ' as SQL to the clipboard', null, 2000);
@@ -162,7 +163,7 @@ module.exports = {
 			if (value === null || value === undefined)
 				return;
 
-			nw.Clipboard.get().set(String(value), 'text');
+			platform.clipboard_write_text(String(value));
 		},
 
 		async initialize() {

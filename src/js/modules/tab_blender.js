@@ -3,6 +3,7 @@ const util = require('util');
 const fsp = require('fs').promises;
 
 const constants = require('../constants');
+const platform = require('../platform');
 const generics = require('../generics');
 const core = require('../core');
 const log = require('../log');
@@ -71,7 +72,7 @@ module.exports = {
 
 	methods: {
 		open_addon_directory() {
-			nw.Shell.openItem(constants.BLENDER.LOCAL_DIR);
+			platform.open_path(constants.BLENDER.LOCAL_DIR);
 		},
 
 		go_back() {

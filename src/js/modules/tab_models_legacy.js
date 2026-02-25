@@ -5,6 +5,7 @@
 */
 
 const log = require('../log');
+const platform = require('../platform');
 const util = require('util');
 const path = require('path');
 const BufferWrapper = require('../buffer');
@@ -214,10 +215,9 @@ const export_files = async (core, files, export_id = -1) => {
 				await export_paths?.writeLine('PNG:' + out_file);
 
 				log.write('Saved legacy 3D preview screenshot to %s', out_file);
-				core.setToast('success', util.format('Successfully exported preview to %s', out_file), { 'View in Explorer': () => nw.Shell.openItem(out_dir) }, -1);
+				core.setToast('success', util.format('Successfully exported preview to %s', out_file), { 'View in Explorer': () => platform.open_path(out_dir) }, -1);
 			} else if (format === 'CLIPBOARD') {
-				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toBase64(), 'png', true);
+				platform.clipboard_write_image(buf.toBase64());
 
 				log.write('Copied legacy 3D preview to clipboard (%s)', active_path);
 				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);

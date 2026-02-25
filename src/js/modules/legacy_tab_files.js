@@ -1,6 +1,7 @@
 const path = require('path');
 const fsp = require('fs').promises;
 const log = require('../log');
+const platform = require('../platform');
 const listboxContext = require('../ui/listbox-context');
 const InstallType = require('../install-type');
 
@@ -51,7 +52,7 @@ const export_files = async (core) => {
 
 		if (last_export_path) {
 			const dir = path.dirname(last_export_path);
-			const toast_opt = { 'View in Explorer': () => nw.Shell.openItem(dir) };
+			const toast_opt = { 'View in Explorer': () => platform.open_path(dir) };
 
 			if (selection.length > 1)
 				core.setToast('success', `Successfully exported ${selection.length} files.`, toast_opt, -1);

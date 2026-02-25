@@ -4,6 +4,7 @@
 	License: MIT
  */
 const path = require('path');
+const platform = require('../platform');
 const core = require('../core');
 const listfile = require('../casc/listfile');
 const ExportHelper = require('../casc/export-helper');
@@ -86,7 +87,7 @@ const get_export_directory = (selection) => {
  */
 const copy_file_paths = (selection) => {
 	const paths = get_file_paths(selection);
-	nw.Clipboard.get().set(paths.join('\n'), 'text');
+	platform.clipboard_write_text(paths.join('\n'));
 };
 
 /**
@@ -95,7 +96,7 @@ const copy_file_paths = (selection) => {
  */
 const copy_listfile_format = (selection) => {
 	const entries = get_listfile_entries(selection);
-	nw.Clipboard.get().set(entries.join('\n'), 'text');
+	platform.clipboard_write_text(entries.join('\n'));
 };
 
 /**
@@ -104,7 +105,7 @@ const copy_listfile_format = (selection) => {
  */
 const copy_file_data_ids = (selection) => {
 	const ids = get_file_data_ids(selection);
-	nw.Clipboard.get().set(ids.join('\n'), 'text');
+	platform.clipboard_write_text(ids.join('\n'));
 };
 
 /**
@@ -113,7 +114,7 @@ const copy_file_data_ids = (selection) => {
  */
 const copy_export_paths = (selection) => {
 	const paths = get_export_paths(selection);
-	nw.Clipboard.get().set(paths.join('\n'), 'text');
+	platform.clipboard_write_text(paths.join('\n'));
 };
 
 /**
@@ -123,7 +124,7 @@ const copy_export_paths = (selection) => {
 const open_export_directory = (selection) => {
 	const dir = get_export_directory(selection);
 	if (dir)
-		nw.Shell.openItem(dir);
+		platform.open_path(dir);
 };
 
 /**

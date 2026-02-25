@@ -9,9 +9,10 @@
 // will be undefined. Any code that only runs when BUILD_RELEASE is false will
 // be removed as dead-code during compile.
 BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
+const platform = require('./js/platform');
 
 // check for --disable-auto-update flag
-const DISABLE_AUTO_UPDATE = nw.App.argv.includes('--disable-auto-update');
+const DISABLE_AUTO_UPDATE = platform.get_argv().includes('--disable-auto-update');
 
 /**
  * crash() is used to inform the user that the application has exploded.
@@ -41,7 +42,7 @@ crash = (errorCode, errorText) => {
 	const setText = (id, text) => document.querySelector(id).textContent = text;
 
 	// Show build version/flavour/ID.
-	const manifest = nw.App.manifest;
+	const manifest = platform.get_manifest();
 	setText('#crash-screen-version', 'v' + manifest.version);
 	setText('#crash-screen-flavour', manifest.flavour);
 	setText('#crash-screen-build', manifest.guid);
@@ -64,7 +65,7 @@ crash = (errorCode, errorText) => {
 if (!BUILD_RELEASE) {
 	window.addEventListener('keyup', e => {
 		if (e.code === 'F5')
-			chrome.runtime.reload();
+			platform.reload();
 	});
 }
 
@@ -72,10 +73,10 @@ if (!BUILD_RELEASE) {
 process.on('unhandledRejection', e => crash('ERR_UNHANDLED_REJECTION', e.message));
 process.on('uncaughtException', e => crash('ERR_UNHANDLED_EXCEPTION', e.message));
 
-const win = nw.Window.get();
+platform.init_window();
 // Launch DevTools for debug builds.
 if (!BUILD_RELEASE)
-	win.showDevTools();
+	platform.show_dev_tools();
 
 // Imports
 const os = require('os');
@@ -102,10 +103,10 @@ window.Vue = Vue;
 
 const modules = require('./js/modules');
 
-win.setProgressBar(-1); // Reset taskbar progress in-case it's stuck.
+platform.set_progress_bar(-1); // Reset taskbar progress in-case it's stuck.
 // ensure clean exit when window is closed (skip in dev to avoid nw.js devtools bug)
 if (BUILD_RELEASE)
-	win.on('close', () => process.exit());
+	platform.on_close(() => process.exit());
 
 // Prevent files from being dropped onto the window. These are over-written
 // later but we disable here to prevent them working if init fails.
@@ -136,7 +137,7 @@ document.addEventListener('click', function(e) {
 		await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
 
 	// Append the application version to the title bar.
-	document.title += ' v' + nw.App.manifest.version;
+	document.title += ' v' + platform.get_version();
 
 	// Initialize Vue.
 	const app = Vue.createApp({
@@ -392,7 +393,7 @@ document.addEventListener('click', function(e) {
 			 * Restart the application.
 			 */
 			restartApplication: function() {
-				chrome.runtime.reload();
+				platform.reload();
 			},
 
 			/**
@@ -438,7 +439,7 @@ document.addEventListener('click', function(e) {
 			 * @param {string} data 
 			 */
 			copyToClipboard: function(data) {
-				nw.Clipboard.get().set(data.toString(), 'text');
+				platform.clipboard_write_text(data.toString());
 			},
 
 			/**
@@ -498,7 +499,7 @@ document.addEventListener('click', function(e) {
 			 * @param {float} val
 			 */
 			loadPct: function(val) {
-				win.setProgressBar(val);
+				platform.set_progress_bar(val);
 			},
 
 			/**
@@ -546,7 +547,7 @@ document.addEventListener('click', function(e) {
 
 	// register static context menu options
 	modules.registerContextMenuOption('runtime-log', 'Open Runtime Log', 'timeline.svg', () => log.openRuntimeLog());
-	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => chrome.runtime.reload());
+	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => platform.reload());
 	modules.registerContextMenuOption('reload-style', 'Reload Styling', 'palette.svg', () => core.view.reloadStylesheet(), true);
 	modules.registerContextMenuOption('reload-shaders', 'Reload Shaders', 'cube.svg', () => Shaders.reload_all(), true);
 	modules.registerContextMenuOption('reload-active', 'Reload Active Module', 'gear.svg', () => modules.reloadActiveModule(), true);
@@ -564,7 +565,7 @@ document.addEventListener('click', function(e) {
 	});
 
 	// Log some basic information for potential diagnostics.
-	const manifest = nw.App.manifest;
+	const manifest = platform.get_manifest();
 	const cpus = os.cpus();
 	log.write('wow.export has started v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid);
 	log.write('Host %s (%s), CPU %s (%d cores), Memory %s / %s', os.platform, os.arch, cpus[0].model, cpus.length, generics.filesize(os.freemem), generics.filesize(os.totalmem));

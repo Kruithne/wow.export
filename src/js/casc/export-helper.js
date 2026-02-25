@@ -6,6 +6,7 @@
 const path = require('path');
 const util = require('util');
 const core = require('../core');
+const platform = require('../platform');
 const log = require('../log');
 const generics = require('../generics');
 
@@ -192,7 +193,7 @@ class ExportHelper {
 		if (this.succeeded === this.count) {
 			// Everything succeeded.
 			const lastExportPath = ExportHelper.getExportPath(path.dirname(this.lastItem));
-			const toastOpt = { 'View in Explorer': () => nw.Shell.openItem(lastExportPath) };
+			const toastOpt = { 'View in Explorer': () => platform.open_path(lastExportPath) };
 
 			if (this.count > 1)
 				core.setToast('success', util.format('Successfully exported %d %s.', this.count, this.unitFormatted), includeDirLink ? toastOpt : null, -1);

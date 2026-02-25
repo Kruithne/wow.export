@@ -1,4 +1,5 @@
 const log = require('../log');
+const platform = require('../platform');
 const util = require('util');
 const path = require('path');
 const ExportHelper = require('../casc/export-helper');
@@ -1188,7 +1189,7 @@ module.exports = {
 				}
 				return entry.name || entry;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_creature_ids(selection) {
@@ -1199,7 +1200,7 @@ module.exports = {
 				}
 				return entry.id?.toString() || '';
 			}).filter(id => id);
-			nw.Clipboard.get().set(ids.join('\n'), 'text');
+			platform.clipboard_write_text(ids.join('\n'));
 		},
 
 		async preview_texture(file_data_id, display_name) {

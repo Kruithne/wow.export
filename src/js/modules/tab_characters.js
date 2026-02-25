@@ -4,6 +4,7 @@
 	License: MIT
  */
 const log = require('../log');
+const platform = require('../platform');
 const util = require('util');
 const path = require('path');
 const os = require('os');
@@ -1668,10 +1669,9 @@ const export_char_model = async (core) => {
 				await export_paths?.writeLine('PNG:' + out_file);
 
 				log.write('saved 3d preview screenshot to %s', out_file);
-				core.setToast('success', util.format('successfully exported preview to %s', out_file), { 'view in explorer': () => nw.Shell.openItem(out_dir) }, -1);
+				core.setToast('success', util.format('successfully exported preview to %s', out_file), { 'view in explorer': () => platform.open_path(out_dir) }, -1);
 			} else if (format === 'CLIPBOARD') {
-				const clipboard = nw.Clipboard.get();
-				clipboard.set(buf.toBase64(), 'png', true);
+				platform.clipboard_write_image(buf.toBase64());
 
 				log.write('copied 3d preview to clipboard (character %s)', active_model);
 				core.setToast('success', '3D preview has been copied to the clipboard', null, -1, true);
@@ -1876,7 +1876,7 @@ const export_chr_texture = async (core) => {
 	await export_paths?.writeLine('PNG:' + export_path);
 
 	log.write('exported character texture to %s', export_path);
-	core.setToast('success', util.format('exported texture to %s', export_path), { 'view in explorer': () => nw.Shell.openItem(out_dir) }, -1);
+	core.setToast('success', util.format('exported texture to %s', export_path), { 'view in explorer': () => platform.open_path(out_dir) }, -1);
 
 	export_paths?.close();
 };

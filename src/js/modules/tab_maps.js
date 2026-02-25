@@ -1,6 +1,7 @@
 const util = require('util');
 const crypto = require('crypto');
 const core = require('../core');
+const platform = require('../platform');
 const log = require('../log');
 const path = require('path');
 const listfile = require('../casc/listfile');
@@ -376,7 +377,7 @@ module.exports = {
 				const map = parse_map_entry(entry);
 				return map.name;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_map_internal_names(selection) {
@@ -384,7 +385,7 @@ module.exports = {
 				const map = parse_map_entry(entry);
 				return map.dir;
 			});
-			nw.Clipboard.get().set(names.join('\n'), 'text');
+			platform.clipboard_write_text(names.join('\n'));
 		},
 
 		copy_map_ids(selection) {
@@ -392,7 +393,7 @@ module.exports = {
 				const map = parse_map_entry(entry);
 				return map.id;
 			});
-			nw.Clipboard.get().set(ids.join('\n'), 'text');
+			platform.clipboard_write_text(ids.join('\n'));
 		},
 
 		copy_map_export_paths(selection) {
@@ -400,7 +401,7 @@ module.exports = {
 				const map = parse_map_entry(entry);
 				return ExportHelper.getExportPath(path.join('maps', map.dir));
 			});
-			nw.Clipboard.get().set(paths.join('\n'), 'text');
+			platform.clipboard_write_text(paths.join('\n'));
 		},
 
 		open_map_export_directory(selection) {
@@ -409,7 +410,7 @@ module.exports = {
 
 			const map = parse_map_entry(selection[0]);
 			const dir = ExportHelper.getExportPath(path.join('maps', map.dir));
-			nw.Shell.openItem(dir);
+			platform.open_path(dir);
 		},
 
 		async load_map(mapID, mapDir) {

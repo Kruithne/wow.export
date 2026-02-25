@@ -5,6 +5,7 @@
  */
 
 const path = require('path');
+const platform = require('../platform');
 const core = require('../core');
 
 const FILTER_DEBOUNCE_MS = 200;
@@ -365,7 +366,7 @@ module.exports = {
 				if (this.copytrimwhitespace)
 					entries = entries.map(e => e.replace(/\s/g, ''));
 
-				nw.Clipboard.get().set(entries.join('\n'), 'text');
+				platform.clipboard_write_text(entries.join('\n'));
 			} else {
 				if (this.disable)
 					return;
