@@ -18,7 +18,6 @@ const db2 = require('../casc/db2');
 const ExportHelper = require('../casc/export-helper');
 const listfile = require('../casc/listfile');
 const realmlist = require('../casc/realmlist');
-const DBCreatures = require('../db/caches/DBCreatures');
 const { wmv_parse } = require('../wmv');
 const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
@@ -30,6 +29,8 @@ const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
 const DBGuildTabard = require('../db/caches/DBGuildTabard');
+const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
+const character_appearance = require('../ui/character-appearance');
 
 
 // geoset group constants (CG enum from DBItemGeosets)
@@ -81,7 +82,7 @@ function get_current_race_gender(core) {
 		return null;
 
 	const race_id = race_selection.id;
-	const models_for_race = chr_race_x_chr_model_map.get(race_id);
+	const models_for_race = DBCharacterCustomization.get_race_models(race_id);
 
 	if (!models_for_race)
 		return null;
@@ -102,27 +103,6 @@ let gl_context = null;
 
 let active_renderer;
 let active_model;
-
-const chr_model_id_to_file_data_id = new Map();
-const chr_model_id_to_texture_layout_id = new Map();
-const options_by_chr_model = new Map();
-const option_to_choices = new Map();
-const default_options = new Array();
-
-const chr_race_map = new Map();
-const chr_race_x_chr_model_map = new Map();
-
-const choice_to_geoset = new Map();
-const choice_to_chr_cust_material_id = new Map();
-const choice_to_skinned_model = new Map();
-const unsupported_choices = new Array();
-
-const geoset_map = new Map();
-const chr_cust_mat_map = new Map();
-const chr_model_texture_layer_map = new Map();
-const char_component_texture_section_map = new Map();
-const chr_model_material_map = new Map();
-const chr_cust_skinned_model_map = new Map();
 
 const skinned_model_renderers = new Map();
 const skinned_model_meshes = new Set();
@@ -271,23 +251,6 @@ const THUMBNAIL_PRESETS = {
 
 function reset_module_state() {
 	active_skins.clear();
-	chr_model_id_to_file_data_id.clear();
-	chr_model_id_to_texture_layout_id.clear();
-	options_by_chr_model.clear();
-	option_to_choices.clear();
-	default_options.length = 0;
-	chr_race_map.clear();
-	chr_race_x_chr_model_map.clear();
-	choice_to_geoset.clear();
-	choice_to_chr_cust_material_id.clear();
-	choice_to_skinned_model.clear();
-	unsupported_choices.length = 0;
-	geoset_map.clear();
-	chr_cust_mat_map.clear();
-	chr_model_texture_layer_map.clear();
-	char_component_texture_section_map.clear();
-	chr_model_material_map.clear();
-	chr_cust_skinned_model_map.clear();
 	skinned_model_renderers.clear();
 	skinned_model_meshes.clear();
 	clear_materials();
@@ -334,40 +297,8 @@ function update_geosets(core) {
 	if (!geosets || geosets.length === 0)
 		return;
 
-	// step 1: reset geosets to model defaults
-	for (const geoset of geosets) {
-		const id_str = geoset.id.toString();
-		const is_default = (geoset.id === 0 || id_str.endsWith('01') || id_str.startsWith('32'));
-		const is_hidden_default = id_str.startsWith('17') || id_str.startsWith('35');
-
-		geoset.checked = is_default && !is_hidden_default;
-	}
-
-	// step 2: apply customization geosets
-	const selection = core.view.chrCustActiveChoices;
-	for (const active_choice of selection) {
-		const available_choices = option_to_choices.get(active_choice.optionID);
-		if (!available_choices)
-			continue;
-
-		for (const available_choice of available_choices) {
-			const chr_cust_geo_id = choice_to_geoset.get(available_choice.id);
-			const geoset_id = geoset_map.get(chr_cust_geo_id);
-
-			if (geoset_id === undefined)
-				continue;
-
-			for (const geoset of geosets) {
-				if (geoset.id === 0)
-					continue;
-
-				if (geoset.id === geoset_id) {
-					const should_be_checked = available_choice.id === active_choice.choiceID;
-					geoset.checked = should_be_checked;
-				}
-			}
-		}
-	}
+	// steps 1+2: reset to defaults and apply customization geosets
+	character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
 
 	// step 3: apply equipment geosets (overrides customization where applicable)
 	const equipped_items = core.view.chrEquippedItems;
@@ -429,122 +360,27 @@ async function update_textures(core) {
 	if (!active_renderer)
 		return;
 
-	// step 1: reset all materials
-	for (const chr_material of chr_materials.values()) {
-		await chr_material.reset();
-		await chr_material.update();
-	}
-
-	let baked_npc_texture_type = null;
-
-	// step 2: apply baked NPC texture (if present)
-	if (core.view.chrCustBakedNPCTexture) {
-		const blp = core.view.chrCustBakedNPCTexture;
-
-		const available_types = [];
-		for (const [key, value] of chr_model_material_map.entries()) {
-			if (key.startsWith(current_char_component_texture_layout_id + '-'))
-				available_types.push({ key, type: value.TextureType, material: value });
-		}
-
-		available_types.sort((a, b) => a.type - b.type);
-
-		const chr_model_material = available_types.length > 0 ? available_types[0].material : null;
-		const texture_type = available_types.length > 0 ? available_types[0].type : 0;
-
-		if (chr_model_material) {
-			let chr_material;
-
-			if (!chr_materials.has(texture_type)) {
-				chr_material = new CharMaterialRenderer(texture_type, chr_model_material.Width, chr_model_material.Height);
-				chr_materials.set(texture_type, chr_material);
-				await chr_material.init();
-			} else {
-				chr_material = chr_materials.get(texture_type);
-			}
-
-			await chr_material.setTextureTarget(
-				{ FileDataID: 0, ChrModelTextureTargetID: 0 },
-				{ X: 0, Y: 0, Width: chr_model_material.Width, Height: chr_model_material.Height },
-				chr_model_material,
-				{ BlendMode: 0, TextureType: texture_type, ChrModelTextureTargetID: [0, 0] },
-				true,
-				blp
-			);
-
-			baked_npc_texture_type = texture_type;
-		}
-	}
-
-	// step 3: apply customization textures
-	const selection = core.view.chrCustActiveChoices;
-	for (const active_choice of selection) {
-		const chr_cust_mat_ids = choice_to_chr_cust_material_id.get(active_choice.choiceID);
-		if (chr_cust_mat_ids === undefined)
-			continue;
-
-		for (const chr_cust_mat_id of chr_cust_mat_ids) {
-			if (chr_cust_mat_id.RelatedChrCustomizationChoiceID != 0) {
-				const has_related_choice = selection.find((selected_choice) => selected_choice.choiceID === chr_cust_mat_id.RelatedChrCustomizationChoiceID);
-				if (!has_related_choice)
-					continue;
-			}
-
-			const chr_cust_mat = chr_cust_mat_map.get(chr_cust_mat_id.ChrCustomizationMaterialID);
-			const chr_model_texture_target = chr_cust_mat.ChrModelTextureTargetID;
-
-			const chr_model_texture_layer = chr_model_texture_layer_map.get(current_char_component_texture_layout_id + '-' + chr_model_texture_target);
-			if (chr_model_texture_layer === undefined)
-				continue;
-
-			const chr_model_material = chr_model_material_map.get(current_char_component_texture_layout_id + '-' + chr_model_texture_layer.TextureType);
-			if (chr_model_material === undefined)
-				continue;
-
-			// skip if baked NPC texture is applied to this texture type
-			if (baked_npc_texture_type !== null && chr_model_material.TextureType === baked_npc_texture_type)
-				continue;
-
-			let chr_material;
-			if (!chr_materials.has(chr_model_material.TextureType)) {
-				chr_material = new CharMaterialRenderer(chr_model_material.TextureType, chr_model_material.Width, chr_model_material.Height);
-				chr_materials.set(chr_model_material.TextureType, chr_material);
-				await chr_material.init();
-			} else {
-				chr_material = chr_materials.get(chr_model_material.TextureType);
-			}
-
-			let char_component_texture_section;
-			if (chr_model_texture_layer.TextureSectionTypeBitMask == -1) {
-				char_component_texture_section = { X: 0, Y: 0, Width: chr_model_material.Width, Height: chr_model_material.Height };
-			} else {
-				const char_component_texture_section_results = char_component_texture_section_map.get(current_char_component_texture_layout_id);
-				for (const char_component_texture_section_row of char_component_texture_section_results) {
-					if ((1 << char_component_texture_section_row.SectionType) & chr_model_texture_layer.TextureSectionTypeBitMask) {
-						char_component_texture_section = char_component_texture_section_row;
-						break;
-					}
-				}
-			}
-
-			if (char_component_texture_section === undefined)
-				continue;
-
-			await chr_material.setTextureTarget(chr_cust_mat, char_component_texture_section, chr_model_material, chr_model_texture_layer, true);
-		}
-	}
+	// steps 1-3: reset, apply baked NPC texture, apply customization textures
+	const baked_npc_texture_type = await character_appearance.apply_customization_textures(
+		active_renderer,
+		core.view.chrCustActiveChoices,
+		current_char_component_texture_layout_id,
+		chr_materials,
+		core.view.chrCustBakedNPCTexture || null
+	);
 
 	// step 4: apply equipment textures
 	const equipped_items = core.view.chrEquippedItems;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
-		const sections = char_component_texture_section_map.get(current_char_component_texture_layout_id);
+		const sections = DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
 		if (sections) {
 			const section_by_type = new Map();
 			for (const section of sections)
 				section_by_type.set(section.SectionType, section);
 
+			const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
 			let base_layer = null;
-			for (const [key, layer] of chr_model_texture_layer_map) {
+			for (const [key, layer] of texture_layer_map) {
 				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
 					continue;
 
@@ -555,7 +391,7 @@ async function update_textures(core) {
 			}
 
 			const layers_by_section = new Map();
-			for (const [key, layer] of chr_model_texture_layer_map) {
+			for (const [key, layer] of texture_layer_map) {
 				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
 					continue;
 
@@ -595,7 +431,7 @@ async function update_textures(core) {
 					if (!layer)
 						continue;
 
-					const chr_model_material = chr_model_material_map.get(current_char_component_texture_layout_id + '-' + layer.TextureType);
+					const chr_model_material = DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
 					if (!chr_model_material)
 						continue;
 
@@ -652,7 +488,7 @@ async function update_textures(core) {
 					if (!layer)
 						continue;
 
-					const chr_model_material = chr_model_material_map.get(current_char_component_texture_layout_id + '-' + layer.TextureType);
+					const chr_model_material = DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
 					if (!chr_model_material)
 						continue;
 
@@ -679,16 +515,7 @@ async function update_textures(core) {
 	}
 
 	// step 5: upload all textures to GPU
-	for (const [chr_model_texture_target, chr_material] of chr_materials) {
-		await chr_material.update();
-		const pixels = chr_material.getRawPixels();
-		await active_renderer.overrideTextureTypeWithPixels(
-			chr_model_texture_target,
-			chr_material.glCanvas.width,
-			chr_material.glCanvas.height,
-			pixels
-		);
-	}
+	await character_appearance.upload_textures_to_gpu(active_renderer, chr_materials);
 }
 
 /**
@@ -959,10 +786,7 @@ function dispose_collection_models() {
 }
 
 function clear_materials() {
-	for (const chr_material of chr_materials.values())
-		chr_material.dispose();
-
-	chr_materials.clear();
+	character_appearance.dispose_materials(chr_materials);
 }
 
 function fit_camera(core) {
@@ -978,7 +802,7 @@ function update_chr_model_list(core) {
 	if (!race_selection)
 		return;
 
-	const models_for_race = chr_race_x_chr_model_map.get(race_selection.id);
+	const models_for_race = DBCharacterCustomization.get_race_models(race_selection.id);
 	if (!models_for_race)
 		return;
 
@@ -1021,12 +845,12 @@ async function update_model_selection(core) {
 
 	log.write('Model selection changed to ID %d', selected.id);
 
-	const available_options = options_by_chr_model.get(selected.id);
+	const available_options = DBCharacterCustomization.get_options_for_model(selected.id);
 	if (available_options === undefined)
 		return;
 
 	// update texture layout for the new model
-	current_char_component_texture_layout_id = chr_model_id_to_texture_layout_id.get(selected.id);
+	current_char_component_texture_layout_id = DBCharacterCustomization.get_texture_layout_id(selected.id);
 
 	// clear materials for new model
 	clear_materials();
@@ -1036,6 +860,9 @@ async function update_model_selection(core) {
 	state.chrCustOptionSelection.splice(0, state.chrCustOptionSelection.length);
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
+	const option_to_choices = DBCharacterCustomization.get_option_to_choices_map();
+	const default_option_ids = DBCharacterCustomization.get_default_options();
+
 	// use imported choices if available and we're loading the target model, otherwise use defaults
 	if (state.chrImportChoices.length > 0 && state.chrImportTargetModelID === selected.id) {
 		state.chrCustActiveChoices.push(...state.chrImportChoices);
@@ -1044,7 +871,7 @@ async function update_model_selection(core) {
 	} else {
 		for (const option of available_options) {
 			const choices = option_to_choices.get(option.id);
-			if (default_options.includes(option.id) && choices && choices.length > 0)
+			if (default_option_ids.includes(option.id) && choices && choices.length > 0)
 				state.chrCustActiveChoices.push({ optionID: option.id, choiceID: choices[0].id });
 		}
 	}
@@ -1054,7 +881,7 @@ async function update_model_selection(core) {
 	state.optionToChoices = option_to_choices;
 
 	// load the model (this will call refresh_character_appearance when done)
-	const file_data_id = chr_model_id_to_file_data_id.get(selected.id);
+	const file_data_id = DBCharacterCustomization.get_model_file_data_id(selected.id);
 	await load_character_model(core, file_data_id);
 }
 
@@ -1067,7 +894,7 @@ function update_customization_type(core) {
 
 	const selected = selection[0];
 
-	const available_choices = option_to_choices.get(selected.id);
+	const available_choices = DBCharacterCustomization.get_choices_for_option(selected.id);
 	if (available_choices === undefined)
 		return;
 
@@ -1108,7 +935,7 @@ function randomize_customization(core) {
 	const options = state.chrCustOptions;
 
 	for (const option of options) {
-		const choices = option_to_choices.get(option.id);
+		const choices = DBCharacterCustomization.get_choices_for_option(option.id);
 		if (choices && choices.length > 0) {
 			const random_choice = choices[Math.floor(Math.random() * choices.length)];
 			update_choice_for_option(core, option.id, random_choice.id);
@@ -1243,8 +1070,8 @@ async function apply_import_data(core, data, source) {
 
 		gender_index = data.gender.type === 'MALE' ? 0 : 1;
 
-		const chr_model_id = chr_race_x_chr_model_map.get(race_id).get(gender_index);
-		const available_options = options_by_chr_model.get(chr_model_id);
+		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
 		const available_options_ids = available_options.map(opt => opt.id);
 
 		customizations = [];
@@ -1265,8 +1092,8 @@ async function apply_import_data(core, data, source) {
 		race_id = data.race;
 		gender_index = data.gender;
 
-		const chr_model_id = chr_race_x_chr_model_map.get(race_id).get(gender_index);
-		const available_options = options_by_chr_model.get(chr_model_id);
+		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
 		const available_options_ids = available_options.map(opt => opt.id);
 
 		if (data.legacy_values) {
@@ -1286,7 +1113,7 @@ async function apply_import_data(core, data, source) {
 
 				for (const [key, value] of Object.entries(option_map)) {
 					if (label_lower.includes(key)) {
-						const choices = option_to_choices.get(option.id);
+						const choices = DBCharacterCustomization.get_choices_for_option(option.id);
 						if (choices && choices[value]) {
 							customizations.push({ optionID: option.id, choiceID: choices[value].id });
 							break;
@@ -1309,8 +1136,8 @@ async function apply_import_data(core, data, source) {
 		race_id = data.race;
 		gender_index = data.gender;
 
-		const chr_model_id = chr_race_x_chr_model_map.get(race_id).get(gender_index);
-		const available_options = options_by_chr_model.get(chr_model_id);
+		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
 
 		customizations = [];
 		for (const choice_id of data.customizations) {
@@ -1334,7 +1161,7 @@ async function apply_import_data(core, data, source) {
 		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 		core.view.chrImportChoices.push(...customizations);
 
-		const chr_model_id = chr_race_x_chr_model_map.get(race_id).get(gender_index);
+		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
 		core.view.chrImportChrModelID = chr_model_id;
 		core.view.chrImportTargetModelID = chr_model_id;
 
@@ -1773,6 +1600,9 @@ function update_chr_race_list(core) {
 	core.view.chrCustRacesPlayable = [];
 	core.view.chrCustRacesNPC = [];
 
+	const chr_race_map = DBCharacterCustomization.get_chr_race_map();
+	const chr_race_x_chr_model_map = DBCharacterCustomization.get_chr_race_x_chr_model_map();
+
 	for (const [chr_race_id, chr_race_info] of chr_race_map) {
 		if (!chr_race_x_chr_model_map.has(chr_race_id))
 			continue;
@@ -2073,7 +1903,7 @@ function get_selected_choice(core, option_id) {
 	if (!active_choice)
 		return null;
 
-	const choices = option_to_choices.get(option_id);
+	const choices = DBCharacterCustomization.get_choices_for_option(option_id);
 	if (!choices)
 		return null;
 
@@ -2712,7 +2542,7 @@ module.exports = {
 
 		reset_module_state();
 
-		this.$core.showLoadingScreen(15);
+		this.$core.showLoadingScreen(8);
 
 		await this.$core.progressLoadingScreen('Retrieving realmlist...');
 		await realmlist.load();
@@ -2749,16 +2579,8 @@ module.exports = {
 		else
 			update_realm_list();
 
-		await this.$core.progressLoadingScreen('Loading texture mapping...');
-		const tfd_map = new Map();
-		for (const tfd_row of (await db2.TextureFileData.getAllRows()).values()) {
-			if (tfd_row.UsageType != 0)
-				continue;
-			tfd_map.set(tfd_row.MaterialResourcesID, tfd_row.FileDataID);
-		}
-
-		await this.$core.progressLoadingScreen('Loading creature data...');
-		await DBCreatures.initializeCreatureData();
+		await this.$core.progressLoadingScreen('Loading character customization data...');
+		await DBCharacterCustomization.ensureInitialized();
 
 		await this.$core.progressLoadingScreen('Loading item data...');
 		await DBItems.ensureInitialized();
@@ -2774,156 +2596,6 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading guild tabard data...');
 		await DBGuildTabard.ensureInitialized();
-
-		await this.$core.progressLoadingScreen('Loading character customization elements...');
-		for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
-			if (chr_customization_element_row.ChrCustomizationGeosetID != 0)
-				choice_to_geoset.set(chr_customization_element_row.ChrCustomizationChoiceID, chr_customization_element_row.ChrCustomizationGeosetID);
-
-			if (chr_customization_element_row.ChrCustomizationSkinnedModelID != 0) {
-				choice_to_skinned_model.set(chr_customization_element_row.ChrCustomizationChoiceID, chr_customization_element_row.ChrCustomizationSkinnedModelID);
-				unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
-			}
-
-			if (chr_customization_element_row.ChrCustomizationBoneSetID != 0)
-				unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
-
-			if (chr_customization_element_row.ChrCustomizationCondModelID != 0)
-				unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
-
-			if (chr_customization_element_row.ChrCustomizationDisplayInfoID != 0)
-				unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
-
-			if (chr_customization_element_row.ChrCustomizationMaterialID != 0) {
-				if (choice_to_chr_cust_material_id.has(chr_customization_element_row.ChrCustomizationChoiceID))
-					choice_to_chr_cust_material_id.get(chr_customization_element_row.ChrCustomizationChoiceID).push({ ChrCustomizationMaterialID: chr_customization_element_row.ChrCustomizationMaterialID, RelatedChrCustomizationChoiceID: chr_customization_element_row.RelatedChrCustomizationChoiceID });
-				else
-					choice_to_chr_cust_material_id.set(chr_customization_element_row.ChrCustomizationChoiceID, [{ ChrCustomizationMaterialID: chr_customization_element_row.ChrCustomizationMaterialID, RelatedChrCustomizationChoiceID: chr_customization_element_row.RelatedChrCustomizationChoiceID }]);
-
-				const mat_row = await db2.ChrCustomizationMaterial.getRow(chr_customization_element_row.ChrCustomizationMaterialID);
-				if (mat_row !== null)
-					chr_cust_mat_map.set(mat_row.ID, {ChrModelTextureTargetID: mat_row.ChrModelTextureTargetID, FileDataID: tfd_map.get(mat_row.MaterialResourcesID)});
-			}
-		}
-
-		await this.$core.progressLoadingScreen('Loading character customization options...');
-
-		const options_by_model = new Map();
-		const choices_by_option = new Map();
-		const unsupported_choices_set = new Set(unsupported_choices);
-
-		for (const [chr_customization_option_id, chr_customization_option_row] of await db2.ChrCustomizationOption.getAllRows()) {
-			const model_id = chr_customization_option_row.ChrModelID;
-			if (!options_by_model.has(model_id))
-				options_by_model.set(model_id, []);
-
-			options_by_model.get(model_id).push([chr_customization_option_id, chr_customization_option_row]);
-		}
-
-		for (const [chr_customization_choice_id, chr_customization_choice_row] of await db2.ChrCustomizationChoice.getAllRows()) {
-			const option_id = chr_customization_choice_row.ChrCustomizationOptionID;
-			if (!choices_by_option.has(option_id))
-				choices_by_option.set(option_id, []);
-
-			choices_by_option.get(option_id).push([chr_customization_choice_id, chr_customization_choice_row]);
-		}
-
-		for (const [chr_model_id, chr_model_row] of await db2.ChrModel.getAllRows()) {
-			const file_data_id = DBCreatures.getFileDataIDByDisplayID(chr_model_row.DisplayID);
-
-			chr_model_id_to_file_data_id.set(chr_model_id, file_data_id);
-			chr_model_id_to_texture_layout_id.set(chr_model_id, chr_model_row.CharComponentTextureLayoutID);
-
-			const model_options = options_by_model.get(chr_model_id);
-			if (!model_options)
-				continue;
-
-			for (const [chr_customization_option_id, chr_customization_option_row] of model_options) {
-				const choice_list = [];
-
-				if (!options_by_chr_model.has(chr_customization_option_row.ChrModelID))
-					options_by_chr_model.set(chr_customization_option_row.ChrModelID, []);
-
-				let option_name = '';
-				if (chr_customization_option_row.Name_lang != '')
-					option_name = chr_customization_option_row.Name_lang;
-				else
-					option_name = 'Option ' + chr_customization_option_row.OrderIndex;
-
-				options_by_chr_model.get(chr_customization_option_row.ChrModelID).push({ id: chr_customization_option_id, label: option_name });
-
-				const option_choices = choices_by_option.get(chr_customization_option_id);
-				if (option_choices) {
-					for (const [chr_customization_choice_id, chr_customization_choice_row] of option_choices) {
-						let name = '';
-						if (chr_customization_choice_row.Name_lang != '')
-							name = chr_customization_choice_row.Name_lang;
-						else
-							name = 'Choice ' + chr_customization_choice_row.OrderIndex;
-
-						const [swatch_color_0, swatch_color_1] = chr_customization_choice_row.SwatchColor || [0, 0];
-						choice_list.push({
-							id: chr_customization_choice_id,
-							label: name,
-							swatch_color_0,
-							swatch_color_1
-						});
-					}
-				}
-
-				const is_color_swatch = choice_list.some(c => c.swatch_color_0 !== 0 || c.swatch_color_1 !== 0);
-				option_to_choices.set(chr_customization_option_id, choice_list);
-				if (is_color_swatch)
-					options_by_chr_model.get(chr_customization_option_row.ChrModelID)[options_by_chr_model.get(chr_customization_option_row.ChrModelID).length - 1].is_color_swatch = true;
-
-				if (!(chr_customization_option_row.Flags & 0x20))
-					default_options.push(chr_customization_option_id);
-			}
-		}
-
-		await this.$core.progressLoadingScreen('Loading character races..');
-		for (const [chr_race_id, chr_race_row] of await db2.ChrRaces.getAllRows()) {
-			const flags = chr_race_row.Flags;
-			chr_race_map.set(chr_race_id, { id: chr_race_id, name: chr_race_row.Name_lang, isNPCRace: ((flags & 1) == 1 && chr_race_id != 23 && chr_race_id != 75) });
-		}
-
-		await this.$core.progressLoadingScreen('Loading character race models..');
-		for (const chr_race_x_chr_model_row of (await db2.ChrRaceXChrModel.getAllRows()).values()) {
-			if (!chr_race_x_chr_model_map.has(chr_race_x_chr_model_row.ChrRacesID))
-				chr_race_x_chr_model_map.set(chr_race_x_chr_model_row.ChrRacesID, new Map());
-
-			chr_race_x_chr_model_map.get(chr_race_x_chr_model_row.ChrRacesID).set(chr_race_x_chr_model_row.Sex, chr_race_x_chr_model_row.ChrModelID);
-		}
-
-		await this.$core.progressLoadingScreen('Loading character model materials..');
-		for (const chr_model_material_row of (await db2.ChrModelMaterial.getAllRows()).values())
-			chr_model_material_map.set(chr_model_material_row.CharComponentTextureLayoutsID + '-' + chr_model_material_row.TextureType, chr_model_material_row);
-
-		await this.$core.progressLoadingScreen('Loading character component texture sections...');
-		const char_component_texture_section_db = db2.CharComponentTextureSections;
-		for (const char_component_texture_section_row of (await char_component_texture_section_db.getAllRows()).values()) {
-			if (!char_component_texture_section_map.has(char_component_texture_section_row.CharComponentTextureLayoutID))
-				char_component_texture_section_map.set(char_component_texture_section_row.CharComponentTextureLayoutID, []);
-
-			char_component_texture_section_map.get(char_component_texture_section_row.CharComponentTextureLayoutID).push(char_component_texture_section_row);
-		}
-
-		await this.$core.progressLoadingScreen('Loading character model texture layers...');
-		const chr_model_texture_layer_db = db2.ChrModelTextureLayer;
-		for (const chr_model_texture_layer_row of (await chr_model_texture_layer_db.getAllRows()).values())
-			chr_model_texture_layer_map.set(chr_model_texture_layer_row.CharComponentTextureLayoutsID + '-' + chr_model_texture_layer_row.ChrModelTextureTargetID[0], chr_model_texture_layer_row);
-
-		await this.$core.progressLoadingScreen('Loading character customization geosets...');
-		for (const [chr_customization_geoset_id, chr_customization_geoset_row] of await db2.ChrCustomizationGeoset.getAllRows()) {
-			const geoset = chr_customization_geoset_row.GeosetType.toString().padStart(2, '0') + chr_customization_geoset_row.GeosetID.toString().padStart(2, '0');
-			geoset_map.set(chr_customization_geoset_id, Number(geoset));
-		}
-
-		await this.$core.progressLoadingScreen('Loading character customization skinned models...');
-
-		const chr_cust_skinned_model_db = db2.ChrCustomizationSkinnedModel;
-		for (const [chr_customization_skinned_model_id, chr_customization_skinned_model_row] of await chr_cust_skinned_model_db.getAllRows())
-			chr_cust_skinned_model_map.set(chr_customization_skinned_model_id, chr_customization_skinned_model_row);
 
 		await this.$core.progressLoadingScreen('Loading character shaders...');
 
@@ -2986,7 +2658,7 @@ module.exports = {
 			})
 		);
 
-		state.optionToChoices = option_to_choices;
+		state.optionToChoices = DBCharacterCustomization.get_option_to_choices_map();
 
 		// trigger initial race/model load
 		update_chr_race_list(this.$core);
