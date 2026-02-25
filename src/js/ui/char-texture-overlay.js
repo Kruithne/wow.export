@@ -48,7 +48,7 @@ function remove(canvas) {
 
 	if (canvas === active_layer) {
 		const element = get_element();
-		if (canvas.parentNode === element)
+		if (element && canvas.parentNode === element)
 			element.removeChild(canvas);
 
 		active_layer = null;
@@ -80,6 +80,8 @@ core.events.on('click-chr-next-overlay', () => {
 
 	if (next) {
 		const element = get_element();
+		if (!element)
+			return;
 
 		if (active_layer.parentNode === element)
 			element.removeChild(active_layer);
@@ -96,6 +98,8 @@ core.events.on('click-chr-prev-overlay', () => {
 
 	if (next) {
 		const element = get_element();
+		if (!element)
+			return;
 
 		if (active_layer.parentNode === element)
 			element.removeChild(active_layer);
