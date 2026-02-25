@@ -262,8 +262,8 @@ const apply_creature_equipment_textures = async (core) => {
 	for (const [slot_id, entry] of enabled) {
 		// use display-ID-based lookup for armor, item-ID-based for weapons
 		const item_textures = entry.item_id
-			? DBItemCharTextures.getItemTextures(entry.item_id)
-			: DBItemCharTextures.getTexturesByDisplayId(entry.display_id);
+			? DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
+			: DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
 
 		if (!item_textures)
 			continue;
@@ -863,8 +863,8 @@ const export_files = async (core, entries) => {
 
 								for (const [slot_id, entry] of export_equipment) {
 									const item_textures = entry.item_id
-										? DBItemCharTextures.getItemTextures(entry.item_id)
-										: DBItemCharTextures.getTexturesByDisplayId(entry.display_id);
+										? DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
+										: DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
 
 									if (!item_textures)
 										continue;
