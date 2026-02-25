@@ -6,6 +6,7 @@ const listfile = require('../casc/listfile');
 const EncryptionError = require('../casc/blte-reader').EncryptionError;
 const InstallType = require('../install-type');
 const listboxContext = require('../ui/listbox-context');
+const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
 
 const BLPFile = require('../casc/blp');
 const M2RendererGL = require('../3D/renderers/M2RendererGL');
@@ -16,6 +17,12 @@ const DBCreatures = require('../db/caches/DBCreatures');
 const DBCreatureList = require('../db/caches/DBCreatureList');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 const DBCreatureDisplayExtra = require('../db/caches/DBCreatureDisplayExtra');
+const DBNpcEquipment = require('../db/caches/DBNpcEquipment');
+const DBItemModels = require('../db/caches/DBItemModels');
+const DBItemGeosets = require('../db/caches/DBItemGeosets');
+const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
+const DBItems = require('../db/caches/DBItems');
+const { get_slot_name, get_attachment_ids_for_slot, get_slot_layer, ATTACHMENT_ID } = require('../wow/EquipmentSlots');
 
 const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
@@ -31,8 +38,476 @@ let active_creature;
 let is_character_model = false;
 const creature_chr_materials = new Map();
 
+// equipment state
+const equipment_model_renderers = new Map();
+const collection_model_renderers = new Map();
+let creature_equipment = null;
+let creature_extra_info = null;
+let creature_layout_id = 0;
+let equipment_refresh_lock = false;
+
+// CG constants from DBItemGeosets
+const CG = DBItemGeosets.CG;
+
+// slot id to geoset group mapping for collection models
+const SLOT_TO_GEOSET_GROUPS = {
+	1: [{ group_index: 0, char_geoset: CG.HELM }, { group_index: 1, char_geoset: CG.SKULL }],
+	5: [{ group_index: 0, char_geoset: CG.SLEEVES }, { group_index: 1, char_geoset: CG.CHEST }, { group_index: 2, char_geoset: CG.TROUSERS }, { group_index: 3, char_geoset: CG.TORSO }, { group_index: 4, char_geoset: CG.ARM_UPPER }],
+	6: [{ group_index: 0, char_geoset: CG.BELT }],
+	7: [{ group_index: 0, char_geoset: CG.PANTS }, { group_index: 1, char_geoset: CG.KNEEPADS }, { group_index: 2, char_geoset: CG.TROUSERS }],
+	8: [{ group_index: 0, char_geoset: CG.BOOTS }, { group_index: 1, char_geoset: CG.FEET }],
+	10: [{ group_index: 0, char_geoset: CG.GLOVES }, { group_index: 1, char_geoset: CG.HAND_ATTACHMENT }],
+	15: [{ group_index: 0, char_geoset: CG.CLOAK }]
+};
+
 const get_creature_displays = (file_data_id) => {
 	return DBCreatures.getCreatureDisplaysByFileDataID(file_data_id) ?? [];
+};
+
+/**
+ * Build equipment data for a character-model creature.
+ * Returns Map<slot_id, { display_id, item_id? }> or null.
+ */
+const build_creature_equipment = (extra_display_id, creature) => {
+	const equipment = new Map();
+
+	// armor from NpcModelItemSlotDisplayInfo (display-ID-based)
+	const npc_armor = DBNpcEquipment.get_equipment(extra_display_id);
+	if (npc_armor) {
+		for (const [slot_id, display_id] of npc_armor)
+			equipment.set(slot_id, { display_id });
+	}
+
+	// weapons from Creature.AlwaysItem (item-ID-based)
+	if (creature.always_items) {
+		for (let i = 0; i < creature.always_items.length && i < 2; i++) {
+			const item_id = creature.always_items[i];
+			const slot_id = i === 0 ? 16 : 17;
+			const display_id = DBItemModels.getDisplayId(item_id);
+			if (display_id !== undefined)
+				equipment.set(slot_id, { display_id, item_id });
+		}
+	}
+
+	return equipment.size > 0 ? equipment : null;
+};
+
+/**
+ * Build checklist array for equipment toggle UI.
+ */
+const build_equipment_checklist = (equipment) => {
+	if (!equipment)
+		return [];
+
+	const list = [];
+	for (const [slot_id, entry] of equipment) {
+		const slot_name = get_slot_name(slot_id) ?? 'Slot ' + slot_id;
+		list.push({
+			id: slot_id,
+			label: slot_name + ' (' + entry.display_id + ')',
+			checked: true
+		});
+	}
+
+	list.sort((a, b) => a.id - b.id);
+	return list;
+};
+
+/**
+ * Get enabled equipment slots from the checklist.
+ */
+const get_enabled_equipment = () => {
+	if (!creature_equipment)
+		return null;
+
+	const enabled = new Map();
+	const checklist = creature_equipment._checklist;
+	if (!checklist)
+		return creature_equipment;
+
+	for (const item of checklist) {
+		if (item.checked && creature_equipment.has(item.id))
+			enabled.set(item.id, creature_equipment.get(item.id));
+	}
+
+	return enabled.size > 0 ? enabled : null;
+};
+
+/**
+ * Apply equipment geosets to creature character model.
+ */
+const apply_creature_equipment_geosets = (core) => {
+	if (!active_renderer || !is_character_model)
+		return;
+
+	const geosets = core.view.creatureViewerGeosets;
+	if (!geosets || geosets.length === 0)
+		return;
+
+	const enabled = get_enabled_equipment();
+	if (!enabled)
+		return;
+
+	// build display-id-based slot map for armor
+	const slot_display_map = new Map();
+	for (const [slot_id, entry] of enabled) {
+		if (slot_id <= 19)
+			slot_display_map.set(slot_id, entry.display_id);
+	}
+
+	if (slot_display_map.size === 0)
+		return;
+
+	const equipment_geosets = DBItemGeosets.calculateEquipmentGeosetsByDisplay(slot_display_map);
+	const affected_groups = DBItemGeosets.getAffectedCharGeosetsByDisplay(slot_display_map);
+
+	for (const char_geoset of affected_groups) {
+		const base = char_geoset * 100;
+		const range_start = base + 1;
+		const range_end = base + 99;
+
+		for (const geoset of geosets) {
+			if (geoset.id >= range_start && geoset.id <= range_end)
+				geoset.checked = false;
+		}
+
+		const value = equipment_geosets.get(char_geoset);
+		if (value !== undefined) {
+			const target_geoset_id = base + value;
+			for (const geoset of geosets) {
+				if (geoset.id === target_geoset_id)
+					geoset.checked = true;
+			}
+		}
+	}
+
+	// helmet hide geosets
+	const head_entry = enabled.get(1);
+	if (head_entry && creature_extra_info) {
+		const hide_groups = DBItemGeosets.getHelmetHideGeosetsByDisplayId(
+			head_entry.display_id,
+			creature_extra_info.DisplayRaceID,
+			creature_extra_info.DisplaySexID
+		);
+
+		for (const char_geoset of hide_groups) {
+			const base = char_geoset * 100;
+			const range_start = base + 1;
+			const range_end = base + 99;
+
+			for (const geoset of geosets) {
+				if (geoset.id >= range_start && geoset.id <= range_end)
+					geoset.checked = false;
+			}
+		}
+	}
+
+	active_renderer.updateGeosets();
+};
+
+/**
+ * Apply equipment textures to creature character model.
+ */
+const apply_creature_equipment_textures = async (core) => {
+	if (!active_renderer || !is_character_model)
+		return;
+
+	const enabled = get_enabled_equipment();
+	if (!enabled || creature_layout_id === 0)
+		return;
+
+	const sections = DBCharacterCustomization.get_texture_sections(creature_layout_id);
+	if (!sections)
+		return;
+
+	const section_by_type = new Map();
+	for (const section of sections)
+		section_by_type.set(section.SectionType, section);
+
+	const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
+	let base_layer = null;
+	for (const [key, layer] of texture_layer_map) {
+		if (!key.startsWith(creature_layout_id + '-'))
+			continue;
+
+		if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1) {
+			base_layer = layer;
+			break;
+		}
+	}
+
+	const layers_by_section = new Map();
+	for (const [key, layer] of texture_layer_map) {
+		if (!key.startsWith(creature_layout_id + '-'))
+			continue;
+
+		if (layer.TextureSectionTypeBitMask === -1)
+			continue;
+
+		for (let section_type = 0; section_type < 9; section_type++) {
+			if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
+				if (!layers_by_section.has(section_type))
+					layers_by_section.set(section_type, layer);
+			}
+		}
+	}
+
+	if (base_layer) {
+		for (let section_type = 0; section_type < 9; section_type++) {
+			if (!layers_by_section.has(section_type))
+				layers_by_section.set(section_type, base_layer);
+		}
+	}
+
+	for (const [slot_id, entry] of enabled) {
+		// use display-ID-based lookup for armor, item-ID-based for weapons
+		const item_textures = entry.item_id
+			? DBItemCharTextures.getItemTextures(entry.item_id)
+			: DBItemCharTextures.getTexturesByDisplayId(entry.display_id);
+
+		if (!item_textures)
+			continue;
+
+		for (const texture of item_textures) {
+			const section = section_by_type.get(texture.section);
+			if (!section)
+				continue;
+
+			const layer = layers_by_section.get(texture.section);
+			if (!layer)
+				continue;
+
+			const chr_model_material = DBCharacterCustomization.get_model_material(creature_layout_id, layer.TextureType);
+			if (!chr_model_material)
+				continue;
+
+			let chr_material;
+			if (!creature_chr_materials.has(chr_model_material.TextureType)) {
+				chr_material = new CharMaterialRenderer(chr_model_material.TextureType, chr_model_material.Width, chr_model_material.Height);
+				creature_chr_materials.set(chr_model_material.TextureType, chr_material);
+				await chr_material.init();
+			} else {
+				chr_material = creature_chr_materials.get(chr_model_material.TextureType);
+			}
+
+			const slot_layer = get_slot_layer(slot_id);
+			const item_material = {
+				ChrModelTextureTargetID: (slot_layer * 100) + texture.section,
+				FileDataID: texture.fileDataID
+			};
+
+			await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+		}
+	}
+};
+
+/**
+ * Apply equipment 3D models (weapons, shoulders, helmets, capes, etc.).
+ */
+const apply_creature_equipment_models = async (core) => {
+	if (!active_renderer || !is_character_model)
+		return;
+
+	const gl_context = core.view.creatureViewerContext?.gl_context;
+	if (!gl_context)
+		return;
+
+	const enabled = get_enabled_equipment();
+
+	// dispose models for slots no longer enabled
+	for (const slot_id of equipment_model_renderers.keys()) {
+		if (!enabled?.has(slot_id)) {
+			const entry = equipment_model_renderers.get(slot_id);
+			for (const { renderer } of entry.renderers)
+				renderer.dispose();
+
+			equipment_model_renderers.delete(slot_id);
+		}
+	}
+
+	for (const slot_id of collection_model_renderers.keys()) {
+		if (!enabled?.has(slot_id)) {
+			const entry = collection_model_renderers.get(slot_id);
+			for (const renderer of entry.renderers)
+				renderer.dispose();
+
+			collection_model_renderers.delete(slot_id);
+		}
+	}
+
+	if (!enabled)
+		return;
+
+	const race_id = creature_extra_info?.DisplayRaceID;
+	const gender_index = creature_extra_info?.DisplaySexID;
+
+	for (const [slot_id, entry] of enabled) {
+		const existing_equip = equipment_model_renderers.get(slot_id);
+		const existing_coll = collection_model_renderers.get(slot_id);
+		if ((existing_equip?.display_id === entry.display_id) && (existing_coll?.display_id === entry.display_id || !existing_coll))
+			continue;
+
+		// dispose old if display changed
+		if (existing_equip) {
+			for (const { renderer } of existing_equip.renderers)
+				renderer.dispose();
+
+			equipment_model_renderers.delete(slot_id);
+		}
+
+		if (existing_coll) {
+			for (const renderer of existing_coll.renderers)
+				renderer.dispose();
+
+			collection_model_renderers.delete(slot_id);
+		}
+
+		// use item-ID-based lookup for weapons, display-ID-based for armor
+		const display = entry.item_id
+			? DBItemModels.getItemDisplay(entry.item_id, race_id, gender_index)
+			: DBItemModels.getDisplayData(entry.display_id, race_id, gender_index);
+
+		if (!display?.models || display.models.length === 0)
+			continue;
+
+		// bows held in left hand
+		let attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
+		if (slot_id === 16 && entry.item_id && DBItems.isItemBow(entry.item_id))
+			attachment_ids = [ATTACHMENT_ID.HAND_LEFT];
+
+		const attachment_model_count = Math.min(display.models.length, attachment_ids.length);
+		const collection_start_index = attachment_model_count;
+
+		// attachment models
+		if (attachment_model_count > 0) {
+			const renderers = [];
+			for (let i = 0; i < attachment_model_count; i++) {
+				const file_data_id = display.models[i];
+				const attachment_id = attachment_ids[i];
+
+				try {
+					const file = await core.view.casc.getFile(file_data_id);
+					const renderer = new M2RendererGL(file, gl_context, false, false);
+					await renderer.load();
+
+					if (display.textures && display.textures.length > i)
+						await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
+
+					renderers.push({ renderer, attachment_id });
+					log.write('Loaded creature attachment model %d for slot %d', file_data_id, slot_id);
+				} catch (e) {
+					log.write('Failed to load creature attachment model %d: %s', file_data_id, e.message);
+				}
+			}
+
+			if (renderers.length > 0)
+				equipment_model_renderers.set(slot_id, { renderers, display_id: entry.display_id });
+		}
+
+		// collection models
+		if (display.models.length > collection_start_index) {
+			const renderers = [];
+			for (let i = collection_start_index; i < display.models.length; i++) {
+				const file_data_id = display.models[i];
+
+				try {
+					const file = await core.view.casc.getFile(file_data_id);
+					const renderer = new M2RendererGL(file, gl_context, false, false);
+					await renderer.load();
+
+					if (active_renderer?.bones)
+						renderer.buildBoneRemapTable(active_renderer.bones);
+
+					const slot_geosets = SLOT_TO_GEOSET_GROUPS[slot_id];
+					if (slot_geosets && display.attachmentGeosetGroup) {
+						renderer.hideAllGeosets();
+						for (const mapping of slot_geosets) {
+							const value = display.attachmentGeosetGroup[mapping.group_index];
+							if (value !== undefined)
+								renderer.setGeosetGroupDisplay(mapping.char_geoset, 1 + value);
+						}
+					}
+
+					const texture_idx = i < display.textures?.length ? i : 0;
+					const texture_fdid = display.textures?.[texture_idx];
+
+					if (texture_fdid)
+						await renderer.applyReplaceableTextures({ textures: [texture_fdid] });
+
+					renderers.push(renderer);
+					log.write('Loaded creature collection model %d for slot %d', file_data_id, slot_id);
+				} catch (e) {
+					log.write('Failed to load creature collection model %d: %s', file_data_id, e.message);
+				}
+			}
+
+			if (renderers.length > 0)
+				collection_model_renderers.set(slot_id, { renderers, display_id: entry.display_id });
+		}
+	}
+};
+
+/**
+ * Dispose all creature equipment model renderers.
+ */
+const dispose_creature_equipment = () => {
+	for (const entry of equipment_model_renderers.values()) {
+		for (const { renderer } of entry.renderers)
+			renderer.dispose();
+	}
+	equipment_model_renderers.clear();
+
+	for (const entry of collection_model_renderers.values()) {
+		for (const renderer of entry.renderers)
+			renderer.dispose();
+	}
+	collection_model_renderers.clear();
+
+	creature_equipment = null;
+	creature_extra_info = null;
+	creature_layout_id = 0;
+};
+
+/**
+ * Full equipment refresh: geosets, textures, models.
+ */
+const refresh_creature_equipment = async (core) => {
+	if (!active_renderer || !is_character_model || !creature_equipment)
+		return;
+
+	// re-apply customization geosets first (reset)
+	const display_info = DBCreatures.getDisplayInfo(active_creature.displayID);
+	const customization_choices = DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
+	character_appearance.apply_customization_geosets(core.view.creatureViewerGeosets, customization_choices);
+
+	// re-apply customization textures (reset materials)
+	let baked_npc_blp = null;
+	const bake_id = creature_extra_info.HDBakeMaterialResourcesID || creature_extra_info.BakeMaterialResourcesID;
+	if (bake_id > 0) {
+		const bake_fdid = DBCharacterCustomization.get_texture_file_data_id(bake_id);
+		if (bake_fdid) {
+			try {
+				const bake_data = await core.view.casc.getFile(bake_fdid);
+				baked_npc_blp = new BLPFile(bake_data);
+			} catch (e) {
+				log.write('Failed to load baked NPC texture %d: %s', bake_fdid, e.message);
+			}
+		}
+	}
+
+	await character_appearance.apply_customization_textures(
+		active_renderer,
+		customization_choices,
+		creature_layout_id,
+		creature_chr_materials,
+		baked_npc_blp
+	);
+
+	// apply equipment on top
+	apply_creature_equipment_geosets(core);
+	await apply_creature_equipment_textures(core);
+	await character_appearance.upload_textures_to_gpu(active_renderer, creature_chr_materials);
+	await apply_creature_equipment_models(core);
 };
 
 const preview_creature = async (core, creature) => {
@@ -58,9 +533,11 @@ const preview_creature = async (core, creature) => {
 		}
 
 		character_appearance.dispose_materials(creature_chr_materials);
+		dispose_creature_equipment();
 		active_skins.clear();
 		selected_variant_texture_ids.length = 0;
 		is_character_model = false;
+		core.view.creatureViewerEquipment = [];
 
 		const display_info = DBCreatures.getDisplayInfo(creature.displayID);
 
@@ -123,7 +600,27 @@ const preview_creature = async (core, creature) => {
 				creature_chr_materials,
 				baked_npc_blp
 			);
+			// load and apply equipment
+			equipment_refresh_lock = true;
+			creature_extra_info = extra;
+			creature_layout_id = layout_id;
+			creature_equipment = build_creature_equipment(display_info.extendedDisplayInfoID, creature);
+
+			if (creature_equipment) {
+				const checklist = build_equipment_checklist(creature_equipment);
+				creature_equipment._checklist = checklist;
+				core.view.creatureViewerEquipment = checklist;
+
+				apply_creature_equipment_geosets(core);
+				await apply_creature_equipment_textures(core);
+			}
+
 			await character_appearance.upload_textures_to_gpu(active_renderer, creature_chr_materials);
+
+			if (creature_equipment)
+				await apply_creature_equipment_models(core);
+
+			equipment_refresh_lock = false;
 
 			core.view.creatureViewerAnims = modelViewerUtils.extract_animations(active_renderer);
 			core.view.creatureViewerAnimSelection = 'none';
@@ -328,6 +825,84 @@ const export_files = async (core, entries) => {
 
 						await character_appearance.apply_customization_textures(null, customization_choices, layout_id, export_materials, baked_npc_blp);
 
+						// apply equipment textures for export
+						const export_equipment = build_creature_equipment(display_info.extendedDisplayInfoID, creature);
+						if (export_equipment) {
+							const sections = DBCharacterCustomization.get_texture_sections(layout_id);
+							if (sections) {
+								const section_by_type = new Map();
+								for (const section of sections)
+									section_by_type.set(section.SectionType, section);
+
+								const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
+								let base_layer = null;
+								const layers_by_section = new Map();
+
+								for (const [key, layer] of texture_layer_map) {
+									if (!key.startsWith(layout_id + '-'))
+										continue;
+
+									if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1)
+										base_layer = layer;
+									else if (layer.TextureSectionTypeBitMask !== -1) {
+										for (let st = 0; st < 9; st++) {
+											if ((1 << st) & layer.TextureSectionTypeBitMask) {
+												if (!layers_by_section.has(st))
+													layers_by_section.set(st, layer);
+											}
+										}
+									}
+								}
+
+								if (base_layer) {
+									for (let st = 0; st < 9; st++) {
+										if (!layers_by_section.has(st))
+											layers_by_section.set(st, base_layer);
+									}
+								}
+
+								for (const [slot_id, entry] of export_equipment) {
+									const item_textures = entry.item_id
+										? DBItemCharTextures.getItemTextures(entry.item_id)
+										: DBItemCharTextures.getTexturesByDisplayId(entry.display_id);
+
+									if (!item_textures)
+										continue;
+
+									for (const texture of item_textures) {
+										const section = section_by_type.get(texture.section);
+										if (!section)
+											continue;
+
+										const layer = layers_by_section.get(texture.section);
+										if (!layer)
+											continue;
+
+										const chr_model_material = DBCharacterCustomization.get_model_material(layout_id, layer.TextureType);
+										if (!chr_model_material)
+											continue;
+
+										let chr_material;
+										if (!export_materials.has(chr_model_material.TextureType)) {
+											chr_material = new CharMaterialRenderer(chr_model_material.TextureType, chr_model_material.Width, chr_model_material.Height);
+											export_materials.set(chr_model_material.TextureType, chr_material);
+											await chr_material.init();
+										} else {
+											chr_material = export_materials.get(chr_model_material.TextureType);
+										}
+
+										const slot_layer = get_slot_layer(slot_id);
+										const item_material = {
+											ChrModelTextureTargetID: (slot_layer * 100) + texture.section,
+											FileDataID: texture.fileDataID
+										};
+
+										await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+									}
+								}
+							}
+						}
+
 						for (const [texture_type, chr_material] of export_materials) {
 							await chr_material.update();
 							exporter.addURITexture(texture_type, chr_material.getURI());
@@ -512,12 +1087,21 @@ module.exports = {
 					<span>Export animations</span>
 				</label>
 				<template v-if="$core.view.creatureViewerActiveType === 'm2'">
-					<span class="header">Geosets</span>
-					<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerGeosets"></component>
-					<div class="list-toggles">
-						<a @click="$core.view.setAllCreatureGeosets(true)">Enable All</a> / <a @click="$core.view.setAllCreatureGeosets(false)">Disable All</a>
-					</div>
-					<template v-if="$core.view.config.modelsExportTextures">
+					<template v-if="$core.view.creatureViewerEquipment.length > 0">
+						<span class="header">Equipment</span>
+						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerEquipment"></component>
+						<div class="list-toggles">
+							<a @click="$core.view.setAllCreatureEquipment(true)">Enable All</a> / <a @click="$core.view.setAllCreatureEquipment(false)">Disable All</a>
+						</div>
+					</template>
+					<template v-if="$core.view.creatureViewerGeosets.length > 0">
+						<span class="header">Geosets</span>
+						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerGeosets"></component>
+						<div class="list-toggles">
+							<a @click="$core.view.setAllCreatureGeosets(true)">Enable All</a> / <a @click="$core.view.setAllCreatureGeosets(false)">Disable All</a>
+						</div>
+					</template>
+					<template v-if="$core.view.config.modelsExportTextures && $core.view.creatureViewerSkins.length > 0">
 						<span class="header">Skins</span>
 						<component :is="$components.Listboxb" :items="$core.view.creatureViewerSkins" v-model:selection="$core.view.creatureViewerSkinsSelection" :single="true"></component>
 					</template>
@@ -537,7 +1121,7 @@ module.exports = {
 
 	methods: {
 		async initialize() {
-			this.$core.showLoadingScreen(5);
+			this.$core.showLoadingScreen(8);
 
 			await this.$core.progressLoadingScreen('Loading model file data...');
 			await DBModelFileData.initializeModelFileData();
@@ -550,6 +1134,17 @@ module.exports = {
 
 			await this.$core.progressLoadingScreen('Loading creature display extras...');
 			await DBCreatureDisplayExtra.ensureInitialized();
+
+			await this.$core.progressLoadingScreen('Loading NPC equipment data...');
+			await DBNpcEquipment.ensureInitialized();
+
+			await this.$core.progressLoadingScreen('Loading item display data...');
+			await DBItemModels.ensureInitialized();
+			await DBItemGeosets.ensureInitialized();
+			await DBItemCharTextures.ensureInitialized();
+
+			await this.$core.progressLoadingScreen('Loading item cache...');
+			await DBItems.ensureInitialized();
 
 			await this.$core.progressLoadingScreen('Loading creature list...');
 			await DBCreatureList.initialize_creature_list();
@@ -568,8 +1163,15 @@ module.exports = {
 
 			this.$core.view.listfileCreatures = entries;
 
-			if (!this.$core.view.creatureViewerContext)
-				this.$core.view.creatureViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+			if (!this.$core.view.creatureViewerContext) {
+				this.$core.view.creatureViewerContext = Object.seal({
+					getActiveRenderer: () => active_renderer,
+					getEquipmentRenderers: () => equipment_model_renderers,
+					getCollectionRenderers: () => collection_model_renderers,
+					gl_context: null,
+					fitCamera: null
+				});
+			}
 
 			this.$core.hideLoadingScreen();
 		},
@@ -755,6 +1357,13 @@ module.exports = {
 			if (creature)
 				preview_creature(this.$core, creature);
 		});
+
+		this.$core.view.$watch('creatureViewerEquipment', async () => {
+			if (equipment_refresh_lock || !active_renderer || !is_character_model || !creature_equipment)
+				return;
+
+			await refresh_creature_equipment(this.$core);
+		}, { deep: true });
 
 		this.$core.events.on('toggle-uv-layer', (layer_name) => {
 			const state = modelViewerUtils.create_view_state(this.$core, 'creature');

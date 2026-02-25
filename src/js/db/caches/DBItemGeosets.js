@@ -358,6 +358,117 @@ const get_affected_char_geosets = (equipped_items) => {
 	return affected;
 };
 
+/**
+ * Get geoset data directly by ItemDisplayInfoID.
+ * @param {number} display_id
+ * @returns {{geosetGroup: number[], helmetGeosetVis: number[]}|null}
+ */
+const get_geoset_data_by_display_id = (display_id) => {
+	return display_to_geosets.get(display_id) || null;
+};
+
+/**
+ * Calculate equipment geosets from a Map<slot_id, display_id> (display-ID-based).
+ * @param {Map<number, number>} slot_display_map
+ * @returns {Map<number, number>}
+ */
+const calculate_equipment_geosets_by_display = (slot_display_map) => {
+	const char_geoset_to_slot_values = new Map();
+
+	for (const [slot_id, display_id] of slot_display_map) {
+		const mapping = SLOT_GEOSET_MAPPING[slot_id];
+		if (!mapping)
+			continue;
+
+		const geoset_data = display_to_geosets.get(display_id);
+		if (!geoset_data)
+			continue;
+
+		for (const entry of mapping) {
+			const group_value = geoset_data.geosetGroup[entry.group_index] || 0;
+			const char_geoset = entry.char_geoset;
+
+			let value;
+			if (entry.special_feet)
+				value = group_value === 0 ? 2 : group_value;
+			else
+				value = 1 + group_value;
+
+			if (!char_geoset_to_slot_values.has(char_geoset))
+				char_geoset_to_slot_values.set(char_geoset, []);
+
+			char_geoset_to_slot_values.get(char_geoset).push({ slot_id, value });
+		}
+	}
+
+	const result = new Map();
+
+	for (const [char_geoset, slot_values] of char_geoset_to_slot_values) {
+		const priority_order = GEOSET_PRIORITY[char_geoset];
+
+		if (priority_order) {
+			for (const priority_slot of priority_order) {
+				const entry = slot_values.find(sv => sv.slot_id === priority_slot);
+				if (entry) {
+					result.set(char_geoset, entry.value);
+					break;
+				}
+			}
+		} else if (slot_values.length > 0) {
+			result.set(char_geoset, slot_values[0].value);
+		}
+	}
+
+	return result;
+};
+
+/**
+ * Get affected char geosets from a Map<slot_id, display_id> (display-ID-based).
+ * @param {Map<number, number>} slot_display_map
+ * @returns {Set<number>}
+ */
+const get_affected_char_geosets_by_display = (slot_display_map) => {
+	const affected = new Set();
+
+	for (const [slot_id, display_id] of slot_display_map) {
+		const mapping = SLOT_GEOSET_MAPPING[slot_id];
+		if (!mapping)
+			continue;
+
+		const geoset_data = display_to_geosets.get(display_id);
+		if (!geoset_data)
+			continue;
+
+		for (const entry of mapping)
+			affected.add(entry.char_geoset);
+	}
+
+	return affected;
+};
+
+/**
+ * Get helmet hide geosets directly by display ID.
+ * @param {number} display_id
+ * @param {number} race_id
+ * @param {number} gender_index
+ * @returns {number[]}
+ */
+const get_helmet_hide_geosets_by_display_id = (display_id, race_id, gender_index) => {
+	const geoset_data = display_to_geosets.get(display_id);
+	if (!geoset_data?.helmetGeosetVis)
+		return [];
+
+	const vis_id = geoset_data.helmetGeosetVis[gender_index];
+	if (!vis_id)
+		return [];
+
+	const race_map = helmet_hide_map.get(vis_id);
+	if (!race_map)
+		return [];
+
+	return race_map.get(race_id) || [];
+};
+
 module.exports = {
 	initialize,
 	ensureInitialized: ensure_initialized,
@@ -366,6 +477,10 @@ module.exports = {
 	calculateEquipmentGeosets: calculate_equipment_geosets,
 	getAffectedCharGeosets: get_affected_char_geosets,
 	getHelmetHideGeosets: get_helmet_hide_geosets,
+	getGeosetDataByDisplayId: get_geoset_data_by_display_id,
+	calculateEquipmentGeosetsByDisplay: calculate_equipment_geosets_by_display,
+	getAffectedCharGeosetsByDisplay: get_affected_char_geosets_by_display,
+	getHelmetHideGeosetsByDisplayId: get_helmet_hide_geosets_by_display_id,
 	SLOT_GEOSET_MAPPING,
 	GEOSET_PRIORITY,
 	CG

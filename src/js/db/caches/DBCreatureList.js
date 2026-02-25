@@ -28,10 +28,13 @@ const initialize_creature_list = async () => {
 			}
 		}
 
+		const always_items = row.AlwaysItem?.filter(e => e > 0) ?? [];
+
 		creatures.set(id, {
 			id,
 			name,
-			displayID: display_id
+			displayID: display_id,
+			always_items
 		});
 	}
 

@@ -222,6 +222,17 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Mark all creature equipment toggles to the given state.
+			 * @param {boolean} state
+			 */
+			setAllCreatureEquipment: function(state) {
+				if (this.creatureViewerEquipment) {
+					for (const node of this.creatureViewerEquipment)
+						node.checked = state;
+				}
+			},
+
+			/**
 			 * Mark all creature WMO groups to the given state.
 			 * @param {boolean} state
 			 */

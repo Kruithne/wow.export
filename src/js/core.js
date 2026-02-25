@@ -163,6 +163,7 @@ const makeNewView = () => {
 		creatureViewerAnimPaused: false, // Creature animation playback paused state.
 		creatureViewerAnimFrame: 0, // Current creature animation frame.
 		creatureViewerAnimFrameCount: 0, // Total frames in current creature animation.
+		creatureViewerEquipment: [], // Active creature equipment toggle checklist.
 		creatureViewerUVLayers: [], // Available UV layers for the active creature model.
 		creatureTexturePreviewURL: '', // Active URL of the texture preview for creature viewer.
 		creatureTexturePreviewUVOverlay: '', // UV overlay data URL for creature texture preview.

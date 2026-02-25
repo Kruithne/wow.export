@@ -123,10 +123,35 @@ const get_display_id = (item_id) => {
 	return item_to_display_id.get(item_id);
 };
 
+/**
+ * Get character texture components directly by ItemDisplayInfoID.
+ * @param {number} display_id
+ * @returns {Array<{section: number, fileDataID: number}>|null}
+ */
+const get_textures_by_display_id = (display_id) => {
+	const components = display_to_component_textures.get(display_id);
+	if (components === undefined)
+		return null;
+
+	const result = [];
+	for (const component of components) {
+		const file_data_ids = DBTextureFileData.getTextureFDIDsByMatID(component.materialResourcesID);
+		if (file_data_ids && file_data_ids.length > 0) {
+			result.push({
+				section: component.section,
+				fileDataID: file_data_ids[0]
+			});
+		}
+	}
+
+	return result.length > 0 ? result : null;
+};
+
 module.exports = {
 	initialize,
 	ensureInitialized: ensure_initialized,
 	getItemTextures: get_item_textures,
 	getDisplayId: get_display_id,
+	getTexturesByDisplayId: get_textures_by_display_id,
 	COMPONENT_SECTION
 };
