@@ -263,14 +263,19 @@ class GLContext {
 
 			case BlendMode.ALPHA:
 				this.set_blend(true);
-				this.set_blend_func(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+				this.set_blend_func_separate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 				this.set_depth_write(false);
 				break;
 
 			case BlendMode.ADD:
+				this.set_blend(true);
+				this.set_blend_func_separate(gl.SRC_ALPHA, gl.ONE, gl.ZERO, gl.ONE);
+				this.set_depth_write(false);
+				break;
+
 			case BlendMode.NO_ALPHA_ADD:
 				this.set_blend(true);
-				this.set_blend_func(gl.SRC_ALPHA, gl.ONE);
+				this.set_blend_func_separate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE);
 				this.set_depth_write(false);
 				break;
 
