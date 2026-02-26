@@ -415,9 +415,36 @@ document.addEventListener('click', (e) => {
 		core.view.cacheSize = size || 0;
 	}).catch(() => {});
 
-	app.check_update().then(update => {
-		if (update?.available)
-			core.setToast('info', 'A new version of wow.export is available: v' + update.version, null, -1, true);
+	app.check_update().then(async (update) => {
+		if (!update?.updateAvailable)
+			return;
+
+		core.setToast('progress', 'Downloading update v' + update.version + '...', null, -1, false);
+
+		const on_status = (e) => {
+			if (e.progress !== undefined)
+				core.setToast('progress', 'Downloading update v' + update.version + '... ' + Math.round(e.progress) + '%', null, -1, false);
+		};
+
+		on(MSG.UPDATE_STATUS, on_status);
+
+		try {
+			const result = await app.download_update();
+			off(MSG.UPDATE_STATUS, on_status);
+
+			if (!result.success) {
+				core.setToast('error', 'Update download failed: ' + (result.error ?? 'unknown error'), null, -1, true);
+				return;
+			}
+
+			core.setToast('info', 'Update v' + update.version + ' is ready to install.', {
+				'Restart Now': () => app.apply_update(),
+				'Later': null
+			}, -1, true);
+		} catch (e) {
+			off(MSG.UPDATE_STATUS, on_status);
+			core.setToast('error', 'Update failed: ' + e.message, null, -1, true);
+		}
 	}).catch(() => {});
 
 	// load what's new html

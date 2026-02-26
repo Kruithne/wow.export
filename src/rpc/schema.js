@@ -115,7 +115,9 @@ export const MAX_REQUEST_TIME = 120_000;
  *
  * app_get_info: {} => { version: string, flavour: string, guid: string, data_path: string }
  * app_get_constants: {} => Constants
- * app_check_update: {} => { available: boolean, url?: string, version?: string } | null
+ * app_check_update: {} => { version?: string, hash?: string, updateAvailable: boolean, updateReady: boolean, error?: string }
+ * app_download_update: {} => { success: boolean, error?: string }
+ * app_apply_update: {} => void
  * app_get_cache_size: {} => number
  * app_clear_cache: { type: string } => void
  */
@@ -144,6 +146,7 @@ export const MAX_REQUEST_TIME = 120_000;
  * export_progress: { current: number, total: number, file?: string }
  * loading_progress: { message: string, pct?: number }
  * config_changed: { key: string, value: any }
+ * update_status: { status: string, progress?: number, error?: string }
  * toast: { message: string, type?: string }
  */
 
@@ -160,6 +163,7 @@ export const MSG = {
 	EXPORT_PROGRESS: 'export_progress',
 	LOADING_PROGRESS: 'loading_progress',
 	CONFIG_CHANGED: 'config_changed',
+	UPDATE_STATUS: 'update_status',
 	TOAST: 'toast',
 	LOG_WRITE: 'log_write',
 };

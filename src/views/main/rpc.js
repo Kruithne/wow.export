@@ -23,6 +23,7 @@ const rpc_config = Electroview.defineRPC({
 			[MSG.EXPORT_PROGRESS](payload) { emit(MSG.EXPORT_PROGRESS, payload); },
 			[MSG.LOADING_PROGRESS](payload) { emit(MSG.LOADING_PROGRESS, payload); },
 			[MSG.CONFIG_CHANGED](payload) { emit(MSG.CONFIG_CHANGED, payload); },
+			[MSG.UPDATE_STATUS](payload) { emit(MSG.UPDATE_STATUS, payload); },
 			[MSG.TOAST](payload) { emit(MSG.TOAST, payload); },
 		},
 	},
@@ -183,6 +184,8 @@ export const app = {
 	get_info: () => rpc_config.request.app_get_info(),
 	get_constants: () => rpc_config.request.app_get_constants(),
 	check_update: () => rpc_config.request.app_check_update(),
+	download_update: () => rpc_config.request.app_download_update(),
+	apply_update: () => rpc_config.request.app_apply_update(),
 	get_cache_size: () => rpc_config.request.app_get_cache_size(),
 	clear_cache: (type) => rpc_config.request.app_clear_cache({ type }),
 };

@@ -55,7 +55,7 @@ export default {
 		},
 
 		release: {
-			baseUrl: 'https://wow.export/update/',
+			baseUrl: 'https://www.kruithne.net/wow.export/update/',
 			generatePatch: true,
 		},
 

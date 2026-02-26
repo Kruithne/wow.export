@@ -14,7 +14,6 @@ export const LISTFILE_MODEL_FILTER = /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/;
 
 export let CACHE = {};
 export let CONFIG = {};
-export let UPDATE = {};
 export let BLENDER = {};
 
 export const PRODUCTS = [
@@ -197,11 +196,6 @@ export const init = (app_paths) => {
 	CONFIG = {
 		DEFAULT_PATH: app_paths.default_config || '',
 		USER_PATH: app_paths.user_config || path.join(DATA_PATH, 'config.json'),
-	};
-
-	UPDATE = {
-		DIRECTORY: INSTALL_PATH ? path.join(INSTALL_PATH, '.update') : '',
-		HELPER: 'updater' + ({ win32: '.exe', darwin: '.app' }[process.platform] || ''),
 	};
 
 	const get_blender_base_dir = () => {

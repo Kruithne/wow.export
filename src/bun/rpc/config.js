@@ -120,6 +120,29 @@ export const app_handlers = {
 		return info;
 	},
 
+	async app_download_update() {
+		Updater.onStatusChange((entry) => {
+			_rpc?.send?.update_status?.({
+				status: entry.status,
+				progress: entry.details?.progress,
+				error: entry.details?.errorMessage,
+			});
+		});
+
+		try {
+			await Updater.downloadUpdate();
+			return { success: true };
+		} catch (e) {
+			return { success: false, error: e.message };
+		} finally {
+			Updater.onStatusChange(null);
+		}
+	},
+
+	async app_apply_update() {
+		await Updater.applyUpdate();
+	},
+
 	async app_get_cache_size() {
 		return core.get_cache_size();
 	},

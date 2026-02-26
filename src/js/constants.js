@@ -39,9 +39,6 @@ export async function init() {
 	constants.CONFIG.DEFAULT_PATH = c.CONFIG_DEFAULT_PATH ?? '';
 	constants.CONFIG.USER_PATH = c.CONFIG_USER_PATH ?? '';
 
-	constants.UPDATE.DIRECTORY = c.UPDATE_DIRECTORY ?? '';
-	constants.UPDATE.HELPER = c.UPDATE_HELPER ?? '';
-
 	_initialized = true;
 }
 
@@ -96,11 +93,6 @@ const constants = {
 	CONFIG: {
 		DEFAULT_PATH: '',
 		USER_PATH: ''
-	},
-
-	UPDATE: {
-		DIRECTORY: '',
-		HELPER: ''
 	},
 
 	PRODUCTS: [

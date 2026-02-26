@@ -1,92 +1,44 @@
 name: Deploy wow.export
 
-on:  
+on:
   push:
     tags:
       - '*'
-jobs: 
+
+jobs:
   build:
-    name: Build and publish
+    name: Build and deploy
     strategy:
       matrix:
         include:
-          - platform: win-x64
+          - prefix: stable-win-x64
             os: windows-latest
-          - platform: linux-x64
+          - prefix: stable-linux-x64
             os: ubuntu-22.04
-          - platform: osx-x64
+          - prefix: stable-macos-x64
             os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Install Python 2 (Linux)
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo apt install -y python2 python2-dev
-      - name: Install Python 2 (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install python2 -y
-      - name: Install Python 2 (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install pyenv
-          pyenv install 2.7.18
-          echo "PYTHON=/Users/runner/.pyenv/versions/2.7.18/bin/python" >> $GITHUB_ENV
-      - name: Install node-gyp dependencies (Linux)
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt-get install -y build-essential
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24.9.0'
+        uses: actions/checkout@v4
+
       - name: Set up bun
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.3.5'
-      - name: Install nw-gyp
-        run: npm install -g nw-gyp@latest
-      - name: bun install
+
+      - name: Install dependencies
         run: bun install
-      - name: Compile wow.export ${{ matrix.platform }}
-        run: bun build.js ${{ matrix.platform }}
-      - name: Publish
-        run: bun publish.js ${{ matrix.platform }}
-      - name: Upload update file
-        id: upload-update
+
+      - name: Build
+        run: bun run build:stable
+
+      - name: Upload release artifacts
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: publish/${{ matrix.platform }}/update
-          asset_name: update-${{ matrix.platform }}
-          tag: ${{ github.ref }}
-      - name: Upload update.json file
-        id: upload-manifest
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: publish/${{ matrix.platform }}/update.json
-          asset_name: update-${{ matrix.platform }}.json
-          tag: ${{ github.ref }}
-      - name: Upload package
-        id: upload-package
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: publish/${{ matrix.platform }}/wow-export-${{ matrix.platform }}-*.*
+          file: artifacts/*
           file_glob: true
           tag: ${{ github.ref }}
-      - name: Upload portable package
-        id: upload-portable
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: publish/${{ matrix.platform }}/portable-wow-export-${{ matrix.platform }}-*.*
-          file_glob: true
-          tag: ${{ github.ref }}
+
       - name: Trigger update webhook
         shell: bash
-        run: 'bun trigger_release.js ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }} ${{ matrix.platform }} "${{ steps.upload-update.outputs.browser_download_url }}" "${{ steps.upload-manifest.outputs.browser_download_url }}" "${{ steps.upload-package.outputs.browser_download_url }}" "${{ steps.upload-portable.outputs.browser_download_url }}"'
+        run: bun trigger_release.js ${{ secrets.WOW_EXPORT_V2_UPDATE_KEY }} ${{ matrix.prefix }} ${{ github.ref_name }}
