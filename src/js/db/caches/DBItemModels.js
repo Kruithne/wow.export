@@ -193,10 +193,64 @@ const get_display_id = (item_id) => {
 	return item_to_display_id.get(item_id);
 };
 
+/**
+ * Get display data directly by ItemDisplayInfoID (skips item->display lookup).
+ * @param {number} display_id
+ * @param {number} [race_id]
+ * @param {number} [gender_index]
+ * @returns {{ID: number, textures: number[], models: number[], geosetGroup: number[], attachmentGeosetGroup: number[]}|null}
+ */
+const get_display_data = (display_id, race_id, gender_index) => {
+	const data = display_to_data.get(display_id);
+	if (!data)
+		return null;
+
+	const models = [];
+
+	const is_shoulder_style = data.modelOptions.length === 2 &&
+		data.modelOptions[0].length > 0 &&
+		data.modelOptions[1].length > 0 &&
+		data.modelOptions[0].length === data.modelOptions[1].length &&
+		data.modelOptions[0].every((v, i) => v === data.modelOptions[1][i]);
+
+	if (is_shoulder_style && race_id !== undefined && gender_index !== undefined) {
+		const options = data.modelOptions[0];
+		const candidates = DBComponentModelFileData.getModelsForRaceGenderByPosition(options, race_id, gender_index);
+
+		if (candidates.left)
+			models.push(candidates.left);
+
+		if (candidates.right)
+			models.push(candidates.right);
+	} else {
+		for (const options of data.modelOptions) {
+			if (options.length === 0)
+				continue;
+
+			if (race_id !== undefined && gender_index !== undefined) {
+				const best = DBComponentModelFileData.getModelForRaceGender(options, race_id, gender_index);
+				if (best)
+					models.push(best);
+			} else {
+				models.push(options[0]);
+			}
+		}
+	}
+
+	return {
+		ID: display_id,
+		models,
+		textures: data.textures,
+		geosetGroup: data.geosetGroup,
+		attachmentGeosetGroup: data.attachmentGeosetGroup
+	};
+};
+
 module.exports = {
 	initialize,
 	ensureInitialized: ensure_initialized,
 	getItemModels: get_item_models,
 	getItemDisplay: get_item_display,
-	getDisplayId: get_display_id
+	getDisplayId: get_display_id,
+	getDisplayData: get_display_data
 };

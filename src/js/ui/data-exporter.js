@@ -17,16 +17,25 @@ const fsp = require('fs').promises;
  * @param {Array} rows - Array of row data arrays
  * @param {string} tableName - Name of the table being exported
  */
-const exportDataTable = async (headers, rows, tableName) => {
+const exportDataTable = async (headers, rows, tableName, options = {}) => {
 	if (!headers || !rows || headers.length === 0 || rows.length === 0) {
-		core.setToast('info', 'No data available to export.');
+		if (!options.helper)
+			core.setToast('info', 'No data available to export.');
+
 		return;
 	}
 
-	const helper = new ExportHelper(1, 'table');
-	helper.start();
+	const standalone = !options.helper;
+	let helper, exportPaths;
 
-	const exportPaths = core.openLastExportStream();
+	if (standalone) {
+		helper = new ExportHelper(1, 'table');
+		helper.start();
+		exportPaths = core.openLastExportStream();
+	} else {
+		helper = options.helper;
+		exportPaths = options.export_paths;
+	}
 
 	try {
 		const fileName = `${tableName}.csv`;
@@ -62,8 +71,10 @@ const exportDataTable = async (headers, rows, tableName) => {
 		log.write('Failed to export data table: %s', e.message);
 	}
 
-	exportPaths?.close();
-	helper.finish();
+	if (standalone) {
+		exportPaths?.close();
+		helper.finish();
+	}
 };
 
 /**
@@ -71,16 +82,25 @@ const exportDataTable = async (headers, rows, tableName) => {
  * @param {string} tableName - Name of the table being exported
  * @param {number} fileDataID - File data ID of the DB2 file
  */
-const exportRawDB2 = async (tableName, fileDataID) => {
+const exportRawDB2 = async (tableName, fileDataID, options = {}) => {
 	if (!tableName || !fileDataID) {
-		core.setToast('info', 'No DB2 file information available to export.');
+		if (!options.helper)
+			core.setToast('info', 'No DB2 file information available to export.');
+
 		return;
 	}
 
-	const helper = new ExportHelper(1, 'db2');
-	helper.start();
+	const standalone = !options.helper;
+	let helper, exportPaths;
 
-	const exportPaths = core.openLastExportStream();
+	if (standalone) {
+		helper = new ExportHelper(1, 'db2');
+		helper.start();
+		exportPaths = core.openLastExportStream();
+	} else {
+		helper = options.helper;
+		exportPaths = options.export_paths;
+	}
 
 	try {
 		const fileName = `${tableName}.db2`;
@@ -92,9 +112,8 @@ const exportRawDB2 = async (tableName, fileDataID) => {
 			helper.mark(fileName, true);
 		} else {
 			const fileData = await core.view.casc.getFile(fileDataID, true);
-			if (!fileData) {
+			if (!fileData)
 				throw new Error('Failed to retrieve DB2 file from CASC');
-			}
 
 			await fileData.writeToFile(exportPath);
 			await exportPaths?.writeLine('DB2:' + exportPath);
@@ -108,8 +127,10 @@ const exportRawDB2 = async (tableName, fileDataID) => {
 		log.write('Failed to export raw DB2 file: %s', e.message);
 	}
 
-	exportPaths?.close();
-	helper.finish();
+	if (standalone) {
+		exportPaths?.close();
+		helper.finish();
+	}
 };
 
 /**
@@ -120,16 +141,25 @@ const exportRawDB2 = async (tableName, fileDataID) => {
  * @param {Map} schema - WDCReader schema map for DDL generation
  * @param {boolean} createTable - Whether to include DROP/CREATE TABLE DDL
  */
-const exportDataTableSQL = async (headers, rows, tableName, schema, createTable) => {
+const exportDataTableSQL = async (headers, rows, tableName, schema, createTable, options = {}) => {
 	if (!headers || !rows || headers.length === 0 || rows.length === 0) {
-		core.setToast('info', 'No data available to export.');
+		if (!options.helper)
+			core.setToast('info', 'No data available to export.');
+
 		return;
 	}
 
-	const helper = new ExportHelper(1, 'table');
-	helper.start();
+	const standalone = !options.helper;
+	let helper, exportPaths;
 
-	const exportPaths = core.openLastExportStream();
+	if (standalone) {
+		helper = new ExportHelper(1, 'table');
+		helper.start();
+		exportPaths = core.openLastExportStream();
+	} else {
+		helper = options.helper;
+		exportPaths = options.export_paths;
+	}
 
 	try {
 		const fileName = `${tableName}.sql`;
@@ -169,8 +199,10 @@ const exportDataTableSQL = async (headers, rows, tableName, schema, createTable)
 		log.write('Failed to export data table: %s', e.message);
 	}
 
-	exportPaths?.close();
-	helper.finish();
+	if (standalone) {
+		exportPaths?.close();
+		helper.finish();
+	}
 };
 
 /**

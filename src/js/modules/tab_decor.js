@@ -575,8 +575,7 @@ module.exports = {
 			await modelViewerUtils.handle_animation_change(
 				active_renderer,
 				state,
-				selected_animation_id,
-				() => this.$core.view.decorViewerContext?.fitCamera?.()
+				selected_animation_id
 			);
 		});
 

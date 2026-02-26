@@ -233,9 +233,8 @@ const extract_animations = (renderer) => {
  * @param {object} renderer - Active renderer
  * @param {object} state - View state with animation properties
  * @param {string} selected_animation_id - Selected animation ID
- * @param {function} fit_camera - Camera fit function
  */
-const handle_animation_change = async (renderer, state, selected_animation_id, fit_camera) => {
+const handle_animation_change = async (renderer, state, selected_animation_id) => {
 	if (!renderer || !renderer.playAnimation)
 		return;
 
@@ -249,10 +248,6 @@ const handle_animation_change = async (renderer, state, selected_animation_id, f
 
 	if (selected_animation_id === 'none') {
 		renderer?.stopAnimation?.();
-
-		if (state.autoAdjust && fit_camera)
-			requestAnimationFrame(() => fit_camera());
-
 		return;
 	}
 
@@ -262,9 +257,6 @@ const handle_animation_change = async (renderer, state, selected_animation_id, f
 		await renderer.playAnimation(anim_info.m2Index);
 
 		state.animFrameCount = renderer.get_animation_frame_count();
-
-		if (state.autoAdjust && fit_camera)
-			requestAnimationFrame(() => fit_camera());
 	}
 };
 
@@ -497,6 +489,39 @@ const create_animation_methods = (get_renderer, get_state) => {
 	};
 };
 
+/**
+ * Create a view state proxy for a model viewer tab.
+ * @param {object} core - Core instance
+ * @param {string} prefix - Property prefix (e.g. 'model', 'decor', 'creature')
+ * @returns {object} Proxy mapping generic names to prefixed core.view properties
+ */
+const create_view_state = (core, prefix) => ({
+	get texturePreviewURL() { return core.view[prefix + 'TexturePreviewURL']; },
+	set texturePreviewURL(v) { core.view[prefix + 'TexturePreviewURL'] = v; },
+	get texturePreviewUVOverlay() { return core.view[prefix + 'TexturePreviewUVOverlay']; },
+	set texturePreviewUVOverlay(v) { core.view[prefix + 'TexturePreviewUVOverlay'] = v; },
+	get texturePreviewWidth() { return core.view[prefix + 'TexturePreviewWidth']; },
+	set texturePreviewWidth(v) { core.view[prefix + 'TexturePreviewWidth'] = v; },
+	get texturePreviewHeight() { return core.view[prefix + 'TexturePreviewHeight']; },
+	set texturePreviewHeight(v) { core.view[prefix + 'TexturePreviewHeight'] = v; },
+	get texturePreviewName() { return core.view[prefix + 'TexturePreviewName']; },
+	set texturePreviewName(v) { core.view[prefix + 'TexturePreviewName'] = v; },
+	get uvLayers() { return core.view[prefix + 'ViewerUVLayers']; },
+	set uvLayers(v) { core.view[prefix + 'ViewerUVLayers'] = v; },
+	get anims() { return core.view[prefix + 'ViewerAnims']; },
+	set anims(v) { core.view[prefix + 'ViewerAnims'] = v; },
+	get animSelection() { return core.view[prefix + 'ViewerAnimSelection']; },
+	set animSelection(v) { core.view[prefix + 'ViewerAnimSelection'] = v; },
+	get animPaused() { return core.view[prefix + 'ViewerAnimPaused']; },
+	set animPaused(v) { core.view[prefix + 'ViewerAnimPaused'] = v; },
+	get animFrame() { return core.view[prefix + 'ViewerAnimFrame']; },
+	set animFrame(v) { core.view[prefix + 'ViewerAnimFrame'] = v; },
+	get animFrameCount() { return core.view[prefix + 'ViewerAnimFrameCount']; },
+	set animFrameCount(v) { core.view[prefix + 'ViewerAnimFrameCount'] = v; },
+	get autoAdjust() { return core.view[prefix + 'ViewerAutoAdjust']; },
+	set autoAdjust(v) { core.view[prefix + 'ViewerAutoAdjust'] = v; }
+});
+
 module.exports = {
 	MODEL_TYPE_M2,
 	MODEL_TYPE_M3,
@@ -514,5 +539,6 @@ module.exports = {
 	handle_animation_change,
 	export_preview,
 	export_model,
-	create_animation_methods
+	create_animation_methods,
+	create_view_state
 };

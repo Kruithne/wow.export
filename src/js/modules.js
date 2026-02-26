@@ -38,6 +38,7 @@ const MODULES = {
 	tab_fonts: require('./modules/tab_fonts'),
 	tab_videos: require('./modules/tab_videos'),
 	tab_models: require('./modules/tab_models'),
+	tab_creatures: require('./modules/tab_creatures'),
 	tab_decor: require('./modules/tab_decor'),
 	tab_audio: require('./modules/tab_audio'),
 	tab_items: require('./modules/tab_items'),

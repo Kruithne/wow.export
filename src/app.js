@@ -227,6 +227,39 @@ document.addEventListener('click', function(e) {
 			},
 
 			/**
+			 * Mark all creature geosets to the given state.
+			 * @param {boolean} state
+			 */
+			setAllCreatureGeosets: function(state) {
+				if (this.creatureViewerGeosets) {
+					for (const node of this.creatureViewerGeosets)
+						node.checked = state;
+				}
+			},
+
+			/**
+			 * Mark all creature equipment toggles to the given state.
+			 * @param {boolean} state
+			 */
+			setAllCreatureEquipment: function(state) {
+				if (this.creatureViewerEquipment) {
+					for (const node of this.creatureViewerEquipment)
+						node.checked = state;
+				}
+			},
+
+			/**
+			 * Mark all creature WMO groups to the given state.
+			 * @param {boolean} state
+			 */
+			setAllCreatureWMOGroups: function(state) {
+				if (this.creatureViewerWMOGroups) {
+					for (const node of this.creatureViewerWMOGroups)
+						node.checked = state;
+				}
+			},
+
+			/**
 			 * Toggle UV layer for the main model viewer.
 			 * @param {string} layerName
 			 */

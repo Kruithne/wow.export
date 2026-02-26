@@ -7,6 +7,7 @@ const log = require('../../log');
 const db2 = require('../../casc/db2');
 
 const creatureDisplays = new Map();
+const creatureDisplayInfoMap = new Map();
 const displayIDToFileDataID = new Map();
 let isInitialized = false;
 
@@ -29,12 +30,11 @@ const initializeCreatureData = async () => {
 		creatureGeosetMap.get(geosetRow.CreatureDisplayInfoID).push((geosetRow.GeosetIndex + 1) * 100 + geosetRow.GeosetValue);
 	}
 
-	const creatureDisplayInfoMap = new Map();
 	const modelIDToDisplayInfoMap = new Map();
 
 	// Map all available texture fileDataIDs to model IDs.
 	for (const [displayID, displayRow] of await db2.CreatureDisplayInfo.getAllRows()) {
-		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
+		creatureDisplayInfoMap.set(displayID, { ID: displayID, modelID: displayRow.ModelID, extendedDisplayInfoID: displayRow.ExtendedDisplayInfoID, textures: displayRow.TextureVariationFileDataID.filter(e => e > 0)})
 		
 		if (modelIDToDisplayInfoMap.has(displayRow.ModelID))
 			modelIDToDisplayInfoMap.get(displayRow.ModelID).push(displayID);
@@ -88,8 +88,13 @@ const getFileDataIDByDisplayID = (displayID) => {
 	return displayIDToFileDataID.get(displayID);
 }
 
+const getDisplayInfo = (displayID) => {
+	return creatureDisplayInfoMap.get(displayID);
+};
+
 module.exports = {
 	initializeCreatureData,
 	getCreatureDisplaysByFileDataID,
-	getFileDataIDByDisplayID
+	getFileDataIDByDisplayID,
+	getDisplayInfo
 };

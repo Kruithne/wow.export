@@ -1696,6 +1696,18 @@ input[type=number]::-webkit-outer-spin-button {
 	margin: 0;
 }
 
+#tab-creatures {
+	grid-template-columns: 1fr 1fr auto;
+}
+#tab-creatures #creature-sidebar .ui-checkboxlist, #tab-creatures #creature-sidebar .ui-listbox {
+	height: 156px;
+}
+#tab-creatures #creature-sidebar .list-toggles {
+	font-size: 14px;
+	text-align: center;
+	margin-top: 5px;
+}
+
 #tab-maps {
 	grid-template-rows: auto 1fr 60px;
 }
@@ -2076,6 +2088,32 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #decor-texture-preview-toast:hover {
+	background: rgba(0, 0, 0, 0.8);
+	border-color: var(--accent);
+}
+
+#creature-texture-preview {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+}
+#creature-texture-preview-toast {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	background: rgba(0, 0, 0, 0.7);
+	border: 1px solid var(--border);
+	color: var(--text);
+	padding: 5px 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+	white-space: nowrap;
+}
+
+#creature-texture-preview-toast:hover {
 	background: rgba(0, 0, 0, 0.8);
 	border-color: var(--accent);
 }

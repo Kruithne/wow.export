@@ -65,6 +65,7 @@ const makeNewView = () => {
 		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
 		userInputFilterLegacyModels: '', // Value of the 'filter' field for legacy models.
 		userInputFilterDecor: '', // Value of the 'filter' field for decor items.
+		userInputFilterCreatures: '', // Value of the 'filter' field for creatures.
 		activeModule: null, // Active module component instance.
 		modNavButtons: [], // Module-registered navigation buttons.
 		modContextMenuOptions: [], // Module-registered context menu options.
@@ -89,6 +90,7 @@ const makeNewView = () => {
 		selectionInstall: [], // Current user selection of install files.
 		selectionLegacyModels: [], // Current user selection of legacy models.
 		selectionDecor: [], // Current user selection of decor items.
+		selectionCreatures: [], // Current user selection of creatures.
 		installStringsView: false, // Whether to show strings view instead of manifest.
 		installStrings: [], // Extracted strings from binary file.
 		installStringsFileName: '', // Name of file strings were extracted from.
@@ -108,6 +110,7 @@ const makeNewView = () => {
 		listfileInstall: [], // Filtered listfile for install files.
 		listfileLegacyModels: [], // Filtered listfile for legacy models from MPQ.
 		listfileDecor: [], // Filtered listfile for decor items.
+		listfileCreatures: [], // Filtered listfile for creatures.
 		decorCategoryMask: [], // Flat array of subcategory checkbox objects for watcher.
 		decorCategoryGroups: [], // Grouped category structure for template rendering.
 		dbdManifest: [], // DB2 entires from DBD manifest.
@@ -147,6 +150,26 @@ const makeNewView = () => {
 		legacyModelViewerAnimFrame: 0, // Current legacy animation frame.
 		legacyModelViewerAnimFrameCount: 0, // Total frames in current legacy animation.
 		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
+		creatureViewerContext: null, // 3D context for the creature viewer.
+		creatureViewerActiveType: 'none', // Type of creature model actively selected ('m2', 'wmo', 'none').
+		creatureViewerGeosets: [], // Active creature M2 geoset control.
+		creatureViewerSkins: [], // Active creature M2 model skins.
+		creatureViewerSkinsSelection: [], // Selected creature M2 model skin.
+		creatureViewerWMOGroups: [], // Active creature WMO group control.
+		creatureViewerWMOSets: [], // Active creature WMO doodad set control.
+		creatureViewerAutoAdjust: true, // Automatic camera adjustment for creature viewer.
+		creatureViewerAnims: [], // Available creature animations.
+		creatureViewerAnimSelection: null, // Selected creature animation.
+		creatureViewerAnimPaused: false, // Creature animation playback paused state.
+		creatureViewerAnimFrame: 0, // Current creature animation frame.
+		creatureViewerAnimFrameCount: 0, // Total frames in current creature animation.
+		creatureViewerEquipment: [], // Active creature equipment toggle checklist.
+		creatureViewerUVLayers: [], // Available UV layers for the active creature model.
+		creatureTexturePreviewURL: '', // Active URL of the texture preview for creature viewer.
+		creatureTexturePreviewUVOverlay: '', // UV overlay data URL for creature texture preview.
+		creatureTexturePreviewWidth: 256, // Width of creature texture preview.
+		creatureTexturePreviewHeight: 256, // Height of creature texture preview.
+		creatureTexturePreviewName: '', // Name of the creature texture preview.
 		decorViewerContext: null, // 3D context for the decor viewer.
 		decorViewerActiveType: 'none', // Type of decor model actively selected ('m2', 'wmo', 'none').
 		decorViewerGeosets: [], // Active decor M2 geoset control.
@@ -314,6 +337,15 @@ const makeNewView = () => {
 			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
 		],
 		menuButtonDecor: [
+			{ label: 'Export OBJ', value: 'OBJ' },
+			{ label: 'Export STL', value: 'STL' },
+			{ label: 'Export glTF', value: 'GLTF' },
+			{ label: 'Export GLB', value: 'GLB' },
+			{ label: 'Export M2 / WMO (Raw)', value: 'RAW' },
+			{ label: 'Export PNG (3D Preview)', value: 'PNG' },
+			{ label: 'Copy to Clipboard (3D Preview)', value: 'CLIPBOARD' },
+		],
+		menuButtonCreatures: [
 			{ label: 'Export OBJ', value: 'OBJ' },
 			{ label: 'Export STL', value: 'STL' },
 			{ label: 'Export glTF', value: 'GLTF' },

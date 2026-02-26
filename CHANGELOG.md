@@ -1,3 +1,9 @@
+## 0.2.14 (???)
+- Added "Creatures" tab, allowing export of NPCs with both custom and character models.
+- Added ability to select/export multiple DB2 tables at once.
+- Fixed some character item textures being selected for the wrong race/gender.
+- Fixed an issue that caused Auto Camera to reset the camera when changing animations.
+
 ## 0.2.13 (21-02-2026)
 - Added guild tabard customization to character tool.
 - Added housing decor categories to quickly filter decor models.

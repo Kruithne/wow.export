@@ -56,6 +56,8 @@
 	"legacyModelsAutoPreview": true,
 	"decorAutoPreview": true,
 	"exportDecorFormat": "OBJ",
+	"creatureAutoPreview": true,
+	"exportCreatureFormat": "OBJ",
 	"exportLegacyModelFormat": "RAW",
 	"modelViewerShowGrid": true,
 	"modelViewerShowBackground": false,
