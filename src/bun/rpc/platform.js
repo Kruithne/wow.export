@@ -1,4 +1,4 @@
-import { Utils } from 'electrobun/bun';
+import { Utils, Screen } from 'electrobun/bun';
 import os from 'node:os';
 import { get_platform_gpu_info } from '../lib/gpu-info.js';
 
@@ -46,7 +46,7 @@ export const platform_handlers = {
 	},
 
 	async platform_get_screen_info() {
-		// TODO: wire to electrobun Screen API
-		return { width: 1920, height: 1080, scale: 1 };
+		const display = Screen.getPrimaryDisplay();
+		return { width: display.bounds.width, height: display.bounds.height, scale: display.scaleFactor };
 	},
 };
