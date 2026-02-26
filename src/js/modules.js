@@ -216,7 +216,13 @@ function wrap_module(module_name, module_def) {
 			if (prop === 'setActive')
 				return () => set_active(module_name);
 
-			return target[prop];
+			if (prop in target)
+				return target[prop];
+
+			if (target.methods?.[prop])
+				return target.methods[prop];
+
+			return undefined;
 		}
 	});
 }

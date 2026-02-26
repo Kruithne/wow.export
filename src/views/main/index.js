@@ -452,4 +452,6 @@ document.addEventListener('click', (e) => {
 	});
 
 	modules.source_select.setActive();
+
+	modules.tab_blender.checkLocalVersion();
 })();
