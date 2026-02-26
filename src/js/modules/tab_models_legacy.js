@@ -121,7 +121,7 @@ const preview_model = async (core, file_name) => {
 		}
 
 		if (core.view.legacyModelViewerActiveType === 'm2') {
-			const displays = DBCreaturesLegacy.getCreatureDisplaysByPath(file_name);
+			const displays = await dbc.get_creature_displays_by_path_legacy(file_name);
 
 			if (displays && displays.length > 0) {
 				const skin_list = [];
@@ -507,7 +507,7 @@ export default {
 
 			await this.$core.progressLoadingScreen('Loading creature skin data...');
 
-			await DBCreaturesLegacy.initializeCreatureData(mpq, mpq.build_id);
+			await dbc.init_creature_data_legacy();
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 

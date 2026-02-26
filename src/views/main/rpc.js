@@ -149,6 +149,8 @@ export const dbc = {
 	get_decor: (filter) => rpc_config.request.dbc_get_decor({ filter }),
 	get_decor_categories: () => rpc_config.request.dbc_get_decor_categories(),
 	get_guild_tabard: (params) => rpc_config.request.dbc_get_guild_tabard(params),
+	init_creature_data_legacy: () => rpc_config.request.dbc_init_creature_data_legacy(),
+	get_creature_displays_by_path_legacy: (model_path) => rpc_config.request.dbc_get_creature_displays_by_path_legacy({ model_path }),
 };
 
 // -- platform API --

@@ -1,4 +1,5 @@
 import * as log from '../lib/log.js';
+import * as core from '../lib/core.js';
 import db2 from '../casc/db2.js';
 
 import * as DBItems from '../db/caches/DBItems.js';
@@ -7,6 +8,7 @@ import * as DBItemModels from '../db/caches/DBItemModels.js';
 import * as DBItemGeosets from '../db/caches/DBItemGeosets.js';
 import * as DBItemCharTextures from '../db/caches/DBItemCharTextures.js';
 import * as DBCreatures from '../db/caches/DBCreatures.js';
+import * as DBCreaturesLegacy from '../db/caches/DBCreaturesLegacy.js';
 import * as DBCreatureDisplayExtra from '../db/caches/DBCreatureDisplayExtra.js';
 import * as DBNpcEquipment from '../db/caches/DBNpcEquipment.js';
 import * as DBCharacterCustomization from '../db/caches/DBCharacterCustomization.js';
@@ -128,5 +130,17 @@ export const db_cache_handlers = {
 	async dbc_get_guild_tabard(params) {
 		await DBGuildTabard.ensureInitialized();
 		return DBGuildTabard;
+	},
+
+	async dbc_init_creature_data_legacy() {
+		const mpq = core.get_mpq();
+		if (!mpq)
+			throw new Error('no MPQ source loaded');
+
+		await DBCreaturesLegacy.initializeCreatureData(mpq, mpq.build_id);
+	},
+
+	async dbc_get_creature_displays_by_path_legacy({ model_path }) {
+		return DBCreaturesLegacy.getCreatureDisplaysByPath(model_path) ?? [];
 	},
 };
