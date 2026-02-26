@@ -338,6 +338,9 @@ class M2RendererGL {
 		this.animation_paused = false;
 		this.tex_matrices = null;
 
+		// global sequences
+		this.global_seq_times = new Float32Array();
+
 		// hand grip state for weapon attachment
 		// when true, finger bones use HandsClosed animation (ID 15)
 		this.close_right_hand = false;
@@ -383,6 +386,7 @@ class M2RendererGL {
 
 		// load textures
 		await this._load_textures();
+		this.global_seq_times = new Float32Array(this.m2.globalLoops.length);
 
 		// load first skin
 		if (this.m2.vertices.length > 0) {
@@ -710,11 +714,13 @@ class M2RendererGL {
 		this.current_anim_index = anim_index;
 		this.current_animation = index;
 		this.animation_time = 0;
+		this.global_seq_times = new Float32Array(anim_source.globalLoops.length);
 	}
 
 	stopAnimation() {
 		this.animation_time = 0;
 		this.animation_paused = false;
+		this.global_seq_times.fill(0);
 
 		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
@@ -746,8 +752,17 @@ class M2RendererGL {
 		if (!anim)
 			return;
 
-		if (!this.animation_paused)
+		if (!this.animation_paused) {
 			this.animation_time += delta_time;
+
+			for (let i = 0; i < this.global_seq_times.length; ++i) {
+				this.global_seq_times[i] += (delta_time * 1000);
+				let ts = anim_source.globalLoops[i];
+				if (ts > 0) {
+					this.global_seq_times[i] %= ts;
+				}
+			}
+		}
 
 		// wrap animation (duration is in milliseconds)
 		const duration_sec = anim.duration / 1000;
