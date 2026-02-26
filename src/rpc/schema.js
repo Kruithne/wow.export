@@ -73,6 +73,7 @@ export const MAX_REQUEST_TIME = 120_000;
  * dbc_get_decor: { filter?: string } => Decor[]
  * dbc_get_decor_categories: {} => DecorCategory[]
  * dbc_get_guild_tabard: { params: object } => TabardData
+ * dbc_call: { module: string, method: string, args?: any[] } => any (generic db cache dispatcher)
  */
 
 /**

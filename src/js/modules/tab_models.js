@@ -1,6 +1,7 @@
 import log from '../log.js';
 import InstallType from '../install-type.js';
 import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import { DBCreatures, DBItemDisplays, DBModelFileData } from '../db-proxy.js';
 import listboxContext from '../ui/listbox-context.js';
 
 import textureRibbon from '../ui/texture-ribbon.js';
@@ -43,11 +44,11 @@ const get_view_state = (core) => ({
 	set autoAdjust(v) { core.view.modelViewerAutoAdjust = v; }
 });
 
-const get_model_displays = (file_data_id) => {
-	let displays = DBCreatures.getCreatureDisplaysByFileDataID(file_data_id);
+const get_model_displays = async (file_data_id) => {
+	let displays = await DBCreatures.getCreatureDisplaysByFileDataID(file_data_id);
 
-	if (displays === undefined)
-		displays = DBItemDisplays.getItemDisplaysByFileDataID(file_data_id);
+	if (displays == null)
+		displays = await DBItemDisplays.getItemDisplaysByFileDataID(file_data_id);
 
 	return displays ?? [];
 };
@@ -94,7 +95,7 @@ const preview_model = async (core, file_name) => {
 		await active_renderer.load();
 
 		if (model_type === modelViewerUtils.MODEL_TYPE_M2) {
-			const displays = get_model_displays(file_data_id);
+			const displays = await get_model_displays(file_data_id);
 
 			const skin_list = [];
 			let model_name = listfile.getByID(file_data_id);
@@ -160,15 +161,14 @@ const preview_model = async (core, file_name) => {
 	}
 };
 
-const get_variant_texture_ids = (file_name) => {
-	if (file_name === active_path) {
+const get_variant_texture_ids = async (file_name) => {
+	if (file_name === active_path)
 		return selected_variant_texture_ids;
-	} else {
-		const file_data_id = listfile.getByFilename(file_name);
-		const displays = get_model_displays(file_data_id);
 
-		return displays.find(e => e.textures.length > 0)?.textures ?? [];
-	}
+	const file_data_id = listfile.getByFilename(file_name);
+	const displays = await get_model_displays(file_data_id);
+
+	return displays.find(e => e.textures.length > 0)?.textures ?? [];
 };
 
 const export_files = async (core, files, is_local = false, export_id = -1) => {
@@ -252,7 +252,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 				export_path,
 				helper,
 				file_manifest,
-				variant_textures: get_variant_texture_ids(file_name),
+				variant_textures: await get_variant_texture_ids(file_name),
 				geoset_mask: is_active ? core.view.modelViewerGeosets : null,
 				wmo_group_mask: is_active ? core.view.modelViewerWMOGroups : null,
 				wmo_set_mask: is_active ? core.view.modelViewerWMOSets : null,

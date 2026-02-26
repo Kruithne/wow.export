@@ -134,6 +134,7 @@ export const db = {
 // -- db cache API --
 
 export const dbc = {
+	call: (module, method, args) => rpc_config.request.dbc_call({ module, method, args }),
 	get_items: (filter) => rpc_config.request.dbc_get_items({ filter }),
 	get_item_displays: (item_id) => rpc_config.request.dbc_get_item_displays({ item_id }),
 	get_item_models: (display_id) => rpc_config.request.dbc_get_item_models({ display_id }),

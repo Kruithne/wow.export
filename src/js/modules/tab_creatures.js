@@ -15,6 +15,7 @@ import textureRibbon from '../ui/texture-ribbon.js';
 import textureExporter from '../ui/texture-exporter.js';
 import modelViewerUtils from '../ui/model-viewer-utils.js';
 import character_appearance from '../ui/character-appearance.js';
+import { DBCreatures, DBCreatureDisplayExtra, DBCreatureList, DBItemGeosets, DBItemModels, DBItemCharTextures, DBItems, DBNpcEquipment, DBCharacterCustomization, DBModelFileData } from '../db-proxy.js';
 
 const ExportHelper = exporter;
 
@@ -35,8 +36,25 @@ let creature_extra_info = null;
 let creature_layout_id = 0;
 let equipment_refresh_lock = false;
 
-// CG constants from DBItemGeosets
-const CG = DBItemGeosets.CG;
+const CG = {
+	SLEEVES: 8,
+	KNEEPADS: 9,
+	CHEST: 10,
+	PANTS: 11,
+	TABARD: 12,
+	TROUSERS: 13,
+	CLOAK: 15,
+	BELT: 18,
+	FEET: 20,
+	TORSO: 22,
+	HAND_ATTACHMENT: 23,
+	SHOULDERS: 26,
+	HELM: 27,
+	ARM_UPPER: 28,
+	BOOTS: 5,
+	GLOVES: 4,
+	SKULL: 21
+};
 
 // slot id to geoset group mapping for collection models
 const SLOT_TO_GEOSET_GROUPS = {
@@ -49,19 +67,19 @@ const SLOT_TO_GEOSET_GROUPS = {
 	15: [{ group_index: 0, char_geoset: CG.CLOAK }]
 };
 
-const get_creature_displays = (file_data_id) => {
-	return DBCreatures.getCreatureDisplaysByFileDataID(file_data_id) ?? [];
+const get_creature_displays = async (file_data_id) => {
+	return await DBCreatures.getCreatureDisplaysByFileDataID(file_data_id) ?? [];
 };
 
 /**
  * Build equipment data for a character-model creature.
  * Returns Map<slot_id, { display_id, item_id? }> or null.
  */
-const build_creature_equipment = (extra_display_id, creature) => {
+const build_creature_equipment = async (extra_display_id, creature) => {
 	const equipment = new Map();
 
 	// armor from NpcModelItemSlotDisplayInfo (display-ID-based)
-	const npc_armor = DBNpcEquipment.get_equipment(extra_display_id);
+	const npc_armor = await DBNpcEquipment.get_equipment(extra_display_id);
 	if (npc_armor) {
 		for (const [slot_id, display_id] of npc_armor)
 			equipment.set(slot_id, { display_id });
@@ -72,7 +90,7 @@ const build_creature_equipment = (extra_display_id, creature) => {
 		for (let i = 0; i < creature.always_items.length && i < 2; i++) {
 			const item_id = creature.always_items[i];
 			const slot_id = i === 0 ? 16 : 17;
-			const display_id = DBItemModels.getDisplayId(item_id);
+			const display_id = await DBItemModels.getDisplayId(item_id);
 			if (display_id !== undefined)
 				equipment.set(slot_id, { display_id, item_id });
 		}
@@ -125,7 +143,7 @@ const get_enabled_equipment = () => {
 /**
  * Apply equipment geosets to creature character model.
  */
-const apply_creature_equipment_geosets = (core) => {
+const apply_creature_equipment_geosets = async (core) => {
 	if (!active_renderer || !is_character_model)
 		return;
 
@@ -147,8 +165,8 @@ const apply_creature_equipment_geosets = (core) => {
 	if (slot_display_map.size === 0)
 		return;
 
-	const equipment_geosets = DBItemGeosets.calculateEquipmentGeosetsByDisplay(slot_display_map);
-	const affected_groups = DBItemGeosets.getAffectedCharGeosetsByDisplay(slot_display_map);
+	const equipment_geosets = await DBItemGeosets.calculateEquipmentGeosetsByDisplay(slot_display_map);
+	const affected_groups = await DBItemGeosets.getAffectedCharGeosetsByDisplay(slot_display_map);
 
 	for (const char_geoset of affected_groups) {
 		const base = char_geoset * 100;
@@ -173,7 +191,7 @@ const apply_creature_equipment_geosets = (core) => {
 	// helmet hide geosets
 	const head_entry = enabled.get(1);
 	if (head_entry && creature_extra_info) {
-		const hide_groups = DBItemGeosets.getHelmetHideGeosetsByDisplayId(
+		const hide_groups = await DBItemGeosets.getHelmetHideGeosetsByDisplayId(
 			head_entry.display_id,
 			creature_extra_info.DisplayRaceID,
 			creature_extra_info.DisplaySexID
@@ -205,7 +223,7 @@ const apply_creature_equipment_textures = async (core) => {
 	if (!enabled || creature_layout_id === 0)
 		return;
 
-	const sections = DBCharacterCustomization.get_texture_sections(creature_layout_id);
+	const sections = await DBCharacterCustomization.get_texture_sections(creature_layout_id);
 	if (!sections)
 		return;
 
@@ -213,7 +231,7 @@ const apply_creature_equipment_textures = async (core) => {
 	for (const section of sections)
 		section_by_type.set(section.SectionType, section);
 
-	const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
+	const texture_layer_map = await DBCharacterCustomization.get_model_texture_layer_map();
 	let base_layer = null;
 	for (const [key, layer] of texture_layer_map) {
 		if (!key.startsWith(creature_layout_id + '-'))
@@ -251,8 +269,8 @@ const apply_creature_equipment_textures = async (core) => {
 	for (const [slot_id, entry] of enabled) {
 		// use display-ID-based lookup for armor, item-ID-based for weapons
 		const item_textures = entry.item_id
-			? DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
-			: DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
+			? await DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
+			: await DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
 
 		if (!item_textures)
 			continue;
@@ -266,7 +284,7 @@ const apply_creature_equipment_textures = async (core) => {
 			if (!layer)
 				continue;
 
-			const chr_model_material = DBCharacterCustomization.get_model_material(creature_layout_id, layer.TextureType);
+			const chr_model_material = await DBCharacterCustomization.get_model_material(creature_layout_id, layer.TextureType);
 			if (!chr_model_material)
 				continue;
 
@@ -353,15 +371,15 @@ const apply_creature_equipment_models = async (core) => {
 
 		// use item-ID-based lookup for weapons, display-ID-based for armor
 		const display = entry.item_id
-			? DBItemModels.getItemDisplay(entry.item_id, race_id, gender_index)
-			: DBItemModels.getDisplayData(entry.display_id, race_id, gender_index);
+			? await DBItemModels.getItemDisplay(entry.item_id, race_id, gender_index)
+			: await DBItemModels.getDisplayData(entry.display_id, race_id, gender_index);
 
 		if (!display?.models || display.models.length === 0)
 			continue;
 
 		// bows held in left hand
 		let attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
-		if (slot_id === 16 && entry.item_id && DBItems.isItemBow(entry.item_id))
+		if (slot_id === 16 && entry.item_id && await DBItems.isItemBow(entry.item_id))
 			attachment_ids = [ATTACHMENT_ID.HAND_LEFT];
 
 		const attachment_model_count = Math.min(display.models.length, attachment_ids.length);
@@ -465,15 +483,15 @@ const refresh_creature_equipment = async (core) => {
 		return;
 
 	// re-apply customization geosets first (reset)
-	const display_info = DBCreatures.getDisplayInfo(active_creature.displayID);
-	const customization_choices = DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
-	character_appearance.apply_customization_geosets(core.view.creatureViewerGeosets, customization_choices);
+	const display_info = await DBCreatures.getDisplayInfo(active_creature.displayID);
+	const customization_choices = await DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
+	await character_appearance.apply_customization_geosets(core.view.creatureViewerGeosets, customization_choices);
 
 	// re-apply customization textures (reset materials)
 	let baked_npc_blp = null;
 	const bake_id = creature_extra_info.HDBakeMaterialResourcesID || creature_extra_info.BakeMaterialResourcesID;
 	if (bake_id > 0) {
-		const bake_fdid = DBCharacterCustomization.get_texture_file_data_id(bake_id);
+		const bake_fdid = await DBCharacterCustomization.get_texture_file_data_id(bake_id);
 		if (bake_fdid) {
 			try {
 				const bake_data = await core.view.casc.getFile(bake_fdid);
@@ -493,7 +511,7 @@ const refresh_creature_equipment = async (core) => {
 	);
 
 	// apply equipment on top
-	apply_creature_equipment_geosets(core);
+	await apply_creature_equipment_geosets(core);
 	await apply_creature_equipment_textures(core);
 	await character_appearance.upload_textures_to_gpu(active_renderer, creature_chr_materials);
 	await apply_creature_equipment_models(core);
@@ -528,23 +546,23 @@ const preview_creature = async (core, creature) => {
 		is_character_model = false;
 		core.view.creatureViewerEquipment = [];
 
-		const display_info = DBCreatures.getDisplayInfo(creature.displayID);
+		const display_info = await DBCreatures.getDisplayInfo(creature.displayID);
 
 		if (display_info?.extendedDisplayInfoID > 0) {
 			// character-model creature
-			const extra = DBCreatureDisplayExtra.get_extra(display_info.extendedDisplayInfoID);
+			const extra = await DBCreatureDisplayExtra.get_extra(display_info.extendedDisplayInfoID);
 			if (!extra) {
 				core.setToast('error', `No extended display info found for creature ${creature.name}.`, null, -1);
 				return;
 			}
 
-			const chr_model_id = DBCharacterCustomization.get_chr_model_id(extra.DisplayRaceID, extra.DisplaySexID);
+			const chr_model_id = await DBCharacterCustomization.get_chr_model_id(extra.DisplayRaceID, extra.DisplaySexID);
 			if (chr_model_id === undefined) {
 				core.setToast('error', `No character model found for creature ${creature.name} (race ${extra.DisplayRaceID}, sex ${extra.DisplaySexID}).`, null, -1);
 				return;
 			}
 
-			const file_data_id = DBCharacterCustomization.get_model_file_data_id(chr_model_id);
+			const file_data_id = await DBCharacterCustomization.get_model_file_data_id(chr_model_id);
 			if (!file_data_id) {
 				core.setToast('error', `No model file found for creature ${creature.name}.`, null, -1);
 				return;
@@ -561,15 +579,15 @@ const preview_creature = async (core, creature) => {
 
 			// apply customization geosets
 			const geosets = core.view.creatureViewerGeosets;
-			const customization_choices = DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
-			character_appearance.apply_customization_geosets(geosets, customization_choices);
+			const customization_choices = await DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
+			await character_appearance.apply_customization_geosets(geosets, customization_choices);
 			active_renderer.updateGeosets();
 
 			// resolve baked NPC texture
 			let baked_npc_blp = null;
 			const bake_id = extra.HDBakeMaterialResourcesID || extra.BakeMaterialResourcesID;
 			if (bake_id > 0) {
-				const bake_fdid = DBCharacterCustomization.get_texture_file_data_id(bake_id);
+				const bake_fdid = await DBCharacterCustomization.get_texture_file_data_id(bake_id);
 				if (bake_fdid) {
 					try {
 						const bake_data = await core.view.casc.getFile(bake_fdid);
@@ -581,7 +599,7 @@ const preview_creature = async (core, creature) => {
 			}
 
 			// apply customization textures + baked NPC texture
-			const layout_id = DBCharacterCustomization.get_texture_layout_id(chr_model_id);
+			const layout_id = await DBCharacterCustomization.get_texture_layout_id(chr_model_id);
 			await character_appearance.apply_customization_textures(
 				active_renderer,
 				customization_choices,
@@ -593,14 +611,14 @@ const preview_creature = async (core, creature) => {
 			equipment_refresh_lock = true;
 			creature_extra_info = extra;
 			creature_layout_id = layout_id;
-			creature_equipment = build_creature_equipment(display_info.extendedDisplayInfoID, creature);
+			creature_equipment = await build_creature_equipment(display_info.extendedDisplayInfoID, creature);
 
 			if (creature_equipment) {
 				const checklist = build_equipment_checklist(creature_equipment);
 				creature_equipment._checklist = checklist;
 				core.view.creatureViewerEquipment = checklist;
 
-				apply_creature_equipment_geosets(core);
+				await apply_creature_equipment_geosets(core);
 				await apply_creature_equipment_textures(core);
 			}
 
@@ -619,7 +637,7 @@ const preview_creature = async (core, creature) => {
 			is_character_model = true;
 		} else {
 			// standard creature model
-			const file_data_id = DBCreatures.getFileDataIDByDisplayID(creature.displayID);
+			const file_data_id = await DBCreatures.getFileDataIDByDisplayID(creature.displayID);
 			if (!file_data_id) {
 				core.setToast('error', `No model data found for creature ${creature.name}.`, null, -1);
 				return;
@@ -650,7 +668,7 @@ const preview_creature = async (core, creature) => {
 			await active_renderer.load();
 
 			if (model_type === modelViewerUtils.MODEL_TYPE_M2) {
-				const displays = get_creature_displays(file_data_id);
+				const displays = await get_creature_displays(file_data_id);
 
 				const skin_list = [];
 				let model_name = listfile.getByID(file_data_id);
@@ -745,26 +763,26 @@ const export_files = async (core, entries) => {
 		if (helper.isCancelled())
 			break;
 
-		const creature = typeof entry === 'object' ? entry : DBCreatureList.get_creature_by_id(entry);
+		const creature = typeof entry === 'object' ? entry : await DBCreatureList.get_creature_by_id(entry);
 		if (!creature)
 			continue;
 
 		const file_manifest = [];
 		const creature_name = ExportHelper.sanitizeFilename(creature.name);
 
-		const display_info = DBCreatures.getDisplayInfo(creature.displayID);
+		const display_info = await DBCreatures.getDisplayInfo(creature.displayID);
 
 		if (display_info?.extendedDisplayInfoID > 0) {
 			// character-model creature export
 			try {
-				const extra = DBCreatureDisplayExtra.get_extra(display_info.extendedDisplayInfoID);
+				const extra = await DBCreatureDisplayExtra.get_extra(display_info.extendedDisplayInfoID);
 				if (!extra) {
 					helper.mark(creature_name, false, 'No extended display info found');
 					continue;
 				}
 
-				const chr_model_id = DBCharacterCustomization.get_chr_model_id(extra.DisplayRaceID, extra.DisplaySexID);
-				const file_data_id = chr_model_id !== undefined ? DBCharacterCustomization.get_model_file_data_id(chr_model_id) : undefined;
+				const chr_model_id = await DBCharacterCustomization.get_chr_model_id(extra.DisplayRaceID, extra.DisplaySexID);
+				const file_data_id = chr_model_id !== undefined ? await DBCharacterCustomization.get_model_file_data_id(chr_model_id) : undefined;
 				if (!file_data_id) {
 					helper.mark(creature_name, false, 'No character model found');
 					continue;
@@ -795,13 +813,13 @@ const export_files = async (core, entries) => {
 					} else {
 						// build textures for export
 						const export_materials = new Map();
-						const customization_choices = DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
-						const layout_id = DBCharacterCustomization.get_texture_layout_id(chr_model_id);
+						const customization_choices = await DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
+						const layout_id = await DBCharacterCustomization.get_texture_layout_id(chr_model_id);
 
 						let baked_npc_blp = null;
 						const bake_id = extra.HDBakeMaterialResourcesID || extra.BakeMaterialResourcesID;
 						if (bake_id > 0) {
-							const bake_fdid = DBCharacterCustomization.get_texture_file_data_id(bake_id);
+							const bake_fdid = await DBCharacterCustomization.get_texture_file_data_id(bake_id);
 							if (bake_fdid) {
 								try {
 									const bake_data = await casc.getFile(bake_fdid);
@@ -815,15 +833,15 @@ const export_files = async (core, entries) => {
 						await character_appearance.apply_customization_textures(null, customization_choices, layout_id, export_materials, baked_npc_blp);
 
 						// apply equipment textures for export
-						const export_equipment = build_creature_equipment(display_info.extendedDisplayInfoID, creature);
+						const export_equipment = await build_creature_equipment(display_info.extendedDisplayInfoID, creature);
 						if (export_equipment) {
-							const sections = DBCharacterCustomization.get_texture_sections(layout_id);
+							const sections = await DBCharacterCustomization.get_texture_sections(layout_id);
 							if (sections) {
 								const section_by_type = new Map();
 								for (const section of sections)
 									section_by_type.set(section.SectionType, section);
 
-								const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
+								const texture_layer_map = await DBCharacterCustomization.get_model_texture_layer_map();
 								let base_layer = null;
 								const layers_by_section = new Map();
 
@@ -852,8 +870,8 @@ const export_files = async (core, entries) => {
 
 								for (const [slot_id, entry] of export_equipment) {
 									const item_textures = entry.item_id
-										? DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
-										: DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
+										? await DBItemCharTextures.getItemTextures(entry.item_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID)
+										: await DBItemCharTextures.getTexturesByDisplayId(entry.display_id, creature_extra_info?.DisplayRaceID, creature_extra_info?.DisplaySexID);
 
 									if (!item_textures)
 										continue;
@@ -867,7 +885,7 @@ const export_files = async (core, entries) => {
 										if (!layer)
 											continue;
 
-										const chr_model_material = DBCharacterCustomization.get_model_material(layout_id, layer.TextureType);
+										const chr_model_material = await DBCharacterCustomization.get_model_material(layout_id, layer.TextureType);
 										if (!chr_model_material)
 											continue;
 
@@ -919,7 +937,7 @@ const export_files = async (core, entries) => {
 			continue;
 		}
 
-		const file_data_id = DBCreatures.getFileDataIDByDisplayID(creature.displayID);
+		const file_data_id = await DBCreatures.getFileDataIDByDisplayID(creature.displayID);
 		if (!file_data_id) {
 			helper.mark(creature_name, false, 'No model data found');
 			continue;
@@ -1138,7 +1156,7 @@ export default {
 			await this.$core.progressLoadingScreen('Loading creature list...');
 			await DBCreatureList.initialize_creature_list();
 
-			const creatures = DBCreatureList.get_all_creatures();
+			const creatures = await DBCreatureList.get_all_creatures();
 			const entries = [];
 
 			for (const [id, creature] of creatures)
@@ -1212,14 +1230,22 @@ export default {
 				return;
 			}
 
-			const creature_items = user_selection.map(entry => {
+			const creature_items = [];
+			for (const entry of user_selection) {
 				if (typeof entry === 'string') {
 					const match = entry.match(/\[(\d+)\]$/);
-					if (match)
-						return DBCreatureList.get_creature_by_id(parseInt(match[1]));
+					if (match) {
+						const creature = await DBCreatureList.get_creature_by_id(parseInt(match[1]));
+						if (creature)
+							creature_items.push(creature);
+
+						continue;
+					}
 				}
-				return entry;
-			}).filter(item => item);
+
+				if (entry)
+					creature_items.push(entry);
+			}
 
 			await export_files(this.$core, creature_items);
 		},
@@ -1341,9 +1367,9 @@ export default {
 			if (!creature_id)
 				return;
 
-			const creature = DBCreatureList.get_creature_by_id(creature_id);
+			const creature = await DBCreatureList.get_creature_by_id(creature_id);
 			if (creature)
-				preview_creature(this.$core, creature);
+				await preview_creature(this.$core, creature);
 		});
 
 		this.$core.view.$watch('creatureViewerEquipment', async () => {

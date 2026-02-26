@@ -1,6 +1,7 @@
 import * as log from '../lib/log.js';
 import * as core from '../lib/core.js';
 import db2 from '../casc/db2.js';
+import { serialize, deserialize } from '../../rpc/serialize.js';
 
 import * as DBItems from '../db/caches/DBItems.js';
 import * as DBItemDisplays from '../db/caches/DBItemDisplays.js';
@@ -10,6 +11,7 @@ import * as DBItemCharTextures from '../db/caches/DBItemCharTextures.js';
 import * as DBCreatures from '../db/caches/DBCreatures.js';
 import * as DBCreaturesLegacy from '../db/caches/DBCreaturesLegacy.js';
 import * as DBCreatureDisplayExtra from '../db/caches/DBCreatureDisplayExtra.js';
+import * as DBCreatureList from '../db/caches/DBCreatureList.js';
 import * as DBNpcEquipment from '../db/caches/DBNpcEquipment.js';
 import * as DBCharacterCustomization from '../db/caches/DBCharacterCustomization.js';
 import * as DBModelFileData from '../db/caches/DBModelFileData.js';
@@ -54,7 +56,43 @@ export const db_handlers = {
 	},
 };
 
+const DB_MODULES = {
+	DBCharacterCustomization,
+	DBCreatures,
+	DBCreatureDisplayExtra,
+	DBCreatureList,
+	DBItemGeosets,
+	DBItemModels,
+	DBItemCharTextures,
+	DBItems,
+	DBNpcEquipment,
+	DBGuildTabard,
+	DBModelFileData,
+	DBTextureFileData,
+	DBItemDisplays,
+	DBDecor,
+	DBDecorCategories,
+};
+
 export const db_cache_handlers = {
+	async dbc_call({ module, method, args }) {
+		const mod = DB_MODULES[module];
+		if (!mod)
+			throw new Error('unknown db module: ' + module);
+
+		const member = mod[method];
+		if (member === undefined)
+			throw new Error('unknown method: ' + module + '.' + method);
+
+		if (typeof member === 'function') {
+			const deserialized_args = (args ?? []).map(deserialize);
+			const result = await member(...deserialized_args);
+			return serialize(result);
+		}
+
+		return serialize(member);
+	},
+
 	async dbc_get_items({ filter }) {
 		await DBItems.ensureInitialized();
 		return DBItems;

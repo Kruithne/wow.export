@@ -4,6 +4,7 @@ import MultiMap from '../MultiMap.js';
 import ExternalLinks from '../external-links.js';
 
 import { db as db2, dbc } from '../../views/main/rpc.js';
+import { DBItems, DBModelFileData, DBTextureFileData } from '../db-proxy.js';
 import ItemSlot from '../wow/ItemSlot.js';
 import InstallType from '../install-type.js';
 import { get_slot_name } from '../wow/EquipmentSlots.js';
@@ -75,13 +76,13 @@ class Item {
 
 let items = [];
 
-const view_item_models = (core, modules, item) => {
+const view_item_models = async (core, modules, item) => {
 	modules.tab_models.setActive();
 
 	const list = new Set();
 
 	for (const model_id of item.models) {
-		const file_data_ids = DBModelFileData.getModelFileDataID(model_id);
+		const file_data_ids = await DBModelFileData.getModelFileDataID(model_id);
 		for (const file_data_id of file_data_ids) {
 			const entry = listfile.getByID(file_data_id);
 
@@ -104,7 +105,7 @@ const view_item_textures = async (core, modules, item) => {
 	const list = new Set();
 
 	for (const texture_id of item.textures) {
-		const file_data_ids = DBTextureFileData.getTextureFDIDsByMatID(texture_id);
+		const file_data_ids = await DBTextureFileData.getTextureFDIDsByMatID(texture_id);
 		if (file_data_ids) {
 			for (const file_data_id of file_data_ids) {
 				const entry = listfile.getByID(file_data_id);
@@ -323,8 +324,8 @@ export default {
 			item.checked = !item.checked;
 		},
 
-		equip_item(item) {
-			const slot_id = DBItems.getItemSlotId(item.id);
+		async equip_item(item) {
+			const slot_id = await DBItems.getItemSlotId(item.id);
 			if (!slot_id) {
 				this.$core.setToast('info', 'This item cannot be equipped.', null, 2000);
 				return;

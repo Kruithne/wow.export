@@ -5,6 +5,7 @@
  */
 import CharMaterialRenderer from '../3D/renderers/CharMaterialRenderer.js';
 import { dbc } from '../../views/main/rpc.js';
+import { DBCharacterCustomization } from '../db-proxy.js';
 
 /**
  * Reset geosets to model defaults, then apply customization choice geosets.
@@ -12,7 +13,7 @@ import { dbc } from '../../views/main/rpc.js';
  * @param {Array} geosets - geoset checkbox array from view state
  * @param {Array} active_choices - array of { optionID, choiceID }
  */
-function apply_customization_geosets(geosets, active_choices) {
+async function apply_customization_geosets(geosets, active_choices) {
 	if (!geosets || geosets.length === 0)
 		return;
 
@@ -27,15 +28,15 @@ function apply_customization_geosets(geosets, active_choices) {
 
 	// apply customization geosets
 	for (const active_choice of active_choices) {
-		const available_choices = DBCharacterCustomization.get_choices_for_option(active_choice.optionID);
+		const available_choices = await DBCharacterCustomization.get_choices_for_option(active_choice.optionID);
 		if (!available_choices)
 			continue;
 
 		for (const available_choice of available_choices) {
-			const chr_cust_geo_id = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
-			const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+			const chr_cust_geo_id = await DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
+			const geoset_id = await DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
 
-			if (geoset_id === undefined)
+			if (geoset_id == null)
 				continue;
 
 			for (const geoset of geosets) {
@@ -72,7 +73,7 @@ async function apply_customization_textures(renderer, active_choices, layout_id,
 
 	// apply baked NPC texture
 	if (baked_npc_blp) {
-		const model_material_map = DBCharacterCustomization.get_model_material_map();
+		const model_material_map = await DBCharacterCustomization.get_model_material_map();
 		const available_types = [];
 		for (const [key, value] of model_material_map.entries()) {
 			if (key.startsWith(layout_id + '-'))
@@ -110,7 +111,7 @@ async function apply_customization_textures(renderer, active_choices, layout_id,
 
 	// apply customization textures
 	for (const active_choice of active_choices) {
-		const chr_cust_mat_ids = DBCharacterCustomization.get_choice_materials(active_choice.choiceID);
+		const chr_cust_mat_ids = await DBCharacterCustomization.get_choice_materials(active_choice.choiceID);
 		if (chr_cust_mat_ids === undefined)
 			continue;
 
@@ -121,14 +122,14 @@ async function apply_customization_textures(renderer, active_choices, layout_id,
 					continue;
 			}
 
-			const chr_cust_mat = DBCharacterCustomization.get_chr_cust_material(chr_cust_mat_id.ChrCustomizationMaterialID);
+			const chr_cust_mat = await DBCharacterCustomization.get_chr_cust_material(chr_cust_mat_id.ChrCustomizationMaterialID);
 			const chr_model_texture_target = chr_cust_mat.ChrModelTextureTargetID;
 
-			const chr_model_texture_layer = DBCharacterCustomization.get_model_texture_layer(layout_id, chr_model_texture_target);
+			const chr_model_texture_layer = await DBCharacterCustomization.get_model_texture_layer(layout_id, chr_model_texture_target);
 			if (chr_model_texture_layer === undefined)
 				continue;
 
-			const chr_model_material = DBCharacterCustomization.get_model_material(layout_id, chr_model_texture_layer.TextureType);
+			const chr_model_material = await DBCharacterCustomization.get_model_material(layout_id, chr_model_texture_layer.TextureType);
 			if (chr_model_material === undefined)
 				continue;
 
@@ -149,7 +150,7 @@ async function apply_customization_textures(renderer, active_choices, layout_id,
 			if (chr_model_texture_layer.TextureSectionTypeBitMask == -1) {
 				char_component_texture_section = { X: 0, Y: 0, Width: chr_model_material.Width, Height: chr_model_material.Height };
 			} else {
-				const char_component_texture_section_results = DBCharacterCustomization.get_texture_sections(layout_id);
+				const char_component_texture_section_results = await DBCharacterCustomization.get_texture_sections(layout_id);
 				for (const char_component_texture_section_row of char_component_texture_section_results) {
 					if ((1 << char_component_texture_section_row.SectionType) & chr_model_texture_layer.TextureSectionTypeBitMask) {
 						char_component_texture_section = char_component_texture_section_row;

@@ -1,5 +1,6 @@
 import log from '../log.js';
 import { db as db2, dbc } from '../../views/main/rpc.js';
+import { DBItems } from '../db-proxy.js';
 import InstallType from '../install-type.js';
 import { get_slot_name } from '../wow/EquipmentSlots.js';
 
@@ -42,7 +43,7 @@ const initialize_item_sets = async (core) => {
 		// get first item for icon/quality
 		let first_item = null;
 		for (const item_id of item_ids) {
-			const item = DBItems.getItemById(item_id);
+			const item = await DBItems.getItemById(item_id);
 			if (item) {
 				const appearance_id = appearance_map.get(item_id);
 				const appearance_row = await db2.ItemAppearance.getRow(appearance_id);
@@ -92,11 +93,11 @@ export default {
 			apply_filter(this.$core);
 		},
 
-		equip_set(set) {
+		async equip_set(set) {
 			let equipped_count = 0;
 
 			for (const item_id of set.item_ids) {
-				const slot_id = DBItems.getItemSlotId(item_id);
+				const slot_id = await DBItems.getItemSlotId(item_id);
 				if (slot_id) {
 					this.$core.view.chrEquippedItems[slot_id] = item_id;
 					equipped_count++;

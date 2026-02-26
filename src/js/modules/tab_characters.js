@@ -19,6 +19,7 @@ import charTextureOverlay from '../ui/char-texture-overlay.js';
 import PNGWriter from '../png-writer.js';
 import { EQUIPMENT_SLOTS, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } from '../wow/EquipmentSlots.js';
 import character_appearance from '../ui/character-appearance.js';
+import { DBCharacterCustomization, DBItems, DBItemCharTextures, DBItemGeosets, DBItemModels, DBGuildTabard } from '../db-proxy.js';
 import AnimMapper from '../3D/AnimMapper.js';
 
 // geoset group constants (CG enum from DBItemGeosets)
@@ -62,7 +63,7 @@ function get_slot_geoset_mapping(slot_id) {
  * @param {object} core
  * @returns {{ raceID: number, genderIndex: number }|null}
  */
-function get_current_race_gender(core) {
+async function get_current_race_gender(core) {
 	const race_selection = core.view.chrCustRaceSelection?.[0];
 	const model_selection = core.view.chrCustModelSelection?.[0];
 
@@ -70,7 +71,7 @@ function get_current_race_gender(core) {
 		return null;
 
 	const race_id = race_selection.id;
-	const models_for_race = DBCharacterCustomization.get_race_models(race_id);
+	const models_for_race = await DBCharacterCustomization.get_race_models(race_id);
 
 	if (!models_for_race)
 		return null;
@@ -266,7 +267,7 @@ async function refresh_character_appearance(core) {
 
 	log.write('Refreshing character appearance...');
 
-	update_geosets(core);
+	await update_geosets(core);
 	await update_textures(core);
 	await update_equipment_models(core);
 
@@ -277,7 +278,7 @@ async function refresh_character_appearance(core) {
  * Updates all geoset visibility based on customization choices and equipped items.
  * Order: 1) Reset to model defaults, 2) Apply customization, 3) Apply equipment
  */
-function update_geosets(core) {
+async function update_geosets(core) {
 	if (!active_renderer)
 		return;
 
@@ -286,13 +287,13 @@ function update_geosets(core) {
 		return;
 
 	// steps 1+2: reset to defaults and apply customization geosets
-	character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
+	await character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
 
 	// step 3: apply equipment geosets (overrides customization where applicable)
 	const equipped_items = core.view.chrEquippedItems;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
-		const equipment_geosets = DBItemGeosets.calculateEquipmentGeosets(equipped_items);
-		const affected_groups = DBItemGeosets.getAffectedCharGeosets(equipped_items);
+		const equipment_geosets = await DBItemGeosets.calculateEquipmentGeosets(equipped_items);
+		const affected_groups = await DBItemGeosets.getAffectedCharGeosets(equipped_items);
 
 		for (const char_geoset of affected_groups) {
 			const base = char_geoset * 100;
@@ -319,9 +320,9 @@ function update_geosets(core) {
 		// apply helmet hide geosets (hair, ears, etc.)
 		const head_item = equipped_items[1];
 		if (head_item) {
-			const char_info = get_current_race_gender(core);
+			const char_info = await get_current_race_gender(core);
 			if (char_info) {
-				const hide_groups = DBItemGeosets.getHelmetHideGeosets(head_item, char_info.raceID, char_info.genderIndex);
+				const hide_groups = await DBItemGeosets.getHelmetHideGeosets(head_item, char_info.raceID, char_info.genderIndex);
 				for (const char_geoset of hide_groups) {
 					const base = char_geoset * 100;
 					const range_start = base + 1;
@@ -360,14 +361,14 @@ async function update_textures(core) {
 	// step 4: apply equipment textures
 	const equipped_items = core.view.chrEquippedItems;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
-		const char_info = get_current_race_gender(core);
-		const sections = DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
+		const char_info = await get_current_race_gender(core);
+		const sections = await DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
 		if (sections) {
 			const section_by_type = new Map();
 			for (const section of sections)
 				section_by_type.set(section.SectionType, section);
 
-			const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
+			const texture_layer_map = await DBCharacterCustomization.get_model_texture_layer_map();
 			let base_layer = null;
 			for (const [key, layer] of texture_layer_map) {
 				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
@@ -404,10 +405,10 @@ async function update_textures(core) {
 
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
 				// guild tabards use custom composition pipeline
-				if (DBGuildTabard.isGuildTabard(item_id))
+				if (await DBGuildTabard.isGuildTabard(item_id))
 					continue;
 
-				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex);
+				const item_textures = await DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex);
 				if (!item_textures)
 					continue;
 
@@ -420,7 +421,7 @@ async function update_textures(core) {
 					if (!layer)
 						continue;
 
-					const chr_model_material = DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
+					const chr_model_material = await DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
 					if (!chr_model_material)
 						continue;
 
@@ -445,8 +446,8 @@ async function update_textures(core) {
 
 			// guild tabard texture composition
 			const tabard_item_id = equipped_items[19];
-			if (tabard_item_id && DBGuildTabard.isGuildTabard(tabard_item_id)) {
-				const tier = DBGuildTabard.getTabardTier(tabard_item_id);
+			if (tabard_item_id && await DBGuildTabard.isGuildTabard(tabard_item_id)) {
+				const tier = await DBGuildTabard.getTabardTier(tabard_item_id);
 				const config = core.view.chrGuildTabardConfig;
 				const TABARD_LAYER = get_slot_layer(19);
 
@@ -455,15 +456,15 @@ async function update_textures(core) {
 
 				const tabard_layers = [];
 				for (const comp of components) {
-					const bg_fdid = DBGuildTabard.getBackgroundFDID(tier, comp, config.background);
+					const bg_fdid = await DBGuildTabard.getBackgroundFDID(tier, comp, config.background);
 					if (bg_fdid)
 						tabard_layers.push({ fdid: bg_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + comp, blend_mode: 1 });
 
-					const emblem_fdid = DBGuildTabard.getEmblemFDID(comp, config.emblem_design, config.emblem_color);
+					const emblem_fdid = await DBGuildTabard.getEmblemFDID(comp, config.emblem_design, config.emblem_color);
 					if (emblem_fdid)
 						tabard_layers.push({ fdid: emblem_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + 10 + comp, blend_mode: 1 });
 
-					const border_fdid = DBGuildTabard.getBorderFDID(tier, comp, config.border_style, config.border_color);
+					const border_fdid = await DBGuildTabard.getBorderFDID(tier, comp, config.border_style, config.border_color);
 					if (border_fdid)
 						tabard_layers.push({ fdid: border_fdid, section_type: comp, target_id: (TABARD_LAYER * 100) + 20 + comp, blend_mode: 1 });
 				}
@@ -477,7 +478,7 @@ async function update_textures(core) {
 					if (!layer)
 						continue;
 
-					const chr_model_material = DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
+					const chr_model_material = await DBCharacterCustomization.get_model_material(current_char_component_texture_layout_id, layer.TextureType);
 					if (!chr_model_material)
 						continue;
 
@@ -572,17 +573,17 @@ async function update_equipment_models(core) {
 		}
 
 		// get race/gender for model filtering
-		const char_info = get_current_race_gender(core);
+		const char_info = await get_current_race_gender(core);
 
 		// get display data for this item (models and textures, filtered by race/gender)
-		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex);
+		const display = await DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex);
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 
 		// get attachment IDs for this slot (may be empty for body slots)
 		// bows are held in the left hand despite being main-hand items
 		let attachment_ids = get_attachment_ids_for_slot(slot_id) || [];
-		if (slot_id === 16 && DBItems.isItemBow(item_id))
+		if (slot_id === 16 && await DBItems.isItemBow(item_id))
 			attachment_ids = [ATTACHMENT_ID.HAND_LEFT];
 
 		// split models into attachment vs collection
@@ -785,12 +786,12 @@ function fit_camera(core) {
 //endregion
 
 //region character state
-function update_chr_model_list(core) {
+async function update_chr_model_list(core) {
 	const race_selection = core.view.chrCustRaceSelection[0];
 	if (!race_selection)
 		return;
 
-	const models_for_race = DBCharacterCustomization.get_race_models(race_selection.id);
+	const models_for_race = await DBCharacterCustomization.get_race_models(race_selection.id);
 	if (!models_for_race)
 		return;
 
@@ -833,12 +834,12 @@ async function update_model_selection(core) {
 
 	log.write('Model selection changed to ID %d', selected.id);
 
-	const available_options = DBCharacterCustomization.get_options_for_model(selected.id);
+	const available_options = await DBCharacterCustomization.get_options_for_model(selected.id);
 	if (available_options === undefined)
 		return;
 
 	// update texture layout for the new model
-	current_char_component_texture_layout_id = DBCharacterCustomization.get_texture_layout_id(selected.id);
+	current_char_component_texture_layout_id = await DBCharacterCustomization.get_texture_layout_id(selected.id);
 
 	// clear materials for new model
 	clear_materials();
@@ -848,8 +849,8 @@ async function update_model_selection(core) {
 	state.chrCustOptionSelection.splice(0, state.chrCustOptionSelection.length);
 	state.chrCustActiveChoices.splice(0, state.chrCustActiveChoices.length);
 
-	const option_to_choices = DBCharacterCustomization.get_option_to_choices_map();
-	const default_option_ids = DBCharacterCustomization.get_default_options();
+	const option_to_choices = await DBCharacterCustomization.get_option_to_choices_map();
+	const default_option_ids = await DBCharacterCustomization.get_default_options();
 
 	// use imported choices if available and we're loading the target model, otherwise use defaults
 	if (state.chrImportChoices.length > 0 && state.chrImportTargetModelID === selected.id) {
@@ -869,11 +870,11 @@ async function update_model_selection(core) {
 	state.optionToChoices = option_to_choices;
 
 	// load the model (this will call refresh_character_appearance when done)
-	const file_data_id = DBCharacterCustomization.get_model_file_data_id(selected.id);
+	const file_data_id = await DBCharacterCustomization.get_model_file_data_id(selected.id);
 	await load_character_model(core, file_data_id);
 }
 
-function update_customization_type(core) {
+async function update_customization_type(core) {
 	const state = core.view;
 	const selection = state.chrCustOptionSelection;
 
@@ -882,7 +883,7 @@ function update_customization_type(core) {
 
 	const selected = selection[0];
 
-	const available_choices = DBCharacterCustomization.get_choices_for_option(selected.id);
+	const available_choices = await DBCharacterCustomization.get_choices_for_option(selected.id);
 	if (available_choices === undefined)
 		return;
 
@@ -918,12 +919,12 @@ function update_choice_for_option(core, option_id, choice_id) {
 	}
 }
 
-function randomize_customization(core) {
+async function randomize_customization(core) {
 	const state = core.view;
 	const options = state.chrCustOptions;
 
 	for (const option of options) {
-		const choices = DBCharacterCustomization.get_choices_for_option(option.id);
+		const choices = await DBCharacterCustomization.get_choices_for_option(option.id);
 		if (choices && choices.length > 0) {
 			const random_choice = choices[Math.floor(Math.random() * choices.length)];
 			update_choice_for_option(core, option.id, random_choice.id);
@@ -1059,8 +1060,8 @@ async function apply_import_data(core, data, source) {
 
 		gender_index = data.gender.type === 'MALE' ? 0 : 1;
 
-		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
-		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
+		const chr_model_id = await DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = await DBCharacterCustomization.get_options_for_model(chr_model_id);
 		const available_options_ids = available_options.map(opt => opt.id);
 
 		customizations = [];
@@ -1081,8 +1082,8 @@ async function apply_import_data(core, data, source) {
 		race_id = data.race;
 		gender_index = data.gender;
 
-		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
-		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
+		const chr_model_id = await DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = await DBCharacterCustomization.get_options_for_model(chr_model_id);
 		const available_options_ids = available_options.map(opt => opt.id);
 
 		if (data.legacy_values) {
@@ -1102,7 +1103,7 @@ async function apply_import_data(core, data, source) {
 
 				for (const [key, value] of Object.entries(option_map)) {
 					if (label_lower.includes(key)) {
-						const choices = DBCharacterCustomization.get_choices_for_option(option.id);
+						const choices = await DBCharacterCustomization.get_choices_for_option(option.id);
 						if (choices && choices[value]) {
 							customizations.push({ optionID: option.id, choiceID: choices[value].id });
 							break;
@@ -1125,8 +1126,8 @@ async function apply_import_data(core, data, source) {
 		race_id = data.race;
 		gender_index = data.gender;
 
-		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
-		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
+		const chr_model_id = await DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const available_options = await DBCharacterCustomization.get_options_for_model(chr_model_id);
 
 		customizations = [];
 		for (const choice_id of data.customizations) {
@@ -1150,7 +1151,7 @@ async function apply_import_data(core, data, source) {
 		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 		core.view.chrImportChoices.push(...customizations);
 
-		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		const chr_model_id = await DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
 		core.view.chrImportChrModelID = chr_model_id;
 		core.view.chrImportTargetModelID = chr_model_id;
 
@@ -1330,7 +1331,7 @@ async function capture_character_thumbnail(core) {
 	const saved_frame = active_renderer.animation_time;
 
 	// get race/gender preset
-	const race_gender = get_current_race_gender(core);
+	const race_gender = await get_current_race_gender(core);
 	let preset = null;
 
 	if (race_gender) {
@@ -1581,15 +1582,15 @@ async function import_json_character(core, save_to_my_characters) {
 //endregion
 
 //region race
-function update_chr_race_list(core) {
+async function update_chr_race_list(core) {
 	const listed_model_ids = [];
 	const listed_race_ids = [];
 
 	core.view.chrCustRacesPlayable = [];
 	core.view.chrCustRacesNPC = [];
 
-	const chr_race_map = DBCharacterCustomization.get_chr_race_map();
-	const chr_race_x_chr_model_map = DBCharacterCustomization.get_chr_race_x_chr_model_map();
+	const chr_race_map = await DBCharacterCustomization.get_chr_race_map();
+	const chr_race_x_chr_model_map = await DBCharacterCustomization.get_chr_race_x_chr_model_map();
 
 	for (const [chr_race_id, chr_race_info] of chr_race_map) {
 		if (!chr_race_x_chr_model_map.has(chr_race_id))
@@ -1716,12 +1717,12 @@ const export_char_model = async (core) => {
 			);
 
 			if (char_exporter.has_equipment()) {
-				const char_info = get_current_race_gender(core);
+				const char_info = await get_current_race_gender(core);
 				const equipment_data = [];
 
 				for (const geom of char_exporter.get_equipment_geometry(apply_pose)) {
 					// get textures from display info
-					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
+					const display = await DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
 					const textures = display?.textures || [];
 
 					equipment_data.push({
@@ -1772,12 +1773,12 @@ const export_char_model = async (core) => {
 			);
 
 			if (char_exporter.has_equipment()) {
-				const char_info = get_current_race_gender(core);
+				const char_info = await get_current_race_gender(core);
 				const equipment_data = [];
 
 				// for GLTF, don't apply pose - let the armature handle it
 				for (const geom of char_exporter.get_equipment_geometry(false)) {
-					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
+					const display = await DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex);
 					const textures = display?.textures || [];
 
 					equipment_data.push({
@@ -1888,12 +1889,12 @@ function int_to_css_color(value) {
 	return `rgb(${r}, ${g}, ${b})`;
 }
 
-function get_selected_choice(core, option_id) {
+async function get_selected_choice(core, option_id) {
 	const active_choice = core.view.chrCustActiveChoices.find(c => c.optionID === option_id);
 	if (!active_choice)
 		return null;
 
-	const choices = DBCharacterCustomization.get_choices_for_option(option_id);
+	const choices = await DBCharacterCustomization.get_choices_for_option(option_id);
 	if (!choices)
 		return null;
 
@@ -2369,12 +2370,12 @@ export default {
 			export_chr_texture(this.$core);
 		},
 
-		get_equipped_item(slot_id) {
+		async get_equipped_item(slot_id) {
 			const item_id = this.$core.view.chrEquippedItems[slot_id];
 			if (!item_id)
 				return null;
 
-			return DBItems.getItemById(item_id);
+			return await DBItems.getItemById(item_id);
 		},
 
 		open_slot_context(event, slot_id) {
@@ -2433,32 +2434,32 @@ export default {
 			this.$core.view.chrEquippedItems = {};
 		},
 
-		is_guild_tabard_equipped() {
+		async is_guild_tabard_equipped() {
 			const item_id = this.$core.view.chrEquippedItems[19];
-			return item_id && DBGuildTabard.isGuildTabard(item_id);
+			return item_id && await DBGuildTabard.isGuildTabard(item_id);
 		},
 
-		get_tabard_tier() {
+		async get_tabard_tier() {
 			const item_id = this.$core.view.chrEquippedItems[19];
 			if (!item_id)
 				return -1;
 
-			return DBGuildTabard.getTabardTier(item_id);
+			return await DBGuildTabard.getTabardTier(item_id);
 		},
 
-		get_tabard_max(key) {
+		async get_tabard_max(key) {
 			switch (key) {
-				case 'background': return DBGuildTabard.getBackgroundColorCount();
-				case 'border_style': return DBGuildTabard.getBorderStyleCount(this.get_tabard_tier());
-				case 'border_color': return DBGuildTabard.getBorderColorCount();
-				case 'emblem_design': return DBGuildTabard.getEmblemDesignCount();
-				case 'emblem_color': return DBGuildTabard.getEmblemColorCount();
+				case 'background': return await DBGuildTabard.getBackgroundColorCount();
+				case 'border_style': return await DBGuildTabard.getBorderStyleCount(await this.get_tabard_tier());
+				case 'border_color': return await DBGuildTabard.getBorderColorCount();
+				case 'emblem_design': return await DBGuildTabard.getEmblemDesignCount();
+				case 'emblem_color': return await DBGuildTabard.getEmblemColorCount();
 				default: return 0;
 			}
 		},
 
-		set_tabard_config(key, value) {
-			const max = this.get_tabard_max(key);
+		async set_tabard_config(key, value) {
+			const max = await this.get_tabard_max(key);
 			value = parseInt(value) || 0;
 
 			if (max > 0)
@@ -2470,8 +2471,8 @@ export default {
 			};
 		},
 
-		adjust_tabard_config(key, delta) {
-			const max = this.get_tabard_max(key);
+		async adjust_tabard_config(key, delta) {
+			const max = await this.get_tabard_max(key);
 			if (max <= 0)
 				return;
 
@@ -2503,9 +2504,9 @@ export default {
 			this.$core.view.colorPickerOpenFor = null;
 		},
 
-		get_tabard_color_css(key) {
+		async get_tabard_color_css(key) {
 			const color_id = this.$core.view.chrGuildTabardConfig[key];
-			const color_map = this.get_tabard_color_list_for_key(key);
+			const color_map = await this.get_tabard_color_list_for_key(key);
 			const color = color_map?.get(color_id);
 			if (!color)
 				return 'transparent';
@@ -2513,15 +2514,15 @@ export default {
 			return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
 		},
 
-		get_tabard_color_list(method_name) {
-			return DBGuildTabard[method_name]();
+		async get_tabard_color_list(method_name) {
+			return await DBGuildTabard[method_name]();
 		},
 
-		get_tabard_color_list_for_key(key) {
+		async get_tabard_color_list_for_key(key) {
 			switch (key) {
-				case 'background': return DBGuildTabard.getBackgroundColors();
-				case 'border_color': return DBGuildTabard.getBorderColors();
-				case 'emblem_color': return DBGuildTabard.getEmblemColors();
+				case 'background': return await DBGuildTabard.getBackgroundColors();
+				case 'border_color': return await DBGuildTabard.getBorderColors();
+				case 'emblem_color': return await DBGuildTabard.getEmblemColors();
 				default: return null;
 			}
 		}
@@ -2648,10 +2649,10 @@ export default {
 			})
 		);
 
-		state.optionToChoices = DBCharacterCustomization.get_option_to_choices_map();
+		state.optionToChoices = await DBCharacterCustomization.get_option_to_choices_map();
 
 		// trigger initial race/model load
-		update_chr_race_list(this.$core);
+		await update_chr_race_list(this.$core);
 
 		this.$core.hideLoadingScreen();
 

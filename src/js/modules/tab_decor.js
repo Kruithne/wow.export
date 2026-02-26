@@ -2,6 +2,7 @@ import log from '../log.js';
 import * as platform from '../platform.js';
 import InstallType from '../install-type.js';
 import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import { DBDecor, DBDecorCategories, DBModelFileData } from '../db-proxy.js';
 import listboxContext from '../ui/listbox-context.js';
 
 import textureRibbon from '../ui/texture-ribbon.js';
@@ -143,7 +144,7 @@ const export_files = async (core, entries, export_id = -1) => {
 		if (helper.isCancelled())
 			break;
 
-		const decor_item = typeof entry === 'object' ? entry : DBDecor.getDecorItemByID(entry);
+		const decor_item = typeof entry === 'object' ? entry : await DBDecor.getDecorItemByID(entry);
 		if (!decor_item)
 			continue;
 
@@ -185,7 +186,7 @@ const export_files = async (core, entries, export_id = -1) => {
 	export_paths?.close();
 };
 
-const apply_filters = (core) => {
+const apply_filters = async (core) => {
 	const checked_subs = new Set();
 	let uncategorized_checked = false;
 
@@ -201,7 +202,7 @@ const apply_filters = (core) => {
 
 	const filtered = [];
 	for (const entry of all_decor_entries) {
-		const subs = DBDecorCategories.get_subcategories_for_decor(entry.decor_id);
+		const subs = await DBDecorCategories.get_subcategories_for_decor(entry.decor_id);
 		if (!subs) {
 			if (uncategorized_checked)
 				filtered.push(entry.display);
@@ -381,7 +382,7 @@ export default {
 			await this.$core.progressLoadingScreen('Loading decor categories...');
 			await DBDecorCategories.initialize_categories();
 
-			const decor_items = DBDecor.getAllDecorItems();
+			const decor_items = await DBDecor.getAllDecorItems();
 			all_decor_entries = [];
 
 			for (const [id, item] of decor_items) {
@@ -401,8 +402,8 @@ export default {
 			});
 
 			// build category groups and mask
-			const categories = DBDecorCategories.get_all_categories();
-			const subcategories = DBDecorCategories.get_all_subcategories();
+			const categories = await DBDecorCategories.get_all_categories();
+			const subcategories = await DBDecorCategories.get_all_subcategories();
 
 			const sorted_categories = [...categories.values()].sort((a, b) => a.orderIndex - b.orderIndex);
 
@@ -435,7 +436,7 @@ export default {
 			this.$core.view.decorCategoryMask = mask;
 			this.$core.view.decorCategoryGroups = groups;
 
-			apply_filters(this.$core);
+			await apply_filters(this.$core);
 
 			if (!this.$core.view.decorViewerContext)
 				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
@@ -490,14 +491,22 @@ export default {
 				return;
 			}
 
-			const decor_items = user_selection.map(entry => {
+			const decor_items = [];
+			for (const entry of user_selection) {
 				if (typeof entry === 'string') {
 					const match = entry.match(/\[(\d+)\]$/);
-					if (match)
-						return DBDecor.getDecorItemByID(parseInt(match[1]));
+					if (match) {
+						const item = await DBDecor.getDecorItemByID(parseInt(match[1]));
+						if (item)
+							decor_items.push(item);
+
+						continue;
+					}
 				}
-				return entry;
-			}).filter(item => item);
+
+				if (entry)
+					decor_items.push(entry);
+			}
 
 			await export_files(this.$core, decor_items);
 		},
@@ -562,7 +571,7 @@ export default {
 
 		const state = get_view_state(this.$core);
 
-		this.$core.view.$watch('decorCategoryMask', () => apply_filters(this.$core), { deep: true });
+		this.$core.view.$watch('decorCategoryMask', async () => apply_filters(this.$core), { deep: true });
 
 		this.$core.view.$watch('decorViewerAnimSelection', async selected_animation_id => {
 			if (this.$core.view.decorViewerAnims.length === 0)
@@ -593,7 +602,7 @@ export default {
 			if (!decor_id)
 				return;
 
-			const decor_item = DBDecor.getDecorItemByID(decor_id);
+			const decor_item = await DBDecor.getDecorItemByID(decor_id);
 			if (decor_item && decor_item.modelFileDataID !== active_file_data_id)
 				preview_decor(this.$core, decor_item);
 		});
