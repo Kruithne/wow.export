@@ -336,6 +336,7 @@ class M2RendererGL {
 		this.current_animation = null;
 		this.animation_time = 0;
 		this.animation_paused = false;
+		this.tex_matrices = null;
 
 		// hand grip state for weapon attachment
 		// when true, finger bones use HandsClosed animation (ID 15)
@@ -535,6 +536,7 @@ class M2RendererGL {
 			let blend_mode = 0;
 			let flags = 0;
 			let texture_count = 1;
+			let tex_mtx_idxs = [-1, -1];
 
 			if (tex_unit) {
 				texture_count = tex_unit.textureCount;
@@ -574,7 +576,8 @@ class M2RendererGL {
 				pixel_shader: pixel_shader,
 				blend_mode: blend_mode,
 				flags: flags,
-				visible: true
+				visible: true,
+				tex_matrix_idxs: tex_mtx_idxs,
 			};
 
 			this.draw_calls.push(draw_call);
@@ -1240,17 +1243,8 @@ class M2RendererGL {
 
 		// bone matrices
 		shader.set_uniform_1i('u_bone_count', this.bones ? this.bones.length : 0);
-		if (this.bones && this.bone_matrices) {
-			const loc = shader.get_uniform_location('u_bone_matrices');
-			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.bone_matrices);
-		}
-
-		// texture matrix defaults
-		shader.set_uniform_1i('u_has_tex_matrix1', 0);
-		shader.set_uniform_1i('u_has_tex_matrix2', 0);
-		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
-		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
+		if (this.bones && this.bone_matrices)
+			shader.set_uniform_mat4('u_bone_matrices', false, this.bone_matrices);
 
 		// lighting - transform light direction to view space
 		const lx = 3, ly = -0.7, lz = -2;
@@ -1298,6 +1292,12 @@ class M2RendererGL {
 			shader.set_uniform_1i('u_vertex_shader', dc.vertex_shader);
 			shader.set_uniform_1i('u_pixel_shader', dc.pixel_shader);
 			shader.set_uniform_1i('u_blend_mode', dc.blend_mode);
+
+			// texture matrix defaults
+			shader.set_uniform_1i('u_tex_matrix1_idx', dc.tex_matrix_idxs[0]);
+			shader.set_uniform_1i('u_tex_matrix2_idx', dc.tex_matrix_idxs[1]);
+			if (dc.tex_matrix_idxs[0] >= 0 || dc.tex_matrix_idxs[1] >= 0)
+				shader.set_uniform_mat4('u_tex_matrices', false, this.tex_matrices);
 
 			// mesh color (white for now)
 			shader.set_uniform_4f('u_mesh_color', 1, 1, 1, 1);
