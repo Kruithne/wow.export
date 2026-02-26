@@ -4,6 +4,7 @@
 	License: MIT
  */
 import generics from '../../generics.js';
+import ExportHelper from '../../export-helper.js';
 import OBJWriter from '../writers/OBJWriter.js';
 import GLTFWriter from '../writers/GLTFWriter.js';
 import M3Exporter from './M3Exporter.js';
@@ -17,8 +18,6 @@ import JSONWriter from '../writers/JSONWriter.js';
 import M2Exporter from './M2Exporter.js';
 import constants from '../../constants.js';
 import log from '../../log.js';
-
-const path = ;
 
 
 
@@ -587,7 +586,7 @@ class WMOExporter {
 							let modelPath = m2Path.replace(outDir, '');
 
 							if (useAbsolute === true)
-								modelPath = path.resolve(outDir, modelPath);
+								modelPath = outDir + '/' + modelPath;
 
 							if (usePosix)
 								modelPath = ExportHelper.win32ToPosix(modelPath);
@@ -1037,7 +1036,7 @@ class WMOExporter {
 							let modelPath = m2Path.replace(outDir, '');
 
 							if (useAbsolute === true)
-								modelPath = path.resolve(outDir, modelPath);
+								modelPath = outDir + '/' + modelPath;
 
 							if (usePosix)
 								modelPath = ExportHelper.win32ToPosix(modelPath);

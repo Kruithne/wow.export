@@ -181,6 +181,16 @@ export const formatPlaybackSeconds = (seconds) => {
 	return Math.floor(seconds / 60).toString().padStart(2, '0') + ':' + Math.round(seconds % 60).toString().padStart(2, '0');
 };
 
+export const fileExists = async (path) => {
+	const { fs } = await import('../views/main/rpc.js');
+	return fs.exists(path);
+};
+
+export const createDirectory = async (path) => {
+	const { fs } = await import('../views/main/rpc.js');
+	return fs.mkdir(path);
+};
+
 export default {
 	getJSON,
 	parseJSON,
@@ -190,5 +200,7 @@ export default {
 	queue,
 	redraw,
 	formatPlaybackSeconds,
-	batchWork
+	batchWork,
+	fileExists,
+	createDirectory
 };

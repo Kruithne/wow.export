@@ -9,10 +9,10 @@ import BufferWrapper from '../../buffer.js';
 import AnimMapper from '../AnimMapper.js';
 import platform from '../../platform.js';
 import { exporter } from '../../views/main/rpc.js';
+import ExportHelper from '../../export-helper.js';
 import BoneMapper from '../BoneMapper.js';
+import core from '../../core.js';
 import log from '../../log.js';
-
-const fsp = .promises;
 
 
 
@@ -197,8 +197,8 @@ class GLTFWriter {
 	}
 
 	async write(overwrite = true, format = 'gltf') {
-		const outGLTF = exporter.replaceExtension(this.out, format === 'glb' ? '.glb' : '.gltf');
-		const outBIN = exporter.replaceExtension(this.out, '.bin');
+		const outGLTF = ExportHelper.replaceExtension(this.out, format === 'glb' ? '.glb' : '.gltf');
+		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
 
 		const out_dir = outGLTF.substring(0, outGLTF.lastIndexOf('/'));
 		const use_absolute = core.view.config.enableAbsoluteGLTFPaths;
@@ -930,7 +930,7 @@ class GLTFWriter {
 				// gltf mode or no buffer: use uri reference
 				let mat_path = texFile.matPathRelative;
 				if (use_absolute)
-					mat_path = path.resolve(out_dir, mat_path);
+					mat_path = out_dir + '/' + mat_path;
 
 				root.images.push({ uri: mat_path });
 			}
@@ -1494,7 +1494,7 @@ class GLTFWriter {
 		} else {
 			// gltf mode: write separate json and bin files
 			root.buffers[0].uri = outBIN.split('/').pop();
-			await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
+			await exporter.export_text(JSON.stringify(root, null, '\t'), outGLTF);
 			await bin_combined.writeToFile(outBIN);
 		}
 

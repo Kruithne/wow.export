@@ -3,15 +3,13 @@ import generics from '../generics.js';
 import log from '../log.js';
 import ExternalLinks from '../external-links.js';
 import InstallType from '../install-type.js';
-import { casc } from '../../views/main/rpc.js';
+import BufferWrapper from '../buffer.js';
+import { casc, platform } from '../../views/main/rpc.js';
 import { MPQInstall } from '../mpq/mpq-install.js';
 
-const CASCLocal = casc.CASCLocal ?? casc;
-const CASCRemote = casc.CASCRemote ?? casc;
-
-let casc_source = null;
-let local_selector = null;
-let legacy_selector = null;
+let casc_type = null;
+let casc_install_path = null;
+let casc_builds = null;
 
 export default {
 	template: `
@@ -80,21 +78,28 @@ export default {
 			this.$core.view.config.sourceSelectUserRegion = region.tag;
 		},
 
+		setup_casc_adapter() {
+			this.$core.view.casc = {
+				getFile: async (id) => BufferWrapper.from(await casc.get_file(id)),
+				getFileByName: async (name) => BufferWrapper.from(await casc.get_file_by_name(name)),
+				getFilePartial: async (id, ofs, len) => BufferWrapper.from(await casc.get_file_partial(id, ofs, len)),
+			};
+		},
+
 		async load_install(index) {
 			this.$core.view.availableLocalBuilds = null;
 			this.$core.view.availableRemoteBuilds = null;
 
-			if (casc_source instanceof CASCLocal) {
+			if (casc_type === 'local' && casc_builds) {
 				const recent_local = this.$core.view.config.recentLocal;
-				const install_path = casc_source.dir;
-				const build = casc_source.builds[index];
-				const pre_index = recent_local.findIndex(e => e.path === install_path && e.product === build.Product);
+				const build = casc_builds[index];
+				const pre_index = recent_local.findIndex(e => e.path === casc_install_path && e.product === build.Product);
 
 				if (pre_index > -1) {
 					if (pre_index > 0)
 						recent_local.unshift(recent_local.splice(pre_index, 1)[0]);
 				} else {
-					recent_local.unshift({ path: install_path, product: build.Product });
+					recent_local.unshift({ path: casc_install_path, product: build.Product });
 				}
 
 				if (recent_local.length > constants.MAX_RECENT_LOCAL)
@@ -102,7 +107,9 @@ export default {
 			}
 
 			try {
-				await casc_source.load(index);
+				const cdn_region = this.$core.view.selectedCDNRegion?.tag;
+				await casc.load(index, cdn_region);
+				this.setup_casc_adapter();
 				this.$core.view.installType = InstallType.CASC;
 				this.$modules.tab_home.setActive();
 			} catch (e) {
@@ -121,13 +128,16 @@ export default {
 			const recent_local = this.$core.view.config.recentLocal;
 
 			try {
-				casc_source = new CASCLocal(install_path);
-				await casc_source.init();
+				const result = await casc.init_local(install_path);
+				casc_type = 'local';
+				casc_install_path = install_path;
+				casc_builds = result.builds;
 
 				if (product) {
-					this.load_install(casc_source.builds.findIndex(build => build.Product === product));
+					const build_index = casc_builds.findIndex(build => build.Product === product);
+					this.load_install(build_index);
 				} else {
-					this.$core.view.availableLocalBuilds = casc_source.getProductList();
+					this.$core.view.availableLocalBuilds = casc_builds;
 					this.$core.view.sourceSelectShowBuildSelect = true;
 				}
 			} catch (e) {
@@ -221,12 +231,17 @@ export default {
 			});
 		},
 
-		click_source_local() {
+		async click_source_local() {
 			if (this.$core.view.isBusy)
 				return;
 
-			local_selector.value = '';
-			local_selector.click();
+			try {
+				const result = await platform.show_open_dialog({ directory: true, title: 'Select World of Warcraft Installation' });
+				if (result)
+					this.open_local_install(result);
+			} catch (e) {
+				log.write('Failed to open directory dialog: %s', e.message);
+			}
 		},
 
 		click_source_local_recent(entry) {
@@ -244,13 +259,15 @@ export default {
 			const tag = this.$core.view.selectedCDNRegion.tag;
 
 			try {
-				casc_source = new CASCRemote(tag);
-				await casc_source.init();
+				const result = await casc.init_remote(tag);
+				casc_type = 'remote';
+				casc_install_path = null;
+				casc_builds = result.builds;
 
-				if (casc_source.builds.length === 0)
+				if (casc_builds.length === 0)
 					throw new Error('No builds available.');
 
-				this.$core.view.availableRemoteBuilds = casc_source.getProductList();
+				this.$core.view.availableRemoteBuilds = casc_builds;
 				this.$core.view.sourceSelectShowBuildSelect = true;
 			} catch (e) {
 				this.$core.setToast('error', `There was an error connecting to Blizzard's ${tag.toUpperCase()} CDN, try another region!`, null, -1);
@@ -258,12 +275,17 @@ export default {
 			}
 		},
 
-		click_source_legacy() {
+		async click_source_legacy() {
 			if (this.$core.view.isBusy)
 				return;
 
-			legacy_selector.value = '';
-			legacy_selector.click();
+			try {
+				const result = await platform.show_open_dialog({ directory: true, title: 'Select Legacy MPQ Installation' });
+				if (result)
+					this.open_legacy_install(result);
+			} catch (e) {
+				log.write('Failed to open directory dialog: %s', e.message);
+			}
 		},
 
 		click_source_legacy_recent(entry) {
@@ -288,27 +310,12 @@ export default {
 	},
 
 	mounted() {
-		// init recent local/legacy arrays if needed
 		if (!Array.isArray(this.$core.view.config.recentLocal))
 			this.$core.view.config.recentLocal = [];
 
 		if (!Array.isArray(this.$core.view.config.recentLegacy))
 			this.$core.view.config.recentLegacy = [];
 
-		// create file selectors
-		local_selector = document.createElement('input');
-		local_selector.setAttribute('type', 'file');
-		local_selector.setAttribute('nwdirectory', true);
-		local_selector.setAttribute('nwdirectorydesc', 'Select World of Warcraft Installation');
-		local_selector.onchange = () => this.open_local_install(local_selector.value);
-
-		legacy_selector = document.createElement('input');
-		legacy_selector.setAttribute('type', 'file');
-		legacy_selector.setAttribute('nwdirectory', true);
-		legacy_selector.setAttribute('nwdirectorydesc', 'Select Legacy MPQ Installation');
-		legacy_selector.onchange = () => this.open_legacy_install(legacy_selector.value);
-
-		// init cdn pings
 		this.init_cdn_pings();
 	}
 };

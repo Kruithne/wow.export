@@ -5,8 +5,10 @@
  */
 import { exporter, listfile } from '../../views/main/rpc.js';
 import generics from '../../generics.js';
+import ExportHelper from '../../export-helper.js';
 import SKELLoader from '../loaders/SKELLoader.js';
 import JSONWriter from '../writers/JSONWriter.js';
+import MTLWriter from '../writers/MTLWriter.js';
 import core from '../../core.js';
 import M3Loader from '../loaders/M3Loader.js';
 import OBJWriter from '../writers/OBJWriter.js';
@@ -59,7 +61,7 @@ class M3Exporter {
 
 	async exportAsGLTF(out, helper, format = 'gltf') {
 		const ext = format === 'glb' ? '.glb' : '.gltf';
-		const outGLTF = exporter.replaceExtension(out, ext);
+		const outGLTF = ExportHelper.replaceExtension(out, ext);
 		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Skip export if file exists and overwriting is disabled.
@@ -116,7 +118,7 @@ class M3Exporter {
 		//const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
-		const mtl = new MTLWriter(exporter.replaceExtension(out, '.mtl'));
+		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const outDir = out.substring(0, out.lastIndexOf('/'));
 
@@ -167,7 +169,7 @@ class M3Exporter {
 		fileManifest?.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
 
 		if (exportCollision) {
-			// const phys = new OBJWriter(exporter.replaceExtension(out, '.phys.obj'));
+			// const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
 			// phys.setVertArray(this.m2.collisionPositions);
 			// phys.setNormalArray(this.m2.collisionNormals);
 			// phys.addMesh('Collision', this.m2.collisionIndices);
@@ -231,7 +233,7 @@ class M3Exporter {
 	async exportRaw(out, helper, fileManifest) {
 		const config = core.view.config;
 
-		const manifestFile = exporter.replaceExtension(out, '.manifest.json');
+		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
 
 		manifest.addProperty('fileDataID', this.fileDataID);

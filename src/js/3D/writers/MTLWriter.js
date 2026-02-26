@@ -5,6 +5,7 @@
  */
 import core from '../../core.js';
 import FileWriter from '../../file-writer.js';
+import generics from '../../generics.js';
 
 
 
@@ -59,7 +60,7 @@ class MTLWriter {
 
 			let materialFile = material.file;
 			if (useAbsolute)
-				materialFile = path.resolve(mtlDir, materialFile);
+				materialFile = mtlDir + '/' + materialFile;
 
 			await writer.writeLine('map_Kd ' + materialFile);
 		}

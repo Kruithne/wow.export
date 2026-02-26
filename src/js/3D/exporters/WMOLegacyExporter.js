@@ -4,6 +4,7 @@
 	License: MIT
 */
 import generics from '../../generics.js';
+import ExportHelper from '../../export-helper.js';
 import JSONWriter from '../writers/JSONWriter.js';
 import MTLWriter from '../writers/MTLWriter.js';
 import BLPImage from '../../casc/blp.js';
@@ -11,7 +12,6 @@ import core from '../../core.js';
 import WMOLegacyLoader from '../loaders/WMOLegacyLoader.js';
 import OBJWriter from '../writers/OBJWriter.js';
 import STLWriter from '../writers/STLWriter.js';
-import BLPImage from '../../casc/blp.js';
 import BufferWrapper from '../../buffer.js';
 import log from '../../log.js';
 
@@ -319,7 +319,7 @@ class WMOLegacyExporter {
 						let modelPath = m2Path.replace(outDir, '');
 
 						if (useAbsolute === true)
-							modelPath = path.resolve(outDir, modelPath);
+							modelPath = outDir + '/' + modelPath;
 
 						if (usePosix)
 							modelPath = ExportHelper.win32ToPosix(modelPath);

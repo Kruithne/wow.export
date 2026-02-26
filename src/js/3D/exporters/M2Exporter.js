@@ -5,8 +5,10 @@
  */
 import { exporter, listfile } from '../../views/main/rpc.js';
 import generics from '../../generics.js';
+import ExportHelper from '../../export-helper.js';
 import SKELLoader from '../loaders/SKELLoader.js';
 import JSONWriter from '../writers/JSONWriter.js';
+import MTLWriter from '../writers/MTLWriter.js';
 import EquipmentSlots from '../../wow/EquipmentSlots.js';
 import core from '../../core.js';
 import M2Loader from '../loaders/M2Loader.js';
@@ -182,7 +184,7 @@ class M2Exporter {
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
 							if (raw === false)
-								fileName = exporter.replaceExtension(fileName, '.png');
+								fileName = ExportHelper.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
 							fileName = listfile.formatUnknownFile(texFile);
@@ -245,7 +247,7 @@ class M2Exporter {
 
 	async exportAsGLTF(out, helper, format = 'gltf') {
 		const ext = format === 'glb' ? '.glb' : '.gltf';
-		const outGLTF = exporter.replaceExtension(out, ext);
+		const outGLTF = ExportHelper.replaceExtension(out, ext);
 		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Skip export if file exists and overwriting is disabled.
@@ -445,7 +447,7 @@ class M2Exporter {
 					}
 
 					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = exporter.replaceExtension(fileName, '.png');
+						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
 						texPath = exporter.getExportPath(sharedFileName);
 						texFile = texPath.replace(outDir, '');
 					}
@@ -592,7 +594,7 @@ class M2Exporter {
 					}
 
 					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = exporter.replaceExtension(fileName, '.png');
+						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
 						texPath = exporter.getExportPath(sharedFileName);
 						texFile = texPath.replace(outDir, '');
 					}
@@ -718,7 +720,7 @@ class M2Exporter {
 		const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
-		const mtl = new MTLWriter(exporter.replaceExtension(out, '.mtl'));
+		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const outDir = out.substring(0, out.lastIndexOf('/'));
 
@@ -748,7 +750,7 @@ class M2Exporter {
 		// Export bone data to a separate JSON file due to the excessive size.
 		// A normal meta-data file is around 8kb without bones, 65mb with bones.
 		if (exportBones) {
-			const json = new JSONWriter(exporter.replaceExtension(out, '_bones.json'));
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
 
 			if (this.m2.skeletonFileID) {
 				const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
@@ -777,7 +779,7 @@ class M2Exporter {
 		}
 
 		if (exportMeta) {
-			const json = new JSONWriter(exporter.replaceExtension(out, '.json'));
+			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
 
 			// Clone the submesh array and add a custom 'enabled' property
 			// to indicate to external readers which submeshes are not included
@@ -882,7 +884,7 @@ class M2Exporter {
 		fileManifest?.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
 
 		if (exportCollision) {
-			const phys = new OBJWriter(exporter.replaceExtension(out, '.phys.obj'));
+			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
@@ -947,7 +949,7 @@ class M2Exporter {
 		fileManifest?.push({ type: 'STL', fileDataID: this.fileDataID, file: stl.out });
 
 		if (exportCollision) {
-			const phys = new STLWriter(exporter.replaceExtension(out, '.phys.stl'));
+			const phys = new STLWriter(ExportHelper.replaceExtension(out, '.phys.stl'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
@@ -968,7 +970,7 @@ class M2Exporter {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
-		const manifestFile = exporter.replaceExtension(out, '.manifest.json');
+		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
 
 		manifest.addProperty('fileDataID', this.fileDataID);

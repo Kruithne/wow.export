@@ -4,6 +4,7 @@
 	License: MIT
 */
 import generics from '../../generics.js';
+import ExportHelper from '../../export-helper.js';
 import OBJWriter from '../writers/OBJWriter.js';
 import STLWriter from '../writers/STLWriter.js';
 import GeosetMapper from '../GeosetMapper.js';

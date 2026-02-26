@@ -10,19 +10,21 @@ export const casc_handlers = {
 	async casc_init_local({ path }) {
 		log.write('casc_init_local: %s', path);
 		const casc = new CASCLocal(path);
-		const builds = await casc.init();
-		return { builds };
+		await casc.init();
+		core.set_casc(casc);
+		return { builds: casc.getProductList() };
 	},
 
 	async casc_init_remote({ region, product }) {
 		log.write('casc_init_remote: %s / %s', region, product);
 		const casc = new CASCRemote(region, product);
-		const builds = await casc.init();
-		return { builds };
+		await casc.init();
+		core.set_casc(casc);
+		return { builds: casc.getProductList() };
 	},
 
-	async casc_load({ build_key, cdn_region }) {
-		log.write('casc_load: %s (cdn: %s)', build_key, cdn_region);
+	async casc_load({ build_index, cdn_region }) {
+		log.write('casc_load: %d (cdn: %s)', build_index, cdn_region);
 		const casc = core.get_casc();
 		if (!casc)
 			throw new Error('no CASC source initialized');
@@ -34,7 +36,7 @@ export const casc_handlers = {
 		await listfile.preload();
 		await realmlist.load();
 
-		await casc.load(build_key);
+		await casc.load(build_index);
 		return { success: true };
 	},
 

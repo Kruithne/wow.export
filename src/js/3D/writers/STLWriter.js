@@ -5,6 +5,7 @@
  */
 import BufferWrapper from '../../buffer.js';
 import generics from '../../generics.js';
+import constants from '../../constants.js';
 
 
 
