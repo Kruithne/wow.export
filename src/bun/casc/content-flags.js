@@ -1,0 +1,10 @@
+export const LoadOnWindows = 0x8;
+export const LoadOnMacOS = 0x10;
+export const LowViolence = 0x80;
+export const DoNotLoad = 0x100;
+export const UpdatePlugin = 0x800;
+export const Encrypted = 0x8000000;
+export const NoNameHash = 0x10000000;
+export const UncommonResolution = 0x20000000;
+export const Bundle = 0x40000000;
+export const NoCompression = 0x80000000;

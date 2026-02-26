@@ -1,5 +1,6 @@
 import { Utils } from 'electrobun/bun';
 import os from 'node:os';
+import { get_platform_gpu_info } from '../lib/gpu-info.js';
 
 export const platform_handlers = {
 	async platform_open_path({ path }) {
@@ -11,30 +12,37 @@ export const platform_handlers = {
 	},
 
 	async platform_clipboard_write_text({ text }) {
-		// TODO: electrobun clipboard API or fallback
-		throw new Error('not implemented: clipboard write text');
-	},
-
-	async platform_clipboard_write_image({ data }) {
-		throw new Error('not implemented: clipboard write image');
+		await Utils.clipboardWriteText(text);
 	},
 
 	async platform_clipboard_read_text() {
-		throw new Error('not implemented: clipboard read text');
+		return await Utils.clipboardReadText();
+	},
+
+	async platform_clipboard_write_image({ data }) {
+		await Utils.clipboardWriteImage(data);
 	},
 
 	async platform_show_open_dialog({ title, filters, default_path, multi }) {
-		// TODO: wire to electrobun file dialog API
-		throw new Error('not implemented: open dialog');
+		try {
+			const result = await Utils.openFileDialog({ title, filters, defaultPath: default_path, multiple: multi });
+			return result;
+		} catch {
+			return null;
+		}
 	},
 
 	async platform_show_save_dialog({ title, filters, default_path }) {
-		throw new Error('not implemented: save dialog');
+		try {
+			const result = await Utils.saveFileDialog({ title, filters, defaultPath: default_path });
+			return result;
+		} catch {
+			return null;
+		}
 	},
 
 	async platform_get_gpu_info() {
-		// TODO: migrate gpu-info.js detection logic
-		return null;
+		return await get_platform_gpu_info();
 	},
 
 	async platform_get_screen_info() {

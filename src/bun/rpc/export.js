@@ -1,6 +1,8 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import fs from 'node:fs';
+import ExportHelper from '../casc/export-helper.js';
+import * as core from '../lib/core.js';
 
 let _rpc = null;
 let _log_stream = null;
@@ -20,10 +22,36 @@ function ensure_log_stream() {
 
 export const export_handlers = {
 	async export_files({ files, dir, format }) {
-		// TODO: wire to export-helper.js migration
-		// will iterate files, extract via casc, write to dir
-		// sends export_progress messages during operation
-		throw new Error('not implemented: export pipeline not yet migrated');
+		const helper = new ExportHelper(files.length, 'file');
+		helper.start();
+
+		const casc = core.get_casc();
+		if (!casc) {
+			helper.finish();
+			throw new Error('no CASC source loaded');
+		}
+
+		for (const file of files) {
+			if (helper.isCancelled())
+				break;
+
+			try {
+				const data = await casc.getFile(file.id);
+				if (data) {
+					data.processAllBlocks?.();
+					const out_path = ExportHelper.getExportPath(file.name || ('unknown/' + file.id));
+					await data.writeToFile(out_path);
+					helper.mark(file.name || String(file.id), true);
+				} else {
+					helper.mark(file.name || String(file.id), false, 'file not found in CASC');
+				}
+			} catch (e) {
+				helper.mark(file.name || String(file.id), false, e.message);
+			}
+		}
+
+		helper.finish();
+		return { succeeded: helper.succeeded, failed: helper.failed };
 	},
 
 	async export_raw({ data, path: file_path }) {
@@ -41,8 +69,7 @@ export const export_handlers = {
 	},
 
 	async export_get_path({ file }) {
-		// TODO: apply config.removePathSpaces, resolve against export dir
-		throw new Error('not implemented: export path resolution');
+		return ExportHelper.getExportPath(file);
 	},
 
 	async export_get_incremental({ path: file_path }) {

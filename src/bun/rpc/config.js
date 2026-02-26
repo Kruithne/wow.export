@@ -1,7 +1,11 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import * as core from '../lib/core.js';
+import * as constants from '../lib/constants.js';
+import * as mmap from '../lib/mmap.js';
+import * as generics from '../lib/generics.js';
+import * as log from '../lib/log.js';
 
-// TODO: wire to actual constants.js paths after migration
 let _config = null;
 let _defaults = null;
 let _config_path = null;
@@ -12,6 +16,10 @@ export function init_config(paths, rpc) {
 	_config_path = paths.user_config;
 	_defaults_path = paths.default_config;
 	_rpc = rpc;
+}
+
+export function get_config_ref() {
+	return _config;
 }
 
 async function load_json(file_path, strip_comments = false) {
@@ -50,6 +58,8 @@ export const config_handlers = {
 		_config[key] = value;
 		await save_config();
 
+		core.events.emit('config-changed', { key, value });
+
 		// notify view of change
 		_rpc?.send?.config_changed?.({ key, value });
 	},
@@ -79,9 +89,8 @@ export const config_handlers = {
 
 export const app_handlers = {
 	async app_get_info() {
-		// TODO: derive from electrobun BuildConfig + package.json
 		return {
-			version: '0.2.14',
+			version: constants.VERSION,
 			flavour: 'win-x64',
 			guid: '',
 			data_path: '',
@@ -89,8 +98,22 @@ export const app_handlers = {
 	},
 
 	async app_get_constants() {
-		// TODO: migrate constants.js
-		throw new Error('not implemented: constants not yet migrated');
+		return {
+			PRODUCTS: constants.PRODUCTS,
+			PATCH: constants.PATCH,
+			BUILD: constants.BUILD,
+			GAME: constants.GAME,
+			MAGIC: constants.MAGIC,
+			FILE_IDENTIFIERS: constants.FILE_IDENTIFIERS,
+			NAV_BUTTON_ORDER: constants.NAV_BUTTON_ORDER,
+			CONTEXT_MENU_ORDER: constants.CONTEXT_MENU_ORDER,
+			FONT_PREVIEW_QUOTES: constants.FONT_PREVIEW_QUOTES,
+			EXPANSIONS: constants.EXPANSIONS,
+			LISTFILE_MODEL_FILTER: constants.LISTFILE_MODEL_FILTER.toString(),
+			TIME: constants.TIME,
+			KINO: constants.KINO,
+			MAX_RECENT_LOCAL: constants.MAX_RECENT_LOCAL,
+		};
 	},
 
 	async app_check_update() {
@@ -99,12 +122,26 @@ export const app_handlers = {
 	},
 
 	async app_get_cache_size() {
-		// TODO: calculate from cache directories
-		return 0;
+		return core.get_cache_size();
 	},
 
 	async app_clear_cache({ type }) {
-		// TODO: delete appropriate cache directory
-		throw new Error('not implemented: cache clear');
+		core.increment_busy();
+		core.set_toast('progress', 'Clearing cache, please wait...', null, -1, false);
+		log.write('Manual cache purge requested!');
+		try {
+			mmap.release_virtual_files();
+			await fsp.rm(constants.CACHE.DIR, { recursive: true, force: true });
+			await fsp.mkdir(constants.CACHE.DIR, { recursive: true });
+			core.set_cache_size(0);
+			log.write('Purge complete');
+			core.set_toast('success', 'Cache has been successfully cleared, a restart is required.', null, -1, false);
+			core.events.emit('cache-cleared');
+		} catch (e) {
+			log.write('Error clearing cache: %s', e.message);
+			core.set_toast('error', 'Failed to clear cache: ' + e.message, null, -1, false);
+		} finally {
+			core.decrement_busy();
+		}
 	},
 };

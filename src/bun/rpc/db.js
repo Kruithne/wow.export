@@ -1,86 +1,132 @@
-// database and db cache handlers
-// stubs for WDCReader/DBCReader queries and high-level cache lookups
+import * as log from '../lib/log.js';
+import db2 from '../casc/db2.js';
 
-const NOT_IMPL = 'not implemented: db subsystem not yet migrated';
+import * as DBItems from '../db/caches/DBItems.js';
+import * as DBItemDisplays from '../db/caches/DBItemDisplays.js';
+import * as DBItemModels from '../db/caches/DBItemModels.js';
+import * as DBItemGeosets from '../db/caches/DBItemGeosets.js';
+import * as DBItemCharTextures from '../db/caches/DBItemCharTextures.js';
+import * as DBCreatures from '../db/caches/DBCreatures.js';
+import * as DBCreatureDisplayExtra from '../db/caches/DBCreatureDisplayExtra.js';
+import * as DBNpcEquipment from '../db/caches/DBNpcEquipment.js';
+import * as DBCharacterCustomization from '../db/caches/DBCharacterCustomization.js';
+import * as DBModelFileData from '../db/caches/DBModelFileData.js';
+import * as DBTextureFileData from '../db/caches/DBTextureFileData.js';
+import * as DBComponentModelFileData from '../db/caches/DBComponentModelFileData.js';
+import * as DBComponentTextureFileData from '../db/caches/DBComponentTextureFileData.js';
+import * as DBDecor from '../db/caches/DBDecor.js';
+import * as DBDecorCategories from '../db/caches/DBDecorCategories.js';
+import * as DBGuildTabard from '../db/caches/DBGuildTabard.js';
 
 export const db_handlers = {
 	async db_load({ table }) {
-		throw new Error(NOT_IMPL);
+		log.write('db_load: %s', table);
+		const reader = db2[table];
+		if (!reader)
+			throw new Error('unknown table: ' + table);
+
+		const rows = await reader.getAllRows();
+		const columns = reader.schema?.fields?.map(f => f.name) ?? [];
+
+		const serialized_rows = [];
+		for (const [id, row] of rows)
+			serialized_rows.push({ id, ...row });
+
+		return { columns, rows: serialized_rows };
 	},
 
 	async db_preload({ table }) {
-		throw new Error(NOT_IMPL);
+		log.write('db_preload: %s', table);
+		const reader = await db2.preload[table]();
+		const rows = reader.getAllRows();
+		return { count: rows.size };
 	},
 
 	async db_get_row({ table, id }) {
-		throw new Error(NOT_IMPL);
+		const reader = db2[table];
+		if (!reader)
+			throw new Error('unknown table: ' + table);
+
+		const row = await reader.getRow(id);
+		return row ?? null;
 	},
 };
 
 export const db_cache_handlers = {
-	// items
 	async dbc_get_items({ filter }) {
-		throw new Error(NOT_IMPL);
+		await DBItems.ensureInitialized();
+		return DBItems;
 	},
 
 	async dbc_get_item_displays({ item_id }) {
-		throw new Error(NOT_IMPL);
+		await DBItemDisplays.initializeItemDisplays?.();
+		return DBItemDisplays.getItemDisplaysByFileDataID?.(item_id) ?? [];
 	},
 
 	async dbc_get_item_models({ display_id }) {
-		throw new Error(NOT_IMPL);
+		await DBItemModels.ensureInitialized();
+		return DBItemModels.getItemModels?.(display_id) ?? [];
 	},
 
 	async dbc_get_item_geosets({ item_id }) {
-		throw new Error(NOT_IMPL);
+		await DBItemGeosets.ensureInitialized();
+		return DBItemGeosets.getItemGeosetData?.(item_id) ?? null;
 	},
 
 	async dbc_get_item_char_textures({ item_id }) {
-		throw new Error(NOT_IMPL);
+		await DBItemCharTextures.ensureInitialized();
+		return DBItemCharTextures.getItemTextures?.(item_id) ?? null;
 	},
 
-	// creatures
 	async dbc_get_creatures({ filter }) {
-		throw new Error(NOT_IMPL);
+		await DBCreatures.initializeCreatureData?.();
+		return DBCreatures;
 	},
 
 	async dbc_get_creature_displays({ creature_id }) {
-		throw new Error(NOT_IMPL);
+		await DBCreatureDisplayExtra.ensureInitialized();
+		return DBCreatureDisplayExtra.get_extra?.(creature_id) ?? null;
 	},
 
 	async dbc_get_creature_equipment({ creature_id }) {
-		throw new Error(NOT_IMPL);
+		await DBNpcEquipment.ensureInitialized();
+		return DBNpcEquipment.get_equipment?.(creature_id) ?? null;
 	},
 
-	// characters
 	async dbc_get_character_customization({ race, gender }) {
-		throw new Error(NOT_IMPL);
+		return DBCharacterCustomization;
 	},
 
-	// models / textures
 	async dbc_get_model_file_data({ model_id }) {
-		throw new Error(NOT_IMPL);
+		await DBModelFileData.initializeModelFileData?.();
+		return DBModelFileData.getModelFileDataID?.(model_id) ?? null;
 	},
 
 	async dbc_get_texture_file_data({ texture_id }) {
-		throw new Error(NOT_IMPL);
+		await DBTextureFileData.ensureInitialized();
+		return DBTextureFileData.getTextureFDIDsByMatID?.(texture_id) ?? null;
 	},
 
 	async dbc_get_component_models({ race, gender, class: class_id }) {
-		throw new Error(NOT_IMPL);
+		await DBComponentModelFileData.initialize?.();
+		return DBComponentModelFileData.getModelsForRaceGenderByPosition?.(race, gender) ?? null;
 	},
 
-	// decor
 	async dbc_get_decor({ filter }) {
-		throw new Error(NOT_IMPL);
+		await DBDecor.initializeDecorData?.();
+		return DBDecor.getAllDecorItems?.() ?? [];
 	},
 
 	async dbc_get_decor_categories() {
-		throw new Error(NOT_IMPL);
+		await DBDecorCategories.initialize_categories?.();
+		return {
+			categories: DBDecorCategories.get_all_categories?.() ?? [],
+			subcategories: DBDecorCategories.get_all_subcategories?.() ?? [],
+		};
 	},
 
-	// guild tabard
 	async dbc_get_guild_tabard(params) {
-		throw new Error(NOT_IMPL);
+		await DBGuildTabard.ensureInitialized();
+		return DBGuildTabard;
 	},
 };
