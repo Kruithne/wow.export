@@ -122,12 +122,6 @@ export const listfile_handlers = {
 		}
 	},
 
-	async listfile_get_tree({ path }) {
-		// tree navigation is handled via binary tree nodes in binary mode
-		// for now, return empty - full tree support is view-side
-		return [];
-	},
-
 	async listfile_strip_prefix({ name }) {
 		return listfile.stripFileEntry(name);
 	},

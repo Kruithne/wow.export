@@ -43,7 +43,6 @@ export const MAX_REQUEST_TIME = 120_000;
  * listfile_get_by_name: { name: string } => number | null
  * listfile_get_filtered: { filter: string, ext?: string, prefilter?: string } => Array<[number, string]>
  * listfile_get_prefilter: { type: string } => Array<[number, string]>
- * listfile_get_tree: { path: string } => TreeEntry[]
  * listfile_strip_prefix: { name: string } => string
  */
 

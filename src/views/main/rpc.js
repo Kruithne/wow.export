@@ -119,7 +119,6 @@ export const listfile = {
 	get_by_name: (name) => rpc_config.request.listfile_get_by_name({ name }),
 	get_filtered: (filter, ext, prefilter) => rpc_config.request.listfile_get_filtered({ filter, ext, prefilter }),
 	get_prefilter: (type) => rpc_config.request.listfile_get_prefilter({ type }),
-	get_tree: (path) => rpc_config.request.listfile_get_tree({ path }),
 	strip_prefix: (name) => rpc_config.request.listfile_strip_prefix({ name }),
 };
 
