@@ -487,6 +487,24 @@ CLI.commands['export-file'] = async () => {
             const data = await core.view.casc.getFile(file_data_id);
             const export_path = ExportHelper.getExportPath(file_name);
             
+            if (CLI.args['include-links']) {
+                const model_type = modelViewerUtils.detect_model_type_by_name(file_name) ?? modelViewerUtils.detect_model_type(data);
+                if (model_type) {
+                    print(`[EXPORT] Detected model type for ${file_name}, using raw model exporter for links...`);
+                    await modelViewerUtils.export_model({
+                        core,
+                        data,
+                        file_data_id,
+                        file_name,
+                        format: 'RAW',
+                        export_path,
+                        helper,
+                        file_manifest: []
+                    });
+                    continue;
+                }
+            }
+
             await data.writeToFile(export_path);
             helper.mark(file_name, true);
             print(`[EXPORT] Saved to: ${export_path}`);
