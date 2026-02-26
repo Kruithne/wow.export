@@ -1,10 +1,8 @@
-const path = require('path');
-const fsp = require('fs').promises;
-const log = require('../log');
-const platform = require('../platform');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
-const { detect_glyphs_async, get_random_quote, inject_font_face } = require('./font_helpers');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
+import { detect_glyphs_async, get_random_quote, inject_font_face } from './font_helpers.js';
 
 const loaded_fonts = new Map();
 
@@ -53,7 +51,7 @@ const load_font_list = async (core) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Fonts', 'font.svg', InstallType.MPQ);
 	},
@@ -119,11 +117,12 @@ module.exports = {
 
 			for (const file_name of selected) {
 				try {
-					const export_path = path.join(export_dir, file_name);
+					const export_path = export_dir + '/' + file_name;
 					const data = this.$core.view.mpq.getFile(file_name);
 					if (data) {
-						await fsp.mkdir(path.dirname(export_path), { recursive: true });
-						await fsp.writeFile(export_path, new Uint8Array(data));
+						const dir_path = export_path.substring(0, export_path.lastIndexOf('/'));
+						await platform.mkdir(dir_path, { recursive: true });
+						await platform.write_file(export_path, new Uint8Array(data));
 						last_export_path = export_path;
 						exported++;
 					} else {
@@ -139,13 +138,14 @@ module.exports = {
 			if (failed > 0) {
 				this.$core.setToast('error', `Exported ${exported} fonts with ${failed} failures.`);
 			} else if (last_export_path) {
-				const dir = path.dirname(last_export_path);
+				const dir = last_export_path.substring(0, last_export_path.lastIndexOf('/'));
 				const toast_opt = { 'View in Explorer': () => platform.open_path(dir) };
+				const base_name = last_export_path.substring(last_export_path.lastIndexOf('/') + 1);
 
 				if (selected.length > 1)
 					this.$core.setToast('success', `Successfully exported ${exported} fonts.`, toast_opt, -1);
 				else
-					this.$core.setToast('success', `Successfully exported ${path.basename(last_export_path)}.`, toast_opt, -1);
+					this.$core.setToast('success', `Successfully exported ${base_name}.`, toast_opt, -1);
 			}
 		}
 	},

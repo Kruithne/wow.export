@@ -3,20 +3,21 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import BLPImage from '../../casc/blp.js';
+import VertexArray from '../gl/VertexArray.js';
+import textureRibbon from '../../ui/texture-ribbon.js';
+import log from '../../log.js';
+import WMOLegacyLoader from '../loaders/WMOLegacyLoader.js';
+import Shaders from '../Shaders.js';
+import GLTexture from '../gl/GLTexture.js';
+import BufferWrapper from '../../buffer.js';
 
-const util = require('util');
-const core = require('../../core');
-const log = require('../../log');
 
-const BLPFile = require('../../casc/blp');
-const WMOLegacyLoader = require('../loaders/WMOLegacyLoader');
-const M2LegacyRendererGL = require('./M2LegacyRendererGL');
-const Shaders = require('../Shaders');
 
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
 
-const textureRibbon = require('../../ui/texture-ribbon');
+
+
+
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -105,8 +106,6 @@ class WMOLegacyRendererGL {
 		const wmo = this.wmo;
 		const materials = wmo.materials;
 		const mpq = core.view.mpq;
-		const BufferWrapper = require('../../buffer');
-
 		if (this.useRibbon)
 			this.syncID = textureRibbon.reset();
 
@@ -140,7 +139,7 @@ class WMOLegacyRendererGL {
 					if (!data)
 						continue;
 
-					const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
+					const blp = new BLPFile(new BufferWrapper(data));
 					const gl_tex = new GLTexture(this.ctx);
 
 					const wrap_s = (material.flags & 0x40) ? this.gl.CLAMP_TO_EDGE : this.gl.REPEAT;
@@ -278,7 +277,7 @@ class WMOLegacyRendererGL {
 		log.write('Loading legacy doodad set: %s', set.name);
 
 		using _lock = core.create_busy_lock();
-		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, set.doodadCount), null, -1, false);
+		core.setToast('progress', `Loading doodad set ${set.name} (${set.doodadCount} doodads)...`, null, -1, false);
 
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
@@ -303,9 +302,7 @@ class WMOLegacyRendererGL {
 					const fileData = mpq.getFile(doodadName);
 					if (!fileData)
 						continue;
-
-					const BufferWrapper = require('../../buffer');
-					const data = new BufferWrapper(Buffer.from(fileData));
+					const data = new BufferWrapper(fileData);
 					const magic = data.readUInt32LE();
 					data.seek(0);
 
@@ -551,4 +548,4 @@ class WMOLegacyRendererGL {
 	}
 }
 
-module.exports = WMOLegacyRendererGL;
+export default WMOLegacyRendererGL;

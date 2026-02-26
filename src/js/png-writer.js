@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const BufferWrapper = require('./buffer');
+import BufferWrapper from './buffer.js';
 
 const FILTERS = {
 	// None
@@ -150,7 +150,7 @@ const filter = (data, width, height, bytesPerPixel) => {
 	let dataOfs = 0;
 
 	let rawOfs = 0;
-	let raw = Buffer.alloc((byteWidth + 1) * height);
+	let raw = new Uint8Array((byteWidth + 1) * height);
 
 	let selectedFilter = 0;
 	for (let y = 0; y < height; y++) {
@@ -186,7 +186,7 @@ class PNGWriter {
 		this.bytesPerPixel = 4;
 		this.bitDepth = 8;
 		this.colorType = 6; // RGBA
-		this.data = Buffer.alloc(width * height * 4);
+		this.data = new Uint8Array(width * height * 4);
 	}
 
 	/**
@@ -249,4 +249,4 @@ class PNGWriter {
 	}
 }
 
-module.exports = PNGWriter;
+export default PNGWriter;

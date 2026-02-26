@@ -169,7 +169,7 @@ const detectFileType = (data) => {
 	return AUDIO_TYPE_UNKNOWN;
 };
 
-module.exports = {
+export {
 	AudioPlayer,
 	AUDIO_TYPE_UNKNOWN,
 	AUDIO_TYPE_OGG,

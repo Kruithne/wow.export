@@ -17,43 +17,43 @@ const generateUVLayerDataURL = (uvCoords, textureWidth, textureHeight, indices) 
 	const canvas = document.createElement('canvas');
 	canvas.width = textureWidth;
 	canvas.height = textureHeight;
-	
+
 	const ctx = canvas.getContext('2d');
-	
+
 	ctx.strokeStyle = '#ffffff';
 	ctx.lineWidth = 0.5;
 	ctx.globalAlpha = 1.0;
-	
+
 	ctx.beginPath();
-	
+
 	for (let i = 0; i < indices.length; i += 3) {
 		const idx1 = indices[i] * 2;
 		const idx2 = indices[i + 1] * 2;
 		const idx3 = indices[i + 2] * 2;
-		
+
 		const u1 = uvCoords[idx1] * textureWidth;
 		const v1 = (1 - uvCoords[idx1 + 1]) * textureHeight; // Flip V coordinate
 		const u2 = uvCoords[idx2] * textureWidth;
 		const v2 = (1 - uvCoords[idx2 + 1]) * textureHeight;
 		const u3 = uvCoords[idx3] * textureWidth;
 		const v3 = (1 - uvCoords[idx3 + 1]) * textureHeight;
-		
+
 		ctx.moveTo(u1, v1);
 		ctx.lineTo(u2, v2);
 		ctx.lineTo(u3, v3);
 		ctx.lineTo(u1, v1);
 	}
-	
+
 	ctx.stroke();
-	
+
 	const dataURL = canvas.toDataURL('image/png');
-	
+
 	canvas.width = 0;
 	canvas.height = 0;
-	
+
 	return dataURL;
 };
 
-module.exports = {
+export {
 	generateUVLayerDataURL
 };

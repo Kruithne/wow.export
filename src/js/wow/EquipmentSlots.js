@@ -168,7 +168,7 @@ const get_slot_layer = (slot_id) => {
 	return SLOT_LAYER[slot_id] ?? 10;
 };
 
-module.exports = {
+export {
 	EQUIPMENT_SLOTS,
 	SLOT_ID_TO_NAME,
 	INVENTORY_TYPE_TO_SLOT_ID,

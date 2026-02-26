@@ -44,4 +44,4 @@ const getSlotName = (id) => {
 	return ITEM_SLOTS[id] ?? 'Unknown';
 };
 
-module.exports = { getSlotName };
+export { getSlotName };

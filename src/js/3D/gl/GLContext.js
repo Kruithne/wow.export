@@ -409,4 +409,4 @@ class GLContext {
 
 GLContext.BlendMode = BlendMode;
 
-module.exports = GLContext;
+export default GLContext;

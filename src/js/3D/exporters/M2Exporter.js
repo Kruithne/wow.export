@@ -3,24 +3,18 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const core = require('../../core');
-const log = require('../../log');
-const path = require('path');
-const generics = require('../../generics');
-const listfile = require('../../casc/listfile');
-
-const BLPFile = require('../../casc/blp');
-const M2Loader= require('../loaders/M2Loader');
-const SKELLoader = require('../loaders/SKELLoader');
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const STLWriter = require('../writers/STLWriter');
-const JSONWriter = require('../writers/JSONWriter');
-const GLTFWriter = require('../writers/GLTFWriter');
-const GeosetMapper = require('../GeosetMapper');
-const ExportHelper = require('../../casc/export-helper');
-const BufferWrapper = require('../../buffer');
-
+import { exporter, listfile } from '../../views/main/rpc.js';
+import generics from '../../generics.js';
+import SKELLoader from '../loaders/SKELLoader.js';
+import JSONWriter from '../writers/JSONWriter.js';
+import EquipmentSlots from '../../wow/EquipmentSlots.js';
+import core from '../../core.js';
+import M2Loader from '../loaders/M2Loader.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import STLWriter from '../writers/STLWriter.js';
+import GLTFWriter from '../writers/GLTFWriter.js';
+import log from '../../log.js';
+import BufferWrapper from '../../buffer.js';
 class M2Exporter {
 	/**
 	 * Construct a new M2Exporter instance.
@@ -81,7 +75,7 @@ class M2Exporter {
 	 * @param {string} out
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {boolean} [fullTexPaths=false]
 	 * @param {boolean} [glbMode=false]
 	 * @returns {Map<number, string>}
@@ -106,7 +100,7 @@ class M2Exporter {
 		for (const [textureName, dataTexture] of this.dataTextures) {
 			try {
 				let texFile = 'data-' + textureName + '.png';
-				let texPath = path.join(out, texFile);
+				let texPath = out + '/' + texFile;
 				const matName = 'mat_' + textureName;
 				const data = BufferWrapper.fromBase64(dataTexture.replace(/^data[^,]+,/,''));
 
@@ -121,7 +115,7 @@ class M2Exporter {
 				}
 
 				if (usePosix)
-					texFile = ExportHelper.win32ToPosix(texFile);
+					texFile = exporter.win32ToPosix(texFile);
 
 				mtl?.addMaterial(matName, texFile);
 				validTextures.set('data-' + textureName, {
@@ -169,14 +163,14 @@ class M2Exporter {
 			if (!Number.isNaN(texFileDataID) && texFileDataID > 0) {
 				try {
 					let texFile = texFileDataID + (raw ? '.blp' : '.png');
-					let texPath = path.join(out, texFile);
+					let texPath = out + '/' + texFile;
 
 					// Default MTL name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + texFileDataID;
 					let fileName = listfile.getByID(texFileDataID);
 
 					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
 
 						// Remove spaces from material name for MTL compatibility.
 						if (core.view.config.removePathSpaces)
@@ -188,14 +182,14 @@ class M2Exporter {
 						if (fileName !== undefined) {
 							// Replace BLP extension with PNG.
 							if (raw === false)
-								fileName = ExportHelper.replaceExtension(fileName, '.png');
+								fileName = exporter.replaceExtension(fileName, '.png');
 						} else {
 							// Handle unknown files.
 							fileName = listfile.formatUnknownFile(texFile);
 						}
 
-						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(out, texPath);
+						texPath = exporter.getExportPath(fileName);
+						texFile = texPath.replace(out, '');
 					}
 
 					const file_existed = await generics.fileExists(texPath);
@@ -227,7 +221,7 @@ class M2Exporter {
 					}
 
 					if (usePosix)
-						texFile = ExportHelper.win32ToPosix(texFile);
+						texFile = exporter.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
 					validTextures.set(texFileDataID, {
@@ -251,8 +245,8 @@ class M2Exporter {
 
 	async exportAsGLTF(out, helper, format = 'gltf') {
 		const ext = format === 'glb' ? '.glb' : '.gltf';
-		const outGLTF = ExportHelper.replaceExtension(out, ext);
-		const outDir = path.dirname(out);
+		const outGLTF = exporter.replaceExtension(out, ext);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Skip export if file exists and overwriting is disabled.
 		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
@@ -261,7 +255,7 @@ class M2Exporter {
 		await this.m2.load();
 		const skin = await this.m2.getSkin(0);
 
-		const model_name = path.basename(outGLTF, ext);
+		const model_name = outGLTF.split('/').pop().replace(ext, '');
 		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M2 model %s as %s: %s', model_name, format.toUpperCase(), outGLTF);
 
@@ -420,7 +414,7 @@ class M2Exporter {
 		if (!skin)
 			return;
 
-		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+		const slot_name = EquipmentSlots.get_slot_name(slot_id) || `Slot${slot_id}`;
 
 		// export equipment textures and build material map
 		const config = core.view.config;
@@ -442,18 +436,18 @@ class M2Exporter {
 					const fileName = listfile.getByID(texFileDataID);
 					let matName = 'mat_equip_' + texFileDataID;
 					let texFile = texFileDataID + '.png';
-					let texPath = path.join(outDir, texFile);
+					let texPath = outDir + '/' + texFile;
 
 					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
 						if (config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
 
 					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = ExportHelper.getExportPath(sharedFileName);
-						texFile = path.relative(outDir, texPath);
+						const sharedFileName = exporter.replaceExtension(fileName, '.png');
+						texPath = exporter.getExportPath(sharedFileName);
+						texFile = texPath.replace(outDir, '');
 					}
 
 					// for glb mode, we need to get the texture buffer
@@ -471,7 +465,7 @@ class M2Exporter {
 
 					const usePosix = config.pathFormat === 'posix';
 					if (usePosix)
-						texFile = ExportHelper.win32ToPosix(texFile);
+						texFile = exporter.win32ToPosix(texFile);
 
 					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
 					textureMap.set(texFileDataID, texInfo);
@@ -587,20 +581,20 @@ class M2Exporter {
 
 				try {
 					let texFile = texFileDataID + '.png';
-					let texPath = path.join(outDir, texFile);
+					let texPath = outDir + '/' + texFile;
 					let matName = 'mat_equip_' + texFileDataID;
 
 					const fileName = listfile.getByID(texFileDataID);
 					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
 						if (config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
 
 					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = ExportHelper.getExportPath(sharedFileName);
-						texFile = path.relative(outDir, texPath);
+						const sharedFileName = exporter.replaceExtension(fileName, '.png');
+						texPath = exporter.getExportPath(sharedFileName);
+						texFile = texPath.replace(outDir, '');
 					}
 
 					if (config.overwriteFiles || !await generics.fileExists(texPath)) {
@@ -611,7 +605,7 @@ class M2Exporter {
 					}
 
 					if (usePosix)
-						texFile = ExportHelper.win32ToPosix(texFile);
+						texFile = exporter.win32ToPosix(texFile);
 
 					mtl.addMaterial(matName, texFile);
 					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
@@ -625,7 +619,7 @@ class M2Exporter {
 		}
 
 		// add equipment meshes
-		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+		const slot_name = EquipmentSlots.get_slot_name(slot_id) || `Slot${slot_id}`;
 		let mesh_idx = 0;
 
 		for (let mI = 0; mI < skin.subMeshes.length; mI++) {
@@ -688,7 +682,7 @@ class M2Exporter {
 		stl.appendGeometry(vertices, normals);
 
 		// add equipment meshes
-		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
+		const slot_name = EquipmentSlots.get_slot_name(slot_id) || `Slot${slot_id}`;
 		let mesh_idx = 0;
 
 		for (let mI = 0; mI < skin.subMeshes.length; mI++) {
@@ -712,7 +706,7 @@ class M2Exporter {
 	 * Export the M2 model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {Array} fileManifest
 	 */
 	async exportAsOBJ(out, exportCollision = false, helper, fileManifest) {
@@ -724,12 +718,12 @@ class M2Exporter {
 		const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
-		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
+		const mtl = new MTLWriter(exporter.replaceExtension(out, '.mtl'));
 
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Use internal M2 name or fallback to the OBJ file name.
-		const model_name = path.basename(out, '.obj');
+		const model_name = out.split('/').pop().replace('.obj', '');
 		obj.setName(model_name);
 
 		log.write('Exporting M2 model %s as OBJ: %s', model_name, out);
@@ -754,7 +748,7 @@ class M2Exporter {
 		// Export bone data to a separate JSON file due to the excessive size.
 		// A normal meta-data file is around 8kb without bones, 65mb with bones.
 		if (exportBones) {
-			const json = new JSONWriter(ExportHelper.replaceExtension(out, '_bones.json'));
+			const json = new JSONWriter(exporter.replaceExtension(out, '_bones.json'));
 
 			if (this.m2.skeletonFileID) {
 				const skel_file = await core.view.casc.getFile(this.m2.skeletonFileID);
@@ -783,7 +777,7 @@ class M2Exporter {
 		}
 
 		if (exportMeta) {
-			const json = new JSONWriter(ExportHelper.replaceExtension(out, '.json'));
+			const json = new JSONWriter(exporter.replaceExtension(out, '.json'));
 
 			// Clone the submesh array and add a custom 'enabled' property
 			// to indicate to external readers which submeshes are not included
@@ -879,7 +873,7 @@ class M2Exporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(path.basename(mtl.out));
+			obj.setMaterialLibrary(mtl.out.split('/').pop());
 
 		await obj.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'OBJ', fileDataID: this.fileDataID, file: obj.out });
@@ -888,7 +882,7 @@ class M2Exporter {
 		fileManifest?.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
 
 		if (exportCollision) {
-			const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
+			const phys = new OBJWriter(exporter.replaceExtension(out, '.phys.obj'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
@@ -902,7 +896,7 @@ class M2Exporter {
 	 * Export the M2 model as an STL file.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {Array} fileManifest
 	 */
 	async exportAsSTL(out, exportCollision = false, helper, fileManifest) {
@@ -912,7 +906,7 @@ class M2Exporter {
 		const config = core.view.config;
 
 		const stl = new STLWriter(out);
-		const model_name = path.basename(out, '.stl');
+		const model_name = out.split('/').pop().replace('.stl', '');
 		stl.setName(model_name);
 
 		log.write('Exporting M2 model %s as STL: %s', model_name, out);
@@ -953,7 +947,7 @@ class M2Exporter {
 		fileManifest?.push({ type: 'STL', fileDataID: this.fileDataID, file: stl.out });
 
 		if (exportCollision) {
-			const phys = new STLWriter(ExportHelper.replaceExtension(out, '.phys.stl'));
+			const phys = new STLWriter(exporter.replaceExtension(out, '.phys.stl'));
 			phys.setVertArray(this.m2.collisionPositions);
 			phys.setNormalArray(this.m2.collisionNormals);
 			phys.addMesh('Collision', this.m2.collisionIndices);
@@ -967,14 +961,14 @@ class M2Exporter {
 	 * Export the model as a raw M2 file, including related files
 	 * such as textures, bones, animations, etc.
 	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 * @param {exporter} helper 
 	 * @param {Array} [fileManifest]
 	 */
 	async exportRaw(out, helper, fileManifest) {
 		const casc = core.view.casc;
 		const config = core.view.config;
 
-		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
+		const manifestFile = exporter.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
 
 		manifest.addProperty('fileDataID', this.fileDataID);
@@ -988,14 +982,14 @@ class M2Exporter {
 			await this.m2.load();
 
 		// Directory that relative files should be exported to.
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Write relative skin files.
 		if (config.modelsExportSkin) {
 			const textures = await this.exportTextures(outDir, true, null, helper);
 			const texturesManifest = [];
 			for (const [texFileDataID, texInfo] of textures) {
-				texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(outDir, texInfo.matPath) });
+				texturesManifest.push({ fileDataID: texFileDataID, file: texInfo.matPath.replace(outDir, '') });
 				fileManifest?.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
 			}
 
@@ -1012,12 +1006,12 @@ class M2Exporter {
 
 					let skinFile;
 					if (config.enableSharedChildren)
-						skinFile = ExportHelper.getExportPath(skin.fileName);
+						skinFile = exporter.getExportPath(skin.fileName);
 					else
-						skinFile = path.join(outDir, path.basename(skin.fileName));
+						skinFile = outDir + '/' + skin.fileName.split('/'.pop());
 	
 					await skinData.writeToFile(skinFile);
-					skinsManifest.push({ fileDataID: skin.fileDataID, file: path.relative(outDir, skinFile) });
+					skinsManifest.push({ fileDataID: skin.fileDataID, file: skinFile.replace(outDir, '') });
 					fileManifest?.push({ type: typeName, fileDataID: skin.fileDataID, file: skinFile });
 				}
 
@@ -1035,12 +1029,12 @@ class M2Exporter {
 
 			let skelFile;
 			if (config.enableSharedChildren)
-				skelFile = ExportHelper.getExportPath(skelFileName);
+				skelFile = exporter.getExportPath(skelFileName);
 			else
-				skelFile = path.join(outDir, path.basename(skelFileName));
+				skelFile = outDir + '/' + skelFileName.split('/'.pop());
 
 			await skelData.writeToFile(skelFile);
-			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: path.relative(outDir, skelFile) });
+			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: skelFile.replace(outDir, '') });
 			fileManifest?.push({ type: 'SKEL', fileDataID: this.m2.skeletonFileID, file: skelFile });
 
 			const skel = new SKELLoader(skelData);
@@ -1058,12 +1052,12 @@ class M2Exporter {
 							
 							let animFile;
 							if (config.enableSharedChildren)
-								animFile = ExportHelper.getExportPath(animFileName);
+								animFile = exporter.getExportPath(animFileName);
 							else
-								animFile = path.join(outDir, path.basename(animFileName));
+								animFile = outDir + '/' + animFileName.split('/'.pop());
 
 							await animData.writeToFile(animFile);
-							animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+							animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });
 							fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
 							animCache.add(anim.fileDataID);
 						}
@@ -1081,12 +1075,12 @@ class M2Exporter {
 		
 						let boneFile;
 						if (config.enableSharedChildren)
-							boneFile = ExportHelper.getExportPath(boneFileName);
+							boneFile = exporter.getExportPath(boneFileName);
 						else
-							boneFile = path.join(outDir, path.basename(boneFileName));
+							boneFile = outDir + '/' + boneFileName.split('/'.pop());
 		
 						await boneData.writeToFile(boneFile);
-						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
 						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
 					}
 		
@@ -1100,13 +1094,13 @@ class M2Exporter {
 	
 				let parentSkelFile;
 				if (config.enableSharedChildren)
-					parentSkelFile = ExportHelper.getExportPath(parentSkelFileName);
+					parentSkelFile = exporter.getExportPath(parentSkelFileName);
 				else
-					parentSkelFile = path.join(outDir, path.basename(parentSkelFileName));
+					parentSkelFile = outDir + '/' + parentSkelFileName.split('/'.pop());
 	
 				await parentSkelData.writeToFile(parentSkelFile);
 	
-				manifest.addProperty('parentSkeleton', { fileDataID: skel.parent_skel_file_id, file: path.relative(outDir, parentSkelFile) });
+				manifest.addProperty('parentSkeleton', { fileDataID: skel.parent_skel_file_id, file: parentSkelFile.replace(outDir, '') });
 				fileManifest?.push({ type: 'PARENT_SKEL', fileDataID: skel.parent_skel_file_id, file: parentSkelFile });
 	
 				const parentSkel = new SKELLoader(parentSkelData);
@@ -1124,12 +1118,12 @@ class M2Exporter {
 								
 								let animFile;
 								if (config.enableSharedChildren)
-									animFile = ExportHelper.getExportPath(animFileName);
+									animFile = exporter.getExportPath(animFileName);
 								else
-									animFile = path.join(outDir, path.basename(animFileName));
+									animFile = outDir + '/' + animFileName.split('/'.pop());
 	
 								await animData.writeToFile(animFile);
-								animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+								animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });
 								fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
 								animCache.add(anim.fileDataID);
 							}
@@ -1148,12 +1142,12 @@ class M2Exporter {
 		
 						let boneFile;
 						if (config.enableSharedChildren)
-							boneFile = ExportHelper.getExportPath(boneFileName);
+							boneFile = exporter.getExportPath(boneFileName);
 						else
-							boneFile = path.join(outDir, path.basename(boneFileName));
+							boneFile = outDir + '/' + boneFileName.split('/'.pop());
 		
 						await boneData.writeToFile(boneFile);
-						boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+						boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
 						fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
 					}
 		
@@ -1172,12 +1166,12 @@ class M2Exporter {
 
 				let boneFile;
 				if (config.enableSharedChildren)
-					boneFile = ExportHelper.getExportPath(boneFileName);
+					boneFile = exporter.getExportPath(boneFileName);
 				else
-					boneFile = path.join(outDir, path.basename(boneFileName));
+					boneFile = outDir + '/' + boneFileName.split('/'.pop());
 
 				await boneData.writeToFile(boneFile);
-				boneManifest.push({ fileDataID: boneFileID, file: path.relative(outDir, boneFile) });
+				boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
 				fileManifest?.push({ type: 'BONE', fileDataID: boneFileID, file: boneFile });
 			}
 
@@ -1195,12 +1189,12 @@ class M2Exporter {
 					
 					let animFile;
 					if (config.enableSharedChildren)
-						animFile = ExportHelper.getExportPath(animFileName);
+						animFile = exporter.getExportPath(animFileName);
 					else
-						animFile = path.join(outDir, path.basename(animFileName));
+						animFile = outDir + '/' + animFileName.split('/'.pop());
 
 					await animData.writeToFile(animFile);
-					animManifest.push({ fileDataID: anim.fileDataID, file: path.relative(outDir, animFile), animID: anim.animID, subAnimID: anim.subAnimID });
+					animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });
 					fileManifest?.push({ type: 'ANIM', fileDataID: anim.fileDataID, file: animFile });
 					animCache.add(anim.fileDataID);
 				}
@@ -1213,4 +1207,4 @@ class M2Exporter {
 	}
 }
 
-module.exports = M2Exporter;
+export default M2Exporter;

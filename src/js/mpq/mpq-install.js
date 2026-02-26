@@ -3,11 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-const path = require('path');
-const fsp = require('fs').promises;
-const { MPQArchive } = require('./mpq');
-const { detect_build_version } = require('./build-version');
-const log = require('../log');
+import { MPQArchive } from './mpq.js';
+import { detect_build_version } from './build-version.js';
+import log from '../log.js';
 
 class MPQInstall {
 	constructor(directory) {
@@ -23,11 +21,12 @@ class MPQInstall {
 	}
 
 	async _scan_mpq_files(dir) {
+		const fsp = await import('fs').then(m => m.promises);
 		const entries = await fsp.readdir(dir, { withFileTypes: true });
 		const results = [];
 
 		for (const entry of entries) {
-			const full_path = path.join(dir, entry.name);
+			const full_path = dir + '/' + entry.name;
 
 			if (entry.isDirectory()) {
 				const sub_results = await this._scan_mpq_files(full_path);
@@ -41,7 +40,7 @@ class MPQInstall {
 	}
 
 	async loadInstall() {
-		const core = require('../core');
+		const { default: core } = await import('../core.js');
 		await core.progressLoadingScreen('Scanning for MPQ Archives');
 
 		const mpq_files = await this._scan_mpq_files(this.directory);
@@ -49,22 +48,21 @@ class MPQInstall {
 		if (mpq_files.length === 0)
 			throw new Error('No MPQ archives found in directory');
 
-		log.write('Found %d MPQ archives in %s', mpq_files.length, this.directory);
+		log.write(`Found ${mpq_files.length} MPQ archives in ${this.directory}`);
 
 		await core.progressLoadingScreen('Loading MPQ Archives');
 
 		for (const mpq_path of mpq_files) {
 			const archive = new MPQArchive(mpq_path);
 			const info = archive.getInfo();
-			const mpq_name = path.relative(this.directory, mpq_path);
+			const mpq_name = mpq_path.startsWith(this.directory) ? mpq_path.slice(this.directory.length).replace(/^[\\/]/, '') : mpq_path;
 
 			this.archives.push({
 				name: mpq_name,
 				archive,
 			});
 
-			log.write('Loaded %s: format v%d, %d files, %d hash entries, %d block entries',
-				mpq_name, info.formatVersion, info.fileCount, info.hashTableEntries, info.blockTableEntries);
+			log.write(`Loaded ${mpq_name}: format v${info.formatVersion}, ${info.fileCount} files, ${info.hashTableEntries} hash entries, ${info.blockTableEntries} block entries`);
 
 			for (const filename of archive.files) {
 				this.listfile.set(filename.toLowerCase(), {
@@ -76,12 +74,12 @@ class MPQInstall {
 		}
 
 		await core.progressLoadingScreen('MPQ Archives Loaded');
-		log.write('Total files in listfile: %d', this.listfile.size);
+		log.write(`Total files in listfile: ${this.listfile.size}`);
 
 		// detect build version
 		const mpq_names = this.archives.map(a => a.name);
 		this.build_id = detect_build_version(this.directory, mpq_names);
-		log.write('Using build version: %s', this.build_id);
+		log.write(`Using build version: ${this.build_id}`);
 	}
 
 	getFilesByExtension(extension) {
@@ -159,4 +157,4 @@ class MPQInstall {
 	}
 }
 
-module.exports = { MPQInstall };
+export { MPQInstall };

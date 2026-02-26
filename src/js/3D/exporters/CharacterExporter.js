@@ -3,7 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const log = require('../../log');
+
+
+import log from '../../log.js';
 
 /**
  * Transform a position by a 4x4 matrix
@@ -346,4 +348,4 @@ class CharacterExporter {
 	}
 }
 
-module.exports = CharacterExporter;
+export default CharacterExporter;

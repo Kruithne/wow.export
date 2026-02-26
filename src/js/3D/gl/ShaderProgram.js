@@ -3,8 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-
-const log = require('../../log');
+import log from '../../log.js';
+import Shaders from '../Shaders.js';
 
 class ShaderProgram {
 	/**
@@ -265,7 +265,6 @@ class ShaderProgram {
 
 		if (!gl.getProgramParameter(new_program, gl.LINK_STATUS)) {
 			const info = gl.getProgramInfoLog(new_program);
-			const log = require('../../log');
 			log.write('Shader program link error on recompile: %s', info);
 			gl.deleteProgram(new_program);
 			return false;
@@ -287,7 +286,6 @@ class ShaderProgram {
 	dispose() {
 		// unregister from Shaders module if tracked
 		if (this._shader_name) {
-			const Shaders = require('../Shaders');
 			Shaders.unregister(this);
 		}
 
@@ -301,4 +299,4 @@ class ShaderProgram {
 	}
 }
 
-module.exports = ShaderProgram;
+export default ShaderProgram;

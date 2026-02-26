@@ -3,13 +3,13 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const core = require('../core');
-const log = require('../log');
-const generics = require('../generics');
-const ExportHelper = require('../casc/export-helper');
-const CSVWriter = require('../3D/writers/CSVWriter');
-const SQLWriter = require('../3D/writers/SQLWriter');
-const fsp = require('fs').promises;
+import core from '../core.js';
+import log from '../log.js';
+import generics from '../generics.js';
+import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import CSVWriter from '../3D/writers/CSVWriter.js';
+import SQLWriter from '../3D/writers/SQLWriter.js';
+import BufferWrapper from '../buffer.js';
 
 /**
  * Export data table to CSV format.
@@ -236,8 +236,11 @@ const exportRawDBC = async (tableName, filePath, mpq) => {
 			if (!raw_data)
 				throw new Error('Failed to retrieve DBC file from MPQ');
 
-			await fsp.mkdir(require('path').dirname(exportPath), { recursive: true });
-			await fsp.writeFile(exportPath, Buffer.from(raw_data));
+			const export_dir = exportPath.substring(0, exportPath.lastIndexOf('/'));
+			await generics.createDirectory(export_dir);
+
+			const buf = BufferWrapper.from(raw_data);
+			await buf.writeToFile(exportPath);
 			await exportPaths?.writeLine('DBC:' + exportPath);
 
 			helper.mark(fileName, true);
@@ -253,4 +256,4 @@ const exportRawDBC = async (tableName, filePath, mpq) => {
 	helper.finish();
 };
 
-module.exports = { exportDataTable, exportDataTableSQL, exportRawDB2, exportRawDBC };
+export { exportDataTable, exportDataTableSQL, exportRawDB2, exportRawDBC };

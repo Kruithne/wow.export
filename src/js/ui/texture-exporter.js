@@ -3,17 +3,14 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const core = require('../core');
-const platform = require('../platform');
-const log = require('../log');
-const util = require('util');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const BLPFile = require('../casc/blp');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
-const JSONWriter = require('../3D/writers/JSONWriter');
-const webp = require('webp-wasm');
+import core from '../core.js';
+import * as platform from '../platform.js';
+import log from '../log.js';
+import generics from '../generics.js';
+import { listfile, exporter as ExportHelper } from '../../views/main/rpc.js';
+import BLPFile from '../casc/blp.js';
+import BufferWrapper from '../buffer.js';
+import JSONWriter from '../3D/writers/JSONWriter.js';
 
 /**
  * Retrieve the fileDataID and fileName for a given fileDataID or fileName.
@@ -75,8 +72,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 		let data;
 		if (isMPQ) {
 			const raw_data = core.view.mpq.getFile(fileName);
-			const buffer = Buffer.from(raw_data);
-			data = new BufferWrapper(buffer);
+			data = new BufferWrapper(raw_data);
 		} else {
 			data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
 		}
@@ -87,7 +83,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 		platform.clipboard_write_image(png.toBase64());
 
 		log.write('Copied texture to clipboard (%s)', fileName);
-		core.setToast('success', util.format('Selected texture %s has been copied to the clipboard', fileName), null, -1, true);
+		core.setToast('success', `Selected texture ${fileName} has been copied to the clipboard`, null, -1, true);
 
 		return;
 	}
@@ -106,20 +102,21 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 		// Abort if the export has been cancelled.
 		if (helper.isCancelled())
 			return;
-			
+
 		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
-		
+
 		try {
 			let exportFileName = fileName;
-			
+
 			// Use fileDataID as filename if exportNamedFiles is disabled
 			if (!isLocal && !core.view.config.exportNamedFiles) {
 				const ext = fileName.toLowerCase().endsWith('.blp') ? '.blp' : '.png';
-				const dir = require('path').dirname(fileName);
+				const last_slash = fileName.lastIndexOf('/');
+				const dir = last_slash === -1 ? '.' : fileName.substring(0, last_slash);
 				const fileDataIDName = fileDataID + ext;
-				exportFileName = dir === '.' ? fileDataIDName : require('path').join(dir, fileDataIDName);
+				exportFileName = dir === '.' ? fileDataIDName : dir + '/' + fileDataIDName;
 			}
-			
+
 			let exportPath = isLocal ? fileName : ExportHelper.getExportPath(exportFileName);
 			let markFileName = exportFileName;
 			if (format === 'WEBP') {
@@ -134,8 +131,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 				let data;
 				if (isMPQ) {
 					const raw_data = core.view.mpq.getFile(fileName);
-					const buffer = Buffer.from(raw_data);
-					data = new BufferWrapper(buffer);
+					data = new BufferWrapper(raw_data);
 				} else {
 					data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
 				}
@@ -192,4 +188,4 @@ const exportSingleTexture = async (fileDataID) => {
 	await exportFiles([fileDataID], false);
 };
 
-module.exports = { exportFiles, exportSingleTexture, getFileInfoPair };
+export { exportFiles, exportSingleTexture, getFileInfoPair };

@@ -30,4 +30,4 @@ const ReadStringBlock = (data, chunkSize) => {
 	return entries;
 }
 
-module.exports = { ReadStringBlock };
+export { ReadStringBlock };

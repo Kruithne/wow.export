@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * options: An array of objects with label/value properties.
 	 * default: The default value from the options array.

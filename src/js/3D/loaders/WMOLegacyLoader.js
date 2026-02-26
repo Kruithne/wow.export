@@ -3,10 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-
-const core = require('../../core');
-const listfile = require('../../casc/listfile');
-const LoaderGenerics = require('./LoaderGenerics');
+import core from '../../core.js';
+import LoaderGenerics from './LoaderGenerics.js';
+import BufferWrapper from '../../buffer.js';
 
 // wmo version constants
 const WMO_VER_ALPHA = 14;      // 0.5.5 alpha
@@ -118,8 +117,6 @@ class WMOLegacyLoader {
 			throw new Error('Attempted to obtain group from a root WMO.');
 
 		const mpq = core.view.mpq;
-		const BufferWrapper = require('../../buffer');
-
 		let group = this.groups[index];
 		if (group)
 			return group;
@@ -141,7 +138,7 @@ class WMOLegacyLoader {
 		if (!fileData)
 			throw new Error('Group file not found: ' + groupFileName);
 
-		const data = new BufferWrapper(Buffer.from(fileData));
+		const data = new BufferWrapper(fileData);
 
 		group = this.groups[index] = new WMOLegacyLoader(data, undefined, this.renderingOnly);
 		group.version = this.version;
@@ -566,4 +563,4 @@ const WMOLegacyChunkHandlers = {
 	}
 };
 
-module.exports = WMOLegacyLoader;
+export default WMOLegacyLoader;

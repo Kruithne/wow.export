@@ -1,20 +1,19 @@
-const util = require('util');
-const constants = require('../constants');
-const generics = require('../generics');
-const log = require('../log');
-const ExternalLinks = require('../external-links');
-const InstallType = require('../install-type');
+import constants from '../constants.js';
+import generics from '../generics.js';
+import log from '../log.js';
+import ExternalLinks from '../external-links.js';
+import InstallType from '../install-type.js';
+import { casc } from '../../views/main/rpc.js';
+import { MPQInstall } from '../mpq/mpq-install.js';
 
-const CASCLocal = require('../casc/casc-source-local');
-const CASCRemote = require('../casc/casc-source-remote');
-const cdnResolver = require('../casc/cdn-resolver');
-const { MPQInstall } = require('../mpq/mpq-install');
+const CASCLocal = casc.CASCLocal ?? casc;
+const CASCRemote = casc.CASCRemote ?? casc;
 
 let casc_source = null;
 let local_selector = null;
 let legacy_selector = null;
 
-module.exports = {
+export default {
 	template: `
 		<div id="source-select" v-if="!$core.view.sourceSelectShowBuildSelect">
 			<div id="source-local" @click="click_source_local">
@@ -79,7 +78,6 @@ module.exports = {
 			this.$core.view.selectedCDNRegion = region;
 			this.$core.view.lockCDNRegion = true;
 			this.$core.view.config.sourceSelectUserRegion = region.tag;
-			cdnResolver.startPreResolution(region.tag);
 		},
 
 		async load_install(index) {
@@ -133,7 +131,7 @@ module.exports = {
 					this.$core.view.sourceSelectShowBuildSelect = true;
 				}
 			} catch (e) {
-				this.$core.setToast('error', util.format('It looks like %s is not a valid World of Warcraft installation.', install_path), null, -1);
+				this.$core.setToast('error', `It looks like ${install_path} is not a valid World of Warcraft installation.`, null, -1);
 				log.write('Failed to initialize local CASC source: %s', e.message);
 
 				for (let i = recent_local.length - 1; i >= 0; i--) {
@@ -169,7 +167,7 @@ module.exports = {
 				this.$core.hideLoadingScreen();
 			} catch (e) {
 				this.$core.hideLoadingScreen();
-				this.$core.setToast('error', util.format('Failed to load legacy installation from %s', install_path), null, -1);
+				this.$core.setToast('error', `Failed to load legacy installation from ${install_path}`, null, -1);
 				log.write('Failed to initialize legacy MPQ source: %s', e.message);
 
 				for (let i = this.$core.view.config.recentLegacy.length - 1; i >= 0; i--) {
@@ -190,17 +188,15 @@ module.exports = {
 				this.$core.view.lockCDNRegion = true;
 
 			for (const region of constants.PATCH.REGIONS) {
-				let cdn_url = util.format(constants.PATCH.HOST, region.tag);
-				if (region.tag === 'cn')
-					cdn_url = constants.PATCH.HOST_CHINA;
+				let cdn_url = region.tag === 'cn'
+					? constants.PATCH.HOST_CHINA
+					: constants.PATCH.HOST.replace('%s', region.tag);
 
 				const node = { tag: region.tag, name: region.name, url: cdn_url, delay: null };
 				regions.push(node);
 
-				if (region.tag === user_region || (typeof user_region !== 'string' && region.tag === constants.PATCH.DEFAULT_REGION)) {
+				if (region.tag === user_region || (typeof user_region !== 'string' && region.tag === constants.PATCH.DEFAULT_REGION))
 					this.$core.view.selectedCDNRegion = node;
-					cdnResolver.startPreResolution(region.tag);
-				}
 
 				pings.push(generics.ping(cdn_url).then(ms => node.delay = ms).catch(e => {
 					node.delay = -1;
@@ -219,10 +215,8 @@ module.exports = {
 					if (region.delay === null || region.delay < 0)
 						continue;
 
-					if (region.delay < selected_region.delay) {
+					if (region.delay < selected_region.delay)
 						this.$core.view.selectedCDNRegion = region;
-						cdnResolver.startPreResolution(region.tag);
-					}
 				}
 			});
 		},
@@ -259,7 +253,7 @@ module.exports = {
 				this.$core.view.availableRemoteBuilds = casc_source.getProductList();
 				this.$core.view.sourceSelectShowBuildSelect = true;
 			} catch (e) {
-				this.$core.setToast('error', util.format('There was an error connecting to Blizzard\'s %s CDN, try another region!', tag.toUpperCase()), null, -1);
+				this.$core.setToast('error', `There was an error connecting to Blizzard's ${tag.toUpperCase()} CDN, try another region!`, null, -1);
 				log.write('Failed to initialize remote CASC source: %s', e.message);
 			}
 		},

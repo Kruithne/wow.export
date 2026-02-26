@@ -1,19 +1,13 @@
-const log = require('../log');
-const util = require('util');
-const path = require('path');
-const ExportHelper = require('../casc/export-helper');
-const listfile = require('../casc/listfile');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const InstallType = require('../install-type');
-const listboxContext = require('../ui/listbox-context');
+import log from '../log.js';
+import InstallType from '../install-type.js';
+import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
 
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBItemDisplays = require('../db/caches/DBItemDisplays');
-const DBCreatures = require('../db/caches/DBCreatures');
+import textureRibbon from '../ui/texture-ribbon.js';
+import textureExporter from '../ui/texture-exporter.js';
+import modelViewerUtils from '../ui/model-viewer-utils.js';
 
-const textureRibbon = require('../ui/texture-ribbon');
-const textureExporter = require('../ui/texture-exporter');
-const modelViewerUtils = require('../ui/model-viewer-utils');
+const ExportHelper = exporter;
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();
@@ -60,7 +54,7 @@ const get_model_displays = (file_data_id) => {
 
 const preview_model = async (core, file_name) => {
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
+	core.setToast('progress', `Loading ${file_name}, please wait...`, null, -1, false);
 	log.write('Previewing model %s', file_name);
 
 	const state = get_view_state(core);
@@ -104,7 +98,7 @@ const preview_model = async (core, file_name) => {
 
 			const skin_list = [];
 			let model_name = listfile.getByID(file_data_id);
-			model_name = path.basename(model_name, 'm2');
+			model_name = model_name.substring(model_name.lastIndexOf('/') + 1).replace(/\.?m2$/i, '');
 
 			for (const display of displays) {
 				if (display.textures.length === 0)
@@ -115,7 +109,7 @@ const preview_model = async (core, file_name) => {
 				let clean_skin_name = '';
 				let skin_name = listfile.getByID(texture);
 				if (skin_name !== undefined) {
-					skin_name = path.basename(skin_name, '.blp');
+					skin_name = skin_name.substring(skin_name.lastIndexOf('/') + 1).replace(/\.blp$/i, '');
 					clean_skin_name = skin_name.replace(model_name, '').replace('_', '');
 				} else {
 					skin_name = 'unknown_' + texture;
@@ -148,7 +142,7 @@ const preview_model = async (core, file_name) => {
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
 
 		if (!has_content) {
-			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_name), null, 4000);
+			core.setToast('info', `The model ${file_name} doesn't have any 3D data associated with it.`, null, 4000);
 		} else {
 			core.hideToast();
 
@@ -156,8 +150,8 @@ const preview_model = async (core, file_name) => {
 				requestAnimationFrame(() => core.view.modelViewerContext?.fitCamera?.());
 		}
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', file_name, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The model ${file_name} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt model %s (%s)', file_name, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview model ' + file_name, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -217,7 +211,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 		const file_manifest = [];
 
 		try {
-			const data = await (is_local ? require('../buffer').readFile(file_name) : casc.getFile(file_data_id));
+			const data = await (is_local ? (await import('../buffer.js')).default.readFile(file_name) : casc.getFile(file_data_id));
 
 			if (file_name === undefined) {
 				const model_type = modelViewerUtils.detect_model_type(data);
@@ -233,7 +227,9 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 			if (is_local) {
 				export_path = file_name;
 			} else if (model_type === modelViewerUtils.MODEL_TYPE_M2 && selected_skin_name !== null && is_active && format !== 'RAW') {
-				const base_file_name = path.basename(file_name, path.extname(file_name));
+				const fn_name = file_name.substring(file_name.lastIndexOf('/') + 1);
+				const fn_dot = fn_name.lastIndexOf('.');
+				const base_file_name = fn_dot !== -1 ? fn_name.substring(0, fn_dot) : fn_name;
 				let skinned_name;
 
 				if (selected_skin_name.startsWith(base_file_name))
@@ -275,7 +271,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 	export_paths?.close();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Models', 'cube.svg', InstallType.CASC);
 	},
@@ -577,7 +573,7 @@ module.exports = {
 	async mounted() {
 		this.$core.registerDropHandler({
 			ext: ['.m2'],
-			prompt: count => util.format('Export %d models as %s', count, this.$core.view.config.exportModelFormat),
+			prompt: count => `Export ${count} models as ${this.$core.view.config.exportModelFormat}`,
 			process: files => export_files(this.$core, files, true)
 		});
 

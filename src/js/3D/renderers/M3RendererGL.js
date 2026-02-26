@@ -3,15 +3,15 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import GLContext from '../gl/GLContext.js';
+import GLTexture from '../gl/GLTexture.js';
+import core from '../../core.js';
+import Shaders from '../Shaders.js';
+import VertexArray from '../gl/VertexArray.js';
 
-const core = require('../../core');
 
-const M3Loader = require('../loaders/M3Loader');
-const Shaders = require('../Shaders');
 
-const GLContext = require('../gl/GLContext');
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
+
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -306,4 +306,4 @@ class M3RendererGL {
 	}
 }
 
-module.exports = M3RendererGL;
+export default M3RendererGL;

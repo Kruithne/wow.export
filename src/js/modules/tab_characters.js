@@ -3,36 +3,23 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const log = require('../log');
-const platform = require('../platform');
-const util = require('util');
-const path = require('path');
-const os = require('os');
-const fsp = require('fs').promises;
-const BufferWrapper = require('../buffer');
-const generics = require('../generics');
-const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
-const M2RendererGL = require('../3D/renderers/M2RendererGL');
-const M2Exporter = require('../3D/exporters/M2Exporter');
-const CharacterExporter = require('../3D/exporters/CharacterExporter');
-const db2 = require('../casc/db2');
-const ExportHelper = require('../casc/export-helper');
-const listfile = require('../casc/listfile');
-const realmlist = require('../casc/realmlist');
-const { wmv_parse } = require('../wmv');
-const { wowhead_parse } = require('../wowhead');
-const InstallType = require('../install-type');
-const charTextureOverlay = require('../ui/char-texture-overlay');
-const PNGWriter = require('../png-writer');
-const { EQUIPMENT_SLOTS, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
-const DBItems = require('../db/caches/DBItems');
-const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
-const DBItemGeosets = require('../db/caches/DBItemGeosets');
-const DBItemModels = require('../db/caches/DBItemModels');
-const DBGuildTabard = require('../db/caches/DBGuildTabard');
-const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
-const character_appearance = require('../ui/character-appearance');
-
+import log from '../log.js';
+import * as platform from '../platform.js';
+import BufferWrapper from '../buffer.js';
+import generics from '../generics.js';
+import CharMaterialRenderer from '../3D/renderers/CharMaterialRenderer.js';
+import M2RendererGL from '../3D/renderers/M2RendererGL.js';
+import M2Exporter from '../3D/exporters/M2Exporter.js';
+import CharacterExporter from '../3D/exporters/CharacterExporter.js';
+import { db as db2, exporter as ExportHelper, listfile, dbc } from '../../views/main/rpc.js';
+import { wmv_parse } from '../wmv.js';
+import { wowhead_parse } from '../wowhead.js';
+import InstallType from '../install-type.js';
+import charTextureOverlay from '../ui/char-texture-overlay.js';
+import PNGWriter from '../png-writer.js';
+import { EQUIPMENT_SLOTS, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } from '../wow/EquipmentSlots.js';
+import character_appearance from '../ui/character-appearance.js';
+import AnimMapper from '../3D/AnimMapper.js';
 
 // geoset group constants (CG enum from DBItemGeosets)
 const CG = {
@@ -733,7 +720,7 @@ async function load_character_model(core, file_data_id) {
 				id: `${Math.floor(animation.id)}.${animation.variationIndex}`,
 				animationId: animation.id,
 				m2Index: i,
-				label: require('../3D/AnimMapper').get_anim_name(animation.id) + ' (' + Math.floor(animation.id) + '.' + animation.variationIndex + ')'
+				label: AnimMapper.get_anim_name(animation.id) + ' (' + Math.floor(animation.id) + '.' + animation.variationIndex + ')'
 			});
 		}
 
@@ -747,7 +734,7 @@ async function load_character_model(core, file_data_id) {
 
 		const has_content = active_renderer.draw_calls?.length > 0;
 		if (!has_content)
-			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_data_id), null, 4000);
+			core.setToast('info', `The model ${file_data_id} doesn't have any 3D data associated with it.`, null, 4000);
 
 		// refresh appearance after model is fully loaded
 		await refresh_character_appearance(core);
@@ -962,8 +949,9 @@ async function import_character(core) {
 		return;
 	}
 
-	const character_label = util.format('%s (%s-%s)', character_name, effective_region, selected_realm.label);
-	const url = util.format(core.view.config.armoryURL, encodeURIComponent(effective_region), encodeURIComponent(selected_realm.value), encodeURIComponent(character_name.toLowerCase()));
+	const character_label = `${character_name} (${effective_region}-${selected_realm.label})`;
+	const armory_template = core.view.config.armoryURL;
+	const url = armory_template.replace('%s', encodeURIComponent(effective_region)).replace('%s', encodeURIComponent(selected_realm.value)).replace('%s', encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
 	const res = await generics.get(url);
@@ -1000,8 +988,8 @@ async function import_wmv_character(core) {
 		const file_path = file.path;
 
 		if (file_path) {
-			const path = require('path');
-			core.view.config.lastWMVImportPath = path.dirname(file_path);
+			const slash_index = Math.max(file_path.lastIndexOf('/'), file_path.lastIndexOf('\\'));
+			core.view.config.lastWMVImportPath = slash_index > 0 ? file_path.substring(0, slash_index) : file_path;
 		}
 
 		core.view.chrModelLoading = true;
@@ -1178,7 +1166,7 @@ async function apply_import_data(core, data, source) {
 
 //region saved characters
 function get_default_characters_dir() {
-	return path.join(os.homedir(), 'wow.export', 'My Characters');
+	return platform.get_home_dir() + '/wow.export/My Characters';
 }
 
 function get_saved_characters_dir(core) {
@@ -1198,12 +1186,12 @@ async function load_saved_characters(core) {
 	core.view.chrSavedCharacters = [];
 
 	try {
-		await fsp.access(dir);
+		await platform.access(dir);
 	} catch {
 		return;
 	}
 
-	const files = await fsp.readdir(dir);
+	const files = await platform.readdir(dir);
 	const characters = [];
 
 	for (const file of files) {
@@ -1216,12 +1204,12 @@ async function load_saved_characters(core) {
 
 		const name = match[1];
 		const id = match[2];
-		const thumb_path = path.join(dir, `${name}-${id}.png`);
+		const thumb_path = dir + '/' + `${name}-${id}.png`;
 
 		let thumb_data = null;
 		try {
-			await fsp.access(thumb_path);
-			const thumb_buffer = await fsp.readFile(thumb_path);
+			await platform.access(thumb_path);
+			const thumb_buffer = await platform.read_file_bytes(thumb_path);
 			thumb_data = 'data:image/png;base64,' + thumb_buffer.toString('base64');
 		} catch {
 			// no thumbnail
@@ -1252,15 +1240,14 @@ async function save_character(core, name, thumb_data) {
 		guild_tabard: { ...core.view.chrGuildTabardConfig }
 	};
 
-	const json_path = path.join(dir, `${name}-${id}.json`);
-	await fsp.writeFile(json_path, JSON.stringify(data, null, '\t'));
+	const json_path = dir + '/' + `${name}-${id}.json`;
+	await platform.write_file(json_path, JSON.stringify(data, null, '\t'));
 
 	// save thumbnail if provided
 	if (thumb_data) {
-		const thumb_path = path.join(dir, `${name}-${id}.png`);
+		const thumb_path = dir + '/' + `${name}-${id}.png`;
 		const base64 = thumb_data.split(',')[1];
-		const buffer = Buffer.from(base64, 'base64');
-		await fsp.writeFile(thumb_path, buffer);
+		await platform.write_file(thumb_path, BufferWrapper.fromBase64(base64)._buf);
 	}
 
 	await load_saved_characters(core);
@@ -1269,17 +1256,17 @@ async function save_character(core, name, thumb_data) {
 
 async function delete_character(core, character) {
 	const dir = get_saved_characters_dir(core);
-	const json_path = path.join(dir, character.file_name);
-	const thumb_path = path.join(dir, `${character.name}-${character.id}.png`);
+	const json_path = dir + '/' + character.file_name;
+	const thumb_path = dir + '/' + `${character.name}-${character.id}.png`;
 
 	try {
-		await fsp.unlink(json_path);
+		await platform.unlink(json_path);
 	} catch (e) {
 		log.write('failed to delete character json: %s', e.message);
 	}
 
 	try {
-		await fsp.unlink(thumb_path);
+		await platform.unlink(thumb_path);
 	} catch {
 		// thumbnail may not exist
 	}
@@ -1293,10 +1280,10 @@ async function delete_character(core, character) {
 
 async function load_character(core, character) {
 	const dir = get_saved_characters_dir(core);
-	const json_path = path.join(dir, character.file_name);
+	const json_path = dir + '/' + character.file_name;
 
 	try {
-		const content = await fsp.readFile(json_path, 'utf8');
+		const content = await platform.read_file(json_path, 'utf8');
 		const data = JSON.parse(content);
 
 		core.view.chrModelLoading = true;
@@ -1455,7 +1442,7 @@ async function export_json_character(core) {
 			return;
 
 		try {
-			await fsp.writeFile(file_path, JSON.stringify(data, null, '\t'));
+			await platform.write_file(file_path, JSON.stringify(data, null, '\t'));
 			core.setToast('success', 'Character exported successfully.', null, 3000);
 		} catch (e) {
 			log.write('failed to export character: %s', e.message);
@@ -1468,11 +1455,11 @@ async function export_json_character(core) {
 
 async function export_saved_character(core, character) {
 	const dir = get_saved_characters_dir(core);
-	const json_path = path.join(dir, character.file_name);
+	const json_path = dir + '/' + character.file_name;
 
 	let data;
 	try {
-		const content = await fsp.readFile(json_path, 'utf8');
+		const content = await platform.read_file(json_path, 'utf8');
 		data = JSON.parse(content);
 		data.name = character.name;
 
@@ -1496,7 +1483,7 @@ async function export_saved_character(core, character) {
 			return;
 
 		try {
-			await fsp.writeFile(file_path, JSON.stringify(data, null, '\t'));
+			await platform.write_file(file_path, JSON.stringify(data, null, '\t'));
 			core.setToast('success', `Character "${character.name}" exported successfully.`, null, 3000);
 		} catch (e) {
 			log.write('failed to export character: %s', e.message);
@@ -1518,7 +1505,7 @@ async function import_json_character(core, save_to_my_characters) {
 			return;
 
 		try {
-			const content = await fsp.readFile(file_path, 'utf8');
+			const content = await platform.read_file(file_path, 'utf8');
 			const data = JSON.parse(content);
 
 			if (!data.race_id || !data.model_id) {
@@ -1531,7 +1518,8 @@ async function import_json_character(core, save_to_my_characters) {
 				let name = data.name;
 				if (!name) {
 					// use filename without extension
-					name = path.basename(file_path, '.json');
+					const fp_slash = Math.max(file_path.lastIndexOf('/'), file_path.lastIndexOf('\\'));
+					name = file_path.substring(fp_slash + 1).replace(/\.json$/i, '');
 				}
 
 				const dir = get_saved_characters_dir(core);
@@ -1550,15 +1538,14 @@ async function import_json_character(core, save_to_my_characters) {
 					equipment: data.equipment || {}
 				};
 
-				const save_path = path.join(dir, `${name}-${id}.json`);
-				await fsp.writeFile(save_path, JSON.stringify(save_data, null, '\t'));
+				const save_path = dir + '/' + `${name}-${id}.json`;
+				await platform.write_file(save_path, JSON.stringify(save_data, null, '\t'));
 
 				// save thumbnail if provided
 				if (data.thumb) {
-					const thumb_path = path.join(dir, `${name}-${id}.png`);
+					const thumb_path = dir + '/' + `${name}-${id}.png`;
 					const base64 = data.thumb.split(',')[1];
-					const buffer = Buffer.from(base64, 'base64');
-					await fsp.writeFile(thumb_path, buffer);
+					await platform.write_file(thumb_path, BufferWrapper.fromBase64(base64)._buf);
 				}
 
 				await load_saved_characters(core);
@@ -1663,13 +1650,13 @@ const export_char_model = async (core) => {
 				if (core.view.config.modelsExportPngIncrements)
 					out_file = await ExportHelper.getIncrementalFilename(out_file);
 
-				const out_dir = path.dirname(out_file);
+				const out_dir = out_file.substring(0, Math.max(out_file.lastIndexOf('/'), out_file.lastIndexOf('\\')));
 
 				await buf.writeToFile(out_file);
 				await export_paths?.writeLine('PNG:' + out_file);
 
 				log.write('saved 3d preview screenshot to %s', out_file);
-				core.setToast('success', util.format('successfully exported preview to %s', out_file), { 'view in explorer': () => platform.open_path(out_dir) }, -1);
+				core.setToast('success', `successfully exported preview to ${out_file}`, { 'view in explorer': () => platform.open_path(out_dir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				platform.clipboard_write_image(buf.toBase64());
 
@@ -1857,11 +1844,14 @@ const export_chr_texture = async (core) => {
 	}
 
 	const file_name = listfile.getByID(active_model);
-	const base_name = path.basename(file_name, path.extname(file_name));
-	const dir_name = path.dirname(file_name);
-	const texture_file_name = path.join(dir_name, base_name + '_texture_' + texture_type + '.png');
+	const fn_slash = Math.max(file_name.lastIndexOf('/'), file_name.lastIndexOf('\\'));
+	const fn_dot = file_name.lastIndexOf('.');
+	const base_name = fn_dot > fn_slash ? file_name.substring(fn_slash + 1, fn_dot) : file_name.substring(fn_slash + 1);
+	const dir_name = fn_slash >= 0 ? file_name.substring(0, fn_slash) : '';
+	const texture_file_name = (dir_name ? dir_name + '/' : '') + base_name + '_texture_' + texture_type + '.png';
 	const export_path = ExportHelper.getExportPath(texture_file_name);
-	const out_dir = path.dirname(export_path);
+	const ep_slash = Math.max(export_path.lastIndexOf('/'), export_path.lastIndexOf('\\'));
+	const out_dir = ep_slash >= 0 ? export_path.substring(0, ep_slash) : '';
 
 	const pixels = chr_material.getRawPixels();
 	const width = active_canvas.width;
@@ -1876,7 +1866,7 @@ const export_chr_texture = async (core) => {
 	await export_paths?.writeLine('PNG:' + export_path);
 
 	log.write('exported character texture to %s', export_path);
-	core.setToast('success', util.format('exported texture to %s', export_path), { 'view in explorer': () => platform.open_path(out_dir) }, -1);
+	core.setToast('success', `exported texture to ${export_path}`, { 'view in explorer': () => platform.open_path(out_dir) }, -1);
 
 	export_paths?.close();
 };
@@ -1913,7 +1903,7 @@ function get_selected_choice(core, option_id) {
 //endregion
 
 //region template
-module.exports = {
+export default {
 	get_default_characters_dir,
 
 	register() {

@@ -3,9 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-
-const constants = require('../../constants');
-const log = require('../../log');
+import constants from '../../constants.js';
+import log from '../../log.js';
 
 const CHUNK_M3DT = 0x54444D33; // 'M3DT'
 const CHUNK_MES3 = 0x3353454D; // 'MES3'
@@ -341,4 +340,4 @@ class M3Loader {
 	}
 }
 
-module.exports = M3Loader;
+export default M3Loader;

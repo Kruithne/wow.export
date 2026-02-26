@@ -3,9 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const generics = require('../../generics');
-const path = require('path');
-const FileWriter = require('../../file-writer');
+import FileWriter from '../../file-writer.js';
+import generics from '../../generics.js';
+
+
 
 class JSONWriter {
 	/**
@@ -35,7 +36,7 @@ class JSONWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await generics.createDirectory(this.out.substring(0, this.out.lastIndexOf('/')));
 		const writer = new FileWriter(this.out);
 		await writer.writeLine(JSON.stringify(this.data, (key, value) => {
 			// Handle serialization of BigInt, as JS will not handle it as per spec (TC39)
@@ -45,4 +46,4 @@ class JSONWriter {
 	}
 }
 
-module.exports = JSONWriter;
+export default JSONWriter;

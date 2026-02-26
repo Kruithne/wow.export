@@ -1,15 +1,10 @@
-const path = require('path');
-const util = require('util');
-const fsp = require('fs').promises;
-const log = require('../log');
-const generics = require('../generics');
-const ExportHelper = require('../casc/export-helper');
-const BufferWrapper = require('../buffer');
-const audioHelper = require('../ui/audio-helper');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
-
-const { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
+import log from '../log.js';
+import generics from '../generics.js';
+import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import BufferWrapper from '../buffer.js';
+import { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } from '../ui/audio-helper.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
 
 let selected_file = null;
 let animation_frame_id = null;
@@ -46,7 +41,7 @@ const load_track = async (core) => {
 		return false;
 
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', selected_file), null, -1, false);
+	core.setToast('progress', `Loading ${selected_file}, please wait...`, null, -1, false);
 	log.write('Previewing sound file %s', selected_file);
 
 	try {
@@ -57,8 +52,7 @@ const load_track = async (core) => {
 			return false;
 		}
 
-		const buffer = Buffer.from(raw_data);
-		const data = new BufferWrapper(buffer);
+		const data = new BufferWrapper(raw_data);
 
 		const ext = selected_file.slice(selected_file.lastIndexOf('.')).toLowerCase();
 		if (ext === '.wav_') {
@@ -161,8 +155,7 @@ const export_sounds = async (core) => {
 			} else {
 				const raw_data = core.view.mpq.getFile(file_name);
 				if (raw_data) {
-					const buffer = Buffer.from(raw_data);
-					const wrapped = new BufferWrapper(buffer);
+					const wrapped = new BufferWrapper(raw_data);
 					const file_type = detectFileType(wrapped);
 
 					if (file_type === AUDIO_TYPE_OGG)
@@ -178,8 +171,9 @@ const export_sounds = async (core) => {
 				if (!raw_data)
 					throw new Error('Failed to read file from MPQ');
 
-				await fsp.mkdir(path.dirname(export_path), { recursive: true });
-				await fsp.writeFile(export_path, new Uint8Array(raw_data));
+				const dir_path = export_path.substring(0, export_path.lastIndexOf('/'));
+				await generics.createDirectory(dir_path);
+				await generics.writeFile(export_path, new Uint8Array(raw_data));
 			} else {
 				log.write('Skipping audio export %s (file exists, overwrite disabled)', export_path);
 			}
@@ -193,7 +187,7 @@ const export_sounds = async (core) => {
 	helper.finish();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Audio', 'music.svg', InstallType.MPQ);
 	},
@@ -298,7 +292,8 @@ module.exports = {
 		this.$core.view.$watch('selectionSounds', async selection => {
 			const first = selection[0];
 			if (!this.$core.view.isBusy && first && selected_file !== first) {
-				this.$core.view.soundPlayerTitle = path.basename(first);
+				const base_name = first.substring(first.lastIndexOf('/') + 1) || first.substring(first.lastIndexOf('\\') + 1) || first;
+				this.$core.view.soundPlayerTitle = base_name;
 
 				selected_file = first;
 				unload_track(this.$core);

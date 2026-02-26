@@ -3,19 +3,24 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import BLPImage from '../../casc/blp.js';
+import Shaders from '../Shaders.js';
+import GLTexture from '../gl/GLTexture.js';
+import core from '../../core.js';
+import BLPImage from '../../casc/blp.js';
+import M2LegacyLoader from '../loaders/M2LegacyLoader.js';
+import VertexArray from '../gl/VertexArray.js';
+import textureRibbon from '../../ui/texture-ribbon.js';
+import log from '../../log.js';
+import BufferWrapper from '../../buffer.js';
 
-const core = require('../../core');
-const log = require('../../log');
 
-const BLPFile = require('../../casc/blp');
-const M2LegacyLoader = require('../loaders/M2LegacyLoader');
-const GeosetMapper = require('../GeosetMapper');
-const Shaders = require('../Shaders');
 
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
 
-const textureRibbon = require('../../ui/texture-ribbon');
+
+
+
+
 
 // m2 version constants
 const M2_VER_WOTLK = 264;
@@ -229,8 +234,7 @@ class M2LegacyRendererGL {
 					const data = mpq.getFile(fileName);
 
 					if (data) {
-						const BufferWrapper = require('../../buffer');
-						const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
+						const blp = new BLPImage(new BufferWrapper(data));
 						const gl_tex = new GLTexture(this.ctx);
 						gl_tex.set_blp(blp, { flags: texture.flags });
 						this.textures.set(i, gl_tex);
@@ -269,8 +273,7 @@ class M2LegacyRendererGL {
 					try {
 						const data = mpq.getFile(texture_path);
 						if (data) {
-							const BufferWrapper = require('../../buffer');
-							const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
+							const blp = new BLPImage(new BufferWrapper(data));
 							const gl_tex = new GLTexture(this.ctx);
 							gl_tex.set_blp(blp, { flags: this.m2.textures[i].flags });
 							this.textures.set(i, gl_tex);
@@ -1052,4 +1055,4 @@ class M2LegacyRendererGL {
 	}
 }
 
-module.exports = M2LegacyRendererGL;
+export default M2LegacyRendererGL;

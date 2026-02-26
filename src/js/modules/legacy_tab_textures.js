@@ -1,9 +1,9 @@
-const log = require('../log');
-const BLPFile = require('../casc/blp');
-const BufferWrapper = require('../buffer');
-const textureExporter = require('../ui/texture-exporter');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
+import log from '../log.js';
+import BLPFile from '../casc/blp.js';
+import BufferWrapper from '../buffer.js';
+import textureExporter from '../ui/texture-exporter.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
 
 let selected_file = null;
 
@@ -21,9 +21,7 @@ const preview_texture = async (core, filename) => {
 		}
 
 		if (ext === '.blp') {
-			const buffer = Buffer.from(data);
-			const wrapped = new BufferWrapper(buffer);
-			const blp = new BLPFile(wrapped);
+			const blp = new BLPFile(new BufferWrapper(data));
 
 			core.view.texturePreviewURL = blp.getDataURL(core.view.config.exportChannelMask);
 			core.view.texturePreviewWidth = blp.width;
@@ -46,8 +44,7 @@ const preview_texture = async (core, filename) => {
 
 			core.view.texturePreviewInfo = `${blp.width}x${blp.height} (${info})`;
 		} else if (ext === '.png' || ext === '.jpg') {
-			const buffer = Buffer.from(data);
-			const base64 = buffer.toString('base64');
+			const base64 = new BufferWrapper(data).toBase64();
 			const mime_type = ext === '.png' ? 'image/png' : 'image/jpeg';
 			const data_url = `data:${mime_type};base64,${base64}`;
 
@@ -80,9 +77,7 @@ const refresh_blp_preview = (core) => {
 	try {
 		const data = core.view.mpq.getFile(selected_file);
 		if (data) {
-			const buffer = Buffer.from(data);
-			const wrapped = new BufferWrapper(buffer);
-			const blp = new BLPFile(wrapped);
+			const blp = new BLPFile(new BufferWrapper(data));
 			core.view.texturePreviewURL = blp.getDataURL(core.view.config.exportChannelMask);
 		}
 	} catch (e) {
@@ -106,7 +101,7 @@ const load_texture_list = async (core) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Textures', 'image.svg', InstallType.MPQ);
 	},

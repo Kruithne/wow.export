@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * selectedOption: An array of strings denoting options shown in the menu.
 	 */

@@ -285,4 +285,4 @@ XXH64_state.prototype.digest = function() {
 
 XXH64.prototype = XXH64_state.prototype;
 
-module.exports = XXH64;
+export default XXH64;

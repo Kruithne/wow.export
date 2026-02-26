@@ -1,8 +1,7 @@
-const log = require('../log');
-const db2 = require('../casc/db2');
-const DBItems = require('../db/caches/DBItems');
-const InstallType = require('../install-type');
-const { get_slot_name } = require('../wow/EquipmentSlots');
+import log from '../log.js';
+import { db as db2, dbc } from '../../views/main/rpc.js';
+import InstallType from '../install-type.js';
+import { get_slot_name } from '../wow/EquipmentSlots.js';
 
 class ItemSet {
 	constructor(id, name, item_ids, first_item) {
@@ -68,7 +67,7 @@ const apply_filter = (core) => {
 	core.view.listfileItemSets = item_sets;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Item Sets', 'armour.svg', InstallType.CASC);
 	},

@@ -3,8 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
-const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
+import CharMaterialRenderer from '../3D/renderers/CharMaterialRenderer.js';
+import { dbc } from '../../views/main/rpc.js';
 
 /**
  * Reset geosets to model defaults, then apply customization choice geosets.
@@ -197,7 +197,7 @@ function dispose_materials(chr_materials) {
 	chr_materials.clear();
 }
 
-module.exports = {
+export {
 	apply_customization_geosets,
 	apply_customization_textures,
 	upload_textures_to_gpu,

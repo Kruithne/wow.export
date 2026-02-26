@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const core = require('../core');
+import core from '../core.js';
 
 let $overlay;
 let $buttons;
@@ -61,7 +61,7 @@ function remove(canvas) {
 }
 
 function ensure_active_layer_attached() {
-	process.nextTick(() => {
+	queueMicrotask(() => {
 		if (active_layer !== null) {
 			const element = get_element();
 			if (element && active_layer.parentNode !== element)
@@ -113,9 +113,9 @@ function get_active_layer() {
 	return active_layer;
 }
 
-module.exports = {
+export {
 	add,
 	remove,
-	ensureActiveLayerAttached: ensure_active_layer_attached,
-	getActiveLayer: get_active_layer
+	ensure_active_layer_attached as ensureActiveLayerAttached,
+	get_active_layer as getActiveLayer
 };

@@ -4,7 +4,9 @@
 	License: MIT
 */
 
-const Texture = require('../Texture');
+
+
+import Texture from '../Texture.js';
 
 const MAGIC_MD20 = 0x3032444D; // 'MD20'
 
@@ -831,4 +833,4 @@ class M2LegacyLoader {
 	}
 }
 
-module.exports = M2LegacyLoader;
+export default M2LegacyLoader;

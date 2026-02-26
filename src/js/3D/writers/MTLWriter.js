@@ -3,10 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const path = require('path');
-const generics = require('../../generics');
-const FileWriter = require('../../file-writer');
-const core = require('../../core');
+import core from '../../core.js';
+import FileWriter from '../../file-writer.js';
+
+
 
 class MTLWriter {
 	/**
@@ -47,7 +47,7 @@ class MTLWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		const mtlDir = path.dirname(this.out);
+		const mtlDir = this.out.substring(0, this.out.lastIndexOf('/'));
 		await generics.createDirectory(mtlDir);
 
 		const useAbsolute = core.view.config.enableAbsoluteMTLPaths;
@@ -68,4 +68,4 @@ class MTLWriter {
 	}
 }
 
-module.exports = MTLWriter;
+export default MTLWriter;

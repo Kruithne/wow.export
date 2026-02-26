@@ -3,9 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-const fs = require('fs');
-const path = require('path');
-const log = require('../log');
+import log from '../log.js';
 
 const DEFAULT_BUILD = '1.12.1.5875';
 
@@ -87,7 +85,7 @@ const read_exe_version = (exe_path) => {
 
 		const version = find_version_in_buffer(buf);
 		if (version !== null)
-			log.write('Detected build version from %s: %s', path.basename(exe_path), version);
+			log.write(`Detected build version from ${exe_path.split(/[\\/]/).pop()}: ${version}`);
 
 		return version;
 	} catch (e) {
@@ -102,11 +100,11 @@ const read_exe_version = (exe_path) => {
  */
 const find_wow_exe = (directory) => {
 	const candidates = ['WoW.exe', 'WowClassic.exe', 'Wow.exe', 'wow.exe'];
-	const search_dirs = [directory, path.dirname(directory)];
+	const search_dirs = [directory, directory.replace(/[\\/][^\\/]*$/, '')];
 
 	for (const dir of search_dirs) {
 		for (const exe_name of candidates) {
-			const exe_path = path.join(dir, exe_name);
+			const exe_path = dir + '/' + exe_name;
 			if (fs.existsSync(exe_path))
 				return exe_path;
 		}
@@ -121,7 +119,7 @@ const find_wow_exe = (directory) => {
  * @returns {string}
  */
 const infer_expansion_from_mpqs = (mpq_names) => {
-	const names_set = new Set(mpq_names.map(n => path.basename(n).toLowerCase()));
+	const names_set = new Set(mpq_names.map(n => n.split(/[\\/]/).pop().toLowerCase()));
 
 	// wotlk indicators
 	if (names_set.has('lichking.mpq') || names_set.has('expansion2.mpq'))
@@ -152,11 +150,11 @@ const detect_build_version = (directory, mpq_files) => {
 	// fallback: infer from mpq files
 	const expansion = infer_expansion_from_mpqs(mpq_files);
 	const build = EXPANSION_BUILDS[expansion];
-	log.write('Inferred %s expansion from MPQ files, using build %s', expansion, build);
+	log.write(`Inferred ${expansion} expansion from MPQ files, using build ${build}`);
 	return build;
 };
 
-module.exports = {
+export {
 	detect_build_version,
 	DEFAULT_BUILD
 };

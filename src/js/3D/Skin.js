@@ -3,10 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-
-const util = require('util');
-const listfile = require('../casc/listfile');
-const core = require('../core');
+import core from '../core.js';
+import { listfile } from '../views/main/rpc.js';
 
 const MAGIC_SKIN = 0x4E494B53;
 
@@ -95,9 +93,9 @@ class Skin {
 
 			this.isLoaded = true;
 		} catch (e) {
-			throw new Error(util.format('Unable to load skin fileDataID %d: %s', this.fileDataID, e.message));
+			throw new Error(`Unable to load skin fileDataID ${this.fileDataID}: ${e.message}`);
 		}
 	}
 }
 
-module.exports = Skin;
+export default Skin;

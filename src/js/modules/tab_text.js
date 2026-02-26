@@ -1,17 +1,16 @@
-const path = require('path');
-const util = require('util');
-const log = require('../log');
-const platform = require('../platform');
-const listfile = require('../casc/listfile');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const generics = require('../generics');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import generics from '../generics.js';
+import { listfile } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
+
+const ExportHelper = exporter;
 
 let selected_file = null;
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Text', 'file-lines.svg', InstallType.CASC);
 	},
@@ -71,7 +70,7 @@ module.exports = {
 
 		copy_text() {
 			platform.clipboard_write_text(this.$core.view.textViewerSelectedText);
-			this.$core.setToast('success', util.format('Copied contents of %s to the clipboard.', selected_file), null, -1, true);
+			this.$core.setToast('success', `Copied contents of ${selected_file} to the clipboard.`, null, -1, true);
 		},
 
 		async export_text() {
@@ -95,10 +94,12 @@ module.exports = {
 				if (!this.$core.view.config.exportNamedFiles) {
 					const file_data_id = listfile.getByFilename(file_name);
 					if (file_data_id) {
-						const ext = path.extname(file_name);
-						const dir = path.dirname(file_name);
+						const dot_idx = file_name.lastIndexOf('.');
+						const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';
+						const slash_idx = file_name.lastIndexOf('/');
+						const dir = slash_idx !== -1 ? file_name.substring(0, slash_idx) : '.';
 						const file_data_id_name = file_data_id + ext;
-						export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+						export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 					}
 				}
 
@@ -131,8 +132,8 @@ module.exports = {
 
 					selected_file = first;
 				} catch (e) {
-					if (e instanceof EncryptionError) {
-						this.$core.setToast('error', util.format('The text file %s is encrypted with an unknown key (%s).', first, e.key), null, -1);
+					if (e.name === 'EncryptionError') {
+						this.$core.setToast('error', `The text file ${first} is encrypted with an unknown key (${e.key}).`, null, -1);
 						log.write('Failed to decrypt texture %s (%s)', first, e.key);
 					} else {
 						this.$core.setToast('error', 'Unable to preview text file ' + first, { 'View Log': () => log.openRuntimeLog() }, -1);

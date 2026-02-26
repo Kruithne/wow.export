@@ -4,26 +4,23 @@
 	License: MIT
 */
 
-const log = require('../log');
-const platform = require('../platform');
-const util = require('util');
-const path = require('path');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
-const InstallType = require('../install-type');
-const listboxContext = require('../ui/listbox-context');
-const constants = require('../constants');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import BufferWrapper from '../buffer.js';
+import { exporter as ExportHelper, dbc } from '../../views/main/rpc.js';
+import InstallType from '../install-type.js';
+import listboxContext from '../ui/listbox-context.js';
+import constants from '../constants.js';
 
-const M2LegacyRendererGL = require('../3D/renderers/M2LegacyRendererGL');
-const WMOLegacyRendererGL = require('../3D/renderers/WMOLegacyRendererGL');
-const MDXRendererGL = require('../3D/renderers/MDXRendererGL');
+import M2LegacyRendererGL from '../3D/renderers/M2LegacyRendererGL.js';
+import WMOLegacyRendererGL from '../3D/renderers/WMOLegacyRendererGL.js';
+import MDXRendererGL from '../3D/renderers/MDXRendererGL.js';
 
-const M2LegacyExporter = require('../3D/exporters/M2LegacyExporter');
-const WMOLegacyExporter = require('../3D/exporters/WMOLegacyExporter');
+import M2LegacyExporter from '../3D/exporters/M2LegacyExporter.js';
+import WMOLegacyExporter from '../3D/exporters/WMOLegacyExporter.js';
 
-const textureRibbon = require('../ui/texture-ribbon');
-const AnimMapper = require('../3D/AnimMapper');
-const DBCreaturesLegacy = require('../db/caches/DBCreaturesLegacy');
+import textureRibbon from '../ui/texture-ribbon.js';
+import AnimMapper from '../3D/AnimMapper.js';
 
 const MAGIC_MD20 = 0x3032444D; // 'MD20'
 const MAGIC_MDLX = 0x584C444D; // 'MDLX'
@@ -34,7 +31,7 @@ const MODEL_TYPE_WMO = Symbol('modelWMO');
 
 let active_renderer;
 let active_path;
-const active_skins = new Map(); // skin_id -> display info
+const active_skins = new Map();
 
 const clear_texture_preview = (core) => {
 	core.view.legacyModelTexturePreviewURL = '';
@@ -42,7 +39,7 @@ const clear_texture_preview = (core) => {
 
 const preview_model = async (core, file_name) => {
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
+	core.setToast('progress', `Loading ${file_name}, please wait...`, null, -1, false);
 	log.write('Previewing legacy model %s', file_name);
 
 	textureRibbon.reset();
@@ -67,7 +64,7 @@ const preview_model = async (core, file_name) => {
 		if (!file_data)
 			throw new Error('File not found in MPQ: ' + file_name);
 
-		const data = new BufferWrapper(Buffer.from(file_data));
+		const data = new BufferWrapper(file_data);
 		const magic = data.readUInt32LE();
 		data.seek(0);
 
@@ -75,11 +72,9 @@ const preview_model = async (core, file_name) => {
 		const gl_context = core.view.legacyModelViewerContext?.gl_context;
 
 		if (magic === MAGIC_MDLX) {
-			// alpha mdx format
 			core.view.legacyModelViewerActiveType = 'mdx';
 			active_renderer = new MDXRendererGL(data, gl_context, true, core.view.config.modelViewerShowTextures);
 		} else if (magic === MAGIC_MD20) {
-			// legacy m2 format (no MD21 wrapper)
 			core.view.legacyModelViewerActiveType = 'm2';
 			active_renderer = new M2LegacyRendererGL(data, gl_context, true, core.view.config.modelViewerShowTextures);
 		} else if (file_name_lower.endsWith('.wmo')) {
@@ -91,7 +86,6 @@ const preview_model = async (core, file_name) => {
 
 		await active_renderer.load();
 
-		// setup animations for m2/mdx
 		if (core.view.legacyModelViewerActiveType === 'm2' || core.view.legacyModelViewerActiveType === 'mdx') {
 			const anim_list = [];
 			const model = core.view.legacyModelViewerActiveType === 'm2' ? active_renderer.m2 : active_renderer.mdx;
@@ -108,7 +102,6 @@ const preview_model = async (core, file_name) => {
 							label: AnimMapper.get_anim_name(animation.id) + ' (' + animation.id + '.' + animation.variationIndex + ')'
 						});
 					} else {
-						// mdx uses sequence names
 						anim_list.push({
 							id: i.toString(),
 							m2Index: i,
@@ -127,27 +120,27 @@ const preview_model = async (core, file_name) => {
 			core.view.legacyModelViewerAnimSelection = 'none';
 		}
 
-		// setup skins for m2 creatures
 		if (core.view.legacyModelViewerActiveType === 'm2') {
 			const displays = DBCreaturesLegacy.getCreatureDisplaysByPath(file_name);
 
 			if (displays && displays.length > 0) {
 				const skin_list = [];
-				const model_name = path.basename(file_name, '.m2').toLowerCase();
+				const dot_index = file_name.lastIndexOf('.');
+				const slash_index = Math.max(file_name.lastIndexOf('/'), file_name.lastIndexOf('\\'));
+				const model_name = (dot_index > slash_index ? file_name.substring(slash_index + 1, dot_index) : file_name.substring(slash_index + 1)).toLowerCase();
 
 				for (const display of displays) {
 					if (display.textures.length === 0)
 						continue;
 
-					// use first texture as skin identifier
 					const first_texture = display.textures[0];
-					let skin_name = path.basename(first_texture, '.blp').toLowerCase();
+					const tex_dot = first_texture.lastIndexOf('.');
+					const tex_slash = Math.max(first_texture.lastIndexOf('/'), first_texture.lastIndexOf('\\'));
+					let skin_name = (tex_dot > tex_slash ? first_texture.substring(tex_slash + 1, tex_dot) : first_texture.substring(tex_slash + 1)).toLowerCase();
 
-					// remove model name prefix if present
 					if (skin_name.startsWith(model_name))
 						skin_name = skin_name.substring(model_name.length);
 
-					// clean up skin name
 					if (skin_name.length === 0 || skin_name === 'skin')
 						skin_name = 'base';
 
@@ -170,15 +163,13 @@ const preview_model = async (core, file_name) => {
 
 		active_path = file_name;
 
-		// check for empty model
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
 
 		if (!has_content) {
-			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_name), null, 4000);
+			core.setToast('info', `The model ${file_name} doesn't have any 3D data associated with it.`, null, 4000);
 		} else {
 			core.hideToast();
 
-			// fit camera to model if auto-adjust is enabled
 			if (core.view.legacyModelViewerAutoAdjust)
 				requestAnimationFrame(() => core.view.legacyModelViewerContext?.fitCamera?.());
 		}
@@ -209,13 +200,13 @@ const export_files = async (core, files, export_id = -1) => {
 				if (core.view.config.modelsExportPngIncrements)
 					out_file = await ExportHelper.getIncrementalFilename(out_file);
 
-				const out_dir = path.dirname(out_file);
+				const out_dir = out_file.substring(0, out_file.lastIndexOf('/'));
 
 				await buf.writeToFile(out_file);
 				await export_paths?.writeLine('PNG:' + out_file);
 
 				log.write('Saved legacy 3D preview screenshot to %s', out_file);
-				core.setToast('success', util.format('Successfully exported preview to %s', out_file), { 'View in Explorer': () => platform.open_path(out_dir) }, -1);
+				core.setToast('success', `Successfully exported preview to ${out_file}`, { 'View in Explorer': () => platform.open_path(out_dir) }, -1);
 			} else if (format === 'CLIPBOARD') {
 				platform.clipboard_write_image(buf.toBase64());
 
@@ -230,7 +221,6 @@ const export_files = async (core, files, export_id = -1) => {
 		const helper = new ExportHelper(files.length, 'model');
 		helper.start();
 
-		// clear doodad cache at start of export batch
 		WMOLegacyExporter.clearCache();
 
 		for (const file_entry of files) {
@@ -246,13 +236,12 @@ const export_files = async (core, files, export_id = -1) => {
 					throw new Error('File not found in MPQ');
 
 				let export_path = ExportHelper.getExportPath(file_name);
-				const data = new BufferWrapper(Buffer.from(file_data));
+				const data = new BufferWrapper(file_data);
 				const file_name_lower = file_name.toLowerCase();
 
 				if (file_name_lower.endsWith('.wmo')) {
 					const exporter = new WMOLegacyExporter(data, file_name, mpq);
 
-					// pass group and doodad set masks if this is the active model
 					if (file_name === active_path) {
 						exporter.setGroupMask(core.view.modelViewerWMOGroups);
 						exporter.setDoodadSetMask(core.view.modelViewerWMOSets);
@@ -273,7 +262,6 @@ const export_files = async (core, files, export_id = -1) => {
 				} else if (file_name_lower.endsWith('.m2')) {
 					const exporter = new M2LegacyExporter(data, file_name, mpq);
 
-					// get selected skin textures if this is the active model
 					if (file_name === active_path) {
 						const skin_selection = core.view.legacyModelViewerSkinsSelection;
 						if (skin_selection && skin_selection.length > 0) {
@@ -299,7 +287,6 @@ const export_files = async (core, files, export_id = -1) => {
 						await export_paths?.writeLine('M2_RAW:' + export_path);
 					}
 				} else {
-					// mdx or unknown - just export raw file
 					await data.writeToFile(export_path);
 					file_manifest.push({ type: 'RAW', file: export_path });
 					await export_paths?.writeLine('RAW:' + export_path);
@@ -321,7 +308,7 @@ const export_files = async (core, files, export_id = -1) => {
 	export_paths?.close();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Models', 'cube.svg', InstallType.MPQ);
 	},
@@ -502,7 +489,6 @@ module.exports = {
 		try {
 			await this.$core.progressLoadingScreen('Building legacy model list...');
 
-			// get model files from mpq
 			const mpq = this.$core.view.mpq;
 			const all_files = mpq.getAllFiles();
 
@@ -511,7 +497,6 @@ module.exports = {
 				if (lower.endsWith('.m2') || lower.endsWith('.mdx'))
 					return true;
 
-				// filter wmo group files
 				if (lower.endsWith('.wmo'))
 					return !constants.LISTFILE_MODEL_FILTER.test(lower);
 
@@ -522,12 +507,10 @@ module.exports = {
 
 			await this.$core.progressLoadingScreen('Loading creature skin data...');
 
-			// initialize creature display data for skin variations
 			await DBCreaturesLegacy.initializeCreatureData(mpq, mpq.build_id);
 
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 
-			// initialize model viewer context if not already present
 			if (!this.$core.view.legacyModelViewerContext)
 				this.$core.view.legacyModelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
 
@@ -542,7 +525,6 @@ module.exports = {
 			if (!active_renderer || !active_renderer.playAnimation || this.$core.view.legacyModelViewerAnims.length === 0)
 				return;
 
-			// reset animation state
 			this.$core.view.legacyModelViewerAnimPaused = false;
 			this.$core.view.legacyModelViewerAnimFrame = 0;
 			this.$core.view.legacyModelViewerAnimFrameCount = 0;
@@ -558,7 +540,6 @@ module.exports = {
 					log.write(`Playing legacy animation at index ${anim_info.m2Index}`);
 					await active_renderer.playAnimation(anim_info.m2Index);
 
-					// set frame count after animation is loaded
 					this.$core.view.legacyModelViewerAnimFrameCount = active_renderer.get_animation_frame_count?.() || 0;
 				}
 			}

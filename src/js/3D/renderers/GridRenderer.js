@@ -4,7 +4,9 @@
 	License: MIT
 */
 
-const ShaderProgram = require('../gl/ShaderProgram');
+
+
+import ShaderProgram from '../gl/ShaderProgram.js';
 
 const GRID_VERT_SHADER = `#version 300 es
 precision highp float;
@@ -149,4 +151,4 @@ class GridRenderer {
 	}
 }
 
-module.exports = GridRenderer;
+export default GridRenderer;

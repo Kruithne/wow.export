@@ -3,8 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const listfile = require('../casc/listfile');
-const core = require('../core');
+import core from '../core.js';
+import { listfile } from '../views/main/rpc.js';
 
 class Texture {
 	/**
@@ -41,4 +41,4 @@ class Texture {
 	}
 }
 
-module.exports = Texture;
+export default Texture;

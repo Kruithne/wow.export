@@ -1,18 +1,17 @@
-const path = require('path');
-const fs = require('fs');
-const fsp = fs.promises;
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const BLTEIntegrityError = require('../casc/blte-reader').BLTEIntegrityError;
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const db2 = require('../casc/db2');
-const InstallType = require('../install-type');
-const constants = require('../constants');
-const core = require('../core');
-const subtitles = require('../subtitles');
-const listboxContext = require('../ui/listbox-context');
-const { BlobPolyfill, URLPolyfill } = require('../blob');
+import log from '../log.js';
+import generics from '../generics.js';
+import constants from '../constants.js';
+import core from '../core.js';
+import InstallType from '../install-type.js';
+import { listfile } from '../../views/main/rpc.js';
+import { db } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import subtitles from '../subtitles.js';
+import listboxContext from '../ui/listbox-context.js';
+import { BlobPolyfill, URLPolyfill } from '../blob.js';
+
+const ExportHelper = exporter;
+const db2 = db;
 
 let movie_variation_map = null;
 let video_file_data_ids = null;
@@ -468,7 +467,7 @@ const trigger_kino_processing = async () => {
 if (!BUILD_RELEASE)
 	window.trigger_kino_processing = trigger_kino_processing;
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Videos', 'film.svg', InstallType.CASC);
 	},
@@ -596,9 +595,10 @@ module.exports = {
 
 				let export_file_name = ExportHelper.replaceExtension(file_name, '.mp4');
 				if (!this.$core.view.config.exportNamedFiles) {
-					const dir = path.dirname(file_name);
+					const slash_idx = file_name.lastIndexOf('/');
+					const dir = slash_idx !== -1 ? file_name.substring(0, slash_idx) : '.';
 					const file_data_id_name = file_data_id + '.mp4';
-					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+					export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 				}
 
 				const export_path = ExportHelper.getExportPath(export_file_name);
@@ -634,8 +634,10 @@ module.exports = {
 					}
 
 					const buffer = await response.arrayBuffer();
-					await fsp.mkdir(path.dirname(export_path), { recursive: true });
-					await fsp.writeFile(export_path, Buffer.from(buffer));
+					const ep_slash = export_path.lastIndexOf('/');
+					const ep_dir = ep_slash !== -1 ? export_path.substring(0, ep_slash) : '.';
+					await generics.createDirectory(ep_dir);
+					await generics.writeFile(export_path, new Uint8Array(buffer));
 
 					helper.mark(export_file_name, true);
 				} catch (e) {
@@ -667,10 +669,12 @@ module.exports = {
 				if (!this.$core.view.config.exportNamedFiles) {
 					const file_data_id = listfile.getByFilename(file_name);
 					if (file_data_id) {
-						const ext = path.extname(file_name);
-						const dir = path.dirname(file_name);
+						const dot_idx = file_name.lastIndexOf('.');
+						const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';
+						const slash_idx = file_name.lastIndexOf('/');
+						const dir = slash_idx !== -1 ? file_name.substring(0, slash_idx) : '.';
 						const file_data_id_name = file_data_id + ext;
-						export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+						export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 					}
 				}
 
@@ -684,7 +688,7 @@ module.exports = {
 
 						helper.mark(export_file_name, true);
 					} catch (e) {
-						if (e instanceof BLTEIntegrityError)
+						if (e.name === 'BLTEIntegrityError')
 							is_corrupted = true;
 						else
 							helper.mark(export_file_name, false, e.message, e.stack);
@@ -742,9 +746,10 @@ module.exports = {
 
 				let export_file_name = ExportHelper.replaceExtension(file_name, '.mp3');
 				if (!this.$core.view.config.exportNamedFiles) {
-					const dir = path.dirname(file_name);
+					const slash_idx_mp3 = file_name.lastIndexOf('/');
+					const dir = slash_idx_mp3 !== -1 ? file_name.substring(0, slash_idx_mp3) : '.';
 					const file_data_id_name = movie_data.AudioFileDataID + '.mp3';
-					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+					export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 				}
 
 				const export_path = ExportHelper.getExportPath(export_file_name);
@@ -801,9 +806,10 @@ module.exports = {
 
 				let export_file_name = ExportHelper.replaceExtension(file_name, ext);
 				if (!this.$core.view.config.exportNamedFiles) {
-					const dir = path.dirname(file_name);
+					const slash_idx_srt = file_name.lastIndexOf('/');
+					const dir = slash_idx_srt !== -1 ? file_name.substring(0, slash_idx_srt) : '.';
 					const file_data_id_name = movie_data.SubtitleFileDataID + ext;
-					export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+					export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 				}
 
 				const export_path = ExportHelper.getExportPath(export_file_name);

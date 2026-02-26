@@ -1,27 +1,12 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const BufferWrapper = require('../buffer');
-const PNGWriter = require('../png-writer');
-const webp = require('webp-wasm');
+import BufferWrapper from '../buffer.js';
+import PNGWriter from '../png-writer.js';
+import webp from 'webp-wasm';
 
 const DXT1 = 0x1;
 const DXT3 = 0x2;
 const DXT5 = 0x4;
-
 const BLP_MAGIC = 0x32504c42;
 
-/**
- * Unpack a colour value.
- * @param {Array} block
- * @param {number} index
- * @param {number} ofs
- * @param {Array} colour
- * @param {number} colourOfs
- * @private
- */
 const unpackColour = (block, index, ofs, colour, colourOfs) => {
 	let value = block[index + ofs] | (block[index + 1 + ofs] << 8);
 
@@ -38,44 +23,33 @@ const unpackColour = (block, index, ofs, colour, colourOfs) => {
 };
 
 class BLPImage {
-	/**
-	 * Construct a new BLPImage instance.
-	 * @param {BufferWrapper}
-	 */
 	constructor(data) {
 		this.data = data;
 
-		// Check magic value..
 		if (this.data.readUInt32LE() !== BLP_MAGIC)
 			throw new Error('Provided data is not a BLP file (invalid header magic).');
 
-		// Check the BLP file type..
 		let type = this.data.readUInt32LE();
 		if (type !== 1)
 			throw new Error('Unsupported BLP type: ' + type);
 
-		// Read file flags..
 		this.encoding = this.data.readUInt8();
 		this.alphaDepth = this.data.readUInt8();
 		this.alphaEncoding = this.data.readUInt8();
 		this.containsMipmaps = this.data.readUInt8();
 
-		// Read file dimensions..
 		this.width = this.data.readUInt32LE();
 		this.height = this.data.readUInt32LE();
 
-		// Read mipmap data..
 		this.mapOffsets = this.data.readUInt32LE(16);
 		this.mapSizes = this.data.readUInt32LE(16);
 
-		// Calculate available mipmaps..
 		this.mapCount = 0;
 		for (let ofs of this.mapOffsets) {
 			if (ofs !== 0)
 				this.mapCount++;
 		}
 
-		// Read colour palette..
 		this.palette = [];
 		if (this.encoding === 1) {
 			for (let i = 0; i < 256; i++)
@@ -85,21 +59,10 @@ class BLPImage {
 		this.dataURL = null;
 	}
 
-	/**
-	 * Encode this image as a data URL and return it.
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 * @returns {string}
-	 */
 	getDataURL(mask = 0b1111, mipmap = 0) {
 		return this.toCanvas(mask, mipmap).toDataURL();
 	}
 
-	/**
-	 * Return a canvas with this BLP painted onto it.
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 */
 	toCanvas(mask = 0b1111, mipmap = 0) {
 		const canvas = document.createElement('canvas');
 
@@ -116,12 +79,6 @@ class BLPImage {
 		return canvas;
 	}
 
-	/**
-	 * Retrieve this BLP as a PNG image.
-	 * @param {number} mask 
-	 * @param {number} mipmap 
-	 * @returns {BufferWrapper}
-	 */
 	toPNG(mask = 0b1111, mipmap = 0) {
 		this._prepare(mipmap);
 
@@ -137,28 +94,14 @@ class BLPImage {
 		return png.getBuffer();
 	}
 
-	/**
-	 * Save this BLP as PNG file.
-	 * @param {string} file
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 */
 	async saveToPNG(file, mask = 0b1111, mipmap = 0) {
 		return await this.toPNG(mask, mipmap).writeToFile(file);
 	}
 
-	/**
-	 * Convert this BLP to WebP format.
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 * @param {number} quality - Quality setting (1-100), 100 = lossless
-	 * @returns {Promise<Buffer>}
-	 */
 	async toWebP(mask = 0b1111, mipmap = 0, quality = 90) {
 		this._prepare(mipmap);
 
-		// Create RGBA pixel data buffer
-		const pixelData = Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
+		const pixelData = new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
 
 		switch (this.encoding) {
 			case 1: this._getUncompressed(pixelData, mask); break;
@@ -176,48 +119,26 @@ class BLPImage {
 			? { lossless: true }
 			: { quality: quality, lossless: false };
 
-		const webpBuffer = await webp.encode(imgData, options);
-
-		return webpBuffer;
+		return await webp.encode(imgData, options);
 	}
 
-	/**
-	 * Save this BLP as WebP file.
-	 * @param {string} file
-	 * @param {number} mask
-	 * @param {number} mipmap
-	 * @param {number} quality - Quality setting (1-100), 100 = lossless
-	 */
 	async saveToWebP(file, mask = 0b1111, mipmap = 0, quality = 90) {
 		const webpBuffer = await this.toWebP(mask, mipmap, quality);
-		await new BufferWrapper(webpBuffer).writeToFile(file);
+		await new BufferWrapper(new Uint8Array(webpBuffer)).writeToFile(file);
 	}
 
-	/**
-	 * Prepare BLP for processing.
-	 * @param {number} mipmap 
-	 */
 	_prepare(mipmap = 0) {
-		// Constrict the requested mipmap to a valid range..
 		mipmap = Math.max(0, Math.min(mipmap || 0, this.mapCount - 1));
 
-		// Calculate the scaled dimensions..
 		this.scale = Math.pow(2, mipmap);
 		this.scaledWidth = this.width / this.scale;
 		this.scaledHeight = this.height / this.scale;
 		this.scaledLength = this.scaledWidth * this.scaledHeight;
 
-		// Extract the raw data we need..
 		this.data.seek(this.mapOffsets[mipmap]);
 		this.rawData = this.data.readUInt8(this.mapSizes[mipmap]);
 	}
 
-	/**
-	 * Draw the contents of this BLP file onto a canvas.
-	 * @param {HTMLElement} canvas 
-	 * @param {number} mipmap 
-	 * @param {number} mask
-	 */
 	drawToCanvas(canvas, mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
@@ -233,12 +154,6 @@ class BLPImage {
 		ctx.putImageData(canvasData, 0, 0);
 	}
 
-	/**
-	 * Get the contents of this BLP as a BufferWrapper instance.
-	 * @param {number} mipmap 
-	 * @param {number} mask 
-	 * @returns {BufferWrapper}
-	 */
 	toBuffer(mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
@@ -249,22 +164,11 @@ class BLPImage {
 		}
 	}
 
-	/**
-	 * Get the contents of this raw BLP mipmap as a Buffer instance.
-	 * @param {number} mipmap 
-	 * @param {number} mask 
-	 * @returns {Buffer}
-	 */
 	getRawMipmap(mipmap = 0) {
 		this._prepare(mipmap);
-		return Buffer.from(this.rawData);
+		return new Uint8Array(this.rawData);
 	}
 
-	/**
-	 * Get the contents of this BLP as an RGBA UInt8 array.
-	 * @param {number} mipmap 
-	 * @param {number} mask
-	 */
 	toUInt8Array(mipmap = 0, mask = 0b1111) {
 		this._prepare(mipmap);
 
@@ -277,12 +181,7 @@ class BLPImage {
 
 		return arr;
 	}
-	
-	/**
-	 * Calculate the alpha using this files alpha depth.
-	 * @param {number} index Alpha index.
-	 * @private
-	 */
+
 	_getAlpha(index) {
 		let byte;
 		switch (this.alphaDepth) {
@@ -302,22 +201,16 @@ class BLPImage {
 		}
 	}
 
-	/**
-	 * Extract compressed data.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
-	 * @private
-	 */
 	_getCompressed(canvasData, mask = 0b1111) {
 		const flags = this.alphaDepth > 1 ? (this.alphaEncoding === 7 ? DXT5 : DXT3) : DXT1;
-		const data = canvasData ? canvasData : Buffer.alloc(this.scaledWidth * this.scaledHeight * 4);
+		const data = canvasData ? canvasData : new Uint8Array(this.scaledWidth * this.scaledHeight * 4);
 
 		let pos = 0;
 		const blockBytes = (flags & DXT1) !== 0 ? 8 : 16;
 		const target = new Array(4 * 16);
 
 		for (let y = 0, sh = this.scaledHeight; y < sh; y += 4) {
-			for (let x = 0, sw = this.scaledWidth; x < sw; x+= 4) {
+			for (let x = 0, sw = this.scaledWidth; x < sw; x += 4) {
 				let blockPos = 0;
 
 				if (this.rawData.length === pos)
@@ -327,7 +220,6 @@ class BLPImage {
 				if ((flags & (DXT3 | DXT5)) !== 0)
 					colourIndex += 8;
 
-				// Decompress colour..
 				let isDXT1 = (flags & DXT1) !== 0;
 				let colours = [];
 				let a = unpackColour(this.rawData, colourIndex, 0, colours, 0);
@@ -369,10 +261,8 @@ class BLPImage {
 				if ((flags & DXT3) !== 0) {
 					for (let i = 0; i < 8; i++) {
 						let quant = this.rawData[pos + i];
-
 						let low = (quant & 0x0F);
 						let high = (quant & 0xF0);
-
 						target[8 * i + 3] = (low | (low << 4));
 						target[8 * i + 7] = (high | (high >> 4));
 					}
@@ -432,24 +322,17 @@ class BLPImage {
 				pos += blockBytes;
 			}
 		}
-		
+
 		if (!canvasData)
 			return new BufferWrapper(data);
 	}
 
-	/**
-	 * Match the uncompressed data with the palette.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
-	 * @returns {BufferWrapper|undefined}
-	 * @private
-	 */
 	_getUncompressed(canvasData, mask) {
 		if (canvasData) {
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const ofs = i * 4;
 				const colour = this.palette[this.rawData[i]];
-				
+
 				canvasData[ofs] = (mask & 0b1) ? colour[2] : 0;
 				canvasData[ofs + 1] = (mask & 0b10) ? colour[1] : 0;
 				canvasData[ofs + 2] = (mask & 0b100) ? colour[0] : 0;
@@ -459,28 +342,19 @@ class BLPImage {
 			const buf = BufferWrapper.alloc(this.scaledLength * 4);
 			for (let i = 0, n = this.scaledLength; i < n; i++) {
 				const colour = this.palette[this.rawData[i]];
-				buf.writeUInt8([
-					(mask & 0b1) ? colour[2] : 0,
-					(mask & 0b10) ? colour[1] : 0,
-					(mask & 0b100) ? colour[0] : 0,
-					(mask & 0b1000) ? this._getAlpha(i) : 255
-				]);
+				buf.writeUInt8((mask & 0b1) ? colour[2] : 0);
+				buf.writeUInt8((mask & 0b10) ? colour[1] : 0);
+				buf.writeUInt8((mask & 0b100) ? colour[0] : 0);
+				buf.writeUInt8((mask & 0b1000) ? this._getAlpha(i) : 255);
 			}
 			buf.seek(0);
 			return buf;
 		}
 	}
 
-	/**
-	 * Marshal a BGRA array into an RGBA ordered buffer.
-	 * @param {ImageData} canvasData
-	 * @param {number} mask
-	 * @returns {BufferWrapper|undefined}
-	 * @private
-	 */
 	_marshalBGRA(canvasData, mask) {
 		const data = this.rawData;
-		
+
 		if (canvasData) {
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;
@@ -493,12 +367,10 @@ class BLPImage {
 			const buf = BufferWrapper.alloc(data.length);
 			for (let i = 0, n = data.length / 4; i < n; i++) {
 				let ofs = i * 4;
-				buf.writeUInt8([
-					(mask & 0b1) ? data[ofs + 2] : 0,
-					(mask & 0b10) ? data[ofs + 1] : 0,
-					(mask & 0b100) ? data[ofs] : 0,
-					(mask & 0b1000) ? data[ofs + 3] : 255
-				]);
+				buf.writeUInt8((mask & 0b1) ? data[ofs + 2] : 0);
+				buf.writeUInt8((mask & 0b10) ? data[ofs + 1] : 0);
+				buf.writeUInt8((mask & 0b100) ? data[ofs] : 0);
+				buf.writeUInt8((mask & 0b1000) ? data[ofs + 3] : 255);
 			}
 			buf.seek(0);
 			return buf;
@@ -506,4 +378,4 @@ class BLPImage {
 	}
 }
 
-module.exports = BLPImage;
+export default BLPImage;

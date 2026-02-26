@@ -1,11 +1,12 @@
-const path = require('path');
-const log = require('../log');
-const listfile = require('../casc/listfile');
-const ExportHelper = require('../casc/export-helper');
-const generics = require('../generics');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
-const { detect_glyphs_async, get_random_quote, inject_font_face } = require('./font_helpers');
+import log from '../log.js';
+import generics from '../generics.js';
+import { listfile } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
+import { detect_glyphs_async, get_random_quote, inject_font_face } from './font_helpers.js';
+
+const ExportHelper = exporter;
 
 const loaded_fonts = new Map();
 
@@ -39,7 +40,7 @@ const load_font = async (core, file_name) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Fonts', 'font.svg', InstallType.CASC);
 	},
@@ -120,10 +121,12 @@ module.exports = {
 				if (!this.$core.view.config.exportNamedFiles) {
 					const file_data_id = listfile.getByFilename(file_name);
 					if (file_data_id) {
-						const ext = path.extname(file_name);
-						const dir = path.dirname(file_name);
+						const dot_idx = file_name.lastIndexOf('.');
+						const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';
+						const slash_idx = file_name.lastIndexOf('/');
+						const dir = slash_idx !== -1 ? file_name.substring(0, slash_idx) : '.';
 						const file_data_id_name = file_data_id + ext;
-						export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+						export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 					}
 				}
 

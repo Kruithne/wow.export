@@ -4,7 +4,9 @@
 	License: MIT
 */
 
-const ShaderProgram = require('../gl/ShaderProgram');
+
+
+import ShaderProgram from '../gl/ShaderProgram.js';
 
 const SHADOW_VERT_SHADER = `#version 300 es
 precision highp float;
@@ -163,4 +165,4 @@ class ShadowPlaneRenderer {
 	}
 }
 
-module.exports = ShadowPlaneRenderer;
+export default ShadowPlaneRenderer;

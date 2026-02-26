@@ -3,7 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const BufferWrapper = require('../../buffer');
+
+
+import BufferWrapper from '../../buffer.js';
 
 // glb magic number: 'glTF' in ascii
 const GLB_MAGIC = 0x46546C67;
@@ -29,7 +31,7 @@ class GLBWriter {
 	 * @returns {BufferWrapper}
 	 */
 	pack() {
-		const json_buffer = Buffer.from(this.json_string, 'utf8');
+		const json_buffer = new TextEncoder().encode(this.json_string);
 
 		// calculate padding for json chunk (must be 4-byte aligned, padded with spaces 0x20)
 		const json_padding = (4 - (json_buffer.length % 4)) % 4;
@@ -72,4 +74,4 @@ class GLBWriter {
 	}
 }
 
-module.exports = GLBWriter;
+export default GLBWriter;

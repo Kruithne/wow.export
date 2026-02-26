@@ -27,6 +27,7 @@
 	"dependencies": {
 		"adm-zip": "git+https://github.com/cthackers/adm-zip.git#1c7860ff5005cd30bf5dc6e557c9b312fedc0a66",
 		"electrobun": "latest",
+		"pako": "^2.1.0",
 		"rcedit": "^2.0.0",
 		"vue": "^3.5.21",
 		"webp-wasm": "^1.0.6"

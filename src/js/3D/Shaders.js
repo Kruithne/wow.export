@@ -3,12 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import constants from '../constants.js';
+import log from '../log.js';
+import ShaderProgram from './gl/ShaderProgram.js';
 
-const fs = require('fs');
-const path = require('path');
-const constants = require('../constants');
-const log = require('../log');
-const ShaderProgram = require('./gl/ShaderProgram');
 
 const SHADER_MANIFEST = {
 	m2: { vert: 'm2.vertex.shader', frag: 'm2.fragment.shader' },
@@ -30,7 +28,7 @@ const active_programs = new Map();
  * @param {string} name
  * @returns {{ vert: string, frag: string }}
  */
-function get_source(name) {
+async function get_source(name) {
 	if (source_cache.has(name))
 		return source_cache.get(name);
 
@@ -38,9 +36,8 @@ function get_source(name) {
 	if (!manifest)
 		throw new Error(`Unknown shader: ${name}`);
 
-	const shader_path = constants.SHADER_PATH;
-	const vert = fs.readFileSync(path.join(shader_path, manifest.vert), 'utf8');
-	const frag = fs.readFileSync(path.join(shader_path, manifest.frag), 'utf8');
+	const vert = await fetch('shaders/' + manifest.vert).then(r => r.text());
+	const frag = await fetch('shaders/' + manifest.frag).then(r => r.text());
 
 	const sources = { vert, frag };
 	source_cache.set(name, sources);
@@ -53,8 +50,8 @@ function get_source(name) {
  * @param {string} name
  * @returns {ShaderProgram}
  */
-function create_program(ctx, name) {
-	const sources = get_source(name);
+async function create_program(ctx, name) {
+	const sources = await get_source(name);
 	const program = new ShaderProgram(ctx, sources.vert, sources.frag);
 
 	if (!program.is_valid())
@@ -88,7 +85,7 @@ function unregister(program) {
 /**
  * Reload all shaders from disk
  */
-function reload_all() {
+async function reload_all() {
 	log.write('Reloading all shaders...');
 
 	// clear source cache to force re-read from disk
@@ -102,7 +99,7 @@ function reload_all() {
 			continue;
 
 		try {
-			const sources = get_source(name);
+			const sources = await get_source(name);
 
 			for (const program of programs) {
 				if (program.recompile(sources.vert, sources.frag)) {
@@ -143,12 +140,10 @@ function get_total_program_count() {
 	return count;
 }
 
-module.exports = {
-	SHADER_MANIFEST,
+export { SHADER_MANIFEST,
 	get_source,
 	create_program,
 	unregister,
 	reload_all,
 	get_program_count,
-	get_total_program_count
-};
+	get_total_program_count };

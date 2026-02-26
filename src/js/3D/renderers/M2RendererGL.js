@@ -3,22 +3,22 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import BLPImage from '../../casc/blp.js';
+import ShaderMapper from '../ShaderMapper.js';
+import GLContext from '../gl/GLContext.js';
+import core from '../../core.js';
+import BLPImage from '../../casc/blp.js';
+import M2Loader from '../loaders/M2Loader.js';
+import GeosetMapper from '../GeosetMapper.js';
+import Shaders from '../Shaders.js';
+import VertexArray from '../gl/VertexArray.js';
+import textureRibbon from '../../ui/texture-ribbon.js';
+import log from '../../log.js';
 
-const core = require('../../core');
-const log = require('../../log');
 
-const BLPFile = require('../../casc/blp');
-const M2Loader = require('../loaders/M2Loader');
-const SKELLoader = require('../loaders/SKELLoader');
-const GeosetMapper = require('../GeosetMapper');
-const ShaderMapper = require('../ShaderMapper');
-const Shaders = require('../Shaders');
 
-const GLContext = require('../gl/GLContext');
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
 
-const textureRibbon = require('../../ui/texture-ribbon');
+
 
 // vertex shader name to ID mapping (matches vertex shader switch cases)
 const VERTEX_SHADER_IDS = {
@@ -413,7 +413,7 @@ class M2RendererGL {
 
 				try {
 					const data = await texture.getTextureFile();
-					const blp = new BLPFile(data);
+					const blp = new BLPImage(data);
 					const gl_tex = new GLTexture(this.ctx);
 					gl_tex.set_blp(blp, { flags: texture.flags });
 					this.textures.set(i, gl_tex);
@@ -1339,7 +1339,7 @@ class M2RendererGL {
 
 			try {
 				const data = await core.view.casc.getFile(fileDataID);
-				const blp = new BLPFile(data);
+				const blp = new BLPImage(data);
 				const gl_tex = new GLTexture(this.ctx);
 				gl_tex.set_blp(blp, { flags: this.m2.textures[i].flags });
 
@@ -1638,4 +1638,4 @@ class M2RendererGL {
 	}
 }
 
-module.exports = M2RendererGL;
+export default M2RendererGL;

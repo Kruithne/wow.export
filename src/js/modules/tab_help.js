@@ -1,6 +1,5 @@
-const fsp = require('fs').promises;
-const path = require('path');
-const log = require('../log');
+import log from '../log.js';
+import * as platform from '../platform.js';
 
 const help_articles = [];
 let help_loaded = false;
@@ -17,13 +16,13 @@ const load_help_docs = async (core) => {
 		const help_dir = './src/help_docs';
 		log.write('loading help docs from: %s', help_dir);
 
-		const files = await fsp.readdir(help_dir);
+		const files = await platform.readdir(help_dir);
 		const md_files = files.filter(f => f.endsWith('.md'));
 		log.write('found %d markdown files', md_files.length);
 
 		for (const file of md_files) {
-			const file_path = path.join(help_dir, file);
-			const content = await fsp.readFile(file_path, 'utf8');
+			const file_path = help_dir + '/' + file;
+			const content = await platform.read_file(file_path, 'utf8');
 			const lines = content.split('\n');
 
 			if (lines.length < 2)
@@ -94,7 +93,7 @@ let filter_timeout = null;
 
 let pending_kb_id = null;
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('Help', 'help.svg');
 	},

@@ -307,4 +307,4 @@ class VertexArray {
 
 VertexArray.AttributeLocation = AttributeLocation;
 
-module.exports = VertexArray;
+export default VertexArray;

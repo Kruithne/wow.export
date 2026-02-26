@@ -3,28 +3,24 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const log = require('../log');
-const platform = require('../platform');
-const util = require('util');
-const path = require('path');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
-const listfile = require('../casc/listfile');
-const constants = require('../constants');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const BLPFile = require('../casc/blp');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import BufferWrapper from '../buffer.js';
+import { exporter as ExportHelper, listfile } from '../../views/main/rpc.js';
+import constants from '../constants.js';
+import BLPFile from '../casc/blp.js';
 
-const M2RendererGL = require('../3D/renderers/M2RendererGL');
-const M3RendererGL = require('../3D/renderers/M3RendererGL');
-const M2Exporter = require('../3D/exporters/M2Exporter');
-const M3Exporter = require('../3D/exporters/M3Exporter');
+import M2RendererGL from '../3D/renderers/M2RendererGL.js';
+import M3RendererGL from '../3D/renderers/M3RendererGL.js';
+import M2Exporter from '../3D/exporters/M2Exporter.js';
+import M3Exporter from '../3D/exporters/M3Exporter.js';
 
-const WMORendererGL = require('../3D/renderers/WMORendererGL');
-const WMOExporter = require('../3D/exporters/WMOExporter');
+import WMORendererGL from '../3D/renderers/WMORendererGL.js';
+import WMOExporter from '../3D/exporters/WMOExporter.js';
 
-const textureRibbon = require('./texture-ribbon');
-const uvDrawer = require('./uv-drawer');
-const AnimMapper = require('../3D/AnimMapper');
+import textureRibbon from './texture-ribbon.js';
+import * as uvDrawer from './uv-drawer.js';
+import AnimMapper from '../3D/AnimMapper.js';
 
 const MODEL_TYPE_M2 = Symbol('modelM2');
 const MODEL_TYPE_M3 = Symbol('modelM3');
@@ -159,7 +155,7 @@ const preview_texture_by_id = async (core, state, renderer, file_data_id, name) 
 	const texture = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
 
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	core.setToast('progress', `Loading ${texture}, please wait...`, null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
 	try {
@@ -175,8 +171,8 @@ const preview_texture_by_id = async (core, state, renderer, file_data_id, name) 
 
 		core.hideToast();
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The texture ${texture} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -284,14 +280,14 @@ const export_preview = async (core, format, canvas, export_name, export_subdir =
 		if (core.view.config.modelsExportPngIncrements)
 			out_file = await ExportHelper.getIncrementalFilename(out_file);
 
-		const out_dir = path.dirname(out_file);
+		const out_dir = out_file.substring(0, out_file.lastIndexOf('/'));
 
 		await buf.writeToFile(out_file);
 		await export_paths?.writeLine('PNG:' + out_file);
 		export_paths?.close();
 
 		log.write('Saved 3D preview screenshot to %s', out_file);
-		core.setToast('success', util.format('Successfully exported preview to %s', out_file), { 'View in Explorer': () => platform.open_path(out_dir) }, -1);
+		core.setToast('success', `Successfully exported preview to ${out_file}`, { 'View in Explorer': () => platform.open_path(out_dir) }, -1);
 	} else if (format === 'CLIPBOARD') {
 		platform.clipboard_write_image(buf.toBase64());
 
@@ -522,7 +518,7 @@ const create_view_state = (core, prefix) => ({
 	set autoAdjust(v) { core.view[prefix + 'ViewerAutoAdjust'] = v; }
 });
 
-module.exports = {
+export {
 	MODEL_TYPE_M2,
 	MODEL_TYPE_M3,
 	MODEL_TYPE_WMO,

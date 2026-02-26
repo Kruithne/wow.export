@@ -1,115 +1,65 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const fs = require('fs');
-const util = require('util');
-const constants = require('./constants');
-const platform = require('./platform');
+import { log as rpc_log } from '../views/main/rpc.js';
+import * as platform from './platform.js';
+import constants from './constants.js';
 
-const MAX_LOG_POOL = 10000; // 1-2MB~
-const MAX_DRAIN_PER_TICK = 50;
+let mark_timer = 0;
 
-let markTimer = 0;
-let isClogged = false;
-const pool = [];
-
-/**
- * Return a HH:MM:SS formatted timestamp.
- */
-const getTimestamp = () => {
+const get_timestamp = () => {
 	const time = new Date();
-	return util.format(
-		'%s:%s:%s',
-		time.getHours().toString().padStart(2, '0'),
-		time.getMinutes().toString().padStart(2, '0'),
-		time.getSeconds().toString().padStart(2, '0'));
+	return String(time.getHours()).padStart(2, '0')
+		+ ':' + String(time.getMinutes()).padStart(2, '0')
+		+ ':' + String(time.getSeconds()).padStart(2, '0');
 };
 
-/**
- * Invoked when the stream has finished flushing.
- */
-const drainPool = () => {
-	isClogged = false;
+const format_args = (...params) => {
+	if (params.length === 0)
+		return '';
 
-	// If the pool is empty, don't slip into a loop.
-	if (pool.length === 0)
-		return;
+	let msg = String(params[0]);
+	let arg_idx = 1;
 
-	let ticks = 0;
-	while (!isClogged && ticks < MAX_DRAIN_PER_TICK && pool.length > 0) {
-		isClogged = !stream.write(pool.shift());
-		ticks++;
-	}
+	msg = msg.replace(/%[sdoO%]/g, (match) => {
+		if (match === '%%')
+			return '%';
 
-	// Only schedule another drain if we're not blocked and we have
-	// something remaining in the pool.
-	if (!isClogged && pool.length > 0)
-		process.nextTick(drainPool);
+		if (arg_idx >= params.length)
+			return match;
+
+		const val = params[arg_idx++];
+
+		switch (match) {
+			case '%s': return String(val);
+			case '%d': return Number(val).toString();
+			case '%o':
+			case '%O':
+				try { return JSON.stringify(val); }
+				catch { return String(val); }
+		}
+		return match;
+	});
+
+	while (arg_idx < params.length)
+		msg += ' ' + String(params[arg_idx++]);
+
+	return msg;
 };
 
-/**
- * Internally mark the current timestamp for measuring
- * performance times with log.timeEnd();
- */
-const timeLog = () => {
-	markTimer = Date.now();
+export const write = (...params) => {
+	const line = '[' + get_timestamp() + '] ' + format_args(...params);
+	rpc_log.info(line);
+	console.log(line);
 };
 
-/**
- * Logs the time (in milliseconds) between the last log.timeLog()
- * call and this call, with the given label prefixed.
- * @param {string} label 
- */
-const timeEnd = (label, ...params) => {
-	write(label + ' (%dms)', ...params, (Date.now() - markTimer));
+export const timeLog = () => {
+	mark_timer = Date.now();
 };
 
-/**
- * Open the runtime log in the users external editor.
- */
-const openRuntimeLog = () => {
+export const timeEnd = (label, ...params) => {
+	write(label + ' (%dms)', ...params, (Date.now() - mark_timer));
+};
+
+export const openRuntimeLog = () => {
 	platform.open_path(constants.RUNTIME_LOG);
 };
 
-/**
- * Write a message to the log.
- */
-const write = (...parameters) => {
-	const line = '[' + getTimestamp() + '] ' + util.format(...parameters) + '\n';
-
-	if (!isClogged) {
-		isClogged = !stream.write(line);
-	} else {
-		// Stream is blocked, pool instead.
-		if (pool.length < MAX_LOG_POOL) {
-			pool.push(line);
-		} else if (pool.length === MAX_LOG_POOL) {
-			pool.push('[' + getTimestamp() + '] WARNING: Log pool overflow - some log entries have been truncated.\n');
-		}
-	}
-
-	// Mirror output to debugger.
-	if (!BUILD_RELEASE)
-		console.log(line);
-};
-
-/**
- * Attempts to return the contents of the runtime log.
- * This is defined as a global as it is requested during
- * an application crash where modules may not be loaded.
- */
-getErrorDump = async () => {
-	try {
-		return await fs.promises.readFile(constants.RUNTIME_LOG, 'utf8');
-	} catch (e) {
-		return 'Unable to obtain runtime log: ' + e.message;
-	}
-};
-
-// Initialize the logging stream.
-const stream = fs.createWriteStream(constants.RUNTIME_LOG);
-stream.on('drain', drainPool);
-
-module.exports = { write, timeLog, timeEnd, openRuntimeLog };
+export default { write, timeLog, timeEnd, openRuntimeLog };

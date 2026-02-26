@@ -1,118 +1,69 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
-const fsp = require('fs').promises;
-const constants = require('./constants');
-const generics = require('./generics');
-const core = require('./core');
-const log = require('./log');
+import { config as rpc_config, on } from '../views/main/rpc.js';
+import { MSG } from '../rpc/schema.js';
+import core from './core.js';
+import log from './log.js';
 
-let isSaving = false;
-let isQueued = false;
-let defaultConfig = {};
+let default_config = {};
+let is_saving = false;
+let save_timer = -1;
 
-/**
- * Clone one config object into another.
- * Arrays are cloned rather than passed by reference.
- * @param {object} src 
- * @param {object} target 
- */
-const copyConfig = (src, target) => {
-	for (const [key, value] of Object.entries(src)) {
-		if (Array.isArray(value)) {
-			// Clone array rather than passing reference.
-			target[key] = value.slice(0);
-		} else {
-			// Pass everything else in wholemeal.
-			target[key] = value;
-		}
-	}
+const copy_config = (src, target) => {
+	for (const [key, value] of Object.entries(src))
+		target[key] = Array.isArray(value) ? value.slice(0) : value;
 };
 
-/**
- * Load configuration from disk.
- */
-const load = async () => {
-	defaultConfig = await generics.readJSON(constants.CONFIG.DEFAULT_PATH, true) || {};
+export const load = async () => {
+	default_config = await rpc_config.get_defaults() ?? {};
+	const user_config = await rpc_config.get() ?? {};
 
-	let userConfig = {};
-	try {
-		userConfig = await generics.readJSON(constants.CONFIG.USER_PATH) || {};
-	} catch (e) {
-		if (e.code === 'EPERM') {
-			log.write('Failed to load user config due to restricted permissions (EPERM)');
-			core.setToast('info', 'Restricted permissions detected. Restart wow.export using "Run as Administrator".', null, -1, true);
-		} else {
-			throw e;
-		}
-	}
-
-	log.write('Loaded config defaults: %o', defaultConfig);
-	log.write('Loaded user config: %o', userConfig);
+	log.write('Loaded config defaults: %o', default_config);
+	log.write('Loaded user config: %o', user_config);
 
 	const config = {};
-	copyConfig(defaultConfig, config);
-	copyConfig(userConfig, config);
+	copy_config(default_config, config);
+	copy_config(user_config, config);
 
 	core.view.config = config;
 	core.view.$watch('config', () => save(), { deep: true });
+
+	on(MSG.CONFIG_CHANGED, ({ key, value }) => {
+		if (core.view.config[key] !== value)
+			core.view.config[key] = value;
+	});
 };
 
-/**
- * Reset a configuration key to default.
- * @param {string} key 
- */
-const resetToDefault = (key) => {
-	if (Object.prototype.hasOwnProperty.call(defaultConfig, key))
-		core.view.config[key] = defaultConfig[key];
+export const resetToDefault = (key) => {
+	if (Object.prototype.hasOwnProperty.call(default_config, key))
+		core.view.config[key] = default_config[key];
 };
 
-/**
- * Reset all configuration to default.
- */
-const resetAllToDefault = () => {
-	// Use JSON parse/stringify to ensure deep non-referenced clone.
-	core.view.config = JSON.parse(JSON.stringify(defaultConfig));
+export const resetAllToDefault = () => {
+	core.view.config = JSON.parse(JSON.stringify(default_config));
 };
 
-/**
- * Mark configuration for saving.
- */
 const save = () => {
-	if (!isSaving) {
-		isSaving = true;
-		setImmediate(doSave);
-	} else {
-		// Queue another save.
-		isQueued = true;
+	if (save_timer !== -1)
+		clearTimeout(save_timer);
+
+	save_timer = setTimeout(do_save, 50);
+};
+
+const do_save = async () => {
+	if (is_saving)
+		return;
+
+	is_saving = true;
+
+	try {
+		for (const [key, value] of Object.entries(core.view.config)) {
+			if (Object.prototype.hasOwnProperty.call(default_config, key) && default_config[key] === value)
+				continue;
+
+			await rpc_config.set(key, value);
+		}
+	} finally {
+		is_saving = false;
 	}
 };
 
-/**
- * Persist configuration data to disk.
- */
-const doSave = async () => {
-	const configSave = {};
-	for (const [key, value] of Object.entries(core.view.config)) {
-		// Only persist configuration values that do not match defaults.
-		if (Object.prototype.hasOwnProperty.call(defaultConfig, key) && defaultConfig[key] === value)
-			continue;
-
-		configSave[key] = value;
-	}
-
-	const out = JSON.stringify(configSave, null, '\t');
-	await fsp.writeFile(constants.CONFIG.USER_PATH, out, 'utf8');
-
-	// If another save was attempted during this one, re-save.
-	if (isQueued) {
-		isQueued = false;
-		doSave();
-	} else {
-		isSaving = false;
-	}
-};
-
-module.exports = { load, resetToDefault, resetAllToDefault };
+export default { load, resetToDefault, resetAllToDefault };

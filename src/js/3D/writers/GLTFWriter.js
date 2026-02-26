@@ -3,17 +3,21 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const util = require('util');
-const fsp = require('fs').promises;
-const path = require('path');
-const core = require('../../core');
-const platform = require('../../platform');
-const generics = require('../../generics');
-const ExportHelper = require('../../casc/export-helper');
-const BufferWrapper = require('../../buffer');
-const BoneMapper = require('../BoneMapper');
-const AnimMapper = require('../AnimMapper');
-const log = require('../../log');
+
+import generics from '../../generics.js';
+import BufferWrapper from '../../buffer.js';
+import AnimMapper from '../AnimMapper.js';
+import platform from '../../platform.js';
+import { exporter } from '../../views/main/rpc.js';
+import BoneMapper from '../BoneMapper.js';
+import log from '../../log.js';
+
+const fsp = .promises;
+
+
+
+
+
 
 // See https://gist.github.com/mhenry07/e31d8c94db91fb823f2eed2fc1b43f15
 const GLTF_ARRAY_BUFFER = 0x8892;
@@ -193,10 +197,10 @@ class GLTFWriter {
 	}
 
 	async write(overwrite = true, format = 'gltf') {
-		const outGLTF = ExportHelper.replaceExtension(this.out, format === 'glb' ? '.glb' : '.gltf');
-		const outBIN = ExportHelper.replaceExtension(this.out, '.bin');
+		const outGLTF = exporter.replaceExtension(this.out, format === 'glb' ? '.glb' : '.gltf');
+		const outBIN = exporter.replaceExtension(this.out, '.bin');
 
-		const out_dir = path.dirname(outGLTF);
+		const out_dir = outGLTF.substring(0, outGLTF.lastIndexOf('/'));
 		const use_absolute = core.view.config.enableAbsoluteGLTFPaths;
 
 		// If overwriting is disabled, check file existence.
@@ -210,7 +214,7 @@ class GLTFWriter {
 		const root = {
 			asset: {
 				version: '2.0',
-				generator: util.format('wow.export v%s %s [%s]', manifest.version, manifest.flavour, manifest.guid)
+				generator: `wow.export v${manifest.version} ${manifest.flavour} [${manifest.guid}]`
 			},
 			nodes: [
 				{
@@ -410,7 +414,7 @@ class GLTFWriter {
 						} else {
 							// gltf mode: animations get separate buffer files
 							root.buffers.push({
-								uri: path.basename(outBIN, ".bin") + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
+								uri: outBIN.split('/').pop().replace(".bin", '') + "_anim" + this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex + ".bin",
 								byteLength: requiredBufferSize
 							});
 							animation_buffer_lookup_map.set(this.animations[animationIndex].id + "-" + this.animations[animationIndex].variationIndex, root.buffers.length - 1);
@@ -933,7 +937,7 @@ class GLTFWriter {
 
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
-				name: path.basename(texFile.matName, path.extname(texFile.matName)),
+				name: texFile.matName.split('/').pop().replace((texFile.matName, ''.includes('.') ? '.' + texFile.matName, ''.split('.').pop() : '')),
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
 					baseColorTexture: {
@@ -1480,17 +1484,16 @@ class GLTFWriter {
 		const bin_combined = BufferWrapper.concat(bins);
 		root.buffers[0].byteLength = bin_combined.byteLength;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await generics.createDirectory(this.out.substring(0, this.out.lastIndexOf('/')));
 
 		if (format === 'glb') {
 			// glb mode: package json and bin into glb container
-			const GLBWriter = require('./GLBWriter');
 			const glb_writer = new GLBWriter(JSON.stringify(root), bin_combined);
 			const glb_buffer = glb_writer.pack();
 			await glb_buffer.writeToFile(outGLTF);
 		} else {
 			// gltf mode: write separate json and bin files
-			root.buffers[0].uri = path.basename(outBIN);
+			root.buffers[0].uri = outBIN.split('/').pop();
 			await fsp.writeFile(outGLTF, JSON.stringify(root, null, '\t'), 'utf8');
 			await bin_combined.writeToFile(outBIN);
 		}
@@ -1498,11 +1501,11 @@ class GLTFWriter {
 		// write out animation buffers (gltf mode only, glb embeds them)
 		if (format === 'gltf') {
 			for (const [animationName, animationBuffer] of animationBufferMap) {
-				const animationPath = path.join(out_dir, path.basename(outBIN, ".bin") + "_anim" + animationName + ".bin");
+				const animationPath = out_dir + '/' + outBIN.split('/'.pop().replace(".bin", '') + "_anim" + animationName + ".bin");
 				await animationBuffer.writeToFile(animationPath);
 			}
 		}
 	}
 }
 
-module.exports = GLTFWriter;
+export default GLTFWriter;

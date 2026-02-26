@@ -3,13 +3,16 @@ wow.export (https://github.com/Kruithne/wow.export)
 Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 License: MIT
 */
-const BLPFile = require('../../casc/blp');
-const core = require('../../core');
-const log = require('../../log');
-const listfile = require('../../casc/listfile');
-const overlay = require('../../ui/char-texture-overlay');
-const PNGWriter = require('../../png-writer');
-const Shaders = require('../Shaders');
+import log from '../../log.js';
+import overlay from '../../ui/char-texture-overlay.js';
+import BLPImage from '../../casc/blp.js';
+import core from '../../core.js';
+import { listfile } from '../../views/main/rpc.js';
+import PNGWriter from '../../png-writer.js';
+import Shaders from '../Shaders.js';
+
+
+
 
 const UV_BUFFER_DATA = new Float32Array([
 	0, 1,
@@ -169,7 +172,7 @@ class CharMaterialRenderer {
 	 */
 	async loadTexture(fileDataID, useAlpha = true) {
 		const texture = this.gl.createTexture();
-		const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+		const blp = new BLPImage(await core.view.casc.getFile(fileDataID));
 
 		// TODO: DXT(1/3/5) support
 
@@ -419,4 +422,4 @@ class CharMaterialRenderer {
 	}
 }
 
-module.exports = CharMaterialRenderer;
+export default CharMaterialRenderer;

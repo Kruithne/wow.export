@@ -3,24 +3,17 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const core = require('../../core');
-const log = require('../../log');
-const path = require('path');
-const generics = require('../../generics');
-const listfile = require('../../casc/listfile');
-
-const BLPFile = require('../../casc/blp');
-const M3Loader= require('../loaders/M3Loader');
-const SKELLoader = require('../loaders/SKELLoader');
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const STLWriter = require('../writers/STLWriter');
-const JSONWriter = require('../writers/JSONWriter');
-const GLTFWriter = require('../writers/GLTFWriter');
-const GeosetMapper = require('../GeosetMapper');
-const ExportHelper = require('../../casc/export-helper');
-const BufferWrapper = require('../../buffer');
-
+import { exporter, listfile } from '../../views/main/rpc.js';
+import generics from '../../generics.js';
+import SKELLoader from '../loaders/SKELLoader.js';
+import JSONWriter from '../writers/JSONWriter.js';
+import core from '../../core.js';
+import M3Loader from '../loaders/M3Loader.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import STLWriter from '../writers/STLWriter.js';
+import GLTFWriter from '../writers/GLTFWriter.js';
+import log from '../../log.js';
+import BufferWrapper from '../../buffer.js';
 class M3Exporter {
 	/**
 	 * Construct a new M3Exporter instance.
@@ -55,7 +48,7 @@ class M3Exporter {
 	 * @param {string} out 
 	 * @param {boolean} raw
 	 * @param {MTLWriter} mtl
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {boolean} [fullTexPaths=false]
 	 * @returns {Map<number, string>}
 	 */
@@ -66,8 +59,8 @@ class M3Exporter {
 
 	async exportAsGLTF(out, helper, format = 'gltf') {
 		const ext = format === 'glb' ? '.glb' : '.gltf';
-		const outGLTF = ExportHelper.replaceExtension(out, ext);
-		const outDir = path.dirname(out);
+		const outGLTF = exporter.replaceExtension(out, ext);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Skip export if file exists and overwriting is disabled.
 		if (!core.view.config.overwriteFiles && await generics.fileExists(outGLTF))
@@ -75,7 +68,7 @@ class M3Exporter {
 
 		await this.m3.load();
 
-		const model_name = path.basename(outGLTF, ext);
+		const model_name = outGLTF.split('/').pop().replace(ext, '');
 		const gltf = new GLTFWriter(out, model_name);
 		log.write('Exporting M3 model %s as %s: %s', model_name, format.toUpperCase(), outGLTF);
 
@@ -112,7 +105,7 @@ class M3Exporter {
 	 * Export the M3 model as a WaveFront OBJ.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {Array} fileManifest
 	 */
 	async exportAsOBJ(out, exportCollision = false, helper, fileManifest) {
@@ -123,12 +116,12 @@ class M3Exporter {
 		//const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
-		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
+		const mtl = new MTLWriter(exporter.replaceExtension(out, '.mtl'));
 
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		// Use internal M3 name or fallback to the OBJ file name.
-		const model_name = path.basename(out, '.obj');
+		const model_name = out.split('/').pop().replace('.obj', '');
 		obj.setName(model_name);
 
 		log.write('Exporting M3 model %s as OBJ: %s', model_name, out);
@@ -165,7 +158,7 @@ class M3Exporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(path.basename(mtl.out));
+			obj.setMaterialLibrary(mtl.out.split('/').pop());
 
 		await obj.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'OBJ', fileDataID: this.fileDataID, file: obj.out });
@@ -174,7 +167,7 @@ class M3Exporter {
 		fileManifest?.push({ type: 'MTL', fileDataID: this.fileDataID, file: mtl.out });
 
 		if (exportCollision) {
-			// const phys = new OBJWriter(ExportHelper.replaceExtension(out, '.phys.obj'));
+			// const phys = new OBJWriter(exporter.replaceExtension(out, '.phys.obj'));
 			// phys.setVertArray(this.m2.collisionPositions);
 			// phys.setNormalArray(this.m2.collisionNormals);
 			// phys.addMesh('Collision', this.m2.collisionIndices);
@@ -188,7 +181,7 @@ class M3Exporter {
 	 * Export the M3 model as an STL file.
 	 * @param {string} out
 	 * @param {boolean} exportCollision
-	 * @param {ExportHelper} helper
+	 * @param {exporter} helper
 	 * @param {Array} fileManifest
 	 */
 	async exportAsSTL(out, exportCollision = false, helper, fileManifest) {
@@ -197,7 +190,7 @@ class M3Exporter {
 		const config = core.view.config;
 
 		const stl = new STLWriter(out);
-		const model_name = path.basename(out, '.stl');
+		const model_name = out.split('/').pop().replace('.stl', '');
 		stl.setName(model_name);
 
 		log.write('Exporting M3 model %s as STL: %s', model_name, out);
@@ -232,13 +225,13 @@ class M3Exporter {
 	 * Export the model as a raw M3 file, including related files
 	 * such as textures, bones, animations, etc.
 	 * @param {string} out 
-	 * @param {ExportHelper} helper 
+	 * @param {exporter} helper 
 	 * @param {Array} [fileManifest]
 	 */
 	async exportRaw(out, helper, fileManifest) {
 		const config = core.view.config;
 
-		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
+		const manifestFile = exporter.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
 
 		manifest.addProperty('fileDataID', this.fileDataID);
@@ -255,4 +248,4 @@ class M3Exporter {
 	}
 }
 
-module.exports = M3Exporter;
+export default M3Exporter;

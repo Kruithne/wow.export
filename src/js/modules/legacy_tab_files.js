@@ -1,9 +1,8 @@
-const path = require('path');
-const fsp = require('fs').promises;
-const log = require('../log');
-const platform = require('../platform');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
+import generics from '../generics.js';
 
 let files_loaded = false;
 
@@ -40,24 +39,25 @@ const export_files = async (core) => {
 				continue;
 			}
 
-			const output_path = path.join(export_dir, display_path);
-			const output_dir = path.dirname(output_path);
+			const output_path = export_dir + '/' + display_path;
+			const output_dir = output_path.substring(0, output_path.lastIndexOf('/'));
 
-			await fsp.mkdir(output_dir, { recursive: true });
-			await fsp.writeFile(output_path, new Uint8Array(data));
+			await generics.createDirectory(output_dir);
+			await generics.writeFile(output_path, new Uint8Array(data));
 
 			last_export_path = output_path;
 			log.write('exported: %s', display_path);
 		}
 
 		if (last_export_path) {
-			const dir = path.dirname(last_export_path);
+			const dir = last_export_path.substring(0, last_export_path.lastIndexOf('/'));
 			const toast_opt = { 'View in Explorer': () => platform.open_path(dir) };
+			const base_name = last_export_path.substring(last_export_path.lastIndexOf('/') + 1);
 
 			if (selection.length > 1)
 				core.setToast('success', `Successfully exported ${selection.length} files.`, toast_opt, -1);
 			else
-				core.setToast('success', `Successfully exported ${path.basename(last_export_path)}.`, toast_opt, -1);
+				core.setToast('success', `Successfully exported ${base_name}.`, toast_opt, -1);
 		}
 	} catch (e) {
 		log.write('failed to export legacy files: %o', e);
@@ -65,7 +65,7 @@ const export_files = async (core) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Files', 'file-lines.svg', InstallType.MPQ);
 	},

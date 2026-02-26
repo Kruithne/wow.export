@@ -1,19 +1,14 @@
-const log = require('../log');
-const platform = require('../platform');
-const util = require('util');
-const ExportHelper = require('../casc/export-helper');
-const listfile = require('../casc/listfile');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const InstallType = require('../install-type');
-const listboxContext = require('../ui/listbox-context');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import InstallType from '../install-type.js';
+import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
 
-const DBDecor = require('../db/caches/DBDecor');
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBDecorCategories = require('../db/caches/DBDecorCategories');
+import textureRibbon from '../ui/texture-ribbon.js';
+import textureExporter from '../ui/texture-exporter.js';
+import modelViewerUtils from '../ui/model-viewer-utils.js';
 
-const textureRibbon = require('../ui/texture-ribbon');
-const textureExporter = require('../ui/texture-exporter');
-const modelViewerUtils = require('../ui/model-viewer-utils');
+const ExportHelper = exporter;
 
 const UNCATEGORIZED_ID = -1;
 
@@ -51,7 +46,7 @@ const get_view_state = (core) => ({
 
 const preview_decor = async (core, decor_item) => {
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', decor_item.name), null, -1, false);
+	core.setToast('progress', `Loading ${decor_item.name}, please wait...`, null, -1, false);
 	log.write('Previewing decor %s (FileDataID: %d)', decor_item.name, decor_item.modelFileDataID);
 
 	const state = get_view_state(core);
@@ -105,7 +100,7 @@ const preview_decor = async (core, decor_item) => {
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
 
 		if (!has_content) {
-			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', decor_item.name), null, 4000);
+			core.setToast('info', `The model ${decor_item.name} doesn't have any 3D data associated with it.`, null, 4000);
 		} else {
 			core.hideToast();
 
@@ -113,8 +108,8 @@ const preview_decor = async (core, decor_item) => {
 				requestAnimationFrame(() => core.view.decorViewerContext?.fitCamera?.());
 		}
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', decor_item.name, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The model ${decor_item.name} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt model %s (%s)', decor_item.name, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview model ' + decor_item.name, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -223,7 +218,7 @@ const apply_filters = (core) => {
 	core.view.listfileDecor = filtered;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Decor', 'house.svg', InstallType.CASC);
 	},

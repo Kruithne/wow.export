@@ -3,11 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-const { pkware_dcl_explode } = require('./pkware');
-const { huffman_decomp } = require('./huffman');
-const { bzip2_decompress } = require('./bzip2');
-const { inflateSync } = require('zlib');
-const fs = require('fs');
+import { pkware_dcl_explode } from './pkware.js';
+import { huffman_decomp } from './huffman.js';
+import { bzip2_decompress } from './bzip2.js';
 
 const MPQ_FILE_IMPLODE = 0x00000100;
 const MPQ_FILE_COMPRESS = 0x00000200;
@@ -652,4 +650,4 @@ class MPQArchive {
 	}
 }
 
-module.exports = { MPQArchive };
+export { MPQArchive };

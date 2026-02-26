@@ -1,4 +1,4 @@
-const showcases = require('../showcase.json');
+import showcases from '../showcase.json';
 
 const BASE_LAYERS = [
 	{
@@ -28,7 +28,7 @@ function build_background_style(showcase) {
 	};
 }
 
-module.exports = {
+export default {
 	template: `
 		<h1 id="home-showcase-header">Made with wow.export</h1>
 		<a id="home-showcase" :data-external="current.link" :style="background_style">

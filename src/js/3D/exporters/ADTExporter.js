@@ -3,32 +3,33 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const util = require('util');
-const path = require('path');
-const core = require('../../core');
-const constants = require('../../constants');
-const generics = require('../../generics');
-const listfile = require('../../casc/listfile');
-const log = require('../../log');
+import constants from '../../constants.js';
+import BufferWrapper from '../../buffer.js';
+import BLPImage from '../../casc/blp.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import PNGWriter from '../../png-writer.js';
+import WMOExporter from '../../3D/exporters/WMOExporter.js';
+import JSONWriter from '../../3D/writers/JSONWriter.js';
+import core from '../../core.js';
+import generics from '../../generics.js';
+import log from '../../log.js';
+import BLPImage from '../../casc/blp.js';
+import WDTLoader from '../loaders/WDTLoader.js';
+import Shaders from '../Shaders.js';
+import MTLWriter from '../writers/MTLWriter.js';
+import { db, dbc } from '../../views/main/rpc.js';
+import M2Exporter from '../../3D/exporters/M2Exporter.js';
+import CSVWriter from '../../3D/writers/CSVWriter.js';
 
-const BufferWrapper = require('../../buffer');
-const BLPFile = require('../../casc/blp');
 
-const WDTLoader = require('../loaders/WDTLoader');
-const ADTLoader = require('../loaders/ADTLoader');
-const Shaders = require('../Shaders');
 
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const PNGWriter = require('../../png-writer');
 
-const db2 = require('../../casc/db2');
 
-const ExportHelper = require('../../casc/export-helper');
-const M2Exporter = require('../../3D/exporters/M2Exporter');
-const WMOExporter = require('../../3D/exporters/WMOExporter');
-const CSVWriter = require('../../3D/writers/CSVWriter');
-const JSONWriter = require('../../3D/writers/JSONWriter');
+
+
+
+
+
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const TILE_SIZE = constants.GAME.TILE_SIZE;
@@ -53,7 +54,7 @@ let gl;
  */
 const loadTexture = async (fileDataID) => {
 	const texture = gl.createTexture();
-	const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+	const blp = new BLPImage(await core.view.casc.getFile(fileDataID));
 
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -124,7 +125,7 @@ const build_texture_array = async (file_data_ids, is_height) => {
 	gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA, target_size, target_size, file_data_ids.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
 	for (let i = 0; i < file_data_ids.length; i++) {
-		const blp = new BLPFile(await core.view.casc.getFile(file_data_ids[i]));
+		const blp = new BLPImage(await core.view.casc.getFile(file_data_ids[i]));
 		const blp_rgba = blp.toUInt8Array(0);
 
 		if (blp.width === target_size && blp.height === target_size) {
@@ -314,7 +315,7 @@ class ADTExporter {
 		const out = { type: isRawExport ? 'ADT_RAW' : 'ADT_OBJ', path: '' };
 
 		const usePosix = config.pathFormat === 'posix';
-		const prefix = util.format('world/maps/%s/%s', this.mapDir, this.mapDir);
+		const prefix = `world/maps/${this.mapDir}/${this.mapDir}`;
 
 		// Load the WDT. We cache this to speed up exporting large amounts of tiles
 		// from the same map. Make sure ADTLoader.clearCache() is called after exporting.
@@ -327,41 +328,41 @@ class ADTExporter {
 			wdtCache.set(this.mapDir, wdt);
 
 			if (isRawExport) {
-				await wdtFile.writeToFile(path.join(dir, this.mapDir + '.wdt'));
+				await wdtFile.writeToFile(dir + '/' + this.mapDir + '.wdt');
 				
 				if (wdt.lgtFileDataID > 0) {
 					const lgtFile = await casc.getFile(wdt.lgtFileDataID);
-					lgtFile.writeToFile(path.join(dir, this.mapDir + '_lgt.wdt'));
+					lgtFile.writeToFile(dir + '/' + this.mapDir + '_lgt.wdt');
 				}
 
 				if (wdt.occFileDataID > 0) {
 					const occFile = await casc.getFile(wdt.occFileDataID);
-					occFile.writeToFile(path.join(dir, this.mapDir + '_occ.wdt'));
+					occFile.writeToFile(dir + '/' + this.mapDir + '_occ.wdt');
 				}
 
 				if (wdt.fogsFileDataID > 0) {
 					const fogsFile = await casc.getFile(wdt.fogsFileDataID);
-					fogsFile.writeToFile(path.join(dir, this.mapDir + '_fogs.wdt'));
+					fogsFile.writeToFile(dir + '/' + this.mapDir + '_fogs.wdt');
 				}
 
 				if (wdt.mpvFileDataID > 0) {
 					const mpvFile = await casc.getFile(wdt.mpvFileDataID);
-					mpvFile.writeToFile(path.join(dir, this.mapDir + '_mpv.wdt'));
+					mpvFile.writeToFile(dir + '/' + this.mapDir + '_mpv.wdt');
 				}
 
 				if (wdt.texFileDataID > 0) {
 					const texFile = await casc.getFile(wdt.texFileDataID);
-					texFile.writeToFile(path.join(dir, this.mapDir + '.tex'));
+					texFile.writeToFile(dir + '/' + this.mapDir + '.tex');
 				}
 
 				if (wdt.wdlFileDataID > 0) {
 					const wdlFile = await casc.getFile(wdt.wdlFileDataID);
-					wdlFile.writeToFile(path.join(dir, this.mapDir + '.wdl'));
+					wdlFile.writeToFile(dir + '/' + this.mapDir + '.wdl');
 				}
 
 				if (wdt.pd4FileDataID > 0) {
 					const pd4File = await casc.getFile(wdt.pd4FileDataID);
-					pd4File.writeToFile(path.join(dir, this.mapDir + '.pd4'));
+					pd4File.writeToFile(dir + '/' + this.mapDir + '.pd4');
 				}
 			}
 		}
@@ -383,18 +384,18 @@ class ADTExporter {
 		const objFile = await casc.getFile(obj0FileDataID);
 
 		if (isRawExport) {
-			await rootFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '.adt'));
-			await texFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_tex0.adt'));
-			await objFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_obj0.adt'));
+			await rootFile.writeToFile(dir + '/' + this.mapDir + "_" + this.tileID + '.adt');
+			await texFile.writeToFile(dir + '/' + this.mapDir + "_" + this.tileID + '_tex0.adt');
+			await objFile.writeToFile(dir + '/' + this.mapDir + "_" + this.tileID + '_obj0.adt');
 
 			// We only care about these when exporting raw files.
 			const obj1File = await casc.getFile(obj1FileDataID);
-			await obj1File.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_obj1.adt'));
+			await obj1File.writeToFile(dir + '/' + this.mapDir + "_" + this.tileID + '_obj1.adt');
 
 			// LOD is not available on Classic.
 			if (maid.lodADT > 0) {
 				const lodFile = await casc.getFile(maid.lodADT);
-				await lodFile.writeToFile(path.join(dir, this.mapDir + "_" + this.tileID + '_lod.adt'));
+				await lodFile.writeToFile(dir + '/' + this.mapDir + "_" + this.tileID + '_lod.adt');
 			}		
 		}
 
@@ -416,11 +417,11 @@ class ADTExporter {
 
 			const chunkMeshes = new Array(256);
 
-			const objOut = path.join(dir, 'adt_' + this.tileID + '.obj');
+			const objOut = dir + '/' + 'adt_' + this.tileID + '.obj';
 			out.path = objOut;
 
 			const obj = new OBJWriter(objOut);
-			const mtl = new MTLWriter(path.join(dir, 'adt_' + this.tileID + '.mtl'));
+			const mtl = new MTLWriter(dir + '/' + 'adt_' + this.tileID + '.mtl');
 
 			const firstChunk = rootAdt.chunks[0];
 			const firstChunkX = firstChunk.position[0];
@@ -578,7 +579,7 @@ class ADTExporter {
 			obj.addUVArray(uvs);
 
 			if (!mtl.isEmpty)
-				obj.setMaterialLibrary(path.basename(mtl.out));
+				obj.setMaterialLibrary(mtl.out.split('/').pop());
 			
 			await obj.write(config.overwriteFiles);
 			await mtl.write(config.overwriteFiles);
@@ -592,7 +593,7 @@ class ADTExporter {
 					const texParams = texAdt.texParams;
 
 					const saveLayerTexture = async (fileDataID) => {
-						const blp = new BLPFile(await core.view.casc.getFile(fileDataID));
+						const blp = new BLPImage(await core.view.casc.getFile(fileDataID));
 						let fileName = listfile.getByID(fileDataID);
 						if (fileName !== undefined)
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
@@ -604,10 +605,10 @@ class ADTExporter {
 					
 						if (config.enableSharedTextures) {
 							texPath = ExportHelper.getExportPath(fileName);
-							texFile = path.relative(dir, texPath);
+							texFile = texPath.replace(dir, '');
 						} else {
-							texPath = path.join(dir, path.basename(fileName));
-							texFile = path.basename(texPath);
+							texPath = dir + '/' + fileName.split('/').pop();
+							texFile = texPath.split('/').pop();
 						}
 					
 						await blp.saveToPNG(texPath);
@@ -721,7 +722,7 @@ class ADTExporter {
 
 								// determine file name: first image keeps original naming, additional get suffix
 								const imageSuffix = imageIndex === 0 ? '' : '_' + imageIndex;
-								const tilePath = path.join(dir, 'tex_' + prefix + imageSuffix + '.png');
+								const tilePath = dir + '/' + 'tex_' + prefix + imageSuffix + '.png';
 
 								await pngWriter.write(tilePath);
 							}
@@ -741,7 +742,7 @@ class ADTExporter {
 								}
 							}
 
-							const json = new JSONWriter(path.join(dir, 'tex_' + prefix + '.json'));
+							const json = new JSONWriter(dir + '/' + 'tex_' + prefix + '.json');
 							json.addProperty('layers', layers);
 
 							if (rootChunk.vertexShading)
@@ -845,12 +846,12 @@ class ADTExporter {
 
 							// save the combined image
 							const imageSuffix = imageIndex === 0 ? '' : '_' + imageIndex;
-							const mergedPath = path.join(dir, 'tex_' + this.tileID + imageSuffix + '.png');
+							const mergedPath = dir + '/' + 'tex_' + this.tileID + imageSuffix + '.png';
 							await pngWriter.write(mergedPath);
 						}
 
 						// write json metadata
-						const json = new JSONWriter(path.join(dir, 'tex_' + this.tileID + '.json'));
+						const json = new JSONWriter(dir + '/' + 'tex_' + this.tileID + '.json');
 						json.addProperty('layers', layers);
 
 						if (vertexColors.length > 0)
@@ -862,12 +863,12 @@ class ADTExporter {
 					// Use minimaps for cheap textures.
 					const paddedX = this.tileY.toString().padStart(2, '0');
 					const paddedY = this.tileX.toString().padStart(2, '0');
-					const tilePath = util.format('world/minimaps/%s/map%s_%s.blp', this.mapDir, paddedX, paddedY);
-					const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
+					const tilePath = `world/minimaps/${this.mapDir}/map${paddedX}_${paddedY}.blp`;
+					const tileOutPath = dir + '/' + 'tex_' + this.tileID + '.png';
 
 					if (config.overwriteFiles || !await generics.fileExists(tileOutPath)) {
 						const data = await casc.getFileByName(tilePath, false, true);
-						const blp = new BLPFile(data);
+						const blp = new BLPImage(data);
 
 						// Draw the BLP onto a raw-sized canvas.
 						const canvas = blp.toCanvas(0b0111);
@@ -890,7 +891,7 @@ class ADTExporter {
 					}
 				} else {
 					const hasHeightTexturing = (wdt.flags & 0x80) === 0x80;
-					const tileOutPath = path.join(dir, 'tex_' + this.tileID + '.png');
+					const tileOutPath = dir + '/' + 'tex_' + this.tileID + '.png';
 
 					let composite, compositeCtx;
 					if (!isSplittingTextures) {
@@ -1126,7 +1127,7 @@ class ADTExporter {
 
 								if (isSplittingTextures) {
 									// Save this individual chunk.
-									const tilePath = path.join(dir, 'tex_' + this.tileID + '_' + (chunkID++) + '.png');
+									const tilePath = dir + '/' + 'tex_' + this.tileID + '_' + (chunkID++) + '.png';
 
 									if (config.overwriteFiles || !await generics.fileExists(tilePath)) {
 										rotateCtx.drawImage(glCanvas, -(rotateCanvas.width / 2), -(rotateCanvas.height / 2));
@@ -1152,7 +1153,7 @@ class ADTExporter {
 						// Save the completed composite tile.
 						if (!isSplittingTextures) {
 							const buf = await BufferWrapper.fromCanvas(composite, 'image/png');
-							await buf.writeToFile(path.join(dir, 'tex_' + this.tileID + '.png'));
+							await buf.writeToFile(dir + '/' + 'tex_' + this.tileID + '.png');
 						}
 
 						// Clear buffer.
@@ -1178,10 +1179,10 @@ class ADTExporter {
 			
 				if (config.enableSharedTextures) {
 					texPath = ExportHelper.getExportPath(fileName);
-					texFile = path.relative(dir, texPath);
+					texFile = texPath.replace(dir, '');
 				} else {
-					texPath = path.join(dir, path.basename(fileName));
-					texFile = path.basename(texPath);
+					texPath = dir + '/' + fileName.split('/').pop();
+					texFile = texPath.split('/').pop();
 				}
 			
 				await blp.writeToFile(texPath);
@@ -1202,7 +1203,7 @@ class ADTExporter {
 		if (config.mapsIncludeWMO || config.mapsIncludeM2 || config.mapsIncludeGameObjects) {
 			const objectCache = new Set();
 
-			const csvPath = path.join(dir, 'adt_' + this.tileID + '_ModelPlacementInformation.csv');
+			const csvPath = dir + '/' + 'adt_' + this.tileID + '_ModelPlacementInformation.csv';
 			if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 				const csv = new CSVWriter(csvPath);
 				csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationX', 'RotationY', 'RotationZ', 'RotationW', 'ScaleFactor', 'ModelId', 'Type', 'FileDataID', 'DoodadSetIndexes', 'DoodadSetNames');
@@ -1235,7 +1236,7 @@ class ADTExporter {
 						if (config.enableSharedChildren)
 							modelPath = ExportHelper.getExportPath(fileName);
 						else
-							modelPath = path.join(dir, path.basename(fileName));
+							modelPath = dir + '/' + fileName.split('/').pop();
 
 						try {
 							if (!objectCache.has(fileDataID)) {
@@ -1254,7 +1255,7 @@ class ADTExporter {
 								objectCache.add(fileDataID);
 							}
 
-							let modelFile = path.relative(dir, modelPath);
+							let modelFile = modelPath.replace(dir, '');
 							if (usePosix)
 								modelFile = ExportHelper.win32ToPosix(modelFile);
 
@@ -1327,7 +1328,7 @@ class ADTExporter {
 							if (config.enableSharedChildren)
 								modelPath = ExportHelper.getExportPath(fileName);
 							else
-								modelPath = path.join(dir, path.basename(fileName));
+								modelPath = dir + '/' + fileName.split('/').pop();
 
 							const doodadSets = useADTSets ? objAdt.doodadSets : [model.doodadSet];
 							const cacheID = fileDataID + '-' + doodadSets.join(',');
@@ -1366,7 +1367,7 @@ class ADTExporter {
 
 							const doodadNames = setNameCache.get(fileDataID);
 
-							let modelFile = path.relative(dir, modelPath);
+							let modelFile = modelPath.replace(dir, '');
 							if (usePosix)
 								modelFile = ExportHelper.win32ToPosix(modelFile);
 
@@ -1403,7 +1404,7 @@ class ADTExporter {
 
 		// Export liquids.
 		if (config.mapsIncludeLiquid && rootAdt.liquidChunks) {
-			const liquidFile = path.join(dir, 'liquid_' + this.tileID + '.json');
+			const liquidFile = dir + '/' + 'liquid_' + this.tileID + '.json';
 			log.write('Exporting liquid data to %s', liquidFile);
 
 			const enhancedLiquidChunks = rootAdt.liquidChunks.map((chunk, chunkIndex) => {
@@ -1451,7 +1452,7 @@ class ADTExporter {
 		if (config.mapsIncludeFoliage && isFoliageAvailable) {
 			const foliageExportCache = new Set();
 			const foliageEffectCache = new Set();
-			const foliageDir = path.join(dir, 'foliage');
+			const foliageDir = dir + '/' + 'foliage';
 			
 			log.write('Exporting foliage to %s', foliageDir);
 
@@ -1472,7 +1473,7 @@ class ADTExporter {
 					// Create a foliage metadata JSON packed with the table data.
 					let foliageJSON;
 					if (core.view.config.exportFoliageMeta && !foliageEffectCache.has(layer.effectID)) {
-						foliageJSON = new JSONWriter(path.join(foliageDir, layer.effectID + '.json'));
+						foliageJSON = new JSONWriter(foliageDir + '/' + layer.effectID + '.json');
 						foliageJSON.data = groundEffectTexture;
 
 						foliageEffectCache.add(layer.effectID);
@@ -1501,9 +1502,9 @@ class ADTExporter {
 							const fileName = listfile.getByID(entry.fileDataID);
 
 							if (isRawExport)
-								entry.fileName = path.basename(fileName);
+								entry.fileName = fileName.split('/').pop();
 							else
-								entry.fileName = ExportHelper.replaceExtension(path.basename(fileName), '.obj');
+								entry.fileName = ExportHelper.replaceExtension(fileName.split('/').pop(), '.obj');
 						}
 
 						foliageJSON.addProperty('DoodadModelIDs', doodadModelIDs);
@@ -1520,16 +1521,16 @@ class ADTExporter {
 			for (const modelID of foliageExportCache) {
 				helper.setCurrentTaskValue(foliageIndex++);
 				
-				const modelName = path.basename(listfile.getByID(modelID));
+				const modelName = listfile.getByID(modelID.split('/').pop());
 				
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);
 
 				if (isRawExport) {
-					await m2.exportRaw(path.join(foliageDir, modelName), helper);
+					await m2.exportRaw(foliageDir + '/' + modelName, helper);
 				} else {
 					const modelPath = ExportHelper.replaceExtension(modelName, '.obj');
-					await m2.exportAsOBJ(path.join(foliageDir, modelPath), config.modelsExportCollision, helper);
+					await m2.exportAsOBJ(foliageDir + '/' + modelPath, config.modelsExportCollision, helper);
 				}
 
 				// Abort if the export has been cancelled.
@@ -1549,4 +1550,4 @@ class ADTExporter {
 	}
 }
 
-module.exports = ADTExporter;
+export default ADTExporter;

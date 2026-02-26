@@ -1,18 +1,16 @@
-const log = require('../log');
-const platform = require('../platform');
-const path = require('path');
-const fsp = require('fs').promises;
-const DBCReader = require('../db/DBCReader');
-const dataExporter = require('../ui/data-exporter');
-const InstallType = require('../install-type');
-const ExportHelper = require('../casc/export-helper');
-const BufferWrapper = require('../buffer');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import dataExporter from '../ui/data-exporter.js';
+import InstallType from '../install-type.js';
+import { exporter as ExportHelper, dbc } from '../../views/main/rpc.js';
+import BufferWrapper from '../buffer.js';
+import generics from '../generics.js';
 
 let selected_file = null;
 let selected_file_path = null;
 let selected_file_schema = null;
 let dbc_listfile = [];
-let dbc_path_map = new Map(); // table_name -> full_path
+let dbc_path_map = new Map();
 
 const DBC_EXTENSION = '.dbc';
 
@@ -24,19 +22,16 @@ const initialize_dbc_listfile = async (core) => {
 	if (!mpq)
 		return;
 
-	// use getFilesByExtension to get properly formatted paths
 	const all_dbc_files = mpq.getFilesByExtension(DBC_EXTENSION);
 
 	dbc_path_map.clear();
 	const table_names = new Set();
 
 	for (const full_path of all_dbc_files) {
-		// extract just the dbc filename
 		const parts = full_path.split('\\');
 		const dbc_file = parts[parts.length - 1];
 		const table_name = dbc_file.replace(/\.dbc$/i, '');
 
-		// keep first occurrence (highest priority MPQ)
 		if (!dbc_path_map.has(table_name)) {
 			dbc_path_map.set(table_name, full_path);
 			table_names.add(table_name);
@@ -64,9 +59,8 @@ const load_table = async (core, table_name) => {
 			return;
 		}
 
-		const data = new BufferWrapper(Buffer.from(raw_data));
+		const data = new BufferWrapper(raw_data);
 
-		// get build version from mpq install
 		const build_id = get_build_version(core);
 
 		const dbc_reader = new DBCReader(table_name + '.dbc', build_id);
@@ -95,7 +89,6 @@ const load_table = async (core, table_name) => {
 			const row_values = [];
 			for (const header of all_headers) {
 				const value = row[header];
-				// flatten arrays for display
 				if (Array.isArray(value))
 					row_values.push(value.join(', '));
 				else
@@ -119,7 +112,7 @@ const get_build_version = (core) => {
 	return core.view.mpq?.build_id ?? '1.12.1.5875';
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Data', 'database.svg', InstallType.MPQ);
 	},

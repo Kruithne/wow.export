@@ -3,25 +3,22 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import constants from '../../constants.js';
+import WMOLoader from '../loaders/WMOLoader.js';
+import Shaders from '../Shaders.js';
+import GLContext from '../gl/GLContext.js';
+import log from '../../log.js';
+import BLPImage from '../../casc/blp.js';
+import Texture from '../Texture.js';
+import M2RendererGL from './M2RendererGL.js';
+import WMOShaderMapper from '../WMOShaderMapper.js';
+import VertexArray from '../gl/VertexArray.js';
+import textureRibbon from '../../ui/texture-ribbon.js';
 
-const util = require('util');
-const core = require('../../core');
-const log = require('../../log');
-const constants = require('../../constants');
 
-const BLPFile = require('../../casc/blp');
-const Texture = require('../Texture');
-const WMOLoader = require('../loaders/WMOLoader');
-const M2RendererGL = require('./M2RendererGL');
-const listfile = require('../../casc/listfile');
-const WMOShaderMapper = require('../WMOShaderMapper');
-const Shaders = require('../Shaders');
 
-const GLContext = require('../gl/GLContext');
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
 
-const textureRibbon = require('../../ui/texture-ribbon');
+
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -177,7 +174,7 @@ class WMORendererGL {
 
 				try {
 					const data = await texture.getTextureFile();
-					const blp = new BLPFile(data);
+					const blp = new BLPImage(data);
 					const gl_tex = new GLTexture(this.ctx);
 
 					// WMO wrap flags are inverted (0x40/0x80 = clamp)
@@ -361,7 +358,7 @@ class WMORendererGL {
 		log.write('Loading doodad set: %s', set.name);
 
 		using _lock = core.create_busy_lock();
-		core.setToast('progress', util.format('Loading doodad set %s (%d doodads)...', set.name, set.doodadCount), null, -1, false);
+		core.setToast('progress', `Loading doodad set ${set.name} (${set.doodadCount} doodads)...`, null, -1, false);
 
 		const firstIndex = set.firstInstanceIndex;
 		const count = set.doodadCount;
@@ -674,4 +671,4 @@ class WMORendererGL {
 	}
 }
 
-module.exports = WMORendererGL;
+export default WMORendererGL;

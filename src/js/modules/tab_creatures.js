@@ -1,34 +1,22 @@
-const log = require('../log');
-const platform = require('../platform');
-const util = require('util');
-const path = require('path');
-const ExportHelper = require('../casc/export-helper');
-const listfile = require('../casc/listfile');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const InstallType = require('../install-type');
-const listboxContext = require('../ui/listbox-context');
-const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import InstallType from '../install-type.js';
+import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
+import CharMaterialRenderer from '../3D/renderers/CharMaterialRenderer.js';
 
-const BLPFile = require('../casc/blp');
-const M2RendererGL = require('../3D/renderers/M2RendererGL');
-const M2Exporter = require('../3D/exporters/M2Exporter');
+import BLPFile from '../casc/blp.js';
+import M2RendererGL from '../3D/renderers/M2RendererGL.js';
+import M2Exporter from '../3D/exporters/M2Exporter.js';
 
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBCreatures = require('../db/caches/DBCreatures');
-const DBCreatureList = require('../db/caches/DBCreatureList');
-const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
-const DBCreatureDisplayExtra = require('../db/caches/DBCreatureDisplayExtra');
-const DBNpcEquipment = require('../db/caches/DBNpcEquipment');
-const DBItemModels = require('../db/caches/DBItemModels');
-const DBItemGeosets = require('../db/caches/DBItemGeosets');
-const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
-const DBItems = require('../db/caches/DBItems');
-const { get_slot_name, get_attachment_ids_for_slot, get_slot_layer, ATTACHMENT_ID } = require('../wow/EquipmentSlots');
+import { get_slot_name, get_attachment_ids_for_slot, get_slot_layer, ATTACHMENT_ID } from '../wow/EquipmentSlots.js';
 
-const textureRibbon = require('../ui/texture-ribbon');
-const textureExporter = require('../ui/texture-exporter');
-const modelViewerUtils = require('../ui/model-viewer-utils');
-const character_appearance = require('../ui/character-appearance');
+import textureRibbon from '../ui/texture-ribbon.js';
+import textureExporter from '../ui/texture-exporter.js';
+import modelViewerUtils from '../ui/model-viewer-utils.js';
+import character_appearance from '../ui/character-appearance.js';
+
+const ExportHelper = exporter;
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();
@@ -513,7 +501,7 @@ const refresh_creature_equipment = async (core) => {
 
 const preview_creature = async (core, creature) => {
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', creature.name), null, -1, false);
+	core.setToast('progress', `Loading ${creature.name}, please wait...`, null, -1, false);
 	log.write('Previewing creature %s (ID: %d)', creature.name, creature.id);
 
 	const state = modelViewerUtils.create_view_state(core, 'creature');
@@ -546,19 +534,19 @@ const preview_creature = async (core, creature) => {
 			// character-model creature
 			const extra = DBCreatureDisplayExtra.get_extra(display_info.extendedDisplayInfoID);
 			if (!extra) {
-				core.setToast('error', util.format('No extended display info found for creature %s.', creature.name), null, -1);
+				core.setToast('error', `No extended display info found for creature ${creature.name}.`, null, -1);
 				return;
 			}
 
 			const chr_model_id = DBCharacterCustomization.get_chr_model_id(extra.DisplayRaceID, extra.DisplaySexID);
 			if (chr_model_id === undefined) {
-				core.setToast('error', util.format('No character model found for creature %s (race %d, sex %d).', creature.name, extra.DisplayRaceID, extra.DisplaySexID), null, -1);
+				core.setToast('error', `No character model found for creature ${creature.name} (race ${extra.DisplayRaceID}, sex ${extra.DisplaySexID}).`, null, -1);
 				return;
 			}
 
 			const file_data_id = DBCharacterCustomization.get_model_file_data_id(chr_model_id);
 			if (!file_data_id) {
-				core.setToast('error', util.format('No model file found for creature %s.', creature.name), null, -1);
+				core.setToast('error', `No model file found for creature ${creature.name}.`, null, -1);
 				return;
 			}
 
@@ -633,7 +621,7 @@ const preview_creature = async (core, creature) => {
 			// standard creature model
 			const file_data_id = DBCreatures.getFileDataIDByDisplayID(creature.displayID);
 			if (!file_data_id) {
-				core.setToast('error', util.format('No model data found for creature %s.', creature.name), null, -1);
+				core.setToast('error', `No model data found for creature ${creature.name}.`, null, -1);
 				return;
 			}
 
@@ -666,7 +654,7 @@ const preview_creature = async (core, creature) => {
 
 				const skin_list = [];
 				let model_name = listfile.getByID(file_data_id);
-				model_name = path.basename(model_name, 'm2');
+				model_name = model_name.substring(model_name.lastIndexOf('/') + 1).replace(/\.?m2$/i, '');
 
 				for (const display of displays) {
 					if (display.textures.length === 0)
@@ -677,7 +665,7 @@ const preview_creature = async (core, creature) => {
 					let clean_skin_name = '';
 					let skin_name = listfile.getByID(texture);
 					if (skin_name !== undefined) {
-						skin_name = path.basename(skin_name, '.blp');
+						skin_name = skin_name.substring(skin_name.lastIndexOf('/') + 1).replace(/\.blp$/i, '');
 						clean_skin_name = skin_name.replace(model_name, '').replace('_', '');
 					} else {
 						skin_name = 'unknown_' + texture;
@@ -714,7 +702,7 @@ const preview_creature = async (core, creature) => {
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
 
 		if (!has_content) {
-			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', creature.name), null, 4000);
+			core.setToast('info', `The model ${creature.name} doesn't have any 3D data associated with it.`, null, 4000);
 		} else {
 			core.hideToast();
 
@@ -722,8 +710,8 @@ const preview_creature = async (core, creature) => {
 				requestAnimationFrame(() => core.view.creatureViewerContext?.fitCamera?.());
 		}
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', creature.name, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The model ${creature.name} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt model %s (%s)', creature.name, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview creature ' + creature.name, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -972,7 +960,7 @@ const export_files = async (core, entries) => {
 	export_paths?.close();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Creatures', 'nessy.svg', InstallType.CASC);
 	},

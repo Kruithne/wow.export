@@ -306,4 +306,4 @@ class URLPolyfill {
 	}
 }
 
-module.exports = { BlobPolyfill, URLPolyfill };
+export { BlobPolyfill, URLPolyfill };

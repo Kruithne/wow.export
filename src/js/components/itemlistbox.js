@@ -3,10 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const platform = require('../platform');
-const IconRender = require('../icon-render');
+import * as platform from '../platform.js';
+import IconRender from '../icon-render.js';
 
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.

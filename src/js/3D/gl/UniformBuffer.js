@@ -227,4 +227,4 @@ UniformBuffer.align = function(current_offset, alignment) {
 	return Math.ceil(current_offset / alignment) * alignment;
 };
 
-module.exports = UniformBuffer;
+export default UniformBuffer;

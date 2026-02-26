@@ -1,7 +1,5 @@
-const fsp = require('fs').promises;
-const log = require('../log');
-
-const BUILD_RELEASE = typeof process.env.BUILD_RELEASE !== 'undefined';
+import log from '../log.js';
+import { fs } from '../../views/main/rpc.js';
 
 let changelog_text = '';
 let has_loaded = false;
@@ -11,8 +9,7 @@ const load_changelog = async () => {
 		return changelog_text;
 
 	try {
-		const changelog_path = BUILD_RELEASE ? './src/CHANGELOG.md' : '../../CHANGELOG.md';
-		changelog_text = await fsp.readFile(changelog_path, 'utf8');
+		changelog_text = await fs.read_file('CHANGELOG.md');
 		has_loaded = true;
 	} catch (e) {
 		log.write('failed to load changelog: %o', e);
@@ -22,7 +19,7 @@ const load_changelog = async () => {
 	return changelog_text;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('View Recent Changes', 'list.svg');
 	},

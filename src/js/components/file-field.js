@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	props: ['modelValue', 'placeholder'],
 	emits: ['update:modelValue'],
 

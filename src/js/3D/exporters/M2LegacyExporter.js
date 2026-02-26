@@ -3,21 +3,23 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import generics from '../../generics.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import STLWriter from '../writers/STLWriter.js';
+import GeosetMapper from '../GeosetMapper.js';
+import core from '../../core.js';
+import M2LegacyLoader from '../loaders/M2LegacyLoader.js';
+import JSONWriter from '../writers/JSONWriter.js';
+import MTLWriter from '../writers/MTLWriter.js';
+import BLPImage from '../../casc/blp.js';
+import BufferWrapper from '../../buffer.js';
+import log from '../../log.js';
 
-const core = require('../../core');
-const log = require('../../log');
-const path = require('path');
-const generics = require('../../generics');
 
-const M2LegacyLoader = require('../loaders/M2LegacyLoader');
-const ExportHelper = require('../../casc/export-helper');
-const JSONWriter = require('../writers/JSONWriter');
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const STLWriter = require('../writers/STLWriter');
-const BLPFile = require('../../casc/blp');
-const BufferWrapper = require('../../buffer');
-const GeosetMapper = require('../GeosetMapper');
+
+
+
+
 
 class M2LegacyExporter {
 	constructor(data, filePath, mpq) {
@@ -84,22 +86,22 @@ class M2LegacyExporter {
 					continue;
 				}
 
-				let texFile = path.basename(texturePath);
+				let texFile = texturePath.split('/').pop();
 				texFile = ExportHelper.replaceExtension(texFile, '.png');
 
 				let texPath;
 				// legacy mpq exports always use flat textures alongside model for compatibility
-				texPath = path.join(outDir, texFile);
+				texPath = outDir + '/' + texFile;
 
-				let matName = 'mat_' + path.basename(texturePath.toLowerCase(), '.blp');
+				let matName = 'mat_' + texturePath.toLowerCase(.split('/').pop(), '.blp');
 				if (config.removePathSpaces)
 					matName = matName.replace(/\s/g, '');
 
 				const fileExisted = await generics.fileExists(texPath);
 
 				if (config.overwriteFiles || !fileExisted) {
-					const buf = new BufferWrapper(Buffer.from(textureData));
-					const blp = new BLPFile(buf);
+					const buf = new BufferWrapper(textureData);
+					const blp = new BLPImage(buf);
 					await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 
 					log.write('Exported legacy M2 texture: %s', texPath);
@@ -131,8 +133,8 @@ class M2LegacyExporter {
 		const obj = new OBJWriter(out);
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
-		const outDir = path.dirname(out);
-		const modelName = path.basename(out, '.obj');
+		const outDir = out.substring(0, out.lastIndexOf('/'));
+		const modelName = out.split('/').pop().replace('.obj', '');
 		obj.setName(modelName);
 
 		log.write('Exporting legacy M2 model %s as OBJ: %s', modelName, out);
@@ -188,7 +190,7 @@ class M2LegacyExporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(path.basename(mtl.out));
+			obj.setMaterialLibrary(mtl.out.split('/').pop());
 
 		await obj.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'OBJ', file: obj.out });
@@ -268,7 +270,7 @@ class M2LegacyExporter {
 		const skin = await this.m2.getSkin(0);
 
 		const stl = new STLWriter(out);
-		const modelName = path.basename(out, '.stl');
+		const modelName = out.split('/').pop().replace('.stl', '');
 		stl.setName(modelName);
 
 		log.write('Exporting legacy M2 model %s as STL: %s', modelName, out);
@@ -299,7 +301,7 @@ class M2LegacyExporter {
 	async exportRaw(out, helper, fileManifest) {
 		const config = core.view.config;
 		const mpq = this.mpq;
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
@@ -344,12 +346,12 @@ class M2LegacyExporter {
 					if (config.enableSharedTextures)
 						texOut = ExportHelper.getExportPath(texturePath);
 					else
-						texOut = path.join(outDir, path.basename(texturePath));
+						texOut = outDir + '/' + texturePath.split('/'.pop());
 
-					const buf = new BufferWrapper(Buffer.from(textureData));
+					const buf = new BufferWrapper(textureData);
 					await buf.writeToFile(texOut);
 
-					texturesManifest.push({ file: path.relative(outDir, texOut), path: texturePath, type: 'embedded' });
+					texturesManifest.push({ file: texOut.replace(outDir, ''), path: texturePath, type: 'embedded' });
 					fileManifest?.push({ type: 'BLP', file: texOut });
 
 					log.write('Exported legacy M2 texture: %s', texOut);
@@ -381,12 +383,12 @@ class M2LegacyExporter {
 						if (config.enableSharedTextures)
 							texOut = ExportHelper.getExportPath(texturePath);
 						else
-							texOut = path.join(outDir, path.basename(texturePath));
+							texOut = outDir + '/' + texturePath.split('/'.pop());
 
-						const buf = new BufferWrapper(Buffer.from(textureData));
+						const buf = new BufferWrapper(textureData);
 						await buf.writeToFile(texOut);
 
-						texturesManifest.push({ file: path.relative(outDir, texOut), path: texturePath, type: 'skin' });
+						texturesManifest.push({ file: texOut.replace(outDir, ''), path: texturePath, type: 'skin' });
 						fileManifest?.push({ type: 'BLP', file: texOut });
 
 						log.write('Exported legacy M2 skin texture: %s', texOut);
@@ -404,4 +406,4 @@ class M2LegacyExporter {
 	}
 }
 
-module.exports = M2LegacyExporter;
+export default M2LegacyExporter;

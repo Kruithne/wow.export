@@ -1,290 +1,273 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
-	License: MIT
- */
-const EventEmitter = require('events');
-const generics = require('./generics');
-const Locale = require('./casc/locale-flags');
-const constants = require('./constants');
-const platform = require('./platform');
-const log = require('./log');
-const fs = require('fs');
-const FileWriter = require('./file-writer');
+import EventEmitter from './event-emitter.js';
+import { redraw } from './generics.js';
+import Locale from './casc/locale-flags.js';
+import constants from './constants.js';
+import * as platform from './platform.js';
 
-let toastTimer = -1; // Used by setToast() for TTL toast prompts.
+let toast_timer = -1;
 
-// core.events is a global event handler used for dispatching
-// events from any point in the system, to any other point.
 const events = new EventEmitter();
 events.setMaxListeners(666);
 
-// dropHandlers contains handlers for drag/drop support.
-// Each item is an object defining .ext, .prompt() and .process().
-const dropHandlers = [];
-
-
-// scrollPositions stores persistent scroll positions for listbox components
-// keyed by persistScrollKey (e.g., "models", "textures", etc.)
-const scrollPositions = {};
+const drop_handlers = [];
+const scroll_positions = {};
 
 const makeNewView = () => {
 	return {
-		installType: 0, // Active install type (MPQ or CASC).
-		isBusy: 0, // To prevent race-conditions with multiple tasks, we adjust isBusy to indicate blocking states.
-		isDev: !BUILD_RELEASE, // True if in development environment.
-		isLoading: false, // Controls whether the loading overlay is visible.
-		loadingProgress: '', // Sets the progress text for the loading screen.
-		loadingTitle: '', // Sets the title text for the loading screen.
-		loadPct: -1, // Controls active loading bar percentage.
-		toast: null, // Controls the currently active toast bar.
-		cdnRegions: [], // CDN region data.
-		selectedCDNRegion: null, // Active CDN region.
-		lockCDNRegion: false, // If true, do not programmatically alter the selected CDN region.
-		config: {}, // Will contain default/user-set configuration. Use config module to operate.
-		configEdit: {}, // Temporary configuration clone used during user configuration editing.
-		constants: constants, // Application constants including expansion definitions.
-		availableLocalBuilds: null, // Array containing local builds to display during source select.
-		availableRemoteBuilds: null, // Array containing remote builds to display during source select.
-		sourceSelectShowBuildSelect: false, // Controls whether build select is shown in source select module.
-		casc: null, // Active CASC instance.
-		cacheSize: 0, // Active size of the user cache.
-		userInputTactKey: '', // Value of manual tact key field.
-		userInputTactKeyName: '', // Value of manual tact key name field.
-		userInputFilterTextures: '', // Value of the 'filter' field for textures.
-		userInputFilterSounds: '', // Value of the 'filter' field for sounds/music.
-		userInputFilterVideos: '', // Value of the 'filter' field for video files.
-		userInputFilterText: '', // Value of the 'filter' field for text files.
-		userInputFilterFonts: '', // Value of the 'filter' field for font files.
-		userInputFilterModels: '', // Value of the 'filter' field for models.
-		userInputFilterMaps: '', // Value of the 'filter' field for maps.
-		userInputFilterZones: '', // Value of the 'filter' field for zones.
-		userInputFilterItems: '', // Value of the 'filter' field of items.
-		userInputFilterItemSets: '', // Value of the 'filter' field of item sets.
-		userInputFilterDB2s: '', // Value of the 'filter' field of DBs.
-		userInputFilterDataTable: '', // Value of the 'filter' field for data table rows.
-		userInputFilterRaw: '', // Value of the 'filter' field for raw files.
-		userInputFilterLegacyModels: '', // Value of the 'filter' field for legacy models.
-		userInputFilterDecor: '', // Value of the 'filter' field for decor items.
-		userInputFilterCreatures: '', // Value of the 'filter' field for creatures.
-		activeModule: null, // Active module component instance.
-		modNavButtons: [], // Module-registered navigation buttons.
-		modContextMenuOptions: [], // Module-registered context menu options.
-		userInputFilterInstall: '', // Value of the 'filter' field for install files.
-		modelQuickFilters: ['m2', 'm3', 'wmo'], // Quick filter configuration for models tab.
-		legacyModelQuickFilters: ['m2', 'mdx', 'wmo'], // Quick filter configuration for legacy models tab.
-		audioQuickFilters: ['ogg', 'mp3', 'unk'], // Quick filter configuration for audio tab.
-		textQuickFilters: ['lua', 'xml', 'txt', 'sbt', 'wtf', 'htm', 'toc', 'xsd', 'srt'], // Quick filter configuration for text tab.
-		selectionTextures: [], // Current user selection of texture files.
-		selectionModels: [], // Current user selection of models.
-		selectionSounds: [], // Current user selection of sounds.
-		selectionVideos: [],  // Current user selection of videos.
-		selectionText: [], // Current user selection of text files.
-		selectionFonts: [], // Current user selection of font files.
-		selectionMaps: [], // Current user selection of maps.
-		selectionZones: [], // Current user selection of zones.
-		selectionItems: [], // Current user selection of items.
-		selectionItemSets: [], // Current user selection of item sets.
-		selectionDB2s: [], // Current user selection of DB2s.
-		selectionDataTable: [], // Current user selection of data table rows.
-		selectionRaw: [], // Current user selection of raw files.
-		selectionInstall: [], // Current user selection of install files.
-		selectionLegacyModels: [], // Current user selection of legacy models.
-		selectionDecor: [], // Current user selection of decor items.
-		selectionCreatures: [], // Current user selection of creatures.
-		installStringsView: false, // Whether to show strings view instead of manifest.
-		installStrings: [], // Extracted strings from binary file.
-		installStringsFileName: '', // Name of file strings were extracted from.
-		selectionInstallStrings: [], // Current user selection of strings.
-		userInputFilterInstallStrings: '', // Filter field for strings.
-		listfileTextures: [], // Filtered listfile for texture files.
-		listfileSounds: [], // Filtered listfile for sound files.
-		listfileVideos: [], // Filtered listfile for video files.
-		listfileText: [], // Filtered listfile for text files.
-		listfileFonts: [], // Filtered listfile for font files.
-		listfileModels: [], // Filtered listfile for M2/WMO models.
-		listfileItems: [], // Filtered item entries.
-		listfileItemSets: [], // Filtered item set entries.
-		itemViewerTypeMask: [], // Item type filter mask.
-		itemViewerQualityMask: [], // Item quality filter mask.
-		listfileRaw: [], // Full raw file listfile.
-		listfileInstall: [], // Filtered listfile for install files.
-		listfileLegacyModels: [], // Filtered listfile for legacy models from MPQ.
-		listfileDecor: [], // Filtered listfile for decor items.
-		listfileCreatures: [], // Filtered listfile for creatures.
-		decorCategoryMask: [], // Flat array of subcategory checkbox objects for watcher.
-		decorCategoryGroups: [], // Grouped category structure for template rendering.
-		dbdManifest: [], // DB2 entires from DBD manifest.
-		installTags: [], // Install manifest tags.
-		tableBrowserHeaders: [], // DB2 headers
-		tableBrowserRows: [], // DB2 rows
-		availableLocale: Locale, // Available CASC locale.
-		fileDropPrompt: null, // Prompt to display for file drag/drops.
-		whatsNewHTML: '', // HTML content for What's New section.
-		textViewerSelectedText: '', // Active text for the text viewer.
-		fontPreviewPlaceholder: '', // Placeholder text for font preview.
-		fontPreviewText: '', // User input text for font preview.
-		fontPreviewFontFamily: '', // CSS font family for font preview.
-		soundPlayerSeek: 0, // Current seek of the sound player.
-		soundPlayerState: false, // Playing state of the sound player.
-		soundPlayerTitle: 'No File Selected', // Name of the currently playing sound track.
-		soundPlayerDuration: 0, // Duration of the currently playing sound track.
-		videoPlayerState: false, // Playing state of the video player.
-		modelViewerContext: null, // 3D context for the model viewer.
-		modelViewerActiveType: 'none', // Type of model actively selected ('m2', 'wmo', 'none').
-		modelViewerGeosets: [], // Active M2 model geoset control.
-		modelViewerSkins: [], // Active M2 model skins.
-		modelViewerSkinsSelection: [], // Selected M2 model skins.
-		modelViewerAnims: [], // Available animations.
-		modelViewerAnimSelection: null, // Selected M2 model animation (single).
-		modelViewerAnimPaused: false, // Animation playback paused state.
-		modelViewerAnimFrame: 0, // Current animation frame.
-		modelViewerAnimFrameCount: 0, // Total frames in current animation.
-		modelViewerWMOGroups: [], // Active WMO model group control.
-		modelViewerWMOSets: [], // Active WMO doodad set control.
-		modelViewerAutoAdjust: true, // Automatic camera adjustment.
-		legacyModelViewerContext: null, // 3D context for the legacy model viewer.
-		legacyModelViewerActiveType: 'none', // Type of legacy model actively selected ('m2', 'mdx', 'wmo', 'none').
-		legacyModelViewerAnims: [], // Available legacy animations.
-		legacyModelViewerAnimSelection: null, // Selected legacy model animation.
-		legacyModelViewerAnimPaused: false, // Legacy animation playback paused state.
-		legacyModelViewerAnimFrame: 0, // Current legacy animation frame.
-		legacyModelViewerAnimFrameCount: 0, // Total frames in current legacy animation.
-		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
-		creatureViewerContext: null, // 3D context for the creature viewer.
-		creatureViewerActiveType: 'none', // Type of creature model actively selected ('m2', 'wmo', 'none').
-		creatureViewerGeosets: [], // Active creature M2 geoset control.
-		creatureViewerSkins: [], // Active creature M2 model skins.
-		creatureViewerSkinsSelection: [], // Selected creature M2 model skin.
-		creatureViewerWMOGroups: [], // Active creature WMO group control.
-		creatureViewerWMOSets: [], // Active creature WMO doodad set control.
-		creatureViewerAutoAdjust: true, // Automatic camera adjustment for creature viewer.
-		creatureViewerAnims: [], // Available creature animations.
-		creatureViewerAnimSelection: null, // Selected creature animation.
-		creatureViewerAnimPaused: false, // Creature animation playback paused state.
-		creatureViewerAnimFrame: 0, // Current creature animation frame.
-		creatureViewerAnimFrameCount: 0, // Total frames in current creature animation.
-		creatureViewerEquipment: [], // Active creature equipment toggle checklist.
-		creatureViewerUVLayers: [], // Available UV layers for the active creature model.
-		creatureTexturePreviewURL: '', // Active URL of the texture preview for creature viewer.
-		creatureTexturePreviewUVOverlay: '', // UV overlay data URL for creature texture preview.
-		creatureTexturePreviewWidth: 256, // Width of creature texture preview.
-		creatureTexturePreviewHeight: 256, // Height of creature texture preview.
-		creatureTexturePreviewName: '', // Name of the creature texture preview.
-		decorViewerContext: null, // 3D context for the decor viewer.
-		decorViewerActiveType: 'none', // Type of decor model actively selected ('m2', 'wmo', 'none').
-		decorViewerGeosets: [], // Active decor M2 geoset control.
-		decorViewerWMOGroups: [], // Active decor WMO group control.
-		decorViewerWMOSets: [], // Active decor WMO doodad set control.
-		decorViewerAutoAdjust: true, // Automatic camera adjustment for decor viewer.
-		decorViewerAnims: [], // Available decor animations.
-		decorViewerAnimSelection: null, // Selected decor animation.
-		decorViewerAnimPaused: false, // Decor animation playback paused state.
-		decorViewerAnimFrame: 0, // Current decor animation frame.
-		decorViewerAnimFrameCount: 0, // Total frames in current decor animation.
-		decorViewerUVLayers: [], // Available UV layers for the active decor model.
-		decorTexturePreviewURL: '', // Active URL of the texture preview for decor viewer.
-		decorTexturePreviewUVOverlay: '', // UV overlay data URL for decor texture preview.
-		decorTexturePreviewWidth: 256, // Width of decor texture preview.
-		decorTexturePreviewHeight: 256, // Height of decor texture preview.
-		decorTexturePreviewName: '', // Name of the decor texture preview.
-		legacyModelViewerSkins: [], // Available legacy M2 model skins.
-		legacyModelViewerSkinsSelection: [], // Selected legacy M2 model skin.
-		legacyModelTexturePreviewURL: '', // Active URL of the texture preview for legacy model viewer.
-		modelViewerRotationSpeed: 0, // Model rotation speed (0 = no rotation).
-		textureRibbonStack: [], // Texture preview stack for model viewer.
-		textureRibbonSlotCount: 0, // How many texture slots to render (dynamic).
-		textureRibbonPage: 0, // Active page of texture slots to render.
-		textureAtlasOverlayRegions: [], // Texture atlas render regions.
-		textureAtlasOverlayWidth: 0, // Width of the texture atlas overlay.
-		textureAtlasOverlayHeight: 0, // Height of the texture atlas overlay.
-		itemViewerTypeMask: [], // Active item type control.
-		modelTexturePreviewWidth: 256, // Active width of the texture preview on the model viewer.
-		modelTexturePreviewHeight: 256, // Active height of the texture preview on the model viewer.
-		modelTexturePreviewURL: '', // Active URL of the texture preview image on the model viewer.
-		modelTexturePreviewName: '', // Name of the texture preview image on the model viewer.
-		modelTexturePreviewUVOverlay: '', // UV overlay data URL for texture preview.
-		modelViewerUVLayers: [], // Available UV layers for the active model.
-		texturePreviewWidth: 256, // Active width of the texture preview.
-		texturePreviewHeight: 256, // Active height of the texture preview.
-		texturePreviewURL: '', // Active URL of the texture preview image.
-		texturePreviewInfo: '', // Text information for a displayed texture.
-		overrideModelList: [], // Override list of models.
-		overrideModelName: '', // Override model name.
-		overrideTextureList: [], // Override list of textures.
-		overrideTextureName: '', // Override texture name.
-		mapViewerMaps: [], // Available maps for the map viewer.
-		zoneViewerZones: [], // Available zones for the zone viewer.
-		zonePhases: [], // Available phases for the selected zone.
-		zonePhaseSelection: null, // Currently selected zone phase.
-		selectedZoneExpansionFilter: -1, // Currently selected zone expansion filter (-1 = show all)
-		mapViewerHasWorldModel: false, // Does selected map have a world model?
-		mapViewerIsWMOMinimap: false, // Is the map viewer showing a WMO minimap?
-		mapViewerTileLoader: null, // Tile loader for active map viewer map.
-		mapViewerSelectedMap: null, // Currently selected map.
+		installType: 0,
+		isBusy: 0,
+		isDev: true,
+		isLoading: false,
+		loadingProgress: '',
+		loadingTitle: '',
+		loadPct: -1,
+		toast: null,
+		cdnRegions: [],
+		selectedCDNRegion: null,
+		lockCDNRegion: false,
+		config: {},
+		configEdit: {},
+		constants: constants,
+		availableLocalBuilds: null,
+		availableRemoteBuilds: null,
+		sourceSelectShowBuildSelect: false,
+		casc: null,
+		cacheSize: 0,
+		userInputTactKey: '',
+		userInputTactKeyName: '',
+		userInputFilterTextures: '',
+		userInputFilterSounds: '',
+		userInputFilterVideos: '',
+		userInputFilterText: '',
+		userInputFilterFonts: '',
+		userInputFilterModels: '',
+		userInputFilterMaps: '',
+		userInputFilterZones: '',
+		userInputFilterItems: '',
+		userInputFilterItemSets: '',
+		userInputFilterDB2s: '',
+		userInputFilterDataTable: '',
+		userInputFilterRaw: '',
+		userInputFilterLegacyModels: '',
+		userInputFilterDecor: '',
+		userInputFilterCreatures: '',
+		activeModule: null,
+		modNavButtons: [],
+		modContextMenuOptions: [],
+		userInputFilterInstall: '',
+		modelQuickFilters: ['m2', 'm3', 'wmo'],
+		legacyModelQuickFilters: ['m2', 'mdx', 'wmo'],
+		audioQuickFilters: ['ogg', 'mp3', 'unk'],
+		textQuickFilters: ['lua', 'xml', 'txt', 'sbt', 'wtf', 'htm', 'toc', 'xsd', 'srt'],
+		selectionTextures: [],
+		selectionModels: [],
+		selectionSounds: [],
+		selectionVideos: [],
+		selectionText: [],
+		selectionFonts: [],
+		selectionMaps: [],
+		selectionZones: [],
+		selectionItems: [],
+		selectionItemSets: [],
+		selectionDB2s: [],
+		selectionDataTable: [],
+		selectionRaw: [],
+		selectionInstall: [],
+		selectionLegacyModels: [],
+		selectionDecor: [],
+		selectionCreatures: [],
+		installStringsView: false,
+		installStrings: [],
+		installStringsFileName: '',
+		selectionInstallStrings: [],
+		userInputFilterInstallStrings: '',
+		listfileTextures: [],
+		listfileSounds: [],
+		listfileVideos: [],
+		listfileText: [],
+		listfileFonts: [],
+		listfileModels: [],
+		listfileItems: [],
+		listfileItemSets: [],
+		itemViewerTypeMask: [],
+		itemViewerQualityMask: [],
+		listfileRaw: [],
+		listfileInstall: [],
+		listfileLegacyModels: [],
+		listfileDecor: [],
+		listfileCreatures: [],
+		decorCategoryMask: [],
+		decorCategoryGroups: [],
+		dbdManifest: [],
+		installTags: [],
+		tableBrowserHeaders: [],
+		tableBrowserRows: [],
+		availableLocale: Locale,
+		fileDropPrompt: null,
+		whatsNewHTML: '',
+		textViewerSelectedText: '',
+		fontPreviewPlaceholder: '',
+		fontPreviewText: '',
+		fontPreviewFontFamily: '',
+		soundPlayerSeek: 0,
+		soundPlayerState: false,
+		soundPlayerTitle: 'No File Selected',
+		soundPlayerDuration: 0,
+		videoPlayerState: false,
+		modelViewerContext: null,
+		modelViewerActiveType: 'none',
+		modelViewerGeosets: [],
+		modelViewerSkins: [],
+		modelViewerSkinsSelection: [],
+		modelViewerAnims: [],
+		modelViewerAnimSelection: null,
+		modelViewerAnimPaused: false,
+		modelViewerAnimFrame: 0,
+		modelViewerAnimFrameCount: 0,
+		modelViewerWMOGroups: [],
+		modelViewerWMOSets: [],
+		modelViewerAutoAdjust: true,
+		legacyModelViewerContext: null,
+		legacyModelViewerActiveType: 'none',
+		legacyModelViewerAnims: [],
+		legacyModelViewerAnimSelection: null,
+		legacyModelViewerAnimPaused: false,
+		legacyModelViewerAnimFrame: 0,
+		legacyModelViewerAnimFrameCount: 0,
+		legacyModelViewerAutoAdjust: true,
+		creatureViewerContext: null,
+		creatureViewerActiveType: 'none',
+		creatureViewerGeosets: [],
+		creatureViewerSkins: [],
+		creatureViewerSkinsSelection: [],
+		creatureViewerWMOGroups: [],
+		creatureViewerWMOSets: [],
+		creatureViewerAutoAdjust: true,
+		creatureViewerAnims: [],
+		creatureViewerAnimSelection: null,
+		creatureViewerAnimPaused: false,
+		creatureViewerAnimFrame: 0,
+		creatureViewerAnimFrameCount: 0,
+		creatureViewerEquipment: [],
+		creatureViewerUVLayers: [],
+		creatureTexturePreviewURL: '',
+		creatureTexturePreviewUVOverlay: '',
+		creatureTexturePreviewWidth: 256,
+		creatureTexturePreviewHeight: 256,
+		creatureTexturePreviewName: '',
+		decorViewerContext: null,
+		decorViewerActiveType: 'none',
+		decorViewerGeosets: [],
+		decorViewerWMOGroups: [],
+		decorViewerWMOSets: [],
+		decorViewerAutoAdjust: true,
+		decorViewerAnims: [],
+		decorViewerAnimSelection: null,
+		decorViewerAnimPaused: false,
+		decorViewerAnimFrame: 0,
+		decorViewerAnimFrameCount: 0,
+		decorViewerUVLayers: [],
+		decorTexturePreviewURL: '',
+		decorTexturePreviewUVOverlay: '',
+		decorTexturePreviewWidth: 256,
+		decorTexturePreviewHeight: 256,
+		decorTexturePreviewName: '',
+		legacyModelViewerSkins: [],
+		legacyModelViewerSkinsSelection: [],
+		legacyModelTexturePreviewURL: '',
+		modelViewerRotationSpeed: 0,
+		textureRibbonStack: [],
+		textureRibbonSlotCount: 0,
+		textureRibbonPage: 0,
+		textureAtlasOverlayRegions: [],
+		textureAtlasOverlayWidth: 0,
+		textureAtlasOverlayHeight: 0,
+		modelTexturePreviewWidth: 256,
+		modelTexturePreviewHeight: 256,
+		modelTexturePreviewURL: '',
+		modelTexturePreviewName: '',
+		modelTexturePreviewUVOverlay: '',
+		modelViewerUVLayers: [],
+		texturePreviewWidth: 256,
+		texturePreviewHeight: 256,
+		texturePreviewURL: '',
+		texturePreviewInfo: '',
+		overrideModelList: [],
+		overrideModelName: '',
+		overrideTextureList: [],
+		overrideTextureName: '',
+		mapViewerMaps: [],
+		zoneViewerZones: [],
+		zonePhases: [],
+		zonePhaseSelection: null,
+		selectedZoneExpansionFilter: -1,
+		mapViewerHasWorldModel: false,
+		mapViewerIsWMOMinimap: false,
+		mapViewerTileLoader: null,
+		mapViewerSelectedMap: null,
 		mapViewerSelectedDir: null,
-		mapViewerChunkMask: null, // Map viewer chunk mask.
-		mapViewerGridSize: null, // Map viewer grid size (null = default 64).
-		mapViewerSelection: [], // Map viewer tile selection
-		selectedExpansionFilter: -1, // Currently selected expansion filter (-1 = show all)
-		chrModelViewerContext: null, // 3D context for the character-specific model viewer.
-		chrModelViewerAnims: [], // Available character animations.
-		chrModelViewerAnimSelection: null, // Selected character animation.
-		chrModelViewerAnimPaused: false, // Character animation playback paused state.
-		chrModelViewerAnimFrame: 0, // Current character animation frame.
-		chrModelViewerAnimFrameCount: 0, // Total frames in current character animation.
-		chrCustRaces: [], // Available character races to select from
-		chrCustRaceSelection: [], // Current race ID selected
-		chrCustModels: [], // Available character customization models.
-		chrCustModelSelection: [], // Selected character customization model.
-		chrCustOptions: [], // Available character customization options.
-		chrCustOptionSelection: [], // Selected character customization option.
-		chrCustChoices: [], // Available character customization choices.
-		chrCustChoiceSelection: [], // Selected character customization choice.
-		chrCustActiveChoices: [], // Active character customization choices.
-		chrCustGeosets: [], // Character customization model geoset control.
-		chrCustTab: 'models', // Active tab for character customization.
-		chrCustRightTab: 'geosets', // Active right tab for character customization.
+		mapViewerChunkMask: null,
+		mapViewerGridSize: null,
+		mapViewerSelection: [],
+		selectedExpansionFilter: -1,
+		chrModelViewerContext: null,
+		chrModelViewerAnims: [],
+		chrModelViewerAnimSelection: null,
+		chrModelViewerAnimPaused: false,
+		chrModelViewerAnimFrame: 0,
+		chrModelViewerAnimFrameCount: 0,
+		chrCustRaces: [],
+		chrCustRaceSelection: [],
+		chrCustModels: [],
+		chrCustModelSelection: [],
+		chrCustOptions: [],
+		chrCustOptionSelection: [],
+		chrCustChoices: [],
+		chrCustChoiceSelection: [],
+		chrCustActiveChoices: [],
+		chrCustGeosets: [],
+		chrCustTab: 'models',
+		chrCustRightTab: 'geosets',
 		chrModelLoading: false,
-		chrShowGeosetControl: false, // Controls whether geoset control view is shown instead of customization.
-		chrExportMenu: 'export', // Active menu in character export section ('export', 'textures', 'settings').
-		colorPickerOpenFor: null, // Currently open color picker option ID.
-		colorPickerPosition: { x: 0, y: 0 }, // Color picker popup position.
-		chrImportChrName: '', // Character import, character name input.
+		chrShowGeosetControl: false,
+		chrExportMenu: 'export',
+		colorPickerOpenFor: null,
+		colorPickerPosition: { x: 0, y: 0 },
+		chrImportChrName: '',
 		chrImportRegions: [],
 		chrImportSelectedRegion: '',
 		chrImportRealms: [],
 		chrImportSelectedRealm: null,
-		chrImportLoadVisage: false, // Whether or not to load the visage model instead (Dracthyr/Worgen)
-		chrImportClassicRealms: false, // Whether to use classic realms instead of retail
-		chrImportChrModelID: 0, // Temporary storage for target character model ID.
-		chrImportTargetModelID: 0, // Target model ID for import choices validation.
-		chrImportChoices: [], // Temporary storage for character import choices.
-		chrImportWowheadURL: '', // Wowhead dressing room url
-		characterImportMode: 'none', // Controls visibility of character import interface ('none', 'BNET', 'WHEAD')
-		chrEquippedItems: {}, // Equipped items by slot name (e.g., { Head: item, Chest: item })
+		chrImportLoadVisage: false,
+		chrImportClassicRealms: false,
+		chrImportChrModelID: 0,
+		chrImportTargetModelID: 0,
+		chrImportChoices: [],
+		chrImportWowheadURL: '',
+		characterImportMode: 'none',
+		chrEquippedItems: {},
 		chrGuildTabardConfig: { background: 0, border_style: 0, border_color: 0, emblem_design: 0, emblem_color: 0 },
-		chrEquipmentSlotContext: null, // Context menu node for equipment slot right-click
-		chrSavedCharactersScreen: false, // Controls visibility of saved characters screen
-		chrSavedCharacters: [], // List of saved characters loaded from disk
-		chrSaveCharacterPrompt: false, // Controls visibility of character name prompt
-		chrSaveCharacterName: '', // Character name input for save prompt
-		chrPendingThumbnail: null, // Pending thumbnail data for save operation
-		realmList: {}, // Contains all regions and realms once realmlist.load() has been called.
-		exportCancelled: false, // Export cancellation state.
+		chrEquipmentSlotContext: null,
+		chrSavedCharactersScreen: false,
+		chrSavedCharacters: [],
+		chrSaveCharacterPrompt: false,
+		chrSaveCharacterName: '',
+		chrPendingThumbnail: null,
+		realmList: {},
+		exportCancelled: false,
 		isXmas: (new Date().getMonth() === 11),
-		chrCustBakedNPCTexture: null, // BLP texture for baked NPC skins (from textures tab)
+		chrCustBakedNPCTexture: null,
 		regexTooltip: '.* - Matches anything\n(a|b) - Matches either a or b.\n[a-f] - Matches characters between a-f.\n[^a-d] - Matches characters that are not between a-d.\n\\s - Matches whitespace characters.\n\\d - Matches any digit.\na? - Matches zero or one of a.\na* - Matches zero or more of a.\na+ - Matches one or more of a.\na{3} - Matches exactly 3 of a.',
 		contextMenus: {
-			nodeTextureRibbon: null, // Context menu node for the texture ribbon.
-			nodeItem: null, // Context menu node for the items listfile.
-			nodeDataTable: null, // Context menu node for the data table.
-			nodeListbox: null, // Context menu node for generic listbox (textures, models, audio, etc.).
-			nodeMap: null, // Context menu node for maps listbox.
-			nodeZone: null, // Context menu node for zones listbox.
-			stateNavExtra: false, // State controller for the extra nav menu.
-			stateModelExport: false, // State controller for the model export menu.
-			stateCDNRegion: false, // State controller for the CDN region selection menu.
+			nodeTextureRibbon: null,
+			nodeItem: null,
+			nodeDataTable: null,
+			nodeListbox: null,
+			nodeMap: null,
+			nodeZone: null,
+			stateNavExtra: false,
+			stateModelExport: false,
+			stateCDNRegion: false,
 		},
 		menuButtonTextures: [
 			{ label: 'Export as PNG', value: 'PNG' },
@@ -379,38 +362,18 @@ const makeNewView = () => {
 		helpSelectedArticle: null,
 		helpSearchQuery: ''
 	};
-}
-
-// The `view` object is used as a reference to the data for the main Vue instance.
-const view = null;
-
-/**
- * Open a stream to the last export file.
- * @returns FileWriter|null
- */
-const openLastExportStream = () => {
-	return new FileWriter(constants.LAST_EXPORT, 'utf8');
 };
 
-/**
- * Creates a disposable lock that increments isBusy on creation and
- * decrements on disposal. Use with the `using` keyword.
- * @returns {Disposable}
- */
+let view = null;
+
 const create_busy_lock = () => {
 	core.view.isBusy++;
 	return { [Symbol.dispose]: () => core.view.isBusy-- };
 };
 
-// internal progress state for loading screen api
 let loading_progress_segments = 1;
 let loading_progress_value = 0;
 
-/**
- * show loading screen with specified number of progress steps.
- * @param {number} segments
- * @param {string} title
- */
 const showLoadingScreen = (segments = 1, title = 'Loading, please wait...') => {
 	loading_progress_segments = segments;
 	loading_progress_value = 0;
@@ -420,10 +383,6 @@ const showLoadingScreen = (segments = 1, title = 'Loading, please wait...') => {
 	core.view.isBusy++;
 };
 
-/**
- * advance loading screen progress by one step.
- * @param {string} text
- */
 const progressLoadingScreen = async (text) => {
 	loading_progress_value++;
 	core.view.loadPct = Math.min(loading_progress_value / loading_progress_segments, 1);
@@ -431,115 +390,73 @@ const progressLoadingScreen = async (text) => {
 	if (text)
 		core.view.loadingProgress = text;
 
-	await generics.redraw();
+	await redraw();
 };
 
-/**
- * hide loading screen.
- */
 const hideLoadingScreen = () => {
 	core.view.loadPct = -1;
 	core.view.isLoading = false;
 	core.view.isBusy--;
 };
 
-/**
- * Hide the currently active toast prompt.
- * @param {boolean} userCancel
- */
-const hideToast = (userCancel = false) => {
-	// Cancel outstanding toast expiry timer.
-	if (toastTimer > -1) {
-		clearTimeout(toastTimer);
-		toastTimer = -1;
+const hideToast = (user_cancel = false) => {
+	if (toast_timer > -1) {
+		clearTimeout(toast_timer);
+		toast_timer = -1;
 	}
 
 	core.view.toast = null;
 
-	if (userCancel)
+	if (user_cancel)
 		events.emit('toast-cancelled');
 };
 
-/**
- * Display a toast message.
- * @param {string} toastType 'error', 'info', 'success', 'progress'
- * @param {string} message 
- * @param {object} options
- * @param {number} ttl Time in milliseconds before removing the toast.
- * @param {boolean} closable If true, toast can manually be closed.
- */
-const setToast = (toastType, message, options = null, ttl = 10000, closable = true) => {
-	core.view.toast = { type: toastType, message, options, closable };
+const setToast = (toast_type, message, options = null, ttl = 10000, closable = true) => {
+	core.view.toast = { type: toast_type, message, options, closable };
+	clearTimeout(toast_timer);
 
-	// Remove any outstanding toast timer we may have.
-	clearTimeout(toastTimer);
-
-	// Create a timer to remove this toast.
 	if (ttl > -1)
-		toastTimer = setTimeout(hideToast, ttl);
-}
+		toast_timer = setTimeout(hideToast, ttl);
+};
 
-/**
- * Open user-configured export directory with OS default.
- */
 const openExportDirectory = () => {
-	platform.open_path(core.view.config.exportDirectory)
+	platform.open_path(core.view.config.exportDirectory);
 };
 
-/**
- * Register a handler for file drops.
- * @param {object} handler 
- */
 const registerDropHandler = (handler) => {
-	// Ensure the extensions are all lower-case.
 	handler.ext = handler.ext.map(e => e.toLowerCase());
-	dropHandlers.push(handler);
+	drop_handlers.push(handler);
 };
 
-/**
- * Get a drop handler for the given file path.
- * @param {string} file 
- */
 const getDropHandler = (file) => {
 	file = file.toLowerCase();
 
-	for (const handler of dropHandlers) {
+	for (const handler of drop_handlers) {
 		for (const ext of handler.ext) {
 			if (file.endsWith(ext))
 				return handler;
 		}
 	}
-	
+
 	return null;
 };
 
-
-/**
- * Save scroll position for a listbox with the given key.
- * @param {string} key - Unique identifier for the listbox
- * @param {number} scrollRel - Relative scroll position (0-1)
- * @param {number} scrollIndex - Current scroll index
- */
-const saveScrollPosition = (key, scrollRel, scrollIndex) => {
+const saveScrollPosition = (key, scroll_rel, scroll_index) => {
 	if (!key)
 		return;
-	
-	scrollPositions[key] = {
-		scrollRel: scrollRel || 0,
-		scrollIndex: scrollIndex || 0,
+
+	scroll_positions[key] = {
+		scrollRel: scroll_rel || 0,
+		scrollIndex: scroll_index || 0,
 		timestamp: Date.now()
 	};
 };
 
-/**
- * Get saved scroll position for a listbox with the given key.
- * @param {string} key - Unique identifier for the listbox
- * @returns {object|null} - Saved scroll state or null if not found
- */
 const getScrollPosition = (key) => {
-	if (!key || !scrollPositions[key]) return null;
-	
-	return scrollPositions[key];
+	if (!key || !scroll_positions[key])
+		return null;
+
+	return scroll_positions[key];
 };
 
 const core = {
@@ -555,9 +472,8 @@ const core = {
 	openExportDirectory,
 	registerDropHandler,
 	getDropHandler,
-	openLastExportStream,
 	saveScrollPosition,
 	getScrollPosition
 };
 
-module.exports = core;
+export default core;

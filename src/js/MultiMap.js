@@ -29,4 +29,4 @@ class MultiMap extends Map {
 	}
 }
 
-module.exports = MultiMap;
+export default MultiMap;

@@ -3,16 +3,16 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
+import constants from '../../constants.js';
+import BufferWrapper from '../../buffer.js';
+import Texture from '../Texture.js';
+import M2Generics from './M2Generics.js';
+import core from '../../core.js';
+import AnimMapper from '../AnimMapper.js';
+import log from '../../log.js';
 
-const Texture = require('../Texture');
-const Skin = require('../Skin');
-const constants = require('../../constants');
-const M2Generics = require('./M2Generics');
-const ANIMLoader = require('./ANIMLoader');
-const core = require('../../core');
-const BufferWrapper = require('../../buffer');
-const AnimMapper = require('../AnimMapper');
-const log = require('../../log');
+
+
 
 const CHUNK_SFID = 0x44494653;
 const CHUNK_TXID = 0x44495854;
@@ -886,4 +886,4 @@ class M2Loader {
 	}
 }
 
-module.exports = M2Loader;
+export default M2Loader;

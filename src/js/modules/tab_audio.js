@@ -1,16 +1,11 @@
-const path = require('path');
-const util = require('util');
-const log = require('../log');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const db2 = require('../casc/db2');
-const audioHelper = require('../ui/audio-helper');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
-
-const { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } = audioHelper;
+import log from '../log.js';
+import generics from '../generics.js';
+import { listfile } from '../../views/main/rpc.js';
+import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import { db as db2 } from '../../views/main/rpc.js';
+import { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } from '../ui/audio-helper.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
 
 let selected_file = null;
 let selected_file_data_id = null;
@@ -49,7 +44,7 @@ const load_track = async (core) => {
 		return false;
 
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', selected_file), null, -1, false);
+	core.setToast('progress', `Loading ${selected_file}, please wait...`, null, -1, false);
 	log.write('Previewing sound file %s', selected_file);
 
 	try {
@@ -72,8 +67,8 @@ const load_track = async (core) => {
 		core.hideToast();
 		return true;
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The audio file %s is encrypted with an unknown key (%s).', selected_file, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The audio file ${selected_file} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt audio file %s (%s)', selected_file, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview audio ' + selected_file, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -152,10 +147,12 @@ const export_sounds = async (core) => {
 		if (!core.view.config.exportNamedFiles) {
 			const file_data_id = listfile.getByFilename(file_name);
 			if (file_data_id) {
-				const ext = path.extname(file_name);
-				const dir = path.dirname(file_name);
+				const dot_index = file_name.lastIndexOf('.');
+				const ext = dot_index !== -1 ? file_name.substring(dot_index) : '';
+				const slash_index = file_name.lastIndexOf('/');
+				const dir = slash_index !== -1 ? file_name.substring(0, slash_index) : '.';
 				const file_data_id_name = file_data_id + ext;
-				export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+				export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 			}
 		}
 
@@ -179,7 +176,7 @@ const export_sounds = async (core) => {
 	helper.finish();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Audio', 'music.svg', InstallType.CASC);
 	},
@@ -315,7 +312,8 @@ module.exports = {
 		this.$core.view.$watch('selectionSounds', async selection => {
 			const entry = listfile.parseFileEntry(selection[0]);
 			if (!this.$core.view.isBusy && entry.file_path && selected_file !== entry.file_path) {
-				this.$core.view.soundPlayerTitle = path.basename(entry.file_path);
+				const base_name = entry.file_path.substring(entry.file_path.lastIndexOf('/') + 1) || entry.file_path.substring(entry.file_path.lastIndexOf('\\') + 1) || entry.file_path;
+				this.$core.view.soundPlayerTitle = base_name;
 
 				selected_file = entry.file_path;
 				selected_file_data_id = entry.file_data_id ?? null;

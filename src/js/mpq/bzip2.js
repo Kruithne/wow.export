@@ -838,6 +838,4 @@ function bzip2_decompress(compressed_data, expected_length) {
 	return result;
 }
 
-module.exports = {
-	bzip2_decompress
-};
+export { bzip2_decompress };

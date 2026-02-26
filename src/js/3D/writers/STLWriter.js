@@ -3,10 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const path = require('path');
-const constants = require('../../constants');
-const generics = require('../../generics');
-const BufferWrapper = require('../../buffer');
+import BufferWrapper from '../../buffer.js';
+import generics from '../../generics.js';
+
+
 
 class STLWriter {
 	/**
@@ -132,7 +132,7 @@ class STLWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await generics.createDirectory(this.out.substring(0, this.out.lastIndexOf('/')));
 
 		// count total triangles
 		let triangle_count = 0;
@@ -145,7 +145,7 @@ class STLWriter {
 
 		// write header (80 bytes)
 		const header = 'Exported using wow.export v' + constants.VERSION;
-		const header_bytes = Buffer.from(header, 'utf8');
+		const header_bytes = new TextEncoder().encode(header);
 		buffer.writeBuffer(header_bytes);
 
 		// pad remaining header with zeros
@@ -249,4 +249,4 @@ class STLWriter {
 	}
 }
 
-module.exports = STLWriter;
+export default STLWriter;

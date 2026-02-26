@@ -3,9 +3,10 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const generics = require('../../generics');
-const path = require('path');
-const FileWriter = require('../../file-writer');
+import FileWriter from '../../file-writer.js';
+import generics from '../../generics.js';
+
+
 
 class CSVWriter {
 	/**
@@ -63,7 +64,7 @@ class CSVWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await generics.createDirectory(this.out.substring(0, this.out.lastIndexOf('/')));
 		const writer = new FileWriter(this.out);
 
 		// Write header.
@@ -83,4 +84,4 @@ class CSVWriter {
 	}
 }
 
-module.exports = CSVWriter;
+export default CSVWriter;

@@ -4,7 +4,9 @@
 	License: MIT
  */
 
-const constants = require('../../constants');
+
+
+import constants from '../../constants.js';
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const MAP_SIZE_SQ = constants.GAME.MAP_SIZE_SQ;
@@ -103,4 +105,4 @@ const WDTChunkHandlers = {
 	}
 };
 
-module.exports = WDTLoader;
+export default WDTLoader;

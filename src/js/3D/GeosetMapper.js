@@ -83,4 +83,4 @@ const map = async (geosets) => {
 	}
 };
 
-module.exports = { map, getGeosetName };
+export { map, getGeosetName };

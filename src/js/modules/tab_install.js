@@ -1,9 +1,10 @@
-const log = require('../log');
-const platform = require('../platform');
-const path = require('path');
-const ExportHelper = require('../casc/export-helper');
-const generics = require('../generics');
-const listfile = require('../casc/listfile');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import generics from '../generics.js';
+import { listfile } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+
+const ExportHelper = exporter;
 
 let manifest = null;
 
@@ -130,15 +131,22 @@ const export_strings = async (core) => {
 		return;
 	}
 
-	const base_name = path.basename(core.view.installStringsFileName, path.extname(core.view.installStringsFileName));
+	const full_name = core.view.installStringsFileName;
+	const slash_idx = full_name.lastIndexOf('/');
+	const name_part = slash_idx !== -1 ? full_name.substring(slash_idx + 1) : full_name;
+	const dot_idx = name_part.lastIndexOf('.');
+	const base_name = dot_idx !== -1 ? name_part.substring(0, dot_idx) : name_part;
 	const export_path = ExportHelper.getExportPath(base_name + '_strings.txt');
 
 	try {
-		await generics.createDirectory(path.dirname(export_path));
+		const dir_slash_idx = export_path.lastIndexOf('/');
+		const dir_path_part = dir_slash_idx !== -1 ? export_path.substring(0, dir_slash_idx) : '.';
+		await generics.createDirectory(dir_path_part);
 		await generics.writeFile(export_path, strings.join('\n'), 'utf8');
 
-		const dir_path = path.dirname(export_path);
-		core.setToast('success', 'Exported ' + strings.length + ' strings.', { 'View in Explorer': () => platform.open_path(dir_path) });
+		const export_dir_idx = export_path.lastIndexOf('/');
+		const export_dir = export_dir_idx !== -1 ? export_path.substring(0, export_dir_idx) : '.';
+		core.setToast('success', 'Exported ' + strings.length + ' strings.', { 'View in Explorer': () => platform.open_path(export_dir) });
 		log.write('Exported %d strings to %s', strings.length, export_path);
 	} catch (e) {
 		core.setToast('error', 'Failed to export strings: ' + e.message);
@@ -154,7 +162,7 @@ const back_to_manifest = (core) => {
 	core.view.userInputFilterInstallStrings = '';
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('Browse Install Manifest', 'clipboard-list.svg');
 	},

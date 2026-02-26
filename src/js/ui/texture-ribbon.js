@@ -3,11 +3,22 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const path = require('path');
-const core = require('../core');
-const listfile = require('../casc/listfile');
+import core from '../core.js';
+import { listfile } from '../../views/main/rpc.js';
 
 let _syncID = 0;
+
+/**
+ * Extract the base name from a file path, without extension.
+ * @param {string} file_path
+ * @returns {string}
+ */
+const get_display_name = (file_path) => {
+	const last_slash = file_path.lastIndexOf('/');
+	const base = last_slash === -1 ? file_path : file_path.substring(last_slash + 1);
+	const dot = base.lastIndexOf('.');
+	return dot === -1 ? base : base.substring(0, dot);
+};
 
 /**
  * Invoked when the texture ribbon element resizes.
@@ -50,7 +61,7 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 
 		const fileName = listfile.getByID(fileDataID) ?? fileDataID.toString();
 		slot.fileName = fileName;
-		slot.displayName = path.basename(fileName, path.extname(fileName));
+		slot.displayName = get_display_name(fileName);
 	}
 };
 
@@ -68,14 +79,14 @@ const setSlotFileLegacy = (slotIndex, filePath, syncID) => {
 	if (slot) {
 		slot.fileDataID = 0;
 		slot.fileName = filePath;
-		slot.displayName = path.basename(filePath, path.extname(filePath));
+		slot.displayName = get_display_name(filePath);
 	}
 };
 
 /**
  * Set the render source for a given ribbon slot.
- * @param {number} slotIndex 
- * @param {string} src 
+ * @param {number} slotIndex
+ * @param {string} src
  * @param {number} syncID
  */
 const setSlotSrc = (slotIndex, src, syncID) => {
@@ -100,7 +111,7 @@ const addSlot = () => {
 	return slotIndex;
 };
 
-module.exports = {
+export default {
 	reset,
 	setSlotFile,
 	setSlotFileLegacy,

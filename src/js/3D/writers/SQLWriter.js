@@ -3,10 +3,12 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const generics = require('../../generics');
-const path = require('path');
-const FileWriter = require('../../file-writer');
-const FieldType = require('../../db/FieldType');
+import FileWriter from '../../file-writer.js';
+import generics from '../../generics.js';
+import FieldType from '../../db/FieldType.js';
+
+
+
 
 const BATCH_SIZE = 100;
 
@@ -214,7 +216,7 @@ class SQLWriter {
 		if (!overwrite && await generics.fileExists(this.out))
 			return;
 
-		await generics.createDirectory(path.dirname(this.out));
+		await generics.createDirectory(this.out.substring(0, this.out.lastIndexOf('/')));
 		const writer = new FileWriter(this.out);
 
 		if (this.include_ddl && this.schema) {
@@ -230,4 +232,4 @@ class SQLWriter {
 	}
 }
 
-module.exports = SQLWriter;
+export default SQLWriter;

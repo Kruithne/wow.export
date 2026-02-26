@@ -4,7 +4,7 @@
 	License: MIT
 */
 
-const { BitStream } = require('./bitstream');
+import BitStream from './bitstream.js';
 
 // ref: https://en.wikipedia.org/wiki/Huffman_coding
 class LinkedNode {
@@ -337,4 +337,4 @@ function huffman_decomp(compressedData) {
 	return new Uint8Array(result);
 }
 
-module.exports = { huffman_decomp };
+export { huffman_decomp };

@@ -214,4 +214,4 @@ function read_caa_bb(data) {
 	return { min: data.readFloatLE(3), max: data.readFloatLE(3) };
 }
 
-module.exports = { M2Track, read_m2_array_array, read_m2_track, read_caa_bb, patch_track_animation }
+export { M2Track, read_m2_array_array, read_m2_track, read_caa_bb, patch_track_animation };

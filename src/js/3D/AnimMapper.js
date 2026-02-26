@@ -1796,4 +1796,4 @@ const get_anim_name = (anim_id) => {
 	return 'UnknownAnim_' + anim_id;
 }
 
-module.exports = { get_anim_name };
+export { get_anim_name };

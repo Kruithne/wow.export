@@ -3,21 +3,24 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import generics from '../../generics.js';
+import JSONWriter from '../writers/JSONWriter.js';
+import MTLWriter from '../writers/MTLWriter.js';
+import BLPImage from '../../casc/blp.js';
+import core from '../../core.js';
+import WMOLegacyLoader from '../loaders/WMOLegacyLoader.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import STLWriter from '../writers/STLWriter.js';
+import BLPImage from '../../casc/blp.js';
+import BufferWrapper from '../../buffer.js';
+import log from '../../log.js';
 
-const core = require('../../core');
-const log = require('../../log');
-const path = require('path');
-const generics = require('../../generics');
 
-const WMOLegacyLoader = require('../loaders/WMOLegacyLoader');
-const ExportHelper = require('../../casc/export-helper');
-const JSONWriter = require('../writers/JSONWriter');
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const STLWriter = require('../writers/STLWriter');
-const CSVWriter = require('../writers/CSVWriter');
-const BLPFile = require('../../casc/blp');
-const BufferWrapper = require('../../buffer');
+
+
+
+
+
 
 const doodadCache = new Set();
 
@@ -47,7 +50,7 @@ class WMOLegacyExporter {
 	async exportTextures(out, mtl = null, helper) {
 		const config = core.view.config;
 		const mpq = this.mpq;
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		const textureMap = new Map();
 		const materialMap = new Map();
@@ -87,22 +90,22 @@ class WMOLegacyExporter {
 						continue;
 					}
 
-					let texFile = path.basename(texturePath);
+					let texFile = texturePath.split('/').pop();
 					texFile = ExportHelper.replaceExtension(texFile, '.png');
 
 					let texPath;
 					// legacy mpq exports always use flat textures alongside model for compatibility
-					texPath = path.join(outDir, texFile);
+					texPath = outDir + '/' + texFile;
 
-					let matName = 'mat_' + path.basename(texturePath.toLowerCase(), '.blp');
+					let matName = 'mat_' + texturePath.toLowerCase(.split('/').pop(), '.blp');
 					if (config.removePathSpaces)
 						matName = matName.replace(/\s/g, '');
 
 					const fileExisted = await generics.fileExists(texPath);
 
 					if (config.overwriteFiles || !fileExisted) {
-						const buf = new BufferWrapper(Buffer.from(textureData));
-						const blp = new BLPFile(buf);
+						const buf = new BufferWrapper(textureData);
+						const blp = new BLPImage(buf);
 						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 
 						log.write('Exported legacy WMO texture: %s', texPath);
@@ -137,7 +140,7 @@ class WMOLegacyExporter {
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
 
-		const wmoName = path.basename(out, '.obj');
+		const wmoName = out.split('/').pop().replace('.obj', '');
 		obj.setName(wmoName);
 
 		log.write('Exporting legacy WMO model %s as OBJ: %s', wmoName, out);
@@ -146,7 +149,7 @@ class WMOLegacyExporter {
 		await this.wmo.load();
 
 		const wmo = this.wmo;
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		helper?.setCurrentTaskName?.(wmoName + ' textures');
 
@@ -290,8 +293,8 @@ class WMOLegacyExporter {
 						let objFileName = ExportHelper.replaceExtension(fileName, '.obj');
 
 						// prepend mpq prefix for consistent export paths
-						const prefixedObjFileName = this.mpqPrefix ? path.join(this.mpqPrefix, objFileName) : objFileName;
-						const prefixedFileName = this.mpqPrefix ? path.join(this.mpqPrefix, fileName) : fileName;
+						const prefixedObjFileName = this.mpqPrefix ? this.mpqPrefix + '/' + objFileName : objFileName;
+						const prefixedFileName = this.mpqPrefix ? this.mpqPrefix + '/' + fileName : fileName;
 
 						let m2Path;
 						if (config.enableSharedChildren)
@@ -302,8 +305,7 @@ class WMOLegacyExporter {
 						if (!doodadCache.has(fileName.toLowerCase())) {
 							const m2Data = mpq.getFile(fileName);
 							if (m2Data) {
-								const M2LegacyExporter = require('./M2LegacyExporter');
-								const buf = new BufferWrapper(Buffer.from(m2Data));
+								const buf = new BufferWrapper(m2Data);
 								const m2Export = new M2LegacyExporter(buf, prefixedFileName, mpq);
 								await m2Export.exportAsOBJ(m2Path, helper);
 
@@ -314,7 +316,7 @@ class WMOLegacyExporter {
 							}
 						}
 
-						let modelPath = path.relative(outDir, m2Path);
+						let modelPath = m2Path.replace(outDir, '');
 
 						if (useAbsolute === true)
 							modelPath = path.resolve(outDir, modelPath);
@@ -347,7 +349,7 @@ class WMOLegacyExporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(path.basename(mtl.out));
+			obj.setMaterialLibrary(mtl.out.split('/').pop());
 
 		await obj.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'OBJ', file: obj.out });
@@ -395,7 +397,7 @@ class WMOLegacyExporter {
 
 		const groupMask = this.groupMask;
 
-		const wmoName = path.basename(out, '.stl');
+		const wmoName = out.split('/').pop().replace('.stl', '');
 		stl.setName(wmoName);
 
 		log.write('Exporting legacy WMO model %s as STL: %s', wmoName, out);
@@ -478,7 +480,7 @@ class WMOLegacyExporter {
 	async exportRaw(out, helper, fileManifest) {
 		const config = core.view.config;
 		const mpq = this.mpq;
-		const outDir = path.dirname(out);
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		const manifestFile = ExportHelper.replaceExtension(out, '.manifest.json');
 		const manifest = new JSONWriter(manifestFile);
@@ -523,12 +525,12 @@ class WMOLegacyExporter {
 					if (config.enableSharedTextures)
 						texOut = ExportHelper.getExportPath(texturePath);
 					else
-						texOut = path.join(outDir, path.basename(texturePath));
+						texOut = outDir + '/' + texturePath.split('/'.pop());
 
-					const buf = new BufferWrapper(Buffer.from(textureData));
+					const buf = new BufferWrapper(textureData);
 					await buf.writeToFile(texOut);
 
-					texturesManifest.push({ file: path.relative(outDir, texOut), path: texturePath });
+					texturesManifest.push({ file: texOut.replace(outDir, ''), path: texturePath });
 					fileManifest?.push({ type: 'BLP', file: texOut });
 
 					log.write('Exported legacy WMO texture: %s', texOut);
@@ -561,12 +563,12 @@ class WMOLegacyExporter {
 					if (config.enableSharedChildren)
 						groupOut = ExportHelper.getExportPath(groupFileName);
 					else
-						groupOut = path.join(outDir, path.basename(groupFileName));
+						groupOut = outDir + '/' + groupFileName.split('/'.pop());
 
-					const buf = new BufferWrapper(Buffer.from(groupData));
+					const buf = new BufferWrapper(groupData);
 					await buf.writeToFile(groupOut);
 
-					groupsManifest.push({ file: path.relative(outDir, groupOut), path: groupFileName, index: i });
+					groupsManifest.push({ file: groupOut.replace(outDir, ''), path: groupFileName, index: i });
 					fileManifest?.push({ type: 'WMO_GROUP', file: groupOut });
 
 					log.write('Exported legacy WMO group: %s', groupOut);
@@ -587,4 +589,4 @@ class WMOLegacyExporter {
 	}
 }
 
-module.exports = WMOLegacyExporter;
+export default WMOLegacyExporter;

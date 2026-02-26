@@ -4,7 +4,7 @@
 	License: MIT
  */
 
-module.exports = {
+export default {
 	props: ['content'],
 
 	data: function() {

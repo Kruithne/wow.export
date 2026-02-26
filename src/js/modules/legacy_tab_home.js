@@ -1,4 +1,4 @@
-module.exports = {
+export default {
 	template: `
 		<div class="tab" id="legacy-tab-home">
 			<HomeShowcase />

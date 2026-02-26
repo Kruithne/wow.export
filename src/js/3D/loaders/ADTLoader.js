@@ -3,7 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const LoaderGenerics = require('./LoaderGenerics');
+
+
+import LoaderGenerics from './LoaderGenerics.js';
 
 class ADTLoader {
 	/**
@@ -555,4 +557,4 @@ const ADTObjChunkHandlers = {
 	}
 };
 
-module.exports = ADTLoader;
+export default ADTLoader;

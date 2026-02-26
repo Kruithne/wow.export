@@ -3,24 +3,28 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-const core = require('../../core');
-const log = require('../../log');
-const listfile = require('../../casc/listfile');
-const path = require('path');
-const generics = require('../../generics');
+import generics from '../../generics.js';
+import OBJWriter from '../writers/OBJWriter.js';
+import GLTFWriter from '../writers/GLTFWriter.js';
+import M3Exporter from './M3Exporter.js';
+import core from '../../core.js';
+import { listfile } from '../../views/main/rpc.js';
+import BLPImage from '../../casc/blp.js';
+import WMOLoader from '../loaders/WMOLoader.js';
+import MTLWriter from '../writers/MTLWriter.js';
+import CSVWriter from '../writers/CSVWriter.js';
+import JSONWriter from '../writers/JSONWriter.js';
+import M2Exporter from './M2Exporter.js';
+import constants from '../../constants.js';
+import log from '../../log.js';
 
-const BLPFile = require('../../casc/blp');
-const WMOLoader = require('../loaders/WMOLoader');
-const OBJWriter = require('../writers/OBJWriter');
-const MTLWriter = require('../writers/MTLWriter');
-const STLWriter = require('../writers/STLWriter');
-const CSVWriter = require('../writers/CSVWriter');
-const GLTFWriter = require('../writers/GLTFWriter');
-const JSONWriter = require('../writers/JSONWriter');
-const ExportHelper = require('../../casc/export-helper');
-const M2Exporter = require('./M2Exporter');
-const M3Exporter = require('./M3Exporter');
-const constants = require('../../constants');
+const path = ;
+
+
+
+
+
+
 
 const doodadCache = new Set();
 
@@ -130,7 +134,7 @@ class WMOExporter {
 
 				try {
 					let texFile = fileDataID + (raw ? '.blp' : '.png');
-					let texPath = path.join(path.dirname(out), texFile);
+					let texPath = out.substring(0, out.lastIndexOf('/')) + '/' + texFile;
 
 					// Default MTl name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + fileDataID;
@@ -141,7 +145,7 @@ class WMOExporter {
 
 					// If we have a valid file name, use it for the material name.
 					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
 						
 						// Remove spaces from material name for MTL compatibility.
 						if (core.view.config.removePathSpaces)
@@ -160,7 +164,7 @@ class WMOExporter {
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
-						texFile = path.relative(path.dirname(out), texPath);
+						texFile = out.lastIndexOf('/'.replace(out.substring(0, '')), texPath);
 					}
 
 					const file_existed = await generics.fileExists(texPath);
@@ -168,7 +172,7 @@ class WMOExporter {
 					if (glbMode && !raw) {
 						// glb mode: convert to PNG buffer without writing
 						const data = await casc.getFile(fileDataID);
-						const blp = new BLPFile(data);
+						const blp = new BLPImage(data);
 						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
 						texture_buffers.set(fileDataID, png_buffer);
 						log.write('Buffering WMO texture %d for GLB embedding', fileDataID);
@@ -182,7 +186,7 @@ class WMOExporter {
 						if (raw) {
 							await data.writeToFile(texPath);
 						} else {
-							const blp = new BLPFile(data);
+							const blp = new BLPImage(data);
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
@@ -223,7 +227,7 @@ class WMOExporter {
 		if (!core.view.config.overwriteFiles && await generics.fileExists(outFile))
 			return log.write('Skipping %s export of %s (already exists, overwrite disabled)', format.toUpperCase(), outFile);
 
-		const wmo_name = path.basename(outFile, ext);
+		const wmo_name = outFile.split('/').pop().replace(ext, '');
 		const gltf = new GLTFWriter(out, wmo_name);
 
 		const groupMask = this.groupMask;
@@ -370,7 +374,7 @@ class WMOExporter {
 		const groupMask = this.groupMask;
 		const doodadSetMask = this.doodadSetMask;
 
-		const wmoName = path.basename(out, '.obj');
+		const wmoName = out.split('/').pop().replace('.obj', '');
 		obj.setName(wmoName);
 
 		log.write('Exporting WMO model %s as OBJ: %s', wmoName, out);
@@ -505,7 +509,7 @@ class WMOExporter {
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
 			const useAbsolute = core.view.config.enableAbsoluteCSVPaths;
 			const usePosix = core.view.config.pathFormat === 'posix';
-			const outDir = path.dirname(out);
+			const outDir = out.substring(0, out.lastIndexOf('/'));
 			const csv = new CSVWriter(csvPath);
 			csv.addField('ModelFile', 'PositionX', 'PositionY', 'PositionZ', 'RotationW', 'RotationX', 'RotationY', 'RotationZ', 'ScaleFactor', 'DoodadSet', 'FileDataID');
 
@@ -580,7 +584,7 @@ class WMOExporter {
 								doodadCache.add(fileDataID);
 							}
 
-							let modelPath = path.relative(outDir, m2Path);
+							let modelPath = m2Path.replace(outDir, '');
 
 							if (useAbsolute === true)
 								modelPath = path.resolve(outDir, modelPath);
@@ -615,7 +619,7 @@ class WMOExporter {
 		}
 
 		if (!mtl.isEmpty)
-			obj.setMaterialLibrary(path.basename(mtl.out));
+			obj.setMaterialLibrary(mtl.out.split('/').pop());
 
 		await obj.write(config.overwriteFiles);
 		fileManifest?.push({ type: 'OBJ', fileDataID: this.wmo.fileDataID, file: obj.out });
@@ -737,7 +741,7 @@ class WMOExporter {
 
 		const groupMask = this.groupMask;
 
-		const wmoName = path.basename(out, '.stl');
+		const wmoName = out.split('/').pop().replace('.stl', '');
 		stl.setName(wmoName);
 
 		log.write('Exporting WMO model %s as STL: %s', wmoName, out);
@@ -843,8 +847,8 @@ class WMOExporter {
 		const wmo = this.wmo;
 		await wmo.load();
 
-		const wmoName = path.basename(out, '.obj');
-		const outDir = path.dirname(out);
+		const wmoName = out.split('/').pop().replace('.obj', '');
+		const outDir = out.substring(0, out.lastIndexOf('/'));
 
 		log.write('exporting wmo model %s as split obj: %s', wmoName, out);
 
@@ -895,7 +899,7 @@ class WMOExporter {
 
 			const groupName = wmo.groupNames[group.nameOfs];
 			const groupFileName = wmoName + '_' + groupName + '.obj';
-			const groupOut = path.join(outDir, groupFileName);
+			const groupOut = outDir + '/' + groupFileName;
 
 			const obj = new OBJWriter(groupOut);
 			obj.setName(groupFileName);
@@ -949,7 +953,7 @@ class WMOExporter {
 			}
 
 			if (!sharedMTL.isEmpty)
-				obj.setMaterialLibrary(path.basename(sharedMTL.out));
+				obj.setMaterialLibrary(sharedMTL.out.split('/').pop());
 
 			await obj.write(config.overwriteFiles);
 			fileManifest?.push({ type: 'OBJ', fileDataID: this.wmo.fileDataID, file: obj.out });
@@ -1030,7 +1034,7 @@ class WMOExporter {
 								doodadCache.add(fileDataID);
 							}
 
-							let modelPath = path.relative(outDir, m2Path);
+							let modelPath = m2Path.replace(outDir, '');
 
 							if (useAbsolute === true)
 								modelPath = path.resolve(outDir, modelPath);
@@ -1200,7 +1204,7 @@ class WMOExporter {
 		const texturesManifest = [];
 		for (const [texFileDataID, texInfo] of textures.textureMap) {
 			fileManifest?.push({ type: 'BLP', fileDataID: texFileDataID, file: texInfo.matPath });
-			texturesManifest.push({ fileDataID: texFileDataID, file: path.relative(out, texInfo.matPath) });
+			texturesManifest.push({ fileDataID: texFileDataID, file: texInfo.matPath.replace(out, '') });
 		}
 
 		manifest.addProperty('textures', texturesManifest);
@@ -1236,12 +1240,12 @@ class WMOExporter {
 					if (config.enableSharedChildren)
 						groupFile = ExportHelper.getExportPath(groupName);
 					else
-						groupFile = path.join(path.dirname(out), path.basename(groupName));
+						groupFile = out.substring(0, out.lastIndexOf('/')) + '/' + groupName.split('/').pop();
 	
 					await groupData.writeToFile(groupFile);
 	
 					fileManifest?.push({ type: 'WMO_GROUP', fileDataID: groupFileDataID, file: groupFile });
-					groupManifest.push({ fileDataID: groupFileDataID, file: path.relative(out, groupFile) });
+					groupManifest.push({ fileDataID: groupFileDataID, file: groupFile.replace(out, '') });
 				}
 			}
 
@@ -1330,4 +1334,4 @@ class WMOExporter {
 	}
 }
 
-module.exports = WMOExporter;
+export default WMOExporter;

@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 */

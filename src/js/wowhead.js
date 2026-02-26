@@ -242,4 +242,4 @@ const wowhead_parse = (url) => {
 	return wowhead_parse_hash(hash);
 };
 
-module.exports = { wowhead_parse };
+export { wowhead_parse };

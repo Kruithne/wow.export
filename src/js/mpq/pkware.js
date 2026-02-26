@@ -4,7 +4,7 @@
 	License: MIT
 */
 
-const { BitStream } = require('./bitstream');
+import BitStream from './bitstream.js';
 
 // LZ77 with Huffman coding
 // ref: https://groups.google.com/g/comp.compression/c/M5P064or93o/m/W1ca1-ad6kgJ?pli=1
@@ -201,4 +201,4 @@ function pkware_dcl_explode(compressedData, expectedLength) {
 	return decompressor.explode(expectedLength);
 }
 
-module.exports = { pkware_dcl_explode };
+export { pkware_dcl_explode };

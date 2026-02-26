@@ -1,23 +1,23 @@
-const util = require('util');
-const crypto = require('crypto');
-const core = require('../core');
-const platform = require('../platform');
-const log = require('../log');
-const path = require('path');
-const listfile = require('../casc/listfile');
-const constants = require('../constants');
-const InstallType = require('../install-type');
+import core from '../core.js';
+import * as platform from '../platform.js';
+import log from '../log.js';
+import constants from '../constants.js';
+import InstallType from '../install-type.js';
+import { listfile } from '../../views/main/rpc.js';
+import { db } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import BLPImage from '../casc/blp.js';
+import WDTLoader from '../3D/loaders/WDTLoader.js';
+import ADTExporter from '../3D/exporters/ADTExporter.js';
+import ADTLoader from '../3D/loaders/ADTLoader.js';
+import WMOExporter from '../3D/exporters/WMOExporter.js';
+import WMOLoader from '../3D/loaders/WMOLoader.js';
+import TiledPNGWriter from '../tiled-png-writer.js';
+import PNGWriter from '../png-writer.js';
 
-const db2 = require('../casc/db2');
-const BLPFile = require('../casc/blp');
-const WDTLoader = require('../3D/loaders/WDTLoader');
-const ADTExporter = require('../3D/exporters/ADTExporter');
-const ADTLoader = require('../3D/loaders/ADTLoader');
-const ExportHelper = require('../casc/export-helper');
-const WMOExporter = require('../3D/exporters/WMOExporter');
-const WMOLoader = require('../3D/loaders/WMOLoader');
-const TiledPNGWriter = require('../tiled-png-writer');
-const PNGWriter = require('../png-writer');
+const ExportHelper = exporter;
+const db2 = db;
+const BLPFile = BLPImage;
 
 const TILE_SIZE = constants.GAME.TILE_SIZE;
 const MAP_OFFSET = constants.GAME.MAP_OFFSET;
@@ -54,7 +54,7 @@ const load_map_tile = async (x, y, size) => {
 	try {
 		const padded_x = x.toString().padStart(2, '0');
 		const padded_y = y.toString().padStart(2, '0');
-		const tile_path = util.format('world/minimaps/%s/map%s_%s.blp', selected_map_dir, padded_x, padded_y);
+		const tile_path = `world/minimaps/${selected_map_dir}/map${padded_x}_${padded_y}.blp`;
 		const data = await core.view.casc.getFileByName(tile_path, false, true);
 		const blp = new BLPFile(data);
 
@@ -207,7 +207,7 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 	const map_dir = adt.mapDir;
 	const tile_x = adt.tileX;
 	const tile_y = adt.tileY;
-	const prefix = util.format('world/maps/%s/%s', map_dir, map_dir);
+	const prefix = `world/maps/${map_dir}/${map_dir}`;
 	const tile_prefix = prefix + '_' + adt.tileY + '_' + adt.tileX;
 
 	try {
@@ -265,7 +265,7 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Maps', 'map.svg', InstallType.CASC);
 	},
@@ -399,7 +399,7 @@ module.exports = {
 		copy_map_export_paths(selection) {
 			const paths = selection.map(entry => {
 				const map = parse_map_entry(entry);
-				return ExportHelper.getExportPath(path.join('maps', map.dir));
+				return ExportHelper.getExportPath('maps/' + map.dir);
 			});
 			platform.clipboard_write_text(paths.join('\n'));
 		},
@@ -409,7 +409,7 @@ module.exports = {
 				return;
 
 			const map = parse_map_entry(selection[0]);
-			const dir = ExportHelper.getExportPath(path.join('maps', map.dir));
+			const dir = ExportHelper.getExportPath('maps/' + map.dir);
 			platform.open_path(dir);
 		},
 
@@ -428,7 +428,7 @@ module.exports = {
 			this.$core.view.mapViewerGridSize = null;
 			this.$core.view.mapViewerSelection.splice(0);
 
-			const wdt_path = util.format('world/maps/%s/%s.wdt', map_dir_lower, map_dir_lower);
+			const wdt_path = `world/maps/${map_dir_lower}/${map_dir_lower}.wdt`;
 			log.write('loading map preview for %s (%d)', map_dir_lower, mapID);
 
 			try {
@@ -443,7 +443,6 @@ module.exports = {
 				const has_global_wmo = wdt.worldModelPlacement !== undefined;
 
 				if (!has_terrain && has_global_wmo) {
-					// try to load WMO minimap
 					await this.setup_wmo_minimap(wdt);
 
 					if (current_wmo_minimap) {
@@ -460,7 +459,6 @@ module.exports = {
 					this.$core.setToast('info', 'This map has no terrain tiles. Use "Export Global WMO" to export the world model.', null, 6000);
 				}
 
-				// use terrain minimap loader
 				this.$core.view.mapViewerTileLoader = load_map_tile;
 				this.$core.view.mapViewerChunkMask = wdt.tiles;
 				this.$core.view.mapViewerSelectedMap = mapID;
@@ -506,7 +504,6 @@ module.exports = {
 				if (!group_info || group_info.length === 0)
 					return;
 
-				// group tiles by groupNum
 				const groups_tiles = new Map();
 				for (const tile of tiles) {
 					if (!groups_tiles.has(tile.groupNum))
@@ -515,8 +512,6 @@ module.exports = {
 					groups_tiles.get(tile.groupNum).push(tile);
 				}
 
-				// calculate absolute pixel position for each tile
-				// tile position = (bbox_min * 2) + (block * 256)
 				const tile_positions = [];
 				for (const [group_num, group_tiles] of groups_tiles) {
 					if (group_num >= group_info.length)
@@ -537,7 +532,6 @@ module.exports = {
 					}
 				}
 
-				// find bounds of all tiles
 				let min_x = Infinity, max_x = -Infinity;
 				let min_y = Infinity, max_y = -Infinity;
 
@@ -548,15 +542,13 @@ module.exports = {
 					max_y = Math.max(max_y, tile.absY + 256);
 				}
 
-				// calculate canvas size and convert to canvas coords
 				const canvas_width = Math.ceil(max_x - min_x);
 				const canvas_height = Math.ceil(max_y - min_y);
 
 				const positioned_tiles = [];
 				for (const tile of tile_positions) {
-					// convert to canvas coords (0,0 at top-left, Y flipped)
 					const canvas_x = tile.absX - min_x;
-					const canvas_y = (max_y - 256) - tile.absY; // flip Y for canvas
+					const canvas_y = (max_y - 256) - tile.absY;
 
 					positioned_tiles.push({
 						...tile,
@@ -572,7 +564,6 @@ module.exports = {
 				if (positioned_tiles.length === 0)
 					return;
 
-				// use 256px output tile size, calculate grid
 				const OUTPUT_TILE_SIZE = 256;
 				const grid_width = Math.ceil(canvas_width / OUTPUT_TILE_SIZE);
 				const grid_height = Math.ceil(canvas_height / OUTPUT_TILE_SIZE);
@@ -580,12 +571,10 @@ module.exports = {
 				const mask = new Array(grid_size * grid_size).fill(0);
 				const tiles_by_coord = new Map();
 
-				// assign tiles to grid cells based on their pixel position
 				for (const tile of positioned_tiles) {
 					const grid_x = Math.floor(tile.pixelX / OUTPUT_TILE_SIZE);
 					const grid_y = Math.floor(tile.pixelY / OUTPUT_TILE_SIZE);
 
-					// tile might span multiple grid cells due to scaling
 					const tile_width = tile.srcWidth * tile.scaleX;
 					const tile_height = tile.srcHeight * tile.scaleY;
 					const end_grid_x = Math.floor((tile.pixelX + tile_width - 1) / OUTPUT_TILE_SIZE);
@@ -605,7 +594,6 @@ module.exports = {
 
 							tiles_by_coord.get(key).push({
 								...tile,
-								// offset within this grid cell
 								drawX: tile.pixelX - (gx * OUTPUT_TILE_SIZE),
 								drawY: tile.pixelY - (gy * OUTPUT_TILE_SIZE)
 							});
@@ -613,7 +601,6 @@ module.exports = {
 					}
 				}
 
-				// sort tiles in each grid cell by Z order (lower Z drawn first, higher Z on top)
 				for (const tile_list of tiles_by_coord.values())
 					tile_list.sort((a, b) => a.zOrder - b.zOrder);
 
@@ -690,7 +677,6 @@ module.exports = {
 			helper.start();
 
 			try {
-				// use cached minimap data if available, otherwise load it
 				let minimap_data = current_wmo_minimap;
 
 				if (!minimap_data) {
@@ -744,7 +730,7 @@ module.exports = {
 				}
 
 				const filename = `${selected_map_dir}_wmo_minimap.png`;
-				const relative_path = path.join('maps', selected_map_dir, filename);
+				const relative_path = 'maps/' + selected_map_dir + '/' + filename;
 				const out_path = ExportHelper.getExportPath(relative_path);
 
 				await writer.write(out_path);
@@ -785,9 +771,9 @@ module.exports = {
 			const helper = new ExportHelper(export_tiles.length, 'tile');
 			helper.start();
 
-			const dir = ExportHelper.getExportPath(path.join('maps', selected_map_dir));
+			const dir = ExportHelper.getExportPath('maps/' + selected_map_dir);
 			const export_paths = this.$core.openLastExportStream();
-			const mark_path = path.join('maps', selected_map_dir, selected_map_dir);
+			const mark_path = 'maps/' + selected_map_dir + '/' + selected_map_dir;
 
 			for (const index of export_tiles) {
 				if (helper.isCancelled())
@@ -831,9 +817,9 @@ module.exports = {
 			const helper = new ExportHelper(export_tiles.length, 'tile');
 			helper.start();
 
-			const dir = ExportHelper.getExportPath(path.join('maps', selected_map_dir));
+			const dir = ExportHelper.getExportPath('maps/' + selected_map_dir);
 			const export_paths = this.$core.openLastExportStream();
-			const mark_path = path.join('maps', selected_map_dir, selected_map_dir);
+			const mark_path = 'maps/' + selected_map_dir + '/' + selected_map_dir;
 
 			for (const index of export_tiles) {
 				if (helper.isCancelled())
@@ -912,10 +898,17 @@ module.exports = {
 				}
 
 				const sorted_tiles = [...export_tiles].sort((a, b) => a - b);
-				const tile_hash = crypto.createHash('md5').update(sorted_tiles.join(',')).digest('hex').substring(0, 8);
+				const tile_hash_data = new TextEncoder().encode(sorted_tiles.join(','));
+				const hash_buffer = await crypto.subtle.digest('MD5', tile_hash_data).catch(() => null);
+				let tile_hash;
+				if (hash_buffer) {
+					tile_hash = Array.from(new Uint8Array(hash_buffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
+				} else {
+					tile_hash = sorted_tiles.length.toString(16).padStart(8, '0');
+				}
 
 				const filename = `${selected_map_dir}_${tile_hash}.png`;
-				const out_path = ExportHelper.getExportPath(path.join('maps', selected_map_dir, filename));
+				const out_path = ExportHelper.getExportPath('maps/' + selected_map_dir + '/' + filename);
 
 				await writer.write(out_path);
 
@@ -926,7 +919,7 @@ module.exports = {
 				await export_paths?.writeLine('png:' + out_path);
 				export_paths?.close();
 
-				helper.mark(path.join('maps', selected_map_dir, filename), true);
+				helper.mark('maps/' + selected_map_dir + '/' + filename, true);
 
 			} catch (e) {
 				helper.mark('PNG export', false, e.message, e.stack);
@@ -968,9 +961,9 @@ module.exports = {
 					if (!listfile.existsByID(entry.WdtFileDataID))
 						listfile.addEntry(entry.WdtFileDataID, wdt_path);
 
-					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+					maps.push(`${entry.ExpansionID}\x19[${id}]\x19${entry.MapName_lang}\x19(${entry.Directory})`);
 				} else if (listfile.getByFilename(wdt_path)) {
-					maps.push(util.format('%d\x19[%d]\x19%s\x19(%s)', entry.ExpansionID, id, entry.MapName_lang, entry.Directory));
+					maps.push(`${entry.ExpansionID}\x19[${id}]\x19${entry.MapName_lang}\x19(${entry.Directory})`);
 				}
 			}
 
@@ -991,7 +984,7 @@ module.exports = {
 			if (export_resolution <= 0)
 				return this.$core.setToast('error', 'Invalid heightmap resolution selected.', null, -1);
 
-			const dir = ExportHelper.getExportPath(path.join('maps', selected_map_dir, 'heightmaps'));
+			const dir = ExportHelper.getExportPath('maps/' + selected_map_dir + '/heightmaps');
 			const export_paths = this.$core.openLastExportStream();
 
 			this.$core.setToast('progress', 'Calculating height range across all tiles...', null, -1, false);
@@ -1059,7 +1052,7 @@ module.exports = {
 						continue;
 					}
 
-					const out_path = path.join(dir, filename);
+					const out_path = dir + '/' + filename;
 
 					const writer = new PNGWriter(export_resolution, export_resolution);
 					const bit_depth = this.$core.view.config.heightmapBitDepth;
@@ -1116,7 +1109,7 @@ module.exports = {
 
 					await export_paths?.writeLine('png:' + out_path);
 
-					helper.mark(path.join('maps', selected_map_dir, 'heightmaps', filename), true);
+					helper.mark('maps/' + selected_map_dir + '/heightmaps/' + filename, true);
 					log.write('exported heightmap: %s', out_path);
 
 				} catch (e) {

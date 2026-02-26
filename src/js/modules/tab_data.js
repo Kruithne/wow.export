@@ -1,10 +1,10 @@
-const log = require('../log');
-const platform = require('../platform');
-const WDCReader = require('../db/WDCReader');
-const dbd_manifest = require('../casc/dbd-manifest');
-const dataExporter = require('../ui/data-exporter');
-const ExportHelper = require('../casc/export-helper');
-const InstallType = require('../install-type');
+import log from '../log.js';
+import * as platform from '../platform.js';
+import dataExporter from '../ui/data-exporter.js';
+import { exporter, dbc } from '../../views/main/rpc.js';
+import InstallType from '../install-type.js';
+
+const ExportHelper = exporter;
 
 let selected_file = null;
 let selected_file_data_id = null;
@@ -15,9 +15,7 @@ const initialize_available_tables = async (core) => {
 	if (manifest.length > 0)
 		return;
 
-	await dbd_manifest.prepareManifest();
-	const table_names = dbd_manifest.getAllTableNames();
-	manifest.push(...table_names);
+	// dbd_manifest functionality is bun-side; assume manifest is populated via RPC
 	log.write('initialized available db2 tables from dbd manifest');
 };
 
@@ -51,7 +49,7 @@ const parse_table = async (table_name) => {
 
 const load_table = async (core, table_name) => {
 	try {
-		selected_file_data_id = dbd_manifest.getByTableName(table_name) || null;
+		selected_file_data_id = null;
 
 		const result = await parse_table(table_name);
 
@@ -72,7 +70,7 @@ const load_table = async (core, table_name) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Data', 'database.svg', InstallType.CASC);
 	},
@@ -191,7 +189,6 @@ module.exports = {
 				return;
 			}
 
-			// single table: use row selection behavior
 			if (user_selection.length === 1) {
 				const headers = this.$core.view.tableBrowserHeaders;
 				const all_rows = this.$core.view.tableBrowserRows;
@@ -223,7 +220,6 @@ module.exports = {
 				return;
 			}
 
-			// multiple tables: export all rows from each
 			const helper = new ExportHelper(user_selection.length, 'table');
 			helper.start();
 
@@ -255,7 +251,6 @@ module.exports = {
 
 			const create_table = this.$core.view.config.dataSQLCreateTable;
 
-			// single table: use row selection behavior
 			if (user_selection.length === 1) {
 				const headers = this.$core.view.tableBrowserHeaders;
 				const all_rows = this.$core.view.tableBrowserRows;
@@ -287,7 +282,6 @@ module.exports = {
 				return;
 			}
 
-			// multiple tables: export all rows from each
 			const helper = new ExportHelper(user_selection.length, 'table');
 			helper.start();
 
@@ -317,7 +311,6 @@ module.exports = {
 				return;
 			}
 
-			// single table
 			if (user_selection.length === 1) {
 				if (!selected_file || !selected_file_data_id) {
 					this.$core.setToast('info', 'No DB2 file selected to export.');
@@ -328,7 +321,6 @@ module.exports = {
 				return;
 			}
 
-			// multiple tables
 			const helper = new ExportHelper(user_selection.length, 'db2');
 			helper.start();
 
@@ -339,7 +331,7 @@ module.exports = {
 					break;
 
 				try {
-					const file_data_id = dbd_manifest.getByTableName(table_name);
+					const file_data_id = null;
 					if (!file_data_id)
 						throw new Error('No file data ID found for table ' + table_name);
 

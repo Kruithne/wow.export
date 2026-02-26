@@ -1,111 +1,112 @@
-/*!
-	wow.export (https://github.com/Kruithne/wow.export)
-	Authors: Kruithne <kruithne@gmail.com>
-	License: MIT
- */
+import { app } from '../views/main/rpc.js';
+import * as platform from './platform.js';
 
-// This file defines constants used throughout the application.
-const path = require('path');
-const os = require('os');
-const platform = require('./platform');
+let INSTALL_PATH = '';
+let DATA_PATH = '';
+let _initialized = false;
 
-// on macOS, process.execPath points to the renderer helper binary deep inside
-// the framework, not the app root. use __dirname (app.nw/src/) instead.
-const INSTALL_PATH = process.platform === 'darwin'
-	? path.resolve(path.join(__dirname, '..'))
-	: path.dirname(process.execPath);
-const DATA_PATH = platform.get_data_path();
+export async function init() {
+	if (_initialized)
+		return;
 
-const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
+	const c = await app.get_constants();
 
-const getBlenderBaseDir = () => {
-	const platform = os.platform();
-	const home_dir = os.homedir();
-	
-	switch (platform) {
-		case 'win32':
-			return path.join(process.env.APPDATA, 'Blender Foundation', 'Blender');
-		case 'darwin': // macOS
-			return path.join(home_dir, 'Library', 'Application Support', 'Blender');
-		case 'linux':
-		default:
-			return path.join(home_dir, '.config', 'blender');
-	}
-};
+	INSTALL_PATH = c.INSTALL_PATH ?? '';
+	DATA_PATH = c.DATA_PATH ?? '';
 
-module.exports = {
-	INSTALL_PATH, // Path to the application installation.
-	DATA_PATH, // Path to the users data directory.
-	RUNTIME_LOG: path.join(DATA_PATH, 'runtime.log'), // Path to the runtime log.
-	LAST_EXPORT: path.join(DATA_PATH, 'last_export'), // Location of the last export.
-	MAX_RECENT_LOCAL: 3, // Maximum recent local installations to remember.
+	constants.INSTALL_PATH = INSTALL_PATH;
+	constants.DATA_PATH = DATA_PATH;
+	constants.RUNTIME_LOG = c.RUNTIME_LOG ?? '';
+	constants.LAST_EXPORT = c.LAST_EXPORT ?? '';
+	constants.SHADER_PATH = c.SHADER_PATH ?? '';
+	constants.VERSION = platform.get_version();
+	constants.USER_AGENT = 'wow.export (' + platform.get_version() + ')';
 
-	// Location of GL shaders.
-	SHADER_PATH: path.join(INSTALL_PATH, 'src', 'shaders'),
+	constants.BLENDER.DIR = c.BLENDER_DIR ?? '';
+	constants.BLENDER.LOCAL_DIR = c.BLENDER_LOCAL_DIR ?? '';
 
-	// Current version of wow.export
-	VERSION: platform.get_version(),
+	constants.CACHE.DIR = c.CACHE_DIR ?? '';
+	constants.CACHE.SIZE = c.CACHE_SIZE ?? '';
+	constants.CACHE.INTEGRITY_FILE = c.CACHE_INTEGRITY_FILE ?? '';
+	constants.CACHE.DIR_BUILDS = c.CACHE_DIR_BUILDS ?? '';
+	constants.CACHE.DIR_INDEXES = c.CACHE_DIR_INDEXES ?? '';
+	constants.CACHE.DIR_DATA = c.CACHE_DIR_DATA ?? '';
+	constants.CACHE.DIR_DBD = c.CACHE_DIR_DBD ?? '';
+	constants.CACHE.DIR_LISTFILE = c.CACHE_DIR_LISTFILE ?? '';
+	constants.CACHE.TACT_KEYS = c.CACHE_TACT_KEYS ?? '';
+	constants.CACHE.REALMLIST = c.CACHE_REALMLIST ?? '';
 
-	// Filter used to filter out WMO LOD files.
+	constants.CONFIG.DEFAULT_PATH = c.CONFIG_DEFAULT_PATH ?? '';
+	constants.CONFIG.USER_PATH = c.CONFIG_USER_PATH ?? '';
+
+	constants.UPDATE.DIRECTORY = c.UPDATE_DIRECTORY ?? '';
+	constants.UPDATE.HELPER = c.UPDATE_HELPER ?? '';
+
+	_initialized = true;
+}
+
+const constants = {
+	INSTALL_PATH: '',
+	DATA_PATH: '',
+	RUNTIME_LOG: '',
+	LAST_EXPORT: '',
+	MAX_RECENT_LOCAL: 3,
+
+	SHADER_PATH: '',
+	VERSION: '',
+
 	LISTFILE_MODEL_FILTER: /(_\d\d\d_)|(_\d\d\d.wmo$)|(lod\d.wmo$)/,
+	USER_AGENT: 'wow.export',
 
-	// User-agent used for HTTP/HTTPs requests.
-	USER_AGENT: 'wow.export (' + platform.get_version() + ')',
-
-	// Defines Blender constants.
 	BLENDER: {
-		DIR: getBlenderBaseDir(), // Blender app-data directory (cross-platform).
-		ADDON_DIR: path.join('scripts', 'addons', 'io_scene_wowobj'), // Install path for add-ons
-		LOCAL_DIR: path.join(INSTALL_PATH, 'addon', 'io_scene_wowobj'), // Local copy of our Blender add-on.
-		ADDON_ENTRY: '__init__.py', // Add-on entry point that contains the version.
-		MIN_VER: 2.8 // Minimum version supported by our add-on.
+		DIR: '',
+		ADDON_DIR: 'scripts/addons/io_scene_wowobj',
+		LOCAL_DIR: '',
+		ADDON_ENTRY: '__init__.py',
+		MIN_VER: 2.8
 	},
 
-	// Defines game-specific constants.
 	GAME: {
 		MAP_SIZE: 64,
-		MAP_SIZE_SQ: 4096, // MAP_SIZE ^ 2
+		MAP_SIZE_SQ: 4096,
 		MAP_COORD_BASE: 51200 / 3,
 		TILE_SIZE: (51200 / 3) / 32,
 		MAP_OFFSET: 17066,
 	},
 
 	CACHE: {
-		DIR: path.join(DATA_PATH, 'casc'), // Cache directory.
-		SIZE: path.join(DATA_PATH, 'casc', 'cachesize'), // Cache size.
-		INTEGRITY_FILE: path.join(DATA_PATH, 'casc', 'cacheintegrity'), // Cache integrity file.
-		SIZE_UPDATE_DELAY: 5000, // Milliseconds to buffer cache size update writes.
-		DIR_BUILDS: path.join(DATA_PATH, 'casc', 'builds'), // Build-specific cache directory.
-		DIR_INDEXES: path.join(DATA_PATH, 'casc', 'indices'), // Cache for archive indexes.
-		DIR_DATA: path.join(DATA_PATH, 'casc', 'data'), // Cache for single data files.
-		DIR_DBD: path.join(DATA_PATH, 'casc', 'dbd'), // Cache for DBD files.
-		DIR_LISTFILE: path.join(DATA_PATH, 'casc', 'listfile'), // Master listfile cache directory.
-		BUILD_MANIFEST: 'manifest.json', // Build-specific manifest file.
-		BUILD_LISTFILE: 'listfile', // Build-specific listfile file.
-		BUILD_ENCODING: 'encoding', // Build-specific encoding file.
-		BUILD_ROOT: 'root', // Build-specific root file.
-		LISTFILE_DATA: 'listfile.txt', // Master listfile data file.
-		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
-		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
+		DIR: '',
+		SIZE: '',
+		INTEGRITY_FILE: '',
+		SIZE_UPDATE_DELAY: 5000,
+		DIR_BUILDS: '',
+		DIR_INDEXES: '',
+		DIR_DATA: '',
+		DIR_DBD: '',
+		DIR_LISTFILE: '',
+		BUILD_MANIFEST: 'manifest.json',
+		BUILD_LISTFILE: 'listfile',
+		BUILD_ENCODING: 'encoding',
+		BUILD_ROOT: 'root',
+		LISTFILE_DATA: 'listfile.txt',
+		TACT_KEYS: '',
+		REALMLIST: '',
 	},
 
-	CONFIG:  {
-		DEFAULT_PATH: path.join(INSTALL_PATH, 'src', 'default_config.jsonc'), // Path of default configuration file.
-		USER_PATH: path.join(DATA_PATH, 'config.json') // Path of user-defined configuration file.
+	CONFIG: {
+		DEFAULT_PATH: '',
+		USER_PATH: ''
 	},
 
 	UPDATE: {
-		DIRECTORY: path.join(INSTALL_PATH, '.update'), // Temporary directory for storing update data.
-		HELPER: 'updater' + (UPDATER_EXT[process.platform] || '') // Path to update helper application.
+		DIRECTORY: '',
+		HELPER: ''
 	},
 
-	// product: Internal product ID.
-	// title: Label as it appears on the Battle.net launcher.
-	// tag: Specific version tag.
 	PRODUCTS: [
 		{ product: 'wow', title: 'World of Warcraft', tag: 'Retail' },
 		{ product: 'wowt', title: 'PTR: World of Warcraft', tag: 'PTR' },
-		{ product: 'wowxptr', title: 'PTR 2: World of Warcraft', tag: 'PTR 2'},
+		{ product: 'wowxptr', title: 'PTR 2: World of Warcraft', tag: 'PTR 2' },
 		{ product: 'wow_beta', title: 'Beta: World of Warcraft', tag: 'Beta' },
 		{ product: 'wow_classic', title: 'World of Warcraft Classic', tag: 'Classic' },
 		{ product: 'wow_classic_beta', title: 'Beta: World of Warcraft Classic', tag: 'Classic Beta' },
@@ -124,20 +125,20 @@ module.exports = {
 			{ tag: 'tw', name: 'Taiwan' },
 			{ tag: 'cn', name: 'China' }
 		],
-		DEFAULT_REGION: 'us', // Region which is selected by default.
-		HOST: 'https://%s.version.battle.net/', // Blizzard patch server host.
-		HOST_CHINA: 'https://cn.version.battlenet.com.cn/', // Blizzard China patch server host.
-		SERVER_CONFIG: '/cdns', // CDN config file on patch server.
-		VERSION_CONFIG: '/versions' // Versions config file on patch server.
+		DEFAULT_REGION: 'us',
+		HOST: 'https://%s.version.battle.net/',
+		HOST_CHINA: 'https://cn.version.battlenet.com.cn/',
+		SERVER_CONFIG: '/cdns',
+		VERSION_CONFIG: '/versions'
 	},
 
 	BUILD: {
-		MANIFEST: '.build.info', // File that contains version information in local installs.
+		MANIFEST: '.build.info',
 		DATA_DIR: 'Data'
 	},
 
 	TIME: {
-		DAY: 86400000 // Milliseconds in a day.
+		DAY: 86400000
 	},
 
 	KINO: {
@@ -146,9 +147,9 @@ module.exports = {
 	},
 
 	MAGIC: {
-		M3DT: 0x5444334D, // M3 model magic.
-		MD21: 0x3132444D, // M2 model magic.
-		MD20: 0x3032444D // M2 model magic (legacy)
+		M3DT: 0x5444334D,
+		MD21: 0x3132444D,
+		MD20: 0x3032444D
 	},
 
 	FILE_IDENTIFIERS: [
@@ -171,7 +172,6 @@ module.exports = {
 		{ match: 'WDC4', ext: '.db2' }
 	],
 
-	// nav button order (module names)
 	NAV_BUTTON_ORDER: [
 		'tab_models',
 		'tab_textures',
@@ -195,7 +195,6 @@ module.exports = {
 		'legacy_tab_files'
 	],
 
-	// context menu item order (module names or static option IDs)
 	CONTEXT_MENU_ORDER: [
 		'tab_blender',
 		'tab_changelog',
@@ -244,3 +243,5 @@ module.exports = {
 		{ id: 12, name: 'The Last Titan', shortName: 'TLT' }
 	]
 };
+
+export default constants;

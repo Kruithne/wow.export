@@ -60,4 +60,4 @@ class BONELoader {
 	}
 }
 
-module.exports = BONELoader;
+export default BONELoader;

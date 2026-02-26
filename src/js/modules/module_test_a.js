@@ -1,4 +1,4 @@
-module.exports = {
+export default {
 	template: `
 		<div class="module-test-a">
 			<h2>Module Test A</h2>

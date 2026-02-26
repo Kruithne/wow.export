@@ -1,4 +1,5 @@
-const constants = require('../constants');
+import constants from '../constants.js';
+import { BlobPolyfill, URLPolyfill } from '../blob.js';
 
 const GLYPH_RANGES = [
 	{ start: 0x0020, end: 0x007F, name: 'Basic Latin' },
@@ -111,8 +112,6 @@ const get_random_quote = () => {
 };
 
 const inject_font_face = async (font_id, blob_data, log, on_error) => {
-	const { BlobPolyfill, URLPolyfill } = require('../blob');
-
 	const blob = new BlobPolyfill([blob_data], { type: 'font/ttf' });
 	const url = URLPolyfill.createObjectURL(blob);
 
@@ -132,8 +131,4 @@ const inject_font_face = async (font_id, blob_data, log, on_error) => {
 	return url;
 };
 
-module.exports = {
-	detect_glyphs_async,
-	get_random_quote,
-	inject_font_face
-};
+export { detect_glyphs_async, get_random_quote, inject_font_face };

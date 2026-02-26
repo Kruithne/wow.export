@@ -1,29 +1,26 @@
-const _manifest = nw.App.manifest;
-let _win = null;
+import { app, platform as rpc_platform } from '../views/main/rpc.js';
 
-module.exports = {
-	// shell
-	open_path: (path) => nw.Shell.openItem(path),
-	open_url: (url) => nw.Shell.openExternal(url),
+let _app_info = null;
 
-	// clipboard
-	clipboard_write_text: (text) => nw.Clipboard.get().set(text, 'text'),
-	clipboard_write_image: (base64_png) => nw.Clipboard.get().set(base64_png, 'png', true),
+export async function init() {
+	_app_info = await app.get_info();
+}
 
-	// app info
-	get_version: () => _manifest.version,
-	get_flavour: () => _manifest.flavour,
-	get_guid: () => _manifest.guid,
-	get_data_path: () => nw.App.dataPath,
-	get_argv: () => nw.App.argv,
-	get_manifest: () => _manifest,
+export const open_path = (path) => rpc_platform.open_path(path);
+export const open_url = (url) => rpc_platform.open_url(url);
 
-	// window management
-	init_window() { _win = nw.Window.get(); return _win; },
-	set_progress_bar: (val) => _win?.setProgressBar(val),
-	show_dev_tools: () => _win?.showDevTools(),
-	on_close: (fn) => _win?.on('close', fn),
+export const clipboard_write_text = (text) => rpc_platform.clipboard_write_text(text);
+export const clipboard_write_image = (data) => rpc_platform.clipboard_write_image(data);
 
-	// app lifecycle
-	reload: () => chrome.runtime.reload(),
-};
+export const get_version = () => _app_info?.version ?? '0.0.0';
+export const get_flavour = () => _app_info?.flavour ?? 'unknown';
+export const get_guid = () => _app_info?.guid ?? '';
+export const get_data_path = () => _app_info?.data_path ?? '';
+export const get_argv = () => [];
+export const get_manifest = () => _app_info ?? { version: '0.0.0', flavour: 'unknown', guid: '' };
+
+export const init_window = () => {};
+export const set_progress_bar = () => {};
+export const show_dev_tools = () => {};
+export const on_close = () => {};
+export const reload = () => location.reload();

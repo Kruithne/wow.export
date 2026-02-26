@@ -58,4 +58,4 @@ class BitStream {
 	}
 }
 
-module.exports = BitStream;
+export default BitStream;

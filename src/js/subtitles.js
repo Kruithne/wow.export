@@ -186,7 +186,7 @@ const get_subtitles_vtt = async (casc, file_data_id, format) => {
 	return srt_to_vtt(srt);
 };
 
-module.exports = {
+export {
 	SUBTITLE_FORMAT,
 	get_subtitles_vtt
 };

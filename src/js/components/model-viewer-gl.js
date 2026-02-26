@@ -4,13 +4,13 @@
 	License: MIT
 */
 
-const core = require('../core');
-const GLContext = require('../3D/gl/GLContext');
-const CameraControlsGL = require('../3D/camera/CameraControlsGL');
-const CharacterCameraControlsGL = require('../3D/camera/CharacterCameraControlsGL');
-const GridRenderer = require('../3D/renderers/GridRenderer');
-const ShadowPlaneRenderer = require('../3D/renderers/ShadowPlaneRenderer');
-const { ATTACHMENT_ID } = require('../wow/EquipmentSlots');
+import core from '../core.js';
+import GLContext from '../3D/gl/GLContext.js';
+import CameraControlsGL from '../3D/camera/CameraControlsGL.js';
+import CharacterCameraControlsGL from '../3D/camera/CharacterCameraControlsGL.js';
+import GridRenderer from '../3D/renderers/GridRenderer.js';
+import ShadowPlaneRenderer from '../3D/renderers/ShadowPlaneRenderer.js';
+import { ATTACHMENT_ID } from '../wow/EquipmentSlots.js';
 
 const parse_hex_color = (hex) => {
 	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -204,7 +204,7 @@ function fit_camera_for_character(bounding_box, camera, controls) {
 	}
 }
 
-module.exports = {
+export default {
 	props: ['context'],
 
 	methods: {

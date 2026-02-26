@@ -426,4 +426,4 @@ class CameraControlsGL {
 	}
 }
 
-module.exports = CameraControlsGL;
+export default CameraControlsGL;

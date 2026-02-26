@@ -4,9 +4,8 @@
 	License: MIT
  */
 
-const path = require('path');
-const platform = require('../platform');
-const core = require('../core');
+import * as platform from '../platform.js';
+import core from '../core.js';
 
 const FILTER_DEBOUNCE_MS = 200;
 
@@ -20,7 +19,7 @@ const fid_filter = (e) => {
 	return e;
 };
 
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 * filter: Optional reactive filter for items.
@@ -358,7 +357,7 @@ module.exports = {
 				// Copy selection to clipboard.
 				let entries = this.selection.slice();
 				if (this.copymode == 'DIR')
-					entries = entries.map(e => path.dirname(e));
+					entries = entries.map(e => e.substring(0, e.lastIndexOf('/')));
 				else if (this.copymode == 'FID')
 					entries = entries.map(fid_filter);
 

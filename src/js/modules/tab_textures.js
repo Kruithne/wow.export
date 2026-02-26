@@ -1,15 +1,12 @@
-const util = require('util');
-const path = require('path');
-const log = require('../log');
-const listfile = require('../casc/listfile');
-const BLPFile = require('../casc/blp');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
-const EncryptionError = require('../casc/blte-reader').EncryptionError;
-const db2 = require('../casc/db2');
-const textureExporter = require('../ui/texture-exporter');
-const listboxContext = require('../ui/listbox-context');
-const InstallType = require('../install-type');
+import log from '../log.js';
+import { listfile } from '../../views/main/rpc.js';
+import BLPFile from '../casc/blp.js';
+import BufferWrapper from '../buffer.js';
+import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import { db as db2 } from '../../views/main/rpc.js';
+import textureExporter from '../ui/texture-exporter.js';
+import listboxContext from '../ui/listbox-context.js';
+import InstallType from '../install-type.js';
 
 const texture_atlas_entries = new Map();
 const texture_atlas_regions = new Map();
@@ -24,7 +21,7 @@ const preview_texture_by_id = async (core, file_data_id, texture = null) => {
 	texture = texture ?? listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
 
 	using _lock = core.create_busy_lock();
-	core.setToast('progress', util.format('Loading %s, please wait...', texture), null, -1, false);
+	core.setToast('progress', `Loading ${texture}, please wait...`, null, -1, false);
 	log.write('Previewing texture file %s', texture);
 
 	try {
@@ -50,14 +47,15 @@ const preview_texture_by_id = async (core, file_data_id, texture = null) => {
 				info = 'Unsupported [' + blp.encoding + ']';
 		}
 
-		core.view.texturePreviewInfo = util.format('%s %d x %d (%s)', path.basename(texture), blp.width, blp.height, info);
+		const base_name = texture.substring(texture.lastIndexOf('/') + 1) || texture.substring(texture.lastIndexOf('\\') + 1) || texture;
+		core.view.texturePreviewInfo = `${base_name} ${blp.width} x ${blp.height} (${info})`;
 		selected_file_data_id = file_data_id;
 
 		update_texture_atlas_overlay(core);
 		core.hideToast();
 	} catch (e) {
-		if (e instanceof EncryptionError) {
-			core.setToast('error', util.format('The texture %s is encrypted with an unknown key (%s).', texture, e.key), null, -1);
+		if (e.name === 'EncryptionError') {
+			core.setToast('error', `The texture ${texture} is encrypted with an unknown key (${e.key}).`, null, -1);
 			log.write('Failed to decrypt texture %s (%s)', texture, e.key);
 		} else {
 			core.setToast('error', 'Unable to preview texture ' + texture, { 'View Log': () => log.openRuntimeLog() }, -1);
@@ -240,7 +238,7 @@ const export_texture_atlas_regions = async (core, file_data_id) => {
 
 			const region = texture_atlas_regions.get(region_id);
 
-			export_file_name = path.join(export_dir, region.name);
+			export_file_name = export_dir + '/' + region.name;
 			const export_path = ExportHelper.getExportPath(export_file_name + ext);
 
 			const crop = ctx.getImageData(region.left, region.top, region.width, region.height);
@@ -275,7 +273,7 @@ const is_baked_npc_texture = (core) => {
 	return first.toLowerCase().startsWith('textures/bakednpctextures/');
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Textures', 'image.svg', InstallType.CASC);
 	},
@@ -465,7 +463,7 @@ module.exports = {
 		// register drop handler
 		this.$core.registerDropHandler({
 			ext: ['.blp'],
-			prompt: count => util.format('Export %d textures as %s', count, this.$core.view.config.exportTextureFormat),
+			prompt: count => `Export ${count} textures as ${this.$core.view.config.exportTextureFormat}`,
 			process: files => textureExporter.exportFiles(files, true)
 		});
 	}

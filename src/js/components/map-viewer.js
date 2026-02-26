@@ -3,9 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const util = require('util');
-const core = require('../core');
-const constants = require('../constants');
+import core from '../core.js';
+import constants from '../constants.js';
 
 const MAP_SIZE = constants.GAME.MAP_SIZE;
 const MAP_COORD_BASE = constants.GAME.MAP_COORD_BASE;
@@ -33,7 +32,7 @@ const state = {
 	renderGeneration: 0
 };
 
-module.exports = {
+export default {
 	/**
 	 * loader: Tile loader function.
 	 * tileSize: Base size of tiles (before zoom).
@@ -1054,7 +1053,7 @@ module.exports = {
 			this.isHovering = true;
 
 			const point = this.mapPositionFromClientPoint(event.clientX, event.clientY);
-			this.hoverInfo = util.format('%d %d (%d %d)', Math.floor(point.posX), Math.floor(point.posY), point.tileX, point.tileY);
+			this.hoverInfo = `${Math.floor(point.posX)} ${Math.floor(point.posY)} (${point.tileX} ${point.tileY})`;
 
 			// If we're not panning, highlight the current tile.
 			if (!this.isPanning)

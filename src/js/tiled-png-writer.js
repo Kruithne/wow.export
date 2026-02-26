@@ -3,8 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const BufferWrapper = require('./buffer');
-const PNGWriter = require('./png-writer');
+import BufferWrapper from './buffer.js';
+import PNGWriter from './png-writer.js';
 
 /**
  * Sparse PNG writer that can stitch together tiles without loading
@@ -140,4 +140,4 @@ class TiledPNGWriter {
 	}
 }
 
-module.exports = TiledPNGWriter;
+export default TiledPNGWriter;

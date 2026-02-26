@@ -914,4 +914,4 @@ MDXLoader.prototype._parse_geosets_v1500 = function() {
 	}
 };
 
-module.exports = MDXLoader;
+export default MDXLoader;

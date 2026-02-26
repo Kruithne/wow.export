@@ -1,7 +1,4 @@
-/**
- * CASC Content Flags
- */
-module.exports = {
+export default {
 	LoadOnWindows: 0x8,
 	LoadOnMacOS: 0x10,
 	LowViolence: 0x80,

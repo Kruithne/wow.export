@@ -429,4 +429,4 @@ const get_bone_name = (bone_id, index, crc) => {
 	return 'bone_' + index;
 }
 
-module.exports = { get_bone_name };
+export { get_bone_name };

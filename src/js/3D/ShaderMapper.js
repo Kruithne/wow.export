@@ -4,7 +4,9 @@
 	License: MIT
  */
 
-const log = require('../log');
+
+
+import log from '../log.js';
 
 const SHADER_ARRAY = [
 	{ "PS": "Combiners_Opaque_Mod2xNA_Alpha",           "VS": "Diffuse_T1_Env",         "HS": "T1_T2",    "DS": "T1_T2"     },
@@ -181,4 +183,4 @@ const getDomainShader = (textureCount, shaderID) => {
 }
 	
 
-module.exports = { getVertexShader, getPixelShader, getHullShader, getDomainShader };
+export { getVertexShader, getPixelShader, getHullShader, getDomainShader };

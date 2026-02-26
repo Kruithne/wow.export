@@ -192,4 +192,4 @@ GLTexture.DXT1_RGBA = 0x83F1;
 GLTexture.DXT3 = 0x83F2;
 GLTexture.DXT5 = 0x83F3;
 
-module.exports = GLTexture;
+export default GLTexture;

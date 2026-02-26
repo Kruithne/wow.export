@@ -1,14 +1,15 @@
-const util = require('util');
-const core = require('../core');
-const platform = require('../platform');
-const log = require('../log');
-const path = require('path');
-const InstallType = require('../install-type');
+import core from '../core.js';
+import * as platform from '../platform.js';
+import log from '../log.js';
+import InstallType from '../install-type.js';
+import { db } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import BLPImage from '../casc/blp.js';
+import BufferWrapper from '../buffer.js';
 
-const db2 = require('../casc/db2');
-const BLPFile = require('../casc/blp');
-const BufferWrapper = require('../buffer');
-const ExportHelper = require('../casc/export-helper');
+const db2 = db;
+const ExportHelper = exporter;
+const BLPFile = BLPImage;
 
 let selected_zone_id = null;
 let selected_phase_id = null;
@@ -288,7 +289,7 @@ const load_zone_map = async (zone_id, phase_id = null) => {
 	}
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Zones', 'mountain-castle.svg', InstallType.CASC);
 	},
@@ -428,8 +429,7 @@ module.exports = {
 					continue;
 
 				zones.push(
-					util.format('%d\x19[%d]\x19%s\x19(%s)',
-					expansion_id, id, entry.AreaName_lang, entry.ZoneName)
+					`${expansion_id}\x19[${id}]\x19${entry.AreaName_lang}\x19(${entry.ZoneName})`
 				);
 			}
 
@@ -477,14 +477,14 @@ module.exports = {
 
 					const phase_suffix = phase_id !== null && phase_id !== 0 ? `_Phase${phase_id}` : '';
 					const filename = `Zone_${zone.id}_${normalized_zone_name}_${normalized_area_name}${phase_suffix}${ext}`;
-					const export_path = ExportHelper.getExportPath(path.join('zones', filename));
+					const export_path = ExportHelper.getExportPath('zones/' + filename);
 
 					log.write('exporting zone map at full resolution (%dx%d): %s', map_info.width, map_info.height, filename);
 
 					const buf = await BufferWrapper.fromCanvas(export_canvas, mime_type, this.$core.view.config.exportWebPQuality);
 					await buf.writeToFile(export_path);
 
-					helper.mark(path.join('zones', filename), true);
+					helper.mark('zones/' + filename, true);
 
 					log.write('successfully exported zone map to: %s', export_path);
 				} catch (e) {

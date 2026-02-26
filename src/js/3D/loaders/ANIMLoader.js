@@ -64,4 +64,4 @@ class ANIMLoader {
 	}
 }
 
-module.exports = ANIMLoader;
+export default ANIMLoader;

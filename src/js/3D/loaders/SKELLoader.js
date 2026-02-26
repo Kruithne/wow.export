@@ -4,6 +4,13 @@
 	License: MIT
  */
 
+import log from '../../log.js';
+import ANIMLoader from './ANIMLoader.js';
+import M2Generics from './M2Generics.js';
+import AnimMapper from '../AnimMapper.js';
+import core from '../../core.js';
+import BufferWrapper from '../../buffer.js';
+
 const CHUNK_SKB1 = 0x31424B53;
 const CHUNK_SKPD = 0x44504B53;
 const CHUNK_SKS1 = 0x31534B53;
@@ -11,12 +18,8 @@ const CHUNK_SKA1 = 0x31414B53; // attachments
 const CHUNK_AFID = 0x44494641;
 const CHUNK_BFID = 0x44494642;
 
-const M2Generics = require('./M2Generics');
-const BufferWrapper = require('../../buffer');
-const AnimMapper = require('../AnimMapper');
-const log = require('../../log');
-const ANIMLoader = require('./ANIMLoader');
-const core = require('../../core');
+
+
 
 // See: https://wowdev.wiki/M2/.skel
 class SKELLoader {
@@ -454,4 +457,4 @@ class SKELLoader {
 	}
 }
 
-module.exports = SKELLoader;
+export default SKELLoader;

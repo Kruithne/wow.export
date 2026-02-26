@@ -1,16 +1,12 @@
-const log = require('../log');
-const listfile = require('../casc/listfile');
-const MultiMap = require('../MultiMap');
-const ExternalLinks = require('../external-links');
+import log from '../log.js';
+import { listfile } from '../../views/main/rpc.js';
+import MultiMap from '../MultiMap.js';
+import ExternalLinks from '../external-links.js';
 
-const DBModelFileData = require('../db/caches/DBModelFileData');
-const DBTextureFileData = require('../db/caches/DBTextureFileData');
-
-const db2 = require('../casc/db2');
-const ItemSlot = require('../wow/ItemSlot');
-const InstallType = require('../install-type');
-const DBItems = require('../db/caches/DBItems');
-const { get_slot_name } = require('../wow/EquipmentSlots');
+import { db as db2, dbc } from '../../views/main/rpc.js';
+import ItemSlot from '../wow/ItemSlot.js';
+import InstallType from '../install-type.js';
+import { get_slot_name } from '../wow/EquipmentSlots.js';
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -227,7 +223,7 @@ const apply_filters = (core) => {
 	core.view.config.itemViewerEnabledQualities = quality_mask;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerNavButton('Items', 'sword.svg', InstallType.CASC);
 	},

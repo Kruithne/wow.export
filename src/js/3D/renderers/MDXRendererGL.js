@@ -3,18 +3,17 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import BLPImage from '../../casc/blp.js';
+import VertexArray from '../gl/VertexArray.js';
+import core from '../../core.js';
+import BLPImage from '../../casc/blp.js';
+import MDXLoader from '../loaders/MDXLoader.js';
+import GLTexture from '../gl/GLTexture.js';
+import log from '../../log.js';
+import Shaders from '../Shaders.js';
+import BufferWrapper from '../../buffer.js';
 
-const core = require('../../core');
-const log = require('../../log');
 
-const BLPFile = require('../../casc/blp');
-const MDXLoader = require('../loaders/MDXLoader');
-const Shaders = require('../Shaders');
-
-const VertexArray = require('../gl/VertexArray');
-const GLTexture = require('../gl/GLTexture');
-
-const textureRibbon = require('../../ui/texture-ribbon');
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -200,8 +199,6 @@ class MDXRendererGL {
 	async _load_textures() {
 		const textures = this.mdx.textures;
 		const mpq = core.view.mpq;
-		const BufferWrapper = require('../../buffer');
-
 		if (this.useRibbon)
 			this.syncID = textureRibbon.reset();
 
@@ -218,7 +215,7 @@ class MDXRendererGL {
 				try {
 					const data = mpq.getFile(fileName);
 					if (data) {
-						const blp = new BLPFile(new BufferWrapper(Buffer.from(data)));
+						const blp = new BLPImage(new BufferWrapper(data));
 						const gl_tex = new GLTexture(this.ctx);
 
 						const wrap_s = (texture.flags & 1) ? this.gl.REPEAT : this.gl.CLAMP_TO_EDGE;
@@ -805,4 +802,4 @@ class MDXRendererGL {
 	}
 }
 
-module.exports = MDXRendererGL;
+export default MDXRendererGL;

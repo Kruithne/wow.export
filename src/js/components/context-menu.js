@@ -13,7 +13,7 @@ window.addEventListener('mousemove', event => {
 	clientMouseY = event.clientY;
 });
 
-module.exports = {
+export default {
 	/**
 	 * node: Object which this context menu represents.
 	 */

@@ -3,11 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const path = require('path');
-const platform = require('../platform');
-const core = require('../core');
-const listfile = require('../casc/listfile');
-const ExportHelper = require('../casc/export-helper');
+import * as platform from '../platform.js';
+import core from '../core.js';
+import { listfile, exporter as ExportHelper } from '../../views/main/rpc.js';
 
 /**
  * Parse a file entry to extract file path and file data ID.
@@ -78,7 +76,7 @@ const get_export_directory = (selection) => {
 
 	const file_path = listfile.stripFileEntry(selection[0]);
 	const export_path = ExportHelper.getExportPath(file_path);
-	return path.dirname(export_path);
+	return export_path.substring(0, export_path.lastIndexOf('/'));
 };
 
 /**
@@ -160,7 +158,7 @@ const close_context_menu = () => {
 	core.view.contextMenus.nodeListbox = null;
 };
 
-module.exports = {
+export {
 	parse_entry,
 	get_file_paths,
 	get_listfile_entries,

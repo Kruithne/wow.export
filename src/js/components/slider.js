@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-module.exports = {
+export default {
 	/**
 	 * value: Slider value between 0 and 1.
 	 */

@@ -175,4 +175,4 @@ class CharacterCameraControlsGL {
 	}
 }
 
-module.exports = CharacterCameraControlsGL;
+export default CharacterCameraControlsGL;

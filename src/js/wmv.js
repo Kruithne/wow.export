@@ -3,8 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const { parse_xml } = require('./xml');
-const { get_slot_id_for_wmv_slot } = require('./wow/EquipmentSlots');
+import { parse_xml } from './xml.js';
+import { get_slot_id_for_wmv_slot } from './wow/EquipmentSlots.js';
 
 const wmv_parse = (xml_str) => {
 	const parsed = parse_xml(xml_str);
@@ -174,4 +174,4 @@ const extract_race_gender_from_path = (model_path) => {
 	return { race, gender };
 };
 
-module.exports = { wmv_parse };
+export { wmv_parse };

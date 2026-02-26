@@ -3,4 +3,4 @@ const InstallType = {
 	CASC: 1 << 1
 };
 
-module.exports = InstallType;
+export default InstallType;

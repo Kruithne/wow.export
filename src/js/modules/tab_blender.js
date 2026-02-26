@@ -1,22 +1,19 @@
-const path = require('path');
-const util = require('util');
-const fsp = require('fs').promises;
+import constants from '../constants.js';
+import * as platform from '../platform.js';
+import generics from '../generics.js';
+import core from '../core.js';
+import log from '../log.js';
 
-const constants = require('../constants');
-const platform = require('../platform');
-const generics = require('../generics');
-const core = require('../core');
-const log = require('../log');
 const PATTERN_ADDON_VER = /'version': \((\d+), (\d+), (\d+)\),/;
 const PATTERN_BLENDER_VER = /\d+\.\d+\w?/;
 
 const parse_manifest_version = async (file) => {
 	try {
-		const data = await fsp.readFile(file, 'utf8');
+		const data = await platform.read_file(file, 'utf8');
 		const match = data.match(PATTERN_ADDON_VER);
 
 		if (match)
-			return util.format('%d.%d.%d', match[1], match[2], match[3]);
+			return `${match[1]}.${match[2]}.${match[3]}`;
 
 		return { error: 'version_pattern_mismatch' };
 	} catch (err) {
@@ -31,7 +28,7 @@ const get_blender_installations = async () => {
 	const installs = [];
 
 	try {
-		const entries = await fsp.readdir(constants.BLENDER.DIR, { withFileTypes: true });
+		const entries = await platform.readdir_with_types(constants.BLENDER.DIR);
 
 		for (const entry of entries) {
 			if (!entry.isDirectory())
@@ -51,7 +48,7 @@ const get_blender_installations = async () => {
 	return installs;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('Install Blender Add-on', '../images/blender.png');
 	},
@@ -90,22 +87,22 @@ module.exports = {
 
 				for (const version of versions) {
 					if (version >= constants.BLENDER.MIN_VER) {
-						const addon_path = path.join(constants.BLENDER.DIR, version, constants.BLENDER.ADDON_DIR);
+						const addon_path = constants.BLENDER.DIR + '/' + version + '/' + constants.BLENDER.ADDON_DIR;
 						log.write('Targeting Blender version %s (%s)', version, addon_path);
 
 						await generics.deleteDirectory(addon_path);
 						await generics.createDirectory(addon_path);
 
-						const files = await fsp.readdir(constants.BLENDER.LOCAL_DIR, { withFileTypes: true });
+						const files = await platform.readdir_with_types(constants.BLENDER.LOCAL_DIR);
 						for (const file of files) {
 							if (file.isDirectory())
 								continue;
 
-							const src_path = path.join(constants.BLENDER.LOCAL_DIR, file.name);
-							const dest_path = path.join(addon_path, file.name);
+							const src_path = constants.BLENDER.LOCAL_DIR + '/' + file.name;
+							const dest_path = addon_path + '/' + file.name;
 
 							log.write('%s -> %s', src_path, dest_path);
-							await fsp.copyFile(src_path, dest_path);
+							await platform.copy_file(src_path, dest_path);
 						}
 
 						installed = true;
@@ -142,7 +139,7 @@ module.exports = {
 			return;
 		}
 
-		const latest_manifest = path.join(constants.BLENDER.LOCAL_DIR, constants.BLENDER.ADDON_ENTRY);
+		const latest_manifest = constants.BLENDER.LOCAL_DIR + '/' + constants.BLENDER.ADDON_ENTRY;
 		const latest_addon_version = await parse_manifest_version(latest_manifest);
 
 		if (typeof latest_addon_version === 'object') {
@@ -156,7 +153,7 @@ module.exports = {
 			return;
 		}
 
-		const blender_manifest = path.join(constants.BLENDER.DIR, blender_version, constants.BLENDER.ADDON_DIR, constants.BLENDER.ADDON_ENTRY);
+		const blender_manifest = constants.BLENDER.DIR + '/' + blender_version + '/' + constants.BLENDER.ADDON_DIR + '/' + constants.BLENDER.ADDON_ENTRY;
 		const blender_addon_version = await parse_manifest_version(blender_manifest);
 
 		log.write('Latest add-on version: %s, Blender add-on version: %s', latest_addon_version, blender_addon_version);
@@ -164,7 +161,10 @@ module.exports = {
 		if (latest_addon_version > blender_addon_version) {
 			log.write('Prompting user for Blender add-on update...');
 			core.setToast('info', 'A newer version of the Blender add-on is available for you.', {
-				'Install': () => require('../modules').setActive('tab_blender'),
+				'Install': async () => {
+					const modules = await import('../modules.js');
+					modules.default.setActive('tab_blender');
+				},
 				'Maybe Later': () => false
 			}, -1, false);
 		}

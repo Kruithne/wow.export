@@ -3,10 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const core = require('../../core');
-const listfile = require('../../casc/listfile');
-
-const LoaderGenerics = require('./LoaderGenerics');
+import core from '../../core.js';
+import LoaderGenerics from './LoaderGenerics.js';
 
 class WMOLoader {
 	/**
@@ -469,4 +467,4 @@ const WMOChunkHandlers = {
 	},
 };
 
-module.exports = WMOLoader;
+export default WMOLoader;

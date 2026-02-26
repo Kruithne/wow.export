@@ -1,7 +1,6 @@
-const generics = require('../generics');
-const constants = require('../constants');
-const tactKeys = require('../casc/tact-keys');
-const tab_characters = require('./tab_characters');
+import generics from '../generics.js';
+import constants from '../constants.js';
+import tab_characters from './tab_characters.js';
 
 let default_config = null;
 
@@ -12,7 +11,7 @@ const load_default_config = async () => {
 	return default_config;
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('Manage Settings', 'gear.svg');
 	},
@@ -391,10 +390,8 @@ module.exports = {
 		},
 
 		handle_tact_key() {
-			if (tactKeys.addKey(this.$core.view.userInputTactKeyName, this.$core.view.userInputTactKey))
-				this.$core.setToast('success', 'Successfully added decryption key.');
-			else
-				this.$core.setToast('error', 'Invalid encryption key.', null, -1);
+			// tact key handling removed (bun-side)
+			this.$core.setToast('error', 'Invalid encryption key.', null, -1);
 		},
 
 		go_home() {

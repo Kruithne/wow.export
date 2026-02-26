@@ -3,9 +3,9 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
  */
-const platform = require('../platform');
+import * as platform from '../platform.js';
 
-module.exports = {
+export default {
 	/**
 	 * items: Item entries displayed in the list.
 	 * selection: Reactive selection controller.

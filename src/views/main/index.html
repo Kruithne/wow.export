@@ -1,22 +1,89 @@
 <!DOCTYPE html>
-<html>
 	<head>
-		<meta charset="UTF-8"/>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<link rel="stylesheet" href="index.css"/>
-		<script defer src="index.js"></script>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<link rel="stylesheet" type="text/css" data-href="index.css" href="index.css"/>
+		<script defer type="module" src="index.js"></script>
 		<title>wow.export</title>
 	</head>
 	<body>
-		<div id="app">
-			<div id="header">
-				<div id="logo">wow.export</div>
-				<div id="version"></div>
+		<div id="logo-background"></div>
+		<div id="container" v-cloak>
+			<div id="header" :class="{ shadowed: toast !== null }">
+				<div id="logo" @click="setActiveModule(installType === 1 ? 'legacy_tab_home' : 'tab_home')" :class="{ active: activeModule && (activeModule.__name === 'tab_home' || activeModule.__name === 'legacy_tab_home') }" style="cursor: pointer;">wow.export</div>
+				<div id="nav" v-if="!isLoading">
+					<template v-for="btn in modNavButtons" :key="btn.module">
+						<div v-if="btn.installTypes & installType" class="option nav-module" :class="{ active: activeModule && activeModule.__name === btn.module }"><span class="nav-icon" @click="setActiveModule(btn.module)" :style="'--nav-icon: url(./fa-icons/' + btn.icon + ')'"></span><span class="nav-label">{{ btn.label }}</span></div>
+					</template>
+					<div id="nav-help" v-if="!isBusy" @click="setActiveModule('tab_help')"></div>
+					<div id="nav-extra" v-if="!isBusy" @click="contextMenus.stateNavExtra = true"></div>
+					<context-menu @close="contextMenus.stateNavExtra = false" :node="contextMenus.stateNavExtra" id="menu-extra">
+						<template v-for="opt in modContextMenuOptions" :key="opt.id">
+							<span v-if="!opt.action?.dev_only || isDev" @click.self="handleContextMenuClick(opt)" :style="opt.icon ? 'background-image: url(./fa-icons/' + opt.icon + ')' : ''">{{ opt.label }}</span>
+						</template>
+					</context-menu>
+				</div>
+			</div>
+			<div id="drop-overlay" v-if="!!fileDropPrompt">
+				<div id="drop-overlay-icon"></div>
+				<div id="drop-overlay-text">» {{ fileDropPrompt }} «</div>
 			</div>
 			<div id="content">
-				<p>Electrobun shell loaded successfully.</p>
-				<p id="runtime-info"></p>
+				<div id="loading" v-if="isLoading">
+					<div id="loading-background" :class="{ xmas: isXmas }"></div>
+					<div id="loading-icon"></div>
+					<span id="loading-title">{{ loadingTitle }}</span>
+					<span id="loading-progress">{{ loadingProgress }}</span>
+					<div id="loading-bar">
+						<div :style="{ width: (loadPct * 100) + '%' }"></div>
+					</div>
+				</div>
+				<div id="module-container" v-if="activeModule">
+					<keep-alive>
+						<component :is="activeModule"></component>
+					</keep-alive>
+				</div>
+				<div id="toast" v-if="toast" :class="toast.type">
+					{{ toast.message }}
+					<span v-for="(func, label) in toast.options" @click="handleToastOptionClick(func)">{{ label }}</span>
+					<div class="close" v-if="toast.closable" @click="hideToast(true)"></div>
+				</div>
+				<div id="toast" v-if="!toast && activeModule && activeModule.__name === 'tab_models' && overrideModelList.length > 0" class="progress">
+					Filtering models for item: {{ overrideModelName }}
+					<span @click="removeOverrideModels">Remove</span>
+					<div class="close" @click="removeOverrideModels"></div>
+				</div>
+			</div>
+			<div id="footer">
+				<span id="footer-links">
+					<a data-external="::WEBSITE">Website</a> -
+					<a data-external="::DISCORD">Discord</a> -
+					<a data-external="::PATREON">Patreon</a> -
+					<a data-external="::GITHUB">GitHub</a>
+				</span>
+				<span id="footer-copyright">
+					World of Warcraft and related trademarks are registered trademarks of Blizzard Entertainment whom this application is not affiliated with.
+				</span>
 			</div>
 		</div>
+		<noscript>
+			<div id="crash-screen">
+				<h1>Oh no! The kākāpō has exploded...</h1>
+				<div id="crash-screen-versions">
+					<span id="crash-screen-version">???</span>
+					<span id="crash-screen-flavour">???</span>
+					<span id="crash-screen-build">???</span>
+				</div>
+				<div id="crash-screen-text">
+					<span id="crash-screen-text-code">ERR_BROKEN:</span>
+					<span id="crash-screen-text-message">Something went so terribly wrong that we don't even have an error message.</span>
+				</div>
+				<div class="form-tray">
+					<input type="button" value="Report Issue" data-external="::ISSUE_TRACKER"/>
+					<input type="button" value="Get Help on Discord" data-external="::DISCORD"/>
+					<input type="button" value="Restart Application" onclick="location.reload()"/>
+				</div>
+				<textarea id="crash-screen-log">No runtime log available.</textarea>
+			</div>
+		</noscript>
 	</body>
 </html>

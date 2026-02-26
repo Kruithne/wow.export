@@ -1,11 +1,11 @@
-const util = require('util');
-const path = require('path');
-const log = require('../log');
-const ExportHelper = require('../casc/export-helper');
-const generics = require('../generics');
-const constants = require('../constants');
-const listfile = require('../casc/listfile');
-const listboxContext = require('../ui/listbox-context');
+import log from '../log.js';
+import generics from '../generics.js';
+import constants from '../constants.js';
+import { listfile } from '../../views/main/rpc.js';
+import { exporter } from '../../views/main/rpc.js';
+import listboxContext from '../ui/listbox-context.js';
+
+const ExportHelper = exporter;
 
 let is_dirty = true;
 
@@ -25,7 +25,7 @@ const compute_raw_files = async (core) => {
 		core.view.listfileRaw = await listfile.renderListfile();
 	}
 
-	core.setToast('success', util.format('Found %d files in the game client', core.view.listfileRaw.length));
+	core.setToast('success', `Found ${core.view.listfileRaw.length} files in the game client`);
 };
 
 const detect_raw_files = async (core) => {
@@ -55,7 +55,7 @@ const detect_raw_files = async (core) => {
 	let current_index = 1;
 
 	for (const file_data_id of filtered_selection) {
-		core.setToast('progress', util.format('Identifying file %d (%d / %d)', file_data_id, current_index++, filtered_selection.length));
+		core.setToast('progress', `Identifying file ${file_data_id} (${current_index++} / ${filtered_selection.length})`);
 
 		try {
 			const data = await core.view.casc.getFile(file_data_id);
@@ -77,12 +77,12 @@ const detect_raw_files = async (core) => {
 
 		if (extension_map.size === 1) {
 			const [file_data_id, ext] = extension_map.entries().next().value;
-			core.setToast('success', util.format('%d has been identified as a %s file', file_data_id, ext));
+			core.setToast('success', `${file_data_id} has been identified as a ${ext} file`);
 		} else {
-			core.setToast('success', util.format('Successfully identified %d files', extension_map.size));
+			core.setToast('success', `Successfully identified ${extension_map.size} files`);
 		}
 
-		core.setToast('success', util.format('%d of the %d selected files have been identified and added to relevant file lists', extension_map.size, filtered_selection.length));
+		core.setToast('success', `${extension_map.size} of the ${filtered_selection.length} selected files have been identified and added to relevant file lists`);
 	} else {
 		core.setToast('info', 'Unable to identify any of the selected files.');
 	}
@@ -109,10 +109,12 @@ const export_raw_files = async (core) => {
 		if (!core.view.config.exportNamedFiles) {
 			const file_data_id = listfile.getByFilename(file_name);
 			if (file_data_id) {
-				const ext = path.extname(file_name);
-				const dir = path.dirname(file_name);
+				const dot_idx = file_name.lastIndexOf('.');
+				const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';
+				const slash_idx = file_name.lastIndexOf('/');
+				const dir = slash_idx !== -1 ? file_name.substring(0, slash_idx) : '.';
 				const file_data_id_name = file_data_id + ext;
-				export_file_name = dir === '.' ? file_data_id_name : path.join(dir, file_data_id_name);
+				export_file_name = dir === '.' ? file_data_id_name : dir + '/' + file_data_id_name;
 			}
 		}
 
@@ -136,7 +138,7 @@ const export_raw_files = async (core) => {
 	helper.finish();
 };
 
-module.exports = {
+export default {
 	register() {
 		this.registerContextMenuOption('Browse Raw Client Files', 'fish.svg');
 	},

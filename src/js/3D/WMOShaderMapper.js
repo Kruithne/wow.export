@@ -91,4 +91,4 @@ const WMOShaderMap = {
     [MOMTShader.DF_MoreTexture_Unknown]: { VertexShader: WMOVertexShader.MapObjDiffuse_T1, PixelShader: WMOPixelShader.MapObjDFShader }
 };
 
-module.exports = { MOMTShader, WMOVertexShader, WMOPixelShader, WMOShaderMap };
+export { MOMTShader, WMOVertexShader, WMOPixelShader, WMOShaderMap };
