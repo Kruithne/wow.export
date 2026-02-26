@@ -176,17 +176,33 @@ CLI.parseArgs = () => {
         const arg = rawArgs[i];
         if (arg.startsWith('--')) {
             const key = arg.substring(2);
-            const next = rawArgs[i + 1];
-            if (next && !next.startsWith('--')) {
-                args[key] = next;
+            let values = [];
+            while (rawArgs[i + 1] && !rawArgs[i + 1].startsWith('--')) {
+                values.push(rawArgs[i + 1]);
                 i++;
-            } else {
+            }
+            
+            if (values.length === 0) {
                 args[key] = true;
+            } else if (values.length === 1) {
+                args[key] = values[0];
+            } else {
+                // Join multiple values with a comma so they can be parsed as a list later.
+                args[key] = values.join(',');
             }
         }
     }
     CLI.args = args;
     print('[CLI] Arguments parsed: %o', CLI.args);
+};
+
+/**
+ * Helper to get a list of values from a potentially comma-separated argument string.
+ */
+CLI.getArgList = (input) => {
+    if (!input) return [];
+    if (typeof input !== 'string') return [input];
+    return input.split(',').map(e => e.replace(/,$/, '').trim()).filter(e => e.length > 0);
 };
 
 /**
@@ -289,6 +305,7 @@ CLI.commands['list-files'] = async () => {
 
     print(`[SEARCH] Searching for: ${search}...`);
     
+    const results = [];
     const searchID = parseInt(search);
     if (!isNaN(searchID)) {
         const name = listfile.getByID(searchID);
@@ -306,7 +323,7 @@ CLI.commands['list-files'] = async () => {
     if (filtered.length > 0) {
         print(`[SEARCH] Found ${filtered.length} matches:`);
         filtered.slice(0, 50).forEach(r => print(`  [${r.fileDataID}] ${r.fileName}`));
-        if (filtered.length > 50) print(`  ... and ${filtered.length - 50} more.`);
+        if (filtered.length > 50) print(`  ... and ${results.length - 50} more.`);
     } else if (isNaN(searchID)) {
         print('[SEARCH] No matches found for string search.');
     }
@@ -345,19 +362,17 @@ CLI.commands['export-texture'] = async () => {
     }
 
     const exportList = [];
-    if (CLI.args.id) exportList.push(parseInt(CLI.args.id));
-    if (CLI.args.name) exportList.push(CLI.args.name);
+    CLI.getArgList(CLI.args.id).forEach(id => exportList.push(parseInt(id)));
+    CLI.getArgList(CLI.args.name).forEach(name => exportList.push(name));
 
     print(`[EXPORT] Exporting ${exportList.length} textures...`);
     
-    // Check if the ID exists in listfile for logging
-    if (CLI.args.id) {
-        const id = parseInt(CLI.args.id);
-        const name = listfile.getByID(id);
-        if (name) {
-            print(`[EXPORT] ID ${id} resolved to: ${name}`);
+    for (const entry of exportList) {
+        if (typeof entry === 'number') {
+            const name = listfile.getByID(entry);
+            print(`[EXPORT] Processing ID ${entry}${name ? ' (' + name + ')' : ''}...`);
         } else {
-            print(`[WARN] ID ${id} could not be resolved in listfile.`);
+            print(`[EXPORT] Processing ${entry}...`);
         }
     }
 
@@ -375,8 +390,8 @@ CLI.commands['export-model'] = async () => {
     }
 
     const exportList = [];
-    if (CLI.args.id) exportList.push(parseInt(CLI.args.id));
-    if (CLI.args.name) exportList.push(CLI.args.name);
+    CLI.getArgList(CLI.args.id).forEach(id => exportList.push(parseInt(id)));
+    CLI.getArgList(CLI.args.name).forEach(name => exportList.push(name));
 
     print(`[EXPORT] Exporting ${exportList.length} models...`);
     
@@ -436,8 +451,8 @@ CLI.commands['export-file'] = async () => {
     }
 
     const exportList = [];
-    if (CLI.args.id) exportList.push(parseInt(CLI.args.id));
-    if (CLI.args.name) exportList.push(CLI.args.name);
+    CLI.getArgList(CLI.args.id).forEach(id => exportList.push(parseInt(id)));
+    CLI.getArgList(CLI.args.name).forEach(name => exportList.push(name));
 
     print(`[EXPORT] Exporting ${exportList.length} files...`);
 
