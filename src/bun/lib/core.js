@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs/promises';
+import * as constants from './constants.js';
 
 export const events = new EventEmitter();
 
@@ -39,9 +41,25 @@ export const get_config = (key) => {
 };
 
 // cache size
+let _cache_size_timer = -1;
+
 export const get_cache_size = () => _cache_size;
 export const set_cache_size = (size) => {
 	_cache_size = size;
+
+	clearTimeout(_cache_size_timer);
+	_cache_size_timer = setTimeout(() => {
+		fs.writeFile(constants.CACHE.SIZE, String(size), 'utf8').catch(() => {});
+	}, constants.CACHE.SIZE_UPDATE_DELAY);
+};
+
+export const load_cache_size = async () => {
+	try {
+		const data = await fs.readFile(constants.CACHE.SIZE, 'utf8');
+		_cache_size = Number(data) || 0;
+	} catch {
+		_cache_size = 0;
+	}
 };
 
 // cdn region

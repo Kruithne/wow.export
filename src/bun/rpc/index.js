@@ -50,6 +50,7 @@ export async function init_services(paths, rpc) {
 
 	// initialize cache integrity system
 	await init_cache_integrity();
+	await core_lib.load_cache_size();
 
 	log_lib.write('bun-side services initialized');
 }
