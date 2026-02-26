@@ -224,10 +224,8 @@ class M3RendererGL {
 			gl.uniformMatrix4fv(loc, false, IDENTITY_MAT4);
 
 		// texture matrix defaults
-		shader.set_uniform_1i('u_has_tex_matrix1', 0);
-		shader.set_uniform_1i('u_has_tex_matrix2', 0);
-		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
-		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
+		shader.set_uniform_1i('u_tex_matrix1_idx', -1);
+		shader.set_uniform_1i('u_tex_matrix2_idx', -1);
 
 		// lighting
 		const lx = 3, ly = -0.7, lz = -2;
