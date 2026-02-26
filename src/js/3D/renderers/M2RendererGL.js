@@ -541,9 +541,13 @@ class M2RendererGL {
 			let flags = 0;
 			let texture_count = 1;
 			let tex_mtx_idxs = [-1, -1];
+			let prio = 0;
+			let layer = 0;
 
 			if (tex_unit) {
 				texture_count = tex_unit.textureCount;
+				prio = tex_unit.priority;
+				layer = tex_unit.materialLayer;
 
 				// get all texture indices for multi-texture shaders
 				for (let j = 0; j < Math.min(texture_count, 4); j++) {
@@ -582,6 +586,8 @@ class M2RendererGL {
 				flags: flags,
 				visible: true,
 				tex_matrix_idxs: tex_mtx_idxs,
+				prio: prio,
+				layer: layer,
 			};
 
 			this.draw_calls.push(draw_call);
@@ -1288,12 +1294,13 @@ class M2RendererGL {
 		// default texture weights
 		shader.set_uniform_3f('u_tex_sample_alpha', 1, 1, 1);
 
-		// sort draw calls by blend mode (opaque first, then transparent)
 		const sorted_calls = [...this.draw_calls].sort((a, b) => {
-			const a_opaque = a.blend_mode === 0 || a.blend_mode === 1;
-			const b_opaque = b.blend_mode === 0 || b.blend_mode === 1;
-			if (a_opaque !== b_opaque)
-				return a_opaque ? -1 : 1;
+			if (a.prio != b.prio)
+				return a.prio - b.prio;
+			if (a.layer != b.layer)
+				return a.layer - b.layer;
+			if (a.blend_mode != b.blend_mode)
+				return a.blend_mode - b.blend_mode;
 
 			return 0;
 		});
