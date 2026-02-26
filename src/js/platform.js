@@ -16,11 +16,4 @@ export const get_version = () => _app_info?.version ?? '0.0.0';
 export const get_flavour = () => _app_info?.flavour ?? 'unknown';
 export const get_guid = () => _app_info?.guid ?? '';
 export const get_data_path = () => _app_info?.data_path ?? '';
-export const get_argv = () => [];
 export const get_manifest = () => _app_info ?? { version: '0.0.0', flavour: 'unknown', guid: '' };
-
-export const init_window = () => {};
-export const set_progress_bar = () => {};
-export const show_dev_tools = () => {};
-export const on_close = () => {};
-export const reload = () => location.reload();

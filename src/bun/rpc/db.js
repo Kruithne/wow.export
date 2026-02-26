@@ -17,7 +17,6 @@ import * as DBCharacterCustomization from '../db/caches/DBCharacterCustomization
 import * as DBModelFileData from '../db/caches/DBModelFileData.js';
 import * as DBTextureFileData from '../db/caches/DBTextureFileData.js';
 import * as DBComponentModelFileData from '../db/caches/DBComponentModelFileData.js';
-import * as DBComponentTextureFileData from '../db/caches/DBComponentTextureFileData.js';
 import * as DBDecor from '../db/caches/DBDecor.js';
 import * as DBDecorCategories from '../db/caches/DBDecorCategories.js';
 import * as DBGuildTabard from '../db/caches/DBGuildTabard.js';

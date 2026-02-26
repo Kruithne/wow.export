@@ -95,10 +95,6 @@ export const set_toast = (type, message, options = null, timeout = -1, cancellab
 	_rpc?.send?.[MSG.TOAST]?.({ type, message, options, timeout, cancellable });
 };
 
-export const send_listfile_data = (key, data) => {
-	_rpc?.send?.listfile_data?.({ key, data });
-};
-
 // disposable busy lock (using Symbol.dispose)
 export const create_busy_lock = () => {
 	_is_busy++;
