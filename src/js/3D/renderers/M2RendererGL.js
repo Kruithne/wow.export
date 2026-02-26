@@ -449,9 +449,9 @@ class M2RendererGL {
 		await this._create_skeleton();
 
 		// build interleaved vertex buffer
-		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) = 40 bytes
+		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) + uv(2f) = 48 bytes
 		const vertex_count = m2.vertices.length / 3;
-		const stride = 40;
+		const stride = 48;
 		const vertex_data = new ArrayBuffer(vertex_count * stride);
 		const vertex_view = new DataView(vertex_data);
 
@@ -486,6 +486,10 @@ class M2RendererGL {
 			// texcoord
 			vertex_view.setFloat32(offset + 32, m2.uv[uv_idx], true);
 			vertex_view.setFloat32(offset + 36, m2.uv[uv_idx + 1], true);
+
+			// texcoord2
+			vertex_view.setFloat32(offset + 40, m2.uv2[uv_idx], true);
+			vertex_view.setFloat32(offset + 44, 1 - m2.uv2[uv_idx + 1], true);
 		}
 
 		// map triangle indices

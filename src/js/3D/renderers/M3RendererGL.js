@@ -80,9 +80,9 @@ class M3RendererGL {
 		const gl = this.gl;
 
 		// build interleaved vertex buffer matching M2 format
-		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) = 40 bytes
+		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) + uv(2f) = 48 bytes
 		const vertex_count = m3.vertices.length / 3;
-		const stride = 40;
+		const stride = 48;
 		const vertex_data = new ArrayBuffer(vertex_count * stride);
 		const vertex_view = new DataView(vertex_data);
 
@@ -116,6 +116,10 @@ class M3RendererGL {
 			// texcoord
 			vertex_view.setFloat32(offset + 32, m3.uv ? m3.uv[uv_idx] : 0, true);
 			vertex_view.setFloat32(offset + 36, m3.uv ? m3.uv[uv_idx + 1] : 0, true);
+
+			// texcoord2
+			vertex_view.setFloat32(offset + 40, m3.uv2 ? m3.uv2[uv_idx] : 0, true);
+			vertex_view.setFloat32(offset + 44, m3.uv2 ? m3.uv2[uv_idx + 1] : 0, true);
 		}
 
 		// create VAO
