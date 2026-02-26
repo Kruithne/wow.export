@@ -112,6 +112,7 @@ export const casc = {
 	get_file_by_name: async (name) => decode_binary(await rpc_config.request.casc_get_file_by_name({ name })),
 	get_file_partial: async (file_data_id, offset, length) => decode_binary(await rpc_config.request.casc_get_file_partial({ file_data_id, offset, length })),
 	add_tact_key: (key_name, key) => rpc_config.request.casc_add_tact_key({ key_name, key }),
+	start_pre_resolution: (region, product) => rpc_config.request.casc_start_pre_resolution({ region, product }),
 };
 
 // -- listfile API --

@@ -75,6 +75,7 @@ export default {
 			this.$core.view.selectedCDNRegion = region;
 			this.$core.view.lockCDNRegion = true;
 			this.$core.view.config.sourceSelectUserRegion = region.tag;
+			casc.start_pre_resolution(region.tag);
 		},
 
 		setup_casc_adapter() {
@@ -221,6 +222,9 @@ export default {
 				}));
 			}
 
+			if (this.$core.view.selectedCDNRegion)
+				casc.start_pre_resolution(this.$core.view.selectedCDNRegion.tag);
+
 			Promise.all(pings).then(() => {
 				if (this.$core.view.lockCDNRegion)
 					return;
@@ -233,6 +237,9 @@ export default {
 					if (region.delay < selected_region.delay)
 						this.$core.view.selectedCDNRegion = region;
 				}
+
+				if (this.$core.view.selectedCDNRegion !== selected_region)
+					casc.start_pre_resolution(this.$core.view.selectedCDNRegion.tag);
 			});
 		},
 

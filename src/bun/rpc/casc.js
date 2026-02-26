@@ -3,6 +3,7 @@ import * as log from '../lib/log.js';
 import * as listfile from '../casc/listfile.js';
 import * as tactKeys from '../casc/tact-keys.js';
 import * as realmlist from '../casc/realmlist.js';
+import cdnResolver from '../casc/cdn-resolver.js';
 import CASCLocal from '../casc/casc-source-local.js';
 import CASCRemote from '../casc/casc-source-remote.js';
 
@@ -89,6 +90,11 @@ export const casc_handlers = {
 
 	async casc_add_tact_key({ key_name, key }) {
 		return tactKeys.addKey(key_name, key);
+	},
+
+	async casc_start_pre_resolution({ region, product }) {
+		log.write('casc_start_pre_resolution: %s / %s', region, product ?? 'wow');
+		cdnResolver.startPreResolution(region, product ?? 'wow');
 	},
 };
 
