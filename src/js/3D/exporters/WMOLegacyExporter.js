@@ -84,7 +84,7 @@ class WMOLegacyExporter {
 					continue;
 
 				try {
-					const textureData = mpq.getFile(texturePath);
+					const textureData = await mpq.getFile(texturePath);
 					if (!textureData) {
 						log.write('Texture not found in MPQ: %s', texturePath);
 						continue;
@@ -303,7 +303,7 @@ class WMOLegacyExporter {
 							m2Path = ExportHelper.replaceFile(out, objFileName);
 
 						if (!doodadCache.has(fileName.toLowerCase())) {
-							const m2Data = mpq.getFile(fileName);
+							const m2Data = await mpq.getFile(fileName);
 							if (m2Data) {
 								const buf = new BufferWrapper(m2Data);
 								const m2Export = new M2LegacyExporter(buf, prefixedFileName, mpq);
@@ -515,7 +515,7 @@ class WMOLegacyExporter {
 				exportedTextures.add(texturePath.toLowerCase());
 
 				try {
-					const textureData = mpq.getFile(texturePath);
+					const textureData = await mpq.getFile(texturePath);
 					if (!textureData) {
 						log.write('Texture not found in MPQ: %s', texturePath);
 						continue;
@@ -553,7 +553,7 @@ class WMOLegacyExporter {
 				const groupFileName = this.filePath.replace('.wmo', '_' + i.toString().padStart(3, '0') + '.wmo');
 
 				try {
-					const groupData = mpq.getFile(groupFileName);
+					const groupData = await mpq.getFile(groupFileName);
 					if (!groupData) {
 						log.write('WMO group file not found: %s', groupFileName);
 						continue;

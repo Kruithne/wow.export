@@ -5,6 +5,7 @@ export const events = new EventEmitter();
 let _rpc = null;
 let _config = null;
 let _casc = null;
+let _mpq = null;
 let _cache_size = 0;
 let _selected_cdn_region = null;
 let _is_busy = 0;
@@ -21,6 +22,10 @@ export const set_casc = (casc) => {
 	_casc = casc;
 	events.emit('casc-source-changed', casc);
 };
+
+// mpq instance management
+export const get_mpq = () => _mpq;
+export const set_mpq = (mpq) => { _mpq = mpq; };
 
 // config access
 export const get_config = (key) => {

@@ -76,6 +76,17 @@ export const MAX_REQUEST_TIME = 120_000;
  */
 
 /**
+ * mpq operations (legacy MPQ-based installations)
+ *
+ * mpq_init: { path: string } => { build_id: string }
+ * mpq_close: {} => void
+ * mpq_get_file: { path: string } => string (base64) | null
+ * mpq_get_files_by_extension: { extension: string } => string[]
+ * mpq_get_all_files: {} => string[]
+ * mpq_get_build_id: {} => string | null
+ */
+
+/**
  * platform operations (shell, clipboard, dialog, system)
  *
  * platform_open_path: { path: string } => void

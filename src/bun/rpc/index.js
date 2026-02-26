@@ -4,6 +4,7 @@ import { db_handlers, db_cache_handlers } from './db.js';
 import { platform_handlers } from './platform.js';
 import { config_handlers, app_handlers, init_config, get_config_ref } from './config.js';
 import { export_handlers, log_handlers, handle_log_write, init_export } from './export.js';
+import { mpq_handlers } from './mpq.js';
 import { MSG } from '../../rpc/schema.js';
 
 import * as log_lib from '../lib/log.js';
@@ -24,6 +25,7 @@ export function create_handlers(rpc) {
 			...app_handlers,
 			...export_handlers,
 			...log_handlers,
+			...mpq_handlers,
 		},
 
 		messages: {

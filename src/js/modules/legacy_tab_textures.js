@@ -14,7 +14,7 @@ const preview_texture = async (core, filename) => {
 	log.write('previewing texture file %s', filename);
 
 	try {
-		const data = core.view.mpq.getFile(filename);
+		const data = await core.view.mpq.getFile(filename);
 		if (!data) {
 			log.write('failed to load texture: %s', filename);
 			return;
@@ -66,7 +66,7 @@ const preview_texture = async (core, filename) => {
 	}
 };
 
-const refresh_blp_preview = (core) => {
+const refresh_blp_preview = async (core) => {
 	if (!selected_file)
 		return;
 
@@ -75,7 +75,7 @@ const refresh_blp_preview = (core) => {
 		return;
 
 	try {
-		const data = core.view.mpq.getFile(selected_file);
+		const data = await core.view.mpq.getFile(selected_file);
 		if (data) {
 			const blp = new BLPFile(new BufferWrapper(data));
 			core.view.texturePreviewURL = blp.getDataURL(core.view.config.exportChannelMask);
@@ -90,9 +90,9 @@ const load_texture_list = async (core) => {
 		using _lock = core.create_busy_lock();
 
 		try {
-			const blp_files = core.view.mpq.getFilesByExtension('.blp');
-			const png_files = core.view.mpq.getFilesByExtension('.png');
-			const jpg_files = core.view.mpq.getFilesByExtension('.jpg');
+			const blp_files = await core.view.mpq.getFilesByExtension('.blp');
+			const png_files = await core.view.mpq.getFilesByExtension('.png');
+			const jpg_files = await core.view.mpq.getFilesByExtension('.jpg');
 
 			core.view.listfileTextures = [...blp_files, ...png_files, ...jpg_files];
 		} catch (e) {

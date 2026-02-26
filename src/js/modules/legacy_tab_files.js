@@ -13,7 +13,7 @@ const load_files = async (core) => {
 	using _lock = core.create_busy_lock();
 
 	try {
-		const files = core.view.mpq.getAllFiles();
+		const files = await core.view.mpq.getAllFiles();
 		core.view.listfileRaw = files;
 		files_loaded = true;
 	} catch (e) {
@@ -33,7 +33,7 @@ const export_files = async (core) => {
 		let last_export_path = null;
 
 		for (const display_path of selection) {
-			const data = core.view.mpq.getFile(display_path);
+			const data = await core.view.mpq.getFile(display_path);
 			if (!data) {
 				log.write('failed to read file: %s', display_path);
 				continue;

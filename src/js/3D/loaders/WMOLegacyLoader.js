@@ -133,7 +133,7 @@ class WMOLegacyLoader {
 		}
 
 		const groupFileName = this.fileName.replace('.wmo', '_' + index.toString().padStart(3, '0') + '.wmo');
-		const fileData = mpq.getFile(groupFileName);
+		const fileData = await mpq.getFile(groupFileName);
 
 		if (!fileData)
 			throw new Error('Group file not found: ' + groupFileName);

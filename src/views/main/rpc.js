@@ -195,6 +195,25 @@ export const exporter = {
 	get_incremental: (path) => rpc_config.request.export_get_incremental({ path }),
 };
 
+// -- mpq API --
+
+export const mpq = {
+	init: (path) => rpc_config.request.mpq_init({ path }),
+	close: () => rpc_config.request.mpq_close(),
+
+	get_file: async (path) => {
+		const data = await rpc_config.request.mpq_get_file({ path });
+		if (data === null)
+			return null;
+
+		return decode_binary(data);
+	},
+
+	get_files_by_extension: (extension) => rpc_config.request.mpq_get_files_by_extension({ extension }),
+	get_all_files: () => rpc_config.request.mpq_get_all_files(),
+	get_build_id: () => rpc_config.request.mpq_get_build_id(),
+};
+
 // -- log API (sends messages to bun, no response expected) --
 
 export const log = {

@@ -231,7 +231,7 @@ class M2LegacyRendererGL {
 					textureRibbon.setSlotFile(ribbonSlot, fileName, this.syncID);
 
 				try {
-					const data = mpq.getFile(fileName);
+					const data = await mpq.getFile(fileName);
 
 					if (data) {
 						const blp = new BLPImage(new BufferWrapper(data));
@@ -271,7 +271,7 @@ class M2LegacyRendererGL {
 					const texture_path = texture_paths[skin_index];
 
 					try {
-						const data = mpq.getFile(texture_path);
+						const data = await mpq.getFile(texture_path);
 						if (data) {
 							const blp = new BLPImage(new BufferWrapper(data));
 							const gl_tex = new GLTexture(this.ctx);

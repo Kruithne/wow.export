@@ -4,8 +4,7 @@ import log from '../log.js';
 import ExternalLinks from '../external-links.js';
 import InstallType from '../install-type.js';
 import BufferWrapper from '../buffer.js';
-import { casc, platform } from '../../views/main/rpc.js';
-import { MPQInstall } from '../mpq/mpq-install.js';
+import { casc, mpq, platform } from '../../views/main/rpc.js';
 
 let casc_type = null;
 let casc_install_path = null;
@@ -156,10 +155,16 @@ export default {
 			this.$core.hideToast();
 
 			try {
-				this.$core.view.mpq = new MPQInstall(install_path);
-
 				this.$core.showLoadingScreen(2, 'Loading Legacy Installation');
-				await this.$core.view.mpq.loadInstall();
+				const result = await mpq.init(install_path);
+
+				this.$core.view.mpq = {
+					build_id: result.build_id,
+					getFile: (path) => mpq.get_file(path),
+					getFilesByExtension: (ext) => mpq.get_files_by_extension(ext),
+					getAllFiles: () => mpq.get_all_files(),
+					close: () => mpq.close(),
+				};
 
 				const pre_index = this.$core.view.config.recentLegacy.findIndex(e => e.path === install_path);
 				if (pre_index > -1) {

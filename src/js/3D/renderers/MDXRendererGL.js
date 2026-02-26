@@ -213,7 +213,7 @@ class MDXRendererGL {
 					textureRibbon.setSlotFile(ribbonSlot, fileName, this.syncID);
 
 				try {
-					const data = mpq.getFile(fileName);
+					const data = await mpq.getFile(fileName);
 					if (data) {
 						const blp = new BLPImage(new BufferWrapper(data));
 						const gl_tex = new GLTexture(this.ctx);

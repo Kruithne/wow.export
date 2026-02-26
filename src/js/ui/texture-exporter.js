@@ -71,7 +71,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 
 		let data;
 		if (isMPQ) {
-			const raw_data = core.view.mpq.getFile(fileName);
+			const raw_data = await core.view.mpq.getFile(fileName);
 			data = new BufferWrapper(raw_data);
 		} else {
 			data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));
@@ -130,7 +130,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 			if (overwriteFiles || !await generics.fileExists(exportPath)) {
 				let data;
 				if (isMPQ) {
-					const raw_data = core.view.mpq.getFile(fileName);
+					const raw_data = await core.view.mpq.getFile(fileName);
 					data = new BufferWrapper(raw_data);
 				} else {
 					data = await (isLocal ? BufferWrapper.readFile(fileName) : core.view.casc.getFile(fileDataID));

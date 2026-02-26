@@ -22,7 +22,7 @@ const initialize_dbc_listfile = async (core) => {
 	if (!mpq)
 		return;
 
-	const all_dbc_files = mpq.getFilesByExtension(DBC_EXTENSION);
+	const all_dbc_files = await mpq.getFilesByExtension(DBC_EXTENSION);
 
 	dbc_path_map.clear();
 	const table_names = new Set();
@@ -52,7 +52,7 @@ const load_table = async (core, table_name) => {
 			return;
 		}
 
-		let raw_data = mpq.getFile(full_path);
+		let raw_data = await mpq.getFile(full_path);
 
 		if (!raw_data) {
 			core.setToast('error', `Unable to load DBC file: ${full_path}`, null, -1);
@@ -291,7 +291,7 @@ export default {
 				return;
 			}
 
-			await dataExporter.exportRawDBC(selected_file, selected_file_path, this.$core.view.mpq);
+			await dataExporter.exportRawDBC(selected_file, selected_file_path);
 		}
 	},
 

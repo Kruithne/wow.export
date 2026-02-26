@@ -211,8 +211,8 @@ const exportDataTableSQL = async (headers, rows, tableName, schema, createTable,
  * @param {string} filePath - Full path to the file in MPQ (including MPQ name prefix)
  * @param {MPQInstall} mpq - MPQ install instance
  */
-const exportRawDBC = async (tableName, filePath, mpq) => {
-	if (!tableName || !filePath || !mpq) {
+const exportRawDBC = async (tableName, filePath) => {
+	if (!tableName || !filePath) {
 		core.setToast('info', 'No DBC file information available to export.');
 		return;
 	}
@@ -231,7 +231,7 @@ const exportRawDBC = async (tableName, filePath, mpq) => {
 			log.write('Skipping export of %s (file exists, overwrite disabled)', exportPath);
 			helper.mark(fileName, true);
 		} else {
-			const raw_data = mpq.getFile(filePath);
+			const raw_data = await core.view.mpq.getFile(filePath);
 
 			if (!raw_data)
 				throw new Error('Failed to retrieve DBC file from MPQ');

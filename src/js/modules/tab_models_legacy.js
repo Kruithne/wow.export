@@ -59,7 +59,7 @@ const preview_model = async (core, file_name) => {
 		}
 
 		const mpq = core.view.mpq;
-		const file_data = mpq.getFile(file_name);
+		const file_data = await mpq.getFile(file_name);
 
 		if (!file_data)
 			throw new Error('File not found in MPQ: ' + file_name);
@@ -231,7 +231,7 @@ const export_files = async (core, files, export_id = -1) => {
 			const file_manifest = [];
 
 			try {
-				const file_data = mpq.getFile(file_name);
+				const file_data = await mpq.getFile(file_name);
 				if (!file_data)
 					throw new Error('File not found in MPQ');
 
@@ -490,7 +490,7 @@ export default {
 			await this.$core.progressLoadingScreen('Building legacy model list...');
 
 			const mpq = this.$core.view.mpq;
-			const all_files = mpq.getAllFiles();
+			const all_files = await mpq.getAllFiles();
 
 			const model_files = all_files.filter(f => {
 				const lower = f.toLowerCase();

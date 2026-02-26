@@ -21,7 +21,7 @@ const load_font = async (core, file_name) => {
 		return font_id;
 
 	try {
-		const data = core.view.mpq.getFile(file_name);
+		const data = await core.view.mpq.getFile(file_name);
 		if (!data) {
 			log.write('failed to load legacy font: %s', file_name);
 			return null;
@@ -44,7 +44,7 @@ const load_font_list = async (core) => {
 		using _lock = core.create_busy_lock();
 
 		try {
-			core.view.listfileFonts = core.view.mpq.getFilesByExtension('.ttf');
+			core.view.listfileFonts = await core.view.mpq.getFilesByExtension('.ttf');
 		} catch (e) {
 			log.write('failed to load legacy fonts: %o', e);
 		}
@@ -118,7 +118,7 @@ export default {
 			for (const file_name of selected) {
 				try {
 					const export_path = export_dir + '/' + file_name;
-					const data = this.$core.view.mpq.getFile(file_name);
+					const data = await this.$core.view.mpq.getFile(file_name);
 					if (data) {
 						const dir_path = export_path.substring(0, export_path.lastIndexOf('/'));
 						await platform.mkdir(dir_path, { recursive: true });

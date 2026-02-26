@@ -3,6 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
+import * as fs from 'node:fs';
+import { inflateSync } from 'node:zlib';
 import { pkware_dcl_explode } from './pkware.js';
 import { huffman_decomp } from './huffman.js';
 import { bzip2_decompress } from './bzip2.js';
@@ -347,13 +349,6 @@ class MPQArchive {
 	}
 
 	decompress(data, expected_size) {
-		// 0x01: Huffman
-		// 0x02: Zlib
-		// 0x08: PKWare
-		// 0x10: Bzip2
-		// 0x40: ADPCM Mono
-		// 0x80: ADPCM Stereo
-
 		if (data.length === 0)
 			return data;
 
@@ -384,7 +379,7 @@ class MPQArchive {
 		}
 
 		if (compression_flags & 0x02) {
-			result = new Uint8Array(this.inflateData(result));
+			result = new Uint8Array(inflateSync(Buffer.from(result)));
 			compression_flags &= ~0x02;
 
 			if (compression_flags === 0)
@@ -409,16 +404,6 @@ class MPQArchive {
 			throw new Error(`unhandled compression flags remaining: 0x${compression_flags.toString(16)}`);
 
 		return result;
-	}
-
-	inflateData(data) {
-		try {
-			const result = inflateSync(Buffer.from(data));
-			return new Uint8Array(result);
-		} catch (e) {
-			console.error('decompression error:', e);
-			throw e;
-		}
 	}
 
 	extractFile(filename) {

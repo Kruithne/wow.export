@@ -3,7 +3,8 @@
 	Authors: Kruithne <kruithne@gmail.com>
 	License: MIT
 */
-import log from '../log.js';
+import * as fs from 'node:fs';
+import * as log from '../lib/log.js';
 
 const DEFAULT_BUILD = '1.12.1.5875';
 
@@ -16,12 +17,6 @@ const EXPANSION_BUILDS = {
 
 const VS_FIXEDFILEINFO_SIGNATURE = 0xFEEF04BD;
 
-/**
- * parse VS_FIXEDFILEINFO from buffer, extract file version
- * @param {Buffer} buf
- * @param {number} offset
- * @returns {string|null}
- */
 const parse_vs_fixed_file_info = (buf, offset) => {
 	if (offset + 52 > buf.length)
 		return null;
@@ -41,11 +36,6 @@ const parse_vs_fixed_file_info = (buf, offset) => {
 	return `${major}.${minor}.${build}.${revision}`;
 };
 
-/**
- * search buffer for VS_FIXEDFILEINFO signature and parse version
- * @param {Buffer} buf
- * @returns {string|null}
- */
 const find_version_in_buffer = (buf) => {
 	// search for signature 0xFEEF04BD (little-endian: BD 04 EF FE)
 	const sig_bytes = Buffer.from([0xBD, 0x04, 0xEF, 0xFE]);
@@ -66,16 +56,10 @@ const find_version_in_buffer = (buf) => {
 	return null;
 };
 
-/**
- * attempt to read version from WoW.exe PE file
- * @param {string} exe_path
- * @returns {string|null}
- */
 const read_exe_version = (exe_path) => {
 	try {
 		const buf = fs.readFileSync(exe_path);
 
-		// basic PE validation
 		if (buf.length < 64)
 			return null;
 
@@ -85,7 +69,7 @@ const read_exe_version = (exe_path) => {
 
 		const version = find_version_in_buffer(buf);
 		if (version !== null)
-			log.write(`Detected build version from ${exe_path.split(/[\\/]/).pop()}: ${version}`);
+			log.write('detected build version from %s: %s', exe_path.split(/[\\/]/).pop(), version);
 
 		return version;
 	} catch (e) {
@@ -93,11 +77,6 @@ const read_exe_version = (exe_path) => {
 	}
 };
 
-/**
- * find WoW executable in install directory
- * @param {string} directory
- * @returns {string|null}
- */
 const find_wow_exe = (directory) => {
 	const candidates = ['WoW.exe', 'WowClassic.exe', 'Wow.exe', 'wow.exe'];
 	const search_dirs = [directory, directory.replace(/[\\/][^\\/]*$/, '')];
@@ -113,33 +92,19 @@ const find_wow_exe = (directory) => {
 	return null;
 };
 
-/**
- * infer expansion from mpq file names
- * @param {Array<string>} mpq_names - lowercased mpq file names
- * @returns {string}
- */
 const infer_expansion_from_mpqs = (mpq_names) => {
 	const names_set = new Set(mpq_names.map(n => n.split(/[\\/]/).pop().toLowerCase()));
 
-	// wotlk indicators
 	if (names_set.has('lichking.mpq') || names_set.has('expansion2.mpq'))
 		return 'wotlk';
 
-	// tbc indicators
 	if (names_set.has('expansion.mpq'))
 		return 'tbc';
 
 	return 'vanilla';
 };
 
-/**
- * detect build version for an MPQ install directory
- * @param {string} directory - the MPQ install directory
- * @param {Array<string>} mpq_files - list of mpq file paths
- * @returns {string}
- */
 const detect_build_version = (directory, mpq_files) => {
-	// try reading from WoW.exe first
 	const exe_path = find_wow_exe(directory);
 	if (exe_path !== null) {
 		const exe_version = read_exe_version(exe_path);
@@ -147,10 +112,9 @@ const detect_build_version = (directory, mpq_files) => {
 			return exe_version;
 	}
 
-	// fallback: infer from mpq files
 	const expansion = infer_expansion_from_mpqs(mpq_files);
 	const build = EXPANSION_BUILDS[expansion];
-	log.write(`Inferred ${expansion} expansion from MPQ files, using build ${build}`);
+	log.write('inferred %s expansion from MPQ files, using build %s', expansion, build);
 	return build;
 };
 

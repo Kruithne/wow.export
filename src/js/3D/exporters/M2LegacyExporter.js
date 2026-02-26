@@ -81,7 +81,7 @@ class M2LegacyExporter {
 			exportedTextures.add(texturePath.toLowerCase());
 
 			try {
-				const textureData = mpq.getFile(texturePath);
+				const textureData = await mpq.getFile(texturePath);
 				if (!textureData) {
 					log.write('Texture not found in MPQ: %s', texturePath);
 					continue;
@@ -337,7 +337,7 @@ class M2LegacyExporter {
 				exportedTextures.add(texturePath.toLowerCase());
 
 				try {
-					const textureData = mpq.getFile(texturePath);
+					const textureData = await mpq.getFile(texturePath);
 					if (!textureData) {
 						log.write('Texture not found in MPQ: %s', texturePath);
 						continue;
@@ -374,7 +374,7 @@ class M2LegacyExporter {
 					exportedTextures.add(texturePath.toLowerCase());
 
 					try {
-						const textureData = mpq.getFile(texturePath);
+						const textureData = await mpq.getFile(texturePath);
 						if (!textureData) {
 							log.write('Skin texture not found in MPQ: %s', texturePath);
 							continue;

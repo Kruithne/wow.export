@@ -135,7 +135,7 @@ class WMOLegacyRendererGL {
 					textureRibbon.setSlotFile(ribbonSlot, textureName, this.syncID);
 
 				try {
-					const data = mpq.getFile(textureName);
+					const data = await mpq.getFile(textureName);
 					if (!data)
 						continue;
 
@@ -299,7 +299,7 @@ class WMOLegacyRendererGL {
 				if (this.m2_renderers.has(doodadName)) {
 					renderer = this.m2_renderers.get(doodadName);
 				} else {
-					const fileData = mpq.getFile(doodadName);
+					const fileData = await mpq.getFile(doodadName);
 					if (!fileData)
 						continue;
 					const data = new BufferWrapper(fileData);

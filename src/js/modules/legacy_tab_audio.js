@@ -45,7 +45,7 @@ const load_track = async (core) => {
 	log.write('Previewing sound file %s', selected_file);
 
 	try {
-		const raw_data = core.view.mpq.getFile(selected_file);
+		const raw_data = await core.view.mpq.getFile(selected_file);
 		if (!raw_data) {
 			log.write('Failed to load audio: %s', selected_file);
 			core.setToast('error', 'Failed to load audio file ' + selected_file, null, -1);
@@ -119,10 +119,10 @@ const load_sound_list = async (core) => {
 		using _lock = core.create_busy_lock();
 
 		try {
-			const ogg_files = core.view.mpq.getFilesByExtension('.ogg');
-			const wav_files = core.view.mpq.getFilesByExtension('.wav');
-			const mp3_files = core.view.mpq.getFilesByExtension('.mp3');
-			const wav__files = core.view.mpq.getFilesByExtension('.wav_');
+			const ogg_files = await core.view.mpq.getFilesByExtension('.ogg');
+			const wav_files = await core.view.mpq.getFilesByExtension('.wav');
+			const mp3_files = await core.view.mpq.getFilesByExtension('.mp3');
+			const wav__files = await core.view.mpq.getFilesByExtension('.wav_');
 
 			core.view.listfileSounds = [...ogg_files, ...wav_files, ...mp3_files, ...wav__files];
 		} catch (e) {
@@ -153,7 +153,7 @@ const export_sounds = async (core) => {
 			if (ext === '.wav_') {
 				export_file_name = file_name.slice(0, -1);
 			} else {
-				const raw_data = core.view.mpq.getFile(file_name);
+				const raw_data = await core.view.mpq.getFile(file_name);
 				if (raw_data) {
 					const wrapped = new BufferWrapper(raw_data);
 					const file_type = detectFileType(wrapped);
@@ -167,7 +167,7 @@ const export_sounds = async (core) => {
 
 			const export_path = ExportHelper.getExportPath(export_file_name);
 			if (overwrite_files || !await generics.fileExists(export_path)) {
-				const raw_data = core.view.mpq.getFile(file_name);
+				const raw_data = await core.view.mpq.getFile(file_name);
 				if (!raw_data)
 					throw new Error('Failed to read file from MPQ');
 
