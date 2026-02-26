@@ -23,7 +23,7 @@ const CLI = {
     commands: {}
 };
 
-const cliLogFile = path.join(constants.DATA_PATH, 'cli.log');
+const cliLogFile = path.join(process.cwd(), 'wow-export-cli.log');
 
 /**
  * Output a message to the console AND to a log file for debugging.
@@ -31,7 +31,13 @@ const cliLogFile = path.join(constants.DATA_PATH, 'cli.log');
 const print = (msg, ...params) => {
     const output = params.length > 0 ? util.format(msg, ...params) : msg;
     const isError = msg.startsWith('[ERROR]');
-    (isError ? process.stderr : process.stdout).write(output + '\n');
+    
+    // Attempt to write to stdout/stderr (may be hidden in GUI process)
+    try {
+        (isError ? process.stderr : process.stdout).write(output + '\n');
+    } catch (e) {}
+
+    // ALWAYS write to the local log file
     try {
         fs.appendFileSync(cliLogFile, `[${new Date().toISOString()}] ${output}\n`);
     } catch (e) {
@@ -43,8 +49,12 @@ const print = (msg, ...params) => {
  * Initialize the CLI environment.
  */
 CLI.init = async () => {
-    // Clear log file
-    try { fs.writeFileSync(cliLogFile, ''); } catch (e) {}
+    // Clear log file and add a "Started" marker
+    try { 
+        fs.writeFileSync(cliLogFile, '--- WOW.EXPORT CLI STARTED ---\n'); 
+    } catch (e) {
+        // If we can't write here, we might be in a read-only dir
+    }
 
     print('[CLI] Initializing...');
 
@@ -103,6 +113,28 @@ CLI.init = async () => {
     if (CLI.args.out) {
         core.view.config.exportDirectory = path.resolve(CLI.args.out);
         print(`[CONFIG] Export directory set to: ${core.view.config.exportDirectory}`);
+    }
+
+    if (CLI.args.listfile) {
+        core.view.config.listfileURL = path.resolve(CLI.args.listfile);
+        core.view.config.enableBinaryListfile = false;
+        print(`[CONFIG] Using local listfile: ${core.view.config.listfileURL}`);
+    }
+
+    // Default CLI overrides to ensure named exports
+    core.view.config.exportNamedFiles = true;
+    core.view.config.exportFullPaths = true;
+    
+    if (!core.view.config.cascLocale) {
+        core.view.config.cascLocale = 0x2; // Default to enUS
+    }
+
+    if (CLI.args.format) {
+        const format = CLI.args.format.toUpperCase();
+        core.view.config.exportTextureFormat = format;
+        core.view.config.exportModelFormat = format;
+    } else if (!core.view.config.exportTextureFormat) {
+        core.view.config.exportTextureFormat = 'PNG';
     }
 
     // 6. Execute Command
@@ -170,50 +202,116 @@ CLI.initCASC = async () => {
         casc = new cascRemote(region);
         await casc.init();
 
-        // Select build
+        const builds = casc.getProductList();
         let buildIndex = 0; 
         if (CLI.args.build) {
-            const builds = casc.getProductList();
             buildIndex = builds.findIndex(b => b.label.toLowerCase().includes(CLI.args.build.toLowerCase()));
             if (buildIndex === -1) {
                 print(`[ERROR] Build containing '${CLI.args.build}' not found.`);
                 print('Available builds:\n%s', builds.map(b => b.label).join('\n'));
                 process.exit(1);
             }
-            print(`[CASC] Selected build: ${builds[buildIndex].label}`);
-        } else {
-            const productList = casc.getProductList();
-            if (productList.length === 0) {
-                print('[ERROR] No products found on CDN.');
-                process.exit(1);
-            }
-            print(`[CASC] Using latest build: ${productList[0].label}`);
         }
+        print(`[CASC] Selected build: ${builds[buildIndex].label}`);
         await casc.load(buildIndex);
     } else {
         print(`[CASC] Initializing local CASC (${localPath})...`);
         casc = new cascLocal(localPath);
-        await casc.init();
+        try {
+            await casc.init();
+        } catch (e) {
+            print(`[ERROR] Failed to initialize local CASC: ${e.message}`);
+            print('[HINT] Make sure the path points to your WoW installation (e.g. "C:\\Games\\World of Warcraft\\_retail_")');
+            process.exit(1);
+        }
 
-        let buildIndex = 0;
+        const builds = casc.getProductList();
+        if (builds.length === 0) {
+            print('[ERROR] No valid World of Warcraft builds found in the specified local path.');
+            process.exit(1);
+        }
+
+        print(`[CASC] Found ${builds.length} local builds:`);
+        builds.forEach((b, i) => print(`  [${i}] ${b.label} (${casc.builds[i].Product})`));
+
+        let buildIndex = -1;
         if (CLI.args.build) {
-            const builds = casc.getProductList();
             buildIndex = builds.findIndex(b => b.label.toLowerCase().includes(CLI.args.build.toLowerCase()));
             if (buildIndex === -1) {
                 print(`[ERROR] Build containing '${CLI.args.build}' not found in local installation.`);
                 process.exit(1);
             }
+        } else {
+            // Prefer Retail ('wow' product) if no build specified.
+            buildIndex = casc.builds.findIndex(b => b.Product === 'wow');
+            if (buildIndex === -1) buildIndex = 0;
+            print(`[CASC] No build specified, defaulting to: ${builds[buildIndex].label}`);
         }
+
+        print(`[CASC] Loading build: ${builds[buildIndex].label}...`);
         await casc.load(buildIndex);
     }
 
     core.view.casc = casc;
-    print('[CASC] Loading listfile...');
-    await listfile.prepareListfile();
+    print(`[CASC] Root loaded with ${casc.rootEntries.size} entries.`);
+
+    // Check if listfile is loaded.
+    if (!listfile.isLoaded()) {
+        print('[CASC] Listfile not yet loaded, initializing...');
+        await listfile.prepareListfile();
+    }
+
+    print('[CASC] Matching listfile against root entries...');
+    listfile.applyPreload(casc.rootEntries);
+
+    if (listfile.isLoaded()) {
+        const testID = 123061;
+        const testName = listfile.getByID(testID);
+        print(`[CASC] Listfile ready. Test resolution for ID ${testID}: ${testName || 'FAILED'}`);
+    } else {
+        print('[ERROR] Listfile failed to load. This usually happens if the internet is blocked.');
+        print('[HINT] You can provide a local listfile using: --listfile "C:\\path\\to\\listfile.csv"');
+        print('[HINT] You can download one from: https://github.com/wowdev/wow-listfile/releases');
+    }
+    
     print('[CASC] Ready.');
 };
 
 // --- Commands ---
+
+CLI.commands['list-files'] = async () => {
+    await CLI.initCASC();
+    const search = CLI.args.search;
+    if (!search) {
+        print('[ERROR] Please specify --search <term> or <fileDataID>');
+        process.exit(1);
+    }
+
+    print(`[SEARCH] Searching for: ${search}...`);
+    
+    const searchID = parseInt(search);
+    if (!isNaN(searchID)) {
+        const name = listfile.getByID(searchID);
+        const inRoot = core.view.casc.rootEntries.has(searchID);
+        print(`[RESULT] ID: ${searchID}`);
+        print(`[RESULT] In CASC Root: ${inRoot ? 'YES' : 'NO'}`);
+        print(`[RESULT] Listfile Name: ${name || 'UNKNOWN'}`);
+        
+        if (inRoot && !name) {
+            print('[DEBUG] ID is in game files but listfile doesn\'t have a name for it.');
+        }
+    }
+
+    const filtered = listfile.getFilteredEntries(search);
+    if (filtered.length > 0) {
+        print(`[SEARCH] Found ${filtered.length} matches:`);
+        filtered.slice(0, 50).forEach(r => print(`  [${r.fileDataID}] ${r.fileName}`));
+        if (filtered.length > 50) print(`  ... and ${filtered.length - 50} more.`);
+    } else if (isNaN(searchID)) {
+        print('[SEARCH] No matches found for string search.');
+    }
+    process.exit(0);
+};
 
 CLI.commands['list-builds'] = async () => {
     let casc;
@@ -233,7 +331,7 @@ CLI.commands['list-builds'] = async () => {
     const builds = casc.getProductList();
     print('\nAvailable Builds:');
     builds.forEach((b, i) => {
-        print(`[${i}] ${b.label}`);
+        print(`[${i}] ${b.label} (${casc.builds[i].Product})`);
     });
     process.exit(0);
 };
@@ -246,15 +344,23 @@ CLI.commands['export-texture'] = async () => {
         process.exit(1);
     }
 
-    if (CLI.args.format) {
-        core.view.config.exportTextureFormat = CLI.args.format.toUpperCase();
-    }
-
     const exportList = [];
     if (CLI.args.id) exportList.push(parseInt(CLI.args.id));
     if (CLI.args.name) exportList.push(CLI.args.name);
 
     print(`[EXPORT] Exporting ${exportList.length} textures...`);
+    
+    // Check if the ID exists in listfile for logging
+    if (CLI.args.id) {
+        const id = parseInt(CLI.args.id);
+        const name = listfile.getByID(id);
+        if (name) {
+            print(`[EXPORT] ID ${id} resolved to: ${name}`);
+        } else {
+            print(`[WARN] ID ${id} could not be resolved in listfile.`);
+        }
+    }
+
     await textureExporter.exportFiles(exportList, false);
     print('[EXPORT] Done.');
     process.exit(0);
@@ -268,10 +374,6 @@ CLI.commands['export-model'] = async () => {
         process.exit(1);
     }
 
-    if (CLI.args.format) {
-        core.view.config.exportModelFormat = CLI.args.format.toUpperCase();
-    }
-    
     const exportList = [];
     if (CLI.args.id) exportList.push(parseInt(CLI.args.id));
     if (CLI.args.name) exportList.push(CLI.args.name);
@@ -300,7 +402,7 @@ CLI.commands['export-model'] = async () => {
              continue;
         }
 
-        print(`[EXPORT] Processing ${file_name} (${file_data_id})...`);
+        print(`[EXPORT] Processing ${file_name || file_data_id}...`);
 
         try {
             const data = await core.view.casc.getFile(file_data_id);
@@ -308,15 +410,15 @@ CLI.commands['export-model'] = async () => {
                 core,
                 data,
                 file_data_id,
-                file_name,
+                file_name: file_name || `unknown/${file_data_id}.m2`,
                 format: core.view.config.exportModelFormat,
-                export_path: ExportHelper.getExportPath(file_name),
+                export_path: ExportHelper.getExportPath(file_name || `unknown/${file_data_id}.m2`),
                 helper,
                 file_manifest: [],
                 export_paths
             });
         } catch (e) {
-            print(`[ERROR] Failed to export ${file_name}: ${e.message}`);
+            print(`[ERROR] Failed to export ${file_name || file_data_id}: ${e.message}`);
         }
     }
     

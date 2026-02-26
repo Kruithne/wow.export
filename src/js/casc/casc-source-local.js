@@ -42,7 +42,28 @@ class CASCLocal extends CASC {
 	async init() {
 		log.write('Initializing local CASC installation: %s', this.dir);
 
-		const buildInfo = path.join(this.dir, constants.BUILD.MANIFEST);
+		let buildInfo = path.join(this.dir, constants.BUILD.MANIFEST);
+		
+		// If the manifest doesn't exist in the root, check common subdirectories.
+		if (!await generics.fileExists(buildInfo)) {
+			const subDirs = ['_retail_', '_classic_', '_classic_era_', '_ptr_', '_beta_'];
+			for (const subDir of subDirs) {
+				const subDirPath = path.join(this.dir, subDir);
+				const subDirManifest = path.join(subDirPath, constants.BUILD.MANIFEST);
+				if (await generics.fileExists(subDirManifest)) {
+					log.write('Found manifest in subdirectory: %s', subDir);
+					this.dir = subDirPath;
+					this.dataDir = path.join(this.dir, constants.BUILD.DATA_DIR);
+					this.storageDir = path.join(this.dataDir, 'data');
+					buildInfo = subDirManifest;
+					break;
+				}
+			}
+		}
+
+		if (!await generics.fileExists(buildInfo))
+			throw new Error('Local WoW installation not found (missing .build.info)');
+
 		const config = VersionConfig(await fsp.readFile(buildInfo, 'utf8'));
 
 		// Filter known products.
