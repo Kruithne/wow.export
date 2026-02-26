@@ -47,7 +47,9 @@ const format_args = (...params) => {
 export const write = (...params) => {
 	const line = '[' + get_timestamp() + '] ' + format_args(...params);
 	rpc_log.info(line);
-	console.log(line);
+
+	if (typeof BUILD_RELEASE === 'undefined' || BUILD_RELEASE !== 'true')
+		console.log(line);
 };
 
 export const timeLog = () => {
