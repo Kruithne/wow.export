@@ -121,6 +121,16 @@ CLI.init = async () => {
         print(`[CONFIG] Using local listfile: ${core.view.config.listfileURL}`);
     }
 
+    if (CLI.args['include-links']) {
+        core.view.config.modelsExportTextures = true;
+        core.view.config.modelsExportSkin = true;
+        core.view.config.modelsExportSkel = true;
+        core.view.config.modelsExportBone = true;
+        core.view.config.modelsExportAnim = true;
+        core.view.config.modelsExportWMOGroups = true;
+        print('[CONFIG] Linked files extraction enabled (textures, animations, etc.)');
+    }
+
     // Default CLI overrides to ensure named exports
     core.view.config.exportNamedFiles = true;
     core.view.config.exportFullPaths = true;
