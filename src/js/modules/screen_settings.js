@@ -1,6 +1,7 @@
 import generics from '../generics.js';
 import constants from '../constants.js';
 import tab_characters from './tab_characters.js';
+import { casc } from '../../views/main/rpc.js';
 
 let default_config = null;
 
@@ -389,9 +390,27 @@ export default {
 				this.$core.events.emit('click-cache-clear');
 		},
 
-		handle_tact_key() {
-			// tact key handling removed (bun-side)
-			this.$core.setToast('error', 'Invalid encryption key.', null, -1);
+		async handle_tact_key() {
+			const key_name = this.$core.view.userInputTactKeyName;
+			const key = this.$core.view.userInputTactKey;
+
+			if (!key_name || key_name.length !== 16 || !key || key.length !== 32) {
+				this.$core.setToast('error', 'Invalid encryption key. Name must be 16 chars, key must be 32 chars.', null, -1);
+				return;
+			}
+
+			try {
+				const success = await casc.add_tact_key(key_name, key);
+				if (success) {
+					this.$core.view.userInputTactKeyName = '';
+					this.$core.view.userInputTactKey = '';
+					this.$core.setToast('success', 'Encryption key added successfully.');
+				} else {
+					this.$core.setToast('error', 'Failed to add encryption key.', null, -1);
+				}
+			} catch (e) {
+				this.$core.setToast('error', 'Failed to add encryption key: ' + e.message, null, -1);
+			}
 		},
 
 		go_home() {

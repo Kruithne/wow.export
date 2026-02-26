@@ -16,7 +16,7 @@ const makeNewView = () => {
 	return {
 		installType: 0,
 		isBusy: 0,
-		isDev: true,
+		isDev: typeof BUILD_RELEASE === 'undefined' || BUILD_RELEASE !== 'true',
 		isLoading: false,
 		loadingProgress: '',
 		loadingTitle: '',

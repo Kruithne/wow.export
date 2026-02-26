@@ -86,6 +86,10 @@ export const casc_handlers = {
 
 		return data.toBase64();
 	},
+
+	async casc_add_tact_key({ key_name, key }) {
+		return tactKeys.addKey(key_name, key);
+	},
 };
 
 export const listfile_handlers = {

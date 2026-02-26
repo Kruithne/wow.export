@@ -19,6 +19,9 @@ export default {
 		views: {
 			main: {
 				entrypoint: 'src/views/main/index.js',
+				define: {
+					'BUILD_RELEASE': '"true"',
+				},
 			},
 		},
 

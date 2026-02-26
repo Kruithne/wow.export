@@ -470,7 +470,7 @@ const trigger_kino_processing = async () => {
 };
 
 // expose to window in dev mode
-if (!BUILD_RELEASE)
+if (typeof BUILD_RELEASE === 'undefined' || BUILD_RELEASE !== 'true')
 	window.trigger_kino_processing = trigger_kino_processing;
 
 export default {

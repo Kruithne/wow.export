@@ -34,6 +34,7 @@ export const MAX_REQUEST_TIME = 120_000;
  * casc_get_file: { file_data_id: number } => string (base64)
  * casc_get_file_by_name: { name: string } => string (base64)
  * casc_get_file_partial: { file_data_id: number, offset: number, length: number } => string (base64)
+ * casc_add_tact_key: { key_name: string, key: string } => boolean
  */
 
 /**

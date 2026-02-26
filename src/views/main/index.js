@@ -7,6 +7,7 @@ import constants from '../../js/constants.js';
 import * as config from '../../js/config.js';
 import * as platform from '../../js/platform.js';
 import ExternalLinks from '../../js/external-links.js';
+import ExportHelper from '../../js/export-helper.js';
 import generics from '../../js/generics.js';
 import log from '../../js/log.js';
 import textureRibbon from '../../js/ui/texture-ribbon.js';
@@ -242,8 +243,7 @@ document.addEventListener('click', (e) => {
 			},
 
 			getExportPath(file) {
-				// export paths handled via RPC now
-				return file;
+				return ExportHelper.getExportPath(file);
 			},
 
 			getExternalLink() {
@@ -271,10 +271,7 @@ document.addEventListener('click', (e) => {
 		},
 
 		watch: {
-			loadPct() {
-				// progress bar handled via RPC if needed
-			},
-
+			// electrobun has no taskbar progress API; progress is shown in-app
 			casc() {
 				core.events.emit('casc-source-changed');
 			}
