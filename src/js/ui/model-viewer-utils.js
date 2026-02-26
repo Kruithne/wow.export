@@ -152,7 +152,7 @@ const toggle_uv_layer = (state, renderer, layer_name) => {
  * @param {string} name - Display name for the texture
  */
 const preview_texture_by_id = async (core, state, renderer, file_data_id, name) => {
-	const texture = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
+	const texture = (await listfile.getByID(file_data_id)) ?? listfile.formatUnknownFile(file_data_id);
 
 	using _lock = core.create_busy_lock();
 	core.setToast('progress', `Loading ${texture}, please wait...`, null, -1, false);

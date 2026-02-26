@@ -19,20 +19,22 @@ class WMOLegacyLoader {
 		this.loaded = false;
 		this.renderingOnly = renderingOnly;
 
-		if (fileID !== undefined) {
-			if (typeof fileID === 'string') {
-				this.fileDataID = listfile.getByFilename(fileID);
-				this.fileName = fileID;
-			} else {
-				this.fileDataID = fileID;
-				this.fileName = listfile.getByID(fileID);
-			}
-		}
+		this._fileID = fileID;
 	}
 
 	async load() {
 		if (this.loaded)
 			return;
+
+		if (this._fileID !== undefined) {
+			if (typeof this._fileID === 'string') {
+				this.fileDataID = await listfile.getByFilename(this._fileID);
+				this.fileName = this._fileID;
+			} else {
+				this.fileDataID = this._fileID;
+				this.fileName = await listfile.getByID(this._fileID);
+			}
+		}
 
 		const data = this.data;
 

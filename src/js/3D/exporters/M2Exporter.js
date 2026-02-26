@@ -171,7 +171,7 @@ class M2Exporter {
 
 					// Default MTL name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + texFileDataID;
-					let fileName = listfile.getByID(texFileDataID);
+					let fileName = await listfile.getByID(texFileDataID);
 
 					if (fileName !== undefined) {
 						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
@@ -437,7 +437,7 @@ class M2Exporter {
 				}
 
 				try {
-					const fileName = listfile.getByID(texFileDataID);
+					const fileName = await listfile.getByID(texFileDataID);
 					let matName = 'mat_equip_' + texFileDataID;
 					let texFile = texFileDataID + '.png';
 					let texPath = outDir + '/' + texFile;
@@ -588,7 +588,7 @@ class M2Exporter {
 					let texPath = outDir + '/' + texFile;
 					let matName = 'mat_equip_' + texFileDataID;
 
-					const fileName = listfile.getByID(texFileDataID);
+					const fileName = await listfile.getByID(texFileDataID);
 					if (fileName !== undefined) {
 						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
 						if (config.removePathSpaces)
@@ -800,7 +800,7 @@ class M2Exporter {
 				const textureEntry = validTextures.get(texture.fileDataID);
 
 				textures[i] = Object.assign({
-					fileNameInternal: listfile.getByID(texture.fileDataID),
+					fileNameInternal: await listfile.getByID(texture.fileDataID),
 					fileNameExternal: textureEntry?.matPathRelative,
 					mtlName: textureEntry?.matName
 				}, texture);
@@ -808,7 +808,7 @@ class M2Exporter {
 
 			json.addProperty('fileType', 'm2');
 			json.addProperty('fileDataID', this.fileDataID);
-			json.addProperty('fileName', listfile.getByID(this.fileDataID));
+			json.addProperty('fileName', await listfile.getByID(this.fileDataID));
 			json.addProperty('internalName', this.m2.name);
 			json.addProperty('textures', textures);
 			json.addProperty('textureTypes', this.m2.textureTypes);
@@ -1029,7 +1029,7 @@ class M2Exporter {
 		// Write relative skeleton files.
 		if (config.modelsExportSkel && this.m2.skeletonFileID) {
 			const skelData = await casc.getFile(this.m2.skeletonFileID);
-			const skelFileName = listfile.getByID(this.m2.skeletonFileID);
+			const skelFileName = await listfile.getByID(this.m2.skeletonFileID);
 
 			let skelFile;
 			if (config.enableSharedChildren)
@@ -1052,7 +1052,7 @@ class M2Exporter {
 					for (const anim of skel.animFileIDs) {
 						if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
 							const animData = await casc.getFile(anim.fileDataID);
-							const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+							const animFileName = await listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
 							
 							let animFile;
 							if (config.enableSharedChildren)
@@ -1075,7 +1075,7 @@ class M2Exporter {
 					for (let i = 0, n = skel.boneFileIDs.length; i < n; i++) {
 						const boneFileID = skel.boneFileIDs[i];
 						const boneData = await casc.getFile(boneFileID);
-						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+						const boneFileName = await listfile.getByIDOrUnknown(boneFileID, '.bone');
 		
 						let boneFile;
 						if (config.enableSharedChildren)
@@ -1094,7 +1094,7 @@ class M2Exporter {
 
 			if (skel.parent_skel_file_id > 0) {
 				const parentSkelData = await core.view.casc.getFile(skel.parent_skel_file_id);
-				const parentSkelFileName = listfile.getByID(skel.parent_skel_file_id);
+				const parentSkelFileName = await listfile.getByID(skel.parent_skel_file_id);
 	
 				let parentSkelFile;
 				if (config.enableSharedChildren)
@@ -1118,7 +1118,7 @@ class M2Exporter {
 						for (const anim of parentSkel.animFileIDs) {
 							if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
 								const animData = await casc.getFile(anim.fileDataID);
-								const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+								const animFileName = await listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
 								
 								let animFile;
 								if (config.enableSharedChildren)
@@ -1142,7 +1142,7 @@ class M2Exporter {
 					for (let i = 0, n = parentSkel.boneFileIDs.length; i < n; i++) {
 						const boneFileID = parentSkel.boneFileIDs[i];
 						const boneData = await casc.getFile(boneFileID);
-						const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+						const boneFileName = await listfile.getByIDOrUnknown(boneFileID, '.bone');
 		
 						let boneFile;
 						if (config.enableSharedChildren)
@@ -1166,7 +1166,7 @@ class M2Exporter {
 			for (let i = 0, n = this.m2.boneFileIDs.length; i < n; i++) {
 				const boneFileID = this.m2.boneFileIDs[i];
 				const boneData = await casc.getFile(boneFileID);
-				const boneFileName = listfile.getByIDOrUnknown(boneFileID, '.bone');
+				const boneFileName = await listfile.getByIDOrUnknown(boneFileID, '.bone');
 
 				let boneFile;
 				if (config.enableSharedChildren)
@@ -1189,7 +1189,7 @@ class M2Exporter {
 			for (const anim of this.m2.animFileIDs) {
 				if (anim.fileDataID > 0 && !animCache.has(anim.fileDataID)) {
 					const animData = await casc.getFile(anim.fileDataID);
-					const animFileName = listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
+					const animFileName = await listfile.getByIDOrUnknown(anim.fileDataID, '.anim');
 					
 					let animFile;
 					if (config.enableSharedChildren)

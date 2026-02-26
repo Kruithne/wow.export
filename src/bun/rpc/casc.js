@@ -125,4 +125,32 @@ export const listfile_handlers = {
 	async listfile_strip_prefix({ name }) {
 		return listfile.stripFileEntry(name);
 	},
+
+	async listfile_exists_by_id({ id }) {
+		return listfile.existsByID(id);
+	},
+
+	async listfile_get_by_id_or_unknown({ id, ext }) {
+		return listfile.getByIDOrUnknown(id, ext);
+	},
+
+	async listfile_add_entry({ id, name }) {
+		listfile.addEntry(id, name);
+	},
+
+	async listfile_render({ ids, include_main_index }) {
+		return listfile.renderListfile(ids, include_main_index);
+	},
+
+	async listfile_ingest_identified({ entries }) {
+		listfile.ingestIdentifiedFiles(entries);
+	},
+
+	async listfile_load_unknown_textures() {
+		return listfile.loadUnknownTextures();
+	},
+
+	async listfile_load_unknown_models() {
+		return listfile.loadUnknownModels();
+	},
 };

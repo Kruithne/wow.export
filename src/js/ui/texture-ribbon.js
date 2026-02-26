@@ -50,7 +50,7 @@ const reset = () => {
  * @param {number} fileDataID
  * @param {number} syncID
  */
-const setSlotFile = (slotIndex, fileDataID, syncID) => {
+const setSlotFile = async (slotIndex, fileDataID, syncID) => {
 	// Only accept data from the latest preparation.
 	if (syncID !== _syncID)
 		return;
@@ -59,7 +59,7 @@ const setSlotFile = (slotIndex, fileDataID, syncID) => {
 	if (slot) {
 		slot.fileDataID = fileDataID;
 
-		const fileName = listfile.getByID(fileDataID) ?? fileDataID.toString();
+		const fileName = (await listfile.getByID(fileDataID)) ?? fileDataID.toString();
 		slot.fileName = fileName;
 		slot.displayName = get_display_name(fileName);
 	}

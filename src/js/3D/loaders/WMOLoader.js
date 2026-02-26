@@ -19,24 +19,22 @@ class WMOLoader {
 		this.loaded = false;
 		this.renderingOnly = renderingOnly;
 
-		if (fileID !== undefined) {
-			if (typeof fileID === 'string') {
-				this.fileDataID = listfile.getByFilename(fileID);
-				this.fileName = fileID;
-			} else {
-				this.fileDataID = fileID;
-				this.fileName = listfile.getByID(fileID);
-			}
-		}
+		this._fileID = fileID;
 	}
 
-	/**
-	 * Load the WMO object.
-	 */
 	async load() {
-		// Prevent duplicate loading.
 		if (this.loaded)
 			return;
+
+		if (this._fileID !== undefined) {
+			if (typeof this._fileID === 'string') {
+				this.fileDataID = await listfile.getByFilename(this._fileID);
+				this.fileName = this._fileID;
+			} else {
+				this.fileDataID = this._fileID;
+				this.fileName = await listfile.getByID(this._fileID);
+			}
+		}
 
 		while (this.data.remainingBytes > 0) {
 			const chunkID = this.data.readUInt32LE();

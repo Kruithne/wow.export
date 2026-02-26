@@ -369,10 +369,10 @@ class ADTExporter {
 		const tilePrefix = prefix + '_' + this.tileID;
 
 		const maid = wdt.entries[this.tileIndex];
-		const rootFileDataID = maid.rootADT > 0 ? maid.rootADT : listfile.getByFilename(tilePrefix + '.adt');
-		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : listfile.getByFilename(tilePrefix + '_tex0.adt');
-		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : listfile.getByFilename(tilePrefix + '_obj0.adt');
-		const obj1FileDataID = maid.obj1ADT > 0 ? maid.obj1ADT : listfile.getByFilename(tilePrefix + '_obj1.adt');
+		const rootFileDataID = maid.rootADT > 0 ? maid.rootADT : await listfile.getByFilename(tilePrefix + '.adt');
+		const tex0FileDataID = maid.tex0ADT > 0 ? maid.tex0ADT : await listfile.getByFilename(tilePrefix + '_tex0.adt');
+		const obj0FileDataID = maid.obj0ADT > 0 ? maid.obj0ADT : await listfile.getByFilename(tilePrefix + '_obj0.adt');
+		const obj1FileDataID = maid.obj1ADT > 0 ? maid.obj1ADT : await listfile.getByFilename(tilePrefix + '_obj1.adt');
 
 		// Ensure we actually have the fileDataIDs for the files we need. LOD is not available on Classic.
 		if (rootFileDataID === 0 || tex0FileDataID === 0 || obj0FileDataID === 0 || obj1FileDataID === 0)
@@ -593,7 +593,7 @@ class ADTExporter {
 
 					const saveLayerTexture = async (fileDataID) => {
 						const blp = new BLPImage(await core.view.casc.getFile(fileDataID));
-						let fileName = listfile.getByID(fileDataID);
+						let fileName = await listfile.getByID(fileDataID);
 						if (fileName !== undefined)
 							fileName = ExportHelper.replaceExtension(fileName, '.png');
 						else
@@ -1167,7 +1167,7 @@ class ADTExporter {
 
 				const blp = await core.view.casc.getFile(fileDataID);
 
-				let fileName = listfile.getByID(fileDataID);
+				let fileName = await listfile.getByID(fileDataID);
 				if (fileName !== undefined)
 					fileName = ExportHelper.replaceExtension(fileName, '.blp');
 				else
@@ -1219,14 +1219,12 @@ class ADTExporter {
 						helper.setCurrentTaskValue(index++);
 
 						const fileDataID = model.FileDataID ?? model.mmidEntry;
-						let fileName = listfile.getByID(fileDataID);
+						let fileName = await listfile.getByID(fileDataID);
 
 						if (!isRawExport) {
 							if (fileName !== undefined) {
-								// Replace M2 extension with OBJ.
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
-								// Handle unknown file.
 								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 						}
@@ -1307,10 +1305,10 @@ class ADTExporter {
 						try {
 							if (usingNames) {
 								fileName = objAdt.wmoNames[objAdt.wmoOffsets[model.mwidEntry]];
-								fileDataID = listfile.getByFilename(fileName);
+								fileDataID = await listfile.getByFilename(fileName);
 							} else {
 								fileDataID = model.mwidEntry;
-								fileName = listfile.getByID(fileDataID);
+								fileName = await listfile.getByID(fileDataID);
 							}
 
 							if (!isRawExport) {
@@ -1498,7 +1496,7 @@ class ADTExporter {
 					if (foliageJSON) {
 						// Map fileDataID to the exported OBJ file names.
 						for (const entry of Object.values(doodadModelIDs)) {
-							const fileName = listfile.getByID(entry.fileDataID);
+							const fileName = await listfile.getByID(entry.fileDataID);
 
 							if (isRawExport)
 								entry.fileName = fileName.split('/').pop();
@@ -1520,7 +1518,7 @@ class ADTExporter {
 			for (const modelID of foliageExportCache) {
 				helper.setCurrentTaskValue(foliageIndex++);
 				
-				const modelName = listfile.getByID(modelID).split('/').pop();
+				const modelName = (await listfile.getByID(modelID)).split('/').pop();
 				
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);

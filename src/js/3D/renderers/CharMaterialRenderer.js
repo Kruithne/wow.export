@@ -122,7 +122,7 @@ class CharMaterialRenderer {
 		// ChrCustomizationMaterial: ChrModelTextureTargetID, FileDataID (this is actually MaterialResourceID but we translate it before here)
 
 		// For debug purposes
-		let filename = listfile.getByID(chrCustomizationMaterial.FileDataID);
+		let filename = await listfile.getByID(chrCustomizationMaterial.FileDataID);
 		console.log("Loading texture " + filename + " for target " + chrCustomizationMaterial.ChrModelTextureTargetID + " with alpha " + useAlpha);
 
 		let textureID;

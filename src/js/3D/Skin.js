@@ -11,12 +11,13 @@ const MAGIC_SKIN = 0x4E494B53;
 class Skin {
 	constructor(fileDataID) {
 		this.fileDataID = fileDataID;
-		this.fileName = listfile.getByIDOrUnknown(fileDataID, '.skin');
+		this.fileName = null;
 		this.isLoaded = false;
 	}
 
 	async load() {
 		try {
+			this.fileName = await listfile.getByIDOrUnknown(this.fileDataID, '.skin');
 			const data = await core.view.casc.getFile(this.fileDataID);
 
 			const magic = data.readUInt32LE();

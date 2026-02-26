@@ -794,7 +794,7 @@ class M2Loader {
 				fileName.replace('\0', ''); // Remove NULL characters.
 
 				if (fileName.length > 0)
-					texture.setFileName(fileName);
+					await texture.setFileName(fileName);
 
 				this.data.seek(pos);
 			}

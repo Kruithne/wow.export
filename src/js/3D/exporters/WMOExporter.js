@@ -117,7 +117,7 @@ class WMOExporter {
 				if (isClassic) {
 					// Classic, lookup fileDataID using file name.
 					fileName = this.wmo.textureNames[materialTexture];
-					fileDataID = listfile.getByFilename(fileName) ?? 0;
+					fileDataID = (await listfile.getByFilename(fileName)) ?? 0;
 
 					// Remove all whitespace from exported textures due to MTL incompatibility.
 					if (config.removePathSpaces)
@@ -138,9 +138,8 @@ class WMOExporter {
 					// Default MTl name to the file ID (prefixed for Maya).
 					let matName = 'mat_' + fileDataID;
 
-					// Attempt to get the file name if we don't already have it.
 					if (fileName === undefined)
-						fileName = listfile.getByID(fileDataID);
+						fileName = await listfile.getByID(fileDataID);
 
 					// If we have a valid file name, use it for the material name.
 					if (fileName !== undefined) {
@@ -538,22 +537,18 @@ class WMOExporter {
 					let fileName;
 		
 					if (wmo.fileDataIDs) {
-						// Retail, use fileDataID and lookup the filename.
 						fileDataID = wmo.fileDataIDs[doodad.offset];
-						fileName = listfile.getByID(fileDataID);
+						fileName = await listfile.getByID(fileDataID);
 					} else {
-						// Classic, use fileName and lookup the fileDataID.
 						fileName = wmo.doodadNames[doodad.offset];
-						fileDataID = listfile.getByFilename(fileName) || 0;
+						fileDataID = (await listfile.getByFilename(fileName)) || 0;
 					}
-		
+
 					if (fileDataID > 0) {
 						try {
 							if (fileName !== undefined) {
-								// Replace M2 extension with OBJ.
 								fileName = ExportHelper.replaceExtension(fileName, '.obj');
 							} else {
-								// Handle unknown files.
 								fileName = listfile.formatUnknownFile(fileDataID, '.obj');
 							}
 
@@ -706,7 +701,7 @@ class WMOExporter {
 					textureCache.add(materialTexture);
 					textures.push({
 						fileDataID: materialTexture,
-						fileNameInternal: listfile.getByID(materialTexture),
+						fileNameInternal: await listfile.getByID(materialTexture),
 						fileNameExternal: textureEntry?.matPathRelative,
 						mtlName: textureEntry?.matName
 					});
@@ -995,10 +990,10 @@ class WMOExporter {
 
 					if (wmo.fileDataIDs) {
 						fileDataID = wmo.fileDataIDs[doodad.offset];
-						fileName = listfile.getByID(fileDataID);
+						fileName = await listfile.getByID(fileDataID);
 					} else {
 						fileName = wmo.doodadNames[doodad.offset];
-						fileDataID = listfile.getByFilename(fileName) || 0;
+						fileDataID = (await listfile.getByFilename(fileName)) || 0;
 					}
 
 					if (fileDataID > 0) {
@@ -1146,7 +1141,7 @@ class WMOExporter {
 					textureCache.add(materialTexture);
 					textures.push({
 						fileDataID: materialTexture,
-						fileNameInternal: listfile.getByID(materialTexture),
+						fileNameInternal: await listfile.getByID(materialTexture),
 						fileNameExternal: textureEntry?.matPathRelative,
 						mtlName: textureEntry?.matName
 					});
@@ -1227,7 +1222,7 @@ class WMOExporter {
 					else
 						groupName = ExportHelper.replaceExtension(wmoFileName, '_' + groupIndex.toString().padStart(3, '0') + '.wmo');
 					
-					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? listfile.getByFilename(groupName);
+					const groupFileDataID = this.wmo.groupIDs?.[groupOffset] ?? await listfile.getByFilename(groupName);
 					groupOffset++;
 
 					if (groupFileDataID === 0)
@@ -1273,13 +1268,11 @@ class WMOExporter {
 				let fileName;
 	
 				if (this.wmo.fileDataIDs) {
-					// Retail, use fileDataID and lookup the filename.
 					fileDataID = this.wmo.fileDataIDs[doodad.offset];
-					fileName = listfile.getByID(fileDataID);
+					fileName = await listfile.getByID(fileDataID);
 				} else {
-					// Classic, use fileName and lookup the fileDataID.
 					fileName = this.wmo.doodadNames[doodad.offset];
-					fileDataID = listfile.getByFilename(fileName) || 0;
+					fileDataID = (await listfile.getByFilename(fileName)) || 0;
 				}
 	
 				if (fileDataID > 0) {

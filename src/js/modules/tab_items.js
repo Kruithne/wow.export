@@ -84,7 +84,7 @@ const view_item_models = async (core, modules, item) => {
 	for (const model_id of item.models) {
 		const file_data_ids = await DBModelFileData.getModelFileDataID(model_id);
 		for (const file_data_id of file_data_ids) {
-			const entry = listfile.getByID(file_data_id);
+			const entry = await listfile.getByID(file_data_id);
 
 			if (entry !== undefined)
 				list.add(`${entry} [${file_data_id}]`);
@@ -108,7 +108,7 @@ const view_item_textures = async (core, modules, item) => {
 		const file_data_ids = await DBTextureFileData.getTextureFDIDsByMatID(texture_id);
 		if (file_data_ids) {
 			for (const file_data_id of file_data_ids) {
-				const entry = listfile.getByID(file_data_id);
+				const entry = await listfile.getByID(file_data_id);
 
 				if (entry !== undefined)
 					list.add(`${entry} [${file_data_id}]`);

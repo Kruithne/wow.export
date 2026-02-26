@@ -78,7 +78,7 @@ const preview_model = async (core, file_name) => {
 		selected_variant_texture_ids.length = 0;
 		selected_skin_name = null;
 
-		const file_data_id = listfile.getByFilename(file_name);
+		const file_data_id = await listfile.getByFilename(file_name);
 		const file = await core.view.casc.getFile(file_data_id);
 		const gl_context = core.view.modelViewerContext?.gl_context;
 
@@ -98,7 +98,7 @@ const preview_model = async (core, file_name) => {
 			const displays = await get_model_displays(file_data_id);
 
 			const skin_list = [];
-			let model_name = listfile.getByID(file_data_id);
+			let model_name = await listfile.getByID(file_data_id);
 			model_name = model_name.substring(model_name.lastIndexOf('/') + 1).replace(/\.?m2$/i, '');
 
 			for (const display of displays) {
@@ -108,7 +108,7 @@ const preview_model = async (core, file_name) => {
 				const texture = display.textures[0];
 
 				let clean_skin_name = '';
-				let skin_name = listfile.getByID(texture);
+				let skin_name = await listfile.getByID(texture);
 				if (skin_name !== undefined) {
 					skin_name = skin_name.substring(skin_name.lastIndexOf('/') + 1).replace(/\.blp$/i, '');
 					clean_skin_name = skin_name.replace(model_name, '').replace('_', '');
@@ -165,7 +165,7 @@ const get_variant_texture_ids = async (file_name) => {
 	if (file_name === active_path)
 		return selected_variant_texture_ids;
 
-	const file_data_id = listfile.getByFilename(file_name);
+	const file_data_id = await listfile.getByFilename(file_name);
 	const displays = await get_model_displays(file_data_id);
 
 	return displays.find(e => e.textures.length > 0)?.textures ?? [];
@@ -202,10 +202,10 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 
 		if (typeof file_entry === 'number') {
 			file_data_id = file_entry;
-			file_name = listfile.getByID(file_data_id);
+			file_name = await listfile.getByID(file_data_id);
 		} else {
 			file_name = listfile.stripFileEntry(file_entry);
-			file_data_id = listfile.getByFilename(file_name);
+			file_data_id = await listfile.getByFilename(file_name);
 		}
 
 		const file_manifest = [];

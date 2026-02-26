@@ -145,7 +145,7 @@ const export_sounds = async (core) => {
 		let export_file_name = file_name;
 
 		if (!core.view.config.exportNamedFiles) {
-			const file_data_id = listfile.getByFilename(file_name);
+			const file_data_id = await listfile.getByFilename(file_name);
 			if (file_data_id) {
 				const dot_index = file_name.lastIndexOf('.');
 				const ext = dot_index !== -1 ? file_name.substring(dot_index) : '';
@@ -281,9 +281,9 @@ export default {
 
 				let unknown_count = 0;
 				for (const entry of (await db2.SoundKitEntry.getAllRows()).values()) {
-					if (!listfile.existsByID(entry.FileDataID)) {
+					if (!await listfile.existsByID(entry.FileDataID)) {
 						const file_name = 'unknown/' + entry.FileDataID + '.unk_sound';
-						listfile.addEntry(entry.FileDataID, file_name, this.$core.view.listfileSounds);
+						await listfile.addEntry(entry.FileDataID, file_name, this.$core.view.listfileSounds);
 						unknown_count++;
 					}
 				}

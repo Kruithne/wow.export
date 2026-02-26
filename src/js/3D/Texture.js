@@ -4,7 +4,7 @@
 	License: MIT
  */
 import core from '../core.js';
-import { listfile } from '../views/main/rpc.js';
+import { listfile } from '../../views/main/rpc.js';
 
 class Texture {
 	/**
@@ -17,12 +17,8 @@ class Texture {
 		this.fileDataID = fileDataID || 0;
 	}
 
-	/**
-	 * Set the texture file using a file name.
-	 * @param {string} fileName 
-	 */
-	setFileName(fileName) {
-		this.fileDataID = listfile.getByFilename(fileName) || 0;
+	async setFileName(fileName) {
+		this.fileDataID = (await listfile.getByFilename(fileName)) || 0;
 	}
 
 	/**

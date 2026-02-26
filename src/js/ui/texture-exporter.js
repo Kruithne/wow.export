@@ -17,16 +17,16 @@ import JSONWriter from '../3D/writers/JSONWriter.js';
  * @param {number|string} input
  * @returns {object}
  */
-const getFileInfoPair = (input) => {
+const getFileInfoPair = async (input) => {
 	let fileName;
 	let fileDataID;
 
 	if (typeof input === 'number') {
 		fileDataID = input;
-		fileName = listfile.getByID(fileDataID) ?? listfile.formatUnknownFile(fileDataID, '.blp');
+		fileName = (await listfile.getByID(fileDataID)) ?? listfile.formatUnknownFile(fileDataID, '.blp');
 	} else {
 		fileName = listfile.stripFileEntry(input);
-		fileDataID = listfile.getByFilename(fileName);
+		fileDataID = await listfile.getByFilename(fileName);
 	}
 
 	return { fileName, fileDataID };
@@ -67,7 +67,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 	const format = core.view.config.exportTextureFormat;
 
 	if (format === 'CLIPBOARD') {
-		const { fileName, fileDataID } = getFileInfoPair(files[0]);
+		const { fileName, fileDataID } = await getFileInfoPair(files[0]);
 
 		let data;
 		if (isMPQ) {
@@ -103,7 +103,7 @@ const exportFiles = async (files, isLocal = false, exportID = -1, isMPQ = false)
 		if (helper.isCancelled())
 			return;
 
-		const { fileName, fileDataID } = getFileInfoPair(fileEntry);
+		const { fileName, fileDataID } = await getFileInfoPair(fileEntry);
 
 		try {
 			let exportFileName = fileName;

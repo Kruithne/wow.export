@@ -116,11 +116,42 @@ export const casc = {
 // -- listfile API --
 
 export const listfile = {
-	get_by_id: (id) => rpc_config.request.listfile_get_by_id({ id }),
-	get_by_name: (name) => rpc_config.request.listfile_get_by_name({ name }),
+	// sync client-side helpers (no RPC needed)
+	stripFileEntry(entry) {
+		if (typeof entry === 'string' && entry.includes(' ['))
+			return entry.substring(0, entry.lastIndexOf(' ['));
+
+		return entry;
+	},
+
+	parseFileEntry(entry) {
+		const file_path = this.stripFileEntry(entry);
+		const fid_match = typeof entry === 'string' ? entry.match(/\[(\d+)\]$/) : null;
+		const file_data_id = fid_match ? parseInt(fid_match[1], 10) : undefined;
+		return { file_path, file_data_id };
+	},
+
+	formatUnknownFile(file_data_id, ext = '') {
+		return 'unknown/' + file_data_id + ext;
+	},
+
+	// async RPC methods
+	getByID: (id) => rpc_config.request.listfile_get_by_id({ id }),
+	getByFilename: (name) => rpc_config.request.listfile_get_by_name({ name }),
+	getByIDOrUnknown: (id, ext) => rpc_config.request.listfile_get_by_id_or_unknown({ id, ext }),
+	existsByID: (id) => rpc_config.request.listfile_exists_by_id({ id }),
+	renderListfile: (ids, include_main_index) => rpc_config.request.listfile_render({ ids, include_main_index }),
+	ingestIdentifiedFiles: (entries) => rpc_config.request.listfile_ingest_identified({ entries }),
+	loadUnknownTextures: () => rpc_config.request.listfile_load_unknown_textures(),
+	loadUnknownModels: () => rpc_config.request.listfile_load_unknown_models(),
 	get_filtered: (filter, ext, prefilter) => rpc_config.request.listfile_get_filtered({ filter, ext, prefilter }),
 	get_prefilter: (type) => rpc_config.request.listfile_get_prefilter({ type }),
-	strip_prefix: (name) => rpc_config.request.listfile_strip_prefix({ name }),
+
+	async addEntry(file_data_id, file_name, array) {
+		await rpc_config.request.listfile_add_entry({ id: file_data_id, name: file_name });
+		if (array)
+			array.push(`${file_name.toLowerCase()} [${file_data_id}]`);
+	},
 };
 
 // -- db API --

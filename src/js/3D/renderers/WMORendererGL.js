@@ -137,9 +137,9 @@ class WMORendererGL {
 			let textureFileDataIDs = [];
 
 			if(isClassic){
-				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture1]) || 0);
-				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture2]) || 0);
-				textureFileDataIDs.push(listfile.getByFilename(wmo.textureNames[material.texture3]) || 0);
+				textureFileDataIDs.push((await listfile.getByFilename(wmo.textureNames[material.texture1])) || 0);
+				textureFileDataIDs.push((await listfile.getByFilename(wmo.textureNames[material.texture2])) || 0);
+				textureFileDataIDs.push((await listfile.getByFilename(wmo.textureNames[material.texture3])) || 0);
 			}else{
 				textureFileDataIDs.push(material.texture1);
 				textureFileDataIDs.push(material.texture2);
@@ -374,7 +374,7 @@ class WMORendererGL {
 			if (wmo.fileDataIDs)
 				fileDataID = wmo.fileDataIDs[doodad.offset];
 			else
-				fileDataID = listfile.getByFilename(wmo.doodadNames[doodad.offset]) || 0;
+				fileDataID = (await listfile.getByFilename(wmo.doodadNames[doodad.offset])) || 0;
 
 			if (fileDataID > 0) {
 				try {

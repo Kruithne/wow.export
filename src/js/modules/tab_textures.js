@@ -18,7 +18,7 @@ let selected_file_data_id = 0;
 let resize_observer = null;
 
 const preview_texture_by_id = async (core, file_data_id, texture = null) => {
-	texture = texture ?? listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id);
+	texture = texture ?? (await listfile.getByID(file_data_id)) ?? listfile.formatUnknownFile(file_data_id);
 
 	using _lock = core.create_busy_lock();
 	core.setToast('progress', `Loading ${texture}, please wait...`, null, -1, false);
@@ -214,7 +214,7 @@ const export_texture_atlas_regions = async (core, file_data_id) => {
 	const atlas_id = texture_atlas_map.get(file_data_id);
 	const atlas = texture_atlas_entries.get(atlas_id);
 
-	const file_name = listfile.getByID(file_data_id);
+	const file_name = await listfile.getByID(file_data_id);
 	const export_dir = ExportHelper.replaceExtension(file_name);
 
 	const helper = new ExportHelper(atlas.regions.length, 'texture');
@@ -417,7 +417,7 @@ export default {
 
 			try {
 				const first = listfile.stripFileEntry(this.$core.view.selectionTextures[0]);
-				const file_data_id = listfile.getByFilename(first);
+				const file_data_id = await listfile.getByFilename(first);
 				const file = await this.$core.view.casc.getFile(file_data_id);
 				const blp = new BLPFile(file);
 
@@ -444,7 +444,7 @@ export default {
 		this.$core.view.$watch('selectionTextures', async selection => {
 			const first = listfile.stripFileEntry(selection[0]);
 			if (first && !this.$core.view.isBusy) {
-				const file_data_id = listfile.getByFilename(first);
+				const file_data_id = await listfile.getByFilename(first);
 				if (selected_file_data_id !== file_data_id)
 					preview_texture_by_id(this.$core, file_data_id);
 			}

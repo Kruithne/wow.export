@@ -70,7 +70,7 @@ const preview_decor = async (core, decor_item) => {
 		const gl_context = core.view.decorViewerContext?.gl_context;
 
 		const model_type = modelViewerUtils.detect_model_type(file);
-		const file_name = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
+		const file_name = await listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
 
 		if (model_type === modelViewerUtils.MODEL_TYPE_M2)
 			core.view.decorViewerActiveType = 'm2';
@@ -156,7 +156,7 @@ const export_files = async (core, entries, export_id = -1) => {
 			const data = await casc.getFile(file_data_id);
 			const model_type = modelViewerUtils.detect_model_type(data);
 			const file_ext = modelViewerUtils.get_model_extension(model_type);
-			const file_name = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, file_ext);
+			const file_name = await listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, file_ext);
 			const export_path = ExportHelper.getExportPath('decor/' + decor_name + file_ext);
 
 			const is_active = file_data_id === active_file_data_id;

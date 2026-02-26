@@ -211,7 +211,7 @@ const extract_height_data_from_tile = async (adt, resolution) => {
 	const tile_prefix = prefix + '_' + adt.tileY + '_' + adt.tileX;
 
 	try {
-		const root_fid = listfile.getByFilename(tile_prefix + '.adt');
+		const root_fid = await listfile.getByFilename(tile_prefix + '.adt');
 		if (!root_fid) {
 			log.write('cannot find fileDataID for %s.adt', tile_prefix);
 			return null;
@@ -478,7 +478,7 @@ export default {
 				let file_data_id = 0;
 
 				if (wdt.worldModel) {
-					file_data_id = listfile.getByFilename(wdt.worldModel);
+					file_data_id = await listfile.getByFilename(wdt.worldModel);
 					if (!file_data_id)
 						return;
 				} else {
@@ -639,7 +639,7 @@ export default {
 
 				if (selected_wdt.worldModel) {
 					file_name = selected_wdt.worldModel;
-					file_data_id = listfile.getByFilename(file_name);
+					file_data_id = await listfile.getByFilename(file_name);
 
 					if (!file_data_id)
 						throw new Error('invalid world model path: ' + file_name);
@@ -648,7 +648,7 @@ export default {
 						throw new Error('map does not define a valid world model.');
 
 					file_data_id = placement.id;
-					file_name = listfile.getByID(file_data_id) || 'unknown_' + file_data_id + '.wmo';
+					file_name = await listfile.getByID(file_data_id) || 'unknown_' + file_data_id + '.wmo';
 				}
 
 				const mark_file_name = ExportHelper.replaceExtension(file_name, '.obj');
@@ -958,11 +958,11 @@ export default {
 				const wdt_path = `world/maps/${entry.Directory}/${entry.Directory}.wdt`;
 
 				if (entry.WdtFileDataID) {
-					if (!listfile.existsByID(entry.WdtFileDataID))
-						listfile.addEntry(entry.WdtFileDataID, wdt_path);
+					if (!await listfile.existsByID(entry.WdtFileDataID))
+						await listfile.addEntry(entry.WdtFileDataID, wdt_path);
 
 					maps.push(`${entry.ExpansionID}\x19[${id}]\x19${entry.MapName_lang}\x19(${entry.Directory})`);
-				} else if (listfile.getByFilename(wdt_path)) {
+				} else if (await listfile.getByFilename(wdt_path)) {
 					maps.push(`${entry.ExpansionID}\x19[${id}]\x19${entry.MapName_lang}\x19(${entry.Directory})`);
 				}
 			}

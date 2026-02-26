@@ -1644,7 +1644,7 @@ const export_char_model = async (core) => {
 			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
 
 			if (format === 'PNG') {
-				const file_name = listfile.getByID(active_model);
+				const file_name = await listfile.getByID(active_model);
 				const export_path = ExportHelper.getExportPath(file_name);
 				let out_file = ExportHelper.replaceExtension(export_path, '.png');
 
@@ -1679,7 +1679,7 @@ const export_char_model = async (core) => {
 		return;
 
 	const file_data_id = active_model;
-	const file_name = listfile.getByID(file_data_id);
+	const file_name = await listfile.getByID(file_data_id);
 
 	try {
 		if (format === 'OBJ' || format === 'STL') {
@@ -1844,7 +1844,7 @@ const export_chr_texture = async (core) => {
 		return;
 	}
 
-	const file_name = listfile.getByID(active_model);
+	const file_name = await listfile.getByID(active_model);
 	const fn_slash = Math.max(file_name.lastIndexOf('/'), file_name.lastIndexOf('\\'));
 	const fn_dot = file_name.lastIndexOf('.');
 	const base_name = fn_dot > fn_slash ? file_name.substring(fn_slash + 1, fn_dot) : file_name.substring(fn_slash + 1);

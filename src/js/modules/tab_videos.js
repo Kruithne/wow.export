@@ -106,7 +106,7 @@ const build_payload = async (core_ref, file_data_id) => {
 };
 
 const stream_video = async (core_ref, file_name, video) => {
-	const file_data_id = listfile.getByFilename(file_name);
+	const file_data_id = await listfile.getByFilename(file_name);
 
 	if (!file_data_id) {
 		core_ref.setToast('error', 'Unable to find file in listfile');
@@ -300,20 +300,26 @@ const load_video_listfile = async () => {
 	const entries = new Array(video_file_data_ids.length);
 	for (let i = 0; i < video_file_data_ids.length; i++) {
 		const fid = video_file_data_ids[i];
-		let filename = listfile.getByID(fid);
+		let filename = await listfile.getByID(fid);
 
 		if (!filename) {
 			filename = 'interface/cinematics/unk_' + fid + '.avi';
-			listfile.addEntry(fid, filename);
+			await listfile.addEntry(fid, filename);
 		}
 
 		entries[i] = `${filename} [${fid}]`;
 	}
 
-	if (core.view.config.listfileSortByID)
-		entries.sort((a, b) => listfile.getByFilename(listfile.stripFileEntry(a)) - listfile.getByFilename(listfile.stripFileEntry(b)));
-	else
+	if (core.view.config.listfileSortByID) {
+		// extract numeric id from entry format "filename [123]"
+		const extract_id = (entry) => {
+			const match = entry.match(/\[(\d+)\]$/);
+			return match ? parseInt(match[1]) : 0;
+		};
+		entries.sort((a, b) => extract_id(a) - extract_id(b));
+	} else {
 		entries.sort();
+	}
 
 	core.view.listfileVideos = entries;
 	log.write('built video listfile with %d entries', entries.length);
@@ -586,7 +592,7 @@ export default {
 					return;
 
 				file_name = listfile.stripFileEntry(file_name);
-				const file_data_id = listfile.getByFilename(file_name);
+				const file_data_id = await listfile.getByFilename(file_name);
 
 				if (!file_data_id) {
 					helper.mark(file_name, false, 'File not found in listfile');
@@ -667,7 +673,7 @@ export default {
 				let export_file_name = file_name;
 
 				if (!this.$core.view.config.exportNamedFiles) {
-					const file_data_id = listfile.getByFilename(file_name);
+					const file_data_id = await listfile.getByFilename(file_name);
 					if (file_data_id) {
 						const dot_idx = file_name.lastIndexOf('.');
 						const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';
@@ -731,7 +737,7 @@ export default {
 					return;
 
 				file_name = listfile.stripFileEntry(file_name);
-				const file_data_id = listfile.getByFilename(file_name);
+				const file_data_id = await listfile.getByFilename(file_name);
 
 				if (!file_data_id) {
 					helper.mark(file_name, false, 'File not found in listfile');
@@ -788,7 +794,7 @@ export default {
 					return;
 
 				file_name = listfile.stripFileEntry(file_name);
-				const file_data_id = listfile.getByFilename(file_name);
+				const file_data_id = await listfile.getByFilename(file_name);
 
 				if (!file_data_id) {
 					helper.mark(file_name, false, 'File not found in listfile');

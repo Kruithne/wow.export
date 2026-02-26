@@ -15,7 +15,7 @@ const get_font_id = (file_data_id) => {
 };
 
 const load_font = async (core, file_name) => {
-	const file_data_id = listfile.getByFilename(file_name);
+	const file_data_id = await listfile.getByFilename(file_name);
 	if (!file_data_id)
 		return null;
 
@@ -119,7 +119,7 @@ export default {
 				let export_file_name = file_name;
 
 				if (!this.$core.view.config.exportNamedFiles) {
-					const file_data_id = listfile.getByFilename(file_name);
+					const file_data_id = await listfile.getByFilename(file_name);
 					if (file_data_id) {
 						const dot_idx = file_name.lastIndexOf('.');
 						const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';

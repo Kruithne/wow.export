@@ -72,7 +72,7 @@ const detect_raw_files = async (core) => {
 	}
 
 	if (extension_map.size > 0) {
-		listfile.ingestIdentifiedFiles(extension_map);
+		await listfile.ingestIdentifiedFiles(extension_map);
 		await compute_raw_files(core);
 
 		if (extension_map.size === 1) {
@@ -107,7 +107,7 @@ const export_raw_files = async (core) => {
 		let export_file_name = file_name;
 
 		if (!core.view.config.exportNamedFiles) {
-			const file_data_id = listfile.getByFilename(file_name);
+			const file_data_id = await listfile.getByFilename(file_name);
 			if (file_data_id) {
 				const dot_idx = file_name.lastIndexOf('.');
 				const ext = dot_idx !== -1 ? file_name.substring(dot_idx) : '';

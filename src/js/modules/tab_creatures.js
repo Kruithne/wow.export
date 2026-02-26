@@ -647,7 +647,7 @@ const preview_creature = async (core, creature) => {
 			const gl_context = core.view.creatureViewerContext?.gl_context;
 
 			const model_type = modelViewerUtils.detect_model_type(file);
-			const file_name = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
+			const file_name = await listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
 
 			if (model_type === modelViewerUtils.MODEL_TYPE_M2)
 				core.view.creatureViewerActiveType = 'm2';
@@ -671,7 +671,7 @@ const preview_creature = async (core, creature) => {
 				const displays = await get_creature_displays(file_data_id);
 
 				const skin_list = [];
-				let model_name = listfile.getByID(file_data_id);
+				let model_name = await listfile.getByID(file_data_id);
 				model_name = model_name.substring(model_name.lastIndexOf('/') + 1).replace(/\.?m2$/i, '');
 
 				for (const display of displays) {
@@ -681,7 +681,7 @@ const preview_creature = async (core, creature) => {
 					const texture = display.textures[0];
 
 					let clean_skin_name = '';
-					let skin_name = listfile.getByID(texture);
+					let skin_name = await listfile.getByID(texture);
 					if (skin_name !== undefined) {
 						skin_name = skin_name.substring(skin_name.lastIndexOf('/') + 1).replace(/\.blp$/i, '');
 						clean_skin_name = skin_name.replace(model_name, '').replace('_', '');
@@ -789,7 +789,7 @@ const export_files = async (core, entries) => {
 				}
 
 				const data = await casc.getFile(file_data_id);
-				const file_name = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, '.m2');
+				const file_name = await listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, '.m2');
 				const export_path = ExportHelper.getExportPath('creatures/' + creature_name + '.m2');
 
 				const is_active = file_data_id === active_file_data_id && is_character_model;
@@ -947,7 +947,7 @@ const export_files = async (core, entries) => {
 			const data = await casc.getFile(file_data_id);
 			const model_type = modelViewerUtils.detect_model_type(data);
 			const file_ext = modelViewerUtils.get_model_extension(model_type);
-			const file_name = listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, file_ext);
+			const file_name = await listfile.getByID(file_data_id) ?? listfile.formatUnknownFile(file_data_id, file_ext);
 			const export_path = ExportHelper.getExportPath('creatures/' + creature_name + file_ext);
 
 			const is_active = file_data_id === active_file_data_id;
