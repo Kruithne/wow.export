@@ -399,6 +399,8 @@ class M2RendererGL {
 			}
 		}
 
+		this._create_tex_matrices();
+
 		// drop reference to raw data
 		this.data = undefined;
 	}
@@ -572,6 +574,17 @@ class M2RendererGL {
 
 					this.material_props.set(tex_indices[0], { blendMode: blend_mode, flags: flags });
 				}
+
+				if (tex_unit.textureTransformComboIndex < m2.textureTransformsLookup.length) {
+					const idx = m2.textureTransformsLookup[tex_unit.textureTransformComboIndex];
+					if (idx < m2.textureTransforms.length)
+						tex_mtx_idxs[0] = idx;
+				}
+				if (tex_unit.textureTransformComboIndex + 1 < m2.textureTransformsLookup.length) {
+					const idx = m2.textureTransformsLookup[tex_unit.textureTransformComboIndex + 1];
+					if (idx < m2.textureTransforms.length)
+						tex_mtx_idxs[1] = idx;
+				}
 			}
 
 			const draw_call = {
@@ -684,6 +697,21 @@ class M2RendererGL {
 		}
 	}
 
+	_create_tex_matrices() {
+		const m2 = this.m2;
+		const tt = m2.textureTransforms;
+
+		if (tt.length <= 0) {
+			return;
+		}
+
+		this.tex_matrices = new Float32Array(tt.length * 16);
+		for (let i = 0; i < tt.length; i++) {
+			const offset = i * 16;
+			this.tex_matrices.set(IDENTITY_MAT4, offset);
+		}
+	}
+
 	/**
 	 * Play animation by index
 	 * @param {number} index
@@ -738,6 +766,7 @@ class M2RendererGL {
 			this.current_anim_index = 0;
 			this.current_anim_source = this.skelLoader || this.m2;
 			this._update_bone_matrices();
+			this._update_tex_matrices();
 
 			this.current_animation = null;
 			this.current_anim_index = null;
@@ -777,6 +806,7 @@ class M2RendererGL {
 
 		// update bone matrices
 		this._update_bone_matrices();
+		this._update_tex_matrices();
 	}
 
 	get_animation_duration() {
@@ -811,6 +841,7 @@ class M2RendererGL {
 		const duration = this.get_animation_duration();
 		this.animation_time = (frame / frame_count) * duration;
 		this._update_bone_matrices();
+		this._update_tex_matrices();
 	}
 
 	set_animation_paused(paused) {
@@ -960,6 +991,135 @@ class M2RendererGL {
 		// calculate all bones
 		for (let i = 0; i < bone_count; i++)
 			calc_bone(i);
+	}
+
+	_find_time_index(currtime, times) {
+		if (times.length > 1) {
+			if (currtime > times[times.length - 1]) return times_len - 1;
+			let lowerbound = (a, b) => { let n = a.length; for (let i=0;i<n;++i) {if (a[i] >= b) return i;} return n;};
+			let time = lowerbound(times, currtime);
+			if (time != 0) {
+				time--;
+			}
+			return time;
+		} else if (times.length == 1) {
+			return 0;
+		} else return -1;
+	}
+
+	_animate_track(anim, animblock, def, lerpfunc) {
+		const m2 = this.m2;
+		const gl = m2.globalLoops;
+		let at = (this.animation_time * 1000);
+		let ai = this.current_anim_index;
+		let maxtime = anim.duration;
+
+		const gs = animblock.globalSeq;
+		if (gs >= 0) {
+			at = this.global_seq_times[gs];
+			maxtime = gl[gs];
+		}
+
+		if (animblock.timestamps.length == 0)
+			return def;
+
+		if (animblock.timestamps.length <= ai)
+			ai = 0;
+
+		if (ai <= animblock.timestamps[ai].length == 0)
+			return def;
+
+		const times = animblock.timestamps[ai];
+		const values = animblock.values[ai];
+		const intertype = animblock.interpolation;
+
+		let ti = 0;
+		if (maxtime != 0) {
+			ti = this._find_time_index(at, times);
+		}
+		if (ti == times.size-1)
+			return values[ti];
+		else if (ti >= 0) {
+			let v1 = values[ti];
+			let v2 = values[ti + 1];
+			let t1 = times[ti];
+			let t2 = times[ti + 1];
+
+			if (intertype == 0)
+				return v1;
+			else {
+				return lerpfunc(v1, v2, (at - t1) / (t2 -t1));
+			}
+		} else {
+			return values[0];
+		}
+	}
+
+	_update_tex_matrices() {
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
+		if (!anim)
+			return;
+
+		const m2 = this.m2;
+		const tm = this.tex_matrices;
+
+		const temp_result = new Float32Array(16);
+
+		for (let i = 0; i < m2.textureTransforms.length; ++i) {
+			const tt = m2.textureTransforms[i];
+			const local_mat = new Float32Array(16);
+			mat4_copy(local_mat, IDENTITY_MAT4);
+
+			const transmat = [0.5, 0.5, 0, 0];
+			const pivotpoint = [-0.5, -0.5, 0, 0];
+
+			if (tt.rotation.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.rotation, [1,0,0,0], (a,b,c)=>{
+					const out = [0, 0, 0, 1];
+					quat_slerp(out, a[0], a[1], a[2], a[3], b[0], b[1], b[2], b[3], c);
+					return out;
+				});
+				mat4_from_translation(temp_result, transmat[0], transmat[1], transmat[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_quat(temp_result, qx, qy, qz, qw);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_translation(temp_result, pivotpoint[0], pivotpoint[1], pivotpoint[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+			if (tt.scaling.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.scaling, [1,1,1,1], (a,b,c)=> {
+					return [
+						lerp(a[0], b[0], c),
+						lerp(a[1], b[1], c),
+						lerp(a[2], b[2], c),
+						lerp(a[3], b[3], c),
+					]
+				});
+				mat4_from_translation(temp_result, transmat[0], transmat[1], transmat[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_scale(temp_result, qx, qy, qz);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_translation(temp_result, pivotpoint[0], pivotpoint[1], pivotpoint[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+			if (tt.translation.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.translation, [0,0,0,0], (a,b,c)=> {
+					return [
+						lerp(a[0], b[0], c),
+						lerp(a[1], b[1], c),
+						lerp(a[2], b[2], c),
+						lerp(a[3], b[3], c),
+					]
+				});
+				mat4_from_translation(temp_result, qx, qy, qz);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+
+			const offset = i * 16;
+			tm.set(local_mat, offset);
+		}
 	}
 
 	_sample_raw_vec3(timestamps, values, time_ms, default_value = [0, 0, 0]) {
