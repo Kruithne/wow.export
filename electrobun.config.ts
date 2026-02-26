@@ -11,6 +11,9 @@ export default {
 	build: {
 		bun: {
 			entrypoint: 'src/bun/index.js',
+			define: {
+				'BUILD_RELEASE': '"true"',
+			},
 		},
 
 		views: {
@@ -28,11 +31,16 @@ export default {
 			'src/shaders': 'views/main/shaders',
 			'src/help_docs': 'views/main/help_docs',
 			'src/whats-new.html': 'views/main/whats-new.html',
+			'addons/blender/io_scene_wowobj': 'addon/io_scene_wowobj',
+			'src/default_config.jsonc': 'default_config.jsonc',
+			'CHANGELOG.md': 'CHANGELOG.md',
+			'LEGAL': 'license/LEGAL',
 		},
 
 		win: {
 			bundleCEF: true,
 			defaultRenderer: 'cef',
+			icon: 'resources/icon.ico',
 		},
 
 		mac: {
@@ -43,6 +51,16 @@ export default {
 		linux: {
 			bundleCEF: true,
 			defaultRenderer: 'cef',
+			icon: 'resources/icon.png',
+		},
+
+		release: {
+			baseUrl: 'https://wow.export/update/',
+			generatePatch: true,
+		},
+
+		runtime: {
+			exitOnLastWindowClosed: true,
 		},
 	},
 } satisfies ElectrobunConfig;

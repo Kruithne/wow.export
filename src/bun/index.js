@@ -1,8 +1,9 @@
-import { BrowserWindow, BrowserView, PATHS } from 'electrobun/bun';
+import { BrowserWindow, BrowserView, BuildConfig, PATHS } from 'electrobun/bun';
 import path from 'node:path';
 import { create_handlers, init_services } from './rpc/index.js';
 import { MAX_REQUEST_TIME } from '../rpc/schema.js';
 
+const build_config = await BuildConfig.get();
 const install_path = path.resolve(import.meta.dir, '..', '..');
 
 const app_paths = {
@@ -12,7 +13,7 @@ const app_paths = {
 	default_config: path.join(import.meta.dir, '..', 'default_config.jsonc'),
 	cache: path.join(PATHS.data, 'cache'),
 	install: install_path,
-	version: '0.2.14',
+	version: build_config.app.version,
 };
 
 const handlers = create_handlers(null);

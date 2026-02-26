@@ -1,5 +1,6 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import { Updater } from 'electrobun/bun';
 import * as core from '../lib/core.js';
 import * as constants from '../lib/constants.js';
 import * as mmap from '../lib/mmap.js';
@@ -91,9 +92,7 @@ export const app_handlers = {
 	async app_get_info() {
 		return {
 			version: constants.VERSION,
-			flavour: 'win-x64',
-			guid: '',
-			data_path: '',
+			data_path: constants.DATA_PATH,
 		};
 	},
 
@@ -117,8 +116,8 @@ export const app_handlers = {
 	},
 
 	async app_check_update() {
-		// TODO: wire to electrobun Updater API
-		return null;
+		const info = await Updater.checkForUpdate();
+		return info;
 	},
 
 	async app_get_cache_size() {
