@@ -1,5 +1,5 @@
 import * as Vue from 'vue';
-import { app, config as rpc_config, log as rpc_log, on, platform as rpc_platform } from './rpc.js';
+import { app, config as rpc_config, log as rpc_log, on, off, platform as rpc_platform } from './rpc.js';
 import { MSG } from '../../rpc/schema.js';
 import core from '../../js/core.js';
 import modules from '../../js/modules.js';

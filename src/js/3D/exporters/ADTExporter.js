@@ -17,8 +17,9 @@ import log from '../../log.js';
 import WDTLoader from '../loaders/WDTLoader.js';
 import Shaders from '../Shaders.js';
 import MTLWriter from '../writers/MTLWriter.js';
-import { db, dbc } from '../../views/main/rpc.js';
+import { db, dbc, listfile } from '../../views/main/rpc.js';
 import M2Exporter from '../../3D/exporters/M2Exporter.js';
+import ADTLoader from '../loaders/ADTLoader.js';
 import CSVWriter from '../../3D/writers/CSVWriter.js';
 
 
@@ -41,8 +42,6 @@ const wdtCache = new Map();
 
 let isFoliageAvailable = false;
 let hasLoadedFoliage = false;
-let dbTextures;
-let dbDoodads;
 
 let glShaderProg;
 let glCanvas;
@@ -73,8 +72,8 @@ const loadTexture = async (fileDataID) => {
 const loadFoliageTables = async () => {
 	if (!hasLoadedFoliage) {
 		try {
-			dbDoodads = db2.GroundEffectDoodad;
-			dbTextures = db2.GroundEffectTexture;
+			await db.preload('GroundEffectDoodad');
+			await db.preload('GroundEffectTexture');
 
 			hasLoadedFoliage = true;
 			isFoliageAvailable = true;
@@ -1466,7 +1465,7 @@ class ADTExporter {
 					if (!layer.effectID)
 						continue;
 
-					const groundEffectTexture = await dbTextures.getRow(layer.effectID);
+					const groundEffectTexture = await db.get_row('GroundEffectTexture', layer.effectID);
 					if (!groundEffectTexture || !Array.isArray(groundEffectTexture.DoodadID))
 						continue;
 
@@ -1485,7 +1484,7 @@ class ADTExporter {
 						if (!doodadEntryID)
 							continue;
 
-						const groundEffectDoodad = await dbDoodads.getRow(doodadEntryID);
+						const groundEffectDoodad = await db.get_row('GroundEffectDoodad', doodadEntryID);
 						if (groundEffectDoodad) {
 							const modelID = groundEffectDoodad.ModelFileID;
 							doodadModelIDs[doodadEntryID] = { fileDataID: modelID };

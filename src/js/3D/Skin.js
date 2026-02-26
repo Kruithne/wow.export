@@ -4,7 +4,7 @@
 	License: MIT
  */
 import core from '../core.js';
-import { listfile } from '../views/main/rpc.js';
+import { listfile } from '../../views/main/rpc.js';
 
 const MAGIC_SKIN = 0x4E494B53;
 

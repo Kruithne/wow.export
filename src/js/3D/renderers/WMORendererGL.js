@@ -4,9 +4,12 @@
 	License: MIT
 */
 import constants from '../../constants.js';
+import core from '../../core.js';
+import { listfile } from '../../views/main/rpc.js';
 import WMOLoader from '../loaders/WMOLoader.js';
 import Shaders from '../Shaders.js';
 import GLContext from '../gl/GLContext.js';
+import GLTexture from '../gl/GLTexture.js';
 import log from '../../log.js';
 import BLPImage from '../../casc/blp.js';
 import Texture from '../Texture.js';

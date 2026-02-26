@@ -7,7 +7,6 @@ import BLPImage from '../../casc/blp.js';
 import ShaderMapper from '../ShaderMapper.js';
 import GLContext from '../gl/GLContext.js';
 import core from '../../core.js';
-import BLPImage from '../../casc/blp.js';
 import M2Loader from '../loaders/M2Loader.js';
 import GeosetMapper from '../GeosetMapper.js';
 import Shaders from '../Shaders.js';

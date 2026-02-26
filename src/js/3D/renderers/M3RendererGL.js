@@ -6,6 +6,7 @@
 import GLContext from '../gl/GLContext.js';
 import GLTexture from '../gl/GLTexture.js';
 import core from '../../core.js';
+import M3Loader from '../loaders/M3Loader.js';
 import Shaders from '../Shaders.js';
 import VertexArray from '../gl/VertexArray.js';
 

@@ -4,10 +4,12 @@
 	License: MIT
 */
 import BLPImage from '../../casc/blp.js';
+import core from '../../core.js';
 import VertexArray from '../gl/VertexArray.js';
 import textureRibbon from '../../ui/texture-ribbon.js';
 import log from '../../log.js';
 import WMOLegacyLoader from '../loaders/WMOLegacyLoader.js';
+import M2LegacyRendererGL from './M2LegacyRendererGL.js';
 import Shaders from '../Shaders.js';
 import GLTexture from '../gl/GLTexture.js';
 import BufferWrapper from '../../buffer.js';
@@ -139,7 +141,7 @@ class WMOLegacyRendererGL {
 					if (!data)
 						continue;
 
-					const blp = new BLPFile(new BufferWrapper(data));
+					const blp = new BLPImage(new BufferWrapper(data));
 					const gl_tex = new GLTexture(this.ctx);
 
 					const wrap_s = (material.flags & 0x40) ? this.gl.CLAMP_TO_EDGE : this.gl.REPEAT;

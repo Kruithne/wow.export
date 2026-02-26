@@ -5,9 +5,9 @@
 */
 import BLPImage from '../../casc/blp.js';
 import Shaders from '../Shaders.js';
+import GeosetMapper from '../GeosetMapper.js';
 import GLTexture from '../gl/GLTexture.js';
 import core from '../../core.js';
-import BLPImage from '../../casc/blp.js';
 import M2LegacyLoader from '../loaders/M2LegacyLoader.js';
 import VertexArray from '../gl/VertexArray.js';
 import textureRibbon from '../../ui/texture-ribbon.js';

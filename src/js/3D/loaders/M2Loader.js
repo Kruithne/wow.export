@@ -7,6 +7,8 @@ import constants from '../../constants.js';
 import BufferWrapper from '../../buffer.js';
 import Texture from '../Texture.js';
 import M2Generics from './M2Generics.js';
+import Skin from '../Skin.js';
+import ANIMLoader from './ANIMLoader.js';
 import core from '../../core.js';
 import AnimMapper from '../AnimMapper.js';
 import log from '../../log.js';

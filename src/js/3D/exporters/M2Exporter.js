@@ -4,8 +4,10 @@
 	License: MIT
  */
 import { exporter, listfile } from '../../views/main/rpc.js';
+import BLPFile from '../../casc/blp.js';
 import generics from '../../generics.js';
 import ExportHelper from '../../export-helper.js';
+import GeosetMapper from '../GeosetMapper.js';
 import SKELLoader from '../loaders/SKELLoader.js';
 import JSONWriter from '../writers/JSONWriter.js';
 import MTLWriter from '../writers/MTLWriter.js';
