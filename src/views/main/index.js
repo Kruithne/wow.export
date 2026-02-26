@@ -11,6 +11,7 @@ import ExportHelper from '../../js/export-helper.js';
 import generics from '../../js/generics.js';
 import log from '../../js/log.js';
 import textureRibbon from '../../js/ui/texture-ribbon.js';
+import { reload_all as reload_shaders } from '../../js/3D/Shaders.js';
 
 let is_crashed = false;
 
@@ -313,6 +314,9 @@ document.addEventListener('click', (e) => {
 	modules.registerContextMenuOption('runtime-log', 'Open Runtime Log', 'timeline.svg', () => log.openRuntimeLog());
 	modules.registerContextMenuOption('restart', 'Restart wow.export', 'arrow-rotate-left.svg', () => location.reload());
 	modules.registerContextMenuOption('reload-style', 'Reload Styling', 'palette.svg', () => core.view.reloadStylesheet(), true);
+	modules.registerContextMenuOption('reload-shaders', 'Reload Shaders', 'cube.svg', () => reload_shaders(), true);
+	modules.registerContextMenuOption('reload-active', 'Reload Active Module', 'arrow-rotate-left.svg', () => location.reload(), true);
+	modules.registerContextMenuOption('reload-all', 'Reload All Modules', 'arrow-rotate-left.svg', () => location.reload(), true);
 
 	core.view.$watch('activeModule', () => {
 		const ctx = core.view.contextMenus;
