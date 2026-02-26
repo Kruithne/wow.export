@@ -36,7 +36,7 @@ async function apply_customization_geosets(geosets, active_choices) {
 			const chr_cust_geo_id = await DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
 			const geoset_id = await DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
 
-			if (geoset_id == null)
+			if (geoset_id === undefined)
 				continue;
 
 			for (const geoset of geosets) {
