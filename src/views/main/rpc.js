@@ -21,6 +21,7 @@ const rpc_config = Electroview.defineRPC({
 		messages: {
 			[MSG.CASC_PROGRESS](payload) { emit(MSG.CASC_PROGRESS, payload); },
 			[MSG.EXPORT_PROGRESS](payload) { emit(MSG.EXPORT_PROGRESS, payload); },
+			[MSG.LOADING_SCREEN](payload) { emit(MSG.LOADING_SCREEN, payload); },
 			[MSG.LOADING_PROGRESS](payload) { emit(MSG.LOADING_PROGRESS, payload); },
 			[MSG.CONFIG_CHANGED](payload) { emit(MSG.CONFIG_CHANGED, payload); },
 			[MSG.UPDATE_STATUS](payload) { emit(MSG.UPDATE_STATUS, payload); },
@@ -47,12 +48,14 @@ export function off(event, handler) {
 // -- helper: request with progress tracking --
 
 export async function request_with_progress(method, params, progress_event, on_progress) {
-	on(progress_event, on_progress);
+	if (on_progress)
+		on(progress_event, on_progress);
 
 	try {
 		return await rpc_config.request[method](params);
 	} finally {
-		off(progress_event, on_progress);
+		if (on_progress)
+			off(progress_event, on_progress);
 	}
 }
 

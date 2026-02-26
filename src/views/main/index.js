@@ -342,12 +342,15 @@ document.addEventListener('click', (e) => {
 		core.setToast(type ?? 'info', message);
 	});
 
-	on(MSG.LOADING_PROGRESS, ({ message, pct }) => {
-		if (message)
-			core.view.loadingProgress = message;
+	on(MSG.LOADING_SCREEN, ({ visible, steps }) => {
+		if (visible)
+			core.showLoadingScreen(steps);
+		else
+			core.hideLoadingScreen();
+	});
 
-		if (pct !== undefined)
-			core.view.loadPct = pct;
+	on(MSG.LOADING_PROGRESS, ({ message }) => {
+		core.progressLoadingScreen(message);
 	});
 
 	let drop_stack = 0;

@@ -73,6 +73,8 @@ export const MAX_REQUEST_TIME = 120_000;
  * dbc_get_decor: { filter?: string } => Decor[]
  * dbc_get_decor_categories: {} => DecorCategory[]
  * dbc_get_guild_tabard: { params: object } => TabardData
+ * dbc_init_creature_data_legacy: {} => void
+ * dbc_get_creature_displays_by_path_legacy: { model_path: string } => CreatureDisplay[]
  * dbc_call: { module: string, method: string, args?: any[] } => any (generic db cache dispatcher)
  */
 
@@ -145,7 +147,8 @@ export const MAX_REQUEST_TIME = 120_000;
 /**
  * casc_progress: { message: string, pct: number, is_done?: boolean }
  * export_progress: { current: number, total: number, file?: string }
- * loading_progress: { message: string, pct?: number }
+ * loading_screen: { visible: boolean, steps?: number }
+ * loading_progress: { message: string }
  * config_changed: { key: string, value: any }
  * update_status: { status: string, progress?: number, error?: string }
  * toast: { message: string, type?: string }
@@ -162,6 +165,7 @@ export const MAX_REQUEST_TIME = 120_000;
 export const MSG = {
 	CASC_PROGRESS: 'casc_progress',
 	EXPORT_PROGRESS: 'export_progress',
+	LOADING_SCREEN: 'loading_screen',
 	LOADING_PROGRESS: 'loading_progress',
 	CONFIG_CHANGED: 'config_changed',
 	UPDATE_STATUS: 'update_status',

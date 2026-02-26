@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs/promises';
 import * as constants from './constants.js';
+import { MSG } from '../../rpc/schema.js';
 
 export const events = new EventEmitter();
 
@@ -79,19 +80,19 @@ export const set_export_cancelled = (val) => { _export_cancelled = val; };
 
 // rpc messaging helpers
 export const show_loading_screen = (steps) => {
-	_rpc?.send?.loading_screen?.({ visible: true, steps });
+	_rpc?.send?.[MSG.LOADING_SCREEN]?.({ visible: true, steps });
 };
 
 export const progress_loading_screen = (text) => {
-	_rpc?.send?.loading_progress?.({ text });
+	_rpc?.send?.[MSG.LOADING_PROGRESS]?.({ message: text });
 };
 
 export const hide_loading_screen = () => {
-	_rpc?.send?.loading_screen?.({ visible: false });
+	_rpc?.send?.[MSG.LOADING_SCREEN]?.({ visible: false });
 };
 
 export const set_toast = (type, message, options = null, timeout = -1, cancellable = true) => {
-	_rpc?.send?.toast?.({ type, message, options, timeout, cancellable });
+	_rpc?.send?.[MSG.TOAST]?.({ type, message, options, timeout, cancellable });
 };
 
 export const send_listfile_data = (key, data) => {
