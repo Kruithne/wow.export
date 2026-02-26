@@ -937,7 +937,7 @@ class GLTFWriter {
 
 			root.textures.push({ source: imageIndex });
 			root.materials.push({
-				name: texFile.matName.split('/').pop().replace((texFile.matName, ''.includes('.') ? '.' + texFile.matName, ''.split('.').pop() : '')),
+				name: texFile.matName.split('/').pop().replace(/\.[^.]+$/, ''),
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
 					baseColorTexture: {
@@ -1501,7 +1501,7 @@ class GLTFWriter {
 		// write out animation buffers (gltf mode only, glb embeds them)
 		if (format === 'gltf') {
 			for (const [animationName, animationBuffer] of animationBufferMap) {
-				const animationPath = out_dir + '/' + outBIN.split('/'.pop().replace(".bin", '') + "_anim" + animationName + ".bin");
+				const animationPath = out_dir + '/' + outBIN.split('/').pop().replace('.bin', '') + '_anim' + animationName + '.bin';
 				await animationBuffer.writeToFile(animationPath);
 			}
 		}

@@ -94,7 +94,7 @@ class M2LegacyExporter {
 				// legacy mpq exports always use flat textures alongside model for compatibility
 				texPath = outDir + '/' + texFile;
 
-				let matName = 'mat_' + texturePath.toLowerCase(.split('/').pop(), '.blp');
+				let matName = 'mat_' + texturePath.toLowerCase().split('/').pop().replace('.blp', '');
 				if (config.removePathSpaces)
 					matName = matName.replace(/\s/g, '');
 
@@ -347,7 +347,7 @@ class M2LegacyExporter {
 					if (config.enableSharedTextures)
 						texOut = ExportHelper.getExportPath(texturePath);
 					else
-						texOut = outDir + '/' + texturePath.split('/'.pop());
+						texOut = outDir + '/' + texturePath.split('/').pop();
 
 					const buf = new BufferWrapper(textureData);
 					await buf.writeToFile(texOut);
@@ -384,7 +384,7 @@ class M2LegacyExporter {
 						if (config.enableSharedTextures)
 							texOut = ExportHelper.getExportPath(texturePath);
 						else
-							texOut = outDir + '/' + texturePath.split('/'.pop());
+							texOut = outDir + '/' + texturePath.split('/').pop();
 
 						const buf = new BufferWrapper(textureData);
 						await buf.writeToFile(texOut);

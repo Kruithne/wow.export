@@ -172,7 +172,7 @@ class M2Exporter {
 					let fileName = listfile.getByID(texFileDataID);
 
 					if (fileName !== undefined) {
-						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
 
 						// Remove spaces from material name for MTL compatibility.
 						if (core.view.config.removePathSpaces)
@@ -441,7 +441,7 @@ class M2Exporter {
 					let texPath = outDir + '/' + texFile;
 
 					if (fileName !== undefined) {
-						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
 						if (config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
@@ -588,7 +588,7 @@ class M2Exporter {
 
 					const fileName = listfile.getByID(texFileDataID);
 					if (fileName !== undefined) {
-						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
 						if (config.removePathSpaces)
 							matName = matName.replace(/\s/g, '');
 					}
@@ -1010,7 +1010,7 @@ class M2Exporter {
 					if (config.enableSharedChildren)
 						skinFile = exporter.getExportPath(skin.fileName);
 					else
-						skinFile = outDir + '/' + skin.fileName.split('/'.pop());
+						skinFile = outDir + '/' + skin.fileName.split('/').pop();
 	
 					await skinData.writeToFile(skinFile);
 					skinsManifest.push({ fileDataID: skin.fileDataID, file: skinFile.replace(outDir, '') });
@@ -1033,7 +1033,7 @@ class M2Exporter {
 			if (config.enableSharedChildren)
 				skelFile = exporter.getExportPath(skelFileName);
 			else
-				skelFile = outDir + '/' + skelFileName.split('/'.pop());
+				skelFile = outDir + '/' + skelFileName.split('/').pop();
 
 			await skelData.writeToFile(skelFile);
 			manifest.addProperty('skeleton', { fileDataID: this.m2.skeletonFileID, file: skelFile.replace(outDir, '') });
@@ -1056,7 +1056,7 @@ class M2Exporter {
 							if (config.enableSharedChildren)
 								animFile = exporter.getExportPath(animFileName);
 							else
-								animFile = outDir + '/' + animFileName.split('/'.pop());
+								animFile = outDir + '/' + animFileName.split('/').pop();
 
 							await animData.writeToFile(animFile);
 							animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });
@@ -1079,7 +1079,7 @@ class M2Exporter {
 						if (config.enableSharedChildren)
 							boneFile = exporter.getExportPath(boneFileName);
 						else
-							boneFile = outDir + '/' + boneFileName.split('/'.pop());
+							boneFile = outDir + '/' + boneFileName.split('/').pop();
 		
 						await boneData.writeToFile(boneFile);
 						boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
@@ -1098,7 +1098,7 @@ class M2Exporter {
 				if (config.enableSharedChildren)
 					parentSkelFile = exporter.getExportPath(parentSkelFileName);
 				else
-					parentSkelFile = outDir + '/' + parentSkelFileName.split('/'.pop());
+					parentSkelFile = outDir + '/' + parentSkelFileName.split('/').pop();
 	
 				await parentSkelData.writeToFile(parentSkelFile);
 	
@@ -1122,7 +1122,7 @@ class M2Exporter {
 								if (config.enableSharedChildren)
 									animFile = exporter.getExportPath(animFileName);
 								else
-									animFile = outDir + '/' + animFileName.split('/'.pop());
+									animFile = outDir + '/' + animFileName.split('/').pop();
 	
 								await animData.writeToFile(animFile);
 								animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });
@@ -1146,7 +1146,7 @@ class M2Exporter {
 						if (config.enableSharedChildren)
 							boneFile = exporter.getExportPath(boneFileName);
 						else
-							boneFile = outDir + '/' + boneFileName.split('/'.pop());
+							boneFile = outDir + '/' + boneFileName.split('/').pop();
 		
 						await boneData.writeToFile(boneFile);
 						boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
@@ -1170,7 +1170,7 @@ class M2Exporter {
 				if (config.enableSharedChildren)
 					boneFile = exporter.getExportPath(boneFileName);
 				else
-					boneFile = outDir + '/' + boneFileName.split('/'.pop());
+					boneFile = outDir + '/' + boneFileName.split('/').pop();
 
 				await boneData.writeToFile(boneFile);
 				boneManifest.push({ fileDataID: boneFileID, file: boneFile.replace(outDir, '') });
@@ -1193,7 +1193,7 @@ class M2Exporter {
 					if (config.enableSharedChildren)
 						animFile = exporter.getExportPath(animFileName);
 					else
-						animFile = outDir + '/' + animFileName.split('/'.pop());
+						animFile = outDir + '/' + animFileName.split('/').pop();
 
 					await animData.writeToFile(animFile);
 					animManifest.push({ fileDataID: anim.fileDataID, file: animFile.replace(outDir, ''), animID: anim.animID, subAnimID: anim.subAnimID });

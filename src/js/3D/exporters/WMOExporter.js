@@ -144,7 +144,7 @@ class WMOExporter {
 
 					// If we have a valid file name, use it for the material name.
 					if (fileName !== undefined) {
-						matName = 'mat_' + fileName.toLowerCase(.split('/').pop(), '.blp');
+						matName = 'mat_' + fileName.toLowerCase().split('/').pop().replace('.blp', '');
 						
 						// Remove spaces from material name for MTL compatibility.
 						if (core.view.config.removePathSpaces)
@@ -163,7 +163,7 @@ class WMOExporter {
 						}
 
 						texPath = ExportHelper.getExportPath(fileName);
-						texFile = out.lastIndexOf('/'.replace(out.substring(0, '')), texPath);
+						texFile = texPath.replace(out.substring(0, out.lastIndexOf('/') + 1), '');
 					}
 
 					const file_existed = await generics.fileExists(texPath);

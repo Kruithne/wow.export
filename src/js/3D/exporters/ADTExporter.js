@@ -1521,7 +1521,7 @@ class ADTExporter {
 			for (const modelID of foliageExportCache) {
 				helper.setCurrentTaskValue(foliageIndex++);
 				
-				const modelName = listfile.getByID(modelID.split('/').pop());
+				const modelName = listfile.getByID(modelID).split('/').pop();
 				
 				const data = await casc.getFile(modelID);
 				const m2 = new M2Exporter(data, undefined, modelID);
