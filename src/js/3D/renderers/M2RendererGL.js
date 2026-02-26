@@ -84,6 +84,17 @@ const PIXEL_SHADER_IDS = {
 	'Combiners_Mod_Mod_Depth': 36
 };
 
+const M2BLEND_TO_EGX = [
+	GLContext.BlendMode.OPAQUE,
+	GLContext.BlendMode.ALPHA_KEY,
+	GLContext.BlendMode.ALPHA,
+	GLContext.BlendMode.NO_ALPHA_ADD,
+	GLContext.BlendMode.ADD,
+	GLContext.BlendMode.MOD,
+	GLContext.BlendMode.MOD2X,
+	GLContext.BlendMode.BLEND_ADD,
+]
+
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -539,7 +550,10 @@ class M2RendererGL {
 
 				const mat = m2.materials[tex_unit.materialIndex];
 				if (mat) {
-					blend_mode = mat.blendingMode;
+					if (M2BLEND_TO_EGX.length > mat.blendingMode)
+						blend_mode = M2BLEND_TO_EGX[mat.blendingMode];
+					else
+						blend_mode = mat.blendingMode;
 					flags = mat.flags;
 
 					this.material_props.set(tex_indices[0], { blendMode: blend_mode, flags: flags });
@@ -1300,6 +1314,11 @@ class M2RendererGL {
 				ctx.set_depth_test(false);
 			else
 				ctx.set_depth_test(true);
+
+			if (dc.flags & 0x10)
+				ctx.set_depth_write(false);
+			else
+				ctx.set_depth_write(true);
 
 			// bind textures (up to 4 for multi-texture shaders)
 			for (let t = 0; t < 4; t++) {
