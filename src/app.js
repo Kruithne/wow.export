@@ -131,6 +131,23 @@ document.addEventListener('click', function(e) {
 });
 
 (async () => {
+	require('fs').writeFileSync('argv_debug.log', JSON.stringify(nw.App.argv));
+	const win = nw.Window.get();
+
+	// Check for CLI usage.
+	const cliCommands = ['export-texture', 'export-model', 'export-file', 'export-data', 'list-builds'];
+	if (nw.App.argv.length > 0 && cliCommands.includes(nw.App.argv[0])) {
+		win.hide();
+		console.log('[APP] CLI Mode Detected');
+		try {
+			await require('./js/cli').init();
+		} catch (e) {
+			console.error(e);
+			process.exit(1);
+		}
+		return;
+	}
+
 	// Wait for the DOM to be loaded.
 	if (document.readyState === 'loading')
 		await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));

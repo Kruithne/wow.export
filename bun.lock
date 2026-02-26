@@ -1,12 +1,12 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "wow.export",
       "dependencies": {
-        "adm-zip": "git+https://github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17",
+        "adm-zip": "git+https://github.com/cthackers/adm-zip.git#1c7860ff5005cd30bf5dc6e557c9b312fedc0a66",
         "rcedit": "^2.0.0",
-        "three": "^0.179.1",
         "vue": "^3.5.21",
         "webp-wasm": "^1.0.6",
       },
@@ -50,7 +50,7 @@
 
     "@vue/shared": ["@vue/shared@3.5.21", "", {}, "sha512-+2k1EQpnYuVuu3N7atWyG3/xoFWIVJZq4Mz8XNOdScFI0etES75fbny/oU4lKWk/577P1zmg0ioYvpGEDZ3DLw=="],
 
-    "adm-zip": ["adm-zip@git+ssh://git@github.com/cthackers/adm-zip.git#ff17ae85000b62b9d159e2520564902724d26c17", {}, "ff17ae85000b62b9d159e2520564902724d26c17"],
+    "adm-zip": ["adm-zip@github:cthackers/adm-zip#1c7860f", {}, "cthackers-adm-zip-1c7860f"],
 
     "bun-types": ["bun-types@1.2.21", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-sa2Tj77Ijc/NTLS0/Odjq/qngmEPZfbfnOERi0KRUYhT9R8M4VBioWVmMWE5GrYbKMc+5lVybXygLdibHaqVqw=="],
 
@@ -71,8 +71,6 @@
     "rcedit": ["rcedit@2.0.0", "", {}, "sha512-XcFGyEBjhWSsud+R8elwQtGBbVkCf7tAiad+nXo5jc6l2rMf46NfGNwjnmBNneBIZDfq+Npf8lwP371JTONfrw=="],
 
     "source-map-js": ["source-map-js@1.2.1", "", {}, "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="],
-
-    "three": ["three@0.179.1", "", {}, "sha512-5y/elSIQbrvKOISxpwXCR4sQqHtGiOI+MKLc3SsBdDXA2hz3Mdp3X59aUp8DyybMa34aeBwbFTpdoLJaUDEWSw=="],
 
     "undici-types": ["undici-types@7.10.0", "", {}, "sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag=="],
 
