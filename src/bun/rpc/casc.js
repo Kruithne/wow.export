@@ -33,6 +33,8 @@ export const casc_handlers = {
 		if (cdn_region)
 			core.set_selected_cdn_region(cdn_region);
 
+		core.show_loading_screen(casc.isRemote ? 14 : 10);
+
 		core.progress_loading_screen('Loading encryption keys');
 		await tactKeys.load();
 
