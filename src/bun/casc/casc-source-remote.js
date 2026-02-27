@@ -10,7 +10,7 @@ import { BuildCache } from './build-cache.js';
 import * as listfile from './listfile.js';
 import { BLTEReader } from './blte-reader.js';
 import BLTEStreamReader from './blte-stream-reader.js';
-import * as cdnResolver from './cdn-resolver.js';
+import cdnResolver from './cdn-resolver.js';
 
 const EMPTY_HASH = '00000000000000000000000000000000';
 
