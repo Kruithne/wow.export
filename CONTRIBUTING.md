@@ -16,42 +16,46 @@ Open-issues that have an assignee and are not listed as "Backlog" on the roadmap
 
 The developers maintain a [public roadmap](https://github.com/users/Kruithne/projects/1/views/9) to help give insight and organization to the development process. Before contributing, it's recommended to consult this.
 
+## Architecture Overview
+
+wow.export uses [Electrobun](https://electrobun.dev/) as its application framework, which pairs a Bun process (server-side) with a CEF webview (client-side). The two sides communicate over a binary RPC layer defined in `src/rpc/`.
+
+- **Bun-side** (`src/bun/`) — CASC file system, database access, exports, file I/O, platform APIs.
+- **View-side** (`src/js/`, `src/views/`) — Vue 3 application with a tab-based module system, 3D rendering, and UI components.
+- **RPC schema** (`src/rpc/schema.js`) — Defines all request/response types between the two sides.
+
 ## Building (Developers Only)
 
 ### Prerequisites
-- **Bun** 1.2 or above (required)
-- **Node.js** v24.9.0 or above (required for native add-ons)
-- **Python 2.7.18** (required for node-gyp)
-  - Windows: Install via `choco install python2 -y`
-  - macOS: Install via pyenv: `pyenv install 2.7.18`
-  - Linux: Install via apt: `sudo apt install python2 python2-dev`
-- **nw-gyp** (required for building native add-ons): `npm install -g nw-gyp@latest`
-- **Build tools** (platform-specific):
-  - Windows: Visual Studio Build Tools with C++ support
-  - Linux: `build-essential` package (`sudo apt-get install build-essential`)
-  - macOS: Xcode Command Line Tools
+- **[Bun](https://bun.sh/)** 1.2 or above
 
-### Build Steps
+No other runtime or build tooling is required. Electrobun and all other dependencies are installed via Bun.
+
+### Setup
 ```
 git clone https://github.com/Kruithne/wow.export.git
 cd wow.export
 bun install
-
-# This will list available builds.
-bun ./build.js
-
-# This will compile -all- available builds.
-bun ./build.js *
-
-# Substitute <BUILD> for the build(s) you wish to compile, space-delimitated.
-bun ./build.js <BUILD1> <BUILD2> ...
 ```
 
-**Note**: The build process will automatically download nw.js headers and handle native add-on compilation if any are present in the `node_addons/` directory.
+### Development
+```
+# Start in development mode.
+bun run dev
 
-## Debugging (Developers Only)
-> **Note**: Debugging is currently only supported on Windows.
+# Start in development mode with live reloading.
+bun run dev:watch
+```
 
-To debug wow.export, compile a `win-x64-debug` build using the build script. This will produce a bare-bones build using the SDK framework and without any production polish. Upon starting the debug version, DevTools will be automatically launched alongside the application.
+In development mode, a context menu provides debug utilities including CSS/shader/module hot-reloading and access to the runtime log.
 
-For the debug build, source code will not be compiled, rather a symlink is created. This means changes to the source code are instantly reflected in the application, simply run `chrome.runtime.reload()` in DevTools console to refresh sources (pressing F5 does not drop references and will lead to memory leaks).
+### Production Builds
+```
+# Build for the stable release channel.
+bun run build:stable
+
+# Build for the canary release channel.
+bun run build:canary
+```
+
+Build output is written to the `build/` directory. Build configuration is defined in `electrobun.config.ts`.
