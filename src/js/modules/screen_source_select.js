@@ -90,7 +90,7 @@ export default {
 			this.$core.view.availableLocalBuilds = null;
 			this.$core.view.availableRemoteBuilds = null;
 			this.$core.view.sourceSelectShowBuildSelect = false;
-			this.$core.showLoadingScreen(0, 'Connecting...');
+			this.$core.showLoadingScreen(1, 'Connecting...');
 
 			if (casc_type === 'local' && casc_builds) {
 				const recent_local = this.$core.view.config.recentLocal;
