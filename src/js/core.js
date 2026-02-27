@@ -379,8 +379,11 @@ const showLoadingScreen = (segments = 1, title = 'Loading, please wait...') => {
 	loading_progress_value = 0;
 	core.view.loadPct = 0;
 	core.view.loadingTitle = title;
-	core.view.isLoading = true;
-	core.view.isBusy++;
+
+	if (!core.view.isLoading) {
+		core.view.isLoading = true;
+		core.view.isBusy++;
+	}
 };
 
 const progressLoadingScreen = async (text) => {

@@ -89,6 +89,8 @@ export default {
 		async load_install(index) {
 			this.$core.view.availableLocalBuilds = null;
 			this.$core.view.availableRemoteBuilds = null;
+			this.$core.view.sourceSelectShowBuildSelect = false;
+			this.$core.showLoadingScreen(0, 'Connecting...');
 
 			if (casc_type === 'local' && casc_builds) {
 				const recent_local = this.$core.view.config.recentLocal;
@@ -113,11 +115,13 @@ export default {
 				this.$core.view.installType = InstallType.CASC;
 				this.$modules.tab_home.setActive();
 			} catch (e) {
+				this.$core.hideLoadingScreen();
 				log.write('Failed to load CASC: %o', e);
 				this.$core.setToast('error', 'Unable to initialize CASC. Try repairing your game installation, or seek support.', {
 					'View Log': () => log.openRuntimeLog(),
 					'Visit Support Discord': () => ExternalLinks.open('::DISCORD')
 				}, -1);
+				this.$core.view.sourceSelectShowBuildSelect = false;
 				this.$modules.source_select.setActive();
 			}
 		},

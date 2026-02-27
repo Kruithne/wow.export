@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import * as log from './log.js';
 
 const virtual_files = new Set();
@@ -13,9 +14,16 @@ export const create_virtual_file = () => {
 				mmap_obj.data = Bun.mmap(file_path);
 				mmap_obj.isMapped = true;
 				return true;
-			} catch (e) {
-				mmap_obj.lastError = e.message;
-				return false;
+			} catch {
+				// Bun.mmap() not supported on windows, fall back to file read
+				try {
+					mmap_obj.data = new Uint8Array(fs.readFileSync(file_path));
+					mmap_obj.isMapped = true;
+					return true;
+				} catch (e) {
+					mmap_obj.lastError = e.message;
+					return false;
+				}
 			}
 		},
 

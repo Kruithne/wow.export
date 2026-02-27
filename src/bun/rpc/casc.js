@@ -33,8 +33,13 @@ export const casc_handlers = {
 		if (cdn_region)
 			core.set_selected_cdn_region(cdn_region);
 
+		core.progress_loading_screen('Loading encryption keys');
 		await tactKeys.load();
+
+		core.progress_loading_screen('Preloading listfile');
 		await listfile.preload();
+
+		core.progress_loading_screen('Loading realm list');
 		await realmlist.load();
 
 		await casc.load(build_index);

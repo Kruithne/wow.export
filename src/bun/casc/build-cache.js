@@ -132,7 +132,13 @@ core.events.once('casc-source-changed', async () => {
 	}
 
 	log.write('Running clean-up for stale build caches...');
-	const entries = await fsp.readdir(constants.CACHE.DIR_BUILDS, { withFileTypes: true });
+
+	let entries;
+	try {
+		entries = await fsp.readdir(constants.CACHE.DIR_BUILDS, { withFileTypes: true });
+	} catch {
+		return;
+	}
 	const ts = Date.now();
 
 	for (const entry of entries) {

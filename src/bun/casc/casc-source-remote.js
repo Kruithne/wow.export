@@ -214,7 +214,7 @@ class CASCRemote extends CASC {
 	}
 
 	async load(buildIndex) {
-		core.show_loading_screen(12);
+		core.show_loading_screen(14);
 		await this.preload(buildIndex);
 
 		await this.loadEncoding();
