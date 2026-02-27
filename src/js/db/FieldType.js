@@ -10,3 +10,5 @@ export const UInt64 = Symbol('dbFieldUInt64');
 export const Float = Symbol('dbFieldFloat');
 export const Relation = Symbol('dbFieldRelation');
 export const NonInlineID = Symbol('dbFieldNonInlineID');
+
+export default { String, Int8, UInt8, Int16, UInt16, Int32, UInt32, Int64, UInt64, Float, Relation, NonInlineID };

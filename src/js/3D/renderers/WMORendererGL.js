@@ -5,7 +5,7 @@
 */
 import constants from '../../constants.js';
 import core from '../../core.js';
-import { listfile } from '../../views/main/rpc.js';
+import { listfile } from '../../../views/main/rpc.js';
 import WMOLoader from '../loaders/WMOLoader.js';
 import Shaders from '../Shaders.js';
 import GLContext from '../gl/GLContext.js';

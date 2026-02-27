@@ -147,3 +147,11 @@ export { SHADER_MANIFEST,
 	reload_all,
 	get_program_count,
 	get_total_program_count };
+
+export default { SHADER_MANIFEST,
+	get_source,
+	create_program,
+	unregister,
+	reload_all,
+	get_program_count,
+	get_total_program_count };

@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-import { exporter, listfile } from '../../views/main/rpc.js';
+import { exporter, listfile } from '../../../views/main/rpc.js';
 import BLPFile from '../../casc/blp.js';
 import generics from '../../generics.js';
 import ExportHelper from '../../export-helper.js';

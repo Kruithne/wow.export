@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-import { exporter, listfile } from '../../views/main/rpc.js';
+import { exporter, listfile } from '../../../views/main/rpc.js';
 import generics from '../../generics.js';
 import ExportHelper from '../../export-helper.js';
 import SKELLoader from '../loaders/SKELLoader.js';

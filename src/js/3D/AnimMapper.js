@@ -1797,3 +1797,5 @@ const get_anim_name = (anim_id) => {
 }
 
 export { get_anim_name };
+
+export default { get_anim_name };

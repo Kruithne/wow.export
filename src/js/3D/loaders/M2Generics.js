@@ -215,3 +215,5 @@ function read_caa_bb(data) {
 }
 
 export { M2Track, read_m2_array_array, read_m2_track, read_caa_bb, patch_track_animation };
+
+export default { M2Track, read_m2_array_array, read_m2_track, read_caa_bb, patch_track_animation };

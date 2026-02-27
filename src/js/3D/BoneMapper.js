@@ -430,3 +430,5 @@ const get_bone_name = (bone_id, index, crc) => {
 }
 
 export { get_bone_name };
+
+export default { get_bone_name };

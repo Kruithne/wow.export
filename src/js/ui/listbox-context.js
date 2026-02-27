@@ -116,3 +116,20 @@ export {
 	handle_context_menu,
 	close_context_menu
 };
+
+export default {
+	parse_entry,
+	get_file_paths,
+	get_listfile_entries,
+	get_file_data_ids,
+	get_export_paths,
+	get_export_directory,
+	has_file_data_ids,
+	copy_file_paths,
+	copy_listfile_format,
+	copy_file_data_ids,
+	copy_export_paths,
+	open_export_directory,
+	handle_context_menu,
+	close_context_menu
+};

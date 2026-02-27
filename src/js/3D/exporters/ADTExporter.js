@@ -17,7 +17,7 @@ import log from '../../log.js';
 import WDTLoader from '../loaders/WDTLoader.js';
 import Shaders from '../Shaders.js';
 import MTLWriter from '../writers/MTLWriter.js';
-import { db, dbc, listfile } from '../../views/main/rpc.js';
+import { db, dbc, listfile } from '../../../views/main/rpc.js';
 import M2Exporter from '../../3D/exporters/M2Exporter.js';
 import ADTLoader from '../loaders/ADTLoader.js';
 import CSVWriter from '../../3D/writers/CSVWriter.js';

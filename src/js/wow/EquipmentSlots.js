@@ -182,3 +182,18 @@ export {
 	get_attachment_ids_for_slot,
 	get_slot_layer
 };
+
+export default {
+	EQUIPMENT_SLOTS,
+	SLOT_ID_TO_NAME,
+	INVENTORY_TYPE_TO_SLOT_ID,
+	WMV_SLOT_TO_SLOT_ID,
+	ATTACHMENT_ID,
+	SLOT_TO_ATTACHMENT,
+	SLOT_LAYER,
+	get_slot_id_for_inventory_type,
+	get_slot_id_for_wmv_slot,
+	get_slot_name,
+	get_attachment_ids_for_slot,
+	get_slot_layer
+};

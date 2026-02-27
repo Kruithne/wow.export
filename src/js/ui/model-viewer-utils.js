@@ -538,3 +538,24 @@ export {
 	create_animation_methods,
 	create_view_state
 };
+
+export default {
+	MODEL_TYPE_M2,
+	MODEL_TYPE_M3,
+	MODEL_TYPE_WMO,
+	EXPORT_EXTENSIONS,
+	detect_model_type,
+	detect_model_type_by_name,
+	get_model_extension,
+	clear_texture_preview,
+	initialize_uv_layers,
+	toggle_uv_layer,
+	preview_texture_by_id,
+	create_renderer,
+	extract_animations,
+	handle_animation_change,
+	export_preview,
+	export_model,
+	create_animation_methods,
+	create_view_state
+};

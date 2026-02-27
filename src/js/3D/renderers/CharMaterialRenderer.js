@@ -7,7 +7,7 @@ import log from '../../log.js';
 import overlay from '../../ui/char-texture-overlay.js';
 import BLPImage from '../../casc/blp.js';
 import core from '../../core.js';
-import { listfile } from '../../views/main/rpc.js';
+import { listfile } from '../../../views/main/rpc.js';
 import PNGWriter from '../../png-writer.js';
 import Shaders from '../Shaders.js';
 

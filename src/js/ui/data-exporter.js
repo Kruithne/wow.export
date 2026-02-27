@@ -257,3 +257,5 @@ const exportRawDBC = async (tableName, filePath) => {
 };
 
 export { exportDataTable, exportDataTableSQL, exportRawDB2, exportRawDBC };
+
+export default { exportDataTable, exportDataTableSQL, exportRawDB2, exportRawDBC };

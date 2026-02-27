@@ -107,3 +107,4 @@ const loadIcon = (fileDataID) => {
 };
 
 export { loadIcon };
+export default { loadIcon };

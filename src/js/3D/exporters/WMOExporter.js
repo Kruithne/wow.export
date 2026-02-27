@@ -9,7 +9,7 @@ import OBJWriter from '../writers/OBJWriter.js';
 import GLTFWriter from '../writers/GLTFWriter.js';
 import M3Exporter from './M3Exporter.js';
 import core from '../../core.js';
-import { listfile } from '../../views/main/rpc.js';
+import { listfile } from '../../../views/main/rpc.js';
 import BLPImage from '../../casc/blp.js';
 import WMOLoader from '../loaders/WMOLoader.js';
 import MTLWriter from '../writers/MTLWriter.js';

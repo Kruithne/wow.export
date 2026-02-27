@@ -45,3 +45,5 @@ const getSlotName = (id) => {
 };
 
 export { getSlotName };
+
+export default { getSlotName };

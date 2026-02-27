@@ -189,3 +189,5 @@ const exportSingleTexture = async (fileDataID) => {
 };
 
 export { exportFiles, exportSingleTexture, getFileInfoPair };
+
+export default { exportFiles, exportSingleTexture, getFileInfoPair };

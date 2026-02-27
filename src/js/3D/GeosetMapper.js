@@ -84,3 +84,5 @@ const map = async (geosets) => {
 };
 
 export { map, getGeosetName };
+
+export default { map, getGeosetName };

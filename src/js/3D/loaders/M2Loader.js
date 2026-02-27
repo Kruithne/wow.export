@@ -349,7 +349,7 @@ class M2Loader {
 		this.parseChunk_MD21_vertices(ofs);
 		this.viewCount = this.data.readUInt32LE();
 		this.parseChunk_MD21_colors(ofs);
-		this.parseChunk_MD21_textures(ofs);
+		await this.parseChunk_MD21_textures(ofs);
 		this.parseChunk_MD21_textureWeights(ofs);
 		this.parseChunk_MD21_textureTransforms(ofs);
 		this.parseChunk_MD21_replaceableTextureLookup(ofs);
@@ -767,7 +767,7 @@ class M2Loader {
 	 * Parse textures from an MD21 chunk.
 	 * @param {number} ofs 
 	 */
-	parseChunk_MD21_textures(ofs) {
+	async parseChunk_MD21_textures(ofs) {
 		const texturesCount = this.data.readUInt32LE();
 		const texturesOfs = this.data.readUInt32LE();
 

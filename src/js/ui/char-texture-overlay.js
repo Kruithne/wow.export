@@ -119,3 +119,10 @@ export {
 	ensure_active_layer_attached as ensureActiveLayerAttached,
 	get_active_layer as getActiveLayer
 };
+
+export default {
+	add,
+	remove,
+	ensureActiveLayerAttached: ensure_active_layer_attached,
+	getActiveLayer: get_active_layer
+};

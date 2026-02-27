@@ -1,19 +1,21 @@
-import { BrowserWindow, BrowserView, BuildConfig, PATHS } from 'electrobun/bun';
+import { BrowserWindow, BrowserView, Utils } from 'electrobun/bun';
 import path from 'node:path';
 import { create_handlers, init_services } from './rpc/index.js';
 import { MAX_REQUEST_TIME } from '../rpc/schema.js';
 
-const build_config = await BuildConfig.get();
 const install_path = path.resolve(import.meta.dir, '..', '..');
+const version_info = await Bun.file(path.join(import.meta.dir, '..', '..', 'version.json')).json();
+
+const data_path = Utils.paths.userData;
 
 const app_paths = {
-	data: PATHS.data,
-	log: path.join(PATHS.data, 'wow-export.log'),
-	user_config: path.join(PATHS.data, 'config.json'),
+	data: data_path,
+	log: path.join(data_path, 'wow-export.log'),
+	user_config: path.join(data_path, 'config.json'),
 	default_config: path.join(import.meta.dir, '..', 'default_config.jsonc'),
-	cache: path.join(PATHS.data, 'cache'),
+	cache: path.join(data_path, 'cache'),
 	install: install_path,
-	version: build_config.app.version,
+	version: version_info.version,
 };
 
 const handlers = create_handlers(null);

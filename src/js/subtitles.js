@@ -190,3 +190,8 @@ export {
 	SUBTITLE_FORMAT,
 	get_subtitles_vtt
 };
+
+export default {
+	SUBTITLE_FORMAT,
+	get_subtitles_vtt
+};

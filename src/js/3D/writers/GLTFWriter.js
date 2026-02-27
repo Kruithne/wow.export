@@ -7,8 +7,8 @@
 import generics from '../../generics.js';
 import BufferWrapper from '../../buffer.js';
 import AnimMapper from '../AnimMapper.js';
-import platform from '../../platform.js';
-import { exporter } from '../../views/main/rpc.js';
+import * as platform from '../../platform.js';
+import { exporter } from '../../../views/main/rpc.js';
 import ExportHelper from '../../export-helper.js';
 import BoneMapper from '../BoneMapper.js';
 import core from '../../core.js';

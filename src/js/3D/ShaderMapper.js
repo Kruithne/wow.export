@@ -184,3 +184,5 @@ const getDomainShader = (textureCount, shaderID) => {
 	
 
 export { getVertexShader, getPixelShader, getHullShader, getDomainShader };
+
+export default { getVertexShader, getPixelShader, getHullShader, getDomainShader };

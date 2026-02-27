@@ -204,3 +204,10 @@ export {
 	upload_textures_to_gpu,
 	dispose_materials
 };
+
+export default {
+	apply_customization_geosets,
+	apply_customization_textures,
+	upload_textures_to_gpu,
+	dispose_materials
+};

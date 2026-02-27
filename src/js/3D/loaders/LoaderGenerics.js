@@ -31,3 +31,5 @@ const ReadStringBlock = (data, chunkSize) => {
 }
 
 export { ReadStringBlock };
+
+export default { ReadStringBlock };

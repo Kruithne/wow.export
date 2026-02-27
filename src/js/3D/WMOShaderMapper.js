@@ -92,3 +92,5 @@ const WMOShaderMap = {
 };
 
 export { MOMTShader, WMOVertexShader, WMOPixelShader, WMOShaderMap };
+
+export default { MOMTShader, WMOVertexShader, WMOPixelShader, WMOShaderMap };
