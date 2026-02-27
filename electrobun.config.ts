@@ -21,6 +21,11 @@ export default {
 				entrypoint: 'src/views/main/index.js',
 				define: {
 					'BUILD_RELEASE': '"true"',
+					'global': 'globalThis',
+					'kCustomPromisifiedSymbol': 'Symbol.for("nodejs.util.promisify.custom")',
+					'__VUE_OPTIONS_API__': 'true',
+					'__VUE_PROD_DEVTOOLS__': 'false',
+					'__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'false',
 				},
 			},
 		},

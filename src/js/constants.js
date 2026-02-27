@@ -43,6 +43,8 @@ export async function init() {
 }
 
 const constants = {
+	init,
+
 	INSTALL_PATH: '',
 	DATA_PATH: '',
 	RUNTIME_LOG: '',

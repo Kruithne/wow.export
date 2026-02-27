@@ -1,4 +1,4 @@
-import * as Vue from 'vue';
+import * as Vue from 'vue/dist/vue.esm-bundler.js';
 import log from './log.js';
 import InstallType from './install-type.js';
 import constants from './constants.js';
