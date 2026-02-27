@@ -49,6 +49,11 @@ export default {
 			bundleCEF: true,
 			defaultRenderer: 'cef',
 			icon: 'resources/icon.ico',
+			chromiumFlags: {
+				'ignore-gpu-blocklist': true,
+				'enable-gpu': true,
+				'in-process-gpu': true,
+			},
 		},
 
 		mac: {
