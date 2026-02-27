@@ -56,14 +56,14 @@ export default {
 			defaultRenderer: 'cef',
 			icon: 'resources/icon.png',
 		},
+	},
 
-		release: {
-			baseUrl: 'https://www.kruithne.net/wow.export/update/',
-			generatePatch: true,
-		},
+	release: {
+		baseUrl: 'https://www.kruithne.net/wow.export/update/',
+		generatePatch: true,
+	},
 
-		runtime: {
-			exitOnLastWindowClosed: true,
-		},
+	runtime: {
+		exitOnLastWindowClosed: true,
 	},
 } satisfies ElectrobunConfig;
