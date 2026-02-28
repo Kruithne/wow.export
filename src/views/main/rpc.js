@@ -218,7 +218,7 @@ export const platform = {
 	open_path: (path) => rpc_config.request.platform_open_path({ path }),
 	open_url: (url) => rpc_config.request.platform_open_url({ url }),
 	clipboard_write_text: (text) => rpc_config.request.platform_clipboard_write_text({ text }),
-	clipboard_write_image: (data) => rpc_config.request.platform_clipboard_write_image({ data: encode_binary(data) }),
+	clipboard_write_image: (data) => rpc_config.request.platform_clipboard_write_image({ data: typeof data === 'string' ? data : encode_binary(data) }),
 	clipboard_read_text: () => rpc_config.request.platform_clipboard_read_text(),
 	show_open_dialog: (opts) => rpc_config.request.platform_show_open_dialog(opts ?? {}),
 	show_save_dialog: (opts) => rpc_config.request.platform_show_save_dialog(opts ?? {}),
