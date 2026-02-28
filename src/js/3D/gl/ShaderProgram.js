@@ -116,6 +116,27 @@ class ShaderProgram {
 
 	/**
 	 * @param {string} name
+	 * @param {GLenum} pname
+	 * @returns {any|null}
+	 */
+	get_uniform_block_param(name, pname) {
+		const index = this.get_uniform_block_index(name);
+		if (index !== this.gl.INVALID_INDEX)
+			return this.gl.getActiveUniformBlockParameter (this.program, name, pname);
+		return null;
+	}
+
+	/**
+	 * @param {string[]} names
+	 * @param {number[]|null} offsets
+	 */
+	get_active_uniform_offsets(names) {
+		const indices = this.gl.getUniformIndices(this.program, names);
+		return this.gl.getActiveUniforms(this.program, indices, this.gl.UNIFORM_OFFSET);
+	}
+
+	/**
+	 * @param {string} name
 	 * @param {number} binding_point
 	 */
 	bind_uniform_block(name, binding_point) {

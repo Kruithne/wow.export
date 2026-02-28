@@ -7,7 +7,7 @@
 const log = require('../../log');
 const db2 = require('../../casc/db2');
 const DBModelFileData = require('./DBModelFileData');
-const DBTextureFileData = require('./DBTextureFileData');
+const DBItemDisplayInfoModelMatRes = require('./DBItemDisplayInfoModelMatRes');
 
 const itemDisplays = new Map();
 let initialized = false;
@@ -19,7 +19,7 @@ const initializeItemDisplays = async () => {
 	if (initialized)
 		return;
 
-	await DBTextureFileData.ensureInitialized();
+	await DBItemDisplayInfoModelMatRes.ensureInitialized();
 
 	log.write('Loading item textures...');
 
@@ -34,12 +34,14 @@ const initializeItemDisplays = async () => {
 			continue;
 
 		const modelFileDataIDs = DBModelFileData.getModelFileDataID(modelResIDs[0]);
-		const textureFileDataIDs = DBTextureFileData.getTextureFDIDsByMatID(matResIDs[0]);
 
-		if (modelFileDataIDs !== undefined && textureFileDataIDs !== undefined) {
+		if (modelFileDataIDs !== undefined) {
 			for (const modelFileDataID of modelFileDataIDs) {
-				const display = { ID: itemDisplayInfoID, textures: textureFileDataIDs};
+				const itemDisplayTexFileDataIDs = DBItemDisplayInfoModelMatRes.getItemDisplayIdTextureFileIds(itemDisplayInfoID);
+				if (itemDisplayTexFileDataIDs === undefined)
+					continue;
 
+				const display = { ID: itemDisplayInfoID, textures: itemDisplayTexFileDataIDs };
 				if (itemDisplays.has(modelFileDataID))
 					itemDisplays.get(modelFileDataID).push(display);
 				else

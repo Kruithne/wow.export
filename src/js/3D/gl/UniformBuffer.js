@@ -174,6 +174,17 @@ class UniformBuffer {
 	}
 
 	/**
+	 * get float32view of binding buffer, will need to be manually uploaded with
+	 * upload_range as dirty tracking will be missing
+	 * @param {number} offset - byte offset
+	 * @param {number} length - length of view
+	 * @param {Float32Array} view
+	 */
+	get_float32_view(offset, length) {
+		return new Float32Array(this.data, offset, length);
+	}
+
+	/**
 	 * Upload data to GPU if dirty
 	 */
 	upload() {

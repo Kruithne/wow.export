@@ -19,6 +19,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
+const UniformBuffer = require('../gl/UniformBuffer');
 
 // vertex shader name to ID mapping (matches vertex shader switch cases)
 const VERTEX_SHADER_IDS = {
@@ -83,6 +84,17 @@ const PIXEL_SHADER_IDS = {
 	'Combiners_Mod_Mod_Mod_Const': 35,
 	'Combiners_Mod_Mod_Depth': 36
 };
+
+const M2BLEND_TO_EGX = [
+	GLContext.BlendMode.OPAQUE,
+	GLContext.BlendMode.ALPHA_KEY,
+	GLContext.BlendMode.ALPHA,
+	GLContext.BlendMode.NO_ALPHA_ADD,
+	GLContext.BlendMode.ADD,
+	GLContext.BlendMode.MOD,
+	GLContext.BlendMode.MOD2X,
+	GLContext.BlendMode.BLEND_ADD,
+]
 
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
@@ -314,6 +326,7 @@ class M2RendererGL {
 
 		// rendering state
 		this.vaos = [];
+		this.ubos = [];
 		this.textures = new Map();
 		this.default_texture = null;
 		this.buffers = [];
@@ -325,6 +338,10 @@ class M2RendererGL {
 		this.current_animation = null;
 		this.animation_time = 0;
 		this.animation_paused = false;
+		this.tex_matrices = null;
+
+		// global sequences
+		this.global_seq_times = new Float32Array();
 
 		// hand grip state for weapon attachment
 		// when true, finger bones use HandsClosed animation (ID 15)
@@ -366,11 +383,14 @@ class M2RendererGL {
 		// load shader program
 		this.shader = M2RendererGL.load_shaders(this.ctx);
 
+		this._create_tex_matrices();
+
 		// create default texture
 		this._create_default_texture();
 
 		// load textures
 		await this._load_textures();
+		this.global_seq_times = new Float32Array(this.m2.globalLoops.length);
 
 		// load first skin
 		if (this.m2.vertices.length > 0) {
@@ -438,9 +458,9 @@ class M2RendererGL {
 		await this._create_skeleton();
 
 		// build interleaved vertex buffer
-		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) = 40 bytes
+		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) + uv(2f) = 48 bytes
 		const vertex_count = m2.vertices.length / 3;
-		const stride = 40;
+		const stride = 48;
 		const vertex_data = new ArrayBuffer(vertex_count * stride);
 		const vertex_view = new DataView(vertex_data);
 
@@ -475,6 +495,10 @@ class M2RendererGL {
 			// texcoord
 			vertex_view.setFloat32(offset + 32, m2.uv[uv_idx], true);
 			vertex_view.setFloat32(offset + 36, m2.uv[uv_idx + 1], true);
+
+			// texcoord2
+			vertex_view.setFloat32(offset + 40, m2.uv2[uv_idx], true);
+			vertex_view.setFloat32(offset + 44, 1 - m2.uv2[uv_idx + 1], true);
 		}
 
 		// map triangle indices
@@ -503,6 +527,8 @@ class M2RendererGL {
 
 		this.vaos.push(vao);
 
+		this._create_bones_ubo();
+
 		// reactive geoset array
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
@@ -520,9 +546,14 @@ class M2RendererGL {
 			let blend_mode = 0;
 			let flags = 0;
 			let texture_count = 1;
+			let tex_mtx_idxs = [-1, -1];
+			let prio = 0;
+			let layer = 0;
 
 			if (tex_unit) {
 				texture_count = tex_unit.textureCount;
+				prio = tex_unit.priority;
+				layer = tex_unit.materialLayer;
 
 				// get all texture indices for multi-texture shaders
 				for (let j = 0; j < Math.min(texture_count, 4); j++) {
@@ -539,10 +570,24 @@ class M2RendererGL {
 
 				const mat = m2.materials[tex_unit.materialIndex];
 				if (mat) {
-					blend_mode = mat.blendingMode;
+					if (M2BLEND_TO_EGX.length > mat.blendingMode)
+						blend_mode = M2BLEND_TO_EGX[mat.blendingMode];
+					else
+						blend_mode = mat.blendingMode;
 					flags = mat.flags;
 
 					this.material_props.set(tex_indices[0], { blendMode: blend_mode, flags: flags });
+				}
+
+				if (tex_unit.textureTransformComboIndex < m2.textureTransformsLookup.length) {
+					const idx = m2.textureTransformsLookup[tex_unit.textureTransformComboIndex];
+					if (idx < m2.textureTransforms.length)
+						tex_mtx_idxs[0] = idx;
+				}
+				if (tex_unit.textureTransformComboIndex + 1 < m2.textureTransformsLookup.length) {
+					const idx = m2.textureTransformsLookup[tex_unit.textureTransformComboIndex + 1];
+					if (idx < m2.textureTransforms.length)
+						tex_mtx_idxs[1] = idx;
 				}
 			}
 
@@ -556,7 +601,10 @@ class M2RendererGL {
 				pixel_shader: pixel_shader,
 				blend_mode: blend_mode,
 				flags: flags,
-				visible: true
+				visible: true,
+				tex_matrix_idxs: tex_mtx_idxs,
+				prio: prio,
+				layer: layer,
 			};
 
 			this.draw_calls.push(draw_call);
@@ -628,18 +676,10 @@ class M2RendererGL {
 
 		if (!bone_data || bone_data.length === 0) {
 			this.bones = null;
-			this.bone_matrices = new Float32Array(16); // single identity
 			return;
 		}
 
 		this.bones = bone_data;
-		this.bone_matrices = new Float32Array(bone_data.length * 16);
-
-		// initialize to identity
-		for (let i = 0; i < bone_data.length; i++) {
-			const offset = i * 16;
-			this.bone_matrices.set(IDENTITY_MAT4, offset);
-		}
 
 		// find HandsClosed animation (ID 15) for hand grip
 		const anim_source = this.skelLoader || this.m2;
@@ -650,6 +690,41 @@ class M2RendererGL {
 					break;
 				}
 			}
+		}
+	}
+
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+
+		const bone_count = this.bones ? this.bones.length : 0;
+		// initialize to identity
+		for (let i = 0; i < bone_count; i++) {
+			const offset = i * 16;
+			this.bone_matrices.set(IDENTITY_MAT4, offset);
+		}
+	}
+
+	_create_tex_matrices() {
+		const m2 = this.m2;
+		const tt = m2.textureTransforms;
+
+		if (tt.length <= 0) {
+			return;
+		}
+
+		this.tex_matrices = new Float32Array(tt.length * 16);
+		for (let i = 0; i < tt.length; i++) {
+			const offset = i * 16;
+			this.tex_matrices.set(IDENTITY_MAT4, offset);
 		}
 	}
 
@@ -689,11 +764,13 @@ class M2RendererGL {
 		this.current_anim_index = anim_index;
 		this.current_animation = index;
 		this.animation_time = 0;
+		this.global_seq_times = new Float32Array(anim_source.globalLoops.length);
 	}
 
 	stopAnimation() {
 		this.animation_time = 0;
 		this.animation_paused = false;
+		this.global_seq_times.fill(0);
 
 		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
@@ -705,6 +782,7 @@ class M2RendererGL {
 			this.current_anim_index = 0;
 			this.current_anim_source = this.skelLoader || this.m2;
 			this._update_bone_matrices();
+			this._update_tex_matrices();
 
 			this.current_animation = null;
 			this.current_anim_index = null;
@@ -725,8 +803,17 @@ class M2RendererGL {
 		if (!anim)
 			return;
 
-		if (!this.animation_paused)
+		if (!this.animation_paused) {
 			this.animation_time += delta_time;
+
+			for (let i = 0; i < this.global_seq_times.length; ++i) {
+				this.global_seq_times[i] += (delta_time * 1000);
+				let ts = anim_source.globalLoops[i];
+				if (ts > 0) {
+					this.global_seq_times[i] %= ts;
+				}
+			}
+		}
 
 		// wrap animation (duration is in milliseconds)
 		const duration_sec = anim.duration / 1000;
@@ -735,6 +822,7 @@ class M2RendererGL {
 
 		// update bone matrices
 		this._update_bone_matrices();
+		this._update_tex_matrices();
 	}
 
 	get_animation_duration() {
@@ -769,6 +857,7 @@ class M2RendererGL {
 		const duration = this.get_animation_duration();
 		this.animation_time = (frame / frame_count) * duration;
 		this._update_bone_matrices();
+		this._update_tex_matrices();
 	}
 
 	set_animation_paused(paused) {
@@ -918,6 +1007,135 @@ class M2RendererGL {
 		// calculate all bones
 		for (let i = 0; i < bone_count; i++)
 			calc_bone(i);
+	}
+
+	_find_time_index(currtime, times) {
+		if (times.length > 1) {
+			if (currtime > times[times.length - 1]) return times_len - 1;
+			let lowerbound = (a, b) => { let n = a.length; for (let i=0;i<n;++i) {if (a[i] >= b) return i;} return n;};
+			let time = lowerbound(times, currtime);
+			if (time != 0) {
+				time--;
+			}
+			return time;
+		} else if (times.length == 1) {
+			return 0;
+		} else return -1;
+	}
+
+	_animate_track(anim, animblock, def, lerpfunc) {
+		const m2 = this.m2;
+		const gl = m2.globalLoops;
+		let at = (this.animation_time * 1000);
+		let ai = this.current_anim_index;
+		let maxtime = anim.duration;
+
+		const gs = animblock.globalSeq;
+		if (gs >= 0) {
+			at = this.global_seq_times[gs];
+			maxtime = gl[gs];
+		}
+
+		if (animblock.timestamps.length == 0)
+			return def;
+
+		if (animblock.timestamps.length <= ai)
+			ai = 0;
+
+		if (ai <= animblock.timestamps[ai].length == 0)
+			return def;
+
+		const times = animblock.timestamps[ai];
+		const values = animblock.values[ai];
+		const intertype = animblock.interpolation;
+
+		let ti = 0;
+		if (maxtime != 0) {
+			ti = this._find_time_index(at, times);
+		}
+		if (ti == times.size-1)
+			return values[ti];
+		else if (ti >= 0) {
+			let v1 = values[ti];
+			let v2 = values[ti + 1];
+			let t1 = times[ti];
+			let t2 = times[ti + 1];
+
+			if (intertype == 0)
+				return v1;
+			else {
+				return lerpfunc(v1, v2, (at - t1) / (t2 -t1));
+			}
+		} else {
+			return values[0];
+		}
+	}
+
+	_update_tex_matrices() {
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
+		if (!anim)
+			return;
+
+		const m2 = this.m2;
+		const tm = this.tex_matrices;
+
+		const temp_result = new Float32Array(16);
+
+		for (let i = 0; i < m2.textureTransforms.length; ++i) {
+			const tt = m2.textureTransforms[i];
+			const local_mat = new Float32Array(16);
+			mat4_copy(local_mat, IDENTITY_MAT4);
+
+			const transmat = [0.5, 0.5, 0, 0];
+			const pivotpoint = [-0.5, -0.5, 0, 0];
+
+			if (tt.rotation.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.rotation, [1,0,0,0], (a,b,c)=>{
+					const out = [0, 0, 0, 1];
+					quat_slerp(out, a[0], a[1], a[2], a[3], b[0], b[1], b[2], b[3], c);
+					return out;
+				});
+				mat4_from_translation(temp_result, transmat[0], transmat[1], transmat[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_quat(temp_result, qx, qy, qz, qw);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_translation(temp_result, pivotpoint[0], pivotpoint[1], pivotpoint[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+			if (tt.scaling.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.scaling, [1,1,1,1], (a,b,c)=> {
+					return [
+						lerp(a[0], b[0], c),
+						lerp(a[1], b[1], c),
+						lerp(a[2], b[2], c),
+						lerp(a[3], b[3], c),
+					]
+				});
+				mat4_from_translation(temp_result, transmat[0], transmat[1], transmat[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_scale(temp_result, qx, qy, qz);
+				mat4_multiply(local_mat, local_mat, temp_result);
+				mat4_from_translation(temp_result, pivotpoint[0], pivotpoint[1], pivotpoint[2]);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+			if (tt.translation.values.length) {
+				const [qx, qy, qz, qw] = this._animate_track(anim, tt.translation, [0,0,0,0], (a,b,c)=> {
+					return [
+						lerp(a[0], b[0], c),
+						lerp(a[1], b[1], c),
+						lerp(a[2], b[2], c),
+						lerp(a[3], b[3], c),
+					]
+				});
+				mat4_from_translation(temp_result, qx, qy, qz);
+				mat4_multiply(local_mat, local_mat, temp_result);
+			}
+
+			const offset = i * 16;
+			tm.set(local_mat, offset);
+		}
 	}
 
 	_sample_raw_vec3(timestamps, values, time_ms, default_value = [0, 0, 0]) {
@@ -1220,19 +1438,11 @@ class M2RendererGL {
 		shader.set_uniform_3f('u_view_up', 0, 1, 0);
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
-		// bone matrices
-		shader.set_uniform_1i('u_bone_count', this.bones ? this.bones.length : 0);
-		if (this.bones && this.bone_matrices) {
-			const loc = shader.get_uniform_location('u_bone_matrices');
-			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.bone_matrices);
-		}
-
-		// texture matrix defaults
-		shader.set_uniform_1i('u_has_tex_matrix1', 0);
-		shader.set_uniform_1i('u_has_tex_matrix2', 0);
-		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
-		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
+		const ubo = this.ubos[0];
+		const bone_count = this.bones ? this.bones.length : 0;
+		shader.set_uniform_1i('u_bone_count', bone_count);
+		if (bone_count)
+			ubo.ubo.upload_range(ubo.offsets[0], bone_count * 16 * 4);
 
 		// lighting - transform light direction to view space
 		const lx = 3, ly = -0.7, lz = -2;
@@ -1261,12 +1471,13 @@ class M2RendererGL {
 		// default texture weights
 		shader.set_uniform_3f('u_tex_sample_alpha', 1, 1, 1);
 
-		// sort draw calls by blend mode (opaque first, then transparent)
 		const sorted_calls = [...this.draw_calls].sort((a, b) => {
-			const a_opaque = a.blend_mode === 0 || a.blend_mode === 1;
-			const b_opaque = b.blend_mode === 0 || b.blend_mode === 1;
-			if (a_opaque !== b_opaque)
-				return a_opaque ? -1 : 1;
+			if (a.prio != b.prio)
+				return a.prio - b.prio;
+			if (a.layer != b.layer)
+				return a.layer - b.layer;
+			if (a.blend_mode != b.blend_mode)
+				return a.blend_mode - b.blend_mode;
 
 			return 0;
 		});
@@ -1280,6 +1491,16 @@ class M2RendererGL {
 			shader.set_uniform_1i('u_vertex_shader', dc.vertex_shader);
 			shader.set_uniform_1i('u_pixel_shader', dc.pixel_shader);
 			shader.set_uniform_1i('u_blend_mode', dc.blend_mode);
+
+			const tmi0 = dc.tex_matrix_idxs[0];
+			const tmi1 = dc.tex_matrix_idxs[1];
+
+			const get_tex_matrix = (idx) => {
+				return this.tex_matrices.subarray(idx * 16, (idx + 1) * 16);
+			}
+
+			shader.set_uniform_mat4('u_tex_matrix1', false, tmi0 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi0));
+			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
 
 			// mesh color (white for now)
 			shader.set_uniform_4f('u_mesh_color', 1, 1, 1, 1);
@@ -1301,6 +1522,11 @@ class M2RendererGL {
 			else
 				ctx.set_depth_test(true);
 
+			if (dc.flags & 0x10)
+				ctx.set_depth_write(false);
+			else
+				ctx.set_depth_write(true);
+
 			// bind textures (up to 4 for multi-texture shaders)
 			for (let t = 0; t < 4; t++) {
 				const tex_idx = dc.tex_indices[t];
@@ -1309,6 +1535,7 @@ class M2RendererGL {
 			}
 
 			// draw
+			ubo.ubo.bind(0);
 			dc.vao.bind();
 			gl.drawElements(
 				wireframe ? gl.LINES : gl.TRIANGLES,
@@ -1608,7 +1835,10 @@ class M2RendererGL {
 		// vao.dispose() handles vbo/ebo deletion
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
+		this.ubos = [];
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];

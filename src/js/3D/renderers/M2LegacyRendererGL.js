@@ -16,6 +16,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
+const UniformBuffer = require('../gl/UniformBuffer');
 
 // m2 version constants
 const M2_VER_WOTLK = 264;
@@ -150,6 +151,7 @@ class M2LegacyRendererGL {
 
 		// rendering state
 		this.vaos = [];
+		this.ubos = [];
 		this.textures = new Map();
 		this.default_texture = null;
 		this.buffers = [];
@@ -301,9 +303,9 @@ class M2LegacyRendererGL {
 		this._create_skeleton();
 
 		// build interleaved vertex buffer
-		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) = 40 bytes
+		// format: position(3f) + normal(3f) + bone_idx(4ub) + bone_weight(4ub) + uv(2f) + uv(2f) = 48 bytes
 		const vertex_count = m2.vertices.length / 3;
-		const stride = 40;
+		const stride = 48;
 		const vertex_data = new ArrayBuffer(vertex_count * stride);
 		const vertex_view = new DataView(vertex_data);
 
@@ -338,6 +340,10 @@ class M2LegacyRendererGL {
 			// texcoord
 			vertex_view.setFloat32(offset + 32, m2.uv[uv_idx], true);
 			vertex_view.setFloat32(offset + 36, m2.uv[uv_idx + 1], true);
+
+			// texcoord2
+			vertex_view.setFloat32(offset + 40, m2.uv2[uv_idx], true);
+			vertex_view.setFloat32(offset + 44, m2.uv2[uv_idx + 1], true);
 		}
 
 		// map triangle indices
@@ -363,6 +369,8 @@ class M2LegacyRendererGL {
 
 		vao.setup_m2_vertex_format();
 		this.vaos.push(vao);
+
+		this._create_bones_ubo();
 
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
@@ -441,15 +449,29 @@ class M2LegacyRendererGL {
 
 		if (!bone_data || bone_data.length === 0) {
 			this.bones = null;
-			this.bone_matrices = new Float32Array(16);
 			return;
 		}
 
 		this.bones = bone_data;
-		this.bone_matrices = new Float32Array(bone_data.length * 16);
+	}
 
-		for (let i = 0; i < bone_data.length; i++)
-			this.bone_matrices.set(IDENTITY_MAT4, i * 16);
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+		const bone_count = this.bones ? this.bones.length : 0;
+		// initialize to identity
+		for (let i = 0; i < bone_count; i++) {
+			const offset = i * 16;
+			this.bone_matrices.set(IDENTITY_MAT4, offset);
+		}
 	}
 
 	async playAnimation(index) {
@@ -928,8 +950,6 @@ class M2LegacyRendererGL {
 		// bone skinning disabled for legacy models until animation system is fixed
 		shader.set_uniform_1i('u_bone_count', 0);
 
-		shader.set_uniform_1i('u_has_tex_matrix1', 0);
-		shader.set_uniform_1i('u_has_tex_matrix2', 0);
 		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
 		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
 
@@ -994,6 +1014,7 @@ class M2LegacyRendererGL {
 				texture.bind(t);
 			}
 
+			this.ubos[0].ubo.bind(0);
 			dc.vao.bind();
 			gl.drawElements(
 				wireframe ? gl.LINES : gl.TRIANGLES,
@@ -1025,7 +1046,10 @@ class M2LegacyRendererGL {
 	_dispose_skin() {
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
+		this.ubos = [];
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];
