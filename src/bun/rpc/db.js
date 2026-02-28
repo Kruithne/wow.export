@@ -2,6 +2,11 @@ import * as log from '../lib/log.js';
 import * as core from '../lib/core.js';
 import db2 from '../casc/db2.js';
 import { serialize, deserialize } from '../../rpc/serialize.js';
+import * as dbd_manifest from '../casc/dbd-manifest.js';
+import WDCReader from '../db/WDCReader.js';
+import DBCReader from '../db/DBCReader.js';
+import BufferWrapper from '../lib/buffer.js';
+import * as FieldType from '../db/FieldType.js';
 
 import * as DBItems from '../db/caches/DBItems.js';
 import * as DBItemDisplays from '../db/caches/DBItemDisplays.js';
@@ -21,6 +26,34 @@ import * as DBDecor from '../db/caches/DBDecor.js';
 import * as DBDecorCategories from '../db/caches/DBDecorCategories.js';
 import * as DBGuildTabard from '../db/caches/DBGuildTabard.js';
 
+const FIELD_TYPE_NAMES = new Map([
+	[FieldType.String, 'String'],
+	[FieldType.Int8, 'Int8'],
+	[FieldType.UInt8, 'UInt8'],
+	[FieldType.Int16, 'Int16'],
+	[FieldType.UInt16, 'UInt16'],
+	[FieldType.Int32, 'Int32'],
+	[FieldType.UInt32, 'UInt32'],
+	[FieldType.Int64, 'Int64'],
+	[FieldType.UInt64, 'UInt64'],
+	[FieldType.Float, 'Float'],
+	[FieldType.Relation, 'Relation'],
+	[FieldType.NonInlineID, 'NonInlineID'],
+]);
+
+const serialize_schema = (schema) => {
+	const result = {};
+	for (const [key, value] of schema) {
+		if (Array.isArray(value))
+			result[key] = [FIELD_TYPE_NAMES.get(value[0]) ?? 'UInt32', value[1]];
+		else if (typeof value === 'object' && value !== null && value.type)
+			result[key] = FIELD_TYPE_NAMES.get(value.type) ?? 'UInt32';
+		else
+			result[key] = FIELD_TYPE_NAMES.get(value) ?? 'UInt32';
+	}
+	return result;
+};
+
 export const db_handlers = {
 	async db_load({ table }) {
 		log.write('db_load: %s', table);
@@ -36,6 +69,86 @@ export const db_handlers = {
 			serialized_rows.push({ id, ...row });
 
 		return { columns, rows: serialized_rows };
+	},
+
+	async db_load_table({ table_name }) {
+		log.write('db_load_table: %s', table_name);
+
+		const reader = new WDCReader('DBFilesClient/' + table_name + '.db2');
+		await reader.parse();
+
+		const all_headers = [...reader.schema.keys()];
+		const id_index = all_headers.findIndex(h => h.toUpperCase() === 'ID');
+		if (id_index > 0) {
+			const id_header = all_headers.splice(id_index, 1)[0];
+			all_headers.unshift(id_header);
+		}
+
+		const rows = await reader.getAllRows();
+		const parsed = Array(rows.size);
+
+		let index = 0;
+		for (const row of rows.values()) {
+			const row_values = Object.values(row);
+			if (id_index > 0) {
+				const id_value = row_values.splice(id_index, 1)[0];
+				row_values.unshift(id_value);
+			}
+			parsed[index++] = row_values;
+		}
+
+		return { headers: all_headers, rows: parsed, schema: serialize_schema(reader.schema) };
+	},
+
+	async db_load_legacy_table({ table_name, file_path }) {
+		log.write('db_load_legacy_table: %s', table_name);
+
+		const mpq = core.get_mpq();
+		if (!mpq)
+			throw new Error('no MPQ source loaded');
+
+		const raw_data = mpq.getFile(file_path);
+		if (!raw_data)
+			throw new Error('unable to load DBC file: ' + file_path);
+
+		const build_id = mpq.build_id ?? '1.12.1.5875';
+		const dbc_reader = new DBCReader(table_name + '.dbc', build_id);
+		await dbc_reader.parse(new BufferWrapper(raw_data));
+
+		const all_headers = [...dbc_reader.schema.keys()];
+		const id_index = all_headers.findIndex(h => h.toUpperCase() === 'ID');
+		if (id_index > 0) {
+			const id_header = all_headers.splice(id_index, 1)[0];
+			all_headers.unshift(id_header);
+		}
+
+		const rows = dbc_reader.getAllRows();
+		const parsed = Array(rows.size);
+
+		let index = 0;
+		for (const row of rows.values()) {
+			const row_values = [];
+			for (const header of all_headers) {
+				const value = row[header];
+				if (Array.isArray(value))
+					row_values.push(value.join(', '));
+				else
+					row_values.push(value);
+			}
+			parsed[index++] = row_values;
+		}
+
+		return { headers: all_headers, rows: parsed, schema: serialize_schema(dbc_reader.schema) };
+	},
+
+	async db_get_available_tables() {
+		await dbd_manifest.prepareManifest();
+		return dbd_manifest.getAllTableNames();
+	},
+
+	async db_get_table_data_id({ table_name }) {
+		await dbd_manifest.prepareManifest();
+		return dbd_manifest.getByTableName(table_name) ?? null;
 	},
 
 	async db_preload({ table }) {

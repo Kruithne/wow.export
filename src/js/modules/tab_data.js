@@ -1,54 +1,60 @@
 import log from '../log.js';
 import * as platform from '../platform.js';
 import dataExporter from '../ui/data-exporter.js';
-import { dbc } from '../../views/main/rpc.js';
+import { db } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
 import InstallType from '../install-type.js';
+import FieldType from '../db/FieldType.js';
+
+const FIELD_TYPE_MAP = {
+	String: FieldType.String,
+	Int8: FieldType.Int8,
+	UInt8: FieldType.UInt8,
+	Int16: FieldType.Int16,
+	UInt16: FieldType.UInt16,
+	Int32: FieldType.Int32,
+	UInt32: FieldType.UInt32,
+	Int64: FieldType.Int64,
+	UInt64: FieldType.UInt64,
+	Float: FieldType.Float,
+	Relation: FieldType.Relation,
+	NonInlineID: FieldType.NonInlineID,
+};
 
 let selected_file = null;
 let selected_file_data_id = null;
 let selected_file_schema = null;
+
+const deserialize_schema = (schema_obj) => {
+	const schema = new Map();
+	for (const [key, value] of Object.entries(schema_obj)) {
+		if (Array.isArray(value))
+			schema.set(key, [FIELD_TYPE_MAP[value[0]] ?? FieldType.UInt32, value[1]]);
+		else
+			schema.set(key, FIELD_TYPE_MAP[value] ?? FieldType.UInt32);
+	}
+	return schema;
+};
 
 const initialize_available_tables = async (core) => {
 	const manifest = core.view.dbdManifest;
 	if (manifest.length > 0)
 		return;
 
-	// dbd_manifest functionality is bun-side; assume manifest is populated via RPC
-	log.write('initialized available db2 tables from dbd manifest');
+	const table_names = await db.get_available_tables();
+	core.view.dbdManifest = table_names;
+	log.write('initialized %d available db2 tables from dbd manifest', table_names.length);
 };
 
 const parse_table = async (table_name) => {
-	const db2_reader = new WDCReader('DBFilesClient/' + table_name + '.db2');
-	await db2_reader.parse();
-
-	const all_headers = [...db2_reader.schema.keys()];
-	const id_index = all_headers.findIndex(header => header.toUpperCase() === 'ID');
-	if (id_index > 0) {
-		const id_header = all_headers.splice(id_index, 1)[0];
-		all_headers.unshift(id_header);
-	}
-
-	const rows = await db2_reader.getAllRows();
-	const parsed = Array(rows.size);
-
-	let index = 0;
-	for (const row of rows.values()) {
-		const row_values = Object.values(row);
-		if (id_index > 0) {
-			const id_value = row_values.splice(id_index, 1)[0];
-			row_values.unshift(id_value);
-		}
-
-		parsed[index++] = row_values;
-	}
-
-	return { headers: all_headers, rows: parsed, schema: db2_reader.schema };
+	const result = await db.load_table(table_name);
+	result.schema = deserialize_schema(result.schema);
+	return result;
 };
 
 const load_table = async (core, table_name) => {
 	try {
-		selected_file_data_id = null;
+		selected_file_data_id = await db.get_table_data_id(table_name);
 
 		const result = await parse_table(table_name);
 
@@ -330,7 +336,7 @@ export default {
 					break;
 
 				try {
-					const file_data_id = null;
+					const file_data_id = await db.get_table_data_id(table_name);
 					if (!file_data_id)
 						throw new Error('No file data ID found for table ' + table_name);
 

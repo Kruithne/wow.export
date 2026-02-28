@@ -2,10 +2,26 @@ import log from '../log.js';
 import * as platform from '../platform.js';
 import dataExporter from '../ui/data-exporter.js';
 import InstallType from '../install-type.js';
-import { dbc } from '../../views/main/rpc.js';
+import { db, mpq } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
-import BufferWrapper from '../buffer.js';
-import generics from '../generics.js';
+import FieldType from '../db/FieldType.js';
+
+const FIELD_TYPE_MAP = {
+	String: FieldType.String,
+	Int8: FieldType.Int8,
+	UInt8: FieldType.UInt8,
+	Int16: FieldType.Int16,
+	UInt16: FieldType.UInt16,
+	Int32: FieldType.Int32,
+	UInt32: FieldType.UInt32,
+	Int64: FieldType.Int64,
+	UInt64: FieldType.UInt64,
+	Float: FieldType.Float,
+	Relation: FieldType.Relation,
+	NonInlineID: FieldType.NonInlineID,
+};
+
+const DBC_EXTENSION = '.dbc';
 
 let selected_file = null;
 let selected_file_path = null;
@@ -13,17 +29,22 @@ let selected_file_schema = null;
 let dbc_listfile = [];
 let dbc_path_map = new Map();
 
-const DBC_EXTENSION = '.dbc';
+const deserialize_schema = (schema_obj) => {
+	const schema = new Map();
+	for (const [key, value] of Object.entries(schema_obj)) {
+		if (Array.isArray(value))
+			schema.set(key, [FIELD_TYPE_MAP[value[0]] ?? FieldType.UInt32, value[1]]);
+		else
+			schema.set(key, FIELD_TYPE_MAP[value] ?? FieldType.UInt32);
+	}
+	return schema;
+};
 
-const initialize_dbc_listfile = async (core) => {
+const initialize_dbc_listfile = async () => {
 	if (dbc_listfile.length > 0)
 		return;
 
-	const mpq = core.view.mpq;
-	if (!mpq)
-		return;
-
-	const all_dbc_files = await mpq.getFilesByExtension(DBC_EXTENSION);
+	const all_dbc_files = await mpq.get_files_by_extension(DBC_EXTENSION);
 
 	dbc_path_map.clear();
 	const table_names = new Set();
@@ -45,72 +66,31 @@ const initialize_dbc_listfile = async (core) => {
 
 const load_table = async (core, table_name) => {
 	try {
-		const mpq = core.view.mpq;
 		const full_path = dbc_path_map.get(table_name);
 
 		if (!full_path) {
-			core.setToast('error', `Unable to find DBC file: ${table_name}`, null, -1);
+			core.setToast('error', 'Unable to find DBC file: ' + table_name, null, -1);
 			return;
 		}
 
-		let raw_data = await mpq.getFile(full_path);
+		const result = await db.load_legacy_table(table_name, full_path);
 
-		if (!raw_data) {
-			core.setToast('error', `Unable to load DBC file: ${full_path}`, null, -1);
-			return;
-		}
-
-		const data = new BufferWrapper(raw_data);
-
-		const build_id = get_build_version(core);
-
-		const dbc_reader = new DBCReader(table_name + '.dbc', build_id);
-		await dbc_reader.parse(data);
-
-		const all_headers = [...dbc_reader.schema.keys()];
-		const id_index = all_headers.findIndex(header => header.toUpperCase() === 'ID');
-		if (id_index > 0) {
-			const id_header = all_headers.splice(id_index, 1)[0];
-			all_headers.unshift(id_header);
-		}
-
-		core.view.tableBrowserHeaders = all_headers;
+		core.view.tableBrowserHeaders = result.headers;
 		core.view.selectionDataTable = [];
 
-		const rows = await dbc_reader.getAllRows();
-		if (rows.size == 0)
+		if (result.rows.length === 0)
 			core.setToast('info', 'Selected DBC has no rows.', null);
 		else
 			core.hideToast(false);
 
-		const parsed = Array(rows.size);
-
-		let index = 0;
-		for (const row of rows.values()) {
-			const row_values = [];
-			for (const header of all_headers) {
-				const value = row[header];
-				if (Array.isArray(value))
-					row_values.push(value.join(', '));
-				else
-					row_values.push(value);
-			}
-			parsed[index++] = row_values;
-		}
-
-		core.view.tableBrowserRows = parsed;
+		core.view.tableBrowserRows = result.rows;
 		selected_file = table_name;
 		selected_file_path = full_path;
-		selected_file_schema = dbc_reader.schema;
+		selected_file_schema = deserialize_schema(result.schema);
 	} catch (e) {
 		core.setToast('error', 'Unable to open DBC file ' + table_name, { 'View Log': () => log.openRuntimeLog() }, -1);
 		log.write('Failed to open DBC file: %s', e.message);
-		log.write('%o', e.stack);
 	}
-};
-
-const get_build_version = (core) => {
-	return core.view.mpq?.build_id ?? '1.12.1.5875';
 };
 
 export default {
@@ -301,7 +281,7 @@ export default {
 
 		try {
 			await this.$core.progressLoadingScreen('Scanning DBC files...');
-			await initialize_dbc_listfile(this.$core);
+			await initialize_dbc_listfile();
 
 			this.dbcListfile = dbc_listfile;
 			this.$core.hideLoadingScreen();

@@ -2534,10 +2534,7 @@ export default {
 
 		reset_module_state();
 
-		this.$core.showLoadingScreen(8);
-
-		await this.$core.progressLoadingScreen('Retrieving realmlist...');
-		await realmlist.load();
+		this.$core.showLoadingScreen(7);
 
 		const update_realm_list = () => {
 			const base_region = state.chrImportSelectedRegion;

@@ -178,6 +178,10 @@ export const listfile = {
 
 export const db = {
 	load: (table) => rpc_config.request.db_load({ table }),
+	load_table: (table_name) => rpc_config.request.db_load_table({ table_name }),
+	load_legacy_table: (table_name, file_path) => rpc_config.request.db_load_legacy_table({ table_name, file_path }),
+	get_available_tables: () => rpc_config.request.db_get_available_tables(),
+	get_table_data_id: (table_name) => rpc_config.request.db_get_table_data_id({ table_name }),
 	preload: (table) => rpc_config.request.db_preload({ table }),
 	get_row: (table, id) => rpc_config.request.db_get_row({ table, id }),
 };
