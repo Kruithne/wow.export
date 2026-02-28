@@ -6,20 +6,30 @@ import * as realmlist from '../casc/realmlist.js';
 import cdnResolver from '../casc/cdn-resolver.js';
 import CASCLocal from '../casc/casc-source-local.js';
 import CASCRemote from '../casc/casc-source-remote.js';
+import { MSG } from '../../rpc/schema.js';
+
+function send_casc_progress(message) {
+	core.get_rpc()?.send?.[MSG.CASC_PROGRESS]?.({ message });
+}
 
 export const casc_handlers = {
 	async casc_init_local({ path }) {
 		log.write('casc_init_local: %s', path);
+		send_casc_progress('Scanning local installation...');
 		const casc = new CASCLocal(path);
 		await casc.init();
+		send_casc_progress('Reading build configurations...');
 		core.set_casc(casc);
 		return { builds: casc.getProductList() };
 	},
 
 	async casc_init_remote({ region, product }) {
 		log.write('casc_init_remote: %s / %s', region, product);
+		send_casc_progress('Resolving CDN...');
 		const casc = new CASCRemote(region, product);
+		send_casc_progress('Fetching version configs...');
 		await casc.init();
+		send_casc_progress('Reading build configurations...');
 		core.set_casc(casc);
 		return { builds: casc.getProductList() };
 	},

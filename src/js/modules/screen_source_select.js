@@ -161,7 +161,9 @@ export default {
 			const recent_local = this.$core.view.config.recentLocal;
 
 			try {
-				const result = await casc.init_local(install_path);
+				const result = await casc.init_local(install_path, (progress) => {
+					this.$core.view.loadingProgress = progress.message;
+				});
 				casc_type = 'local';
 				casc_install_path = install_path;
 				casc_builds = result.builds;
@@ -304,7 +306,9 @@ export default {
 			const tag = this.$core.view.selectedCDNRegion.tag;
 
 			try {
-				const result = await casc.init_remote(tag);
+				const result = await casc.init_remote(tag, null, (progress) => {
+					this.$core.view.loadingProgress = progress.message;
+				});
 				casc_type = 'remote';
 				casc_install_path = null;
 				casc_builds = result.builds;
