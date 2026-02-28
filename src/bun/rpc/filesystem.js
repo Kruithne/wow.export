@@ -91,6 +91,28 @@ export const filesystem_handlers = {
 		return crypto.createHash(algorithm).update(data).digest(encoding);
 	},
 
+	async fs_readdir_with_types({ path: dir_path }) {
+		const entries = await fsp.readdir(dir_path, { withFileTypes: true });
+		return entries.map(e => ({ name: e.name, isDirectory: e.isDirectory(), isFile: e.isFile() }));
+	},
+
+	async fs_copy_file({ src, dest }) {
+		await fsp.copyFile(src, dest);
+	},
+
+	async fs_unlink({ path: file_path }) {
+		await fsp.unlink(file_path);
+	},
+
+	async fs_access({ path: file_path }) {
+		try {
+			await fsp.access(file_path);
+			return true;
+		} catch {
+			return false;
+		}
+	},
+
 	async fs_read_json({ path: file_path, strip_comments }) {
 		try {
 			let text = await fsp.readFile(file_path, 'utf8');
