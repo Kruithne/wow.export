@@ -18,15 +18,14 @@ uniform vec3 u_view_up;
 uniform float u_time;
 
 // bone matrices (max 256 bones)
-#define MAX_BONES 256
-uniform mat4 u_bone_matrices[MAX_BONES];
 uniform int u_bone_count;
-
+#define MAX_BONES 256
+uniform VsBoneUbo {
+	mat4 u_bone_matrices[MAX_BONES];
+};
 // texture transform matrices
-uniform int u_tex_matrix1_idx;
-uniform int u_tex_matrix2_idx;
-#define MAX_MATRICES 64
-uniform mat4 u_tex_matrices[MAX_MATRICES];
+uniform mat4 u_tex_matrix1;
+uniform mat4 u_tex_matrix2;
 
 // vertex shader mode
 uniform int u_vertex_shader;
@@ -89,8 +88,8 @@ void main() {
 	v_edge_fade = 1.0;
 
 	// apply texture matrix transforms
-	mat4 tex_mat1 = u_tex_matrix1_idx < 0 ? mat4(1.0) : u_tex_matrices[u_tex_matrix1_idx];
-	mat4 tex_mat2 = u_tex_matrix2_idx < 0 ? mat4(1.0) : u_tex_matrices[u_tex_matrix2_idx];
+	mat4 tex_mat1 = u_tex_matrix1;
+	mat4 tex_mat2 = u_tex_matrix2;
 
 	v_texcoord = a_texcoord;
 	v_texcoord2 = vec2(0.0);
