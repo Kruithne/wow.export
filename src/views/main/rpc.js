@@ -120,6 +120,17 @@ export const casc = {
 	get_file_partial: async (file_data_id, offset, length) => decode_binary(await rpc_config.request.casc_get_file_partial({ file_data_id, offset, length })),
 	add_tact_key: (key_name, key) => rpc_config.request.casc_add_tact_key({ key_name, key }),
 	start_pre_resolution: (region, product) => rpc_config.request.casc_start_pre_resolution({ region, product }),
+	get_install_manifest: () => rpc_config.request.casc_get_install_manifest(),
+	get_valid_root_entries: () => rpc_config.request.casc_get_valid_root_entries(),
+	file_exists: (file_data_id) => rpc_config.request.casc_file_exists({ file_data_id }),
+
+	get_file_by_content_key: async (content_key) => {
+		const data = await rpc_config.request.casc_get_file_by_content_key({ content_key });
+		if (data === null)
+			return null;
+
+		return decode_binary(data);
+	},
 };
 
 // -- listfile API --

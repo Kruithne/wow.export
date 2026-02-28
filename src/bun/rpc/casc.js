@@ -95,6 +95,43 @@ export const casc_handlers = {
 		return data.toBase64();
 	},
 
+	async casc_get_install_manifest() {
+		const casc = core.get_casc();
+		if (!casc)
+			throw new Error('no CASC source loaded');
+
+		const manifest = await casc.getInstallManifest();
+		return manifest;
+	},
+
+	async casc_get_valid_root_entries() {
+		const casc = core.get_casc();
+		if (!casc)
+			throw new Error('no CASC source loaded');
+
+		return casc.getValidRootEntries();
+	},
+
+	async casc_file_exists({ file_data_id }) {
+		const casc = core.get_casc();
+		if (!casc)
+			throw new Error('no CASC source loaded');
+
+		return casc.fileExists(file_data_id);
+	},
+
+	async casc_get_file_by_content_key({ content_key }) {
+		const casc = core.get_casc();
+		if (!casc)
+			throw new Error('no CASC source loaded');
+
+		const data = await casc.getDataFile(casc.formatCDNKey(content_key));
+		if (!data)
+			return null;
+
+		return data.toBase64();
+	},
+
 	async casc_add_tact_key({ key_name, key }) {
 		return tactKeys.addKey(key_name, key);
 	},

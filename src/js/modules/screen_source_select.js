@@ -83,6 +83,17 @@ export default {
 				getFile: async (id) => BufferWrapper.from(await casc.get_file(id)),
 				getFileByName: async (name) => BufferWrapper.from(await casc.get_file_by_name(name)),
 				getFilePartial: async (id, ofs, len) => BufferWrapper.from(await casc.get_file_partial(id, ofs, len)),
+				getInstallManifest: () => casc.get_install_manifest(),
+				getValidRootEntries: () => casc.get_valid_root_entries(),
+				fileExists: (id) => casc.file_exists(id),
+
+				getFileByContentKey: async (key) => {
+					const data = await casc.get_file_by_content_key(key);
+					if (data === null)
+						return null;
+
+					return BufferWrapper.from(data);
+				},
 			};
 		},
 
