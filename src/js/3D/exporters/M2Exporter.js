@@ -3,7 +3,7 @@
 	Authors: Kruithne <kruithne@gmail.com>, Marlamin <marlamin@marlamin.com>
 	License: MIT
  */
-import { exporter, listfile } from '../../../views/main/rpc.js';
+import { listfile } from '../../../views/main/rpc.js';
 import BLPFile from '../../casc/blp.js';
 import generics from '../../generics.js';
 import ExportHelper from '../../export-helper.js';
@@ -119,7 +119,7 @@ class M2Exporter {
 				}
 
 				if (usePosix)
-					texFile = exporter.win32ToPosix(texFile);
+					texFile = ExportHelper.win32ToPosix(texFile);
 
 				mtl?.addMaterial(matName, texFile);
 				validTextures.set('data-' + textureName, {
@@ -192,7 +192,7 @@ class M2Exporter {
 							fileName = listfile.formatUnknownFile(texFile);
 						}
 
-						texPath = exporter.getExportPath(fileName);
+						texPath = ExportHelper.getExportPath(fileName);
 						texFile = texPath.replace(out, '');
 					}
 
@@ -225,7 +225,7 @@ class M2Exporter {
 					}
 
 					if (usePosix)
-						texFile = exporter.win32ToPosix(texFile);
+						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
 					validTextures.set(texFileDataID, {
@@ -450,7 +450,7 @@ class M2Exporter {
 
 					if (config.enableSharedTextures && fileName !== undefined) {
 						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = exporter.getExportPath(sharedFileName);
+						texPath = ExportHelper.getExportPath(sharedFileName);
 						texFile = texPath.replace(outDir, '');
 					}
 
@@ -469,7 +469,7 @@ class M2Exporter {
 
 					const usePosix = config.pathFormat === 'posix';
 					if (usePosix)
-						texFile = exporter.win32ToPosix(texFile);
+						texFile = ExportHelper.win32ToPosix(texFile);
 
 					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
 					textureMap.set(texFileDataID, texInfo);
@@ -597,7 +597,7 @@ class M2Exporter {
 
 					if (config.enableSharedTextures && fileName !== undefined) {
 						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = exporter.getExportPath(sharedFileName);
+						texPath = ExportHelper.getExportPath(sharedFileName);
 						texFile = texPath.replace(outDir, '');
 					}
 
@@ -609,7 +609,7 @@ class M2Exporter {
 					}
 
 					if (usePosix)
-						texFile = exporter.win32ToPosix(texFile);
+						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl.addMaterial(matName, texFile);
 					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
@@ -1010,7 +1010,7 @@ class M2Exporter {
 
 					let skinFile;
 					if (config.enableSharedChildren)
-						skinFile = exporter.getExportPath(skin.fileName);
+						skinFile = ExportHelper.getExportPath(skin.fileName);
 					else
 						skinFile = outDir + '/' + skin.fileName.split('/').pop();
 	
@@ -1033,7 +1033,7 @@ class M2Exporter {
 
 			let skelFile;
 			if (config.enableSharedChildren)
-				skelFile = exporter.getExportPath(skelFileName);
+				skelFile = ExportHelper.getExportPath(skelFileName);
 			else
 				skelFile = outDir + '/' + skelFileName.split('/').pop();
 
@@ -1056,7 +1056,7 @@ class M2Exporter {
 							
 							let animFile;
 							if (config.enableSharedChildren)
-								animFile = exporter.getExportPath(animFileName);
+								animFile = ExportHelper.getExportPath(animFileName);
 							else
 								animFile = outDir + '/' + animFileName.split('/').pop();
 
@@ -1079,7 +1079,7 @@ class M2Exporter {
 		
 						let boneFile;
 						if (config.enableSharedChildren)
-							boneFile = exporter.getExportPath(boneFileName);
+							boneFile = ExportHelper.getExportPath(boneFileName);
 						else
 							boneFile = outDir + '/' + boneFileName.split('/').pop();
 		
@@ -1098,7 +1098,7 @@ class M2Exporter {
 	
 				let parentSkelFile;
 				if (config.enableSharedChildren)
-					parentSkelFile = exporter.getExportPath(parentSkelFileName);
+					parentSkelFile = ExportHelper.getExportPath(parentSkelFileName);
 				else
 					parentSkelFile = outDir + '/' + parentSkelFileName.split('/').pop();
 	
@@ -1122,7 +1122,7 @@ class M2Exporter {
 								
 								let animFile;
 								if (config.enableSharedChildren)
-									animFile = exporter.getExportPath(animFileName);
+									animFile = ExportHelper.getExportPath(animFileName);
 								else
 									animFile = outDir + '/' + animFileName.split('/').pop();
 	
@@ -1146,7 +1146,7 @@ class M2Exporter {
 		
 						let boneFile;
 						if (config.enableSharedChildren)
-							boneFile = exporter.getExportPath(boneFileName);
+							boneFile = ExportHelper.getExportPath(boneFileName);
 						else
 							boneFile = outDir + '/' + boneFileName.split('/').pop();
 		
@@ -1170,7 +1170,7 @@ class M2Exporter {
 
 				let boneFile;
 				if (config.enableSharedChildren)
-					boneFile = exporter.getExportPath(boneFileName);
+					boneFile = ExportHelper.getExportPath(boneFileName);
 				else
 					boneFile = outDir + '/' + boneFileName.split('/').pop();
 
@@ -1193,7 +1193,7 @@ class M2Exporter {
 					
 					let animFile;
 					if (config.enableSharedChildren)
-						animFile = exporter.getExportPath(animFileName);
+						animFile = ExportHelper.getExportPath(animFileName);
 					else
 						animFile = outDir + '/' + animFileName.split('/').pop();
 
