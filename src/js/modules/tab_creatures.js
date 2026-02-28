@@ -1176,7 +1176,8 @@ export default {
 					getEquipmentRenderers: () => equipment_model_renderers,
 					getCollectionRenderers: () => collection_model_renderers,
 					gl_context: null,
-					fitCamera: null
+					fitCamera: null,
+					controls: null
 				});
 			}
 

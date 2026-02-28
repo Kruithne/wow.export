@@ -439,7 +439,7 @@ export default {
 			await apply_filters(this.$core);
 
 			if (!this.$core.view.decorViewerContext)
-				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+				this.$core.view.decorViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null, controls: null });
 
 			this.$core.hideLoadingScreen();
 		},

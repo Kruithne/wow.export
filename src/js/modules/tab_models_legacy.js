@@ -512,7 +512,7 @@ export default {
 			await this.$core.progressLoadingScreen('Initializing 3D preview...');
 
 			if (!this.$core.view.legacyModelViewerContext)
-				this.$core.view.legacyModelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null });
+				this.$core.view.legacyModelViewerContext = Object.seal({ getActiveRenderer: () => active_renderer, gl_context: null, fitCamera: null, controls: null });
 
 			this.$core.hideLoadingScreen();
 		} catch (error) {
