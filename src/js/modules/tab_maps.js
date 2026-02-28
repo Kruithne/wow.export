@@ -4,7 +4,6 @@ import log from '../log.js';
 import constants from '../constants.js';
 import InstallType from '../install-type.js';
 import { listfile, fs } from '../../views/main/rpc.js';
-import { db } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
 import BLPImage from '../casc/blp.js';
 import WDTLoader from '../3D/loaders/WDTLoader.js';
@@ -14,7 +13,7 @@ import WMOExporter from '../3D/exporters/WMOExporter.js';
 import WMOLoader from '../3D/loaders/WMOLoader.js';
 import TiledPNGWriter from '../tiled-png-writer.js';
 import PNGWriter from '../png-writer.js';
-const db2 = db;
+import db2 from '../db2-proxy.js';
 const BLPFile = BLPImage;
 
 const TILE_SIZE = constants.GAME.TILE_SIZE;

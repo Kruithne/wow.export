@@ -3,7 +3,7 @@ import { listfile } from '../../views/main/rpc.js';
 import BLPFile from '../casc/blp.js';
 import BufferWrapper from '../buffer.js';
 import ExportHelper from '../export-helper.js';
-import { db as db2 } from '../../views/main/rpc.js';
+import db2 from '../db2-proxy.js';
 import textureExporter from '../ui/texture-exporter.js';
 import listboxContext from '../ui/listbox-context.js';
 import InstallType from '../install-type.js';

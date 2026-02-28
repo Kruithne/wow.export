@@ -3,7 +3,8 @@ import { listfile } from '../../views/main/rpc.js';
 import MultiMap from '../MultiMap.js';
 import ExternalLinks from '../external-links.js';
 
-import { db as db2, dbc } from '../../views/main/rpc.js';
+import { dbc } from '../../views/main/rpc.js';
+import db2 from '../db2-proxy.js';
 import { DBItems, DBModelFileData, DBTextureFileData } from '../db-proxy.js';
 import ItemSlot from '../wow/ItemSlot.js';
 import InstallType from '../install-type.js';

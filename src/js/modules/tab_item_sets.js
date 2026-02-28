@@ -1,5 +1,6 @@
 import log from '../log.js';
-import { db as db2, dbc } from '../../views/main/rpc.js';
+import { dbc } from '../../views/main/rpc.js';
+import db2 from '../db2-proxy.js';
 import { DBItems } from '../db-proxy.js';
 import InstallType from '../install-type.js';
 import { get_slot_name } from '../wow/EquipmentSlots.js';

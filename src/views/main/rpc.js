@@ -189,6 +189,8 @@ export const db = {
 	get_table_data_id: (table_name) => rpc_config.request.db_get_table_data_id({ table_name }),
 	preload: (table) => rpc_config.request.db_preload({ table }),
 	get_row: (table, id) => rpc_config.request.db_get_row({ table, id }),
+	get_all_rows: (table) => rpc_config.request.db_get_all_rows({ table }),
+	get_relation_rows: (table, foreign_key) => rpc_config.request.db_get_relation_rows({ table, foreign_key }),
 };
 
 // -- db cache API --

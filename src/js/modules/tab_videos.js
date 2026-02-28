@@ -4,12 +4,11 @@ import constants from '../constants.js';
 import core from '../core.js';
 import InstallType from '../install-type.js';
 import { listfile } from '../../views/main/rpc.js';
-import { db } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
 import subtitles from '../subtitles.js';
 import listboxContext from '../ui/listbox-context.js';
 import { BlobPolyfill, URLPolyfill } from '../blob.js';
-const db2 = db;
+import db2 from '../db2-proxy.js';
 
 let movie_variation_map = null;
 let video_file_data_ids = null;

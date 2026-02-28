@@ -2,12 +2,10 @@ import core from '../core.js';
 import * as platform from '../platform.js';
 import log from '../log.js';
 import InstallType from '../install-type.js';
-import { db } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
 import BLPImage from '../casc/blp.js';
 import BufferWrapper from '../buffer.js';
-
-const db2 = db;
+import db2 from '../db2-proxy.js';
 const BLPFile = BLPImage;
 
 let selected_zone_id = null;

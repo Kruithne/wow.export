@@ -151,6 +151,27 @@ export const db_handlers = {
 		return dbd_manifest.getByTableName(table_name) ?? null;
 	},
 
+	async db_get_all_rows({ table }) {
+		const reader = db2[table];
+		if (!reader)
+			throw new Error('unknown table: ' + table);
+
+		const rows = await reader.getAllRows();
+		const result = [];
+		for (const [id, row] of rows)
+			result.push({ id, ...row });
+
+		return result;
+	},
+
+	async db_get_relation_rows({ table, foreign_key }) {
+		const reader = db2[table];
+		if (!reader)
+			throw new Error('unknown table: ' + table);
+
+		return reader.getRelationRows(foreign_key);
+	},
+
 	async db_preload({ table }) {
 		log.write('db_preload: %s', table);
 		const reader = await db2.preload[table]();
