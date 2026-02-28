@@ -24,6 +24,12 @@ class BufferWrapper {
 		return new BufferWrapper(new Uint8Array(source));
 	}
 
+	static async readFile(path) {
+		const { fs } = await import('../views/main/rpc.js');
+		const data = await fs.read_file(path);
+		return new BufferWrapper(new Uint8Array(data));
+	}
+
 	static fromBase64(source) {
 		const binary = atob(source);
 		const bytes = new Uint8Array(binary.length);
