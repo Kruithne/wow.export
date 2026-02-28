@@ -62,6 +62,9 @@ export async function request_with_progress(method, params, progress_event, on_p
 // -- binary helpers --
 
 export function decode_binary(base64_str) {
+	if (base64_str === null || base64_str === undefined)
+		return null;
+
 	const binary = atob(base64_str);
 	const len = binary.length;
 	const bytes = new Uint8Array(len);
