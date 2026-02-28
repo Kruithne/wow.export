@@ -196,6 +196,19 @@ export const readJSON = async (path, strip_comments = false) => {
 	return fs.read_json(path, strip_comments);
 };
 
+export const writeFile = async (path, data, encoding) => {
+	const { fs } = await import('../views/main/rpc.js');
+	if (typeof data === 'string')
+		return fs.write_text(path, data, encoding);
+
+	return fs.write_file(path, data);
+};
+
+export const deleteDirectory = async (path) => {
+	const { fs } = await import('../views/main/rpc.js');
+	return fs.delete_dir(path);
+};
+
 export default {
 	getJSON,
 	parseJSON,
@@ -208,5 +221,7 @@ export default {
 	batchWork,
 	fileExists,
 	createDirectory,
-	readJSON
+	readJSON,
+	writeFile,
+	deleteDirectory
 };
