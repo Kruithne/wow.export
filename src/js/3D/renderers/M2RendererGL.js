@@ -19,6 +19,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
+const UniformBuffer = require('../gl/UniformBuffer');
 
 // vertex shader name to ID mapping (matches vertex shader switch cases)
 const VERTEX_SHADER_IDS = {
@@ -325,6 +326,7 @@ class M2RendererGL {
 
 		// rendering state
 		this.vaos = [];
+		this.ubos = [];
 		this.textures = new Map();
 		this.default_texture = null;
 		this.buffers = [];
@@ -381,6 +383,8 @@ class M2RendererGL {
 		// load shader program
 		this.shader = M2RendererGL.load_shaders(this.ctx);
 
+		this._create_tex_matrices();
+
 		// create default texture
 		this._create_default_texture();
 
@@ -398,8 +402,6 @@ class M2RendererGL {
 				this.bonesWatcher = core.view.$watch('config.modelViewerShowBones', () => {}, { deep: true });
 			}
 		}
-
-		this._create_tex_matrices();
 
 		// drop reference to raw data
 		this.data = undefined;
@@ -524,6 +526,8 @@ class M2RendererGL {
 		vao.setup_m2_vertex_format();
 
 		this.vaos.push(vao);
+
+		this._create_bones_ubo();
 
 		// reactive geoset array
 		if (this.reactive)
@@ -672,18 +676,10 @@ class M2RendererGL {
 
 		if (!bone_data || bone_data.length === 0) {
 			this.bones = null;
-			this.bone_matrices = new Float32Array(16); // single identity
 			return;
 		}
 
 		this.bones = bone_data;
-		this.bone_matrices = new Float32Array(bone_data.length * 16);
-
-		// initialize to identity
-		for (let i = 0; i < bone_data.length; i++) {
-			const offset = i * 16;
-			this.bone_matrices.set(IDENTITY_MAT4, offset);
-		}
 
 		// find HandsClosed animation (ID 15) for hand grip
 		const anim_source = this.skelLoader || this.m2;
@@ -694,6 +690,26 @@ class M2RendererGL {
 					break;
 				}
 			}
+		}
+	}
+
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+
+		const bone_count = this.bones ? this.bones.length : 0;
+		// initialize to identity
+		for (let i = 0; i < bone_count; i++) {
+			const offset = i * 16;
+			this.bone_matrices.set(IDENTITY_MAT4, offset);
 		}
 	}
 
@@ -1422,10 +1438,11 @@ class M2RendererGL {
 		shader.set_uniform_3f('u_view_up', 0, 1, 0);
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
-		// bone matrices
-		shader.set_uniform_1i('u_bone_count', this.bones ? this.bones.length : 0);
-		if (this.bones && this.bone_matrices)
-			shader.set_uniform_mat4('u_bone_matrices', false, this.bone_matrices);
+		const ubo = this.ubos[0];
+		const bone_count = this.bones ? this.bones.length : 0;
+		shader.set_uniform_1i('u_bone_count', bone_count);
+		if (bone_count)
+			ubo.ubo.upload_range(ubo.offsets[0], bone_count * 16 * 4);
 
 		// lighting - transform light direction to view space
 		const lx = 3, ly = -0.7, lz = -2;
@@ -1475,11 +1492,15 @@ class M2RendererGL {
 			shader.set_uniform_1i('u_pixel_shader', dc.pixel_shader);
 			shader.set_uniform_1i('u_blend_mode', dc.blend_mode);
 
-			// texture matrix defaults
-			shader.set_uniform_1i('u_tex_matrix1_idx', dc.tex_matrix_idxs[0]);
-			shader.set_uniform_1i('u_tex_matrix2_idx', dc.tex_matrix_idxs[1]);
-			if (dc.tex_matrix_idxs[0] >= 0 || dc.tex_matrix_idxs[1] >= 0)
-				shader.set_uniform_mat4('u_tex_matrices', false, this.tex_matrices);
+			const tmi0 = dc.tex_matrix_idxs[0];
+			const tmi1 = dc.tex_matrix_idxs[1];
+
+			const get_tex_matrix = (idx) => {
+				return this.tex_matrices.subarray(idx * 16, (idx + 1) * 16);
+			}
+
+			shader.set_uniform_mat4('u_tex_matrix1', false, tmi0 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi0));
+			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
 
 			// mesh color (white for now)
 			shader.set_uniform_4f('u_mesh_color', 1, 1, 1, 1);
@@ -1514,6 +1535,7 @@ class M2RendererGL {
 			}
 
 			// draw
+			ubo.ubo.bind(0);
 			dc.vao.bind();
 			gl.drawElements(
 				wireframe ? gl.LINES : gl.TRIANGLES,
@@ -1813,7 +1835,10 @@ class M2RendererGL {
 		// vao.dispose() handles vbo/ebo deletion
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
+		this.ubos = [];
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];

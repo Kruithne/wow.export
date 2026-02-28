@@ -15,6 +15,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
+const UniformBuffer = require('../gl/UniformBuffer');
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -143,6 +144,7 @@ class MDXRendererGL {
 		this.syncID = -1;
 
 		// rendering
+		this.ubos = [];
 		this.vaos = [];
 		this.textures = new Map();
 		this.default_texture = null;
@@ -244,29 +246,41 @@ class MDXRendererGL {
 		}
 	}
 
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.node_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+
+		const bone_count = this.nodes ? this.nodes.length : 0;
+		// initialize to identity
+		for (let i = 0; i < bone_count; i++) {
+			const offset = i * 16;
+			this.node_matrices.set(IDENTITY_MAT4, offset);
+		}
+	}
+
 	_create_skeleton() {
 		const nodes = this.mdx.nodes;
 
 		if (!nodes || nodes.length === 0) {
 			this.nodes = null;
-			this.node_matrices = new Float32Array(16);
 			return;
 		}
 
 		// flatten nodes array (may have gaps)
 		this.nodes = [];
-		let maxId = 0;
 		for (let i = 0; i < nodes.length; i++) {
 			if (nodes[i]) {
 				this.nodes.push(nodes[i]);
-				if (nodes[i].objectId > maxId)
-					maxId = nodes[i].objectId;
 			}
 		}
-
-		this.node_matrices = new Float32Array((maxId + 1) * 16);
-		for (let i = 0; i <= maxId; i++)
-			this.node_matrices.set(IDENTITY_MAT4, i * 16);
 	}
 
 	_build_geometry() {
@@ -369,6 +383,8 @@ class MDXRendererGL {
 
 			this.vaos.push(vao);
 
+			this._create_bones_ubo();
+
 			// material/texture
 			const material = mdx.materials[geoset.materialId];
 			let textureId = null;
@@ -415,9 +431,7 @@ class MDXRendererGL {
 		this.animation_paused = false;
 
 		if (this.nodes) {
-			const maxId = (this.node_matrices.length / 16) - 1;
-			for (let i = 0; i <= maxId; i++)
-				this.node_matrices.set(IDENTITY_MAT4, i * 16);
+			this.node_matrices.set(IDENTITY_MAT4);
 		}
 	}
 
@@ -681,15 +695,15 @@ class MDXRendererGL {
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
 		// bone matrices (mdx uses node-based skeleton)
-		shader.set_uniform_1i('u_bone_count', this.nodes ? this.nodes.length : 0);
+		const ubo = this.ubos[0];
+		const node_count = this.nodes ? this.nodes.length : 0;
+		shader.set_uniform_1i('u_bone_count', node_count);
 		if (this.nodes && this.node_matrices) {
-			const loc = shader.get_uniform_location('u_bone_matrices');
-			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.node_matrices);
+			ubo.ubo.upload_range(ubo.offsets[0], node_count * 16 * 4);
 		}
 
-		shader.set_uniform_1i('u_tex_matrix1_idx', -1);
-		shader.set_uniform_1i('u_tex_matrix2_idx', -1);
+		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
+		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
 
 		// lighting
 		const lx = 3, ly = -0.7, lz = -2;
@@ -744,6 +758,7 @@ class MDXRendererGL {
 			this.default_texture.bind(2);
 			this.default_texture.bind(3);
 
+			ubo.ubo.bind(0);
 			dc.vao.bind();
 			gl.drawElements(
 				wireframe ? gl.LINES : gl.TRIANGLES,

@@ -16,6 +16,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
+const UniformBuffer = require('../gl/UniformBuffer');
 
 // m2 version constants
 const M2_VER_WOTLK = 264;
@@ -150,6 +151,7 @@ class M2LegacyRendererGL {
 
 		// rendering state
 		this.vaos = [];
+		this.ubos = [];
 		this.textures = new Map();
 		this.default_texture = null;
 		this.buffers = [];
@@ -368,6 +370,8 @@ class M2LegacyRendererGL {
 		vao.setup_m2_vertex_format();
 		this.vaos.push(vao);
 
+		this._create_bones_ubo();
+
 		if (this.reactive)
 			this.geosetArray = new Array(skin.subMeshes.length);
 
@@ -445,15 +449,29 @@ class M2LegacyRendererGL {
 
 		if (!bone_data || bone_data.length === 0) {
 			this.bones = null;
-			this.bone_matrices = new Float32Array(16);
 			return;
 		}
 
 		this.bones = bone_data;
-		this.bone_matrices = new Float32Array(bone_data.length * 16);
+	}
 
-		for (let i = 0; i < bone_data.length; i++)
-			this.bone_matrices.set(IDENTITY_MAT4, i * 16);
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+		const bone_count = this.bones ? this.bones.length : 0;
+		// initialize to identity
+		for (let i = 0; i < bone_count; i++) {
+			const offset = i * 16;
+			this.bone_matrices.set(IDENTITY_MAT4, offset);
+		}
 	}
 
 	async playAnimation(index) {
@@ -932,8 +950,8 @@ class M2LegacyRendererGL {
 		// bone skinning disabled for legacy models until animation system is fixed
 		shader.set_uniform_1i('u_bone_count', 0);
 
-		shader.set_uniform_1i('u_tex_matrix1_idx', -1);
-		shader.set_uniform_1i('u_tex_matrix2_idx', -1);
+		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
+		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
 
 		const lx = 3, ly = -0.7, lz = -2;
 		const light_view_x = view_matrix[0] * lx + view_matrix[4] * ly + view_matrix[8] * lz;
@@ -996,6 +1014,7 @@ class M2LegacyRendererGL {
 				texture.bind(t);
 			}
 
+			this.ubos[0].ubo.bind(0);
 			dc.vao.bind();
 			gl.drawElements(
 				wireframe ? gl.LINES : gl.TRIANGLES,
@@ -1027,7 +1046,10 @@ class M2LegacyRendererGL {
 	_dispose_skin() {
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
+		this.ubos = [];
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];

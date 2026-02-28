@@ -13,6 +13,8 @@ const GLContext = require('../gl/GLContext');
 const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
+const UniformBuffer = require('../gl/UniformBuffer');
+
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
 	0, 1, 0, 0,
@@ -38,6 +40,7 @@ class M3RendererGL {
 
 		// rendering state
 		this.vaos = [];
+		this.ubos = [];
 		this.buffers = [];
 		this.draw_calls = [];
 		this.default_texture = null;
@@ -71,6 +74,20 @@ class M3RendererGL {
 		const pixels = new Uint8Array([87, 175, 226, 255]); // 0x57afe2 blue
 		this.default_texture = new GLTexture(this.ctx);
 		this.default_texture.set_rgba(pixels, 1, 1, { has_alpha: false });
+	}
+
+	_create_bones_ubo() {
+		this.shader.bind_uniform_block("VsBoneUbo", 0);
+		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
+		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
+		const ubo = new UniformBuffer(this.ctx, ubosize);
+		this.ubos.push({
+			ubo: ubo,
+			offsets: offsets
+		});
+
+		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
+		this.bone_matrices.set(IDENTITY_MAT4);
 	}
 
 	async loadLOD(index) {
@@ -136,6 +153,8 @@ class M3RendererGL {
 		vao.setup_m2_vertex_format();
 
 		this.vaos.push(vao);
+
+		this._create_bones_ubo();
 
 		// build draw calls for LOD 0 geosets
 		this.draw_calls = [];
@@ -219,13 +238,12 @@ class M3RendererGL {
 
 		// set identity bone matrix for bone 0 (M3 has no skeleton)
 		shader.set_uniform_1i('u_bone_count', 1);
-		const loc = shader.get_uniform_location('u_bone_matrices');
-		if (loc !== null)
-			gl.uniformMatrix4fv(loc, false, IDENTITY_MAT4);
+		const ubo = this.ubos[0];
+		ubo.ubo.upload_range(ubo.offsets[0], 16 * 4);
 
 		// texture matrix defaults
-		shader.set_uniform_1i('u_tex_matrix1_idx', -1);
-		shader.set_uniform_1i('u_tex_matrix2_idx', -1);
+		shader.set_uniform_mat4('u_tex_matrix1', false, IDENTITY_MAT4);
+		shader.set_uniform_mat4('u_tex_matrix2', false, IDENTITY_MAT4);
 
 		// lighting
 		const lx = 3, ly = -0.7, lz = -2;
@@ -273,6 +291,7 @@ class M3RendererGL {
 			if (!dc.visible)
 				continue;
 
+			ubo.ubo.bind(0);
 			dc.vao.bind();
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.ebo);
 			gl.drawElements(
@@ -289,10 +308,13 @@ class M3RendererGL {
 	_dispose_geometry() {
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
 		for (const buf of this.buffers)
 			this.gl.deleteBuffer(buf);
 
+		this.ubos = [];
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];
