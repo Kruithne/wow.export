@@ -24,7 +24,6 @@ const load_font = async (core, file_name) => {
 
 	try {
 		const data = await core.view.casc.getFileByName(file_name);
-		data.processAllBlocks();
 
 		const url = await inject_font_face(font_id, data.raw, log);
 		loaded_fonts.set(font_id, url);

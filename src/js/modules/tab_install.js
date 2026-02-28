@@ -101,7 +101,6 @@ const view_strings = async (core) => {
 
 	try {
 		const data = await core.view.casc.getFileByContentKey(file.hash);
-		data.processAllBlocks();
 		const strings = extract_strings(data.raw);
 
 		core.view.installStrings = strings;
