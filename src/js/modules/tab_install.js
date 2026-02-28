@@ -70,7 +70,7 @@ const export_install_files = async (core) => {
 
 		if (overwrite_files || !await generics.fileExists(export_path)) {
 			try {
-				const data = await core.view.casc.getFile(0, false, false, true, false, file.hash);
+				const data = await core.view.casc.getFileByContentKey(file.hash);
 				await data.writeToFile(export_path);
 
 				helper.mark(file_name, true);
@@ -100,7 +100,7 @@ const view_strings = async (core) => {
 	core.view.isBusy++;
 
 	try {
-		const data = await core.view.casc.getFile(0, false, false, true, false, file.hash);
+		const data = await core.view.casc.getFileByContentKey(file.hash);
 		data.processAllBlocks();
 		const strings = extract_strings(data.raw);
 
