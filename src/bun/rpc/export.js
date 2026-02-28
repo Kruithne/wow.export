@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import ExportHelper from '../casc/export-helper.js';
 import * as core from '../lib/core.js';
+import { MSG } from '../../rpc/schema.js';
 
 let _rpc = null;
 let _log_stream = null;
@@ -31,9 +32,15 @@ export const export_handlers = {
 			throw new Error('no CASC source loaded');
 		}
 
+		let current = 0;
+		const total = files.length;
+
 		for (const file of files) {
 			if (helper.isCancelled())
 				break;
+
+			current++;
+			_rpc?.send?.[MSG.EXPORT_PROGRESS]?.({ current, total, file: file.name || String(file.id) });
 
 			try {
 				const data = await casc.getFile(file.id);
