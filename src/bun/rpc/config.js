@@ -1,5 +1,6 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { Updater } from 'electrobun/bun';
 import * as core from '../lib/core.js';
 import * as constants from '../lib/constants.js';
@@ -93,6 +94,7 @@ export const app_handlers = {
 		return {
 			version: constants.VERSION,
 			data_path: constants.DATA_PATH,
+			home_dir: os.homedir(),
 		};
 	},
 

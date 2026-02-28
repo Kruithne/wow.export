@@ -16,4 +16,5 @@ export const get_version = () => _app_info?.version ?? '0.0.0';
 export const get_flavour = () => _app_info?.flavour ?? 'unknown';
 export const get_guid = () => _app_info?.guid ?? '';
 export const get_data_path = () => _app_info?.data_path ?? '';
+export const get_home_dir = () => _app_info?.home_dir ?? '';
 export const get_manifest = () => _app_info ?? { version: '0.0.0', flavour: 'unknown', guid: '' };

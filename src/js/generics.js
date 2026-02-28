@@ -191,6 +191,11 @@ export const createDirectory = async (path) => {
 	return fs.mkdir(path);
 };
 
+export const readJSON = async (path, strip_comments = false) => {
+	const { fs } = await import('../views/main/rpc.js');
+	return fs.read_json(path, strip_comments);
+};
+
 export default {
 	getJSON,
 	parseJSON,
@@ -202,5 +207,6 @@ export default {
 	formatPlaybackSeconds,
 	batchWork,
 	fileExists,
-	createDirectory
+	createDirectory,
+	readJSON
 };
