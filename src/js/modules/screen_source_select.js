@@ -4,7 +4,7 @@ import log from '../log.js';
 import ExternalLinks from '../external-links.js';
 import InstallType from '../install-type.js';
 import BufferWrapper from '../buffer.js';
-import { casc, mpq, platform } from '../../views/main/rpc.js';
+import { casc, listfile, mpq, platform } from '../../views/main/rpc.js';
 
 let casc_type = null;
 let casc_install_path = null;
@@ -78,6 +78,22 @@ export default {
 			casc.start_pre_resolution(region.tag);
 		},
 
+		async load_listfile_data() {
+			const [textures, sounds, text, fonts, models] = await Promise.all([
+				listfile.get_prefilter('textures'),
+				listfile.get_prefilter('sounds'),
+				listfile.get_prefilter('text'),
+				listfile.get_prefilter('fonts'),
+				listfile.get_prefilter('models'),
+			]);
+
+			this.$core.view.listfileTextures = textures;
+			this.$core.view.listfileSounds = sounds;
+			this.$core.view.listfileText = text;
+			this.$core.view.listfileFonts = fonts;
+			this.$core.view.listfileModels = models;
+		},
+
 		setup_casc_adapter() {
 			this.$core.view.casc = {
 				getFile: async (id) => BufferWrapper.from(await casc.get_file(id)),
@@ -124,6 +140,7 @@ export default {
 				const cdn_region = this.$core.view.selectedCDNRegion?.tag;
 				await casc.load(index, cdn_region);
 				this.setup_casc_adapter();
+				await this.load_listfile_data();
 				this.$core.view.installType = InstallType.CASC;
 				this.$modules.tab_home.setActive();
 			} catch (e) {
