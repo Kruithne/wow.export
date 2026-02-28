@@ -124,6 +124,7 @@ export const casc = {
 	get_file_partial: async (file_data_id, offset, length) => decode_binary(await rpc_config.request.casc_get_file_partial({ file_data_id, offset, length })),
 	add_tact_key: (key_name, key) => rpc_config.request.casc_add_tact_key({ key_name, key }),
 	start_pre_resolution: (region, product) => rpc_config.request.casc_start_pre_resolution({ region, product }),
+	get_file_encoding_info: (file_data_id) => rpc_config.request.casc_get_file_encoding_info({ file_data_id }),
 	get_install_manifest: () => rpc_config.request.casc_get_install_manifest(),
 	get_valid_root_entries: () => rpc_config.request.casc_get_valid_root_entries(),
 	file_exists: (file_data_id) => rpc_config.request.casc_file_exists({ file_data_id }),

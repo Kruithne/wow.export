@@ -120,6 +120,14 @@ export const casc_handlers = {
 		return casc.fileExists(file_data_id);
 	},
 
+	async casc_get_file_encoding_info({ file_data_id }) {
+		const casc = core.get_casc();
+		if (!casc)
+			throw new Error('no CASC source loaded');
+
+		return casc.getFileEncodingInfo(file_data_id);
+	},
+
 	async casc_get_file_by_content_key({ content_key }) {
 		const casc = core.get_casc();
 		if (!casc)
