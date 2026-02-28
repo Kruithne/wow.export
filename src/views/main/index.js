@@ -334,7 +334,7 @@ document.addEventListener('click', (e) => {
 	await config.load();
 
 	if (core.view.config.exportDirectory === '') {
-		core.view.config.exportDirectory = 'wow.export';
+		core.view.config.exportDirectory = platform.get_home_dir() + '/wow.export';
 		log.write('No export directory set, using default');
 	}
 
