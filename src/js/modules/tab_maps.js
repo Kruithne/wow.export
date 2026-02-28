@@ -3,7 +3,7 @@ import * as platform from '../platform.js';
 import log from '../log.js';
 import constants from '../constants.js';
 import InstallType from '../install-type.js';
-import { listfile } from '../../views/main/rpc.js';
+import { listfile, fs } from '../../views/main/rpc.js';
 import { db } from '../../views/main/rpc.js';
 import ExportHelper from '../export-helper.js';
 import BLPImage from '../casc/blp.js';
@@ -897,13 +897,8 @@ export default {
 
 				const sorted_tiles = [...export_tiles].sort((a, b) => a - b);
 				const tile_hash_data = new TextEncoder().encode(sorted_tiles.join(','));
-				const hash_buffer = await crypto.subtle.digest('MD5', tile_hash_data).catch(() => null);
-				let tile_hash;
-				if (hash_buffer) {
-					tile_hash = Array.from(new Uint8Array(hash_buffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
-				} else {
-					tile_hash = sorted_tiles.length.toString(16).padStart(8, '0');
-				}
+				const tile_hash_hex = await fs.hash_data(tile_hash_data.buffer, 'md5', 'hex');
+				const tile_hash = tile_hash_hex.substring(0, 8);
 
 				const filename = `${selected_map_dir}_${tile_hash}.png`;
 				const out_path = ExportHelper.getExportPath('maps/' + selected_map_dir + '/' + filename);

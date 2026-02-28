@@ -105,6 +105,7 @@ export const fs = {
 	file_hash: (path, algorithm, encoding) => rpc_config.request.fs_file_hash({ path, algorithm, encoding }),
 	read_json: (path, strip_comments) => rpc_config.request.fs_read_json({ path, strip_comments }),
 	write_json: (path, data) => rpc_config.request.fs_write_json({ path, data }),
+	hash_data: (data, algorithm, encoding) => rpc_config.request.fs_hash_data({ data: encode_binary(data), algorithm, encoding }),
 	readdir_with_types: (path) => rpc_config.request.fs_readdir_with_types({ path }),
 	copy_file: (src, dest) => rpc_config.request.fs_copy_file({ src, dest }),
 	unlink: (path) => rpc_config.request.fs_unlink({ path }),

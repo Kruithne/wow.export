@@ -91,6 +91,11 @@ export const filesystem_handlers = {
 		return crypto.createHash(algorithm).update(data).digest(encoding);
 	},
 
+	async fs_hash_data({ data, algorithm, encoding }) {
+		const buf = Buffer.from(data, 'base64');
+		return crypto.createHash(algorithm).update(buf).digest(encoding ?? 'hex');
+	},
+
 	async fs_readdir_with_types({ path: dir_path }) {
 		const entries = await fsp.readdir(dir_path, { withFileTypes: true });
 		return entries.map(e => ({ name: e.name, isDirectory: e.isDirectory(), isFile: e.isFile() }));
