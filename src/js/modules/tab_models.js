@@ -1,14 +1,13 @@
 import log from '../log.js';
 import InstallType from '../install-type.js';
-import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import { listfile, dbc } from '../../views/main/rpc.js';
 import { DBCreatures, DBItemDisplays, DBModelFileData } from '../db-proxy.js';
 import listboxContext from '../ui/listbox-context.js';
+import ExportHelper from '../export-helper.js';
 
 import textureRibbon from '../ui/texture-ribbon.js';
 import textureExporter from '../ui/texture-exporter.js';
 import modelViewerUtils from '../ui/model-viewer-utils.js';
-
-const ExportHelper = exporter;
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();

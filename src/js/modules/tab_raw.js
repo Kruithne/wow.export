@@ -2,10 +2,8 @@ import log from '../log.js';
 import generics from '../generics.js';
 import constants from '../constants.js';
 import { listfile } from '../../views/main/rpc.js';
-import { exporter } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import listboxContext from '../ui/listbox-context.js';
-
-const ExportHelper = exporter;
 
 let is_dirty = true;
 

@@ -5,7 +5,8 @@
  */
 import * as platform from '../platform.js';
 import core from '../core.js';
-import { listfile, exporter as ExportHelper } from '../../views/main/rpc.js';
+import { listfile } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 
 const parse_entry = async (entry) => {
 	const file_path = listfile.stripFileEntry(entry);

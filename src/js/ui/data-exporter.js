@@ -6,7 +6,7 @@
 import core from '../core.js';
 import log from '../log.js';
 import generics from '../generics.js';
-import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import CSVWriter from '../3D/writers/CSVWriter.js';
 import SQLWriter from '../3D/writers/SQLWriter.js';
 import BufferWrapper from '../buffer.js';

@@ -1,12 +1,10 @@
 import log from '../log.js';
 import generics from '../generics.js';
 import { listfile } from '../../views/main/rpc.js';
-import { exporter } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import listboxContext from '../ui/listbox-context.js';
 import InstallType from '../install-type.js';
 import { detect_glyphs_async, get_random_quote, inject_font_face } from './font_helpers.js';
-
-const ExportHelper = exporter;
 
 const loaded_fonts = new Map();
 

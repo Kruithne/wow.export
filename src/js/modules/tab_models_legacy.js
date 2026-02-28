@@ -7,7 +7,8 @@
 import log from '../log.js';
 import * as platform from '../platform.js';
 import BufferWrapper from '../buffer.js';
-import { exporter as ExportHelper, dbc } from '../../views/main/rpc.js';
+import { dbc } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import InstallType from '../install-type.js';
 import listboxContext from '../ui/listbox-context.js';
 import constants from '../constants.js';

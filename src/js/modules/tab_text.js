@@ -2,11 +2,9 @@ import log from '../log.js';
 import * as platform from '../platform.js';
 import generics from '../generics.js';
 import { listfile } from '../../views/main/rpc.js';
-import { exporter } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import listboxContext from '../ui/listbox-context.js';
 import InstallType from '../install-type.js';
-
-const ExportHelper = exporter;
 
 let selected_file = null;
 

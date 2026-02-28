@@ -5,12 +5,10 @@ import core from '../core.js';
 import InstallType from '../install-type.js';
 import { listfile } from '../../views/main/rpc.js';
 import { db } from '../../views/main/rpc.js';
-import { exporter } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import subtitles from '../subtitles.js';
 import listboxContext from '../ui/listbox-context.js';
 import { BlobPolyfill, URLPolyfill } from '../blob.js';
-
-const ExportHelper = exporter;
 const db2 = db;
 
 let movie_variation_map = null;

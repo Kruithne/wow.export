@@ -1,7 +1,7 @@
 import log from '../log.js';
 import generics from '../generics.js';
 import { listfile } from '../../views/main/rpc.js';
-import { exporter as ExportHelper } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import { db as db2 } from '../../views/main/rpc.js';
 import { AudioPlayer, AUDIO_TYPE_OGG, AUDIO_TYPE_MP3, detectFileType } from '../ui/audio-helper.js';
 import listboxContext from '../ui/listbox-context.js';

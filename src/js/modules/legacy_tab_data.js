@@ -2,7 +2,8 @@ import log from '../log.js';
 import * as platform from '../platform.js';
 import dataExporter from '../ui/data-exporter.js';
 import InstallType from '../install-type.js';
-import { exporter as ExportHelper, dbc } from '../../views/main/rpc.js';
+import { dbc } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import BufferWrapper from '../buffer.js';
 import generics from '../generics.js';
 

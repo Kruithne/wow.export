@@ -2,9 +2,7 @@ import log from '../log.js';
 import * as platform from '../platform.js';
 import generics from '../generics.js';
 import { listfile } from '../../views/main/rpc.js';
-import { exporter } from '../../views/main/rpc.js';
-
-const ExportHelper = exporter;
+import ExportHelper from '../export-helper.js';
 
 let manifest = null;
 

@@ -6,7 +6,8 @@
 import log from '../log.js';
 import * as platform from '../platform.js';
 import BufferWrapper from '../buffer.js';
-import { exporter as ExportHelper, listfile } from '../../views/main/rpc.js';
+import { listfile } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import constants from '../constants.js';
 import BLPFile from '../casc/blp.js';
 

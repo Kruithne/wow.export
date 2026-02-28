@@ -1,9 +1,10 @@
 import log from '../log.js';
 import * as platform from '../platform.js';
 import InstallType from '../install-type.js';
-import { listfile, exporter, dbc } from '../../views/main/rpc.js';
+import { listfile, dbc } from '../../views/main/rpc.js';
 import listboxContext from '../ui/listbox-context.js';
 import CharMaterialRenderer from '../3D/renderers/CharMaterialRenderer.js';
+import ExportHelper from '../export-helper.js';
 
 import BLPFile from '../casc/blp.js';
 import M2RendererGL from '../3D/renderers/M2RendererGL.js';
@@ -16,8 +17,6 @@ import textureExporter from '../ui/texture-exporter.js';
 import modelViewerUtils from '../ui/model-viewer-utils.js';
 import character_appearance from '../ui/character-appearance.js';
 import { DBCreatures, DBCreatureDisplayExtra, DBCreatureList, DBItemGeosets, DBItemModels, DBItemCharTextures, DBItems, DBNpcEquipment, DBCharacterCustomization, DBModelFileData } from '../db-proxy.js';
-
-const ExportHelper = exporter;
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();

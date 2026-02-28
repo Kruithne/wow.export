@@ -1,10 +1,9 @@
 import log from '../log.js';
 import * as platform from '../platform.js';
 import dataExporter from '../ui/data-exporter.js';
-import { exporter, dbc } from '../../views/main/rpc.js';
+import { dbc } from '../../views/main/rpc.js';
+import ExportHelper from '../export-helper.js';
 import InstallType from '../install-type.js';
-
-const ExportHelper = exporter;
 
 let selected_file = null;
 let selected_file_data_id = null;
