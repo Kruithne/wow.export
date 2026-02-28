@@ -260,6 +260,7 @@ export const exporter = {
 	export_text: (text, path) => rpc_config.request.export_text({ text, path }),
 	get_path: (file) => rpc_config.request.export_get_path({ file }),
 	get_incremental: (path) => rpc_config.request.export_get_incremental({ path }),
+	export_cancel: () => rpc_config.send[MSG.EXPORT_CANCEL]({}),
 };
 
 // -- mpq API --

@@ -4,6 +4,7 @@ import Locale from './casc/locale-flags.js';
 import constants from './constants.js';
 import * as platform from './platform.js';
 import FileWriter from './file-writer.js';
+import { exporter } from '../views/main/rpc.js';
 
 let toast_timer = -1;
 
@@ -411,8 +412,10 @@ const hideToast = (user_cancel = false) => {
 
 	core.view.toast = null;
 
-	if (user_cancel)
+	if (user_cancel) {
+		exporter.export_cancel();
 		events.emit('toast-cancelled');
+	}
 };
 
 const setToast = (toast_type, message, options = null, ttl = 10000, closable = true) => {

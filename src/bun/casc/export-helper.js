@@ -84,13 +84,6 @@ class ExportHelper {
 
 		log.write('Starting export of %d %s items', this.count, this.unit);
 		this.updateCurrentTask();
-
-		core.events.once('toast-cancelled', () => {
-			if (!this.isFinished) {
-				core.set_toast('progress', 'Cancelling export, hold on...', null, -1, false);
-				core.set_export_cancelled(true);
-			}
-		});
 	}
 
 	isCancelled() {

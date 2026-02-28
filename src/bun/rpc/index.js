@@ -3,7 +3,7 @@ import { casc_handlers, listfile_handlers } from './casc.js';
 import { db_handlers, db_cache_handlers } from './db.js';
 import { platform_handlers } from './platform.js';
 import { config_handlers, app_handlers, init_config, get_config_ref } from './config.js';
-import { export_handlers, log_handlers, handle_log_write, init_export } from './export.js';
+import { export_handlers, log_handlers, handle_log_write, handle_export_cancel, init_export } from './export.js';
 import { mpq_handlers } from './mpq.js';
 import { MSG } from '../../rpc/schema.js';
 
@@ -30,6 +30,7 @@ export function create_handlers(rpc) {
 
 		messages: {
 			[MSG.LOG_WRITE]: handle_log_write,
+			[MSG.EXPORT_CANCEL]: handle_export_cancel,
 		},
 	};
 }

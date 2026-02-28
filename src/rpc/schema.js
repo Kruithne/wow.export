@@ -158,6 +158,7 @@ export const MAX_REQUEST_TIME = 120_000;
 
 /**
  * log_write: { level: string, message: string, args?: any[] }
+ * export_cancel: {} — cancels the current export operation
  */
 
 // -- message name constants --
@@ -171,4 +172,5 @@ export const MSG = {
 	UPDATE_STATUS: 'update_status',
 	TOAST: 'toast',
 	LOG_WRITE: 'log_write',
+	EXPORT_CANCEL: 'export_cancel',
 };

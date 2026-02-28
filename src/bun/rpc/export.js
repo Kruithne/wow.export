@@ -111,6 +111,14 @@ export const log_handlers = {
 	},
 };
 
+// bun-side message handler: view cancels an active export
+export function handle_export_cancel() {
+	if (!core.get_export_cancelled()) {
+		core.set_toast('progress', 'Cancelling export, hold on...', null, -1, false);
+		core.set_export_cancelled(true);
+	}
+}
+
 // bun-side message handler: view sends log_write messages
 export function handle_log_write({ level, message, args }) {
 	ensure_log_stream();
