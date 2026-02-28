@@ -1,5 +1,5 @@
 import log from '../log.js';
-import * as platform from '../platform.js';
+import { fs } from '../../views/main/rpc.js';
 
 const help_articles = [];
 let help_loaded = false;
@@ -16,13 +16,13 @@ const load_help_docs = async (core) => {
 		const help_dir = './src/help_docs';
 		log.write('loading help docs from: %s', help_dir);
 
-		const files = await platform.readdir(help_dir);
+		const files = await fs.readdir(help_dir);
 		const md_files = files.filter(f => f.endsWith('.md'));
 		log.write('found %d markdown files', md_files.length);
 
 		for (const file of md_files) {
 			const file_path = help_dir + '/' + file;
-			const content = await platform.read_file(file_path, 'utf8');
+			const content = new TextDecoder().decode(await fs.read_file(file_path));
 			const lines = content.split('\n');
 
 			if (lines.length < 2)
