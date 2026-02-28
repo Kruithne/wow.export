@@ -3,6 +3,7 @@ import { redraw } from './generics.js';
 import Locale from './casc/locale-flags.js';
 import constants from './constants.js';
 import * as platform from './platform.js';
+import FileWriter from './file-writer.js';
 
 let toast_timer = -1;
 
@@ -462,6 +463,10 @@ const getScrollPosition = (key) => {
 	return scroll_positions[key];
 };
 
+const openLastExportStream = () => {
+	return new FileWriter(constants.LAST_EXPORT);
+};
+
 const core = {
 	events,
 	view,
@@ -473,6 +478,7 @@ const core = {
 	setToast,
 	hideToast,
 	openExportDirectory,
+	openLastExportStream,
 	registerDropHandler,
 	getDropHandler,
 	saveScrollPosition,
