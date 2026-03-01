@@ -217,6 +217,53 @@
 				],
 				"whitelist": ["nwjs.app\/Contents\/Resources\/en.lproj"]
 			}
+		},
+		{
+			"name": "osx-arm64",
+			"bundle": "nwjs-v%s-osx-arm64.zip",
+			"bundleType": "ZIP",
+			"buildArchive": "ZIP",
+			"sourceMethod": "BUNDLE",
+			"bundleConfig": {
+				"filterExt": [".js"],
+				"jsEntry": "app.js"
+			},
+			"updater": {
+				"target": "bun-darwin-arm64",
+				"out": "updater"
+			},
+			"installer": {
+				"target": "bun-darwin-arm64",
+				"out": "installer"
+			},
+			"updateBundle": {
+				"bundle": "update",
+				"manifest": "update.json"
+			},
+			"sourceTarget": "./wow.export.app/Contents/Resources/app.nw/src",
+			"manifestTarget": "./wow.export.app/Contents/Resources/app.nw/package.json",
+			"include": {
+				"./resources/wet.icns": "./wow.export.app/Contents/Resources/app.icns",
+				"LEGAL": "./wow.export.app/License/LEGAL",
+				"CHANGELOG.md": "./wow.export.app/Contents/Resources/app.nw/src/CHANGELOG.md",
+				"addons/blender/io_scene_wowobj/*": "./wow.export.app/Contents/Resources/app.nw/addon/io_scene_wowobj",
+				"node_modules/webp-wasm/webp_node_enc.wasm": "./wow.export.app/Contents/Resources/app.nw/src/webp_node_enc.wasm",
+				"node_addons/mmap/build/Release/mmap.node": "./wow.export.app/Contents/Resources/app.nw/src/mmap.node"
+			},
+			"remap": {
+				"nwjs.app": "wow.export.app",
+				"credits.html": "./wow.export.app/License/nwjs.html"
+			},
+			"macos": {
+				"appName": "wow.export",
+				"bundleIdentifier": "net.kruithne.wow-export"
+			},
+			"filter": {
+				"blacklist": [
+					"nwjs.app\/Contents\/Resources\/[^.]+.lproj"
+				],
+				"whitelist": ["nwjs.app\/Contents\/Resources\/en.lproj"]
+			}
 		}
 	]
 }
