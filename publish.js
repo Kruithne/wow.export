@@ -16,7 +16,7 @@ const PUBLISH_DIR = path.join(__dirname, 'publish');
 const deflate_buffer = util.promisify(zlib.deflate);
 
 const argv = process.argv.splice(2);
-const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x64'];
+const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x64', 'osx-arm64'];
 
 const INSTALLER_NAMES = {
 	'win-x64': 'installer.exe',
