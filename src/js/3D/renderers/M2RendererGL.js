@@ -1450,7 +1450,6 @@ class M2RendererGL {
 		const light_view_y = view_matrix[1] * lx + view_matrix[5] * ly + view_matrix[9] * lz;
 		const light_view_z = view_matrix[2] * lx + view_matrix[6] * ly + view_matrix[10] * lz;
 
-		shader.set_uniform_1i('u_apply_lighting', 1);
 		shader.set_uniform_3f('u_ambient_color', 0.5, 0.5, 0.5);
 		shader.set_uniform_3f('u_diffuse_color', 0.7, 0.7, 0.7);
 		shader.set_uniform_3f('u_light_dir', light_view_x, light_view_y, light_view_z);
@@ -1504,6 +1503,7 @@ class M2RendererGL {
 
 			// mesh color (white for now)
 			shader.set_uniform_4f('u_mesh_color', 1, 1, 1, 1);
+			shader.set_uniform_1i('u_apply_lighting', dc.flags & 0x1 ? 0 : 1);
 
 			// apply blend mode
 			ctx.apply_blend_mode(dc.blend_mode);
