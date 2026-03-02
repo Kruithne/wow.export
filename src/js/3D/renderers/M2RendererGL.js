@@ -339,6 +339,7 @@ class M2RendererGL {
 		this.animation_time = 0;
 		this.animation_paused = false;
 		this.tex_matrices = null;
+		this.submesh_colors = new Float32Array();
 
 		// global sequences
 		this.global_seq_times = new Float32Array();
@@ -391,6 +392,7 @@ class M2RendererGL {
 		// load textures
 		await this._load_textures();
 		this.global_seq_times = new Float32Array(this.m2.globalLoops.length);
+		this.submesh_colors = new Float32Array(this.m2.colors.length * 4);
 
 		// load first skin
 		if (this.m2.vertices.length > 0) {
@@ -549,11 +551,14 @@ class M2RendererGL {
 			let tex_mtx_idxs = [-1, -1];
 			let prio = 0;
 			let layer = 0;
+			let coloridx = -1;
 
 			if (tex_unit) {
 				texture_count = tex_unit.textureCount;
 				prio = tex_unit.priority;
 				layer = tex_unit.materialLayer;
+				if (tex_unit.colorIndex < m2.colors.length)
+					coloridx = tex_unit.colorIndex;
 
 				// get all texture indices for multi-texture shaders
 				for (let j = 0; j < Math.min(texture_count, 4); j++) {
@@ -605,6 +610,7 @@ class M2RendererGL {
 				tex_matrix_idxs: tex_mtx_idxs,
 				prio: prio,
 				layer: layer,
+				color_idx: coloridx,
 			};
 
 			this.draw_calls.push(draw_call);
@@ -771,6 +777,7 @@ class M2RendererGL {
 		this.animation_time = 0;
 		this.animation_paused = false;
 		this.global_seq_times.fill(0);
+		this.submesh_colors.fill(1);
 
 		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
@@ -783,6 +790,7 @@ class M2RendererGL {
 			this.current_anim_source = this.skelLoader || this.m2;
 			this._update_bone_matrices();
 			this._update_tex_matrices();
+			this._update_submesh_colors();
 
 			this.current_animation = null;
 			this.current_anim_index = null;
@@ -823,6 +831,7 @@ class M2RendererGL {
 		// update bone matrices
 		this._update_bone_matrices();
 		this._update_tex_matrices();
+		this._update_submesh_colors();
 	}
 
 	get_animation_duration() {
@@ -858,6 +867,7 @@ class M2RendererGL {
 		this.animation_time = (frame / frame_count) * duration;
 		this._update_bone_matrices();
 		this._update_tex_matrices();
+		this._update_submesh_colors();
 	}
 
 	set_animation_paused(paused) {
@@ -1135,6 +1145,37 @@ class M2RendererGL {
 
 			const offset = i * 16;
 			tm.set(local_mat, offset);
+		}
+	}
+
+	_update_submesh_colors() {
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
+		if (!anim)
+			return;
+
+		const m2 = this.m2;
+
+		for (let i = 0; i < m2.colors.length; ++i) {
+			let rgb = this._animate_track(anim, m2.colors[i].color, [1, 1, 1], (a,b,c) => {
+					return [
+						lerp(a[0], b[0], c),
+						lerp(a[1], b[1], c),
+						lerp(a[2], b[2], c),
+						lerp(a[3], b[3], c),
+					]
+			});
+
+			this.submesh_colors[(i*4)+0] = rgb[0];
+			this.submesh_colors[(i*4)+1] = rgb[1];
+			this.submesh_colors[(i*4)+2] = rgb[2];
+
+			let a = this._animate_track(anim, m2.colors[i].alpha, 32767, (a, b, c) => {
+				return lerp(a, b, c);
+			});
+
+			this.submesh_colors[(i*4) + 3] = a / 32768;
 		}
 	}
 
@@ -1502,7 +1543,12 @@ class M2RendererGL {
 			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
 
 			// mesh color (white for now)
-			shader.set_uniform_4f('u_mesh_color', 1, 1, 1, 1);
+			let color = [1,1,1,1];
+			if (dc.color_idx != -1) {
+				color = this.submesh_colors.subarray(dc.color_idx * 4, (dc.color_idx * 4) + 4);
+			}
+			shader.set_uniform_4f('u_mesh_color', color[0], color[1], color[2], color[3]);
+
 			shader.set_uniform_1i('u_apply_lighting', dc.flags & 0x1 ? 0 : 1);
 
 			// apply blend mode
