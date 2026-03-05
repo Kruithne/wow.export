@@ -318,6 +318,7 @@ class M2RendererGL {
 		this.default_texture = null;
 		this.buffers = [];
 		this.draw_calls = [];
+		this.indices_data = null;
 
 		// animation state
 		this.bones = null;
@@ -481,6 +482,8 @@ class M2RendererGL {
 		const index_data = new Uint16Array(skin.triangles.length);
 		for (let i = 0; i < skin.triangles.length; i++)
 			index_data[i] = skin.indices[skin.triangles[i]];
+
+		this.indices_data = index_data;
 
 		// create VAO
 		const vao = new VertexArray(this.ctx);
@@ -1432,14 +1435,19 @@ class M2RendererGL {
 	 * Get UV layer data
 	 */
 	getUVLayers() {
-		if (!this.m2)
+		if (!this.m2 || !this.indices_data)
 			return { layers: [], indices: null };
 
+		const layers = [
+			{ name: 'UV1', data: new Float32Array(this.m2.uv), active: false }
+		];
+
+		if (this.m2.uv2)
+			layers.push({ name: 'UV2', data: new Float32Array(this.m2.uv2), active: false });
+
 		return {
-			layers: [
-				{ name: 'UV1', data: new Float32Array(this.m2.uv), active: false }
-			],
-			indices: null
+			layers,
+			indices: this.indices_data
 		};
 	}
 
@@ -1612,6 +1620,7 @@ class M2RendererGL {
 		this.vaos = [];
 		this.buffers = [];
 		this.draw_calls = [];
+		this.indices_data = null;
 
 		if (this.geosetArray)
 			this.geosetArray.splice(0);
