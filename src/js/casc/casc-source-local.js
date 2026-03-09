@@ -209,12 +209,8 @@ class CASCLocal extends CASC {
 		
 		this.cdnConfig = await this.getConfigFileWithRemoteFallback(this.build.CDNKey);
 
-		if (this.build.ProductConfig)
-			this.productConfig = await this.getProductConfig(this.build.ProductConfig);
-
 		log.write('BuildConfig: %o', this.buildConfig);
 		log.write('CDNConfig: %o', this.cdnConfig);
-		log.write('ProductConfig: %o', this.productConfig);
 	}
 
 	/**
@@ -232,18 +228,6 @@ class CASCLocal extends CASC {
 		} else {
 			return CDNConfig(await fsp.readFile(configPath, 'utf8'));
 		}
-	}
-
-	/**
-	 * Get product config from CDN using ConfigPath.
-	 * Product configs are not stored locally and use a different CDN path.
-	 */
-	async getProductConfig(key) {
-		if (!this.remote)
-			await this.initializeRemoteCASC();
-
-		const cdnHosts = await cdnResolver.getRankedHosts(core.view.selectedCDNRegion.tag, this.remote.serverConfig);
-		return this.remote.getProductConfig(key, cdnHosts);
 	}
 
 	/**

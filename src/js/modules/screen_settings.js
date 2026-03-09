@@ -342,6 +342,14 @@ module.exports = {
 				<p>Primary <input type="text" class="long" v-model.trim="$core.view.configEdit.dbdFilenameURL"/></p>
 				<p>Fallback <input type="text" class="long" v-model.trim="$core.view.configEdit.dbdFilenameFallbackURL" /></p>
 			</div>
+			<div>
+				<h1>Allow Cache Collection</h1>
+				<p>If enabled, wow.export will anonymously collect cache data from your client for community usage.</p>
+				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.configEdit.allowCacheCollection"/>
+					<span>Enable</span>
+				</label>
+			</div>
 		</div>
 		<div id="config-buttons">
 			<input type="button" value="Discard" :class="{ disabled: $core.view.isBusy }" @click="handle_discard"/>
