@@ -122,6 +122,38 @@ class CASCRemote extends CASC {
 	}
 
 	/**
+	 * Download and parse a product config (JSON) from ConfigPath.
+	 * @param {string} key
+	 * @param {Array<string>} [cdnHosts=null]
+	 */
+	async getProductConfig(key, cdnHosts = null) {
+		const hostsToTry = cdnHosts || [this.host];
+		const configPath = this.serverConfig.ConfigPath;
+
+		let lastError = null;
+		for (const host of hostsToTry) {
+			try {
+				const baseUrl = host.replace(this.serverConfig.Path + '/', configPath + '/');
+				const url = baseUrl + this.formatCDNKey(key);
+				log.write('Attempting to retrieve product config from: %s', url);
+				const res = await generics.get(url);
+
+				if (!res.ok)
+					throw new Error(util.format('HTTP %d from product config endpoint', res.status));
+
+				return await res.json();
+			} catch (error) {
+				log.write('Failed to retrieve product config from %s: %s', host, error.message);
+				lastError = error;
+				cdnResolver.markHostFailed(host);
+				continue;
+			}
+		}
+
+		throw new Error(util.format('Unable to retrieve product config %s from any CDN host. Last error: %s', key, lastError?.message || 'Unknown error'));
+	}
+
+	/**
 	 * Obtain a file by it's fileDataID.
 	 * @param {number} fileDataID
 	 * @param {boolean} [partialDecryption=false]
@@ -460,8 +492,12 @@ class CASCRemote extends CASC {
 		this.cdnConfig = await this.getCDNConfig(this.build.CDNConfig, cdnHosts);
 		this.buildConfig = await this.getCDNConfig(this.build.BuildConfig, cdnHosts);
 
+		if (this.build.ProductConfig)
+			this.productConfig = await this.getProductConfig(this.build.ProductConfig, cdnHosts);
+
 		log.write('CDNConfig: %o', this.cdnConfig);
 		log.write('BuildConfig: %o', this.buildConfig);
+		log.write('ProductConfig: %o', this.productConfig);
 	}
 
 	/**
