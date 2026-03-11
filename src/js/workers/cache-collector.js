@@ -1,10 +1,12 @@
 const { workerData, parentPort } = require('worker_threads');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const crypto = require('crypto');
 
 const WDB_MIN_SIZE = 32;
+const CHUNK_SIZE = 5 * 1024 * 1024;
 
 const BINARY_NAMES = {
 	'wow': 'Wow.exe',
@@ -16,6 +18,104 @@ const BINARY_NAMES = {
 	'wow_classic_ptr': 'WowClassic.exe',
 	'wow_classic_beta': 'WowClassic.exe'
 };
+
+function log(msg) {
+	parentPort.postMessage(msg);
+}
+
+function https_request(url, options, body) {
+	return new Promise((resolve, reject) => {
+		const parsed = new (require('url').URL)(url);
+		const req = https.request({
+			hostname: parsed.hostname,
+			port: parsed.port || 443,
+			path: parsed.pathname + parsed.search,
+			method: options.method || 'GET',
+			headers: options.headers || {}
+		}, res => {
+			const chunks = [];
+			res.on('data', chunk => chunks.push(chunk));
+			res.on('end', () => {
+				const data = Buffer.concat(chunks).toString('utf8');
+				resolve({ status: res.statusCode, ok: res.statusCode >= 200 && res.statusCode < 300, data });
+			});
+		});
+
+		req.on('error', reject);
+
+		if (body)
+			req.write(body);
+
+		req.end();
+	});
+}
+
+async function json_post(url, payload, user_agent) {
+	const body = JSON.stringify(payload);
+	const res = await https_request(url, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'User-Agent': user_agent,
+			'Content-Length': Buffer.byteLength(body)
+		}
+	}, body);
+
+	let json = null;
+	if (res.ok) {
+		try {
+			json = JSON.parse(res.data);
+		} catch {}
+	}
+
+	return { status: res.status, ok: res.ok, json };
+}
+
+function build_multipart(boundary, file_buf, offset) {
+	const parts = [];
+
+	// file field
+	parts.push(Buffer.from(
+		`--${boundary}\r\n` +
+		`Content-Disposition: form-data; name="file"; filename="chunk.bin"\r\n` +
+		`Content-Type: application/octet-stream\r\n\r\n`
+	));
+	parts.push(file_buf);
+	parts.push(Buffer.from('\r\n'));
+
+	// offset field
+	const offset_str = offset.toString();
+	parts.push(Buffer.from(
+		`--${boundary}\r\n` +
+		`Content-Disposition: form-data; name="offset"\r\n\r\n` +
+		`${offset_str}\r\n`
+	));
+
+	// closing boundary
+	parts.push(Buffer.from(`--${boundary}--\r\n`));
+
+	return Buffer.concat(parts);
+}
+
+async function upload_chunks(url, buffer) {
+	const boundary = crypto.randomBytes(16).toString('hex');
+
+	for (let offset = 0; offset < buffer.length; offset += CHUNK_SIZE) {
+		const chunk = buffer.slice(offset, Math.min(offset + CHUNK_SIZE, buffer.length));
+		const body = build_multipart(boundary, chunk, offset);
+
+		const res = await https_request(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': `multipart/form-data; boundary=${boundary}`,
+				'Content-Length': body.length
+			}
+		}, body);
+
+		if (!res.ok)
+			throw new Error('upload chunk failed: ' + res.status);
+	}
+}
 
 function parse_build_info(text) {
 	const lines = text.split('\n').filter(line => line.length > 0);
@@ -99,7 +199,7 @@ async function scan_wdb(flavor_dir) {
 			try {
 				const stat = await fsp.stat(file_path);
 				if (stat.size > WDB_MIN_SIZE)
-					wdb_files.push({ name: file, locale: locale_entry.name, size: stat.size });
+					wdb_files.push({ name: file, locale: locale_entry.name, size: stat.size, path: file_path });
 			} catch {}
 		}
 	}
@@ -107,10 +207,76 @@ async function scan_wdb(flavor_dir) {
 	return wdb_files;
 }
 
+async function upload_flavor(result) {
+	const { machine_id, submit_url, finalize_url, user_agent } = workerData;
+
+	if (!result.wdb_files || result.wdb_files.length === 0)
+		return;
+
+	const file_buffers = new Map();
+	const submit_files = [];
+
+	for (const wdb of result.wdb_files) {
+		try {
+			const buffer = await fsp.readFile(wdb.path);
+			const key = `${wdb.locale}/${wdb.name}`;
+			file_buffers.set(key, buffer);
+			submit_files.push({ name: wdb.name, locale: wdb.locale, size: buffer.length });
+		} catch (e) {
+			log(`failed to read ${wdb.path}: ${e.message}`);
+		}
+	}
+
+	if (submit_files.length === 0)
+		return;
+
+	const submit_res = await json_post(submit_url, {
+		machine_id,
+		product: result.product,
+		patch: result.patch,
+		build_number: parseInt(result.build_number) || 0,
+		build_key: result.build_key,
+		cdn_key: result.cdn_key,
+		binary_hash: result.binary_hash || '',
+		files: submit_files
+	}, user_agent);
+
+	if (!submit_res.ok) {
+		log(`submit failed (${submit_res.status}) for ${result.product}`);
+		return;
+	}
+
+	const { submission_id, upload_urls } = submit_res.json;
+	log(`submission ${submission_id} created for ${result.product} (${submit_files.length} files)`);
+
+	const checksums = {};
+
+	for (const [key, buffer] of file_buffers) {
+		const url = upload_urls[key];
+		if (!url) {
+			log(`no upload URL for ${key}`);
+			continue;
+		}
+
+		try {
+			await upload_chunks(url, buffer);
+			checksums[key] = crypto.createHash('sha256').update(buffer).digest('hex');
+		} catch (e) {
+			log(`upload failed for ${key}: ${e.message}`);
+		}
+	}
+
+	const finalize_res = await json_post(finalize_url, { submission_id, checksums }, user_agent);
+
+	if (finalize_res.ok)
+		log(`submission ${submission_id} finalized`);
+	else
+		log(`finalize failed (${finalize_res.status}) for ${submission_id}`);
+}
+
 async function collect() {
 	const { install_path } = workerData;
 
-	// parse .build.info
 	const build_info_path = path.join(install_path, '.build.info');
 	const build_info_text = await fsp.readFile(build_info_path, 'utf8');
 	const builds = parse_build_info(build_info_text);
@@ -118,7 +284,6 @@ async function collect() {
 	if (builds.length === 0)
 		return;
 
-	// scan for _*_ flavor directories containing .flavor.info
 	const root_entries = await fsp.readdir(install_path, { withFileTypes: true });
 	const flavor_dirs = [];
 
@@ -137,17 +302,13 @@ async function collect() {
 		}
 	}
 
-	const results = [];
-
 	for (const flavor of flavor_dirs) {
-		// match flavor to .build.info row
 		const build_row = builds.find(b => b.Product === flavor.product);
 		if (!build_row)
 			continue;
 
 		const flavor_path = path.join(install_path, flavor.dir);
 
-		// find and hash binary
 		const binary_path = await find_binary(flavor_path, flavor.product);
 		let binary_hash = null;
 		if (binary_path) {
@@ -156,31 +317,29 @@ async function collect() {
 			} catch {}
 		}
 
-		// scan WDB caches
 		const wdb_files = await scan_wdb(flavor_path);
 		if (wdb_files.length === 0)
 			continue;
 
-		// split version into patch + build number
 		const version = build_row.Version || '';
 		const version_parts = version.match(/^(.+)\.(\d+)$/);
 		const patch = version_parts ? version_parts[1] : version;
 		const build_number = version_parts ? version_parts[2] : '';
 
-		results.push({
-			product: flavor.product,
-			patch,
-			build_number,
-			build_key: build_row['Build Key'] || '',
-			cdn_key: build_row['CDN Key'] || '',
-			binary_hash,
-			wdb_files
-		});
+		try {
+			await upload_flavor({
+				product: flavor.product,
+				patch,
+				build_number,
+				build_key: build_row['Build Key'] || '',
+				cdn_key: build_row['CDN Key'] || '',
+				binary_hash,
+				wdb_files
+			});
+		} catch (e) {
+			log(`error for ${flavor.product}: ${e.message}`);
+		}
 	}
-
-	parentPort.postMessage(results);
 }
 
-collect().catch(err => {
-	parentPort.postMessage({ error: err.message });
-});
+collect().catch(err => log(`fatal: ${err.message}`));

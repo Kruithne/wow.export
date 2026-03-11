@@ -86,6 +86,8 @@ module.exports = {
 		LISTFILE_DATA: 'listfile.txt', // Master listfile data file.
 		TACT_KEYS: path.join(DATA_PATH, 'tact.json'), // Tact key cache.
 		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
+		SUBMIT_URL: 'https://www.kruithne.net/wow.export/v2/cache/submit',
+		FINALIZE_URL: 'https://www.kruithne.net/wow.export/v2/cache/finalize',
 	},
 
 	CONFIG:  {

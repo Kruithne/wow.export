@@ -5,6 +5,7 @@
 - Fixed an issue that caused Auto Camera to reset the camera when changing animations.
 - Fixed an issue that would prevent data tables with BigInt values from opening in the data tab.
 - Fixed an issue that would cause wow.export to crash when previewing UV layers on texture previews.
+- wow.export will now optionally collect anonymous cache data for NPCs and quests for community usage.
 
 ## 0.2.13 (21-02-2026)
 - Added guild tabard customization to character tool.

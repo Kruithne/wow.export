@@ -118,5 +118,6 @@
 	"pathFormat": "win32",
 	"showZoneBaseMap": true,
 	"showZoneOverlays": true,
-	"allowCacheCollection": true
+	"allowCacheCollection": true,
+	"machineId": null
 }
