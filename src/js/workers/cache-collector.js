@@ -207,16 +207,42 @@ async function scan_wdb(flavor_dir) {
 	return wdb_files;
 }
 
+async function scan_adb(flavor_dir) {
+	const adb_root = path.join(flavor_dir, 'Cache', 'ADB');
+	const adb_files = [];
+
+	let locale_dirs;
+	try {
+		locale_dirs = await fsp.readdir(adb_root, { withFileTypes: true });
+	} catch {
+		return adb_files;
+	}
+
+	for (const locale_entry of locale_dirs) {
+		if (!locale_entry.isDirectory())
+			continue;
+
+		const file_path = path.join(adb_root, locale_entry.name, 'DBCache.bin');
+		try {
+			const stat = await fsp.stat(file_path);
+			if (stat.size > WDB_MIN_SIZE)
+				adb_files.push({ name: 'DBCache.bin', locale: locale_entry.name, size: stat.size, path: file_path });
+		} catch {}
+	}
+
+	return adb_files;
+}
+
 async function upload_flavor(result) {
 	const { machine_id, submit_url, finalize_url, user_agent } = workerData;
 
-	if (!result.wdb_files || result.wdb_files.length === 0)
+	if (!result.cache_files || result.cache_files.length === 0)
 		return;
 
 	const file_buffers = new Map();
 	const submit_files = [];
 
-	for (const wdb of result.wdb_files) {
+	for (const wdb of result.cache_files) {
 		try {
 			const buffer = await fsp.readFile(wdb.path);
 			const key = `${wdb.locale}/${wdb.name}`;
@@ -318,7 +344,10 @@ async function collect() {
 		}
 
 		const wdb_files = await scan_wdb(flavor_path);
-		if (wdb_files.length === 0)
+		const adb_files = await scan_adb(flavor_path);
+		const cache_files = [...wdb_files, ...adb_files];
+
+		if (cache_files.length === 0)
 			continue;
 
 		const version = build_row.Version || '';
@@ -334,7 +363,7 @@ async function collect() {
 				build_key: build_row['Build Key'] || '',
 				cdn_key: build_row['CDN Key'] || '',
 				binary_hash,
-				wdb_files
+				cache_files
 			});
 		} catch (e) {
 			log(`error for ${flavor.product}: ${e.message}`);
