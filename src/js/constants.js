@@ -88,6 +88,7 @@ module.exports = {
 		REALMLIST: path.join(DATA_PATH, 'realmlist.json'), // Realmlist cache.
 		SUBMIT_URL: 'https://www.kruithne.net/wow.export/v2/cache/submit',
 		FINALIZE_URL: 'https://www.kruithne.net/wow.export/v2/cache/finalize',
+		STATE_FILE: path.join(DATA_PATH, 'cache_state.json'),
 	},
 
 	CONFIG:  {

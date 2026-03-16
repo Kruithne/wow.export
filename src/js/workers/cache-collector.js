@@ -233,19 +233,43 @@ async function scan_adb(flavor_dir) {
 	return adb_files;
 }
 
-async function upload_flavor(result) {
+async function load_state(state_path) {
+	try {
+		const data = await fsp.readFile(state_path, 'utf8');
+		return JSON.parse(data);
+	} catch {
+		return {};
+	}
+}
+
+async function save_state(state_path, state) {
+	await fsp.writeFile(state_path, JSON.stringify(state), 'utf8');
+}
+
+async function upload_flavor(result, state) {
 	const { machine_id, submit_url, finalize_url, user_agent } = workerData;
 
 	if (!result.cache_files || result.cache_files.length === 0)
 		return;
 
+	const flavor_key = `${result.product}|${result.patch}|${result.build_number}`;
+	const prev_hashes = state[flavor_key] || {};
+
 	const file_buffers = new Map();
+	const file_hashes = new Map();
 	const submit_files = [];
 
 	for (const wdb of result.cache_files) {
 		try {
 			const buffer = await fsp.readFile(wdb.path);
 			const key = `${wdb.locale}/${wdb.name}`;
+			const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+			file_hashes.set(key, hash);
+
+			if (prev_hashes[key] === hash)
+				continue;
+
 			file_buffers.set(key, buffer);
 			submit_files.push({ name: wdb.name, locale: wdb.locale, size: buffer.length });
 		} catch (e) {
@@ -253,8 +277,10 @@ async function upload_flavor(result) {
 		}
 	}
 
-	if (submit_files.length === 0)
+	if (submit_files.length === 0) {
+		log(`all files unchanged for ${result.product}, skipping`);
 		return;
+	}
 
 	const submit_res = await json_post(submit_url, {
 		machine_id,
@@ -286,7 +312,7 @@ async function upload_flavor(result) {
 
 		try {
 			await upload_chunks(url, buffer);
-			checksums[key] = crypto.createHash('sha256').update(buffer).digest('hex');
+			checksums[key] = file_hashes.get(key);
 		} catch (e) {
 			log(`upload failed for ${key}: ${e.message}`);
 		}
@@ -294,14 +320,23 @@ async function upload_flavor(result) {
 
 	const finalize_res = await json_post(finalize_url, { submission_id, checksums }, user_agent);
 
-	if (finalize_res.ok)
+	if (finalize_res.ok) {
 		log(`submission ${submission_id} finalized`);
-	else
+
+		// update state with hashes of successfully uploaded files
+		const new_hashes = { ...prev_hashes };
+		for (const key of Object.keys(checksums))
+			new_hashes[key] = checksums[key];
+
+		state[flavor_key] = new_hashes;
+	} else {
 		log(`finalize failed (${finalize_res.status}) for ${submission_id}`);
+	}
 }
 
 async function collect() {
-	const { install_path } = workerData;
+	const { install_path, state_path } = workerData;
+	const state = await load_state(state_path);
 
 	const build_info_path = path.join(install_path, '.build.info');
 	const build_info_text = await fsp.readFile(build_info_path, 'utf8');
@@ -364,11 +399,13 @@ async function collect() {
 				cdn_key: build_row['CDN Key'] || '',
 				binary_hash,
 				cache_files
-			});
+			}, state);
 		} catch (e) {
 			log(`error for ${flavor.product}: ${e.message}`);
 		}
 	}
+
+	await save_state(state_path, state);
 }
 
 collect().catch(err => log(`fatal: ${err.message}`));

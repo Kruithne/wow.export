@@ -119,7 +119,8 @@ module.exports = {
 							machine_id: this.$core.view.config.machineId,
 							submit_url: constants.CACHE.SUBMIT_URL,
 							finalize_url: constants.CACHE.FINALIZE_URL,
-							user_agent: constants.USER_AGENT
+							user_agent: constants.USER_AGENT,
+							state_path: constants.CACHE.STATE_FILE
 						}
 					});
 					worker.on('message', msg => log.write('cache-collector: %s', msg));
