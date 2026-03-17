@@ -139,7 +139,7 @@ function parse_build_info(text) {
 
 async function hash_file(file_path) {
 	return new Promise((resolve, reject) => {
-		const hash = crypto.createHash('sha256');
+		const hash = crypto.createHash('md5');
 		const stream = fs.createReadStream(file_path);
 		stream.on('data', chunk => hash.update(chunk));
 		stream.on('end', () => resolve(hash.digest('hex')));
@@ -290,6 +290,7 @@ async function upload_flavor(result, state) {
 		build_key: result.build_key,
 		cdn_key: result.cdn_key,
 		binary_hash: result.binary_hash || '',
+		binary_name: result.binary_name || '',
 		files: submit_files
 	}, user_agent);
 
@@ -398,6 +399,7 @@ async function collect() {
 				build_key: build_row['Build Key'] || '',
 				cdn_key: build_row['CDN Key'] || '',
 				binary_hash,
+				binary_name: binary_path ? path.basename(binary_path) : '',
 				cache_files
 			}, state);
 		} catch (e) {
