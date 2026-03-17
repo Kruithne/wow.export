@@ -7,6 +7,7 @@ const crypto = require('crypto');
 
 const WDB_MIN_SIZE = 32;
 const CHUNK_SIZE = 5 * 1024 * 1024;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const BINARY_EXE_PATTERN = /\.exe$/i;
 const BINARY_APP_DIR = '.app';
@@ -205,7 +206,7 @@ async function scan_wdb(flavor_dir) {
 			try {
 				const stat = await fsp.stat(file_path);
 				if (stat.size > WDB_MIN_SIZE)
-					wdb_files.push({ name: file, locale: locale_entry.name, size: stat.size, path: file_path });
+					wdb_files.push({ name: file, locale: locale_entry.name, size: stat.size, path: file_path, modified_at: stat.mtimeMs });
 			} catch {}
 		}
 	}
@@ -232,7 +233,7 @@ async function scan_adb(flavor_dir) {
 		try {
 			const stat = await fsp.stat(file_path);
 			if (stat.size > WDB_MIN_SIZE)
-				adb_files.push({ name: 'DBCache.bin', locale: locale_entry.name, size: stat.size, path: file_path });
+				adb_files.push({ name: 'DBCache.bin', locale: locale_entry.name, size: stat.size, path: file_path, modified_at: stat.mtimeMs });
 		} catch {}
 	}
 
@@ -265,8 +266,15 @@ async function upload_flavor(result, state) {
 	const file_hashes = new Map();
 	const submit_files = [];
 
+	const now = Date.now();
+
 	for (const wdb of result.cache_files) {
 		try {
+			if (now - wdb.modified_at > MAX_AGE_MS) {
+				log(`skipping ${wdb.name} (${wdb.locale}): file too old`);
+				continue;
+			}
+
 			const buffer = await fsp.readFile(wdb.path);
 			const key = `${wdb.locale}/${wdb.name}`;
 			const hash = crypto.createHash('sha256').update(buffer).digest('hex');
@@ -277,7 +285,7 @@ async function upload_flavor(result, state) {
 				continue;
 
 			file_buffers.set(key, buffer);
-			submit_files.push({ name: wdb.name, locale: wdb.locale, size: buffer.length });
+			submit_files.push({ name: wdb.name, locale: wdb.locale, size: buffer.length, modified_at: new Date(wdb.modified_at).toISOString() });
 		} catch (e) {
 			log(`failed to read ${wdb.path}: ${e.message}`);
 		}
