@@ -8,16 +8,8 @@ const crypto = require('crypto');
 const WDB_MIN_SIZE = 32;
 const CHUNK_SIZE = 5 * 1024 * 1024;
 
-const BINARY_NAMES = {
-	'wow': 'Wow.exe',
-	'wowt': 'WowT.exe',
-	'wow_beta': 'WowB.exe',
-	'wow_classic': 'WowClassic.exe',
-	'wow_classic_era': 'WowClassic.exe',
-	'wow_classic_era_ptr': 'WowClassic.exe',
-	'wow_classic_ptr': 'WowClassic.exe',
-	'wow_classic_beta': 'WowClassic.exe'
-};
+const BINARY_EXE_PATTERN = /\.exe$/i;
+const BINARY_APP_DIR = '.app';
 
 function log(msg) {
 	parentPort.postMessage(msg);
@@ -147,25 +139,39 @@ async function hash_file(file_path) {
 	});
 }
 
-async function find_binary(flavor_dir, product) {
-	const known_name = BINARY_NAMES[product];
-	if (known_name) {
-		const bin_path = path.join(flavor_dir, known_name);
-		try {
-			await fsp.access(bin_path);
-			return bin_path;
-		} catch {}
-	}
+async function find_binaries(flavor_dir) {
+	const binaries = [];
 
-	// fallback: scan for Wow*.exe
 	try {
-		const entries = await fsp.readdir(flavor_dir);
-		const candidates = entries.filter(e => /^Wow.*\.exe$/i.test(e));
-		if (candidates.length > 0)
-			return path.join(flavor_dir, candidates[0]);
+		const entries = await fsp.readdir(flavor_dir, { withFileTypes: true });
+
+		for (const entry of entries) {
+			if (entry.isFile() && BINARY_EXE_PATTERN.test(entry.name))
+				binaries.push(path.join(flavor_dir, entry.name));
+
+			if (entry.isDirectory() && entry.name.endsWith(BINARY_APP_DIR)) {
+				const app_binaries = await scan_app_bundle(path.join(flavor_dir, entry.name));
+				binaries.push(...app_binaries);
+			}
+		}
 	} catch {}
 
-	return null;
+	return binaries;
+}
+
+async function scan_app_bundle(app_dir) {
+	const binaries = [];
+	const macos_dir = path.join(app_dir, 'Contents', 'MacOS');
+
+	try {
+		const entries = await fsp.readdir(macos_dir, { withFileTypes: true });
+		for (const entry of entries) {
+			if (entry.isFile())
+				binaries.push(path.join(macos_dir, entry.name));
+		}
+	} catch {}
+
+	return binaries;
 }
 
 async function scan_wdb(flavor_dir) {
@@ -289,8 +295,7 @@ async function upload_flavor(result, state) {
 		build_number: parseInt(result.build_number) || 0,
 		build_key: result.build_key,
 		cdn_key: result.cdn_key,
-		binary_hash: result.binary_hash || '',
-		binary_name: result.binary_name || '',
+		binary_hashes: result.binary_hashes || {},
 		files: submit_files
 	}, user_agent);
 
@@ -371,11 +376,11 @@ async function collect() {
 
 		const flavor_path = path.join(install_path, flavor.dir);
 
-		const binary_path = await find_binary(flavor_path, flavor.product);
-		let binary_hash = null;
-		if (binary_path) {
+		const binary_paths = await find_binaries(flavor_path);
+		const binary_hashes = {};
+		for (const bin_path of binary_paths) {
 			try {
-				binary_hash = await hash_file(binary_path);
+				binary_hashes[path.basename(bin_path)] = await hash_file(bin_path);
 			} catch {}
 		}
 
@@ -398,8 +403,7 @@ async function collect() {
 				build_number,
 				build_key: build_row['Build Key'] || '',
 				cdn_key: build_row['CDN Key'] || '',
-				binary_hash,
-				binary_name: binary_path ? path.basename(binary_path) : '',
+				binary_hashes,
 				cache_files
 			}, state);
 		} catch (e) {
