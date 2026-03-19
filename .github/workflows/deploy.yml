@@ -18,7 +18,6 @@ jobs:
             os: macos-latest
           #- platform: osx-arm64
           #  os: macos-latest
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
