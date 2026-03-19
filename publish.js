@@ -21,7 +21,8 @@ const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x6
 const INSTALLER_NAMES = {
 	'win-x64': 'installer.exe',
 	'linux-x64': 'installer',
-	'osx-x64': 'installer'
+	'osx-x64': 'installer',
+	'osx-arm64': 'installer'
 };
 
 async function collect_files(dir, out = []) {
