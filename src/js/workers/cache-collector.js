@@ -276,6 +276,12 @@ async function upload_flavor(result, state) {
 			}
 
 			const buffer = await fsp.readFile(wdb.path);
+
+			if (buffer.length === 0) {
+				log(`skipping ${wdb.name} (${wdb.locale}): empty file`);
+				continue;
+			}
+
 			const key = `${wdb.locale}/${wdb.name}`;
 			const hash = crypto.createHash('sha256').update(buffer).digest('hex');
 
