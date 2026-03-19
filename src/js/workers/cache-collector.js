@@ -147,7 +147,7 @@ async function find_binaries(flavor_dir) {
 		const entries = await fsp.readdir(flavor_dir, { withFileTypes: true });
 
 		for (const entry of entries) {
-			if (entry.isFile() && BINARY_EXE_PATTERN.test(entry.name))
+			if (entry.isFile() && BINARY_EXE_PATTERN.test(entry.name) && entry.name.toLowerCase() !== 'blizzarderror.exe')
 				binaries.push(path.join(flavor_dir, entry.name));
 
 			if (entry.isDirectory() && entry.name.endsWith(BINARY_APP_DIR)) {
