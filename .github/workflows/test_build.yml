@@ -15,7 +15,8 @@ jobs:
             os: ubuntu-22.04
           - platform: osx-x64
             os: macos-latest
-          - platform: osx-arm64
+          #- platform: osx-arm64
+          #  os: macos-latest
             os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
