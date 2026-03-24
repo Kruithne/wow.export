@@ -21,6 +21,7 @@ const ExportHelper = require('../../casc/export-helper');
 const M2Exporter = require('./M2Exporter');
 const M3Exporter = require('./M3Exporter');
 const constants = require('../../constants');
+const WMOShaderMapper = require('../WMOShaderMapper');
 
 const doodadCache = new Set();
 
@@ -685,13 +686,17 @@ class WMOExporter {
 			for (const material of wmo.materials) {
 				const materialTextures = [material.texture1, material.texture2, material.texture3];
 
-				if (material.shader == 23) {
-					materialTextures.push(material.color3);
+				material.vertexShader = WMOShaderMapper.WMOShaderMap[material.shader].VertexShader;
+				material.pixelShader = WMOShaderMapper.WMOShaderMap[material.shader].PixelShader;
+
+				if (material.pixelShader == 19) {
+					materialTextures.push(material.color2);
 					materialTextures.push(material.flags3);
 					materialTextures.push(material.runtimeData[0]);
-					materialTextures.push(material.runtimeData[1]);
-					materialTextures.push(material.runtimeData[2]);
-					materialTextures.push(material.runtimeData[3]);
+				} else if (material.pixelShader == 20) {
+					materialTextures.push(material.color3);
+					for (const rtdTexture of material.runtimeData)
+						materialTextures.push(rtdTexture);
 				}
 
 				for (const materialTexture of materialTextures) {
