@@ -341,9 +341,9 @@ const WMOChunkHandlers = {
 	// TODO: If MOGP flag 0x1000000	is set, this chunk can appear twice similar to MOTV.
 	0x4D4F4356: function(data, chunkSize) {
 		if (!this.vertexColours)
-			this.vertexColours = [];
-
-		this.vertexColours.push(data.readUInt8(chunkSize));
+			this.vertexColours = data.readUInt8(chunkSize);
+		else
+			this.vertexColours2 = data.readUInt8(chunkSize);
 	},
 
 	// MDAL (Ambient Color) [WMO Group]

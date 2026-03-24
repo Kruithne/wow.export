@@ -77,6 +77,7 @@ class GLTFWriter {
 		this.vertices = [];
 		this.normals = [];
 		this.uvs = [];
+		this.vertexColors = [];
 		this.boneWeights = [];
 		this.boneIndices = [];
 		this.bones = [];
@@ -137,6 +138,14 @@ class GLTFWriter {
 	 */
 	addUVArray(uvs) {
 		this.uvs.push(uvs);
+	}
+
+	/**
+	 * Set the vertex colors array for this writer.
+	 * @param {Array} vertexColors - Flat RGBA float array (0-1 range)
+	 */
+	setVertexColorArray(vertexColors) {
+		this.vertexColors = vertexColors;
 	}
 
 	/**
@@ -1053,6 +1062,30 @@ class GLTFWriter {
 			});
 
 			writeData(index, uv, 2, GLTF_FLOAT);
+		}
+
+		if (this.vertexColors.length > 0) {
+			const color_index = root.bufferViews.length;
+			primitive_attributes['COLOR_0'] = color_index;
+
+			root.accessors.push({
+				name: 'COLOR_0',
+				bufferView: color_index,
+				byteOffset: 0,
+				componentType: GLTF_UNSIGNED_BYTE,
+				normalized: true,
+				count: this.vertexColors.length / 4,
+				type: 'VEC4'
+			});
+
+			root.bufferViews.push({
+				buffer: 0,
+				byteLength: 0,
+				byteOffset: 0,
+				target: GLTF_ARRAY_BUFFER
+			});
+
+			writeData(color_index, this.vertexColors, 4, GLTF_UNSIGNED_BYTE);
 		}
 
 		for (let i = 0, n = this.meshes.length; i < n; i++) {

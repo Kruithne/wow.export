@@ -286,8 +286,10 @@ class WMOExporter {
 
 		const vertices = new Array(nInd * 3);
 		const normals = new Array(nInd * 3);
+		const vertexColors = new Array(nInd * 4);
 
 		const uv_maps = [];
+		let has_vertex_colors = false;
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -303,6 +305,23 @@ class WMOExporter {
 			const groupNormals = group.normals;
 			for (let i = 0, n = groupNormals.length; i < n; i++)
 				normals[vertOfs + i] = groupNormals[i];
+
+			// Vertex colours (MOCV, stored as BGRA bytes). Reorder to RGBA.
+			const colorOfs = indOfs * 4;
+			if (group.vertexColours !== undefined) {
+				has_vertex_colors = true;
+				const vc = group.vertexColours;
+				for (let i = 0; i < indCount; i++) {
+					vertexColors[colorOfs + i * 4 + 0] = vc[i * 4 + 2]; // R
+					vertexColors[colorOfs + i * 4 + 1] = vc[i * 4 + 1]; // G
+					vertexColors[colorOfs + i * 4 + 2] = vc[i * 4 + 0]; // B
+					vertexColors[colorOfs + i * 4 + 3] = vc[i * 4 + 3]; // A
+				}
+			} else {
+				// No vertex colours for this group; default to opaque white.
+				for (let i = 0; i < indCount * 4; i++)
+					vertexColors[colorOfs + i] = 255;
+			}
 
 			const uv_ofs = indOfs * 2;
 
@@ -345,6 +364,9 @@ class WMOExporter {
 		
 		for (const uv_map of uv_maps)
 			gltf.addUVArray(uv_map);
+
+		if (has_vertex_colors)
+			gltf.setVertexColorArray(vertexColors);
 
 		// TODO: Add support for exporting doodads inside a GLTF WMO.
 
