@@ -1,3 +1,6 @@
+## 0.2.15 (xx-04-2026)
+- Fixed crash when copying item IDs in character tab.
+
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
 - Added ability to select/export multiple DB2 tables at once.
