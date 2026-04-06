@@ -111,12 +111,12 @@ class VertexArray {
 
 	/**
 	 * Set up M2 vertex format
-	 * layout: position(3f) + normal(3f) + bone_indices(4ub) + bone_weights(4ub) + uv1(2f)
-	 * stride = 40 bytes
+	 * layout: position(3f) + normal(3f) + bone_indices(4ub) + bone_weights(4ub) + uv1(2f) + uv2(2f)
+	 * stride = 48 bytes
 	 */
 	setup_m2_vertex_format() {
 		const gl = this.gl;
-		const stride = 40;
+		const stride = 48;
 
 		this.bind();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -141,7 +141,9 @@ class VertexArray {
 		gl.enableVertexAttribArray(AttributeLocation.TEXCOORD);
 		gl.vertexAttribPointer(AttributeLocation.TEXCOORD, 2, gl.FLOAT, false, stride, 32);
 
-		// texcoord2 uses separate buffer or not present for simple models
+		// texcoord2: vec2 at offset 40
+		gl.enableVertexAttribArray(AttributeLocation.TEXCOORD2);
+		gl.vertexAttribPointer(AttributeLocation.TEXCOORD2, 2, gl.FLOAT, false, stride, 40);
 	}
 
 	/**

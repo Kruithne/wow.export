@@ -880,7 +880,7 @@ class M2Loader {
 		const base = this.data.offset;
 		this.data.seek(globalLoopOfs + ofs);
 
-		this.globalLoops = this.data.readInt16LE(globalLoopCount);
+		this.globalLoops = this.data.readInt32LE(globalLoopCount);
 
 		this.data.seek(base);
 	}
