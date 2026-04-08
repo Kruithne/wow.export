@@ -213,8 +213,9 @@ function requestData(url, partialOfs, partialLen) {
 * @param {number} partialOfs Partial content start offset.
 * @param {number} partialLen Partial content size.
 * @param {boolean} deflate If true, will deflate data regardless of header.
+* @param {fs.Mode} mode File permissions
 */
-const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false) => {
+const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false, mode = 0o600) => {
 	const url_stack = Array.isArray(url) ? url : [url];
 	
 	for (const currentUrl of url_stack) {
@@ -236,6 +237,7 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate 
 			if (out) {
 				await createDirectory(path.dirname(out));
 				await wrapped.writeToFile(out);
+				await fs.chmod(out, mode);
 			}
 
 			return wrapped;

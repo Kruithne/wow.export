@@ -251,7 +251,7 @@
 				"CHANGELOG.md": "./wow.export.app/Contents/Resources/app.nw/src/CHANGELOG.md",
 				"addons/blender/io_scene_wowobj/*": "./wow.export.app/Contents/Resources/app.nw/addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "./wow.export.app/Contents/Resources/app.nw/src/webp_node_enc.wasm",
-				"node_addons/mmap/build/Release/mmap.node": "./wow.export.app/Contents/Resources/app.nw/src/mmap.node"
+				"node_addons/mmap/build/Release/mmap.node": "./wow.export.app/Contents/Resources/app.nw/mmap.node"
 			},
 			"remap": {
 				"nwjs.app": "wow.export.app",
