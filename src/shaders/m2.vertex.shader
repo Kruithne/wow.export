@@ -17,8 +17,9 @@ uniform mat4 u_model_matrix;
 uniform vec3 u_view_up;
 uniform float u_time;
 
-// bone matrices (max 256 bones)
-#define MAX_BONES 256
+// bone matrices -- macOS WebGL2 caps at 1024 vec4 uniforms total,
+// 256 mat4 bones (1024 vec4) + other uniforms exceeds that limit.
+#define MAX_BONES 220
 uniform mat4 u_bone_matrices[MAX_BONES];
 uniform int u_bone_count;
 
