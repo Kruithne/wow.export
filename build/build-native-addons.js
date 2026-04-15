@@ -187,9 +187,14 @@ function rebuild_addon(addon_dir) {
 		`--nodedir=${node_dir}`
 	];
 
-	execFileSync('npx', ['nw-gyp', ...args], {
+	execFileSync('node-gyp', [...args, `--arch=${process.arch}`], {
 		cwd: addon_dir,
-		stdio: 'inherit'
+		stdio: 'inherit',
+		env: {
+			...process.env,
+			npm_config_runtime: 'node-webkit',
+			npm_config_target: nw_version
+		}
 	});
 }
 

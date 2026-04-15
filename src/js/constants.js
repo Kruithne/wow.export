@@ -9,9 +9,10 @@ const path = require('path');
 const os = require('os');
 
 // on macOS, process.execPath points to the renderer helper binary deep inside
-// the framework, not the app root. use __dirname (app.nw/src/) instead.
+// the framework, not the app root. __dirname is src/js/, so go up two levels
+// to reach the package root (app.nw/ in production, repo root in dev).
 const INSTALL_PATH = process.platform === 'darwin'
-	? path.resolve(path.join(__dirname, '..'))
+	? path.resolve(path.join(__dirname, '..', '..'))
 	: path.dirname(process.execPath);
 const DATA_PATH = nw.App.dataPath;
 

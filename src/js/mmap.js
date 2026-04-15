@@ -5,11 +5,44 @@
  */
 const path = require('path');
 const log = require('./log');
-const INSTALL_PATH = process.platform === 'darwin'
-	? path.resolve(path.join(__dirname, '..'))
-	: path.dirname(process.execPath);
+const fs = require('fs');
 
-const mmap_native = require(path.join(INSTALL_PATH, 'mmap.node'));
+/**
+ * Locate mmap.node native addon.
+ *
+ * On macOS, Bun inlines __dirname at bundle time as a hardcoded path from
+ * the build machine's source tree. At runtime inside the .app bundle this
+ * path is wrong, so we resolve relative to process.execPath instead.
+ *
+ * The search covers three cases:
+ *   1. Next to the executable (Windows, Linux)
+ *   2. In the main app bundle Resources/app.nw/src/ (macOS main process)
+ *   3. Same as #2 but reached from a helper process deep in Frameworks/
+ */
+const resolve_mmap_path = () => {
+	const execDir = path.dirname(process.execPath);
+	const candidates = [
+		path.join(execDir, 'mmap.node'),
+	];
+
+	// Walk up from execPath looking for a directory that contains
+	// Contents/Resources/app.nw/src/mmap.node (the macOS app bundle).
+	let dir = execDir;
+	for (let i = 0; i < 15; i++) {
+		candidates.push(path.join(dir, 'Contents', 'Resources', 'app.nw', 'src', 'mmap.node'));
+		const parent = path.dirname(dir);
+		if (parent === dir) break;
+		dir = parent;
+	}
+
+	for (const candidate of candidates) {
+		try { if (fs.existsSync(candidate)) return candidate; } catch {}
+	}
+
+	throw new Error('mmap.node not found. Searched:\n' + candidates.join('\n'));
+};
+
+const mmap_native = require(resolve_mmap_path());
 
 const virtual_files = new Set();
 
