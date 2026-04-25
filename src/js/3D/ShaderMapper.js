@@ -42,7 +42,7 @@ const SHADER_ARRAY = [
 	{ "PS": "Combiners_Opaque",                         "VS": "Diffuse_T1",             "HS": "T1",       "DS": "T1"        },
 	{ "PS": "Combiners_Mod_Mod2x",                      "VS": "Diffuse_EdgeFade_T1_T2", "HS": "T1_T2",    "DS": "T1_T2"     },
 	{ "PS": "Combiners_Mod",                            "VS": "Diffuse_EdgeFade_T1",    "HS": "T1_T2",    "DS": "T1_T2"     },
-	{ "PS": "Combiners_Mod_Mod",                        "VS": "Diffuse_EdgeFade_T1_T2", "HS": "T1_T2",    "DS": "T1_T2"     },
+	{ "PS": "Combiners_Mod_Mod_Depth",                  "VS": "Diffuse_EdgeFade_T1_T2", "HS": "T1_T2",    "DS": "T1_T2"     },
 ];
 
 
@@ -50,7 +50,7 @@ const SHADER_ARRAY = [
  * Gets Vertex shader name from shader ID
  */
 const getVertexShader = (textureCount, shaderID) => {
-	if (shaderID < 0) {
+	if (shaderID & 0x8000) {
 		const vertexShaderId = shaderID & 0x7FFF;
 		if (vertexShaderId >= SHADER_ARRAY.length) {
 			log.write("Unknown vertex shader ID: " + vertexShaderId);

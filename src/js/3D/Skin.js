@@ -78,7 +78,7 @@ class Skin {
 			for (let i = 0; i < textureUnitsCount; i++) {
 				this.textureUnits[i] = {
 					flags: data.readUInt8(),
-					priority: data.readUInt8(),
+					priority: data.readInt8(),
 					shaderID: data.readUInt16LE(),
 					skinSectionIndex: data.readUInt16LE(),
 					flags2: data.readUInt16LE(),

@@ -618,8 +618,8 @@ async function update_equipment_models(core) {
 					const is_collection_style = false;
 
 					// apply textures
-					if (display.textures && display.textures.length > i)
-						await renderer.applyReplaceableTextures({ textures: [display.textures[i]] });
+					if (display.textures)
+						await renderer.applyReplaceableTextures({ textures: display.textures });
 
 					renderers.push({ renderer, attachment_id, is_collection_style });
 					log.write('Loaded attachment model %d for slot %d attachment %d (item %d)', file_data_id, slot_id, attachment_id, item_id);
@@ -661,11 +661,8 @@ async function update_equipment_models(core) {
 					}
 
 					// use matching texture for this model index
-					const texture_idx = i < display.textures?.length ? i : 0;
-					const texture_fdid = display.textures?.[texture_idx];
-
-					if (texture_fdid)
-						await renderer.applyReplaceableTextures({ textures: [texture_fdid] });
+					if (display.textures)
+						await renderer.applyReplaceableTextures({ textures: display.textures });
 
 					renderers.push(renderer);
 					log.write('Loaded collection model %d for slot %d (item %d)', file_data_id, slot_id, item_id);

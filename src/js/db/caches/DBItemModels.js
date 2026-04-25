@@ -7,7 +7,7 @@
 const log = require('../../log');
 const db2 = require('../../casc/db2');
 const DBModelFileData = require('./DBModelFileData');
-const DBTextureFileData = require('./DBTextureFileData');
+const DBItemDisplayInfoModelMatRes = require('./DBItemDisplayInfoModelMatRes');
 const DBComponentModelFileData = require('./DBComponentModelFileData');
 
 // maps ItemID -> ItemDisplayInfoID
@@ -30,8 +30,8 @@ const initialize = async () => {
 		log.write('Loading item models...');
 
 		await DBModelFileData.initializeModelFileData();
-		await DBTextureFileData.ensureInitialized();
 		await DBComponentModelFileData.initialize();
+		await DBItemDisplayInfoModelMatRes.ensureInitialized();
 
 		// build item -> appearance -> display chain
 		const appearance_map = new Map();
@@ -68,13 +68,11 @@ const initialize = async () => {
 			if (model_options.every(arr => arr.length === 0))
 				continue;
 
-			// get texture file data IDs from material resources
-			const mat_res_ids = row.ModelMaterialResourcesID.filter(e => e > 0);
+			// get texture file data IDs from display id
 			const texture_file_data_ids = [];
-			for (const mat_res_id of mat_res_ids) {
-				const tex_fdids = DBTextureFileData.getTextureFDIDsByMatID(mat_res_id);
-				if (tex_fdids && tex_fdids.length > 0)
-					texture_file_data_ids.push(tex_fdids[0]);
+			const itemDisplayTexFileDataIDs = DBItemDisplayInfoModelMatRes.getItemDisplayIdTextureFileIds(display_id);
+			if (itemDisplayTexFileDataIDs !== undefined) {
+				texture_file_data_ids.push(...itemDisplayTexFileDataIDs);
 			}
 
 			// geoset groups for character model and attachment/collection models

@@ -17,17 +17,15 @@ uniform mat4 u_model_matrix;
 uniform vec3 u_view_up;
 uniform float u_time;
 
-// bone matrices -- macOS WebGL2 caps at 1024 vec4 uniforms total,
-// 256 mat4 bones (1024 vec4) + other uniforms exceeds that limit.
-#define MAX_BONES 220
-uniform mat4 u_bone_matrices[MAX_BONES];
+// bone matrices (max 256 bones)
 uniform int u_bone_count;
-
+#define MAX_BONES 256
+uniform VsBoneUbo {
+	mat4 u_bone_matrices[MAX_BONES];
+};
 // texture transform matrices
 uniform mat4 u_tex_matrix1;
 uniform mat4 u_tex_matrix2;
-uniform int u_has_tex_matrix1;
-uniform int u_has_tex_matrix2;
 
 // vertex shader mode
 uniform int u_vertex_shader;
@@ -90,8 +88,8 @@ void main() {
 	v_edge_fade = 1.0;
 
 	// apply texture matrix transforms
-	mat4 tex_mat1 = u_has_tex_matrix1 != 0 ? u_tex_matrix1 : mat4(1.0);
-	mat4 tex_mat2 = u_has_tex_matrix2 != 0 ? u_tex_matrix2 : mat4(1.0);
+	mat4 tex_mat1 = u_tex_matrix1;
+	mat4 tex_mat2 = u_tex_matrix2;
 
 	v_texcoord = a_texcoord;
 	v_texcoord2 = vec2(0.0);
