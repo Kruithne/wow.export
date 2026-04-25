@@ -44,15 +44,59 @@ void main() {
 	v_color = a_color;
 	v_color2 = a_color2;
 	v_color3 = a_color3;
+	v_texcoord4 = a_texcoord4;
 
 	// WMO vertex shader modes
 	switch (u_vertex_shader) {
-		default: // TODO: Implement other modes
-		case 0:
+		case 0: // MapObjDiffuse_T1
 			v_texcoord = a_texcoord;
 			v_texcoord2 = a_texcoord2;
 			v_texcoord3 = a_texcoord3;
-			v_texcoord4 = a_texcoord4;
+			break;
+		case 1: // MapObjDiffuse_T1_Refl
+			v_texcoord = a_texcoord;
+			v_texcoord2 = reflect(normalize(vec3(1.0)), a_normal).xy; // TODO: 1.0 => cameraPoint
+			v_texcoord3 = a_texcoord3;
+			break;
+		case 2: //MapObjDiffuse_T1_Env_T2
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_texcoord2;
+			v_texcoord3 = a_texcoord3;
+			break;
+		case 3: //MapObjSpecular_T1
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_texcoord2; //not used
+			v_texcoord3 = a_texcoord3; //not used
+			break;
+		case 4: //MapObjDiffuse_Comp
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_texcoord2;
+			v_texcoord3 = a_texcoord3; //not used
+			break;
+		case 5: //MapObjDiffuse_Comp_Refl
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_texcoord2;
+			v_texcoord3 = reflect(normalize(vec3(1.0)), a_normal).xy; // TODO: 1.0 => cameraPoint
+			break;
+		case 6: //MapObjDiffuse_Comp_Terrain
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_position.xy * -0.239999995;
+			v_texcoord3 = a_texcoord3; //not used
+			break;
+		case 7: //MapObjDiffuse_CompAlpha
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_position.xy * -0.239999995;
+			v_texcoord3 = a_texcoord3; //not used
+			break;
+		case 8: //MapObjParallax
+			v_texcoord = a_texcoord;
+			v_texcoord2 = a_texcoord2;
+			v_texcoord3 = a_texcoord3;
+			break;
+		default:
+		    v_texcoord = vec2(0.0, 1.0);
+        	v_texcoord2 = vec2(0.0, 1.0);
+        	v_texcoord3 = vec2(0.0, 1.0);
 			break;
 	}
 }
