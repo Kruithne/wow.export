@@ -21,21 +21,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Python 2 (Linux)
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo apt install -y python2 python2-dev
-      - name: Install Python 2 (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install python2 -y
-      - name: Install Python 2 (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install pyenv
-          pyenv install 2.7.18
-          echo "PYTHON=/Users/runner/.pyenv/versions/2.7.18/bin/python" >> $GITHUB_ENV
       - name: Install node-gyp dependencies (Linux)
         if: matrix.os == 'ubuntu-22.04'
         run: |
