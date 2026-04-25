@@ -1,4 +1,8 @@
-## 0.2.15 (xx-04-2026)
+## 0.2.15 (25-04-2026)
+- Added working builds for macOS Apple Silicon (ARM64).
+- Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
+- Fixed issues that would prevent wow.export from functioning correctly on macOS.
+- Fixed 3D preview failing on macOS due to shader uniform limit.
 - Fixed crash when copying item IDs in character tab.
 
 ## 0.2.14 (19-03-2026)
