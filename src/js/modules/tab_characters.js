@@ -1067,6 +1067,14 @@ async function apply_import_data(core, data, source) {
 
 		gender_index = data.gender.type === 'MALE' ? 0 : 1;
 
+		// fallback: if resolved model has no customization data, try Race_related
+		const test_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
+		if (test_model_id === undefined || !DBCharacterCustomization.get_options_for_model(test_model_id)) {
+			const chr_race_row = await db2.ChrRaces.getRow(race_id);
+			if (chr_race_row?.Race_related)
+				race_id = chr_race_row.Race_related;
+		}
+
 		const chr_model_id = DBCharacterCustomization.get_chr_model_id(race_id, gender_index);
 		const available_options = DBCharacterCustomization.get_options_for_model(chr_model_id);
 		const available_options_ids = available_options.map(opt => opt.id);
