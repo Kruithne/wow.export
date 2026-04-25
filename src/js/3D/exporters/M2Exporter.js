@@ -136,6 +136,7 @@ class M2Exporter {
 			textureIndex++;
 		}
 
+		textureIndex = 0;
 		for (const texture of this.m2.textures) {
 			// Abort if the export has been cancelled.
 			if (helper.isCancelled())

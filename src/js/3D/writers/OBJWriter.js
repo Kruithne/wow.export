@@ -191,7 +191,7 @@ class OBJWriter {
 						if (uvIndex === 0)
 							uvMap.set(j, u++);
 
-						await writer.writeLine(prefix + ' ' + uv[i] + ' ' + uv[i + 1]);
+						await writer.writeLine(prefix + ' ' + uv[i] + ' ' + (1 - uv[i + 1]));
 					}
 				}
 			}

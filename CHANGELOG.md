@@ -26,6 +26,7 @@
 - Fixed an issue preventing some models from importing in to Blender (unsupported operand type).
 - Fixed model animations not applying texture weight transparency, causing invisible geometry to render opaque.
 - Fixed an issue causing the first texture of an WMO export to be missing when exporting from MPQ archives.
+- Fixed an issue that caused posed characters exported as OBJ to have their skin upside down.
 - Thank you to jarveson (1), VamooseAddons (2) and 0xUnkn0wN (3) for contributions included in this release.
 
 ## 0.2.14 (19-03-2026)
