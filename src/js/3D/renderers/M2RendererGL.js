@@ -1087,10 +1087,11 @@ class M2RendererGL {
 			const t1 = times[ti];
 			const t2 = times[ti + 1];
 
-			if (intertype === 0)
+			const dt = t2 - t1;
+			if (intertype === 0 || dt <= 0)
 				return v1;
 			else
-				return lerpfunc(v1, v2, (at - t1) / (t2 - t1));
+				return lerpfunc(v1, v2, Math.min((at - t1) / dt, 1));
 		} else {
 			return values[0];
 		}
@@ -1212,7 +1213,8 @@ class M2RendererGL {
 
 		const t0 = timestamps[frame];
 		const t1 = timestamps[frame + 1];
-		const alpha = (time_ms - t0) / (t1 - t0);
+		const dt = t1 - t0;
+		const alpha = dt > 0 ? Math.min((time_ms - t0) / dt, 1) : 0;
 
 		const v0 = values[frame];
 		const v1 = values[frame + 1];
@@ -1242,7 +1244,8 @@ class M2RendererGL {
 
 		const t0 = timestamps[frame];
 		const t1 = timestamps[frame + 1];
-		const alpha = (time_ms - t0) / (t1 - t0);
+		const dt = t1 - t0;
+		const alpha = dt > 0 ? Math.min((time_ms - t0) / dt, 1) : 0;
 
 		const q0 = values[frame];
 		const q1 = values[frame + 1];
