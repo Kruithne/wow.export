@@ -800,6 +800,8 @@ class MDXRendererGL {
 
 		for (const vao of this.vaos)
 			vao.dispose();
+		for (const ubo of this.ubos)
+			ubo.ubo.dispose();
 
 		for (const buf of this.buffers)
 			this.gl.deleteBuffer(buf);
@@ -815,6 +817,7 @@ class MDXRendererGL {
 		}
 
 		this.vaos = [];
+		this.ubos = [];
 		this.buffers = [];
 		this.draw_calls = [];
 
