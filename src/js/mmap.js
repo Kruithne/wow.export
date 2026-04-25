@@ -6,7 +6,7 @@
 const path = require('path');
 const log = require('./log');
 const INSTALL_PATH = process.platform === 'darwin'
-	? path.resolve(path.join(__dirname, '..'))
+	? nw.__dirname
 	: path.dirname(process.execPath);
 
 const mmap_native = require(path.join(INSTALL_PATH, 'mmap.node'));
