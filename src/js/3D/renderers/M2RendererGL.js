@@ -107,6 +107,19 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 0, 1
 ]);
 
+// binary search for largest index where timestamps[i] <= time
+function find_keyframe(timestamps, time) {
+	let lo = 0, hi = timestamps.length - 1;
+	while (lo < hi) {
+		const mid = (lo + hi + 1) >> 1;
+		if (timestamps[mid] <= time)
+			lo = mid;
+		else
+			hi = mid - 1;
+	}
+	return lo;
+}
+
 /**
  * multiply two 4x4 matrices (column-major): out = a * b
  * @param {Float32Array} out
@@ -1033,12 +1046,7 @@ class M2RendererGL {
 			if (currtime > times[times.length - 1])
 				return times.length - 1;
 
-			const lowerbound = (a, b) => { let n = a.length; for (let i = 0; i < n; ++i) { if (a[i] >= b) return i; } return n; };
-			let time = lowerbound(times, currtime);
-			if (time !== 0)
-				time--;
-
-			return time;
+			return find_keyframe(times, currtime);
 		} else if (times.length === 1) {
 			return 0;
 		} else {
@@ -1205,14 +1213,7 @@ class M2RendererGL {
 			return [v[0], v[1], v[2]];
 		}
 
-		// find keyframe
-		let frame = 0;
-		for (let i = 0; i < timestamps.length - 1; i++) {
-			if (time_ms >= timestamps[i] && time_ms < timestamps[i + 1]) {
-				frame = i;
-				break;
-			}
-		}
+		const frame = find_keyframe(timestamps, time_ms);
 
 		const t0 = timestamps[frame];
 		const t1 = timestamps[frame + 1];
@@ -1242,14 +1243,7 @@ class M2RendererGL {
 			return [v[0], v[1], v[2], v[3]];
 		}
 
-		// find keyframe
-		let frame = 0;
-		for (let i = 0; i < timestamps.length - 1; i++) {
-			if (time_ms >= timestamps[i] && time_ms < timestamps[i + 1]) {
-				frame = i;
-				break;
-			}
-		}
+		const frame = find_keyframe(timestamps, time_ms);
 
 		const t0 = timestamps[frame];
 		const t1 = timestamps[frame + 1];
