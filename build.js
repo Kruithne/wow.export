@@ -587,6 +587,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			for (const file of files) {
 				const relative = path.relative(buildDir, file).replace(/\\/g, '/');
+				const permissions = (await fs.stat(file)).mode & 0o7777;
 
 				const data = await fs.readFile(file);
 				const hash = crypto.createHash('sha256');
@@ -595,7 +596,14 @@ const deflateBuffer = util.promisify(zlib.deflate);
 				const comp = await deflateBuffer(data);
 				await fs.writeFile(bundleOut, comp, { flag: 'a' });
 
-				contents[relative] = { hash: hash.digest('hex'), size: data.byteLength, compSize: comp.byteLength, ofs: compSize };
+				contents[relative] = { 
+					hash: hash.digest('hex'),
+					permissions: permissions,
+					size: data.byteLength,
+					compSize: comp.byteLength,
+					ofs: compSize 
+				};
+				
 				totalSize += data.byteLength;
 				compSize += comp.byteLength;
 

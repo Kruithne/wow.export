@@ -24,6 +24,9 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 0, 1
 ]);
 
+// must match MAX_BONES in m2.vertex.shader
+const MAX_BONES = 220;
+
 // interpolation types
 const INTERP_NONE = 0;
 const INTERP_LINEAR = 1;
@@ -373,11 +376,15 @@ class MDXRendererGL {
 			this.buffers.push(bwbo);
 
 			// index buffer
+			const face_data = new Uint16Array(geoset.faces);
 			const ebo = gl.createBuffer();
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geoset.faces), gl.STATIC_DRAW);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, face_data, gl.STATIC_DRAW);
 			this.buffers.push(ebo);
 			vao.ebo = ebo;
+
+			// wireframe index buffer
+			vao.set_wireframe_index_buffer(VertexArray.triangles_to_lines(face_data));
 
 			vao.setup_m2_separate_buffers(vbo, nbo, uvo, bibo, bwbo, null);
 
@@ -760,12 +767,14 @@ class MDXRendererGL {
 
 			ubo.ubo.bind(0);
 			dc.vao.bind();
-			gl.drawElements(
-				wireframe ? gl.LINES : gl.TRIANGLES,
-				dc.count,
-				gl.UNSIGNED_SHORT,
-				dc.start * 2
-			);
+
+			if (wireframe) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.wireframe_ebo);
+				gl.drawElements(gl.LINES, dc.count * 2, gl.UNSIGNED_SHORT, dc.start * 4);
+			} else {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.ebo);
+				gl.drawElements(gl.TRIANGLES, dc.count, gl.UNSIGNED_SHORT, dc.start * 2);
+			}
 		}
 
 		ctx.set_blend(false);

@@ -5,11 +5,9 @@
  */
 const path = require('path');
 const log = require('./log');
-const INSTALL_PATH = process.platform === 'darwin'
-	? path.resolve(path.join(__dirname, '..'))
-	: path.dirname(process.execPath);
+const constants = require('./constants');
 
-const mmap_native = require(path.join(INSTALL_PATH, 'mmap.node'));
+const mmap_native = require(path.join(constants.INSTALL_PATH, 'mmap.node'));
 
 const virtual_files = new Set();
 

@@ -48,12 +48,12 @@ async function patch_delay_load_hook() {
 	const search_paths = [];
 
 	try {
-		const npm_root = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
+		const npm_root = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: true }).trim();
 		search_paths.push(resolve(npm_root, 'node-gyp/src/win_delay_load_hook.cc'));
 	} catch {}
 
 	try {
-		const npm_prefix = execFileSync('npm', ['prefix', '-g'], { encoding: 'utf8' }).trim();
+		const npm_prefix = execFileSync('npm', ['prefix', '-g'], { encoding: 'utf8', shell: true }).trim();
 		search_paths.push(resolve(npm_prefix, 'node_modules/node-gyp/src/win_delay_load_hook.cc'));
 	} catch {}
 
@@ -187,9 +187,15 @@ function rebuild_addon(addon_dir) {
 		`--nodedir=${node_dir}`
 	];
 
-	execFileSync('npx', ['nw-gyp', ...args], {
+	execFileSync('node-gyp', [...args, `--arch=${process.arch}`], {
 		cwd: addon_dir,
-		stdio: 'inherit'
+		stdio: 'inherit',
+		shell: true,
+		env: {
+			...process.env,
+			npm_config_runtime: 'node-webkit',
+			npm_config_target: nw_version
+		}
 	});
 }
 

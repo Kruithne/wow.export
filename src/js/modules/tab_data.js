@@ -42,6 +42,17 @@ const parse_table = async (table_name) => {
 			row_values.unshift(id_value);
 		}
 
+		// coerce BigInt to Number to avoid JSON.stringify crash in Vue rendering
+		for (let i = 0; i < row_values.length; i++) {
+			const val = row_values[i];
+			if (typeof val === 'bigint')
+				row_values[i] = Number(val);
+			else if (Array.isArray(val))
+				for (let j = 0; j < val.length; j++)
+					if (typeof val[j] === 'bigint')
+						val[j] = Number(val[j]);
+		}
+
 		parsed[index++] = row_values;
 	}
 

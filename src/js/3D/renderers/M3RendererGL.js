@@ -172,9 +172,17 @@ class M3RendererGL {
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 			this.buffers.push(ebo);
 
+			// wireframe index buffer
+			const wireframe_ebo = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframe_ebo);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, VertexArray.triangles_to_lines(indices), gl.STATIC_DRAW);
+			this.buffers.push(wireframe_ebo);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+
 			this.draw_calls.push({
 				vao: vao,
 				ebo: ebo,
+				wireframe_ebo: wireframe_ebo,
 				count: geoset.indexCount,
 				visible: true
 			});
@@ -293,13 +301,14 @@ class M3RendererGL {
 
 			ubo.ubo.bind(0);
 			dc.vao.bind();
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.ebo);
-			gl.drawElements(
-				wireframe ? gl.LINES : gl.TRIANGLES,
-				dc.count,
-				gl.UNSIGNED_SHORT,
-				0
-			);
+
+			if (wireframe) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.wireframe_ebo);
+				gl.drawElements(gl.LINES, dc.count * 2, gl.UNSIGNED_SHORT, 0);
+			} else {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.ebo);
+				gl.drawElements(gl.TRIANGLES, dc.count, gl.UNSIGNED_SHORT, 0);
+			}
 		}
 
 		ctx.set_cull_face(false);

@@ -2423,7 +2423,7 @@ module.exports = {
 		copy_item_id(slot_id) {
 			const item = this.get_equipped_item(slot_id);
 			if (item)
-				navigator.clipboard.writeText(String(item.id));
+				nw.Clipboard.get().set(String(item.id), 'text');
 
 			this.$core.view.chrEquipmentSlotContext = null;
 		},
@@ -2431,7 +2431,7 @@ module.exports = {
 		copy_item_name(slot_id) {
 			const item = this.get_equipped_item(slot_id);
 			if (item)
-				navigator.clipboard.writeText(item.name);
+				nw.Clipboard.get().set(item.name, 'text');
 
 			this.$core.view.chrEquipmentSlotContext = null;
 		},

@@ -16,12 +16,13 @@ const PUBLISH_DIR = path.join(__dirname, 'publish');
 const deflate_buffer = util.promisify(zlib.deflate);
 
 const argv = process.argv.splice(2);
-const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x64'];
+const PUBLISH_BUILDS = argv.length > 0 ? argv : ['win-x64', 'linux-x64', 'osx-x64', 'osx-arm64'];
 
 const INSTALLER_NAMES = {
 	'win-x64': 'installer.exe',
 	'linux-x64': 'installer',
-	'osx-x64': 'installer'
+	'osx-x64': 'installer',
+	'osx-arm64': 'installer'
 };
 
 async function collect_files(dir, out = []) {
@@ -52,11 +53,13 @@ async function create_data_pak(build_dir, output_dir) {
 		const relative = path.relative(build_dir, file).replace(/\\/g, '/');
 		const data = await fs.readFile(file);
 		const compressed = await deflate_buffer(data);
+		const permissions = (await fs.stat(file)).mode & 0o7777;
 
 		await fs.appendFile(pak_path, compressed);
 
 		contents[relative] = {
 			size: data.byteLength,
+			permissions: permissions,
 			compSize: compressed.byteLength,
 			ofs: comp_size
 		};

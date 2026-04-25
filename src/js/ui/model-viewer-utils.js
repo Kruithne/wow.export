@@ -136,6 +136,11 @@ const toggle_uv_layer = (state, renderer, layer_name) => {
 		state.texturePreviewUVOverlay = '';
 	} else if (renderer && renderer.getUVLayers) {
 		const uv_layer_data = renderer.getUVLayers();
+		if (!uv_layer_data.indices) {
+			state.texturePreviewUVOverlay = '';
+			return;
+		}
+
 		const overlay_data_url = uvDrawer.generateUVLayerDataURL(
 			layer.data,
 			state.texturePreviewWidth,

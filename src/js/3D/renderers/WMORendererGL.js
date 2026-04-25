@@ -291,10 +291,14 @@ class WMORendererGL {
 				}
 
 				// index buffer (managed by vao.dispose())
+				const index_data = new Uint16Array(group.indices);
 				const ebo = gl.createBuffer();
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(group.indices), gl.STATIC_DRAW);
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index_data, gl.STATIC_DRAW);
 				vao.ebo = ebo;
+
+				// wireframe index buffer
+				vao.set_wireframe_index_buffer(VertexArray.triangles_to_lines(index_data));
 
 				// set up vertex attributes
 				vao.setup_wmo_separate_buffers(vbo, nbo, uvo, cbo, cbo2, cbo3, uv2o, uv3o, uv4o);
@@ -563,6 +567,7 @@ class WMORendererGL {
 				continue;
 
 			group.vao.bind();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframe ? group.vao.wireframe_ebo : group.vao.ebo);
 
 			for (const dc of group.draw_calls) {
 				// set shader mode
@@ -581,12 +586,10 @@ class WMORendererGL {
 				}
 
 				// draw
-				gl.drawElements(
-					wireframe ? gl.LINES : gl.TRIANGLES,
-					dc.count,
-					gl.UNSIGNED_SHORT,
-					dc.start * 2
-				);
+				if (wireframe)
+					gl.drawElements(gl.LINES, dc.count * 2, gl.UNSIGNED_SHORT, dc.start * 4);
+				else
+					gl.drawElements(gl.TRIANGLES, dc.count, gl.UNSIGNED_SHORT, dc.start * 2);
 			}
 		}
 

@@ -15,25 +15,12 @@ jobs:
             os: ubuntu-22.04
           - platform: osx-x64
             os: macos-latest
+          - platform: osx-arm64
+            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Python 2 (Linux)
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo apt install -y python2 python2-dev
-      - name: Install Python 2 (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install python2 -y
-      - name: Install Python 2 (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install pyenv
-          pyenv install 2.7.18
-          echo "PYTHON=/Users/runner/.pyenv/versions/2.7.18/bin/python" >> $GITHUB_ENV
       - name: Install node-gyp dependencies (Linux)
         if: matrix.os == 'ubuntu-22.04'
         run: |
@@ -46,12 +33,15 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.5'
-      - name: Install nw-gyp
-        run: npm install -g nw-gyp@latest
+      - name: Install node-gyp
+        run: npm install -g node-gyp@latest
       - name: bun install
         run: bun install
       - name: Compile wow.export ${{ matrix.platform }}
         run: bun build.js ${{ matrix.platform }}
+      - name: Ad-hoc codesign (macOS)
+        if: startsWith(matrix.platform, 'osx')
+        run: codesign --force --deep -s - bin/${{ matrix.platform }}/wow.export.app
       - name: Publish
         run: bun publish.js ${{ matrix.platform }}
       - name: Upload artifacts

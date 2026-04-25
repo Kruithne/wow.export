@@ -117,7 +117,7 @@ const applyUpdate = async () => {
 		log.write('Downloading %s to %s', node.file, localFile);
 
 		await core.progressLoadingScreen(util.format('%d / %d (%s)', i + 1, n, downloadSize));
-		await generics.downloadFile(remoteEndpoint, localFile, node.meta.ofs, node.meta.compSize, true);
+		await generics.downloadFile(remoteEndpoint, localFile, node.meta.ofs, node.meta.compSize, true, node.meta.permissions);
 	}
 
 	core.view.loadingTitle = 'Restarting application...';

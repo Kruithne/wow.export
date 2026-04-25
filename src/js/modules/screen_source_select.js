@@ -105,6 +105,28 @@ module.exports = {
 
 			try {
 				await casc_source.load(index);
+
+				if (casc_source instanceof CASCLocal && this.$core.view.config.allowCacheCollection) {
+					const { Worker } = require('worker_threads');
+					const crypto = require('crypto');
+
+					if (!this.$core.view.config.machineId)
+						this.$core.view.config.machineId = crypto.randomUUID();
+
+					const worker = new Worker('./src/js/workers/cache-collector.js', {
+						workerData: {
+							install_path: casc_source.dir,
+							machine_id: this.$core.view.config.machineId,
+							submit_url: constants.CACHE.SUBMIT_URL,
+							finalize_url: constants.CACHE.FINALIZE_URL,
+							user_agent: constants.USER_AGENT,
+							state_path: constants.CACHE.STATE_FILE
+						}
+					});
+					worker.on('message', msg => log.write('cache-collector: %s', msg));
+					worker.on('error', err => log.write('cache-collector error: %s', err.message));
+				}
+
 				this.$core.view.installType = InstallType.CASC;
 				this.$modules.tab_home.setActive();
 			} catch (e) {
