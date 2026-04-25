@@ -4,6 +4,7 @@
 - Added working builds for macOS Apple Silicon (ARM64). (3)
 - Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
 - Importing from Battle.net now uses the correct item appearance in character customization.
+- Importing from Battle.net now loads your character's guild tabard customization.
 - Improved 3D previews for WMO models.
 - Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
 - Improved rendering order of transparent and layered model parts in the 3D previewer. (1)

@@ -1130,6 +1130,17 @@ async function apply_import_data(core, data, source) {
 			}
 		}
 
+		if (data.guild_crest) {
+			const crest = data.guild_crest;
+			core.view.chrGuildTabardConfig = {
+				background: crest.background?.color?.id ?? 0,
+				border_style: crest.border?.id ?? 0,
+				border_color: crest.border?.color?.id ?? 0,
+				emblem_design: crest.emblem?.id ?? 0,
+				emblem_color: crest.emblem?.color?.id ?? 0
+			};
+		}
+
 	} else if (source === 'wmv') {
 		race_id = data.race;
 		gender_index = data.gender;
