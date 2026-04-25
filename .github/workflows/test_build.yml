@@ -41,7 +41,7 @@ jobs:
         run: bun build.js ${{ matrix.platform }}
       - name: Ad-hoc codesign (macOS)
         if: startsWith(matrix.platform, 'osx')
-        run: codesign --force --deep -s - build/${{ matrix.platform }}/wow.export.app
+        run: codesign --force --deep -s - bin/${{ matrix.platform }}/wow.export.app
       - name: Publish
         run: bun publish.js ${{ matrix.platform }}
       - name: Upload artifacts
