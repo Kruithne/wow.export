@@ -1079,7 +1079,7 @@ async function import_wowhead_character(core) {
  * Sets all state first, then triggers model selection which loads the model.
  */
 async function apply_import_data(core, data, source) {
-	let race_id, gender_index, customizations, equipment;
+	let race_id, gender_index, customizations, equipment, equipment_skins = {};
 
 	if (source === 'bnet') {
 		race_id = data.playable_race.id;
@@ -1124,6 +1124,9 @@ async function apply_import_data(core, data, source) {
 			for (const item of data.items) {
 				const slot_id = item.internal_slot_id + 1;
 				equipment[slot_id] = item.id;
+
+				if (item.item_appearance_modifier_id)
+					equipment_skins[slot_id] = item.item_appearance_modifier_id;
 			}
 		}
 
@@ -1196,7 +1199,7 @@ async function apply_import_data(core, data, source) {
 
 	try {
 		core.view.chrEquippedItems = { ...equipment };
-		core.view.chrEquippedItemSkins = {};
+		core.view.chrEquippedItemSkins = { ...equipment_skins };
 
 		core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 		core.view.chrImportChoices.push(...customizations);
