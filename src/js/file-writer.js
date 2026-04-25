@@ -12,7 +12,17 @@ class FileWriter {
 	 * @param {string} encoding 
 	 */
 	constructor(file, encoding = 'utf8') {
-		this.stream = fs.createWriteStream(file, { flags: 'w', encoding });
+		try {
+			this.stream = fs.createWriteStream(file, { flags: 'w', encoding });
+		} catch (e) {
+			if (e.code === 'EISDIR') {
+				fs.rmSync(file, { recursive: true });
+				this.stream = fs.createWriteStream(file, { flags: 'w', encoding });
+			} else {
+				throw e;
+			}
+		}
+
 		this.blocked = false;
 		this.resolver = null;
 	}

@@ -184,7 +184,7 @@ class WOWEXPORT_OT_import_last_export(bpy.types.Operator):
     def execute(self, context):
         export_file = get_last_export_path()
 
-        if not os.path.exists(export_file):
+        if not os.path.isfile(export_file):
             self.report({'ERROR'}, f'Export file not found: {export_file}')
             return {'CANCELLED'}
 
