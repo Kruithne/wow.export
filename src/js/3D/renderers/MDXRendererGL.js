@@ -23,6 +23,9 @@ const IDENTITY_MAT4 = new Float32Array([
 	0, 0, 0, 1
 ]);
 
+// must match MAX_BONES in m2.vertex.shader
+const MAX_BONES = 220;
+
 // interpolation types
 const INTERP_NONE = 0;
 const INTERP_LINEAR = 1;
@@ -681,11 +684,12 @@ class MDXRendererGL {
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
 		// bone matrices (mdx uses node-based skeleton)
-		shader.set_uniform_1i('u_bone_count', this.nodes ? this.nodes.length : 0);
+		const bone_count = this.nodes ? Math.min(this.nodes.length, MAX_BONES) : 0;
+		shader.set_uniform_1i('u_bone_count', bone_count);
 		if (this.nodes && this.node_matrices) {
 			const loc = shader.get_uniform_location('u_bone_matrices');
 			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.node_matrices);
+				gl.uniformMatrix4fv(loc, false, this.node_matrices.subarray(0, bone_count * 16));
 		}
 
 		shader.set_uniform_1i('u_has_tex_matrix1', 0);

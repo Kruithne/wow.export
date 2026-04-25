@@ -44,6 +44,9 @@ const VERTEX_SHADER_IDS = {
 };
 
 // pixel shader name to ID mapping (matches fragment shader switch cases)
+// must match MAX_BONES in m2.vertex.shader
+const MAX_BONES = 220;
+
 const PIXEL_SHADER_IDS = {
 	'Combiners_Opaque': 0,
 	'Combiners_Mod': 1,
@@ -1224,11 +1227,12 @@ class M2RendererGL {
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
 		// bone matrices
-		shader.set_uniform_1i('u_bone_count', this.bones ? this.bones.length : 0);
+		const bone_count = this.bones ? Math.min(this.bones.length, MAX_BONES) : 0;
+		shader.set_uniform_1i('u_bone_count', bone_count);
 		if (this.bones && this.bone_matrices) {
 			const loc = shader.get_uniform_location('u_bone_matrices');
 			if (loc !== null)
-				gl.uniformMatrix4fv(loc, false, this.bone_matrices);
+				gl.uniformMatrix4fv(loc, false, this.bone_matrices.subarray(0, bone_count * 16));
 		}
 
 		// texture matrix defaults
