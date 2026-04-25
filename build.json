@@ -24,6 +24,7 @@
 	"builds": [
 		{
 			"name": "win-x64-debug",
+			"arch": "x64",
 			"bundle": "nwjs-sdk-v%s-win-x64.zip",
 			"bundleType": "ZIP",
 			"sourceMethod": "LINK",
@@ -44,6 +45,7 @@
 		},
 		{
 			"name": "win-x64",
+			"arch": "x64",
 			"bundle": "nwjs-v%s-win-x64.zip",
 			"bundleType": "ZIP",
 			"buildArchive": "ZIP",
@@ -116,6 +118,7 @@
 		},
 		{
 			"name": "linux-x64",
+			"arch": "x64",
 			"bundle": "nwjs-v%s-linux-x64.tar.gz",
 			"bundleType": "GZ",
 			"buildArchive": "GZ",
@@ -158,6 +161,7 @@
 		},
 		{
 			"name": "linux-x64-debug",
+			"arch": "x64",
 			"bundle": "nwjs-sdk-v%s-linux-x64.tar.gz",
 			"bundleType": "GZ",
 			"sourceMethod": "LINK",
@@ -175,6 +179,7 @@
 		},
 		{
 			"name": "osx-x64",
+			"arch": "x64",
 			"bundle": "nwjs-v%s-osx-x64.zip",
 			"bundleType": "ZIP",
 			"buildArchive": "ZIP",
@@ -223,6 +228,7 @@
 		},
 		{
 			"name": "osx-arm64",
+			"arch": "arm64",
 			"bundle": "nwjs-v%s-osx-arm64.zip",
 			"bundleType": "ZIP",
 			"buildArchive": "ZIP",

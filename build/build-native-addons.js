@@ -5,6 +5,8 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } fr
 import { join, resolve } from 'path';
 import { log, log_color } from './log.js';
 
+const target_arch = process.argv.find(a => a.startsWith('--arch='))?.split('=')[1] ?? process.arch;
+
 const build_config = await Bun.file('./build.json').json();
 const nw_version = build_config.webkitVersion;
 const addons_dir = resolve(process.cwd(), 'node_addons');
@@ -179,7 +181,7 @@ function install_deps(addon_dir) {
 
 function rebuild_addon(addon_dir) {
 	const addon_name = join(addon_dir).split(/[/\\]/).pop();
-	log.info('Building addon *%s*...', addon_name);
+	log.info('Building addon *%s* for *%s*...', addon_name, target_arch);
 
 	const args = [
 		'rebuild',
@@ -187,7 +189,7 @@ function rebuild_addon(addon_dir) {
 		`--nodedir=${node_dir}`
 	];
 
-	execFileSync('node-gyp', [...args, `--arch=${process.arch}`], {
+	execFileSync('node-gyp', [...args, `--arch=${target_arch}`], {
 		cwd: addon_dir,
 		stdio: 'inherit',
 		shell: true,

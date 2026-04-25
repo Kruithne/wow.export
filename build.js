@@ -108,23 +108,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 	const allBuildsStart = Date.now();
 	log.info('Selected builds: %s', log_colour_array(targetBuilds));
 
-	// build native addons once before processing any build targets
-	if (config.nativeAddonScript) {
-		const addonScriptPath = path.resolve(config.nativeAddonScript);
-		log.info('Building native addons (*%s*)...', addonScriptPath);
-
-		const addonStart = Date.now();
-		const addon_result = Bun.spawnSync({
-			cmd: ['bun', addonScriptPath],
-			stdio: ['inherit', 'inherit', 'inherit']
-		});
-
-		if (addon_result.exitCode !== 0)
-			throw new Error('Native addon build failed');
-
-		const addonElapsed = (Date.now() - addonStart) / 1000;
-		log.success('Native addons built in *%ds*', addonElapsed);
-	}
+	let last_addon_arch = null;
 
 	for (const build of targetBuilds) {
 		const buildGUID = Bun.randomUUIDv7();
@@ -132,6 +116,26 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		log.info('Starting build *%s* [guid *%s*]...', build.name, buildGUID);
 		const buildStart = Date.now();
 		const buildDir = path.join(outDir, build.name);
+
+		// build native addons for the target architecture (skip if already built for this arch)
+		const target_arch = build.arch ?? process.arch;
+		if (config.nativeAddonScript && last_addon_arch !== target_arch) {
+			const addonScriptPath = path.resolve(config.nativeAddonScript);
+			log.info('Building native addons for *%s* (*%s*)...', target_arch, addonScriptPath);
+
+			const addonStart = Date.now();
+			const addon_result = Bun.spawnSync({
+				cmd: ['bun', addonScriptPath, `--arch=${target_arch}`],
+				stdio: ['inherit', 'inherit', 'inherit']
+			});
+
+			if (addon_result.exitCode !== 0)
+				throw new Error('Native addon build failed');
+
+			last_addon_arch = target_arch;
+			const addonElapsed = (Date.now() - addonStart) / 1000;
+			log.success('Native addons built for *%s* in *%ds*', target_arch, addonElapsed);
+		}
 
 		// Wipe the build directory and then re-create it.
 		await fs.rm(buildDir, { recursive: true, force: true });
