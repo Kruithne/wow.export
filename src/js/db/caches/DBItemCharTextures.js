@@ -9,8 +9,8 @@ const db2 = require('../../casc/db2');
 const DBTextureFileData = require('./DBTextureFileData');
 const DBComponentTextureFileData = require('./DBComponentTextureFileData');
 
-// maps ItemID -> ItemDisplayInfoID
-const item_to_display_id = new Map();
+// maps ItemID -> Map<ItemAppearanceModifierID, ItemDisplayInfoID>
+const item_to_display_ids = new Map();
 
 // maps ItemDisplayInfoID -> array of { componentSection, materialResourcesID }
 const display_to_component_textures = new Map();
@@ -44,20 +44,30 @@ const initialize = async () => {
 		await DBTextureFileData.ensureInitialized();
 		await DBComponentTextureFileData.initialize();
 
-		// build item -> appearance -> display chain
+		// build item -> modifier -> appearance -> display chain
 		const appearance_map = new Map();
-		for (const row of (await db2.ItemModifiedAppearance.getAllRows()).values())
-			appearance_map.set(row.ItemID, row.ItemAppearanceID);
+		for (const row of (await db2.ItemModifiedAppearance.getAllRows()).values()) {
+			if (!appearance_map.has(row.ItemID))
+				appearance_map.set(row.ItemID, new Map());
+
+			appearance_map.get(row.ItemID).set(row.ItemAppearanceModifierID, row.ItemAppearanceID);
+		}
 
 		const appearance_to_display = new Map();
 		for (const [id, row] of await db2.ItemAppearance.getAllRows())
 			appearance_to_display.set(id, row.ItemDisplayInfoID);
 
-		// map item id to display id
-		for (const [item_id, appearance_id] of appearance_map) {
-			const display_id = appearance_to_display.get(appearance_id);
-			if (display_id !== undefined && display_id !== 0)
-				item_to_display_id.set(item_id, display_id);
+		// map item id -> modifier -> display id
+		for (const [item_id, modifiers] of appearance_map) {
+			for (const [modifier_id, appearance_id] of modifiers) {
+				const display_id = appearance_to_display.get(appearance_id);
+				if (display_id !== undefined && display_id !== 0) {
+					if (!item_to_display_ids.has(item_id))
+						item_to_display_ids.set(item_id, new Map());
+
+					item_to_display_ids.get(item_id).set(modifier_id, display_id);
+				}
+			}
 		}
 
 		// load component textures from ItemDisplayInfoMaterialRes
@@ -88,15 +98,37 @@ const ensure_initialized = async () => {
 };
 
 /**
+ * Resolve display ID for an item, optionally with a specific modifier.
+ * @param {number} item_id
+ * @param {number} [modifier_id]
+ * @returns {number|undefined}
+ */
+const resolve_display_id = (item_id, modifier_id) => {
+	const modifiers = item_to_display_ids.get(item_id);
+	if (!modifiers)
+		return undefined;
+
+	if (modifier_id !== undefined)
+		return modifiers.get(modifier_id);
+
+	if (modifiers.has(0))
+		return modifiers.get(0);
+
+	const sorted = [...modifiers.keys()].sort((a, b) => a - b);
+	return modifiers.get(sorted[0]);
+};
+
+/**
  * Get character texture components for an item.
  * Returns array of { section, fileDataID } for each body part the item covers.
  * @param {number} item_id
  * @param {number} [race_id] - character race ID for filtering
  * @param {number} [gender_index] - 0=male, 1=female for filtering
+ * @param {number} [modifier_id] - item appearance modifier (skin index)
  * @returns {Array<{section: number, fileDataID: number}>|null}
  */
-const get_item_textures = (item_id, race_id = null, gender_index = null) => {
-	const display_id = item_to_display_id.get(item_id);
+const get_item_textures = (item_id, race_id = null, gender_index = null, modifier_id) => {
+	const display_id = resolve_display_id(item_id, modifier_id);
 	if (display_id === undefined)
 		return null;
 
@@ -106,10 +138,11 @@ const get_item_textures = (item_id, race_id = null, gender_index = null) => {
 /**
  * Get ItemDisplayInfoID for an item.
  * @param {number} item_id
+ * @param {number} [modifier_id]
  * @returns {number|undefined}
  */
-const get_display_id = (item_id) => {
-	return item_to_display_id.get(item_id);
+const get_display_id = (item_id, modifier_id) => {
+	return resolve_display_id(item_id, modifier_id);
 };
 
 /**

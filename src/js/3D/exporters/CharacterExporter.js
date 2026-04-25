@@ -215,6 +215,7 @@ class CharacterExporter {
 					results.push({
 						slot_id,
 						item_id: entry.item_id,
+						modifier_id: entry.modifier_id,
 						attachment_id,
 						is_collection_style,
 						renderer,
@@ -242,6 +243,7 @@ class CharacterExporter {
 					results.push({
 						slot_id,
 						item_id: entry.item_id,
+						modifier_id: entry.modifier_id,
 						is_collection_style: true,
 						renderer,
 						...geometry

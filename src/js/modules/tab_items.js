@@ -337,6 +337,10 @@ module.exports = {
 			this.$core.view.chrEquippedItems[slot_id] = item.id;
 			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
 
+			// reset skin selection for newly equipped item
+			delete this.$core.view.chrEquippedItemSkins[slot_id];
+			this.$core.view.chrEquippedItemSkins = { ...this.$core.view.chrEquippedItemSkins };
+
 			const slot_name = get_slot_name(slot_id);
 			this.$core.setToast('success', `Equipped ${item.name} to ${slot_name} slot.`, null, 2000);
 		}

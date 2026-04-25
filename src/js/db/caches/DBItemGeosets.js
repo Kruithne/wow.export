@@ -7,8 +7,8 @@
 const log = require('../../log');
 const db2 = require('../../casc/db2');
 
-// maps ItemID -> ItemDisplayInfoID
-const item_to_display_id = new Map();
+// maps ItemID -> Map<ItemAppearanceModifierID, ItemDisplayInfoID>
+const item_to_display_ids = new Map();
 
 // maps ItemDisplayInfoID -> geoset data
 const display_to_geosets = new Map();
@@ -161,20 +161,30 @@ const initialize = async () => {
 	init_promise = (async () => {
 		log.write('Loading item geosets...');
 
-		// build item -> appearance -> display chain
+		// build item -> modifier -> appearance -> display chain
 		const appearance_map = new Map();
-		for (const row of (await db2.ItemModifiedAppearance.getAllRows()).values())
-			appearance_map.set(row.ItemID, row.ItemAppearanceID);
+		for (const row of (await db2.ItemModifiedAppearance.getAllRows()).values()) {
+			if (!appearance_map.has(row.ItemID))
+				appearance_map.set(row.ItemID, new Map());
+
+			appearance_map.get(row.ItemID).set(row.ItemAppearanceModifierID, row.ItemAppearanceID);
+		}
 
 		const appearance_to_display = new Map();
 		for (const [id, row] of await db2.ItemAppearance.getAllRows())
 			appearance_to_display.set(id, row.ItemDisplayInfoID);
 
-		// map item id to display id
-		for (const [item_id, appearance_id] of appearance_map) {
-			const display_id = appearance_to_display.get(appearance_id);
-			if (display_id !== undefined && display_id !== 0)
-				item_to_display_id.set(item_id, display_id);
+		// map item id -> modifier -> display id
+		for (const [item_id, modifiers] of appearance_map) {
+			for (const [modifier_id, appearance_id] of modifiers) {
+				const display_id = appearance_to_display.get(appearance_id);
+				if (display_id !== undefined && display_id !== 0) {
+					if (!item_to_display_ids.has(item_id))
+						item_to_display_ids.set(item_id, new Map());
+
+					item_to_display_ids.get(item_id).set(modifier_id, display_id);
+				}
+			}
 		}
 
 		// load geoset groups from ItemDisplayInfo
@@ -220,12 +230,34 @@ const ensure_initialized = async () => {
 };
 
 /**
+ * Resolve display ID for an item, optionally with a specific modifier.
+ * @param {number} item_id
+ * @param {number} [modifier_id]
+ * @returns {number|undefined}
+ */
+const resolve_display_id = (item_id, modifier_id) => {
+	const modifiers = item_to_display_ids.get(item_id);
+	if (!modifiers)
+		return undefined;
+
+	if (modifier_id !== undefined)
+		return modifiers.get(modifier_id);
+
+	if (modifiers.has(0))
+		return modifiers.get(0);
+
+	const sorted = [...modifiers.keys()].sort((a, b) => a - b);
+	return modifiers.get(sorted[0]);
+};
+
+/**
  * Get geoset data for an item's display.
  * @param {number} item_id
+ * @param {number} [modifier_id]
  * @returns {{geosetGroup: number[], helmetGeosetVis: number[]}|null}
  */
-const get_item_geoset_data = (item_id) => {
-	const display_id = item_to_display_id.get(item_id);
+const get_item_geoset_data = (item_id, modifier_id) => {
+	const display_id = resolve_display_id(item_id, modifier_id);
 	if (display_id === undefined)
 		return null;
 
@@ -235,10 +267,11 @@ const get_item_geoset_data = (item_id) => {
 /**
  * Get ItemDisplayInfoID for an item.
  * @param {number} item_id
+ * @param {number} [modifier_id]
  * @returns {number|undefined}
  */
-const get_display_id = (item_id) => {
-	return item_to_display_id.get(item_id);
+const get_display_id = (item_id, modifier_id) => {
+	return resolve_display_id(item_id, modifier_id);
 };
 
 /**
@@ -246,9 +279,10 @@ const get_display_id = (item_id) => {
  * Returns a map of char_geoset (CG enum) -> value to show.
  * The actual geoset ID = char_geoset * 100 + value.
  * @param {Object} equipped_items - Map of slot_id -> item_id
+ * @param {Object} [item_skins] - Map of slot_id -> modifier_id
  * @returns {Map<number, number>} - Map of char_geoset -> value
  */
-const calculate_equipment_geosets = (equipped_items) => {
+const calculate_equipment_geosets = (equipped_items, item_skins) => {
 	// track values per char_geoset, grouped by slot for priority resolution
 	const char_geoset_to_slot_values = new Map();
 
@@ -259,7 +293,8 @@ const calculate_equipment_geosets = (equipped_items) => {
 		if (!mapping)
 			continue;
 
-		const geoset_data = get_item_geoset_data(item_id);
+		const modifier_id = item_skins?.[slot_id_str];
+		const geoset_data = get_item_geoset_data(item_id, modifier_id);
 		if (!geoset_data)
 			continue;
 
@@ -312,10 +347,11 @@ const calculate_equipment_geosets = (equipped_items) => {
  * @param {number} item_id - The helmet item ID
  * @param {number} race_id - Character's race ID
  * @param {number} gender_index - 0 for male, 1 for female
+ * @param {number} [modifier_id]
  * @returns {number[]} Array of CG enum values to hide
  */
-const get_helmet_hide_geosets = (item_id, race_id, gender_index) => {
-	const geoset_data = get_item_geoset_data(item_id);
+const get_helmet_hide_geosets = (item_id, race_id, gender_index, modifier_id) => {
+	const geoset_data = get_item_geoset_data(item_id, modifier_id);
 	if (!geoset_data?.helmetGeosetVis)
 		return [];
 
@@ -334,9 +370,10 @@ const get_helmet_hide_geosets = (item_id, race_id, gender_index) => {
  * Get the set of char_geosets (CG enum values) that are affected by equipped items.
  * Only includes geosets for items that have display data (excludes hidden items).
  * @param {Object} equipped_items - Map of slot_id -> item_id
+ * @param {Object} [item_skins] - Map of slot_id -> modifier_id
  * @returns {Set<number>}
  */
-const get_affected_char_geosets = (equipped_items) => {
+const get_affected_char_geosets = (equipped_items, item_skins) => {
 	const affected = new Set();
 
 	for (const [slot_id_str, item_id] of Object.entries(equipped_items)) {
@@ -347,7 +384,8 @@ const get_affected_char_geosets = (equipped_items) => {
 			continue;
 
 		// skip items without display data (hidden items)
-		const geoset_data = get_item_geoset_data(item_id);
+		const modifier_id = item_skins?.[slot_id_str];
+		const geoset_data = get_item_geoset_data(item_id, modifier_id);
 		if (!geoset_data)
 			continue;
 

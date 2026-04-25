@@ -1,8 +1,8 @@
 ## 0.2.15 (25-04-2026)
-- Thank you to jarveson (1), VamooseAddons (2) and 0xUnkn0wN (3) for contributions included in this release.
+- Added support for item variants in character customization.
+- Added support for conditional character models (such as upright orcs).
 - Added working builds for macOS Apple Silicon (ARM64). (3)
 - Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
-- Added support for conditional character models (such as upright orcs).
 - Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
 - Improved rendering order of transparent and layered model parts in the 3D previewer. (1)
 - Improved blend mode rendering for glowing and transparent model effects. (1)
@@ -23,6 +23,7 @@
 - Fixed an issue preventing some models from importing in to Blender (unsupported operand type).
 - Fixed model animations not applying texture weight transparency, causing invisible geometry to render opaque.
 - Fixed an issue causing the first texture of an WMO export to be missing when exporting from MPQ archives.
+- Thank you to jarveson (1), VamooseAddons (2) and 0xUnkn0wN (3) for contributions included in this release.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.

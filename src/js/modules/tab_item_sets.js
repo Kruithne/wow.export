@@ -100,12 +100,14 @@ module.exports = {
 				const slot_id = DBItems.getItemSlotId(item_id);
 				if (slot_id) {
 					this.$core.view.chrEquippedItems[slot_id] = item_id;
+					delete this.$core.view.chrEquippedItemSkins[slot_id];
 					equipped_count++;
 				}
 			}
 
 			if (equipped_count > 0) {
 				this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
+				this.$core.view.chrEquippedItemSkins = { ...this.$core.view.chrEquippedItemSkins };
 				this.$core.setToast('success', `Equipped ${equipped_count} items from ${set.name}.`, null, 2000);
 			} else {
 				this.$core.setToast('info', 'No equippable items in this set.', null, 2000);
