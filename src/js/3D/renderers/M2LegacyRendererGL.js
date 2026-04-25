@@ -16,7 +16,7 @@ const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
 const textureRibbon = require('../../ui/texture-ribbon');
-const UniformBuffer = require('../gl/UniformBuffer');
+const { create_bones_ubo } = require('./renderer_utils');
 
 // m2 version constants
 const M2_VER_WOTLK = 264;
@@ -472,22 +472,8 @@ class M2LegacyRendererGL {
 	}
 
 	_create_bones_ubo() {
-		this.shader.bind_uniform_block("VsBoneUbo", 0);
-		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
-		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
-		const ubo = new UniformBuffer(this.ctx, ubosize);
-		this.ubos.push({
-			ubo: ubo,
-			offsets: offsets
-		});
-
-		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
-		const bone_count = Math.min(this.bones ? this.bones.length : 0, this.bone_matrices.length / 16);
-		// initialize to identity
-		for (let i = 0; i < bone_count; i++) {
-			const offset = i * 16;
-			this.bone_matrices.set(IDENTITY_MAT4, offset);
-		}
+		const bone_count = this.bones ? this.bones.length : 0;
+		this.bone_matrices = create_bones_ubo(this.shader, this.gl, this.ctx, this.ubos, bone_count);
 	}
 
 	async playAnimation(index) {

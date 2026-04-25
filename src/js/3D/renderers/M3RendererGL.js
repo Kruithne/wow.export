@@ -13,7 +13,7 @@ const GLContext = require('../gl/GLContext');
 const VertexArray = require('../gl/VertexArray');
 const GLTexture = require('../gl/GLTexture');
 
-const UniformBuffer = require('../gl/UniformBuffer');
+const { create_bones_ubo } = require('./renderer_utils');
 
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -77,17 +77,7 @@ class M3RendererGL {
 	}
 
 	_create_bones_ubo() {
-		this.shader.bind_uniform_block("VsBoneUbo", 0);
-		const ubosize = this.shader.get_uniform_block_param("VsBoneUbo", this.gl.UNIFORM_BLOCK_DATA_SIZE);
-		const offsets = this.shader.get_active_uniform_offsets(["u_bone_matrices"]);
-		const ubo = new UniformBuffer(this.ctx, ubosize);
-		this.ubos.push({
-			ubo: ubo,
-			offsets: offsets
-		});
-
-		this.bone_matrices = ubo.get_float32_view(offsets[0], (ubosize - offsets[0]) / 4);
-		this.bone_matrices.set(IDENTITY_MAT4);
+		this.bone_matrices = create_bones_ubo(this.shader, this.gl, this.ctx, this.ubos, 1);
 	}
 
 	async loadLOD(index) {
