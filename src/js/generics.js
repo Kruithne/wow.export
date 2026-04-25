@@ -216,6 +216,7 @@ function requestData(url, partialOfs, partialLen) {
 * @param {fs.Mode} mode File permissions
 */
 const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate = false, mode = 0o600) => {
+	mode = mode & 0o7777;
 	const url_stack = Array.isArray(url) ? url : [url];
 	
 	for (const currentUrl of url_stack) {

@@ -53,7 +53,7 @@ async function create_data_pak(build_dir, output_dir) {
 		const relative = path.relative(build_dir, file).replace(/\\/g, '/');
 		const data = await fs.readFile(file);
 		const compressed = await deflate_buffer(data);
-		const permissions = (await fs.stat(file)).mode;
+		const permissions = (await fs.stat(file)).mode & 0o7777;
 
 		await fs.appendFile(pak_path, compressed);
 

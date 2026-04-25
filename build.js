@@ -587,7 +587,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			for (const file of files) {
 				const relative = path.relative(buildDir, file).replace(/\\/g, '/');
-				const permissions = (await fs.stat(file)).mode;
+				const permissions = (await fs.stat(file)).mode & 0o7777;
 
 				const data = await fs.readFile(file);
 				const hash = crypto.createHash('sha256');
