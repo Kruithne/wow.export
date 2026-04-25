@@ -122,7 +122,7 @@ class ShaderProgram {
 	get_uniform_block_param(name, pname) {
 		const index = this.get_uniform_block_index(name);
 		if (index !== this.gl.INVALID_INDEX)
-			return this.gl.getActiveUniformBlockParameter(this.program, name, pname);
+			return this.gl.getActiveUniformBlockParameter(this.program, index, pname);
 		return null;
 	}
 
