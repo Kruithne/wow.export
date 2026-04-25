@@ -209,8 +209,8 @@ void main() {
 							tex4_20 * alpha_normalized.b +
 							tex5_20 * alpha_normalized.a;
 
-			// env texture would use posToTexCoord - simplified here
-			emissive = (tex_mixed.a * tex1.rgb) * tex_mixed.rgb;
+			vec4 env_tex = vec4(0.0); // env texture would use posToTexCoord - simplified here
+			emissive = (tex_mixed.a * env_tex.rgb) * tex_mixed.rgb;
 			mat_diffuse = mix(tex_mixed.rgb, vec3(0.0), v_color3.a);
 			break;
 		}
