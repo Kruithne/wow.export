@@ -15,6 +15,7 @@
 - Fixed an issue that would cause wow.export to crash is last_export was a directory.
 - Fixed an issue that would cause unnamed files to no longer appear in the raw client files list.
 - Fixed an issue that would prevent Earthen characters from importing from Battle.net.
+- Fixed item model exports missing material textures.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.

@@ -21,7 +21,6 @@ const initializeIDIMMR = async () => {
 	log.write('Loading item display info model mat res...');
 
 	for (const [id, row] of await db2.ItemDisplayInfoModelMatRes.getAllRows()) {
-		const id = row.ID;
 		if (id === 0)
 			continue;
 		const itemdisplayinfoid = row.ItemDisplayInfoID;
