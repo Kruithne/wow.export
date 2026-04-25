@@ -422,6 +422,7 @@ class M2RendererGL {
 		this.global_seq_times = new Float32Array(this.m2.globalLoops.length);
 		this.submesh_colors = new Float32Array(this.m2.colors.length * 4);
 		this.tex_weights = new Float32Array(this.m2.textureWeights.length);
+		this.tex_weights.fill(1);
 
 		// load first skin
 		if (this.m2.vertices.length > 0) {
