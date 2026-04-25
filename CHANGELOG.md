@@ -21,6 +21,7 @@
 - Fixed an issue that would cause the binary listfile to become corrupt in rare circumstances.
 - Fixed an issue preventing some models from importing in to Blender (unsupported operand type).
 - Fixed model animations not applying texture weight transparency, causing invisible geometry to render opaque.
+- Fixed an issue causing the first texture of an WMO export to be missing when exporting from MPQ archives.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
