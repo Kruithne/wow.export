@@ -370,13 +370,11 @@ class M2LegacyLoader {
 			normals[i * 3 + 2] = data.readFloatLE() * -1;
 			normals[i * 3 + 1] = data.readFloatLE();
 
-			// uv (flip v)
 			uv[i * 2] = data.readFloatLE();
-			uv[i * 2 + 1] = (data.readFloatLE() - 1) * -1;
+			uv[i * 2 + 1] = data.readFloatLE();
 
-			// uv2 (flip v)
 			uv2[i * 2] = data.readFloatLE();
-			uv2[i * 2 + 1] = (data.readFloatLE() - 1) * -1;
+			uv2[i * 2 + 1] = data.readFloatLE();
 		}
 
 		data.seek(base);

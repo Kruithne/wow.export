@@ -970,12 +970,6 @@ class GLTFWriter {
 			};
 		}
 
-		for (const uv of this.uvs) {
-			// Flip UVs on Y axis.
-			for (let i = 0; i < uv.length; i += 2)
-				uv[i + 1] = (uv[i + 1] - 1) * -1;
-		}
-
 		const bins = [];
 
 		const component_sizes = {
@@ -1223,13 +1217,6 @@ class GLTFWriter {
 
 			// write equipment UVs
 			if (equip.uv && equip.uv.length > 0) {
-				// flip UVs on Y axis
-				const flipped_uv = new Float32Array(equip.uv.length);
-				for (let i = 0; i < equip.uv.length; i += 2) {
-					flipped_uv[i] = equip.uv[i];
-					flipped_uv[i + 1] = (equip.uv[i + 1] - 1) * -1;
-				}
-
 				const eq_uv_accessor = root.accessors.length;
 				const eq_uv_bufview = root.bufferViews.length;
 				eq_prim_attribs['TEXCOORD_0'] = eq_uv_accessor;
@@ -1245,7 +1232,7 @@ class GLTFWriter {
 					bufferView: eq_uv_bufview,
 					byteOffset: 0,
 					componentType: GLTF_FLOAT,
-					count: flipped_uv.length / 2,
+					count: equip.uv.length / 2,
 					type: 'VEC2'
 				});
 
@@ -1255,7 +1242,7 @@ class GLTFWriter {
 				bin_ofs += padding;
 
 				root.bufferViews[eq_uv_bufview].byteOffset = bin_ofs;
-				const buffer_length = flipped_uv.length * component_size;
+				const buffer_length = equip.uv.length * component_size;
 				root.bufferViews[eq_uv_bufview].byteLength = buffer_length;
 				bin_ofs += buffer_length;
 
@@ -1263,7 +1250,7 @@ class GLTFWriter {
 				if (padding > 0)
 					buffer.fill(0, padding);
 
-				for (const uv of flipped_uv)
+				for (const uv of equip.uv)
 					buffer.writeFloatLE(uv);
 
 				bins.push(buffer);

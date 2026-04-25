@@ -40,13 +40,7 @@ class GLTexture {
 
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
-		// flip Y to match Three.js texture loading behavior
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-		// reset flip state
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 
 		this._apply_wrap(options.wrap_s, options.wrap_t);
 		this._apply_filter(options.min_filter, options.mag_filter);
@@ -69,13 +63,7 @@ class GLTexture {
 
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
-		// flip Y to match Three.js texture loading behavior
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-
-		// reset flip state
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 
 		this._apply_wrap(options.wrap_s, options.wrap_t);
 		this._apply_filter(options.min_filter, options.mag_filter);

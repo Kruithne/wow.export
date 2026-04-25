@@ -201,12 +201,7 @@ class M3Loader {
 				if (format != '2F32')
 					throw new Error(`M3Loader: Unexpected ${chunkName} format ${format}`);
 
-				const floatArray = this.ReadBufferAsFormat(format, chunkSize);
-				const fixedUVs = new Float32Array(floatArray.length);
-				for (let i = 0; i < floatArray.length; i += 2) {
-					fixedUVs[i] = floatArray[i];
-					fixedUVs[i + 1] = (floatArray[i + 1] - 1) * -1;
-				}
+				const fixedUVs = this.ReadBufferAsFormat(format, chunkSize);
 
 				if (chunkID == CHUNK_VUV0)
 					this.uv = fixedUVs;

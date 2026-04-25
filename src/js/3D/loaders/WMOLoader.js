@@ -417,7 +417,7 @@ const WMOChunkHandlers = {
 		const uvs = new Array(count);
 		for (let i = 0; i < count; i += 2) {
 			uvs[i] = data.readFloatLE();
-			uvs[i + 1] = (data.readFloatLE() - 1) * -1;
+			uvs[i + 1] = data.readFloatLE();
 		}
 
 		this.uvs.push(uvs);

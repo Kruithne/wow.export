@@ -309,13 +309,7 @@ class MDXRendererGL {
 				normals[i * 3 + 2] = -geoset.normals[i * 3 + 1];
 			}
 
-			// uvs (flip v)
 			const uvs = geoset.tVertices[0] || new Float32Array(vertCount * 2);
-			const flippedUvs = new Float32Array(uvs.length);
-			for (let i = 0; i < vertCount; i++) {
-				flippedUvs[i * 2] = uvs[i * 2];
-				flippedUvs[i * 2 + 1] = 1 - uvs[i * 2 + 1];
-			}
 
 			// create VAO
 			const vao = new VertexArray(this.ctx);
@@ -336,7 +330,7 @@ class MDXRendererGL {
 			// uv buffer
 			const uvo = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, uvo);
-			gl.bufferData(gl.ARRAY_BUFFER, flippedUvs, gl.STATIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
 			this.buffers.push(uvo);
 
 			// bone index/weight (mdx uses group-based skinning, simplified for now)

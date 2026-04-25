@@ -58,6 +58,9 @@ void main() {
 	v_color3 = a_color3;
 	v_texcoord4 = a_texcoord4;
 
+	// un-swizzle from WebGL (X, Z, -Y) back to WoW (X, Y, Z) for UV computations
+	vec3 wow_normal = vec3(a_normal.x, -a_normal.z, a_normal.y);
+
 	// WMO vertex shader modes
 	switch (u_vertex_shader) {
 		case 0: // MapObjDiffuse_T1
@@ -67,12 +70,12 @@ void main() {
 			break;
 		case 1: // MapObjDiffuse_T1_Refl
 			v_texcoord = a_texcoord;
-			v_texcoord2 = reflect(normalize(vec3(1.0)), a_normal).xy; // TODO: 1.0 => cameraPoint
+			v_texcoord2 = reflect(normalize(vec3(1.0)), wow_normal).xy; // TODO: 1.0 => cameraPoint
 			v_texcoord3 = a_texcoord3;
 			break;
 		case 2: //MapObjDiffuse_T1_Env_T2
 			v_texcoord = a_texcoord;
-			v_texcoord2 = posToTexCoord(a_position, a_normal);
+			v_texcoord2 = a_texcoord2;
 			v_texcoord3 = a_texcoord3;
 			break;
 		case 3: //MapObjSpecular_T1
@@ -88,16 +91,16 @@ void main() {
 		case 5: //MapObjDiffuse_Comp_Refl
 			v_texcoord = a_texcoord;
 			v_texcoord2 = a_texcoord2;
-			v_texcoord3 = reflect(normalize(vec3(1.0)), a_normal).xy; // TODO: 1.0 => cameraPoint
+			v_texcoord3 = reflect(normalize(vec3(1.0)), wow_normal).xy; // TODO: 1.0 => cameraPoint
 			break;
 		case 6: //MapObjDiffuse_Comp_Terrain
 			v_texcoord = a_texcoord;
-			v_texcoord2 = a_position.xy * -0.239999995;
+			v_texcoord2 = vec2(a_position.x, -a_position.z) * -0.239999995;
 			v_texcoord3 = a_texcoord3; //not used
 			break;
 		case 7: //MapObjDiffuse_CompAlpha
 			v_texcoord = a_texcoord;
-			v_texcoord2 = a_position.xy * -0.239999995;
+			v_texcoord2 = vec2(a_position.x, -a_position.z) * -0.239999995;
 			v_texcoord3 = a_texcoord3; //not used
 			break;
 		case 8: //MapObjParallax
