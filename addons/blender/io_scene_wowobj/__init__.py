@@ -51,9 +51,9 @@ def get_last_export_path():
         base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
         return os.path.join(base, 'wow.export', 'User Data', 'Default', 'last_export')
     elif sys.platform == 'darwin':
-        return os.path.expanduser('~/Library/Application Support/wow.export/User Data/Default/last_export')
+        return os.path.expanduser('~/Library/Application Support/wow.export/last_export')
     else:
-        return os.path.expanduser('~/.config/wow.export/User Data/Default/last_export')
+        return os.path.expanduser('~/.config/wow.export/last_export')
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 
