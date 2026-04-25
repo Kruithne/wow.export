@@ -19,19 +19,21 @@ def process_texture_transform(transform_data):
         
         actual_values = []
         actual_timestamps = []
-        
-        if len(values) == 1 and isinstance(values[0], list) and len(values[0]) > 1:
-            actual_values = values[0]
-            # Create synthetic timestamps if we only have one timestamp
-            if len(timestamps) == 1:
-                # Handle case where timestamp might be a list or single value
-                base_time = timestamps[0][0] if isinstance(timestamps[0], list) else timestamps[0]
-                actual_timestamps = [base_time + i * 1000 for i in range(len(actual_values))]
-            else:
+
+        if len(timestamps) > 0 and isinstance(timestamps[0], list):
+            # only keep non-empty entries
+            for i in range(len(timestamps)):
+                if timestamps[i] and values[i]:
+                    for j in range(len(timestamps[i])):
+                        if j < len(values[i]):
+                            actual_timestamps.append(timestamps[i][j])
+                            actual_values.append(values[i][j])
+            if not actual_timestamps:
                 actual_timestamps = timestamps
+                actual_values = values
         else:
-            actual_values = values
             actual_timestamps = timestamps
+            actual_values = values
         
         if len(actual_timestamps) > 1 and len(actual_values) > 1:
             # Get first and last values to determine overall direction
