@@ -357,6 +357,7 @@ class M2RendererGL {
 		this.animation_paused = false;
 		this.tex_matrices = null;
 		this.submesh_colors = new Float32Array();
+		this.tex_weights = new Float32Array();
 
 		// pre-allocated scratch matrices for per-frame bone/texture calculations
 		this._scratch_local = new Float32Array(16);
@@ -420,6 +421,7 @@ class M2RendererGL {
 		await this._load_textures();
 		this.global_seq_times = new Float32Array(this.m2.globalLoops.length);
 		this.submesh_colors = new Float32Array(this.m2.colors.length * 4);
+		this.tex_weights = new Float32Array(this.m2.textureWeights.length);
 
 		// load first skin
 		if (this.m2.vertices.length > 0) {
@@ -584,6 +586,7 @@ class M2RendererGL {
 			let prio = 0;
 			let layer = 0;
 			let coloridx = -1;
+			let tex_weight_idx = -1;
 
 			if (tex_unit) {
 				texture_count = tex_unit.textureCount;
@@ -626,6 +629,12 @@ class M2RendererGL {
 					if (idx < m2.textureTransforms.length)
 						tex_mtx_idxs[1] = idx;
 				}
+
+				if (tex_unit.textureWeightComboIndex < m2.transparencyLookup.length) {
+					const idx = m2.transparencyLookup[tex_unit.textureWeightComboIndex];
+					if (idx < m2.textureWeights.length)
+						tex_weight_idx = idx;
+				}
 			}
 
 			const draw_call = {
@@ -643,6 +652,7 @@ class M2RendererGL {
 				prio: prio,
 				layer: layer,
 				color_idx: coloridx,
+				tex_weight_idx: tex_weight_idx,
 			};
 
 			this.draw_calls.push(draw_call);
@@ -795,6 +805,7 @@ class M2RendererGL {
 		this.animation_paused = false;
 		this.global_seq_times.fill(0);
 		this.submesh_colors.fill(1);
+		this.tex_weights.fill(1);
 
 		// calculate bone matrices using animation 0 (stand) at time 0 for rest pose
 		if (this.bones) {
@@ -808,6 +819,7 @@ class M2RendererGL {
 			this._update_bone_matrices();
 			this._update_tex_matrices();
 			this._update_submesh_colors();
+			this._update_tex_weights();
 
 			this.current_animation = null;
 			this.current_anim_index = null;
@@ -849,6 +861,7 @@ class M2RendererGL {
 		this._update_bone_matrices();
 		this._update_tex_matrices();
 		this._update_submesh_colors();
+		this._update_tex_weights();
 	}
 
 	get_animation_duration() {
@@ -885,6 +898,7 @@ class M2RendererGL {
 		this._update_bone_matrices();
 		this._update_tex_matrices();
 		this._update_submesh_colors();
+		this._update_tex_weights();
 	}
 
 	set_animation_paused(paused) {
@@ -1192,6 +1206,24 @@ class M2RendererGL {
 			});
 
 			this.submesh_colors[(i*4) + 3] = a / 32768;
+		}
+	}
+
+	_update_tex_weights() {
+		const anim_source = this.current_anim_source || this.skelLoader || this.m2;
+		const anim_idx = this.current_anim_index ?? this.current_animation;
+		const anim = anim_source.animations?.[anim_idx];
+		if (!anim)
+			return;
+
+		const m2 = this.m2;
+
+		for (let i = 0; i < m2.textureWeights.length; ++i) {
+			const w = this._animate_track(anim, m2.textureWeights[i], 32767, (a, b, c) => {
+				return lerp(a, b, c);
+			});
+
+			this.tex_weights[i] = w / 32768;
 		}
 	}
 
@@ -1549,12 +1581,18 @@ class M2RendererGL {
 			shader.set_uniform_mat4('u_tex_matrix1', false, tmi0 === -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi0));
 			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 === -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
 
-			// mesh color (white for now)
-			let color = [1,1,1,1];
-			if (dc.color_idx !== -1) {
+			let color = [1, 1, 1, 1];
+			if (dc.color_idx !== -1)
 				color = this.submesh_colors.subarray(dc.color_idx * 4, (dc.color_idx * 4) + 4);
-			}
-			shader.set_uniform_4f('u_mesh_color', color[0], color[1], color[2], color[3]);
+
+			let alpha = color[3];
+			if (dc.tex_weight_idx !== -1)
+				alpha *= this.tex_weights[dc.tex_weight_idx];
+
+			if (alpha <= 0)
+				continue;
+
+			shader.set_uniform_4f('u_mesh_color', color[0], color[1], color[2], alpha);
 
 			shader.set_uniform_1i('u_apply_lighting', dc.flags & 0x1 ? 0 : 1);
 

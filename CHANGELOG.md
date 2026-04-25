@@ -20,6 +20,7 @@
 - Fixed an issue that prevented colour channel UI being inaccessible when previewing large textures.
 - Fixed an issue that would cause the binary listfile to become corrupt in rare circumstances.
 - Fixed an issue preventing some models from importing in to Blender (unsupported operand type).
+- Fixed model animations not applying texture weight transparency, causing invisible geometry to render opaque.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
