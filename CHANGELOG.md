@@ -12,6 +12,7 @@
 - Fixed missing or incorrect textures on equipped items in the character viewer. (1)
 - Fixed broken animations on models with long-running looping effects. (1)
 - Fixed lighting being incorrectly applied to unlit model parts such as glowing overlays. (1)
+- Fixed an issue that would cause wow.export to crash is last_export was a directory.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
