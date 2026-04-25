@@ -96,8 +96,8 @@ const M2BLEND_TO_EGX = [
 	GLContext.BlendMode.ADD,
 	GLContext.BlendMode.MOD,
 	GLContext.BlendMode.MOD2X,
-	GLContext.BlendMode.BLEND_ADD,
-]
+	GLContext.BlendMode.BLEND_ADD
+];
 
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
@@ -1030,16 +1030,20 @@ class M2RendererGL {
 
 	_find_time_index(currtime, times) {
 		if (times.length > 1) {
-			if (currtime > times[times.length - 1]) return times.length - 1;
-			let lowerbound = (a, b) => { let n = a.length; for (let i=0;i<n;++i) {if (a[i] >= b) return i;} return n;};
+			if (currtime > times[times.length - 1])
+				return times.length - 1;
+
+			const lowerbound = (a, b) => { let n = a.length; for (let i = 0; i < n; ++i) { if (a[i] >= b) return i; } return n; };
 			let time = lowerbound(times, currtime);
-			if (time != 0) {
+			if (time !== 0)
 				time--;
-			}
+
 			return time;
-		} else if (times.length == 1) {
+		} else if (times.length === 1) {
 			return 0;
-		} else return -1;
+		} else {
+			return -1;
+		}
 	}
 
 	_animate_track(anim, animblock, def, lerpfunc) {
@@ -1055,13 +1059,13 @@ class M2RendererGL {
 			maxtime = gl[gs];
 		}
 
-		if (animblock.timestamps.length == 0)
+		if (animblock.timestamps.length === 0)
 			return def;
 
 		if (animblock.timestamps.length <= ai)
 			ai = 0;
 
-		if (ai <= animblock.timestamps[ai].length && animblock.timestamps[ai].length == 0)
+		if (ai <= animblock.timestamps[ai].length && animblock.timestamps[ai].length === 0)
 			return def;
 
 		const times = animblock.timestamps[ai];
@@ -1069,22 +1073,21 @@ class M2RendererGL {
 		const intertype = animblock.interpolation;
 
 		let ti = 0;
-		if (maxtime != 0) {
+		if (maxtime !== 0)
 			ti = this._find_time_index(at, times);
-		}
-		if (ti == times.length-1)
+
+		if (ti === times.length - 1)
 			return values[ti];
 		else if (ti >= 0) {
-			let v1 = values[ti];
-			let v2 = values[ti + 1];
-			let t1 = times[ti];
-			let t2 = times[ti + 1];
+			const v1 = values[ti];
+			const v2 = values[ti + 1];
+			const t1 = times[ti];
+			const t2 = times[ti + 1];
 
-			if (intertype == 0)
+			if (intertype === 0)
 				return v1;
-			else {
-				return lerpfunc(v1, v2, (at - t1) / (t2 -t1));
-			}
+			else
+				return lerpfunc(v1, v2, (at - t1) / (t2 - t1));
 		} else {
 			return values[0];
 		}
@@ -1521,11 +1524,11 @@ class M2RendererGL {
 		shader.set_uniform_3f('u_tex_sample_alpha', 1, 1, 1);
 
 		const sorted_calls = [...this.draw_calls].sort((a, b) => {
-			if (a.prio != b.prio)
+			if (a.prio !== b.prio)
 				return a.prio - b.prio;
-			if (a.layer != b.layer)
+			if (a.layer !== b.layer)
 				return a.layer - b.layer;
-			if (a.blend_mode != b.blend_mode)
+			if (a.blend_mode !== b.blend_mode)
 				return a.blend_mode - b.blend_mode;
 
 			return 0;
@@ -1548,12 +1551,12 @@ class M2RendererGL {
 				return this.tex_matrices.subarray(idx * 16, (idx + 1) * 16);
 			}
 
-			shader.set_uniform_mat4('u_tex_matrix1', false, tmi0 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi0));
-			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 == -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
+			shader.set_uniform_mat4('u_tex_matrix1', false, tmi0 === -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi0));
+			shader.set_uniform_mat4('u_tex_matrix2', false, tmi1 === -1 ? IDENTITY_MAT4 : get_tex_matrix(tmi1));
 
 			// mesh color (white for now)
 			let color = [1,1,1,1];
-			if (dc.color_idx != -1) {
+			if (dc.color_idx !== -1) {
 				color = this.submesh_colors.subarray(dc.color_idx * 4, (dc.color_idx * 4) + 4);
 			}
 			shader.set_uniform_4f('u_mesh_color', color[0], color[1], color[2], color[3]);
