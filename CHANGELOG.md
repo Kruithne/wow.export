@@ -4,6 +4,7 @@
 - Fixed issues that would prevent wow.export from functioning correctly on macOS.
 - Fixed 3D preview failing on macOS due to shader uniform limit.
 - Fixed crash when copying item IDs in character tab.
+- Fixed an issue preventing the wireframe view from rendering correctly in the modelviewer.
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
