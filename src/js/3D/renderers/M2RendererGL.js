@@ -1540,6 +1540,9 @@ class M2RendererGL {
 			const tmi1 = dc.tex_matrix_idxs[1];
 
 			const get_tex_matrix = (idx) => {
+				if (this.tex_matrices === null)
+					return IDENTITY_MAT4;
+
 				return this.tex_matrices.subarray(idx * 16, (idx + 1) * 16);
 			}
 
