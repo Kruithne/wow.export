@@ -155,6 +155,7 @@ class WMORendererGL {
 			else if(pixelShader == 20)
 			{
 				textureFileDataIDs.push(material.color3);
+				textureFileDataIDs.push(material.flags3);
 				for (const rtdTexture of material.runtimeData)
 					textureFileDataIDs.push(rtdTexture);
 			}
