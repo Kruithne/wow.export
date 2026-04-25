@@ -192,7 +192,7 @@ async function extract_data_pak(install_path) {
 		const decompressed = await inflate_buffer(compressed);
 
 		await fsp.writeFile(target_path, decompressed);
-		await fsp.chmod(target_path, entry.permissions & 0o7777);
+		await fsp.chmod(target_path, (entry.permissions ?? 0o644) & 0o7777);
 
 		extracted++;
 
