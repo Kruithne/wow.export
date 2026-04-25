@@ -21,6 +21,9 @@ const UniformBuffer = require('../gl/UniformBuffer');
 // m2 version constants
 const M2_VER_WOTLK = 264;
 
+// must match MAX_BONES in m2.vertex.shader
+const MAX_BONES = 220;
+
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([
 	1, 0, 0, 0,
@@ -163,6 +166,16 @@ class M2LegacyRendererGL {
 		this.current_animation = null;
 		this.animation_time = 0;
 		this.animation_paused = false;
+
+		// pre-allocated scratch matrices for per-frame bone calculations
+		this._scratch_local = new Float32Array(16);
+		this._scratch_trans = new Float32Array(16);
+		this._scratch_rot = new Float32Array(16);
+		this._scratch_scale = new Float32Array(16);
+		this._scratch_pivot = new Float32Array(16);
+		this._scratch_neg_pivot = new Float32Array(16);
+		this._scratch_result = new Float32Array(16);
+		this._scratch_calculated = new Uint8Array(MAX_BONES);
 
 		// reactive state
 		this.geosetKey = 'modelViewerGeosets';
@@ -575,15 +588,16 @@ class M2LegacyRendererGL {
 			anim_end = m2.animations[anim_idx].endTimestamp;
 		}
 
-		const local_mat = new Float32Array(16);
-		const trans_mat = new Float32Array(16);
-		const rot_mat = new Float32Array(16);
-		const scale_mat = new Float32Array(16);
-		const pivot_mat = new Float32Array(16);
-		const neg_pivot_mat = new Float32Array(16);
-		const temp_result = new Float32Array(16);
+		const local_mat = this._scratch_local;
+		const trans_mat = this._scratch_trans;
+		const rot_mat = this._scratch_rot;
+		const scale_mat = this._scratch_scale;
+		const pivot_mat = this._scratch_pivot;
+		const neg_pivot_mat = this._scratch_neg_pivot;
+		const temp_result = this._scratch_result;
 
-		const calculated = new Array(bone_count).fill(false);
+		const calculated = this._scratch_calculated;
+		calculated.fill(0);
 
 		const calc_bone = (idx) => {
 			if (calculated[idx])
@@ -685,7 +699,7 @@ class M2LegacyRendererGL {
 				this.bone_matrices.set(local_mat, offset);
 			}
 
-			calculated[idx] = true;
+			calculated[idx] = 1;
 		};
 
 		for (let i = 0; i < bone_count; i++)

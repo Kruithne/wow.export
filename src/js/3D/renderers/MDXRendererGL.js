@@ -161,6 +161,16 @@ class MDXRendererGL {
 		this.animation_time = 0;
 		this.animation_paused = false;
 
+		// pre-allocated scratch matrices for per-frame node calculations
+		this._scratch_local = new Float32Array(16);
+		this._scratch_trans = new Float32Array(16);
+		this._scratch_rot = new Float32Array(16);
+		this._scratch_scale = new Float32Array(16);
+		this._scratch_pivot = new Float32Array(16);
+		this._scratch_neg_pivot = new Float32Array(16);
+		this._scratch_result = new Float32Array(16);
+		this._scratch_calculated = new Set();
+
 		// reactive
 		this.geosetKey = 'modelViewerGeosets';
 		this.geosetArray = null;
@@ -467,15 +477,16 @@ class MDXRendererGL {
 		const frame = this.mdx.sequences[this.current_animation].interval[0] + this.animation_time;
 		const nodes = this.nodes;
 
-		const local_mat = new Float32Array(16);
-		const trans_mat = new Float32Array(16);
-		const rot_mat = new Float32Array(16);
-		const scale_mat = new Float32Array(16);
-		const pivot_mat = new Float32Array(16);
-		const neg_pivot_mat = new Float32Array(16);
-		const temp_result = new Float32Array(16);
+		const local_mat = this._scratch_local;
+		const trans_mat = this._scratch_trans;
+		const rot_mat = this._scratch_rot;
+		const scale_mat = this._scratch_scale;
+		const pivot_mat = this._scratch_pivot;
+		const neg_pivot_mat = this._scratch_neg_pivot;
+		const temp_result = this._scratch_result;
 
-		const calculated = new Set();
+		const calculated = this._scratch_calculated;
+		calculated.clear();
 
 		const calc_node = (node) => {
 			if (!node || calculated.has(node.objectId))

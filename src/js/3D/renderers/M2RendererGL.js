@@ -358,6 +358,16 @@ class M2RendererGL {
 		this.tex_matrices = null;
 		this.submesh_colors = new Float32Array();
 
+		// pre-allocated scratch matrices for per-frame bone/texture calculations
+		this._scratch_local = new Float32Array(16);
+		this._scratch_trans = new Float32Array(16);
+		this._scratch_rot = new Float32Array(16);
+		this._scratch_scale = new Float32Array(16);
+		this._scratch_pivot = new Float32Array(16);
+		this._scratch_neg_pivot = new Float32Array(16);
+		this._scratch_result = new Float32Array(16);
+		this._scratch_calculated = new Uint8Array(MAX_BONES);
+
 		// global sequences
 		this.global_seq_times = new Float32Array();
 
@@ -925,17 +935,17 @@ class M2RendererGL {
 		const close_r = this.close_right_hand && hands_closed_idx !== null;
 		const close_l = this.close_left_hand && hands_closed_idx !== null;
 
-		// temp matrices for bone calculation
-		const local_mat = new Float32Array(16);
-		const trans_mat = new Float32Array(16);
-		const rot_mat = new Float32Array(16);
-		const scale_mat = new Float32Array(16);
-		const pivot_mat = new Float32Array(16);
-		const neg_pivot_mat = new Float32Array(16);
-		const temp_result = new Float32Array(16);
+		// reuse pre-allocated scratch matrices
+		const local_mat = this._scratch_local;
+		const trans_mat = this._scratch_trans;
+		const rot_mat = this._scratch_rot;
+		const scale_mat = this._scratch_scale;
+		const pivot_mat = this._scratch_pivot;
+		const neg_pivot_mat = this._scratch_neg_pivot;
+		const temp_result = this._scratch_result;
 
-		// track which bones have been calculated
-		const calculated = new Array(bone_count).fill(false);
+		const calculated = this._scratch_calculated;
+		calculated.fill(0);
 
 		// recursive bone calculation using raw M2 bone data
 		// applies: T(pivot) * T(anim) * R(anim) * S(anim) * T(-pivot)
@@ -1033,7 +1043,7 @@ class M2RendererGL {
 				this.bone_matrices.set(local_mat, offset);
 			}
 
-			calculated[idx] = true;
+			calculated[idx] = 1;
 		};
 
 		// calculate all bones
@@ -1111,11 +1121,11 @@ class M2RendererGL {
 		const m2 = this.m2;
 		const tm = this.tex_matrices;
 
-		const temp_result = new Float32Array(16);
+		const temp_result = this._scratch_result;
+		const local_mat = this._scratch_local;
 
 		for (let i = 0; i < m2.textureTransforms.length; ++i) {
 			const tt = m2.textureTransforms[i];
-			const local_mat = new Float32Array(16);
 			mat4_copy(local_mat, IDENTITY_MAT4);
 
 			const transmat = [0.5, 0.5, 0, 0];
