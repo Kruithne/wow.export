@@ -51,6 +51,9 @@ async function prepareManifest() {
 	if (is_preloaded)
 		return true;
 
+	if (preload_promise === null)
+		preload();
+
 	await preload_promise;
 	return true;
 }
