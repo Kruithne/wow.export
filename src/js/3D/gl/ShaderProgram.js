@@ -126,10 +126,6 @@ class ShaderProgram {
 		return null;
 	}
 
-	/**
-	 * @param {string[]} names
-	 * @param {number[]|null} offsets
-	 */
 	get_active_uniform_offsets(names) {
 		const indices = this.gl.getUniformIndices(this.program, names);
 		return this.gl.getActiveUniforms(this.program, indices, this.gl.UNIFORM_OFFSET);
