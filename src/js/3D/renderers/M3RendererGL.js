@@ -124,9 +124,9 @@ class M3RendererGL {
 			vertex_view.setFloat32(offset + 32, m3.uv ? m3.uv[uv_idx] : 0, true);
 			vertex_view.setFloat32(offset + 36, m3.uv ? m3.uv[uv_idx + 1] : 0, true);
 
-			// texcoord2
+			// texcoord2 (y-flipped for opengl bottom-left origin)
 			vertex_view.setFloat32(offset + 40, m3.uv2 ? m3.uv2[uv_idx] : 0, true);
-			vertex_view.setFloat32(offset + 44, m3.uv2 ? m3.uv2[uv_idx + 1] : 0, true);
+			vertex_view.setFloat32(offset + 44, m3.uv2 ? 1 - m3.uv2[uv_idx + 1] : 0, true);
 		}
 
 		// create VAO

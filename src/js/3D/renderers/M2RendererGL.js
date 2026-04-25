@@ -525,7 +525,7 @@ class M2RendererGL {
 			vertex_view.setFloat32(offset + 32, m2.uv[uv_idx], true);
 			vertex_view.setFloat32(offset + 36, m2.uv[uv_idx + 1], true);
 
-			// texcoord2
+			// texcoord2 (y-flipped for opengl bottom-left origin)
 			vertex_view.setFloat32(offset + 40, m2.uv2[uv_idx], true);
 			vertex_view.setFloat32(offset + 44, 1 - m2.uv2[uv_idx + 1], true);
 		}
