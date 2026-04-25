@@ -288,6 +288,8 @@ class MDXRendererGL {
 		if (this.reactive)
 			this.geosetArray = [];
 
+		this._create_bones_ubo();
+
 		for (let g = 0; g < mdx.geosets.length; g++) {
 			const geoset = mdx.geosets[g];
 
@@ -384,8 +386,6 @@ class MDXRendererGL {
 			vao.setup_m2_separate_buffers(vbo, nbo, uvo, bibo, bwbo, null);
 
 			this.vaos.push(vao);
-
-			this._create_bones_ubo();
 
 			// material/texture
 			const material = mdx.materials[geoset.materialId];
