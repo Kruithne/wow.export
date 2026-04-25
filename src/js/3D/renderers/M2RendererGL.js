@@ -1068,7 +1068,7 @@ class M2RendererGL {
 		if (animblock.timestamps.length <= ai)
 			ai = 0;
 
-		if (ai <= animblock.timestamps[ai].length && animblock.timestamps[ai].length === 0)
+		if (animblock.timestamps[ai].length === 0)
 			return def;
 
 		const times = animblock.timestamps[ai];
