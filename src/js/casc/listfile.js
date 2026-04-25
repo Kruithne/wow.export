@@ -709,6 +709,7 @@ const ingestIdentifiedFiles = (entries) => {
 
 const renderListfile = async (file_data_ids, include_main_index = false) => {
 	const result = [];
+	const seen_ids = file_data_ids ? new Set() : null;
 
 	if (is_binary_mode) {
 		const pf_files = [
@@ -733,8 +734,12 @@ const renderListfile = async (file_data_ids, include_main_index = false) => {
 				const file_data_id = file_buffer.readUInt32BE();
 				const filename = file_buffer.readNullTerminatedString('utf8');
 
-				if (id_set === null || id_set.has(file_data_id))
+				if (id_set === null || id_set.has(file_data_id)) {
 					result.push(`${filename} [${file_data_id}]`);
+
+					if (seen_ids)
+						seen_ids.add(file_data_id);
+				}
 			}
 		}
 	}
@@ -747,8 +752,18 @@ const renderListfile = async (file_data_ids, include_main_index = false) => {
 	} else {
 		const id_set = new Set(file_data_ids);
 		for (const [file_data_id, filename] of legacy_id_lookup) {
-			if (id_set.has(file_data_id))
+			if (id_set.has(file_data_id)) {
 				result.push(`${filename} [${file_data_id}]`);
+				seen_ids.add(file_data_id);
+			}
+		}
+	}
+
+	// append unnamed entries for IDs not found in any data source
+	if (file_data_ids !== undefined) {
+		for (const id of file_data_ids) {
+			if (!seen_ids.has(id))
+				result.push(`unknown/${id} [${id}]`);
 		}
 	}
 
