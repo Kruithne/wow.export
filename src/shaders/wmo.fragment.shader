@@ -26,6 +26,7 @@ uniform sampler2D u_texture9;
 
 // material parameters
 uniform int u_pixel_shader;
+uniform int u_blend_mode;
 uniform int u_use_vertex_color;
 
 // lighting
@@ -244,6 +245,15 @@ void main() {
 			final_opacity = tex1.a;
 			break;
 	}
+
+	// alpha test for blend mode 1 (alpha key)
+	if (u_blend_mode == 1 && final_opacity < 0.904)
+		discard;
+
+	// blend modes 0/1 are non-blended, force opaque output
+	// prevents canvas alpha compositing from causing semi-transparency
+	if (u_blend_mode <= 1)
+		final_opacity = 1.0;
 
 	// apply vertex color if enabled
 	if (u_use_vertex_color != 0)

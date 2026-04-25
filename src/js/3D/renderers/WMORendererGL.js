@@ -566,6 +566,7 @@ class WMORendererGL {
 				// set shader mode
 				shader.set_uniform_1i('u_vertex_shader', dc.shader.VertexShader);
 				shader.set_uniform_1i('u_pixel_shader', dc.shader.PixelShader);
+				shader.set_uniform_1i('u_blend_mode', dc.blendMode);
 
 				// set blend mode
 				ctx.apply_blend_mode(dc.blendMode);
