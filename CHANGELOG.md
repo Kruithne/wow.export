@@ -2,6 +2,7 @@
 - Thank you to jarveson (1), VamooseAddons (2) and 0xUnkn0wN (3) for contributions included in this release.
 - Added working builds for macOS Apple Silicon (ARM64). (3)
 - Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
+- Added support for conditional character models (such as upright orcs).
 - Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
 - Improved rendering order of transparent and layered model parts in the 3D previewer. (1)
 - Improved blend mode rendering for glowing and transparent model effects. (1)

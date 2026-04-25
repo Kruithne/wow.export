@@ -30,6 +30,8 @@ const chr_model_texture_layer_map = new Map();
 const geoset_map = new Map();
 const chr_cust_mat_map = new Map();
 const chr_cust_skinned_model_map = new Map();
+const cond_model_map = new Map();
+const choice_to_cond_file_data_id = new Map();
 
 let is_initialized = false;
 let init_promise = null;
@@ -58,6 +60,10 @@ const _initialize = async () => {
 	// creature data (needed for ChrModel -> FileDataID)
 	await DBCreatures.initializeCreatureData();
 
+	// conditional model mapping (ChrCustomizationCondModel -> CreatureModelData -> FileDataID)
+	for (const [cond_model_id, cond_model_row] of await db2.ChrCustomizationCondModel.getAllRows())
+		cond_model_map.set(cond_model_id, cond_model_row.CreatureModelDataID);
+
 	// customization elements
 	for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
 		if (chr_customization_element_row.ChrCustomizationGeosetID != 0)
@@ -71,8 +77,16 @@ const _initialize = async () => {
 		if (chr_customization_element_row.ChrCustomizationBoneSetID != 0)
 			unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
 
-		if (chr_customization_element_row.ChrCustomizationCondModelID != 0)
-			unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
+		if (chr_customization_element_row.ChrCustomizationCondModelID != 0) {
+			const creature_model_data_id = cond_model_map.get(chr_customization_element_row.ChrCustomizationCondModelID);
+			if (creature_model_data_id !== undefined) {
+				const file_data_id = DBCreatures.getFileDataIDByModelDataID(creature_model_data_id);
+				if (file_data_id !== undefined)
+					choice_to_cond_file_data_id.set(chr_customization_element_row.ChrCustomizationChoiceID, file_data_id);
+				else
+					log.write('ChrCustomizationCondModel %d references unknown CreatureModelData %d', chr_customization_element_row.ChrCustomizationCondModelID, creature_model_data_id);
+			}
+		}
 
 		if (chr_customization_element_row.ChrCustomizationDisplayInfoID != 0)
 			unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
@@ -250,6 +264,7 @@ const get_texture_file_data_id = (material_resources_id) => tfd_map.get(material
 
 const get_choice_skinned_model = (choice_id) => choice_to_skinned_model.get(choice_id);
 const get_skinned_model = (id) => chr_cust_skinned_model_map.get(id);
+const get_choice_cond_model_file_data_id = (choice_id) => choice_to_cond_file_data_id.get(choice_id);
 
 module.exports = {
 	ensureInitialized,
@@ -280,5 +295,6 @@ module.exports = {
 
 	get_texture_file_data_id,
 	get_choice_skinned_model,
-	get_skinned_model
+	get_skinned_model,
+	get_choice_cond_model_file_data_id
 };

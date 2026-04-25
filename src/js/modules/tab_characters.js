@@ -117,6 +117,7 @@ const equipment_model_renderers = new Map();
 const collection_model_renderers = new Map();
 
 let current_char_component_texture_layout_id = 0;
+let default_model_file_data_id = 0;
 let watcher_cleanup_funcs = [];
 let is_importing = false;
 
@@ -276,6 +277,10 @@ async function refresh_character_appearance(core) {
 	if (!active_renderer || is_importing)
 		return;
 
+	// check if a conditional model swap is needed (e.g. upright orc)
+	if (await check_cond_model_swap(core))
+		return;
+
 	log.write('Refreshing character appearance...');
 
 	update_geosets(core);
@@ -283,6 +288,27 @@ async function refresh_character_appearance(core) {
 	await update_equipment_models(core);
 
 	log.write('Character appearance refresh complete');
+}
+
+async function check_cond_model_swap(core) {
+	const active_choices = core.view.chrCustActiveChoices;
+	let target_file_data_id = default_model_file_data_id;
+
+	for (const choice of active_choices) {
+		const cond_file_data_id = DBCharacterCustomization.get_choice_cond_model_file_data_id(choice.choiceID);
+		if (cond_file_data_id !== undefined) {
+			target_file_data_id = cond_file_data_id;
+			break;
+		}
+	}
+
+	if (!target_file_data_id || target_file_data_id === active_model)
+		return false;
+
+	log.write('Conditional model swap: %d -> %d', active_model, target_file_data_id);
+	active_model = undefined;
+	await load_character_model(core, target_file_data_id);
+	return true;
 }
 
 /**
@@ -879,6 +905,7 @@ async function update_model_selection(core) {
 
 	// load the model (this will call refresh_character_appearance when done)
 	const file_data_id = DBCharacterCustomization.get_model_file_data_id(selected.id);
+	default_model_file_data_id = file_data_id;
 	await load_character_model(core, file_data_id);
 }
 

@@ -693,24 +693,9 @@ class M2RendererGL {
 					const parent_skel = new SKELLoader(parent_file);
 					await parent_skel.load();
 
-					// track which animations come from child vs parent
-					// child skeleton's .anim files have different data layouts than parent's bone offsets expect
-					const child_anim_keys = new Set();
-					if (skel.animFileIDs) {
-						for (const entry of skel.animFileIDs) {
-							if (entry.fileDataID > 0)
-								child_anim_keys.add(`${entry.animID}-${entry.subAnimID}`);
-						}
-					}
-
-					// store child skeleton for animations that need it
-					if (child_anim_keys.size > 0) {
-						this.childSkelLoader = skel;
-						this.childAnimKeys = child_anim_keys;
-					}
-
-					// don't merge child AFIDs into parent - they use incompatible bone offsets
-					// parent skeleton handles its own animations, child handles its own
+					// child skel is authoritative for animations it contains,
+					// falling back to parent skel for animations it doesn't override
+					this.childSkelLoader = skel;
 					this.skelLoader = parent_skel;
 					bone_data = parent_skel.bones;
 				} else {
@@ -769,20 +754,16 @@ class M2RendererGL {
 		let anim_source = this.skelLoader || this.m2;
 		let anim_index = index;
 
-		// check if this animation should come from child skeleton
-		if (this.childSkelLoader && this.childAnimKeys && anim_source.animations?.[index]) {
+		// child skel is authoritative; try it first, fall back to parent
+		if (this.childSkelLoader && anim_source.animations?.[index]) {
 			const anim = anim_source.animations[index];
-			const key = `${anim.id}-${anim.variationIndex}`;
-			if (this.childAnimKeys.has(key)) {
-				// find the matching animation index in child skeleton
-				const child_anims = this.childSkelLoader.animations;
-				if (child_anims) {
-					for (let i = 0; i < child_anims.length; i++) {
-						if (child_anims[i].id === anim.id && child_anims[i].variationIndex === anim.variationIndex) {
-							anim_source = this.childSkelLoader;
-							anim_index = i;
-							break;
-						}
+			const child_anims = this.childSkelLoader.animations;
+			if (child_anims) {
+				for (let i = 0; i < child_anims.length; i++) {
+					if (child_anims[i].id === anim.id && child_anims[i].variationIndex === anim.variationIndex) {
+						anim_source = this.childSkelLoader;
+						anim_index = i;
+						break;
 					}
 				}
 			}

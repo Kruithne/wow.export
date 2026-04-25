@@ -9,6 +9,7 @@ const db2 = require('../../casc/db2');
 const creatureDisplays = new Map();
 const creatureDisplayInfoMap = new Map();
 const displayIDToFileDataID = new Map();
+const modelDataIDToFileDataID = new Map();
 let isInitialized = false;
 
 /**
@@ -44,6 +45,8 @@ const initializeCreatureData = async () => {
 
 	// Using the texture mapping, map all model fileDataIDs to used textures.
 	for (const [modelID, modelRow] of await db2.CreatureModelData.getAllRows()) {
+		modelDataIDToFileDataID.set(modelID, modelRow.FileDataID);
+
 		if (modelIDToDisplayInfoMap.has(modelID)) {
 			const fileDataID = modelRow.FileDataID;
 			const displayIDs = modelIDToDisplayInfoMap.get(modelID);
@@ -92,9 +95,14 @@ const getDisplayInfo = (displayID) => {
 	return creatureDisplayInfoMap.get(displayID);
 };
 
+const getFileDataIDByModelDataID = (modelDataID) => {
+	return modelDataIDToFileDataID.get(modelDataID);
+};
+
 module.exports = {
 	initializeCreatureData,
 	getCreatureDisplaysByFileDataID,
 	getFileDataIDByDisplayID,
+	getFileDataIDByModelDataID,
 	getDisplayInfo
 };
