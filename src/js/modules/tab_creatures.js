@@ -803,6 +803,12 @@ const export_files = async (core, entries) => {
 							exporter.addURITexture(texture_type, chr_material.getURI());
 
 						exporter.setGeosetMask(core.view.creatureViewerGeosets);
+
+						if (active_renderer && core.view.config.modelsExportApplyPose && (format === 'OBJ' || format === 'STL')) {
+							const baked = active_renderer.getBakedGeometry();
+							if (baked)
+								exporter.setPosedGeometry(baked.vertices, baked.normals);
+						}
 					} else {
 						// build textures for export
 						const export_materials = new Map();
@@ -958,6 +964,7 @@ const export_files = async (core, entries) => {
 				geoset_mask: is_active ? core.view.creatureViewerGeosets : null,
 				wmo_group_mask: is_active ? core.view.creatureViewerWMOGroups : null,
 				wmo_set_mask: is_active ? core.view.creatureViewerWMOSets : null,
+				active_renderer: is_active ? active_renderer : null,
 				export_paths
 			});
 
@@ -1085,6 +1092,10 @@ module.exports = {
 				<label v-if="$core.view.config.exportCreatureFormat === 'GLTF' && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
 					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 					<span>Export animations</span>
+				</label>
+				<label v-if="($core.view.config.exportCreatureFormat === 'OBJ' || $core.view.config.exportCreatureFormat === 'STL') && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Apply current animation pose to exported geometry">
+					<input type="checkbox" v-model="$core.view.config.modelsExportApplyPose"/>
+					<span>Apply pose</span>
 				</label>
 				<template v-if="$core.view.creatureViewerActiveType === 'm2'">
 					<template v-if="$core.view.creatureViewerEquipment.length > 0">

@@ -338,7 +338,8 @@ const export_model = async (options) => {
 		geoset_mask = null,
 		wmo_group_mask = null,
 		wmo_set_mask = null,
-		export_paths = null
+		export_paths = null,
+		active_renderer = null
 	} = options;
 
 	const model_type = detect_model_type_by_name(file_name) ?? detect_model_type(data);
@@ -377,6 +378,12 @@ const export_model = async (options) => {
 
 				if (geoset_mask)
 					exporter.setGeosetMask(geoset_mask);
+
+				if (active_renderer && core.view.config.modelsExportApplyPose && (format === 'OBJ' || format === 'STL')) {
+					const baked = active_renderer.getBakedGeometry();
+					if (baked)
+						exporter.setPosedGeometry(baked.vertices, baked.normals);
+				}
 
 				if (format === 'OBJ') {
 					await exporter.exportAsOBJ(final_export_path, core.view.config.modelsExportCollision, helper, file_manifest);

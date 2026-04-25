@@ -260,6 +260,7 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 				geoset_mask: is_active ? core.view.modelViewerGeosets : null,
 				wmo_group_mask: is_active ? core.view.modelViewerWMOGroups : null,
 				wmo_set_mask: is_active ? core.view.modelViewerWMOSets : null,
+				active_renderer: is_active ? active_renderer : null,
 				export_paths
 			});
 
@@ -395,6 +396,10 @@ module.exports = {
 				<label v-if="$core.view.config.exportModelFormat === 'GLTF' && $core.view.modelViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
 					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 					<span>Export animations</span>
+				</label>
+				<label v-if="($core.view.config.exportModelFormat === 'OBJ' || $core.view.config.exportModelFormat === 'STL') && $core.view.modelViewerActiveType === 'm2'" class="ui-checkbox" title="Apply current animation pose to exported geometry">
+					<input type="checkbox" v-model="$core.view.config.modelsExportApplyPose"/>
+					<span>Apply pose</span>
 				</label>
 				<template v-if="$core.view.config.exportModelFormat === 'RAW'">
 					<label class="ui-checkbox" title="Export raw .skin files with M2 exports">
