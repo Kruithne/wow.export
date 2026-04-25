@@ -526,16 +526,9 @@ class WMORendererGL {
 		shader.set_uniform_mat4('u_projection_matrix', false, projection_matrix);
 		shader.set_uniform_mat4('u_model_matrix', false, this.model_matrix);
 
-		// lighting - transform light direction to view space
-		const lx = 0.5, ly = -0.7, lz = 0.5;
-		const light_view_x = view_matrix[0] * lx + view_matrix[4] * ly + view_matrix[8] * lz;
-		const light_view_y = view_matrix[1] * lx + view_matrix[5] * ly + view_matrix[9] * lz;
-		const light_view_z = view_matrix[2] * lx + view_matrix[6] * ly + view_matrix[10] * lz;
-
+		// lighting
 		shader.set_uniform_1i('u_apply_lighting', 1);
-		shader.set_uniform_3f('u_ambient_color', 0.5, 0.5, 0.5);
-		shader.set_uniform_3f('u_diffuse_color', 0.7, 0.7, 0.7);
-		shader.set_uniform_3f('u_light_dir', light_view_x, light_view_y, light_view_z);
+		shader.set_uniform_3f('u_light_dir', 0.5, 1.0, 0.5);
 
 		// wireframe
 		shader.set_uniform_1i('u_wireframe', wireframe ? 1 : 0);
@@ -575,7 +568,7 @@ class WMORendererGL {
 				shader.set_uniform_1i('u_pixel_shader', dc.shader.PixelShader);
 
 				// set blend mode
-				shader.set_uniform_1i('u_blend_mode', dc.blendMode);
+				ctx.apply_blend_mode(dc.blendMode);
 
 				// bind texture
 				const textureFileDataIDs = this.materialTextures.get(dc.material_id);
