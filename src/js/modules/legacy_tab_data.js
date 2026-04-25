@@ -250,7 +250,7 @@ module.exports = {
 					return;
 				}
 
-				rows_to_export = selection.map(row_index => all_rows[row_index]).filter(row => row !== undefined);
+				rows_to_export = [...selection];
 				if (rows_to_export.length === 0) {
 					this.$core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
 					return;
@@ -280,7 +280,7 @@ module.exports = {
 					return;
 				}
 
-				rows_to_export = selection.map(row_index => all_rows[row_index]).filter(row => row !== undefined);
+				rows_to_export = [...selection];
 				if (rows_to_export.length === 0) {
 					this.$core.setToast('info', 'No rows selected. Please select some rows first or enable "Export all rows".');
 					return;

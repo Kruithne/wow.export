@@ -117,6 +117,10 @@ module.exports = {
 			return Math.round((this.sortedItems.length - this.slotCount) * this.scrollRel);
 		},
 
+		selectionSet: function() {
+			return new Set(this.selection);
+		},
+
 		/**
 		 * Reactively filtered version of the underlying data array.
 		 * Automatically refilters when the filter input is changed.
@@ -141,8 +145,9 @@ module.exports = {
 			// Remove anything from the user selection that has now been filtered out.
 			// Iterate backwards here due to re-indexing as elements are spliced.
 			let hasChanges = false;
-			const newSelection = this.selection.filter((rowIndex) => {
-				const includes = rowIndex < res.length;
+			const filtered_set = new Set(res);
+			const newSelection = this.selection.filter((row) => {
+				const includes = filtered_set.has(row);
 				if (!includes)
 					hasChanges = true;
 				return includes;
@@ -815,7 +820,7 @@ module.exports = {
 					if (!e.shiftKey)
 						newSelection.splice(0);
 
-					newSelection.push(nextIndex);
+					newSelection.push(this.sortedItems[nextIndex]);
 					this.lastSelectItem = nextIndex;
 					this.$emit('update:selection', newSelection);
 				}
@@ -828,7 +833,8 @@ module.exports = {
 		 * @param {MouseEvent} event
 		 */
 		selectRow: function(rowIndex, event) {
-			const checkIndex = this.selection.indexOf(rowIndex);
+			const row = this.sortedItems[rowIndex];
+			const checkIndex = this.selection.indexOf(row);
 			const newSelection = this.selection.slice();
 
 			if (event.ctrlKey) {
@@ -836,7 +842,7 @@ module.exports = {
 				if (checkIndex > -1)
 					newSelection.splice(checkIndex, 1);
 				else
-					newSelection.push(rowIndex);
+					newSelection.push(row);
 			} else if (event.shiftKey) {
 				// Shift-key held, select a range.
 				if (this.lastSelectItem !== null && this.lastSelectItem !== rowIndex) {
@@ -848,14 +854,15 @@ module.exports = {
 					const highest = lowest + delta;
 
 					for (let i = lowest; i <= highest; i++) {
-						if (newSelection.indexOf(i) === -1)
-							newSelection.push(i);
+						const r = this.sortedItems[i];
+						if (!newSelection.includes(r))
+							newSelection.push(r);
 					}
 				}
 			} else if (checkIndex === -1 || (checkIndex > -1 && newSelection.length > 1)) {
 				// Normal click, replace entire selection.
 				newSelection.splice(0);
-				newSelection.push(rowIndex);
+				newSelection.push(row);
 			}
 
 			this.lastSelectItem = rowIndex;
@@ -871,13 +878,14 @@ module.exports = {
 		handleContextMenu: function(rowIndex, columnIndex, event) {
 			event.preventDefault();
 
+			const row = this.sortedItems[rowIndex];
+
 			// if the row is not already selected, select it
-			if (!this.selection.includes(rowIndex)) {
+			if (!this.selectionSet.has(row)) {
 				this.lastSelectItem = rowIndex;
-				this.$emit('update:selection', [rowIndex]);
+				this.$emit('update:selection', [row]);
 			}
 
-			const row = this.sortedItems[rowIndex];
 			const cellValue = row ? row[columnIndex] : null;
 
 			this.$emit('contextmenu', {
@@ -897,14 +905,10 @@ module.exports = {
 			if (!this.selection || this.selection.length === 0 || !this.headers)
 				return '';
 
+			const index_map = new Map(this.sortedItems.map((row, idx) => [row, idx]));
 			const rows = this.selection
 				.slice()
-				.sort((a, b) => a - b)
-				.map(idx => this.sortedItems[idx])
-				.filter(row => row !== undefined);
-
-			if (rows.length === 0)
-				return '';
+				.sort((a, b) => index_map.get(a) - index_map.get(b));
 
 			const escape_csv = (val) => {
 				const str = String(val ?? '');
@@ -932,14 +936,10 @@ module.exports = {
 			if (!this.selection || this.selection.length === 0 || !this.headers)
 				return '';
 
+			const index_map = new Map(this.sortedItems.map((row, idx) => [row, idx]));
 			const rows = this.selection
 				.slice()
-				.sort((a, b) => a - b)
-				.map(idx => this.sortedItems[idx])
-				.filter(row => row !== undefined);
-
-			if (rows.length === 0)
-				return '';
+				.sort((a, b) => index_map.get(a) - index_map.get(b));
 
 			const table_name = this.tablename || 'unknown_table';
 
@@ -1008,7 +1008,7 @@ module.exports = {
 				<tbody>
 					<tr v-for="(row, rowIndex) in displayItems"
 						@click="selectRow(scrollIndex + rowIndex, $event)"
-						:class="{ selected: selection.includes(scrollIndex + rowIndex) }">
+						:class="{ selected: selectionSet.has(row) }">
 						<td v-for="(field, index) in row" :style="columnStyles['col-' + index] || {}" @contextmenu="handleContextMenu(scrollIndex + rowIndex, index, $event)">{{field}}</td>
 					</tr>
 				</tbody>
