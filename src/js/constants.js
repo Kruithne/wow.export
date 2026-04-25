@@ -15,6 +15,12 @@ const INSTALL_PATH = process.platform === 'darwin'
 	: path.dirname(process.execPath);
 const DATA_PATH = nw.App.dataPath;
 
+// on macOS, update manifest paths are relative to the portable root (the
+// directory containing the .app bundle), not app.nw inside it.
+const UPDATE_ROOT = process.platform === 'darwin'
+	? path.resolve(nw.__dirname, '..', '..', '..', '..')
+	: INSTALL_PATH;
+
 const UPDATER_EXT = { win32: '.exe', darwin: '.app' };
 
 const getBlenderBaseDir = () => {
@@ -97,7 +103,8 @@ module.exports = {
 	},
 
 	UPDATE: {
-		DIRECTORY: path.join(INSTALL_PATH, '.update'), // Temporary directory for storing update data.
+		ROOT: UPDATE_ROOT, // Root path for update file resolution.
+		DIRECTORY: path.join(UPDATE_ROOT, '.update'), // Temporary directory for storing update data.
 		HELPER: 'updater' + (UPDATER_EXT[process.platform] || '') // Path to update helper application.
 	},
 
