@@ -506,6 +506,16 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			const updaterElapsed = (Date.now() - updaterStart) / 1000;
 			log.success('Updater application compiled in *%ds* -> *%s*', updaterElapsed, updaterOutput);
+
+			// ad-hoc codesign bun-compiled binaries for macOS
+			if (build.updater.target.includes('darwin') && process.platform === 'darwin') {
+				log.info('Ad-hoc codesigning updater binary...');
+				const sign_result = Bun.spawnSync({ cmd: ['codesign', '--force', '-s', '-', updaterOutput], stdio: ['inherit', 'inherit', 'inherit'] });
+				if (sign_result.exitCode !== 0)
+					throw new Error('Codesigning updater binary failed');
+
+				log.success('Updater binary codesigned');
+			}
 		}
 
 		// Compile installer application (output to separate directory for publish).
@@ -558,6 +568,16 @@ const deflateBuffer = util.promisify(zlib.deflate);
 
 			const installerElapsed = (Date.now() - installerStart) / 1000;
 			log.success('Installer application compiled in *%ds* -> *%s*', installerElapsed, installerOutput);
+
+			// ad-hoc codesign bun-compiled binaries for macOS
+			if (build.installer.target.includes('darwin') && process.platform === 'darwin') {
+				log.info('Ad-hoc codesigning installer binary...');
+				const sign_result = Bun.spawnSync({ cmd: ['codesign', '--force', '-s', '-', installerOutput], stdio: ['inherit', 'inherit', 'inherit'] });
+				if (sign_result.exitCode !== 0)
+					throw new Error('Codesigning installer binary failed');
+
+				log.success('Installer binary codesigned');
+			}
 		}
 
 		// Build a manifest (package.json) file for the build.
@@ -576,6 +596,17 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		const manifestPath = path.resolve(path.join(buildDir, build.manifestTarget));
 		await fs.writeFile(manifestPath, JSON.stringify(manifest, null, '\t'));
 		log.success('Manifest file written to *%s*', manifestPath);
+
+		// ad-hoc codesign macOS app bundle after all modifications are finalized
+		if (build.macos && process.platform === 'darwin') {
+			const app_path = path.join(buildDir, build.macos.appName + '.app');
+			log.info('Ad-hoc codesigning app bundle (*%s*)...', app_path);
+			const sign_result = Bun.spawnSync({ cmd: ['codesign', '--force', '--deep', '-s', '-', app_path], stdio: ['inherit', 'inherit', 'inherit'] });
+			if (sign_result.exitCode !== 0)
+				throw new Error('Codesigning app bundle failed');
+
+			log.success('App bundle codesigned');
+		}
 
 		// Create update bundle and manifest.
 		if (build.updateBundle) {
