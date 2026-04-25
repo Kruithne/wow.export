@@ -3,6 +3,7 @@
 - Added support for conditional character models (such as upright orcs).
 - Added working builds for macOS Apple Silicon (ARM64). (3)
 - Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
+- Added 'Apply Pose' checkbox to export models in their animated pose as OBJ/STL.
 - Importing from Battle.net now uses the correct item appearance in character customization.
 - Importing from Battle.net now loads your character's guild tabard customization.
 - Improved 3D previews for WMO models.
