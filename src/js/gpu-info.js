@@ -106,46 +106,29 @@ const get_windows_registry_vram = async () => {
 };
 
 /**
- * Get GPU info on Windows via WMIC/PowerShell.
+ * Get GPU info on Windows via PowerShell/CIM.
  * @returns {Promise<{ name: string, vram: string, driver: string } | null>}
  */
 const get_windows_gpu_info = async () => {
 	try {
-		const output = await exec_cmd('wmic path win32_VideoController get Name,AdapterRAM,DriverVersion /format:csv');
+		const ps_cmd = 'powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -First 1 Name,AdapterRAM,DriverVersion | ConvertTo-Json"';
+		const output = await exec_cmd(ps_cmd);
+		const gpu = JSON.parse(output);
 
-		// split by both \r\n and \n, filter empty lines
-		const lines = output.split(/\r?\n/).filter(line => line.trim().length > 0);
+		let adapter_ram = gpu.AdapterRAM ?? 0;
 
-		if (lines.length < 2) {
-			log.write('GPU: WMIC returned insufficient data (%d lines)', lines.length);
-			return null;
-		}
-
-		// csv format: Node,AdapterRAM,DriverVersion,Name
-		const data_line = lines[1].trim();
-		const parts = data_line.split(',');
-
-		if (parts.length < 4) {
-			log.write('GPU: WMIC CSV parse failed, expected 4 fields, got %d', parts.length);
-			return null;
-		}
-
-		let adapter_ram = parseInt(parts[1], 10);
-		const driver_version = parts[2];
-		const name = parts[3];
-
-		// wmi AdapterRAM is 32-bit, try registry for accurate value on >4GB GPUs
+		// WMI AdapterRAM is 32-bit, try registry for accurate value on >4GB GPUs
 		const registry_vram = await get_windows_registry_vram();
 		if (registry_vram !== null)
 			adapter_ram = registry_vram;
 
 		return {
-			name: name || 'Unknown',
+			name: gpu.Name || 'Unknown',
 			vram: format_vram(adapter_ram),
-			driver: driver_version || 'Unknown'
+			driver: gpu.DriverVersion || 'Unknown'
 		};
 	} catch (e) {
-		log.write('GPU: Windows WMIC query failed: %s', e.message);
+		log.write('GPU: Windows CIM query failed: %s', e.message);
 		return null;
 	}
 };
