@@ -1,10 +1,17 @@
 ## 0.2.15 (25-04-2026)
-- Added working builds for macOS Apple Silicon (ARM64).
+- Thank you to jarveson (1), VamooseAddons (2) and 0xUnkn0wN (3) for contributions included in this release.
+- Added working builds for macOS Apple Silicon (ARM64). (3)
 - Added ad-hoc codesigning to portable macOS builds to reduce security warnings.
-- Fixed issues that would prevent wow.export from functioning correctly on macOS.
-- Fixed 3D preview failing on macOS due to shader uniform limit.
+- Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
+- Improved rendering order of transparent and layered model parts in the 3D previewer. (1)
+- Improved blend mode rendering for glowing and transparent model effects. (1)
+- Fixed issues that would prevent wow.export from functioning correctly on macOS. (2)
+- Fixed 3D preview failing on macOS due to shader uniform limit. (2)
 - Fixed crash when copying item IDs in character tab.
 - Fixed an issue preventing the wireframe view from rendering correctly in the modelviewer.
+- Fixed missing or incorrect textures on equipped items in the character viewer. (1)
+- Fixed broken animations on models with long-running looping effects. (1)
+- Fixed lighting being incorrectly applied to unlit model parts such as glowing overlays. (1)
 
 ## 0.2.14 (19-03-2026)
 - Added "Creatures" tab, allowing export of NPCs with both custom and character models.
