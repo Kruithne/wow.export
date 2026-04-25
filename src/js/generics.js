@@ -238,7 +238,7 @@ const downloadFile = async (url, out, partialOfs = -1, partialLen = -1, deflate 
 			if (out) {
 				await createDirectory(path.dirname(out));
 				await wrapped.writeToFile(out);
-				await fs.chmod(out, mode);
+				await fsp.chmod(out, mode);
 			}
 
 			return wrapped;
