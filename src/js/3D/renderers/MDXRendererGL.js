@@ -362,11 +362,15 @@ class MDXRendererGL {
 			this.buffers.push(bwbo);
 
 			// index buffer
+			const face_data = new Uint16Array(geoset.faces);
 			const ebo = gl.createBuffer();
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geoset.faces), gl.STATIC_DRAW);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, face_data, gl.STATIC_DRAW);
 			this.buffers.push(ebo);
 			vao.ebo = ebo;
+
+			// wireframe index buffer
+			vao.set_wireframe_index_buffer(VertexArray.triangles_to_lines(face_data));
 
 			vao.setup_m2_separate_buffers(vbo, nbo, uvo, bibo, bwbo, null);
 
@@ -751,12 +755,14 @@ class MDXRendererGL {
 			this.default_texture.bind(3);
 
 			dc.vao.bind();
-			gl.drawElements(
-				wireframe ? gl.LINES : gl.TRIANGLES,
-				dc.count,
-				gl.UNSIGNED_SHORT,
-				dc.start * 2
-			);
+
+			if (wireframe) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.wireframe_ebo);
+				gl.drawElements(gl.LINES, dc.count * 2, gl.UNSIGNED_SHORT, dc.start * 4);
+			} else {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.ebo);
+				gl.drawElements(gl.TRIANGLES, dc.count, gl.UNSIGNED_SHORT, dc.start * 2);
+			}
 		}
 
 		ctx.set_blend(false);

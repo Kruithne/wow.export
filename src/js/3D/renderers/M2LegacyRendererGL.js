@@ -361,6 +361,9 @@ class M2LegacyRendererGL {
 		this.buffers.push(ebo);
 		vao.ebo = ebo;
 
+		// wireframe index buffer
+		vao.set_wireframe_index_buffer(VertexArray.triangles_to_lines(index_data));
+
 		vao.setup_m2_vertex_format();
 		this.vaos.push(vao);
 
@@ -995,12 +998,14 @@ class M2LegacyRendererGL {
 			}
 
 			dc.vao.bind();
-			gl.drawElements(
-				wireframe ? gl.LINES : gl.TRIANGLES,
-				dc.count,
-				gl.UNSIGNED_SHORT,
-				dc.start * 2
-			);
+
+			if (wireframe) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.wireframe_ebo);
+				gl.drawElements(gl.LINES, dc.count * 2, gl.UNSIGNED_SHORT, dc.start * 4);
+			} else {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, dc.vao.ebo);
+				gl.drawElements(gl.TRIANGLES, dc.count, gl.UNSIGNED_SHORT, dc.start * 2);
+			}
 		}
 
 		ctx.set_blend(false);
