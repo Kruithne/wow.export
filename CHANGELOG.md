@@ -11,6 +11,7 @@
 - Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
 - Improved rendering order of transparent and layered model parts in the 3D previewer. (1)
 - Improved blend mode rendering for glowing and transparent model effects. (1)
+- Improved output of newer WMO models when exporting directly as OBJ.
 - Fixed issues that would prevent wow.export from functioning correctly on macOS. (2)
 - Fixed 3D preview failing on macOS due to shader uniform limit. (2)
 - Fixed crash when copying item IDs in character tab.

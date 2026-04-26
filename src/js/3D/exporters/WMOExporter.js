@@ -90,18 +90,17 @@ class WMOExporter {
 
 			const materialTextures = [material.texture1, material.texture2, material.texture3];
 
-			// Variable that purely exists to not handle the first texture as the main one for shader23
-			let dontUseFirstTexture = false;
-
-			if (material.shader == 23) {
+			// shader 23 (pixel shader 20): competitive 4-layer blend using
+			// texture2..flags3 as diffuse and runtimeData[0..3] as height maps.
+			// texture2 is the first diffuse layer sampled at UV0.
+			const is_shader23 = material.shader == 23;
+			if (is_shader23) {
 				materialTextures.push(material.flags3);
 				materialTextures.push(material.color3);
 				materialTextures.push(material.runtimeData[0]);
 				materialTextures.push(material.runtimeData[1]);
 				materialTextures.push(material.runtimeData[2]);
 				materialTextures.push(material.runtimeData[3]);
-
-				dontUseFirstTexture = true;
 			}
 
 			for (const materialTexture of materialTextures) {
@@ -196,12 +195,10 @@ class WMOExporter {
 					mtl?.addMaterial(matName, texFile);
 					textureMap.set(fileDataID, { matPathRelative: texFile, matPath: texPath, matName });
 
-					// MTL only supports one texture per material, only link the first unless we only want the second one (e.g. for shader 23).
-					if (!materialMap.has(i) && dontUseFirstTexture == false)
+					// shader 23: use texture2 (first competitive diffuse layer at UV0)
+					// other shaders: use the first available texture
+					if (!materialMap.has(i) && (!is_shader23 || materialTexture === material.texture2))
 						materialMap.set(i, matName);
-
-					// Unset skip here so we always pick the next texture in line
-					dontUseFirstTexture = false;
 				} catch (e) {
 					log.write('Failed to export texture %d for WMO: %s', fileDataID, e.message);
 				}
