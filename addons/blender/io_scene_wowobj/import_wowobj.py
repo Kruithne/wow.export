@@ -442,6 +442,359 @@ def create_competitive_blend_node_group():
 	return group
 
 
+def create_wmo_shader20_blend_group():
+	"""create reusable WMO shader 20 competitive blend node group (4-layer)"""
+	group_name = 'wmo_shader20_blend'
+
+	if group_name in bpy.data.node_groups:
+		return bpy.data.node_groups[group_name]
+
+	group = bpy.data.node_groups.new(group_name, 'ShaderNodeTree')
+	group.nodes.clear()
+
+	if hasattr(group, 'interface'):
+		for i in range(4):
+			group.interface.new_socket(f'diffuse_{i}', in_out='INPUT', socket_type='NodeSocketColor')
+			group.interface.new_socket(f'height_{i}', in_out='INPUT', socket_type='NodeSocketFloat')
+		group.interface.new_socket('weight_0', in_out='INPUT', socket_type='NodeSocketFloat')
+		group.interface.new_socket('weight_1', in_out='INPUT', socket_type='NodeSocketFloat')
+		group.interface.new_socket('weight_2', in_out='INPUT', socket_type='NodeSocketFloat')
+		group.interface.new_socket('result', in_out='OUTPUT', socket_type='NodeSocketColor')
+	else:
+		for i in range(4):
+			group.inputs.new('NodeSocketColor', f'diffuse_{i}')
+			group.inputs.new('NodeSocketFloat', f'height_{i}')
+		group.inputs.new('NodeSocketFloat', 'weight_0')
+		group.inputs.new('NodeSocketFloat', 'weight_1')
+		group.inputs.new('NodeSocketFloat', 'weight_2')
+		group.outputs.new('NodeSocketColor', 'result')
+
+	nodes = group.nodes
+	links = group.links
+
+	group_input = nodes.new('NodeGroupInput')
+	group_input.location = (-2000, 0)
+
+	group_output = nodes.new('NodeGroupOutput')
+	group_output.location = (1600, 0)
+
+	# weight_3 = 1.0 - clamp(weight_0 + weight_1 + weight_2, 0, 1)
+	w_sum_01 = nodes.new('ShaderNodeMath')
+	w_sum_01.operation = 'ADD'
+	w_sum_01.location = (-1600, -400)
+	links.new(group_input.outputs['weight_0'], w_sum_01.inputs[0])
+	links.new(group_input.outputs['weight_1'], w_sum_01.inputs[1])
+
+	w_sum_012 = nodes.new('ShaderNodeMath')
+	w_sum_012.operation = 'ADD'
+	w_sum_012.location = (-1400, -400)
+	links.new(w_sum_01.outputs[0], w_sum_012.inputs[0])
+	links.new(group_input.outputs['weight_2'], w_sum_012.inputs[1])
+
+	w_sum_clamp = nodes.new('ShaderNodeClamp')
+	w_sum_clamp.location = (-1200, -400)
+	w_sum_clamp.inputs['Min'].default_value = 0.0
+	w_sum_clamp.inputs['Max'].default_value = 1.0
+	links.new(w_sum_012.outputs[0], w_sum_clamp.inputs['Value'])
+
+	w3_node = nodes.new('ShaderNodeMath')
+	w3_node.operation = 'SUBTRACT'
+	w3_node.location = (-1000, -400)
+	w3_node.inputs[0].default_value = 1.0
+	links.new(w_sum_clamp.outputs[0], w3_node.inputs[1])
+
+	weight_outputs = [
+		group_input.outputs['weight_0'],
+		group_input.outputs['weight_1'],
+		group_input.outputs['weight_2'],
+		w3_node.outputs[0]
+	]
+
+	# alpha_vec[i] = weight[i] * max(height[i], 0.004)
+	alpha_nodes = []
+	for i in range(4):
+		h_max = nodes.new('ShaderNodeMath')
+		h_max.operation = 'MAXIMUM'
+		h_max.location = (-1600, 200 - i * 120)
+		links.new(group_input.outputs[f'height_{i}'], h_max.inputs[0])
+		h_max.inputs[1].default_value = 0.004
+
+		alpha = nodes.new('ShaderNodeMath')
+		alpha.operation = 'MULTIPLY'
+		alpha.location = (-1400, 200 - i * 120)
+		links.new(weight_outputs[i], alpha.inputs[0])
+		links.new(h_max.outputs[0], alpha.inputs[1])
+		alpha_nodes.append(alpha)
+
+	# max of all alpha values
+	a_max_01 = nodes.new('ShaderNodeMath')
+	a_max_01.operation = 'MAXIMUM'
+	a_max_01.location = (-1000, 200)
+	links.new(alpha_nodes[0].outputs[0], a_max_01.inputs[0])
+	links.new(alpha_nodes[1].outputs[0], a_max_01.inputs[1])
+
+	a_max_012 = nodes.new('ShaderNodeMath')
+	a_max_012.operation = 'MAXIMUM'
+	a_max_012.location = (-800, 200)
+	links.new(a_max_01.outputs[0], a_max_012.inputs[0])
+	links.new(alpha_nodes[2].outputs[0], a_max_012.inputs[1])
+
+	a_max_all = nodes.new('ShaderNodeMath')
+	a_max_all.operation = 'MAXIMUM'
+	a_max_all.location = (-600, 200)
+	links.new(a_max_012.outputs[0], a_max_all.inputs[0])
+	links.new(alpha_nodes[3].outputs[0], a_max_all.inputs[1])
+
+	# competitive suppression: (1 - clamp(max - alpha, 0, 1)) * alpha
+	suppressed = []
+	for i in range(4):
+		diff = nodes.new('ShaderNodeMath')
+		diff.operation = 'SUBTRACT'
+		diff.location = (-400, 200 - i * 150)
+		links.new(a_max_all.outputs[0], diff.inputs[0])
+		links.new(alpha_nodes[i].outputs[0], diff.inputs[1])
+
+		clamp = nodes.new('ShaderNodeClamp')
+		clamp.location = (-200, 200 - i * 150)
+		clamp.inputs['Min'].default_value = 0.0
+		clamp.inputs['Max'].default_value = 1.0
+		links.new(diff.outputs[0], clamp.inputs['Value'])
+
+		inv = nodes.new('ShaderNodeMath')
+		inv.operation = 'SUBTRACT'
+		inv.location = (0, 200 - i * 150)
+		inv.inputs[0].default_value = 1.0
+		links.new(clamp.outputs[0], inv.inputs[1])
+
+		supp = nodes.new('ShaderNodeMath')
+		supp.operation = 'MULTIPLY'
+		supp.location = (200, 200 - i * 150)
+		links.new(inv.outputs[0], supp.inputs[0])
+		links.new(alpha_nodes[i].outputs[0], supp.inputs[1])
+		suppressed.append(supp)
+
+	# sum suppressed for normalization
+	s_sum_01 = nodes.new('ShaderNodeMath')
+	s_sum_01.operation = 'ADD'
+	s_sum_01.location = (400, 200)
+	links.new(suppressed[0].outputs[0], s_sum_01.inputs[0])
+	links.new(suppressed[1].outputs[0], s_sum_01.inputs[1])
+
+	s_sum_012 = nodes.new('ShaderNodeMath')
+	s_sum_012.operation = 'ADD'
+	s_sum_012.location = (400, 100)
+	links.new(s_sum_01.outputs[0], s_sum_012.inputs[0])
+	links.new(suppressed[2].outputs[0], s_sum_012.inputs[1])
+
+	s_sum_all = nodes.new('ShaderNodeMath')
+	s_sum_all.operation = 'ADD'
+	s_sum_all.location = (400, 0)
+	links.new(s_sum_012.outputs[0], s_sum_all.inputs[0])
+	links.new(suppressed[3].outputs[0], s_sum_all.inputs[1])
+
+	# normalize, multiply by diffuse color, sum all channels
+	weighted_colors = []
+	for i in range(4):
+		norm = nodes.new('ShaderNodeMath')
+		norm.operation = 'DIVIDE'
+		norm.location = (600, 200 - i * 200)
+		links.new(suppressed[i].outputs[0], norm.inputs[0])
+		links.new(s_sum_all.outputs[0], norm.inputs[1])
+
+		sep = nodes.new('ShaderNodeSeparateColor')
+		sep.location = (600, 130 - i * 200)
+		links.new(group_input.outputs[f'diffuse_{i}'], sep.inputs['Color'])
+
+		channels = []
+		for ci, ch in enumerate(['Red', 'Green', 'Blue']):
+			mult = nodes.new('ShaderNodeMath')
+			mult.operation = 'MULTIPLY'
+			mult.location = (800, 200 - i * 200 - ci * 40)
+			links.new(sep.outputs[ch], mult.inputs[0])
+			links.new(norm.outputs[0], mult.inputs[1])
+			channels.append(mult)
+
+		weighted_colors.append(channels)
+
+	# sum per-channel across all 4 layers
+	def chain_add(outputs, x_base, y):
+		prev = outputs[0].outputs[0]
+		for i in range(1, len(outputs)):
+			add = nodes.new('ShaderNodeMath')
+			add.operation = 'ADD'
+			add.location = (x_base + i * 150, y)
+			links.new(prev, add.inputs[0])
+			links.new(outputs[i].outputs[0], add.inputs[1])
+			prev = add.outputs[0]
+		return prev
+
+	r_sum = chain_add([wc[0] for wc in weighted_colors], 1000, 200)
+	g_sum = chain_add([wc[1] for wc in weighted_colors], 1000, 50)
+	b_sum = chain_add([wc[2] for wc in weighted_colors], 1000, -100)
+
+	combine = nodes.new('ShaderNodeCombineColor')
+	combine.location = (1500, 50)
+	links.new(r_sum, combine.inputs['Red'])
+	links.new(g_sum, combine.inputs['Green'])
+	links.new(b_sum, combine.inputs['Blue'])
+
+	links.new(combine.outputs['Color'], group_output.inputs['result'])
+
+	return group
+
+
+def is_wmo_shader20(json_info, material_name):
+	"""check if a WMO material uses pixel shader 20 (competitive blend)"""
+	if json_info.get('fileType') != 'wmo':
+		return False
+
+	mat_idx = json_info.get('mtlIndexes', {}).get(material_name)
+	if mat_idx is None:
+		return False
+
+	materials = json_info.get('materials', [])
+	if mat_idx >= len(materials):
+		return False
+
+	return materials[mat_idx].get('pixelShader') == 20
+
+
+def createWMOShader20Material(material_name, json_info, base_dir, lookup_name=None):
+	"""create a competitive blend material for WMO pixel shader 20"""
+	mat_idx = json_info['mtlIndexes'][lookup_name or material_name]
+	mat_data = json_info['materials'][mat_idx]
+	tex_paths = json_info.get('texturePathsByFDID', {})
+
+	material = bpy.data.materials.new(name=material_name)
+	material.use_nodes = True
+	material.blend_method = 'CLIP'
+
+	node_tree = material.node_tree
+	nodes = node_tree.nodes
+	links = node_tree.links
+
+	principled = getFirstNodeOfType(nodes, 'BSDF_PRINCIPLED')
+	out_node = getFirstNodeOfType(nodes, 'OUTPUT_MATERIAL')
+
+	if not out_node:
+		out_node = nodes.new('ShaderNodeOutputMaterial')
+		out_node.location = (600, 0)
+
+	if not principled:
+		principled = nodes.new('ShaderNodeBsdfPrincipled')
+		principled.location = (300, 0)
+		links.new(principled.outputs['BSDF'], out_node.inputs['Surface'])
+
+	principled.inputs[SPECULAR_INPUT_NAME].default_value = 0
+
+	# diffuse textures: texture2, texture3, color3, flags3
+	diffuse_fdids = [
+		mat_data.get('texture2', 0),
+		mat_data.get('texture3', 0),
+		mat_data.get('color3', 0),
+		mat_data.get('flags3', 0)
+	]
+
+	# height maps: runtimeData[0..3] (alpha channel used for height)
+	runtime_data = mat_data.get('runtimeData', [0, 0, 0, 0])
+	height_fdids = [runtime_data[i] if i < len(runtime_data) else 0 for i in range(4)]
+
+	uv_names = ['UVMap', 'UV2Map', 'UV3Map', 'UV4Map']
+
+	# uv map nodes
+	uv_nodes = []
+	for i, uv_name in enumerate(uv_names):
+		uv_node = nodes.new('ShaderNodeUVMap')
+		uv_node.uv_map = uv_name
+		uv_node.location = (-1200, 300 - i * 250)
+		uv_nodes.append(uv_node)
+
+	# diffuse texture nodes
+	diffuse_nodes = []
+	for i, fdid in enumerate(diffuse_fdids):
+		tex_node = nodes.new('ShaderNodeTexImage')
+		tex_node.location = (-800, 300 - i * 250)
+		tex_node.label = f'Diffuse {i}'
+
+		if fdid != 0:
+			rel_path = tex_paths.get(fdid, '')
+			if rel_path:
+				abs_path = os.path.join(base_dir, rel_path)
+				if os.path.exists(abs_path):
+					tex_node.image = loadImage(abs_path)
+
+		links.new(uv_nodes[i].outputs['UV'], tex_node.inputs['Vector'])
+		diffuse_nodes.append(tex_node)
+
+	# height texture nodes (reuse diffuse node if same texture)
+	height_nodes = []
+	for i, fdid in enumerate(height_fdids):
+		if fdid != 0 and fdid == diffuse_fdids[i]:
+			height_nodes.append(diffuse_nodes[i])
+		elif fdid != 0:
+			tex_node = nodes.new('ShaderNodeTexImage')
+			tex_node.location = (-800, -800 - i * 250)
+			tex_node.label = f'Height {i}'
+
+			rel_path = tex_paths.get(fdid, '')
+			if rel_path:
+				abs_path = os.path.join(base_dir, rel_path)
+				if os.path.exists(abs_path):
+					tex_node.image = loadImage(abs_path)
+					tex_node.image.colorspace_settings.name = 'Non-Color'
+
+			links.new(uv_nodes[i].outputs['UV'], tex_node.inputs['Vector'])
+			height_nodes.append(tex_node)
+		else:
+			# missing height map, use constant 1.0
+			val_node = nodes.new('ShaderNodeValue')
+			val_node.location = (-800, -800 - i * 250)
+			val_node.outputs[0].default_value = 1.0
+			height_nodes.append(val_node)
+
+	# vertex color attribute for blend weights
+	color_attr = nodes.new('ShaderNodeAttribute')
+	color_attr.attribute_name = 'wmo_colors2'
+	color_attr.attribute_type = 'GEOMETRY'
+	color_attr.location = (-1200, -1400)
+
+	separate = nodes.new('ShaderNodeSeparateColor')
+	separate.location = (-1000, -1400)
+	links.new(color_attr.outputs['Color'], separate.inputs['Color'])
+
+	# competitive blend node group
+	blend_group = create_wmo_shader20_blend_group()
+	blend_node = nodes.new('ShaderNodeGroup')
+	blend_node.node_tree = blend_group
+	blend_node.location = (-200, 0)
+
+	for i in range(4):
+		links.new(diffuse_nodes[i].outputs['Color'], blend_node.inputs[f'diffuse_{i}'])
+
+	for i in range(4):
+		if hasattr(height_nodes[i], 'type') and height_nodes[i].type == 'TEX_IMAGE':
+			links.new(height_nodes[i].outputs['Alpha'], blend_node.inputs[f'height_{i}'])
+		else:
+			links.new(height_nodes[i].outputs[0], blend_node.inputs[f'height_{i}'])
+
+	# exporter converts BGRA→RGBA, so channels map directly
+	links.new(separate.outputs['Red'], blend_node.inputs['weight_0'])
+	links.new(separate.outputs['Green'], blend_node.inputs['weight_1'])
+	links.new(separate.outputs['Blue'], blend_node.inputs['weight_2'])
+
+	# v_color3.a darkening: mix(blend_result, black, alpha)
+	darken_node = nodes.new('ShaderNodeMixRGB')
+	darken_node.blend_type = 'MIX'
+	darken_node.location = (50, 0)
+	links.new(color_attr.outputs['Alpha'], darken_node.inputs['Fac'])
+	links.new(blend_node.outputs['result'], darken_node.inputs['Color1'])
+	darken_node.inputs['Color2'].default_value = (0.0, 0.0, 0.0, 1.0)
+
+	links.new(darken_node.outputs['Color'], principled.inputs['Base Color'])
+
+	return material
+
+
 def create_animated_texture_nodes(nodes, node_tree, animation_data, texture_path, x_pos, y_pos):
     """Create texture nodes with UV animation"""
     # Create TexturePanner node group instance
@@ -1410,6 +1763,7 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
     verts = []
     normals = []
     uvs = []
+    vertex_colors = []
     meshes = []
 
     ### Per group
@@ -1434,10 +1788,27 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 json_info['textureTransformsLookup'] = json_info.get('textureTransformsLookup', [])
             elif json_info.get('fileType') == 'wmo':
                 json_info['mtlTextureIds'] = {i['fileDataID']: i['mtlName'] for i in json_info['textures']}
-                json_info['mtlIndexes'] = {
-                    json_info['mtlTextureIds'][data['texture1']]: idx
-                    for idx, data in enumerate(json_info['materials'])
-                    if data['texture1'] in json_info['mtlTextureIds']}
+
+                # texture file path lookup by fileDataID
+                json_info['texturePathsByFDID'] = {
+                    t['fileDataID']: t.get('fileNameExternal', '')
+                    for t in json_info.get('textures', [])
+                    if t.get('fileNameExternal')
+                }
+
+                # material index lookup by MTL name
+                json_info['mtlIndexes'] = {}
+                for idx, data in enumerate(json_info.get('materials', [])):
+                    # shader 23 (pixelShader 20) uses texture2 as the MTL material
+                    if data.get('shader') == 23:
+                        tex_id = data.get('texture2', 0)
+                    else:
+                        tex_id = data.get('texture1', 0)
+
+                    if tex_id in json_info['mtlTextureIds']:
+                        mtl_name = json_info['mtlTextureIds'][tex_id]
+                        if mtl_name not in json_info['mtlIndexes']:
+                            json_info['mtlIndexes'][mtl_name] = idx
     except:
         pass
 
@@ -1456,6 +1827,8 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 verts.append([float(v) for v in line_split[1:]])
             elif line_start == b'vn':
                 normals.append([float(v) for v in line_split[1:]])
+            elif line_start == b'vc':
+                vertex_colors.append([float(v) for v in line_split[1:]])
             elif line_start.startswith(b'vt'):
                 layer_index = 0
 
@@ -1574,6 +1947,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                     if 'layers' in material_json:
                         material = createBlendedTerrain(materialName, textureLocation, material_json['layers'], baseDir, textureExtensionMode)
                 
+                if material is None and materialName in usedMaterials and is_wmo_shader20(json_info, materialName):
+                    try:
+                        material = createWMOShader20Material(materialName, json_info, baseDir)
+                    except Exception as e:
+                        print('failed to create WMO shader 20 material for %s: %s' % (materialName, e))
+                        material = None
+
                 if material is None and materialName in usedMaterials:
                     if has_advanced_m2_data(json_info):
                         # Find the FIRST mesh that uses this material to get the correct texture unit
@@ -1602,7 +1982,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
                 for bm, (materialBName, materialBMat) in materialB.items():
                     # create materials with different blending modes
                     if materialBName in usedMaterials and materialBMat is None:
-                        if has_advanced_m2_data(json_info):
+                        if is_wmo_shader20(json_info, materialName):
+                            try:
+                                materialB[bm] = (materialBName, createWMOShader20Material(materialBName, json_info, baseDir, lookup_name=materialName))
+                            except Exception as e:
+                                print('failed to create WMO shader 20 blend material for %s: %s' % (materialBName, e))
+                                materialB[bm] = (materialBName, createStandardMaterial(materialBName, textureLocation, bm, settings.createEmissiveMaterials, textureExtensionMode))
+                        elif has_advanced_m2_data(json_info):
                             # Find the mesh that uses this blend mode material
                             texture_unit_found = None
                             for mesh_idx, mesh in enumerate(meshes):
@@ -1683,6 +2069,13 @@ def importWoWOBJ(objectFile, givenParent = None, settings = None):
 
     bm.to_mesh(newmesh)
     bm.free()
+
+    # import vertex colors as color attribute for WMO shader 20 blend weights
+    if vertex_colors:
+        color_layer = newmesh.color_attributes.new(name='wmo_colors2', type='FLOAT_COLOR', domain='POINT')
+        for i, color in enumerate(vertex_colors):
+            if i < len(color_layer.data):
+                color_layer.data[i].color = color if len(color) >= 4 else [*color, 1.0]
 
     # needed to have a mesh before we can create vertex groups, so do that now
     if settings.createVertexGroups:

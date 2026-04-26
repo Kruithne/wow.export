@@ -450,6 +450,10 @@ class WMOExporter {
 		for (let i = 0; i < maxLayerCount; i++)
 			uvArrays[i] = new Array(nInd * 2);
 
+		// colors2 provides vertex blend weights for shader 20.
+		const hasColors2 = groups.some(g => g.colors2);
+		const colorsArray = hasColors2 ? new Array(nInd * 4).fill(0) : null;
+
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
 		for (const group of groups) {
@@ -476,6 +480,19 @@ class WMOExporter {
 					uvArrays[i][uvsOfs + j] = uv?.[j] ?? 0;
 			}
 
+			// colors2 (BGRA uint8) → RGBA float for shader 20 blend weights.
+			if (colorsArray && group.colors2) {
+				const colorOfs = indOfs * 4;
+				const src = group.colors2;
+				for (let i = 0; i < indCount; i++) {
+					const si = i * 4, di = colorOfs + i * 4;
+					colorsArray[di] = src[si + 2] / 255;
+					colorsArray[di + 1] = src[si + 1] / 255;
+					colorsArray[di + 2] = src[si] / 255;
+					colorsArray[di + 3] = src[si + 3] / 255;
+				}
+			}
+
 			const groupName = wmo.groupNames[group.nameOfs];
 
 			// Load all render batches into the mesh.
@@ -498,6 +515,9 @@ class WMOExporter {
 
 		for (const arr of uvArrays)
 			obj.addUVArray(arr);
+
+		if (colorsArray)
+			obj.setColorArray(colorsArray);
 
 		const csvPath = ExportHelper.replaceExtension(out, '_ModelPlacementInformation.csv');
 		if (config.overwriteFiles || !await generics.fileExists(csvPath)) {
@@ -672,6 +692,7 @@ class WMOExporter {
 					materialInfo: group.materialInfo,
 					renderBatches: group.renderBatches,
 					vertexColours: group.vertexColours,
+					colors2: group.colors2,
 					liquid: group.liquid
 				};
 			}
@@ -692,6 +713,7 @@ class WMOExporter {
 					materialTextures.push(material.runtimeData[0]);
 				} else if (material.pixelShader == 20) {
 					materialTextures.push(material.color3);
+					materialTextures.push(material.flags3);
 					for (const rtdTexture of material.runtimeData)
 						materialTextures.push(rtdTexture);
 				}
@@ -938,6 +960,20 @@ class WMOExporter {
 			for (const arr of uvArrays)
 				obj.addUVArray(arr);
 
+			// colors2 (BGRA uint8) → RGBA float for shader 20 blend weights.
+			if (group.colors2) {
+				const groupColorsArray = new Array(indCount * 4);
+				const src = group.colors2;
+				for (let j = 0; j < indCount; j++) {
+					const si = j * 4, di = j * 4;
+					groupColorsArray[di] = src[si + 2] / 255;
+					groupColorsArray[di + 1] = src[si + 1] / 255;
+					groupColorsArray[di + 2] = src[si] / 255;
+					groupColorsArray[di + 3] = src[si + 3] / 255;
+				}
+				obj.setColorArray(groupColorsArray);
+			}
+
 			// add render batches
 			for (let bI = 0, bC = group.renderBatches.length; bI < bC; bI++) {
 				const batch = group.renderBatches[bI];
@@ -1118,6 +1154,7 @@ class WMOExporter {
 					materialInfo: group.materialInfo,
 					renderBatches: group.renderBatches,
 					vertexColours: group.vertexColours,
+					colors2: group.colors2,
 					liquid: group.liquid
 				};
 			}
