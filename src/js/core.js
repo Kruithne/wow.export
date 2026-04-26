@@ -266,6 +266,8 @@ const makeNewView = () => {
 		chrGuildTabardConfig: { background: 0, border_style: 0, border_color: 0, emblem_design: 0, emblem_color: 0 },
 		chrEquipmentSlotContext: null, // Context menu node for equipment slot right-click
 		chrPendingEquipSlot: null, // Slot ID pending equip from character tab navigation
+		chrItemPickerSlot: null, // Slot ID for item picker modal (null = hidden)
+		chrItemPickerFilter: null, // Slot filter name for item picker modal
 		chrSavedCharactersScreen: false, // Controls visibility of saved characters screen
 		chrSavedCharacters: [], // List of saved characters loaded from disk
 		chrSaveCharacterPrompt: false, // Controls visibility of character name prompt

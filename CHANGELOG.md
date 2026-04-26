@@ -7,6 +7,7 @@
 - Added 'Apply Pose' checkbox to export models in their animated pose as OBJ/STL.
 - Importing from Battle.net now uses the correct item appearance in character customization.
 - Importing from Battle.net now loads your character's guild tabard customization.
+- Improved item equipping in character customization to be quicker and easier.
 - Improved 3D previews for WMO models.
 - Improved 3D preview rendering with animated texture effects, submesh colors, and looping visual effects. (1)
 - Improved rendering order of transparent and layered model parts in the 3D previewer. (1)

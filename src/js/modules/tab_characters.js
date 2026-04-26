@@ -28,6 +28,7 @@ const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
+const DBItemList = require('../db/caches/DBItemList');
 const DBGuildTabard = require('../db/caches/DBGuildTabard');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 const character_appearance = require('../ui/character-appearance');
@@ -2302,6 +2303,7 @@ module.exports = {
 			</div>
 			</div>
 		</div>
+		<component :is="$components.ItemPickerModal" v-if="$core.view.chrItemPickerSlot !== null" :slot_id="$core.view.chrItemPickerSlot" :slot_filter="$core.view.chrItemPickerFilter" @close="$core.view.chrItemPickerSlot = null" @open-items-tab="open_items_tab_from_picker" />
 	`,
 
 	data() {
@@ -2487,7 +2489,7 @@ module.exports = {
 		open_slot_context(event, slot_id) {
 			const item_id = this.$core.view.chrEquippedItems[slot_id];
 			if (!item_id) {
-				this.navigate_to_items_for_slot(slot_id);
+				this.open_item_picker(slot_id);
 				return;
 			}
 
@@ -2522,6 +2524,21 @@ module.exports = {
 
 		replace_slot_item(slot_id) {
 			this.$core.view.chrEquipmentSlotContext = null;
+			this.open_item_picker(slot_id);
+		},
+
+		open_item_picker(slot_id) {
+			const slot = EQUIPMENT_SLOTS.find(s => s.id === slot_id);
+			if (!slot)
+				return;
+
+			this.$core.view.chrItemPickerFilter = slot.filter_name ?? slot.name;
+			this.$core.view.chrItemPickerSlot = slot_id;
+		},
+
+		open_items_tab_from_picker() {
+			const slot_id = this.$core.view.chrItemPickerSlot;
+			this.$core.view.chrItemPickerSlot = null;
 			this.navigate_to_items_for_slot(slot_id);
 		},
 
@@ -2687,7 +2704,7 @@ module.exports = {
 
 		reset_module_state();
 
-		this.$core.showLoadingScreen(8);
+		this.$core.showLoadingScreen(10);
 
 		await this.$core.progressLoadingScreen('Retrieving realmlist...');
 		await realmlist.load();
@@ -2738,6 +2755,8 @@ module.exports = {
 
 		await this.$core.progressLoadingScreen('Loading item models...');
 		await DBItemModels.ensureInitialized();
+
+		await DBItemList.initialize((msg) => this.$core.progressLoadingScreen(msg));
 
 		await this.$core.progressLoadingScreen('Loading guild tabard data...');
 		await DBGuildTabard.ensureInitialized();

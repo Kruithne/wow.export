@@ -19,6 +19,7 @@ const COMPONENTS = {
 	DataTable: require('./components/data-table'),
 	ResizeLayer: require('./components/resize-layer'),
 	ContextMenu: require('./components/context-menu'),
+	ItemPickerModal: require('./components/item-picker-modal'),
 	MarkdownContent: require('./components/markdown-content'),
 	HomeShowcase: require('./components/home-showcase')
 };
@@ -75,6 +76,7 @@ const COMPONENT_PATH_MAP = {
 	DataTable: 'data-table',
 	ResizeLayer: 'resize-layer',
 	ContextMenu: 'context-menu',
+	ItemPickerModal: 'item-picker-modal',
 	MarkdownContent: 'markdown-content',
 	HomeShowcase: 'home-showcase'
 };
