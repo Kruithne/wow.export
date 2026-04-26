@@ -4,11 +4,15 @@
 	License: MIT
  */
 
+const SHOULDER_SLOT_L = 3;
+const SHOULDER_SLOT_R = 30;
+
 // equipment slots with numeric IDs and display names
 const EQUIPMENT_SLOTS = [
 	{ id: 1, name: 'Head' },
 	{ id: 2, name: 'Neck' },
-	{ id: 3, name: 'Shoulder' },
+	{ id: SHOULDER_SLOT_L, name: 'Shoulder (L)', filter_name: 'Shoulder' },
+	{ id: SHOULDER_SLOT_R, name: 'Shoulder (R)', filter_name: 'Shoulder' },
 	{ id: 15, name: 'Back' },
 	{ id: 5, name: 'Chest' },
 	{ id: 4, name: 'Shirt' },
@@ -31,7 +35,7 @@ for (const slot of EQUIPMENT_SLOTS)
 const INVENTORY_TYPE_TO_SLOT_ID = {
 	1: 1,   // head
 	2: 2,   // neck
-	3: 3,   // shoulder
+	3: SHOULDER_SLOT_L, // shoulder -> left shoulder
 	4: 4,   // shirt
 	5: 5,   // chest
 	6: 6,   // waist
@@ -55,7 +59,7 @@ const INVENTORY_TYPE_TO_SLOT_ID = {
 // maps WoWModelViewer CharSlots to our slot IDs
 const WMV_SLOT_TO_SLOT_ID = {
 	0: 1,   // CS_HEAD -> head
-	1: 3,   // CS_SHOULDER -> shoulder
+	1: SHOULDER_SLOT_L, // CS_SHOULDER -> left shoulder
 	2: 8,   // CS_BOOTS -> feet
 	3: 6,   // CS_BELT -> waist
 	4: 4,   // CS_SHIRT -> shirt
@@ -126,7 +130,8 @@ const SLOT_LAYER = {
 	7: 10,   // legs/pants
 	1: 11,   // head
 	8: 11,   // feet/boots
-	3: 13,   // shoulder
+	3: 13,   // shoulder (L)
+	30: 13,  // shoulder (R)
 	5: 13,   // chest
 	19: 17,  // tabard
 	6: 18,   // waist/belt
@@ -142,7 +147,8 @@ const SLOT_LAYER = {
 // order matches ItemDisplayInfo.ModelResourcesID order
 const SLOT_TO_ATTACHMENT = {
 	1: [ATTACHMENT_ID.HELMET],                                      // head
-	3: [ATTACHMENT_ID.SHOULDER_LEFT, ATTACHMENT_ID.SHOULDER_RIGHT], // shoulder (left first, then right)
+	[SHOULDER_SLOT_L]: [ATTACHMENT_ID.SHOULDER_LEFT],  // shoulder (L)
+	[SHOULDER_SLOT_R]: [ATTACHMENT_ID.SHOULDER_RIGHT], // shoulder (R)
 	15: [ATTACHMENT_ID.BACK],                                       // back/cape
 	16: [ATTACHMENT_ID.HAND_RIGHT],                                 // main-hand weapon
 	17: [ATTACHMENT_ID.HAND_LEFT, ATTACHMENT_ID.SHIELD]             // off-hand (weapon or shield)
@@ -170,6 +176,8 @@ const get_slot_layer = (slot_id) => {
 
 module.exports = {
 	EQUIPMENT_SLOTS,
+	SHOULDER_SLOT_L,
+	SHOULDER_SLOT_R,
 	SLOT_ID_TO_NAME,
 	INVENTORY_TYPE_TO_SLOT_ID,
 	WMV_SLOT_TO_SLOT_ID,

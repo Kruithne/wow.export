@@ -79,8 +79,12 @@ const SLOT_GEOSET_MAPPING = {
 		{ group_index: 0, char_geoset: CG.HELM },
 		{ group_index: 1, char_geoset: CG.SKULL }
 	],
-	// Shoulder: geosetGroup[0] = SHOULDERS
+	// Shoulder (L): geosetGroup[0] = SHOULDERS
 	3: [
+		{ group_index: 0, char_geoset: CG.SHOULDERS }
+	],
+	// Shoulder (R): same geoset group as left
+	30: [
 		{ group_index: 0, char_geoset: CG.SHOULDERS }
 	],
 	// Shirt: geosetGroup[0] = CG_SLEEVES, geosetGroup[1] = CG_CHEST
@@ -144,7 +148,7 @@ const GEOSET_PRIORITY = {
 	[CG.HELM]: [1],                // head only
 	[CG.ARM_UPPER]: [5],           // chest only
 	[CG.SKULL]: [1],               // head only
-	[CG.SHOULDERS]: [3],           // shoulder only
+	[CG.SHOULDERS]: [3, 30],       // shoulder (L or R)
 	[CG.BOOTS]: [8],               // boots only
 	[CG.GLOVES]: [10],             // gloves only
 	[CG.PANTS]: [7],               // pants only

@@ -1,4 +1,5 @@
 ## 0.2.15 (25-04-2026)
+- Added ability to equip left and right shoulderpads independently.
 - Added support for item variants in character customization.
 - Added support for conditional character models (such as upright orcs).
 - Added working builds for macOS Apple Silicon (ARM64). (3)

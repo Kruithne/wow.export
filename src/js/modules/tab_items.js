@@ -10,7 +10,7 @@ const db2 = require('../casc/db2');
 const ItemSlot = require('../wow/ItemSlot');
 const InstallType = require('../install-type');
 const DBItems = require('../db/caches/DBItems');
-const { get_slot_name } = require('../wow/EquipmentSlots');
+const { get_slot_name, SHOULDER_SLOT_L, SHOULDER_SLOT_R } = require('../wow/EquipmentSlots');
 
 const ITEM_SLOTS_IGNORED = [0, 18, 11, 12, 24, 25, 27, 28];
 
@@ -334,15 +334,31 @@ module.exports = {
 				return;
 			}
 
-			this.$core.view.chrEquippedItems[slot_id] = item.id;
-			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
+			const pending_slot = this.$core.view.chrPendingEquipSlot;
+			this.$core.view.chrPendingEquipSlot = null;
 
-			// reset skin selection for newly equipped item
-			delete this.$core.view.chrEquippedItemSkins[slot_id];
+			let slot_ids;
+			if (slot_id === SHOULDER_SLOT_L) {
+				const target = (pending_slot === SHOULDER_SLOT_L || pending_slot === SHOULDER_SLOT_R) ? pending_slot : SHOULDER_SLOT_L;
+				const other = target === SHOULDER_SLOT_L ? SHOULDER_SLOT_R : SHOULDER_SLOT_L;
+
+				slot_ids = [target];
+				if (!this.$core.view.chrEquippedItems[other])
+					slot_ids.push(other);
+			} else {
+				slot_ids = [slot_id];
+			}
+
+			for (const sid of slot_ids) {
+				this.$core.view.chrEquippedItems[sid] = item.id;
+				delete this.$core.view.chrEquippedItemSkins[sid];
+			}
+
+			this.$core.view.chrEquippedItems = { ...this.$core.view.chrEquippedItems };
 			this.$core.view.chrEquippedItemSkins = { ...this.$core.view.chrEquippedItemSkins };
 
-			const slot_name = get_slot_name(slot_id);
-			this.$core.setToast('success', `Equipped ${item.name} to ${slot_name} slot.`, null, 2000);
+			const equip_slot_name = get_slot_name(slot_ids.length === 1 ? slot_ids[0] : slot_id);
+			this.$core.setToast('success', `Equipped ${item.name} to ${equip_slot_name} slot.`, null, 2000);
 		}
 	},
 

@@ -159,9 +159,10 @@ const get_item_models = (item_id, modifier_id) => {
  * @param {number} [race_id] - character race ID for filtering
  * @param {number} [gender_index] - 0=male, 1=female for filtering
  * @param {number} [modifier_id] - item appearance modifier (skin index)
+ * @param {'left'|'right'} [shoulder_position] - for shoulder items, return only the specified side
  * @returns {{ID: number, textures: number[], models: number[], geosetGroup: number[], attachmentGeosetGroup: number[]}|null}
  */
-const get_item_display = (item_id, race_id, gender_index, modifier_id) => {
+const get_item_display = (item_id, race_id, gender_index, modifier_id, shoulder_position) => {
 	const display_id = resolve_display_id(item_id, modifier_id);
 	if (display_id === undefined)
 		return null;
@@ -182,15 +183,22 @@ const get_item_display = (item_id, race_id, gender_index, modifier_id) => {
 		data.modelOptions[0].every((v, i) => v === data.modelOptions[1][i]);
 
 	if (is_shoulder_style && race_id !== undefined && gender_index !== undefined) {
-		// for shoulders, select two models with different PositionIndex values
 		const options = data.modelOptions[0];
 		const candidates = DBComponentModelFileData.getModelsForRaceGenderByPosition(options, race_id, gender_index);
 
-		if (candidates.left)
-			models.push(candidates.left);
+		if (shoulder_position === 'left') {
+			if (candidates.left)
+				models.push(candidates.left);
+		} else if (shoulder_position === 'right') {
+			if (candidates.right)
+				models.push(candidates.right);
+		} else {
+			if (candidates.left)
+				models.push(candidates.left);
 
-		if (candidates.right)
-			models.push(candidates.right);
+			if (candidates.right)
+				models.push(candidates.right);
+		}
 	} else {
 		// standard logic for non-shoulder items
 		for (const options of data.modelOptions) {

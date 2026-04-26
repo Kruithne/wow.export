@@ -23,7 +23,7 @@ const { wowhead_parse } = require('../wowhead');
 const InstallType = require('../install-type');
 const charTextureOverlay = require('../ui/char-texture-overlay');
 const PNGWriter = require('../png-writer');
-const { EQUIPMENT_SLOTS, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
+const { EQUIPMENT_SLOTS, SHOULDER_SLOT_L, SHOULDER_SLOT_R, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
@@ -620,7 +620,8 @@ async function update_equipment_models(core) {
 		const char_info = get_current_race_gender(core);
 
 		// get display data for this item (models and textures, filtered by race/gender)
-		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id);
+		const shoulder_pos = slot_id === SHOULDER_SLOT_L ? 'left' : slot_id === SHOULDER_SLOT_R ? 'right' : undefined;
+		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, shoulder_pos);
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 
@@ -1075,6 +1076,19 @@ async function import_wowhead_character(core) {
 }
 
 /**
+ * Copies left shoulder equipment to right shoulder slot.
+ * Mutates the provided objects in-place.
+ */
+function expand_shoulder_slots(equipment, equipment_skins) {
+	if (equipment[SHOULDER_SLOT_L] !== undefined) {
+		equipment[SHOULDER_SLOT_R] = equipment[SHOULDER_SLOT_L];
+
+		if (equipment_skins[SHOULDER_SLOT_L] !== undefined)
+			equipment_skins[SHOULDER_SLOT_R] = equipment_skins[SHOULDER_SLOT_L];
+	}
+}
+
+/**
  * Unified import handler - parses import data and applies it.
  * Sets all state first, then triggers model selection which loads the model.
  */
@@ -1206,6 +1220,9 @@ async function apply_import_data(core, data, source) {
 		equipment = data.equipment || {};
 	}
 
+	// external imports always set both shoulders from a single shoulder slot
+	expand_shoulder_slots(equipment, equipment_skins);
+
 	is_importing = true;
 
 	try {
@@ -1297,17 +1314,7 @@ async function save_character(core, name, thumb_data) {
 		id = generate_character_id();
 
 	// gather character data
-	const data = {
-		race_id: core.view.chrCustRaceSelection[0]?.id,
-		model_id: core.view.chrCustModelSelection[0]?.id,
-		choices: [...core.view.chrCustActiveChoices],
-		equipment: { ...core.view.chrEquippedItems },
-		guild_tabard: { ...core.view.chrGuildTabardConfig }
-	};
-
-	const skins = core.view.chrEquippedItemSkins;
-	if (skins && Object.keys(skins).length > 0)
-		data.equipment_skins = { ...skins };
+	const data = get_current_character_data(core);
 
 	const json_path = path.join(dir, `${name}-${id}.json`);
 	await fsp.writeFile(json_path, JSON.stringify(data, null, '\t'));
@@ -1360,8 +1367,15 @@ async function load_character(core, character) {
 		core.view.chrSavedCharactersScreen = false;
 
 		// apply equipment
-		core.view.chrEquippedItems = data.equipment || {};
-		core.view.chrEquippedItemSkins = data.equipment_skins || {};
+		const equipment = data.equipment || {};
+		const equipment_skins = data.equipment_skins || {};
+
+		// v1 saves have a single shoulder slot, expand to both
+		if (!data.version || data.version < 2)
+			expand_shoulder_slots(equipment, equipment_skins);
+
+		core.view.chrEquippedItems = equipment;
+		core.view.chrEquippedItemSkins = equipment_skins;
 
 		// apply guild tabard config
 		if (data.guild_tabard)
@@ -1481,6 +1495,7 @@ async function capture_character_thumbnail(core) {
 
 function get_current_character_data(core) {
 	const data = {
+		version: 2,
 		race_id: core.view.chrCustRaceSelection[0]?.id,
 		model_id: core.view.chrCustModelSelection[0]?.id,
 		choices: [...core.view.chrCustActiveChoices],
@@ -1590,6 +1605,12 @@ async function import_json_character(core, save_to_my_characters) {
 				return;
 			}
 
+			// v1 saves have a single shoulder slot, expand to both
+			const equipment = data.equipment || {};
+			const equipment_skins = data.equipment_skins || {};
+			if (!data.version || data.version < 2)
+				expand_shoulder_slots(equipment, equipment_skins);
+
 			if (save_to_my_characters) {
 				// import into My Characters
 				let name = data.name;
@@ -1608,14 +1629,15 @@ async function import_json_character(core, save_to_my_characters) {
 
 				// remove name/thumb from data before saving (stored separately)
 				const save_data = {
+					version: 2,
 					race_id: data.race_id,
 					model_id: data.model_id,
 					choices: data.choices || [],
-					equipment: data.equipment || {},
+					equipment,
 				};
 
-				if (data.equipment_skins && Object.keys(data.equipment_skins).length > 0)
-					save_data.equipment_skins = data.equipment_skins;
+				if (Object.keys(equipment_skins).length > 0)
+					save_data.equipment_skins = equipment_skins;
 
 				const save_path = path.join(dir, `${name}-${id}.json`);
 				await fsp.writeFile(save_path, JSON.stringify(save_data, null, '\t'));
@@ -1635,8 +1657,8 @@ async function import_json_character(core, save_to_my_characters) {
 				core.view.chrModelLoading = true;
 				core.view.chrSavedCharactersScreen = false;
 
-				core.view.chrEquippedItems = data.equipment || {};
-				core.view.chrEquippedItemSkins = data.equipment_skins || {};
+				core.view.chrEquippedItems = equipment;
+				core.view.chrEquippedItemSkins = equipment_skins;
 
 				core.view.chrImportChoices.splice(0, core.view.chrImportChoices.length);
 				core.view.chrImportChoices.push(...(data.choices || []));
@@ -2477,12 +2499,15 @@ module.exports = {
 			if (!slot)
 				return;
 
+			this.$core.view.chrPendingEquipSlot = slot_id;
+
+			const filter = slot.filter_name ?? slot.name;
 			const type_mask = this.$core.view.itemViewerTypeMask;
 			if (type_mask && type_mask.length > 0) {
 				for (const item of type_mask)
-					item.checked = item.label === slot.name;
+					item.checked = item.label === filter;
 			} else {
-				this.$core.view.pendingItemSlotFilter = slot.name;
+				this.$core.view.pendingItemSlotFilter = filter;
 			}
 
 			this.$modules.tab_items.setActive();

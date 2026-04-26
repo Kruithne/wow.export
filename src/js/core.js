@@ -265,6 +265,7 @@ const makeNewView = () => {
 		chrEquippedItemSkins: {}, // Item skin selection by slot id (e.g., { 1: modifier_id })
 		chrGuildTabardConfig: { background: 0, border_style: 0, border_color: 0, emblem_design: 0, emblem_color: 0 },
 		chrEquipmentSlotContext: null, // Context menu node for equipment slot right-click
+		chrPendingEquipSlot: null, // Slot ID pending equip from character tab navigation
 		chrSavedCharactersScreen: false, // Controls visibility of saved characters screen
 		chrSavedCharacters: [], // List of saved characters loaded from disk
 		chrSaveCharacterPrompt: false, // Controls visibility of character name prompt
