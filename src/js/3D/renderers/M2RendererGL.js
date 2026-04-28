@@ -46,7 +46,7 @@ const VERTEX_SHADER_IDS = {
 
 // pixel shader name to ID mapping (matches fragment shader switch cases)
 // must match MAX_BONES in m2.vertex.shader
-const MAX_BONES = 220;
+const MAX_BONES = 256;
 
 const PIXEL_SHADER_IDS = {
 	'Combiners_Opaque': 0,
@@ -907,7 +907,7 @@ class M2RendererGL {
 		// child animations need child's bones which have correct offsets
 		const anim_bones = this.current_anim_source?.bones || this.bones;
 		const bones = this.bones; // structural bones for hierarchy/pivots
-		const bone_count = bones.length;
+		const bone_count = Math.min(bones.length, this.bone_matrices.length / 16);
 		// use the correct animation index for the skeleton we're reading from
 		const anim_idx = this.current_anim_index ?? this.current_animation;
 
@@ -1498,7 +1498,7 @@ class M2RendererGL {
 		shader.set_uniform_1f('u_time', performance.now() * 0.001);
 
 		const ubo = this.ubos[0];
-		const bone_count = this.bones ? this.bones.length : 0;
+		const bone_count = this.bones ? Math.min(this.bones.length, this.bone_matrices.length / 16) : 0;
 		shader.set_uniform_1i('u_bone_count', bone_count);
 		if (bone_count)
 			ubo.ubo.upload_range(ubo.offsets[0], bone_count * 16 * 4);

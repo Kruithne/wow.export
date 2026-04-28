@@ -22,7 +22,7 @@ const { create_bones_ubo } = require('./renderer_utils');
 const M2_VER_WOTLK = 264;
 
 // must match MAX_BONES in m2.vertex.shader
-const MAX_BONES = 220;
+const MAX_BONES = 256;
 
 // identity matrix
 const IDENTITY_MAT4 = new Float32Array([

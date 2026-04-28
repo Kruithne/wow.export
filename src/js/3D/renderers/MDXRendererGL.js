@@ -25,7 +25,7 @@ const IDENTITY_MAT4 = new Float32Array([
 ]);
 
 // must match MAX_BONES in m2.vertex.shader
-const MAX_BONES = 220;
+const MAX_BONES = 256;
 
 // interpolation types
 const INTERP_NONE = 0;
