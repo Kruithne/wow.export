@@ -1,3 +1,6 @@
+## 0.2.16 (xx-0x-2026)
+- Fixed crash when loading Dracthyr characters (thanks Natnat).
+
 ## 0.2.15 (26-04-2026)
 - Added ability to equip left and right shoulderpads independently.
 - Added support for item variants in character customization.
