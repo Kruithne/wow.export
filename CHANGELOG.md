@@ -1,5 +1,6 @@
 ## 0.2.15 Hotfixes
 - Fixed a regression causing terrain UV maps to be broken.
+- Fixed crash when loading Dracthyr characters (thanks Natnat).
 
 ## 0.2.15 (26-04-2026)
 - Added ability to equip left and right shoulderpads independently.
