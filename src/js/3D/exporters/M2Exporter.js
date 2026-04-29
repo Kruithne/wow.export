@@ -725,6 +725,7 @@ class M2Exporter {
 		const exportBones = core.view.config.exportM2Bones;
 
 		const obj = new OBJWriter(out);
+		obj.flip_uvs = true;
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const outDir = path.dirname(out);

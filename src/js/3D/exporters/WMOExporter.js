@@ -363,6 +363,7 @@ class WMOExporter {
 		const config = core.view.config;
 		const casc = core.view.casc;
 		const obj = new OBJWriter(out);
+		obj.flip_uvs = true;
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const groupMask = this.groupMask;
@@ -922,6 +923,7 @@ class WMOExporter {
 			const groupOut = path.join(outDir, groupFileName);
 
 			const obj = new OBJWriter(groupOut);
+			obj.flip_uvs = true;
 			obj.setName(groupFileName);
 
 			log.write('exporting wmo group %s: %s', groupName, groupOut);

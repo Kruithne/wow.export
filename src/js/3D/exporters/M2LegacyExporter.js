@@ -129,6 +129,7 @@ class M2LegacyExporter {
 		const skin = await this.m2.getSkin(0);
 
 		const obj = new OBJWriter(out);
+		obj.flip_uvs = true;
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const outDir = path.dirname(out);

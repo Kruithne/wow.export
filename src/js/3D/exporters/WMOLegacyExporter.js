@@ -129,6 +129,7 @@ class WMOLegacyExporter {
 		const mpq = this.mpq;
 
 		const obj = new OBJWriter(out);
+		obj.flip_uvs = true;
 		const mtl = new MTLWriter(ExportHelper.replaceExtension(out, '.mtl'));
 
 		const groupMask = this.groupMask;

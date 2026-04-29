@@ -20,6 +20,7 @@ class OBJWriter {
 		this.normals = [];
 		this.uvs = [];
 		this.colors = null;
+		this.flip_uvs = false;
 
 		this.meshes = [];
 		this.name = 'Mesh';
@@ -209,7 +210,8 @@ class OBJWriter {
 						if (uvIndex === 0)
 							uvMap.set(j, u++);
 
-						await writer.writeLine(prefix + ' ' + uv[i] + ' ' + (1 - uv[i + 1]));
+						const v = this.flip_uvs ? (1 - uv[i + 1]) : uv[i + 1];
+						await writer.writeLine(prefix + ' ' + uv[i] + ' ' + v);
 					}
 				}
 			}
