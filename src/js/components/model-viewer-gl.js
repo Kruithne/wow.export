@@ -363,6 +363,28 @@ module.exports = {
 				}
 			}
 
+			// render external customization models (DH horns, dracthyr, mechagnome upgrades)
+			const skinned_renderers = this.context.getSkinnedRenderers?.();
+			if (skinned_renderers && activeRenderer) {
+				const char_bone_matrices = activeRenderer.bone_matrices;
+				const char_model_matrix = activeRenderer.model_matrix;
+
+				for (const entry of skinned_renderers.values()) {
+					const renderer = entry?.renderer;
+					if (!renderer?.render)
+						continue;
+
+					// share character skeleton + world transform
+					if (char_bone_matrices && renderer.applyExternalBoneMatrices)
+						renderer.applyExternalBoneMatrices(char_bone_matrices);
+
+					if (char_model_matrix)
+						renderer.setTransformMatrix(char_model_matrix);
+
+					renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
+				}
+			}
+
 			requestAnimationFrame(() => this.render());
 		},
 

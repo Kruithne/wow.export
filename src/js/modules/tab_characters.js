@@ -105,8 +105,9 @@ let gl_context = null;
 let active_renderer;
 let active_model;
 
+// external customization models (file_data_id -> { renderer, geosets })
+// e.g. demon hunter horns, dracthyr, mechagnome limb upgrades
 const skinned_model_renderers = new Map();
-const skinned_model_meshes = new Set();
 
 const chr_materials = new Map();
 
@@ -253,8 +254,7 @@ const THUMBNAIL_PRESETS = {
 
 function reset_module_state() {
 	active_skins.clear();
-	skinned_model_renderers.clear();
-	skinned_model_meshes.clear();
+	dispose_skinned_models();
 	clear_materials();
 	dispose_equipment_models();
 	dispose_collection_models();
@@ -286,6 +286,7 @@ async function refresh_character_appearance(core) {
 
 	update_geosets(core);
 	await update_textures(core);
+	await update_skinned_models(core);
 	await update_equipment_models(core);
 
 	log.write('Character appearance refresh complete');
@@ -712,6 +713,93 @@ async function update_equipment_models(core) {
 	}
 }
 
+/**
+ * Loads/updates external customization models (ChrCustomizationSkinnedModel).
+ * These share the character skeleton via bone remapping and consume the
+ * character's composite textures by texture type. Each active choice that maps
+ * to a skinned model contributes one geoset (submeshID) within its collection M2.
+ * Must run after update_textures so chr_materials are current.
+ */
+async function update_skinned_models(core) {
+	if (!gl_context || !active_renderer)
+		return;
+
+	// resolve active choices -> file_data_id -> set of visible geosets
+	const needed = new Map();
+	for (const active_choice of core.view.chrCustActiveChoices) {
+		const skinned = DBCharacterCustomization.get_skinned_model_for_choice(active_choice.choiceID);
+		if (skinned === undefined)
+			continue;
+
+		if (!needed.has(skinned.FileDataID))
+			needed.set(skinned.FileDataID, new Set());
+
+		needed.get(skinned.FileDataID).add(skinned.geoset);
+	}
+
+	// dispose collection models no longer referenced
+	for (const file_data_id of skinned_model_renderers.keys()) {
+		if (!needed.has(file_data_id)) {
+			skinned_model_renderers.get(file_data_id).renderer.dispose();
+			skinned_model_renderers.delete(file_data_id);
+			log.write('Disposed skinned model %d', file_data_id);
+		}
+	}
+
+	// load/update referenced collection models
+	for (const [file_data_id, geosets] of needed) {
+		let entry = skinned_model_renderers.get(file_data_id);
+
+		if (!entry) {
+			try {
+				const file = await core.view.casc.getFile(file_data_id);
+				const renderer = new M2RendererGL(file, gl_context, false, false);
+				await renderer.load();
+
+				if (active_renderer?.bones)
+					renderer.buildBoneRemapTable(active_renderer.bones);
+
+				entry = { renderer, geosets: null };
+				skinned_model_renderers.set(file_data_id, entry);
+				log.write('Loaded skinned model %d', file_data_id);
+			} catch (e) {
+				log.write('Failed to load skinned model %d: %s', file_data_id, e.message);
+				continue;
+			}
+		}
+
+		// bind character composite textures (skin/hair/etc.) by type; embedded
+		// type-0 textures are already loaded during renderer.load()
+		await apply_skinned_model_textures(entry.renderer);
+
+		apply_skinned_model_geosets(entry.renderer, geosets);
+		entry.geosets = geosets;
+	}
+}
+
+async function apply_skinned_model_textures(renderer) {
+	for (const [texture_type, chr_material] of chr_materials) {
+		const pixels = chr_material.getRawPixels();
+		await renderer.overrideTextureTypeWithPixels(
+			texture_type,
+			chr_material.glCanvas.width,
+			chr_material.glCanvas.height,
+			pixels
+		);
+	}
+}
+
+function apply_skinned_model_geosets(renderer, geosets) {
+	const skin = renderer.m2?.skins?.[0];
+	if (!skin?.subMeshes || !renderer.draw_calls)
+		return;
+
+	for (let i = 0; i < renderer.draw_calls.length && i < skin.subMeshes.length; i++) {
+		const submesh_id = skin.subMeshes[i].submeshID;
+		renderer.draw_calls[i].visible = (submesh_id === 0) || geosets.has(submesh_id);
+	}
+}
+
 //endregion
 
 //region models
@@ -792,11 +880,10 @@ async function load_character_model(core, file_data_id) {
 }
 
 function dispose_skinned_models() {
-	for (const [file_data_id, skinned_model_renderer] of skinned_model_renderers)
-		skinned_model_renderer.dispose();
+	for (const entry of skinned_model_renderers.values())
+		entry.renderer.dispose();
 
 	skinned_model_renderers.clear();
-	skinned_model_meshes.clear();
 }
 
 function dispose_equipment_models() {
@@ -1817,7 +1904,8 @@ const export_char_model = async (core) => {
 			const char_exporter = new CharacterExporter(
 				active_renderer,
 				equipment_model_renderers,
-				collection_model_renderers
+				collection_model_renderers,
+				skinned_model_renderers
 			);
 
 			if (char_exporter.has_equipment()) {
@@ -1873,7 +1961,8 @@ const export_char_model = async (core) => {
 			const char_exporter = new CharacterExporter(
 				active_renderer,
 				equipment_model_renderers,
-				collection_model_renderers
+				collection_model_renderers,
+				skinned_model_renderers
 			);
 
 			if (char_exporter.has_equipment()) {
@@ -2770,7 +2859,8 @@ module.exports = {
 			fitCamera: null,
 			getActiveRenderer: () => active_renderer,
 			getEquipmentRenderers: () => equipment_model_renderers,
-			getCollectionRenderers: () => collection_model_renderers
+			getCollectionRenderers: () => collection_model_renderers,
+			getSkinnedRenderers: () => skinned_model_renderers
 		};
 
 		const ctx_watcher = state.$watch('chrModelViewerContext.gl_context', (new_ctx) => {

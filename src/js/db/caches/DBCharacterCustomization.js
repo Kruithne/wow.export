@@ -264,6 +264,19 @@ const get_texture_file_data_id = (material_resources_id) => tfd_map.get(material
 
 const get_choice_skinned_model = (choice_id) => choice_to_skinned_model.get(choice_id);
 const get_skinned_model = (id) => chr_cust_skinned_model_map.get(id);
+
+// resolve a choice to its external collection model + geoset (submeshID = type*100+id)
+const get_skinned_model_for_choice = (choice_id) => {
+	const skinned_model_id = choice_to_skinned_model.get(choice_id);
+	if (skinned_model_id === undefined)
+		return undefined;
+
+	const row = chr_cust_skinned_model_map.get(skinned_model_id);
+	if (row === undefined)
+		return undefined;
+
+	return { FileDataID: row.CollectionsFileDataID, geoset: (row.GeosetType * 100) + row.GeosetID };
+};
 const get_choice_cond_model_file_data_id = (choice_id) => choice_to_cond_file_data_id.get(choice_id);
 
 module.exports = {
@@ -296,5 +309,6 @@ module.exports = {
 	get_texture_file_data_id,
 	get_choice_skinned_model,
 	get_skinned_model,
+	get_skinned_model_for_choice,
 	get_choice_cond_model_file_data_id
 };

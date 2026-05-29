@@ -173,18 +173,20 @@ class CharacterExporter {
 	 * @param {M2RendererGL} char_renderer - character renderer with bone matrices
 	 * @param {Map} equipment_renderers - slot_id -> { renderers: [{renderer, attachment_id, is_collection_style}], item_id }
 	 * @param {Map} collection_renderers - slot_id -> { renderers: [renderer], item_id }
+	 * @param {Map} skinned_renderers - file_data_id -> { renderer } (external customization models)
 	 */
-	constructor(char_renderer, equipment_renderers, collection_renderers) {
+	constructor(char_renderer, equipment_renderers, collection_renderers, skinned_renderers) {
 		this.char_renderer = char_renderer;
 		this.equipment_renderers = equipment_renderers || new Map();
 		this.collection_renderers = collection_renderers || new Map();
+		this.skinned_renderers = skinned_renderers || new Map();
 	}
 
 	/**
 	 * Check if there are any equipment models to export
 	 */
 	has_equipment() {
-		return this.equipment_renderers.size > 0 || this.collection_renderers.size > 0;
+		return this.equipment_renderers.size > 0 || this.collection_renderers.size > 0 || this.skinned_renderers.size > 0;
 	}
 
 	/**
@@ -249,6 +251,31 @@ class CharacterExporter {
 						...geometry
 					});
 				}
+			}
+		}
+
+		// process external customization models (share character skeleton)
+		for (const [file_data_id, entry] of this.skinned_renderers) {
+			const renderer = entry?.renderer;
+			if (!renderer?.m2)
+				continue;
+
+			const geometry = this._process_equipment_renderer(
+				renderer,
+				undefined,
+				true,
+				char_bone_matrices,
+				apply_pose
+			);
+
+			if (geometry) {
+				results.push({
+					slot_id: file_data_id,
+					item_id: null,
+					is_collection_style: true,
+					renderer,
+					...geometry
+				});
 			}
 		}
 
