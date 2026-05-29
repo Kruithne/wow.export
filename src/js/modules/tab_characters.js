@@ -746,6 +746,9 @@ async function update_skinned_models(core) {
 		}
 	}
 
+	// raw textures for non-skin replaceable types (e.g. blindfold = type 9)
+	const replaceable_textures = character_appearance.resolve_replaceable_textures(core.view.chrCustActiveChoices, current_char_component_texture_layout_id);
+
 	// load/update referenced collection models
 	for (const [file_data_id, geosets] of needed) {
 		let entry = skinned_model_renderers.get(file_data_id);
@@ -768,24 +771,36 @@ async function update_skinned_models(core) {
 			}
 		}
 
-		// bind character composite textures (skin/hair/etc.) by type; embedded
-		// type-0 textures are already loaded during renderer.load()
-		await apply_skinned_model_textures(entry.renderer);
+		// bind textures: skin types use the composite body skin, all other
+		// replaceable types bind their raw source (embedded type-0 already loaded)
+		await apply_skinned_model_textures(entry.renderer, replaceable_textures);
 
 		apply_skinned_model_geosets(entry.renderer, geosets);
 		entry.geosets = geosets;
 	}
 }
 
-async function apply_skinned_model_textures(renderer) {
-	for (const [texture_type, chr_material] of chr_materials) {
-		const pixels = chr_material.getRawPixels();
-		await renderer.overrideTextureTypeWithPixels(
-			texture_type,
-			chr_material.glCanvas.width,
-			chr_material.glCanvas.height,
-			pixels
-		);
+async function apply_skinned_model_textures(renderer, replaceable_textures) {
+	const needed_types = new Set(renderer.m2?.textureTypes || []);
+
+	for (const texture_type of needed_types) {
+		// embedded type-0 textures are loaded during renderer.load()
+		if (texture_type === 0)
+			continue;
+
+		// skin + skin-extra reuse the character composite body skin
+		if (texture_type === character_appearance.SKIN_TEXTURE_TYPE || texture_type === character_appearance.SKIN_EXTRA_TEXTURE_TYPE) {
+			const composite = chr_materials.get(character_appearance.SKIN_TEXTURE_TYPE) || chr_materials.get(texture_type);
+			if (composite)
+				await renderer.overrideTextureTypeWithPixels(texture_type, composite.glCanvas.width, composite.glCanvas.height, composite.getRawPixels());
+
+			continue;
+		}
+
+		// all other replaceable types bind the raw source texture directly
+		const file_data_id = replaceable_textures.get(texture_type);
+		if (file_data_id !== undefined)
+			await renderer.overrideTextureType(texture_type, file_data_id);
 	}
 }
 
