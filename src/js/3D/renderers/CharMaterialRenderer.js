@@ -344,10 +344,10 @@ class CharMaterialRenderer {
 
 			switch (layer.textureLayer.BlendMode) {
 				case 0: // None
+				case 1: // Blit - straight copy, preserves albedo rgb + alpha mask (no premultiply over black)
 					this.gl.disable(this.gl.BLEND);
 					this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
 					break;
-				case 1: // Blit
 				case 4: // Multiply
 				case 6: // Overlay
 				case 7: // Screen

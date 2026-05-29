@@ -4,6 +4,7 @@
 - Added ability to export minimaps directly from maps for MPQ legacy builds.
 - Added ability to export terrain with pre-baked and alpha map support for MPQ legacy builds.
 - Added support for extended character customization (Dracthyr, Demon Hunter, Mechagnome etc).
+- Fixed an issue that caused Mechagnome customization textures to render incorrectly.
 
 ## 0.2.18 (11-05-2026)
 - Fixed GLTF primitives missing material index crashing Unreal Engine.
