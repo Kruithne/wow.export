@@ -12,7 +12,8 @@ const file_data_to_info = new Map();
 let is_initialized = false;
 let init_promise = null;
 
-const GENDER_ANY = 2;
+// ComponentTextureFileData.GenderIndex: 0=male, 1=female, 2=none, 3=any/generic
+const GENDER_ANY = 3;
 
 const initialize = async () => {
 	if (is_initialized)
@@ -41,60 +42,57 @@ const initialize = async () => {
 };
 
 /**
- * Filter a list of FileDataIDs to find the best match for race/gender
+ * Filter a list of FileDataIDs to find the best match for race/gender/class.
+ * Mirrors wowmodelviewer's item-texture query: exclude the opposite gender and
+ * inapplicable classes, then prefer specific gender over generic and the
+ * subject class over the generic (class 0).
  * @param {number[]} file_data_ids - list of candidate FileDataIDs
  * @param {number} race_id - character race ID
  * @param {number} gender_index - 0=male, 1=female
- * @param {number} [fallback_race_id] - optional fallback race
+ * @param {number} [class_id] - character class ID (12=demon hunter); 0=generic
  * @returns {number|null} - best matching FileDataID or null
  */
-const getTextureForRaceGender = (file_data_ids, race_id, gender_index, fallback_race_id = 0) => {
+const getTextureForRaceGender = (file_data_ids, race_id, gender_index, class_id = 0) => {
 	if (!file_data_ids || file_data_ids.length === 0)
 		return null;
 
-	// if only one option, return it
+	// single option has no ambiguity
 	if (file_data_ids.length === 1)
 		return file_data_ids[0];
 
-	// try exact race + gender match
-	for (const fdid of file_data_ids) {
-		const info = file_data_to_info.get(fdid);
-		if (info && info.raceID === race_id && info.genderIndex === gender_index)
-			return fdid;
+	// fdids without a ComponentTextureFileData entry carry no constraint
+	const candidates = file_data_ids.map(fdid => ({ fdid, info: file_data_to_info.get(fdid) }));
+	if (!candidates.some(c => c.info))
+		return file_data_ids[0];
+
+	// exclude the opposite definite gender and inapplicable classes entirely.
+	// keep matching/generic gender and matching/generic(0) class.
+	const tagged = candidates.filter(c => {
+		if (!c.info)
+			return false;
+
+		const gender_ok = c.info.genderIndex === gender_index || c.info.genderIndex === GENDER_ANY;
+		const class_ok = c.info.classID === 0 || c.info.classID === class_id;
+		return gender_ok && class_ok;
+	});
+
+	// no tagged match: fall back to an untagged entry, else skip the layer
+	if (tagged.length === 0) {
+		const untagged = candidates.find(c => !c.info);
+		return untagged ? untagged.fdid : null;
 	}
 
-	// try race + any gender
-	for (const fdid of file_data_ids) {
-		const info = file_data_to_info.get(fdid);
-		if (info && info.raceID === race_id && info.genderIndex === GENDER_ANY)
-			return fdid;
-	}
+	// rank: specific gender > generic, then subject class > generic, then race match
+	const rank_gender = info => info.genderIndex === gender_index ? 0 : 1;
+	const rank_class = info => (class_id && info.classID === class_id) ? 0 : 1;
+	const rank_race = info => info.raceID === race_id ? 0 : 1;
 
-	// try fallback race if provided
-	if (fallback_race_id > 0) {
-		for (const fdid of file_data_ids) {
-			const info = file_data_to_info.get(fdid);
-			if (info && info.raceID === fallback_race_id && (info.genderIndex === gender_index || info.genderIndex === GENDER_ANY))
-				return fdid;
-		}
-	}
+	tagged.sort((a, b) =>
+		rank_gender(a.info) - rank_gender(b.info) ||
+		rank_class(a.info) - rank_class(b.info) ||
+		rank_race(a.info) - rank_race(b.info));
 
-	// try race=0 (any race) with specific gender
-	for (const fdid of file_data_ids) {
-		const info = file_data_to_info.get(fdid);
-		if (info && info.raceID === 0 && info.genderIndex === gender_index)
-			return fdid;
-	}
-
-	// try race=0 (any race)
-	for (const fdid of file_data_ids) {
-		const info = file_data_to_info.get(fdid);
-		if (info && info.raceID === 0)
-			return fdid;
-	}
-
-	// fallback to first
-	return file_data_ids[0];
+	return tagged[0].fdid;
 };
 
 /**

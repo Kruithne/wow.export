@@ -125,14 +125,15 @@ const resolve_display_id = (item_id, modifier_id) => {
  * @param {number} [race_id] - character race ID for filtering
  * @param {number} [gender_index] - 0=male, 1=female for filtering
  * @param {number} [modifier_id] - item appearance modifier (skin index)
+ * @param {number} [class_id] - character class ID (12=demon hunter) for filtering
  * @returns {Array<{section: number, fileDataID: number}>|null}
  */
-const get_item_textures = (item_id, race_id = null, gender_index = null, modifier_id) => {
+const get_item_textures = (item_id, race_id = null, gender_index = null, modifier_id, class_id = 0) => {
 	const display_id = resolve_display_id(item_id, modifier_id);
 	if (display_id === undefined)
 		return null;
 
-	return get_textures_by_display_id(display_id, race_id, gender_index);
+	return get_textures_by_display_id(display_id, race_id, gender_index, class_id);
 };
 
 /**
@@ -150,9 +151,10 @@ const get_display_id = (item_id, modifier_id) => {
  * @param {number} display_id
  * @param {number} [race_id] - character race ID for filtering
  * @param {number} [gender_index] - 0=male, 1=female for filtering
+ * @param {number} [class_id] - character class ID (12=demon hunter) for filtering
  * @returns {Array<{section: number, fileDataID: number}>|null}
  */
-const get_textures_by_display_id = (display_id, race_id = null, gender_index = null) => {
+const get_textures_by_display_id = (display_id, race_id = null, gender_index = null, class_id = 0) => {
 	const components = display_to_component_textures.get(display_id);
 	if (components === undefined)
 		return null;
@@ -161,7 +163,7 @@ const get_textures_by_display_id = (display_id, race_id = null, gender_index = n
 	for (const component of components) {
 		const file_data_ids = DBTextureFileData.getTextureFDIDsByMatID(component.materialResourcesID);
 		if (file_data_ids && file_data_ids.length > 0) {
-			const bestFileDataID = DBComponentTextureFileData.getTextureForRaceGender(file_data_ids, race_id, gender_index);
+			const bestFileDataID = DBComponentTextureFileData.getTextureForRaceGender(file_data_ids, race_id, gender_index, class_id);
 			result.push({
 				section: component.section,
 				fileDataID: bestFileDataID

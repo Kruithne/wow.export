@@ -484,7 +484,8 @@ async function update_textures(core) {
 					continue;
 
 				const modifier_id = item_skins?.[slot_id];
-				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id);
+				const class_id = core.view.config.chrIsDemonHunter ? 12 : 0;
+				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, class_id);
 				if (!item_textures)
 					continue;
 
@@ -2350,6 +2351,14 @@ module.exports = {
 							<option value="false">Hidden</option>
 						</select>
 					</label>
+					<label class="ui-select-label">
+						<span class="select-prefix"><span class="prefix-label">Class:</span> <span class="prefix-value">{{ $core.view.config.chrIsDemonHunter ? 'Demon Hunter' : 'Other' }}</span></span>
+						<select class="ui-select" :value="$core.view.config.chrIsDemonHunter" @change="$core.view.config.chrIsDemonHunter = $event.target.value === 'true'">
+							<option value="" disabled selected style="display:none;"></option>
+							<option value="false">Other</option>
+							<option value="true">Demon Hunter</option>
+						</select>
+					</label>
 					</template>
 					<template v-else>
 						<div class="geoset-checkboxes">
@@ -2966,6 +2975,7 @@ module.exports = {
 		// simplified watchers - no isBusy checks, proper async handling
 		watcher_cleanup_funcs.push(
 			this.$core.view.$watch('config.chrIncludeBaseClothing', () => refresh_character_appearance(this.$core)),
+			this.$core.view.$watch('config.chrIsDemonHunter', () => refresh_character_appearance(this.$core)),
 			this.$core.view.$watch('chrCustRaceSelection', () => update_chr_model_list(this.$core)),
 			this.$core.view.$watch('chrCustModelSelection', () => update_model_selection(this.$core), { deep: true }),
 			this.$core.view.$watch('chrCustOptionSelection', () => update_customization_type(this.$core), { deep: true }),
