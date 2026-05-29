@@ -71,7 +71,13 @@ const _initialize = async () => {
 			choice_to_geoset.set(chr_customization_element_row.ChrCustomizationChoiceID, chr_customization_element_row.ChrCustomizationGeosetID);
 
 		if (chr_customization_element_row.ChrCustomizationSkinnedModelID != 0) {
-			choice_to_skinned_model.set(chr_customization_element_row.ChrCustomizationChoiceID, chr_customization_element_row.ChrCustomizationSkinnedModelID);
+			// a single choice may carry multiple skinned-model elements (e.g.
+			// mechagnome legs reference two geoset groups), so accumulate them
+			if (choice_to_skinned_model.has(chr_customization_element_row.ChrCustomizationChoiceID))
+				choice_to_skinned_model.get(chr_customization_element_row.ChrCustomizationChoiceID).push(chr_customization_element_row.ChrCustomizationSkinnedModelID);
+			else
+				choice_to_skinned_model.set(chr_customization_element_row.ChrCustomizationChoiceID, [chr_customization_element_row.ChrCustomizationSkinnedModelID]);
+
 			unsupported_choices.push(chr_customization_element_row.ChrCustomizationChoiceID);
 		}
 
@@ -268,17 +274,23 @@ const get_texture_file_data_id = (material_resources_id) => tfd_map.get(material
 const get_choice_skinned_model = (choice_id) => choice_to_skinned_model.get(choice_id);
 const get_skinned_model = (id) => chr_cust_skinned_model_map.get(id);
 
-// resolve a choice to its external collection model + geoset (submeshID = type*100+id)
+// resolve a choice to its external collection model(s) + geoset(s)
+// (submeshID = type*100+id); a choice may map to multiple skinned models
 const get_skinned_model_for_choice = (choice_id) => {
-	const skinned_model_id = choice_to_skinned_model.get(choice_id);
-	if (skinned_model_id === undefined)
+	const skinned_model_ids = choice_to_skinned_model.get(choice_id);
+	if (skinned_model_ids === undefined)
 		return undefined;
 
-	const row = chr_cust_skinned_model_map.get(skinned_model_id);
-	if (row === undefined)
-		return undefined;
+	const result = [];
+	for (const skinned_model_id of skinned_model_ids) {
+		const row = chr_cust_skinned_model_map.get(skinned_model_id);
+		if (row === undefined)
+			continue;
 
-	return { FileDataID: row.CollectionsFileDataID, geoset: (row.GeosetType * 100) + row.GeosetID };
+		result.push({ FileDataID: row.CollectionsFileDataID, geoset: (row.GeosetType * 100) + row.GeosetID, geoset_group: row.GeosetType });
+	}
+
+	return result.length > 0 ? result : undefined;
 };
 const get_choice_cond_model_file_data_id = (choice_id) => choice_to_cond_file_data_id.get(choice_id);
 

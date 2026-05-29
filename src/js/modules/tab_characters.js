@@ -329,6 +329,11 @@ function update_geosets(core) {
 	// steps 1+2: reset to defaults and apply customization geosets
 	character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
 
+	// step 2.5: hide base-model geosets for groups supplied by skinned models
+	// (e.g. mechagnome arms/legs live in both the base model and the collection
+	// model; without this the base limb renders alongside the upgrade -> dupes)
+	hide_skinned_model_base_geosets(core, geosets);
+
 	// step 3: apply equipment geosets (overrides customization where applicable)
 	const equipped_items = core.view.chrEquippedItems;
 	const item_skins = core.view.chrEquippedItemSkins;
@@ -381,6 +386,33 @@ function update_geosets(core) {
 
 	// step 4: sync to renderer
 	active_renderer.updateGeosets();
+}
+
+/**
+ * Hide base-model geosets in any geoset group that an active skinned (collection)
+ * model supplies, so the upgrade geometry replaces the default limb instead of
+ * stacking on top of it.
+ */
+function hide_skinned_model_base_geosets(core, geosets) {
+	const covered_groups = new Set();
+	for (const active_choice of core.view.chrCustActiveChoices) {
+		const skinned_models = DBCharacterCustomization.get_skinned_model_for_choice(active_choice.choiceID);
+		if (skinned_models === undefined)
+			continue;
+
+		for (const skinned of skinned_models)
+			covered_groups.add(skinned.geoset_group);
+	}
+
+	for (const group of covered_groups) {
+		const range_start = group * 100 + 1;
+		const range_end = group * 100 + 99;
+
+		for (const geoset of geosets) {
+			if (geoset.id >= range_start && geoset.id <= range_end)
+				geoset.checked = false;
+		}
+	}
 }
 
 /**
@@ -726,16 +758,19 @@ async function update_skinned_models(core) {
 		return;
 
 	// resolve active choices -> file_data_id -> set of visible geosets
+	// (a choice may contribute multiple skinned models / geoset groups)
 	const needed = new Map();
 	for (const active_choice of core.view.chrCustActiveChoices) {
-		const skinned = DBCharacterCustomization.get_skinned_model_for_choice(active_choice.choiceID);
-		if (skinned === undefined)
+		const skinned_models = DBCharacterCustomization.get_skinned_model_for_choice(active_choice.choiceID);
+		if (skinned_models === undefined)
 			continue;
 
-		if (!needed.has(skinned.FileDataID))
-			needed.set(skinned.FileDataID, new Set());
+		for (const skinned of skinned_models) {
+			if (!needed.has(skinned.FileDataID))
+				needed.set(skinned.FileDataID, new Set());
 
-		needed.get(skinned.FileDataID).add(skinned.geoset);
+			needed.get(skinned.FileDataID).add(skinned.geoset);
+		}
 	}
 
 	// dispose collection models no longer referenced
@@ -789,9 +824,11 @@ async function apply_skinned_model_textures(renderer, replaceable_textures) {
 		if (texture_type === 0)
 			continue;
 
-		// skin + skin-extra reuse the character composite body skin
+		// skin + skin-extra bind their matching composite (e.g. mechagnome
+		// metal is composited into skin-extra/type 8); fall back to the body
+		// skin only when the model lacks a dedicated composite for this type
 		if (texture_type === character_appearance.SKIN_TEXTURE_TYPE || texture_type === character_appearance.SKIN_EXTRA_TEXTURE_TYPE) {
-			const composite = chr_materials.get(character_appearance.SKIN_TEXTURE_TYPE) || chr_materials.get(texture_type);
+			const composite = chr_materials.get(texture_type) || chr_materials.get(character_appearance.SKIN_TEXTURE_TYPE);
 			if (composite)
 				await renderer.overrideTextureTypeWithPixels(texture_type, composite.glCanvas.width, composite.glCanvas.height, composite.getRawPixels());
 
