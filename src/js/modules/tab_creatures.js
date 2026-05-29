@@ -277,6 +277,11 @@ const apply_creature_equipment_textures = async (core) => {
 			if (!layer)
 				continue;
 
+			// item textures overlay the skin; none/blit straight-copy would
+			// erase the body where the texture is transparent (e.g. sleeves),
+			// so force alpha compositing for those layers
+			const item_layer = (layer.BlendMode === 0 || layer.BlendMode === 1) ? { ...layer, BlendMode: 15 } : layer;
+
 			const chr_model_material = DBCharacterCustomization.get_model_material(creature_layout_id, layer.TextureType);
 			if (!chr_model_material)
 				continue;
@@ -296,7 +301,7 @@ const apply_creature_equipment_textures = async (core) => {
 				FileDataID: texture.fileDataID
 			};
 
-			await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+			await chr_material.setTextureTarget(item_material, section, chr_model_material, item_layer, true);
 		}
 	}
 };
@@ -884,6 +889,11 @@ const export_files = async (core, entries) => {
 										if (!layer)
 											continue;
 
+										// item textures overlay the skin; none/blit straight-copy would
+										// erase the body where the texture is transparent (e.g. sleeves),
+										// so force alpha compositing for those layers
+										const item_layer = (layer.BlendMode === 0 || layer.BlendMode === 1) ? { ...layer, BlendMode: 15 } : layer;
+
 										const chr_model_material = DBCharacterCustomization.get_model_material(layout_id, layer.TextureType);
 										if (!chr_model_material)
 											continue;
@@ -903,7 +913,7 @@ const export_files = async (core, entries) => {
 											FileDataID: texture.fileDataID
 										};
 
-										await chr_material.setTextureTarget(item_material, section, chr_model_material, layer, true);
+										await chr_material.setTextureTarget(item_material, section, chr_model_material, item_layer, true);
 									}
 								}
 							}
