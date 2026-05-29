@@ -15,6 +15,7 @@ const unsupported_choices = new Array();
 
 const options_by_chr_model = new Map();
 const option_to_choices = new Map();
+const choice_to_option = new Map();
 const default_options = new Array();
 
 const chr_model_id_to_file_data_id = new Map();
@@ -121,6 +122,7 @@ const _initialize = async () => {
 			choices_by_option.set(option_id, []);
 
 		choices_by_option.get(option_id).push([chr_customization_choice_id, chr_customization_choice_row]);
+		choice_to_option.set(chr_customization_choice_id, option_id);
 	}
 
 	// ChrModel -> FileDataID, texture layout, options, choices
@@ -227,6 +229,7 @@ const get_model_file_data_id = (model_id) => chr_model_id_to_file_data_id.get(mo
 const get_texture_layout_id = (model_id) => chr_model_id_to_texture_layout_id.get(model_id);
 const get_options_for_model = (model_id) => options_by_chr_model.get(model_id);
 const get_choices_for_option = (option_id) => option_to_choices.get(option_id);
+const get_choice_option = (choice_id) => choice_to_option.get(choice_id);
 const get_default_options = () => default_options;
 const get_option_to_choices_map = () => option_to_choices;
 
@@ -286,6 +289,7 @@ module.exports = {
 	get_texture_layout_id,
 	get_options_for_model,
 	get_choices_for_option,
+	get_choice_option,
 	get_default_options,
 	get_option_to_choices_map,
 

@@ -122,6 +122,7 @@ let current_char_component_texture_layout_id = 0;
 let default_model_file_data_id = 0;
 let watcher_cleanup_funcs = [];
 let is_importing = false;
+let auto_select_in_progress = false;
 
 // thumbnail camera presets by race_id, then gender (0=male, 1=female)
 // format: [cam_x, cam_y, cam_z, tgt_x, tgt_y, tgt_z, rot]
@@ -1062,6 +1063,46 @@ function update_choice_for_option(core, option_id, choice_id) {
 		existing_choice.choiceID = choice_id;
 	} else {
 		state.chrCustActiveChoices.push({ optionID: option_id, choiceID: choice_id });
+	}
+
+	auto_select_texture_gating(core, choice_id);
+}
+
+/**
+ * When a choice drives a skinned model whose texture is gated by another option
+ * (e.g. DH blindfold needs a DH eye color), switch that option to a compatible
+ * value so the model isn't shown untextured. The user can still pick any value
+ * afterwards; this only nudges the default on enable.
+ */
+function auto_select_texture_gating(core, choice_id) {
+	if (auto_select_in_progress)
+		return;
+
+	// only relevant for choices that drive a skinned model
+	if (DBCharacterCustomization.get_skinned_model_for_choice(choice_id) === undefined)
+		return;
+
+	const { has_ungated, gates } = character_appearance.get_texture_gating(choice_id, current_char_component_texture_layout_id);
+	if (has_ungated || gates.size === 0)
+		return;
+
+	const state = core.view;
+
+	auto_select_in_progress = true;
+	try {
+		for (const [gating_option_id, compatible] of gates) {
+			// skip options not present on this model
+			if (!DBCharacterCustomization.get_choices_for_option(gating_option_id))
+				continue;
+
+			const active = state.chrCustActiveChoices.find((c) => c.optionID === gating_option_id);
+			if (active && compatible.has(active.choiceID))
+				continue;
+
+			update_choice_for_option(core, gating_option_id, compatible.values().next().value);
+		}
+	} finally {
+		auto_select_in_progress = false;
 	}
 }
 

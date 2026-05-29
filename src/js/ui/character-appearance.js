@@ -248,6 +248,54 @@ function resolve_replaceable_textures(active_choices, layout_id) {
 	return result;
 }
 
+/**
+ * Determine whether a choice's skinned-model texture is gated by choices from
+ * other options (e.g. DH blindfold textures only for certain eye colors).
+ * @param {number} choice_id
+ * @param {number} layout_id - CharComponentTextureLayoutID
+ * @returns {{ has_ungated: boolean, gates: Map<number, Set<number>> }}
+ *   has_ungated: a direct-bind texture applies regardless of related choices
+ *   gates: option_id -> set of related choice ids that would supply the texture
+ */
+function get_texture_gating(choice_id, layout_id) {
+	const gates = new Map();
+	let has_ungated = false;
+
+	const chr_cust_mat_ids = DBCharacterCustomization.get_choice_materials(choice_id);
+	if (chr_cust_mat_ids === undefined)
+		return { has_ungated, gates };
+
+	for (const chr_cust_mat_id of chr_cust_mat_ids) {
+		const chr_cust_mat = DBCharacterCustomization.get_chr_cust_material(chr_cust_mat_id.ChrCustomizationMaterialID);
+		if (!chr_cust_mat || !chr_cust_mat.FileDataID)
+			continue;
+
+		const chr_model_texture_layer = DBCharacterCustomization.get_model_texture_layer(layout_id, chr_cust_mat.ChrModelTextureTargetID);
+		if (chr_model_texture_layer === undefined)
+			continue;
+
+		// only direct-bind (non-skin) types can leave a skinned model untextured
+		if (chr_model_texture_layer.TextureType === SKIN_TEXTURE_TYPE || chr_model_texture_layer.TextureType === SKIN_EXTRA_TEXTURE_TYPE)
+			continue;
+
+		if (chr_cust_mat_id.RelatedChrCustomizationChoiceID === 0) {
+			has_ungated = true;
+			continue;
+		}
+
+		const option_id = DBCharacterCustomization.get_choice_option(chr_cust_mat_id.RelatedChrCustomizationChoiceID);
+		if (option_id === undefined)
+			continue;
+
+		if (!gates.has(option_id))
+			gates.set(option_id, new Set());
+
+		gates.get(option_id).add(chr_cust_mat_id.RelatedChrCustomizationChoiceID);
+	}
+
+	return { has_ungated, gates };
+}
+
 module.exports = {
 	SKIN_TEXTURE_TYPE,
 	SKIN_EXTRA_TEXTURE_TYPE,
@@ -256,5 +304,6 @@ module.exports = {
 	apply_customization_textures,
 	upload_textures_to_gpu,
 	dispose_materials,
-	resolve_replaceable_textures
+	resolve_replaceable_textures,
+	get_texture_gating
 };
