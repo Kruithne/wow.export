@@ -1,13 +1,12 @@
-## 0.2.19 (??-??-2026)
+## 0.2.18 (??-??-2026)
 - Added an "Export WMO Minimap" button to the model viewer for WMOs with minimaps.
 - Added "Maps" tab to MPQ Legacy builds with map previews and exports.
 - Added ability to export minimaps directly from maps for MPQ legacy builds.
 - Added ability to export terrain with pre-baked and alpha map support for MPQ legacy builds.
 - Added support for extended character customization (Dracthyr, Demon Hunter, Mechagnome etc).
 - Added support for gender/class item texture variants.
+- Fixed WMO minimaps to render properly for preview/export.
 - Fixed an issue that caused Mechagnome customization textures to render incorrectly.
-
-## 0.2.18 (11-05-2026)
 - Fixed GLTF primitives missing material index crashing Unreal Engine.
 - Improved rendering of WMO models in the map viewer.
 
