@@ -182,13 +182,12 @@ module.exports = {
 
 	// nav button order (module names)
 	NAV_BUTTON_ORDER: [
-		'tab_models',
+		'tab_creatures',
 		'tab_textures',
 		'tab_characters',
 		'tab_items',
 		'tab_item_sets',
 		'tab_decor',
-		'tab_creatures',
 		'tab_audio',
 		'tab_videos',
 		'tab_maps',

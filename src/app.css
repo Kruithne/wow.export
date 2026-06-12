@@ -67,6 +67,13 @@
 	outline: 0;
 }
 
+/* restore focus indication for keyboard navigation only; mouse clicks
+   (:focus without :focus-visible) stay outline-free */
+*:focus-visible {
+	outline: 2px solid var(--font-alt);
+	outline-offset: 1px;
+}
+
 [v-cloak] {
 	display: none !important;
 }
@@ -497,6 +504,7 @@ body {
 	background-position: center;
 	background-repeat: no-repeat;
 	background-size: auto 22px;
+	transition: filter 0.15s ease;
 }
 #nav .option .nav-icon:hover {
 	filter: brightness(2);
@@ -859,10 +867,14 @@ input[type=button] {
 	border: 0;
 	border-radius: 5px;
 	cursor: pointer;
+	transition: background-color 0.15s ease, color 0.15s ease, transform 0.06s ease;
 }
 input[type=button]:hover:not(.disabled) {
 	background-color: var(--form-button-hover);
 	color: var(--font-highlight);
+}
+input[type=button]:active:not(.disabled) {
+	transform: scale(0.97);
 }
 input[type=button].disabled {
 	cursor: default;
@@ -1093,6 +1105,23 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .ui-listbox .item.selected, .ui-checkboxlist .item.selected, .ui-datatable .item.selected {
 	background: var(--font-alt);
+}
+.ui-listbox .item.tree-dir {
+	color: var(--font-highlight);
+}
+.ui-listbox .tree-expander {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	line-height: 11px;
+	text-align: center;
+	font-size: 12px;
+	margin-right: 5px;
+	border: 1px solid var(--border);
+	border-radius: 2px;
+	background: var(--background);
+	color: var(--font);
+	vertical-align: middle;
 }
 .ui-listbox .scroller, .ui-checkboxlist .scroller, .ui-datatable .scroller {
 	position: absolute;
@@ -1383,6 +1412,41 @@ input[type=number]::-webkit-outer-spin-button {
 	flex-direction: column;
 }
 
+#config-search {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--border);
+	background: var(--background-dark);
+}
+#config-search input[type=text] {
+	flex: 1;
+	max-width: 420px;
+	margin: 0;
+}
+#config-search .config-search-count {
+	color: var(--font-faded);
+	font-size: 13px;
+}
+#config-search .config-search-clear {
+	cursor: pointer;
+	color: var(--font-faded);
+	font-size: 20px;
+	line-height: 1;
+	padding: 2px 6px;
+}
+#config-search .config-search-clear:hover {
+	color: var(--font-highlight);
+}
+
+#config-no-results {
+	color: var(--font-faded);
+	font-size: 15px;
+	text-align: center;
+	padding: 40px 20px !important;
+}
+
 #config {
 	flex: 1;
 	display: flex;
@@ -1397,17 +1461,39 @@ input[type=number]::-webkit-outer-spin-button {
 	margin-top: 10px;
 }
 #config > div {
-	padding: 20px;
-	padding-bottom: 0;
+	padding: 16px 20px;
+	margin: 10px 20px 0;
+	background: var(--background-alt);
+	border: 1px solid #ffffff12;
+	border-radius: 8px;
+}
+#config > div.search-hidden {
+	display: none;
 }
 #config > div h1 {
-	font-size: 18px;
+	font-size: 17px;
+	margin-bottom: 4px;
+	color: var(--font-highlight);
+}
+#config > div p {
+	font-size: 13.5px;
+	line-height: 1.5;
 }
 #config > div input {
 	margin-bottom: 0;
 }
 #config > div .spaced {
 	margin: 10px;
+}
+
+#config-unsaved {
+	align-self: center;
+	margin-right: 14px;
+	color: var(--font-alt-highlight);
+	font-size: 13px;
+}
+#config-buttons input.attention {
+	box-shadow: 0 0 0 2px var(--font-alt-highlight);
 }
 
 #export-meta-multi, #export-copy-multi {
@@ -1458,6 +1544,214 @@ input[type=number]::-webkit-outer-spin-button {
 	display: block;
 	margin: 5px 0;
 }
+
+.sidebar .sidebar-tabs {
+	display: flex;
+	margin-bottom: 10px;
+}
+.sidebar .sidebar-tabs li {
+	flex: 1;
+	text-align: center;
+	padding: 8px 4px;
+	font-size: 13px;
+}
+
+.sidebar .sidebar-hint {
+	display: block;
+	margin-top: 10px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--font-faded);
+}
+
+/* match the character viewer's clean, frameless viewport: no checkered
+   transparency backdrop on the 3D preview (the texture preview keeps it) */
+#creature-preview {
+	border: none;
+	background: none;
+	box-shadow: none;
+}
+
+/* name label for the currently previewed model/creature */
+#tab-creatures .viewer-title {
+	position: absolute;
+	top: 16px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	pointer-events: none;
+	max-width: 55%;
+	text-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--font-highlight);
+	background: var(--background-trans);
+	padding: 5px 14px;
+	border-radius: 6px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* hint shown over the empty viewer */
+#tab-creatures .viewer-empty {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
+	pointer-events: none;
+	font-size: 16px;
+	color: var(--font-faded);
+}
+
+/* full-bleed creature viewer with floating panels, like the characters tab.
+   the 3D viewer fills the whole tab; the list, filter and sidebar float over
+   it as translucent panels instead of sitting in a rigid 3-column grid. */
+#tab-creatures.tab.list-tab {
+	/* keep the base .tab absolute inset:0 fill; just drop the 3-column grid */
+	display: block;
+}
+#tab-creatures .preview-container {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+}
+#tab-creatures #creature-preview {
+	width: 100%;
+	height: 100%;
+}
+#tab-creatures .list-container {
+	position: absolute;
+	left: 20px;
+	top: 20px;
+	bottom: 74px;
+	width: 360px;
+	margin: 0;
+	z-index: 2;
+}
+#tab-creatures .filter {
+	position: absolute;
+	left: 20px;
+	bottom: 20px;
+	width: 360px;
+	margin: 0;
+	z-index: 2;
+}
+#tab-creatures .filter input {
+	margin: 0;
+}
+#tab-creatures .sidebar {
+	position: absolute;
+	right: 0;
+	top: 20px;
+	bottom: 74px;
+	width: 250px;
+	margin: 0;
+	padding: 14px 16px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	z-index: 2;
+	background: var(--background-trans);
+	border-radius: 10px 0 0 10px;
+	box-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(3px);
+}
+#tab-creatures .preview-controls {
+	position: absolute;
+	right: 20px;
+	bottom: 20px;
+	margin: 0;
+	z-index: 3;
+}
+/* the texture ribbon floats bottom-center over the preview in this tab;
+   let clicks pass through its empty areas so the viewer stays usable,
+   while keeping the thumbnails and pager interactive */
+#tab-creatures #texture-ribbon {
+	top: auto;
+	bottom: 20px;
+	left: 50%;
+	right: auto;
+	transform: translateX(-50%);
+	/* width must not derive from content: the slot count is computed from the
+	   measured width (ResizeLayer), so a shrink-to-fit width feeds back into
+	   itself and oscillates, making the ribbon flicker */
+	width: 45%;
+	/* cap so the centered pill clears the floating list panel (right edge at
+	   380px) on narrow windows: left edge stays at >= 390px */
+	max-width: calc(100% - 780px);
+	background: var(--background-trans);
+	border-radius: 8px;
+	padding: 5px 8px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+	pointer-events: none;
+}
+#tab-creatures #texture-ribbon .slot,
+#tab-creatures #texture-ribbon #texture-ribbon-prev,
+#tab-creatures #texture-ribbon #texture-ribbon-next {
+	pointer-events: auto;
+}
+
+/* the combined tab's list panel is narrower than a full-width list tab, so let
+   the status bar (count + quick filters) wrap cleanly instead of squashing */
+#tab-creatures .list-status.with-quick-filters {
+	height: auto;
+	min-height: 27px;
+	flex-wrap: wrap;
+	row-gap: 1px;
+	column-gap: 10px;
+	font-size: 11.5px;
+	align-content: center;
+	padding-bottom: 4px;
+}
+/* the status bar wraps to two lines in this narrow panel; give the list
+   extra bottom clearance so the wrapped bar doesn't cover list rows */
+#tab-creatures .list-container .ui-listbox {
+	bottom: 45px;
+}
+
+/* Models/Creatures source switch (top-left, above the list) */
+#tab-creatures .browse-mode-switch {
+	position: absolute;
+	left: 20px;
+	top: 20px;
+	z-index: 3;
+	display: flex;
+}
+#tab-creatures .browse-mode-switch li {
+	padding: 7px 16px;
+	font-size: 13px;
+}
+/* drop the list/sidebar down to clear the floating switch */
+#tab-creatures .list-container {
+	top: 64px;
+}
+#tab-creatures .sidebar {
+	top: 64px;
+}
+
+/* group dividers inside the creatures sidebar */
+#creature-sidebar .header {
+	text-transform: uppercase;
+	font-size: 11px;
+	letter-spacing: 0.6px;
+	font-weight: bold;
+	color: var(--font-faded);
+	margin: 14px 0 6px;
+}
+#creature-sidebar .header:first-of-type,
+#creature-sidebar > div > .header:first-child {
+	margin-top: 4px;
+}
+/* keep the floating animation dropdown clear of the floating list panel,
+   which spans up to 380px from the left edge */
+#tab-creatures .preview-dropdown-overlay {
+	left: 400px;
+	top: 20px;
+}
+
 .sidebar label span {
 	font-size: 16px;
 }
@@ -1886,9 +2180,82 @@ input[type=number]::-webkit-outer-spin-button {
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
+	gap: 8px;
 	margin-right: 20px;
 	grid-column: 2;
 	grid-row: 2;
+}
+
+/* zone lighting time-of-day control (characters + creatures sidebars) */
+.zone-light-time {
+	margin-top: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.zone-light-time .prefix-label {
+	font-size: 13px;
+	color: var(--font-primary);
+}
+
+/* adjustable light slider controls */
+.light-control {
+	margin-top: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.light-control .prefix-label {
+	font-size: 13px;
+	color: var(--font-primary);
+}
+.light-control input[type=range] {
+	width: 100%;
+}
+
+/* light direction gizmo */
+.light-gizmo-wrap {
+	margin-top: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-start;
+}
+.light-gizmo {
+	position: relative;
+	width: 130px;
+	height: 96px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 70%), var(--background-dark);
+	cursor: crosshair;
+	overflow: hidden;
+}
+.light-gizmo::before, .light-gizmo::after {
+	content: '';
+	position: absolute;
+	background: rgba(255, 255, 255, 0.08);
+}
+.light-gizmo::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+.light-gizmo::after { top: 50%; left: 0; right: 0; height: 1px; }
+.light-gizmo-dot {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: #f0c850;
+	box-shadow: 0 0 8px 2px rgba(240, 200, 80, 0.7);
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.light-gizmo-readout {
+	font-size: 12px;
+	color: var(--font-faded);
+}
+.light-reset-btn {
+	margin-top: 10px;
+	font-size: 13px;
+	padding: 6px 12px;
 }
 
 .spaced-preview-controls input,
@@ -3059,6 +3426,89 @@ input[type=number]::-webkit-outer-spin-button {
 	gap: 10px;
 }
 
+.character-imported-info {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	z-index: 2;
+	pointer-events: auto;
+	cursor: move;
+	padding: 4px 6px;
+	user-select: none;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+.character-imported-info.armory-bar {
+	display: flex;
+	align-items: flex-start;
+	gap: 24px;
+}
+
+.armory-col-left {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.armory-name {
+	font-size: 22px;
+	font-weight: bold;
+	line-height: 1.1;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.armory-title {
+	font-size: 12px;
+	font-weight: bold;
+	margin-top: 3px;
+}
+
+.armory-col-right {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 5px;
+}
+
+.armory-stats {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.armory-ach,
+.armory-ilvl {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.armory-ach {
+	color: #f0b132;
+}
+
+.armory-ilvl {
+	color: #e8e8e8;
+}
+
+.armory-ico {
+	width: 15px;
+	height: 15px;
+	flex-shrink: 0;
+}
+
+.armory-desc {
+	font-size: 12px;
+	opacity: 0.9;
+	white-space: nowrap;
+}
+
+.armory-guild {
+	opacity: 0.85;
+}
+
 .character-button-group {
 	display: flex;
 	gap: 5px;
@@ -3105,6 +3555,18 @@ input[type=number]::-webkit-outer-spin-button {
 	padding-left: 0 !important;
 	background-position: center;
 	width: 35px;
+}
+
+.character-link-button {
+	background-image: url(./images/import_link.svg);
+	background-color: #2fa572 !important;
+	padding-left: 0 !important;
+	background-position: center;
+	width: 35px;
+}
+
+.character-link-button.active {
+	background-color: var(--form-button-hover) !important;
 }
 
 .character-save-button {

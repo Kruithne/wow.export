@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{306D683D-DFA5-6531-4CD5-A5A84D056EE5}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>spout</RootNamespace>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Locals">
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props"/>
+  <ImportGroup Label="ExtensionSettings"/>
+  <ImportGroup Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros"/>
+  <PropertyGroup>
+    <ExecutablePath>$(ExecutablePath);$(MSBuildProjectDirectory)\..\bin\;$(MSBuildProjectDirectory)\..\bin\</ExecutablePath>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <IntDir>$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.node</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.node</TargetExt>
+    <TargetName>$(ProjectName)</TargetName>
+    <TargetPath>$(OutDir)\$(ProjectName).node</TargetPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 /std:c++17 /bigobj /d2FastFail /Zc:dllexportInlines- /std:c++20 /Zc:sizedDealloc- /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;4595;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Lib>
+      <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;user32.lib;uuid.lib;odbc32.lib;odbccp32.lib;delayimp.lib;credui.lib;dbghelp.lib;shlwapi.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\Rasmus Lund\\Downloads\\wow.export-main\\bin\\gyp\\node\\$(Configuration)\\node.lib&quot;;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 /maxilksize:0x7ff00000 /fastfail %(AdditionalOptions)</AdditionalOptions>
+      <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(ProjectName).node</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetExt>.node</TargetExt>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 /std:c++17 /bigobj /d2FastFail /Zc:dllexportInlines- /std:c++20 /Zc:sizedDealloc- /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;4595;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Lib>
+      <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;user32.lib;uuid.lib;odbc32.lib;odbccp32.lib;delayimp.lib;credui.lib;dbghelp.lib;shlwapi.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\Rasmus Lund\\Downloads\\wow.export-main\\bin\\gyp\\node\\$(Configuration)\\node.lib&quot;;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 /maxilksize:0x7ff00000 /fastfail %(AdditionalOptions)</AdditionalOptions>
+      <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(ProjectName).node</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetExt>.node</TargetExt>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 /std:c++17 /bigobj /d2FastFail /Zc:dllexportInlines- /std:c++20 /Zc:sizedDealloc- /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;4595;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Lib>
+      <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;user32.lib;uuid.lib;odbc32.lib;odbccp32.lib;delayimp.lib;credui.lib;dbghelp.lib;shlwapi.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\Rasmus Lund\\Downloads\\wow.export-main\\bin\\gyp\\node\\$(Configuration)\\node.lib&quot;;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 /maxilksize:0x7ff00000 /fastfail %(AdditionalOptions)</AdditionalOptions>
+      <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(ProjectName).node</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetExt>.node</TargetExt>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 /std:c++17 /bigobj /d2FastFail /Zc:dllexportInlines- /std:c++20 /Zc:sizedDealloc- /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;4595;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Lib>
+      <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;user32.lib;uuid.lib;odbc32.lib;odbccp32.lib;delayimp.lib;credui.lib;dbghelp.lib;shlwapi.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\Rasmus Lund\\Downloads\\wow.export-main\\bin\\gyp\\node\\$(Configuration)\\node.lib&quot;;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 /maxilksize:0x7ff00000 /fastfail %(AdditionalOptions)</AdditionalOptions>
+      <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(ProjectName).node</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetExt>.node</TargetExt>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\include\node;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\src;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\config;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\openssl\openssl\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\uv\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\zlib;C:\Users\Rasmus Lund\Downloads\wow.export-main\bin\gyp\node\deps\v8\include;C:\Users\Rasmus Lund\Downloads\wow.export-main\node_addons\spout\node_modules\node-addon-api;..\spout;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=spout;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;V8_REVERSE_JSARGS;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS;_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_VIRTUAL_MEMORY_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_USE_PERFETTO;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=1;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_DISABLE_CPP_EXCEPTIONS;_WIN32_WINNT=0x0A00;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\binding.gyp"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\spout_addon.cpp">
+      <ObjectFileName>$(IntDir)\src\spout_addon.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutDX.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutDX.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutCopy.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutCopy.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutDirectX.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutDirectX.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutFrameCount.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutFrameCount.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutSenderNames.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutSenderNames.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutSharedMemory.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutSharedMemory.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutUtils.cpp">
+      <ObjectFileName>$(IntDir)\spout\SpoutUtils.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules\node-gyp\src\win_delay_load_hook.cc"/>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets"/>
+  <ImportGroup Label="ExtensionTargets"/>
+</Project>

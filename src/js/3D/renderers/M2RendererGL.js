@@ -6,6 +6,7 @@
 
 const core = require('../../core');
 const log = require('../../log');
+const zoneLighting = require('../zone-lighting');
 
 const BLPFile = require('../../casc/blp');
 const M2Loader = require('../loaders/M2Loader');
@@ -1503,14 +1504,44 @@ class M2RendererGL {
 		if (bone_count)
 			ubo.ubo.upload_range(ubo.offsets[0], bone_count * 16 * 4);
 
-		// lighting - transform light direction to view space
-		const lx = 3, ly = -0.7, lz = -2;
+		// lighting - use real zone lighting (LightData) when active, otherwise a
+		// neutral default light. The shader expects the light *travel* direction
+		// in view space; zone light_dir points toward the sun, so it is negated.
+		let amb_r = 0.5, amb_g = 0.5, amb_b = 0.5;
+		let dif_r = 0.7, dif_g = 0.7, dif_b = 0.7;
+		let lx = 3, ly = -0.7, lz = -2;
+
+		const cfg = core.view.config;
+		const zl = zoneLighting.get_uniforms();
+		if (zl) {
+			amb_r = zl.ambient_color[0]; amb_g = zl.ambient_color[1]; amb_b = zl.ambient_color[2];
+			dif_r = zl.direct_color[0]; dif_g = zl.direct_color[1]; dif_b = zl.direct_color[2];
+			lx = -zl.light_dir[0]; ly = -zl.light_dir[1]; lz = -zl.light_dir[2];
+		} else if (cfg.modelViewerCustomLight) {
+			// adjustable directional light driven by azimuth/elevation sliders.
+			const az = (cfg.modelViewerLightAzimuth ?? 45) * Math.PI / 180;
+			const el = (cfg.modelViewerLightElevation ?? 35) * Math.PI / 180;
+			const intensity = cfg.modelViewerLightIntensity ?? 0.8;
+			const ambient = cfg.modelViewerLightAmbient ?? 0.45;
+
+			// direction from the model toward the light; the shader travel
+			// direction is its negation.
+			const cos_el = Math.cos(el);
+			lx = -(cos_el * Math.sin(az));
+			ly = -Math.sin(el);
+			lz = -(cos_el * Math.cos(az));
+
+			amb_r = amb_g = amb_b = ambient;
+			dif_r = dif_g = dif_b = intensity;
+		}
+
+		// transform light direction to view space
 		const light_view_x = view_matrix[0] * lx + view_matrix[4] * ly + view_matrix[8] * lz;
 		const light_view_y = view_matrix[1] * lx + view_matrix[5] * ly + view_matrix[9] * lz;
 		const light_view_z = view_matrix[2] * lx + view_matrix[6] * ly + view_matrix[10] * lz;
 
-		shader.set_uniform_3f('u_ambient_color', 0.5, 0.5, 0.5);
-		shader.set_uniform_3f('u_diffuse_color', 0.7, 0.7, 0.7);
+		shader.set_uniform_3f('u_ambient_color', amb_r, amb_g, amb_b);
+		shader.set_uniform_3f('u_diffuse_color', dif_r, dif_g, dif_b);
 		shader.set_uniform_3f('u_light_dir', light_view_x, light_view_y, light_view_z);
 
 		// wireframe

@@ -53,7 +53,8 @@ module.exports = {
 			debouncedFilter: null,
 			filterTimeout: null,
 			scrollPositionRestored: false,
-			activeQuickFilter: null
+			activeQuickFilter: null,
+			expandedNodes: new Set()
 		}
 	},
 
@@ -175,7 +176,99 @@ module.exports = {
 		 * capped based on slot count to prevent empty slots appearing.
 		 */
 		scrollIndex: function() {
-			return Math.round((this.filteredItems.length - this.slotCount) * this.scrollRel);
+			return Math.round((this.rowCount - this.slotCount) * this.scrollRel);
+		},
+
+		/**
+		 * Whether the listbox renders as a hierarchical tree.
+		 */
+		treeMode: function() {
+			return core.view.config.listboxTreeView === true;
+		},
+
+		/**
+		 * Total amount of scrollable rows in the current view mode.
+		 */
+		rowCount: function() {
+			return this.treeMode ? this.visibleRows.length : this.filteredItems.length;
+		},
+
+		/**
+		 * Hierarchical directory tree built from the filtered items.
+		 * Each node is { dirs: Map<name, node>, files: [{ name, item }] }.
+		 */
+		treeRoot: function() {
+			if (!this.treeMode)
+				return null;
+
+			const root = { dirs: new Map(), files: [] };
+			for (const item of this.filteredItems) {
+				const parts = item.split('/');
+				let node = root;
+
+				for (let i = 0; i < parts.length - 1; i++) {
+					const part = parts[i];
+					let child = node.dirs.get(part);
+					if (!child) {
+						child = { dirs: new Map(), files: [] };
+						node.dirs.set(part, child);
+					}
+
+					node = child;
+				}
+
+				node.files.push({ name: parts[parts.length - 1], item });
+			}
+
+			return root;
+		},
+
+		/**
+		 * Flattened array of tree rows currently visible (expanded).
+		 * Directories list before files within each level. While a filter is
+		 * active, all branches are force-expanded to reveal matches.
+		 */
+		visibleRows: function() {
+			if (!this.treeMode)
+				return [];
+
+			const rows = [];
+			const forceExpand = (this.debouncedFilter && this.debouncedFilter.trim().length > 0) || this.activeQuickFilter !== null;
+
+			const walk = (node, prefix, depth) => {
+				for (const [name, child] of node.dirs) {
+					const dirPath = prefix + name;
+					const expanded = forceExpand || this.expandedNodes.has(dirPath);
+					rows.push({ type: 'dir', name, path: dirPath, depth, expanded });
+
+					if (expanded)
+						walk(child, dirPath + '/', depth + 1);
+				}
+
+				for (const file of node.files)
+					rows.push({ type: 'file', name: file.name, item: file.item, depth });
+			};
+
+			walk(this.treeRoot, '', 0);
+			return rows;
+		},
+
+		/**
+		 * Items in visual order, used for range-selection and keyboard
+		 * navigation. Matches filteredItems in flat mode, visible tree
+		 * files in tree mode.
+		 */
+		selectionOrderList: function() {
+			if (!this.treeMode)
+				return this.filteredItems;
+
+			const items = [];
+			for (const row of this.visibleRows) {
+				if (row.type === 'file')
+					items.push(row.item);
+			}
+
+			return items;
 		},
 
 		/**
@@ -236,14 +329,15 @@ module.exports = {
 		 * data array. Reactively updates based on scroll and data.
 		 */
 		displayItems: function() {
-			return this.filteredItems.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
+			const source = this.treeMode ? this.visibleRows : this.filteredItems;
+			return source.slice(this.scrollIndex, this.scrollIndex + this.slotCount);
 		},
 
 		/**
 		 * Weight (0-1) of a single item.
 		 */
 		itemWeight: function() {
-			return 1 / this.filteredItems.length;
+			return 1 / this.rowCount;
 		}
 	},
 
@@ -377,9 +471,28 @@ module.exports = {
 					const delta = isArrowUp ? -1 : 1;
 
 					// Move/expand selection one.
-					const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-					const nextIndex = lastSelectIndex + delta;
-					const next = this.filteredItems[nextIndex];
+					let nextIndex;
+					let next;
+
+					if (this.treeMode) {
+						// Navigate visible tree rows, skipping directory rows.
+						const rows = this.visibleRows;
+						const lastRowIndex = rows.findIndex(row => row.type === 'file' && row.item === this.lastSelectItem);
+
+						let rowIndex = lastRowIndex + delta;
+						while (rowIndex >= 0 && rowIndex < rows.length && rows[rowIndex].type !== 'file')
+							rowIndex += delta;
+
+						if (lastRowIndex > -1 && rowIndex >= 0 && rowIndex < rows.length) {
+							nextIndex = rowIndex;
+							next = rows[rowIndex].item;
+						}
+					} else {
+						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
+						nextIndex = lastSelectIndex + delta;
+						next = this.filteredItems[nextIndex];
+					}
+
 					if (next) {
 						const lastViewIndex = isArrowUp ? this.scrollIndex : this.scrollIndex + this.slotCount;
 						let diff = Math.abs(nextIndex - lastViewIndex);
@@ -435,12 +548,13 @@ module.exports = {
 				} else if (event.shiftKey) {
 					// Shift-key held, select a range.
 					if (this.lastSelectItem && this.lastSelectItem !== item) {
-						const lastSelectIndex = this.filteredItems.indexOf(this.lastSelectItem);
-						const thisSelectIndex = this.filteredItems.indexOf(item);
+						const orderList = this.selectionOrderList;
+						const lastSelectIndex = orderList.indexOf(this.lastSelectItem);
+						const thisSelectIndex = orderList.indexOf(item);
 
 						const delta = Math.abs(lastSelectIndex - thisSelectIndex);
 						const lowest = Math.min(lastSelectIndex, thisSelectIndex);
-						const range = this.filteredItems.slice(lowest, lowest + delta + 1);
+						const range = orderList.slice(lowest, lowest + delta + 1);
 
 						for (const select of range) {
 							if (newSelection.indexOf(select) === -1)
@@ -468,6 +582,38 @@ module.exports = {
 				this.activeQuickFilter = null;
 			else
 				this.activeQuickFilter = ext;
+		},
+
+		/**
+		 * Toggles between flat list and hierarchical tree view.
+		 * Persisted globally via configuration.
+		 */
+		toggleTreeMode: function() {
+			core.view.config.listboxTreeView = !this.treeMode;
+		},
+
+		/**
+		 * Expand or collapse a directory row in tree mode.
+		 * @param {object} row
+		 */
+		toggleExpand: function(row) {
+			if (this.expandedNodes.has(row.path))
+				this.expandedNodes.delete(row.path);
+			else
+				this.expandedNodes.add(row.path);
+		},
+
+		/**
+		 * Invoked when a tree row is clicked. Directories toggle their
+		 * expansion state, files delegate to normal selection handling.
+		 * @param {object} row
+		 * @param {MouseEvent} event
+		 */
+		handleRowClick: function(row, event) {
+			if (row.type === 'dir')
+				this.toggleExpand(row);
+			else
+				this.selectItem(row.item, event);
 		},
 
 		/**
@@ -503,14 +649,24 @@ module.exports = {
 	 */
 	template: `<div><div ref="root" class="ui-listbox" @wheel="wheelMouse">
 		<div class="scroller" ref="scroller" @mousedown="startMouse" :class="{ using: isScrolling }" :style="{ top: scrollOffset }"><div></div></div>
-		<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" @contextmenu="handleContextMenu(item, $event)" :class="{ selected: selection.includes(item) }">
-			<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
-		</div>
+		<template v-if="!treeMode">
+			<div v-for="(item, i) in displayItems" class="item" @click="selectItem(item, $event)" @contextmenu="handleContextMenu(item, $event)" :class="{ selected: selection.includes(item) }">
+				<span v-for="(sub, si) in item.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
+			</div>
+		</template>
+		<template v-else>
+			<div v-for="(row, i) in displayItems" class="item" :class="{ 'tree-dir': row.type === 'dir', selected: row.type === 'file' && selection.includes(row.item) }" :style="{ paddingLeft: (8 + row.depth * 16) + 'px' }" @click="handleRowClick(row, $event)" @contextmenu="row.type === 'file' && handleContextMenu(row.item, $event)">
+				<span v-if="row.type === 'dir'" class="tree-expander">{{ row.expanded ? '−' : '+' }}</span>
+				<template v-if="row.type === 'dir'">{{ row.name }}</template>
+				<span v-else v-for="(sub, si) in row.name.split('\\31')" :class="'sub sub-' + si" :data-item="sub">{{ sub }}</span>
+			</div>
+		</template>
 	</div>
-	<div class="list-status" v-if="unittype" :class="{ 'with-quick-filters': quickfilters && quickfilters.length > 0 }">
+	<div class="list-status with-quick-filters" v-if="unittype">
 		<span>{{ filteredItems.length }} {{ unittype + (filteredItems.length != 1 ? 's' : '') }} found. {{ selection.length > 0 ? ' (' + selection.length + ' selected)' : '' }}</span>
-		<span v-if="quickfilters && quickfilters.length > 0" class="quick-filters">
-			Quick filter: <template v-for="(ext, index) in quickfilters" :key="ext"><a @click="applyQuickFilter(ext)" :class="{ active: activeQuickFilter === ext }">{{ ext.toUpperCase() }}</a><span v-if="index < quickfilters.length - 1"> / </span></template>
+		<span class="quick-filters">
+			<a @click="toggleTreeMode" :class="{ active: treeMode }">Tree view</a><template v-if="quickfilters && quickfilters.length > 0"><span> · </span>
+			Quick filter: <template v-for="(ext, index) in quickfilters" :key="ext"><a @click="applyQuickFilter(ext)" :class="{ active: activeQuickFilter === ext }">{{ ext.toUpperCase() }}</a><span v-if="index < quickfilters.length - 1"> / </span></template></template>
 		</span>
 	</div></div>`
 };

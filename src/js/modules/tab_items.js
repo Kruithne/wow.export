@@ -35,7 +35,7 @@ const ITEM_SLOTS_MERGED = {
 };
 
 const view_item_models = (core, modules, item) => {
-	modules.tab_models.setActive();
+	modules.tab_creatures.setActive();
 
 	const list = DBItemList.getItemModels(item);
 	core.view.userInputFilterModels = '';

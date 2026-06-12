@@ -266,6 +266,30 @@ const handle_animation_change = async (renderer, state, selected_animation_id) =
 };
 
 /**
+ * Capture a preview canvas as a transparent PNG BufferWrapper. When the viewer
+ * exposes a high-resolution capture and the user configured a scale above 1, the
+ * frame is supersampled for a sharper export; otherwise it is captured at the
+ * on-screen resolution.
+ * @param {object} core - Core instance
+ * @param {HTMLCanvasElement} canvas - Preview canvas
+ * @returns {Promise<BufferWrapper>}
+ */
+const capture_canvas_png = async (core, canvas) => {
+	const scale = Math.max(1, Math.min(core.view.config.previewExportScale ?? 1, 4));
+
+	if (scale > 1 && typeof canvas.captureHighRes === 'function') {
+		try {
+			const data_url = canvas.captureHighRes(scale);
+			return BufferWrapper.fromBase64(data_url.slice(data_url.indexOf(',') + 1));
+		} catch (e) {
+			log.write('High-res preview capture failed, falling back to display resolution: %s', e.message);
+		}
+	}
+
+	return BufferWrapper.fromCanvas(canvas, 'image/png');
+};
+
+/**
  * Export 3D preview as PNG or to clipboard.
  * @param {object} core - Core instance
  * @param {string} format - 'PNG' or 'CLIPBOARD'
@@ -277,7 +301,7 @@ const handle_animation_change = async (renderer, state, selected_animation_id) =
 const export_preview = async (core, format, canvas, export_name, export_subdir = '') => {
 	core.setToast('progress', 'Saving preview, hold on...', null, -1, false);
 
-	const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+	const buf = await capture_canvas_png(core, canvas);
 
 	if (format === 'PNG') {
 		const export_paths = core.openLastExportStream();
@@ -549,6 +573,7 @@ module.exports = {
 	create_renderer,
 	extract_animations,
 	handle_animation_change,
+	capture_canvas_png,
 	export_preview,
 	export_model,
 	create_animation_methods,

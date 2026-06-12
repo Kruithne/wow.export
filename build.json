@@ -7,7 +7,7 @@
 	"manifest": {
 		"name": "wow.export",
 		"main": "./src/index.html",
-		"chromium-args": "--disable-devtools --disable-raf-throttling --mixed-context --enable-node-worker --disable-logging --password-store=basic",
+		"chromium-args": "--disable-devtools --disable-raf-throttling --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --mixed-context --enable-node-worker --disable-logging --password-store=basic",
 		"product_string": "wow.export",
 		"user-agent": "wow.export (%ver); %osinfo",
 		"window": {
@@ -89,6 +89,7 @@
 				"addons/blender/io_scene_wowobj/*": "addon/io_scene_wowobj",
 				"node_modules/webp-wasm/webp_node_enc.wasm": "src/webp_node_enc.wasm",
 				"node_addons/mmap/build/Release/mmap.node": "mmap.node",
+				"node_addons/spout/build/Release/spout.node": "spout.node",
 				"src/js/workers/cache-collector.js": "src/js/workers/cache-collector.js"
 			},
 			"remap": {

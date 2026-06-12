@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\src">
+      <UniqueIdentifier>{F1003AD6-4B6D-45DF-3F56-5CAC869BF55E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\spout">
+      <UniqueIdentifier>{B94BAA70-4B5A-66A0-AD4F-E90D6E774D55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:">
+      <UniqueIdentifier>{F87FD356-0FEB-9BC5-D1FA-368C81420008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users">
+      <UniqueIdentifier>{707347A1-1ABA-A9B2-9AF4-DE122F5D7F08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund">
+      <UniqueIdentifier>{89401C6C-E9E9-D18F-FF54-BD119860F27D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData">
+      <UniqueIdentifier>{DABCEBCE-33D1-4D68-EC67-0BC19A2A0901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData\Roaming">
+      <UniqueIdentifier>{06897101-0A2C-F34A-36C2-4D0BE8BF5EB9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData\Roaming\npm">
+      <UniqueIdentifier>{E6F3EBE6-A3A6-AA7E-34C1-5CE4364854E4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules">
+      <UniqueIdentifier>{126A39EA-1D28-5689-C126-0DA0AB5837A0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules\node-gyp">
+      <UniqueIdentifier>{49558BB4-6D34-CA91-A65D-85A65792DC11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules\node-gyp\src">
+      <UniqueIdentifier>{F1003AD6-4B6D-45DF-3F56-5CAC869BF55E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\spout_addon.cpp">
+      <Filter>..\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutDX.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutCopy.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutDirectX.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutFrameCount.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutSenderNames.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutSharedMemory.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spout\SpoutUtils.cpp">
+      <Filter>..\spout</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules\node-gyp\src\win_delay_load_hook.cc">
+      <Filter>C:\Users\Rasmus Lund\AppData\Roaming\npm\node_modules\node-gyp\src</Filter>
+    </ClCompile>
+    <None Include="..\binding.gyp">
+      <Filter>..</Filter>
+    </None>
+  </ItemGroup>
+</Project>

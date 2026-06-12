@@ -285,7 +285,8 @@ const export_files = async (core, files, is_local = false, export_id = -1) => {
 
 module.exports = {
 	register() {
-		this.registerNavButton('Models', 'cube.svg', InstallType.CASC);
+		// nav button retired: Models is now hosted by the combined Models/Creatures
+		// tab (tab_creatures). This module is kept only so legacy references resolve.
 	},
 
 	template: `

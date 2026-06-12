@@ -32,6 +32,8 @@ const DBItemList = require('../db/caches/DBItemList');
 const DBGuildTabard = require('../db/caches/DBGuildTabard');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 const character_appearance = require('../ui/character-appearance');
+const modelViewerUtils = require('../ui/model-viewer-utils');
+const zoneLighting = require('../3D/zone-lighting');
 
 
 // geoset group constants (CG enum from DBItemGeosets)
@@ -1165,29 +1167,152 @@ function randomize_customization(core) {
 //endregion
 
 //region import
-async function import_character(core) {
-	core.view.characterImportMode = 'none';
-	core.view.chrModelLoading = true;
+/**
+ * Resolve a human-readable name from a Blizzard API field, which may be a plain
+ * string, a { name } object, or a localized { name: { en_US } } object.
+ */
+function resolve_api_name(value) {
+	if (!value)
+		return null;
 
-	const character_name = core.view.chrImportChrName;
-	const selected_realm = core.view.chrImportSelectedRealm;
-	const base_region = core.view.chrImportSelectedRegion;
-	const effective_region = core.view.chrImportClassicRealms ? 'classic-' + base_region : base_region;
+	if (typeof value === 'string')
+		return value;
 
-	if (selected_realm === null) {
-		core.setToast('error', 'Please enter a valid realm.', null, 3000);
-		core.view.chrModelLoading = false;
-		return;
+	if (typeof value === 'object') {
+		if (typeof value.name === 'string')
+			return value.name;
+
+		if (value.name && typeof value.name === 'object')
+			return value.name.en_US ?? Object.values(value.name)[0] ?? null;
+
+		if (typeof value.en_US === 'string')
+			return value.en_US;
 	}
 
+	return null;
+}
+
+function capitalize_word(str) {
+	return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str;
+}
+
+// Official WoW class colors keyed by class id (stable across client locales).
+const CLASS_COLORS = {
+	1: '#C69B6D',  // Warrior
+	2: '#F48CBA',  // Paladin
+	3: '#AAD372',  // Hunter
+	4: '#FFF468',  // Rogue
+	5: '#FFFFFF',  // Priest
+	6: '#C41E3A',  // Death Knight
+	7: '#0070DD',  // Shaman
+	8: '#3FC7EB',  // Mage
+	9: '#8788EE',  // Warlock
+	10: '#00FF98', // Monk
+	11: '#FF7C0A', // Druid
+	12: '#A330C9', // Demon Hunter
+	13: '#33937F'  // Evoker
+};
+
+const FACTION_COLORS = {
+	ALLIANCE: '#4a91d6',
+	HORDE: '#cc4733'
+};
+
+/**
+ * Build the display-info object shown after a Battle.net character import.
+ * Mirrors the in-game/armory presentation: name in class color and a
+ * "<Race> <Spec> <Class>" descriptor. Sourced from the Blizzard appearance
+ * endpoint (via the configured proxy), which provides name/realm/class/spec/
+ * race/faction/gender but not level, title, guild name or item level.
+ */
+function build_imported_info(input_name, base_region, selected_realm, data) {
+	const class_name = resolve_api_name(data?.playable_class);
+	const spec_name = resolve_api_name(data?.active_spec);
+	const race_name = resolve_api_name(data?.playable_race);
+	const faction_type = data?.faction?.type;
+
+	// armory-style descriptor, e.g. "Night Elf Survival Hunter"
+	const descriptor = [race_name, spec_name, class_name].filter(Boolean).join(' ');
+
+	return {
+		name: resolve_api_name(data?.character) || resolve_api_name(data?.name) || capitalize_word(input_name),
+		class_color: CLASS_COLORS[data?.playable_class?.id] || '#ffffff',
+		descriptor: descriptor || null,
+		realm: resolve_api_name(data?.character?.realm) || selected_realm?.label || null,
+		region: base_region ? base_region.toUpperCase() : null,
+		faction: resolve_api_name(data?.faction) || (faction_type ? capitalize_word(faction_type) : null),
+		faction_color: FACTION_COLORS[faction_type] || null,
+		gender: resolve_api_name(data?.gender) || null,
+		// Filled in best-effort from a secondary source (raider.io); stay null if
+		// unavailable so the template simply omits them.
+		guild: null,
+		item_level: null,
+		achievement_points: null,
+		title: null // requires Blizzard's OAuth profile API; not available here.
+	};
+}
+
+/**
+ * Best-effort enrichment of imported character info using the public raider.io
+ * API, which exposes equipped item level, achievement points and guild name -
+ * none of which the appearance endpoint provides. Failures are swallowed so a
+ * raider.io outage never blocks the import.
+ */
+async function fetch_armory_extras(region, realm_slug, character_name) {
+	try {
+		const url = util.format(
+			'https://raider.io/api/v1/characters/profile?region=%s&realm=%s&name=%s&fields=gear,guild',
+			encodeURIComponent(region), encodeURIComponent(realm_slug), encodeURIComponent(character_name)
+		);
+
+		const res = await generics.get(url);
+		if (!res.ok)
+			return null;
+
+		const j = await res.json();
+		return {
+			item_level: typeof j?.gear?.item_level_equipped === 'number' ? Math.round(j.gear.item_level_equipped) : null,
+			achievement_points: typeof j?.achievement_points === 'number' ? j.achievement_points : null,
+			guild: j?.guild?.name || null
+		};
+	} catch (e) {
+		log.write('Failed to fetch armory extras: %s', e.message);
+		return null;
+	}
+}
+
+/**
+ * Core Battle.net import routine, shared by the form-based import and the
+ * armory-link import. Fetches appearance data, applies it to the viewer, and
+ * builds the armory info card (enriched via raider.io for retail realms).
+ */
+async function run_bnet_import(core, base_region, realm_slug, realm_label, character_name, is_classic) {
+	core.view.chrModelLoading = true;
+	core.view.chrImportedInfo = null;
+
+	const effective_region = is_classic ? 'classic-' + base_region : base_region;
+	const selected_realm = { label: realm_label || realm_slug, value: realm_slug };
+
 	const character_label = util.format('%s (%s-%s)', character_name, effective_region, selected_realm.label);
-	const url = util.format(core.view.config.armoryURL, encodeURIComponent(effective_region), encodeURIComponent(selected_realm.value), encodeURIComponent(character_name.toLowerCase()));
+	const url = util.format(core.view.config.armoryURL, encodeURIComponent(effective_region), encodeURIComponent(realm_slug), encodeURIComponent(character_name.toLowerCase()));
 	log.write('Retrieving character data for %s from %s', character_label, url);
 
 	const res = await generics.get(url);
 	if (res.ok) {
 		try {
-			await apply_import_data(core, await res.json(), 'bnet');
+			const data = await res.json();
+			await apply_import_data(core, data, 'bnet');
+
+			const info = build_imported_info(character_name, base_region, selected_realm, data);
+
+			// Classic realms aren't on raider.io; only enrich for retail.
+			if (!is_classic) {
+				const extras = await fetch_armory_extras(base_region, realm_slug, character_name.toLowerCase());
+				if (extras)
+					Object.assign(info, extras);
+			}
+
+			core.view.chrImportedInfo = info;
 		} catch (e) {
 			log.write('Failed to parse character data: %s', e.message);
 			core.setToast('error', 'Failed to import character ' + character_label, null, -1);
@@ -1202,6 +1327,59 @@ async function import_character(core) {
 	}
 
 	core.view.chrModelLoading = false;
+}
+
+async function import_character(core) {
+	core.view.characterImportMode = 'none';
+
+	const character_name = core.view.chrImportChrName;
+	const selected_realm = core.view.chrImportSelectedRealm;
+	const base_region = core.view.chrImportSelectedRegion;
+
+	if (selected_realm === null) {
+		core.setToast('error', 'Please enter a valid realm.', null, 3000);
+		return;
+	}
+
+	await run_bnet_import(core, base_region, selected_realm.value, selected_realm.label, character_name, core.view.chrImportClassicRealms);
+}
+
+/**
+ * Parse a worldofwarcraft.blizzard.com armory character URL into its region,
+ * realm slug and character name, e.g.:
+ *   https://worldofwarcraft.blizzard.com/en-gb/character/eu/tarren-mill/meeres
+ * Returns null if the URL is not a recognisable armory character link.
+ */
+function parse_armory_url(url) {
+	if (!url)
+		return null;
+
+	const match = url.match(/\/character\/([^/]+)\/([^/]+)\/([^/?#]+)/i);
+	if (!match)
+		return null;
+
+	const region = decodeURIComponent(match[1]).toLowerCase();
+	const realm = decodeURIComponent(match[2]).toLowerCase();
+	const name = decodeURIComponent(match[3]);
+
+	// guard against matching the locale segment by mistake (region is segment 1
+	// after /character/, so it must be a known WoW region code)
+	if (!['us', 'eu', 'kr', 'tw', 'cn'].includes(region))
+		return null;
+
+	return { region, realm, name };
+}
+
+async function import_character_from_link(core) {
+	core.view.characterImportMode = 'none';
+
+	const parsed = parse_armory_url((core.view.chrImportArmoryURL || '').trim());
+	if (!parsed) {
+		core.setToast('error', 'Please enter a valid armory character URL (e.g. https://worldofwarcraft.blizzard.com/en-gb/character/eu/tarren-mill/meeres).', null, 4000);
+		return;
+	}
+
+	await run_bnet_import(core, parsed.region, parsed.realm, parsed.realm, parsed.name, false);
 }
 
 async function import_wmv_character(core) {
@@ -1930,7 +2108,7 @@ const export_char_model = async (core) => {
 			core.setToast('progress', 'saving preview, hold on...', null, -1, false);
 
 			const canvas = document.querySelector('.char-preview canvas');
-			const buf = await BufferWrapper.fromCanvas(canvas, 'image/png');
+			const buf = await modelViewerUtils.capture_canvas_png(core, canvas);
 
 			if (format === 'PNG') {
 				const file_name = listfile.getByID(active_model);
@@ -2259,7 +2437,25 @@ module.exports = {
 				<div class="character-button-group">
 					<input type="button" value="" title="Import from Battle.net" class="ui-image-button character-bnet-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'BNET' ? 'none' : 'BNET'" :class="{ active: $core.view.characterImportMode === 'BNET' }"/>
 					<input type="button" value="" title="Import from Wowhead" class="ui-image-button character-wowhead-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'WHEAD' ? 'none' : 'WHEAD'" :class="{ active: $core.view.characterImportMode === 'WHEAD' }"/>
+					<input type="button" value="" title="Import from Armory Link" class="ui-image-button character-link-button" @click="$core.view.characterImportMode = $core.view.characterImportMode === 'LINK' ? 'none' : 'LINK'" :class="{ active: $core.view.characterImportMode === 'LINK' }"/>
 					<input type="button" value="" title="Import from WoW Model Viewer" class="ui-image-button character-wmv-button" @click="import_wmv"/>
+				</div>
+			</div>
+			<div v-if="$core.view.chrImportedInfo" class="character-imported-info armory-bar" :style="$core.view.chrImportedInfoPos ? { left: $core.view.chrImportedInfoPos.x + 'px', top: $core.view.chrImportedInfoPos.y + 'px', right: 'auto', bottom: 'auto' } : null" @mousedown="start_info_drag">
+				<div class="armory-col-left">
+					<div class="armory-name" :style="{ color: $core.view.chrImportedInfo.class_color }">{{ $core.view.chrImportedInfo.name }}</div>
+					<div v-if="$core.view.chrImportedInfo.title" class="armory-title">{{ $core.view.chrImportedInfo.title }}</div>
+				</div>
+				<div class="armory-col-right">
+					<div v-if="$core.view.chrImportedInfo.achievement_points !== null || $core.view.chrImportedInfo.item_level !== null" class="armory-stats">
+						<span v-if="$core.view.chrImportedInfo.achievement_points !== null" class="armory-ach" title="Achievement Points">
+							<svg class="armory-ico" viewBox="0 0 24 24"><path d="M12 2l7 2.3v5.7c0 4.6-7 9-7 9s-7-4.4-7-9V4.3z" fill="#f0b132"/></svg>{{ $core.view.chrImportedInfo.achievement_points }}
+						</span>
+						<span v-if="$core.view.chrImportedInfo.item_level !== null" class="armory-ilvl" title="Equipped Item Level">
+							<svg class="armory-ico" viewBox="0 0 24 24" fill="none" stroke="#d6d6d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg>{{ $core.view.chrImportedInfo.item_level }} ILVL
+						</span>
+					</div>
+					<div class="armory-desc"><template v-if="$core.view.chrImportedInfo.descriptor">{{ $core.view.chrImportedInfo.descriptor }}</template><template v-if="$core.view.chrImportedInfo.guild"> <span class="armory-guild">&lsaquo;{{ $core.view.chrImportedInfo.guild }}&rsaquo;</span></template><template v-if="$core.view.chrImportedInfo.realm"> {{ $core.view.chrImportedInfo.realm }}<template v-if="$core.view.chrImportedInfo.region"> ({{ $core.view.chrImportedInfo.region }})</template></template></div>
 				</div>
 			</div>
 			<div v-if="$core.view.characterImportMode === 'BNET'" id="character-import-panel-floating" @click.stop>
@@ -2283,6 +2479,15 @@ module.exports = {
 				<div class="header"><b>Wowhead Import</b></div>
 				<input type="text" v-model="$core.view.chrImportWowheadURL" placeholder="Wowhead Dressing Room URL"/>
 				<input type="button" value="Import Character" @click="import_wowhead" :class="{ disabled: $core.view.chrModelLoading }"/>
+			</div>
+			<div v-if="$core.view.characterImportMode === 'LINK'" id="character-import-panel-floating" @click.stop>
+				<div class="header"><b>Armory Link Import</b></div>
+				<input type="text" v-model="$core.view.chrImportArmoryURL" placeholder="Armory Character URL" @keyup.enter="import_from_link"/>
+				<label class="ui-checkbox" title="Load visage model (Dracthyr/Worgen)">
+					<input type="checkbox" v-model="$core.view.chrImportLoadVisage"/>
+					<span>Load visage model (Dracthyr/Worgen)</span>
+				</label>
+				<input type="button" value="Import Character" @click="import_from_link" :class="{ disabled: $core.view.chrModelLoading }"/>
 			</div>
 			<div class="left-panel">
 				<div class="left-panel-scroll">
@@ -2432,6 +2637,22 @@ module.exports = {
 								<input type="color" id="chr-background-color-input" v-model="$core.view.config.chrBackgroundColor"/>
 								<span>Background color</span>
 							</label>
+							<label v-if="false" class="ui-checkbox" title="Light the model using a zone's real in-game lighting (LightData)">
+								<input type="checkbox" v-model="$core.view.config.zoneLightEnabled"/>
+								<span>In-game zone lighting</span>
+							</label>
+							<template v-if="false && $core.view.config.zoneLightEnabled">
+								<label class="ui-select-label">
+									<span class="select-prefix"><span class="prefix-label">Zone:</span></span>
+									<select class="ui-select" v-model.number="$core.view.config.zoneLightMapId">
+										<option v-for="m in $core.view.zoneLightMaps" :key="m.id" :value="m.id">{{ m.label }}</option>
+									</select>
+								</label>
+								<div class="zone-light-time">
+									<span class="prefix-label">Time of day: {{ format_zone_time($core.view.config.zoneLightTime) }}</span>
+									<input type="range" min="0" max="2880" step="15" v-model.number="$core.view.config.zoneLightTime" style="width:100%"/>
+								</div>
+							</template>
 						</div>
 					</div>
 					<ul class="ui-multi-button character-export-tabs">
@@ -2523,6 +2744,68 @@ module.exports = {
 
 		import_character() {
 			import_character(this.$core);
+		},
+
+		import_from_link() {
+			import_character_from_link(this.$core);
+		},
+
+		// Format a zone-lighting time value (0-2880 half-minutes) as HH:MM.
+		format_zone_time(value) {
+			const total_minutes = Math.round((value | 0) / 2);
+			const h = Math.floor(total_minutes / 60) % 24;
+			const m = total_minutes % 60;
+			return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+		},
+
+		// Populate the zone lighting map picker (shared with other viewer tabs).
+		async load_zone_light_maps() {
+			await zoneLighting.load_map_picker(this.$core);
+		},
+
+		// Drag the imported-character info card around the viewer. Position is
+		// kept relative to the viewer container and persisted to config so it
+		// stays where the user left it across sessions.
+		start_info_drag(event) {
+			if (event.button !== 0)
+				return;
+
+			const el = event.currentTarget;
+			const parent = el.offsetParent || el.parentElement;
+			if (!parent)
+				return;
+
+			const start_x = event.clientX;
+			const start_y = event.clientY;
+			const parent_rect = parent.getBoundingClientRect();
+			const el_rect = el.getBoundingClientRect();
+			const orig_left = el_rect.left - parent_rect.left;
+			const orig_top = el_rect.top - parent_rect.top;
+
+			const core = this.$core;
+
+			const on_move = (e) => {
+				const max_x = Math.max(0, parent.clientWidth - el.offsetWidth);
+				const max_y = Math.max(0, parent.clientHeight - el.offsetHeight);
+				const nx = Math.min(Math.max(orig_left + (e.clientX - start_x), 0), max_x);
+				const ny = Math.min(Math.max(orig_top + (e.clientY - start_y), 0), max_y);
+				core.view.chrImportedInfoPos = { x: Math.round(nx), y: Math.round(ny) };
+			};
+
+			const on_up = () => {
+				document.removeEventListener('mousemove', on_move);
+				document.removeEventListener('mouseup', on_up);
+
+				const pos = core.view.chrImportedInfoPos;
+				if (pos) {
+					core.view.config.chrImportedInfoX = pos.x;
+					core.view.config.chrImportedInfoY = pos.y;
+				}
+			};
+
+			document.addEventListener('mousemove', on_move);
+			document.addEventListener('mouseup', on_up);
+			event.preventDefault();
 		},
 
 		toggle_animation_pause() {
@@ -2898,6 +3181,13 @@ module.exports = {
 	async mounted() {
 		const state = this.$core.view;
 
+		// restore the saved position of the imported-character info card
+		if (typeof state.config.chrImportedInfoX === 'number' && typeof state.config.chrImportedInfoY === 'number')
+			state.chrImportedInfoPos = { x: state.config.chrImportedInfoX, y: state.config.chrImportedInfoY };
+
+		// populate the zone lighting map picker
+		this.load_zone_light_maps();
+
 		reset_module_state();
 
 		this.$core.showLoadingScreen(10);
@@ -3040,7 +3330,8 @@ module.exports = {
 				const import_panel = event.target.closest('#character-import-panel-floating');
 				const bnet_button = event.target.closest('.character-bnet-button');
 				const wowhead_button = event.target.closest('.character-wowhead-button');
-				if (!import_panel && !bnet_button && !wowhead_button)
+				const link_button = event.target.closest('.character-link-button');
+				if (!import_panel && !bnet_button && !wowhead_button && !link_button)
 					this.$core.view.characterImportMode = 'none';
 			}
 		};
