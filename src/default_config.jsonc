@@ -57,6 +57,8 @@
 	"decorAutoPreview": true,
 	"exportDecorFormat": "OBJ",
 	"creatureAutoPreview": true,
+	"creatureAutoPlayAnim": true,
+	"lastBrowseMode": "models",
 	"exportCreatureFormat": "OBJ",
 	"exportLegacyModelFormat": "RAW",
 	"modelViewerShowGrid": true,

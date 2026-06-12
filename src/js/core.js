@@ -153,6 +153,7 @@ const makeNewView = () => {
 		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
 		creatureViewerContext: null, // 3D context for the creature viewer.
 		creatureViewerActiveType: 'none', // Type of creature model actively selected ('m2', 'wmo', 'none').
+		creatureViewerTitle: '', // Display name of the currently previewed model/creature.
 		creatureViewerGeosets: [], // Active creature M2 geoset control.
 		creatureViewerSkins: [], // Active creature M2 model skins.
 		creatureViewerSkinsSelection: [], // Selected creature M2 model skin.

@@ -4259,3 +4259,192 @@ input[type=number]::-webkit-outer-spin-button {
 	background: rgba(255, 255, 255, 0.2);
 	color: rgba(255, 255, 255, 0.9);
 }
+
+/* Combined Models/Creatures tab layout */
+.sidebar .sidebar-tabs {
+	display: flex;
+	margin-bottom: 10px;
+}
+.sidebar .sidebar-tabs li {
+	flex: 1;
+	text-align: center;
+	padding: 8px 4px;
+	font-size: 13px;
+}
+.sidebar .sidebar-hint {
+	display: block;
+	margin-top: 10px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--font-faded);
+}
+#creature-preview {
+	border: none;
+	background: none;
+	box-shadow: none;
+}
+#tab-creatures .viewer-title {
+	position: absolute;
+	top: 16px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	pointer-events: none;
+	max-width: 55%;
+	text-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--font-highlight);
+	background: var(--background-trans);
+	padding: 5px 14px;
+	border-radius: 6px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+#tab-creatures .viewer-empty {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
+	pointer-events: none;
+	font-size: 16px;
+	color: var(--font-faded);
+}
+#tab-creatures.tab.list-tab {
+	/* keep the base .tab absolute inset:0 fill; just drop the 3-column grid */
+	display: block;
+}
+#tab-creatures .preview-container {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+}
+#tab-creatures #creature-preview {
+	width: 100%;
+	height: 100%;
+}
+#tab-creatures .list-container {
+	position: absolute;
+	left: 20px;
+	top: 20px;
+	bottom: 74px;
+	width: 360px;
+	margin: 0;
+	z-index: 2;
+}
+#tab-creatures .filter {
+	position: absolute;
+	left: 20px;
+	bottom: 20px;
+	width: 360px;
+	margin: 0;
+	z-index: 2;
+}
+#tab-creatures .filter input {
+	margin: 0;
+}
+#tab-creatures .sidebar {
+	position: absolute;
+	right: 0;
+	top: 20px;
+	bottom: 74px;
+	width: 250px;
+	margin: 0;
+	padding: 14px 16px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	z-index: 2;
+	background: var(--background-trans);
+	border-radius: 10px 0 0 10px;
+	box-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(3px);
+}
+#tab-creatures .preview-controls {
+	position: absolute;
+	right: 20px;
+	bottom: 20px;
+	margin: 0;
+	z-index: 3;
+}
+#tab-creatures #texture-ribbon {
+	top: auto;
+	bottom: 20px;
+	left: 50%;
+	right: auto;
+	transform: translateX(-50%);
+	/* width must not derive from content: the slot count is computed from the
+	   measured width (ResizeLayer), so a shrink-to-fit width feeds back into
+	   itself and oscillates, making the ribbon flicker */
+	width: 45%;
+	/* cap so the centered pill clears the floating list panel (right edge at
+	   380px) on narrow windows: left edge stays at >= 390px */
+	max-width: calc(100% - 780px);
+	background: var(--background-trans);
+	border-radius: 8px;
+	padding: 5px 8px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+	pointer-events: none;
+}
+#tab-creatures #texture-ribbon #texture-ribbon-next {
+	pointer-events: auto;
+}
+#tab-creatures .list-status.with-quick-filters {
+	height: auto;
+	min-height: 27px;
+	flex-wrap: wrap;
+	row-gap: 1px;
+	column-gap: 10px;
+	font-size: 11.5px;
+	align-content: center;
+	padding-bottom: 4px;
+}
+#tab-creatures .list-container .ui-listbox {
+	bottom: 45px;
+}
+#tab-creatures .browse-mode-switch {
+	position: absolute;
+	left: 20px;
+	top: 20px;
+	z-index: 3;
+	display: flex;
+}
+#tab-creatures .browse-mode-switch li {
+	padding: 7px 16px;
+	font-size: 13px;
+}
+#tab-creatures .list-container {
+	top: 64px;
+}
+#tab-creatures .sidebar {
+	top: 64px;
+}
+#creature-sidebar .header {
+	text-transform: uppercase;
+	font-size: 11px;
+	letter-spacing: 0.6px;
+	font-weight: bold;
+	color: var(--font-faded);
+	margin: 14px 0 6px;
+}
+#creature-sidebar > div > .header:first-child {
+	margin-top: 4px;
+}
+#tab-creatures .preview-dropdown-overlay {
+	left: 400px;
+	top: 20px;
+}
+#tab-creatures {
+	grid-template-columns: 1fr 1fr auto;
+}
+#tab-creatures #creature-sidebar .ui-checkboxlist, #tab-creatures #creature-sidebar .ui-listbox {
+	height: 156px;
+}
+#tab-creatures #creature-sidebar .list-toggles {
+	font-size: 14px;
+	text-align: center;
+	margin-top: 5px;
+}
