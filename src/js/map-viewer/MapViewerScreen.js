@@ -845,7 +845,7 @@ module.exports = {
 			const entry = listfile.getByIDOrUnknown(file_data_id);
 
 			core.view.mapViewerActive = false;
-			require('../modules').tab_models.setActive();
+			require('../modules').tab_creatures.setActive();
 
 			core.view.userInputFilterModels = '';
 			core.view.overrideModelList = [entry];

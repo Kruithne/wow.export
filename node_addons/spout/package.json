@@ -1,0 +1,12 @@
+{
+	"name": "spout",
+	"version": "1.0.0",
+	"description": "Spout DirectX sender bindings for wow.export",
+	"main": "index.js",
+	"scripts": {
+		"install": "echo 'Skipping automatic native build - use build script instead'"
+	},
+	"dependencies": {
+		"node-addon-api": "^8.5.0"
+	}
+}

@@ -186,13 +186,27 @@ function rebuild_addon(addon_dir) {
 	const args = [
 		'rebuild',
 		`--target=${nw_version}`,
-		`--nodedir=${node_dir}`
+		`--nodedir=${node_dir}`,
+		`--arch=${target_arch}`
 	];
 
-	execFileSync('node-gyp', [...args, `--arch=${target_arch}`], {
+	// Invoke node-gyp's script directly via node with the shell disabled.
+	// Running it through a shell re-splits arguments on spaces, which corrupts
+	// any path containing one (e.g. a Windows user profile like
+	// "C:\Users\First Last\..."), breaking --nodedir.
+	const npm_root = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: true }).trim();
+	const node_gyp_bin = resolve(npm_root, 'node-gyp/bin/node-gyp.js');
+
+	let node_exe = 'node';
+	if (process.platform === 'win32') {
+		try {
+			node_exe = execFileSync('where', ['node'], { encoding: 'utf8' }).split(/\r?\n/)[0].trim();
+		} catch {}
+	}
+
+	execFileSync(node_exe, [node_gyp_bin, ...args], {
 		cwd: addon_dir,
 		stdio: 'inherit',
-		shell: true,
 		env: {
 			...process.env,
 			npm_config_runtime: 'node-webkit',

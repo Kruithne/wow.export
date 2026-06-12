@@ -3,9 +3,6 @@ const log = require('./log');
 const BLPFile = require('./casc/blp');
 const TiledPNGWriter = require('./tiled-png-writer');
 
-// fixed pixel size of a wmo minimap block (blockX/blockY step; 2 px per world unit).
-const MINIMAP_BLOCK_SIZE = 256;
-
 let wmo_minimap_textures = null;
 
 const load_minimap_textures = async () => {
@@ -173,12 +170,8 @@ const composite_tile = async (tile_list, size, casc, scale = 1) => {
 		const blp = new BLPFile(blp_data);
 		const canvas = blp.toCanvas(0b1111);
 
-		// each minimap blp renders its group footprint at true scale into a fixed
-		// MINIMAP_BLOCK_SIZE cell with content anchored bottom-LEFT; cropped tiles are
-		// smaller than the block, so bottom-anchor them (left stays at the cell edge).
-		// otherwise thin groups (tunnels, connectors) float at the cell top and misalign.
 		const draw_x = tile.drawX * scale;
-		const draw_y = (tile.drawY + (MINIMAP_BLOCK_SIZE - canvas.height)) * scale;
+		const draw_y = tile.drawY * scale;
 		const draw_width = canvas.width * tile.scaleX * scale;
 		const draw_height = canvas.height * tile.scaleY * scale;
 

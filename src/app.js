@@ -13,6 +13,11 @@ BUILD_RELEASE = process.env.BUILD_RELEASE === 'true';
 // check for --disable-auto-update flag
 const DISABLE_AUTO_UPDATE = nw.App.argv.includes('--disable-auto-update');
 
+// Custom OBS build: auto-update is disabled so official releases can never
+// overwrite local modifications (e.g. the OBS browser source). Set this back to
+// true if you ever want this build to track upstream releases again.
+const ALLOW_AUTO_UPDATE = false;
+
 /**
  * crash() is used to inform the user that the application has exploded.
  * It is purposely global and primitive as we have no idea what state
@@ -96,6 +101,8 @@ const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 const Shaders = require('./js/3D/Shaders');
 const gpuInfo = require('./js/gpu-info');
+const obsServer = require('./js/obs-server');
+const zoneLighting = require('./js/3D/zone-lighting');
 
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
@@ -576,6 +583,22 @@ document.addEventListener('click', function(e) {
 	// Load configuration.
 	await config.load();
 
+	// Start the OBS browser source server if enabled, and keep it in sync with
+	// any changes made to its configuration from the settings screen.
+	obsServer.apply_config();
+	core.view.$watch('config.obsServerEnabled', () => obsServer.apply_config());
+	core.view.$watch('config.obsSpoutEnabled', () => obsServer.apply_config());
+	core.view.$watch('config.obsServerPort', () => obsServer.apply_config());
+	core.view.$watch('config.obsServerFPS', () => obsServer.apply_config());
+
+	// Drive real zone lighting (LightData) for the model/character preview.
+	zoneLighting.set_map(core.view.config.zoneLightMapId);
+	zoneLighting.set_time(core.view.config.zoneLightTime);
+	zoneLighting.set_enabled(core.view.config.zoneLightEnabled);
+	core.view.$watch('config.zoneLightEnabled', (v) => zoneLighting.set_enabled(v));
+	core.view.$watch('config.zoneLightMapId', (v) => zoneLighting.set_map(v));
+	core.view.$watch('config.zoneLightTime', (v) => zoneLighting.set_time(v));
+
 	// Set-up default export directory if none configured.
 	if (core.view.config.exportDirectory === '') {
 		core.view.config.exportDirectory = path.join(os.homedir(), 'wow.export');
@@ -685,7 +708,7 @@ document.addEventListener('click', function(e) {
 	tactKeys.load();
 
 	// Check for updates.
-	if (BUILD_RELEASE && !DISABLE_AUTO_UPDATE) {
+	if (ALLOW_AUTO_UPDATE && BUILD_RELEASE && !DISABLE_AUTO_UPDATE) {
 		core.showLoadingScreen(1, 'Checking for updates...');
 
 		updater.checkForUpdates().then(updateAvailable => {

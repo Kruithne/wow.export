@@ -440,11 +440,17 @@ const deflateBuffer = util.promisify(zlib.deflate);
 		// Grab the contents of the project manifest file.
 		const meta = JSON.parse(await fs.readFile(MANIFEST_FILE));
 
+		// Windows binary metadata (PE headers) only accepts a numeric version
+		// (e.g. 1.2.3). The manifest version can be any string (e.g. a
+		// "0.2.18-obs" marker), so derive a numeric-only version for the binary
+		// metadata while leaving the full version for display.
+		const winVersion = (String(meta.version).match(/^\d+(?:\.\d+)*/)?.[0]) || '0.0.0';
+
 		// Set resource strings for the Windows binary.
 		if (build.rcedit) {
 			const rcConfig = Object.assign({
-				'file-version': meta.version,
-				'product-version': meta.version
+				'file-version': winVersion,
+				'product-version': winVersion
 			}, build.rcedit);
 
 			const placeholders = { year: new Date().getFullYear() };
@@ -494,7 +500,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					if (metadata.icon)
 						bunArgs.push('--windows-icon=' + path.resolve(metadata.icon));
 
-					bunArgs.push('--windows-version=' + meta.version);
+					bunArgs.push('--windows-version=' + winVersion);
 				}
 
 				log.info('Applied updater metadata: *%s*', metadata.title || 'unknown');
@@ -556,7 +562,7 @@ const deflateBuffer = util.promisify(zlib.deflate);
 					if (metadata.icon)
 						bunArgs.push('--windows-icon=' + path.resolve(metadata.icon));
 
-					bunArgs.push('--windows-version=' + meta.version);
+					bunArgs.push('--windows-version=' + winVersion);
 				}
 
 				log.info('Applied installer metadata: *%s*', metadata.title || 'unknown');

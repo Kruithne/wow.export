@@ -1,13 +1,26 @@
-## 0.2.18 (??-??-2026)
+## 0.2.18-obs (custom build, updated 12-06-2026)
+- Added a "Tree view" toggle to all file list tabs (models, textures, audio, text, fonts), displaying files in a collapsible folder hierarchy instead of a flat path list. Folders list first with expand/collapse boxes; typing in the filter auto-expands matching branches.
+- Added a "listboxTreeView" configuration option that persists the tree view preference across sessions.
+- Fixed constant flickering of the texture ribbon in the combined Models/Creatures tab, caused by a feedback loop between the ribbon's content-driven width and its width-derived slot count.
+- Moved the texture ribbon in the combined Models/Creatures tab from the top of the preview to bottom-center, aligned with the viewer title.
+- Removed the floating screenshot and copy-to-clipboard buttons from the Models/Creatures preview (superseded by the Export PNG (3D Preview) button).
+- Fixed the animation playback controls overlapping the file list panel in the combined Models/Creatures tab.
+- Fixed the wrapped list status bar covering list rows above the filter box in the combined Models/Creatures tab.
+- Fixed the texture ribbon sliding under the file list panel on narrow windows.
+
+## 0.2.18-obs (custom build)
+- Added an OBS Browser Source: streams the live 3D model/character preview over a local web server (default http://localhost:25478/) for use as a transparent OBS overlay while streaming. Configurable under Settings (enable, port, frame rate, quality, max resolution).
+
+## 0.2.19 (??-??-2026)
 - Added an "Export WMO Minimap" button to the model viewer for WMOs with minimaps.
 - Added "Maps" tab to MPQ Legacy builds with map previews and exports.
 - Added ability to export minimaps directly from maps for MPQ legacy builds.
 - Added ability to export terrain with pre-baked and alpha map support for MPQ legacy builds.
 - Added support for extended character customization (Dracthyr, Demon Hunter, Mechagnome etc).
 - Added support for gender/class item texture variants.
-- Fixed terrain blending in the map viewer.
-- Fixed WMO minimaps to render properly for preview/export.
 - Fixed an issue that caused Mechagnome customization textures to render incorrectly.
+
+## 0.2.18 (11-05-2026)
 - Fixed GLTF primitives missing material index crashing Unreal Engine.
 - Improved rendering of WMO models in the map viewer.
 

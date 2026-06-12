@@ -153,6 +153,7 @@ const makeNewView = () => {
 		legacyModelViewerAutoAdjust: true, // Automatic camera adjustment for legacy viewer.
 		creatureViewerContext: null, // 3D context for the creature viewer.
 		creatureViewerActiveType: 'none', // Type of creature model actively selected ('m2', 'wmo', 'none').
+		creatureViewerTitle: '', // Display name of the currently previewed model/creature.
 		creatureViewerGeosets: [], // Active creature M2 geoset control.
 		creatureViewerSkins: [], // Active creature M2 model skins.
 		creatureViewerSkinsSelection: [], // Selected creature M2 model skin.
@@ -256,6 +257,9 @@ const makeNewView = () => {
 		colorPickerOpenFor: null, // Currently open color picker option ID.
 		colorPickerPosition: { x: 0, y: 0 }, // Color picker popup position.
 		chrImportChrName: '', // Character import, character name input.
+		chrImportedInfo: null, // Metadata about the last imported character (name, realm, region, etc.) for display.
+		chrImportedInfoPos: null, // Live { x, y } position of the draggable imported-info card.
+		zoneLightMaps: [], // [{ id, label }] list of maps for the zone lighting picker.
 		chrImportRegions: [],
 		chrImportSelectedRegion: '',
 		chrImportRealms: [],
@@ -266,6 +270,7 @@ const makeNewView = () => {
 		chrImportTargetModelID: 0, // Target model ID for import choices validation.
 		chrImportChoices: [], // Temporary storage for character import choices.
 		chrImportWowheadURL: '', // Wowhead dressing room url
+		chrImportArmoryURL: '', // Blizzard armory character URL for link-based import
 		characterImportMode: 'none', // Controls visibility of character import interface ('none', 'BNET', 'WHEAD')
 		chrEquippedItems: {}, // Equipped items by slot id (e.g., { 1: item_id, 5: item_id })
 		chrEquippedItemSkins: {}, // Item skin selection by slot id (e.g., { 1: modifier_id })

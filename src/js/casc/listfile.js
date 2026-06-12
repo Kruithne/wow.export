@@ -591,6 +591,11 @@ const applyPreload = (rootEntries) => {
 
 			const filter_and_format = (preload_map) => {
 				const filtered_ids = filterMapToIds(preload_map);
+
+				// match formatEntries ordering: by ID, or alphabetically by name
+				if (core.view.config.listfileSortByID)
+					filtered_ids.sort((a, b) => a - b);
+
 				const formatted_array = new Array(filtered_ids.length);
 				for (let i = 0; i < filtered_ids.length; i++) {
 					const fid = filtered_ids[i];
@@ -598,6 +603,10 @@ const applyPreload = (rootEntries) => {
 					formatted_array[i] = `${filename} [${fid}]`;
 				}
 				preload_map.clear();
+
+				if (!core.view.config.listfileSortByID)
+					formatted_array.sort();
+
 				return formatted_array;
 			};
 

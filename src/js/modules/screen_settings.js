@@ -19,7 +19,13 @@ module.exports = {
 
 	template: `
 		<div id="config-wrapper">
+		<div id="config-search">
+			<input type="text" ref="searchInput" v-model.trim="search" placeholder="Search settings... (Ctrl+F)" spellcheck="false"/>
+			<span v-if="search.length > 0" class="config-search-count">{{ search_match_count }} match{{ search_match_count === 1 ? '' : 'es' }}</span>
+			<span v-if="search.length > 0" class="config-search-clear" title="Clear search" @click="search = ''">&times;</span>
+		</div>
 		<div id="config" :class="{ toastgap: $core.view.toast !== null }">
+			<div v-if="search.length > 0 && search_match_count === 0" id="config-no-results">No settings match "{{ search }}"</div>
 			<div>
 				<h1>Export Directory</h1>
 				<p>Local directory where files will be exported to.</p>
@@ -217,6 +223,47 @@ module.exports = {
 				</label>
 			</div>
 			<div>
+				<h1>3D Preview Export Quality</h1>
+				<p>Supersampling multiplier for exported 3D preview images (PNG, transparent). Higher values render the model at a multiple of the on-screen resolution for a sharper, high-quality image. Larger windows produce larger exports.</p>
+				<ul class="ui-multi-button" id="export-preview-scale-multi">
+					<li :class="{ selected: $core.view.configEdit.previewExportScale == 1 }" @click.stop="$core.view.configEdit.previewExportScale = 1">1x</li>
+					<li :class="{ selected: $core.view.configEdit.previewExportScale == 2 }" @click.stop="$core.view.configEdit.previewExportScale = 2">2x</li>
+					<li :class="{ selected: $core.view.configEdit.previewExportScale == 3 }" @click.stop="$core.view.configEdit.previewExportScale = 3">3x</li>
+					<li :class="{ selected: $core.view.configEdit.previewExportScale == 4 }" @click.stop="$core.view.configEdit.previewExportScale = 4">4x</li>
+				</ul>
+			</div>
+			<div>
+				<h1>Crop Preview Export To Model</h1>
+				<p>If enabled, exported 3D preview images are cropped to the model's edges so the subject fills the frame (no wasted empty space), giving a much higher effective resolution.</p>
+				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.configEdit.previewExportCrop"/>
+					<span>Enable</span>
+				</label>
+			</div>
+			<div>
+				<h1>OBS Browser Source (Live Model Feed)</h1>
+				<p>Streams the active 3D model/character preview as a seamless 1080p MJPEG video stream for use as an OBS Browser Source.</p>
+				<p>In OBS, add a <b>Browser</b> source, paste the URL below and set its size to <b>1920x1080</b>. MJPEG has no transparency, so the model is shown over the chroma colour below - add a <b>Chroma Key</b> filter in OBS (keyed to that colour) for a transparent overlay. Disable the model viewer background so only the chroma colour shows.</p>
+				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.configEdit.obsServerEnabled"/>
+					<span>Enable</span>
+				</label>
+				<p v-if="$core.view.configEdit.obsServerEnabled">Browser Source URL <input type="text" class="long" :value="obs_source_url" readonly onclick="this.select()"/></p>
+				<p>Port <input type="number" min="1" max="65535" v-model.number="$core.view.configEdit.obsServerPort"/></p>
+				<p>Frame Rate <input type="number" min="1" max="60" v-model.number="$core.view.configEdit.obsServerFPS"/> FPS</p>
+				<p>Quality <input type="number" min="1" max="100" v-model.number="$core.view.configEdit.obsServerQuality"/> (1-100)</p>
+				<p>Chroma Key Colour <input type="color" v-model="$core.view.configEdit.obsServerChromaColor"/> <input type="text" v-model.trim="$core.view.configEdit.obsServerChromaColor" maxlength="7" style="width:90px"/></p>
+			</div>
+			<div>
+				<h1>Spout Output (OBS, true transparency)</h1>
+				<p>Shares the live 3D preview directly to the GPU via Spout - smooth, sharp and light on memory, with true transparency (no chroma key needed).</p>
+				<p>Requires the <b>Spout2 plugin</b> for OBS. In OBS add a <b>Spout2 Capture</b> source and pick the <b>wow.export</b> sender. Uses the Frame Rate setting above; max resolution <input type="number" min="64" max="4096" v-model.number="$core.view.configEdit.obsServerMaxSize"/> px.</p>
+				<label class="ui-checkbox">
+					<input type="checkbox" v-model="$core.view.configEdit.obsSpoutEnabled"/>
+					<span>Enable</span>
+				</label>
+			</div>
+			<div>
 				<h1>Regular Expression Filtering (Advanced)</h1>
 				<p>Allows use of regular expressions in filtering lists.</p>
 				<label class="ui-checkbox">
@@ -353,7 +400,8 @@ module.exports = {
 		</div>
 		<div id="config-buttons">
 			<input type="button" value="Discard" :class="{ disabled: $core.view.isBusy }" @click="handle_discard"/>
-			<input type="button" value="Apply" :class="{ disabled: $core.view.isBusy }" @click="handle_apply"/>
+			<input type="button" :value="has_unsaved_changes ? 'Apply Changes' : 'Apply'" :class="{ disabled: $core.view.isBusy, attention: has_unsaved_changes }" @click="handle_apply"/>
+			<span v-if="has_unsaved_changes" id="config-unsaved">Unsaved changes</span>
 			<input type="button" id="config-reset" value="Reset to Defaults" :class="{ disabled: $core.view.isBusy }" @click="handle_reset"/>
 		</div>
 		</div>
@@ -361,13 +409,29 @@ module.exports = {
 
 	data() {
 		return {
-			default_config: null
+			default_config: null,
+			search: '',
+			search_match_count: 0
 		};
+	},
+
+	watch: {
+		search() {
+			this.$nextTick(() => this.apply_search());
+		}
 	},
 
 	computed: {
 		is_edit_export_path_concerning() {
 			return !!this.$core.view.configEdit?.exportDirectory?.match(/\s/g);
+		},
+
+		has_unsaved_changes() {
+			try {
+				return JSON.stringify(this.$core.view.configEdit) !== JSON.stringify(this.$core.view.config);
+			} catch (e) {
+				return false;
+			}
 		},
 
 		default_character_path() {
@@ -376,6 +440,10 @@ module.exports = {
 
 		cache_size_formatted() {
 			return generics.filesize(this.$core.view.cacheSize);
+		},
+
+		obs_source_url() {
+			return 'http://localhost:' + (this.$core.view.configEdit.obsServerPort || 25478) + '/';
 		},
 
 		available_locale_keys() {
@@ -393,6 +461,31 @@ module.exports = {
 	},
 
 	methods: {
+		// Live settings filter: show only blocks whose text matches the query.
+		// Operates on the rendered DOM so it works without restructuring the
+		// template into data-driven sections.
+		apply_search() {
+			const blocks = this.$el.querySelectorAll('#config > div:not(#config-no-results)');
+			const query = this.search.toLowerCase();
+
+			let matches = 0;
+			for (const block of blocks) {
+				const match = query.length === 0 || block.textContent.toLowerCase().includes(query);
+				block.classList.toggle('search-hidden', !match);
+				if (match)
+					matches++;
+			}
+
+			this.search_match_count = query.length === 0 ? 0 : matches;
+		},
+
+		handle_search_hotkey(event) {
+			if (event.ctrlKey && event.key === 'f' && this.$core.view.activeModule?.__name === 'settings') {
+				event.preventDefault();
+				this.$refs.searchInput?.focus();
+			}
+		},
+
 		handle_cache_clear(event) {
 			if (!event.target.classList.contains('disabled'))
 				this.$core.events.emit('click-cache-clear');
@@ -460,5 +553,12 @@ module.exports = {
 
 	mounted() {
 		this.$core.view.configEdit = Object.assign({}, this.$core.view.config);
+
+		this._search_hotkey = (e) => this.handle_search_hotkey(e);
+		document.addEventListener('keydown', this._search_hotkey);
+	},
+
+	unmounted() {
+		document.removeEventListener('keydown', this._search_hotkey);
 	}
 };
