@@ -5,6 +5,7 @@
 - Added ability to export terrain with pre-baked and alpha map support for MPQ legacy builds.
 - Added support for extended character customization (Dracthyr, Demon Hunter, Mechagnome etc).
 - Added support for gender/class item texture variants.
+- Fixed terrain blending in the map viewer.
 - Fixed WMO minimaps to render properly for preview/export.
 - Fixed an issue that caused Mechagnome customization textures to render incorrectly.
 - Fixed GLTF primitives missing material index crashing Unreal Engine.

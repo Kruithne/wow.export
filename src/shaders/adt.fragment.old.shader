@@ -35,23 +35,20 @@ void main() {
 	alphas[6] = uLayerCount > 6 ? texture(uAlphaBlend5, mod(vTextureCoord, 1.0)).r : 0.0;
 	alphas[7] = uLayerCount > 7 ? texture(uAlphaBlend6, mod(vTextureCoord, 1.0)).r : 0.0;
 
-	// simple alpha blending without height-based weighting
+	float overlay_sum = alphas[1] + alphas[2] + alphas[3] + alphas[4] + alphas[5] + alphas[6] + alphas[7];
+	alphas[0] = 1.0 - clamp(overlay_sum, 0.0, 1.0);
+
 	vec3 final_color = vec3(0.0);
-	float remaining = 1.0;
-
-	// base layer
-	vec2 tc0 = vTextureCoord * (8.0 / uLayerScales[0]);
-	final_color = texture(uDiffuseLayers, vec3(tc0, uDiffuseIndices[0])).rgb;
-
-	// blend layers 1-7 on top
-	for (int i = 1; i < 8; i++) {
+	float weight_sum = 0.0;
+	for (int i = 0; i < 8; i++) {
 		if (i >= uLayerCount)
 			break;
 
 		vec2 tc = vTextureCoord * (8.0 / uLayerScales[i]);
-		vec3 layer_color = texture(uDiffuseLayers, vec3(tc, uDiffuseIndices[i])).rgb;
-		final_color = mix(final_color, layer_color, alphas[i]);
+		final_color += texture(uDiffuseLayers, vec3(tc, uDiffuseIndices[i])).rgb * alphas[i];
+		weight_sum += alphas[i];
 	}
+	final_color /= weight_sum; // weight_sum == max(1, overlay_sum), never zero
 
 	fragColor = vec4(final_color * vVertexColor.rgb * 2.0, 1.0);
 }
