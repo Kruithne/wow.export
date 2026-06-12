@@ -96,6 +96,7 @@ const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 const Shaders = require('./js/3D/Shaders');
 const gpuInfo = require('./js/gpu-info');
+const zoneLighting = require('./js/3D/zone-lighting');
 
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
@@ -581,6 +582,14 @@ document.addEventListener('click', function(e) {
 		core.view.config.exportDirectory = path.join(os.homedir(), 'wow.export');
 		log.write('No export directory set, setting to %s', core.view.config.exportDirectory);
 	}
+
+	// Drive real zone lighting (LightData) for the model/character preview.
+	zoneLighting.set_map(core.view.config.zoneLightMapId);
+	zoneLighting.set_time(core.view.config.zoneLightTime);
+	zoneLighting.set_enabled(core.view.config.zoneLightEnabled);
+	core.view.$watch('config.zoneLightEnabled', (v) => zoneLighting.set_enabled(v));
+	core.view.$watch('config.zoneLightMapId', (v) => zoneLighting.set_map(v));
+	core.view.$watch('config.zoneLightTime', (v) => zoneLighting.set_time(v));
 
 	listfile.preload();
 	dbd_manifest.preload();
