@@ -30,6 +30,7 @@ const textureRibbon = require('../ui/texture-ribbon');
 const textureExporter = require('../ui/texture-exporter');
 const modelViewerUtils = require('../ui/model-viewer-utils');
 const character_appearance = require('../ui/character-appearance');
+const zoneLighting = require('../3D/zone-lighting');
 
 const active_skins = new Map();
 let selected_variant_texture_ids = new Array();
@@ -1389,6 +1390,53 @@ module.exports = {
 						<input type="checkbox" v-model="$core.view.config.modelViewerShowBackground"/>
 						<span>Show Background</span>
 					</label>
+					<label class="ui-checkbox" title="Render a soft shadow beneath the model">
+						<input type="checkbox" v-model="$core.view.config.modelViewerShowShadow"/>
+						<span>Render Shadow</span>
+					</label>
+					<label class="ui-checkbox" title="Use a free orbit camera (off = locked, upright camera that rotates the model)">
+						<input type="checkbox" v-model="$core.view.config.modelViewerUse3DCamera"/>
+						<span>Use 3D Camera</span>
+					</label>
+					<span class="header">Lighting</span>
+					<label v-if="false" class="ui-checkbox" title="Light the model using a zone's real in-game lighting (LightData)">
+						<input type="checkbox" v-model="$core.view.config.zoneLightEnabled"/>
+						<span>In-game zone lighting</span>
+					</label>
+					<template v-if="false && $core.view.config.zoneLightEnabled">
+						<label class="ui-select-label">
+							<span class="select-prefix"><span class="prefix-label">Zone:</span></span>
+							<select class="ui-select" v-model.number="$core.view.config.zoneLightMapId">
+								<option v-for="m in $core.view.zoneLightMaps" :key="m.id" :value="m.id">{{ m.label }}</option>
+							</select>
+						</label>
+						<div class="zone-light-time">
+							<span class="prefix-label">Time of day: {{ format_zone_time($core.view.config.zoneLightTime) }}</span>
+							<input type="range" min="0" max="2880" step="15" v-model.number="$core.view.config.zoneLightTime" style="width:100%"/>
+						</div>
+					</template>
+					<label class="ui-checkbox" title="Use an adjustable light you can move and tune" :class="{ disabled: $core.view.config.zoneLightEnabled }">
+						<input type="checkbox" v-model="$core.view.config.modelViewerCustomLight" :disabled="$core.view.config.zoneLightEnabled"/>
+						<span>Adjustable light</span>
+					</label>
+					<template v-if="$core.view.config.modelViewerCustomLight && !$core.view.config.zoneLightEnabled">
+						<div class="light-gizmo-wrap">
+							<span class="prefix-label">Light direction</span>
+							<div class="light-gizmo" @mousedown="start_light_drag" title="Drag to aim the light">
+								<div class="light-gizmo-dot" :style="light_dot_style"></div>
+							</div>
+							<span class="light-gizmo-readout">H {{ $core.view.config.modelViewerLightAzimuth }}&deg; &middot; V {{ $core.view.config.modelViewerLightElevation }}&deg;</span>
+						</div>
+						<div class="light-control">
+							<span class="prefix-label">Intensity: {{ light_value_label($core.view.config.modelViewerLightIntensity) }}</span>
+							<input type="range" min="0" max="2" step="0.05" v-model.number="$core.view.config.modelViewerLightIntensity"/>
+						</div>
+						<div class="light-control">
+							<span class="prefix-label">Ambient: {{ light_value_label($core.view.config.modelViewerLightAmbient) }}</span>
+							<input type="range" min="0" max="1" step="0.05" v-model.number="$core.view.config.modelViewerLightAmbient"/>
+						</div>
+						<input type="button" value="Reset Light" class="light-reset-btn" @click="reset_custom_light"/>
+					</template>
 				</div>
 				<div v-show="sidebar_tab === 'model'">
 					<span v-if="$core.view.creatureViewerActiveType !== 'm2' && $core.view.creatureViewerActiveType !== 'wmo'" class="sidebar-hint">Preview a model or creature to see its geosets, skins and groups.</span>
@@ -1499,6 +1547,17 @@ module.exports = {
 
 			return t;
 		},
+
+		// Position of the light gizmo dot (horizontal = azimuth, vertical =
+		// elevation; top of pad = light from above).
+		light_dot_style() {
+			const az = this.$core.view.config.modelViewerLightAzimuth ?? 45;
+			const el = this.$core.view.config.modelViewerLightElevation ?? 35;
+			return {
+				left: ((az / 360) * 100) + '%',
+				top: (((90 - el) / 180) * 100) + '%'
+			};
+		}
 	},
 
 	methods: {
@@ -1562,6 +1621,9 @@ module.exports = {
 					fitCamera: null
 				});
 			}
+
+			// populate the zone lighting map picker (shared with characters tab)
+			zoneLighting.load_map_picker(this.$core);
 
 			this.$core.hideLoadingScreen();
 		},
@@ -1675,6 +1737,52 @@ module.exports = {
 			}).filter(item => item);
 
 			await export_files(this.$core, creature_items);
+		},
+
+		light_value_label(value) {
+			return Number(value ?? 0).toFixed(2);
+		},
+
+		reset_custom_light() {
+			const cfg = this.$core.view.config;
+			cfg.modelViewerLightAzimuth = 45;
+			cfg.modelViewerLightElevation = 35;
+			cfg.modelViewerLightIntensity = 0.8;
+			cfg.modelViewerLightAmbient = 0.45;
+		},
+
+		// Drag the light gizmo to set azimuth (x) and elevation (y) at once.
+		start_light_drag(event) {
+			const pad = event.currentTarget;
+			const cfg = this.$core.view.config;
+
+			const update = (e) => {
+				const rect = pad.getBoundingClientRect();
+				const fx = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+				const fy = Math.min(Math.max((e.clientY - rect.top) / rect.height, 0), 1);
+				cfg.modelViewerLightAzimuth = Math.round(fx * 360);
+				cfg.modelViewerLightElevation = Math.round(90 - fy * 180);
+			};
+
+			update(event);
+
+			const move = (e) => update(e);
+			const up = () => {
+				document.removeEventListener('mousemove', move);
+				document.removeEventListener('mouseup', up);
+			};
+
+			document.addEventListener('mousemove', move);
+			document.addEventListener('mouseup', up);
+			event.preventDefault();
+		},
+
+		// Format a zone-lighting time value (0-2880 half-minutes) as HH:MM.
+		format_zone_time(value) {
+			const total_minutes = Math.round((value | 0) / 2);
+			const h = Math.floor(total_minutes / 60) % 24;
+			const m = total_minutes % 60;
+			return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 		},
 
 		toggle_animation_pause() {

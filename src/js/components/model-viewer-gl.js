@@ -24,6 +24,37 @@ const parse_hex_color = (hex) => {
 	];
 };
 
+/**
+ * Scan a 2D context for the bounding box of pixels above an alpha threshold,
+ * used to crop a transparent capture down to just the rendered model.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} w
+ * @param {number} h
+ * @returns {{ min_x: number, min_y: number, max_x: number, max_y: number }|null}
+ */
+function find_opaque_bounds(ctx, w, h) {
+	const data = ctx.getImageData(0, 0, w, h).data;
+	const ALPHA = 10;
+
+	let min_x = w, min_y = h, max_x = -1, max_y = -1;
+
+	for (let y = 0; y < h; y++) {
+		for (let x = 0; x < w; x++) {
+			if (data[(y * w + x) * 4 + 3] > ALPHA) {
+				if (x < min_x) min_x = x;
+				if (x > max_x) max_x = x;
+				if (y < min_y) min_y = y;
+				if (y > max_y) max_y = y;
+			}
+		}
+	}
+
+	if (max_x < 0)
+		return null;
+
+	return { min_x, min_y, max_x, max_y };
+}
+
 // general model camera fit constants
 const CAMERA_FIT_DIAGONAL_ANGLE = 45;
 const CAMERA_FIT_DISTANCE_MULTIPLIER = 2;
@@ -249,6 +280,29 @@ module.exports = {
 			// update controls
 			this.controls.update();
 
+			// enforce character model orientation every frame. the rotation is
+			// otherwise only pushed via the controls callback, which a freshly
+			// loaded renderer can miss (load-order race) - leaving the model
+			// misaligned with the fixed light so it appears lit from behind.
+			// applying it here is idempotent and covers every ordering.
+			if (this.context.useCharacterControls && activeRenderer?.setTransform) {
+				if (typeof this.controls.model_rotation_y === 'number')
+					this.last_chr_rotation = this.controls.model_rotation_y;
+
+				activeRenderer.setTransform([0, 0, 0], [0, this.last_chr_rotation ?? -Math.PI / 2, 0], [1, 1, 1]);
+			}
+
+			this.draw_scene();
+
+			requestAnimationFrame(() => this.render());
+		},
+
+		// Draws the current scene to the bound canvas at its current backing
+		// resolution. Separated from render() so it can be reused for off-cycle
+		// high-resolution captures without disturbing the animation loop.
+		draw_scene: function() {
+			const activeRenderer = this.context.getActiveRenderer?.();
+
 			// clear with appropriate background
 			const is_chr = this.context.useCharacterControls;
 			const show_bg = is_chr ? core.view.config.chrShowBackground : core.view.config.modelViewerShowBackground;
@@ -384,8 +438,71 @@ module.exports = {
 					renderer.render(this.camera.view_matrix, this.camera.projection_matrix);
 				}
 			}
+		},
 
-			requestAnimationFrame(() => this.render());
+		// Render the scene at a multiple of the current resolution and return a
+		// transparent PNG data URL. Runs synchronously (resize -> draw -> read ->
+		// restore) so the browser never paints the upscaled buffer (no flicker).
+		// By default the result is cropped to the model's opaque bounds so the
+		// subject fills the frame instead of wasting resolution on empty space.
+		capture_high_res: function(scale) {
+			const canvas = this.canvas;
+
+			const prev_w = canvas.width;
+			const prev_h = canvas.height;
+
+			// clamp the multiplier and keep within a safe maximum dimension so we
+			// never exceed GL/canvas limits on large windows.
+			const MAX_DIM = 8192;
+			let factor = Math.max(1, Math.min(scale || 1, 4));
+			factor = Math.max(1, Math.min(factor, MAX_DIM / prev_w, MAX_DIM / prev_h));
+
+			const cap_w = Math.max(1, Math.round(prev_w * factor));
+			const cap_h = Math.max(1, Math.round(prev_h * factor));
+
+			try {
+				canvas.width = cap_w;
+				canvas.height = cap_h;
+				this.gl_context.set_viewport(cap_w, cap_h);
+
+				this.draw_scene();
+
+				// Copy into a 2D canvas: the source is a WebGL canvas, so reading
+				// pixels (for cropping) requires a 2D context.
+				const tmp = document.createElement('canvas');
+				tmp.width = cap_w;
+				tmp.height = cap_h;
+				const tctx = tmp.getContext('2d');
+				tctx.drawImage(canvas, 0, 0);
+
+				// When the background is opaque we can't crop; return as-is.
+				const should_crop = core.view.config.previewExportCrop !== false;
+				const bounds = should_crop ? find_opaque_bounds(tctx, cap_w, cap_h) : null;
+				if (!bounds)
+					return tmp.toDataURL('image/png');
+
+				// add a little breathing room around the model
+				const pad = Math.round(Math.max(cap_w, cap_h) * 0.02);
+				const x0 = Math.max(0, bounds.min_x - pad);
+				const y0 = Math.max(0, bounds.min_y - pad);
+				const x1 = Math.min(cap_w - 1, bounds.max_x + pad);
+				const y1 = Math.min(cap_h - 1, bounds.max_y + pad);
+
+				const out_w = x1 - x0 + 1;
+				const out_h = y1 - y0 + 1;
+
+				const out = document.createElement('canvas');
+				out.width = out_w;
+				out.height = out_h;
+				out.getContext('2d').drawImage(tmp, x0, y0, out_w, out_h, 0, 0, out_w, out_h);
+
+				return out.toDataURL('image/png');
+			} finally {
+				canvas.width = prev_w;
+				canvas.height = prev_h;
+				this.gl_context.set_viewport(prev_w, prev_h);
+				this.draw_scene();
+			}
 		},
 
 		recreate_controls: function() {
@@ -394,9 +511,9 @@ module.exports = {
 				this.controls = null;
 			}
 
-			const use_3d_camera = this.context.useCharacterControls ? core.view.config.chrUse3DCamera : true;
+			const use_3d_camera = this.context.useCharacterControls ? core.view.config.chrUse3DCamera : core.view.config.modelViewerUse3DCamera !== false;
 
-			if (this.context.useCharacterControls && !use_3d_camera) {
+			if (!use_3d_camera) {
 				this.controls = new CharacterCameraControlsGL(this.camera, this.canvas);
 				this.controls.on_model_rotate = (rotation_y) => {
 					const active_renderer = this.context.getActiveRenderer?.();
@@ -421,9 +538,10 @@ module.exports = {
 			if (!this.shadow_renderer)
 				return;
 
-			const should_show = this.context.useCharacterControls &&
-				core.view.config.chrRenderShadow &&
-				!core.view.chrModelLoading;
+			const config = core.view.config;
+			const should_show = this.context.useCharacterControls
+				? (config.chrRenderShadow && !core.view.chrModelLoading)
+				: !!config.modelViewerShowShadow;
 
 			this.shadow_renderer.visible = should_show;
 		},
@@ -453,6 +571,10 @@ module.exports = {
 		container.appendChild(canvas);
 		this.canvas = canvas;
 
+		// Expose a high-resolution capture on the canvas so export code (which
+		// already has the canvas element) can produce supersampled screenshots.
+		canvas.captureHighRes = (scale) => this.capture_high_res(scale);
+
 		// create GL context
 		this.gl_context = new GLContext(canvas, {
 			antialias: true,
@@ -469,6 +591,10 @@ module.exports = {
 		// model rotation
 		this.model_rotation_y = 0;
 		this.use_character_controls = false;
+
+		// last known character model rotation; used to keep the model oriented
+		// even when the active controls don't track model rotation (3D camera)
+		this.last_chr_rotation = -Math.PI / 2;
 
 		// create controls
 		this.recreate_controls();
@@ -492,6 +618,11 @@ module.exports = {
 				core.view.$watch('config.chrUse3DCamera', () => this.recreate_controls()),
 				core.view.$watch('config.chrRenderShadow', () => this.update_shadow_visibility()),
 				core.view.$watch('chrModelLoading', () => this.update_shadow_visibility())
+			);
+		} else {
+			this.watchers.push(
+				core.view.$watch('config.modelViewerUse3DCamera', () => this.recreate_controls()),
+				core.view.$watch('config.modelViewerShowShadow', () => this.update_shadow_visibility())
 			);
 		}
 
