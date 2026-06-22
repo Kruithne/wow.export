@@ -17,6 +17,7 @@ const WMOExporter = require('../3D/exporters/WMOExporter');
 const WMOLoader = require('../3D/loaders/WMOLoader');
 const TiledPNGWriter = require('../tiled-png-writer');
 const PNGWriter = require('../png-writer');
+const JSONWriter = require('../3D/writers/JSONWriter');
 const wmo_minimap = require('../wmo-minimap');
 
 const TILE_SIZE = constants.GAME.TILE_SIZE;
@@ -580,7 +581,7 @@ module.exports = {
 				const relative_path = path.join('maps', selected_map_dir, filename);
 				const out_path = ExportHelper.getExportPath(relative_path);
 
-				await wmo_minimap.export_minimap(minimap_data, this.$core.view.casc, out_path, helper);
+				await wmo_minimap.export_minimap(minimap_data, this.$core.view.casc, out_path, helper, selected_wdt.worldModelPlacement, selected_map_id, selected_map_name);
 
 				if (helper.isCancelled())
 					return;
@@ -757,6 +758,31 @@ module.exports = {
 
 				const stats = writer.getStats();
 				log.write('map export complete: %s (%d tiles)', out_path, stats.totalTiles);
+
+				// sidecar describing the stitched image's world-space placement. world_x =
+				// north, world_y = west (yards), matching the wmo minimap sidecar so a single
+				// loader handles both. image axes: horizontal = tileY (x), vertical = tileX (y);
+				// top-left is (min_x, min_y), bottom-right spans one tile past (max_x, max_y).
+				const meta = new JSONWriter(out_path.replace(/\.[^.\/]+$/, '.json'));
+				meta.addProperty('map_id', selected_map_id);
+				meta.addProperty('map_dir', selected_map_dir);
+				meta.addProperty('map_name', selected_map_name);
+				meta.addProperty('tile_size', tile_size);
+				meta.addProperty('tiles', { min_x, max_x, min_y, max_y, wide: tiles_wide, high: tiles_high });
+				meta.addProperty('image', { width: final_width, height: final_height });
+				meta.addProperty('corners', {
+					top_left: {
+						world_x: (32 - min_y) * TILE_SIZE,
+						world_y: (32 - min_x) * TILE_SIZE,
+					},
+					bottom_right: {
+						world_x: (32 - (max_y + 1)) * TILE_SIZE,
+						world_y: (32 - (max_x + 1)) * TILE_SIZE,
+					},
+				});
+				meta.addProperty('modf', null);
+				await meta.write();
+				log.write('map export meta written: %s', meta.out);
 
 				const export_paths = this.$core.openLastExportStream();
 				await export_paths?.writeLine('png:' + out_path);

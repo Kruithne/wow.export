@@ -1,3 +1,4 @@
+const fsp = require('fs').promises;
 const db2 = require('./casc/db2');
 const log = require('./log');
 const BLPFile = require('./casc/blp');
@@ -5,6 +6,9 @@ const TiledPNGWriter = require('./tiled-png-writer');
 
 // fixed pixel size of a wmo minimap block (blockX/blockY step; 2 px per world unit).
 const MINIMAP_BLOCK_SIZE = 256;
+
+// minimap pixels per world unit (group bboxes are scaled x2 in compute_minimap_layout).
+const MINIMAP_PPU = 2;
 
 let wmo_minimap_textures = null;
 
@@ -56,6 +60,7 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 	}
 
 	const tile_positions = [];
+	let model_z_min = Infinity, model_z_max = -Infinity;
 	for (const [group_num, group_tiles] of groups_tiles) {
 		if (group_num >= group_info.length)
 			continue;
@@ -64,6 +69,11 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 		const g_min_x = Math.min(group.boundingBox1[0], group.boundingBox2[0]) * 2;
 		const g_min_y = Math.min(group.boundingBox1[1], group.boundingBox2[1]) * 2;
 		const g_min_z = Math.min(group.boundingBox1[2], group.boundingBox2[2]);
+
+		// model-space vertical extent (unscaled) — used to derive a placed city's
+		// altitude band.
+		model_z_min = Math.min(model_z_min, group.boundingBox1[2], group.boundingBox2[2]);
+		model_z_max = Math.max(model_z_max, group.boundingBox1[2], group.boundingBox2[2]);
 
 		for (const tile of group_tiles) {
 			tile_positions.push({
@@ -157,8 +167,51 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 		grid_size,
 		mask,
 		tiles_by_coord,
-		output_tile_size: OUTPUT_TILE_SIZE
+		output_tile_size: OUTPUT_TILE_SIZE,
+		min_x,
+		max_x,
+		min_y,
+		max_y,
+		model_z_min: isFinite(model_z_min) ? model_z_min : null,
+		model_z_max: isFinite(model_z_max) ? model_z_max : null
 	};
+};
+
+// ppu (2 px per world unit) converts the pixel-space bbox to model units. for a
+// global wmo placed at the wdt origin (pos 0, rot 0) model->world is a straight
+// negate (world = -model). yields the world (x, y) at the exported image's top-left
+// and bottom-right pixels.
+const build_world_meta = (minimap_data, placement, map_id = null, map_name = null) => {
+	const top_left = { world_x: -minimap_data.min_x / MINIMAP_PPU, world_y: -minimap_data.max_y / MINIMAP_PPU };
+	const bottom_right = { world_x: -minimap_data.max_x / MINIMAP_PPU, world_y: -minimap_data.min_y / MINIMAP_PPU };
+
+	const meta = {
+		// engine Map.db2 id of the wmo-backed map (when exported via the maps tab),
+		// distinct from wmo_id (the WMO model id), which is informational.
+		map_id: map_id,
+		map_name: map_name,
+		wmo_id: minimap_data.wmo_id,
+		ppu: MINIMAP_PPU,
+		image: { width: minimap_data.canvas_width, height: minimap_data.canvas_height },
+		corners: { top_left, bottom_right },
+		// model-space vertical extent (z, unscaled); scale + offset by the MODF to get
+		// a placed city's altitude band.
+		model_z: { min: minimap_data.model_z_min, max: minimap_data.model_z_max },
+		modf: null
+	};
+
+	// raw MODF (position, rotation[deg], scale uint16 where 1024=1.0) for a placed wmo.
+	// global wmos pass the WDT placement here; under-terrain cities (ironforge/exodar/
+	// undercity) are placed via an adt MODF, which the model export does not carry.
+	if (placement) {
+		meta.modf = {
+			position: placement.position,
+			rotation: placement.rotation,
+			scale: placement.scale
+		};
+	}
+
+	return meta;
 };
 
 const composite_tile = async (tile_list, size, casc, scale = 1) => {
@@ -188,7 +241,7 @@ const composite_tile = async (tile_list, size, casc, scale = 1) => {
 	return ctx.getImageData(0, 0, size, size);
 };
 
-const export_minimap = async (minimap_data, casc, out_path, helper) => {
+const export_minimap = async (minimap_data, casc, out_path, helper, placement, map_id = null, map_name = null) => {
 	const { tiles_by_coord, canvas_width, canvas_height, output_tile_size } = minimap_data;
 
 	log.write('WMO minimap export: %d tile positions, %dx%d pixels', tiles_by_coord.size, canvas_width, canvas_height);
@@ -210,6 +263,12 @@ const export_minimap = async (minimap_data, casc, out_path, helper) => {
 
 	await writer.write(out_path);
 	log.write('WMO minimap exported: %s', out_path);
+
+	// sidecar describing the image's world-space placement.
+	const meta = build_world_meta(minimap_data, placement, map_id, map_name);
+	const meta_path = out_path.replace(/\.[^.\\/]+$/, '.json');
+	await fsp.writeFile(meta_path, JSON.stringify(meta, null, '\t'));
+	log.write('WMO minimap meta exported: %s', meta_path);
 };
 
-module.exports = { load_minimap_textures, has_minimap, compute_minimap_layout, composite_tile, export_minimap };
+module.exports = { load_minimap_textures, has_minimap, compute_minimap_layout, composite_tile, export_minimap, build_world_meta };
