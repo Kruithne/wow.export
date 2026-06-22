@@ -270,7 +270,7 @@ const load_legacy_adt = (map_dir, tile_y, tile_x) => {
 	const adt = new ADTLoader(data);
 
 	// monolithic pre-cata ADT: load root chunks (geometry)
-	adt.loadRoot();
+	adt.loadRoot(true);
 
 	// rewind and load obj chunks (M2/WMO placements)
 	data.seek(0);

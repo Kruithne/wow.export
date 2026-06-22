@@ -16,10 +16,12 @@ class ADTLoader {
 
 	/**
 	 * Parse this ADT as a root file.
+	 * @param {boolean} [monolithic=false]
 	 */
-	loadRoot() {
+	loadRoot(monolithic = false) {
 		this.chunks = new Array(16 * 16);
 		this.chunkIndex = 0;
+		this.monolithic = monolithic;
 
 		this.handlers = ADTChunkHandlers;
 		this._load();
@@ -113,8 +115,8 @@ const ADTChunkHandlers = {
 			const subChunkSize = data.readUInt32LE();
 			let nextChunkPos = data.offset + subChunkSize;
 
-			// MCNR has 13 bytes of padding not included in chunk size
-			if (chunkID === 0x4D434E52)
+			// monolithic ADTs have 13 bytes of MCNR padding not included in chunk size
+			if (this.monolithic && chunkID === 0x4D434E52)
 				nextChunkPos += 13;
 
 			const handler = RootMCNKChunkHandlers[chunkID];
@@ -373,8 +375,8 @@ const ADTTexChunkHandlers = {
 			const subChunkSize = data.readUInt32LE();
 			let nextChunkPos = data.offset + subChunkSize;
 
-			// MCNR has 13 bytes of padding not included in chunk size
-			if (chunkID === 0x4D434E52)
+			// monolithic ADTs have 13 bytes of MCNR padding not included in chunk size
+			if (this.monolithic && chunkID === 0x4D434E52)
 				nextChunkPos += 13;
 
 			const handler = TexMCNKChunkHandlers[chunkID];
