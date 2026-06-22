@@ -368,10 +368,6 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelsAutoPreview"/>
 					<span>Auto Preview</span>
 				</label>
-				<label class="ui-checkbox" title="Automatically adjust camera when selecting a new model">
-					<input type="checkbox" v-model="$core.view.modelViewerAutoAdjust"/>
-					<span>Auto Camera</span>
-				</label>
 				<label class="ui-checkbox" title="Show a grid in the 3D viewport">
 					<input type="checkbox" v-model="$core.view.config.modelViewerShowGrid"/>
 					<span>Show Grid</span>
@@ -392,6 +388,27 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelViewerShowBackground"/>
 					<span>Show Background</span>
 				</label>
+				<span class="header">Camera</span>
+				<label class="ui-checkbox" title="Automatically adjust camera when selecting a new model">
+					<input type="checkbox" v-model="$core.view.modelViewerAutoAdjust"/>
+					<span>Auto Camera</span>
+				</label>
+				<label class="ui-checkbox" title="Render the preview using an orthographic projection">
+					<input type="checkbox" v-model="$core.view.config.modelViewerOrthographic"/>
+					<span>Orthographic</span>
+				</label>
+				<div class="camera-field" title="Distance of the near clipping plane">
+					<span>Near Clip</span>
+					<input type="number" v-model.number="$core.view.config.modelViewerNearClip" min="0.001" step="0.01"/>
+				</div>
+				<div class="camera-field" title="Distance of the far clipping plane">
+					<span>Far Clip</span>
+					<input type="number" v-model.number="$core.view.config.modelViewerFarClip" min="1" step="1"/>
+				</div>
+				<div v-if="$core.view.config.modelViewerOrthographic" class="camera-field" title="Orthographic zoom scale (lower zooms in)">
+					<span>Ortho Scale</span>
+					<input type="number" v-model.number="$core.view.config.modelViewerOrthoScale" min="0.01" step="0.05"/>
+				</div>
 				<span class="header">Export</span>
 				<label class="ui-checkbox" title="Include textures when exporting models">
 					<input type="checkbox" v-model="$core.view.config.modelsExportTextures"/>

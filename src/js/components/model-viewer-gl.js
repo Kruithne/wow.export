@@ -30,6 +30,8 @@ const CAMERA_FIT_DISTANCE_MULTIPLIER = 2;
 const CAMERA_FIT_ELEVATION_FACTOR = 0.3;
 const CAMERA_FIT_CENTER_OFFSET_Y = -0.5;
 
+const ORTHO_MIN_SIZE = 0.001;
+
 // simple perspective camera implementation
 class PerspectiveCamera {
 	constructor(fov, aspect, near, far) {
@@ -37,6 +39,9 @@ class PerspectiveCamera {
 		this.aspect = aspect;
 		this.near = near;
 		this.far = far;
+
+		this.orthographic = false;
+		this.ortho_size = 5;
 
 		this.position = [0, 0, 5];
 		this.target = [0, 0, 0];
@@ -50,6 +55,11 @@ class PerspectiveCamera {
 	}
 
 	update_projection() {
+		if (this.orthographic) {
+			this.update_projection_ortho();
+			return;
+		}
+
 		const f = 1.0 / Math.tan(this.fov * 0.5 * Math.PI / 180);
 		const nf = 1 / (this.near - this.far);
 
@@ -69,6 +79,19 @@ class PerspectiveCamera {
 		this.projection_matrix[13] = 0;
 		this.projection_matrix[14] = 2 * this.far * this.near * nf;
 		this.projection_matrix[15] = 0;
+	}
+
+	update_projection_ortho() {
+		const t = this.ortho_size;
+		const r = t * this.aspect;
+		const nf = 1 / (this.near - this.far);
+
+		this.projection_matrix.fill(0);
+		this.projection_matrix[0] = 1 / r;
+		this.projection_matrix[5] = 1 / t;
+		this.projection_matrix[10] = 2 * nf;
+		this.projection_matrix[14] = (this.far + this.near) * nf;
+		this.projection_matrix[15] = 1;
 	}
 
 	update_view() {
@@ -248,6 +271,18 @@ module.exports = {
 
 			// update controls
 			this.controls.update();
+
+			// derive orthographic extent from zoom distance so dolly behaves like perspective
+			if (this.camera.orthographic) {
+				const tx = this.controls.target;
+				const px = this.camera.position;
+				const dx = px[0] - tx[0], dy = px[1] - tx[1], dz = px[2] - tx[2];
+				const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+				const half_fov = this.camera.fov * 0.5 * Math.PI / 180;
+
+				this.camera.ortho_size = Math.max(ORTHO_MIN_SIZE, distance * Math.tan(half_fov) * core.view.config.modelViewerOrthoScale);
+				this.camera.update_projection();
+			}
 
 			// clear with appropriate background
 			const is_chr = this.context.useCharacterControls;
@@ -464,7 +499,8 @@ module.exports = {
 		this.context.gl_context = this.gl_context;
 
 		// create camera
-		this.camera = new PerspectiveCamera(70, 1, 0.01, 2000);
+		this.camera = new PerspectiveCamera(70, 1, core.view.config.modelViewerNearClip, core.view.config.modelViewerFarClip);
+		this.camera.orthographic = core.view.config.modelViewerOrthographic;
 
 		// model rotation
 		this.model_rotation_y = 0;
@@ -486,6 +522,21 @@ module.exports = {
 
 		// watchers for character mode
 		this.watchers = [];
+
+		const apply_clip = () => {
+			this.camera.near = core.view.config.modelViewerNearClip;
+			this.camera.far = core.view.config.modelViewerFarClip;
+			this.camera.update_projection();
+		};
+
+		this.watchers.push(
+			core.view.$watch('config.modelViewerNearClip', apply_clip),
+			core.view.$watch('config.modelViewerFarClip', apply_clip),
+			core.view.$watch('config.modelViewerOrthographic', () => {
+				this.camera.orthographic = core.view.config.modelViewerOrthographic;
+				this.camera.update_projection();
+			})
+		);
 
 		if (this.context.useCharacterControls) {
 			this.watchers.push(

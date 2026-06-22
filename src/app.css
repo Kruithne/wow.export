@@ -1464,6 +1464,22 @@ input[type=number]::-webkit-outer-spin-button {
 .sidebar .ui-checkboxlist {
 	margin-top: 10px;
 }
+.sidebar .camera-field {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 5px 0;
+	gap: 10px;
+}
+.sidebar .camera-field span {
+	font-size: 16px;
+}
+.sidebar .camera-field input {
+	width: 80px;
+	margin: 0;
+	padding: 4px 6px;
+	box-sizing: border-box;
+}
 
 #sidebar-button {
 	margin-left: 5px;
