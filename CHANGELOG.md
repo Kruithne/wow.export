@@ -1,3 +1,7 @@
+## 0.2.19 (22-06-2026)
+- Fixed a regression causing modern map exports to fail.
+- Fixed an issue that prevents certain WMO minimaps from exporting fully.
+
 ## 0.2.18 (22-06-2026)
 - Added an "Export WMO Minimap" button to the model viewer for WMOs with minimaps.
 - Added "Maps" tab to MPQ Legacy builds with map previews and exports.
