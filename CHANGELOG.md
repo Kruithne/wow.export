@@ -5,6 +5,9 @@
 - Added ability to export terrain with pre-baked and alpha map support for MPQ legacy builds.
 - Added support for extended character customization (Dracthyr, Demon Hunter, Mechagnome etc).
 - Added support for gender/class item texture variants.
+- Added orthographic camera mode to model viewer.
+- Added JSON sidecar for minimap exports with world-space metadata.
+- Added dungeon journal encounter overlay on to map viewer.
 - Fixed terrain blending in the map viewer.
 - Fixed WMO minimaps to render properly for preview/export.
 - Fixed an issue that caused Mechagnome customization textures to render incorrectly.
