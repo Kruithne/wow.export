@@ -10,6 +10,9 @@ const MINIMAP_BLOCK_SIZE = 256;
 // minimap pixels per world unit (group bboxes are scaled x2 in compute_minimap_layout).
 const MINIMAP_PPU = 2;
 
+// temporary: dump layout/composite diagnostics to log to diagnose missing chunks.
+const DIAG = true;
+
 let wmo_minimap_textures = null;
 
 const load_minimap_textures = async () => {
@@ -59,6 +62,13 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 		groups_tiles.get(tile.groupNum).push(tile);
 	}
 
+	if (DIAG) {
+		log.write('[wmo-minimap diag] wmo_id=%d, groups_with_tiles=%d, group_info.length=%d', wmo_id, groups_tiles.size, group_info.length);
+		const dropped = [...groups_tiles.keys()].filter(g => g >= group_info.length);
+		if (dropped.length > 0)
+			log.write('[wmo-minimap diag] DROPPED groups (group_num >= group_info.length): %s', dropped.join(','));
+	}
+
 	const tile_positions = [];
 	let model_z_min = Infinity, model_z_max = -Infinity;
 	for (const [group_num, group_tiles] of groups_tiles) {
@@ -69,6 +79,17 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 		const g_min_x = Math.min(group.boundingBox1[0], group.boundingBox2[0]) * 2;
 		const g_min_y = Math.min(group.boundingBox1[1], group.boundingBox2[1]) * 2;
 		const g_min_z = Math.min(group.boundingBox1[2], group.boundingBox2[2]);
+
+		if (DIAG) {
+			log.write('[wmo-minimap diag] g%d: bbox x[%s..%s] y[%s..%s] z[%s..%s] -> g_min_x=%s g_min_y=%s, %d blocks [%s]',
+				group_num,
+				group.boundingBox1[0].toFixed(1), group.boundingBox2[0].toFixed(1),
+				group.boundingBox1[1].toFixed(1), group.boundingBox2[1].toFixed(1),
+				group.boundingBox1[2].toFixed(1), group.boundingBox2[2].toFixed(1),
+				g_min_x.toFixed(1), g_min_y.toFixed(1),
+				group_tiles.length,
+				group_tiles.map(t => `(${t.blockX},${t.blockY})`).join(' '));
+		}
 
 		// model-space vertical extent (unscaled) — used to derive a placed city's
 		// altitude band.
@@ -157,6 +178,23 @@ const compute_minimap_layout = (wmo_id, group_info) => {
 	for (const tile_list of tiles_by_coord.values())
 		tile_list.sort((a, b) => a.zOrder - b.zOrder);
 
+	if (DIAG) {
+		log.write('[wmo-minimap diag] canvas=%dx%d, grid=%dx%d (square %d), positioned_tiles=%d, occupied_cells=%d',
+			canvas_width, canvas_height, grid_width, grid_height, grid_size, positioned_tiles.length, tiles_by_coord.size);
+
+		// cells where blocks from >1 group land together (world-space overlap = expected
+		// multi-floor compositing; useful to correlate with blank-tile gaps).
+		let multi_group_cells = 0;
+		for (const [key, tile_list] of tiles_by_coord) {
+			const groups = new Set(tile_list.map(t => t.groupNum));
+			if (groups.size > 1) {
+				multi_group_cells++;
+				log.write('[wmo-minimap diag] cell %s: %d blocks, groups [%s]', key, tile_list.length, [...groups].join(','));
+			}
+		}
+		log.write('[wmo-minimap diag] cells with multi-group overlap: %d', multi_group_cells);
+	}
+
 	return {
 		wmo_id,
 		tiles: positioned_tiles,
@@ -214,7 +252,7 @@ const build_world_meta = (minimap_data, placement, map_id = null, map_name = nul
 	return meta;
 };
 
-const composite_tile = async (tile_list, size, casc, scale = 1) => {
+const composite_tile = async (tile_list, size, casc, scale = 1, diag_key = null) => {
 	const composite = document.createElement('canvas');
 	composite.width = size;
 	composite.height = size;
@@ -222,9 +260,17 @@ const composite_tile = async (tile_list, size, casc, scale = 1) => {
 	const ctx = composite.getContext('2d');
 
 	for (const tile of tile_list) {
-		const blp_data = await casc.getFile(tile.fileDataID);
-		const blp = new BLPFile(blp_data);
-		const canvas = blp.toCanvas(0b1111);
+		// tolerate per-block failures (e.g. fileDataID absent from root in this build);
+		// a missing block must not discard the other valid blocks sharing this cell.
+		let canvas;
+		try {
+			const blp_data = await casc.getFile(tile.fileDataID);
+			const blp = new BLPFile(blp_data);
+			canvas = blp.toCanvas(0b1111);
+		} catch (e) {
+			log.write('skipped WMO minimap block (cell %s, g%d, fid %d): %s', diag_key, tile.groupNum, tile.fileDataID, e.message);
+			continue;
+		}
 
 		// each minimap blp renders its group footprint at true scale into a fixed
 		// MINIMAP_BLOCK_SIZE cell with content anchored bottom-LEFT; cropped tiles are
@@ -234,6 +280,12 @@ const composite_tile = async (tile_list, size, casc, scale = 1) => {
 		const draw_y = (tile.drawY + (MINIMAP_BLOCK_SIZE - canvas.height)) * scale;
 		const draw_width = canvas.width * tile.scaleX * scale;
 		const draw_height = canvas.height * tile.scaleY * scale;
+
+		if (DIAG && (canvas.width !== MINIMAP_BLOCK_SIZE || canvas.height !== MINIMAP_BLOCK_SIZE)) {
+			log.write('[wmo-minimap diag] cell %s g%d block(%d,%d) fid=%d CROPPED src=%dx%d anchor_dy=%d',
+				diag_key, tile.groupNum, tile.blockX, tile.blockY, tile.fileDataID,
+				canvas.width, canvas.height, MINIMAP_BLOCK_SIZE - canvas.height);
+		}
 
 		ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, draw_x, draw_y, draw_width, draw_height);
 	}
@@ -253,10 +305,13 @@ const export_minimap = async (minimap_data, casc, out_path, helper, placement, m
 			break;
 
 		try {
-			const image_data = await composite_tile(tile_list, output_tile_size, casc);
+			const image_data = await composite_tile(tile_list, output_tile_size, casc, 1, key);
 			const [rel_x, rel_y] = key.split(',').map(Number);
 			writer.addTile(rel_x, rel_y, image_data);
 		} catch (e) {
+			if (DIAG)
+				log.write('[wmo-minimap diag] CELL DROPPED %s (%d blocks, fids [%s]): %s', key, tile_list.length, tile_list.map(t => t.fileDataID).join(','), e.message);
+
 			log.write('failed to load WMO minimap tile at %s: %s', key, e.message);
 		}
 	}
