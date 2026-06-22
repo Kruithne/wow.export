@@ -43,8 +43,9 @@ module.exports = {
 	 * selection: Array defining selected tiles.
 	 * selectable: Whether tile selection is enabled (default true).
 	 * gridSize: Size of the tile grid (default MAP_SIZE, 64).
+	 * markers: Overlay markers [{ x, y, label }] in fractional tile coords.
 	 */
-	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection', 'selectable', 'gridSize'],
+	props: ['loader', 'tileSize', 'map', 'zoom', 'mask', 'selection', 'selectable', 'gridSize', 'markers'],
 	emits: ['update:selection'],
 
 	data: function() {
@@ -160,6 +161,13 @@ module.exports = {
 		 * Invoked when the selection changes.
 		 */
 		selection: function() {
+			this.renderOverlay();
+		},
+
+		/**
+		 * Invoked when the overlay markers change.
+		 */
+		markers: function() {
 			this.renderOverlay();
 		}
 	},
@@ -772,6 +780,43 @@ module.exports = {
 				overlayCtx.setLineDash([5, 5]);
 				overlayCtx.strokeRect(rectX, rectY, rectW, rectH);
 				overlayCtx.setLineDash([]);
+			}
+
+			this.renderMarkers(overlayCtx, tileSize);
+		},
+
+		/**
+		 * Draw encounter markers as red circles with labels.
+		 */
+		renderMarkers: function(overlayCtx, tileSize) {
+			const markers = this.markers;
+			if (!markers || markers.length === 0)
+				return;
+
+			const radius = Math.max(4, Math.min(12, tileSize * 0.12));
+
+			overlayCtx.textAlign = 'center';
+			overlayCtx.textBaseline = 'bottom';
+			overlayCtx.font = '12px sans-serif';
+
+			for (const marker of markers) {
+				const cx = (marker.x * tileSize) + state.offsetX;
+				const cy = (marker.y * tileSize) + state.offsetY;
+
+				overlayCtx.beginPath();
+				overlayCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+				overlayCtx.fillStyle = 'rgba(226, 52, 52, 0.55)';
+				overlayCtx.fill();
+				overlayCtx.lineWidth = 2;
+				overlayCtx.strokeStyle = 'rgba(255, 90, 90, 0.95)';
+				overlayCtx.stroke();
+
+				if (marker.label) {
+					overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+					overlayCtx.fillText(marker.label, cx + 1, cy - radius - 1);
+					overlayCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+					overlayCtx.fillText(marker.label, cx, cy - radius - 2);
+				}
 			}
 		},
 

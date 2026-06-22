@@ -144,5 +144,6 @@
 	"mapViewerShowWMODoodads": true,
 	"mapViewerWMORenderDistance": 5000,
 	"mapViewerShowGlobalWMO": true,
-	"mapViewerEnableLighting": true
+	"mapViewerEnableLighting": true,
+	"mapViewerShowEncounters": true
 }

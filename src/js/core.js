@@ -227,6 +227,7 @@ const makeNewView = () => {
 		mapViewerChunkMask: null, // Map viewer chunk mask.
 		mapViewerGridSize: null, // Map viewer grid size (null = default 64).
 		mapViewerSelection: [], // Map viewer tile selection
+		mapViewerMarkers: [], // Encounter overlay markers { x, y, label } in tile coords
 		mapViewerActive: false,
 		mapViewerMapDir: null,
 		mapViewerMapName: null,
