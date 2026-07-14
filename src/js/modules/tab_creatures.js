@@ -15,6 +15,8 @@ const M2Exporter = require('../3D/exporters/M2Exporter');
 const DBModelFileData = require('../db/caches/DBModelFileData');
 const DBCreatures = require('../db/caches/DBCreatures');
 const DBCreatureList = require('../db/caches/DBCreatureList');
+const DBItemDisplays = require('../db/caches/DBItemDisplays');
+const wmo_minimap = require('../wmo-minimap');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 const DBCreatureDisplayExtra = require('../db/caches/DBCreatureDisplayExtra');
 const DBNpcEquipment = require('../db/caches/DBNpcEquipment');
@@ -37,6 +39,10 @@ let active_file_data_id;
 let active_creature;
 let is_character_model = false;
 const creature_chr_materials = new Map();
+
+// model-browsing state (Models mode of the combined tab)
+let active_model_path = null;
+let selected_skin_name = null;
 
 // equipment state
 const equipment_model_renderers = new Map();
@@ -62,6 +68,18 @@ const SLOT_TO_GEOSET_GROUPS = {
 
 const get_creature_displays = (file_data_id) => {
 	return DBCreatures.getCreatureDisplaysByFileDataID(file_data_id) ?? [];
+};
+
+/**
+ * Pick the default animation for a freshly previewed creature. Auto-plays the
+ * Stand (idle) animation when available - matching the character viewer -
+ * unless the user disabled auto-play.
+ */
+const pick_default_animation = (core, anims) => {
+	if (!core.view.config.creatureAutoPlayAnim)
+		return 'none';
+
+	return anims.some(anim => anim.id === '0.0') ? '0.0' : 'none';
 };
 
 /**
@@ -575,6 +593,11 @@ const preview_creature = async (core, creature) => {
 			active_renderer.geosetKey = 'creatureViewerGeosets';
 			await active_renderer.load();
 
+			// character-model NPCs load facing away from the camera; rotate them
+			// to face front like the character viewer, so the fixed light hits the
+			// front rather than the back.
+			active_renderer.setTransform([0, 0, 0], [0, -Math.PI / 2, 0], [1, 1, 1]);
+
 			// apply customization geosets
 			const geosets = core.view.creatureViewerGeosets;
 			const customization_choices = DBCreatureDisplayExtra.get_customization_choices(display_info.extendedDisplayInfoID);
@@ -628,10 +651,11 @@ const preview_creature = async (core, creature) => {
 			equipment_refresh_lock = false;
 
 			core.view.creatureViewerAnims = modelViewerUtils.extract_animations(active_renderer);
-			core.view.creatureViewerAnimSelection = 'none';
+			core.view.creatureViewerAnimSelection = pick_default_animation(core, core.view.creatureViewerAnims);
 
 			active_file_data_id = file_data_id;
 			active_creature = creature;
+			core.view.creatureViewerTitle = creature.name;
 			is_character_model = true;
 		} else {
 			// standard creature model
@@ -708,11 +732,12 @@ const preview_creature = async (core, creature) => {
 				core.view.creatureViewerSkinsSelection = matching_skin ? [matching_skin] : skin_list.slice(0, 1);
 
 				core.view.creatureViewerAnims = modelViewerUtils.extract_animations(active_renderer);
-				core.view.creatureViewerAnimSelection = 'none';
+				core.view.creatureViewerAnimSelection = pick_default_animation(core, core.view.creatureViewerAnims);
 			}
 
 			active_file_data_id = file_data_id;
 			active_creature = creature;
+			core.view.creatureViewerTitle = creature.name;
 		}
 
 		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
@@ -988,23 +1013,281 @@ const export_files = async (core, entries) => {
 	export_paths?.close();
 };
 
+//region model browsing (Models mode)
+
+const get_model_displays = (file_data_id) => {
+	let displays = DBCreatures.getCreatureDisplaysByFileDataID(file_data_id);
+	if (displays === undefined)
+		displays = DBItemDisplays.getItemDisplaysByFileDataID(file_data_id);
+
+	return displays ?? [];
+};
+
+const get_variant_texture_ids = (file_name) => {
+	if (file_name === active_model_path)
+		return selected_variant_texture_ids;
+
+	const file_data_id = listfile.getByFilename(file_name);
+	const displays = get_model_displays(file_data_id);
+	return displays.find(e => e.textures.length > 0)?.textures ?? [];
+};
+
+/**
+ * Preview a model file. Mirrors the standalone Models tab, but drives the
+ * shared creature viewer state/context so the combined tab needs only one 3D
+ * viewer.
+ */
+const preview_model_file = async (core, file_name) => {
+	using _lock = core.create_busy_lock();
+	core.setToast('progress', util.format('Loading %s, please wait...', file_name), null, -1, false);
+	log.write('Previewing model %s', file_name);
+
+	const state = modelViewerUtils.create_view_state(core, 'creature');
+	textureRibbon.reset();
+	modelViewerUtils.clear_texture_preview(state);
+
+	core.view.creatureViewerSkins = [];
+	core.view.creatureViewerSkinsSelection = [];
+	core.view.creatureViewerAnims = [];
+	core.view.creatureViewerAnimSelection = null;
+
+	try {
+		if (active_renderer) {
+			active_renderer.dispose();
+			active_renderer = null;
+			active_file_data_id = null;
+			active_creature = null;
+		}
+
+		character_appearance.dispose_materials(creature_chr_materials);
+		dispose_creature_equipment();
+		active_skins.clear();
+		selected_variant_texture_ids.length = 0;
+		selected_skin_name = null;
+		is_character_model = false;
+		core.view.creatureViewerEquipment = [];
+
+		const file_data_id = listfile.getByFilename(file_name);
+		const file = await core.view.casc.getFile(file_data_id);
+		const gl_context = core.view.creatureViewerContext?.gl_context;
+
+		const model_type = modelViewerUtils.detect_model_type_by_name(file_name) ?? modelViewerUtils.detect_model_type(file);
+
+		if (model_type === modelViewerUtils.MODEL_TYPE_M2)
+			core.view.creatureViewerActiveType = 'm2';
+		else if (model_type === modelViewerUtils.MODEL_TYPE_M3)
+			core.view.creatureViewerActiveType = 'm3';
+		else
+			core.view.creatureViewerActiveType = 'wmo';
+
+		active_renderer = modelViewerUtils.create_renderer(file, model_type, gl_context, core.view.config.modelViewerShowTextures, file_name);
+
+		if (model_type === modelViewerUtils.MODEL_TYPE_M2)
+			active_renderer.geosetKey = 'creatureViewerGeosets';
+		else if (model_type === modelViewerUtils.MODEL_TYPE_WMO) {
+			active_renderer.wmoGroupKey = 'creatureViewerWMOGroups';
+			active_renderer.wmoSetKey = 'creatureViewerWMOSets';
+		}
+
+		await active_renderer.load();
+
+		core.view.modelViewerWMOHasMinimap = false;
+		if (model_type === modelViewerUtils.MODEL_TYPE_WMO && active_renderer.wmo?.wmoID) {
+			await wmo_minimap.load_minimap_textures();
+			core.view.modelViewerWMOHasMinimap = wmo_minimap.has_minimap(active_renderer.wmo.wmoID);
+		}
+
+		if (model_type === modelViewerUtils.MODEL_TYPE_M2) {
+			const displays = get_model_displays(file_data_id);
+
+			const skin_list = [];
+			let model_name = listfile.getByID(file_data_id);
+			model_name = path.basename(model_name, 'm2');
+
+			for (const display of displays) {
+				if (display.textures.length === 0)
+					continue;
+
+				const texture = display.textures[0];
+
+				let clean_skin_name = '';
+				let skin_name = listfile.getByID(texture);
+				if (skin_name !== undefined) {
+					skin_name = path.basename(skin_name, '.blp');
+					clean_skin_name = skin_name.replace(model_name, '').replace('_', '');
+				} else {
+					skin_name = 'unknown_' + texture;
+				}
+
+				if (clean_skin_name.length === 0)
+					clean_skin_name = 'base';
+
+				if (display.extraGeosets?.length > 0)
+					skin_name += display.extraGeosets.join(',');
+
+				clean_skin_name += ' (' + display.ID + ')';
+
+				if (active_skins.has(skin_name))
+					continue;
+
+				skin_list.push({ id: skin_name, label: clean_skin_name });
+				active_skins.set(skin_name, display);
+			}
+
+			core.view.creatureViewerSkins = skin_list;
+			core.view.creatureViewerSkinsSelection = skin_list.slice(0, 1);
+
+			core.view.creatureViewerAnims = modelViewerUtils.extract_animations(active_renderer);
+			core.view.creatureViewerAnimSelection = pick_default_animation(core, core.view.creatureViewerAnims);
+		}
+
+		active_model_path = file_name;
+		core.view.creatureViewerTitle = file_name;
+
+		const has_content = active_renderer.draw_calls?.length > 0 || active_renderer.groups?.length > 0;
+		if (!has_content) {
+			core.setToast('info', util.format('The model %s doesn\'t have any 3D data associated with it.', file_name), null, 4000);
+		} else {
+			core.hideToast();
+			if (core.view.creatureViewerAutoAdjust)
+				requestAnimationFrame(() => core.view.creatureViewerContext?.fitCamera?.());
+		}
+	} catch (e) {
+		if (e instanceof EncryptionError) {
+			core.setToast('error', util.format('The model %s is encrypted with an unknown key (%s).', file_name, e.key), null, -1);
+			log.write('Failed to decrypt model %s (%s)', file_name, e.key);
+		} else {
+			core.setToast('error', 'Unable to preview model ' + file_name, { 'View Log': () => log.openRuntimeLog() }, -1);
+			log.write('Failed to open CASC file: %s', e.message);
+		}
+	}
+};
+
+const export_model_files = async (core, files, is_local = false) => {
+	const export_paths = core.openLastExportStream();
+	const format = core.view.config.exportModelFormat;
+
+	if (format === 'PNG' || format === 'CLIPBOARD') {
+		if (active_model_path) {
+			const canvas = document.getElementById('creature-preview').querySelector('canvas');
+			await modelViewerUtils.export_preview(core, format, canvas, active_model_path);
+		} else {
+			core.setToast('error', 'The selected export option only works for model previews. Preview something first!', null, -1);
+		}
+
+		export_paths?.close();
+		return;
+	}
+
+	const casc = core.view.casc;
+	const helper = new ExportHelper(files.length, 'model');
+	helper.start();
+
+	for (const file_entry of files) {
+		if (helper.isCancelled())
+			break;
+
+		let file_name;
+		let file_data_id;
+
+		if (typeof file_entry === 'number') {
+			file_data_id = file_entry;
+			file_name = listfile.getByID(file_data_id);
+		} else {
+			file_name = listfile.stripFileEntry(file_entry);
+			file_data_id = listfile.getByFilename(file_name);
+		}
+
+		const file_manifest = [];
+
+		try {
+			const data = await (is_local ? require('../buffer').readFile(file_name) : casc.getFile(file_data_id));
+
+			if (file_name === undefined) {
+				const model_type = modelViewerUtils.detect_model_type(data);
+				file_name = listfile.formatUnknownFile(file_data_id, modelViewerUtils.get_model_extension(model_type));
+			}
+
+			let export_path;
+			let mark_file_name = file_name;
+
+			const is_active = file_name === active_model_path;
+			const model_type = modelViewerUtils.detect_model_type_by_name(file_name) ?? modelViewerUtils.detect_model_type(data);
+
+			if (is_local) {
+				export_path = file_name;
+			} else if (model_type === modelViewerUtils.MODEL_TYPE_M2 && selected_skin_name !== null && is_active && format !== 'RAW') {
+				const base_file_name = path.basename(file_name, path.extname(file_name));
+				let skinned_name;
+
+				if (selected_skin_name.startsWith(base_file_name))
+					skinned_name = ExportHelper.replaceBaseName(file_name, selected_skin_name);
+				else
+					skinned_name = ExportHelper.replaceBaseName(file_name, base_file_name + '_' + selected_skin_name);
+
+				export_path = ExportHelper.getExportPath(skinned_name);
+				mark_file_name = skinned_name;
+			} else {
+				export_path = ExportHelper.getExportPath(file_name);
+			}
+
+			const mark_name = await modelViewerUtils.export_model({
+				core,
+				data,
+				file_data_id,
+				file_name,
+				format,
+				export_path,
+				helper,
+				file_manifest,
+				variant_textures: get_variant_texture_ids(file_name),
+				geoset_mask: is_active ? core.view.creatureViewerGeosets : null,
+				wmo_group_mask: is_active ? core.view.creatureViewerWMOGroups : null,
+				wmo_set_mask: is_active ? core.view.creatureViewerWMOSets : null,
+				active_renderer: is_active ? active_renderer : null,
+				export_paths
+			});
+
+			helper.mark(mark_name, true);
+		} catch (e) {
+			helper.mark(file_name, false, e.message, e.stack);
+		}
+	}
+
+	helper.finish();
+	export_paths?.close();
+};
+
+//endregion
+
 module.exports = {
 	register() {
-		this.registerNavButton('Creatures', 'nessy.svg', InstallType.CASC);
+		this.registerNavButton('Models', 'cube.svg', InstallType.CASC);
 	},
 
 	template: `
 		<div class="tab list-tab" id="tab-creatures">
-			<div class="list-container">
-				<component :is="$components.Listbox" v-model:selection="$core.view.selectionCreatures" v-model:filter="$core.view.userInputFilterCreatures" :items="$core.view.listfileCreatures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="creature" persistscrollkey="creatures" @contextmenu="handle_listbox_context"></component>
-				<component :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
+			<ul class="ui-multi-button browse-mode-switch">
+					<li :class="{ selected: browse_mode === 'models' }" @click.stop="browse_mode = 'models'">Models</li>
+					<li :class="{ selected: browse_mode === 'creatures' }" @click.stop="browse_mode = 'creatures'">Creatures</li>
+				</ul>
+				<div class="list-container">
+				<component v-if="browse_mode === 'models'" :is="$components.Listbox" v-model:selection="$core.view.selectionModels" v-model:filter="$core.view.userInputFilterModels" :items="models_list" :override="$core.view.overrideModelList" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="model" persistscrollkey="models" :quickfilters="$core.view.modelQuickFilters" @contextmenu="handle_listbox_context"></component>
+					<component v-if="browse_mode === 'creatures'" :is="$components.Listbox" v-model:selection="$core.view.selectionCreatures" v-model:filter="$core.view.userInputFilterCreatures" :items="$core.view.listfileCreatures" :keyinput="true" :regex="$core.view.config.regexFilters" :copymode="$core.view.config.copyMode" :pasteselection="$core.view.config.pasteSelection" :copytrimwhitespace="$core.view.config.removePathSpacesCopy" :includefilecount="true" unittype="creature" persistscrollkey="creatures" @contextmenu="handle_listbox_context"></component>
+				<component v-if="browse_mode === 'models'" :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
+						<span @click.self="copy_file_paths(context.node.selection)">Copy file path{{ context.node.count > 1 ? 's' : '' }}</span>
+						<span @click.self="copy_export_paths(context.node.selection)">Copy export path{{ context.node.count > 1 ? 's' : '' }}</span>
+						<span @click.self="open_export_directory(context.node.selection)">Open export directory</span>
+					</component>
+					<component v-if="browse_mode === 'creatures'" :is="$components.ContextMenu" :node="$core.view.contextMenus.nodeListbox" v-slot:default="context" @close="$core.view.contextMenus.nodeListbox = null">
 					<span @click.self="copy_creature_names(context.node.selection)">Copy name{{ context.node.count > 1 ? 's' : '' }}</span>
 					<span @click.self="copy_creature_ids(context.node.selection)">Copy ID{{ context.node.count > 1 ? 's' : '' }}</span>
 				</component>
 			</div>
 			<div class="filter">
 				<div class="regex-info" v-if="$core.view.config.regexFilters" :title="$core.view.regexTooltip">Regex Enabled</div>
-				<input type="text" v-model="$core.view.userInputFilterCreatures" placeholder="Filter creatures..."/>
+				<input v-if="browse_mode === 'models'" type="text" v-model="$core.view.userInputFilterModels" placeholder="Filter models..."/>
+					<input v-else type="text" v-model="$core.view.userInputFilterCreatures" placeholder="Filter creatures..."/>
 			</div>
 			<div class="preview-container">
 				<component :is="$components.ResizeLayer" @resize="$core.view.onTextureRibbonResize" id="texture-ribbon" v-if="$core.view.config.modelViewerShowTextures && $core.view.textureRibbonStack.length > 0">
@@ -1039,6 +1322,8 @@ module.exports = {
 				<div class="preview-background" id="creature-preview">
 					<input v-if="$core.view.config.modelViewerShowBackground" type="color" id="background-color-input" v-model="$core.view.config.modelViewerBackgroundColor" title="Click to change background color"/>
 					<component :is="$components.ModelViewerGL" v-if="$core.view.creatureViewerContext" :context="$core.view.creatureViewerContext"></component>
+					<div v-if="viewer_title && $core.view.creatureViewerActiveType !== 'none' && !$core.view.creatureTexturePreviewURL" class="viewer-title" :title="$core.view.creatureViewerTitle">{{ viewer_title }}</div>
+					<div v-if="$core.view.creatureViewerActiveType === 'none' && !$core.view.creatureTexturePreviewURL" class="viewer-empty">Select a {{ browse_mode === 'models' ? 'model' : 'creature' }} to preview</div>
 					<div v-if="$core.view.creatureViewerAnims && $core.view.creatureViewerAnims.length > 0 && !$core.view.creatureTexturePreviewURL" class="preview-dropdown-overlay">
 						<select v-model="$core.view.creatureViewerAnimSelection">
 							<option v-for="animation in $core.view.creatureViewerAnims" :key="animation.id" :value="animation.id">
@@ -1058,87 +1343,163 @@ module.exports = {
 				</div>
 			</div>
 			<div class="preview-controls">
-				<component :is="$components.MenuButton" :options="$core.view.menuButtonCreatures" :default="$core.view.config.exportCreatureFormat" @change="$core.view.config.exportCreatureFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_creatures"></component>
+				<input v-if="browse_mode === 'models' && $core.view.modelViewerWMOHasMinimap" type="button" value="Export WMO Minimap" :class="{ disabled: $core.view.isBusy }" @click="export_wmo_minimap"/>
+				<component v-if="browse_mode === 'models'" :is="$components.MenuButton" :options="$core.view.menuButtonModels" :default="$core.view.config.exportModelFormat" @change="$core.view.config.exportModelFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_selected_models"></component>
+				<component v-else :is="$components.MenuButton" :options="$core.view.menuButtonCreatures" :default="$core.view.config.exportCreatureFormat" @change="$core.view.config.exportCreatureFormat = $event" class="upward" :disabled="$core.view.isBusy" @click="export_creatures"></component>
 			</div>
 			<div id="creature-sidebar" class="sidebar">
-				<span class="header">Preview</span>
-				<label class="ui-checkbox" title="Automatically preview a creature when selecting it">
-					<input type="checkbox" v-model="$core.view.config.creatureAutoPreview"/>
-					<span>Auto Preview</span>
-				</label>
-				<label class="ui-checkbox" title="Automatically adjust camera when selecting a new creature">
-					<input type="checkbox" v-model="$core.view.creatureViewerAutoAdjust"/>
-					<span>Auto Camera</span>
-				</label>
-				<label class="ui-checkbox" title="Show a grid in the 3D viewport">
-					<input type="checkbox" v-model="$core.view.config.modelViewerShowGrid"/>
-					<span>Show Grid</span>
-				</label>
-				<label class="ui-checkbox" title="Render the preview model as a wireframe">
-					<input type="checkbox" v-model="$core.view.config.modelViewerWireframe"/>
-					<span>Show Wireframe</span>
-				</label>
-				<label class="ui-checkbox" title="Show the model's bone structure">
-					<input type="checkbox" v-model="$core.view.config.modelViewerShowBones"/>
-					<span>Show Bones</span>
-				</label>
-				<label class="ui-checkbox" title="Show model textures in the preview pane">
-					<input type="checkbox" v-model="$core.view.config.modelViewerShowTextures"/>
-					<span>Show Textures</span>
-				</label>
-				<label class="ui-checkbox" title="Show a background color in the 3D viewport">
-					<input type="checkbox" v-model="$core.view.config.modelViewerShowBackground"/>
-					<span>Show Background</span>
-				</label>
-				<span class="header">Export</span>
-				<label class="ui-checkbox" title="Include textures when exporting models">
-					<input type="checkbox" v-model="$core.view.config.modelsExportTextures"/>
-					<span>Textures</span>
-				</label>
-				<label v-if="$core.view.config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
-					<input type="checkbox" v-model="$core.view.config.modelsExportAlpha"/>
-					<span>Texture Alpha</span>
-				</label>
-				<label v-if="$core.view.config.exportCreatureFormat === 'GLTF' && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
-					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
-					<span>Export animations</span>
-				</label>
-				<label v-if="($core.view.config.exportCreatureFormat === 'OBJ' || $core.view.config.exportCreatureFormat === 'STL') && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Apply current animation pose to exported geometry">
-					<input type="checkbox" v-model="$core.view.config.modelsExportApplyPose"/>
-					<span>Apply pose</span>
-				</label>
-				<template v-if="$core.view.creatureViewerActiveType === 'm2'">
-					<template v-if="$core.view.creatureViewerEquipment.length > 0">
-						<span class="header">Equipment</span>
-						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerEquipment"></component>
+				<ul class="ui-multi-button sidebar-tabs">
+					<li :class="{ selected: sidebar_tab === 'preview' }" @click.stop="sidebar_tab = 'preview'">Preview</li>
+					<li :class="{ selected: sidebar_tab === 'model' }" @click.stop="sidebar_tab = 'model'">Model</li>
+					<li :class="{ selected: sidebar_tab === 'export' }" @click.stop="sidebar_tab = 'export'">Export</li>
+				</ul>
+				<div v-show="sidebar_tab === 'preview'">
+					<span class="header">Automation</span>
+					<label class="ui-checkbox" title="Automatically preview a creature when selecting it">
+						<input type="checkbox" v-model="$core.view.config.creatureAutoPreview"/>
+						<span>Auto Preview</span>
+					</label>
+					<label class="ui-checkbox" title="Automatically adjust camera when selecting a new creature">
+						<input type="checkbox" v-model="$core.view.creatureViewerAutoAdjust"/>
+						<span>Auto Camera</span>
+					</label>
+					<label class="ui-checkbox" title="Automatically play the idle animation when previewing a creature">
+						<input type="checkbox" v-model="$core.view.config.creatureAutoPlayAnim"/>
+						<span>Auto Play Animation</span>
+					</label>
+					<span class="header">Display</span>
+					<label class="ui-checkbox" title="Show a grid in the 3D viewport">
+						<input type="checkbox" v-model="$core.view.config.modelViewerShowGrid"/>
+						<span>Show Grid</span>
+					</label>
+					<label class="ui-checkbox" title="Render the preview model as a wireframe">
+						<input type="checkbox" v-model="$core.view.config.modelViewerWireframe"/>
+						<span>Show Wireframe</span>
+					</label>
+					<label class="ui-checkbox" title="Show the model's bone structure">
+						<input type="checkbox" v-model="$core.view.config.modelViewerShowBones"/>
+						<span>Show Bones</span>
+					</label>
+					<label class="ui-checkbox" title="Show model textures in the preview pane">
+						<input type="checkbox" v-model="$core.view.config.modelViewerShowTextures"/>
+						<span>Show Textures</span>
+					</label>
+					<span class="header">Scene</span>
+					<label class="ui-checkbox" title="Show a background color in the 3D viewport">
+						<input type="checkbox" v-model="$core.view.config.modelViewerShowBackground"/>
+						<span>Show Background</span>
+					</label>
+				</div>
+				<div v-show="sidebar_tab === 'model'">
+					<span v-if="$core.view.creatureViewerActiveType !== 'm2' && $core.view.creatureViewerActiveType !== 'wmo'" class="sidebar-hint">Preview a model or creature to see its geosets, skins and groups.</span>
+					<template v-if="$core.view.creatureViewerActiveType === 'm2'">
+						<template v-if="$core.view.creatureViewerEquipment.length > 0">
+							<span class="header">Equipment</span>
+							<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerEquipment"></component>
+							<div class="list-toggles">
+								<a @click="$core.view.setAllCreatureEquipment(true)">Enable All</a> / <a @click="$core.view.setAllCreatureEquipment(false)">Disable All</a>
+							</div>
+						</template>
+						<template v-if="$core.view.creatureViewerGeosets.length > 0">
+							<span class="header">Geosets</span>
+							<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerGeosets"></component>
+							<div class="list-toggles">
+								<a @click="$core.view.setAllCreatureGeosets(true)">Enable All</a> / <a @click="$core.view.setAllCreatureGeosets(false)">Disable All</a>
+							</div>
+						</template>
+						<template v-if="$core.view.config.modelsExportTextures && $core.view.creatureViewerSkins.length > 0">
+							<span class="header">Skins</span>
+							<component :is="$components.Listboxb" :items="$core.view.creatureViewerSkins" v-model:selection="$core.view.creatureViewerSkinsSelection" :single="true"></component>
+						</template>
+					</template>
+					<template v-if="$core.view.creatureViewerActiveType === 'wmo'">
+						<span class="header">WMO Groups</span>
+						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerWMOGroups"></component>
 						<div class="list-toggles">
-							<a @click="$core.view.setAllCreatureEquipment(true)">Enable All</a> / <a @click="$core.view.setAllCreatureEquipment(false)">Disable All</a>
+							<a @click="$core.view.setAllCreatureWMOGroups(true)">Enable All</a> / <a @click="$core.view.setAllCreatureWMOGroups(false)">Disable All</a>
 						</div>
+						<span class="header">Doodad Sets</span>
+						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerWMOSets"></component>
 					</template>
-					<template v-if="$core.view.creatureViewerGeosets.length > 0">
-						<span class="header">Geosets</span>
-						<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerGeosets"></component>
-						<div class="list-toggles">
-							<a @click="$core.view.setAllCreatureGeosets(true)">Enable All</a> / <a @click="$core.view.setAllCreatureGeosets(false)">Disable All</a>
-						</div>
+				</div>
+				<div v-show="sidebar_tab === 'export'">
+					<span class="header">Export</span>
+					<label class="ui-checkbox" title="Include textures when exporting models">
+						<input type="checkbox" v-model="$core.view.config.modelsExportTextures"/>
+						<span>Textures</span>
+					</label>
+					<label v-if="$core.view.config.modelsExportTextures" class="ui-checkbox" title="Include alpha channel in exported model textures">
+						<input type="checkbox" v-model="$core.view.config.modelsExportAlpha"/>
+						<span>Texture Alpha</span>
+					</label>
+					<label v-if="export_format === 'GLTF' && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Include animations in export">
+						<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
+						<span>Export animations</span>
+					</label>
+					<label v-if="(export_format === 'OBJ' || export_format === 'STL') && $core.view.creatureViewerActiveType === 'm2'" class="ui-checkbox" title="Apply current animation pose to exported geometry">
+						<input type="checkbox" v-model="$core.view.config.modelsExportApplyPose"/>
+						<span>Apply pose</span>
+					</label>
+					<template v-if="browse_mode === 'models' && export_format === 'RAW'">
+						<label class="ui-checkbox" title="Export raw .skin files with M2 exports"><input type="checkbox" v-model="$core.view.config.modelsExportSkin"/><span>M2 .skin Files</span></label>
+						<label class="ui-checkbox" title="Export raw .skel files with M2 exports"><input type="checkbox" v-model="$core.view.config.modelsExportSkel"/><span>M2 .skel Files</span></label>
+						<label class="ui-checkbox" title="Export raw .bone files with M2 exports"><input type="checkbox" v-model="$core.view.config.modelsExportBone"/><span>M2 .bone Files</span></label>
+						<label class="ui-checkbox" title="Export raw .anim files with M2 exports"><input type="checkbox" v-model="$core.view.config.modelsExportAnim"/><span>M2 .anim files</span></label>
+						<label class="ui-checkbox" title="Export WMO group files"><input type="checkbox" v-model="$core.view.config.modelsExportWMOGroups"/><span>WMO Groups</span></label>
 					</template>
-					<template v-if="$core.view.config.modelsExportTextures && $core.view.creatureViewerSkins.length > 0">
-						<span class="header">Skins</span>
-						<component :is="$components.Listboxb" :items="$core.view.creatureViewerSkins" v-model:selection="$core.view.creatureViewerSkinsSelection" :single="true"></component>
-					</template>
-				</template>
-				<template v-if="$core.view.creatureViewerActiveType === 'wmo'">
-					<span class="header">WMO Groups</span>
-					<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerWMOGroups"></component>
-					<div class="list-toggles">
-						<a @click="$core.view.setAllCreatureWMOGroups(true)">Enable All</a> / <a @click="$core.view.setAllCreatureWMOGroups(false)">Disable All</a>
-					</div>
-					<span class="header">Doodad Sets</span>
-					<component :is="$components.Checkboxlist" :items="$core.view.creatureViewerWMOSets"></component>
-				</template>
+					<label v-if="browse_mode === 'models' && export_format === 'OBJ' && $core.view.creatureViewerActiveType === 'wmo'" class="ui-checkbox" title="Export each WMO group as a separate OBJ file">
+						<input type="checkbox" v-model="$core.view.config.modelsExportSplitWMOGroups"/>
+						<span>Split WMO Groups</span>
+					</label>
+				</div>
 			</div>
 		</div>
 	`,
+
+	data() {
+		return {
+			sidebar_tab: 'preview',
+			browse_mode: 'models'
+		};
+	},
+
+	created() {
+		// restore the last-used Models/Creatures mode
+		const mode = this.$core.view.config.lastBrowseMode;
+		if (mode === 'models' || mode === 'creatures')
+			this.browse_mode = mode;
+	},
+
+	computed: {
+		export_format() {
+			return this.browse_mode === 'models'
+				? this.$core.view.config.exportModelFormat
+				: this.$core.view.config.exportCreatureFormat;
+		},
+
+		// Always present the model list alphabetically (A-Z). The underlying
+		// listfileModels can be in file-ID order depending on listfile mode /
+		// settings, which clusters low-ID vanilla files (world/wmo) at the top.
+		models_list() {
+			const list = this.$core.view.listfileModels;
+			if (!Array.isArray(list))
+				return list;
+
+			return [...list].sort();
+		},
+
+		// Friendly label for the previewed subject (model basename or creature name).
+		viewer_title() {
+			const t = this.$core.view.creatureViewerTitle;
+			if (!t)
+				return '';
+
+			if (this.browse_mode === 'models')
+				return t.replace(/\s*\[\d+\]\s*$/, '').split(/[\\/]/).pop();
+
+			return t;
+		},
+	},
 
 	methods: {
 		async initialize() {
@@ -1149,6 +1510,14 @@ module.exports = {
 
 			await this.$core.progressLoadingScreen('Loading creature data...');
 			await DBCreatures.initializeCreatureData();
+
+			if (this.$core.view.config.enableUnknownFiles) {
+				await this.$core.progressLoadingScreen('Loading unknown models...');
+				await listfile.loadUnknownModels();
+			}
+
+			await this.$core.progressLoadingScreen('Loading item displays...');
+			await DBItemDisplays.initializeItemDisplays();
 
 			await this.$core.progressLoadingScreen('Loading character customization data...');
 			await DBCharacterCustomization.ensureInitialized();
@@ -1199,6 +1568,58 @@ module.exports = {
 
 		handle_listbox_context(data) {
 			listboxContext.handle_context_menu(data);
+		},
+
+		// --- Models mode ---
+		copy_file_paths(selection) { listboxContext.copy_file_paths(selection); },
+		copy_file_data_ids(selection) { listboxContext.copy_file_data_ids(selection); },
+		copy_export_paths(selection) { listboxContext.copy_export_paths(selection); },
+		open_export_directory(selection) { listboxContext.open_export_directory(selection); },
+
+		async export_selected_models() {
+			const user_selection = this.$core.view.selectionModels;
+			if (user_selection.length === 0) {
+				this.$core.setToast('info', 'You didn\'t select any files to export; you should do that first.');
+				return;
+			}
+
+			await export_model_files(this.$core, user_selection, false);
+		},
+
+		async export_wmo_minimap() {
+			if (!active_renderer?.wmo?.wmoID)
+				return;
+
+			const wmo = active_renderer.wmo;
+			const helper = new ExportHelper(1, 'minimap');
+			helper.start();
+
+			try {
+				await wmo_minimap.load_minimap_textures();
+
+				const layout = wmo_minimap.compute_minimap_layout(wmo.wmoID, wmo.groupInfo);
+				if (!layout)
+					throw new Error('no minimap textures found for this WMO.');
+
+				const wmo_name = active_model_path || ('unknown_' + wmo.wmoID + '.wmo');
+				const base_name = path.basename(wmo_name, path.extname(wmo_name));
+				const relative_path = path.join(path.dirname(wmo_name), base_name + '_minimap.png');
+				const out_path = ExportHelper.getExportPath(relative_path);
+
+				await wmo_minimap.export_minimap(layout, this.$core.view.casc, out_path, helper);
+				if (helper.isCancelled())
+					return;
+
+				const export_paths = this.$core.openLastExportStream();
+				await export_paths?.writeLine('png:' + out_path);
+				export_paths?.close();
+
+				helper.mark(relative_path, true);
+			} catch (e) {
+				helper.mark('WMO minimap', false, e.message, e.stack);
+			}
+
+			helper.finish();
 		},
 
 		copy_creature_names(selection) {
@@ -1356,7 +1777,7 @@ module.exports = {
 		});
 
 		this.$core.view.$watch('selectionCreatures', async selection => {
-			if (!this.$core.view.config.creatureAutoPreview)
+			if (this.browse_mode !== 'creatures' || !this.$core.view.config.creatureAutoPreview)
 				return;
 
 			const first = selection[0];
@@ -1384,6 +1805,35 @@ module.exports = {
 
 			await refresh_creature_equipment(this.$core);
 		}, { deep: true });
+
+		this.$core.view.$watch('selectionModels', async selection => {
+			if (this.browse_mode !== 'models' || !this._tab_initialized)
+				return;
+
+			if (!this.$core.view.config.modelsAutoPreview)
+				return;
+
+			// filtering can transiently clear the selection (the listbox emits an
+			// empty selection when the active item scrolls out of the filtered set)
+			if (!Array.isArray(selection) || selection.length === 0 || selection[0] === undefined)
+				return;
+
+			const first = listfile.stripFileEntry(selection[0]);
+			if (!this.$core.view.isBusy && first && active_model_path !== first)
+				preview_model_file(this.$core, first);
+		});
+
+		// deep-links from the Items / Map tabs populate overrideModelList; jump to
+		// Models mode so the user sees the override list immediately.
+		this.$core.view.$watch('overrideModelList', list => {
+			if (Array.isArray(list) && list.length > 0)
+				this.browse_mode = 'models';
+		});
+
+		// remember the selected mode across sessions
+		this.$watch('browse_mode', mode => {
+			this.$core.view.config.lastBrowseMode = mode;
+		});
 
 		this.$core.events.on('toggle-uv-layer', (layer_name) => {
 			const state = modelViewerUtils.create_view_state(this.$core, 'creature');
