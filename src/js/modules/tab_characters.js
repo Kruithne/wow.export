@@ -478,9 +478,31 @@ async function update_textures(core) {
 				}
 			}
 
+			// TBC Anniversary's ItemDisplayInfoMaterialRes has legacy/set-mate
+			// rows that don't match in-game rendering: M2-attachment slots
+			// (helms/shoulders/weapons/back) reference body overlays, and
+			// belts/gloves/etc. reference shared chest BLPs instead of
+			// piece-specific textures. Filter these on this client only.
+			// Section IDs: 0=ArmUpper 1=ArmLower 2=Hand 3=TorsoUpper
+			//              4=TorsoLower 5=LegUpper 6=LegLower 7=Foot 8=Accessory
+			const is_tbc_anniversary = core.view.casc?.build?.Product === 'wow_anniversary';
+			const M2_ONLY_SLOTS = new Set([1, 3, 15, 16, 17, 30]);
+			const ALLOWED_SECTIONS_PER_SLOT = {
+				4:  new Set([0, 1, 3, 4]),  // shirt
+				5:  new Set([0, 1, 3, 4]),  // chest
+				6:  new Set([5]),           // belt (section 4 row is a bogus chest-share)
+				7:  new Set([4, 5, 6]),     // legs
+				8:  new Set([6, 7]),        // boots
+				9:  new Set([1]),           // bracers
+				10: new Set([1, 2]),        // gloves
+				19: new Set([3, 4])         // tabard (custom pipeline elsewhere)
+			};
+
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
 				// guild tabards use custom composition pipeline
 				if (DBGuildTabard.isGuildTabard(item_id))
+					continue;
+				if (is_tbc_anniversary && M2_ONLY_SLOTS.has(Number(slot_id)))
 					continue;
 
 				const modifier_id = item_skins?.[slot_id];
@@ -489,7 +511,11 @@ async function update_textures(core) {
 				if (!item_textures)
 					continue;
 
+				const allowed_sections = is_tbc_anniversary ? ALLOWED_SECTIONS_PER_SLOT[Number(slot_id)] : undefined;
+
 				for (const texture of item_textures) {
+					if (allowed_sections && !allowed_sections.has(texture.section))
+						continue;
 					const section = section_by_type.get(texture.section);
 					if (!section)
 						continue;
