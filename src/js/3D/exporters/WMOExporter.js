@@ -281,8 +281,10 @@ class WMOExporter {
 			groups.push(group);
 		}
 
-		const vertices = new Array(nInd * 3);
-		const normals = new Array(nInd * 3);
+		// Typed arrays to keep large WMO geometry within the heap (see the OBJ
+		// path above for the rationale).
+		const vertices = new Float32Array(nInd * 3);
+		const normals = new Float32Array(nInd * 3);
 
 		const uv_maps = [];
 
@@ -306,7 +308,7 @@ class WMOExporter {
 			if (group.uvs) {
 				for (let i = 0, n = group.uvs.length; i < n; i++) {
 					if (!uv_maps[i])
-						uv_maps[i] = new Array(indCount * 2).fill(0);
+						uv_maps[i] = new Float32Array(indCount * 2);
 
 					const uv = group.uvs[i];
 					const uv_map = uv_maps[i];
@@ -443,17 +445,21 @@ class WMOExporter {
 		if (!core.view.config.modelsExportUV2)
 			maxLayerCount = Math.min(maxLayerCount, 1);
 
-		const vertsArray = new Array(nInd * 3);
-		const normalsArray = new Array(nInd * 3);
+		// Use typed arrays rather than plain JS arrays. A boxed-float JS array
+		// costs ~8 bytes/element plus object overhead; a Float32Array is 4 bytes
+		// with no boxing. Large WMOs (e.g. a raid with millions of triangles)
+		// otherwise exhaust the heap building these vertex/normal/uv buffers.
+		const vertsArray = new Float32Array(nInd * 3);
+		const normalsArray = new Float32Array(nInd * 3);
 		const uvArrays = new Array(maxLayerCount);
 
 		// Create all necessary UV layer arrays.
 		for (let i = 0; i < maxLayerCount; i++)
-			uvArrays[i] = new Array(nInd * 2);
+			uvArrays[i] = new Float32Array(nInd * 2);
 
 		// colors2 provides vertex blend weights for shader 20.
 		const hasColors2 = groups.some(g => g.colors2);
-		const colorsArray = hasColors2 ? new Array(nInd * 4).fill(0) : null;
+		const colorsArray = hasColors2 ? new Float32Array(nInd * 4) : null;
 
 		// Iterate over groups again and fill the allocated arrays.
 		let indOfs = 0;
@@ -811,8 +817,8 @@ class WMOExporter {
 			groups.push(group);
 		}
 
-		const vertsArray = new Array(nInd * 3);
-		const normalsArray = new Array(nInd * 3);
+		const vertsArray = new Float32Array(nInd * 3);
+		const normalsArray = new Float32Array(nInd * 3);
 
 		// iterate over groups again and fill the allocated arrays
 		let indOfs = 0;

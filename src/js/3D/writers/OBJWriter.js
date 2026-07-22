@@ -8,6 +8,22 @@ const constants = require('../../constants');
 const generics = require('../../generics');
 const FileWriter = require('../../file-writer');
 
+/**
+ * Concatenate two numeric sequences into a single Float32Array, allocating the
+ * result once and copying in place. Avoids the [...a, ...b] spread that builds a
+ * temporary JS array of every element before rebuilding a typed array - a triple
+ * copy that exhausts the heap on large (e.g. raid-sized) geometry.
+ * @param {Float32Array|Array} a
+ * @param {Float32Array|Array} b
+ * @returns {Float32Array}
+ */
+function concatFloats(a, b) {
+	const out = new Float32Array(a.length + b.length);
+	out.set(a, 0);
+	out.set(b, a.length);
+	return out;
+}
+
 class OBJWriter {
 	/**
 	 * Construct a new OBJWriter instance.
@@ -100,20 +116,12 @@ class OBJWriter {
 		this.vertex_offset = current_vertex_count;
 
 		// append vertices
-		if (verts) {
-			if (Array.isArray(this.verts))
-				this.verts = [...this.verts, ...verts];
-			else
-				this.verts = Float32Array.from([...this.verts, ...verts]);
-		}
+		if (verts)
+			this.verts = concatFloats(this.verts, verts);
 
 		// append normals
-		if (normals) {
-			if (Array.isArray(this.normals))
-				this.normals = [...this.normals, ...normals];
-			else
-				this.normals = Float32Array.from([...this.normals, ...normals]);
-		}
+		if (normals)
+			this.normals = concatFloats(this.normals, normals);
 
 		// append uvs (match layer count)
 		if (uvArrays) {
@@ -122,12 +130,8 @@ class OBJWriter {
 					this.uvs.push([]);
 
 				const uv = uvArrays[i];
-				if (uv) {
-					if (Array.isArray(this.uvs[i]))
-						this.uvs[i] = [...this.uvs[i], ...uv];
-					else
-						this.uvs[i] = Float32Array.from([...this.uvs[i], ...uv]);
-				}
+				if (uv)
+					this.uvs[i] = concatFloats(this.uvs[i], uv);
 			}
 		}
 	}
