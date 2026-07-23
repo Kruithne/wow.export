@@ -247,6 +247,151 @@ class OBJWriter {
 
 		writer.close();
 	}
+
+	/**
+	 * Write the OBJ file one group at a time, never holding the whole model in
+	 * memory at once. Each group carries its own vertices/normals/uvs/colours and
+	 * its own meshes (whose triangle indices are group-local, i.e. zero-based
+	 * within that group's vertex block). This is the memory-safe path for very
+	 * large models (e.g. raid WMOs of several million vertices) where building a
+	 * single merged buffer plus every retained index array exhausts the V8 heap.
+	 *
+	 * Output is equivalent to write(): each group emits its used verts, normals,
+	 * uvs and (optional) colours, remapped to a compact local numbering, followed
+	 * by its faces. Vertex references in 'f' lines are global 1-based indices, so
+	 * a running offset is carried across groups. Groups are independent (WMO
+	 * groups never share vertices), so no cross-group dedup is needed or lost.
+	 *
+	 * @param {Iterable|AsyncIterable} groups - yields { verts, normals, uvs,
+	 *   colors, meshes, flipUVs } where meshes is [{ name, triangles, matName }]
+	 *   with triangles zero-based within this group's verts.
+	 * @param {boolean} overwrite
+	 */
+	async writeStreamingGroups(groups, overwrite = true) {
+		if (!overwrite && await generics.fileExists(this.out))
+			return;
+
+		await generics.createDirectory(path.dirname(this.out));
+		const writer = new FileWriter(this.out);
+
+		await writer.writeLine('# Exported using wow.export v' + constants.VERSION);
+		await writer.writeLine('o ' + this.name);
+
+		if (this.mtl)
+			await writer.writeLine('mtllib ' + this.mtl);
+
+		// Running counts of already-emitted verts / normals / uvs / colours so
+		// each group's face indices resolve to the correct global 1-based value.
+		let vertBase = 0;
+		let normalBase = 0;
+		let uvBase = 0;
+
+		for await (const group of groups) {
+			const verts = group.verts;
+			const normals = group.normals;
+			const uvLayers = group.uvs ?? [];
+			const colors = group.colors ?? null;
+			const meshes = group.meshes ?? [];
+			const flipUVs = group.flipUVs ?? this.flip_uvs;
+
+			const layerCount = uvLayers.length;
+			const hasUV = layerCount > 0;
+
+			// Determine which of this group's vertices are actually referenced
+			// by a face, mirroring write()'s culling so output stays identical.
+			const usedIndices = new Set();
+			for (const mesh of meshes) {
+				const tris = mesh.triangles;
+				for (let i = 0, n = tris.length; i < n; i++)
+					usedIndices.add(tris[i]);
+			}
+
+			// Local (group) index -> compacted position within the emitted block.
+			const vertMap = new Map();
+			const normalMap = new Map();
+			const uvMap = new Map();
+
+			// Verts.
+			for (let i = 0, j = 0, u = 0, n = verts.length; i < n; j++, i += 3) {
+				if (usedIndices.has(j)) {
+					vertMap.set(j, u++);
+					await writer.writeLine('v ' + verts[i] + ' ' + verts[i + 1] + ' ' + verts[i + 2]);
+				}
+			}
+
+			// Normals.
+			for (let i = 0, j = 0, u = 0, n = normals.length; i < n; j++, i += 3) {
+				if (usedIndices.has(j)) {
+					normalMap.set(j, u++);
+					await writer.writeLine('vn ' + normals[i] + ' ' + normals[i + 1] + ' ' + normals[i + 2]);
+				}
+			}
+
+			// Vertex colours (non-standard, used by the wow.export Blender addon).
+			if (colors) {
+				for (let i = 0, j = 0, n = colors.length; i < n; j++, i += 4) {
+					if (usedIndices.has(j))
+						await writer.writeLine('vc ' + colors[i] + ' ' + colors[i + 1] + ' ' + colors[i + 2] + ' ' + colors[i + 3]);
+				}
+			}
+
+			// UVs (all layers; index map built from the first layer only).
+			if (hasUV) {
+				for (let uvIndex = 0; uvIndex < layerCount; uvIndex++) {
+					const uv = uvLayers[uvIndex];
+					let prefix = 'vt';
+					if (uvIndex > 0)
+						prefix += (uvIndex + 1);
+
+					for (let i = 0, j = 0, u = 0, n = uv.length; i < n; j++, i += 2) {
+						if (usedIndices.has(j)) {
+							if (uvIndex === 0)
+								uvMap.set(j, u++);
+
+							const v = flipUVs ? (1 - uv[i + 1]) : uv[i + 1];
+							await writer.writeLine(prefix + ' ' + uv[i] + ' ' + v);
+						}
+					}
+				}
+			}
+
+			// Faces, using global 1-based indices (local compacted + running base).
+			for (const mesh of meshes) {
+				await writer.writeLine('g ' + mesh.name);
+				await writer.writeLine('s 1');
+
+				if (mesh.matName)
+					await writer.writeLine('usemtl ' + mesh.matName);
+
+				const tris = mesh.triangles;
+				for (let i = 0, n = tris.length; i < n; i += 3) {
+					const a = tris[i], b = tris[i + 1], c = tris[i + 2];
+
+					const va = vertBase + vertMap.get(a) + 1;
+					const vb = vertBase + vertMap.get(b) + 1;
+					const vc = vertBase + vertMap.get(c) + 1;
+
+					const na = normalBase + normalMap.get(a) + 1;
+					const nb = normalBase + normalMap.get(b) + 1;
+					const nc = normalBase + normalMap.get(c) + 1;
+
+					const ua = hasUV ? uvBase + uvMap.get(a) + 1 : '';
+					const ub = hasUV ? uvBase + uvMap.get(b) + 1 : '';
+					const uc = hasUV ? uvBase + uvMap.get(c) + 1 : '';
+
+					await writer.writeLine('f ' + va + '/' + ua + '/' + na + ' ' + vb + '/' + ub + '/' + nb + ' ' + vc + '/' + uc + '/' + nc);
+				}
+			}
+
+			// Advance the global bases by the number of unique verts we emitted
+			// for this group (vertMap/normalMap/uvMap all share usedIndices size).
+			vertBase += vertMap.size;
+			normalBase += normalMap.size;
+			uvBase += uvMap.size;
+		}
+
+		writer.close();
+	}
 }
 
 module.exports = OBJWriter;
