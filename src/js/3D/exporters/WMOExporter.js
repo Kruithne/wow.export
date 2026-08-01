@@ -480,6 +480,17 @@ class WMOExporter {
 					meshes,
 					flipUVs: true,
 				};
+
+				// Generator execution resumes here only after the writer has fully
+				// consumed the yielded group, so the geometry is safe to release.
+				// WMOLoader.getGroup caches every group it loads and never evicts;
+				// without this, walking all groups leaves the entire model resident
+				// in the loader (boxed vertex/normal/index/uv arrays) - and because a
+				// map export re-runs this per referencing tile, the cache compounds
+				// across passes until the heap is exhausted. Dropping the cache slot
+				// lets it be reclaimed now; getGroup transparently reloads the group
+				// from CASC if a later pass (or the meta writer) needs it again.
+				wmo.groups[i] = null;
 			}
 		}
 
@@ -635,9 +646,13 @@ class WMOExporter {
 			json.addProperty('fog', wmo.fogs);
 			json.addProperty('flags', wmo.flags);
 
-			const groups = Array(wmo.groups.length);
-			for (let i = 0, n = wmo.groups.length; i < n; i++) {
-				const group = wmo.groups[i];
+			const groups = Array(wmo.groupCount);
+			for (let i = 0, n = wmo.groupCount; i < n; i++) {
+				// The streaming write above evicts each group from the loader cache
+				// as it consumes it, so re-fetch here (getGroup reloads from CASC if
+				// the slot was cleared). Keeps peak memory to a single group during
+				// meta export too, rather than the whole model.
+				const group = await wmo.getGroup(i);
 				groups[i] = {
 					groupName: wmo.groupNames[group.nameOfs],
 					groupDescription: wmo.groupNames[group.descOfs],
@@ -659,6 +674,10 @@ class WMOExporter {
 					colors2: group.colors2,
 					liquid: group.liquid
 				};
+
+				// Release the geometry again; the JSON above copied only the light
+				// metadata it needs, not the vertex/normal/index/uv arrays.
+				wmo.groups[i] = null;
 			}
 
 			// Create a textures array and push every unique fileDataID from the
