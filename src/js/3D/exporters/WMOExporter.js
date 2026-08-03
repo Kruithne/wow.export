@@ -176,7 +176,11 @@ class WMOExporter {
 					// reference. Decoding it once per export is enough - a large
 					// raid can reference the same handful of textures thousands of
 					// times, and the fetch+BLP decode dominates the export time.
-					const already_written = textureExportCache.has(fileDataID);
+					// Keyed on the destination too: with shared textures disabled
+					// the same fileDataID legitimately lands in several folders,
+					// and skipping those writes would leave dangling MTL entries.
+					const texture_cache_key = fileDataID + '>' + texPath;
+					const already_written = textureExportCache.has(texture_cache_key);
 
 					if (glbMode && !raw) {
 						// glb mode: convert to PNG buffer without writing
@@ -200,7 +204,7 @@ class WMOExporter {
 							const blp = new BLPFile(data);
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
-						textureExportCache.add(fileDataID);
+						textureExportCache.add(texture_cache_key);
 					} else {
 						log.write('Skipping WMO texture export %s (already exported this run or exists)', texPath);
 					}
