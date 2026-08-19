@@ -21,6 +21,14 @@ module.exports = {
 		<div id="config-wrapper">
 		<div id="config" :class="{ toastgap: $core.view.toast !== null }">
 			<div>
+				<h1>Interface Language</h1>
+				<p>Language used for the wow.export interface. Game file locale is configured separately.</p>
+				<p>Language changes take effect immediately.</p>
+				<div style="width: 180px">
+					<component :is="$components.MenuButton" class="spaced" :dropdown="true" :options="interface_languages" :default="$core.view.configEdit.uiLocale" @change="set_interface_language"></component>
+				</div>
+			</div>
+			<div>
 				<h1>Export Directory</h1>
 				<p>Local directory where files will be exported to.</p>
 				<p v-if="is_edit_export_path_concerning" class="concern">Warning: Using an export path with spaces may lead to problems in most 3D programs.</p>
@@ -382,6 +390,13 @@ module.exports = {
 			return Object.keys(this.$core.view.availableLocale.flags).map(e => { return { value: e }});
 		},
 
+		interface_languages() {
+			return [
+				{ value: 'en-US', label: 'English' },
+				{ value: 'zh-CN', label: '简体中文' }
+			];
+		},
+
 		selected_locale_key() {
 			for (const [key, flag] of Object.entries(this.$core.view.availableLocale.flags)) {
 				if (flag === this.$core.view.config.cascLocale)
@@ -409,10 +424,16 @@ module.exports = {
 			this.$modules.go_to_landing();
 		},
 
+		set_interface_language(value) {
+			this.$core.view.configEdit.uiLocale = value;
+			require('../i18n').setPreference(value);
+		},
+
 		handle_discard() {
 			if (this.$core.view.isBusy)
 				return;
 
+			require('../i18n').setPreference(this.$core.view.config.uiLocale);
 			this.go_home();
 		},
 
@@ -445,6 +466,8 @@ module.exports = {
 				return this.$core.setToast('error', 'A valid URL is required for DBD manfiest.', { 'Use Default': () => cfg.dbdFilenameURL = defaults.dbdFilenameURL }, -1);
 
 			this.$core.view.config = cfg;
+			const i18n = require('../i18n');
+			i18n.setPreference(cfg.uiLocale);
 			this.go_home();
 			this.$core.setToast('success', 'Changes to your configuration have been saved!');
 		},
@@ -455,6 +478,7 @@ module.exports = {
 
 			const defaults = await load_default_config();
 			this.$core.view.configEdit = JSON.parse(JSON.stringify(defaults));
+			require('../i18n').setPreference(defaults.uiLocale);
 		}
 	},
 

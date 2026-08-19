@@ -37,6 +37,8 @@ jobs:
         run: npm install -g node-gyp@latest
       - name: bun install
         run: bun install
+      - name: Test internationalization
+        run: bun test tests/i18n.test.js
       - name: Compile wow.export ${{ matrix.platform }}
         run: bun build.js ${{ matrix.platform }}
       - name: Ad-hoc codesign (macOS)

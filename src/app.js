@@ -96,6 +96,7 @@ const ExternalLinks = require('./js/external-links');
 const textureRibbon = require('./js/ui/texture-ribbon');
 const Shaders = require('./js/3D/Shaders');
 const gpuInfo = require('./js/gpu-info');
+const i18n = require('./js/i18n');
 
 const Vue = require('vue/dist/vue.cjs.js');
 window.Vue = Vue;
@@ -315,6 +316,11 @@ document.addEventListener('click', function(e) {
 				modules.setActive(module_name);
 			},
 
+			setInterfaceLanguage: function(locale) {
+				this.config.uiLocale = locale;
+				i18n.setPreference(locale);
+			},
+
 			handleContextMenuClick: function(opt) {
 				if (opt.action?.handler)
 					opt.action.handler();
@@ -512,6 +518,7 @@ document.addEventListener('click', function(e) {
 
 	// Interlink error handling for Vue.
 	app.config.errorHandler = err => crash('ERR_VUE', err.message);
+	i18n.init(app);
 
 	modules.register_components(app);
 	app.mount('#container');
@@ -575,6 +582,9 @@ document.addEventListener('click', function(e) {
 
 	// Load configuration.
 	await config.load();
+	if (core.view.config.uiLocale !== 'en-US' && core.view.config.uiLocale !== 'zh-CN')
+		core.view.config.uiLocale = 'en-US';
+	i18n.setPreference(core.view.config.uiLocale);
 
 	// Set-up default export directory if none configured.
 	if (core.view.config.exportDirectory === '') {
