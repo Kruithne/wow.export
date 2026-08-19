@@ -12,6 +12,7 @@
     "export": "Export",
     "settings": "Manage Settings",
     "language": "Interface Language",
+    "lastOpened": "Last Opened",
     "english": "English",
     "simplifiedChinese": "简体中文"
   },
