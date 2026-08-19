@@ -23,7 +23,7 @@ module.exports = {
 					<div class="source-title">Open Local Installation (Recommended)</div>
 					<div class="source-subtitle">Explore a locally installed World of Warcraft installation on your machine</div>
 					<div v-if="$core.view.config.recentLocal && $core.view.config.recentLocal.length > 0" class="source-last-opened">
-						Last Opened: <span class="link" @click.stop="click_source_local_recent($core.view.config.recentLocal[0])">{{ $core.view.config.recentLocal[0].path }} ({{ get_product_tag($core.view.config.recentLocal[0].product) }})</span>
+						{{ $t('common.lastOpened') }}: <span class="link" @click.stop="click_source_local_recent($core.view.config.recentLocal[0])">{{ $core.view.config.recentLocal[0].path }} ({{ get_product_tag($core.view.config.recentLocal[0].product) }})</span>
 					</div>
 				</div>
 			</div>
@@ -49,7 +49,7 @@ module.exports = {
 					<div class="source-title">Open Legacy Installation</div>
 					<div class="source-subtitle">Explore a legacy MPQ-based installation on your machine</div>
 					<div v-if="$core.view.config.recentLegacy && $core.view.config.recentLegacy.length > 0" class="source-last-opened">
-						Last Opened: <span class="link" @click.stop="click_source_legacy_recent($core.view.config.recentLegacy[0])">{{ $core.view.config.recentLegacy[0].path }}</span>
+						{{ $t('common.lastOpened') }}: <span class="link" @click.stop="click_source_legacy_recent($core.view.config.recentLegacy[0])">{{ $core.view.config.recentLegacy[0].path }}</span>
 					</div>
 				</div>
 			</div>

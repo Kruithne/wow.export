@@ -1,0 +1,374 @@
+{
+  "common": {
+    "enable": "启用",
+    "disable": "禁用",
+    "apply": "应用",
+    "discard": "放弃",
+    "reset": "恢复默认设置",
+    "add": "添加",
+    "cancel": "取消",
+    "close": "关闭",
+    "preview": "预览",
+    "export": "导出",
+    "settings": "管理设置",
+    "language": "界面语言",
+    "lastOpened": "最近打开",
+    "english": "English",
+    "simplifiedChinese": "简体中文"
+  },
+  "nav": {
+    "home": "主页",
+    "maps": "地图",
+    "zones": "区域",
+    "data": "数据",
+    "raw": "原始文件",
+    "install": "安装文件",
+    "text": "文本",
+    "fonts": "字体",
+    "videos": "视频",
+    "models": "模型",
+    "creatures": "生物",
+    "decor": "装饰物",
+    "audio": "音频",
+    "items": "物品",
+    "itemSets": "套装",
+    "characters": "角色",
+    "textures": "纹理",
+    "help": "帮助",
+    "blender": "Blender"
+  },
+  "actions": {
+    "files": "文件",
+    "browseInstallManifest": "浏览安装清单",
+    "browseRawClientFiles": "浏览客户端原始文件",
+    "installBlenderAddon": "安装 Blender 插件",
+    "viewRecentChanges": "查看最近更新"
+  },
+  "settings": {
+    "interfaceLanguage": "界面语言",
+    "interfaceLanguageDescription": "wow.export 使用的界面语言。游戏文件语言在其他设置中单独配置。",
+    "exportDirectory": "导出目录",
+    "characterSaveDirectory": "角色保存目录",
+    "scrollSpeed": "滚动速度",
+    "cascLocale": "CASC 语言",
+    "webpQuality": "WebP 质量",
+    "cacheExpiry": "缓存有效期",
+    "languageRestart": "语言切换会立即生效。"
+  },
+  "menu": {
+    "runtimeLog": "打开运行日志",
+    "restart": "重启 wow.export",
+    "reloadStyling": "重新加载样式",
+    "reloadShaders": "重新加载着色器",
+    "reloadActive": "重新加载当前模块",
+    "reloadAll": "重新加载所有模块"
+  },
+  "source": {
+    "localTitle": "打开本地安装（推荐）",
+    "remoteTitle": "使用 Battle.net CDN",
+    "legacyTitle": "打开旧版安装",
+    "selectBuild": "选择版本",
+    "return": "返回安装来源",
+    "region": "区域"
+  },
+  "itemTypes": {
+    "Head": "头部",
+    "Neck": "颈部",
+    "Shoulder": "肩部",
+    "Shirt": "衬衣",
+    "Chest": "胸部",
+    "Waist": "腰部",
+    "Legs": "腿部",
+    "Feet": "脚部",
+    "Wrist": "手腕",
+    "Hands": "手部",
+    "One-hand": "单手",
+    "Off-hand": "副手",
+    "Two-hand": "双手",
+    "Main-hand": "主手",
+    "Ranged": "远程",
+    "Back": "背部",
+    "Tabard": "战袍"
+  },
+  "itemQualities": {
+    "Poor": "粗糙",
+    "Common": "普通",
+    "Uncommon": "优秀",
+    "Rare": "精良",
+    "Epic": "史诗",
+    "Legendary": "传说",
+    "Artifact": "神器",
+    "Heirloom": "传家宝"
+  },
+  "status": {
+    "quickFilter": "快速筛选：",
+    "enableAll": "全部启用",
+    "disableAll": "全部禁用",
+    "autoPreview": "自动预览",
+    "showGrid": "显示网格",
+    "showWireframe": "显示线框",
+    "showBones": "显示骨骼",
+    "showTextures": "显示纹理",
+    "showBackground": "显示背景",
+    "camera": "相机",
+    "exportSection": "导出",
+    "textures": "纹理",
+    "textureAlpha": "纹理 Alpha",
+    "geosets": "几何组",
+    "skins": "皮肤",
+    "wmoGroups": "WMO 组",
+    "doodadSets": "装饰物集合"
+  },
+  "toast": {
+    "viewLog": "查看日志",
+    "useDefault": "使用默认值",
+    "noSelection": "你没有选择要导出的文件，请先选择文件。",
+    "saved": "配置更改已保存！",
+    "invalidExportDirectory": "必须提供有效的导出目录",
+    "invalidUrl": "必须提供有效的 URL。",
+    "unableToPreview": "无法预览模型",
+    "notConverted": "无法转换此文件。"
+  },
+  "legacy": {
+    "Website": "网站",
+    "Discord": "Discord 社区",
+    "Patreon": "Patreon",
+    "GitHub": "GitHub",
+    "Export Directory": "导出目录",
+    "Local directory where files will be exported to.": "文件导出的本地目录。",
+    "Character Save Directory": "角色保存目录",
+    "Local directory where saved characters are stored. Leave empty to use the default location.": "保存角色的本地目录。留空则使用默认位置。",
+    "Scroll Speed": "滚动速度",
+    "Display File Lists in Numerical Order (FileDataID)": "按数字顺序显示文件列表（FileDataID）",
+    "Find Unknown Files (Requires Restart)": "查找未知文件（需要重启）",
+    "Load Model Skins (Requires Restart)": "加载模型皮肤（需要重启）",
+    "Include Bone Prefixes": "包含骨骼前缀",
+    "Enable Shared Textures (Recommended)": "启用共享纹理（推荐）",
+    "Enable Shared Children (Recommended)": "启用共享子资源（推荐）",
+    "Path Separator Format": "路径分隔符格式",
+    "Windows": "Windows",
+    "POSIX": "POSIX",
+    "Use Absolute MTL Texture Paths": "使用绝对 MTL 纹理路径",
+    "Use Absolute glTF Texture Paths": "使用绝对 glTF 纹理路径",
+    "Use Absolute Model Placement Paths": "使用绝对模型摆放路径",
+    "Export Model Collision": "导出模型碰撞体",
+    "Export Additional UV Layers": "导出额外 UV 图层",
+    "Export Meta Data": "导出元数据",
+    "Export M2 Bone Data": "导出 M2 骨骼数据",
+    "Always Overwrite Existing Files (Recommended)": "始终覆盖现有文件（推荐）",
+    "Name Exported Files": "为导出文件命名",
+    "Prevent 3D Preview Overwrites": "防止 3D 预览文件覆盖",
+    "Regular Expression Filtering (Advanced)": "正则表达式筛选（高级）",
+    "Copy Mode": "复制模式",
+    "Paste Selection": "粘贴选择",
+    "Split Large Terrain Maps (Recommended)": "拆分大型地形地图（推荐）",
+    "Split Alpha Maps": "拆分 Alpha 地图",
+    "Show unknown items": "显示未知物品",
+    "CDN Fallback Hosts": "CDN 备用主机",
+    "Manually Clear Cache (Requires Restart)": "手动清理缓存（需要重启）",
+    "Encryption Keys": "加密密钥",
+    "Add Encryption Key": "添加加密密钥",
+    "Realm List Source": "服务器列表来源",
+    "Character Appearance API Endpoint": "角色外观 API 地址",
+    "Use Binary Listfile Format (Requires Restart)": "使用二进制 Listfile 格式（需要重启）",
+    "Listfile Source (Legacy)": "Listfile 来源（旧版）",
+    "Listfile Update Frequency": "Listfile 更新频率",
+    "Data Table Definition Repository": "数据表定义仓库",
+    "DBD Manifest Repository": "DBD 清单仓库",
+    "Allow Cache Collection": "允许收集缓存",
+    "Requires Restart": "需要重启",
+    "Loading, please wait...": "正在加载，请稍候……",
+    "No File Selected": "未选择文件",
+    "Apply pose": "应用姿势",
+    "Auto Camera": "自动相机",
+    "Background color": "背景颜色",
+    "Clear All Equipment": "清除全部装备",
+    "Close Preview": "关闭预览",
+    "Copy Header": "复制表头",
+    "Copy Item Name": "复制物品名称",
+    "Copy cell contents": "复制单元格内容",
+    "Create Table": "创建表格",
+    "Demon Hunter": "恶魔猎手",
+    "Directory": "目录",
+    "Equip": "装备",
+    "Equipment": "装备",
+    "Export Options": "导出选项",
+    "Export all rows": "导出所有行",
+    "Export animations": "导出动画",
+    "Far Clip": "远裁剪面",
+    "Foliage": "植被",
+    "Full": "完整",
+    "Heightmap Resolution": "高度图分辨率",
+    "Heightmaps": "高度图",
+    "Include Holes": "包含地形孔洞",
+    "Increment": "递增编号",
+    "Item Types": "物品类型",
+    "Load visage model (Dracthyr/Worgen)": "加载面容模型（龙希尔/狼人）",
+    "Loop": "循环播放",
+    "M2 .anim files": "M2 .anim 文件",
+    "M2 .bone Files": "M2 .bone 文件",
+    "M2 .skel Files": "M2 .skel 文件",
+    "M2 .skin Files": "M2 .skin 文件",
+    "Map Display": "地图显示",
+    "Model Textures": "模型纹理",
+    "My Characters": "我的角色",
+    "Near Clip": "近裁剪面",
+    "Open export directory": "打开导出目录",
+    "Options": "选项",
+    "Ortho Scale": "正交缩放",
+    "Orthographic": "正交投影",
+    "Other": "其他",
+    "Primary": "主要地址",
+    "Quality": "质量",
+    "Race:": "种族：",
+    "Randomize Customization": "随机定制",
+    "Refresh": "刷新",
+    "Remove": "移除",
+    "Remove Item": "移除物品",
+    "Replace Item": "替换物品",
+    "Return to Customization": "返回定制",
+    "Save Character": "保存角色",
+    "Search in Items Tab": "在物品页中搜索",
+    "Select All: Control + A": "全选：Control + A",
+    "Select Item": "选择物品",
+    "Select Tile: Shift + Click": "选择地块：Shift + 点击",
+    "Show Base Map": "显示基础地图",
+    "Show Encounters": "显示遭遇战标记",
+    "Show Overlays": "显示覆盖层",
+    "Show Subtitles": "显示字幕",
+    "Split WMO Groups": "拆分 WMO 组",
+    "Strings from:": "字符串来源：",
+    "Strip Whitespace From Copied Paths": "移除复制路径中的空格",
+    "Strip Whitespace From Export Paths": "移除导出路径中的空格",
+    "Terrain Texture Quality": "地形纹理质量",
+    "Underwear:": "内衣：",
+    "Use 3D camera": "使用 3D 相机",
+    "Visible": "可见",
+    "View item on Wowhead (web)": "在 Wowhead 中查看物品",
+    "Zoom: Mouse Wheel": "缩放：鼠标滚轮"
+    ,"After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).": "缓存闲置多少天后删除。设为 0 可禁用缓存清理（不推荐）。"
+    ,"Allows use of regular expressions in filtering lists.": "允许在列表筛选中使用正则表达式。"
+    ,"By default, using CTRL + C on a file list will copy the full entry to your clipboard.": "默认情况下，在文件列表中按 CTRL + C 会将完整条目复制到剪贴板。"
+    ,"Comma-separated list of additional CDN hostnames to try when official CDN servers are unavailable or slow.": "官方 CDN 不可用或速度较慢时尝试的备用 CDN 主机列表，以逗号分隔。"
+    ,"How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)": "结果视图每次滚动的行数（设为 0 使用默认滚动量）。"
+    ,"How often (in days) the listfile is updated. Set to zero to always re-download the listfile.": "Listfile 的更新间隔（天）。设为 0 则每次都重新下载。"
+    ,"Remote URL used for downloading the optimized binary listfile format. (Must use same format)": "用于下载优化二进制 Listfile 的远程地址（必须使用相同格式）。"
+    ,"Remote URL used for retrieving data from the Battle.net Character Appearance API. (Must use same format)": "用于从 Battle.net 角色外观 API 获取数据的远程地址（必须使用相同格式）。"
+    ,"Remote URL used for retrieving the realm list. (Must use same format)": "用于获取服务器列表的远程地址（必须使用相同格式）。"
+    ,"Remote URL used to obtain DBD manifest information. (Must use same format)": "用于获取 DBD 清单信息的远程地址（必须使用相同格式）。"
+    ,"Remote URL used to update DBD definitions. (Must use same format)": "用于更新 DBD 定义的远程地址（必须使用相同格式）。"
+    ,"Remote URL used to update keys for encrypted files.": "用于更新加密文件密钥的远程地址。"
+    ,"Sets the path separator format used in exported files.": "设置导出文件使用的路径分隔符格式。"
+    ,"Setting this to Directory will instead only copy the directory of the given entry.": "设为“目录”时只复制条目的目录。"
+    ,"Setting this to FileDataID will instead only copy the FID of the given entry (must have FIDs enabled).": "设为“FileDataID”时只复制条目的 FID（必须启用 FID）。"
+    ,"Setting this to FileDataID will instead only copy the FID of the entry (must have FIDs enabled).": "设为“FileDataID”时只复制条目的 FID（必须启用 FID）。"
+    ,"This dramatically reduces disk space used by not duplicating models.": "避免重复导出模型，可显著减少磁盘占用。"
+    ,"This dramatically reduces disk space used by not duplicating textures.": "避免重复导出纹理，可显著减少磁盘占用。"
+    ,"This should match the locale of your client when using local installations.": "使用本地安装时，此项应与客户端语言一致。"
+    ,"This will cause issues when sharing exported models between computers.": "在不同电脑之间共享导出模型时可能导致问题。"
+    ,"Warning: Using an export path with spaces may lead to problems in most 3D programs.": "警告：导出路径包含空格可能导致大多数 3D 软件出现问题。"
+    ,"When disabled, files are exported using their fileDataID numbers (e.g., \"12345.png\").": "禁用时使用 fileDataID 数字命名文件（例如“12345.png”）。"
+    ,"When enabled, files are exported using their listfile names (e.g., \"ability_stealth.png\").": "启用时使用 Listfile 名称命名文件（例如“ability_stealth.png”）。"
+    ,"When enabled, wow.export will list all items in the items tab, even those without a name.": "启用后，物品页会列出所有物品，包括没有名称的物品。"
+    ,"When exporting, files will always be written to disk even if they exist.": "导出时即使文件已存在，也始终写入磁盘。"
+    ,"Atlas Regions": "图集区域"
+    ,"Autoplay": "自动播放"
+    ,"BLP": "BLP"
+    ,"Body:": "身体："
+    ,"Box Select: B": "框选：B"
+    ,"Categories": "分类"
+    ,"Change": "更改"
+    ,"Changelog": "更新日志"
+    ,"Character Import": "角色导入"
+    ,"Class:": "职业："
+    ,"Copy export path": "复制导出路径"
+    ,"Copy export path to clipboard": "复制导出路径到剪贴板"
+    ,"Copy file data ID to clipboard": "复制文件数据 ID 到剪贴板"
+    ,"Copy file path to clipboard": "复制文件路径到剪贴板"
+    ,"Copy item ID to clipboard": "复制物品 ID 到剪贴板"
+    ,"Copy item name to clipboard": "复制物品名称到剪贴板"
+    ,"Copy texture name to clipboard": "复制纹理名称到剪贴板"
+    ,"Custom Geoset Control": "自定义几何组控制"
+    ,"Deselect All: D": "取消全选：D"
+    ,"Empty": "空"
+    ,"Explore a legacy MPQ-based installation on your machine": "浏览电脑上的旧版 MPQ 安装"
+    ,"Explore a locally installed World of Warcraft installation on your machine": "浏览电脑上本地安装的《魔兽世界》"
+    ,"Explore available builds without installation directly from the Battle.net servers": "直接从 Battle.net 服务器浏览可用版本，无需安装游戏"
+    ,"Export Foliage": "导出植被"
+    ,"Export G-Objects": "导出 G 物件"
+    ,"Export Liquids": "导出液体"
+    ,"Export M2": "导出 M2"
+    ,"Export M2 (Raw)": "导出 M2（原始）"
+    ,"Export WMO": "导出 WMO"
+    ,"Export WMO (Raw)": "导出 WMO（原始）"
+    ,"Export WMO Sets": "导出 WMO 集合"
+    ,"Fallback": "备用"
+    ,"Feedback": "反馈"
+    ,"FileDataID": "FileDataID"
+    ,"Hidden": "隐藏"
+    ,"Listfile Binary Source": "二进制 Listfile 来源"
+    ,"Loading items...": "正在加载物品……"
+    ,"Made with wow.export": "由 wow.export 制作"
+    ,"Module Test A": "模块测试 A"
+    ,"Module Test B": "模块测试 B"
+    ,"Navigate: Click + Drag": "移动：点击并拖动"
+    ,"No items found.": "未找到物品。"
+    ,"No runtime log available.": "没有可用的运行日志。"
+    ,"Quality setting for WebP exports. Range is 1-100 (100 is lossless)": "WebP 导出质量，范围为 1-100（100 为无损）"
+    ,"Regex Enabled": "已启用正则表达式"
+    ,"Reload Module B": "重新加载模块 B"
+    ,"Remote URL or local path used for updating the CASC listfile. (Must use same format)": "用于更新 CASC Listfile 的远程地址或本地路径（必须使用相同格式）"
+    ,"Render shadow": "渲染阴影"
+    ,"Select an article to view": "选择要查看的文章"
+    ,"Settings": "设置"
+    ,"Show Toast": "显示提示"
+    ,"Show background": "显示背景"
+    ,"Stuck? Need Help?": "遇到问题？需要帮助？"
+    ,"Support Us!": "支持我们！"
+    ,"Switch to Module A": "切换到模块 A"
+    ,"Switch to Module B": "切换到模块 B"
+    ,"Wowhead Import": "Wowhead 导入"
+    ,"wow.export": "wow.export"
+    ,"Classic Realms": "经典服务器"
+    ,"Failed to load items.": "加载物品失败。"
+    ,"Gnomish Heritage?": "侏儒传承护甲？"
+    ,"Guild Tabard": "公会战袍"
+    ,"WMO": "WMO"
+    ,"Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.": "Blender 用户可以使用专用导入插件，一键导入高级对象。WMO 对象会包含导出的装饰物集合，ADT 地图块也会完整导入 WMO 和装饰物，并保持游戏内的位置。"
+    ,"Disabling this can speed up exporting, but may lead to issues between versions.": "禁用后可以加快导出，但可能导致不同版本之间出现问题。"
+    ,"Disabling this will break backwards compatibility with previous glTF model and animation exports.": "禁用后将破坏与旧版 glTF 模型和动画导出的兼容性。"
+    ,"Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality.": "禁用后可以减少内存使用并改善加载速度，但会禁用 M2 皮肤功能。"
+    ,"Enable this option if you are having issues importing OBJ models with Shared Textures enabled.": "如果启用共享纹理后导入 OBJ 模型出现问题，请启用此选项。"
+    ,"Enable this option if you are having issues importing glTF models with Shared Textures enabled.": "如果启用共享纹理后导入 glTF 模型出现问题，请启用此选项。"
+    ,"Enable this option if your 3D software does not support whitespace in paths.": "如果你的 3D 软件不支持路径中的空格，请启用此选项。"
+    ,"If enabled, 3D preview exports will add increments to prevent overwriting existing files.": "启用后，3D 预览导出会添加递增编号，避免覆盖现有文件。"
+    ,"If enabled, M2 models exported as OBJ will also have their collision exported into a .phys.obj file.": "启用后，导出为 OBJ 的 M2 模型还会将碰撞体导出为 .phys.obj 文件。"
+    ,"If enabled, MTL files will contain absolute textures paths rather than relative ones.": "启用后，MTL 文件将使用绝对纹理路径，而不是相对路径。"
+    ,"If enabled, additional UV layers will be exported for M2/WMO models, included as non-standard properties (vt2, vt3, etc) in OBJ files.": "启用后，M2/WMO 模型的额外 UV 图层会作为非标准属性（vt2、vt3 等）导出到 OBJ 文件。"
+    ,"If enabled, all file lists will be ordered numerically by file ID, otherwise alphabetically by filename.": "启用后，所有文件列表按文件 ID 数字排序，否则按文件名的字母顺序排序。"
+    ,"If enabled, exported models on a WMO/ADT will be exported to their own path rather than with their parent.": "启用后，WMO/ADT 中导出的模型会放到独立路径，而不是与父对象放在一起。"
+    ,"If enabled, exported textures will be exported to their own path rather than with their parent.": "启用后，导出的纹理会放到独立路径，而不是与父对象放在一起。"
+    ,"If enabled, exporting baked terrain above 8k will be split into smaller files rather than one large file.": "启用后，导出超过 8K 的烘焙地形时会拆分为多个较小文件。"
+    ,"If enabled, file paths copied from a listbox (CTRL + C) will have whitespace stripped.": "启用后，从列表框复制的文件路径（CTRL + C）会移除空格。"
+    ,"If enabled, glTF files will contain absolute textures paths rather than relative ones.": "启用后，glTF 文件将使用绝对纹理路径，而不是相对路径。"
+    ,"If enabled, paths inside model placement files (CSV) will contain absolute paths rather than relative ones.": "启用后，模型摆放文件（CSV）中的路径将使用绝对路径，而不是相对路径。"
+    ,"If enabled, terrain alpha maps will be exported as individual images for each ADT chunk.": "启用后，地形 Alpha 图会按 ADT 区块分别导出为独立图像。"
+    ,"If enabled, using CTRL + V on the model list will attempt to select filenames you paste.": "启用后，在模型列表中按 CTRL + V 会尝试选中粘贴的文件名。"
+    ,"If enabled, verbose data will be exported for enabled formats into relative .json files.": "启用后，会为启用的格式导出详细数据到相对路径的 .json 文件。"
+    ,"If enabled, whitespace will be removed from exported paths.": "启用后，导出路径中的空格会被移除。"
+    ,"If enabled, wow.export will anonymously collect cache data from your client for community usage.": "启用后，wow.export 会匿名收集客户端缓存数据供社区使用。"
+    ,"If enabled, wow.export will parse creature and item skins from data tables for M2 models.": "启用后，wow.export 会从数据表解析 M2 模型的生物和物品皮肤。"
+    ,"If enabled, wow.export will use the optimized binary listfile format instead of the legacy CSV format.": "启用后，wow.export 会使用优化的二进制 Listfile，而不是旧版 CSV 格式。"
+    ,"If enabled, wow.export will use various methods to locate unknown files.": "启用后，wow.export 会使用多种方法查找未知文件。"
+    ,"Installing the wow.export Add-on for Blender 2.8+": "正在安装 Blender 2.8+ 的 wow.export 插件"
+    ,"Join our Discord community for support!": "加入 Discord 社区获取帮助！"
+    ,"Manually add a BLTE encryption key.": "手动添加 BLTE 加密密钥。"
+    ,"Something went so terribly wrong that we don't even have an error message.": "发生了严重错误，甚至无法获取错误信息。"
+    ,"Support development of wow.export through Patreon!": "通过 Patreon 支持 wow.export 的开发！"
+    ,"These are pinged alongside official servers and used based on speed and availability.": "这些主机会与官方服务器一起进行测速，并根据速度和可用性使用。"
+    ,"Use the wow.export Blender add-on to import OBJ models with additional UV layers.": "使用 wow.export Blender 插件导入带有额外 UV 图层的 OBJ 模型。"
+    ,"Which locale to use for file reading. This only affects game files.": "读取文件时使用的语言。此项只影响游戏文件。"
+    ,"While housekeeping on the cache is mostly automatic, sometimes clearing manually can resolve issues.": "缓存维护通常会自动进行，但手动清理有时可以解决问题。"
+    ,"wow.export is open-source, tinkerers are welcome!": "wow.export 是开源项目，欢迎动手探索！"
+  }
+}

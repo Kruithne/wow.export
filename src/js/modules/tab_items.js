@@ -95,7 +95,7 @@ module.exports = {
 				<div class="sidebar-checklist">
 					<div v-for="item in $core.view.itemViewerTypeMask" class="sidebar-checklist-item" :class="{ selected: item.checked }" @click="toggle_checklist_item(item)">
 						<input type="checkbox" v-model="item.checked" @click.stop/>
-						<span>{{ item.label }}</span>
+						<span>{{ $t('itemTypes.' + item.label) }}</span>
 					</div>
 				</div>
 				<div class="list-toggles">
@@ -105,7 +105,7 @@ module.exports = {
 				<div class="sidebar-checklist">
 					<div v-for="item in $core.view.itemViewerQualityMask" class="sidebar-checklist-item" :class="{ selected: item.checked }" @click="toggle_checklist_item(item)">
 						<input type="checkbox" v-model="item.checked" :class="'quality-' + item.id" @click.stop/>
-						<span>{{ item.label }}</span>
+						<span>{{ $t('itemQualities.' + item.label) }}</span>
 					</div>
 				</div>
 				<div class="list-toggles">

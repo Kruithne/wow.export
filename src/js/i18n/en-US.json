@@ -1,0 +1,374 @@
+{
+  "common": {
+    "enable": "Enable",
+    "disable": "Disable",
+    "apply": "Apply",
+    "discard": "Discard",
+    "reset": "Reset to Defaults",
+    "add": "Add",
+    "cancel": "Cancel",
+    "close": "Close",
+    "preview": "Preview",
+    "export": "Export",
+    "settings": "Manage Settings",
+    "language": "Interface Language",
+    "lastOpened": "Last Opened",
+    "english": "English",
+    "simplifiedChinese": "简体中文"
+  },
+  "nav": {
+    "home": "Home",
+    "maps": "Maps",
+    "zones": "Zones",
+    "data": "Data",
+    "raw": "Raw",
+    "install": "Install",
+    "text": "Text",
+    "fonts": "Fonts",
+    "videos": "Videos",
+    "models": "Models",
+    "creatures": "Creatures",
+    "decor": "Decor",
+    "audio": "Audio",
+    "items": "Items",
+    "itemSets": "Item Sets",
+    "characters": "Characters",
+    "textures": "Textures",
+    "help": "Help",
+    "blender": "Blender"
+  },
+  "actions": {
+    "files": "Files",
+    "browseInstallManifest": "Browse Install Manifest",
+    "browseRawClientFiles": "Browse Raw Client Files",
+    "installBlenderAddon": "Install Blender Add-on",
+    "viewRecentChanges": "View Recent Changes"
+  },
+  "settings": {
+    "interfaceLanguage": "Interface Language",
+    "interfaceLanguageDescription": "Language used for the wow.export interface. Game file locale is configured separately.",
+    "exportDirectory": "Export Directory",
+    "characterSaveDirectory": "Character Save Directory",
+    "scrollSpeed": "Scroll Speed",
+    "cascLocale": "CASC Locale",
+    "webpQuality": "WebP Quality",
+    "cacheExpiry": "Cache Expiry",
+    "languageRestart": "Language changes take effect immediately."
+  },
+  "menu": {
+    "runtimeLog": "Open Runtime Log",
+    "restart": "Restart wow.export",
+    "reloadStyling": "Reload Styling",
+    "reloadShaders": "Reload Shaders",
+    "reloadActive": "Reload Active Module",
+    "reloadAll": "Reload All Modules"
+  },
+  "source": {
+    "localTitle": "Open Local Installation (Recommended)",
+    "remoteTitle": "Use Battle.net CDN",
+    "legacyTitle": "Open Legacy Installation",
+    "selectBuild": "Select Build",
+    "return": "Return to Installations",
+    "region": "Region"
+  },
+  "itemTypes": {
+    "Head": "Head",
+    "Neck": "Neck",
+    "Shoulder": "Shoulder",
+    "Shirt": "Shirt",
+    "Chest": "Chest",
+    "Waist": "Waist",
+    "Legs": "Legs",
+    "Feet": "Feet",
+    "Wrist": "Wrist",
+    "Hands": "Hands",
+    "One-hand": "One-hand",
+    "Off-hand": "Off-hand",
+    "Two-hand": "Two-hand",
+    "Main-hand": "Main-hand",
+    "Ranged": "Ranged",
+    "Back": "Back",
+    "Tabard": "Tabard"
+  },
+  "itemQualities": {
+    "Poor": "Poor",
+    "Common": "Common",
+    "Uncommon": "Uncommon",
+    "Rare": "Rare",
+    "Epic": "Epic",
+    "Legendary": "Legendary",
+    "Artifact": "Artifact",
+    "Heirloom": "Heirloom"
+  },
+  "status": {
+    "quickFilter": "Quick filter:",
+    "enableAll": "Enable All",
+    "disableAll": "Disable All",
+    "autoPreview": "Auto Preview",
+    "showGrid": "Show Grid",
+    "showWireframe": "Show Wireframe",
+    "showBones": "Show Bones",
+    "showTextures": "Show Textures",
+    "showBackground": "Show Background",
+    "camera": "Camera",
+    "exportSection": "Export",
+    "textures": "Textures",
+    "textureAlpha": "Texture Alpha",
+    "geosets": "Geosets",
+    "skins": "Skins",
+    "wmoGroups": "WMO Groups",
+    "doodadSets": "Doodad Sets"
+  },
+  "toast": {
+    "viewLog": "View Log",
+    "useDefault": "Use Default",
+    "noSelection": "You didn't select any files to export; you should do that first.",
+    "saved": "Changes to your configuration have been saved!",
+    "invalidExportDirectory": "A valid export directory must be provided",
+    "invalidUrl": "A valid URL is required.",
+    "unableToPreview": "Unable to preview model",
+    "notConverted": "That file cannot be converted."
+  },
+  "legacy": {
+    "Website": "Website",
+    "Discord": "Discord",
+    "Patreon": "Patreon",
+    "GitHub": "GitHub",
+    "Export Directory": "Export Directory",
+    "Local directory where files will be exported to.": "Local directory where files will be exported to.",
+    "Character Save Directory": "Character Save Directory",
+    "Local directory where saved characters are stored. Leave empty to use the default location.": "Local directory where saved characters are stored. Leave empty to use the default location.",
+    "Scroll Speed": "Scroll Speed",
+    "Display File Lists in Numerical Order (FileDataID)": "Display File Lists in Numerical Order (FileDataID)",
+    "Find Unknown Files (Requires Restart)": "Find Unknown Files (Requires Restart)",
+    "Load Model Skins (Requires Restart)": "Load Model Skins (Requires Restart)",
+    "Include Bone Prefixes": "Include Bone Prefixes",
+    "Enable Shared Textures (Recommended)": "Enable Shared Textures (Recommended)",
+    "Enable Shared Children (Recommended)": "Enable Shared Children (Recommended)",
+    "Path Separator Format": "Path Separator Format",
+    "Windows": "Windows",
+    "POSIX": "POSIX",
+    "Use Absolute MTL Texture Paths": "Use Absolute MTL Texture Paths",
+    "Use Absolute glTF Texture Paths": "Use Absolute glTF Texture Paths",
+    "Use Absolute Model Placement Paths": "Use Absolute Model Placement Paths",
+    "Export Model Collision": "Export Model Collision",
+    "Export Additional UV Layers": "Export Additional UV Layers",
+    "Export Meta Data": "Export Meta Data",
+    "Export M2 Bone Data": "Export M2 Bone Data",
+    "Always Overwrite Existing Files (Recommended)": "Always Overwrite Existing Files (Recommended)",
+    "Name Exported Files": "Name Exported Files",
+    "Prevent 3D Preview Overwrites": "Prevent 3D Preview Overwrites",
+    "Regular Expression Filtering (Advanced)": "Regular Expression Filtering (Advanced)",
+    "Copy Mode": "Copy Mode",
+    "Paste Selection": "Paste Selection",
+    "Split Large Terrain Maps (Recommended)": "Split Large Terrain Maps (Recommended)",
+    "Split Alpha Maps": "Split Alpha Maps",
+    "Show unknown items": "Show unknown items",
+    "CDN Fallback Hosts": "CDN Fallback Hosts",
+    "Manually Clear Cache (Requires Restart)": "Manually Clear Cache (Requires Restart)",
+    "Encryption Keys": "Encryption Keys",
+    "Add Encryption Key": "Add Encryption Key",
+    "Realm List Source": "Realm List Source",
+    "Character Appearance API Endpoint": "Character Appearance API Endpoint",
+    "Use Binary Listfile Format (Requires Restart)": "Use Binary Listfile Format (Requires Restart)",
+    "Listfile Source (Legacy)": "Listfile Source (Legacy)",
+    "Listfile Update Frequency": "Listfile Update Frequency",
+    "Data Table Definition Repository": "Data Table Definition Repository",
+    "DBD Manifest Repository": "DBD Manifest Repository",
+    "Allow Cache Collection": "Allow Cache Collection",
+    "Requires Restart": "Requires Restart",
+    "Loading, please wait...": "Loading, please wait...",
+    "No File Selected": "No File Selected",
+    "Apply pose": "Apply pose",
+    "Auto Camera": "Auto Camera",
+    "Background color": "Background color",
+    "Clear All Equipment": "Clear All Equipment",
+    "Close Preview": "Close Preview",
+    "Copy Header": "Copy Header",
+    "Copy Item Name": "Copy Item Name",
+    "Copy cell contents": "Copy cell contents",
+    "Create Table": "Create Table",
+    "Demon Hunter": "Demon Hunter",
+    "Directory": "Directory",
+    "Equip": "Equip",
+    "Equipment": "Equipment",
+    "Export Options": "Export Options",
+    "Export all rows": "Export all rows",
+    "Export animations": "Export animations",
+    "Far Clip": "Far Clip",
+    "Foliage": "Foliage",
+    "Full": "Full",
+    "Heightmap Resolution": "Heightmap Resolution",
+    "Heightmaps": "Heightmaps",
+    "Include Holes": "Include Holes",
+    "Increment": "Increment",
+    "Item Types": "Item Types",
+    "Load visage model (Dracthyr/Worgen)": "Load visage model (Dracthyr/Worgen)",
+    "Loop": "Loop",
+    "M2 .anim files": "M2 .anim files",
+    "M2 .bone Files": "M2 .bone Files",
+    "M2 .skel Files": "M2 .skel Files",
+    "M2 .skin Files": "M2 .skin Files",
+    "Map Display": "Map Display",
+    "Model Textures": "Model Textures",
+    "My Characters": "My Characters",
+    "Near Clip": "Near Clip",
+    "Open export directory": "Open export directory",
+    "Options": "Options",
+    "Ortho Scale": "Ortho Scale",
+    "Orthographic": "Orthographic",
+    "Other": "Other",
+    "Primary": "Primary",
+    "Quality": "Quality",
+    "Race:": "Race:",
+    "Randomize Customization": "Randomize Customization",
+    "Refresh": "Refresh",
+    "Remove": "Remove",
+    "Remove Item": "Remove Item",
+    "Replace Item": "Replace Item",
+    "Return to Customization": "Return to Customization",
+    "Save Character": "Save Character",
+    "Search in Items Tab": "Search in Items Tab",
+    "Select All: Control + A": "Select All: Control + A",
+    "Select Item": "Select Item",
+    "Select Tile: Shift + Click": "Select Tile: Shift + Click",
+    "Show Base Map": "Show Base Map",
+    "Show Encounters": "Show Encounters",
+    "Show Overlays": "Show Overlays",
+    "Show Subtitles": "Show Subtitles",
+    "Split WMO Groups": "Split WMO Groups",
+    "Strings from:": "Strings from:",
+    "Strip Whitespace From Copied Paths": "Strip Whitespace From Copied Paths",
+    "Strip Whitespace From Export Paths": "Strip Whitespace From Export Paths",
+    "Terrain Texture Quality": "Terrain Texture Quality",
+    "Underwear:": "Underwear:",
+    "Use 3D camera": "Use 3D camera",
+    "Visible": "Visible",
+    "View item on Wowhead (web)": "View item on Wowhead (web)",
+    "Zoom: Mouse Wheel": "Zoom: Mouse Wheel"
+    ,"After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended).": "After how many days of inactivity is cached data deleted. Setting to zero disables cache clean-up (not recommended)."
+    ,"Allows use of regular expressions in filtering lists.": "Allows use of regular expressions in filtering lists."
+    ,"By default, using CTRL + C on a file list will copy the full entry to your clipboard.": "By default, using CTRL + C on a file list will copy the full entry to your clipboard."
+    ,"Comma-separated list of additional CDN hostnames to try when official CDN servers are unavailable or slow.": "Comma-separated list of additional CDN hostnames to try when official CDN servers are unavailable or slow."
+    ,"How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)": "How many lines at a time you scroll down in the results view (leave at 0 for default scroll amount)"
+    ,"How often (in days) the listfile is updated. Set to zero to always re-download the listfile.": "How often (in days) the listfile is updated. Set to zero to always re-download the listfile."
+    ,"Remote URL used for downloading the optimized binary listfile format. (Must use same format)": "Remote URL used for downloading the optimized binary listfile format. (Must use same format)"
+    ,"Remote URL used for retrieving data from the Battle.net Character Appearance API. (Must use same format)": "Remote URL used for retrieving data from the Battle.net Character Appearance API. (Must use same format)"
+    ,"Remote URL used for retrieving the realm list. (Must use same format)": "Remote URL used for retrieving the realm list. (Must use same format)"
+    ,"Remote URL used to obtain DBD manifest information. (Must use same format)": "Remote URL used to obtain DBD manifest information. (Must use same format)"
+    ,"Remote URL used to update DBD definitions. (Must use same format)": "Remote URL used to update DBD definitions. (Must use same format)"
+    ,"Remote URL used to update keys for encrypted files.": "Remote URL used to update keys for encrypted files."
+    ,"Sets the path separator format used in exported files.": "Sets the path separator format used in exported files."
+    ,"Setting this to Directory will instead only copy the directory of the given entry.": "Setting this to Directory will instead only copy the directory of the given entry."
+    ,"Setting this to FileDataID will instead only copy the FID of the given entry (must have FIDs enabled).": "Setting this to FileDataID will instead only copy the FID of the given entry (must have FIDs enabled)."
+    ,"Setting this to FileDataID will instead only copy the FID of the entry (must have FIDs enabled).": "Setting this to FileDataID will instead only copy the FID of the entry (must have FIDs enabled)."
+    ,"This dramatically reduces disk space used by not duplicating models.": "This dramatically reduces disk space used by not duplicating models."
+    ,"This dramatically reduces disk space used by not duplicating textures.": "This dramatically reduces disk space used by not duplicating textures."
+    ,"This should match the locale of your client when using local installations.": "This should match the locale of your client when using local installations."
+    ,"This will cause issues when sharing exported models between computers.": "This will cause issues when sharing exported models between computers."
+    ,"Warning: Using an export path with spaces may lead to problems in most 3D programs.": "Warning: Using an export path with spaces may lead to problems in most 3D programs."
+    ,"When disabled, files are exported using their fileDataID numbers (e.g., \"12345.png\").": "When disabled, files are exported using their fileDataID numbers (e.g., \"12345.png\")."
+    ,"When enabled, files are exported using their listfile names (e.g., \"ability_stealth.png\").": "When enabled, files are exported using their listfile names (e.g., \"ability_stealth.png\")."
+    ,"When enabled, wow.export will list all items in the items tab, even those without a name.": "When enabled, wow.export will list all items in the items tab, even those without a name."
+    ,"When exporting, files will always be written to disk even if they exist.": "When exporting, files will always be written to disk even if they exist."
+    ,"Atlas Regions": "Atlas Regions"
+    ,"Autoplay": "Autoplay"
+    ,"BLP": "BLP"
+    ,"Body:": "Body:"
+    ,"Box Select: B": "Box Select: B"
+    ,"Categories": "Categories"
+    ,"Change": "Change"
+    ,"Changelog": "Changelog"
+    ,"Character Import": "Character Import"
+    ,"Class:": "Class:"
+    ,"Copy export path": "Copy export path"
+    ,"Copy export path to clipboard": "Copy export path to clipboard"
+    ,"Copy file data ID to clipboard": "Copy file data ID to clipboard"
+    ,"Copy file path to clipboard": "Copy file path to clipboard"
+    ,"Copy item ID to clipboard": "Copy item ID to clipboard"
+    ,"Copy item name to clipboard": "Copy item name to clipboard"
+    ,"Copy texture name to clipboard": "Copy texture name to clipboard"
+    ,"Custom Geoset Control": "Custom Geoset Control"
+    ,"Deselect All: D": "Deselect All: D"
+    ,"Empty": "Empty"
+    ,"Explore a legacy MPQ-based installation on your machine": "Explore a legacy MPQ-based installation on your machine"
+    ,"Explore a locally installed World of Warcraft installation on your machine": "Explore a locally installed World of Warcraft installation on your machine"
+    ,"Explore available builds without installation directly from the Battle.net servers": "Explore available builds without installation directly from the Battle.net servers"
+    ,"Export Foliage": "Export Foliage"
+    ,"Export G-Objects": "Export G-Objects"
+    ,"Export Liquids": "Export Liquids"
+    ,"Export M2": "Export M2"
+    ,"Export M2 (Raw)": "Export M2 (Raw)"
+    ,"Export WMO": "Export WMO"
+    ,"Export WMO (Raw)": "Export WMO (Raw)"
+    ,"Export WMO Sets": "Export WMO Sets"
+    ,"Fallback": "Fallback"
+    ,"Feedback": "Feedback"
+    ,"FileDataID": "FileDataID"
+    ,"Hidden": "Hidden"
+    ,"Listfile Binary Source": "Listfile Binary Source"
+    ,"Loading items...": "Loading items..."
+    ,"Made with wow.export": "Made with wow.export"
+    ,"Module Test A": "Module Test A"
+    ,"Module Test B": "Module Test B"
+    ,"Navigate: Click + Drag": "Navigate: Click + Drag"
+    ,"No items found.": "No items found."
+    ,"No runtime log available.": "No runtime log available."
+    ,"Quality setting for WebP exports. Range is 1-100 (100 is lossless)": "Quality setting for WebP exports. Range is 1-100 (100 is lossless)"
+    ,"Regex Enabled": "Regex Enabled"
+    ,"Reload Module B": "Reload Module B"
+    ,"Remote URL or local path used for updating the CASC listfile. (Must use same format)": "Remote URL or local path used for updating the CASC listfile. (Must use same format)"
+    ,"Render shadow": "Render shadow"
+    ,"Select an article to view": "Select an article to view"
+    ,"Settings": "Settings"
+    ,"Show Toast": "Show Toast"
+    ,"Show background": "Show background"
+    ,"Stuck? Need Help?": "Stuck? Need Help?"
+    ,"Support Us!": "Support Us!"
+    ,"Switch to Module A": "Switch to Module A"
+    ,"Switch to Module B": "Switch to Module B"
+    ,"Wowhead Import": "Wowhead Import"
+    ,"wow.export": "wow.export"
+    ,"Classic Realms": "Classic Realms"
+    ,"Failed to load items.": "Failed to load items."
+    ,"Gnomish Heritage?": "Gnomish Heritage?"
+    ,"Guild Tabard": "Guild Tabard"
+    ,"WMO": "WMO"
+    ,"Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game.": "Blender users can make use of our special importer add-on which makes importing advanced objects as simple as a single click. WMO objects are imported with any exported doodad sets included. ADT map tiles are imported complete with all WMOs and doodads positioned as they would be in-game."
+    ,"Disabling this can speed up exporting, but may lead to issues between versions.": "Disabling this can speed up exporting, but may lead to issues between versions."
+    ,"Disabling this will break backwards compatibility with previous glTF model and animation exports.": "Disabling this will break backwards compatibility with previous glTF model and animation exports."
+    ,"Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality.": "Disabling this will reduce memory usage and improve loading, but will disable M2 skin functionality."
+    ,"Enable this option if you are having issues importing OBJ models with Shared Textures enabled.": "Enable this option if you are having issues importing OBJ models with Shared Textures enabled."
+    ,"Enable this option if you are having issues importing glTF models with Shared Textures enabled.": "Enable this option if you are having issues importing glTF models with Shared Textures enabled."
+    ,"Enable this option if your 3D software does not support whitespace in paths.": "Enable this option if your 3D software does not support whitespace in paths."
+    ,"If enabled, 3D preview exports will add increments to prevent overwriting existing files.": "If enabled, 3D preview exports will add increments to prevent overwriting existing files."
+    ,"If enabled, M2 models exported as OBJ will also have their collision exported into a .phys.obj file.": "If enabled, M2 models exported as OBJ will also have their collision exported into a .phys.obj file."
+    ,"If enabled, MTL files will contain absolute textures paths rather than relative ones.": "If enabled, MTL files will contain absolute textures paths rather than relative ones."
+    ,"If enabled, additional UV layers will be exported for M2/WMO models, included as non-standard properties (vt2, vt3, etc) in OBJ files.": "If enabled, additional UV layers will be exported for M2/WMO models, included as non-standard properties (vt2, vt3, etc) in OBJ files."
+    ,"If enabled, all file lists will be ordered numerically by file ID, otherwise alphabetically by filename.": "If enabled, all file lists will be ordered numerically by file ID, otherwise alphabetically by filename."
+    ,"If enabled, exported models on a WMO/ADT will be exported to their own path rather than with their parent.": "If enabled, exported models on a WMO/ADT will be exported to their own path rather than with their parent."
+    ,"If enabled, exported textures will be exported to their own path rather than with their parent.": "If enabled, exported textures will be exported to their own path rather than with their parent."
+    ,"If enabled, exporting baked terrain above 8k will be split into smaller files rather than one large file.": "If enabled, exporting baked terrain above 8k will be split into smaller files rather than one large file."
+    ,"If enabled, file paths copied from a listbox (CTRL + C) will have whitespace stripped.": "If enabled, file paths copied from a listbox (CTRL + C) will have whitespace stripped."
+    ,"If enabled, glTF files will contain absolute textures paths rather than relative ones.": "If enabled, glTF files will contain absolute textures paths rather than relative ones."
+    ,"If enabled, paths inside model placement files (CSV) will contain absolute paths rather than relative ones.": "If enabled, paths inside model placement files (CSV) will contain absolute paths rather than relative ones."
+    ,"If enabled, terrain alpha maps will be exported as individual images for each ADT chunk.": "If enabled, terrain alpha maps will be exported as individual images for each ADT chunk."
+    ,"If enabled, using CTRL + V on the model list will attempt to select filenames you paste.": "If enabled, using CTRL + V on the model list will attempt to select filenames you paste."
+    ,"If enabled, verbose data will be exported for enabled formats into relative .json files.": "If enabled, verbose data will be exported for enabled formats into relative .json files."
+    ,"If enabled, whitespace will be removed from exported paths.": "If enabled, whitespace will be removed from exported paths."
+    ,"If enabled, wow.export will anonymously collect cache data from your client for community usage.": "If enabled, wow.export will anonymously collect cache data from your client for community usage."
+    ,"If enabled, wow.export will parse creature and item skins from data tables for M2 models.": "If enabled, wow.export will parse creature and item skins from data tables for M2 models."
+    ,"If enabled, wow.export will use the optimized binary listfile format instead of the legacy CSV format.": "If enabled, wow.export will use the optimized binary listfile format instead of the legacy CSV format."
+    ,"If enabled, wow.export will use various methods to locate unknown files.": "If enabled, wow.export will use various methods to locate unknown files."
+    ,"Installing the wow.export Add-on for Blender 2.8+": "Installing the wow.export Add-on for Blender 2.8+"
+    ,"Join our Discord community for support!": "Join our Discord community for support!"
+    ,"Manually add a BLTE encryption key.": "Manually add a BLTE encryption key."
+    ,"Something went so terribly wrong that we don't even have an error message.": "Something went so terribly wrong that we don't even have an error message."
+    ,"Support development of wow.export through Patreon!": "Support development of wow.export through Patreon!"
+    ,"These are pinged alongside official servers and used based on speed and availability.": "These are pinged alongside official servers and used based on speed and availability."
+    ,"Use the wow.export Blender add-on to import OBJ models with additional UV layers.": "Use the wow.export Blender add-on to import OBJ models with additional UV layers."
+    ,"Which locale to use for file reading. This only affects game files.": "Which locale to use for file reading. This only affects game files."
+    ,"While housekeeping on the cache is mostly automatic, sometimes clearing manually can resolve issues.": "While housekeeping on the cache is mostly automatic, sometimes clearing manually can resolve issues."
+    ,"wow.export is open-source, tinkerers are welcome!": "wow.export is open-source, tinkerers are welcome!"
+  }
+}
