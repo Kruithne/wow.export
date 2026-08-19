@@ -71,6 +71,35 @@
     "return": "返回安装来源",
     "region": "区域"
   },
+  "itemTypes": {
+    "Head": "头部",
+    "Neck": "颈部",
+    "Shoulder": "肩部",
+    "Shirt": "衬衣",
+    "Chest": "胸部",
+    "Waist": "腰部",
+    "Legs": "腿部",
+    "Feet": "脚部",
+    "Wrist": "手腕",
+    "Hands": "手部",
+    "One-hand": "单手",
+    "Off-hand": "副手",
+    "Two-hand": "双手",
+    "Main-hand": "主手",
+    "Ranged": "远程",
+    "Back": "背部",
+    "Tabard": "战袍"
+  },
+  "itemQualities": {
+    "Poor": "粗糙",
+    "Common": "普通",
+    "Uncommon": "优秀",
+    "Rare": "精良",
+    "Epic": "史诗",
+    "Legendary": "传说",
+    "Artifact": "神器",
+    "Heirloom": "传家宝"
+  },
   "status": {
     "quickFilter": "快速筛选：",
     "enableAll": "全部启用",

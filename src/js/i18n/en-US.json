@@ -71,6 +71,35 @@
     "return": "Return to Installations",
     "region": "Region"
   },
+  "itemTypes": {
+    "Head": "Head",
+    "Neck": "Neck",
+    "Shoulder": "Shoulder",
+    "Shirt": "Shirt",
+    "Chest": "Chest",
+    "Waist": "Waist",
+    "Legs": "Legs",
+    "Feet": "Feet",
+    "Wrist": "Wrist",
+    "Hands": "Hands",
+    "One-hand": "One-hand",
+    "Off-hand": "Off-hand",
+    "Two-hand": "Two-hand",
+    "Main-hand": "Main-hand",
+    "Ranged": "Ranged",
+    "Back": "Back",
+    "Tabard": "Tabard"
+  },
+  "itemQualities": {
+    "Poor": "Poor",
+    "Common": "Common",
+    "Uncommon": "Uncommon",
+    "Rare": "Rare",
+    "Epic": "Epic",
+    "Legendary": "Legendary",
+    "Artifact": "Artifact",
+    "Heirloom": "Heirloom"
+  },
   "status": {
     "quickFilter": "Quick filter:",
     "enableAll": "Enable All",
