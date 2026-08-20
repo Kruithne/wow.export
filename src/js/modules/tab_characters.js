@@ -1295,7 +1295,7 @@ async function apply_import_data(core, data, source) {
 
 		// worgen/dracthyr visage
 		if (race_id == 22 && core.view.chrImportLoadVisage)
-			race_id = 23;
+			race_id = 1;
 
 		if (race_id == 52 && core.view.chrImportLoadVisage)
 			race_id = 75;
