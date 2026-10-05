@@ -1721,8 +1721,6 @@ class M2RendererGL {
 	 * @param {object} displays
 	 */
 	async applyReplaceableTextures(displays) {
-		// debug: log the model's replaceable texture types and what we resolve
-		log.write('DEBUG M2 texture types: %s avail: %s', JSON.stringify(this.m2.textureTypes), JSON.stringify(displays.textures));
 		for (let i = 0; i < this.m2.textureTypes.length; i++) {
 			const textureType = this.m2.textureTypes[i];
 			if (textureType >= 11 && textureType < 14)

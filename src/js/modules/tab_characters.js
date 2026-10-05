@@ -443,8 +443,6 @@ async function update_textures(core) {
 		if (equipment_layers) {
 			const section_by_type = equipment_layers.section_by_type;
 			const layers_by_section = equipment_layers.layers_by_section;
-			log.write('DEBUG layout %d atlas sections: %s layers: %s', current_char_component_texture_layout_id, JSON.stringify([...section_by_type.keys()]), JSON.stringify([...layers_by_section.keys()]));
-			log.write('DEBUG char M2 texture types: %s', JSON.stringify(active_renderer?.m2?.textureTypes ?? []));
 
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
 				// guild tabards use custom composition pipeline
@@ -454,7 +452,6 @@ async function update_textures(core) {
 				const modifier_id = item_skins?.[slot_id];
 				const class_id = core.view.config.chrIsDemonHunter ? 12 : 0;
 				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, class_id);
-				log.write('DEBUG slot %s item %d atlas-textures: %s', slot_id, item_id, JSON.stringify(item_textures?.map(t => t.section)));
 				if (!item_textures)
 					continue;
 
@@ -654,7 +651,6 @@ async function update_equipment_models(core) {
 		// get display data for this item (models and textures, filtered by race/gender)
 		const shoulder_pos = slot_id === SHOULDER_SLOT_L ? 'left' : slot_id === SHOULDER_SLOT_R ? 'right' : undefined;
 		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, shoulder_pos);
-		log.write('DEBUG equipment slot %d item %d: display %s models %s textures %s', slot_id, item_id, display?.ID ?? 0, JSON.stringify(display?.models ?? []), JSON.stringify(display?.textures ?? []));
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 

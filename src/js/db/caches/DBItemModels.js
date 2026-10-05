@@ -169,10 +169,7 @@ const get_item_display = (item_id, race_id, gender_index, modifier_id, shoulder_
 
 	const data = display_to_data.get(display_id);
 	if (!data)
-	{
-		log.write('DEBUG DBItemModels item %d -> display %d (no model resources); model-mat-res textures: %s', item_id, display_id, JSON.stringify(DBItemDisplayInfoModelMatRes.getItemDisplayIdTextureFileIds(display_id) ?? []));
 		return null;
-	}
 
 	// filter models by race/gender
 	const models = [];

@@ -130,7 +130,6 @@ const resolve_display_id = (item_id, modifier_id) => {
  */
 const get_item_textures = (item_id, race_id = null, gender_index = null, modifier_id, class_id = 0) => {
 	const display_id = resolve_display_id(item_id, modifier_id);
-	log.write('DEBUG DBItemCharTextures item %d -> display %s', item_id, display_id ?? 'none');
 	if (display_id === undefined)
 		return null;
 
