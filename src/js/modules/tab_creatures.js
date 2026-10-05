@@ -216,48 +216,12 @@ const apply_creature_equipment_textures = async (core) => {
 	if (!enabled || creature_layout_id === 0)
 		return;
 
-	const sections = DBCharacterCustomization.get_texture_sections(creature_layout_id);
-	if (!sections)
+	const equipment_layers = character_appearance.get_equipment_texture_layers(creature_layout_id);
+	if (!equipment_layers)
 		return;
 
-	const section_by_type = new Map();
-	for (const section of sections)
-		section_by_type.set(section.SectionType, section);
-
-	const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
-	let base_layer = null;
-	for (const [key, layer] of texture_layer_map) {
-		if (!key.startsWith(creature_layout_id + '-'))
-			continue;
-
-		if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1) {
-			base_layer = layer;
-			break;
-		}
-	}
-
-	const layers_by_section = new Map();
-	for (const [key, layer] of texture_layer_map) {
-		if (!key.startsWith(creature_layout_id + '-'))
-			continue;
-
-		if (layer.TextureSectionTypeBitMask === -1)
-			continue;
-
-		for (let section_type = 0; section_type < 9; section_type++) {
-			if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
-				if (!layers_by_section.has(section_type))
-					layers_by_section.set(section_type, layer);
-			}
-		}
-	}
-
-	if (base_layer) {
-		for (let section_type = 0; section_type < 9; section_type++) {
-			if (!layers_by_section.has(section_type))
-				layers_by_section.set(section_type, base_layer);
-		}
-	}
+	const section_by_type = equipment_layers.section_by_type;
+	const layers_by_section = equipment_layers.layers_by_section;
 
 	for (const [slot_id, entry] of enabled) {
 		// use display-ID-based lookup for armor, item-ID-based for weapons
@@ -839,38 +803,10 @@ const export_files = async (core, entries) => {
 						// apply equipment textures for export
 						const export_equipment = build_creature_equipment(display_info.extendedDisplayInfoID, creature);
 						if (export_equipment) {
-							const sections = DBCharacterCustomization.get_texture_sections(layout_id);
-							if (sections) {
-								const section_by_type = new Map();
-								for (const section of sections)
-									section_by_type.set(section.SectionType, section);
-
-								const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
-								let base_layer = null;
-								const layers_by_section = new Map();
-
-								for (const [key, layer] of texture_layer_map) {
-									if (!key.startsWith(layout_id + '-'))
-										continue;
-
-									if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1)
-										base_layer = layer;
-									else if (layer.TextureSectionTypeBitMask !== -1) {
-										for (let st = 0; st < 9; st++) {
-											if ((1 << st) & layer.TextureSectionTypeBitMask) {
-												if (!layers_by_section.has(st))
-													layers_by_section.set(st, layer);
-											}
-										}
-									}
-								}
-
-								if (base_layer) {
-									for (let st = 0; st < 9; st++) {
-										if (!layers_by_section.has(st))
-											layers_by_section.set(st, base_layer);
-									}
-								}
+							const equipment_layers = character_appearance.get_equipment_texture_layers(layout_id);
+							const section_by_type = equipment_layers?.section_by_type;
+							const layers_by_section = equipment_layers?.layers_by_section;
+							if (layers_by_section) {
 
 								for (const [slot_id, entry] of export_equipment) {
 									const item_textures = entry.item_id

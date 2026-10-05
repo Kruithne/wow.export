@@ -26,8 +26,10 @@ const PNGWriter = require('../png-writer');
 const { EQUIPMENT_SLOTS, SHOULDER_SLOT_L, SHOULDER_SLOT_R, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
+const DBComponentTextureFileData = require('../db/caches/DBComponentTextureFileData');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
+const DBItemDisplayInfoModelMatRes = require('../db/caches/DBItemDisplayInfoModelMatRes');
 const DBItemList = require('../db/caches/DBItemList');
 const DBGuildTabard = require('../db/caches/DBGuildTabard');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
@@ -437,46 +439,12 @@ async function update_textures(core) {
 	const item_skins = core.view.chrEquippedItemSkins;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
 		const char_info = get_current_race_gender(core);
-		const sections = DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
-		if (sections) {
-			const section_by_type = new Map();
-			for (const section of sections)
-				section_by_type.set(section.SectionType, section);
-
-			const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
-			let base_layer = null;
-			for (const [key, layer] of texture_layer_map) {
-				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
-					continue;
-
-				if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1) {
-					base_layer = layer;
-					break;
-				}
-			}
-
-			const layers_by_section = new Map();
-			for (const [key, layer] of texture_layer_map) {
-				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
-					continue;
-
-				if (layer.TextureSectionTypeBitMask === -1)
-					continue;
-
-				for (let section_type = 0; section_type < 9; section_type++) {
-					if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
-						if (!layers_by_section.has(section_type))
-							layers_by_section.set(section_type, layer);
-					}
-				}
-			}
-
-			if (base_layer) {
-				for (let section_type = 0; section_type < 9; section_type++) {
-					if (!layers_by_section.has(section_type))
-						layers_by_section.set(section_type, base_layer);
-				}
-			}
+		const equipment_layers = character_appearance.get_equipment_texture_layers(current_char_component_texture_layout_id);
+		if (equipment_layers) {
+			const section_by_type = equipment_layers.section_by_type;
+			const layers_by_section = equipment_layers.layers_by_section;
+			log.write('DEBUG layout %d atlas sections: %s layers: %s', current_char_component_texture_layout_id, JSON.stringify([...section_by_type.keys()]), JSON.stringify([...layers_by_section.keys()]));
+			log.write('DEBUG char M2 texture types: %s', JSON.stringify(active_renderer?.m2?.textureTypes ?? []));
 
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
 				// guild tabards use custom composition pipeline
@@ -486,6 +454,7 @@ async function update_textures(core) {
 				const modifier_id = item_skins?.[slot_id];
 				const class_id = core.view.config.chrIsDemonHunter ? 12 : 0;
 				const item_textures = DBItemCharTextures.getItemTextures(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, class_id);
+				log.write('DEBUG slot %s item %d atlas-textures: %s', slot_id, item_id, JSON.stringify(item_textures?.map(t => t.section)));
 				if (!item_textures)
 					continue;
 
@@ -584,6 +553,28 @@ async function update_textures(core) {
 				}
 			}
 		}
+
+		// cloak/cape textures are not composited into the skin atlas on many layouts;
+		// they bind to the character M2's own replaceable texture slots (e.g. type 2
+		// OBJECT_SKIN) via ItemDisplayInfoModelMatRes
+		const cloak_item_id = equipped_items[15];
+		if (cloak_item_id && active_renderer) {
+			const cloak_display_id = DBItemModels.getDisplayId(cloak_item_id, item_skins?.['15']);
+			const cloak_rows = DBItemDisplayInfoModelMatRes.getDisplayTextureRows(cloak_display_id);
+			if (cloak_rows) {
+				for (const cloak_row of cloak_rows) {
+					if (!cloak_row.fileDataIDs?.length)
+						continue;
+
+					// prefer a race/gender-matching texture when there are several
+					let cloak_fdid = cloak_row.fileDataIDs[0];
+					if (cloak_row.fileDataIDs.length > 1)
+						cloak_fdid = DBComponentTextureFileData.getTextureForRaceGender(cloak_row.fileDataIDs, char_info?.raceID, char_info?.genderIndex, 0) ?? cloak_fdid;
+
+					await active_renderer.overrideTextureType(cloak_row.textureType, cloak_fdid);
+				}
+			}
+		}
 	}
 
 	// step 5: upload all textures to GPU
@@ -663,6 +654,7 @@ async function update_equipment_models(core) {
 		// get display data for this item (models and textures, filtered by race/gender)
 		const shoulder_pos = slot_id === SHOULDER_SLOT_L ? 'left' : slot_id === SHOULDER_SLOT_R ? 'right' : undefined;
 		const display = DBItemModels.getItemDisplay(item_id, char_info?.raceID, char_info?.genderIndex, modifier_id, shoulder_pos);
+		log.write('DEBUG equipment slot %d item %d: display %s models %s textures %s', slot_id, item_id, display?.ID ?? 0, JSON.stringify(display?.models ?? []), JSON.stringify(display?.textures ?? []));
 		if (!display || !display.models || display.models.length === 0)
 			continue;
 
