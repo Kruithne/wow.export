@@ -1843,9 +1843,9 @@ class M2RendererGL {
 
 	/**
 	 * Get the raw attachment definition (bone index + position) for an attachment ID.
-	 * The position is returned in the model's native (WoW) coordinate space, matching
-	 * the bone pivots/vertices used by the exporters. Use this for GLTF rigging where
-	 * the equipment node is parented to the bone and offset in the bone's local space.
+	 * The position is returned in WoW space (X right, Y forward, Z up). The exporters
+	 * convert it to the GLTF's Y-up space ((x,y,z) -> (x,z,-y)) when parenting the
+	 * equipment node to the bone.
 	 * @param {number} attachmentId - attachment ID (e.g., 11 for helmet)
 	 * @returns {{bone: number, position: number[]}|null}
 	 */
@@ -1865,7 +1865,8 @@ class M2RendererGL {
 		if (bone_idx < 0)
 			return null;
 
-		return { bone: bone_idx, position: attachment.position };
+		const pivot = this.bones?.[bone_idx]?.pivot ?? [0, 0, 0];
+		return { bone: bone_idx, position: attachment.position, pivot: pivot };
 	}
 
 	/**
