@@ -459,9 +459,6 @@ class M2Exporter {
 			return;
 
 		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
-
-		log.write('DEBUG equip slot %d (%s) item %d display textures: %s', slot_id, slot_name, item_id, (textures || []).join(','));
-
 		// export equipment textures and build material map
 		const config = core.view.config;
 
@@ -555,11 +552,7 @@ class M2Exporter {
 
 				const texInfo = texFileDataID > 0 ? textureMap.get(texFileDataID) : null;
 				if (texInfo)
-					matName = texInfo.matName;
-
-				log.write('DEBUG equip mesh %d combo %d texType %d texFDID %d blend %d -> %s',
-					mI, texUnit.textureComboIndex, textureType, texFileDataID, m2.materials[texUnit.materialIndex]?.blendingMode ?? -1, matName ?? 'UNRESOLVED');
-			}
+					matName = texInfo.matName;			}
 
 			let alphaMode = undefined;
 			let alphaCutoff = undefined;

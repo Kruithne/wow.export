@@ -9,7 +9,6 @@ const DBCreatures = require('./DBCreatures');
 
 const tfd_map = new Map();
 const choice_to_geoset = new Map();
-const choice_to_elements = new Map();
 const choice_to_chr_cust_material_id = new Map();
 const choice_to_skinned_model = new Map();
 const unsupported_choices = new Array();
@@ -68,12 +67,6 @@ const _initialize = async () => {
 
 	// customization elements
 	for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
-		// keep the raw rows so callers can see how a choice drives the model
-		if (choice_to_elements.has(chr_customization_element_row.ChrCustomizationChoiceID))
-			choice_to_elements.get(chr_customization_element_row.ChrCustomizationChoiceID).push(chr_customization_element_row);
-		else
-			choice_to_elements.set(chr_customization_element_row.ChrCustomizationChoiceID, [chr_customization_element_row]);
-
 		if (chr_customization_element_row.ChrCustomizationGeosetID != 0) {
 			// a single choice can reference more than one geoset element, so keep
 			// every one of them instead of letting the last row overwrite the rest
@@ -281,7 +274,6 @@ const get_choice_geoset_id = (choice_id) => {
 };
 
 const get_choice_geoset_raw = (choice_id) => choice_to_geoset.get(choice_id);
-const get_choice_elements = (choice_id) => choice_to_elements.get(choice_id);
 const get_geoset_value = (geoset_id) => geoset_map.get(geoset_id);
 
 const get_choice_materials = (choice_id) => choice_to_chr_cust_material_id.get(choice_id);
@@ -337,7 +329,6 @@ module.exports = {
 
 	get_choice_geoset_id,
 	get_choice_geoset_raw,
-	get_choice_elements,
 	get_geoset_value,
 	get_choice_materials,
 	get_chr_cust_material,

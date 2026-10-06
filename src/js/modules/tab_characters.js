@@ -256,7 +256,6 @@ const THUMBNAIL_PRESETS = {
 };
 
 function reset_module_state() {
-	option_table_dumped = false;
 	active_skins.clear();
 	dispose_skinned_models();
 	clear_materials();
@@ -289,11 +288,6 @@ async function refresh_character_appearance(core) {
 	log.write('Refreshing character appearance...');
 
 	update_geosets(core);
-
-	if (!option_table_dumped) {
-		option_table_dumped = true;
-		dump_option_table(core, 0);
-	}
 
 	await update_textures(core);
 	await update_skinned_models(core);
@@ -1062,7 +1056,6 @@ async function update_model_selection(core) {
 		}
 	}
 
-	option_table_dumped = false;
 	state.chrCustOptions.push(...available_options);
 	state.chrCustOptionSelection.push(...available_options.slice(0, 1));
 	state.optionToChoices = option_to_choices;
@@ -1107,35 +1100,7 @@ function update_customization_choice(core) {
 	}
 }
 
-/**
- * Debug: print the customization options of the current model together with the
- * geosets each choice selects. Pass 0 to dump every option, or an option id to
- * dump just that one.
- * @param {object} core
- * @param {number} filter_option_id
- */
-let option_table_dumped = false;
-
-function dump_option_table(core, filter_option_id) {
-	const state = core.view;
-	const option_to_choices = state.optionToChoices;
-
-	for (const option of state.chrCustOptions) {
-		if (filter_option_id !== 0 && option.id !== filter_option_id)
-			continue;
-
-		const option_choices = option_to_choices?.get(option.id) || [];
-		const parts = [];
-		for (const option_choice of option_choices)
-			parts.push(option_choice.id + ':' + option_choice.label + '=' + (DBCharacterCustomization.get_choice_geoset_id(option_choice.id) || []).join('+'));
-
-		log.write('DEBUG model option %d (%s): %s', option.id, option.label, parts.join(', '));
-	}
-}
-
 function update_choice_for_option(core, option_id, choice_id) {
-	dump_option_table(core, option_id);
-
 	const state = core.view;
 	const existing_choice = state.chrCustActiveChoices.find((choice) => choice.optionID === option_id);
 
@@ -2481,9 +2446,9 @@ module.exports = {
 				<div class="chr-cust-controls">
 					<template v-if="!$core.view.chrShowGeosetControl">
 						<span class="chr-randomize-toggle" @click="randomize_customization">Randomize Customization</span>
-						<span @click="enter_geoset_control()">Custom Geoset Control</span>
+						<span @click="$core.view.chrShowGeosetControl = true">Custom Geoset Control</span>
 					</template>
-					<span v-else class="chr-geoset-return" @click="return_to_customization()">Return to Customization</span>
+					<span v-else class="chr-geoset-return" @click="$core.view.chrShowGeosetControl = false">Return to Customization</span>
 				</div>
 			</div>
 			<div class="char-preview preview-container">
@@ -2687,24 +2652,6 @@ module.exports = {
 
 		set_all_geosets(state) {
 			this.$core.view.setAllGeosets(state, this.$core.view.chrCustGeosets);
-		},
-
-		// debug: report the currently checked geosets, so a manual geoset selection
-		// can be compared against what the customization choices produce
-		log_selected_geosets(reason) {
-			const geosets = this.$core.view.chrCustGeosets;
-			log.write('DEBUG geosets (%s): %s', reason,
-				geosets.filter(geoset => geoset.checked).map(geoset => geoset.id + ':' + (geoset.label || '')).join(','));
-		},
-
-		enter_geoset_control() {
-			this.$core.view.chrShowGeosetControl = true;
-			this.log_selected_geosets('entering geoset control');
-		},
-
-		return_to_customization() {
-			this.log_selected_geosets('returning to customization');
-			this.$core.view.chrShowGeosetControl = false;
 		},
 
 		toggle_color_picker(option_id, event) {
