@@ -295,6 +295,19 @@ class CharacterExporter {
 		let boneIndices = null;
 		let boneWeights = null;
 
+		// attachment-style equipment is parented to a bone node in the GLTF export;
+		// resolve the bone index + native-space offset for that rigging
+		let attachment_bone = null;
+		let attachment_offset = null;
+
+		if (!is_collection_style && attachment_id !== undefined) {
+			const info = this.char_renderer?.getAttachmentInfo?.(attachment_id);
+			if (info) {
+				attachment_bone = info.bone;
+				attachment_offset = [info.position[0], info.position[1], info.position[2]];
+			}
+		}
+
 		if (is_collection_style && apply_pose && char_bone_matrices) {
 			// collection-style models use character's bone matrices via remapping
 			// first ensure bone matrices are updated from character
@@ -346,7 +359,9 @@ class CharacterExporter {
 			uv: m2.uv,
 			uv2: m2.uv2,
 			boneIndices,
-			boneWeights
+			boneWeights,
+			attachment_bone,
+			attachment_offset
 		};
 	}
 

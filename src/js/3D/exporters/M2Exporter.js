@@ -409,7 +409,7 @@ class M2Exporter {
 	 * @private
 	 */
 	async _addEquipmentToGLTF(gltf, equip, textureMap, outDir, format, helper) {
-		const { slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style } = equip;
+	 const { slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style, attachment_bone, attachment_offset } = equip;
 
 		if (!renderer?.m2)
 			return;
@@ -526,17 +526,19 @@ class M2Exporter {
 			});
 		}
 
-		// add equipment to GLTF
-		gltf.addEquipmentModel({
-			name: `${slot_name}_Item${item_id}`,
-			vertices: vertices,
-			normals: normals,
-			uv: uv,
-			uv2: uv2,
-			boneIndices: is_collection_style ? boneIndices : null,
-			boneWeights: is_collection_style ? boneWeights : null,
-			meshes
-		});
+			// add equipment to GLTF
+		 gltf.addEquipmentModel({
+			 name: `${slot_name}_Item${item_id}`,
+			 vertices: vertices,
+			 normals: normals,
+			 uv: uv,
+			 uv2: uv2,
+			 boneIndices: is_collection_style ? boneIndices : null,
+			 boneWeights: is_collection_style ? boneWeights : null,
+			 attachment_bone: is_collection_style ? null : attachment_bone,
+			 attachment_offset: is_collection_style ? null : attachment_offset,
+			 meshes
+		 });
 
 		log.write('Added equipment GLTF meshes for slot %d (item %d)', slot_id, item_id);
 	}

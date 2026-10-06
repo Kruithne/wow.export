@@ -1909,6 +1909,45 @@ function update_chr_race_list(core) {
 //endregion
 
 //region export
+/**
+ * Resolve the cloak/cape model texture (OBJECT_SKIN, replaceable texture type 2).
+ * Cloaks are not composited into the skin atlas on most layouts; they bind directly
+ * to the character M2's OBJECT_SKIN slot. The GLTF exporter re-parses the M2 from
+ * scratch, so it needs this fileDataID handed to it as a variant texture (index
+ * textureType-2 = 0) or the cloak geoset falls back to the main character material.
+ * @param {object} core
+ * @returns {number|null}
+ */
+const resolve_cloak_texture = (core) => {
+	const equipped_items = core.view.chrEquippedItems;
+	const cloak_item_id = equipped_items[15];
+	if (!cloak_item_id)
+	 return null;
+
+	const cloak_display_id = DBItemModels.getDisplayId(cloak_item_id, core.view.chrEquippedItemSkins?.['15']);
+	const cloak_rows = DBItemDisplayInfoModelMatRes.getDisplayTextureRows(cloak_display_id);
+	if (!cloak_rows)
+	 return null;
+
+	const char_info = get_current_race_gender(core);
+	for (const cloak_row of cloak_rows) {
+		if (!cloak_row.fileDataIDs?.length)
+			 continue;
+
+		// OBJECT_SKIN slot used by cloak geosets
+	 if (cloak_row.textureType !== 2)
+			 continue;
+
+	 let cloak_fdid = cloak_row.fileDataIDs[0];
+	 if (cloak_row.fileDataIDs.length > 1)
+			 cloak_fdid = DBComponentTextureFileData.getTextureForRaceGender(cloak_row.fileDataIDs, char_info?.raceID, char_info?.genderIndex, 0) ?? cloak_fdid;
+
+	 return cloak_fdid;
+	 }
+
+	return null;
+};
+
 const export_char_model = async (core) => {
 	const export_paths = core.openLastExportStream();
 	const format = core.view.config.exportCharacterFormat;
@@ -2033,11 +2072,17 @@ const export_char_model = async (core) => {
 
 			helper.mark(mark_file_name, true);
 		} else {
-			const casc = core.view.casc;
-			const data = await casc.getFile(file_data_id);
-			const mark_file_name = ExportHelper.replaceExtension(file_name, '.gltf');
-			const export_path = ExportHelper.getExportPath(mark_file_name);
-			const exporter = new M2Exporter(data, [], file_data_id);
+		 const casc = core.view.casc;
+		 const data = await casc.getFile(file_data_id);
+		 const mark_file_name = ExportHelper.replaceExtension(file_name, '.gltf');
+		 const export_path = ExportHelper.getExportPath(mark_file_name);
+
+		 // cloak/cape binds to the character M2's OBJECT_SKIN slot (type 2); hand it to
+		 // the exporter as a variant texture so the cloak geoset gets the right material
+		 const cloak_fdid = resolve_cloak_texture(core);
+		 const variant_textures = cloak_fdid ? [cloak_fdid] : [];
+
+		 const exporter = new M2Exporter(data, variant_textures, file_data_id);
 
 			for (const [chr_model_texture_target, chr_material] of chr_materials)
 				exporter.addURITexture(chr_model_texture_target, chr_material.getURI());
@@ -2061,19 +2106,21 @@ const export_char_model = async (core) => {
 					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex, geom.modifier_id);
 					const textures = display?.textures || [];
 
-					equipment_data.push({
-						slot_id: geom.slot_id,
-						item_id: geom.item_id,
-						renderer: geom.renderer,
-						vertices: geom.vertices,
-						normals: geom.normals,
-						uv: geom.uv,
-						uv2: geom.uv2,
-						boneIndices: geom.boneIndices,
-						boneWeights: geom.boneWeights,
-						textures,
-						is_collection_style: geom.is_collection_style
-					});
+				 equipment_data.push({
+					 slot_id: geom.slot_id,
+					 item_id: geom.item_id,
+					 renderer: geom.renderer,
+					 vertices: geom.vertices,
+					 normals: geom.normals,
+					 uv: geom.uv,
+					 uv2: geom.uv2,
+					 boneIndices: geom.boneIndices,
+					 boneWeights: geom.boneWeights,
+					 textures,
+					 is_collection_style: geom.is_collection_style,
+					 attachment_bone: geom.attachment_bone,
+					 attachment_offset: geom.attachment_offset
+				 });
 				}
 
 				exporter.setEquipmentModelsGLTF(equipment_data);

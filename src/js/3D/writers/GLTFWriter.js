@@ -186,6 +186,7 @@ class GLTFWriter {
 	 * @param {Uint8Array} equip.boneWeights - Bone weights
 	 * @param {Array} equip.meshes - Array of {name, triangles, matName}
 	 * @param {number} [equip.attachment_bone] - Bone index for attachment (non-skinned equipment)
+	 * @param {Array} [equip.attachment_offset] - Native-space [x,y,z] offset applied to the attachment bone node
 	 */
 	addEquipmentModel(equip) {
 		this.equipment_models.push(equip);
@@ -275,9 +276,21 @@ class GLTFWriter {
 
 		const add_scene_node = (node) => {
 			root.nodes.push(node);
-			root.nodes[0].children.push(root.nodes.length - 1);
-			return node;
-		};
+		 root.nodes[0].children.push(root.nodes.length - 1);
+		 return node;
+	 };
+
+		// Attach a node as a child of an existing (bone) node instead of the scene root.
+		// Used for rigid equipment (weapons/helms/shoulders) so it follows its bone.
+		const add_bone_child_node = (parent_node, node) => {
+			const node_index = root.nodes.length;
+		 root.nodes.push(node);
+		 if (parent_node.children)
+			 parent_node.children.push(node_index);
+		 else
+			 parent_node.children = [node_index];
+		 return node_index;
+	 };
 
 		const add_buffered_accessor = (accessor, buffer_target, add_primitive = false) => {
 			const buffer_idx = root.bufferViews.push({
@@ -302,6 +315,9 @@ class GLTFWriter {
 		let idx_bone_joints = -1
 		let idx_bone_weights = -1;
 		const animationBufferMap = new Map();
+
+		// bone node lookup (hoisted so equipment nodes can be parented to bones)
+		const bone_lookup_map = new Map();
 
 		if (bones.length > 0) {
 			idx_bone_joints = add_buffered_accessor({
@@ -345,8 +361,6 @@ class GLTFWriter {
 				name: this.name + '_skeleton',
 				children: []
 			});
-
-			const bone_lookup_map = new Map();
 
 			const animation_buffer_lookup_map = new Map();
 
@@ -1397,16 +1411,26 @@ class GLTFWriter {
 					}]
 				});
 
-				const node = { name: `${equip.name}_${mesh.name}`, mesh: meshIndex };
+			 const node = { name: `${equip.name}_${mesh.name}`, mesh: meshIndex };
 
-				// apply skin or parent to attachment bone
-				if (eq_has_skin)
-					node.skin = 0;
-				else if (equip.attachment_bone !== undefined && equip.attachment_bone >= 0)
-					node.parent_bone = equip.attachment_bone;
+			 // skinned equipment shares the character armature via joint weights
+			 if (eq_has_skin) {
+				 node.skin = 0;
+				 add_scene_node(node);
+			 }
+			 // rigid attachment equipment (weapons/helms/shoulders): parent to its
+			 // attachment bone and offset in the bone's local space so it follows the bone
+			 else if (equip.attachment_bone !== undefined && equip.attachment_bone >= 0 && bone_lookup_map.has(equip.attachment_bone)) {
+				 const bone_node = bone_lookup_map.get(equip.attachment_bone);
+				 if (equip.attachment_offset)
+					 node.translation = equip.attachment_offset;
+				 add_bone_child_node(bone_node, node);
+			 }
+			 else {
+				 add_scene_node(node);
+			 }
 
-				add_scene_node(node);
-				bins.push(buffer);
+			 bins.push(buffer);
 			}
 		}
 
