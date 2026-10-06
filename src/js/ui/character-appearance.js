@@ -4,6 +4,7 @@
 	License: MIT
  */
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
+const log = require('../log');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 
 // m2 texture types built from the composited character skin; every other
@@ -37,24 +38,45 @@ function apply_customization_geosets(geosets, active_choices) {
 		if (!available_choices)
 			continue;
 
+		const active_geosets = DBCharacterCustomization.get_choice_geoset_id(active_choice.choiceID) || [];
+		log.write('DEBUG choice option %d choice %d geosets %s',
+			active_choice.optionID, active_choice.choiceID, active_geosets.join(','));
+
+		// dump the raw rows for a choice that carries no geoset, so the column that
+		// actually drives the model becomes visible
+		if (active_geosets.length === 0) {
+			log.write('DEBUG option %d choices: %s', active_choice.optionID,
+				available_choices.map(choice => choice.id + ':' + choice.label).join(', '));
+
+			log.write('DEBUG active choice option %d choice %d rows: %s', active_choice.optionID,
+				active_choice.choiceID, JSON.stringify(DBCharacterCustomization.get_choice_elements(active_choice.choiceID) || []));
+		}
+
 		for (const available_choice of available_choices) {
-			const chr_cust_geo_id = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
-			const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+			const chr_cust_geo_ids = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id) || [];
+			const should_be_checked = available_choice.id === active_choice.choiceID;
 
-			if (geoset_id === undefined)
-				continue;
-
-			for (const geoset of geosets) {
-				if (geoset.id === 0)
+			for (const chr_cust_geo_id of chr_cust_geo_ids) {
+				const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+				if (geoset_id === undefined)
 					continue;
 
-				if (geoset.id === geoset_id) {
-					const should_be_checked = available_choice.id === active_choice.choiceID;
-					geoset.checked = should_be_checked;
+				for (const geoset of geosets) {
+					if (geoset.id === 0)
+						continue;
+
+					if (geoset.id === geoset_id)
+						geoset.checked = should_be_checked;
 				}
 			}
 		}
 	}
+
+	log.write('DEBUG geosets after customization: %s',
+		geosets.filter(geoset => geoset.checked).map(geoset => geoset.id).join(','));
+
+	log.write('DEBUG model geosets: %s',
+		geosets.map(geoset => geoset.id + ':' + (geoset.label || '')).join(','));
 }
 
 /**

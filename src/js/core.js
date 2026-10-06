@@ -266,6 +266,8 @@ const makeNewView = () => {
 		chrImportChrModelID: 0, // Temporary storage for target character model ID.
 		chrImportTargetModelID: 0, // Target model ID for import choices validation.
 		chrImportChoices: [], // Temporary storage for character import choices.
+		chrImportGeosets: [], // Manual geoset selection (ids) from an imported character file.
+		chrImportGeosetTargetModelID: 0, // Target model ID for the manual geoset selection above.
 		chrImportWowheadURL: '', // Wowhead dressing room url
 		characterImportMode: 'none', // Controls visibility of character import interface ('none', 'BNET', 'WHEAD')
 		chrEquippedItems: {}, // Equipped items by slot id (e.g., { 1: item_id, 5: item_id })

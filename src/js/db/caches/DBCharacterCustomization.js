@@ -9,6 +9,7 @@ const DBCreatures = require('./DBCreatures');
 
 const tfd_map = new Map();
 const choice_to_geoset = new Map();
+const choice_to_elements = new Map();
 const choice_to_chr_cust_material_id = new Map();
 const choice_to_skinned_model = new Map();
 const unsupported_choices = new Array();
@@ -67,8 +68,20 @@ const _initialize = async () => {
 
 	// customization elements
 	for (const chr_customization_element_row of (await db2.ChrCustomizationElement.getAllRows()).values()) {
-		if (chr_customization_element_row.ChrCustomizationGeosetID != 0)
-			choice_to_geoset.set(chr_customization_element_row.ChrCustomizationChoiceID, chr_customization_element_row.ChrCustomizationGeosetID);
+		// keep the raw rows so callers can see how a choice drives the model
+		if (choice_to_elements.has(chr_customization_element_row.ChrCustomizationChoiceID))
+			choice_to_elements.get(chr_customization_element_row.ChrCustomizationChoiceID).push(chr_customization_element_row);
+		else
+			choice_to_elements.set(chr_customization_element_row.ChrCustomizationChoiceID, [chr_customization_element_row]);
+
+		if (chr_customization_element_row.ChrCustomizationGeosetID != 0) {
+			// a single choice can reference more than one geoset element, so keep
+			// every one of them instead of letting the last row overwrite the rest
+			if (choice_to_geoset.has(chr_customization_element_row.ChrCustomizationChoiceID))
+				choice_to_geoset.get(chr_customization_element_row.ChrCustomizationChoiceID).push(chr_customization_element_row.ChrCustomizationGeosetID);
+			else
+				choice_to_geoset.set(chr_customization_element_row.ChrCustomizationChoiceID, [chr_customization_element_row.ChrCustomizationGeosetID]);
+		}
 
 		if (chr_customization_element_row.ChrCustomizationSkinnedModelID != 0) {
 			// a single choice may carry multiple skinned-model elements (e.g.
@@ -251,12 +264,24 @@ const get_race_models = (race_id) => chr_race_x_chr_model_map.get(race_id);
 const get_chr_race_map = () => chr_race_map;
 const get_chr_race_x_chr_model_map = () => chr_race_x_chr_model_map;
 
+// resolve a choice to every geoset it references (ChrCustomizationGeoset values)
 const get_choice_geoset_id = (choice_id) => {
-	const chr_cust_geo_id = choice_to_geoset.get(choice_id);
-	return geoset_map.get(chr_cust_geo_id);
+	const chr_cust_geo_ids = choice_to_geoset.get(choice_id);
+	if (chr_cust_geo_ids === undefined)
+		return undefined;
+
+	const geoset_ids = [];
+	for (const chr_cust_geo_id of chr_cust_geo_ids) {
+		const geoset_id = geoset_map.get(chr_cust_geo_id);
+		if (geoset_id !== undefined)
+			geoset_ids.push(geoset_id);
+	}
+
+	return geoset_ids.length > 0 ? geoset_ids : undefined;
 };
 
 const get_choice_geoset_raw = (choice_id) => choice_to_geoset.get(choice_id);
+const get_choice_elements = (choice_id) => choice_to_elements.get(choice_id);
 const get_geoset_value = (geoset_id) => geoset_map.get(geoset_id);
 
 const get_choice_materials = (choice_id) => choice_to_chr_cust_material_id.get(choice_id);
@@ -312,6 +337,7 @@ module.exports = {
 
 	get_choice_geoset_id,
 	get_choice_geoset_raw,
+	get_choice_elements,
 	get_geoset_value,
 	get_choice_materials,
 	get_chr_cust_material,
