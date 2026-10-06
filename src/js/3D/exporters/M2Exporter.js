@@ -431,12 +431,13 @@ class M2Exporter {
 		if (blendingMode === 1)
 			return 'MASK';
 
-		// ALPHA and BLEND_ADD blend the texture alpha against the background.
-		if (blendingMode === 2 || blendingMode === 7)
+		// ALPHA, ADD and BLEND_ADD blend the texture alpha against the background.
+		// glTF cannot express additive blending, so alpha blending is the closest match.
+		if (blendingMode === 2 || blendingMode === 3 || blendingMode === 4 || blendingMode === 7)
 			return 'BLEND';
 
-		// All other modes (opaque, additive, modulative) do not use texture alpha
-		// as visibility, so the material is kept opaque.
+		// Opaque and modulative modes do not use texture alpha as visibility,
+		// so the material is kept opaque.
 		return 'OPAQUE';
 	}
 
@@ -459,67 +460,60 @@ class M2Exporter {
 
 		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
 
+		log.write('DEBUG equip slot %d (%s) item %d display textures: %s', slot_id, slot_name, item_id, (textures || []).join(','));
+
 		// export equipment textures and build material map
 		const config = core.view.config;
-		const equipTextures = new Map();
+
+		const export_texture = async (texFileDataID) => {
+			if (!texFileDataID || texFileDataID <= 0 || textureMap.has(texFileDataID))
+				return;
+
+			try {
+				const fileName = listfile.getByID(texFileDataID);
+				let matName = 'mat_equip_' + texFileDataID;
+				let texFile = texFileDataID + '.png';
+				let texPath = path.join(outDir, texFile);
+
+				if (fileName !== undefined) {
+					matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+					if (config.removePathSpaces)
+						matName = matName.replace(/\s/g, '');
+				}
+
+				if (config.enableSharedTextures && fileName !== undefined) {
+					const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
+					texPath = ExportHelper.getExportPath(sharedFileName);
+					texFile = path.relative(outDir, texPath);
+				}
+
+				let has_alpha = true;
+				if (format === 'glb') {
+					const data = await core.view.casc.getFile(texFileDataID);
+					const blp = new BLPFile(data);
+					has_alpha = blp.alphaDepth > 0;
+					const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
+
+					gltf.texture_buffers.set(texFileDataID, png_buffer);
+				} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const data = await core.view.casc.getFile(texFileDataID);
+					const blp = new BLPFile(data);
+					has_alpha = blp.alphaDepth > 0;
+					await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
+				}
+
+				if (config.pathFormat === 'posix')
+					texFile = ExportHelper.win32ToPosix(texFile);
+
+				textureMap.set(texFileDataID, { matName, matPathRelative: texFile, matPath: texPath, hasAlpha: has_alpha });
+			} catch (e) {
+				log.write('Failed to export equipment GLTF texture %d: %s', texFileDataID, e.message);
+			}
+		};
 
 		if (config.modelsExportTextures && textures) {
-			for (let i = 0; i < textures.length; i++) {
-				const texFileDataID = textures[i];
-				if (!texFileDataID || texFileDataID <= 0)
-					continue;
-
-				// use existing texture if already exported
-				if (textureMap.has(texFileDataID)) {
-					equipTextures.set(i, textureMap.get(texFileDataID));
-					continue;
-				}
-
-				try {
-					const fileName = listfile.getByID(texFileDataID);
-					let matName = 'mat_equip_' + texFileDataID;
-					let texFile = texFileDataID + '.png';
-					let texPath = path.join(outDir, texFile);
-
-					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
-						if (config.removePathSpaces)
-							matName = matName.replace(/\s/g, '');
-					}
-
-					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = ExportHelper.getExportPath(sharedFileName);
-						texFile = path.relative(outDir, texPath);
-					}
-
-					// for glb mode, we need to get the texture buffer
-					let has_alpha = true;
-					if (format === 'glb') {
-						const data = await core.view.casc.getFile(texFileDataID);
-						const blp = new BLPFile(data);
-						has_alpha = blp.alphaDepth > 0;
-						const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
-
-						gltf.texture_buffers.set(texFileDataID, png_buffer);
-					} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
-						const data = await core.view.casc.getFile(texFileDataID);
-						const blp = new BLPFile(data);
-						has_alpha = blp.alphaDepth > 0;
-						await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
-					}
-
-					const usePosix = config.pathFormat === 'posix';
-					if (usePosix)
-						texFile = ExportHelper.win32ToPosix(texFile);
-
-					const texInfo = { matName, matPathRelative: texFile, matPath: texPath, hasAlpha: has_alpha };
-					textureMap.set(texFileDataID, texInfo);
-					equipTextures.set(i, texInfo);
-				} catch (e) {
-					log.write('Failed to export equipment GLTF texture %d: %s', texFileDataID, e.message);
-				}
-			}
+			for (const texFileDataID of textures)
+				await export_texture(texFileDataID);
 		}
 
 		// build meshes for this equipment
@@ -544,18 +538,27 @@ class M2Exporter {
 				const texture = m2.textures[textureIdx];
 				const textureType = m2.textureTypes[textureIdx];
 
-				// check for replaceable texture
-				if (textureType >= 11 && textureType < 14) {
-					const texInfo = equipTextures.get(textureType - 11);
-					if (texInfo)
-						matName = texInfo.matName;
-				} else if (textureType > 1 && textureType < 5) {
-					const texInfo = equipTextures.get(textureType - 2);
-					if (texInfo)
-						matName = texInfo.matName;
-				} else if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID)) {
-					matName = textureMap.get(texture.fileDataID).matName;
-				}
+				let texFileDataID = 0;
+
+				// replaceable textures come from the item display list, indexed by texture type
+				if (textureType >= 11 && textureType < 14)
+					texFileDataID = (textures || [])[textureType - 11] ?? 0;
+				else if (textureType > 1 && textureType < 5)
+					texFileDataID = (textures || [])[textureType - 2] ?? 0;
+				else if (texture?.fileDataID > 0)
+					texFileDataID = texture.fileDataID;
+
+				// the equipment M2 can reference textures that the item display info does not
+				// list (effect textures, for example), so export those on demand
+				if (texFileDataID > 0 && config.modelsExportTextures)
+					await export_texture(texFileDataID);
+
+				const texInfo = texFileDataID > 0 ? textureMap.get(texFileDataID) : null;
+				if (texInfo)
+					matName = texInfo.matName;
+
+				log.write('DEBUG equip mesh %d combo %d texType %d texFDID %d blend %d -> %s',
+					mI, texUnit.textureComboIndex, textureType, texFileDataID, m2.materials[texUnit.materialIndex]?.blendingMode ?? -1, matName ?? 'UNRESOLVED');
 			}
 
 			let alphaMode = undefined;
