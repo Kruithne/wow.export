@@ -168,9 +168,11 @@ class GLTFWriter {
 	 * @param {string} name
 	 * @param {Array} triangles
 	 * @param {string} matName
+	 * @param {string} [alphaMode] - glTF alpha mode override (OPAQUE, MASK, BLEND)
+	 * @param {number} [alphaCutoff] - Alpha cutoff used when alphaMode is MASK
 	 */
-	addMesh(name, triangles, matName) {
-		this.meshes.push({ name, triangles, matName });
+	addMesh(name, triangles, matName, alphaMode, alphaCutoff) {
+		this.meshes.push({ name, triangles, matName, alphaMode, alphaCutoff });
 	}
 
 	/**
@@ -921,7 +923,10 @@ class GLTFWriter {
 		}
 
 		const materialMap = new Map();
+		const material_alpha_modes = new Map();
 		const texture_buffer_views = [];
+
+		const transparent_textures = core.view.config.modelsExportTransparentTextures !== false;
 
 		for (const [fileDataID, texFile] of this.textures) {
 			const imageIndex = root.images.length;
@@ -945,7 +950,8 @@ class GLTFWriter {
 			}
 
 			root.textures.push({ source: imageIndex });
-			root.materials.push({
+
+			const material = {
 				name: path.basename(texFile.matName, path.extname(texFile.matName)),
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
@@ -954,10 +960,54 @@ class GLTFWriter {
 					},
 					metallicFactor: 0
 				}
-			});
+			};
+
+			const base_alpha_mode = transparent_textures && texFile.hasAlpha !== false ? 'BLEND' : 'OPAQUE';
+			if (base_alpha_mode !== 'OPAQUE')
+				material.alphaMode = base_alpha_mode;
+
+			root.materials.push(material);
 
 			materialMap.set(texFile.matName, materialIndex);
+			material_alpha_modes.set(texFile.matName, base_alpha_mode);
 		}
+
+		// Resolve the material index for a mesh, creating material variants when the
+		// mesh requests an alpha mode that differs from the textures default.
+		const material_variants = new Map();
+
+		const resolve_mesh_material = (mesh) => {
+			const baseIndex = materialMap.get(mesh.matName);
+			if (baseIndex === undefined)
+				return 0;
+
+			const mode = mesh.alphaMode;
+			if (!transparent_textures || mode === undefined || mode === material_alpha_modes.get(mesh.matName))
+				return baseIndex;
+
+			const key = mesh.matName + "|" + mode + "|" + (mesh.alphaCutoff ?? '');
+			const existing = material_variants.get(key);
+			if (existing !== undefined)
+				return existing;
+
+			const variant = JSON.parse(JSON.stringify(root.materials[baseIndex]));
+
+			if (mode === 'OPAQUE') {
+				delete variant.alphaMode;
+				delete variant.alphaCutoff;
+			} else {
+				variant.alphaMode = mode;
+				if (mode === 'MASK')
+					variant.alphaCutoff = mesh.alphaCutoff ?? 0.5;
+				else
+					delete variant.alphaCutoff;
+			}
+
+			const index = root.materials.length;
+			root.materials.push(variant);
+			material_variants.set(key, index);
+			return index;
+		};
 
 		const mesh_component_meta = Array(this.meshes.length);
 		for (let i = 0, n = this.meshes.length; i < n; i++) {
@@ -1121,7 +1171,7 @@ class GLTFWriter {
 						attributes: primitive_attributes,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
-						material: materialMap.get(mesh.matName) ?? 0
+						material: resolve_mesh_material(mesh)
 					}
 				]
 			});
@@ -1407,7 +1457,7 @@ class GLTFWriter {
 						attributes: eq_prim_attribs,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
-						material: materialMap.get(mesh.matName) ?? 0
+						material: resolve_mesh_material(mesh)
 					}]
 				});
 

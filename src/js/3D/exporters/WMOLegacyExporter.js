@@ -96,10 +96,12 @@ class WMOLegacyExporter {
 						matName = matName.replace(/\s/g, '');
 
 					const fileExisted = await generics.fileExists(texPath);
+					let has_alpha = true;
 
 					if (config.overwriteFiles || !fileExisted) {
 						const buf = new BufferWrapper(Buffer.from(textureData));
 						const blp = new BLPFile(buf);
+						has_alpha = blp.alphaDepth > 0;
 						await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 
 						log.write('Exported legacy WMO texture: %s', texPath);
@@ -111,7 +113,7 @@ class WMOLegacyExporter {
 						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
-					textureMap.set(materialTexture, { matPathRelative: texFile, matPath: texPath, matName });
+					textureMap.set(materialTexture, { matPathRelative: texFile, matPath: texPath, matName, hasAlpha: has_alpha });
 
 					if (!materialMap.has(i))
 						materialMap.set(i, matName);

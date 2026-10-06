@@ -422,6 +422,10 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 					<span>Export animations</span>
 				</label>
+				<label v-if="($core.view.config.exportModelFormat === 'GLTF' || $core.view.config.exportModelFormat === 'GLB')" class="ui-checkbox" title="Apply texture transparency to exported materials">
+					<input type="checkbox" v-model="$core.view.config.modelsExportTransparentTextures"/>
+					<span>Transparent textures</span>
+				</label>
 				<label v-if="($core.view.config.exportModelFormat === 'OBJ' || $core.view.config.exportModelFormat === 'STL') && $core.view.modelViewerActiveType === 'm2'" class="ui-checkbox" title="Apply current animation pose to exported geometry">
 					<input type="checkbox" v-model="$core.view.config.modelsExportApplyPose"/>
 					<span>Apply pose</span>

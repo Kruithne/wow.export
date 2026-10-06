@@ -127,7 +127,8 @@ class M2Exporter {
 				validTextures.set('data-' + textureName, {
 					matName: fullTexPaths ? texFile : matName,
 					matPathRelative: texFile,
-					matPath: texPath
+					matPath: texPath,
+					hasAlpha: true
 				});
 			} catch (e) {
 				log.write('Failed to export data texture %d for M2: %s', textureName, e.message);
@@ -200,11 +201,13 @@ class M2Exporter {
 					}
 
 					const file_existed = await generics.fileExists(texPath);
+					let has_alpha = true;
 
 					if (glbMode && !raw) {
 						// glb mode: convert to PNG buffer without writing
 						const data = await core.view.casc.getFile(texFileDataID);
 						const blp = new BLPFile(data);
+						has_alpha = blp.alphaDepth > 0;
 						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
 						texture_buffers.set(texFileDataID, png_buffer);
 						log.write('Buffering M2 texture %d for GLB embedding', texFileDataID);
@@ -221,6 +224,7 @@ class M2Exporter {
 						} else {
 							// convert BLP to PNG
 							const blp = new BLPFile(data);
+							has_alpha = blp.alphaDepth > 0;
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
@@ -234,7 +238,8 @@ class M2Exporter {
 					validTextures.set(texFileDataID, {
 						matName: fullTexPaths ? texFile : matName,
 						matPathRelative: texFile,
-						matPath: texPath
+						matPath: texPath,
+						hasAlpha: has_alpha
 					});
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
@@ -391,7 +396,18 @@ class M2Exporter {
 					matName = textureMap.get(dataTextureKey).matName;
 			}
 
-			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
+			let alphaMode = undefined;
+			let alphaCutoff = undefined;
+			if (texUnit) {
+				const material = this.m2.materials[texUnit.materialIndex];
+				if (material) {
+					alphaMode = this._getGLTFAlphaMode(material.blendingMode);
+					if (alphaMode === 'MASK')
+						alphaCutoff = 0.5;
+				}
+			}
+
+			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName, alphaMode, alphaCutoff);
 		}
 
 		// add equipment models for GLTF export
@@ -402,6 +418,26 @@ class M2Exporter {
 		}
 
 		await gltf.write(core.view.config.overwriteFiles, format);
+	}
+
+	/**
+	 * Map an M2 blending mode to a glTF alpha mode.
+	 * @private
+	 * @param {number} blendingMode
+	 * @returns {string}
+	 */
+	_getGLTFAlphaMode(blendingMode) {
+		// ALPHA_KEY uses the texture alpha as a hard cutout (alpha-test).
+		if (blendingMode === 1)
+			return 'MASK';
+
+		// ALPHA and BLEND_ADD blend the texture alpha against the background.
+		if (blendingMode === 2 || blendingMode === 7)
+			return 'BLEND';
+
+		// All other modes (opaque, additive, modulative) do not use texture alpha
+		// as visibility, so the material is kept opaque.
+		return 'OPAQUE';
 	}
 
 	/**
@@ -458,15 +494,18 @@ class M2Exporter {
 					}
 
 					// for glb mode, we need to get the texture buffer
+					let has_alpha = true;
 					if (format === 'glb') {
 						const data = await core.view.casc.getFile(texFileDataID);
 						const blp = new BLPFile(data);
+						has_alpha = blp.alphaDepth > 0;
 						const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
 
 						gltf.texture_buffers.set(texFileDataID, png_buffer);
 					} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
 						const data = await core.view.casc.getFile(texFileDataID);
 						const blp = new BLPFile(data);
+						has_alpha = blp.alphaDepth > 0;
 						await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
 					}
 
@@ -474,7 +513,7 @@ class M2Exporter {
 					if (usePosix)
 						texFile = ExportHelper.win32ToPosix(texFile);
 
-					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
+					const texInfo = { matName, matPathRelative: texFile, matPath: texPath, hasAlpha: has_alpha };
 					textureMap.set(texFileDataID, texInfo);
 					equipTextures.set(i, texInfo);
 				} catch (e) {
@@ -519,10 +558,23 @@ class M2Exporter {
 				}
 			}
 
+			let alphaMode = undefined;
+			let alphaCutoff = undefined;
+			if (texUnit) {
+				const material = m2.materials[texUnit.materialIndex];
+				if (material) {
+					alphaMode = this._getGLTFAlphaMode(material.blendingMode);
+					if (alphaMode === 'MASK')
+						alphaCutoff = 0.5;
+				}
+			}
+
 			meshes.push({
 				name: `${mesh_idx++}`,
 				triangles,
-				matName
+				matName,
+				alphaMode,
+				alphaCutoff
 			});
 		}
 
