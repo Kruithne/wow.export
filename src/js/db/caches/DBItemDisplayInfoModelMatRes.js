@@ -7,6 +7,12 @@ const db2 = require('../../casc/db2');
 const DBTextureFileData = require('./DBTextureFileData');
 
 const itemDisplays = new Map();
+
+// maps ItemDisplayInfoID -> array of { textureType, modelIndex, fileDataIDs }
+// ItemDisplayInfoModelMatRes rows carry a TextureType (which replaceable texture
+// slot of the model the texture belongs to, e.g. 2 = OBJECT_SKIN for cloaks) and
+// a ModelIndex; the flat map above loses both, so keep the rows too
+const itemDisplayRows = new Map();
 let is_initialized = false;
 
 /**
@@ -32,6 +38,12 @@ const initializeIDIMMR = async () => {
 				itemDisplays.get(itemdisplayinfoid).push(...textureFileDataIDs);
 			else
 				itemDisplays.set(itemdisplayinfoid, [...textureFileDataIDs]);
+
+			const row_entry = { textureType: row.TextureType, modelIndex: row.ModelIndex, fileDataIDs: textureFileDataIDs };
+			if (itemDisplayRows.has(itemdisplayinfoid))
+				itemDisplayRows.get(itemdisplayinfoid).push(row_entry);
+			else
+				itemDisplayRows.set(itemdisplayinfoid, [row_entry]);
 		}
 	}
 
@@ -53,8 +65,18 @@ const getItemDisplayIdTextureFileIds = (ItemDisplayInfoId) => {
 	return itemDisplays.get(ItemDisplayInfoId);
 };
 
+/**
+ * Get the raw texture rows (with texture type + model index) by ItemDisplayInfoId.
+ * @param {number} ItemDisplayInfoId
+ * @returns {Array<{textureType: number, modelIndex: number, fileDataIDs: number[]}>|undefined}
+ */
+const getDisplayTextureRows = (ItemDisplayInfoId) => {
+	return itemDisplayRows.get(ItemDisplayInfoId);
+};
+
 module.exports = {
 	initialize: initializeIDIMMR,
 	ensureInitialized: ensure_initialized,
 	getItemDisplayIdTextureFileIds,
+	getDisplayTextureRows,
 };
