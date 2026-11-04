@@ -1094,6 +1094,23 @@ input[type=number]::-webkit-outer-spin-button {
 .ui-listbox .item.selected, .ui-checkboxlist .item.selected, .ui-datatable .item.selected {
 	background: var(--font-alt);
 }
+.ui-listbox .item.tree-dir {
+	color: var(--font-highlight);
+}
+.ui-listbox .tree-expander {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	line-height: 11px;
+	text-align: center;
+	font-size: 12px;
+	margin-right: 5px;
+	border: 1px solid var(--border);
+	border-radius: 2px;
+	background: var(--background);
+	color: var(--font);
+	vertical-align: middle;
+}
 .ui-listbox .scroller, .ui-checkboxlist .scroller, .ui-datatable .scroller {
 	position: absolute;
 	right: 3px;

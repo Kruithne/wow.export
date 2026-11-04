@@ -12,6 +12,7 @@
 	"listfileFallbackURL": "https://www.kruithne.net/wow.export/data/listfile/master",
 	"listfileCacheRefresh": 3,
 	"listfileSortByID": false,
+	"listboxTreeView": false,
 	"dbdURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/refs/heads/master/definitions/%s.dbd",
 	"dbdFallbackURL": "https://www.kruithne.net/wow.export/data/dbd/?def=%s",
 	"dbdFilenameURL": "https://raw.githubusercontent.com/wowdev/WoWDBDefs/refs/heads/master/manifest.json",
