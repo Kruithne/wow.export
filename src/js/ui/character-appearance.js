@@ -38,20 +38,34 @@ function apply_customization_geosets(geosets, active_choices) {
 			continue;
 
 		for (const available_choice of available_choices) {
-			const chr_cust_geo_id = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
-			const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+			const chr_cust_geo_ids = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
+			if (!chr_cust_geo_ids)
+				continue;
 
+			for (const chr_cust_geo_id of chr_cust_geo_ids) {
+				const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+				if (geoset_id === undefined)
+					continue;
+
+				for (const geoset of geosets) {
+					if (geoset.id !== 0 && geoset.id === geoset_id)
+						geoset.checked = false;
+				}
+			}
+		}
+
+		const active_geo_ids = DBCharacterCustomization.get_choice_geoset_raw(active_choice.choiceID);
+		if (!active_geo_ids)
+			continue;
+
+		for (const chr_cust_geo_id of active_geo_ids) {
+			const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
 			if (geoset_id === undefined)
 				continue;
 
 			for (const geoset of geosets) {
-				if (geoset.id === 0)
-					continue;
-
-				if (geoset.id === geoset_id) {
-					const should_be_checked = available_choice.id === active_choice.choiceID;
-					geoset.checked = should_be_checked;
-				}
+				if (geoset.id !== 0 && geoset.id === geoset_id)
+					geoset.checked = true;
 			}
 		}
 	}
