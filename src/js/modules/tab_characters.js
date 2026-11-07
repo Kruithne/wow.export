@@ -26,8 +26,10 @@ const PNGWriter = require('../png-writer');
 const { EQUIPMENT_SLOTS, SHOULDER_SLOT_L, SHOULDER_SLOT_R, ATTACHMENT_ID, get_slot_name, get_attachment_ids_for_slot, get_slot_layer } = require('../wow/EquipmentSlots');
 const DBItems = require('../db/caches/DBItems');
 const DBItemCharTextures = require('../db/caches/DBItemCharTextures');
+const DBComponentTextureFileData = require('../db/caches/DBComponentTextureFileData');
 const DBItemGeosets = require('../db/caches/DBItemGeosets');
 const DBItemModels = require('../db/caches/DBItemModels');
+const DBItemDisplayInfoModelMatRes = require('../db/caches/DBItemDisplayInfoModelMatRes');
 const DBItemList = require('../db/caches/DBItemList');
 const DBGuildTabard = require('../db/caches/DBGuildTabard');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
@@ -286,6 +288,7 @@ async function refresh_character_appearance(core) {
 	log.write('Refreshing character appearance...');
 
 	update_geosets(core);
+
 	await update_textures(core);
 	await update_skinned_models(core);
 	await update_equipment_models(core);
@@ -327,7 +330,20 @@ function update_geosets(core) {
 		return;
 
 	// steps 1+2: reset to defaults and apply customization geosets
-	character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
+	// in geoset control mode the checkboxes are the source of truth, so the choices
+	// are not re-applied; an imported selection seeds them exactly once
+	if (core.view.chrShowGeosetControl) {
+		if (core.view.chrImportGeosets.length > 0 && core.view.chrImportGeosetTargetModelID === core.view.chrCustModelSelection[0]?.id) {
+			const imported = new Set(core.view.chrImportGeosets);
+			for (const geoset of geosets)
+				geoset.checked = imported.has(geoset.id);
+
+			core.view.chrImportGeosets.splice(0, core.view.chrImportGeosets.length);
+			core.view.chrImportGeosetTargetModelID = 0;
+		}
+	} else {
+		character_appearance.apply_customization_geosets(geosets, core.view.chrCustActiveChoices);
+	}
 
 	// step 2.5: hide base-model geosets for groups supplied by skinned models
 	// (e.g. mechagnome arms/legs live in both the base model and the collection
@@ -437,46 +453,10 @@ async function update_textures(core) {
 	const item_skins = core.view.chrEquippedItemSkins;
 	if (equipped_items && Object.keys(equipped_items).length > 0) {
 		const char_info = get_current_race_gender(core);
-		const sections = DBCharacterCustomization.get_texture_sections(current_char_component_texture_layout_id);
-		if (sections) {
-			const section_by_type = new Map();
-			for (const section of sections)
-				section_by_type.set(section.SectionType, section);
-
-			const texture_layer_map = DBCharacterCustomization.get_model_texture_layer_map();
-			let base_layer = null;
-			for (const [key, layer] of texture_layer_map) {
-				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
-					continue;
-
-				if (layer.TextureSectionTypeBitMask === -1 && layer.TextureType === 1) {
-					base_layer = layer;
-					break;
-				}
-			}
-
-			const layers_by_section = new Map();
-			for (const [key, layer] of texture_layer_map) {
-				if (!key.startsWith(current_char_component_texture_layout_id + '-'))
-					continue;
-
-				if (layer.TextureSectionTypeBitMask === -1)
-					continue;
-
-				for (let section_type = 0; section_type < 9; section_type++) {
-					if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
-						if (!layers_by_section.has(section_type))
-							layers_by_section.set(section_type, layer);
-					}
-				}
-			}
-
-			if (base_layer) {
-				for (let section_type = 0; section_type < 9; section_type++) {
-					if (!layers_by_section.has(section_type))
-						layers_by_section.set(section_type, base_layer);
-				}
-			}
+		const equipment_layers = character_appearance.get_equipment_texture_layers(current_char_component_texture_layout_id);
+		if (equipment_layers) {
+			const section_by_type = equipment_layers.section_by_type;
+			const layers_by_section = equipment_layers.layers_by_section;
 
 			for (const [slot_id, item_id] of Object.entries(equipped_items)) {
 				// guild tabards use custom composition pipeline
@@ -581,6 +561,28 @@ async function update_textures(core) {
 					// override BlendMode on the layer for guild tabard composition
 					const tabard_texture_layer = { ...layer, BlendMode: tl.blend_mode };
 					await chr_material.setTextureTarget(item_material, section, chr_model_material, tabard_texture_layer, true);
+				}
+			}
+		}
+
+		// cloak/cape textures are not composited into the skin atlas on many layouts;
+		// they bind to the character M2's own replaceable texture slots (e.g. type 2
+		// OBJECT_SKIN) via ItemDisplayInfoModelMatRes
+		const cloak_item_id = equipped_items[15];
+		if (cloak_item_id && active_renderer) {
+			const cloak_display_id = DBItemModels.getDisplayId(cloak_item_id, item_skins?.['15']);
+			const cloak_rows = DBItemDisplayInfoModelMatRes.getDisplayTextureRows(cloak_display_id);
+			if (cloak_rows) {
+				for (const cloak_row of cloak_rows) {
+					if (!cloak_row.fileDataIDs?.length)
+						continue;
+
+					// prefer a race/gender-matching texture when there are several
+					let cloak_fdid = cloak_row.fileDataIDs[0];
+					if (cloak_row.fileDataIDs.length > 1)
+						cloak_fdid = DBComponentTextureFileData.getTextureForRaceGender(cloak_row.fileDataIDs, char_info?.raceID, char_info?.genderIndex, 0) ?? cloak_fdid;
+
+					await active_renderer.overrideTextureType(cloak_row.textureType, cloak_fdid);
 				}
 			}
 		}
@@ -1574,6 +1576,12 @@ async function load_character(core, character) {
 		core.view.chrImportChrModelID = data.model_id;
 		core.view.chrImportTargetModelID = data.model_id;
 
+		// a file that recorded a manual geoset selection re-enters geoset control mode
+		core.view.chrImportGeosets.splice(0, core.view.chrImportGeosets.length);
+		core.view.chrImportGeosets.push(...(data.geosets || []));
+		core.view.chrImportGeosetTargetModelID = data.model_id;
+		core.view.chrShowGeosetControl = (data.geosets || []).length > 0;
+
 		// apply race selection
 		const race = core.view.chrCustRaces.find(r => r.id === data.race_id);
 		if (race)
@@ -1689,6 +1697,11 @@ function get_current_character_data(core) {
 		equipment: { ...core.view.chrEquippedItems },
 		guild_tabard: { ...core.view.chrGuildTabardConfig }
 	};
+
+	// a manual geoset selection is not representable by customization choices, so
+	// it is stored separately and re-applied on import
+	if (core.view.chrShowGeosetControl)
+		data.geosets = core.view.chrCustGeosets.filter(geoset => geoset.checked).map(geoset => geoset.id);
 
 	const skins = core.view.chrEquippedItemSkins;
 	if (skins && Object.keys(skins).length > 0)
@@ -1820,6 +1833,7 @@ async function import_json_character(core, save_to_my_characters) {
 					race_id: data.race_id,
 					model_id: data.model_id,
 					choices: data.choices || [],
+					geosets: data.geosets || [],
 					equipment,
 				};
 
@@ -1851,6 +1865,11 @@ async function import_json_character(core, save_to_my_characters) {
 				core.view.chrImportChoices.push(...(data.choices || []));
 				core.view.chrImportChrModelID = data.model_id;
 				core.view.chrImportTargetModelID = data.model_id;
+
+				core.view.chrImportGeosets.splice(0, core.view.chrImportGeosets.length);
+				core.view.chrImportGeosets.push(...(data.geosets || []));
+				core.view.chrImportGeosetTargetModelID = data.model_id;
+				core.view.chrShowGeosetControl = (data.geosets || []).length > 0;
 
 				const race = core.view.chrCustRaces.find(r => r.id === data.race_id);
 				if (race)
@@ -1921,6 +1940,45 @@ function update_chr_race_list(core) {
 //endregion
 
 //region export
+/**
+ * Resolve the cloak/cape model texture (OBJECT_SKIN, replaceable texture type 2).
+ * Cloaks are not composited into the skin atlas on most layouts; they bind directly
+ * to the character M2's OBJECT_SKIN slot. The GLTF exporter re-parses the M2 from
+ * scratch, so it needs this fileDataID handed to it as a variant texture (index
+ * textureType-2 = 0) or the cloak geoset falls back to the main character material.
+ * @param {object} core
+ * @returns {number|null}
+ */
+const resolve_cloak_texture = (core) => {
+	const equipped_items = core.view.chrEquippedItems;
+	const cloak_item_id = equipped_items[15];
+	if (!cloak_item_id)
+	 return null;
+
+	const cloak_display_id = DBItemModels.getDisplayId(cloak_item_id, core.view.chrEquippedItemSkins?.['15']);
+	const cloak_rows = DBItemDisplayInfoModelMatRes.getDisplayTextureRows(cloak_display_id);
+	if (!cloak_rows)
+	 return null;
+
+	const char_info = get_current_race_gender(core);
+	for (const cloak_row of cloak_rows) {
+		if (!cloak_row.fileDataIDs?.length)
+			 continue;
+
+		// OBJECT_SKIN slot used by cloak geosets
+	 if (cloak_row.textureType !== 2)
+			 continue;
+
+	 let cloak_fdid = cloak_row.fileDataIDs[0];
+	 if (cloak_row.fileDataIDs.length > 1)
+			 cloak_fdid = DBComponentTextureFileData.getTextureForRaceGender(cloak_row.fileDataIDs, char_info?.raceID, char_info?.genderIndex, 0) ?? cloak_fdid;
+
+	 return cloak_fdid;
+	 }
+
+	return null;
+};
+
 const export_char_model = async (core) => {
 	const export_paths = core.openLastExportStream();
 	const format = core.view.config.exportCharacterFormat;
@@ -2045,11 +2103,17 @@ const export_char_model = async (core) => {
 
 			helper.mark(mark_file_name, true);
 		} else {
-			const casc = core.view.casc;
-			const data = await casc.getFile(file_data_id);
-			const mark_file_name = ExportHelper.replaceExtension(file_name, '.gltf');
-			const export_path = ExportHelper.getExportPath(mark_file_name);
-			const exporter = new M2Exporter(data, [], file_data_id);
+		 const casc = core.view.casc;
+		 const data = await casc.getFile(file_data_id);
+		 const mark_file_name = ExportHelper.replaceExtension(file_name, '.gltf');
+		 const export_path = ExportHelper.getExportPath(mark_file_name);
+
+		 // cloak/cape binds to the character M2's OBJECT_SKIN slot (type 2); hand it to
+		 // the exporter as a variant texture so the cloak geoset gets the right material
+		 const cloak_fdid = resolve_cloak_texture(core);
+		 const variant_textures = cloak_fdid ? [cloak_fdid] : [];
+
+		 const exporter = new M2Exporter(data, variant_textures, file_data_id);
 
 			for (const [chr_model_texture_target, chr_material] of chr_materials)
 				exporter.addURITexture(chr_model_texture_target, chr_material.getURI());
@@ -2073,19 +2137,21 @@ const export_char_model = async (core) => {
 					const display = DBItemModels.getItemDisplay(geom.item_id, char_info?.raceID, char_info?.genderIndex, geom.modifier_id);
 					const textures = display?.textures || [];
 
-					equipment_data.push({
-						slot_id: geom.slot_id,
-						item_id: geom.item_id,
-						renderer: geom.renderer,
-						vertices: geom.vertices,
-						normals: geom.normals,
-						uv: geom.uv,
-						uv2: geom.uv2,
-						boneIndices: geom.boneIndices,
-						boneWeights: geom.boneWeights,
-						textures,
-						is_collection_style: geom.is_collection_style
-					});
+				 equipment_data.push({
+					 slot_id: geom.slot_id,
+					 item_id: geom.item_id,
+					 renderer: geom.renderer,
+					 vertices: geom.vertices,
+					 normals: geom.normals,
+					 uv: geom.uv,
+					 uv2: geom.uv2,
+					 boneIndices: geom.boneIndices,
+					 boneWeights: geom.boneWeights,
+					 textures,
+					 is_collection_style: geom.is_collection_style,
+					 attachment_bone: geom.attachment_bone,
+					 attachment_offset: geom.attachment_offset
+				 });
 				}
 
 				exporter.setEquipmentModelsGLTF(equipment_data);
@@ -2399,6 +2465,10 @@ module.exports = {
 							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'GLTF' || $core.view.config.exportCharacterFormat === 'GLB'" title="Include Animations in Export">
 								<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 								<span>Export animations</span>
+							</label>
+							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'GLTF' || $core.view.config.exportCharacterFormat === 'GLB'" title="Apply texture transparency to exported materials">
+								<input type="checkbox" v-model="$core.view.config.modelsExportTransparentTextures"/>
+								<span>Transparent textures</span>
 							</label>
 							<label class="ui-checkbox" v-show="$core.view.config.exportCharacterFormat === 'OBJ' || $core.view.config.exportCharacterFormat === 'STL'" title="Apply current animation pose to exported geometry">
 								<input type="checkbox" v-model="$core.view.config.chrExportApplyPose"/>

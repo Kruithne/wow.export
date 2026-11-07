@@ -96,10 +96,12 @@ class M2LegacyExporter {
 					matName = matName.replace(/\s/g, '');
 
 				const fileExisted = await generics.fileExists(texPath);
+				let has_alpha = true;
 
 				if (config.overwriteFiles || !fileExisted) {
 					const buf = new BufferWrapper(Buffer.from(textureData));
 					const blp = new BLPFile(buf);
+					has_alpha = blp.alphaDepth > 0;
 					await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 
 					log.write('Exported legacy M2 texture: %s', texPath);
@@ -111,7 +113,7 @@ class M2LegacyExporter {
 					texFile = ExportHelper.win32ToPosix(texFile);
 
 				mtl?.addMaterial(matName, texFile);
-				validTextures.set(texturePath.toLowerCase(), { matPathRelative: texFile, matPath: texPath, matName });
+				validTextures.set(texturePath.toLowerCase(), { matPathRelative: texFile, matPath: texPath, matName, hasAlpha: has_alpha });
 			} catch (e) {
 				log.write('Failed to export texture %s for M2: %s', texturePath, e.message);
 			}

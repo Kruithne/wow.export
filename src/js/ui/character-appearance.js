@@ -4,6 +4,7 @@
 	License: MIT
  */
 const CharMaterialRenderer = require('../3D/renderers/CharMaterialRenderer');
+const log = require('../log');
 const DBCharacterCustomization = require('../db/caches/DBCharacterCustomization');
 
 // m2 texture types built from the composited character skin; every other
@@ -38,19 +39,20 @@ function apply_customization_geosets(geosets, active_choices) {
 			continue;
 
 		for (const available_choice of available_choices) {
-			const chr_cust_geo_id = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id);
-			const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+			const chr_cust_geo_ids = DBCharacterCustomization.get_choice_geoset_raw(available_choice.id) || [];
+			const should_be_checked = available_choice.id === active_choice.choiceID;
 
-			if (geoset_id === undefined)
-				continue;
-
-			for (const geoset of geosets) {
-				if (geoset.id === 0)
+			for (const chr_cust_geo_id of chr_cust_geo_ids) {
+				const geoset_id = DBCharacterCustomization.get_geoset_value(chr_cust_geo_id);
+				if (geoset_id === undefined)
 					continue;
 
-				if (geoset.id === geoset_id) {
-					const should_be_checked = available_choice.id === active_choice.choiceID;
-					geoset.checked = should_be_checked;
+				for (const geoset of geosets) {
+					if (geoset.id === 0)
+						continue;
+
+					if (geoset.id === geoset_id)
+						geoset.checked = should_be_checked;
 				}
 			}
 		}
@@ -204,6 +206,62 @@ function dispose_materials(chr_materials) {
 }
 
 /**
+ * Resolve the texture section/layer mapping needed when compositing equipment
+ * textures into a character's skin atlas.
+ * Sections are not limited to the 0-8 body parts: modern layouts also define
+ * cape (13), tattoo and tabard regions, and those must resolve to a layer too,
+ * otherwise e.g. cloaks end up equipped without their texture.
+ * @param {number} layout_id - CharComponentTextureLayoutID
+ * @returns {{section_by_type: Map, layers_by_section: Map}|null}
+ */
+function get_equipment_texture_layers(layout_id) {
+	const sections = DBCharacterCustomization.get_texture_sections(layout_id);
+	if (!sections)
+		return null;
+
+	const section_by_type = new Map();
+	for (const section of sections)
+		section_by_type.set(section.SectionType, section);
+
+	const layers_by_section = new Map();
+	let base_layer = null;
+
+	for (const [key, layer] of DBCharacterCustomization.get_model_texture_layer_map()) {
+		// Layer keys are "<layoutID>-<targetID>", so compare the layout part as a
+		// number - a string prefix would also match other layouts (1 vs 10, 11...).
+		if (Number(key.split('-')[0]) !== layout_id)
+			continue;
+
+		if (layer.TextureSectionTypeBitMask === -1) {
+			// Full-atlas layer, used as fallback for sections without their own layer.
+			if (layer.TextureType === 1 && base_layer === null)
+				base_layer = layer;
+
+			continue;
+		}
+
+		// Match every section this layer covers, whatever the section type is.
+		for (const section of sections) {
+			const section_type = section.SectionType;
+			if ((1 << section_type) & layer.TextureSectionTypeBitMask) {
+				if (!layers_by_section.has(section_type))
+					layers_by_section.set(section_type, layer);
+			}
+		}
+	}
+
+	// Sections without a dedicated layer fall back to the layout's base layer.
+	if (base_layer !== null) {
+		for (const section of sections) {
+			if (!layers_by_section.has(section.SectionType))
+				layers_by_section.set(section.SectionType, base_layer);
+		}
+	}
+
+	return { section_by_type, layers_by_section };
+}
+
+/**
  * Resolve active choices to raw customization texture files for non-skin
  * replaceable texture types (e.g. DH blindfold = type 9). These are bound
  * directly to skinned models rather than composited, since the composite
@@ -302,6 +360,7 @@ module.exports = {
 
 	apply_customization_geosets,
 	apply_customization_textures,
+	get_equipment_texture_layers,
 	upload_textures_to_gpu,
 	dispose_materials,
 	resolve_replaceable_textures,

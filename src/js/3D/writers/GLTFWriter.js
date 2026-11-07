@@ -168,9 +168,11 @@ class GLTFWriter {
 	 * @param {string} name
 	 * @param {Array} triangles
 	 * @param {string} matName
+	 * @param {string} [alphaMode] - glTF alpha mode override (OPAQUE, MASK, BLEND)
+	 * @param {number} [alphaCutoff] - Alpha cutoff used when alphaMode is MASK
 	 */
-	addMesh(name, triangles, matName) {
-		this.meshes.push({ name, triangles, matName });
+	addMesh(name, triangles, matName, alphaMode, alphaCutoff) {
+		this.meshes.push({ name, triangles, matName, alphaMode, alphaCutoff });
 	}
 
 	/**
@@ -186,6 +188,7 @@ class GLTFWriter {
 	 * @param {Uint8Array} equip.boneWeights - Bone weights
 	 * @param {Array} equip.meshes - Array of {name, triangles, matName}
 	 * @param {number} [equip.attachment_bone] - Bone index for attachment (non-skinned equipment)
+	 * @param {Array} [equip.attachment_offset] - Native-space [x,y,z] offset applied to the attachment bone node
 	 */
 	addEquipmentModel(equip) {
 		this.equipment_models.push(equip);
@@ -275,9 +278,21 @@ class GLTFWriter {
 
 		const add_scene_node = (node) => {
 			root.nodes.push(node);
-			root.nodes[0].children.push(root.nodes.length - 1);
-			return node;
-		};
+		 root.nodes[0].children.push(root.nodes.length - 1);
+		 return node;
+	 };
+
+		// Attach a node as a child of an existing (bone) node instead of the scene root.
+		// Used for rigid equipment (weapons/helms/shoulders) so it follows its bone.
+		const add_bone_child_node = (parent_node, node) => {
+			const node_index = root.nodes.length;
+		 root.nodes.push(node);
+		 if (parent_node.children)
+			 parent_node.children.push(node_index);
+		 else
+			 parent_node.children = [node_index];
+		 return node_index;
+	 };
 
 		const add_buffered_accessor = (accessor, buffer_target, add_primitive = false) => {
 			const buffer_idx = root.bufferViews.push({
@@ -302,6 +317,9 @@ class GLTFWriter {
 		let idx_bone_joints = -1
 		let idx_bone_weights = -1;
 		const animationBufferMap = new Map();
+
+		// bone node lookup (hoisted so equipment nodes can be parented to bones)
+		const bone_lookup_map = new Map();
 
 		if (bones.length > 0) {
 			idx_bone_joints = add_buffered_accessor({
@@ -345,8 +363,6 @@ class GLTFWriter {
 				name: this.name + '_skeleton',
 				children: []
 			});
-
-			const bone_lookup_map = new Map();
 
 			const animation_buffer_lookup_map = new Map();
 
@@ -907,7 +923,10 @@ class GLTFWriter {
 		}
 
 		const materialMap = new Map();
+		const material_alpha_modes = new Map();
 		const texture_buffer_views = [];
+
+		const transparent_textures = core.view.config.modelsExportTransparentTextures !== false;
 
 		for (const [fileDataID, texFile] of this.textures) {
 			const imageIndex = root.images.length;
@@ -931,7 +950,8 @@ class GLTFWriter {
 			}
 
 			root.textures.push({ source: imageIndex });
-			root.materials.push({
+
+			const material = {
 				name: path.basename(texFile.matName, path.extname(texFile.matName)),
 				emissiveFactor: [0, 0, 0],
 				pbrMetallicRoughness: {
@@ -940,10 +960,54 @@ class GLTFWriter {
 					},
 					metallicFactor: 0
 				}
-			});
+			};
+
+			const base_alpha_mode = transparent_textures && texFile.hasAlpha !== false ? 'BLEND' : 'OPAQUE';
+			if (base_alpha_mode !== 'OPAQUE')
+				material.alphaMode = base_alpha_mode;
+
+			root.materials.push(material);
 
 			materialMap.set(texFile.matName, materialIndex);
+			material_alpha_modes.set(texFile.matName, base_alpha_mode);
 		}
+
+		// Resolve the material index for a mesh, creating material variants when the
+		// mesh requests an alpha mode that differs from the textures default.
+		const material_variants = new Map();
+
+		const resolve_mesh_material = (mesh) => {
+			const baseIndex = materialMap.get(mesh.matName);
+			if (baseIndex === undefined)
+				return 0;
+
+			const mode = mesh.alphaMode;
+			if (!transparent_textures || mode === undefined || mode === material_alpha_modes.get(mesh.matName))
+				return baseIndex;
+
+			const key = mesh.matName + "|" + mode + "|" + (mesh.alphaCutoff ?? '');
+			const existing = material_variants.get(key);
+			if (existing !== undefined)
+				return existing;
+
+			const variant = JSON.parse(JSON.stringify(root.materials[baseIndex]));
+
+			if (mode === 'OPAQUE') {
+				delete variant.alphaMode;
+				delete variant.alphaCutoff;
+			} else {
+				variant.alphaMode = mode;
+				if (mode === 'MASK')
+					variant.alphaCutoff = mesh.alphaCutoff ?? 0.5;
+				else
+					delete variant.alphaCutoff;
+			}
+
+			const index = root.materials.length;
+			root.materials.push(variant);
+			material_variants.set(key, index);
+			return index;
+		};
 
 		const mesh_component_meta = Array(this.meshes.length);
 		for (let i = 0, n = this.meshes.length; i < n; i++) {
@@ -1107,7 +1171,7 @@ class GLTFWriter {
 						attributes: primitive_attributes,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
-						material: materialMap.get(mesh.matName) ?? 0
+						material: resolve_mesh_material(mesh)
 					}
 				]
 			});
@@ -1393,20 +1457,30 @@ class GLTFWriter {
 						attributes: eq_prim_attribs,
 						indices: accessorIndex,
 						mode: GLTF_TRIANGLES,
-						material: materialMap.get(mesh.matName) ?? 0
+						material: resolve_mesh_material(mesh)
 					}]
 				});
 
-				const node = { name: `${equip.name}_${mesh.name}`, mesh: meshIndex };
+			 const node = { name: `${equip.name}_${mesh.name}`, mesh: meshIndex };
 
-				// apply skin or parent to attachment bone
-				if (eq_has_skin)
-					node.skin = 0;
-				else if (equip.attachment_bone !== undefined && equip.attachment_bone >= 0)
-					node.parent_bone = equip.attachment_bone;
+			 // skinned equipment shares the character armature via joint weights
+			 if (eq_has_skin) {
+				 node.skin = 0;
+				 add_scene_node(node);
+			 }
+			 // rigid attachment equipment (weapons/helms/shoulders): parent to its
+			 // attachment bone and offset in the bone's local space so it follows the bone
+			 else if (equip.attachment_bone !== undefined && equip.attachment_bone >= 0 && bone_lookup_map.has(equip.attachment_bone)) {
+				 const bone_node = bone_lookup_map.get(equip.attachment_bone);
+				 if (equip.attachment_offset)
+					 node.translation = equip.attachment_offset;
+				 add_bone_child_node(bone_node, node);
+			 }
+			 else {
+				 add_scene_node(node);
+			 }
 
-				add_scene_node(node);
-				bins.push(buffer);
+			 bins.push(buffer);
 			}
 		}
 

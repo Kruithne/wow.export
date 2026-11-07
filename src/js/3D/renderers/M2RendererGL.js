@@ -1842,12 +1842,14 @@ class M2RendererGL {
 	}
 
 	/**
-	 * Get world transform matrix for an attachment point.
-	 * Combines bone transform with attachment local offset.
+	 * Get the raw attachment definition (bone index + position) for an attachment ID.
+	 * The position is returned in WoW space (X right, Y forward, Z up). The exporters
+	 * convert it to the GLTF's Y-up space ((x,y,z) -> (x,z,-y)) when parenting the
+	 * equipment node to the bone.
 	 * @param {number} attachmentId - attachment ID (e.g., 11 for helmet)
-	 * @returns {Float32Array|null} - 4x4 transform matrix or null if not found
+	 * @returns {{bone: number, position: number[]}|null}
 	 */
-	getAttachmentTransform(attachmentId) {
+	getAttachmentInfo(attachmentId) {
 		if (!this.m2)
 			return null;
 
@@ -1860,16 +1862,34 @@ class M2RendererGL {
 			return null;
 
 		const bone_idx = attachment.bone;
-		if (bone_idx < 0 || !this.bone_matrices)
+		if (bone_idx < 0)
+			return null;
+
+		const pivot = this.bones?.[bone_idx]?.pivot ?? [0, 0, 0];
+		return { bone: bone_idx, position: attachment.position, pivot: pivot };
+	}
+
+	/**
+	 * Get world transform matrix for an attachment point.
+	 * Combines bone transform with attachment local offset.
+	 * @param {number} attachmentId - attachment ID (e.g., 11 for helmet)
+	 * @returns {Float32Array|null} - 4x4 transform matrix or null if not found
+	 */
+	getAttachmentTransform(attachmentId) {
+		if (!this.m2)
+			return null;
+
+		const info = this.getAttachmentInfo(attachmentId);
+		if (!info || !this.bone_matrices)
 			return null;
 
 		// get bone world matrix (includes rotation from animation)
-		const bone_offset = bone_idx * 16;
+		const bone_offset = info.bone * 16;
 		const bone_mat = this.bone_matrices.subarray(bone_offset, bone_offset + 16);
 
 		// attachment position is in WoW coords (X=right, Y=forward, Z=up)
 		// convert to WebGL coords (X=right, Y=up, Z=-forward)
-		const pos = attachment.position;
+		const pos = info.position;
 		const att_x = pos[0];
 		const att_y = pos[2];  // WoW Z -> WebGL Y
 		const att_z = -pos[1]; // WoW Y -> WebGL -Z
@@ -1884,10 +1904,10 @@ class M2RendererGL {
 
 		// combine: world = bone_world * attachment_local
 		const result = new Float32Array(16);
-		mat4_multiply(result, bone_mat, att_mat);
+		(mat4_multiply)(result, bone_mat, att_mat);
 
 		// apply character model's transform (rotation from camera controls)
-		mat4_multiply(result, this.model_matrix, result);
+		(mat4_multiply)(result, this.model_matrix, result);
 
 		return result;
 	}

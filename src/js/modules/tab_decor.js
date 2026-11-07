@@ -352,6 +352,10 @@ module.exports = {
 					<input type="checkbox" v-model="$core.view.config.modelsExportAnimations"/>
 					<span>Export animations</span>
 				</label>
+				<label v-if="($core.view.config.exportDecorFormat === 'GLTF' || $core.view.config.exportDecorFormat === 'GLB')" class="ui-checkbox" title="Apply texture transparency to exported materials">
+					<input type="checkbox" v-model="$core.view.config.modelsExportTransparentTextures"/>
+					<span>Transparent textures</span>
+				</label>
 				<template v-if="$core.view.decorViewerActiveType === 'm2'">
 					<span class="header">Geosets</span>
 					<component :is="$components.Checkboxlist" :items="$core.view.decorViewerGeosets"></component>

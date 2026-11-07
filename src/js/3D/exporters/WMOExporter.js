@@ -164,11 +164,13 @@ class WMOExporter {
 					}
 
 					const file_existed = await generics.fileExists(texPath);
+					let has_alpha = true;
 
 					if (glbMode && !raw) {
 						// glb mode: convert to PNG buffer without writing
 						const data = await casc.getFile(fileDataID);
 						const blp = new BLPFile(data);
+						has_alpha = blp.alphaDepth > 0;
 						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
 						texture_buffers.set(fileDataID, png_buffer);
 						log.write('Buffering WMO texture %d for GLB embedding', fileDataID);
@@ -183,6 +185,7 @@ class WMOExporter {
 							await data.writeToFile(texPath);
 						} else {
 							const blp = new BLPFile(data);
+							has_alpha = blp.alphaDepth > 0;
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
@@ -193,7 +196,7 @@ class WMOExporter {
 						texFile = ExportHelper.win32ToPosix(texFile);
 
 					mtl?.addMaterial(matName, texFile);
-					textureMap.set(fileDataID, { matPathRelative: texFile, matPath: texPath, matName });
+					textureMap.set(fileDataID, { matPathRelative: texFile, matPath: texPath, matName, hasAlpha: has_alpha });
 
 					// shader 23: use texture2 (first competitive diffuse layer at UV0)
 					// other shaders: use the first available texture
@@ -206,6 +209,22 @@ class WMOExporter {
 		}
 
 		return { textureMap, materialMap, texture_buffers, files_to_cleanup };
+	}
+
+	/**
+	 * Map a WMO blend mode to a glTF alpha mode.
+	 * @private
+	 * @param {number} blendMode
+	 * @returns {string}
+	 */
+	_getGLTFAlphaMode(blendMode) {
+		// ALPHA_KEY uses the texture alpha as a hard cutout (alpha-test).
+		if (blendMode === 1)
+			return 'MASK';
+
+		// Opaque and additive/modulative modes do not use texture alpha as
+		// visibility, so the material is kept opaque.
+		return 'OPAQUE';
 	}
 
 	/**
@@ -331,7 +350,8 @@ class WMOExporter {
 					indices[i] = group.indices[batch.firstFace + i] + indOfs;
 
 				const matID = ((batch.flags & 2) === 2) ? batch.possibleBox2[2] : batch.materialID;
-				gltf.addMesh(groupName + bI, indices, texMaps.materialMap.get(matID));
+				const alphaMode = this._getGLTFAlphaMode(this.wmo.materials[matID]?.blendMode ?? 0);
+				gltf.addMesh(groupName + bI, indices, texMaps.materialMap.get(matID), alphaMode, alphaMode === 'MASK' ? 0.904 : undefined);
 			}
 
 			indOfs += indCount;

@@ -127,7 +127,8 @@ class M2Exporter {
 				validTextures.set('data-' + textureName, {
 					matName: fullTexPaths ? texFile : matName,
 					matPathRelative: texFile,
-					matPath: texPath
+					matPath: texPath,
+					hasAlpha: true
 				});
 			} catch (e) {
 				log.write('Failed to export data texture %d for M2: %s', textureName, e.message);
@@ -200,11 +201,13 @@ class M2Exporter {
 					}
 
 					const file_existed = await generics.fileExists(texPath);
+					let has_alpha = true;
 
 					if (glbMode && !raw) {
 						// glb mode: convert to PNG buffer without writing
 						const data = await core.view.casc.getFile(texFileDataID);
 						const blp = new BLPFile(data);
+						has_alpha = blp.alphaDepth > 0;
 						const png_buffer = blp.toPNG(useAlpha ? 0b1111 : 0b0111);
 						texture_buffers.set(texFileDataID, png_buffer);
 						log.write('Buffering M2 texture %d for GLB embedding', texFileDataID);
@@ -221,6 +224,7 @@ class M2Exporter {
 						} else {
 							// convert BLP to PNG
 							const blp = new BLPFile(data);
+							has_alpha = blp.alphaDepth > 0;
 							await blp.saveToPNG(texPath, useAlpha ? 0b1111 : 0b0111);
 						}
 					} else {
@@ -234,7 +238,8 @@ class M2Exporter {
 					validTextures.set(texFileDataID, {
 						matName: fullTexPaths ? texFile : matName,
 						matPathRelative: texFile,
-						matPath: texPath
+						matPath: texPath,
+						hasAlpha: has_alpha
 					});
 				} catch (e) {
 					log.write('Failed to export texture %d for M2: %s', texFileDataID, e.message);
@@ -391,7 +396,18 @@ class M2Exporter {
 					matName = textureMap.get(dataTextureKey).matName;
 			}
 
-			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName);
+			let alphaMode = undefined;
+			let alphaCutoff = undefined;
+			if (texUnit) {
+				const material = this.m2.materials[texUnit.materialIndex];
+				if (material) {
+					alphaMode = this._getGLTFAlphaMode(material.blendingMode);
+					if (alphaMode === 'MASK')
+						alphaCutoff = 0.5;
+				}
+			}
+
+			gltf.addMesh(GeosetMapper.getGeosetName(mI, mesh.submeshID), indices, matName, alphaMode, alphaCutoff);
 		}
 
 		// add equipment models for GLTF export
@@ -405,11 +421,32 @@ class M2Exporter {
 	}
 
 	/**
+	 * Map an M2 blending mode to a glTF alpha mode.
+	 * @private
+	 * @param {number} blendingMode
+	 * @returns {string}
+	 */
+	_getGLTFAlphaMode(blendingMode) {
+		// ALPHA_KEY uses the texture alpha as a hard cutout (alpha-test).
+		if (blendingMode === 1)
+			return 'MASK';
+
+		// ALPHA, ADD and BLEND_ADD blend the texture alpha against the background.
+		// glTF cannot express additive blending, so alpha blending is the closest match.
+		if (blendingMode === 2 || blendingMode === 3 || blendingMode === 4 || blendingMode === 7)
+			return 'BLEND';
+
+		// Opaque and modulative modes do not use texture alpha as visibility,
+		// so the material is kept opaque.
+		return 'OPAQUE';
+	}
+
+	/**
 	 * Add equipment model to GLTF writer.
 	 * @private
 	 */
 	async _addEquipmentToGLTF(gltf, equip, textureMap, outDir, format, helper) {
-		const { slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style } = equip;
+	 const { slot_id, item_id, renderer, vertices, normals, uv, uv2, boneIndices, boneWeights, textures, is_collection_style, attachment_bone, attachment_offset } = equip;
 
 		if (!renderer?.m2)
 			return;
@@ -422,65 +459,58 @@ class M2Exporter {
 			return;
 
 		const slot_name = require('../../wow/EquipmentSlots').get_slot_name(slot_id) || `Slot${slot_id}`;
-
 		// export equipment textures and build material map
 		const config = core.view.config;
-		const equipTextures = new Map();
+
+		const export_texture = async (texFileDataID) => {
+			if (!texFileDataID || texFileDataID <= 0 || textureMap.has(texFileDataID))
+				return;
+
+			try {
+				const fileName = listfile.getByID(texFileDataID);
+				let matName = 'mat_equip_' + texFileDataID;
+				let texFile = texFileDataID + '.png';
+				let texPath = path.join(outDir, texFile);
+
+				if (fileName !== undefined) {
+					matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
+					if (config.removePathSpaces)
+						matName = matName.replace(/\s/g, '');
+				}
+
+				if (config.enableSharedTextures && fileName !== undefined) {
+					const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
+					texPath = ExportHelper.getExportPath(sharedFileName);
+					texFile = path.relative(outDir, texPath);
+				}
+
+				let has_alpha = true;
+				if (format === 'glb') {
+					const data = await core.view.casc.getFile(texFileDataID);
+					const blp = new BLPFile(data);
+					has_alpha = blp.alphaDepth > 0;
+					const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
+
+					gltf.texture_buffers.set(texFileDataID, png_buffer);
+				} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
+					const data = await core.view.casc.getFile(texFileDataID);
+					const blp = new BLPFile(data);
+					has_alpha = blp.alphaDepth > 0;
+					await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
+				}
+
+				if (config.pathFormat === 'posix')
+					texFile = ExportHelper.win32ToPosix(texFile);
+
+				textureMap.set(texFileDataID, { matName, matPathRelative: texFile, matPath: texPath, hasAlpha: has_alpha });
+			} catch (e) {
+				log.write('Failed to export equipment GLTF texture %d: %s', texFileDataID, e.message);
+			}
+		};
 
 		if (config.modelsExportTextures && textures) {
-			for (let i = 0; i < textures.length; i++) {
-				const texFileDataID = textures[i];
-				if (!texFileDataID || texFileDataID <= 0)
-					continue;
-
-				// use existing texture if already exported
-				if (textureMap.has(texFileDataID)) {
-					equipTextures.set(i, textureMap.get(texFileDataID));
-					continue;
-				}
-
-				try {
-					const fileName = listfile.getByID(texFileDataID);
-					let matName = 'mat_equip_' + texFileDataID;
-					let texFile = texFileDataID + '.png';
-					let texPath = path.join(outDir, texFile);
-
-					if (fileName !== undefined) {
-						matName = 'mat_' + path.basename(fileName.toLowerCase(), '.blp');
-						if (config.removePathSpaces)
-							matName = matName.replace(/\s/g, '');
-					}
-
-					if (config.enableSharedTextures && fileName !== undefined) {
-						const sharedFileName = ExportHelper.replaceExtension(fileName, '.png');
-						texPath = ExportHelper.getExportPath(sharedFileName);
-						texFile = path.relative(outDir, texPath);
-					}
-
-					// for glb mode, we need to get the texture buffer
-					if (format === 'glb') {
-						const data = await core.view.casc.getFile(texFileDataID);
-						const blp = new BLPFile(data);
-						const png_buffer = await blp.toPNG(config.modelsExportAlpha ? 0b1111 : 0b0111);
-
-						gltf.texture_buffers.set(texFileDataID, png_buffer);
-					} else if (config.overwriteFiles || !await generics.fileExists(texPath)) {
-						const data = await core.view.casc.getFile(texFileDataID);
-						const blp = new BLPFile(data);
-						await blp.saveToPNG(texPath, config.modelsExportAlpha ? 0b1111 : 0b0111);
-					}
-
-					const usePosix = config.pathFormat === 'posix';
-					if (usePosix)
-						texFile = ExportHelper.win32ToPosix(texFile);
-
-					const texInfo = { matName, matPathRelative: texFile, matPath: texPath };
-					textureMap.set(texFileDataID, texInfo);
-					equipTextures.set(i, texInfo);
-				} catch (e) {
-					log.write('Failed to export equipment GLTF texture %d: %s', texFileDataID, e.message);
-				}
-			}
+			for (const texFileDataID of textures)
+				await export_texture(texFileDataID);
 		}
 
 		// build meshes for this equipment
@@ -505,38 +535,58 @@ class M2Exporter {
 				const texture = m2.textures[textureIdx];
 				const textureType = m2.textureTypes[textureIdx];
 
-				// check for replaceable texture
-				if (textureType >= 11 && textureType < 14) {
-					const texInfo = equipTextures.get(textureType - 11);
-					if (texInfo)
-						matName = texInfo.matName;
-				} else if (textureType > 1 && textureType < 5) {
-					const texInfo = equipTextures.get(textureType - 2);
-					if (texInfo)
-						matName = texInfo.matName;
-				} else if (texture?.fileDataID > 0 && textureMap.has(texture.fileDataID)) {
-					matName = textureMap.get(texture.fileDataID).matName;
+				let texFileDataID = 0;
+
+				// replaceable textures come from the item display list, indexed by texture type
+				if (textureType >= 11 && textureType < 14)
+					texFileDataID = (textures || [])[textureType - 11] ?? 0;
+				else if (textureType > 1 && textureType < 5)
+					texFileDataID = (textures || [])[textureType - 2] ?? 0;
+				else if (texture?.fileDataID > 0)
+					texFileDataID = texture.fileDataID;
+
+				// the equipment M2 can reference textures that the item display info does not
+				// list (effect textures, for example), so export those on demand
+				if (texFileDataID > 0 && config.modelsExportTextures)
+					await export_texture(texFileDataID);
+
+				const texInfo = texFileDataID > 0 ? textureMap.get(texFileDataID) : null;
+				if (texInfo)
+					matName = texInfo.matName;			}
+
+			let alphaMode = undefined;
+			let alphaCutoff = undefined;
+			if (texUnit) {
+				const material = m2.materials[texUnit.materialIndex];
+				if (material) {
+					alphaMode = this._getGLTFAlphaMode(material.blendingMode);
+					if (alphaMode === 'MASK')
+						alphaCutoff = 0.5;
 				}
 			}
 
 			meshes.push({
 				name: `${mesh_idx++}`,
 				triangles,
-				matName
+				matName,
+				alphaMode,
+				alphaCutoff
 			});
 		}
 
-		// add equipment to GLTF
-		gltf.addEquipmentModel({
-			name: `${slot_name}_Item${item_id}`,
-			vertices: vertices,
-			normals: normals,
-			uv: uv,
-			uv2: uv2,
-			boneIndices: is_collection_style ? boneIndices : null,
-			boneWeights: is_collection_style ? boneWeights : null,
-			meshes
-		});
+			// add equipment to GLTF
+		 gltf.addEquipmentModel({
+			 name: `${slot_name}_Item${item_id}`,
+			 vertices: vertices,
+			 normals: normals,
+			 uv: uv,
+			 uv2: uv2,
+			 boneIndices: is_collection_style ? boneIndices : null,
+			 boneWeights: is_collection_style ? boneWeights : null,
+			 attachment_bone: is_collection_style ? null : attachment_bone,
+			 attachment_offset: is_collection_style ? null : attachment_offset,
+			 meshes
+		 });
 
 		log.write('Added equipment GLTF meshes for slot %d (item %d)', slot_id, item_id);
 	}

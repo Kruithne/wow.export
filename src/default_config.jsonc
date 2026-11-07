@@ -81,6 +81,7 @@
 	"modelsExportTextures": true,
 	"modelsExportAlpha": true,
 	"modelsExportAnimations": false,
+	"modelsExportTransparentTextures": true,
 	"chrRenderShadow": true,
 	"chrUse3DCamera": false,
 	"chrShowBackground": false,

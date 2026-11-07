@@ -295,6 +295,25 @@ class CharacterExporter {
 		let boneIndices = null;
 		let boneWeights = null;
 
+		// attachment-style equipment is parented to a bone node in the GLTF export;
+		// resolve the bone index + offset for that rigging. Per wowdev.wiki/M2 the
+		// attachment position is "relative to bone" and is often exactly the bone's
+		// pivot, so the equipment sits at the bone node. Convert the WoW position
+		// (X right, Y forward, Z up) to the GLTF's Y-up space (x, z, -y) FIRST, then
+		// subtract the bone's absolute Y-up pivot to get the node-local translation.
+		let attachment_bone = null;
+		let attachment_offset = null;
+
+		if (!is_collection_style && attachment_id !== undefined) {
+			const info = this.char_renderer?.getAttachmentInfo?.(attachment_id);
+			if (info) {
+				attachment_bone = info.bone;
+				const pos = info.position;
+				const pv = info.pivot;
+				attachment_offset = [pos[0] - pv[0], pos[2] - pv[1], -pos[1] - pv[2]];
+			}
+		}
+
 		if (is_collection_style && apply_pose && char_bone_matrices) {
 			// collection-style models use character's bone matrices via remapping
 			// first ensure bone matrices are updated from character
@@ -346,7 +365,9 @@ class CharacterExporter {
 			uv: m2.uv,
 			uv2: m2.uv2,
 			boneIndices,
-			boneWeights
+			boneWeights,
+			attachment_bone,
+			attachment_offset
 		};
 	}
 
