@@ -858,6 +858,14 @@ def loadImage(textureLocation):
         loadedImage = bpy.data.images.load(textureLocation)
         loadedImage.name = imageName
 
+        # Game textures pack independent data into their channels; many opaque
+        # ones ship with an unused alpha channel that sits at zero. Blender's
+        # default straight-alpha handling multiplies the colour by alpha when
+        # sampling, which turns those textures solid black. Channel-packed
+        # leaves the colour untouched and keeps the alpha readable for the
+        # material paths that use it as a mask or height source.
+        loadedImage.alpha_mode = 'CHANNEL_PACKED'
+
     return bpy.data.images[imageName]
 
 def createStandardMaterial(materialName, textureLocation, blendMode, createEmissive, extension_mode='REPEAT'):
